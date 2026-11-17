@@ -4,14 +4,18 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.explain",
-    "l2": "explain-promotion",
-    "order": 198
+    "l1": "sections.sections",
+    "l2": "sections-story",
+    "order": 180
   },
   "kind": "element",
   "contract": {
     "kind": "section",
     "root": "section",
+    "media": [
+      "slide",
+      "web"
+    ],
     "anatomy": {
       "band": "sections.band",
       "header": "sections.section-header"
@@ -88,45 +92,50 @@
         {
           "key": "header.title",
           "kind": "plain",
+          "role": "heading",
           "required": true,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "header.eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "header.description",
           "kind": "plain",
+          "role": "lead",
           "required": false,
           "maxLength": {
-            "en": 480
+            "en": 200
           },
           "dir": "auto"
         },
         {
           "key": "actions.primary.label",
           "kind": "plain",
+          "role": "action",
           "required": true,
           "maxLength": {
-            "en": 120
+            "en": 24
           },
           "dir": "auto"
         },
         {
           "key": "actions.secondary.label",
           "kind": "plain",
+          "role": "action",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 24
           },
           "dir": "auto"
         }

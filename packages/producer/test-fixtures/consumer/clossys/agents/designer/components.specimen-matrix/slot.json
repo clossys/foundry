@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "components",
-    "l1": "components.display",
-    "l2": "display-specimens",
-    "order": 145
+    "l1": "components.components",
+    "l2": "components-specimens",
+    "order": 159
   },
   "kind": "element",
   "contract": {
@@ -63,6 +63,5 @@
     "components.grid-list",
     "components.semantic-content",
     "components.table"
-  ],
-  "standard": "component"
+  ]
 }

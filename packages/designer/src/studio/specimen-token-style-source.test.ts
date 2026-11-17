@@ -4,7 +4,8 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { parseSurfaceModule } from "../catalog-core/surface-source-analysis.js";
 
-const text = readFileSync(new URL("./specimen-token-assets.tsx", import.meta.url), "utf8");
+// The helper moved to the engine (foundry-build-0007, 70c7c56f9); ./specimen-token-assets.tsx is now a re-export stub.
+const text = readFileSync(new URL("../specimen/specimen-token-assets.tsx", import.meta.url), "utf8");
 const ast = ts.createSourceFile("specimen-token-assets.tsx", text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
 const helper = ast.statements.find((node): node is ts.FunctionDeclaration => ts.isFunctionDeclaration(node) && node.name?.text === "typeStyle")!;
 const source = helper.getText(ast);

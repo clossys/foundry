@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "frames",
-    "l1": "frames.regions",
-    "l2": "headers",
-    "order": 242
+    "l1": "frames.frames",
+    "l2": "frames-bars",
+    "order": 243
   },
   "kind": "element",
   "contract": {
@@ -114,7 +114,52 @@
       "components.badge",
       "components.disclosure",
       "components.dialog"
-    ]
+    ],
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "skip.label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "navigation.label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "navigation.open",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "navigation.close",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        }
+      ]
+    }
   },
   "inputs": [
     "advantage.proposition.promise",

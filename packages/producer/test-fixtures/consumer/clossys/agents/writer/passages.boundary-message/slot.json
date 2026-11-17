@@ -4,9 +4,9 @@
   "agent": "writer",
   "ia": {
     "l0": "passages",
-    "l1": "passages.respond",
-    "l2": "respond-states",
-    "order": 122
+    "l1": "passages.sections",
+    "l2": "sections-states",
+    "order": 124
   },
   "kind": "strings",
   "contract": {
@@ -20,6 +20,7 @@
         {
           "key": "status",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 80
@@ -29,15 +30,17 @@
         {
           "key": "title",
           "kind": "plain",
+          "role": "heading",
           "required": true,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "description",
           "kind": "plain",
+          "role": "body",
           "required": true,
           "maxLength": {
             "en": 480
@@ -47,15 +50,17 @@
         {
           "key": "actions[].label",
           "kind": "plain",
+          "role": "action",
           "required": true,
           "maxLength": {
-            "en": 120
+            "en": 24
           },
           "dir": "auto"
         },
         {
           "key": "notes",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480

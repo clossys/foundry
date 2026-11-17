@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.explain",
-    "l2": "explain-reading",
-    "order": 196
+    "l1": "sections.sections",
+    "l2": "sections-reading",
+    "order": 195
   },
   "kind": "element",
   "contract": {
@@ -95,15 +95,17 @@
         {
           "key": "heading",
           "kind": "plain",
+          "role": "heading",
           "required": true,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "revision.label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -113,6 +115,7 @@
         {
           "key": "revision.value",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 160
@@ -122,6 +125,7 @@
         {
           "key": "body",
           "kind": "rich",
+          "role": "body",
           "required": true,
           "maxLength": {
             "en": 48000
@@ -145,6 +149,5 @@
     "components.semantic-content",
     "sections.article",
     "sections.section-header"
-  ],
-  "standard": "section.site"
+  ]
 }

@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.navigate",
-    "l2": "navigate-discovery",
-    "order": 232
+    "l1": "sections.sections",
+    "l2": "sections-records",
+    "order": 222
   },
   "kind": "element",
   "contract": {
@@ -92,33 +92,37 @@
         {
           "key": "header.eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "header.heading",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "header.description",
           "kind": "plain",
+          "role": "lead",
           "required": false,
           "maxLength": {
-            "en": 480
+            "en": 200
           },
           "dir": "auto"
         },
         {
           "key": "fields[].label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -128,6 +132,7 @@
         {
           "key": "fields[].options[].label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -137,6 +142,7 @@
         {
           "key": "operators[].label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -146,6 +152,7 @@
         {
           "key": "groups[].label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -155,6 +162,7 @@
         {
           "key": "labels.add-rule",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -164,6 +172,7 @@
         {
           "key": "labels.add-group",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -173,6 +182,7 @@
         {
           "key": "labels.remove",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -182,6 +192,7 @@
         {
           "key": "labels.match-all",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -191,6 +202,7 @@
         {
           "key": "labels.match-any",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -200,6 +212,7 @@
         {
           "key": "labels.value",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120

@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "components",
-    "l1": "components.navigation",
-    "l2": "navigation-panels",
-    "order": 158
+    "l1": "components.components",
+    "l2": "components-navigation",
+    "order": 134
   },
   "kind": "element",
   "contract": {

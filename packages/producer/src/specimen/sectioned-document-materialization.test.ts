@@ -62,7 +62,8 @@ it("materializes the registered whole document through canonical records and pag
   expect(result).toMatchObject({ status: "DRAFT", approved: false, candidate: "sectioned-document-v1.json", ports: { required: ["document"], supplied: ["document", "landmark"], unresolved: [], serverRequired: true } });
   const entry = listSlots(root, "designer").find(row => row.id === slot);
   if (!entry) throw new Error("canonical slot readback required");
-  expect(entry.position).toMatchObject({ l0: "sections", l1: "sections.explain", l2: "explain-reading" });
+  // The Designer recut (foundry-build-0018, d5159f1a2) moved the leaf from sections.explain/explain-reading.
+  expect(entry.position).toMatchObject({ l0: "sections", l1: "sections.sections", l2: "sections-reading" });
   expect(existsSync(pinFile(entry.dir))).toBe(false);
   expect(readCandidate(root, "designer", slot, result.candidate).sha256).toBe(result.contentHash);
   const source = libraryRecordSource({ roots: [root] }), record = await source.read(result.id, result.version);

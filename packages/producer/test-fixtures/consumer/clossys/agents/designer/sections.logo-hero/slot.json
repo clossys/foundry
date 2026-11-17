@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.explain",
-    "l2": "explain-introductions",
-    "order": 190
+    "l1": "sections.sections",
+    "l2": "sections-story",
+    "order": 185
   },
   "kind": "element",
   "contract": {
@@ -69,6 +69,7 @@
         {
           "key": "name",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 160
@@ -104,6 +105,5 @@
   "uses": [
     "components.logo",
     "components.semantic-content"
-  ],
-  "standard": "section.site"
+  ]
 }

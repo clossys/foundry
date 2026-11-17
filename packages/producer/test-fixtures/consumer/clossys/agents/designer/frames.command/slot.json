@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "frames",
-    "l1": "frames.overlay-shells",
-    "l2": "overlay-shells-commands",
-    "order": 248
+    "l1": "frames.frames",
+    "l2": "frames-panels",
+    "order": 249
   },
   "kind": "element",
   "contract": {

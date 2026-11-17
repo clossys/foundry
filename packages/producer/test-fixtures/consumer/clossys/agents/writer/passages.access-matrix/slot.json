@@ -4,9 +4,9 @@
   "agent": "writer",
   "ia": {
     "l0": "passages",
-    "l1": "passages.collect",
-    "l2": "collect-configuration",
-    "order": 113
+    "l1": "passages.sections",
+    "l2": "sections-forms",
+    "order": 117
   },
   "kind": "strings",
   "contract": {
@@ -20,33 +20,37 @@
         {
           "key": "header.eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "header.heading",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "header.description",
           "kind": "plain",
+          "role": "lead",
           "required": false,
           "maxLength": {
-            "en": 480
+            "en": 200
           },
           "dir": "auto"
         },
         {
           "key": "roles[].label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -56,6 +60,7 @@
         {
           "key": "permissions[].label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -65,6 +70,7 @@
         {
           "key": "permissions[].permissions[].label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -74,6 +80,7 @@
         {
           "key": "permissions[].permissions[].description",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
@@ -83,6 +90,7 @@
         {
           "key": "labels.label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -92,6 +100,7 @@
         {
           "key": "roles[].locked-reason",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 160
@@ -101,6 +110,7 @@
         {
           "key": "labels.permission-header",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 160
@@ -110,6 +120,7 @@
         {
           "key": "labels.cell",
           "kind": "icu",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 160
@@ -119,6 +130,7 @@
         {
           "key": "labels.group-all",
           "kind": "icu",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 160
@@ -128,6 +140,7 @@
         {
           "key": "labels.inherited",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 160
@@ -137,6 +150,7 @@
         {
           "key": "labels.locked",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 160
@@ -146,6 +160,7 @@
         {
           "key": "labels.change-summary",
           "kind": "icu",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 160

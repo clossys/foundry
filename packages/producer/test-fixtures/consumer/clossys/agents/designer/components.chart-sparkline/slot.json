@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "components",
-    "l1": "components.display",
-    "l2": "charts-compact",
-    "order": 132
+    "l1": "components.components",
+    "l2": "components-charts",
+    "order": 126
   },
   "kind": "element",
   "contract": {
@@ -75,6 +75,5 @@
     "themes.muted-foreground",
     "themes.radius"
   ],
-  "uses": [],
-  "standard": "component"
+  "uses": []
 }

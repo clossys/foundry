@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "components",
-    "l1": "components.containment",
-    "l2": "containment-overlays",
-    "order": 171
+    "l1": "components.components",
+    "l2": "components-overlays",
+    "order": 169
   },
   "kind": "element",
   "contract": {
@@ -58,7 +58,22 @@
     },
     "composes": [
       "components.icon"
-    ]
+    ],
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "close.label",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        }
+      ]
+    }
   },
   "inputs": [
     "advantage.proposition.promise",

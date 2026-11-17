@@ -4,9 +4,9 @@
   "agent": "writer",
   "ia": {
     "l0": "passages",
-    "l1": "passages.explain",
-    "l2": "explain-social-proof",
-    "order": 87
+    "l1": "passages.sections",
+    "l2": "sections-story",
+    "order": 83
   },
   "kind": "strings",
   "contract": {
@@ -20,33 +20,37 @@
         {
           "key": "header.eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "header.heading",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "header.description",
           "kind": "plain",
+          "role": "lead",
           "required": false,
           "maxLength": {
-            "en": 480
+            "en": 200
           },
           "dir": "auto"
         },
         {
           "key": "logos[].name",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 160

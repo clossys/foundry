@@ -4,8 +4,8 @@
   "agent": "designer",
   "ia": {
     "l0": "assets",
-    "l1": "assets.logo",
-    "l2": "logo-artwork",
+    "l1": "assets.logos",
+    "l2": "logos-marks",
     "order": 45
   },
   "kind": "element",
@@ -21,7 +21,22 @@
     },
     "modes": [
       "light"
-    ]
+    ],
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "alt",
+          "kind": "plain",
+          "role": "alt",
+          "required": true,
+          "maxLength": {
+            "en": 140
+          },
+          "dir": "auto"
+        }
+      ]
+    }
   },
   "inputs": [
     "advantage.proposition.promise",
@@ -31,7 +46,8 @@
     "identity.brand.personality",
     "identity.verbal.voice",
     "identity.visual.imagery",
-    "identity.visual.style"
+    "identity.visual.style",
+    "identity.naming.name"
   ],
   "uses": [],
   "standard": "asset.logo-mark"

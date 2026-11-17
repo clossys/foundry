@@ -4,9 +4,9 @@
   "agent": "writer",
   "ia": {
     "l0": "passages",
-    "l1": "passages.collect",
-    "l2": "collect-forms",
-    "order": 108
+    "l1": "passages.sections",
+    "l2": "sections-forms",
+    "order": 112
   },
   "kind": "strings",
   "contract": {
@@ -20,33 +20,37 @@
         {
           "key": "header.eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "header.heading",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "header.description",
           "kind": "plain",
+          "role": "lead",
           "required": false,
           "maxLength": {
-            "en": 480
+            "en": 200
           },
           "dir": "auto"
         },
         {
           "key": "fields[].label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -56,6 +60,7 @@
         {
           "key": "fields[].description",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
@@ -65,6 +70,7 @@
         {
           "key": "fields[].placeholder",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -74,6 +80,7 @@
         {
           "key": "fields[].options[].label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -83,6 +90,7 @@
         {
           "key": "fields[].error",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -92,6 +100,7 @@
         {
           "key": "submit.label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -101,15 +110,17 @@
         {
           "key": "error-summary.heading",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "error-summary.items[].message",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -119,6 +130,7 @@
         {
           "key": "success.message",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
@@ -128,6 +140,7 @@
         {
           "key": "error.message",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480

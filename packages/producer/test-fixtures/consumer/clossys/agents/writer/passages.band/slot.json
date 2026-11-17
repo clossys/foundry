@@ -4,8 +4,8 @@
   "agent": "writer",
   "ia": {
     "l0": "passages",
-    "l1": "passages.parts",
-    "l2": "parts-structure",
+    "l1": "passages.sections",
+    "l2": "sections-parts",
     "order": 73
   },
   "kind": "strings",

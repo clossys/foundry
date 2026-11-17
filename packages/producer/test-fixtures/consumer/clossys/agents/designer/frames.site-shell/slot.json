@@ -4,8 +4,8 @@
   "agent": "designer",
   "ia": {
     "l0": "frames",
-    "l1": "frames.page-shells",
-    "l2": "page-shells-documents",
+    "l1": "frames.frames",
+    "l2": "frames-shells",
     "order": 238
   },
   "kind": "element",
@@ -13,6 +13,12 @@
     "kind": "frame",
     "root": "div",
     "landmarks": [
+      {
+        "slot": "consent",
+        "role": "region",
+        "topLevel": true,
+        "nameRequired": true
+      },
       {
         "slot": "header",
         "role": "banner",
@@ -54,7 +60,7 @@
       {
         "id": "consent",
         "required": false,
-        "accepts": "sections.*"
+        "accepts": "sections.consent"
       },
       {
         "id": "header",

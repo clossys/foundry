@@ -5,8 +5,8 @@
   "ia": {
     "l0": "assets",
     "l1": "assets.icons",
-    "l2": "icons-objects",
-    "order": 72
+    "l2": "icons-entities",
+    "order": 76
   },
   "kind": "element",
   "contract": {
@@ -15,13 +15,19 @@
     "members": {
       "mode": "closed",
       "names": [
-        "default"
+        "default",
+        "business",
+        "institution"
       ]
     },
     "modes": [
       "light"
     ],
-    "grid": 24
+    "grid": 24,
+    "optional": [
+      "business",
+      "institution"
+    ]
   },
   "inputs": [
     "advantage.proposition.promise",

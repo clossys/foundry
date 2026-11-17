@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "components",
-    "l1": "components.navigation",
-    "l2": "navigation-canvas",
-    "order": 162
+    "l1": "components.components",
+    "l2": "components-navigation",
+    "order": 138
   },
   "kind": "element",
   "contract": {
@@ -63,6 +63,5 @@
   "uses": [
     "components.button",
     "components.semantic-content"
-  ],
-  "standard": "component"
+  ]
 }

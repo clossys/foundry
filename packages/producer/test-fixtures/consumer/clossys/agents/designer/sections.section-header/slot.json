@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.parts",
-    "l2": "parts-structure",
-    "order": 187
+    "l1": "sections.sections",
+    "l2": "sections-parts",
+    "order": 173
   },
   "kind": "element",
   "contract": {
@@ -110,24 +110,27 @@
         {
           "key": "eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "heading",
           "kind": "plain",
+          "role": "heading",
           "required": true,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "description",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
@@ -137,9 +140,10 @@
         {
           "key": "actions[].label",
           "kind": "plain",
+          "role": "action",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 24
           },
           "dir": "auto"
         }

@@ -1,5 +1,5 @@
 import { once } from "node:events";
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { cp, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
@@ -134,7 +134,9 @@ describe("loopback Producer", () => {
     await server!.close();
   });
 
-  it("runs the installed CLI with initial compile gaps, honors no-open, and stops on SIGTERM", async () => {
+  // The produce verb is retired (foundry-build-0007, 1f99d180c; owner decision 8): the installed CLI refuses with
+  // exit 2 before starting any server or browser; --once still reports the slot models and the manifest guard holds.
+  it("runs the installed CLI: the retired produce refuses without a server or browser, --once reports slot models", async () => {
     const runtime = join(root, "runtime");
     await cp(join(repo, "packages/producer/dist"), join(runtime, "dist"), { recursive: true });
     await cp(join(repo, "packages/producer/pipeline"), join(runtime, "pipeline"), { recursive: true });
@@ -144,35 +146,28 @@ describe("loopback Producer", () => {
     await cp(childEntry, join(runtime, "dist/studio/standalone/apps/studio/server.js"));
     await writeFile(join(runtime, "dist/studio/manifest.json"), JSON.stringify({ schemaVersion: 1, serverEntry: "standalone/apps/studio/server.js", staticDir: "standalone/apps/studio/.next/static", publicDir: null }));
     await writeFile(join(root, "clossys/clossys.config.ts"), "export default {};\n");
-    // Without a Designer slot model /api/config compiles the whole Foundry default fill
-    // (226 s measured 2026-11-12 at load 6-17, 37.8 s on 2026-11-06), which this CLI
-    // lifecycle test does not exercise; the pinless model keeps every compile input a gap.
     await designerModel();
     const bin = join(root, "bin"); await mkdir(bin);
     const opened = join(root, "browser-opened");
     // A browser launch would invoke this marker program, even without a desktop.
     await writeFile(join(bin, "xdg-open"), `#!/bin/sh\ntouch '${opened}'\n`, { mode: 0o755 });
-    const cli = spawn(process.execPath, [join(runtime, "dist/cli/index.js"), "produce", "--port", "0", "--no-open"], { cwd: root, env: { ...process.env, PATH: `${bin}:${process.env.PATH}` }, stdio: ["ignore", "pipe", "pipe"] });
-    let stdout = "", stderr = "";
-    cli.stderr.setEncoding("utf8"); cli.stderr.on("data", part => { stderr += part; });
-    try {
-      const url = await new Promise<string>((resolve, reject) => {
-        cli.stdout.setEncoding("utf8"); cli.stdout.on("data", part => { stdout += part; const match = /Producer Studio: (http:\/\/127\.0\.0\.1:\d+)/.exec(stdout); if (match) resolve(match[1]!); });
-        cli.once("error", reject); cli.once("exit", code => reject(new Error(`CLI exited before readiness: ${code}; ${stderr}`)));
-      });
-      const config = await (await fetch(`${url}/api/config`)).json() as any;
-      expect(config).toMatchObject({ readOnly: true }); expect(config.compilation).toBeUndefined();
-      expect((await fetch(`${url}/api/cells`)).status).toBe(404);
-      const exited = once(cli, "exit"); cli.kill("SIGTERM");
-      expect((await exited)[0]).toBe(0); expect(stderr).toBe("");
-      expect(stdout).toContain("Producer stopped; director: missing, designer: slot model, writer: missing, publisher: missing");
-      expect(stdout).not.toContain(config.token); expect(stdout).not.toContain("token=");
-      await expect(stat(opened)).rejects.toMatchObject({ code: "ENOENT" });
-      await expect(fetch(`${url}/api/health`)).rejects.toThrow();
-      await writeFile(join(runtime, "dist/studio/manifest.json"), JSON.stringify({ schemaVersion: 1, serverEntry: "../outside.js" }));
-      const invalid = spawnSync(process.execPath, [join(runtime, "dist/cli/index.js"), "produce", "--no-open", "--json"], { cwd: root, encoding: "utf8" });
-      expect(invalid.status).toBe(2); expect(JSON.parse(invalid.stdout).message).toContain("Studio manifest serverEntry must remain under dist/studio");
-    } finally { if (cli.exitCode === null) { const exited = once(cli, "exit"); cli.kill("SIGKILL"); await exited; } }
+    const env = { ...process.env, PATH: `${bin}:${process.env.PATH}` };
+    const { PRODUCE_RETIRED } = await import(join(runtime, "dist/cli/produce.js"));
+    const cli = spawnSync(process.execPath, [join(runtime, "dist/cli/index.js"), "produce", "--port", "0", "--no-open"], { cwd: root, env, encoding: "utf8", timeout: 15_000 });
+    expect(cli.status).toBe(2); expect(cli.signal).toBeNull();
+    expect(cli.stdout + cli.stderr).toContain(PRODUCE_RETIRED);
+    expect(cli.stdout).not.toMatch(/Producer Studio: http/);
+    const json = spawnSync(process.execPath, [join(runtime, "dist/cli/index.js"), "produce", "--json"], { cwd: root, env, encoding: "utf8", timeout: 15_000 });
+    expect(json.status).toBe(2); expect(JSON.parse(json.stdout)).toMatchObject({ exitCode: 2, verb: "produce", message: PRODUCE_RETIRED });
+    await expect(stat(opened)).rejects.toMatchObject({ code: "ENOENT" });
+    const report = spawnSync(process.execPath, [join(runtime, "dist/cli/index.js"), "produce", "--once", "--no-open"], { cwd: root, env, encoding: "utf8", timeout: 15_000 });
+    expect(report.status).toBe(0); expect(report.stderr).toBe("");
+    expect(report.stdout).toContain("director: missing, designer: slot model, writer: missing, publisher: missing");
+    expect(await readdir(join(root, "clossys"))).toEqual(expect.arrayContaining(["clossys.config.ts"]));
+    // The installed manifest guard still refuses an entry outside dist/studio.
+    await writeFile(join(runtime, "dist/studio/manifest.json"), JSON.stringify({ schemaVersion: 1, serverEntry: "../outside.js" }));
+    const { studioEntry } = await import(join(runtime, "dist/server/studio.js"));
+    await expect(studioEntry()).rejects.toThrow("Studio manifest serverEntry must remain under dist/studio");
   }, 20_000);
 });
 

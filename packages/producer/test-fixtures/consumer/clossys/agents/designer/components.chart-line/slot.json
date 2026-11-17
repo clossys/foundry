@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "components",
-    "l1": "components.display",
-    "l2": "charts-core",
-    "order": 130
+    "l1": "components.components",
+    "l2": "components-charts",
+    "order": 124
   },
   "kind": "element",
   "contract": {

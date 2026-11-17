@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "components",
-    "l1": "components.actions",
-    "l2": "actions-menus",
-    "order": 99
+    "l1": "components.components",
+    "l2": "components-actions",
+    "order": 101
   },
   "kind": "element",
   "contract": {
@@ -85,6 +85,5 @@
   ],
   "uses": [
     "components.icon"
-  ],
-  "standard": "component"
+  ]
 }

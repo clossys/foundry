@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.parts",
-    "l2": "parts-structure",
-    "order": 186
+    "l1": "sections.sections",
+    "l2": "sections-parts",
+    "order": 172
   },
   "kind": "element",
   "contract": {

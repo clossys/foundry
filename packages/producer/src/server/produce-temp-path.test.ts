@@ -8,6 +8,7 @@ import { agentRoot } from "./cells.js";
 import { studioSelection, type StudioSelection } from "./selection.js";
 import { studioTheme, type StudioTheme } from "./theme.js";
 import { consumerPath } from "../consumer-root.js";
+import { PRODUCE_RETIRED } from "../cli/produce.js";
 
 const repository = fileURLToPath(new URL("../../../../", import.meta.url));
 const timeout = 90_000;
@@ -107,7 +108,25 @@ describe("clossys produce temporary projection paths", () => {
     if (selection.message !== undefined) expect(aliased.selection.message).toBe(selection.message);
   }, timeout);
 
-  it.each(["consumer-root", "agent-ia"] as const)("continues rejecting a symlinked %s through the real server", async kind => {
+  // The produce verb is retired (foundry-build-0007, 1f99d180c; owner decision 8): the real bin now refuses
+  // before any server or compile, so the symlink refusal is pinned on the exact /api/config sources in-process.
+  async function retired(label: string, root: string) {
+    const child = spawn(executable, ["produce", "--root", root, "--port", "0", "--no-open"], {
+      cwd: consumer, env: { ...process.env, TMPDIR: aliasTemp }, stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stdout = "", stderr = "";
+    child.stdout.setEncoding("utf8"); child.stderr.setEncoding("utf8");
+    child.stdout.on("data", part => { stdout += part; }); child.stderr.on("data", part => { stderr += part; });
+    const result = await new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve, reject) => {
+      child.once("error", reject); child.once("close", (code, signal) => resolve({ code, signal }));
+    });
+    await writeFile(join(directory, `${++sequence}-${label}.json`), JSON.stringify({ root, ...result, stdout, stderr }, null, 2));
+    expect(result.code, stderr).toBe(2);
+    expect(stderr + stdout).toContain(PRODUCE_RETIRED);
+    expect(stdout).not.toMatch(/Producer Studio: http/);
+  }
+
+  it.each(["consumer-root", "agent-ia"] as const)("continues rejecting a symlinked %s; the retired bin refuses before reading it", async kind => {
     const target = join(directory, kind);
     if (kind === "consumer-root") await symlink(consumer, target, "dir");
     else {
@@ -117,10 +136,11 @@ describe("clossys produce temporary projection paths", () => {
     }
     const iaPath = join(agentRoot(consumer, "designer"), "ia.json");
     const before = await readFile(iaPath, "utf8");
-    const config = await produce(`rejected-${kind}`, aliasTemp, target);
-    expect(config.selection.leaves).toEqual([]);
-    expect(config.selection.message).toMatch(/[Ss]ymbolic link|symlink/);
-    expect(config.theme.source).not.toBe("consumer");
+    const [theme, selection] = await Promise.all([studioTheme(target), studioSelection(target)]);
+    expect(selection.leaves).toEqual([]);
+    expect(selection.message).toMatch(/[Ss]ymbolic link|symlink/);
+    expect(theme.source).not.toBe("consumer");
+    await retired(`rejected-${kind}`, target);
     expect(await readFile(iaPath, "utf8")).toBe(before);
   }, timeout);
 });

@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.explain",
-    "l2": "explain-media",
-    "order": 202
+    "l1": "sections.sections",
+    "l2": "sections-reading",
+    "order": 190
   },
   "kind": "element",
   "contract": {
@@ -87,33 +87,37 @@
         {
           "key": "header.eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "header.heading",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "header.description",
           "kind": "plain",
+          "role": "lead",
           "required": false,
           "maxLength": {
-            "en": 480
+            "en": 200
           },
           "dir": "auto"
         },
         {
           "key": "figure.caption",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
@@ -123,15 +127,17 @@
         {
           "key": "figure.media.title",
           "kind": "plain",
+          "role": "heading",
           "required": true,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "figure.media.series[].name",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 160
@@ -141,6 +147,7 @@
         {
           "key": "figure.chrome-label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 160
@@ -150,6 +157,7 @@
         {
           "key": "callouts.label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 160
@@ -159,6 +167,7 @@
         {
           "key": "callouts.items[].body",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
