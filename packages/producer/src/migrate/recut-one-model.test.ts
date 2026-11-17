@@ -14,7 +14,7 @@ import { SLOT_SCHEMA, serializeSlot, validateSlot } from "../records/slot.js";
 import { readSlot } from "../records/slots.js";
 import type { Slot } from "../records/types.js";
 import { writeNotNeeded, writeSlotOptions } from "../records/slot-write.js";
-import { applyRecut, planRecut, RECUT_AGENTS } from "./recut.js";
+import { applyRecut, planRecut } from "./recut.js";
 
 const AT = "2026-11-15T10:00:00Z";
 let root: string | undefined;
@@ -37,18 +37,24 @@ function recut() {
 const rowsOf = (w: ReturnType<typeof recut>, check: string) => runConstitution({ root: w.root, consumer: w.consumer, rule: "R01", history: () => NO_HISTORY })
   .rows.filter(row => row.check === check);
 const perSlot = (rows: readonly { slot: string }[]) => rows.filter(row => row.slot !== "*");
+/** The rows about a slot.json that exists and is clossys.slot/2 (an IA leaf with no folder is the separate ia-gap reading). */
+const onCurrentFiles = <T extends { agent: string; slot: string }>(w: ReturnType<typeof recut>, rows: readonly T[]): T[] =>
+  rows.filter(row => row.slot !== "*" && existsSync(w.file(row.agent, row.slot)) && (w.read(row.agent, row.slot) as unknown as { schema?: unknown }).schema === SLOT_SCHEMA);
 
 describe("recut, then the constitution: slot shape is green on clossys.slot/2", () => {
-  it("leaves every slot.json in the current format and raises no R01.2 or per-slot R01.8 row", () => {
+  it("leaves every Director, Designer and Writer slot.json in the current format and raises no R01.2 or R01.8 row on one", () => {
     const w = recut();
-    let current = 0;
-    for (const agent of RECUT_AGENTS) for (const id of w.slots(agent)) {
-      const doc = w.read(agent, id) as unknown as Record<string, unknown>;
-      if (doc.schema === SLOT_SCHEMA) current++;
+    let current = 0, old = 0;
+    for (const agent of ["director", "designer", "writer"] as const) for (const id of w.slots(agent)) {
+      if ((w.read(agent, id) as unknown as Record<string, unknown>).schema === SLOT_SCHEMA) current++; else old++;
     }
     expect(current).toBeGreaterThan(100);
-    expect(rowsOf(w, "R01.2").map(row => `${row.agent}/${row.slot}: ${row.reason}`)).toEqual([]);
-    expect(perSlot(rowsOf(w, "R01.8")).map(row => `${row.agent}/${row.slot}: ${row.reason}`)).toEqual([]);
+    expect(old).toBe(0);
+    const shape = rowsOf(w, "R01.2");
+    expect(onCurrentFiles(w, shape).map(row => `${row.agent}/${row.slot}: ${row.reason}`)).toEqual([]);
+    // What R01.2 still reports is the IA-gap reading only: a leaf ia.json lists with no slot folder.
+    expect(shape.filter(row => row.reason !== "live slot has no folder")).toEqual([]);
+    expect(onCurrentFiles(w, rowsOf(w, "R01.8")).map(row => `${row.agent}/${row.slot}: ${row.reason}`)).toEqual([]);
   });
 
   // Mutation: the R01.2 slot/2 branch still judges shape, kind and contract (nothing is waved through).
@@ -74,7 +80,7 @@ describe("recut, then the constitution: slot shape is green on clossys.slot/2", 
     w.write("designer", moved!, { ...slot, ia: { ...slot.ia, l2: `${slot.ia.l1}/elsewhere` } });
     const other = w.read("designer", dotted!);
     w.write("designer", dotted!, { ...other, ia: { ...other.ia, l1: other.ia.l1.split("/").slice(1).join(".") } });
-    const rows = perSlot(rowsOf(w, "R01.8"));
+    const rows = perSlot(rowsOf(w, "R01.8")).filter(row => row.agent === "designer");
     expect(rows.map(row => row.slot).sort()).toEqual([moved, dotted].sort());
     expect(rows.find(row => row.slot === moved)!.reason).toMatch(/slot\.json ia is .*\/elsewhere, but ia\.json places the leaf at /);
   });
@@ -92,16 +98,17 @@ describe("slot writes on clossys.slot/2 (options, not-needed)", () => {
   it("writeSlotOptions writes options and varyOn into the slot/2 file, which stays valid, and reads back", () => {
     const w = recut();
     const { agent, id } = consumerAdded(w);
-    expect(writeSlotOptions(w.consumer, agent, id, { options: 3, varyOn: "angle", at: "2026-11-16T00:00:00Z" })).toBe(true);
+    expect(writeSlotOptions(w.consumer, agent, id, { options: 2, varyOn: "tone", at: "2026-11-16T00:00:00Z" })).toBe(true);
     const after = w.read(agent, id);
-    expect(after).toMatchObject({ schema: SLOT_SCHEMA, options: 3, varyOn: "angle", updatedAt: "2026-11-16T00:00:00Z" });
+    expect(after).toMatchObject({ schema: SLOT_SCHEMA, options: 2, varyOn: "tone", updatedAt: "2026-11-16T00:00:00Z" });
     expect(validateSlot(after)).toEqual([]);
     expect(readFileSync(w.file(agent, id), "utf8")).toBe(serializeSlot(after));
-    expect(readSlot(w.consumer, agent, id)).toMatchObject({ options: 3, varyOn: "angle" });
+    expect(readSlot(w.consumer, agent, id)).toMatchObject({ options: 2, varyOn: "tone" });
     // Same class again: nothing to write.
-    expect(writeSlotOptions(w.consumer, agent, id, { options: 3, varyOn: "angle", at: "2026-11-16T01:00:00Z" })).toBe(false);
+    expect(writeSlotOptions(w.consumer, agent, id, { options: 2, varyOn: "tone", at: "2026-11-16T01:00:00Z" })).toBe(false);
     expect(writeSlotOptions(w.consumer, agent, id, { options: 1, at: "2026-11-16T02:00:00Z" })).toBe(true);
     expect(w.read(agent, id)).not.toHaveProperty("options");
+    expect(w.read(agent, id)).not.toHaveProperty("varyOn");
   });
 
   it("writeNotNeeded parks the slot/2 file with contract.notNeeded, and the reader sees the marker", () => {
@@ -117,11 +124,11 @@ describe("slot writes on clossys.slot/2 (options, not-needed)", () => {
 
   it("refuses to write a computed field into a slot synced from a package base", () => {
     const w = recut();
-    let synced: { agent: "director" | "writer" | "designer"; id: string } | undefined;
-    for (const agent of ["director", "writer", "designer"] as const) for (const id of w.slots(agent)) if (!synced && w.read(agent, id).base !== null) synced = { agent, id };
-    if (!synced) return; // the fixture syncs no slot from a package base
-    const before = readFileSync(w.file(synced.agent, synced.id), "utf8");
-    expect(() => writeSlotOptions(w.consumer, synced!.agent, synced!.id, { options: 2, varyOn: "tone" })).toThrow(/synced from @clossys\//);
-    expect(readFileSync(w.file(synced.agent, synced.id), "utf8")).toBe(before);
+    const { agent, id } = consumerAdded(w);
+    // The recut fixture adds every slot itself, so one is marked as synced from its package base here.
+    w.write(agent, id, { ...w.read(agent, id), base: { package: `@clossys/${agent}`, version: "0.0.0", path: `src/catalog/slots/${id}/slot.json`, sha256: "0".repeat(64) } });
+    const before = readFileSync(w.file(agent, id), "utf8");
+    expect(() => writeSlotOptions(w.consumer, agent, id, { options: 2, varyOn: "tone" })).toThrow(/synced from @clossys\//);
+    expect(readFileSync(w.file(agent, id), "utf8")).toBe(before);
   });
 });
