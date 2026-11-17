@@ -16,6 +16,8 @@ import { queueEntryChangeIssues } from "../queue/append-only.js";
 import { runOf, type TargetCheckRun, type TargetFinding } from "./pins-resolve.js";
 
 export const LEDGER_APPEND_ONLY = "ledger.append-only";
+/** The finding when the workspace has no git history at all (subject: the root). */
+export const NOT_A_REPOSITORY = "not inside a git repository: ledger.append-only reads the git history of the queue and ledger entries and cannot pass without it";
 
 const PRODUCER = "clossys/agents/producer";
 const QUEUE_FILE = /^clossys\/agents\/producer\/(queue\.(?:pick|approve|clarify|fix))\/entries\/([^/]+)\.json$/;
@@ -54,7 +56,7 @@ export function checkLedgerAppendOnly(root: string): TargetCheckRun {
 
   const prefix = tryGit(root, ["rev-parse", "--show-prefix"]);
   if (prefix === undefined) {
-    push(root, "not inside a git repository: ledger.append-only reads the git history of the queue and ledger entries and cannot pass without it");
+    push(root, NOT_A_REPOSITORY);
     return runOf(LEDGER_APPEND_ONLY, findings);
   }
   if (tryGit(root, ["rev-parse", "--is-shallow-repository"])?.trim() === "true") {

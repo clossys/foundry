@@ -24,7 +24,7 @@ import {
 import { isAbsent, parseJson } from "../errors.js";
 import { candidateIssues, isCurrentSlot, placedAt, readSlotValue } from "./slot-current.js";
 /** A candidate as its kind rules read it (a clossys.candidate/1 file without its header, with the header source): Designer checks parse this, never the raw bytes. */
-export { candidateView } from "./slot-current.js";
+export { candidateView, viewIssues, viewPlacedAt } from "./slot-current.js";
 import { notNeededIssue } from "./slot-model/validate.js";
 
 export interface SlotEntry<A extends ModelAgent = SlotAgent> {

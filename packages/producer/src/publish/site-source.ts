@@ -8,8 +8,8 @@ import type { WriterSlotBodyRecord } from "@clossys/writer/slot-body";
 import { agentModule } from "../read/cells.js";
 import { readPinnedPublication } from "./pinned-publication.js";
 import { writerDeclarationsText } from "./studio-defaults.js";
-import { hasPinFile, hasSlotModel, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
-import { parseFrontmatter, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
+import { hasPinFile, hasSlotModel, listSlots, readCandidate, readIa, readSlot, viewPlacedAt } from "../records/slots.js";
+import { parseFrontmatter, validateCandidate } from "../records/slot-model/index.js";
 import type { PageCopyBinding, PublisherInput, WriterInput, WriterRecord, WriterSectionBinding } from "@clossys/publisher/build";
 
 const isRecord = (value: unknown): value is Record<string, any> => !!value && typeof value === "object" && !Array.isArray(value);
@@ -66,8 +66,7 @@ async function pinnedWriterRows(consumer: string): Promise<{ rows: WriterSlotBod
       continue;
     }
     const doc = readSlot(consumer, "writer", entry.id);
-    if (validateSlotDoc(doc).length || doc.id !== entry.id || doc.agent !== "writer" || doc.kind !== "strings"
-      || doc.ia.l0 !== entry.position.l0 || doc.ia.l1 !== entry.position.l1 || doc.ia.l2 !== entry.position.l2 || doc.ia.order !== entry.position.order) {
+    if (!viewPlacedAt(doc, entry.id, "writer", entry.position) || doc.kind !== "strings") {
       throw new Error(`Invalid Writer slot: ${entry.id}`);
     }
     const candidate = readCandidate(consumer, "writer", entry.id, entry.pin.candidate);

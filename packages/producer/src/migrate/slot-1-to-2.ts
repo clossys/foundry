@@ -67,7 +67,7 @@ const WRITER_KINDS: Record<string, TargetSlotKind> = {
   lexicon: "voice", narrative: "prose", narratives: "prose", passage: "copy", passages: "copy", pattern: "copy", patterns: "copy", string: "copy", strings: "copy",
 };
 const PUBLISHER_PREFIXES: Record<string, TargetSlotKind> = {
-  page: "page", pages: "page", layout: "layout", layouts: "layout", chrome: "chrome", release: "release", publication: "release",
+  page: "page", pages: "page", layout: "layout", layouts: "layout", chrome: "chrome", release: "release", publication: "publication",
 };
 
 /** The slot/2 kind of a slot/1 file, or undefined when it has none. */

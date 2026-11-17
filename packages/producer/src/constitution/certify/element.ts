@@ -24,7 +24,7 @@ import ts from "typescript";
 import { specimenKindOf } from "@clossys/publisher/specimen";
 import { contractFixtureIssues, type ContractFixture } from "../../records/slot-model/contract-fixture.js";
 import { dependencyPart } from "../../specimen/specimen-tree.js";
-import { installPathOf, isObject, registryFiles, stringList } from "../checks/shared.js";
+import { installPathOf, isObject, registryFiles, slotDoc, stringList } from "../checks/shared.js";
 import type { CandidateRecord, SlotRecord } from "../types.js";
 import { pinKey, type CertifyEnv } from "./env.js";
 import { reason, type Reason } from "./types.js";
@@ -223,7 +223,7 @@ export function certifyElement(slot: SlotRecord, candidate: CandidateRecord, con
   const primary = payloadOf(slot.id, candidate);
   const entry = primary.byPath.get(posix.normalize(fixture.fixtures.file));
   if (!entry) return [...reasons, reason("fixture", `the candidate ships no ${fixture.fixtures.file}, which the contract fixture mounts`)];
-  const doc = isObject(slot.slot?.value) ? slot.slot!.value as Record<string, unknown> : {};
+  const doc = slotDoc(slot) ?? {};
   const host = hostRequire(env.root);
   const modules = new Modules(primary, new Set(stringList(doc.uses)), env, host);
   const quiet = { error: console.error, warn: console.warn };

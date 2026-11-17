@@ -25,6 +25,7 @@ import { buildContext, type ContextOptions } from "./context.js";
 import { fixHint, REF_VERBATIM_FIX, REF_VERBATIM_ID } from "./fix.js";
 import { registeredRules, type RegisteredRule } from "./registry.js";
 import { submitOf } from "./rules/r03.js";
+import { slotDoc } from "./checks/shared.js";
 import { registerGuardRunner } from "../records/slot-write.js";
 import type { Check, ConstitutionContext, Row, RuleId } from "./types.js";
 
@@ -108,8 +109,8 @@ export function refVerbatimRows(ctx: ConstitutionContext, targets: readonly Guar
     const base = { rule: "R03" as RuleId, check: REF_VERBATIM_GUARD.id, agent: target.agent, slot: target.slot, candidate: candidate.name, path: candidate.path };
     let findings: readonly { code: string; detail: string; file?: string }[];
     try {
-      const slotDoc = slot.slot?.value as { uses?: readonly string[] } | undefined;
-      findings = checkRegistryItem(ctx.consumer, slot.id, candidate.json, { strict: true, ...(slotDoc ? { slotDoc } : {}) }).findings;
+      const doc = slotDoc(slot) as { uses?: readonly string[] } | undefined;
+      findings = checkRegistryItem(ctx.consumer, slot.id, candidate.json, { strict: true, ...(doc ? { slotDoc: doc } : {}) }).findings;
     } catch (error) { findings = [{ code: "REF-NO-SOURCE", detail: `ref-verbatim could not run: ${error instanceof Error ? error.message : String(error)}` }]; }
     for (const finding of findings) rows.push({ ...base, reason: `${finding.code} ${finding.detail}${finding.file ? ` (${finding.file})` : ""} [adopt: ${why}]` });
   }

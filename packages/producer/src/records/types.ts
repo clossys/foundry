@@ -289,7 +289,7 @@ export type TargetSlotKind =
   | "brief"                                                   // Director
   | "element/token" | "element/asset" | "element/component" | "element/section" | "element/frame"   // Designer
   | "voice" | "prose" | "copy"                                // Writer
-  | "layout" | "chrome" | "page" | "release"                  // Publisher
+  | "layout" | "chrome" | "page" | "publication" | "release" // Publisher
   | "loop" | "queue" | "ledger";                              // Producer
 
 export interface Common {

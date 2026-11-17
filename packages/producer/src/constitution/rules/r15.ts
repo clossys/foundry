@@ -16,7 +16,7 @@ import {
   type Standard, type StandardPolicy,
 } from "../../records/standards.js";
 import { criterionIds } from "../criteria/core/catalog.js";
-import { isObject, liveSlotRecords, stringList } from "../checks/shared.js";
+import { isObject, liveSlotRecords, slotDoc, stringList } from "../checks/shared.js";
 import type { Check, ConstitutionContext, Row, RuleModule, SlotRecord } from "../types.js";
 
 /** Everything R15 and R16 judge beyond the context, read once per context. */
@@ -54,7 +54,7 @@ const slotRow = (check: string, slot: SlotRecord, reason: string, path = `${slot
 
 /** The slot.json fields R15 reads, when slot.json parsed. */
 function slotFields(slot: SlotRecord): { kind?: string; standard?: string; contract?: unknown } | undefined {
-  const doc = slot.slot?.value;
+  const doc = slotDoc(slot);
   if (!isObject(doc)) return undefined;
   return {
     ...(typeof doc.kind === "string" ? { kind: doc.kind } : {}),

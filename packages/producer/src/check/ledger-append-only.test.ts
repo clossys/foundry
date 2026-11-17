@@ -3,7 +3,8 @@ import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSy
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { answerQueueEntry } from "../queue/answer.js";
+import { runCli } from "../cli/main.js";
+import { AnswerRefused, answerQueueEntry } from "../queue/answer.js";
 import { checkLedgerAppendOnly, LEDGER_APPEND_ONLY } from "./ledger-append-only.js";
 
 const roots: string[] = [];
@@ -122,6 +123,59 @@ describe("ledger.append-only", () => {
     r.commit("main moves");
     r.git("-c", "user.name=t", "-c", "user.email=t@t", "merge", "-q", "--no-edit", "side");
     expect(details(checkLedgerAppendOnly(r.root))).toContain("edits a ledger entry");
+  });
+
+  // G6: the check runs where an entry is appended (clossys answer) and in the full gate (clossys check --strict).
+  const answerB = { entry: QUEUE_ID, answer: "b", by: "owner" as const, via: "chat" as const, quote: "test quote" };
+  const answeredAt = new Date("2026-11-20T09:00:00Z");
+
+  it("answer refuses an entry whose ask was edited in a later commit, and writes nothing", () => {
+    const r = repo();
+    r.put(QUEUE_REL, { ...r.queueEntry, ask: "rewritten ask" });
+    r.commit("edit ask");
+    const before = readFileSync(join(r.root, QUEUE_REL), "utf8");
+    expect(() => answerQueueEntry(r.root, answerB, answeredAt)).toThrow(AnswerRefused);
+    expect(() => answerQueueEntry(r.root, answerB, answeredAt)).toThrow(/ledger\.append-only|ask was edited/);
+    try { answerQueueEntry(r.root, answerB, answeredAt); } catch (error) { expect((error as AnswerRefused).check).toBe(LEDGER_APPEND_ONLY); expect((error as Error).message).toMatch(/commit [0-9a-f]{12}: ask was edited/); }
+    expect(readFileSync(join(r.root, QUEUE_REL), "utf8")).toBe(before);
+  });
+
+  it("answer refuses an entry rewritten in the working tree, and writes nothing", () => {
+    const r = repo();
+    r.put(QUEUE_REL, { ...r.queueEntry, ask: "rewritten ask" });
+    const before = readFileSync(join(r.root, QUEUE_REL), "utf8");
+    expect(() => answerQueueEntry(r.root, answerB, answeredAt)).toThrow("the working tree: ask was edited");
+    expect(readFileSync(join(r.root, QUEUE_REL), "utf8")).toBe(before);
+  });
+
+  it("answer refuses in a shallow clone, whose history it cannot read", () => {
+    const r = repo();
+    const clone = realpathSync(mkdtempSync(join(tmpdir(), "append-only-shallow-answer-")));
+    roots.push(clone);
+    execFileSync("git", ["clone", "-q", "--depth", "1", `file://${r.top}`, join(clone, "c")], { stdio: "ignore" });
+    expect(() => answerQueueEntry(join(clone, "c", "site"), answerB, answeredAt)).toThrow(/shallow/);
+  });
+
+  it("answer still appends to an intact entry when another entry was tampered with", () => {
+    const r = repo();
+    r.put(LEDGER_REL, { ...r.ledgerEntry, outcome: "rewritten" });
+    r.commit("edit ledger");
+    expect(answerQueueEntry(r.root, answerB, answeredAt).entry.status).toBe("answered");
+  });
+
+  it("clossys check --strict fails on a mutated entry and passes the intact history; plain check does not run it", async () => {
+    const r = repo();
+    const strict = async () => runCli(["check", "--strict", "--root", r.root], r.root);
+    const intact = await strict();
+    expect(intact.message).toContain("ledger.append-only: pass");
+    r.put(QUEUE_REL, { ...r.queueEntry, ask: "rewritten ask" });
+    const tampered = await strict();
+    expect(tampered.exitCode).toBe(1);
+    expect(tampered.message).toContain(`ledger.append-only: fail (1)\n  producer/queue.approve#${QUEUE_ID}: the working tree: ask was edited`);
+    expect((tampered as unknown as { checks: Record<string, { findings: unknown[] }> }).checks["ledger.append-only"]!.findings).toEqual([
+      { check: LEDGER_APPEND_ONLY, subject: `producer/queue.approve#${QUEUE_ID}`, detail: "the working tree: ask was edited" },
+    ]);
+    expect((await runCli(["check", "--root", r.root], r.root)).message).not.toContain("ledger.append-only");
   });
 
   it("fails in a shallow clone, whose history it cannot read", () => {

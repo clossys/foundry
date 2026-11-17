@@ -11,16 +11,17 @@
  *   that are not the licence; the frame must compose the slot instead.
  */
 import type { CandidateRecord, ConstitutionContext, Row, SlotRecord } from "../types.js";
-import { isObject, listed, liveSlotRecords, registryFiles, row, stringList } from "../checks/shared.js";
+import { isObject, listed, liveSlotRecords, registryFiles, row, slotDoc, stringList } from "../checks/shared.js";
+import { isCurrentSlot } from "../../records/slot-current.js";
 
 const basename = (path: string) => path.split("/").pop()!;
 const LICENCE = /^licen[cs]e(\.[a-z]+)?$/i;
 
-const slotDoc = (slot: SlotRecord): Record<string, unknown> | undefined => (isObject(slot.slot?.value) ? slot.slot.value : undefined);
 
 export function isRegion(slot: SlotRecord): boolean {
-  const ia = slotDoc(slot)?.ia;
-  return slot.agent === "designer" && isObject(ia) && ia.l1 === "frames.regions";
+  const doc = slotDoc(slot), ia = doc?.ia;
+  // The regions L1 in either format: the ia.json node id (slot/1) or its slash path (slot/2).
+  return slot.agent === "designer" && isObject(ia) && ia.l1 === (isCurrentSlot(doc) ? "frames/regions" : "frames.regions");
 }
 
 export function isFrame(slot: SlotRecord): boolean {

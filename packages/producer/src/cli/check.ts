@@ -1,4 +1,5 @@
 import { runSlotResolve, slotResolveSummary, type SlotResolveReport } from "../check/slot-resolve.js";
+import { checkLedgerAppendOnly } from "../check/ledger-append-only.js";
 import { runLoopReachable } from "../check/loop-reachable.js";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -128,13 +129,17 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
   // loop.reachable (producer loops): every package v1 and the version each loop runs for this consumer can reach its exit.
   const loops = runLoopReachable(dirname(consumer));
   const loopsSummary = loops.status === "pass" ? "loop.reachable: pass" : [`loop.reachable: fail (${loops.findings.length})`, ...loops.findings.map(finding => `  ${finding.subject}: ${finding.detail}`)].join("\n");
-  const exitCode = Math.max(slots.exitCode, page?.exitCode ?? 0, suites?.exitCode ?? 0, reference?.exitCode ?? 0, readiness?.length ? 1 : 0, loops.status === "fail" ? 1 : 0) as 0 | 1 | 2;
+  // ledger.append-only (strict): no committed Producer queue or ledger entry was edited, retyped or deleted.
+  const appendOnly = args.strict ? checkLedgerAppendOnly(dirname(consumer)) : undefined;
+  const appendOnlySummary = appendOnly && (appendOnly.status === "pass" ? "ledger.append-only: pass" : [`ledger.append-only: fail (${appendOnly.findings.length})`, ...appendOnly.findings.map(finding => `  ${finding.subject}: ${finding.detail}`)].join("\n"));
+  const appendOnlyFailed = appendOnly !== undefined && appendOnly.status !== "pass";
+  const exitCode = Math.max(slots.exitCode, page?.exitCode ?? 0, suites?.exitCode ?? 0, reference?.exitCode ?? 0, readiness?.length ? 1 : 0, loops.status === "fail" ? 1 : 0, appendOnlyFailed ? 1 : 0) as 0 | 1 | 2;
   return {
     ...(page ?? { verb: "check" as const, root, check: true }),
     exitCode,
-    message: [slotResolveSummary(slots, args.readiness), readiness && readinessSummary(readiness), loopsSummary, page?.message, suites && recordSuitesSummary(suites), referenceReport && recordSuitesSummary(referenceReport)].filter(Boolean).join("\n"),
+    message: [slotResolveSummary(slots, args.readiness), readiness && readinessSummary(readiness), loopsSummary, appendOnlySummary, page?.message, suites && recordSuitesSummary(suites), referenceReport && recordSuitesSummary(referenceReport)].filter(Boolean).join("\n"),
     slots,
-    ...(readiness || loops.status === "fail" ? { checks: { ...(loops.status === "fail" ? { "loop.reachable": loops } : {}), ...(readiness ? { readiness: { strict: true, blocked: readiness.length, findings: readiness } } : {}) } } : {}),
+    ...(readiness || loops.status === "fail" || appendOnlyFailed ? { checks: { ...(loops.status === "fail" ? { "loop.reachable": loops } : {}), ...(appendOnlyFailed ? { "ledger.append-only": appendOnly } : {}), ...(readiness ? { readiness: { strict: true, blocked: readiness.length, findings: readiness } } : {}) } } : {}),
     ...(suites || referenceReport ? { suites: suites ?? referenceReport } : {}),
   };
 }

@@ -1,7 +1,6 @@
 /** Page discovery for installed specimens; record bytes stay with pageRecordFromCell. */
 import { join } from "node:path";
-import { hasSlotModel, listSlots, readSlot } from "../records/slots.js";
-import { validateSlotDoc } from "../records/slot-model/index.js";
+import { hasSlotModel, listSlots, readSlot, viewPlacedAt } from "../records/slots.js";
 
 const pageOrder = (a: string, b: string) => a === "page.home" ? -1 : b === "page.home" ? 1 : a.localeCompare(b);
 
@@ -13,9 +12,7 @@ export async function specimenPageSlotIds(root: string): Promise<string[]> {
       if (!entry.pin || !entry.candidates.includes(entry.pin.candidate)) return false;
       try {
         const doc = readSlot(consumer, "publisher", entry.id);
-        return !validateSlotDoc(doc).length && doc.id === entry.id && doc.agent === "publisher" && doc.kind === "page"
-          && doc.ia.l0 === entry.position.l0 && doc.ia.l1 === entry.position.l1
-          && doc.ia.l2 === entry.position.l2 && doc.ia.order === entry.position.order;
+        return viewPlacedAt(doc, entry.id, "publisher", entry.position) && doc.kind === "page";
       } catch { return false; }
     }).map(entry => entry.id).sort(pageOrder);
   }

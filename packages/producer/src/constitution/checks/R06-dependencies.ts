@@ -17,7 +17,7 @@
  */
 import { sha256Hex } from "../../records/hash.js";
 import type { ConstitutionContext, Row, RuleModule, SlotRecord } from "../types.js";
-import { allSlots, candidateMeta, focusedSlots, installPathOf, isObject, listed, pending, registryFiles, row, stringList } from "./shared.js";
+import { allSlots, candidateMeta, focusedSlots, installPathOf, isObject, listed, pending, registryFiles, row, slotDoc, stringList } from "./shared.js";
 
 const EXACT_DEPENDENCY = /^((?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*)@(\d+\.\d+\.\d+)$/;
 const CJS = /module\.exports|require\(['"]/;
@@ -143,7 +143,7 @@ export function crossSlotCandidateFiles(ctx: ConstitutionContext): Row[] {
       const refs = foreignCandidateFiles(candidate.text, slot.id, known);
       if (refs.length) rows.push(row("R06", "R06.7", slot, `references another slot's candidate file: ${listed(refs, 3)}; ${fix}`, candidate.path, candidate.name));
     }
-    const doc = slot.slot?.value;
+    const doc = slotDoc(slot);
     if (!isObject(doc)) continue;
     const deps = [...stringList(doc.inputs), ...stringList(doc.uses)].flatMap(dep => foreignCandidateFiles(dep, slot.id, known));
     if (deps.length) rows.push(row("R06", "R06.7", slot, `slot.json inputs/uses name a candidate file: ${listed([...new Set(deps)].sort(), 3)}; ${fix}`, slot.slot!.path));

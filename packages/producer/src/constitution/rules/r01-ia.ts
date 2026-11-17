@@ -29,6 +29,8 @@
  * - R01.15 IA-FANOUT (warn): an L0 with one L1, or an L1 with one leaf.
  */
 import { MODEL_AGENTS, type ModelAgent } from "../../records/slot-model/index.js";
+import { isCurrentSlot } from "../../records/slot-current.js";
+import { positionIa } from "../../records/slot.js";
 import { isObject, liveSlots, row, stringList } from "../checks/shared.js";
 import type { AgentRecord, Check, ConstitutionContext, Row, SlotRecord } from "../types.js";
 
@@ -268,7 +270,11 @@ export function iaAxis(ctx: ConstitutionContext): Row[] {
   return rows;
 }
 
-/** R01.8 IA-DEPTH: every leaf at L3 under a declared L0; slot.json ia carries l0, l1 and l2 equal to its placement. */
+/**
+ * R01.8 IA-DEPTH: every leaf at L3 under a declared L0; slot.json ia carries l0, l1 and l2 equal to its placement.
+ * A `clossys.slot/2` file writes its placement as slash paths (records/slot.ts positionIa), so its ia is compared
+ * with the slash paths of the ia.json placement; a `clossys.slot/1` file with the dotted ids themselves.
+ */
 export function iaDepth(ctx: ConstitutionContext): Row[] {
   const rows: Row[] = [];
   for (const view of viewsOf(ctx)) {
@@ -289,6 +295,12 @@ export function iaDepth(ctx: ConstitutionContext): Row[] {
       const ia = doc.ia;
       const ref = { agent: view.agent.agent, id };
       const path = record!.slot!.path;
+      if (isCurrentSlot(doc)) {
+        if (place.l0 === undefined) rows.push(row("R01", "R01.8", ref, `ia.json gives the leaf no L0 (slot.json ia.l0 is ${String(ia.l0)})`, path));
+        const want = positionIa(id, { ...(place.l0 === undefined ? {} : { l0: place.l0 }), l1: place.node, l2: place.child });
+        if (ia.l0 !== want.l0 || ia.l1 !== want.l1 || ia.l2 !== want.l2) rows.push(row("R01", "R01.8", ref, `slot.json ia is ${String(ia.l2)}, but ia.json places the leaf at ${want.l2} (${place.node}/${place.child})`, path));
+        continue;
+      }
       if (ia.l0 === undefined) rows.push(row("R01", "R01.8", ref, place.l0 === undefined ? "slot.json ia has no l0, and ia.json gives the leaf no L0" : `slot.json ia has no l0 (the leaf's L0 is ${place.l0})`, path));
       else if (ia.l0 !== place.l0) rows.push(row("R01", "R01.8", ref, `slot.json ia.l0 is ${String(ia.l0)}, but ia.json places the leaf under L0 ${place.l0 ?? "(none)"}`, path));
       if (ia.l1 !== place.node || ia.l2 !== place.child) rows.push(row("R01", "R01.8", ref, `slot.json ia is ${String(ia.l1)}/${String(ia.l2)}, but ia.json places the leaf at ${place.node}/${place.child}`, path));

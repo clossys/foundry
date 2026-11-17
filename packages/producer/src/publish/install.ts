@@ -28,8 +28,8 @@ import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { isHostPackage } from "../specimen/host-packages.js";
 import { dependencyPart, treeDependencyParts } from "../specimen/specimen-tree.js";
 import { firstComponentSource } from "@clossys/publisher/build";
-import { hasSlotModel, readCandidate, readIa, readPin, readSlot } from "../records/slots.js";
-import { slotPositions, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
+import { hasSlotModel, readCandidate, readIa, readPin, readSlot, viewPlacedAt } from "../records/slots.js";
+import { slotPositions, validateCandidate } from "../records/slot-model/index.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { readWriter } from "./site-source.js";
 import { specimenRoots } from "./publish.js";
@@ -451,8 +451,7 @@ export async function pageRecordFromCell(root: string, id: string, pins: Install
     const position = ia ? slotPositions("publisher", ia).get(cellId) : undefined;
     if (!position) throw new Error(`publish --install: Publisher has no page slot ${cellId} in ia.json`);
     const slot = readSlot(consumer, "publisher", cellId);
-    if (validateSlotDoc(slot).length || slot.id !== cellId || slot.agent !== "publisher" || slot.kind !== "page"
-      || slot.ia.l0 !== position.l0 || slot.ia.l1 !== position.l1 || slot.ia.l2 !== position.l2 || slot.ia.order !== position.order) {
+    if (!viewPlacedAt(slot, cellId, "publisher", position) || slot.kind !== "page") {
       throw new Error(`publish --install: invalid Publisher page slot ${cellId}`);
     }
     const pin = readPin(consumer, "publisher", cellId);

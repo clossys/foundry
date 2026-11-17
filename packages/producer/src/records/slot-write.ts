@@ -21,6 +21,9 @@ import {
   type ModelAgent, type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
+import { isCurrentSlot, slotReadIssues } from "./slot-current.js";
+import { serializeSlot } from "./slot.js";
+import type { Slot } from "./types.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, skillFile, skillPath,
   type LedgerEvent, type LedgerRecordState, type LedgerSkill, type Provenance, type RecordFile, type Verb,
@@ -936,19 +939,43 @@ export function appendMigrationEvents(consumer: string, migration: FormatMigrati
   });
 }
 
-/** Mark a slot not needed: slot.json `notNeeded {reason, since, decidedBy}`, and any pin.json removed. */
+/**
+ * The next bytes of a `clossys.slot/2` slot.json under `change`, applied to the document as written (the
+ * reader's view is never written back), with `updatedAt` stamped when the bytes change and judged as the
+ * reader judges it (schemas/slot.json and the notNeeded rule). Undefined for an old-format file, which keeps
+ * its slot/1 path. A slot synced from a package base (`base` not null) refuses a change: every field these
+ * writes touch is computed from the base (records.computed-match), so it changes in the package.
+ */
+function currentSlotWrite(file: string, verb: string, at: string, change: (slot: Slot) => Slot): { before: string; after: string; slot: Slot } | undefined {
+  const before = readFileSync(file, "utf8");
+  const value = JSON.parse(before) as unknown;
+  if (!isCurrentSlot(value)) return undefined;
+  const slot = value as unknown as Slot;
+  const changed = change(structuredClone(slot));
+  if (serializeSlot(changed) === serializeSlot(slot)) return { before, after: before, slot };
+  if (slot.base !== null) throw new Error(`${verb} refused: ${slot.agent}/${slot.id} is synced from ${slot.base.package}; the field is computed from the package base (change it there, then clossys ia)`);
+  const next: Slot = { ...changed, updatedAt: at };
+  const issues = slotReadIssues(next, file);
+  if (issues.length) throw new Error(`${verb} refused: ${issues.map(issue => issue.message).join("; ")}`);
+  return { before, after: serializeSlot(next), slot: next };
+}
+
+/** Mark a slot not needed: slot.json `notNeeded {reason, since, decidedBy}` (slot/2: `contract.notNeeded`, status parked), and any pin.json removed. */
 export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, notNeeded: NotNeeded, given?: WriteProvenance & { readonly at?: string }): SlotDoc {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
   const { doc } = located(consumer, agent, id);
-  const next: SlotDoc = { ...doc, notNeeded: { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy } };
-  const issues = validateSlotDoc(next);
+  const marker = { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy };
+  const at = given?.at ?? nowIso();
+  const current = currentSlotWrite(slotFile(entry.dir), "not-needed", at, slot => ({ ...slot, status: "parked", contract: { ...slot.contract, notNeeded: marker } }));
+  const next: SlotDoc = { ...doc, notNeeded: marker };
+  const issues = current ? [] : validateSlotDoc(next);
   if (issues.length) throw new Error(`not-needed refused: ${issues.map(issue => issue.message).join("; ")}`);
   const who = provenance({ verb: "pin", by: notNeeded.decidedBy, skill: skillPath("producer", `pin.${agent}`) }, given);
   readLedger(entry.dir, "slot");
-  replaceFile(slotFile(entry.dir), jsonBytes(next));
+  replaceFile(slotFile(entry.dir), current ? current.after : jsonBytes(next));
   if (existsSync(pinFile(entry.dir))) { unlinkSync(pinFile(entry.dir)); forgetSlotReads(); }
-  appendEvent(entry.dir, "slot", ledgerEvent("not-needed", given?.at ?? nowIso(), who, { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy },
+  appendEvent(entry.dir, "slot", ledgerEvent("not-needed", at, who, { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy },
     [recordState(entry.dir, "slot.json"), recordState(entry.dir, "pin.json")]));
   return next;
   });
@@ -962,16 +989,21 @@ export function writeSlotOptions(consumer: string, agent: SlotAgent, id: string,
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
   const { doc } = located(consumer, agent, id);
-  const { options: _options, varyOn: _varyOn, ...rest } = doc;
-  const next: SlotDoc = input.options > 1 ? { ...rest, options: input.options, ...(input.varyOn ? { varyOn: input.varyOn } : {}) } : rest;
-  const issues = validateSlotDoc(next);
+  const classed = <T extends { options?: unknown; varyOn?: unknown }>(value: T): Omit<T, "options" | "varyOn"> & { options?: 2 | 3; varyOn?: string } => {
+    const { options: _options, varyOn: _varyOn, ...rest } = value;
+    return input.options > 1 ? { ...rest, options: input.options as 2 | 3, ...(input.varyOn ? { varyOn: input.varyOn } : {}) } : rest;
+  };
+  const at = input.at ?? nowIso();
+  const current = currentSlotWrite(slotFile(entry.dir), "options", at, slot => classed(slot) as Slot);
+  const next = classed(doc) as SlotDoc;
+  const issues = current ? [] : validateSlotDoc(next);
   if (issues.length) throw new Error(`options refused: ${issues.map(issue => issue.message).join("; ")}`);
-  const before = jsonBytes(doc), after = jsonBytes(next);
+  const before = current ? current.before : jsonBytes(doc), after = current ? current.after : jsonBytes(next);
   if (before === after) return false;
   const who = provenance({ verb: "options", by: "planner", skill: skillPath("producer", "options") }, given);
   readLedger(entry.dir, "slot");
   replaceFile(slotFile(entry.dir), after);
-  appendEvent(entry.dir, "slot", ledgerEvent("slot", input.at ?? nowIso(), who, { options: input.options, ...(input.varyOn ? { varyOn: input.varyOn } : {}) }, [recordState(entry.dir, "slot.json")]));
+  appendEvent(entry.dir, "slot", ledgerEvent("slot", at, who, { options: input.options, ...(input.varyOn ? { varyOn: input.varyOn } : {}) }, [recordState(entry.dir, "slot.json")]));
   return true;
   });
 }
