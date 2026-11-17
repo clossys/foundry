@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { isDeepStrictEqual } from "node:util";
 import { describe, expect, it } from "vitest";
-import { loadWriterCatalog, writerIAFindings, type WriterCatalog, type WriterNode } from "./index.js";
+import { loadWriterStore, writerIAFindings, type WriterCatalog, type WriterNode } from "./index.js";
 import { checkWriterClosedWorld } from "../../checks/closed-world.js";
 import { checkIACoverage } from "../../checks/ia-coverage/index.js";
 import { loadBuildCatalog } from "../../../../designer/src/catalog-core/index.js";
@@ -77,9 +77,12 @@ function coverageReport(catalog: WriterCatalog) {
       })) schemaPair.push(`schema-pair: ${section.id} -> ${id} must have one exact Designer copy contract`);
   }
   for (const slot of slots) if (!expectedIds.includes(slot.id)) schemaPair.push(`schema-pair: unexpected ${slot.id}`);
-  if (!isDeepStrictEqual(catalog.placements.filter(row => row.layer === "passages"), [
-    { ...sectionIA, layer: "passages", nodes: mapNodes(sectionIA.nodes) },
-  ])) schemaPair.push("schema-pair: passage placements must exactly mirror Designer sections");
+  // The mirror names passages in its retired and starter lists and is flagged retired as live IA (foundry-build-0033).
+  const passageList = (ids: string[] | undefined) => ids?.filter(id => !specimen(id)).map(id => id.replace(/^sections\./, "passages."));
+  const mirror: Record<string, unknown> = { ...sectionIA, layer: "passages", nodes: mapNodes(sectionIA.nodes) };
+  for (const key of ["retired", "starter"] as const) if (Object.hasOwn(sectionIA, key)) mirror[key] = passageList((sectionIA as Record<string, unknown>)[key] as string[]);
+  mirror.status = "retired";
+  if (!isDeepStrictEqual(catalog.placements.filter(row => row.layer === "passages"), [mirror])) schemaPair.push("schema-pair: passage placements must exactly mirror Designer sections");
   const closedWorld = checkWriterClosedWorld(library, { catalog });
   const recordLeaf = closedWorld.filter(finding => /^(?:Catalog leaf |Passage schema )/.test(finding.message));
   const dangling = closedWorld.filter(finding => /^Reference .* (?:must resolve|targets a retired|must target)/.test(finding.message) || /^Pattern .* has no part /.test(finding.message));
@@ -104,7 +107,7 @@ describe("Designer to Writer passage catalog coverage", () => {
   });
 
   it("reports zero schema-pair, record-leaf and dangling findings across all 52 non-specimen pairs and actual records", () => {
-    const catalog = loadWriterCatalog();
+    const catalog = loadWriterStore();
     const paired = allSections.filter(section => !specimen(section.id));
     expect(paired).toHaveLength(52);
     expect(new Set(paired.map(section => section.contract.passageSchema)).size).toBe(52);
@@ -120,7 +123,7 @@ describe("Designer to Writer passage catalog coverage", () => {
   });
 
   it.each(additions)("connects sections.%s to its exact schema and real opaque passage records", name => {
-    const catalog = loadWriterCatalog();
+    const catalog = loadWriterStore();
     const id = `passages.${name}`;
     const source = sections.filter(section => section.id === `sections.${name}`);
     const slots = catalog.slots.filter(slot => slot.id === id);
@@ -128,8 +131,10 @@ describe("Designer to Writer passage catalog coverage", () => {
     expect(slots).toHaveLength(1);
     expect(slots[0]!.contract).toEqual({ kind: "passage", source: "writer", sectionId: source[0]!.id, passageSchema: id, copy: source[0]!.contract.copy });
     const records = subjects.filter(subject => subject.record.leaf === id);
-    // Unfilled schema leaves are valid: only existing records can prove fill.
-    expect(coverageReport(catalog).coverage.leaves.find(leaf => leaf.id === id)!.records).toHaveLength(records.length);
+    // Unfilled schema leaves are valid: only existing live records can prove fill. Records on a passage Designer
+    // retired stay in place as status retired and fill nothing (foundry-build-0033).
+    const live = records.filter(subject => subject.record.status !== "retired");
+    expect(coverageReport(catalog).coverage.leaves.find(leaf => leaf.id === id)!.records).toHaveLength(live.length);
     for (const { record } of records) {
       expect(record.id).toMatch(opaqueId);
       expect(record).toHaveProperty("schema", id);
@@ -138,7 +143,7 @@ describe("Designer to Writer passage catalog coverage", () => {
   });
 
   it.each(additions)("fails with named schema and record findings when %s loses its schema leaf", name => {
-    const catalog = structuredClone(loadWriterCatalog());
+    const catalog = structuredClone(loadWriterStore());
     const id = `passages.${name}`;
     catalog.slots = catalog.slots.filter(slot => slot.id !== id);
     const report = coverageReport(catalog);

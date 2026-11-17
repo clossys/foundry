@@ -1,0 +1,41 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "writer/page.guide.meta/package:guide.meta-v1.json",
+    "agent": "writer",
+    "kind": "candidate",
+    "status": "draft",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/writer",
+      "version": "0.6.0"
+    },
+    "createdAt": "2026-11-16T00:00:00Z",
+    "refs": [],
+    "slot": "writer/page.guide.meta",
+    "record": "guide.meta",
+    "source": {
+      "kind": "package-default",
+      "ref": [
+        "ia-target/writer.md#2-copy"
+      ]
+    },
+    "rationale": [
+      {
+        "purpose": "package default",
+        "why": "Claim-free sample copy, a draft pending owner approval; a consumer Writer run replaces it before release.",
+        "sources": []
+      }
+    ]
+  },
+  "content": {
+    "fields": {
+      "title": {
+        "en": "Guide"
+      },
+      "description": {
+        "en": "Step-by-step help with one task in {brand}."
+      }
+    }
+  }
+}

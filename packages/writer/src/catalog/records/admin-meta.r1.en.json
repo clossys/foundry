@@ -9796,7 +9796,8 @@
       "target": "packages/designer/src/catalog/slots/frames.json",
       "kind": "display-name",
       "parent": "publisher.frame",
-      "value": "frames.document"
+      "value": "frames.document",
+      "status": "retired"
     },
     {
       "cellId": "publisher.frame.frames.site-shell",

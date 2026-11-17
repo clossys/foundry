@@ -1786,7 +1786,8 @@
       "cellId": "strings.admin.stats.locales",
       "recordId": "st.kh6eqvydzq",
       "target": "sections.record-detail.groups",
-      "kind": "CopyRef"
+      "kind": "CopyRef",
+      "status": "retired"
     },
     {
       "cellId": "strings.admin.action.showAll",
@@ -1966,7 +1967,8 @@
       "cellId": "strings.admin.item.details",
       "recordId": "st.1vc3bb7pw7",
       "target": "sections.record-detail.groups",
-      "kind": "CopyRef"
+      "kind": "CopyRef",
+      "status": "retired"
     },
     {
       "cellId": "strings.admin.item.locales",
@@ -1990,25 +1992,29 @@
       "cellId": "strings.admin.item.source",
       "recordId": "st.qcqdptzn0r",
       "target": "sections.record-detail.groups",
-      "kind": "CopyRef"
+      "kind": "CopyRef",
+      "status": "retired"
     },
     {
       "cellId": "strings.admin.item.contract",
       "recordId": "st.k31tyhmpf8",
       "target": "sections.record-detail.groups",
-      "kind": "CopyRef"
+      "kind": "CopyRef",
+      "status": "retired"
     },
     {
       "cellId": "strings.admin.item.members",
       "recordId": "st.5gst4ht50q",
       "target": "sections.record-detail.groups",
-      "kind": "CopyRef"
+      "kind": "CopyRef",
+      "status": "retired"
     },
     {
       "cellId": "strings.admin.item.usedBy",
       "recordId": "st.7pxepx20q1",
       "target": "sections.record-detail.groups",
-      "kind": "CopyRef"
+      "kind": "CopyRef",
+      "status": "retired"
     },
     {
       "cellId": "strings.admin.pagination.previous",
@@ -2086,7 +2092,8 @@
       "cellId": "strings.admin.source.none",
       "recordId": "st.ebdhf0cn7w",
       "target": "sections.record-detail.groups",
-      "kind": "CopyRef"
+      "kind": "CopyRef",
+      "status": "retired"
     },
     {
       "cellId": "strings.admin.release.never",
@@ -3490,7 +3497,8 @@
       "cellId": "strings.admin.item.actionsLabel",
       "recordId": "st.619a8b5bc8",
       "target": "sections.record-detail.actionsLabel",
-      "kind": "CopyRef"
+      "kind": "CopyRef",
+      "status": "retired"
     },
     {
       "cellId": "strings.admin.table.label",

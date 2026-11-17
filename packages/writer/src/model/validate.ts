@@ -1,6 +1,6 @@
 import { formatRef, parseRef } from "@clossys/director";
 import { isValidWriterLeafId, WRITER_LAYERS, type WriterLayer } from "../catalog-core/ids.js";
-import { loadWriterCatalog } from "../catalog/ia/index.js";
+import { loadWriterStore } from "../catalog/ia/index.js";
 import { canonicalLocale, intlDirectionFor } from "../locale.js";
 import type { WriterShapeIssue } from "./types.js";
 import { isDirectorSource } from "./director-sources.js";
@@ -143,7 +143,7 @@ export function validateWriterRecord(value: unknown, layer: WriterLayer, path = 
         else s.obj(v, p, { ref: s.fields({ kind: s.one("string"), id: s.id("st") }) });
       }) });
       if (typeof value.leaf === "string" && object(value.parts)) {
-        const contract = loadWriterCatalog().slots.find(slot => slot.id === value.leaf)?.contract.parts;
+        const contract = loadWriterStore().slots.find(slot => slot.id === value.leaf)?.contract.parts;
         if (object(contract) && contract.mode === "closed" && Array.isArray(contract.items)) {
           const items = contract.items.filter(object);
           const names = new Set(items.map(item => item.id));

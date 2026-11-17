@@ -25,13 +25,26 @@ function workspace(root: string): string {
   return consumer;
 }
 
-/** The pinned Director inputs a Writer session reads, with the voice and personality lines it must realise. */
-function writerBrief(cells: readonly Cell[], catalog: { slots: { id: string; layer: string; contract: Record<string, unknown> }[] }, layers: readonly string[]) {
+/** One Writer target tree (voice, prose or copy; @clossys/writer catalog/ia/target): its placement and its slots. */
+interface WriterTree { group: string; nodes: { children: { leaves: string[] }[] }[]; slots: { id: string; kind: string }[] }
+
+/**
+ * The pinned Director inputs a Writer session reads, with the voice and personality lines it must realise, and the
+ * Writer's live leaves: one row per target tree (voice, prose, copy), its slot ids in placement order and their kind.
+ * The retired five-layer store is not briefed (foundry-build-0033); copy leaves still awaiting Designer fields are
+ * not slots, so they are not listed.
+ */
+function writerBrief(cells: readonly Cell[], trees: readonly WriterTree[]) {
   const selected = cells.filter(cell => (INPUTS as readonly string[]).includes(cell.id));
+  const leaves = trees.map(tree => {
+    const slots = new Map(tree.slots.map(slot => [slot.id, slot]));
+    const placed = tree.nodes.flatMap(l1 => l1.children.flatMap(l2 => l2.leaves)).filter(id => slots.has(id));
+    return { layer: tree.group, role: [...new Set(placed.map(id => slots.get(id)!.kind))].join(", "), ids: placed };
+  });
   return {
     schemaVersion: 1 as const, agent: "writer" as const,
     directorInputs: selected.map(cell => ({ id: cell.id, version: cell.version, ref: directorRef(cell), path: cell.path, direction: cell.direction, because: cell.because, watch: cell.watch })),
-    leaves: layers.map(layer => ({ layer, role: [...new Set(catalog.slots.filter(slot => slot.layer === layer).map(slot => String(slot.contract.recordKind ?? slot.contract.kind)))].join(", "), ids: catalog.slots.filter(slot => slot.layer === layer).map(slot => slot.id) })),
+    leaves,
     missingInputs: INPUTS.filter(id => !selected.some(cell => cell.id === id)),
     obligations: selected.filter(cell => OBLIGED.includes(cell.id)).flatMap(cell => cell.direction.map(bullet => ({ id: `${directorLineRef(cell)}#L${bullet.line}`, ref: directorLineRef(cell), line: bullet.line, ...(bullet.key ? { key: bullet.key } : {}), text: bullet.text }))),
   };
@@ -66,9 +79,8 @@ export async function runWrite(args: CliArgs, root: string): Promise<CliResult> 
     const consumer = workspace(root);
     const director = await readPinnedDirector(consumer);
     if (args.brief) {
-      const ia = await agentModule("writer", "catalog/ia/index.js");
-      const ids = await agentModule("writer", "catalog-core/ids.js");
-      const brief = writerBrief(director.cells, ia.loadWriterCatalog(), ids.WRITER_LAYERS);
+      const target = await agentModule("writer", "catalog/ia/target.js");
+      const brief = writerBrief(director.cells, target.loadWriterTrees());
       const emitted = await emitProjection(args, root, "writer brief", brief);
       return { ...base, exitCode: brief.missingInputs.length ? 1 : 0, brief, message: emitted ? `write: brief written to ${emitted}` : JSON.stringify(brief, null, 2) };
     }
@@ -110,9 +122,8 @@ export async function runWrite(args: CliArgs, root: string): Promise<CliResult> 
       if (problem) findings.push({ rule: "director-trace-missing", slot: candidate.id, message: `pinned ${candidate.name}: ${problem}` });
     }
     // Voice derivation: record-level directorSources against the pinned voice/personality lines.
-    const ia = await agentModule("writer", "catalog/ia/index.js");
-    const ids = await agentModule("writer", "catalog-core/ids.js");
-    const brief = writerBrief(director.cells, ia.loadWriterCatalog(), ids.WRITER_LAYERS);
+    const target = await agentModule("writer", "catalog/ia/target.js");
+    const brief = writerBrief(director.cells, target.loadWriterTrees());
     const sources = await agentModule("writer", "model/director-sources.js");
     const obligations = new Set(brief.obligations.map(obligation => obligation.id));
     const mapped: string[] = [];

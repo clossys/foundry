@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loadWriterCatalog } from "../catalog/ia/index.js";
+import { loadWriterStore } from "../catalog/ia/index.js";
 import { loadWriterLeafFreezeSnapshots, loadWriterLeafAmendments } from "../catalog-core/leaf-freeze.js";
 import type { WriterLibrary } from "../model/types.js";
 import { checkWriterFreeze } from "./freeze.js";
@@ -13,7 +13,7 @@ const library = (): WriterLibrary => ({
 // Injected baselines deliberately receive no implicit amendments. Older baseline
 // fixtures therefore omit the separately authorized common leaf on both sides.
 const originalCatalog = () => {
-  const catalog = loadWriterCatalog();
+  const catalog = loadWriterStore();
   const snapshot = loadWriterLeafFreezeSnapshots().find(row => row.layer === "strings")!;
   catalog.slots = catalog.slots.filter(slot => slot.id !== "strings.common");
   catalog.placements.find(row => row.layer === "strings")!.nodes = [{ id: "baseline", label: "Original baseline", leaves: [...snapshot.leafIds] }];
@@ -26,7 +26,7 @@ const unsignedSnapshots = () => loadWriterLeafFreezeSnapshots().map(snapshot => 
 describe("WR2 Writer leaf membership", () => {
   it("accepts the shipped owner-signed snapshots with empty heads, without modifying evidence", () => {
     const value = library();
-    const catalog = loadWriterCatalog();
+    const catalog = loadWriterStore();
     const snapshots = loadWriterLeafFreezeSnapshots();
     const amendments = loadWriterLeafAmendments();
     const before = JSON.stringify({ value, catalog, snapshots, amendments });
@@ -43,7 +43,7 @@ describe("WR2 Writer leaf membership", () => {
   });
 
   it("permits L1/L2 regrouping, labels, order and metadata while preserving membership", () => {
-    const catalog = loadWriterCatalog();
+    const catalog = loadWriterStore();
     const snapshots = loadWriterLeafFreezeSnapshots();
     for (const snapshot of snapshots) {
       catalog.placements.find(placement => placement.layer === snapshot.layer)!.nodes = [{
@@ -86,7 +86,7 @@ describe("WR2 Writer leaf membership", () => {
   });
 
   it("leaves passage and narrative membership unfrozen", () => {
-    const catalog = loadWriterCatalog();
+    const catalog = loadWriterStore();
     catalog.placements = catalog.placements.filter(value => value.layer !== "passages" && value.layer !== "narratives");
     catalog.slots = catalog.slots.filter(value => value.layer !== "passages" && value.layer !== "narratives");
     expect(checkWriterFreeze(library(), { catalog })).toEqual([]);
@@ -104,7 +104,7 @@ describe("WR2 Writer leaf membership", () => {
 
 
   it("requires explicit amendments with injected snapshots and refuses unsigned or mismatched amendment evidence", () => {
-    const catalog = loadWriterCatalog(), snapshots = loadWriterLeafFreezeSnapshots(), amendments = loadWriterLeafAmendments();
+    const catalog = loadWriterStore(), snapshots = loadWriterLeafFreezeSnapshots(), amendments = loadWriterLeafAmendments();
     expect(checkWriterFreeze(library(), { catalog, freeze: { snapshots } })).toContainEqual(expect.objectContaining({ path: "catalog.slots.strings", message: expect.stringContaining("strings.common") }));
     expect(checkWriterFreeze(library(), { catalog, freeze: { snapshots, amendments } })).toEqual([]);
     for (const freeze of [

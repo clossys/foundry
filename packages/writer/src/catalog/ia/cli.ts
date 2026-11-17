@@ -1,5 +1,5 @@
 import { WRITER_LAYERS, isWriterLayer, type WriterLayer } from "../../catalog-core/ids.js";
-import { createWriterIAReport, loadWriterCatalog, type WriterIAReport, type WriterNode } from "./index.js";
+import { createWriterIAReport, loadWriterStore, type WriterIAReport, type WriterNode } from "./index.js";
 
 const USAGE = "Usage: writer-check ia [--layers lexicon,strings,patterns,passages,narratives] [--format text|json]";
 
@@ -21,7 +21,7 @@ function textReport(report: WriterIAReport): string {
 }
 
 /** Additive subcommand with the existing clean/finding/could-not-run exit contract. */
-export function mainWriterIA(argv: string[], io: { stdout(value: string): void; stderr(value: string): void } = { stdout: console.log, stderr: console.error }, load = loadWriterCatalog): number {
+export function mainWriterIA(argv: string[], io: { stdout(value: string): void; stderr(value: string): void } = { stdout: console.log, stderr: console.error }, load = loadWriterStore): number {
   try {
     let layers: readonly WriterLayer[] = WRITER_LAYERS, format = "text";
     const seen = new Set<string>();

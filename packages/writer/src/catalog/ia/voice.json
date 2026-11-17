@@ -26,7 +26,7 @@
         },
         {
           "id": "voice/tone/rhythm",
-          "label": "Rhythm",
+          "label": "Readability",
           "leaves": [
             "lexicon.sentence-length",
             "lexicon.reading-level"
