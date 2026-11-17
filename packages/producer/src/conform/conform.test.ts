@@ -255,8 +255,11 @@ describe("conformance over the repo and its fixture", () => {
     for (const agent of report.agents) {
       expect(agent.cells).toHaveLength(23);
       expect(agent.dogfood).toHaveLength(5);
-      // Shared today: placement records no decision, no cascade, no five loops.
-      for (const id of ["L1", "L2", "X1", "X4", "W1"]) expect(agent.cells.find(cell => cell.id === id)!.red, `${agent.agent} ${id}`).toBe(true);
+      // Shared today: placement records no decision, no five loops.
+      for (const id of ["L1", "L2", "W1"]) expect(agent.cells.find(cell => cell.id === id)!.red, `${agent.agent} ${id}`).toBe(true);
+      // The cascade rows (U6): a repin re-verdicts its dependants, every edge resolves, no input reads a candidate
+      // file, release refuses needs-refresh.
+      for (const id of ["X1", "X2", "X3", "X4"]) expect(agent.cells.find(cell => cell.id === id)!.rows, `${agent.agent} ${id}`).toEqual([]);
     }
     // C1 (family): every Director, Designer and Writer slot carries the family the contracts migration seeded from the
     // option table (the re-keyed table classes every Director and Writer group); Publisher's slot/1 slots carry none.
@@ -265,13 +268,6 @@ describe("conformance over the repo and its fixture", () => {
     expect(c1("publisher").red).toBe(true);
     const director = report.agents.find(agent => agent.agent === "director")!;
     expect(director.cells.find(cell => cell.id === "K3")!.red).toBe(false);
-    expect(report.agents.find(agent => agent.agent === "publisher")!.cells.find(cell => cell.id === "X3")!.red).toBe(true);
-    // X2 over the package trees: Director feeds name Writer ids its package tree lacks; Designer's usage graph reads missing endpoints.
-    const x2 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "X2")!;
-    expect(x2("director").red).toBe(true);
-    expect(x2("director").rows.filter(row => row.includes("(writer)")).length).toBeGreaterThanOrEqual(120);
-    expect(x2("designer").red).toBe(true);
-    expect(x2("designer").rows.filter(row => / -> themes\.[a-z-]+\.[a-z]+: no such package slot$/.test(row)).length).toBe(258);
     expect(report.ok).toBe(false);
   });
 });
