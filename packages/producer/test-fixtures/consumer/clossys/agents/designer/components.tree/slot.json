@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "components",
-    "l1": "components.display",
-    "l2": "display-data",
-    "order": 121
+    "l1": "components.components",
+    "l2": "components-collections",
+    "order": 122
   },
   "kind": "element",
   "contract": {

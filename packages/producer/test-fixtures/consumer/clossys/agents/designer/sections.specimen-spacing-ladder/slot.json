@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.specimens",
-    "l2": "specimens-content",
-    "order": 175
+    "l1": "sections.sections",
+    "l2": "sections-reading",
+    "order": 199
   },
   "kind": "element",
   "contract": {
@@ -64,6 +64,7 @@
         {
           "key": "labels.show-all-variants",
           "kind": "icu",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 160
@@ -88,6 +89,5 @@
     "components.grid-list",
     "components.semantic-content",
     "components.specimen-ladder"
-  ],
-  "standard": "section.app"
+  ]
 }

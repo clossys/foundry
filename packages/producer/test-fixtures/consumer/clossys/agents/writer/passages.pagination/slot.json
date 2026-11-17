@@ -4,8 +4,8 @@
   "agent": "writer",
   "ia": {
     "l0": "passages",
-    "l1": "passages.parts",
-    "l2": "parts-navigation",
+    "l1": "passages.sections",
+    "l2": "sections-parts",
     "order": 75
   },
   "kind": "strings",
@@ -20,6 +20,7 @@
         {
           "key": "page.label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -29,6 +30,7 @@
         {
           "key": "page.previous-label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -38,6 +40,7 @@
         {
           "key": "page.next-label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -47,6 +50,7 @@
         {
           "key": "page.page-text",
           "kind": "icu",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -56,6 +60,7 @@
         {
           "key": "total.label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -65,6 +70,7 @@
         {
           "key": "page.no-results-label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -74,6 +80,7 @@
         {
           "key": "page.page-size-label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -83,6 +90,7 @@
         {
           "key": "total.range-text",
           "kind": "icu",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120

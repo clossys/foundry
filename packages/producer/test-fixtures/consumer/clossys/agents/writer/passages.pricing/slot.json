@@ -4,9 +4,9 @@
   "agent": "writer",
   "ia": {
     "l0": "passages",
-    "l1": "passages.organize",
-    "l2": "organize-comparison",
-    "order": 98
+    "l1": "passages.sections",
+    "l2": "sections-story",
+    "order": 80
   },
   "kind": "strings",
   "contract": {
@@ -20,33 +20,37 @@
         {
           "key": "header.eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "header.heading",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "header.description",
           "kind": "plain",
+          "role": "lead",
           "required": false,
           "maxLength": {
-            "en": 480
+            "en": 200
           },
           "dir": "auto"
         },
         {
           "key": "plans[].name",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 160
@@ -56,6 +60,7 @@
         {
           "key": "plans[].price",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -65,6 +70,7 @@
         {
           "key": "plans[].description",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
@@ -74,6 +80,7 @@
         {
           "key": "plans[].features[]",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -83,6 +90,7 @@
         {
           "key": "plans[].cta.label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -92,6 +100,7 @@
         {
           "key": "plans[].badge",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -101,6 +110,7 @@
         {
           "key": "interval",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -110,6 +120,7 @@
         {
           "key": "plans[].price-by-interval[].amount",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 160
@@ -119,6 +130,7 @@
         {
           "key": "plans[].price-by-interval[].price-text",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 160

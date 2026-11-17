@@ -4,9 +4,9 @@
   "agent": "writer",
   "ia": {
     "l0": "passages",
-    "l1": "passages.explain",
-    "l2": "explain-reading",
-    "order": 80
+    "l1": "passages.sections",
+    "l2": "sections-reading",
+    "order": 87
   },
   "kind": "strings",
   "contract": {
@@ -20,33 +20,37 @@
         {
           "key": "header.eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "header.heading",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "header.description",
           "kind": "plain",
+          "role": "lead",
           "required": false,
           "maxLength": {
-            "en": 480
+            "en": 200
           },
           "dir": "auto"
         },
         {
           "key": "header.actions[].label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -56,6 +60,7 @@
         {
           "key": "body[].text",
           "kind": "plain",
+          "role": "body",
           "required": true,
           "maxLength": {
             "en": 8000
@@ -65,6 +70,7 @@
         {
           "key": "body[].items[]",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 8000
@@ -74,15 +80,17 @@
         {
           "key": "media.title",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "media.series[].name",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 160
@@ -92,6 +100,7 @@
         {
           "key": "footnote",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
@@ -101,6 +110,7 @@
         {
           "key": "aside[].label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -110,6 +120,7 @@
         {
           "key": "aside[].value",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480

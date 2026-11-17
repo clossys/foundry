@@ -4,8 +4,8 @@
   "agent": "designer",
   "ia": {
     "l0": "assets",
-    "l1": "assets.app-identity",
-    "l2": "app-identity-application",
+    "l1": "assets.logos",
+    "l2": "logos-app-icons",
     "order": 48
   },
   "kind": "element",

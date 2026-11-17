@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.explain",
-    "l2": "explain-reading",
-    "order": 194
+    "l1": "sections.sections",
+    "l2": "sections-reading",
+    "order": 188
   },
   "kind": "element",
   "contract": {
@@ -87,33 +87,37 @@
         {
           "key": "header.eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "header.heading",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "header.description",
           "kind": "plain",
+          "role": "lead",
           "required": false,
           "maxLength": {
-            "en": 480
+            "en": 200
           },
           "dir": "auto"
         },
         {
           "key": "body[].text",
           "kind": "plain",
+          "role": "body",
           "required": true,
           "maxLength": {
             "en": 8000
@@ -123,6 +127,7 @@
         {
           "key": "body[].items[]",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 8000
@@ -132,6 +137,7 @@
         {
           "key": "toc.label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -141,6 +147,7 @@
         {
           "key": "toc.items[].label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120

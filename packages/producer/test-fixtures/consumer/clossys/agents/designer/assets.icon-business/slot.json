@@ -5,8 +5,8 @@
   "ia": {
     "l0": "assets",
     "l1": "assets.icons",
-    "l2": "icons-objects",
-    "order": 83
+    "l2": "icons-entities",
+    "order": 77
   },
   "kind": "element",
   "contract": {
@@ -33,6 +33,5 @@
     "identity.visual.imagery",
     "identity.visual.style"
   ],
-  "uses": [],
-  "standard": "asset.glyph"
+  "uses": []
 }

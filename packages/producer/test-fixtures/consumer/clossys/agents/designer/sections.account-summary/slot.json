@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.organize",
-    "l2": "organize-summaries",
-    "order": 215
+    "l1": "sections.sections",
+    "l2": "sections-records",
+    "order": 217
   },
   "kind": "element",
   "contract": {
@@ -87,15 +87,17 @@
         {
           "key": "heading",
           "kind": "plain",
+          "role": "heading",
           "required": true,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "identity.name",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 160
@@ -105,6 +107,7 @@
         {
           "key": "identity.name-label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -114,15 +117,17 @@
         {
           "key": "identity.email",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
-            "en": 320
+            "en": 160
           },
           "dir": "auto"
         },
         {
           "key": "identity.email-label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -132,6 +137,7 @@
         {
           "key": "rows[].label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -141,6 +147,7 @@
         {
           "key": "rows[].value",
           "kind": "plain",
+          "role": "body",
           "required": true,
           "maxLength": {
             "en": 1000
@@ -150,9 +157,10 @@
         {
           "key": "actions[].label",
           "kind": "plain",
+          "role": "action",
           "required": true,
           "maxLength": {
-            "en": 160
+            "en": 24
           },
           "dir": "auto"
         }

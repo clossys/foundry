@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "frames",
-    "l1": "frames.regions",
-    "l2": "headers",
-    "order": 243
+    "l1": "frames.frames",
+    "l2": "frames-bars",
+    "order": 245
   },
   "kind": "element",
   "contract": {
@@ -91,7 +91,102 @@
       "components.tooltip",
       "components.semantic-content",
       "components.dialog"
-    ]
+    ],
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "skip.label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "breadcrumb.label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "breadcrumb.collapsed",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "page.info",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "page.actions",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "navigation.open",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "navigation.close",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "panel.open",
+          "kind": "plain",
+          "role": "action",
+          "required": false,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "panel.close",
+          "kind": "plain",
+          "role": "action",
+          "required": false,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        }
+      ]
+    }
   },
   "inputs": [
     "advantage.proposition.promise",

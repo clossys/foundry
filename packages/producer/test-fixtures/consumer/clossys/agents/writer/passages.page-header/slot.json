@@ -4,8 +4,8 @@
   "agent": "writer",
   "ia": {
     "l0": "passages",
-    "l1": "passages.explain",
-    "l2": "explain-introductions",
+    "l1": "passages.sections",
+    "l2": "sections-story",
     "order": 78
   },
   "kind": "strings",
@@ -20,42 +20,47 @@
         {
           "key": "header.eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "header.heading",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "header.description",
           "kind": "plain",
+          "role": "lead",
           "required": false,
           "maxLength": {
-            "en": 480
+            "en": 200
           },
           "dir": "auto"
         },
         {
           "key": "title",
           "kind": "plain",
+          "role": "heading",
           "required": true,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "description",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
@@ -65,6 +70,7 @@
         {
           "key": "breadcrumbs.label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -74,6 +80,7 @@
         {
           "key": "breadcrumbs.items[].label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -83,15 +90,17 @@
         {
           "key": "actions[].label",
           "kind": "plain",
+          "role": "action",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 24
           },
           "dir": "auto"
         },
         {
           "key": "meta[].label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -101,6 +110,7 @@
         {
           "key": "meta[].value",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -114,7 +124,5 @@
     "identity.verbal.voice"
   ],
   "uses": [],
-  "options": 3,
-  "varyOn": "tone",
   "standard": "copy.headline"
 }

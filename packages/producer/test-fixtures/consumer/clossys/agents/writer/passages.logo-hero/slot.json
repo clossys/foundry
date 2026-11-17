@@ -4,9 +4,9 @@
   "agent": "writer",
   "ia": {
     "l0": "passages",
-    "l1": "passages.explain",
-    "l2": "explain-introductions",
-    "order": 77
+    "l1": "passages.sections",
+    "l2": "sections-story",
+    "order": 85
   },
   "kind": "strings",
   "contract": {
@@ -20,6 +20,7 @@
         {
           "key": "name",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 160

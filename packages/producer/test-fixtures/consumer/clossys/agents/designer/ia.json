@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "themes.colors",
-      "label": "Colors",
+      "label": "Color",
       "children": [
         {
           "id": "colors-surfaces",
@@ -20,8 +20,8 @@
           ]
         },
         {
-          "id": "colors-actions",
-          "label": "Actions",
+          "id": "colors-emphasis",
+          "label": "Emphasis",
           "slots": [
             "themes.primary",
             "themes.primary-foreground",
@@ -29,10 +29,7 @@
             "themes.secondary-foreground",
             "themes.accent",
             "themes.accent-foreground",
-            "themes.destructive",
-            "themes.success",
-            "themes.warning",
-            "themes.info"
+            "themes.destructive"
           ]
         },
         {
@@ -44,17 +41,6 @@
             "themes.border",
             "themes.input",
             "themes.ring"
-          ]
-        },
-        {
-          "id": "colors-charts",
-          "label": "Charts",
-          "slots": [
-            "themes.chart-1",
-            "themes.chart-2",
-            "themes.chart-3",
-            "themes.chart-4",
-            "themes.chart-5"
           ]
         },
         {
@@ -70,18 +56,25 @@
             "themes.sidebar-border",
             "themes.sidebar-ring"
           ]
-        }
-      ]
-    },
-    {
-      "id": "themes.shape",
-      "label": "Shape",
-      "children": [
+        },
         {
-          "id": "shape-corners",
-          "label": "Corners",
+          "id": "colors-charts",
+          "label": "Chart palette",
           "slots": [
-            "themes.radius"
+            "themes.chart-1",
+            "themes.chart-2",
+            "themes.chart-3",
+            "themes.chart-4",
+            "themes.chart-5"
+          ]
+        },
+        {
+          "id": "colors-actions",
+          "label": "Actions",
+          "slots": [
+            "themes.success",
+            "themes.warning",
+            "themes.info"
           ]
         }
       ]
@@ -92,44 +85,27 @@
       "children": [
         {
           "id": "typography-fonts",
-          "label": "Fonts",
+          "label": "Fonts and tracking",
           "slots": [
             "themes.font-sans",
             "themes.font-heading",
             "themes.font-mono",
-            "themes.font-serif"
-          ]
-        },
-        {
-          "id": "typography-tracking",
-          "label": "Tracking",
-          "slots": [
+            "themes.font-serif",
             "themes.tracking-tight"
           ]
         }
       ]
     },
     {
-      "id": "themes.space",
-      "label": "Space",
+      "id": "themes.layout",
+      "label": "Layout",
       "children": [
         {
-          "id": "space-rhythm",
-          "label": "Rhythm",
+          "id": "layout-shape",
+          "label": "Space and shape",
           "slots": [
-            "themes.spacing"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "themes.depth",
-      "label": "Depth",
-      "children": [
-        {
-          "id": "depth-effects",
-          "label": "Effects",
-          "slots": [
+            "themes.spacing",
+            "themes.radius",
             "themes.shadow"
           ]
         }
@@ -151,35 +127,45 @@
       ]
     },
     {
-      "id": "assets.logo",
-      "label": "Logo",
+      "id": "assets.logos",
+      "label": "Logos",
       "children": [
         {
-          "id": "logo-artwork",
-          "label": "Artwork",
+          "id": "logos-marks",
+          "label": "Marks",
           "slots": [
             "assets.lockup",
             "assets.mark"
+          ]
+        },
+        {
+          "id": "logos-app-icons",
+          "label": "App icons",
+          "slots": [
+            "assets.favicon",
+            "assets.app-icon"
           ]
         }
       ]
     },
     {
-      "id": "assets.app-identity",
-      "label": "App identity",
+      "id": "assets.imagery",
+      "label": "Imagery",
       "children": [
         {
-          "id": "app-identity-browser",
-          "label": "Browser",
+          "id": "imagery-media",
+          "label": "Media",
           "slots": [
-            "assets.favicon"
+            "assets.image",
+            "assets.video"
           ]
         },
         {
-          "id": "app-identity-application",
-          "label": "Application",
+          "id": "imagery-treatments",
+          "label": "Treatments",
           "slots": [
-            "assets.app-icon"
+            "assets.image-ratio",
+            "assets.pattern"
           ]
         }
       ]
@@ -192,8 +178,8 @@
           "id": "icons-navigation",
           "label": "Navigation",
           "slots": [
-            "assets.icon-chevron-down",
             "assets.icon-chevron-up",
+            "assets.icon-chevron-down",
             "assets.icon-chevron-left",
             "assets.icon-chevron-right",
             "assets.icon-arrow-right",
@@ -203,8 +189,8 @@
           ]
         },
         {
-          "id": "icons-actions",
-          "label": "Actions",
+          "id": "icons-commands",
+          "label": "Commands",
           "slots": [
             "assets.icon-search",
             "assets.icon-close",
@@ -218,8 +204,8 @@
           ]
         },
         {
-          "id": "icons-status",
-          "label": "Status",
+          "id": "icons-alerts",
+          "label": "Alerts",
           "slots": [
             "assets.icon-success",
             "assets.icon-warning",
@@ -228,223 +214,105 @@
           ]
         },
         {
-          "id": "icons-objects",
-          "label": "Objects",
+          "id": "icons-entities",
+          "label": "Entities",
           "slots": [
             "assets.icon-user",
             "assets.icon-team",
             "assets.icon-organization",
-            "assets.icon-website",
+            "assets.icon-business",
             "assets.icon-institution",
-            "assets.icon-guide",
+            "assets.icon-website"
+          ]
+        },
+        {
+          "id": "icons-documents",
+          "label": "Documents",
+          "slots": [
             "assets.icon-document",
             "assets.icon-document-approved",
             "assets.icon-folder",
+            "assets.icon-guide",
+            "assets.icon-legal",
+            "assets.icon-package",
+            "assets.icon-layers"
+          ]
+        },
+        {
+          "id": "icons-properties",
+          "label": "Properties",
+          "slots": [
             "assets.icon-date",
             "assets.icon-time",
             "assets.icon-payment",
             "assets.icon-receipt",
-            "assets.icon-business",
             "assets.icon-security",
             "assets.icon-locked",
-            "assets.icon-legal",
-            "assets.icon-package",
-            "assets.icon-layers",
             "assets.icon-integration"
           ]
         }
       ]
     },
     {
-      "id": "assets.imagery",
-      "label": "Media",
+      "id": "components.components",
+      "label": "Components",
       "children": [
         {
-          "id": "imagery-framing",
-          "label": "Framing",
-          "slots": [
-            "assets.image-ratio"
-          ]
-        },
-        {
-          "id": "imagery-resources",
-          "label": "Resources",
-          "slots": [
-            "assets.image",
-            "assets.video"
-          ]
-        },
-        {
-          "id": "imagery-patterns",
-          "label": "Patterns",
-          "slots": [
-            "assets.pattern"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "components.actions",
-      "label": "Actions",
-      "children": [
-        {
-          "id": "actions-buttons",
-          "label": "Buttons",
+          "id": "components-actions",
+          "label": "Actions",
           "slots": [
             "components.button",
-            "components.native-action",
-            "components.toggle-button"
-          ]
-        },
-        {
-          "id": "actions-menus",
-          "label": "Menus",
-          "slots": [
+            "components.toggle-button",
+            "components.toggle-group",
+            "components.toolbar",
             "components.menu",
             "components.command",
+            "components.native-action",
             "components.dropdown-menu"
           ]
         },
         {
-          "id": "actions-toolbars",
-          "label": "Toolbars",
-          "slots": [
-            "components.toolbar"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "components.inputs",
-      "label": "Inputs",
-      "children": [
-        {
-          "id": "inputs-form",
-          "label": "Form",
+          "id": "components-inputs",
+          "label": "Inputs",
           "slots": [
             "components.field",
-            "components.form"
-          ]
-        },
-        {
-          "id": "inputs-text",
-          "label": "Text",
-          "slots": [
+            "components.form",
             "components.text-field",
-            "components.search-field"
-          ]
-        },
-        {
-          "id": "inputs-choice",
-          "label": "Choice",
-          "slots": [
+            "components.search-field",
             "components.checkbox",
             "components.radio-group",
             "components.switch",
+            "components.slider",
             "components.select",
             "components.combo-box",
-            "components.toggle-group"
-          ]
-        },
-        {
-          "id": "inputs-tags",
-          "label": "Tags",
-          "slots": [
-            "components.tag-group"
-          ]
-        },
-        {
-          "id": "inputs-number",
-          "label": "Number",
-          "slots": [
-            "components.number-field",
-            "components.slider"
-          ]
-        },
-        {
-          "id": "inputs-date",
-          "label": "Date",
-          "slots": [
+            "components.tag-group",
+            "components.file-trigger",
+            "components.color-picker",
             "components.date-field",
             "components.date-picker",
-            "components.calendar"
+            "components.calendar",
+            "components.number-field"
           ]
         },
         {
-          "id": "inputs-color",
-          "label": "Color",
-          "slots": [
-            "components.color-picker"
-          ]
-        },
-        {
-          "id": "inputs-files",
-          "label": "Files",
-          "slots": [
-            "components.file-trigger"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "components.display",
-      "label": "Display",
-      "children": [
-        {
-          "id": "display-data",
-          "label": "Data",
+          "id": "components-collections",
+          "label": "Collections",
           "slots": [
             "components.table",
             "components.grid-list",
-            "components.tree",
-            "components.meter"
+            "components.item",
+            "components.tree"
           ]
         },
         {
-          "id": "display-labels",
-          "label": "Labels",
-          "slots": [
-            "components.badge",
-            "components.keyboard"
-          ]
-        },
-        {
-          "id": "display-media",
-          "label": "Media",
-          "slots": [
-            "components.avatar",
-            "components.media-player"
-          ]
-        },
-        {
-          "id": "display-assets",
-          "label": "Assets",
-          "slots": [
-            "components.icon",
-            "components.logo"
-          ]
-        },
-        {
-          "id": "charts-core",
-          "label": "Core charts",
+          "id": "components-charts",
+          "label": "Charts (parked)",
           "slots": [
             "components.chart-bar",
             "components.chart-line",
-            "components.chart-area"
-          ]
-        },
-        {
-          "id": "charts-compact",
-          "label": "Compact charts",
-          "slots": [
+            "components.chart-area",
             "components.chart-sparkline",
-            "components.chart-status-strip"
-          ]
-        },
-        {
-          "id": "charts-analytic",
-          "label": "Analytic charts",
-          "slots": [
+            "components.chart-status-strip",
             "components.chart-scatter",
             "components.chart-heatmap",
             "components.chart-range",
@@ -452,17 +320,49 @@
           ]
         },
         {
-          "id": "display-content",
-          "label": "Content",
+          "id": "components-navigation",
+          "label": "Navigation",
           "slots": [
-            "components.semantic-content",
-            "components.rich-text",
-            "components.item"
+            "components.link",
+            "components.breadcrumbs",
+            "components.tabs",
+            "components.sidebar",
+            "components.navigation-tree",
+            "components.canvas-zoom",
+            "components.canvas-map"
           ]
         },
         {
-          "id": "display-specimens",
-          "label": "Specimens",
+          "id": "components-feedback",
+          "label": "Feedback",
+          "slots": [
+            "components.banner",
+            "components.toast",
+            "components.progress-bar",
+            "components.meter",
+            "components.spinner",
+            "components.skeleton",
+            "components.empty"
+          ]
+        },
+        {
+          "id": "components-text-and-media",
+          "label": "Text and media",
+          "slots": [
+            "components.semantic-content",
+            "components.rich-text",
+            "components.badge",
+            "components.status-mark",
+            "components.keyboard",
+            "components.avatar",
+            "components.media-player",
+            "components.icon",
+            "components.logo"
+          ]
+        },
+        {
+          "id": "components-specimens",
+          "label": "Specimens (retired)",
           "slots": [
             "components.specimen-swatch",
             "components.specimen-ladder",
@@ -473,112 +373,80 @@
             "components.specimen-passage",
             "components.specimen-copy-in-context"
           ]
-        }
-      ]
-    },
-    {
-      "id": "components.feedback",
-      "label": "Feedback",
-      "children": [
-        {
-          "id": "feedback-messages",
-          "label": "Messages",
-          "slots": [
-            "components.banner",
-            "components.toast",
-            "components.empty"
-          ]
         },
         {
-          "id": "feedback-indicators",
-          "label": "Indicators",
-          "slots": [
-            "components.status-mark"
-          ]
-        },
-        {
-          "id": "feedback-progress",
-          "label": "Progress",
-          "slots": [
-            "components.progress-bar",
-            "components.spinner",
-            "components.skeleton"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "components.navigation",
-      "label": "Navigation",
-      "children": [
-        {
-          "id": "navigation-links",
-          "label": "Links",
-          "slots": [
-            "components.link",
-            "components.breadcrumbs"
-          ]
-        },
-        {
-          "id": "navigation-panels",
-          "label": "Panels",
-          "slots": [
-            "components.tabs"
-          ]
-        },
-        {
-          "id": "navigation-trees",
-          "label": "Trees",
-          "slots": [
-            "components.navigation-tree",
-            "components.sidebar"
-          ]
-        },
-        {
-          "id": "navigation-canvas",
-          "label": "Canvas",
-          "slots": [
-            "components.canvas-zoom",
-            "components.canvas-map"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "components.containment",
-      "label": "Containment",
-      "children": [
-        {
-          "id": "containment-structure",
+          "id": "components-structure",
           "label": "Structure",
           "slots": [
             "components.card",
-            "components.separator",
             "components.disclosure",
-            "components.resize-handle",
-            "components.scroll-area"
+            "components.scroll-area",
+            "components.separator",
+            "components.resize-handle"
           ]
         },
         {
-          "id": "containment-overlays",
+          "id": "components-overlays",
           "label": "Overlays",
           "slots": [
             "components.dialog",
+            "components.sheet",
             "components.popover",
-            "components.tooltip",
-            "components.sheet"
+            "components.tooltip"
           ]
         }
       ]
     },
     {
-      "id": "sections.specimens",
-      "label": "Specimens",
+      "id": "sections.sections",
+      "label": "Sections",
       "children": [
         {
-          "id": "specimens-content",
-          "label": "Content and presentation",
+          "id": "sections-parts",
+          "label": "Parts",
           "slots": [
+            "sections.band",
+            "sections.section-header"
+          ]
+        },
+        {
+          "id": "sections-navigation",
+          "label": "Navigation",
+          "slots": [
+            "sections.pagination",
+            "sections.table-of-contents"
+          ]
+        },
+        {
+          "id": "sections-story",
+          "label": "Story",
+          "slots": [
+            "sections.hero",
+            "sections.page-header",
+            "sections.features",
+            "sections.pricing",
+            "sections.call-to-action",
+            "sections.testimonials",
+            "sections.logo-cloud",
+            "sections.people",
+            "sections.comparison",
+            "sections.logo-hero",
+            "sections.logo-mark"
+          ]
+        },
+        {
+          "id": "sections-reading",
+          "label": "Reading",
+          "slots": [
+            "sections.content",
+            "sections.article",
+            "sections.sectioned-document",
+            "sections.media",
+            "sections.gallery",
+            "sections.faq",
+            "sections.steps",
+            "sections.timeline",
+            "sections.legal-prose",
             "sections.specimen-swatch",
             "sections.specimen-color-ramp",
             "sections.specimen-type-ladder",
@@ -594,313 +462,86 @@
             "sections.specimen-copy-in-context",
             "sections.specimen-page-viewports"
           ]
-        }
-      ]
-    },
-    {
-      "id": "sections.parts",
-      "label": "Parts",
-      "children": [
-        {
-          "id": "parts-structure",
-          "label": "Structure",
-          "slots": [
-            "sections.band",
-            "sections.section-header"
-          ]
         },
         {
-          "id": "parts-navigation",
-          "label": "Navigation",
-          "slots": [
-            "sections.pagination"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "sections.explain",
-      "label": "Explain",
-      "children": [
-        {
-          "id": "explain-introductions",
-          "label": "Introductions",
-          "slots": [
-            "sections.hero",
-            "sections.logo-hero",
-            "sections.page-header",
-            "sections.logo-mark"
-          ]
-        },
-        {
-          "id": "explain-reading",
-          "label": "Reading",
-          "slots": [
-            "sections.content",
-            "sections.article",
-            "sections.sectioned-document",
-            "sections.legal-prose"
-          ]
-        },
-        {
-          "id": "explain-promotion",
-          "label": "Promotion",
-          "slots": [
-            "sections.features",
-            "sections.call-to-action"
-          ]
-        },
-        {
-          "id": "explain-social-proof",
-          "label": "Social proof",
-          "slots": [
-            "sections.testimonials",
-            "sections.logo-cloud",
-            "sections.people"
-          ]
-        },
-        {
-          "id": "explain-media",
-          "label": "Media",
-          "slots": [
-            "sections.media",
-            "sections.gallery"
-          ]
-        },
-        {
-          "id": "explain-guidance",
-          "label": "Guidance",
-          "slots": [
-            "sections.faq",
-            "sections.steps",
-            "sections.timeline"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "sections.organize",
-      "label": "Organize",
-      "children": [
-        {
-          "id": "organize-collections",
-          "label": "Collections",
-          "slots": [
-            "sections.cards",
-            "sections.resource-list",
-            "sections.task-list"
-          ]
-        },
-        {
-          "id": "organize-comparison",
-          "label": "Comparison",
-          "slots": [
-            "sections.comparison",
-            "sections.pricing"
-          ]
-        },
-        {
-          "id": "organize-summaries",
-          "label": "Summaries",
-          "slots": [
-            "sections.stats",
-            "sections.status-list",
-            "sections.usage",
-            "sections.account-summary"
-          ]
-        },
-        {
-          "id": "organize-records",
+          "id": "sections-records",
           "label": "Records",
           "slots": [
+            "sections.link-index",
+            "sections.resource-list",
+            "sections.task-list",
             "sections.data-table",
             "sections.data-grid",
+            "sections.stats",
+            "sections.usage",
+            "sections.account-summary",
+            "sections.status-list",
+            "sections.activity-feed",
+            "sections.audit-log",
+            "sections.explorer",
+            "sections.filter-builder",
+            "sections.cards",
             "sections.record-detail"
           ]
         },
         {
-          "id": "organize-history",
-          "label": "History",
-          "slots": [
-            "sections.activity-feed",
-            "sections.audit-log"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "sections.collect",
-      "label": "Collect",
-      "children": [
-        {
-          "id": "collect-forms",
+          "id": "sections-forms",
           "label": "Forms",
           "slots": [
             "sections.form",
+            "sections.sign-in-form",
+            "sections.wizard",
+            "sections.chat",
+            "sections.settings",
+            "sections.access-matrix",
+            "sections.column-mapper",
             "sections.newsletter"
           ]
         },
         {
-          "id": "collect-workflows",
-          "label": "Workflows",
-          "slots": [
-            "sections.wizard"
-          ]
-        },
-        {
-          "id": "collect-preferences",
-          "label": "Preferences",
-          "slots": [
-            "sections.settings"
-          ]
-        },
-        {
-          "id": "collect-configuration",
-          "label": "Configuration",
-          "slots": [
-            "sections.column-mapper",
-            "sections.access-matrix"
-          ]
-        },
-        {
-          "id": "collect-conversation",
-          "label": "Conversation",
-          "slots": [
-            "sections.chat"
-          ]
-        },
-        {
-          "id": "collect-inputs",
-          "label": "Inputs",
-          "slots": [
-            "sections.sign-in-form"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "sections.navigate",
-      "label": "Navigate",
-      "children": [
-        {
-          "id": "navigate-indexes",
-          "label": "Indexes",
-          "slots": [
-            "sections.link-index",
-            "sections.table-of-contents"
-          ]
-        },
-        {
-          "id": "navigate-discovery",
-          "label": "Discovery",
-          "slots": [
-            "sections.explorer",
-            "sections.filter-builder"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "sections.respond",
-      "label": "Respond",
-      "children": [
-        {
-          "id": "respond-states",
+          "id": "sections-states",
           "label": "States",
           "slots": [
             "sections.empty-state",
             "sections.error-state",
-            "sections.boundary-message"
-          ]
-        },
-        {
-          "id": "respond-messages",
-          "label": "Messages",
-          "slots": [
             "sections.notices",
-            "sections.consent"
+            "sections.consent",
+            "sections.boundary-message"
           ]
         }
       ]
     },
     {
-      "id": "frames.page-shells",
-      "label": "Page shells",
+      "id": "frames.frames",
+      "label": "Frames",
       "children": [
         {
-          "id": "page-shells-documents",
-          "label": "Documents",
+          "id": "frames-shells",
+          "label": "Shells",
           "slots": [
             "frames.site-shell",
+            "frames.app-shell",
+            "frames.auth-shell",
+            "frames.deck",
             "frames.document"
           ]
         },
         {
-          "id": "page-shells-workspaces",
-          "label": "Workspaces",
-          "slots": [
-            "frames.app-shell"
-          ]
-        },
-        {
-          "id": "page-shells-authentication",
-          "label": "Authentication",
-          "slots": [
-            "frames.auth-shell"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "frames.regions",
-      "label": "Regions",
-      "children": [
-        {
-          "id": "headers",
-          "label": "Headers",
+          "id": "frames-bars",
+          "label": "Bars",
           "slots": [
             "frames.site-header",
-            "frames.app-header"
-          ]
-        },
-        {
-          "id": "navigation",
-          "label": "Navigation",
-          "slots": [
+            "frames.site-footer",
+            "frames.app-header",
             "frames.app-sidebar"
           ]
         },
         {
-          "id": "panels",
+          "id": "frames-panels",
           "label": "Panels",
           "slots": [
-            "frames.inspector"
-          ]
-        },
-        {
-          "id": "footers",
-          "label": "Footers",
-          "slots": [
-            "frames.site-footer"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "frames.overlay-shells",
-      "label": "Overlay shells",
-      "children": [
-        {
-          "id": "overlay-shells-panels",
-          "label": "Panels",
-          "slots": [
-            "frames.sheet"
-          ]
-        },
-        {
-          "id": "overlay-shells-commands",
-          "label": "Commands",
-          "slots": [
+            "frames.inspector",
+            "frames.sheet",
             "frames.command"
           ]
         }

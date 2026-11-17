@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.collect",
-    "l2": "collect-configuration",
-    "order": 225
+    "l1": "sections.sections",
+    "l2": "sections-forms",
+    "order": 231
   },
   "kind": "element",
   "contract": {
@@ -85,33 +85,37 @@
         {
           "key": "header.eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "header.heading",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "header.description",
           "kind": "plain",
+          "role": "lead",
           "required": false,
           "maxLength": {
-            "en": 480
+            "en": 200
           },
           "dir": "auto"
         },
         {
           "key": "source-columns[].label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -121,6 +125,7 @@
         {
           "key": "target-fields[].label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -130,6 +135,7 @@
         {
           "key": "target-fields[].description",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
@@ -139,6 +145,7 @@
         {
           "key": "labels.source",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -148,6 +155,7 @@
         {
           "key": "labels.target",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -157,6 +165,7 @@
         {
           "key": "labels.unmapped",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120

@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "frames",
-    "l1": "frames.regions",
-    "l2": "footers",
-    "order": 246
+    "l1": "frames.frames",
+    "l2": "frames-bars",
+    "order": 244
   },
   "kind": "element",
   "contract": {
@@ -108,7 +108,32 @@
       "components.separator",
       "components.semantic-content",
       "components.button"
-    ]
+    ],
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "navigation.label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "legal.notice",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    }
   },
   "inputs": [
     "advantage.proposition.promise",

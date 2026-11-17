@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "components",
-    "l1": "components.containment",
-    "l2": "containment-overlays",
-    "order": 169
+    "l1": "components.components",
+    "l2": "components-overlays",
+    "order": 170
   },
   "kind": "element",
   "contract": {

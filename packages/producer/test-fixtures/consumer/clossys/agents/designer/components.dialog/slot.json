@@ -4,8 +4,8 @@
   "agent": "designer",
   "ia": {
     "l0": "components",
-    "l1": "components.containment",
-    "l2": "containment-overlays",
+    "l1": "components.components",
+    "l2": "components-overlays",
     "order": 168
   },
   "kind": "element",
@@ -56,7 +56,22 @@
         "assets.icon-close"
       ]
     },
-    "apg": "dialog-modal"
+    "apg": "dialog-modal",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "close.label",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        }
+      ]
+    }
   },
   "inputs": [
     "advantage.proposition.promise",

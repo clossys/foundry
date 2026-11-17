@@ -4,8 +4,8 @@
   "agent": "designer",
   "ia": {
     "l0": "themes",
-    "l1": "themes.depth",
-    "l2": "depth-effects",
+    "l1": "themes.layout",
+    "l2": "layout-shape",
     "order": 41
   },
   "kind": "element",

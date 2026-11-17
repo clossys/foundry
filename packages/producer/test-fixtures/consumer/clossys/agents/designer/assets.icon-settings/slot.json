@@ -5,8 +5,8 @@
   "ia": {
     "l0": "assets",
     "l1": "assets.icons",
-    "l2": "icons-actions",
-    "order": 60
+    "l2": "icons-commands",
+    "order": 64
   },
   "kind": "element",
   "contract": {

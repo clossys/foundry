@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "frames",
-    "l1": "frames.regions",
-    "l2": "panels",
-    "order": 245
+    "l1": "frames.frames",
+    "l2": "frames-panels",
+    "order": 247
   },
   "kind": "element",
   "contract": {

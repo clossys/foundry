@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.respond",
-    "l2": "respond-states",
-    "order": 235
+    "l1": "sections.sections",
+    "l2": "sections-states",
+    "order": 237
   },
   "kind": "element",
   "contract": {
@@ -100,6 +100,7 @@
         {
           "key": "status",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 80
@@ -109,15 +110,17 @@
         {
           "key": "title",
           "kind": "plain",
+          "role": "heading",
           "required": true,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "description",
           "kind": "plain",
+          "role": "body",
           "required": true,
           "maxLength": {
             "en": 480
@@ -127,15 +130,17 @@
         {
           "key": "actions[].label",
           "kind": "plain",
+          "role": "action",
           "required": true,
           "maxLength": {
-            "en": 120
+            "en": 24
           },
           "dir": "auto"
         },
         {
           "key": "notes",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
@@ -162,6 +167,5 @@
     "components.button",
     "components.link",
     "components.semantic-content"
-  ],
-  "standard": "section.app"
+  ]
 }

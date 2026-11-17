@@ -5,8 +5,8 @@
   "ia": {
     "l0": "assets",
     "l1": "assets.imagery",
-    "l2": "imagery-resources",
-    "order": 91
+    "l2": "imagery-media",
+    "order": 49
   },
   "kind": "element",
   "contract": {
@@ -18,7 +18,32 @@
     },
     "modes": [
       "light"
-    ]
+    ],
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "alt",
+          "kind": "plain",
+          "role": "alt",
+          "required": true,
+          "maxLength": {
+            "en": 140
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "caption",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    }
   },
   "inputs": [
     "advantage.proposition.promise",

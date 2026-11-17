@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "frames",
-    "l1": "frames.regions",
-    "l2": "navigation",
-    "order": 244
+    "l1": "frames.frames",
+    "l2": "frames-bars",
+    "order": 246
   },
   "kind": "element",
   "contract": {
@@ -29,7 +29,7 @@
       {
         "id": "tree",
         "required": true,
-        "accepts": "components.navigation-tree"
+        "accepts": "components.sidebar"
       },
       {
         "id": "account",
@@ -105,6 +105,7 @@
     },
     "composes": [
       "components.navigation-tree",
+      "components.sidebar",
       "components.link",
       "components.button",
       "components.tooltip",
@@ -114,7 +115,52 @@
       "components.card",
       "components.icon",
       "components.semantic-content"
-    ]
+    ],
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "navigation.label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "navigation.empty",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "navigation.expand",
+          "kind": "plain",
+          "role": "action",
+          "required": false,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "navigation.collapse",
+          "kind": "plain",
+          "role": "action",
+          "required": false,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        }
+      ]
+    }
   },
   "inputs": [
     "advantage.proposition.promise",

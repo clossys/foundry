@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "components",
-    "l1": "components.feedback",
-    "l2": "feedback-progress",
-    "order": 154
+    "l1": "components.components",
+    "l2": "components-feedback",
+    "order": 143
   },
   "kind": "element",
   "contract": {

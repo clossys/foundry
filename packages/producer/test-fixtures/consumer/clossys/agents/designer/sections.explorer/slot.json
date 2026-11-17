@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "sections",
-    "l1": "sections.navigate",
-    "l2": "navigate-discovery",
-    "order": 231
+    "l1": "sections.sections",
+    "l2": "sections-records",
+    "order": 221
   },
   "kind": "element",
   "contract": {
@@ -90,33 +90,37 @@
         {
           "key": "header.eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "header.heading",
           "kind": "plain",
+          "role": "heading",
           "required": false,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "header.description",
           "kind": "plain",
+          "role": "lead",
           "required": false,
           "maxLength": {
-            "en": 480
+            "en": 200
           },
           "dir": "auto"
         },
         {
           "key": "tree.label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -126,6 +130,7 @@
         {
           "key": "tree.nodes[].label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -135,6 +140,7 @@
         {
           "key": "tree.nodes[].description",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
@@ -144,6 +150,7 @@
         {
           "key": "list.label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -153,6 +160,7 @@
         {
           "key": "list.items[].label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -162,6 +170,7 @@
         {
           "key": "labels.details",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120

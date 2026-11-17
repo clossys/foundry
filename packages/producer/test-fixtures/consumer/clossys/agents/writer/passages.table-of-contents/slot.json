@@ -4,9 +4,9 @@
   "agent": "writer",
   "ia": {
     "l0": "passages",
-    "l1": "passages.navigate",
-    "l2": "navigate-indexes",
-    "order": 117
+    "l1": "passages.sections",
+    "l2": "sections-parts",
+    "order": 76
   },
   "kind": "strings",
   "contract": {
@@ -20,6 +20,7 @@
         {
           "key": "headings[].label",
           "kind": "plain",
+          "role": "label",
           "required": true,
           "maxLength": {
             "en": 120
@@ -29,6 +30,7 @@
         {
           "key": "labels.label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120
@@ -38,6 +40,7 @@
         {
           "key": "label",
           "kind": "plain",
+          "role": "label",
           "required": false,
           "maxLength": {
             "en": 120

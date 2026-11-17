@@ -4,8 +4,8 @@
   "agent": "writer",
   "ia": {
     "l0": "passages",
-    "l1": "passages.parts",
-    "l2": "parts-structure",
+    "l1": "passages.sections",
+    "l2": "sections-parts",
     "order": 74
   },
   "kind": "strings",
@@ -20,24 +20,27 @@
         {
           "key": "eyebrow",
           "kind": "plain",
+          "role": "eyebrow",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 48
           },
           "dir": "auto"
         },
         {
           "key": "heading",
           "kind": "plain",
+          "role": "heading",
           "required": true,
           "maxLength": {
-            "en": 160
+            "en": 60
           },
           "dir": "auto"
         },
         {
           "key": "description",
           "kind": "plain",
+          "role": "body",
           "required": false,
           "maxLength": {
             "en": 480
@@ -47,9 +50,10 @@
         {
           "key": "actions[].label",
           "kind": "plain",
+          "role": "action",
           "required": false,
           "maxLength": {
-            "en": 120
+            "en": 24
           },
           "dir": "auto"
         }

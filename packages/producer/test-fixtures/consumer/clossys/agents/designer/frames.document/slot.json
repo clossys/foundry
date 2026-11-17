@@ -4,9 +4,9 @@
   "agent": "designer",
   "ia": {
     "l0": "frames",
-    "l1": "frames.page-shells",
-    "l2": "page-shells-documents",
-    "order": 239
+    "l1": "frames.frames",
+    "l2": "frames-shells",
+    "order": 242
   },
   "kind": "element",
   "contract": {
@@ -67,6 +67,5 @@
     "frames.app-shell",
     "frames.auth-shell",
     "frames.site-shell"
-  ],
-  "standard": "frame"
+  ]
 }

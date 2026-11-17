@@ -4,8 +4,8 @@
   "agent": "designer",
   "ia": {
     "l0": "components",
-    "l1": "components.display",
-    "l2": "display-data",
+    "l1": "components.components",
+    "l2": "components-collections",
     "order": 120
   },
   "kind": "element",

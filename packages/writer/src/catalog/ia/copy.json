@@ -47,7 +47,13 @@
           "id": "copy/section-copy/parts",
           "label": "Parts",
           "leaves": [
-            "sections.section-header.copy",
+            "sections.section-header.copy"
+          ]
+        },
+        {
+          "id": "copy/section-copy/navigation",
+          "label": "Navigation",
+          "leaves": [
             "sections.pagination.copy",
             "sections.table-of-contents.copy"
           ]
@@ -63,7 +69,8 @@
             "sections.call-to-action.copy",
             "sections.testimonials.copy",
             "sections.logo-cloud.copy",
-            "sections.people.copy"
+            "sections.people.copy",
+            "sections.comparison.copy"
           ]
         },
         {
@@ -92,7 +99,6 @@
             "sections.stats.copy",
             "sections.usage.copy",
             "sections.account-summary.copy",
-            "sections.comparison.copy",
             "sections.status-list.copy",
             "sections.activity-feed.copy",
             "sections.audit-log.copy",
@@ -130,17 +136,11 @@
       "label": "Frame copy",
       "children": [
         {
-          "id": "copy/frame-copy/site",
-          "label": "Site",
+          "id": "copy/frame-copy/bars",
+          "label": "Bars",
           "leaves": [
             "frames.site-header.copy",
-            "frames.site-footer.copy"
-          ]
-        },
-        {
-          "id": "copy/frame-copy/app",
-          "label": "App",
-          "leaves": [
+            "frames.site-footer.copy",
             "frames.app-header.copy",
             "frames.app-sidebar.copy"
           ]
@@ -227,9 +227,685 @@
   ],
   "slots": [
     {
-      "id": "sections.section-header.copy",
+      "id": "components.command.copy",
       "kind": "copy",
       "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/components.command",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "search.label",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "search.placeholder",
+              "kind": "plain",
+              "role": "label",
+              "required": false,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "results.label",
+              "kind": "plain",
+              "role": "label",
+              "required": false,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "empty.label",
+              "kind": "plain",
+              "role": "label",
+              "required": false,
+              "maxLength": {
+                "en": 120
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "6f318090c4a6401a5a322dcc1bec3a5085a4df67e287ebdc123eb4258d086948",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "components.breadcrumbs.copy",
+      "kind": "copy",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/components.breadcrumbs",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "navigation.label",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "more.label",
+              "kind": "plain",
+              "role": "label",
+              "required": false,
+              "maxLength": {
+                "en": 40
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "c95c4e039de4ec070a85a6bb38c438de9495121e40f3c1bf2637a0cc8046c037",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "components.sidebar.copy",
+      "kind": "copy",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/components.sidebar",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "toggle.label",
+              "kind": "plain",
+              "role": "action",
+              "required": true,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "mobile.title",
+              "kind": "plain",
+              "role": "heading",
+              "required": false,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "mobile.description",
+              "kind": "plain",
+              "role": "label",
+              "required": false,
+              "maxLength": {
+                "en": 160
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "6683f8c3a8638660f9683604b5d91105ccc8826ee9da6e3e3a904cda7a4d3f7f",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "components.media-player.copy",
+      "kind": "copy",
+      "mark": "other-live",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/components.media-player",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "title",
+              "kind": "plain",
+              "role": "heading",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "play",
+              "kind": "plain",
+              "role": "action",
+              "required": true,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "pause",
+              "kind": "plain",
+              "role": "action",
+              "required": true,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "mute",
+              "kind": "plain",
+              "role": "action",
+              "required": true,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "seek",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "captions",
+              "kind": "plain",
+              "role": "action",
+              "required": true,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "error.title",
+              "kind": "plain",
+              "role": "heading",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "error.description",
+              "kind": "plain",
+              "role": "lead",
+              "required": true,
+              "maxLength": {
+                "en": 200
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "b23c29025ae42a1d1af0e5bddbad461596803c9f3eb761d5198cdf2256423aae",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "components.dialog.copy",
+      "kind": "copy",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/components.dialog",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "close.label",
+              "kind": "plain",
+              "role": "action",
+              "required": true,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "cdc29ec17a332294814bd87d15bb09a8c67063ab2fc639df9770f08fae450e54",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "components.sheet.copy",
+      "kind": "copy",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/components.sheet",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "close.label",
+              "kind": "plain",
+              "role": "action",
+              "required": true,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "cdc29ec17a332294814bd87d15bb09a8c67063ab2fc639df9770f08fae450e54",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "sections.section-header.copy",
+      "kind": "copy",
+      "mark": "other-live",
       "inputs": [
         {
           "to": "writer/lexicon.formality",
@@ -1679,7 +2355,7 @@
     {
       "id": "sections.people.copy",
       "kind": "copy",
-      "mark": "other-live",
+      "mark": "starter",
       "inputs": [
         {
           "to": "writer/lexicon.formality",
@@ -2756,7 +3432,7 @@
     {
       "id": "sections.timeline.copy",
       "kind": "copy",
-      "mark": "other-live",
+      "mark": "starter",
       "inputs": [
         {
           "to": "writer/lexicon.formality",
@@ -4685,7 +5361,7 @@
     {
       "id": "sections.comparison.copy",
       "kind": "copy",
-      "mark": "other-live",
+      "mark": "starter",
       "inputs": [
         {
           "to": "writer/lexicon.formality",
@@ -7870,7 +8546,7 @@
     {
       "id": "sections.notices.copy",
       "kind": "copy",
-      "mark": "other-live",
+      "mark": "starter",
       "inputs": [
         {
           "to": "writer/lexicon.formality",
@@ -8166,6 +8842,904 @@
           ]
         },
         "fieldsSha256": "7cbdcd6881b8717e77a8155d3ca3cee2593c5c665325f17ca00b8440cef5cc46",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "frames.site-header.copy",
+      "kind": "copy",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/frames.site-header",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "skip.label",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "navigation.label",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "navigation.open",
+              "kind": "plain",
+              "role": "action",
+              "required": true,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "navigation.close",
+              "kind": "plain",
+              "role": "action",
+              "required": true,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "93b8bf1e0526232e44e71ba3052525f88240d90ba1144530a2fa41b4891534d3",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "frames.site-footer.copy",
+      "kind": "copy",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/frames.site-footer",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "navigation.label",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "legal.notice",
+              "kind": "plain",
+              "role": "label",
+              "required": false,
+              "maxLength": {
+                "en": 160
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "6bcfcac748fc89d1cfbcfd14aad9f05344cf276ec899b329f00d5556a28bb25a",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "frames.app-header.copy",
+      "kind": "copy",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/frames.app-header",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "skip.label",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "breadcrumb.label",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "breadcrumb.collapsed",
+              "kind": "plain",
+              "role": "label",
+              "required": false,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "page.info",
+              "kind": "plain",
+              "role": "label",
+              "required": false,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "page.actions",
+              "kind": "plain",
+              "role": "label",
+              "required": false,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "navigation.open",
+              "kind": "plain",
+              "role": "action",
+              "required": true,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "navigation.close",
+              "kind": "plain",
+              "role": "action",
+              "required": true,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "panel.open",
+              "kind": "plain",
+              "role": "action",
+              "required": false,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "panel.close",
+              "kind": "plain",
+              "role": "action",
+              "required": false,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "8480c2a3eda00a117df865d09d0f126c37c669a1e16d72623a69dcfeb9feccf2",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "frames.app-sidebar.copy",
+      "kind": "copy",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/frames.app-sidebar",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "navigation.label",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "navigation.empty",
+              "kind": "plain",
+              "role": "label",
+              "required": false,
+              "maxLength": {
+                "en": 120
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "navigation.expand",
+              "kind": "plain",
+              "role": "action",
+              "required": false,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "navigation.collapse",
+              "kind": "plain",
+              "role": "action",
+              "required": false,
+              "maxLength": {
+                "en": 24
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "65198b8c79a29d93adcfb0bf66d4790783119d21c68f3f00b8741d8847378001",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "assets.lockup.copy",
+      "kind": "copy",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/assets.lockup",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "alt",
+              "kind": "plain",
+              "role": "alt",
+              "required": true,
+              "maxLength": {
+                "en": 140
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "2cc8fbff565a8acfb40594cea0638eea57432578ba5248ed4ed899638163c01d",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "assets.mark.copy",
+      "kind": "copy",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/assets.mark",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "alt",
+              "kind": "plain",
+              "role": "alt",
+              "required": true,
+              "maxLength": {
+                "en": 140
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "2cc8fbff565a8acfb40594cea0638eea57432578ba5248ed4ed899638163c01d",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "assets.image.copy",
+      "kind": "copy",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/assets.image",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "alt",
+              "kind": "plain",
+              "role": "alt",
+              "required": true,
+              "maxLength": {
+                "en": 140
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "caption",
+              "kind": "plain",
+              "role": "label",
+              "required": false,
+              "maxLength": {
+                "en": 160
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "a0feb3ef65556872951ae44f3e80985cf4fbc0a7a7f6c2f4bd3a298ef33572ea",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "assets.video.copy",
+      "kind": "copy",
+      "mark": "other-live",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "designer/assets.video",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "title",
+              "kind": "plain",
+              "role": "heading",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "description",
+              "kind": "plain",
+              "role": "lead",
+              "required": false,
+              "maxLength": {
+                "en": 200
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "36f4dea89d80b12150baab9049b4b6ee87da7f9349218054f9f7772f7189674b",
         "candidate": "clossys.copy-candidate/1"
       }
     },
@@ -11282,92 +12856,8 @@
   ],
   "awaiting": [
     {
-      "id": "components.command.copy",
-      "unit": "designer/components.command",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "components.breadcrumbs.copy",
-      "unit": "designer/components.breadcrumbs",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "components.sidebar.copy",
-      "unit": "designer/components.sidebar",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "components.media-player.copy",
-      "unit": "designer/components.media-player",
-      "mark": "other-live",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "components.dialog.copy",
-      "unit": "designer/components.dialog",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "components.sheet.copy",
-      "unit": "designer/components.sheet",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
       "id": "sections.sectioned-document.copy",
       "unit": "designer/sections.sectioned-document",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "frames.site-header.copy",
-      "unit": "designer/frames.site-header",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "frames.site-footer.copy",
-      "unit": "designer/frames.site-footer",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "frames.app-header.copy",
-      "unit": "designer/frames.app-header",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "frames.app-sidebar.copy",
-      "unit": "designer/frames.app-sidebar",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "assets.lockup.copy",
-      "unit": "designer/assets.lockup",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "assets.mark.copy",
-      "unit": "designer/assets.mark",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "assets.image.copy",
-      "unit": "designer/assets.image",
-      "mark": "starter",
-      "reason": "Designer unit declares no copy.fields yet"
-    },
-    {
-      "id": "assets.video.copy",
-      "unit": "designer/assets.video",
       "mark": "other-live",
       "reason": "Designer unit declares no copy.fields yet"
     }
