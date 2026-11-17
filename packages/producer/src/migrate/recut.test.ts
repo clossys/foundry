@@ -126,9 +126,9 @@ describe("migrate recut: apply", () => {
     expect(existsSync(w.agent("writer", "passages.hero"))).toBe(false);
     expect(existsSync(w.agent("writer", "_retired", "passages.hero", "slot.json"))).toBe(true);
 
-    // Moved JSON: content kept as is.
+    // Moved JSON: only the source moves into the header; the rest of the int2 document (meta.element too) is the content.
     const button = JSON.parse(readFileSync(w.agent("designer", "components.button", "candidates", "native-action-v1.json"), "utf8")) as { clossys: Record<string, unknown>; content: unknown };
-    expect(button.content).toEqual(jsonContent());
+    expect(button.content).toEqual({ meta: { element: {} }, content: jsonContent() });
     expect(button.clossys.slot).toBe("designer/components.button");
 
     // Live: the int2 front matter is the header that changes; the body after it is kept.

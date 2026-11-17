@@ -1,8 +1,8 @@
 /**
  * Slot integrity over the common IA / slot / candidate / pin model. The model check runs in the current
  * format only (records/slot-check.ts `current`): a clossys.slot/1 slot.json is a finding naming
- * `clossys migrate recut`. A clossys.candidate/1 candidate's source is its header `source` (a `{"hash"}` ref
- * is its hash, records/slot-current.ts sourceView) and its body or JSON `content` is what is read.
+ * `clossys migrate recut`. A clossys.candidate/1 candidate is read through its view (records/slot-current.ts
+ * candidateView): its header `source`, and the document its kind rules read.
  */
 import { lstatSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -12,8 +12,7 @@ import { resolveAgent } from "../agents.js";
 import { buildCheckOutputEnvelope, envelopeToExitCode } from "../generated/check-output-envelope.js";
 import { sha256Hex } from "../records/hash.js";
 import { loadReferencesManifest } from "../records/validate.js";
-import { readRecordHeader } from "../records/schema.js";
-import { sourceView } from "../records/slot-current.js";
+import { candidateHeaderOf, candidateView } from "../records/slot-current.js";
 import { assertModelTree, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
 import { agentModule } from "../read/cells.js";
 import { checkSlotModel, formatCoverage, slotCoverage, writerRecords, type AgentCoverage } from "../records/slot-check.js";
@@ -109,27 +108,16 @@ function safe(path: string): string {
   }
   return path;
 }
-const FRONT_MATTER = /^---\r?\n[\s\S]*?\r?\n---(\r?\n|$)/;
-/** A clossys.candidate/1 header, or undefined for an int2 candidate (or a record such as clossys.page/1). */
-function candidateHeader(name: string, bytes: string): Record<string, any> | undefined {
-  try {
-    const header = readRecordHeader(name, bytes) as Record<string, any> | undefined;
-    return header && typeof header === "object" && header.schema === "clossys.candidate/1" ? header : undefined;
-  } catch { return undefined; }
-}
-/** What a candidate is read as: its source, and the document (Markdown fields and body, or JSON) its rules read. */
+/**
+ * What a candidate is read as: its source, and the document (Markdown fields and body, or JSON) its rules read. A
+ * clossys.candidate/1 file is read through its view (records/slot-current.ts candidateView): the same document
+ * an int2 candidate is, with the header's source, so element copy keys (meta.element.reads.copyKeys) still count.
+ */
 function document(name: string, bytes: string): { source: SlotSource | undefined; doc: Record<string, any> } {
-  const markdown = name.endsWith(".md");
-  const header = candidateHeader(name, bytes);
-  if (header) {
-    const source = sourceView(header.source) as SlotSource | undefined;
-    if (markdown) return { source, doc: { body: bytes.replace(FRONT_MATTER, "") } };
-    if (!name.endsWith(".json")) return { source, doc: {} };
-    const content = (JSON.parse(bytes) as { content?: unknown }).content;
-    return { source, doc: content && typeof content === "object" && !Array.isArray(content) ? content as Record<string, any> : {} };
-  }
-  if (!markdown) { const doc = JSON.parse(bytes); return { source: doc.meta?.source, doc }; }
-  const parsed = parseFrontmatter(bytes);
+  if (!name.endsWith(".md") && !name.endsWith(".json")) return { source: candidateHeaderOf(name, bytes)?.source as SlotSource | undefined, doc: {} };
+  const view = candidateView(name, bytes);
+  if (!name.endsWith(".md")) { const doc = JSON.parse(view); return { source: doc.meta?.source, doc }; }
+  const parsed = parseFrontmatter(view);
   if (!parsed.ok) throw new Error("Invalid candidate frontmatter.");
   const doc = { ...parsed.value.fields, body: parsed.value.body } as Record<string, any>;
   return { source: doc.source, doc };

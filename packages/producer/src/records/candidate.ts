@@ -153,14 +153,21 @@ export function buildCandidateHeader(input: NewCandidateHeader): CandidateHeader
 
 /**
  * The bytes of a candidate file: `content` is the JSON `content` value, the Markdown body, or the SVG document
- * (which must not already carry a `<metadata>` element).
+ * (which must not already carry a `<metadata>` element). A Markdown candidate's `front` fields (its own
+ * frontmatter, such as a brief's feeds or a Writer file's locales) are written after the clossys header in
+ * the one front matter block, a `key: <JSON>` line each.
  */
-export function serializeCandidate(name: CandidateName, header: CandidateHeader, content: unknown): string {
+export function serializeCandidate(name: CandidateName, header: CandidateHeader, content: unknown, front: Readonly<Record<string, unknown>> = {}): string {
   const parts = parseCandidateName(name);
   if (!parts) throw new Error(`not a candidate file name: ${name}`);
+  if (parts.ext !== "md" && Object.keys(front).length) throw new Error(`${name}: only a Markdown candidate has front matter fields`);
   if (parts.ext === "json") return `${JSON.stringify({ clossys: header, content }, null, 2)}\n`;
   if (typeof content !== "string") throw new Error(`${name}: ${parts.ext} content must be text`);
-  if (parts.ext === "md") return `---\nclossys: ${JSON.stringify(header)}\n---\n${content}`;
+  if (parts.ext === "md") {
+    if (Object.hasOwn(front, "clossys")) throw new Error(`${name}: a front matter field cannot be named clossys`);
+    const lines = Object.entries(front).filter(([, value]) => value !== undefined).map(([key, value]) => `\n${key}: ${JSON.stringify(value)}`).join("");
+    return `---\nclossys: ${JSON.stringify(header)}${lines}\n---\n${content}`;
+  }
   if (/<metadata[\s>]/.test(content)) throw new Error(`${name}: the SVG already has a <metadata> element`);
   const open = /<svg\b[^>]*>/.exec(content);
   if (!open) throw new Error(`${name}: no <svg> element`);

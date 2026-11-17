@@ -10,9 +10,12 @@
  *    list. An id in no tree and no retired.json is unknown: the run names it, exits 1 and writes nothing.
  *    Producer seat folders are not recut (seats become loop steps).
  * 2. Header. Every candidate of a live or target slot carries the clossys.candidate/1 header, created by
- *    `{actor: code, cli: clossys migrate recut}` (the migrated records' actor); an int2 header (Markdown
- *    front matter of `slot`/`source`/`reason`, the Designer JSON `meta`) is replaced, and the body is kept
- *    byte for byte (a JSON `content` value as is). A moved candidate keeps its name unless the target holds
+ *    `{actor: code, cli: clossys migrate recut}` (the migrated records' actor). Only the int2 `source` moves
+ *    into the header: every other int2 field stays where the kind rules read it through the candidate view
+ *    (records/slot-current.ts candidateView). A Markdown candidate's own front matter fields (`slot`,
+ *    `feeds`, `functions`, `note`, `vary`, `locales`, `reason`) follow the clossys header in its one front
+ *    matter block; a JSON candidate's `meta` (`refVerbatim`, `element`, `vary`, `slot`, `catalog`, `preview`)
+ *    stays in its `content`; the body is kept byte for byte. A moved candidate keeps its name unless the target holds
  *    that name with other bytes; it then takes the next free version. Each rewritten file is one `migrated`
  *    event (migration `recut`, old and new sha256 and blob ids) in `clossys/evidence/migrations.json`.
  * 3. Library. Each int2 library cell becomes one candidate in its slot's target (./library-cells.ts).
@@ -22,9 +25,10 @@
  *    (an `ia sync` finding of the result) and gets no slot.json; the rest of the plan still applies.
  * 5. Then slot-1-to-2, pin-1-to-2 and `ia sync` run over the result.
  *
- * A candidate's int2 provenance is kept in its header `source`: the caller's int2 source, else the Designer
- * JSON `meta.source`, else `meta.element.source`, else a derived source naming where the bytes came from.
- * A registry `hash` (no candidate/1 source key) is carried as one more ref, `{"hash":"<hash>"}`.
+ * A candidate's int2 provenance is kept in its header `source`, as it was (kind, ref, parts, hash, license):
+ * the caller's int2 source, else the Designer JSON `meta.source`, else `meta.element.source`, else a derived
+ * source naming where the bytes came from. A source the candidate/1 source cannot hold is never replaced by
+ * a derived one: that file is not rewritten and the plan names it.
  *
  * Slot/1 `inputs` and `uses` naming a moved id are repointed to its target; a retired id is dropped from them.
  * A second `--apply` changes no byte.
@@ -44,6 +48,7 @@ import { dirname, join, relative, sep } from "node:path";
 import { CANDIDATE_NAME, buildCandidateHeader, parseCandidateName, serializeCandidate, targetSchema } from "../records/candidate.js";
 import { fileState, type FileState } from "../records/migrations.js";
 import { parseYamlSubset, validateAgainst } from "../records/schema.js";
+import { parseFrontmatter } from "../records/slot-model/frontmatter.js";
 import { agentPackageRoot, packageVersion, readBaseSlot, serializeSlot, writeSlot, SLOT_V1_SCHEMA } from "../records/slot.js";
 import { RETIRE_SCHEMA, appendMigrationEvents, type RewrittenFile } from "../records/slot-write.js";
 import { slotPositions, studioDesignerSlots } from "../records/slot-model/foundry-ia.js";
@@ -188,9 +193,6 @@ export function fateOf(table: PackageTable, id: string): { fate: RecutFate; targ
 
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---(\r?\n|$)/;
 const SVG_META = /<metadata[^>]*>([\s\S]*?)<\/metadata>/;
-/** The int2 Markdown front matter keys (system.md 6.2: Director/Writer `slot` and `source`, and `reason`). */
-const INT2_FRONT = new Set(["slot", "source", "reason"]);
-const SOURCE_KINDS = new Set(["registry", "composition", "npm", "derived", "original", "package-default"]);
 
 export interface HeaderContext {
   readonly agent: AgentId;
@@ -199,25 +201,26 @@ export interface HeaderContext {
   readonly version: string;
   /** Where the bytes came from, relative to the consumer folder: the source ref of a derived header. */
   readonly sourceRef: string;
+  /** The slot id a moved candidate (or a routed library cell) left: its int2 `slot` field follows it to `slotId`. */
+  readonly movedFrom?: string;
 }
 
-const nonEmpty = (value: unknown): value is string => typeof value === "string" && value.length > 0;
-
-/** One int2 source as a candidate/1 source, or undefined when it is not one: a `hash` rides as a last `{"hash"}` ref. */
-function headerSource(value: unknown): CandidateHeader["source"] | undefined {
-  if (!object(value) || typeof value.kind !== "string" || !SOURCE_KINDS.has(value.kind) || !Array.isArray(value.ref) || !value.ref.every(nonEmpty)) return undefined;
-  if (!Object.keys(value).every(key => key === "kind" || key === "ref" || ((key === "license" || key === "hash") && nonEmpty(value[key])))) return undefined;
-  const ref = [...value.ref as string[], ...(nonEmpty(value.hash) ? [JSON.stringify({ hash: value.hash })] : [])];
-  return { kind: value.kind, ref, ...(nonEmpty(value.license) ? { license: value.license } : {}) } as CandidateHeader["source"];
-}
-
-/** The first of `values` that is a source, in order; else a derived source naming `fallback`. */
+/**
+ * The first int2 source of `values` that is present, as it is; else a derived source naming `fallback`. The
+ * header check (`checked`) fails the file when the candidate/1 source cannot hold it: never a silent derived.
+ */
 function sourceOf(values: readonly unknown[], fallback: string): CandidateHeader["source"] {
-  for (const value of values) {
-    const source = headerSource(value);
-    if (source) return source;
-  }
+  for (const value of values) if (value !== undefined) return value as CandidateHeader["source"];
   return { kind: "derived", ref: [fallback] };
+}
+
+/** A Markdown front matter's fields: the int2 `key: <JSON>` lines exactly, else the YAML subset (which throws on what it cannot read). */
+function frontFields(name: string, text: string, match: RegExpExecArray): { fields: Record<string, unknown>; body: string } | undefined {
+  const exact = parseFrontmatter(text);
+  if (exact.ok) return { fields: { ...exact.value.fields }, body: exact.value.body };
+  let front: unknown;
+  try { front = parseYamlSubset(match[1] ?? ""); } catch (error) { throw new Error(`${name}: its front matter cannot be read (${(error as Error).message}); not rewritten`); }
+  return object(front) ? { fields: front, body: text.slice(match[0].length) } : undefined;
 }
 
 function checked(header: CandidateHeader, name: string): CandidateHeader {
@@ -241,19 +244,23 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
   }), name);
   const readdressed = (header: Record<string, unknown>) => checked({ ...header, id, agent: context.agent, slot } as unknown as CandidateHeader, name);
   const current = (header: unknown) => object(header) && header.schema === "clossys.candidate/1" && header.id === id && header.slot === slot && header.agent === context.agent;
+  // The int2 `slot` field names the slot the file sits in: on a move it follows the candidate, as the header does.
+  // Any other value is kept as it is, for the kind rules to judge.
+  const follows = (fields: Record<string, unknown>) => context.movedFrom !== undefined && fields.slot === context.movedFrom ? { ...fields, slot: context.slotId } : fields;
 
   if (parts.ext === "md") {
     const match = FRONT.exec(text);
-    if (match) {
-      const front = parseYamlSubset(match[1] ?? "");
-      const body = text.slice(match[0].length);
-      if (object(front) && "clossys" in front) {
-        if (current(front.clossys)) return text;
-        if (!object(front.clossys)) throw new Error(`${name}: the clossys front matter is not an object`);
-        if (Object.keys(front).length > 1) throw new Error(`${name}: front matter holds keys beside clossys; not rewritten`);
-        return serializeCandidate(name, readdressed(front.clossys), body);
-      }
-      if (object(front) && Object.keys(front).every(key => INT2_FRONT.has(key))) return serializeCandidate(name, fresh(sourceOf([front.source, int2?.source], context.sourceRef)), body);
+    const front = match ? frontFields(name, text, match) : undefined;
+    if (front && "clossys" in front.fields) {
+      const { clossys, ...rest } = front.fields;
+      if (current(clossys)) return text;
+      if (!object(clossys)) throw new Error(`${name}: the clossys front matter is not an object`);
+      return serializeCandidate(name, readdressed(clossys), front.body, follows(rest));
+    }
+    // The int2 front matter: its source moves into the header, every other field stays beside it.
+    if (front) {
+      const { source, ...rest } = front.fields;
+      return serializeCandidate(name, fresh(sourceOf([source, int2?.source], context.sourceRef)), front.body, follows(rest));
     }
     return serializeCandidate(name, fresh(sourceOf([int2?.source], context.sourceRef)), text);
   }
@@ -262,7 +269,8 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
     if (object(doc) && object(doc.clossys)) {
       if (Object.keys(doc).some(key => key !== "clossys" && key !== "content")) throw new Error(`${name}: holds keys beside clossys and content; not rewritten`);
       if (current(doc.clossys)) return text;
-      return serializeCandidate(name, readdressed(doc.clossys), doc.content);
+      const content = object(doc.content) && object(doc.content.meta) ? { ...doc.content, meta: follows(doc.content.meta) } : doc.content;
+      return serializeCandidate(name, readdressed(doc.clossys), content);
     }
     // A Publisher page record (clossys.page/1) is the record today's install and slot check read: kept as is.
     if (context.agent === "publisher" && object(doc) && doc.schema === PAGE_SCHEMA) return text;
@@ -273,8 +281,11 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
       const meta = object(doc.meta) ? doc.meta : undefined;
       const element = meta && object(meta.element) ? meta.element : undefined;
       sources.push(meta?.source, element?.source);
-      const rest = Object.fromEntries(Object.entries(doc).filter(([key]) => key !== "meta"));
-      content = Object.keys(rest).length === 1 && "content" in rest ? rest.content : rest;
+      // Only meta.source moves into the header; the rest of meta stays in the content, where the candidate view reads it.
+      if (meta) {
+        const { source: _moved, ...kept } = meta;
+        content = Object.keys(kept).length ? { ...doc, meta: follows(kept) } : Object.fromEntries(Object.entries(doc).filter(([key]) => key !== "meta"));
+      }
     } else if (object(doc) && Object.keys(doc).length === 1 && "content" in doc) content = doc.content;
     return serializeCandidate(name, fresh(sourceOf(sources, context.sourceRef)), content);
   }
@@ -427,7 +438,7 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
     library: { conversions: [], findings: [] }, findings: [], skipped: slotFolders(consumer, "producer").map(id => `producer/${id}`), counts,
   };
   const planned = new Set<string>();
-  const context = (agent: RecutAgent, slotId: string, sourceRef: string): HeaderContext => ({ agent, slotId, at: options.at, version, sourceRef });
+  const context = (agent: RecutAgent, slotId: string, sourceRef: string, movedFrom?: string): HeaderContext => ({ agent, slotId, at: options.at, version, sourceRef, ...(movedFrom !== undefined && movedFrom !== slotId ? { movedFrom } : {}) });
 
   // Every slot folder, at any depth; a nested one (or one under another name) flattens to agents/<agent>/<id>.
   const ids = {} as Record<RecutAgent, string[]>;
@@ -477,7 +488,7 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
         const original = readFileSync(real(file), "utf8");
         let targetName = name;
         let bytes: string;
-        try { bytes = recutCandidateBytes(name, original, context(agent, slotId, sourceRef)); }
+        try { bytes = recutCandidateBytes(name, original, context(agent, slotId, sourceRef, id)); }
         catch (error) { plan.findings.push(`${sourceRef}: ${(error as Error).message}`); ok = false; continue; }
         if (fate === "live") {
           if (bytes === original) continue;
@@ -494,7 +505,7 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
         }
         if (existsSync(real(at(name))) || planned.has(at(name))) {
           targetName = nextFreeName(name, candidate => existsSync(real(at(candidate))) || planned.has(at(candidate)));
-          bytes = recutCandidateBytes(targetName, original, context(agent, slotId, sourceRef));
+          bytes = recutCandidateBytes(targetName, original, context(agent, slotId, sourceRef, id));
         }
         planned.add(at(targetName));
         counts[agent].carried++;
@@ -563,7 +574,7 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
   const library = planLibraryCells(consumer, route, input => {
     const element = object(input.element) ? input.element : {};
     const license = object(element.license) && typeof element.license.spdx === "string" && element.license.spdx ? element.license.spdx : undefined;
-    return recutCandidateBytes(input.name, input.body, context(input.agent as RecutAgent, input.slotId, input.sourceRef), {
+    return recutCandidateBytes(input.name, input.body, context(input.agent as RecutAgent, input.slotId, input.sourceRef, input.from), {
       source: { kind: "derived", ref: [input.sourceRef], ...(license ? { license } : {}) },
     });
   }, planned);

@@ -170,8 +170,9 @@ describe("default native model enforcement", () => {
       };
       expect(run(original, 0, "satisfied").findings).toEqual([]);
       const altered = structuredClone(original);
-      altered.files[0].content = altered.files[0].content.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl");
-      expect(altered.files[0].content).not.toBe(original.files[0].content);
+      // A recut candidate wraps the registry item in `content`; the header carries only identity and source.
+      altered.content.files[0].content = altered.content.files[0].content.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl");
+      expect(altered.content.files[0].content).not.toBe(original.content.files[0].content);
       const failed = run(altered, 1, "violated");
       expect(failed.findings.some((finding: any) => finding.rule === "REF-HUNK-CLASS" && finding.severity === "error")).toBe(true);
       expect(failed.summary).not.toContain("passed");
@@ -183,7 +184,7 @@ describe("default native model enforcement", () => {
     ["pin removed", dir => unlinkSync(join(dir, "pin.json")), "no-pin"],
     ["sha changed", dir => { const pin = JSON.parse(readFileSync(join(dir, "pin.json"), "utf8")); save(join(dir, "pin.json"), { ...pin, sha256: "0".repeat(64) }); }, "hash-drift"],
     ["candidate deleted", dir => unlinkSync(join(dir, "candidates", "sample-v1.json")), "pin-missing-file"],
-    ["uses names an unknown slot", dir => { const slot = JSON.parse(readFileSync(join(dir, "slot.json"), "utf8")); save(join(dir, "slot.json"), { ...slot, uses: ["unknown.synthetic"] }); }, "schema"],
+    ["uses names an unknown slot", dir => { const slot = JSON.parse(readFileSync(join(dir, "slot.json"), "utf8")); save(join(dir, "slot.json"), { ...slot, refs: [...slot.refs, { to: "designer/unknown.synthetic", rel: "uses" }] }); }, "schema"],
     ["candidate carries status", dir => { const path = join(dir, "candidates", "sample-v1.json"); save(path, { ...JSON.parse(readFileSync(path, "utf8")), status: "active" }); }, "candidate-status"],
     ["slot is at the wrong IA path", dir => {
       // Folders are flat (agents/<agent>/<slot-id>): a Designer slot under the Writer agent is misplaced.
@@ -204,6 +205,23 @@ describe("default native model enforcement", () => {
       expect(report).toMatchObject({ exitCode: 1, verdict: "violated", slots: { exitCode: 1, verdict: "violated" } });
       expect(report.findings.some((row: any) => row.rule === code)).toBe(true);
       expect(report.slots.coverage).toHaveLength(4);
+    } finally { rmSync(f.root, { recursive: true, force: true }); }
+  });
+
+  it("reads a recut Designer element's copy keys from its content: a key Writer lacks is copy-missing-key", async () => {
+    const f = fixture();
+    try {
+      const dir = f.dirs.designer!;
+      const path = join(dir, "candidates", "sample-v1.json");
+      const element = JSON.parse(readFileSync(path, "utf8"));
+      const reads = async (keys: string[]) => {
+        save(path, { ...element, content: { ...element.content, meta: { ...element.content.meta, element: { reads: { copyKeys: keys } } } } });
+        const pin = JSON.parse(readFileSync(join(dir, "pin.json"), "utf8"));
+        save(join(dir, "pin.json"), { ...pin, sha256: sha256Hex(readFileSync(path)) });
+        return (await runSlotResolve(f.consumer)).findings.filter(row => row.rule === "copy-missing-key").map(row => row.path);
+      };
+      expect(await reads(["site.synthetic.title"])).toEqual([]);
+      expect(await reads(["site.synthetic.missing"])).toEqual(["designer:components.synthetic"]);
     } finally { rmSync(f.root, { recursive: true, force: true }); }
   });
 

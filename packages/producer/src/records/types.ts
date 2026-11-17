@@ -345,7 +345,7 @@ export interface CandidateHeader extends Common {
   record?: string;
   /** The resolved brief it was made against. Absent only on package defaults (publisher.md 9.4 header-v1.json). */
   briefSha256?: Sha256;
-  source: { kind: "registry" | "composition" | "npm" | "derived" | "original" | "package-default"; ref: string[]; license?: string };
+  source: { kind: "registry" | "composition" | "npm" | "derived" | "original" | "package-default"; ref: string[]; parts?: { slot: string; files: string[] }[]; hash?: string; license?: string };
   rationale: { purpose: string; field?: string; why: string; sources: Ref[] }[];
 }
 

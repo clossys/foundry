@@ -59,7 +59,7 @@ export type CellRoute =
   | { readonly finding: string };
 
 /** The candidate bytes for a cell: the body kept byte for byte, the header built from the int2 element record. */
-export type CellConvert = (input: { readonly agent: AgentId; readonly slotId: string; readonly name: string; readonly body: string; readonly element: unknown; readonly sourceRef: string }) => string;
+export type CellConvert = (input: { readonly agent: AgentId; readonly slotId: string; readonly name: string; readonly body: string; readonly element: unknown; readonly sourceRef: string; readonly from?: string }) => string;
 
 export interface CellConversion {
   readonly cell: LibraryCell;
@@ -103,7 +103,7 @@ export function planLibraryCells(consumer: string, route: (slot: string) => Cell
       catch (error) { findings.push(`${at}: ${ELEMENT_FILE} is not JSON (${(error as Error).message}); left in place`); continue; }
     }
     let bytes: string;
-    try { bytes = convert({ agent: target.agent, slotId: target.slotId, name: candidate, body, element, sourceRef: at }); }
+    try { bytes = convert({ agent: target.agent, slotId: target.slotId, name: candidate, body, element, sourceRef: at, from: cell.slot }); }
     catch (error) { findings.push(`${at}: ${(error as Error).message}; left in place`); continue; }
     conversions.push({ cell, agent: target.agent, slotId: target.slotId, file, bytes, from: fileState(body), record: target.record });
   }

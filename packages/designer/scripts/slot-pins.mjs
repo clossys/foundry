@@ -1,7 +1,9 @@
 /**
  * Designer pins through the one slot-model reader (packages/producer/src/records/slots.ts).
  * Designer checks never read pin.json, slot.json or candidate files by hand, and never read a
- * legacy selection store: a pin is what `listSlots` lists, its bytes are what `readCandidate` returns.
+ * legacy selection store: a pin is what `listSlots` lists, its bytes are what `readCandidate` returns, and
+ * its registry item is those bytes read through the reader's `candidateView` (a clossys.candidate/1 file
+ * without its header, with the header source as meta.source).
  *
  * The reader ships in @clossys/producer (`@clossys/producer/records/slots`), which depends on this
  * package, so it is resolved by its public specifier and only when a pin is read: importing a
@@ -22,6 +24,9 @@ catch (error) {
   readerMissing = error;
 }
 if (resolved) reader = await import(resolved);
+
+/** A candidate's registry item: its bytes as the reader's candidate view reads them (a reader without one reads int2 bytes only). */
+const itemOf = (candidate, read = slotReader()) => JSON.parse(read.candidateView ? read.candidateView(candidate.name, candidate.bytes) : candidate.bytes);
 
 /** The slot-model reader, or a named error when @clossys/producer is not installed beside this package. */
 export function slotReader() {
@@ -45,7 +50,7 @@ export function designerSlotRecords(root) {
       try {
         const candidate = readCandidate(root, "designer", entry.id, entry.pin.candidate);
         pinned = candidate.sha256 === entry.pin.sha256
-          ? { pin: entry.pin, item: JSON.parse(candidate.bytes) }
+          ? { pin: entry.pin, item: itemOf(candidate) }
           : { error: "has a pin sha256 that does not match its candidate" };
       } catch { pinned = { error: "pins a missing candidate" }; }
     }
@@ -78,7 +83,7 @@ export function designerPins(root, { all = false } = {}) {
       const pinned = entry.pin?.candidate === name;
       try {
         const candidate = readCandidate(root, "designer", entry.id, name);
-        out.push({ slot: entry.id, pin: pinned ? entry.pin : null, candidate, item: JSON.parse(candidate.bytes), slotDoc, error: undefined });
+        out.push({ slot: entry.id, pin: pinned ? entry.pin : null, candidate, item: itemOf(candidate), slotDoc, error: undefined });
       } catch (error) {
         out.push({ slot: entry.id, pin: pinned ? entry.pin : null, candidate: { name }, item: null, slotDoc, error: error.message });
       }
