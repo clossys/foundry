@@ -132,7 +132,7 @@ describe("production check CLI adapters", () => {
   it("status prints the skill progress shape from canonical reports", () => {
     const root = fixture(true); const print = vi.fn();
     expect(runReadCommand(["status", "--root", root], { execute: args => executeChecksCommand(args, store) }, print)).toBe(0);
-    expect(print.mock.calls[0]![0]).toMatch(/^MVS 24\/24 · L1 unlocked \d\/7 \(.+\) · L2 coherent \d+\/28 · active 57\/57 · requests 0 open · next: .+$/);
+    expect(print.mock.calls[0]![0]).toMatch(/^MVS 24\/24 · L1 unlocked \d\/9 \(.+\) · L2 coherent \d+\/27 · active 55\/55 · requests 0 open · next: .+$/);
     expect(invoke(["status", "--scope", "full", "--root", root]).value.result.scope).toBe("full");
   });
   it("cell group and strategy views use canonical state and do not save reports", () => {
