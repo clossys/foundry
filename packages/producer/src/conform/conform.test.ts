@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { ASSERTIONS, OVERLAP_MIN } from "./assertions.js";
-import { isContractRefusal, judgeDogfood, probeIaContract, probePinGate, PROBES, type ProbeFacts } from "./dogfood.js";
+import { isContractRefusal, judgeDogfood, probeIaContract, probePinGate, PROBES, type PinGateResult, type ProbeFacts, type VerbProbe } from "./dogfood.js";
 import { adapterIssues, CONFORM_AGENTS, missingPaths, readConformModel, type Adapter, type AgentModel, type ConformModel, type LiveSlot } from "./model.js";
 import { cellOf, conform, formatReport, readRegistry } from "./run.js";
 
@@ -278,22 +278,38 @@ describe("conformance over the repo and its fixture", () => {
 
 describe("pin gate probe (the real pin verb on a temporary copy)", () => {
   const model = readConformModel(REPO, FIXTURE);
-  it("pins no hand-placed candidate for any agent: each refusal names the missing submit record or verdict", async () => {
+  it("pins no hand-placed or uncertified candidate for any agent through any verb: each refusal is the CHOOSE gate's", async () => {
     const results = await probePinGate(FIXTURE, model.agents);
     // Publisher's live slots are clossys.slot/1 (no CREATE and CHOOSE contract yet), so its probe names that gap.
     expect(results.publisher).toBe("pin probe: publisher has no live clossys.slot/2 slot");
     for (const agent of ["director", "designer", "writer"]) {
       const result = results[agent];
       expect(typeof result, `${agent}: ${String(result)}`).toBe("object");
-      const gate = result as { target: string; accepted: boolean; message: string };
+      const gate = result as PinGateResult;
       expect(gate.accepted, gate.target).toBe(false);
-      expect(gate.message, gate.target).toMatch(/no submit record|no passing verdict/);
+      expect(gate.message, gate.target).toMatch(/no submit record/);
+      const verbs = gate.verbs!;
+      // pin, pick and verdict for every agent, approve for Writer; each on the hand-placed and the submitted candidate.
+      expect(verbs.map(run => `${run.case}:${run.verb}`).sort(), agent).toEqual(
+        ["hand-placed", "submitted-uncertified"].flatMap(kind => ["pin", "pick", "verdict", ...(agent === "writer" ? ["approve"] : [])].map(verb => `${kind}:${verb}`)).sort());
+      for (const run of verbs) {
+        expect(run.exit, `${agent} ${run.case} ${run.verb}: ${run.message}`).not.toBe(0);
+        expect(run.gated, `${agent} ${run.case} ${run.verb}: ${run.message}`).toBe(true);
+      }
+      // The submitted candidate reaches the certification: pin names its failing verdict, not a missing submit.
+      expect(verbs.find(run => run.case === "submitted-uncertified" && run.verb === "pin")!.message).toMatch(/no passing verdict/);
+      for (const verb of ["pick", "verdict", ...(agent === "writer" ? ["approve"] : [])]) {
+        expect(verbs.find(run => run.case === "submitted-uncertified" && run.verb === verb)!.message, `${agent} ${verb}`).toMatch(/pinned only through the CHOOSE gate/);
+      }
     }
     // The C3 cell reads the probe: green on these refusals, red once one agent's pin accepts.
     const facts = { emptyL2Detected: {}, requestVerb: true, critiqueMonorepoPath: false, iaContract: {}, pinGate: results };
     for (const agent of model.agents) expect(ASSERTIONS.C3!(agent, model, facts).rows.filter(row => row.startsWith("pin ") && row.includes("accepted")), agent.agent).toEqual([]);
-    const accepted = { ...facts, pinGate: { ...results, director: { ...(results.director as object), accepted: true } } };
-    expect(ASSERTIONS.C3!(model.agents.find(agent => agent.agent === "director")!, model, accepted as ProbeFacts).rows.some(row => /accepted a hand-placed candidate/.test(row))).toBe(true);
+    const writer = results.writer as PinGateResult;
+    const opened = (verb: string, change: Partial<VerbProbe>) => ({ ...facts, pinGate: { ...results, writer: { ...writer, verbs: writer.verbs!.map(run => run.verb === verb && run.case === "submitted-uncertified" ? { ...run, ...change } : run) } } }) as ProbeFacts;
+    const c3 = (given: ProbeFacts) => ASSERTIONS.C3!(model.agents.find(agent => agent.agent === "writer")!, model, given).rows;
+    expect(c3(opened("approve", { exit: 0, gated: false }))).toContainEqual(expect.stringMatching(/^approve writer\/\S+ \S+ accepted a submitted candidate with no passing verdict \(exit 0\)$/));
+    expect(c3(opened("pick", { exit: 1, gated: false, message: "pick refused: R02.2" }))).toContainEqual(expect.stringMatching(/^pick writer\/\S+ \S+ \(submitted-uncertified\) was refused before the CHOOSE gate \(exit 1\): pick refused: R02\.2$/));
   });
 });
 

@@ -251,12 +251,20 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     evidence: agent.live.length,
   }),
   C3: (agent, model, facts) => {
-    // The real path: `clossys pin` run on a temporary consumer copy with a hand-placed candidate (dogfood.ts probePinGate).
+    // The real path: every pin-writing verb (pin, pick, verdict, approve) run on a temporary consumer copy with a
+    // hand-placed and a submitted, uncertified candidate (dogfood.ts probePinGate). Red on any accepted pin, and on any
+    // refusal that is not the CHOOSE gate's: that verb never reached the pin write, so the gate is unproven for it.
     const rows = ruleRow(model, "R05.2", agent.agent);
     const probe = facts?.pinGate?.[agent.agent];
     if (probe === undefined) return { rows: [...rows, "pin was not probed"], evidence: 0 };
     if (typeof probe === "string") return { rows: [...rows, probe], evidence: 0 };
-    return { rows: [...rows, ...(probe.accepted ? [`pin ${probe.target} ${probe.candidate} accepted a hand-placed candidate with no submit record (exit 0)`] : [])], evidence: agent.live.length ? 1 : 0 };
+    const verbs = probe.verbs ?? [{ verb: "pin", case: "hand-placed", target: probe.target, candidate: probe.candidate, exit: probe.accepted ? 0 : 1, gated: !probe.accepted, message: probe.message }];
+    const what = (run: { case: string }) => run.case === "hand-placed" ? "a hand-placed candidate with no submit record" : "a submitted candidate with no passing verdict";
+    return {
+      rows: [...rows, ...verbs.flatMap(run => run.exit === 0 ? [`${run.verb} ${run.target} ${run.candidate} accepted ${what(run)} (exit 0)`]
+        : run.gated ? [] : [`${run.verb} ${run.target} ${run.candidate} (${run.case}) was refused before the CHOOSE gate (exit ${run.exit}): ${run.message}`])],
+      evidence: agent.live.length ? verbs.length : 0,
+    };
   },
   C4: agent => {
     const pinned = pins(agent);

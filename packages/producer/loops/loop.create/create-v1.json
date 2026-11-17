@@ -82,7 +82,7 @@
         "decider": {
           "by": "code"
         },
-        "cli": "clossys check <ref>",
+        "cli": "clossys options <ref> --check",
         "reads": [
           "<slot>/slot.json",
           "<slot>/candidates/*",

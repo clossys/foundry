@@ -21,6 +21,9 @@ import { certify, certifyEnv } from "./certify/index.js";
 import { submitOf } from "./rules/r03.js";
 import type { Reason } from "./certify/types.js";
 import type { Ref } from "../records/types.js";
+import { judgeSlotOptions } from "../records/slot-options.js";
+import { OPTION_TABLE, type SlotAgent } from "../records/slot-model/index.js";
+import { readSlotEntry } from "../records/slots.js";
 
 export const SCORECARD_SCHEMA = "clossys.scorecard/1";
 export const SCORECARD_REF_TO = "producer/checks.scorecard" as const;
@@ -89,4 +92,44 @@ export function writeScorecard(root: string, agent: string, slotId: string, scor
   const bytes = `${JSON.stringify(scorecard, null, 2)}\n`;
   writeFileSync(join(dir, "scorecard.json"), bytes);
   return { to: SCORECARD_REF_TO, rel: "cites", record: `${agent}/${slotId}`, sha256: sha(bytes) };
+}
+
+export const CERTIFY_REPORT_SCHEMA = "clossys.certify/1";
+export interface CertifiedOptions {
+  /** The slot holds the options its family owes among its submitted, certified candidates. */
+  readonly ok: boolean;
+  /** Why not (empty when ok). */
+  readonly why: readonly string[];
+  readonly scorecard: Scorecard;
+  /** The options held among the passing candidates, and the options the slot owes. */
+  readonly distinct: number;
+  readonly options: number;
+}
+
+/**
+ * loop.create's exit, `candidates.certified` (and loop.choose's rank): every candidate certified as the pin gate
+ * judges it, then the submitted, certified ones judged by the CANDIDATE-OPTIONS rules (records/slot-options.ts
+ * judgeSlotOptions, the function check:slot-options runs) so the two never drift. `clossys options <ref> --check`
+ * runs it; the loop runner verifies it again from the files.
+ */
+export function certifiedOptions(root: string, consumer: string, agent: string, slotId: string, at: string): CertifiedOptions {
+  const { scorecard } = pinGate(root, consumer, agent, slotId, "", at);
+  const passing = scorecard.candidates.filter(row => row.submitted && row.certified).map(row => row.candidate);
+  const entry = readSlotEntry(consumer, agent as SlotAgent, slotId);
+  const judged = entry ? judgeSlotOptions(consumer, entry, OPTION_TABLE, new Set(passing)) : undefined;
+  // A slot the options check skips (an unmapped agent with no family) owes one passing candidate.
+  const options = judged?.view?.options ?? 1;
+  const distinct = judged ? judged.view?.distinct ?? 0 : Math.min(passing.length, 1);
+  const why = [
+    ...(!entry ? [`${agent}/${slotId} is no live slot`] : []),
+    ...(judged?.findings ?? []).map(finding => `[${finding.code}] ${finding.message}`),
+    ...(distinct < options && !(judged?.findings ?? []).some(finding => finding.code === "options-short") ? [`holds ${distinct} of ${options} option(s)`] : []),
+  ];
+  if (why.length) {
+    const failing = scorecard.candidates.filter(row => !(row.submitted && row.certified))
+      .map(row => `${row.candidate} (${!row.submitted ? "no matching submit record" : row.reasons.map(reason => `[${reason.code}] ${reason.message}`).join("; ")})`);
+    why.push(`${passing.length} submitted, certified candidate(s)${passing.length ? ` (${passing.join(", ")})` : ""}`);
+    if (failing.length) why.push(`not passing: ${failing.join("; ")}`);
+  }
+  return { ok: why.length === 0, why, scorecard, distinct, options };
 }

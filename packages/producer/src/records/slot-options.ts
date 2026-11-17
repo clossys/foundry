@@ -81,14 +81,17 @@ export function familyClass(doc: Pick<SlotDoc, "family">): OptionClass | undefin
 const sameClass = (a: OptionClass, b: OptionClass) => a.options === b.options && (a.varyOn ?? null) === (b.varyOn ?? null)
   && JSON.stringify(a.values ?? []) === JSON.stringify(b.values ?? []);
 
-/** One slot's options view (what `clossys options` prints and the check judges). */
-export function slotOptions(consumer: string, entry: SlotEntry, table: OptionTable = OPTION_TABLE): SlotOptions {
+/**
+ * One slot's options view (what `clossys options` prints and the check judges). `only` judges a subset of the
+ * slot's candidates (loop.create's exit: the submitted, certified ones), counted by the same rules.
+ */
+export function slotOptions(consumer: string, entry: SlotEntry, table: OptionTable = OPTION_TABLE, only?: ReadonlySet<string>): SlotOptions {
   const group = groupOf(entry);
   const doc = inspectSlot(consumer, entry.agent, entry.id).doc as SlotDoc;
   const klass: OptionClass | undefined = familyClass(doc) ?? (() => { const c = classify(entry.agent, entry.id, group, table)?.classId; return c ? table.classes[c] : undefined; })();
   const options = klass?.options ?? doc.options ?? 1;
   const varyOn = klass?.varyOn ?? doc.varyOn ?? null;
-  const candidates = entry.candidates.map(name => {
+  const candidates = entry.candidates.filter(name => !only || only.has(name)).map(name => {
     const tag = candidateVary(name, readCandidate(consumer, entry.agent, entry.id, name).bytes);
     const pair = tag && tag !== "invalid" ? Object.entries(tag)[0]! : null;
     return { name, vary: pair ? { axis: pair[0], value: pair[1] } : null, pinned: entry.pin?.candidate === name };
@@ -103,50 +106,64 @@ export function slotOptions(consumer: string, entry: SlotEntry, table: OptionTab
   };
 }
 
+/**
+ * One slot judged by the CANDIDATE-OPTIONS rules: its view and findings, or undefined for a slot the check skips
+ * (an unmapped agent's slot with no family). check:slot-options runs it over every slot; loop.create's exit
+ * (candidates.certified) runs it with `only` = the submitted, certified candidates, so the two never drift.
+ */
+export function judgeSlotOptions(consumer: string, entry: SlotEntry, table: OptionTable = OPTION_TABLE, only?: ReadonlySet<string>): { view?: SlotOptions; findings: SlotOptionsFinding[] } | undefined {
+  const agent = entry.agent;
+  const findings: SlotOptionsFinding[] = [];
+  const add = (code: SlotOptionsCode, message: string) => findings.push({ code, agent, slot: entry.id, message });
+  const group = groupOf(entry);
+  const doc = inspectSlot(consumer, agent, entry.id).doc as SlotDoc;
+  const own = familyClass(doc);
+  if (!own && !table.groups[agent]) return undefined;
+  const classId = classify(agent, entry.id, group, table)?.classId;
+  const seeded = classId ? table.classes[classId] : undefined;
+  let klass: OptionClass;
+  if (own) {
+    klass = own;
+    const tableSays = classify(agent, entry.id, group, table) === null ? familyClass({ family: { options: 1, varyOn: null, values: [] } })! : seeded;
+    if (tableSays && !sameClass(own, tableSays)) {
+      add("options-drift", `slot.json family ${own.options}${own.varyOn ? `/${own.varyOn}` : ""} != class ${tableSays.id} ${tableSays.options}${tableSays.varyOn ? `/${tableSays.varyOn}` : ""}; run clossys migrate contracts`);
+    }
+  } else {
+    if (!classId) { add("options-unclassified", `L2 group ${group} has no option class`); return { findings }; }
+    if (!seeded) { add("options-unknown-class", `class ${classId} is not defined`); return { findings }; }
+    klass = seeded;
+    const stored = doc.options ?? 1;
+    if (stored !== klass.options || (doc.varyOn ?? undefined) !== klass.varyOn) {
+      add("options-drift", `slot.json options ${stored}${doc.varyOn ? `/${doc.varyOn}` : ""} != class ${klass.id} ${klass.options}${klass.varyOn ? `/${klass.varyOn}` : ""}; run clossys options --classes`);
+    }
+  }
+  const view = slotOptions(consumer, entry, table, only);
+  if (klass.options <= 1) return { view, findings };
+  const seen = new Map<string, string>();
+  for (const candidate of view.candidates) {
+    const tag = candidateVary(candidate.name, readCandidate(consumer, agent, entry.id, candidate.name).bytes);
+    if (tag === "invalid") { add("options-vary-invalid", `${candidate.name}: vary must be {"${klass.varyOn}": "<value>"}`); continue; }
+    if (!candidate.vary) continue;
+    if (candidate.vary.axis !== klass.varyOn) { add("options-vary-invalid", `${candidate.name}: varies on ${candidate.vary.axis}, slot varies on ${klass.varyOn}`); continue; }
+    if (!klass.values?.includes(candidate.vary.value)) { add("options-vary-invalid", `${candidate.name}: ${klass.varyOn} ${candidate.vary.value} is not one of ${klass.values?.join(", ")}`); continue; }
+    const prior = seen.get(candidate.vary.value);
+    if (prior) add("options-vary-duplicate", `${candidate.name} and ${prior} both offer ${klass.varyOn} ${candidate.vary.value}`);
+    else seen.set(candidate.vary.value, candidate.name);
+  }
+  if (view.distinct < klass.options) add("options-short", `holds ${view.distinct} distinct option(s) on ${klass.varyOn}, needs ${klass.options}; run clossys options ${agent}/${entry.id} --more`);
+  return { view, findings };
+}
+
 /** Every slot that carries a family, and every mapped agent's slots, with findings; other slots of unmapped agents are skipped. */
 export function checkSlotOptions(consumer: string, table: OptionTable = OPTION_TABLE): { findings: SlotOptionsFinding[]; slots: SlotOptions[] } {
   const findings: SlotOptionsFinding[] = [];
   const slots: SlotOptions[] = [];
   for (const agent of SLOT_AGENTS) {
     for (const entry of listSlots(consumer, agent)) {
-      const add = (code: SlotOptionsCode, message: string) => findings.push({ code, agent, slot: entry.id, message });
-      const group = groupOf(entry);
-      const doc = inspectSlot(consumer, agent, entry.id).doc as SlotDoc;
-      const own = familyClass(doc);
-      if (!own && !table.groups[agent]) continue;
-      const classId = classify(agent, entry.id, group, table)?.classId;
-      const seeded = classId ? table.classes[classId] : undefined;
-      let klass: OptionClass;
-      if (own) {
-        klass = own;
-        const tableSays = classify(agent, entry.id, group, table) === null ? familyClass({ family: { options: 1, varyOn: null, values: [] } })! : seeded;
-        if (tableSays && !sameClass(own, tableSays)) {
-          add("options-drift", `slot.json family ${own.options}${own.varyOn ? `/${own.varyOn}` : ""} != class ${tableSays.id} ${tableSays.options}${tableSays.varyOn ? `/${tableSays.varyOn}` : ""}; run clossys migrate contracts`);
-        }
-      } else {
-        if (!classId) { add("options-unclassified", `L2 group ${group} has no option class`); continue; }
-        if (!seeded) { add("options-unknown-class", `class ${classId} is not defined`); continue; }
-        klass = seeded;
-        const stored = doc.options ?? 1;
-        if (stored !== klass.options || (doc.varyOn ?? undefined) !== klass.varyOn) {
-          add("options-drift", `slot.json options ${stored}${doc.varyOn ? `/${doc.varyOn}` : ""} != class ${klass.id} ${klass.options}${klass.varyOn ? `/${klass.varyOn}` : ""}; run clossys options --classes`);
-        }
-      }
-      const view = slotOptions(consumer, entry, table);
-      slots.push(view);
-      if (klass.options <= 1) continue;
-      const seen = new Map<string, string>();
-      for (const candidate of view.candidates) {
-        const tag = candidateVary(candidate.name, readCandidate(consumer, agent, entry.id, candidate.name).bytes);
-        if (tag === "invalid") { add("options-vary-invalid", `${candidate.name}: vary must be {"${klass.varyOn}": "<value>"}`); continue; }
-        if (!candidate.vary) continue;
-        if (candidate.vary.axis !== klass.varyOn) { add("options-vary-invalid", `${candidate.name}: varies on ${candidate.vary.axis}, slot varies on ${klass.varyOn}`); continue; }
-        if (!klass.values?.includes(candidate.vary.value)) { add("options-vary-invalid", `${candidate.name}: ${klass.varyOn} ${candidate.vary.value} is not one of ${klass.values?.join(", ")}`); continue; }
-        const prior = seen.get(candidate.vary.value);
-        if (prior) add("options-vary-duplicate", `${candidate.name} and ${prior} both offer ${klass.varyOn} ${candidate.vary.value}`);
-        else seen.set(candidate.vary.value, candidate.name);
-      }
-      if (view.distinct < klass.options) add("options-short", `holds ${view.distinct} distinct option(s) on ${klass.varyOn}, needs ${klass.options}; run clossys options ${agent}/${entry.id} --more`);
+      const judged = judgeSlotOptions(consumer, entry, table);
+      if (!judged) continue;
+      findings.push(...judged.findings);
+      if (judged.view) slots.push(judged.view);
     }
   }
   return { findings, slots };

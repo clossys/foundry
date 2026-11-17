@@ -35,7 +35,7 @@
         "decider": {
           "by": "code"
         },
-        "cli": "clossys check <ref>",
+        "cli": "clossys options <ref> --check",
         "reads": [
           "<slot>/candidates/*",
           "<slot>/ledger.json"

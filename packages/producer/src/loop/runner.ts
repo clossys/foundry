@@ -40,10 +40,7 @@ import {
 } from "./names.js";
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
 import { checkReleaseReady } from "../release/ready.js";
-import { pinGate } from "../constitution/pin-gate.js";
-import { candidateVary } from "../records/slot-options.js";
-import { readCandidate } from "../records/slots.js";
-import type { SlotAgent } from "../records/slot-model/types.js";
+import { certifiedOptions } from "../constitution/pin-gate.js";
 
 export type Exit = 0 | 1 | 2;
 
@@ -198,8 +195,18 @@ export function waitingRuns(root: string): RunState[] {
 }
 
 /** A path as the ledger names it: relative to `clossys/agents/` when inside it, else to the root. */
+/**
+ * Where a step's wrote file lives: an absolute path as given; a root-relative `clossys/agents/...` or `.clossys/...`
+ * path under the root; any other relative path under clossys/agents/. Agents name the candidate the submit verb printed
+ * (clossys/agents/<agent>/<slot>/candidates/<name>), so both spellings hash the same file.
+ */
+export function wroteFile(root: string, file: string): string {
+  if (file.startsWith(sep)) return file;
+  if (file.startsWith("clossys/agents/") || file.startsWith(".clossys/")) return join(root, file);
+  return join(agentsDir(root), file);
+}
 function ledgerPath(root: string, file: string): string {
-  const absolute = file.startsWith(sep) ? file : join(agentsDir(root), file);
+  const absolute = wroteFile(root, file);
   const inAgents = relative(agentsDir(root), absolute);
   if (!inAgents.startsWith("..")) return inAgents.split(sep).join("/");
   return relative(root, absolute).split(sep).join("/");
@@ -208,7 +215,7 @@ const isFile = (path: string): boolean => statSync(path, { throwIfNoEntry: false
 function wroteOf(root: string, files: readonly string[] = []): LedgerStep["wrote"] {
   return files.map(file => {
     const rel = ledgerPath(root, file);
-    const absolute = rel.startsWith(".clossys") ? join(root, rel) : join(agentsDir(root), rel);
+    const absolute = wroteFile(root, file);
     // Every file the step wrote is hashed as it stands when the step ends; null only when it no longer exists.
     return { file: rel, sha256: isFile(absolute) ? sha256Hex(readFileSync(absolute)) : null };
   });
@@ -433,24 +440,9 @@ export function verifyCheck(ctx: { readonly root: string; readonly state: RunSta
   if (name === CANDIDATES_CERTIFIED) {
     if (!state.subject) return { ok: false, why: `${CANDIDATES_CERTIFIED}: the run has no slot` };
     const { agent, slotId } = state.subject;
-    const family = readSubject(root, agent, slotId)?.slot.family;
-    const want = family?.options ?? 1;
-    const consumer = join(root, "clossys");
-    const { scorecard } = pinGate(root, consumer, agent, slotId, "", state.startedAt);
-    const passing = scorecard.candidates.filter(row => row.submitted && row.certified);
-    // A family that varies on an axis owes that many distinct values among the passing candidates (the options check's
-    // count, records/slot-options.ts); a one-option family owes one passing candidate.
-    const axis = want > 1 ? family?.varyOn ?? null : null;
-    const offered = axis === null ? passing.length : new Set(passing.flatMap(row => {
-      const tag = candidateVary(row.candidate, readCandidate(consumer, agent as SlotAgent, slotId, row.candidate).bytes);
-      const value = tag && tag !== "invalid" ? tag[axis] : undefined;
-      return value !== undefined && (family!.values.length === 0 || family!.values.includes(value)) ? [value] : [];
-    })).size;
-    if (offered >= want) return { ok: true };
-    const failing = scorecard.candidates.filter(row => !(row.submitted && row.certified))
-      .map(row => `${row.candidate} (${!row.submitted ? "no matching submit record" : row.reasons.map(reason => `[${reason.code}] ${reason.message}`).join("; ")})`);
-    const held = axis === null ? `${offered} of ${want} submitted, certified candidates` : `${offered} of ${want} distinct ${axis} values (${family!.values.join(", ")}) among ${passing.length} submitted, certified candidates`;
-    return { ok: false, why: `${CANDIDATES_CERTIFIED}: ${agent}/${slotId} holds ${held}${failing.length ? `; not passing: ${failing.join("; ")}` : ""}` };
+    // The same judgement `clossys options <ref> --check` and check:slot-options make (constitution/pin-gate.ts).
+    const judged = certifiedOptions(root, join(root, "clossys"), agent, slotId, state.startedAt);
+    return judged.ok ? { ok: true } : { ok: false, why: `${CANDIDATES_CERTIFIED}: ${agent}/${slotId}: ${judged.why.join("; ")}` };
   }
   return { ok: false, why: `${name} is not a check clossys run computes` };
 }

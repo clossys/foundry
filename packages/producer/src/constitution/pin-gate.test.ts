@@ -85,6 +85,12 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     rmSync(scorecardFile);
     expect(danglingReason(w.root, ref)).toMatch(/no such check record/);
     writeFileSync(scorecardFile, bytes);
+    // The cite carries the scorecard's sha256: a later write over the scorecard (a re-pin) leaves this pin's cite dangling.
+    const cited = pin.refs.find((item: { to: string }) => item.to === SCORECARD_REF_TO);
+    expect(danglingReason(w.root, cited)).toBeUndefined();
+    writeFileSync(scorecardFile, bytes.replace(`"pick": "${good.name}"`, `"pick": "${bad.name}"`));
+    expect(danglingReason(w.root, cited)).toMatch(/the check record's sha256 is [0-9a-f]{12}, not the cited [0-9a-f]{12}/);
+    writeFileSync(scorecardFile, bytes);
     const scorecard = JSON.parse(bytes);
     expect(scorecard).toMatchObject({ schema: SCORECARD_SCHEMA, slot: `writer/${SLOT}`, pick: good.name });
     expect(scorecard.candidates.map((row: { candidate: string; rank: number; certified: boolean; submitted: boolean }) => [row.rank, row.candidate, row.certified, row.submitted]))
@@ -130,13 +136,13 @@ describe("loop.create's exit, candidates.certified (computed by clossys run, nev
   const ctx = (root: string) => ({ root, state: { subject: { agent: "writer", slotId: SLOT }, startedAt: AT, vars: {} } as never });
   it("fails while the slot holds fewer certified tones than its family owes, naming why, and passes once all three are", () => {
     const w = world();
-    const owed = "0 of 3 distinct tone values (plain, bold, warm)";
+    // The exit judges with check:slot-options' own function (judgeSlotOptions), over the submitted, certified candidates only.
     const none = verifyCheck(ctx(w.root), "candidates.certified");
-    expect(none).toEqual({ ok: false, why: `candidates.certified: writer/${SLOT} holds ${owed} among 0 submitted, certified candidates` });
+    expect(none).toEqual({ ok: false, why: `candidates.certified: writer/${SLOT}: [options-short] holds 0 distinct option(s) on tone, needs 3; run clossys options writer/${SLOT} --more; 0 submitted, certified candidate(s)` });
     w.submit(BAD);
     const bad = verifyCheck(ctx(w.root), "candidates.certified");
     expect(bad.ok).toBe(false);
-    expect(!bad.ok && bad.why).toMatch(/holds 0 of 3 .*not passing: copy-v1\.md \(\[limit\] en header\.heading is \d+ characters/);
+    expect(!bad.ok && bad.why).toMatch(/\[options-short\] holds 0 distinct .*not passing: copy-v1\.md \(\[limit\] en header\.heading is \d+ characters/);
     // A hand-placed copy of the good text is no submit.
     writeFileSync(join(w.dir, "candidates", "copy-v2.md"), toned(GOOD, "plain"));
     const placed = verifyCheck(ctx(w.root), "candidates.certified");
@@ -144,8 +150,11 @@ describe("loop.create's exit, candidates.certified (computed by clossys run, nev
     rmSync(join(w.dir, "candidates", "copy-v2.md"));
     // One certified tone, then a second candidate on the same tone: still one distinct value of three.
     w.submit(toned(GOOD, "plain"));
-    w.submit(toned(copy("Ship your site in days", "Get started"), "plain"));
-    expect(verifyCheck(ctx(w.root), "candidates.certified")).toMatchObject({ ok: false, why: expect.stringContaining("1 of 3 distinct tone values") });
+    expect(verifyCheck(ctx(w.root), "candidates.certified")).toMatchObject({ ok: false, why: expect.stringContaining("[options-short] holds 1 distinct option(s) on tone, needs 3") });
+    // A second candidate on the same tone is check:slot-options' vary-duplicate finding, so the exit fails on it too.
+    const twin = w.submit(toned(copy("Ship your site in days", "Get started"), "plain"));
+    expect(verifyCheck(ctx(w.root), "candidates.certified")).toMatchObject({ ok: false, why: expect.stringMatching(new RegExp(`\\[options-vary-duplicate\\] ${twin.name.replace(".", "\\.")} and copy-v2\\.md both offer tone plain`)) });
+    rmSync(join(w.dir, "candidates", twin.name));
     w.submit(toned(copy("Launch the site you meant to build", "Start building"), "bold"));
     w.submit(toned(copy("Your site, ready when you are", "Come on in"), "warm"));
     expect(verifyCheck(ctx(w.root), "candidates.certified")).toEqual({ ok: true });
