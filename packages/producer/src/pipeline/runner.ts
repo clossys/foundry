@@ -140,6 +140,8 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     // The workspace read model (system.md 12.2) reads only, like gaps.
     if (head === "status") return await (await import("../cli/status.js")).runStatusCli(argv.slice(1), cwd, steps);
     if (head === "slot") return await (await import("../cli/slot.js")).runSlotCli(argv.slice(1), cwd);
+    // The brief read and its append-only tighten (system.md 6.1): the loops' refine-brief step writes through it.
+    if (head === "brief") return await (await import("../cli/brief.js")).runBriefCli(argv.slice(1), cwd);
     // The preview builds a publication from resolved pins and serves it (system.md 12.5); it records nothing.
     if (head === "preview") return await (await import("../cli/preview.js")).runPreviewCli(argv.slice(1), cwd);
     // The queue write path (system.md 12.6, flows.md F5): feedback opens a queue.fix entry, answer closes one entry.

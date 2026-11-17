@@ -74,7 +74,8 @@ export function chainCommand(step: Step, root: string, packageRoot = PACKAGE_ROO
   if (argv.some(word => /<[^>]+>/.test(word))) return { skip: `its run names placeholders and its contract names no chain command` };
   if (argv[0] === "pipeline" && argv[1] === "trace") {
     // A traced command is package-relative: it runs from the step's package folder.
-    return { argv, cwd: packageDir(step, packageRoot), invocation: invocationOf(argv.slice(argv.indexOf("--") + 1)) };
+    // It is told the chain root (--root, and CLOSSYS_ROOT in its child's env) so it reads the workspace, never a fixture.
+    return { argv: [...argv.slice(0, 2), "--root", root, ...argv.slice(2)], cwd: packageDir(step, packageRoot), invocation: invocationOf(argv.slice(argv.indexOf("--") + 1)) };
   }
   return { argv, cwd: root, invocation: invocationOf(argv, step.command.cli?.target) };
 }
@@ -387,7 +388,10 @@ export function packetOf(step: Step, item: string, open: number, context: Contex
   const doc = item.includes("/") && (SLOT_AGENTS as readonly string[]).includes(agent) ? slotDoc(context.root, item) : undefined;
   const briefStep = context.steps.find(each => each.agent === agent && each.kind === "plumb" && (each.command.cli?.flags ?? []).includes("--brief"));
   const slot = item.includes("/") ? item.slice(item.indexOf("/") + 1) : "<slot>";
-  const record = step.kind === "decide:creative"
+  // An open ia item is a slot ia.json already places (it lacks only its slot.json): --under places a
+  // new slot and is refused for a placed one, so its record names what option (a) runs.
+  const record = step.id === "ia" && item.includes("/") ? `clossys ia ${item} --contract <file>`
+    : step.kind === "decide:creative"
     ? `clossys next ${item} --submit <file> --model <model> --tier <tier> --basis <basis> --skill ${skillOf(step, packageRoot).path} --rung <${rungsOf(agent).join("|")}> [--seed <id>] [--reason <text>]`
     : step.run?.replace("<agent>/<slot>", item).replace(/(director|designer|writer|publisher)\/<slot>/, item.includes("/") ? item : `$1/${slot}`).replace("<step>", item) ?? verbOf(step);
   const packet: Packet = {

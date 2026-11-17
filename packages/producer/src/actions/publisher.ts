@@ -181,6 +181,8 @@ const USAGE = "Usage: clossys publisher check [--root <dir>] [--json]\n"
 /** The verb's run: parse argv, run the action, return its exit, printed text and --json output. */
 export async function runPublisherAction(argv: readonly string[], cwd: string, options: PublisherActionOptions & { release?: ReleaseRunner } = {}): Promise<{ exit: Exit; text: string; output?: unknown }> {
   const [mode, ...rest] = argv;
+  // --help (on its own or after check|release) prints the usage and runs nothing.
+  if (argv.includes("--help") || argv.includes("-h")) return { exit: 0, text: USAGE };
   if (mode !== "check" && mode !== "release") return { exit: 2, text: USAGE };
   let rootFlag: string | undefined;
   let publication: string | undefined;

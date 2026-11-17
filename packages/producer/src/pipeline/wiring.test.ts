@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runPipelineCli, uncitedStatusFields } from "../cli/pipeline.js";
 import { runPipeline } from "./runner.js";
+import { chainCommand } from "./chain.js";
+import { STEPS } from "./steps/index.js";
 import { PACKAGE_ROOT } from "./options.js";
 import { pipelineStatus } from "./status.js";
 import { appendRecord, buildRecord, invocationOf, observe, readRuns, RUN_SCHEMA, sanitizeArgv, storeFile, storeIgnored } from "./trace.js";
@@ -129,6 +131,37 @@ describe("wiring from run records (mutation proofs)", () => {
     expect(passed.exitCode).toBe(0);
     expect(buildWiring(root).nodes.filter(each => each.step === step).map(each => each.state)).toEqual(["passed"]);
     expect((await runPipelineCli(["trace", "no.such.step", "--", process.execPath, "-e", ""], root)).exitCode).toBe(2);
+  });
+
+  it("G4: a traced step run from its package folder reads the chain root (--root, CLOSSYS_ROOT), never Root not found", async () => {
+    const root = workspace();
+    const step = readStepGraph().nodes.find(each => each.command.script !== undefined)!.id;
+    // The child reads the workspace through CLOSSYS_ROOT, as the package scripts do (consumer-root.mjs).
+    const read = "const fs = require('node:fs'); const path = require('node:path'); fs.readFileSync(path.join(process.env.CLOSSYS_ROOT, 'clossys/clossys.config.ts'))";
+    const away = realpathSync(mkdtempSync(join(tmpdir(), "wiring-away-")));
+    dirs.push(away);
+    const lost = await runPipelineCli(["trace", step, "--", process.execPath, "-e", read], away);
+    expect(lost.exitCode).toBe(2);
+    expect(lost.message).toContain("Root not found");
+    const named = await runPipelineCli(["trace", "--root", root, step, "--", process.execPath, "-e", read], away);
+    expect(named.exitCode, named.message).toBe(0);
+    expect(named.root).toBe(root);
+    // The child's I/O is hashed: its read of the chain root is on the record.
+    expect(readRuns(root).at(-1)!.record.reads.find(entry => entry.path === "clossys/clossys.config.ts")?.sha256).toMatch(/^[0-9a-f]{64}$/);
+    const saved = process.env.CLOSSYS_ROOT;
+    process.env.CLOSSYS_ROOT = root;
+    try { expect((await runPipelineCli(["trace", step, "--", process.execPath, "-e", read], away)).exitCode).toBe(0); }
+    finally { if (saved === undefined) delete process.env.CLOSSYS_ROOT; else process.env.CLOSSYS_ROOT = saved; }
+    expect((await runPipelineCli(["trace", "--root"], away)).exitCode).toBe(2);
+  });
+
+  it("G4: clossys run passes the chain root to a traced step (--root before its id), its invocation unchanged", () => {
+    const step = STEPS.find(each => typeof each.run === "string" && each.run.startsWith("clossys pipeline trace "))!;
+    const command = chainCommand(step, "/the/root");
+    expect("argv" in command).toBe(true);
+    if (!("argv" in command)) return;
+    expect(command.argv.slice(0, 4)).toEqual(["pipeline", "trace", "--root", "/the/root"]);
+    expect(command.invocation).not.toContain("/the/root");
   });
 
   it("a changed input -> stale, citing the files that changed", async () => {

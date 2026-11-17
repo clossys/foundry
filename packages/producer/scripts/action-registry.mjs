@@ -24,6 +24,44 @@ export const ACTION_FOLDER_FILES = Object.freeze([ACTION_FILE, SKILL_FILE]);
 /** The registry-level files beside the action folders. */
 export const REGISTRY_FILES = Object.freeze([IA_FILE, EXCEPTIONS_FILE]);
 
+/** The Producer's loop versions (loops/loop.<id>/<id>-v<n>.json) and the slot agents their `<agent>` fills. */
+export const LOOPS_DIR = "loops";
+export const LOOP_AGENTS = Object.freeze(["director", "designer", "writer", "publisher"]);
+
+/**
+ * Every skill file a loop version's agent decider declares (`decider.skill`), `<agent>` filled for each
+ * slot agent: repository path -> the loop files that declare it. A loop names its skill by the action
+ * folder it belongs to, so such a skill.md may sit in a plumb action's folder, or in a folder that holds
+ * only that skill (no action of its own); the step standard admits exactly these paths and fails when one
+ * is missing (check-step-standard.mjs loop.skill-missing).
+ */
+export function loopSkills(packagesDir = join(REPO, "packages")) {
+  const skills = new Map();
+  const problems = [];
+  const dir = join(packagesDir, "producer", LOOPS_DIR);
+  if (!existsSync(dir)) return { skills, problems };
+  for (const loop of readdirSync(dir).sort()) {
+    const folder = join(dir, loop);
+    if (!statSync(folder).isDirectory()) continue;
+    for (const file of readdirSync(folder).filter(name => name.endsWith(".json")).sort()) {
+      const rel = `packages/producer/${LOOPS_DIR}/${loop}/${file}`;
+      let doc;
+      try { doc = readJson(join(folder, file)); } catch (error) { problems.push({ rule: "loop.skill-missing", message: `${rel} is not JSON: ${error.message}` }); continue; }
+      const steps = doc?.content?.steps ?? doc?.steps;
+      for (const step of Array.isArray(steps) ? steps : []) {
+        const skill = step?.decider?.skill;
+        if (typeof skill !== "string" || !skill.startsWith("packages/")) continue;
+        for (const agent of skill.includes("<agent>") ? LOOP_AGENTS : [null]) {
+          const path = agent ? skill.replaceAll("<agent>", agent) : skill;
+          if (!skills.has(path)) skills.set(path, []);
+          if (!skills.get(path).includes(rel)) skills.get(path).push(rel);
+        }
+      }
+    }
+  }
+  return { skills, problems };
+}
+
 const SKIP = new Set(["node_modules", "dist", ".next", ".turbo", "coverage", ".cache", ACTIONS_DIR]);
 const readJson = file => JSON.parse(readFileSync(file, "utf8"));
 const repoPath = (...parts) => posix.normalize(parts.join("/"));
@@ -38,6 +76,9 @@ export function readRegistry(packagesDir = join(REPO, "packages")) {
   const exceptions = {};
   const problems = [];
   const stray = [];
+  /** Folders that hold only a loop-declared skill.md and no action.json (see loopSkills). */
+  const loopSkillFolders = [];
+  const declared = loopSkills(packagesDir).skills;
   for (const pkg of PACKAGES) {
     const dir = join(packagesDir, pkg, ACTIONS_DIR);
     if (!existsSync(dir)) { problems.push({ rule: "ia.invalid", message: `packages/${pkg}/${ACTIONS_DIR}/ does not exist` }); continue; }
@@ -51,6 +92,7 @@ export function readRegistry(packagesDir = join(REPO, "packages")) {
       const files = readdirSync(path).sort();
       const contractFile = join(path, ACTION_FILE);
       let contract = null;
+      if (!existsSync(contractFile) && files.length === 1 && files[0] === SKILL_FILE && declared.has(`${rel}/${SKILL_FILE}`)) { loopSkillFolders.push(rel); continue; }
       if (!existsSync(contractFile)) problems.push({ rule: "action.folder", message: `${rel}/ has no ${ACTION_FILE}` });
       else try { contract = readJson(contractFile); } catch (error) { problems.push({ rule: "action.invalid", message: `${rel}/${ACTION_FILE} is not JSON: ${error.message}` }); }
       const nested = files.filter(file => statSync(join(path, file)).isDirectory());
@@ -62,7 +104,7 @@ export function readRegistry(packagesDir = join(REPO, "packages")) {
       try { into[pkg] = readJson(path); } catch (error) { problems.push({ rule, message: `packages/${pkg}/${ACTIONS_DIR}/${file} is not JSON: ${error.message}` }); }
     }
   }
-  return { actions, ia, exceptions, problems, stray };
+  return { actions, ia, exceptions, problems, stray, loopSkillFolders };
 }
 
 /** The ia.json order of every action id: [L1 agent, L2 stage, L3 action] rows. */

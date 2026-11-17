@@ -118,14 +118,25 @@ export function dependantsOf(root: string, subject: SlotSubject): SlotSubject[] 
   return out;
 }
 
+/** A decider declares a skill the installed agent package does not have: the step cannot hand its agent the judgment. */
+export class MissingSkillError extends Error {
+  constructor(readonly path: string, readonly resolved: string) {
+    super(`skill ${path} is declared by the step's decider, but ${resolved} does not exist; author it in its agent package (a packet never drops a declared skill)`);
+    this.name = "MissingSkillError";
+  }
+}
+
 /**
  * A decider's skill (system.md 14.1: `packages/<agent>/actions/<action-id>/skill.md`, the same path a candidate records
- * in `createdBy.skill`) with `<agent>` filled; undefined when the installed agent package has no such file.
+ * in `createdBy.skill`) with `<agent>` filled; undefined only when the decider declares none. A declared skill the
+ * installed agent package lacks throws MissingSkillError: the packet never goes out without it.
  */
 export function skillFor(root: string, skill: string | undefined, agent: AgentId): string | undefined {
   if (skill === undefined) return undefined;
   const path = fillNames(skill, { agent }).text;
-  return existsSync(packagePath(root, path)) ? path : undefined;
+  const resolved = packagePath(root, path);
+  if (!existsSync(resolved)) throw new MissingSkillError(path, resolved);
+  return path;
 }
 
 /** The candidate files of a consumer slot, sorted. */

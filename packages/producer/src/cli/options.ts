@@ -16,7 +16,7 @@
 import { join, resolve } from "node:path";
 import { OPTION_TABLE, SLOT_AGENTS, pinStatus, type SlotAgent } from "../records/slot-model/index.js";
 import { checkSlotOptions, classCounts, classify, slotOptions, type SlotOptions } from "../records/slot-options.js";
-import { inspectSlot, listSlots, readCandidate, readSlotEntry } from "../records/slots.js";
+import { inspectSlot, listSlots, modelExists, readCandidate, readSlotEntry } from "../records/slots.js";
 import { writePin, writeSlotOptions } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { CliUsageError } from "./args.js";
@@ -117,10 +117,12 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
   const consumer = consumerOf(cwd, flags.root);
   if (flags.classes) {
     if (flags.positional.length || flags.more || flags.redraft) throw new CliUsageError(`--classes takes no slot\n${OPTIONS_USAGE}`);
-    const changed: string[] = [];
+    const changed: string[] = [], unplaced: string[] = [];
     for (const agent of SLOT_AGENTS) {
       if (!OPTION_TABLE.groups[agent]) continue;
       for (const entry of listSlots(consumer, agent)) {
+        // An IA slot with no slot.json is an open ia item (clossys next), not an options drift: listed, never written.
+        if (!modelExists(join(entry.dir, "slot.json"))) { unplaced.push(`${agent}/${entry.id}`); continue; }
         const classId = classify(agent, entry.id, `${entry.position.l1}/${entry.position.l2}`)?.classId;
         const klass = classId ? OPTION_TABLE.classes[classId] : undefined;
         if (!klass) continue;
@@ -133,7 +135,8 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
       }
     }
     const verb = flags.check ? "drift" : "wrote";
-    return { exitCode: flags.check && changed.length ? 1 : 0, message: [...changed.map(slot => `${verb} ${slot}`), `options --classes: ${changed.length} slot.json ${flags.check ? "drifted" : "updated"}`].join("\n"), output: { changed } };
+    const open = unplaced.length ? `; ${unplaced.length} IA slot(s) have no slot.json yet (open ia items: clossys next)` : "";
+    return { exitCode: flags.check && changed.length ? 1 : 0, message: [...changed.map(slot => `${verb} ${slot}`), ...unplaced.map(slot => `ia gap ${slot}: no slot.json`), `options --classes: ${changed.length} slot.json ${flags.check ? "drifted" : "updated"}${open}`].join("\n"), output: { changed, unplaced } };
   }
   if (flags.check) throw new CliUsageError(`--check is only for --classes\n${OPTIONS_USAGE}`);
   if (!flags.positional.length) {
@@ -148,6 +151,7 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
   const { agent, id } = target(flags.positional[0], OPTIONS_USAGE);
   const entry = readSlotEntry(consumer, agent, id);
   if (!entry) return { exitCode: 1, message: `options refused: unknown slot ${agent}/${id} (not in ${agent} ia.json)` };
+  if (!modelExists(join(entry.dir, "slot.json"))) return { exitCode: 1, message: `options: ia gap ${agent}/${id}: the IA places it, but it has no slot.json yet (an open ia item: clossys next)` };
   const view = slotOptions(consumer, entry);
   if (flags.more || flags.redraft) {
     const brief = optionsBrief(consumer, view, flags.redraft ? "redraft" : "more");
