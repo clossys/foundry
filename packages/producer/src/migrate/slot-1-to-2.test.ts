@@ -5,7 +5,9 @@ import { runRecordsComputedMatch } from "../check/records-computed-match.js";
 import { sha256Hex } from "../records/hash.js";
 import type { Slot } from "../records/types.js";
 import { CONSUMER, TALLYHOUSE, consumerCopy, packageBaseOf } from "../records/__fixtures__/slot2-workspace.js";
-import { migrateSlot1To2, planSlot1To2, targetIa, type SlotV1 } from "./slot-1-to-2.js";
+import { migrateSlot1To2, planSlot1To2, targetIa, targetKind, type SlotV1 } from "./slot-1-to-2.js";
+import { validateSlot } from "../records/slot.js";
+import { readSlotValue, viewPlacedAt } from "../records/slot-current.js";
 
 const OPTIONS = { at: "2026-11-18T09:12:00Z", version: "0.0.0-test" };
 const agents = (root: string, ...path: string[]): string => join(root, "clossys", "agents", ...path);
@@ -90,6 +92,29 @@ describe("migrate slot-1-to-2 on a copy of test-fixtures/consumer", () => {
     expect(slot.base).toMatchObject({ package: "@clossys/writer", version: "1.0.0" });
     expect(slot.ia.order).toBe(order);
     expect(runRecordsComputedMatch(ws.root).findings.find(item => item.subject === "writer/lexicon.sentence-length")).toBeUndefined();
+  });
+
+  // foundry-build-0038: the one slot model holds every Publisher kind, a publication included.
+  it("keeps a Publisher publication a publication (not a release), and a release a release", () => {
+    const doc = (id: string, kind: string) => ({ schema: "clossys.slot/1", id, agent: "publisher", kind, ia: { l1: "site", l2: "site-pages", order: 0 }, contract: {}, inputs: [], uses: [] }) as unknown as SlotV1;
+    expect(targetKind(doc("publication.studio", "publication"))).toBe("publication");
+    expect(targetKind(doc("release.site", "publication"))).toBe("release");
+    expect(targetKind(doc("page.home", "page"))).toBe("page");
+  });
+
+  it("migrates a slot/1 publication to a valid slot/2 publication the reader places and reads as the publication family", () => {
+    const ws = consumerCopy();
+    const v1 = { schema: "clossys.slot/1", id: "publication.studio", agent: "publisher", kind: "publication", ia: { l1: "site", l2: "site-pages", order: 1 }, contract: {}, inputs: [], uses: [] };
+    ws.write("publisher", "publication.studio", `${JSON.stringify(v1, null, 2)}\n`);
+    migrateSlot1To2(ws.root, OPTIONS);
+    const slot = ws.read("publisher", "publication.studio");
+    expect(slot).toMatchObject({ schema: "clossys.slot/2", kind: "publication", ia: { l0: "publication", l1: "publication/site", l2: "publication/site/site-pages", order: 1 } });
+    expect(validateSlot(slot)).toEqual([]);
+    const read = readSlotValue(slot)!;
+    expect(read.doc).toMatchObject({ kind: "publication", inputs: [], uses: [] });
+    expect(viewPlacedAt(read.doc, "publication.studio", "publisher", { l1: "site", l2: "site-pages", order: 1 })).toBe(true);
+    expect(viewPlacedAt(read.doc, "publication.studio", "publisher", { l1: "site", l2: "other", order: 1 })).toBe(false);
+    expect(viewPlacedAt(read.doc, "publication.studio", "writer", { l1: "site", l2: "site-pages", order: 1 })).toBe(false);
   });
 
   it("maps ia to slash paths and fills a missing l0 from the id", () => {

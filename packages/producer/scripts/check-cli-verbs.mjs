@@ -33,8 +33,10 @@ export const VERBS = [
   [['status'], [0]],
   [['slot', 'designer/components.button'], [0]],
 ];
-// `clossys feedback` and `clossys answer` write a queue entry, so they are not run here; src/queue/queue.test.ts
-// and the answer.* and ledger.append-only checks cover them.
+// `clossys feedback` and `clossys answer` write a queue entry, so they are not run here. src/queue/queue.test.ts and
+// src/check/answer-checks.test.ts cover them. `answer` runs the ledger.append-only history check on its entry before
+// appending (src/queue/answer.ts), and `clossys check --strict` runs it over every queue and ledger entry
+// (src/cli/check.ts); src/check/ledger-append-only.test.ts holds both mutated-entry refusals.
 
 /** The findings of one verb from its two runs (`{ status, stdout, stderr }` each). */
 export function verbFindings(argv, allowed, first, second) {

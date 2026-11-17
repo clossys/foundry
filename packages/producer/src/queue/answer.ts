@@ -10,11 +10,16 @@
  * 4. An owner answer records the owner's words verbatim in `quote`, whatever the channel (`answer.quote-required`);
  *    only an owner answer takes a quote, and an owner answer names its channel (`--via cli|chat|app`).
  * 5. Writes under the entry's lock: re-reads, runs the record schema, every answer rule and the append-only
- *    comparison on the new bytes, then renames them into place. Nothing is written when any of them fails.
+ *    comparison on the new bytes, then the `ledger.append-only` history check (check/ledger-append-only.ts) for
+ *    this entry: an entry whose file was already edited against its git history, or a shallow clone whose history
+ *    cannot be read, takes no answer. Only then are the bytes renamed into place. Nothing is written when any of
+ *    them fails. A workspace with no git repository has no committed version to compare against; there the
+ *    comparison above is the whole check (and `clossys check --strict` fails the workspace for it).
  * The follow-up (step 6: pin, confirm, resume) is not run here; for a queue.pick the result names the pin command.
  *
  * There is no flag to skip a rule and no flag to set the event time.
  */
+import { checkLedgerAppendOnly, LEDGER_APPEND_ONLY, NOT_A_REPOSITORY } from "../check/ledger-append-only.js";
 import { danglingReason } from "../check/refs-dangling.js";
 import { parseRefString } from "../records/resolve.js";
 import type { QueueEntry, Ref } from "../records/types.js";
@@ -81,6 +86,14 @@ function answersRef(root: string, value: string): Ref {
   return ref;
 }
 
+/** The `ledger.append-only` history findings that bar appending to this entry: its own, and an unreadable (shallow) history. */
+function historyIssues(root: string, queue: string, id: string): string[] {
+  const subject = `producer/${queue}#${id}`;
+  return checkLedgerAppendOnly(root).findings
+    .filter(finding => finding.subject === subject || (finding.subject === root && finding.detail !== NOT_A_REPOSITORY))
+    .map(finding => finding.detail);
+}
+
 export function answerQueueEntry(root: string, input: AnswerInput, now: Date = new Date()): AnswerResult {
   const { by } = input;
   if (!ANSWER_BY.test(by)) throw new AnswerRefused(ANSWER_DECIDER_MATCH, `--by ${by} is not owner, agent:<agent> or code:<cli>`);
@@ -123,7 +136,9 @@ export function answerQueueEntry(root: string, input: AnswerInput, now: Date = n
       if (issues.length) throw new AnswerRefused(rule.check, `${queue}#${id}: ${issues.join("; ")}`);
     }
     const rewritten = queueEntryChangeIssues(entry, next);
-    if (rewritten.length) throw new AnswerRefused("ledger.append-only", `${queue}#${id}: ${rewritten.join("; ")}`);
+    if (rewritten.length) throw new AnswerRefused(LEDGER_APPEND_ONLY, `${queue}#${id}: ${rewritten.join("; ")}`);
+    const history = historyIssues(root, queue, id);
+    if (history.length) throw new AnswerRefused(LEDGER_APPEND_ONLY, `${queue}#${id}: ${history.join("; ")}`);
 
     replaceQueueEntry(file, next);
     const option = (next.options ?? []).find(candidate => candidate.id === input.answer);

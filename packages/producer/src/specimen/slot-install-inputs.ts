@@ -1,8 +1,8 @@
 /** Runtime specimen inputs: canonical Designer slots; a consumer without the slot model has none. */
 import { createHash } from "node:crypto";
 import type { InstallPins } from "@clossys/publisher/install";
-import { hasPinFile, hasSlotModel, listSlots, readCandidate, readSlot } from "../records/slots.js";
-import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
+import { hasPinFile, hasSlotModel, listSlots, readCandidate, readSlot, viewPlacedAt } from "../records/slots.js";
+import { CANDIDATE_NAME, validateCandidate } from "../records/slot-model/index.js";
 import { hostPackageImports } from "./host-packages.js";
 
 /** One recorded candidate of a slot, by element and version (its file is `<element>-v<version>.json`). */
@@ -39,8 +39,7 @@ export function slotInstallInputs(consumer: string): SlotInstallInputs | undefin
     let doc: ReturnType<typeof readSlot>;
     try { doc = readSlot(consumer, "designer", entry.id); }
     catch { if (pinPresent) throw new Error(`Specimen slot ${entry.id}: missing or invalid slot`); continue; }
-    if (validateSlotDoc(doc).length || doc.id !== entry.id || doc.agent !== "designer" || doc.kind !== "element"
-      || doc.ia.l0 !== entry.position.l0 || doc.ia.l1 !== entry.position.l1 || doc.ia.l2 !== entry.position.l2 || doc.ia.order !== entry.position.order) {
+    if (!viewPlacedAt(doc, entry.id, "designer", entry.position) || doc.kind !== "element") {
       if (pinPresent) fail("slot identity or position differs from IA");
       continue;
     }

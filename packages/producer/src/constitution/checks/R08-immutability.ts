@@ -19,7 +19,7 @@
 import { AGENT_KIND, CANDIDATE_NAME, KIND_EXT } from "../../records/slot-model/index.js";
 import { expectedCandidateSha, ledgerEventsOf } from "../../records/ledger.js";
 import type { CandidateRecord, ConstitutionContext, PathChange, Row, RuleModule, SlotRecord } from "../types.js";
-import { allSlots, isObject, pending, row } from "./shared.js";
+import { allSlots, isObject, pending, row, slotDoc } from "./shared.js";
 
 /** The extensions a slot's candidates may use: its kind's, else its agent's kinds'. */
 function allowedExtensions(agent: string, kind: unknown): Set<string> {
@@ -33,7 +33,7 @@ export function naming(ctx: ConstitutionContext): Row[] {
   const rows: Row[] = [];
   for (const slot of allSlots(ctx)) {
     const leaf = slot.id.split(".").pop()!;
-    const doc = slot.slot?.value;
+    const doc = slotDoc(slot);
     const extensions = allowedExtensions(slot.agent, isObject(doc) ? doc.kind : undefined);
     const versions = new Map<number, string[]>();
     const retiredNames = new Set(slot.retired.filter(entry => CANDIDATE_NAME.test(entry.name)).map(entry => entry.name));

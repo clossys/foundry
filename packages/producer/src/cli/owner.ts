@@ -54,6 +54,11 @@ import { RETIRE_CODES, RETIRE_REASON } from "../constitution/checks/R10-retire.j
 import { validateAgainst } from "../constitution/schema.js";
 import { IA_KIND, slotWriteKind } from "../constitution/green.js";
 import { resolveCandidate } from "./pin.js";
+import { consumerSlotFolders, positionIa, serializeSlot, SLOT_SCHEMA as SLOT_V2_SCHEMA, validateSlot } from "../records/slot.js";
+import { currentView } from "../records/slot-current.js";
+import { cliActor, toIsoZ } from "../records/pin.js";
+import { slotFromV1, targetKind, type SlotV1 } from "../migrate/slot-1-to-2.js";
+import type { AgentId, Ref, Slot, TargetSlotKind } from "../records/types.js";
 import { CliUsageError } from "./args.js";
 import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlot, packageStructureChange, planIaWrite, renameGroup, reorderGroup, setAxes, setExtension, setLayers, type Edit, type IaFile, type PositionFollow } from "./ia-regroup.js";
 import type { CliResult } from "./main.js";
@@ -572,7 +577,12 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   if (iaIssues.length) return refuse("ia", iaIssues.map(issue => issue.message).join("; "));
   const position = slotPositions(agent, next as unknown as IaDoc).get(slot);
   if (!position) return refuse("ia", `${target} has no position in ${agent} ia.json`);
-  const existing = modelExists(slotFile(dir)) ? readModelJson(slotFile(dir)) as Record<string, unknown> : undefined;
+  const stored = modelExists(slotFile(dir)) ? readModelJson(slotFile(dir)) as Record<string, unknown> : undefined;
+  // A recut store's slot.json is clossys.slot/2: its view (inputs and uses from refs, the kind family) is what this
+  // write edits, and the file written back is slot/2 again (currentSlotWrite).
+  const storedV2 = stored?.schema === SLOT_V2_SCHEMA && !validateSlot(stored).length ? stored as unknown as Slot : undefined;
+  if (stored?.schema === SLOT_V2_SCHEMA && !storedV2) return refuse("ia", `${target} slot.json is not a valid ${SLOT_V2_SCHEMA}; clossys check names why`);
+  const existing = storedV2 ? currentView(storedV2) as unknown as Record<string, unknown> : stored;
   const kind = (one(flags, "--kind") ?? (existing?.kind as string | undefined) ?? AGENT_KIND[agent][0]) as SlotKind;
   if (!(SLOT_KINDS as readonly string[]).includes(kind)) throw new CliUsageError(`--kind must be one of ${SLOT_KINDS.join(", ")}\n${IA_USAGE}`);
   if (contractFile === undefined) {
@@ -593,11 +603,64 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   };
   const docIssues = validateSlotDoc(doc, slotFile(dir));
   if (docIssues.length) return refuse("ia", docIssues.map(issue => issue.message).join("; "));
-  const writes: [string, string][] = [...(next !== ia ? [[iaFile, jsonBytes(next)] as [string, string]] : []), [slotFile(dir), jsonBytes(doc)], ...follow.writes];
+  let slotBytes = jsonBytes(doc);
+  if (storedV2 || (!stored && recutStore(root))) {
+    const written = currentSlotWrite(root, doc as unknown as SlotV1, position, storedV2, {
+      kind: flags.values.has("--kind") ? undefined : storedV2?.kind, live: modelExists(pinFile(dir)), at: eventAt || new Date().toISOString(),
+    });
+    if ("error" in written) return refuse("ia", written.error);
+    slotBytes = written.bytes;
+  }
+  const writes: [string, string][] = [...(next !== ia ? [[iaFile, jsonBytes(next)] as [string, string]] : []), [slotFile(dir), slotBytes], ...follow.writes];
   const named = standardId !== undefined ? `, standard ${standardId} named` : "";
   const what = contractFile === undefined ? `standard ${standardId} named` : `${placed ? "contract written" : `placed under ${one(flags, "--under")} and its contract written`}${named}`;
   const summary = contractFile === undefined ? `${target} standard ${standardId}` : `${target} ${placed ? "contract" : `placed under ${one(flags, "--under")} and contract`}${standardId !== undefined ? `, standard ${standardId}` : ""}`;
   return commitIa(consumer, root, writes, dry, summary, followLines(follow), `ia: ${target} ${what} (clossys/agents/${agent}/${slot}/slot.json)`, iaWho(owner.ref, eventAt));
+}
+
+/** True when the workspace holds a recut store: some slot.json under clossys/agents is `clossys.slot/2`. */
+function recutStore(root: string): boolean {
+  for (const folder of consumerSlotFolders(root)) {
+    if (!folder.hasSlot) continue;
+    try { if ((JSON.parse(readModelText(folder.file)) as { schema?: unknown }).schema === SLOT_V2_SCHEMA) return true; } catch { /* judged by clossys check */ }
+  }
+  return false;
+}
+
+/**
+ * The `clossys.slot/2` bytes `clossys ia` writes on a recut store for the slot/1 document it built and validated:
+ * the slot-1-to-2 mapping (slotFromV1), refs resolved to the agent whose folder holds each id (same agent first).
+ * An existing slot/2 file keeps its createdBy, createdAt, status, base, brief (inputs follow the refs), tighten and
+ * refs of other rels, and gains updatedAt; a new one is created by this verb, `live` when a pin is already there.
+ */
+function currentSlotWrite(root: string, doc: SlotV1, position: { l1: string; l2: string; order: number }, stored: Slot | undefined, options: { kind?: TargetSlotKind; live: boolean; at: string }): { bytes: string } | { error: string } {
+  const at = toIsoZ(options.at);
+  if (!at) return { error: `--at ${options.at} is not an ISO timestamp` };
+  const kind = options.kind ?? targetKind(doc);
+  if (!kind) return { error: `${doc.agent}/${doc.id} kind ${doc.kind} has no ${SLOT_V2_SCHEMA} kind` };
+  const holders = new Map<string, AgentId[]>();
+  for (const folder of consumerSlotFolders(root)) holders.set(folder.id, [...(holders.get(folder.id) ?? []), folder.agent]);
+  const unresolved: string[] = [];
+  const refsOf = (ids: readonly string[] | undefined, rel: Ref["rel"]): Ref[] => (ids ?? []).flatMap(id => {
+    const agents = holders.get(id) ?? [];
+    const agent = agents.includes(doc.agent) ? doc.agent : agents[0];
+    if (!agent) { unresolved.push(id); return []; }
+    return [{ to: `${agent}/${id}` as Ref["to"], rel }];
+  });
+  const inputs = refsOf(doc.inputs, "input"), uses = refsOf(doc.uses, "uses");
+  if (unresolved.length) return { error: `no consumer slot folder holds ${unresolved.join(", ")}` };
+  const ia = positionIa(doc.id, position);
+  const made = slotFromV1(doc, { kind, status: stored?.status ?? (options.live ? "live" : "starter"), ia, inputs, uses, createdBy: stored?.createdBy ?? cliActor("clossys ia"), at: stored?.createdAt ?? at });
+  const slot: Slot = !stored ? made : {
+    ...made,
+    updatedAt: at, base: stored.base, brief: { ...stored.brief, inputs: structuredClone(inputs) }, tighten: stored.tighten,
+    refs: [...inputs, ...uses, ...stored.refs.filter(ref => ref.rel !== "input" && ref.rel !== "uses")],
+    ...(made.options === undefined && stored.options !== undefined ? { options: stored.options } : {}),
+    ...(made.varyOn === undefined && stored.varyOn !== undefined ? { varyOn: stored.varyOn } : {}),
+  };
+  const issues = validateSlot(slot);
+  if (issues.length) return { error: `the ${SLOT_V2_SCHEMA} file would be invalid: ${issues.slice(0, 5).map(issue => `${issue.path} ${issue.message}`).join("; ")}` };
+  return { bytes: serializeSlot(slot) };
 }
 
 // ---------------------------------------------------------------- clossys evidence

@@ -279,3 +279,99 @@ it.each(["missing candidate", "malformed pin", "unsafe candidate name", "malform
   if (name === "malformed selected candidate") { await writeFile(selected, "{"); await repin(f.path, id); }
   await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Missing native record|Malformed JSON|Unsafe/);
 });
+
+/** The fixture's Publisher slot.json files in the one slot model, `clossys.slot/2`: slash-path ia
+ * (Producer records/slot.ts positionIa of catalog/bindings) and inputs/uses as `publisher/<id>` refs. */
+async function asSlot2(path: string, ids: string[]) {
+  for (const id of ids) {
+    const file = join(dir(path, id), "slot.json"), v1 = JSON.parse(await readFile(file, "utf8")) as JsonObject;
+    const l0 = id.split(".")[0]!;
+    await put(file, {
+      schema: "clossys.slot/2", id, agent: "publisher", kind: v1.kind, status: "starter",
+      ia: { l0, l1: `${l0}/catalog`, l2: `${l0}/catalog/bindings`, order: v1.ia.order },
+      createdBy: { actor: "code", cli: "clossys migrate slot-1-to-2", version: "0.0.0" }, createdAt: "2026-10-31T00:00:00Z",
+      refs: [...v1.inputs.map((to: string) => ({ to: `publisher/${to}`, rel: "input" })), ...v1.uses.map((to: string) => ({ to: `publisher/${to}`, rel: "uses" }))],
+      base: null, standard: v1.kind, brief: { purpose: `Fill publisher/${id}.`, mustDo: [], inputs: [], acceptance: [] }, contract: v1.contract, tighten: [],
+    });
+  }
+}
+
+it("SLOT/2 projects the same map from clossys.slot/2 publication and page slots", async () => {
+  const f = await fixture();
+  await asSlot2(f.path, f.ids);
+  expect(JSON.parse(await readFile(join(dir(f.path, f.pubId), "slot.json"), "utf8")).schema).toBe("clossys.slot/2");
+  expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
+});
+
+it.each(["dotted ia", "wrong order", "no l0", "parked", "retired", "unknown key", "missing brief", "bad standard"])("SLOT/2 refuses %s in a clossys.slot/2 slot.json", async name => {
+  const f = await fixture();
+  await asSlot2(f.path, f.ids);
+  await edit(join(dir(f.path, "page.designer"), "slot.json"), value => {
+    if (name === "dotted ia") value.ia = { l0: "page", l1: "catalog", l2: "bindings", order: value.ia.order };
+    if (name === "wrong order") value.ia.order = 99;
+    if (name === "no l0") delete value.ia.l0;
+    if (name === "parked") value.status = "parked";
+    if (name === "retired") value.status = "retired";
+    if (name === "unknown key") value.inputs = [];
+    if (name === "missing brief") delete value.brief;
+    if (name === "bad standard") value.standard = "Not A Standard";
+  });
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/slot identity|not publishable|Unknown key|Missing slot key|Invalid slot standard/);
+});
+
+it("SLOT/2 cannot borrow a page the publication's refs do not declare", async () => {
+  const f = await fixture();
+  await asSlot2(f.path, f.ids);
+  await edit(join(dir(f.path, f.pubId), "slot.json"), value => { value.refs = value.refs.filter((ref: JsonObject) => !(ref.rel === "uses" && ref.to === "publisher/page.designer")); });
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/page\.designer: Page is not declared by this publication/);
+});
+
+/** The fixture's pins in the one pin model, `clossys.pin/2` (Producer records/pin.ts buildPin): the COMMON block
+ * around the same record fields, as `clossys migrate recut` writes them. */
+async function asPin2(path: string, ids: string[]) {
+  for (const id of ids) {
+    const file = join(dir(path, id), "pin.json"), v1 = JSON.parse(await readFile(file, "utf8")) as JsonObject;
+    await put(file, {
+      schema: "clossys.pin/2", id: `publisher/${id}/pin`, agent: "publisher", kind: "pin", status: "confirm",
+      createdBy: { actor: "code", cli: "clossys migrate pin-1-to-2", version: "0.0.0" }, createdAt: v1.at, updatedAt: v1.at, refs: [],
+      candidate: v1.candidate, sha256: v1.sha256, decidedBy: v1.decidedBy, basis: v1.basis, at: v1.at,
+    });
+  }
+}
+
+it("PIN/2 projects the same map from clossys.pin/2 pins over clossys.slot/2 slots", async () => {
+  const f = await fixture();
+  await asSlot2(f.path, f.ids);
+  await asPin2(f.path, f.ids);
+  expect(JSON.parse(await readFile(join(dir(f.path, f.pubId), "pin.json"), "utf8")).schema).toBe("clossys.pin/2");
+  expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
+});
+
+it("PIN/2 reads an owner-confirmed agent pick (confirmed.by owner)", async () => {
+  const f = await fixture();
+  await asPin2(f.path, f.ids);
+  const pin = join(dir(f.path, f.pubId), "pin.json");
+  await edit(pin, value => { value.decidedBy = "agent:publisher"; value.basis = "agent"; value.status = "pinned"; value.confirmed = { by: "owner", ref: "queue.pick#20261112T0000Z-example", at: "2026-11-12T00:00:00Z" }; });
+  expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
+  await edit(pin, value => { value.confirmed.by = "owner:ref"; });
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Invalid pin confirmation/);
+});
+
+it.each(["wrong id", "wrong agent", "wrong kind", "bad status", "no refs", "no createdBy", "bad createdAt", "recited", "unknown schema", "migration decider", "hash drift"])("PIN/2 refuses %s in a clossys.pin/2 pin.json", async name => {
+  const f = await fixture();
+  await asPin2(f.path, f.ids);
+  await edit(join(dir(f.path, "page.designer"), "pin.json"), value => {
+    if (name === "wrong id") value.id = "publisher/page.other/pin";
+    if (name === "wrong agent") value.agent = "writer";
+    if (name === "wrong kind") value.kind = "pin-map";
+    if (name === "bad status") value.status = "open";
+    if (name === "no refs") delete value.refs;
+    if (name === "no createdBy") delete value.createdBy;
+    if (name === "bad createdAt") value.createdAt = "yesterday";
+    if (name === "recited") value.recited = { by: "agent:publisher", at: "2026-11-11T00:00:00Z", cites: {} };
+    if (name === "unknown schema") value.schema = "clossys.pin/3";
+    if (name === "migration decider") value.decidedBy = "migration";
+    if (name === "hash drift") value.sha256 = "0".repeat(64);
+  });
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Invalid pin|Missing pin key|Unknown key|Invalid pin schema|hash drift/);
+});

@@ -10,10 +10,10 @@
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
-import { listCandidateNames, modelPresence, readCandidate, readIa, readPin, readSlot } from "../records/slots.js";
+import { listCandidateNames, modelPresence, readCandidate, readIa, readPin, readSlot, slotCandidateIssues, viewPlacedAt } from "../records/slots.js";
 import type { AgentCensus as AgentCensusCounts, AgentId, StatusView } from "../records/types.js";
 import {
-  SLOT_AGENTS, pinFile, pinStatus, slotDir, slotFile, slotPositions, validateCandidate, validateSlotDoc,
+  SLOT_AGENTS, pinFile, pinStatus, slotDir, slotFile, slotPositions,
   type PinBasis, type PinDoc, type PinStatus, type SlotAgent, type SlotDoc, type SlotPosition,
 } from "../records/slot-model/index.js";
 
@@ -66,9 +66,7 @@ function censusRow(consumer: string, agent: SlotAgent, id: string, position: Slo
   if (slotPresence === "present") {
     try {
       const value = readSlot(consumer, agent, id);
-      if (validateSlotDoc(value).length || value.id !== id || value.agent !== agent ||
-          value.ia.l0 !== position.l0 || value.ia.l1 !== position.l1 ||
-          value.ia.l2 !== position.l2 || value.ia.order !== position.order) row.slot = "invalid";
+      if (!viewPlacedAt(value, id, agent, position)) row.slot = "invalid";
       else { row.slot = "valid"; doc = value; }
     } catch (error) {
       const validationError = error instanceof Error && (
@@ -94,7 +92,7 @@ function censusRow(consumer: string, agent: SlotAgent, id: string, position: Slo
           const candidate = readCandidate(consumer, agent, id, pin.candidate);
           if (candidate.sha256 !== pin.sha256) row.pin = "hash-drift";
           else if (!doc) row.pin = "unvalidated-candidate";
-          else if (validateCandidate(doc.kind, id, candidate.name, candidate.bytes).length) row.pin = "invalid-candidate";
+          else if (slotCandidateIssues(consumer, agent, id, candidate.name, candidate.bytes).length) row.pin = "invalid-candidate";
           else row.pin = "valid";
         } catch (error) {
           row.pin = (error as NodeJS.ErrnoException).code === "ENOENT" ? "missing-candidate" : "error";

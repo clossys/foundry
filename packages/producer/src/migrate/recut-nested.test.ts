@@ -186,6 +186,14 @@ describe("migrate recut: Publisher page candidates", () => {
     expect(() => recutCandidateBytes("page-v1.json", other, context("publisher", "page.home"))).toThrow(/is a record, not an int2 candidate/);
   });
 
+  // foundry-build-0038: a publication candidate is a Publisher record too; outside Publisher it stays refused.
+  it("passes a clossys.publication/1 publication record through untouched on Publisher only", () => {
+    const publication = `${JSON.stringify({ schema: "clossys.publication/1", format: "web.page.responsive", entryOrder: ["home"], meta: { source: { kind: "derived", ref: ["publisher:recut"] }, tree: { id: "studio", name: "studio" } } }, null, 2)}\n`;
+    const context = (agent: "publisher" | "writer", slotId: string) => ({ agent, slotId, at: AT, version: "0.0.0", sourceRef: `agents/${agent}/${slotId}/candidates/studio-v1.json` });
+    expect(recutCandidateBytes("studio-v1.json", publication, context("publisher", "publication.studio"))).toBe(publication);
+    expect(() => recutCandidateBytes("studio-v1.json", publication, context("writer", "sections.hero.copy"))).toThrow(/is a record, not an int2 candidate/);
+  });
+
   it("a consumer with a page candidate plans with no finding, keeps its bytes and records no migrated event for it", () => {
     const w = world();
     const seeded = seed(w);

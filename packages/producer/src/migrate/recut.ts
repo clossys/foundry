@@ -53,7 +53,7 @@ import { agentPackageRoot, packageVersion, readBaseSlot, serializeSlot, writeSlo
 import { RETIRE_SCHEMA, appendMigrationEvents, type RewrittenFile } from "../records/slot-write.js";
 import { slotPositions, studioDesignerSlots } from "../records/slot-model/foundry-ia.js";
 import { modelExists, readIa } from "../records/slots.js";
-import { PAGE_SCHEMA, type IaDoc } from "../records/slot-model/types.js";
+import { PAGE_SCHEMA, PUBLICATION_SCHEMA, type IaDoc } from "../records/slot-model/types.js";
 import type { AgentId, CandidateHeader, Iso } from "../records/types.js";
 import { planIaSync } from "../cli/ia-sync.js";
 import { migratePins } from "./pin-1-to-2.js";
@@ -272,8 +272,9 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
       const content = object(doc.content) && object(doc.content.meta) ? { ...doc.content, meta: follows(doc.content.meta) } : doc.content;
       return serializeCandidate(name, readdressed(doc.clossys), content);
     }
-    // A Publisher page record (clossys.page/1) is the record today's install and slot check read: kept as is.
-    if (context.agent === "publisher" && object(doc) && doc.schema === PAGE_SCHEMA) return text;
+    // A Publisher page or publication record (clossys.page/1, clossys.publication/1) is the record today's install,
+    // projector and slot check read: kept as is.
+    if (context.agent === "publisher" && object(doc) && (doc.schema === PAGE_SCHEMA || doc.schema === PUBLICATION_SCHEMA)) return text;
     if (object(doc) && typeof doc.schema === "string") throw new Error(`${name}: a top-level schema key (${doc.schema}) is a record, not an int2 candidate`);
     let content: unknown = doc;
     const sources: unknown[] = [int2?.source];

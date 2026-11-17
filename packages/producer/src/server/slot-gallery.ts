@@ -1,6 +1,6 @@
 /** IA-first Studio gallery data. Empty slots never depend on a candidate or a route. */
-import { hasAgentModel, hasPinFile as hasPinRecord, listSlots, readCandidate, readIa, readSlot, readSlotEntry, type SlotEntry } from '../records/slots.js';
-import { type IaDoc, type NotNeeded, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind, type SlotStateRejection } from '../records/slot-model/index.js';
+import { hasAgentModel, hasPinFile as hasPinRecord, listSlots, readCandidate, readIa, readSlot, readSlotEntry, viewPlacedAt, type SlotEntry } from '../records/slots.js';
+import { type IaDoc, type NotNeeded, parseFrontmatter, validateCandidate, type SlotAgent, type SlotKind, type SlotStateRejection } from '../records/slot-model/index.js';
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
 import { iaLabel, slotLabel, slotLabels } from '../records/slot-labels.js';
 import { copyRef, type CopyText } from './copy-ref.js';
@@ -36,8 +36,7 @@ const hasPinFile = (entry: SlotEntry) => hasPinRecord(entry.dir);
 
 function checkedSlot(consumer: string, agent: SlotAgent, entry: SlotEntry) {
   const doc = readSlot(consumer, agent, entry.id);
-  if (validateSlotDoc(doc).length || doc.id !== entry.id || doc.agent !== agent
-    || doc.ia.l0 !== entry.position.l0 || doc.ia.l1 !== entry.position.l1 || doc.ia.l2 !== entry.position.l2 || doc.ia.order !== entry.position.order) {
+  if (!viewPlacedAt(doc, entry.id, agent, entry.position)) {
     throw new Error(`Invalid slot: ${entry.id}`);
   }
   return doc;

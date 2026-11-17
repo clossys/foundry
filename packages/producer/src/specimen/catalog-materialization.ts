@@ -2,9 +2,9 @@
 import { emitSurfacePackageCandidate, runtimeHash, runtimeSnapshot, type CompositeCatalogData, type RuntimeJson, type SurfacePackageEvidence, type SurfaceSlot } from "@clossys/designer/catalog";
 import { readSurfacePackageEvidence } from "@clossys/designer/catalog/node";
 import { specimenRecordFrom } from "@clossys/publisher/specimen";
-import { listSlots, readCandidate, readSlot } from "../records/slots.js";
+import { listSlots, readCandidate, readSlot, viewIssues, viewPlacedAt } from "../records/slots.js";
 import { writeCandidate } from "../records/slot-write.js";
-import { CANDIDATE_NAME, candidateName, jsonBytes, sameJson, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
+import { CANDIDATE_NAME, candidateName, jsonBytes, sameJson, validateCandidate } from "../records/slot-model/index.js";
 import { RecordError } from "../records/validate.js";
 import { sha256Hex } from "../records/hash.js";
 import { libraryRecordStore } from "./library-source.js";
@@ -53,8 +53,8 @@ export async function materializeCatalogCandidate(input: CatalogCandidateInput) 
   if (!sameJson(installed.find(row => row.module === emission.package.module), emission.package)) fail("installed package artifact evidence differs");
   const entry = listSlots(input.root, "designer").find(row => row.id === input.slot);
   if (!entry) fail("target slot is not in the Designer IA");
-  const slot = readSlot(input.root, "designer", input.slot), issues = validateSlotDoc(slot);
-  if (slot.id !== input.slot || slot.agent !== "designer" || slot.kind !== "element" || !sameJson(slot.ia, entry.position) || !sameJson(slot.contract, emission.contract.contract)) fail("target slot identity, position or native contract differs");
+  const slot = readSlot(input.root, "designer", input.slot), issues = viewIssues(slot);
+  if (!viewPlacedAt(slot, input.slot, "designer", entry.position) || slot.kind !== "element" || !sameJson(slot.contract, emission.contract.contract)) fail("target slot identity, position or native contract differs");
   if (issues.length) throw new RecordError(`slot ${input.slot}`, issues);
   const descriptor = emission.descriptor;
   const contract = emission.contract.contract;

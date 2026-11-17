@@ -1,6 +1,7 @@
 /** Helpers shared by the rule modules: row building, slot lookups, citation and file scans. Pure. */
 import { installedPath } from "@clossys/publisher/specimen";
 import { parseFrontmatter } from "../../records/slot-model/index.js";
+import { isCurrentSlot, readSlotValue } from "../../records/slot-current.js";
 import type { AgentRecord, CandidateRecord, Check, ConstitutionContext, Row, RuleId, SlotRecord } from "../types.js";
 
 export function row(rule: RuleId, check: string, slot: Pick<SlotRecord, "agent" | "id">, reason: string, path: string, candidate?: string): Row {
@@ -17,6 +18,30 @@ export function pending(rule: RuleId, check: string, owner: string, what: string
 
 export const isObject = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 export const stringList = (value: unknown): string[] => (Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : []);
+
+const views = new WeakMap<object, Record<string, unknown>>();
+/**
+ * slot.json as the rules read it, in one set of terms for either format: an old-format document as written; a
+ * valid `clossys.slot/2` one through the reader's view (records/slot-current.ts: the kind family, the `inputs`
+ * and `uses` its refs name, `contract.notNeeded` as `notNeeded`), its contract without that marker, so every rule
+ * reads the same fields it reads on a slot/1 store. An invalid slot/2 document is returned as written (R01.2
+ * reports it). Undefined when slot.json is missing, unreadable or not an object.
+ */
+export function slotDoc(record: Pick<SlotRecord, "slot"> | undefined): Record<string, unknown> | undefined {
+  const value = record?.slot?.value;
+  if (!isObject(value)) return undefined;
+  if (!isCurrentSlot(value)) return value;
+  let view = views.get(value);
+  if (!view) {
+    const read = readSlotValue(value, record!.slot!.path);
+    if (read) {
+      const { notNeeded: _marker, ...contract } = read.doc.contract as Record<string, unknown>;
+      view = { ...read.doc, contract };
+    } else view = value;
+    views.set(value, view);
+  }
+  return view;
+}
 
 /** Live slots of an agent, in IA order, with their folder record when one exists. */
 export function liveSlots(agent: AgentRecord): { id: string; record?: SlotRecord }[] {
@@ -55,7 +80,7 @@ export function* focusedLiveSlots(ctx: ConstitutionContext): Generator<SlotRecor
 
 /** slot.json `inputs` ∪ `uses` (the dependency set), or undefined without a parseable slot.json. */
 export function dependencySet(slot: SlotRecord): Set<string> | undefined {
-  const doc = slot.slot?.value;
+  const doc = slotDoc(slot);
   if (!isObject(doc)) return undefined;
   return new Set([...stringList(doc.inputs), ...stringList(doc.uses)]);
 }

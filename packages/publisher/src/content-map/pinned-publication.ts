@@ -31,6 +31,12 @@ const SLOT_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;
 /** The slot's judge (`clossys ia --standard`): the slot-model STANDARD_ID, mirrored (publisher cannot import producer). */
 const STANDARD_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*$/;
 const CANDIDATE = /^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.json$/;
+/** A slot ref's target in `clossys.slot/2` (`<agent>/<slot id>`): Producer records/slot-current.ts SLOT_REF, mirrored. */
+const SLOT_REF = /^(director|designer|writer|publisher|producer)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
+const SLOT_V2_KEYS = ["schema", "id", "agent", "kind", "status", "ia", "createdBy", "createdAt", "updatedAt", "refs", "base", "standard", "brief", "contract", "tighten", "options", "varyOn"] as const;
+const SLOT_V2_REQUIRED = ["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "refs", "ia", "base", "standard", "brief", "contract", "tighten"] as const;
+/** Statuses of a slot that may be published: a parked (not needed) or retired slot never is. */
+const PUBLISHABLE = ["starter", "live", "needs-refresh"];
 function fail(path: string, message: string): never { throw new TypeError(`${path}: ${message}`); }
 function keys(value: JsonObject, allowed: readonly string[], path: string) {
   for (const key of Object.keys(value)) if (!allowed.includes(key)) fail(path, `Unknown key ${key}`);
@@ -92,11 +98,38 @@ function candidate(value: JsonObject, kind: "page" | "publication", path: string
       || !object(value.copy) || Object.values(value.copy).some(ref => typeof ref !== "string" || !/^[^#\s]+#[^#\s]+$/.test(ref))) fail(path, "Invalid page contract");
   }
 }
-function pinned(records: PinnedPublicationSource, index: Map<string, Position>, id: string, kind: "page" | "publication") {
-  const position = index.get(id); if (!position) fail(id, "Slot is not declared in Publisher IA");
-  // Flat layout: agents/publisher/<slot-id>; grouping lives only in ia.json + slot.json ia.
-  const dir = id, slotPath = `${dir}/slot.json`;
-  const slot = parse(present(records.record(id, "slot.json"), slotPath), slotPath);
+/** Producer records/slot.ts positionIa, mirrored: the slash-path ia a `clossys.slot/2` file writes for a placement. */
+const iaSegment = (value: string): string => {
+  const cleaned = value.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  return /^[a-z]/.test(cleaned) ? cleaned : `x${cleaned || "slot"}`;
+};
+const stripPrefix = (value: string, prefix: string): string => value.startsWith(`${prefix}.`) && value.length > prefix.length + 1 ? value.slice(prefix.length + 1) : value;
+function positionIa(id: string, position: Position) {
+  const rawL0 = id.split(".")[0]!, l0 = iaSegment(rawL0);
+  const l1 = `${l0}/${iaSegment(stripPrefix(position.l1, rawL0))}`;
+  return { l0, l1, l2: `${l1}/${iaSegment(stripPrefix(stripPrefix(position.l2, position.l1), rawL0))}`, order: position.order };
+}
+/** The slot ids one rel of a `clossys.slot/2` file's refs names, in order and once each (Producer refIds, mirrored). */
+const refIds = (refs: JsonObject[], rel: "input" | "uses") => [...new Set(refs.flatMap(ref => {
+  const id = ref.rel === rel ? SLOT_REF.exec(ref.to)?.[2] : undefined;
+  return id === undefined ? [] : [id];
+}))];
+/** A `clossys.slot/2` Publisher slot.json placed where ia.json places it: its declared inputs and uses, read from its refs. */
+function currentSlot(slot: JsonObject, id: string, kind: "page" | "publication", position: Position, slotPath: string): { inputs: string[]; uses: string[] } {
+  keys(slot, SLOT_V2_KEYS, slotPath);
+  for (const key of SLOT_V2_REQUIRED) if (!Object.hasOwn(slot, key)) fail(slotPath, `Missing slot key ${key}`);
+  if (!text(slot.standard) || !STANDARD_ID.test(slot.standard)) fail(slotPath, "Invalid slot standard");
+  if (!PUBLISHABLE.includes(slot.status)) fail(slotPath, `Slot status ${String(slot.status)} is not publishable`);
+  if (slot.base !== null && !object(slot.base)) fail(slotPath, "Invalid slot base");
+  if (!Array.isArray(slot.refs) || slot.refs.some(ref => !object(ref) || typeof ref.to !== "string" || typeof ref.rel !== "string")) fail(slotPath, "Invalid slot refs");
+  const want = positionIa(id, position);
+  if (slot.id !== id || slot.agent !== "publisher" || slot.kind !== kind || !object(slot.ia) || !object(slot.contract)
+    || slot.ia.l0 !== want.l0 || slot.ia.l1 !== want.l1 || slot.ia.l2 !== want.l2 || slot.ia.order !== want.order) fail(slotPath, "Invalid slot identity, kind or IA position");
+  keys(slot.ia, ["l0", "l1", "l2", "order"], slotPath);
+  return { inputs: refIds(slot.refs, "input"), uses: refIds(slot.refs, "uses") };
+}
+/** A `clossys.slot/1` Publisher slot.json placed where ia.json places it: its declared inputs and uses. */
+function legacySlot(slot: JsonObject, id: string, kind: "page" | "publication", position: Position, slotPath: string): { inputs: string[]; uses: string[] } {
   keys(slot, ["schema", "id", "agent", "ia", "kind", "contract", "inputs", "uses", "standard"], slotPath);
   if (slot.standard !== undefined && (typeof slot.standard !== "string" || !STANDARD_ID.test(slot.standard))) fail(slotPath, "Invalid slot standard");
   if (slot.schema !== "clossys.slot/1" || slot.id !== id || slot.agent !== "publisher" || slot.kind !== kind || !object(slot.ia)
@@ -104,7 +137,30 @@ function pinned(records: PinnedPublicationSource, index: Map<string, Position>, 
     || !object(slot.contract) || !strings(slot.inputs) || !strings(slot.uses)
     || [...slot.inputs, ...slot.uses].some(ref => !SLOT_ID.test(ref))) fail(slotPath, "Invalid slot identity, kind or IA position");
   keys(slot.ia, ["l1", "l2", "order"], slotPath);
-  const pinPath = `${dir}/pin.json`, pin = parse(present(records.record(id, "pin.json"), pinPath), pinPath);
+  return { inputs: slot.inputs, uses: slot.uses };
+}
+const iso = (value: unknown): boolean => typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value) && !Number.isNaN(Date.parse(value));
+/** Producer schemas/pin.json (`clossys.pin/2`), mirrored: COMMON block plus the int2 record fields, no `recited`. */
+const PIN_V2_KEYS = ["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "updatedAt", "refs", "candidate", "sha256", "decidedBy", "basis", "at", "confirmed"] as const;
+const PIN_V2_REQUIRED = ["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "refs", "candidate", "sha256", "decidedBy", "basis", "at"] as const;
+/** A `clossys.pin/2` Publisher pin.json for slot `id`: its COMMON block and confirmation (Producer records/pin.ts pinIssues, mirrored). */
+function currentPin(pin: JsonObject, id: string, pinPath: string) {
+  keys(pin, PIN_V2_KEYS, pinPath);
+  for (const key of PIN_V2_REQUIRED) if (!Object.hasOwn(pin, key)) fail(pinPath, `Missing pin key ${key}`);
+  if (pin.id !== `publisher/${id}/pin` || pin.agent !== "publisher" || pin.kind !== "pin" || !["pinned", "confirm"].includes(pin.status)) fail(pinPath, "Invalid pin identity, kind or status");
+  if (!object(pin.createdBy) || !text(pin.createdBy.actor) || !iso(pin.createdAt) || pin.updatedAt !== undefined && !iso(pin.updatedAt)) fail(pinPath, "Invalid pin provenance");
+  if (!Array.isArray(pin.refs) || pin.refs.some(ref => !object(ref) || typeof ref.to !== "string" || typeof ref.rel !== "string")) fail(pinPath, "Invalid pin refs");
+  if (typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner)(?::.+)?|agent:(?:director|designer|writer|publisher|producer)|migrated)$/.test(pin.decidedBy)) fail(pinPath, "Invalid pin");
+  if (pin.confirmed !== undefined) {
+    if (pin.basis !== "agent") fail(pinPath, "confirmed is only on an agent pick (basis agent)");
+    if (!object(pin.confirmed)) fail(pinPath, "Invalid pin confirmation");
+    keys(pin.confirmed, ["by", "ref", "at"], pinPath);
+    if (pin.confirmed.by !== "owner" || !text(pin.confirmed.ref) || !iso(pin.confirmed.at)) fail(pinPath, "Invalid pin confirmation");
+  }
+  recordFields(pin, pinPath);
+}
+/** An int2 pin.json (pin/1, no schema key): the record fields, an owner confirmation and a pointer-only re-cite. */
+function legacyPin(pin: JsonObject, pinPath: string) {
   keys(pin, ["candidate", "sha256", "decidedBy", "basis", "at", "confirmed", "recited"], pinPath);
   // The owner's confirmation of an agent pick (`clossys pin --confirm --ref`), same shape as the slot model's
   // PinConfirmation: {by: owner[:<ref>], ref, at}, and only on a basis agent pin.
@@ -113,21 +169,39 @@ function pinned(records: PinnedPublicationSource, index: Map<string, Position>, 
     if (pin.basis !== "agent") fail(pinPath, "confirmed is only on an agent pick (basis agent)");
     if (!object(confirmed)) fail(pinPath, "Invalid pin confirmation");
     keys(confirmed, ["by", "ref", "at"], pinPath);
-    if (typeof confirmed.by !== "string" || !/^owner(?::\S.*)?$/.test(confirmed.by) || !text(confirmed.ref)
-      || typeof confirmed.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(confirmed.at) || Number.isNaN(Date.parse(confirmed.at))) fail(pinPath, "Invalid pin confirmation");
+    if (typeof confirmed.by !== "string" || !/^owner(?::\S.*)?$/.test(confirmed.by) || !text(confirmed.ref) || !iso(confirmed.at)) fail(pinPath, "Invalid pin confirmation");
   }
   // A pointer-only re-cite (`clossys migrate recite`): the slot-model reader validates it and hands over the
   // candidate bytes with refs re-addressed; here it only has to be the {by, at, cites} record.
   if (pin.recited !== undefined && (!object(pin.recited) || !text(pin.recited.by) || !text(pin.recited.at) || !object(pin.recited.cites))) fail(pinPath, "Invalid pin recite");
-  safeSegment(pin.candidate, CANDIDATE, pinPath);
+  recordFields(pin, pinPath);
+}
+/** The record fields both pin formats share: hash, decider, basis (agent iff decidedBy agent:<id>) and time. */
+function recordFields(pin: JsonObject, pinPath: string) {
   if (typeof pin.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(pin.sha256)
     || typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/.test(pin.decidedBy)
     || !["picked", "bulk", "planner", "agent"].includes(pin.basis as string)
     || (pin.basis === "agent") !== pin.decidedBy.startsWith("agent:")
-    || typeof pin.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(pin.at) || Number.isNaN(Date.parse(pin.at))) fail(pinPath, "Invalid pin");
-  const path = `${dir}/candidates/${pin.candidate}`, raw = present(records.candidate(id, pin.candidate), path);
-  if (raw.sha256 !== pin.sha256) fail(path, "Pinned candidate hash drift");
-const value = parse(raw.bytes, path); candidate(value, kind, path);
+    || !iso(pin.at)) fail(pinPath, "Invalid pin");
+}
+function pinned(records: PinnedPublicationSource, index: Map<string, Position>, id: string, kind: "page" | "publication") {
+  const position = index.get(id); if (!position) fail(id, "Slot is not declared in Publisher IA");
+  // Flat layout: agents/publisher/<slot-id>; grouping lives only in ia.json + slot.json ia.
+  const dir = id, slotPath = `${dir}/slot.json`;
+  const raw = parse(present(records.record(id, "slot.json"), slotPath), slotPath);
+  // The one slot model is `clossys.slot/2`; a `clossys.slot/1` file still reads until its store is recut.
+  const slot = raw.schema === "clossys.slot/2" ? currentSlot(raw, id, kind, position, slotPath)
+    : raw.schema === "clossys.slot/1" ? legacySlot(raw, id, kind, position, slotPath)
+      : fail(slotPath, "Invalid slot identity, kind or IA position");
+  const pinPath = `${dir}/pin.json`, pin = parse(present(records.record(id, "pin.json"), pinPath), pinPath);
+  // The one pin format is `clossys.pin/2`; an int2 pin (no schema key) still reads until its store is recut.
+  if (pin.schema === "clossys.pin/2") currentPin(pin, id, pinPath);
+  else if (pin.schema === undefined) legacyPin(pin, pinPath);
+  else fail(pinPath, `Invalid pin schema ${String(pin.schema)}`);
+  safeSegment(pin.candidate, CANDIDATE, pinPath);
+  const path = `${dir}/candidates/${pin.candidate}`, bytes = present(records.candidate(id, pin.candidate), path);
+  if (bytes.sha256 !== pin.sha256) fail(path, "Pinned candidate hash drift");
+  const value = parse(bytes.bytes, path); candidate(value, kind, path);
   if (value.meta.slot !== undefined && value.meta.slot !== id) fail(path, "Conflicting candidate slot identity");
   return { slot, value };
 }

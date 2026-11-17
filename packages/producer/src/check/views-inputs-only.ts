@@ -36,7 +36,7 @@ export const VIEW_SLOT_KINDS: readonly string[] = [
   "element/token", "element/asset", "element/component", "element/section", "element/frame",
   "token", "asset", "component", "section", "frame",
   "voice", "prose", "copy",
-  "layout", "chrome", "page", "release",
+  "layout", "chrome", "page", "publication", "release",
   "loop", "queue", "ledger",
 ];
 /** `clossys` verbs a view body may name: the read verbs, the one write path back (`answer`) and view discovery. */

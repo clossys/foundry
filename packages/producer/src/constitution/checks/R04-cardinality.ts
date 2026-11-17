@@ -5,7 +5,7 @@
  * every defect of that slot in its reason.
  */
 import type { ConstitutionContext, Row, RuleModule } from "../types.js";
-import { isObject, liveSlots, row } from "./shared.js";
+import { isObject, liveSlots, row, slotDoc } from "./shared.js";
 
 export function cardinality(ctx: ConstitutionContext): Row[] {
   const rows: Row[] = [];
@@ -23,8 +23,8 @@ export function cardinality(ctx: ConstitutionContext): Row[] {
       if (!named) defects.push(`pinned candidate ${pinned} does not exist`);
       else if (pin.value.sha256 !== named.sha256) defects.push(`pinned candidate ${named.name} sha256 does not match pin.json`);
     }
-    const slotDoc = record.slot?.value;
-    if (isObject(slotDoc) && Object.hasOwn(slotDoc, "notNeeded")) defects.push("slot.json carries notNeeded (retire or pin, D4)");
+    const doc = slotDoc(record);
+    if (isObject(doc) && Object.hasOwn(doc, "notNeeded")) defects.push("slot.json carries notNeeded (retire or pin, D4)");
     if (defects.length) rows.push(row("R04", "R04", record, defects.join("; "), record.dir));
   }
   return rows;

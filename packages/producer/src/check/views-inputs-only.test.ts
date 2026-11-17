@@ -114,6 +114,8 @@ describe(VIEWS_INPUTS_ONLY, () => {
   it("fails appliesTo outside slot kinds, queue ids and refs, and answers outside the four queues", () => {
     expect(details(view("designer", "one-slot", { appliesTo: "[packages/designer]" })).join("\n")).toMatch(/appliesTo "packages\/designer" is not a slot kind/);
     expect(details(view("designer", "one-slot", { appliesTo: "[writer/*.copy, queue.fix, element/frame]" }))).toEqual([]);
+    // The Publisher slot/2 kinds publication and release are slot kinds a view may apply to (foundry-build-0038).
+    expect(details(view("designer", "one-slot", { appliesTo: "[publication, release, page]" }))).toEqual([]);
     expect(details(view("designer", "one-slot", { answers: "[queue.ship]" })).join("\n")).toMatch(/answers "queue\.ship" is not one of/);
   });
 

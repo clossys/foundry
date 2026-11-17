@@ -67,7 +67,7 @@ const WRITER_KINDS: Record<string, TargetSlotKind> = {
   lexicon: "voice", narrative: "prose", narratives: "prose", passage: "copy", passages: "copy", pattern: "copy", patterns: "copy", string: "copy", strings: "copy",
 };
 const PUBLISHER_PREFIXES: Record<string, TargetSlotKind> = {
-  page: "page", pages: "page", layout: "layout", layouts: "layout", chrome: "chrome", release: "release", publication: "release",
+  page: "page", pages: "page", layout: "layout", layouts: "layout", chrome: "chrome", release: "release", publication: "publication",
 };
 
 /** The slot/2 kind of a slot/1 file, or undefined when it has none. */
@@ -110,6 +110,35 @@ export function briefMustDo(contract: Readonly<Record<string, unknown>> | undefi
 }
 
 /** The ia.json positions of one agent, or none when it has no ia.json or one that is not valid. */
+export interface SlotFromV1 {
+  readonly kind: TargetSlotKind;
+  readonly status: Slot["status"];
+  readonly ia: Slot["ia"];
+  readonly inputs: readonly Ref[];
+  readonly uses: readonly Ref[];
+  readonly createdBy: Slot["createdBy"];
+  readonly at: Iso;
+}
+
+/**
+ * The `clossys.slot/2` a slot/1 document becomes when no package base ships it (pure): the mapping in this
+ * file's header. Shared by this migration and `clossys ia` on a recut store, so both write the same file.
+ */
+export function slotFromV1(doc: SlotV1, to: SlotFromV1): Slot {
+  const standard = typeof doc.standard === "string" && doc.standard ? doc.standard : to.kind;
+  const contract: Record<string, unknown> = structuredClone(doc.contract ?? {});
+  if (doc.notNeeded !== undefined) contract.notNeeded = structuredClone(doc.notNeeded);
+  const slot: Slot = {
+    schema: SLOT_SCHEMA, id: doc.id, agent: doc.agent, kind: to.kind, status: to.status, ia: to.ia,
+    createdBy: to.createdBy, createdAt: to.at, refs: [...to.inputs, ...to.uses], base: null, standard,
+    brief: { purpose: briefPurpose(doc.agent, doc.id, doc.contract, standard), mustDo: briefMustDo(doc.contract), inputs: structuredClone([...to.inputs]), acceptance: [] },
+    contract, tighten: [],
+  };
+  if (doc.options === 1 || doc.options === 2 || doc.options === 3) slot.options = doc.options;
+  if (typeof doc.varyOn === "string" && doc.varyOn) slot.varyOn = doc.varyOn;
+  return slot;
+}
+
 function placedPositions(root: string, agent: AgentId): ReadonlyMap<string, SlotPosition> {
   if (agent === "producer") return new Map();
   try {
@@ -163,18 +192,7 @@ export function planSlot1To2(root: string, options: { at: Iso; version: string }
       slot.status = status;
       slot.ia.order = iaOf(doc).order;
     } else {
-      const standard = typeof doc.standard === "string" && doc.standard ? doc.standard : kind;
-      const contract: Record<string, unknown> = structuredClone(doc.contract ?? {});
-      if (doc.notNeeded !== undefined) contract.notNeeded = structuredClone(doc.notNeeded);
-      slot = {
-        schema: SLOT_SCHEMA, id: doc.id, agent: doc.agent, kind, status, ia: iaOf(doc),
-        createdBy: { actor: "code", cli: SLOT_1_TO_2_CLI, version: options.version },
-        createdAt: options.at, refs: [...inputs, ...uses], base: null, standard,
-        brief: { purpose: briefPurpose(doc.agent, doc.id, doc.contract, standard), mustDo: briefMustDo(doc.contract), inputs: structuredClone(inputs), acceptance: [] },
-        contract, tighten: [],
-      };
-      if (doc.options === 1 || doc.options === 2 || doc.options === 3) slot.options = doc.options;
-      if (typeof doc.varyOn === "string" && doc.varyOn) slot.varyOn = doc.varyOn;
+      slot = slotFromV1(doc, { kind, status, ia: iaOf(doc), inputs, uses, createdBy: { actor: "code", cli: SLOT_1_TO_2_CLI, version: options.version }, at: options.at });
     }
     const issues = validateSlot(slot);
     if (issues.length) { plan.findings.push({ subject, detail: `migrated file is not a valid ${SLOT_SCHEMA}: ${issues.map(issue => `${issue.path} ${issue.message}`).join("; ")}` }); continue; }

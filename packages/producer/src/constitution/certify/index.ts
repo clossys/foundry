@@ -23,7 +23,7 @@ import { standardFits, standardFor } from "../../records/standards.js";
 import { AGENT_CRITERIA } from "../criteria/agent-criteria.js";
 import { CORE_CRITERIA } from "../criteria/core/index.js";
 import { canonicalJson, certifyKey, type CertifyKey } from "../criteria/core/verdict.js";
-import { candidateCitations, dependencySet, focusedLiveSlots, isObject, registryFiles, stringList } from "../checks/shared.js";
+import { candidateCitations, dependencySet, focusedLiveSlots, isObject, registryFiles, slotDoc, stringList } from "../checks/shared.js";
 import type { CandidateRecord, ConstitutionContext, SlotRecord } from "../types.js";
 import { cachePath, openCache, type CertifyCache } from "./cache.js";
 import { certifyBrief } from "./brief.js";
@@ -43,7 +43,7 @@ const sha = (text: string) => createHash("sha256").update(text).digest("hex");
 
 /** slot.json as a record, its kind and its contract. */
 export function slotDocOf(slot: SlotRecord): { doc: Record<string, unknown>; kind?: SlotKind; contract: Readonly<Record<string, unknown>> } {
-  const doc = isObject(slot.slot?.value) ? slot.slot!.value as Record<string, unknown> : {};
+  const doc = slotDoc(slot) ?? {};
   const kind = KINDS.has(doc.kind as SlotKind) ? doc.kind as SlotKind : undefined;
   return { doc, ...(kind ? { kind } : {}), contract: isObject(doc.contract) ? doc.contract : {} };
 }

@@ -18,7 +18,7 @@ import { parseYamlSubset, readRecordHeader } from "./schema.js";
 import { parseFrontmatter } from "./slot-model/frontmatter.js";
 import { positionIa, sameJson, SLOT_SCHEMA, SLOT_V1_SCHEMA, validateSlot } from "./slot.js";
 import type { AgentId, Slot, SlotId, TargetSlotKind } from "./types.js";
-import { notNeededIssue, validateCandidate, validateSlotDoc, validateSource, type SlotModelIssue } from "./slot-model/validate.js";
+import { contractIssues, notNeededIssue, optionIssues, validateCandidate, validateSlotDoc, validateSource, type SlotModelIssue } from "./slot-model/validate.js";
 import { CANDIDATE_STATUS_KEYS, KIND_EXT, LEGACY_PROVENANCE_KEYS, PAGE_SCHEMA, PUBLICATION_SCHEMA, type ModelAgent, type NotNeeded, type SlotDoc, type SlotKind, type SlotPosition } from "./slot-model/types.js";
 
 /** The finding `clossys check` gives a slot.json still in the old format. */
@@ -29,14 +29,14 @@ const FAMILY: Readonly<Partial<Record<TargetSlotKind, SlotKind>>> = {
   brief: "brief",
   "element/token": "element", "element/asset": "element", "element/component": "element", "element/section": "element", "element/frame": "element",
   voice: "strings", prose: "strings", copy: "strings",
-  page: "page", layout: "page", chrome: "page", release: "publication",
+  page: "page", layout: "page", chrome: "page", publication: "publication", release: "publication",
 };
 /** The current kinds each slot-model agent holds. */
 export const CURRENT_AGENT_KINDS: Readonly<Record<ModelAgent, readonly TargetSlotKind[]>> = {
   director: ["brief"],
   designer: ["element/token", "element/asset", "element/component", "element/section", "element/frame"],
   writer: ["voice", "prose", "copy"],
-  publisher: ["page", "layout", "chrome", "release"],
+  publisher: ["page", "layout", "chrome", "publication", "release"],
   producer: ["loop", "queue", "ledger"],
 };
 
@@ -83,6 +83,12 @@ export function slotReadIssues(value: unknown, path: string): SlotModelIssue[] {
   const contract = (value as Record<string, unknown>).contract;
   const notNeeded = object(contract) ? contract.notNeeded : undefined;
   if (notNeeded !== undefined && notNeededIssue(notNeeded)) issues.push({ code: "slot-invalid", path, message: "contract.notNeeded must be {reason, since, decidedBy} with a non-empty reason, an ISO date and who decided" });
+  // The slot/1 rules the schema does not hold, unrelaxed: the options rules, and the contract semantics of the
+  // kind family (a clossys.slot-contract/1 contract, the fixture shape).
+  const slot = value as Record<string, unknown>;
+  issues.push(...optionIssues(slot, path));
+  const family = typeof slot.kind === "string" ? FAMILY[slot.kind as TargetSlotKind] : undefined;
+  if (family && object(contract)) issues.push(...contractIssues(family, contract, typeof slot.id === "string" ? slot.id : "", path));
   return issues;
 }
 
@@ -102,10 +108,26 @@ export function placedAt(read: SlotRead, id: string, agent: ModelAgent, position
   return ia.l0 === position.l0 && ia.l1 === position.l1 && ia.l2 === position.l2 && ia.order === position.order;
 }
 
-/** True when the bytes are a Publisher `clossys.page/1` record (recut passes these through as they are). */
+/**
+ * Issues of a reader view (what `readSlot` and `inspectSlot` return) for a caller that re-judges it: none for a
+ * current-format view, which readSlotValue only builds from a document schemas/slot.json and the notNeeded rule
+ * passed; an old-format view by validateSlotDoc, as before.
+ */
+export function viewIssues(doc: SlotDoc, path = "slot.json"): SlotModelIssue[] {
+  return (doc.schema as string) === SLOT_SCHEMA ? [] : validateSlotDoc(doc, path);
+}
+
+/** True when a reader view is a valid slot its IA position names: same id and agent, and the position's ia in its format. */
+export function viewPlacedAt(doc: SlotDoc, id: string, agent: ModelAgent, position: SlotPosition): boolean {
+  if (viewIssues(doc).length || doc.id !== id || doc.agent !== agent) return false;
+  if ((doc.schema as string) === SLOT_SCHEMA) return sameJson(doc.ia, positionIa(id, position));
+  return doc.ia.l0 === position.l0 && doc.ia.l1 === position.l1 && doc.ia.l2 === position.l2 && doc.ia.order === position.order;
+}
+
+/** True when the bytes are a Publisher `clossys.page/1` or `clossys.publication/1` record (recut passes these through as they are). */
 function pageRecord(agent: ModelAgent, name: string, bytes: string): boolean {
   if (agent !== "publisher" || !name.endsWith(".json")) return false;
-  try { const doc = JSON.parse(bytes) as unknown; return object(doc) && doc.schema === PAGE_SCHEMA; } catch { return false; }
+  try { const doc = JSON.parse(bytes) as unknown; return object(doc) && (doc.schema === PAGE_SCHEMA || doc.schema === PUBLICATION_SCHEMA); } catch { return false; }
 }
 
 const CANDIDATE_SCHEMA = "clossys.candidate/1";
@@ -222,8 +244,8 @@ function targetIssues(kind: Exclude<SlotKind, "seat">, name: string, bytes: stri
  * slot's by the clossys.candidate/1 header (schema, and id, agent and slot naming where the file sits), then: an
  * int2-shaped document by every rule of its kind over its view (kind to extension, sections, locales and records,
  * registry item, pin state and legacy provenance keys, vary, source) and a second source; a target-format document
- * by the target rules. A Publisher page record goes by the page rules. Producer kinds (loop, queue, ledger) have no
- * kind rules beyond the header.
+ * by the target rules. A Publisher page or publication record goes by its kind's rules. Producer kinds (loop,
+ * queue, ledger) have no kind rules beyond the header.
  */
 export function candidateIssues(read: SlotRead, agent: ModelAgent, id: string, name: string, bytes: string, path = name): SlotModelIssue[] {
   if (!read.current || pageRecord(agent, name, bytes)) return validateCandidate(read.doc.kind, id, name, bytes, path);

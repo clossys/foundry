@@ -18,13 +18,13 @@ import { sha256Hex } from "./hash.js";
 import { LEDGER_FILE, ledgerIssues, type LedgerDoc } from "./ledger.js";
 import {
   CANDIDATE_NAME, MODEL_AGENTS, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, isNonSlotEntry, pinFile, retiredSeatFile, seatDir, seatSlotId, seatStepOf, slotDir, slotFile, slotPositions,
-  validateIa, validatePin, validateSlotDoc,
-  type IaDoc, type ModelAgent, type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
+  validateIa, validatePin, validateSlotDoc, pinRecords, pinView,
+  type IaDoc, type ModelAgent, type NotNeeded, type PinDoc, type SlotModelIssue, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
 import { isAbsent, parseJson } from "../errors.js";
 import { candidateIssues, isCurrentSlot, placedAt, readSlotValue } from "./slot-current.js";
 /** A candidate as its kind rules read it (a clossys.candidate/1 file without its header, with the header source): Designer checks parse this, never the raw bytes. */
-export { candidateView } from "./slot-current.js";
+export { candidateView, viewIssues, viewPlacedAt } from "./slot-current.js";
 import { notNeededIssue } from "./slot-model/validate.js";
 
 export interface SlotEntry<A extends ModelAgent = SlotAgent> {
@@ -363,7 +363,7 @@ function seatTextAt(consumer: string, step: string): string | undefined {
   try { value = JSON.parse(readBytes(path)); } catch { throw new Error(`Seat ${step}: pin.json is not JSON`); }
   const issues = validatePin(value, path);
   if (issues.length) throw new Error(`Seat ${step}: pin.json is invalid (${issues.map(issue => issue.message).join("; ")})`);
-  const pin = value as PinDoc;
+  const pin = pinView(value)!;
   const file = join(candidatesDir(dir), pin.candidate);
   assertModelPath(file);
   if (!fsExists(file)) throw new Error(`Seat ${step}: pinned candidate ${pin.candidate} does not exist`);
@@ -471,6 +471,20 @@ export function inspectSlot(consumer: string, agent: ModelAgent, id: string): { 
   });
 }
 
+/**
+ * A candidate's issues judged by its slot as stored: the slot.json's own format (slot/1 or slot/2) and the
+ * candidate's (int2 bytes, a candidate/1 header, or a Publisher page/1 or publication/1 record), never the
+ * slot/1 view's kind alone (slot-current.ts candidateIssues).
+ */
+export function slotCandidateIssues(consumer: string, agent: ModelAgent, id: string, name: string, bytes: string): SlotModelIssue[] {
+  return withSlotReadScope(() => {
+    const path = slotFile(locate(consumer, agent, id).dir);
+    const read = readSlotValue(readJson(path), path);
+    if (!read) return [{ code: "slot-invalid", path, message: `Invalid ${agent} slot ${id}` }];
+    return candidateIssues(read, agent, id, name, bytes);
+  });
+}
+
 export function readSlot(consumer: string, agent: ModelAgent, id: string): SlotDoc {
   return withSlotReadScope(() => {
     const { doc, placed } = inspectSlot(consumer, agent, id);
@@ -512,7 +526,7 @@ function readPinAt(dir: string): PinDoc | null {
   // slot as invalid-pin and the model check reports it; it never clears an input or acts as an
   // authoring fallback merely because its file is present.
   if (!parsed.ok) return null;
-  return validatePin(parsed.value, path).length ? null : parsed.value as PinDoc;
+  return validatePin(parsed.value, path).length ? null : pinView(parsed.value) ?? null;
 }
 export function readPin(consumer: string, agent: SlotAgent, id: string): PinDoc | null {
   return withSlotReadScope(() => {
@@ -714,30 +728,33 @@ export function slotIndex(consumer: string): Map<string, SlotEntry> {
   });
 }
 
-/** Only a valid pin over the current, valid candidate bytes clears an input. */
+/** Only a valid pin over the current, valid candidate bytes clears an input; a pin map clears it when every record does. */
 function inputBlocker(entry: SlotEntry): BlockReason | undefined {
   const path = pinFile(entry.dir);
   if (!fsExists(path)) return "unpinned";
-  let pin: PinDoc;
+  let pins: PinDoc[];
   try {
     const value = readJson(path);
     if (validatePin(value, path).length) return "invalid-pin";
-    pin = value as PinDoc;
+    pins = pinRecords(value);
   } catch { return "invalid-pin"; }
-  let candidate: Candidate;
-  try {
-    const path = join(candidatesDir(entry.dir), pin.candidate);
-    const bytes = readBytes(path);
-    candidate = { name: pin.candidate, bytes, sha256: fsTextSha(path, bytes) };
+  if (!pins.length) return "unpinned";
+  const candidates: Candidate[] = [];
+  for (const pin of pins) {
+    try {
+      const path = join(candidatesDir(entry.dir), pin.candidate);
+      const bytes = readBytes(path);
+      candidates.push({ name: pin.candidate, bytes, sha256: fsTextSha(path, bytes) });
+    }
+    catch { return "missing-candidate"; }
+    if (candidates.at(-1)!.sha256 !== pin.sha256) return "hash-drift";
   }
-  catch { return "missing-candidate"; }
-  if (candidate.sha256 !== pin.sha256) return "hash-drift";
   let read: ReturnType<typeof readSlotValue>;
   try {
     read = readSlotValue(readJson(slotFile(entry.dir)));
     if (!read || !placedAt(read, entry.id, entry.agent, entry.position)) return "invalid-slot";
   } catch { return "invalid-slot"; }
-  if (candidateIssues(read, entry.agent, entry.id, candidate.name, candidate.bytes).length) return "invalid-candidate";
+  for (const candidate of candidates) if (candidateIssues(read, entry.agent, entry.id, candidate.name, candidate.bytes).length) return "invalid-candidate";
   return undefined;
 }
 

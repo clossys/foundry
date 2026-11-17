@@ -2,10 +2,14 @@
  * R01 Catalog and contract: every agent has one valid IA, and every live slot has one contract.
  * - R01.1 ia.json is valid (validate.ts validateIa plus pipeline/schemas/ia.schema.json) for all
  *   five agents; Producer ids are `seat.<step-id>` (D5) and no other agent uses the seat namespace.
- * - R01.2 every live slot has a slot.json valid against pipeline/schemas/slot.schema.json and
- *   validateSlotDoc, naming its own id and agent, with `kind` in AGENT_KIND[agent]; its contract is
- *   valid against contract-<kind>.schema.json. A kind with no such schema yet is one agent-level row.
- * - R01.3 every contract carries a fixture of its kind's shape (validate.ts fixtureShapeIssues).
+ * - R01.2 every live slot has a slot.json valid for its format, naming its own id and agent, with a kind
+ *   its agent holds, and a contract valid against contract-<kind>.schema.json. A `clossys.slot/2` file is
+ *   judged as the reader judges it (schemas/slot.json and the notNeeded rule, records/slot-current.ts),
+ *   its kind one of CURRENT_AGENT_KINDS[agent] and its contract (without `notNeeded`) validated by the
+ *   schema of its kind family; a `clossys.slot/1` file by pipeline/schemas/slot.schema.json and
+ *   validateSlotDoc, its kind in AGENT_KIND[agent]. A kind with no such schema yet is one agent-level row.
+ * - R01.3 every contract carries a fixture of its kind's shape (validate.ts fixtureShapeIssues); a slot/2
+ *   kind is read as its family (the slot.json view in shared.ts slotDoc, used by R01.3 and R01.6 alike).
  * - R01.4 an agent tree holds only ia.json, ledger.json, policy.json, live slot folders and
  *   tombstones (a folder holding only a ledger.json whose last event is retire-slot); a live slot
  *   folder holds only slot.json, pin.json, candidates/, ledger.json and retired/. The `retired/`
@@ -18,9 +22,10 @@
 import { createHash } from "node:crypto";
 import { hasSchema, loadSchema, validateValue } from "../../pipeline/schema.js";
 import { AGENT_KIND, fixtureShapeIssues, SLOT_KINDS, validateIa, validateSlotDoc, type SlotKind } from "../../records/slot-model/index.js";
+import { CURRENT_AGENT_KINDS, isCurrentSlot, slotReadIssues } from "../../records/slot-current.js";
 import type { AgentRecord, ConstitutionContext, FoundryAgent, Row, RuleModule, SlotRecord } from "../types.js";
 import { R01_IA_CHECKS } from "../rules/r01-ia.js";
-import { isObject, listed, liveSlots, row } from "./shared.js";
+import { isObject, listed, liveSlots, row, slotDoc } from "./shared.js";
 
 const AGENT_FILES = new Set(["ia.json", "ledger.json", "policy.json"]);
 const SLOT_ENTRIES = new Set(["slot.json", "pin.json", "candidates", "ledger.json", "retired"]);
@@ -29,8 +34,8 @@ export const FOUNDRY_AGENTS: readonly FoundryAgent[] = ["director", "designer", 
 
 const agentRow = (check: string, agent: AgentRecord, reason: string, path: string): Row => row("R01", check, { agent: agent.agent, id: "*" }, reason, path);
 const schemaIssues = (value: unknown, name: string) => validateValue(value, loadSchema(name)).map(issue => `${issue.path} ${issue.message}`);
-/** The parsed slot.json of a live slot, when it is an object. */
-const slotDocOf = (record: SlotRecord | undefined): Record<string, unknown> | undefined => (isObject(record?.slot?.value) ? record.slot.value : undefined);
+/** The parsed slot.json of a live slot, when it is an object, in the rules' terms (shared.ts slotDoc). */
+const slotDocOf = (record: SlotRecord | undefined): Record<string, unknown> | undefined => slotDoc(record);
 const kindOf = (doc: Record<string, unknown>): SlotKind | undefined => (SLOT_KINDS.includes(doc.kind as SlotKind) ? doc.kind as SlotKind : undefined);
 
 /** R01.1 One valid IA per agent. */
@@ -58,14 +63,21 @@ export function slotContract(ctx: ConstitutionContext): Row[] {
       if (!record.slot) { rows.push(row("R01", "R01.2", ref, "live slot has no slot.json", path)); continue; }
       if (record.slot.error !== undefined) { rows.push(row("R01", "R01.2", ref, `slot.json is unreadable: ${record.slot.error}`, path)); continue; }
       const doc = record.slot.value;
-      const issues = [...validateSlotDoc(doc, path).map(issue => issue.message), ...schemaIssues(doc, "slot")];
+      const current = isCurrentSlot(doc);
+      const shape = current ? slotReadIssues(doc, path).map(issue => issue.message) : [...validateSlotDoc(doc, path).map(issue => issue.message), ...schemaIssues(doc, "slot")];
+      const issues = [...shape];
       if (isObject(doc)) {
         if (doc.id !== id) issues.push(`id must be ${id}, the folder and IA id`);
         if (doc.agent !== agent.agent) issues.push(`agent must be ${agent.agent}, the tree it sits in`);
-        const kind = kindOf(doc);
-        if (kind && !AGENT_KIND[agent.agent].includes(kind)) issues.push(`kind ${kind} is not one of ${agent.agent}'s kinds (${AGENT_KIND[agent.agent].join(", ")})`);
-        if (kind && isObject(doc.contract)) {
-          if (hasSchema(`contract-${kind}`)) issues.push(...schemaIssues(doc.contract, `contract-${kind}`).map(issue => `contract ${issue}`));
+        const kinds: readonly string[] = current ? CURRENT_AGENT_KINDS[agent.agent] : AGENT_KIND[agent.agent];
+        const raw: { kind?: unknown } = doc;
+        const named = current ? (typeof raw.kind === "string" ? raw.kind : undefined) : kindOf(doc);
+        if (named && !kinds.includes(named)) issues.push(`kind ${named} is not one of ${agent.agent}'s kinds (${kinds.join(", ")})`);
+        // A slot/2 kind is validated by its family's contract schema, read through the view (only a valid slot/2 file has one).
+        const view = current ? (shape.length ? undefined : slotDoc(record)) : doc;
+        const kind = current ? (typeof view?.kind === "string" ? view.kind : undefined) : named;
+        if (kind && isObject(view?.contract)) {
+          if (hasSchema(`contract-${kind}`)) issues.push(...schemaIssues(view.contract, `contract-${kind}`).map(issue => `contract ${issue}`));
           else missingSchemas.set(kind, [...(missingSchemas.get(kind) ?? []), id]);
         }
       }

@@ -14,6 +14,8 @@ import { nodeLayers, slotPositions } from "../records/slot-model/foundry-ia.js";
 import { validateIa, validateSlotDoc } from "../records/slot-model/validate.js";
 import { NODE_ID, type IaChange, type IaDoc, type ModelAgent } from "../records/slot-model/types.js";
 import { modelExists, readModelText } from "../records/slots.js";
+import { positionIa, serializeSlot, SLOT_SCHEMA as SLOT_V2_SCHEMA, validateSlot } from "../records/slot.js";
+import type { Slot } from "../records/types.js";
 
 export interface IaGroup { id: string; label: string; slots: string[] }
 export interface IaL1 { id: string; label: string; children: IaGroup[] }
@@ -368,6 +370,20 @@ export function followPositions(consumer: string, agent: ModelAgent, before: IaF
       continue;
     }
     const doc = JSON.parse(readModelText(file)) as Record<string, unknown>;
+    if (doc.schema === SLOT_V2_SCHEMA) {
+      // A recut slot.json: its ia is the slash-path positionIa of its placement, and it has no extension key (the
+      // ia.json extensions list carries that). Rewritten as slot/2 and judged by the slot/2 schema.
+      const want = positionIa(id, at), had = positionIa(id, was.get(id));
+      if (jsonBytes(doc.ia) === jsonBytes(want) || !(targeted || jsonBytes(doc.ia) === jsonBytes(had))) continue;
+      const nextSlot = { ...doc, ia: want } as unknown as Slot;
+      const issues = validateSlot(nextSlot);
+      if (issues.length) return { error: `${agent}/${id}: ${issues.map(issue => `${issue.path} ${issue.message}`).join("; ")}` };
+      writes.push([file, serializeSlot(nextSlot)]);
+      const from = doc.ia as { l1?: string; l2?: string }, levelChanged = from.l1 !== want.l1 || from.l2 !== want.l2;
+      if (targeted || levelChanged) moved.push(`slot.json ${id}: ia ${position(doc.ia)} -> ${position(want)}`);
+      else reordered++;
+      continue;
+    }
     let nextDoc: Record<string, unknown> = doc;
     if (jsonBytes(doc.ia) !== jsonBytes(at) && (targeted || jsonBytes(doc.ia) === jsonBytes(was.get(id)))) nextDoc = { ...nextDoc, ia: { ...at } };
     if (targeted && slot?.extension === true) nextDoc = { ...nextDoc, extension: true };
