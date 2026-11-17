@@ -37,7 +37,6 @@
             "sections.steps",
             "sections.timeline",
             "sections.call-to-action",
-            "sections.cards",
             "sections.resource-list",
             "sections.task-list",
             "sections.comparison",
@@ -47,11 +46,9 @@
             "sections.usage",
             "sections.data-table",
             "sections.data-grid",
-            "sections.record-detail",
             "sections.activity-feed",
             "sections.audit-log",
             "sections.form",
-            "sections.newsletter",
             "sections.wizard",
             "sections.settings",
             "sections.column-mapper",
@@ -72,8 +69,7 @@
         {
           "id": "close",
           "accepts": [
-            "sections.call-to-action",
-            "sections.newsletter"
+            "sections.call-to-action"
           ],
           "min": 0,
           "max": 1,
@@ -163,7 +159,7 @@
               "accepts": [
                 "sections.data-table",
                 "sections.resource-list",
-                "sections.cards",
+                "sections.link-index",
                 "sections.data-grid"
               ],
               "max": 1
@@ -188,7 +184,6 @@
                 "sections.explorer",
                 "sections.data-table",
                 "sections.form",
-                "sections.record-detail",
                 "sections.empty-state",
                 "sections.error-state",
                 "sections.notices"
@@ -246,11 +241,9 @@
           "id": "end",
           "accepts": [
             "sections.form",
-            "sections.newsletter",
             "sections.wizard",
             "sections.media",
-            "sections.content",
-            "sections.record-detail"
+            "sections.content"
           ],
           "min": 1,
           "max": 1,
@@ -327,7 +320,7 @@
             "sections.steps",
             "sections.timeline",
             "sections.call-to-action",
-            "sections.cards",
+            "sections.link-index",
             "sections.resource-list",
             "sections.task-list",
             "sections.comparison",
@@ -337,11 +330,9 @@
             "sections.usage",
             "sections.data-table",
             "sections.data-grid",
-            "sections.record-detail",
             "sections.activity-feed",
             "sections.audit-log",
             "sections.form",
-            "sections.newsletter",
             "sections.wizard",
             "sections.settings",
             "sections.column-mapper",
@@ -364,7 +355,6 @@
             "sections.usage",
             "sections.activity-feed",
             "sections.notices",
-            "sections.record-detail",
             "sections.table-of-contents",
             "sections.link-index",
             "sections.people"
@@ -468,7 +458,7 @@
             "sections.testimonials",
             "sections.usage",
             "sections.status-list",
-            "sections.cards",
+            "sections.link-index",
             "sections.call-to-action",
             "sections.logo-cloud"
           ],
@@ -543,7 +533,7 @@
           "accepts": [
             "sections.testimonials",
             "sections.media",
-            "sections.cards"
+            "sections.link-index"
           ],
           "min": 4,
           "max": 24,

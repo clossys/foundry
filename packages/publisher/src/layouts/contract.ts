@@ -43,6 +43,8 @@ export interface LayoutLeaf {
 }
 export interface LayoutIA {
   readonly layer: "layouts";
+  /** The shipped legacy tree is retired in place (foundry-build-0036, audit P10): layouts.* are retired leaves. */
+  readonly retired?: { readonly retiredAt: string; readonly decidedBy: string; readonly reason: string };
   readonly nodes: readonly {
     readonly id: ArrangementModel;
     readonly label: string;

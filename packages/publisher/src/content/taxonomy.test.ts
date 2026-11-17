@@ -9,8 +9,10 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("content taxonomy", () => {
   it("loads the seed JSON in presentation order and derives the compatibility view", () => {
-    expect(CONTENT_TREE).toEqual(treeData);
-    expect(loadContentTree()).toEqual(treeData);
+    const { retired, ...placement } = treeData;
+    expect(retired).toMatchObject({ retiredAt: "2026-11-17", decidedBy: expect.stringContaining("audit P10") });
+    expect(CONTENT_TREE).toEqual(placement);
+    expect(loadContentTree()).toEqual(placement);
     expect(CONTENT_TAXONOMY).toEqual({
       websites: ["site", "admin", "auth", "app", "demo"],
       documents: ["docs"],

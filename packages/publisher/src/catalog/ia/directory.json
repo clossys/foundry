@@ -65,7 +65,7 @@
     },
     {
       "id": "directory/decks",
-      "label": "Decks",
+      "label": "Slides",
       "children": [
         {
           "id": "directory/decks/slides",

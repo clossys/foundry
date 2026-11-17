@@ -1,5 +1,10 @@
 {
   "schemaVersion": 1,
+  "retired": {
+    "retiredAt": "2026-11-17",
+    "decidedBy": "owner 2026-11-16 (go with your recommendation); foundry-build-0036 audit P10",
+    "reason": "legacy content tree: the consumer owns the content map (src/content-map) and the Publisher slot tree is src/catalog/ia/*.json; kept in place, flagged retired, until its legacy content-slot readers are removed"
+  },
   "nodes": [
     {
       "id": "websites",

@@ -6,11 +6,12 @@ import {
 import type { LayoutConfig, LayoutLeaf, LayoutIA } from "./index.js";
 
 // An injected registry fixture: acceptance is validated against permanent leaf IDs,
-// independently of mutable section IA grouping.
+// independently of mutable section IA grouping. foundry-build-0036 (audit P9): the retired Designer sections cards
+// (merged into link-index), record-detail and newsletter are not registered, so no layout slot may accept them.
 const sectionLeaves = `band section-header pagination hero page-header content article features
-  testimonials logo-cloud people media gallery faq steps timeline call-to-action cards resource-list
-  task-list comparison pricing stats status-list usage data-table data-grid record-detail activity-feed
-  audit-log form newsletter wizard settings column-mapper access-matrix chat link-index table-of-contents
+  testimonials logo-cloud people media gallery faq steps timeline call-to-action resource-list
+  task-list comparison pricing stats status-list usage data-table data-grid activity-feed
+  audit-log form wizard settings column-mapper access-matrix chat link-index table-of-contents
   explorer filter-builder empty-state error-state notices`.split(/\s+/).map((id) => `sections.${id}`);
 const copy = () => structuredClone(LAYOUT_LEAVES) as LayoutLeaf[];
 function withConfig(config: LayoutConfig): LayoutLeaf[] {
@@ -22,7 +23,7 @@ const issues = (registry: readonly LayoutLeaf[]) => checkLayoutRegistry(sectionL
 
 describe("page layout registry", () => {
   it("registers exactly five leaves, four available and staggered-grid held, and nine configs", () => {
-    expect(sectionLeaves).toHaveLength(44);
+    expect(sectionLeaves).toHaveLength(41);
     expect(LAYOUT_LEAVES.map((leaf) => leaf.id)).toEqual(LAYOUT_IDS);
     expect(LAYOUT_LEAVES.filter((leaf) => leaf.status !== "held")).toHaveLength(4);
     expect(getLayoutLeaf("layouts.staggered-grid")?.status).toBe("held");
@@ -144,7 +145,8 @@ describe("page layout registry", () => {
     expect(stack.slots.map(({ id, min, max, position }) => ({ id, min, max, position }))).toEqual([
       { id: "lead", min: 0, max: 1, position: "first" }, { id: "body", min: 1, max: 24, position: "any" }, { id: "close", min: 0, max: 1, position: "last" },
     ]);
-    expect(stack.slots[1]?.accepts).toHaveLength(42);
+    // 42 -> 39: foundry-build-0036 P9 drops the retired sections.cards, sections.record-detail and sections.newsletter from layouts.json.
+    expect(stack.slots[1]?.accepts).toHaveLength(39);
     expect(stack.slots[1]?.accepts).not.toContain("sections.table-of-contents");
     expect(getLayoutLeaf("layouts.bento")!.contract).toMatchObject({ requiresSection: { container: "adaptive" }, slots: [{ id: "lead" }, { id: "tiles", min: 3, max: 12, tile: { spans: ["1x1", "2x1", "1x2", "2x2"] } }] });
     expect(getLayoutLeaf("layouts.bento")!.contract.reflow.map((step) => step.columns)).toEqual([2, 3, 4]);

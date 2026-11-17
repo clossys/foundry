@@ -7,7 +7,8 @@
  * pin) with the slide slot left as `DECK_SLIDE_SLOT`, renders each slide's Designer section on the `slide` medium with its
  * Writer words bound, compiles the theme stylesheet those sections need, and hands all of it here. Assembles only: each
  * slide is the frame's markup with one section in its slide slot. The frame owns the canvas (root, aspect, surface); the
- * one size source is the frame contract's `canvas`, which the print page box is derived from. No words, no styling.
+ * one size source is the frame contract's `canvas` (its aspect member at the print base width), which the print page box
+ * is derived from. No words, no styling.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -15,7 +16,7 @@ import { dirname, join } from "node:path";
 export interface SlideInput {
   /** The page option's instance key for this slide (`title`, `agenda`, ...). */
   readonly role: string;
-  /** The Designer section slot it renders (`sections.slide-title`). */
+  /** The Designer section slot it renders on the slide medium (`sections.hero`). */
   readonly section: string;
   /** The section's rendered markup on the slide medium, Writer words already bound. */
   readonly html: string;

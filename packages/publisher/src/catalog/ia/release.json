@@ -37,7 +37,7 @@
       "children": [
         {
           "id": "release/slides/slides",
-          "label": "Slide releases",
+          "label": "Slides releases",
           "leaves": [
             "release.slides"
           ]
@@ -58,12 +58,6 @@
           ]
         }
       ]
-    },
-    {
-      "id": "release/video",
-      "label": "Video",
-      "parked": true,
-      "children": []
     }
   ],
   "slots": {

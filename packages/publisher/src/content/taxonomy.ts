@@ -28,7 +28,8 @@ export function loadContentTree(input: unknown = treeData): ContentTree {
   if (!record(input) || input.schemaVersion !== 1 || !Array.isArray(input.nodes)) {
     throw new Error("Invalid content tree: expected schemaVersion 1 and nodes");
   }
-  assertFields(input, ["schemaVersion", "nodes"], "tree");
+  // `retired` marks the shipped seed tree retired in place (foundry-build-0036, audit P10); it is a record, never placement data.
+  assertFields(input, ["schemaVersion", "retired", "nodes"], "tree");
   const groupIds = new Set<string>();
   const nodes = input.nodes.map((node: unknown, index: number): ContentTreeNode => {
     const path = `nodes[${index}]`;

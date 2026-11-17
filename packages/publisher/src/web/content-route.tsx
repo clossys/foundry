@@ -11,7 +11,7 @@ import { PublisherHost, writerShellCopyResolver } from "./publisher-host.js";
 import { canonicalLocale, directionFor } from "@clossys/writer/locale";
 import { AppFrame, AuthFrame, DocumentFrame, SiteFrame } from "@clossys/designer/frames";
 import type { SiteFrameProps } from "@clossys/designer/frames";
-import { EmptyState, LogoHero, SectionHeader } from "@clossys/designer/blocks/server";
+import { EmptyState, SectionHeader } from "@clossys/designer/blocks/server";
 import { PAGE_META_KEY, resolveCopy, validateCopyFields } from "../content/composition.js";
 import type { CompositionSection, CopyFinding, CopyResolutionReport, ResolveCopyOptions } from "../content/composition.js";
 import { isContentJson } from "../content/json.js";
@@ -236,7 +236,8 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     const registration = library?.sections.find(entry => entry.id === section.sectionId);
     if (!registration) add("section", "designer", section.sectionId, `Section is not registered in the selected consumer library: ${section.sectionId}`);
     else if (!registration.configIds.includes(section.configId)) add("config", "designer", section.configId, `Section config is not registered: ${section.sectionId}/${section.configId}`);
-    const supported = ["sections.empty-state", "sections.section-header", "sections.logo-hero"].includes(section.sectionId);
+    // foundry-build-0036 (audit P9): the retired sections.logo-hero (merged into sections.hero) has no adapter; it needs a binding like any section.
+    const supported = ["sections.empty-state", "sections.section-header"].includes(section.sectionId);
     const binding = input.sectionBindings?.[occurrence.key];
     if (!supported && !binding) add("section", "designer", section.sectionId, `Designer section export adapter is unavailable: ${section.sectionId}`);
     else if (!binding && section.configId !== "default") add("config", "designer", section.configId, `Section config adapter is unavailable: ${section.sectionId}/${section.configId}`);
@@ -244,15 +245,15 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     // A historical section is projected in isolation; unrelated source sections never replace this route.
     const sectionCopy = recordCopy(resolveCopy({ composition: { ...composition, sections: [{ ...section, key: occurrence.key }] } }, locale, copyOptions), `sections.${occurrence.key}`);
     const fields = sectionCopy[occurrence.key] ?? {};
-    const allowed = section.sectionId === "sections.logo-hero" ? ["name"] : section.sectionId === "sections.section-header" ? ["heading", "description", "eyebrow"] : ["title", "description"];
+    const allowed = section.sectionId === "sections.section-header" ? ["heading", "description", "eyebrow"] : ["title", "description"];
     if (supported && !binding) for (const field of section.fields) if (!allowed.includes(field.key)) add("copy", "writer", `${occurrence.key}.${field.key}`, `Section copy has no closed adapter: ${section.sectionId}/${field.key}`);
-    const requiredKey = section.sectionId === "sections.logo-hero" ? "name" : section.sectionId === "sections.section-header" ? "heading" : "title";
+    const requiredKey = section.sectionId === "sections.section-header" ? "heading" : "title";
     if (supported && !binding && !fields[requiredKey]?.trim()) add("copy", "writer", `${occurrence.key}.${requiredKey}`, `Writer section copy is required for ${locale}: ${occurrence.key}.${requiredKey}`);
 
     for (const ref of section.assets ?? []) {
       if (ref.libraryVersion !== composition.libraryVersion || !library?.assetIds.includes(ref.assetId)) add("asset", "designer", ref.assetId, `Asset is not registered in the selected consumer library: ${ref.assetId}/${ref.libraryVersion}`);
     }
-    if (!binding && section.sectionId !== "sections.logo-hero" && section.assets?.length) add("config", "designer", section.configId, `Section config has no asset adapter: ${section.sectionId}/${section.configId}`);
+    if (!binding && section.assets?.length) add("config", "designer", section.configId, `Section config has no asset adapter: ${section.sectionId}/${section.configId}`);
     if (binding && (!registration || !registration.configIds.includes(section.configId))) continue;
     if (binding) {
       try { sectionNodes.push(createElement(Fragment, { key: occurrence.key }, renderContentSection(binding, section.sectionId, section.configId, composition.libraryVersion, fields, locale))); }
@@ -264,14 +265,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
       continue;
     }
     if (!supported || section.configId !== "default") continue;
-    if (section.sectionId === "sections.logo-hero") {
-      const refs = section.assets ?? [];
-      if (refs.length !== 1) { add("asset", "designer", occurrence.key, `LogoHero requires exactly one registered mark asset: ${occurrence.key}`); continue; }
-      const ref = refs[0]!;
-      const asset = assets.find(entry => entry.assetId === ref.assetId && entry.libraryVersion === ref.libraryVersion);
-      if (!asset) { add("asset", "designer", ref.assetId, `Asset source binding is unavailable: ${ref.assetId}/${ref.libraryVersion}`); continue; }
-      sectionNodes.push(createElement(LogoHero, { key: occurrence.key, mark: asset.src, name: fields.name! }));
-    } else if (section.sectionId === "sections.section-header") sectionNodes.push(createElement(SectionHeader, { key: occurrence.key, title: fields.heading, description: fields.description, eyebrow: fields.eyebrow }));
+    if (section.sectionId === "sections.section-header") sectionNodes.push(createElement(SectionHeader, { key: occurrence.key, title: fields.heading, description: fields.description, eyebrow: fields.eyebrow }));
     else sectionNodes.push(createElement(EmptyState, { key: occurrence.key, title: fields.title, description: fields.description }));
   }
 

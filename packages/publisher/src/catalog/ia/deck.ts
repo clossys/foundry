@@ -1,7 +1,9 @@
 /**
  * Deck checks (foundry-build-0027). A deck page assembles slides on Designer's deck frame: every frame and section it
  * names is a live Designer slot that ships a package default, and every slide renders on the `slide` medium of its
- * section (one construct, two media). Words stay in Writer records; `checkPageOption` covers record refs and inline copy.
+ * section (one construct, two media). foundry-build-0036: a slide is a live twin section on the slide medium (hero,
+ * table-of-contents, content, testimonials, call-to-action), never a retired sections.slide-*; its Designer contract
+ * must declare the slide medium. Words stay in Writer records; `checkPageOption` covers record refs and inline copy.
  */
 import type { DesignerCatalog, LayoutSlot, PageOption } from "./tree.js";
 
@@ -20,6 +22,7 @@ export function checkDeck(pageId: string, page: PageOption, layout: LayoutSlot |
     if (!section.use.startsWith("designer/sections.")) add(`${section.role} places ${section.use}, not a Designer section`);
     else if (!designer.live.has(unit(section.use))) add(`${section.role} places ${section.use}, which the Designer catalog does not have`);
     else if (!designer.withDefault.has(unit(section.use))) add(`${section.role} places ${section.use}, which has no Designer package default`);
+    if (designer.slideMedium && designer.live.has(unit(section.use)) && !designer.slideMedium.has(unit(section.use))) add(`${section.role} places ${section.use}, whose Designer contract does not declare the slide medium`);
     if (section.variant?.medium !== "slide") add(`${section.role} must render on the slide medium (variant.medium slide)`);
   }
   return findings;
