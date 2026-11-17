@@ -629,6 +629,23 @@ function recutStore(root: string): boolean {
 }
 
 /**
+ * The slot/2 kind a new slot takes when neither its id nor its contract names one (a slot the package tree does not
+ * hold, such as an owner extension): the one kind the agent's `clossys.slot/2` slots under the same L1 hold. The L1
+ * decides it, as the package trees do (Writer Voice, Prose and Copy; a Designer layer). None, or more than one, is none.
+ */
+function placedKind(root: string, agent: AgentId, l1: string): TargetSlotKind | undefined {
+  const kinds = new Set<TargetSlotKind>();
+  for (const folder of consumerSlotFolders(root)) {
+    if (folder.agent !== agent || !folder.hasSlot) continue;
+    try {
+      const doc = JSON.parse(readModelText(folder.file)) as Partial<Slot>;
+      if (doc.schema === SLOT_V2_SCHEMA && doc.ia?.l1 === l1 && typeof doc.kind === "string") kinds.add(doc.kind);
+    } catch { /* judged by clossys check */ }
+  }
+  return kinds.size === 1 ? [...kinds][0] : undefined;
+}
+
+/**
  * The `clossys.slot/2` bytes `clossys ia` writes on a recut store for the slot/1 document it built and validated:
  * the slot-1-to-2 mapping (slotFromV1), refs resolved to the agent whose folder holds each id (same agent first).
  * An existing slot/2 file keeps its createdBy, createdAt, status, base, brief (inputs follow the refs), tighten and
@@ -637,10 +654,12 @@ function recutStore(root: string): boolean {
 function currentSlotWrite(root: string, doc: SlotV1, position: { l1: string; l2: string; order: number }, stored: Slot | undefined, options: { kind?: TargetSlotKind; live: boolean; at: string }): { bytes: string } | { error: string } {
   const at = toIsoZ(options.at);
   if (!at) return { error: `--at ${options.at} is not an ISO timestamp` };
-  const kind = options.kind ?? targetKind(doc);
-  if (!kind) return { error: `${doc.agent}/${doc.id} kind ${doc.kind} has no ${SLOT_V2_SCHEMA} kind` };
   const holders = new Map<string, AgentId[]>();
   for (const folder of consumerSlotFolders(root)) holders.set(folder.id, [...(holders.get(folder.id) ?? []), folder.agent]);
+  const ia = positionIa(doc.id, position);
+  // A Publisher --kind (page, publication) is itself a slot/2 kind, judged by validateSlot below.
+  const kind = options.kind ?? targetKind(doc) ?? placedKind(root, doc.agent, ia.l1) ?? (doc.agent === "publisher" ? doc.kind as TargetSlotKind : undefined);
+  if (!kind) return { error: `${doc.agent}/${doc.id} kind ${doc.kind} has no ${SLOT_V2_SCHEMA} kind` };
   const unresolved: string[] = [];
   const refsOf = (ids: readonly string[] | undefined, rel: Ref["rel"]): Ref[] => (ids ?? []).flatMap(id => {
     const agents = holders.get(id) ?? [];
@@ -650,7 +669,6 @@ function currentSlotWrite(root: string, doc: SlotV1, position: { l1: string; l2:
   });
   const inputs = refsOf(doc.inputs, "input"), uses = refsOf(doc.uses, "uses");
   if (unresolved.length) return { error: `no consumer slot folder holds ${unresolved.join(", ")}` };
-  const ia = positionIa(doc.id, position);
   const made = slotFromV1(doc, { kind, status: stored?.status ?? (options.live ? "live" : "starter"), ia, inputs, uses, createdBy: stored?.createdBy ?? cliActor("clossys ia"), at: stored?.createdAt ?? at });
   const slot: Slot = !stored ? made : {
     ...made,
