@@ -5,9 +5,10 @@
  * the repo either still has (red) or no longer has. The empty-L2 probe runs the real constitution over a
  * temporary copy of the consumer with one empty L2 group added per agent; the rest read files.
  */
-import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { standardTastePath } from "../cli/critique.js";
 import { runConstitution } from "../constitution/run.js";
 import { ASSERTIONS, type Judgement } from "./assertions.js";
 import type { AgentModel, ConformModel } from "./model.js";
@@ -20,7 +21,7 @@ export interface ProbeFacts {
   readonly emptyL2Detected: Readonly<Record<string, boolean | string>>;
   /** A request verb (head or step) exists. */
   readonly requestVerb: boolean;
-  /** critique-packet resolves standards against the workspace root (`packages/<agent>/standards`). */
+  /** critique-packet cannot resolve a standard's taste.md from a consumer root (no packages/ folder). */
   readonly critiqueMonorepoPath: boolean;
 }
 
@@ -51,16 +52,34 @@ export function probeEmptyL2(repo: string, consumer: string, agents: readonly st
   }
 }
 
+/**
+ * Resolves each agent's first standard's taste.md the way critique-packet does, from a consumer root with
+ * no packages/ folder (a temp folder outside the monorepo, real path). Red (true) when any resolves under
+ * that consumer root or to no file: a consumer cannot build the packet.
+ */
+export function probeCritiquePath(model: ConformModel): boolean {
+  const temp = realpathSync(mkdtempSync(join(tmpdir(), "conform-critique-")));
+  try {
+    const judged = model.agents.flatMap(agent => agent.standards.slice(0, 1).map(standard => ({ agent: agent.agent, id: standard.id })));
+    if (!judged.length) return true;
+    return judged.some(({ agent, id }) => {
+      const path = standardTastePath(temp, agent, id);
+      return path.startsWith(temp) || !existsSync(path);
+    });
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+}
+
 /** Reads the cheap probe facts and runs the empty-L2 probe. */
 export function readProbeFacts(model: ConformModel): ProbeFacts {
   const producer = join(model.repo, "packages/producer");
   const runner = readFileSync(join(producer, "src/pipeline/runner.ts"), "utf8");
   const actions = JSON.parse(readFileSync(join(producer, "pipeline/actions.json"), "utf8")) as { actions?: { path?: string }[] };
-  const critique = readFileSync(join(producer, "src/cli/critique.ts"), "utf8");
   return {
     emptyL2Detected: probeEmptyL2(model.repo, model.consumer, model.agents.map(agent => agent.agent)),
     requestVerb: /head === "request"/.test(runner) || (actions.actions ?? []).some(action => /(^|\/)request(\/|$)/.test(action.path ?? "")),
-    critiqueMonorepoPath: /`packages\/\$\{agent\}\/standards/.test(critique),
+    critiqueMonorepoPath: probeCritiquePath(model),
   };
 }
 
