@@ -415,10 +415,17 @@ describe("build-0035 IA data (ia-audit 2026-11-16 P11, P14-P18, P24)", () => {
     expect(surface["frames.deck"]).toBe("deck");
   });
 
-  it("P11: lockup and mark read the Director name; every theme reads the Director visual identity", () => {
-    for (const id of ["assets.lockup", "assets.mark"]) expect(rows[id]?.inputs, id).toContain("identity.naming.name");
+  // A listed inputs array replaces the derived Director read graph (producer ia-sync), so every listed array
+  // keeps the generic eight Director refs and only adds to them (review r1 of build-0035).
+  const directorBase = ["advantage.proposition.promise", "focus.category.definition", "focus.segment.core", "identity.brand.essence", "identity.brand.personality", "identity.verbal.voice", "identity.visual.imagery", "identity.visual.style"];
+  it("P11: lockup and mark read the generic Director inputs plus the name; themes keep the derived inputs, which include the visual identity", () => {
+    for (const id of ["assets.lockup", "assets.mark"]) expect(rows[id]?.inputs, id).toEqual([...directorBase, "identity.naming.name"]);
     const themes = Object.keys(rows).filter(id => id.startsWith("themes."));
     expect(themes).toHaveLength(42);
-    for (const id of themes) expect(rows[id]?.inputs, id).toEqual(expect.arrayContaining(["identity.visual.style", "identity.visual.imagery"]));
+    for (const id of themes) expect(rows[id]?.inputs, id).toBeUndefined();
+  });
+
+  it("every listed inputs array is a superset of the generic Director inputs", () => {
+    for (const [id, row] of Object.entries(rows)) if (row?.inputs) expect(row.inputs, id).toEqual(expect.arrayContaining(directorBase));
   });
 });
