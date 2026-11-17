@@ -1,0 +1,91 @@
+{
+  "schema": "clossys.conform-adapter/1",
+  "agent": "designer",
+  "trees": [
+    {
+      "file": "src/catalog/ia/themes.json",
+      "freeze": "src/catalog/ia/themes.leaf-freeze.json"
+    },
+    {
+      "file": "src/catalog/ia/assets.json",
+      "freeze": "src/catalog/ia/assets.leaf-freeze.json"
+    },
+    {
+      "file": "src/catalog/ia/components.json",
+      "freeze": "src/catalog/ia/components.leaf-freeze.json"
+    },
+    {
+      "file": "src/catalog/ia/sections.json",
+      "freeze": null
+    },
+    {
+      "file": "src/catalog/ia/frames.json",
+      "freeze": null
+    }
+  ],
+  "kinds": [
+    "element/token",
+    "element/asset",
+    "element/component",
+    "element/section",
+    "element/frame"
+  ],
+  "defaults": [
+    "src/catalog/defaults"
+  ],
+  "recipes": [
+    {
+      "dir": "recipes/create.component"
+    },
+    {
+      "dir": "recipes/create.element"
+    },
+    {
+      "dir": "recipes/create.glyph"
+    },
+    {
+      "dir": "recipes/create.mark"
+    },
+    {
+      "dir": "recipes/create.marketing-section"
+    },
+    {
+      "dir": "recipes/create.tokens"
+    }
+  ],
+  "derive": [],
+  "edgeFiles": [
+    {
+      "file": "src/catalog/slot-contracts/themes.json",
+      "format": "slot-contracts"
+    },
+    {
+      "file": "src/catalog/slot-contracts/assets.json",
+      "format": "slot-contracts"
+    },
+    {
+      "file": "src/catalog/slot-contracts/components.json",
+      "format": "slot-contracts"
+    },
+    {
+      "file": "src/catalog/slot-contracts/sections.json",
+      "format": "slot-contracts"
+    },
+    {
+      "file": "src/catalog/slot-contracts/frames.json",
+      "format": "slot-contracts"
+    },
+    {
+      "file": "src/catalog/reports/usage-graph.json",
+      "format": "usage-graph"
+    }
+  ],
+  "skill": "skill/SKILL.md",
+  "skills": {
+    "scope": null,
+    "slot": "packages/producer/actions/ia/skill.md",
+    "create": "packages/designer/actions/designer.candidates/skill.md",
+    "choose": "packages/designer/actions/pick.designer/skill.md",
+    "cascade": null
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "schema": "clossys.conform-adapter/1",
+  "agent": "writer",
+  "trees": [
+    {
+      "file": "src/catalog/ia/voice.json",
+      "freeze": "src/catalog/ia/voice.leaf-freeze.json"
+    },
+    {
+      "file": "src/catalog/ia/prose.json",
+      "freeze": "src/catalog/ia/prose.leaf-freeze.json"
+    },
+    {
+      "file": "src/catalog/ia/copy.json",
+      "freeze": "src/catalog/ia/copy.leaf-freeze.json"
+    }
+  ],
+  "kinds": [
+    "voice",
+    "prose",
+    "copy"
+  ],
+  "defaults": [
+    "defaults"
+  ],
+  "recipes": [
+    {
+      "dir": "recipes/create.copy"
+    },
+    {
+      "dir": "recipes/create.headline"
+    },
+    {
+      "dir": "recipes/create.lexicon"
+    }
+  ],
+  "derive": [
+    {
+      "module": "src/derive/copy.ts"
+    }
+  ],
+  "edgeFiles": [],
+  "skill": "skill/SKILL.md",
+  "skills": {
+    "scope": null,
+    "slot": "packages/producer/actions/ia/skill.md",
+    "create": "packages/writer/actions/writer.candidates/skill.md",
+    "choose": "packages/writer/actions/pick.writer/skill.md",
+    "cascade": null
+  }
+}

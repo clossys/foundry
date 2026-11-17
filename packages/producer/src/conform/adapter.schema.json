@@ -1,0 +1,59 @@
+{
+  "$comment": "clossys.conform-adapter/1: what an agent package declares to the conformance runner (foundry-build-0048 U1).",
+  "type": "object",
+  "required": ["schema", "agent", "trees", "kinds", "defaults", "recipes", "derive", "edgeFiles", "skill", "skills"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "clossys.conform-adapter/1" },
+    "agent": { "enum": ["director", "designer", "writer", "publisher"] },
+    "trees": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "required": ["file", "freeze"], "additionalProperties": false,
+        "properties": { "file": { "type": "string", "minLength": 1 }, "freeze": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] } }
+      }
+    },
+    "kinds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "defaults": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "recipes": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["dir"], "additionalProperties": false,
+        "properties": {
+          "dir": { "type": "string", "minLength": 1 },
+          "fixture": {
+            "type": "object", "required": ["output", "slot"], "additionalProperties": false,
+            "properties": { "output": { "type": "string", "minLength": 1 }, "slot": { "type": "string", "minLength": 1 } }
+          }
+        }
+      }
+    },
+    "derive": {
+      "type": "array",
+      "items": { "type": "object", "required": ["module"], "additionalProperties": false, "properties": { "module": { "type": "string", "minLength": 1 } } }
+    },
+    "edgeFiles": {
+      "$comment": "slots: {slots: [{id, inputs, feeds}]}, feeds resolving in feedsTo's package tree; slot-contracts: [{slot, inputs: [{name, kind}]}]; usage-graph: {edges: [{from, to}]} within this agent.",
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["file", "format"], "additionalProperties": false,
+        "properties": {
+          "file": { "type": "string", "minLength": 1 },
+          "format": { "enum": ["slots", "slot-contracts", "usage-graph"] },
+          "feedsTo": { "enum": ["director", "designer", "writer", "publisher"] }
+        }
+      }
+    },
+    "skill": { "type": "string", "minLength": 1 },
+    "skills": {
+      "type": "object", "required": ["scope", "slot", "create", "choose", "cascade"], "additionalProperties": false,
+      "properties": {
+        "scope": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "slot": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "create": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "choose": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "cascade": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+      }
+    }
+  }
+}
