@@ -18,7 +18,7 @@ import { parseYamlSubset, readRecordHeader } from "./schema.js";
 import { parseFrontmatter } from "./slot-model/frontmatter.js";
 import { positionIa, sameJson, SLOT_SCHEMA, SLOT_V1_SCHEMA, validateSlot } from "./slot.js";
 import type { AgentId, Slot, SlotId, TargetSlotKind } from "./types.js";
-import { notNeededIssue, validateCandidate, validateSlotDoc, validateSource, type SlotModelIssue } from "./slot-model/validate.js";
+import { contractIssues, notNeededIssue, optionIssues, validateCandidate, validateSlotDoc, validateSource, type SlotModelIssue } from "./slot-model/validate.js";
 import { CANDIDATE_STATUS_KEYS, KIND_EXT, LEGACY_PROVENANCE_KEYS, PAGE_SCHEMA, PUBLICATION_SCHEMA, type ModelAgent, type NotNeeded, type SlotDoc, type SlotKind, type SlotPosition } from "./slot-model/types.js";
 
 /** The finding `clossys check` gives a slot.json still in the old format. */
@@ -83,6 +83,12 @@ export function slotReadIssues(value: unknown, path: string): SlotModelIssue[] {
   const contract = (value as Record<string, unknown>).contract;
   const notNeeded = object(contract) ? contract.notNeeded : undefined;
   if (notNeeded !== undefined && notNeededIssue(notNeeded)) issues.push({ code: "slot-invalid", path, message: "contract.notNeeded must be {reason, since, decidedBy} with a non-empty reason, an ISO date and who decided" });
+  // The slot/1 rules the schema does not hold, unrelaxed: the options rules, and the contract semantics of the
+  // kind family (a clossys.slot-contract/1 contract, the fixture shape).
+  const slot = value as Record<string, unknown>;
+  issues.push(...optionIssues(slot, path));
+  const family = typeof slot.kind === "string" ? FAMILY[slot.kind as TargetSlotKind] : undefined;
+  if (family && object(contract)) issues.push(...contractIssues(family, contract, typeof slot.id === "string" ? slot.id : "", path));
   return issues;
 }
 

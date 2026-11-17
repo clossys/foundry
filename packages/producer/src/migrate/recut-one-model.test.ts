@@ -7,6 +7,7 @@ import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, wri
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { runCli } from "../cli/main.js";
 import { runConstitution } from "../constitution/run.js";
 import { NO_HISTORY } from "../constitution/__fixtures__/workspace.js";
 import { PRODUCER_ROOT } from "../package-path.js";
@@ -120,6 +121,48 @@ describe("slot writes on clossys.slot/2 (options, not-needed)", () => {
     expect(after).toMatchObject({ schema: SLOT_SCHEMA, status: "parked", contract: { notNeeded: marker } });
     expect(validateSlot(after)).toEqual([]);
     expect(readSlot(w.consumer, agent, id).notNeeded).toEqual(marker);
+  });
+
+  // Mutation: the slot/1 options rules hold on slot/2 too (slotReadIssues), for the writer and for the checks.
+  it("refuses options 2 with no varyOn, and a varyOn that is not an axis id, on a recut slot", () => {
+    const w = recut();
+    const { agent, id } = consumerAdded(w);
+    const before = readFileSync(w.file(agent, id), "utf8");
+    expect(() => writeSlotOptions(w.consumer, agent, id, { options: 2, at: "2026-11-16T00:00:00Z" })).toThrow(/options refused: .*varyOn is required when options > 1/);
+    expect(() => writeSlotOptions(w.consumer, agent, id, { options: 3, varyOn: "Not An Axis!", at: "2026-11-16T00:00:00Z" })).toThrow(/options refused: .*varyOn must be an axis id/);
+    expect(readFileSync(w.file(agent, id), "utf8")).toBe(before);
+  });
+
+  it("flags a hand-set options 2 with no varyOn in clossys check and in R01.2", async () => {
+    const w = recut();
+    const { agent, id } = consumerAdded(w);
+    const baseline = await runCli(["check", "--root", w.root]);
+    expect(baseline.message).not.toMatch(/varyOn is required/);
+    const { varyOn: dropped, ...slot } = w.read(agent, id) as unknown as Record<string, unknown>;
+    expect(dropped).toBeDefined();
+    w.write(agent, id, { ...slot, options: 2 });
+    const check = await runCli(["check", "--root", w.root]);
+    // An invalid slot.json fails the slot model inputs closed (exit 2), and the row names the file and the rule.
+    expect(check.exitCode).toBe(2);
+    expect(check.message).toMatch(new RegExp(`${agent}/${id}[^\n]*varyOn is required when options > 1`));
+    expect(rowsOf(w, "R01.2").filter(row => row.agent === agent && row.slot === id).map(row => row.reason)).toEqual([expect.stringMatching(/^slot\.json is invalid: .*varyOn is required when options > 1/)]);
+  });
+
+  // Mutation: the slot/1 contract semantics hold on slot/2 too (slotReadIssues): a clossys.slot-contract/1 names its own slot, a fixture has its kind's shape.
+  it("flags a slot/2 contract that names another slot, and a brief fixture with no headings, in R01.2", () => {
+    const w = recut();
+    const section = "sections.producer.team-strip", brief = "advantage.defensibility.moat";
+    const sectionSlot = w.read("designer", section) as unknown as Record<string, unknown> & { contract: Record<string, unknown> };
+    const briefSlot = w.read("director", brief) as unknown as Record<string, unknown> & { contract: Record<string, unknown> };
+    expect(sectionSlot.contract).toMatchObject({ schema: "clossys.slot-contract/1", slot: section });
+    expect(briefSlot.contract.fixture).toMatchObject({ headings: expect.any(Array) });
+    const before = rowsOf(w, "R01.2").filter(row => (row.agent === "designer" && row.slot === section) || (row.agent === "director" && row.slot === brief));
+    expect(before.map(row => row.reason).join("\n")).not.toMatch(/contract\.slot must be|contract\.fixture headings/);
+    w.write("designer", section, { ...sectionSlot, contract: { ...sectionSlot.contract, slot: "sections.producer.elsewhere" } });
+    w.write("director", brief, { ...briefSlot, contract: { ...briefSlot.contract, fixture: { headings: [] } } });
+    const text = rowsOf(w, "R01.2").map(row => `${row.agent}/${row.slot}: ${row.reason}`).join("\n");
+    expect(text).toMatch(new RegExp(`designer/${section}: slot\\.json is invalid: [^\\n]*contract\\.slot must be ${section}, the slot's own id`));
+    expect(text).toMatch(new RegExp(`director/${brief}: slot\\.json is invalid: [^\\n]*contract\\.fixture headings must be a non-empty list of strings`));
   });
 
   it("refuses to write a computed field into a slot synced from a package base", () => {

@@ -2,7 +2,6 @@
  * foundry-build-0031: `clossys check` judges a recut consumer (clossys.slot/2). Synthetic: a tmp copy of
  * test-fixtures/consumer, recut in tmp, then the slot resolve that `clossys check` runs.
  */
-import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -198,19 +197,17 @@ describe("a target-format candidate is judged by the target rules", () => {
     expect(pinned.exitCode, pinned.message).toBe(0);
     expect(rows(world)).toEqual([]);
     const after = await runCli(["check", "--root", world.root], world.root);
-    // After the pin: no candidate finding. (The check's pin reader still judges a clossys.pin/2 pin.json by the
-    // pin/1 keys, a separate reader outside the candidate rules; its rows are left out here.)
-    expect(findings(after.message).filter(line => !findings(before.message).includes(line) && !line.includes("release.site/pin.json"))).toEqual([]);
+    // After the pin: no new finding at all, the clossys.pin/2 pin.json that `clossys pin` wrote included.
+    expect(JSON.parse(world.read("clossys/agents/publisher/release.site/pin.json"))).toMatchObject({ schema: "clossys.pin/2", candidate: name });
+    expect(findings(after.message).filter(line => !findings(before.message).includes(line))).toEqual([]);
     expect(after.message).not.toMatch(/release\.site[^\n]*(schema must be|format is required|entryOrder|candidates are)/);
     // slots.ts:740 (inputBlocker) gives the pinned manifest this verdict: the slot read and the pinned bytes.
     const manifestBytes = world.read(`clossys/agents/publisher/release.site/candidates/${name}`);
     const releaseRead = readSlotValue(JSON.parse(world.read("clossys/agents/publisher/release.site/slot.json")))!;
     expect(candidateIssues(releaseRead, "publisher", "release.site", name, manifestBytes)).toEqual([]);
-    // Through slots.ts itself: page.home takes the release as an input. inputBlocker reads the slot-model pin shape
-    // (a target pin.json is invalid-pin there, before :740; a separate reader), so the same manifest is pinned in
-    // that shape to reach the candidate verdict, and clears.
+    // Through slots.ts itself: page.home takes the release as an input, and inputBlocker reads the clossys.pin/2
+    // pin.json `clossys pin` wrote, through to the candidate verdict at :740, and clears.
     place("page.home", "pages", 1, slot => ({ ...slot, refs: [...(slot.refs as unknown[]), { to: "publisher/release.site", rel: "input" }] }));
-    world.write("clossys/agents/publisher/release.site/pin.json", `${JSON.stringify({ candidate: name, sha256: createHash("sha256").update(manifestBytes).digest("hex"), decidedBy: "planner", basis: "planner", at: AT })}\n`);
     expect(readSlotEntry(consumer, "publisher", "release.site")).toBeDefined();
     expect(readiness(consumer, "publisher", "page.home")).toEqual({ ready: true, blockedBy: [] });
   });

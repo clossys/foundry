@@ -127,6 +127,17 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
     else for (const id of value[key] as string[]) if (!SLOT_ID.test(id)) fail(`${key} names an invalid slot id ${id}`);
   }
   if (value.notNeeded !== undefined && notNeededIssue(value.notNeeded)) fail("notNeeded must be {reason, since, decidedBy} with a non-empty reason, an ISO date and who decided");
+  issues.push(...optionIssues(value, path));
+  return issues;
+}
+
+/**
+ * The options rules of a slot in either format: options is 1, 2 or 3; varyOn is an axis id; varyOn is required
+ * when options > 1. validateSlotDoc applies them to a slot/1 document, slotReadIssues to a slot/2 one.
+ */
+export function optionIssues(value: Readonly<Record<string, unknown>>, path = "slot.json"): SlotModelIssue[] {
+  const issues: SlotModelIssue[] = [];
+  const fail = (message: string) => issues.push({ code: "slot-invalid", path, message });
   if (value.options !== undefined && !(OPTION_COUNTS as readonly unknown[]).includes(value.options)) fail("options must be 1, 2 or 3");
   if (value.varyOn !== undefined && (typeof value.varyOn !== "string" || !VARY_ID.test(value.varyOn))) fail("varyOn must be an axis id such as tone");
   if (typeof value.options === "number" && value.options > 1 && value.varyOn === undefined) fail("varyOn is required when options > 1");
@@ -136,9 +147,10 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
 /**
  * A kind's contract, beyond the object shape: the seat contract against contract-seat.schema.json,
  * a contract declaring `clossys.slot-contract/1` against the slot contract schema (naming this slot),
- * every kind's fixture by its shape.
+ * every kind's fixture by its shape. validateSlotDoc applies it to a slot/1 document, slotReadIssues to a
+ * slot/2 one by its kind family.
  */
-function contractIssues(kind: SlotKind, contract: Record<string, unknown>, id: string, path: string): SlotModelIssue[] {
+export function contractIssues(kind: SlotKind, contract: Record<string, unknown>, id: string, path: string): SlotModelIssue[] {
   if (kind === "seat") return seatContractIssues(contract, id, path);
   const issues = contract.schema === RECORD_SCHEMA_IDS.slotContract ? slotContractIssues(contract, id, path) : [];
   if (!SLOT_KINDS.includes(kind) || contract.fixture === undefined) return issues;
