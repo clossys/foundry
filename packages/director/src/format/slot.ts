@@ -8,7 +8,7 @@
  */
 import { readBullet } from "../cell-format/markdown.js";
 import { parseSlotCitation, versionedCitation, versionedCitationMessage } from "./citation.js";
-import { pinIssues } from "./pin.js";
+import { pin2Issues, PIN2_SCHEMA, pinIssues } from "./pin.js";
 import { parseRef } from "./ref.js";
 import type { Bullet, Cell, Ref } from "./types.js";
 
@@ -22,9 +22,12 @@ export interface SlotPin { candidate: string; sha256: string; decidedBy: string;
 /**
  * pin.json against the one pin schema (format/pin.ts), the same verdict as @clossys/producer validatePin and
  * scripts/check-decisions.mjs. That a Director pin names a Markdown candidate is the store's rule, not the schema's.
+ * A document whose `schema` is `clossys.pin/2` (what `clossys pin` writes after a recut) is judged by pin2Issues
+ * instead and read as its pin record; `slot`, when given, is the Director slot id the pin.json was read from.
  */
-export function parseSlotPin(value: unknown): { ok: true; value: SlotPin } | { ok: false; message: string } {
-  const issues = pinIssues(value);
+export function parseSlotPin(value: unknown, slot?: string): { ok: true; value: SlotPin } | { ok: false; message: string } {
+  const pin2 = typeof value === "object" && value !== null && !Array.isArray(value) && (value as { schema?: unknown }).schema === PIN2_SCHEMA;
+  const issues = pin2 ? pin2Issues(value, slot === undefined ? undefined : { agent: "director", id: slot }) : pinIssues(value);
   if (issues.length) return { ok: false, message: issues.join("; ") };
   const pin = value as SlotPin;
   return { ok: true, value: { candidate: pin.candidate, sha256: pin.sha256, decidedBy: pin.decidedBy, basis: pin.basis, at: pin.at, ...(pin.confirmed ? { confirmed: { by: pin.confirmed.by, ref: pin.confirmed.ref, at: pin.confirmed.at } } : {}) } };
