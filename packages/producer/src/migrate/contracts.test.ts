@@ -1,8 +1,8 @@
 /**
  * `clossys migrate contracts` (foundry-build-0048 U3) on a temp copy of `test-fixtures/consumer` (the fixture stays
  * byte-identical): the committed fixture is already seeded, so a run changes nothing; a slot whose requirements were
- * stripped is reseeded from its standard in one ledgered event; and an option table that classes the hero and
- * call-to-action copy as writer.choice gives them the three-tone family (3 on tone: plain, bold, warm).
+ * stripped is reseeded from its standard in one ledgered event; the hero and call-to-action copy carry the writer.choice
+ * family (3 on tone: plain, bold, warm), and a table that reclasses one reseeds only its family.
  */
 import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { OPTION_TABLE, type OptionTable } from "../records/slot-model/option-classes.js";
 import { checkSlotOptions } from "../records/slot-options.js";
-import { applyContracts, familyFor, planContracts } from "./contracts.js";
+import { applyContracts, planContracts } from "./contracts.js";
 
 const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
@@ -61,19 +61,24 @@ describe("clossys migrate contracts", () => {
     expect(planContracts(consumer, REPO).seeds.filter(seed => seed.changes.length)).toEqual([]);
   });
 
-  it("gives the hero and call-to-action copy the writer.choice family (3 tones) once the option table classes them", () => {
+  it("carries the writer.choice family (3 tones) on the hero and call-to-action copy, and reseeds it from the option table", () => {
     const consumer = copy();
-    const table: OptionTable = { ...OPTION_TABLE, overrides: { ...OPTION_TABLE.overrides, writer: { ...OPTION_TABLE.overrides.writer, "sections.hero.copy": { class: "writer.choice", reason: "hero tone" }, "sections.call-to-action.copy": { class: "writer.choice", reason: "call-to-action tone" } } } };
     const tones = { options: 3, varyOn: "tone", values: ["plain", "bold", "warm"], class: "writer.choice" };
-    expect(familyFor("writer", "sections.hero.copy", "unused/group", table)).toEqual(tones);
+    for (const slot of ["sections.hero.copy", "sections.call-to-action.copy"]) {
+      expect(readDoc(consumer, "writer", slot).family, slot).toEqual(tones);
+    }
+    // The options check reads the family: three tones are owed and the table agrees (no drift).
+    const short = checkSlotOptions(consumer).findings.filter(finding => ["sections.hero.copy", "sections.call-to-action.copy"].includes(finding.slot));
+    expect(short.map(finding => finding.code)).toEqual(["options-short", "options-short"]);
+    expect(short.every(finding => /needs 3/.test(finding.message))).toBe(true);
+    // A table that classes the hero copy as one system string reseeds only its family, in one ledgered event.
+    const table: OptionTable = { ...OPTION_TABLE, overrides: { ...OPTION_TABLE.overrides, writer: { ...OPTION_TABLE.overrides.writer, "sections.hero.copy": { class: "writer.system", reason: "probe" } } } };
     const plan = planContracts(consumer, REPO, table);
-    const seeded = plan.seeds.filter(seed => seed.changes.includes("family")).map(seed => seed.slot).sort();
-    expect(seeded).toEqual(["sections.call-to-action.copy", "sections.hero.copy"]);
-    applyContracts(consumer, plan, AT);
-    for (const slot of seeded) expect(readDoc(consumer, "writer", slot).family, slot).toEqual(tones);
-    // The options check now reads the family: three tones are owed, and the table agrees, so no drift.
-    const findings = checkSlotOptions(consumer, table).findings.filter(finding => seeded.includes(finding.slot));
-    expect(findings.map(finding => finding.code).sort()).toEqual(["options-short", "options-short"]);
-    expect(findings.every(finding => /needs 3/.test(finding.message))).toBe(true);
+    expect(plan.seeds.filter(seed => seed.changes.length).map(seed => [seed.slot, seed.changes])).toEqual([["sections.hero.copy", ["family"]]]);
+    expect(applyContracts(consumer, plan, AT)).toEqual(["writer/sections.hero.copy"]);
+    expect(readDoc(consumer, "writer", "sections.hero.copy").family).toEqual({ options: 1, varyOn: null, values: [], class: "writer.system" });
+    expect(ledgerOps(consumer, "writer", "sections.hero.copy").at(-1)).toMatchObject({ op: "slot", verb: "migrate", migration: "contracts", class: "writer.system" });
+    // Back on the committed table, the family disagrees with it: the options check names the drift.
+    expect(checkSlotOptions(consumer).findings.find(finding => finding.slot === "sections.hero.copy")?.code).toBe("options-drift");
   });
 });

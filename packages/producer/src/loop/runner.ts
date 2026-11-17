@@ -41,6 +41,9 @@ import {
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { pinGate } from "../constitution/pin-gate.js";
+import { candidateVary } from "../records/slot-options.js";
+import { readCandidate } from "../records/slots.js";
+import type { SlotAgent } from "../records/slot-model/types.js";
 
 export type Exit = 0 | 1 | 2;
 
@@ -430,13 +433,24 @@ export function verifyCheck(ctx: { readonly root: string; readonly state: RunSta
   if (name === CANDIDATES_CERTIFIED) {
     if (!state.subject) return { ok: false, why: `${CANDIDATES_CERTIFIED}: the run has no slot` };
     const { agent, slotId } = state.subject;
-    const want = readSubject(root, agent, slotId)?.slot.family?.options ?? 1;
-    const { scorecard } = pinGate(root, join(root, "clossys"), agent, slotId, "", state.startedAt);
+    const family = readSubject(root, agent, slotId)?.slot.family;
+    const want = family?.options ?? 1;
+    const consumer = join(root, "clossys");
+    const { scorecard } = pinGate(root, consumer, agent, slotId, "", state.startedAt);
     const passing = scorecard.candidates.filter(row => row.submitted && row.certified);
-    if (passing.length >= want) return { ok: true };
+    // A family that varies on an axis owes that many distinct values among the passing candidates (the options check's
+    // count, records/slot-options.ts); a one-option family owes one passing candidate.
+    const axis = want > 1 ? family?.varyOn ?? null : null;
+    const offered = axis === null ? passing.length : new Set(passing.flatMap(row => {
+      const tag = candidateVary(row.candidate, readCandidate(consumer, agent as SlotAgent, slotId, row.candidate).bytes);
+      const value = tag && tag !== "invalid" ? tag[axis] : undefined;
+      return value !== undefined && (family!.values.length === 0 || family!.values.includes(value)) ? [value] : [];
+    })).size;
+    if (offered >= want) return { ok: true };
     const failing = scorecard.candidates.filter(row => !(row.submitted && row.certified))
       .map(row => `${row.candidate} (${!row.submitted ? "no matching submit record" : row.reasons.map(reason => `[${reason.code}] ${reason.message}`).join("; ")})`);
-    return { ok: false, why: `${CANDIDATES_CERTIFIED}: ${agent}/${slotId} holds ${passing.length} of ${want} submitted, certified candidates${failing.length ? `; not passing: ${failing.join("; ")}` : ""}` };
+    const held = axis === null ? `${offered} of ${want} submitted, certified candidates` : `${offered} of ${want} distinct ${axis} values (${family!.values.join(", ")}) among ${passing.length} submitted, certified candidates`;
+    return { ok: false, why: `${CANDIDATES_CERTIFIED}: ${agent}/${slotId} holds ${held}${failing.length ? `; not passing: ${failing.join("; ")}` : ""}` };
   }
   return { ok: false, why: `${name} is not a check clossys run computes` };
 }

@@ -258,11 +258,11 @@ describe("conformance over the repo and its fixture", () => {
       // Shared today: placement records no decision, no cascade, no five loops.
       for (const id of ["L1", "L2", "X1", "X4", "W1"]) expect(agent.cells.find(cell => cell.id === id)!.red, `${agent.agent} ${id}`).toBe(true);
     }
-    // C1 (family): Designer's slots carry the one-candidate family the contracts migration seeded; Director and Writer
-    // still name the groups the option table does not class, and Publisher's slot/1 slots carry none.
+    // C1 (family): every Director, Designer and Writer slot carries the family the contracts migration seeded from the
+    // option table (the re-keyed table classes every Director and Writer group); Publisher's slot/1 slots carry none.
     const c1 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "C1")!;
-    expect(c1("designer").red).toBe(false);
-    for (const agent of ["director", "writer", "publisher"]) expect(c1(agent).red, agent).toBe(true);
+    for (const agent of ["director", "designer", "writer"]) expect(c1(agent).red, agent).toBe(false);
+    expect(c1("publisher").red).toBe(true);
     const director = report.agents.find(agent => agent.agent === "director")!;
     expect(director.cells.find(cell => cell.id === "K3")!.red).toBe(false);
     expect(report.agents.find(agent => agent.agent === "publisher")!.cells.find(cell => cell.id === "X3")!.red).toBe(true);

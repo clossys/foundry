@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runNextCli, runNextSubmitCli } from "../cli/next.js";
 import { runRunCli } from "../cli/run.js";
@@ -14,6 +14,8 @@ import { ownerStep, runPipeline } from "./runner.js";
 import { STEPS } from "./steps/index.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import { readSlot } from "../records/slots.js";
+import { readStandard } from "../records/standards.js";
+import { seededContract } from "../migrate/contracts.js";
 import { designerIa, directorIa, writerIa } from "../records/slot-model/foundry-ia.js";
 import { appendRecord, buildRecord, readStore, STEP_ENV, storeFile } from "./trace.js";
 import { consumerPath } from "../consumer-root.js";
@@ -388,7 +390,10 @@ describe("clossys next", { timeout: 60_000 }, () => {
     for (const [agent, id] of [["director", "advantage.defensibility.differentiator"], ["designer", "assets.icon-arrow-right"]] as const) {
       const read = (base: string) => readSlot(base, agent, id);
       const [ours, foundry] = [read(consumer), read(FOUNDRY)];
-      expect({ kind: ours.kind, contract: ours.contract, inputs: ours.inputs }).toEqual({ kind: foundry.kind, contract: foundry.contract, inputs: foundry.inputs });
+      // The fixture's slot/2 contract also carries the CREATE and CHOOSE seed (`clossys migrate contracts`, U3): the
+      // fresh slot/1 contract is compared with that seed applied from its own standard.
+      const standard = typeof ours.standard === "string" ? readStandard(dirname(FOUNDRY), agent, ours.standard).doc : undefined;
+      expect({ kind: ours.kind, contract: seededContract(agent, ours.contract as Record<string, unknown>, standard), inputs: ours.inputs }).toEqual({ kind: foundry.kind, contract: foundry.contract, inputs: foundry.inputs });
     }
     // A Director brief's feeds become inputs of each placed slot it feeds.
     const placedIds = new Map<string, string>();

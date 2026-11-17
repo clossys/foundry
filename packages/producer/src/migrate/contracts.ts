@@ -17,7 +17,7 @@ import type { Slot, SlotFamily } from "../records/types.js";
 import { listSlots, readSlotRecordText } from "../records/slots.js";
 import { OPTION_TABLE, type OptionTable } from "../records/slot-model/option-classes.js";
 import { classify } from "../records/slot-options.js";
-import { readStandard } from "../records/standards.js";
+import { readStandard, type StandardDoc } from "../records/standards.js";
 import { writeSlotSeed } from "../records/slot-write.js";
 import type { SlotAgent } from "../records/slot-model/index.js";
 
@@ -61,6 +61,28 @@ export function copyFixture(contract: Readonly<Record<string, unknown>>): { keys
   return keys.length ? { keys, locales: [copy.sourceLocale] } : undefined;
 }
 
+/**
+ * One contract with the CREATE and CHOOSE seed applied, from package data only: the contract's own
+ * requirements, then every requirement check of the slot's standard it does not list yet; and, when the
+ * contract declares no fixture, the copy fixture a Writer contract determines. `clossys migrate contracts`
+ * writes it, and `clossys ia sync` compares and writes a slot/2 contract against the package contract
+ * seeded so (a sync never strips the seed, and a hand edit of it is still drift).
+ */
+export function seededContract(agent: string, contract: Readonly<Record<string, unknown>>, standard: StandardDoc | undefined): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...contract };
+  if (standard) {
+    const have = Array.isArray(contract.requirements) ? contract.requirements.filter(object) : [];
+    const ids = new Set(have.map(item => item.check));
+    const requirements = [...have as { check: string }[], ...standard.requirements.filter(item => !ids.has(item.check)).map(item => ({ check: item.check }))];
+    if (requirements.length) out.requirements = requirements;
+  }
+  if (contract.fixture === undefined && agent === "writer") {
+    const fixture = copyFixture(contract);
+    if (fixture) out.fixture = fixture;
+  }
+  return out;
+}
+
 /** Plans the seed of every live slot/2 slot of the contract agents. `root` resolves the packages (standards). */
 export function planContracts(consumer: string, root: string, table: OptionTable = OPTION_TABLE): ContractsPlan {
   const seeds: ContractSeed[] = [];
@@ -77,20 +99,17 @@ export function planContracts(consumer: string, root: string, table: OptionTable
       const family = familyFor(agent, entry.id, `${entry.position.l1}/${entry.position.l2}`, table);
       if (family === null) gap("family", `the option table classes no ${entry.position.l1}/${entry.position.l2} group`);
       else if (!same(doc.family, family)) changes.push("family");
-      let requirements: { check: string }[] | undefined;
       const standardId = typeof doc.standard === "string" ? doc.standard : undefined;
       const standard = standardId ? readStandard(root, agent, standardId) : undefined;
       if (!standard?.doc) gap("requirements", `standard ${standardId ?? "(none)"} is missing or not valid`);
-      else {
-        const have = Array.isArray(contract.requirements) ? contract.requirements.filter(object) : [];
-        const ids = new Set(have.map(item => item.check));
-        requirements = [...have as { check: string }[], ...standard.doc.requirements.filter(item => !ids.has(item.check)).map(item => ({ check: item.check }))];
-        if (!requirements.length) gap("requirements", `standard ${standardId} lists no requirement`);
+      const seeded = seededContract(agent, contract, standard?.doc);
+      const requirements = seeded.requirements as { check: string }[] | undefined;
+      if (standard?.doc) {
+        if (!requirements?.length) gap("requirements", `standard ${standardId} lists no requirement`);
         else if (!same(contract.requirements, requirements)) changes.push("requirements");
       }
-      let fixture: Record<string, unknown> | undefined;
+      const fixture = contract.fixture === undefined ? seeded.fixture as Record<string, unknown> | undefined : undefined;
       if (contract.fixture === undefined) {
-        fixture = agent === "writer" ? copyFixture(contract) : undefined;
         if (fixture) changes.push("fixture");
         else gap("fixture", agent === "writer" ? "the contract carries no copy fields to derive a fixture from" : "the contract does not determine a fixture (a mounted element needs the candidate's file and export)");
       }

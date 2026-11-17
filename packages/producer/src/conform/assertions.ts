@@ -70,6 +70,15 @@ function subjectsOf(agent: string, slot: LiveSlot, inputs: readonly string[]): S
 const familyOf = (slot: LiveSlot) => KIND_FAMILY[slot.kind ?? ""] ?? slot.kind ?? "";
 const sameList = (a: readonly unknown[], b: readonly unknown[]) => a.length > 0 && JSON.stringify([...a].map(item => JSON.stringify(item)).sort()) === JSON.stringify([...b].map(item => JSON.stringify(item)).sort());
 const requirementsOf = (slot: LiveSlot): unknown[] => Array.isArray(slot.contract.requirements) ? slot.contract.requirements : [];
+/**
+ * The requirements a slot adds to its standard's: `clossys migrate contracts` seeds every check of the slot's
+ * standard into its contract as `{check}`, so an inherited check is shared by every sibling of that standard and
+ * says nothing about the slot's own purpose (S4 compares only these).
+ */
+const ownRequirementsOf = (agent: AgentModel, slot: LiveSlot): unknown[] => {
+  const inherited = new Set((standardOf(agent, slot)?.doc?.requirements ?? []).map(item => JSON.stringify({ check: item.check })));
+  return requirementsOf(slot).filter(item => !inherited.has(JSON.stringify(item)));
+};
 /** At this many slot-id literals one module holds a fixed list, not a derivation. */
 export const FIXED_LIST_MIN = 5;
 
@@ -113,12 +122,12 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     for (let i = 0; i < judged.length; i++) for (let j = i + 1; j < judged.length; j++) {
       const a = judged[i]!, b = judged[j]!;
       if (familyOf(a) !== familyOf(b)) continue;
-      // Purpose, whatever the name: both are for the same foreign slot, or one L2 holds both with the same inputs and requirements.
+      // Purpose, whatever the name: both are for the same foreign slot, or one L2 holds both with the same inputs and own requirements.
       const shared = [...subjects.get(a.id)!].filter(subject => subjects.get(b.id)!.has(subject));
       if (shared.length) { rows.push(`${a.id} and ${b.id}: both are for ${shared.join(", ")} (same purpose)`); continue; }
       const l2 = agent.l2Of.get(a.id);
       const inA = inputs.get(a)!, inB = inputs.get(b)!;
-      if (l2 !== undefined && l2 === agent.l2Of.get(b.id) && sameList(inA, inB) && sameList(requirementsOf(a), requirementsOf(b))) {
+      if (l2 !== undefined && l2 === agent.l2Of.get(b.id) && sameList(inA, inB) && sameList(ownRequirementsOf(agent, a), ownRequirementsOf(agent, b))) {
         rows.push(`${a.id} and ${b.id}: one L2 (${l2}), same inputs and requirements (same purpose)`); continue;
       }
       // Name: same kind and inputs, and ids that differ only past the threshold.

@@ -18,7 +18,12 @@
  * `contract.notNeeded`, the slot ids of its `input` refs (as a set: refs keep their keys and order), and the
  * slash-path `ia` the package position gives (positionIa: `themes/colors`, the position `themes.colors`). A
  * sync writes a slot/2 file as slot/2 (and adopts a missing leaf of a slot/2 store as slot/2), never as slot/1.
+ * The package contract of a Director, Designer or Writer slot/2 file is the CREATE and CHOOSE seed of the
+ * package's own contract (migrate/contracts.ts seededContract: its standard's requirement checks, and the copy
+ * fixture a Writer contract determines), so a sync keeps that seed and a hand edit of it is drift; an adopted
+ * slot/2 leaf also takes its option family.
  */
+import { dirname } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { deriveRefs, feedsIndex } from "./derive.js";
 import { designerIa, directorIa, producerIa, slotPositions, writerIa, type FoundryIa, type FoundrySlot } from "./foundry-ia.js";
@@ -32,6 +37,8 @@ import type { AgentId, Iso, Ref, Slot } from "../types.js";
 import { slotFromV1, targetKind as v1TargetKind, type SlotV1 } from "../../migrate/slot-1-to-2.js";
 import { classify } from "../slot-options.js";
 import { OPTION_TABLE } from "./option-classes.js";
+import { CONTRACT_AGENTS, familyFor, seededContract } from "../../migrate/contracts.js";
+import { readStandard } from "../standards.js";
 
 /**
  * The agents whose IA a package owns: the three catalog agents and the Producer seat tree
@@ -159,6 +166,15 @@ export function adoptedSlotDoc(agent: SyncAgent, id: string, slot: FoundrySlot, 
   return { doc, dropped: behaviour.dropped };
 }
 
+/**
+ * The contract a package slot gives a slot/2 file: the package contract with the CREATE and CHOOSE seed
+ * (contract agents only), read against the slot's standard from the installed or configured packages.
+ */
+function seededPackageContract(consumerDir: string, agent: SyncAgent, contract: unknown, standard: unknown): unknown {
+  if (!(CONTRACT_AGENTS as readonly string[]).includes(agent) || !contract || typeof contract !== "object" || Array.isArray(contract)) return contract;
+  const doc = typeof standard === "string" ? readStandard(dirname(consumerDir), agent as (typeof CONTRACT_AGENTS)[number], standard).doc : undefined;
+  return seededContract(agent, contract as Record<string, unknown>, doc);
+}
 /** A slot/2 contract as the package sees it: without the consumer's `notNeeded` marker. */
 const packageContract = (contract: unknown): unknown => {
   if (!contract || typeof contract !== "object" || Array.isArray(contract)) return contract;
@@ -212,9 +228,10 @@ function inputRefs(id: string, slot: FoundrySlot, behaviour: SlotBehaviour, exis
   });
 }
 /** An existing slot/2 file with the package's structure and behaviour: kind, contract (notNeeded kept), refs, ia, standard, options. */
-function syncedCurrent(current: Slot, id: string, slot: FoundrySlot, position: SlotPosition, behaviour: SlotBehaviour, held: ReadonlyMap<string, readonly AgentId[]>, agent: SyncAgent): Slot {
+function syncedCurrent(consumerDir: string, current: Slot, id: string, slot: FoundrySlot, position: SlotPosition, behaviour: SlotBehaviour, held: ReadonlyMap<string, readonly AgentId[]>, agent: SyncAgent): Slot {
   const marker = (current.contract as Doc | undefined)?.notNeeded;
-  const contract: Record<string, unknown> = { ...structuredClone(slot.contract as Record<string, unknown>), ...(marker !== undefined ? { notNeeded: marker } : {}) };
+  const seeded = seededPackageContract(consumerDir, agent, structuredClone(slot.contract), behaviour.standard ?? current.standard) as Record<string, unknown>;
+  const contract: Record<string, unknown> = { ...seeded, ...(marker !== undefined ? { notNeeded: marker } : {}) };
   const inputs = inputRefs(id, slot, behaviour, current.refs, held, agent);
   const next: Slot = {
     ...current,
@@ -233,7 +250,7 @@ function syncedCurrent(current: Slot, id: string, slot: FoundrySlot, position: S
 /** The options a slot/2 adoption stamps: when it is written and the CLI version that writes it. */
 export interface CurrentSyncOptions { readonly at: Iso; readonly version: string; readonly cli?: string }
 /** A newly adopted package leaf in a slot/2 store: the slot/1 adoption, as slot-1-to-2 maps it, with the package refs and kind. */
-function adoptedCurrent(agent: SyncAgent, id: string, slot: FoundrySlot, position: SlotPosition, behaviour: SlotBehaviour, held: ReadonlyMap<string, readonly AgentId[]>, options: CurrentSyncOptions): Slot | undefined {
+function adoptedCurrent(consumerDir: string, agent: SyncAgent, id: string, slot: FoundrySlot, position: SlotPosition, behaviour: SlotBehaviour, held: ReadonlyMap<string, readonly AgentId[]>, options: CurrentSyncOptions): Slot | undefined {
   const v1 = withBehaviour({ schema: SLOT_SCHEMA, id, agent, ia: { ...position }, ...packageFields(slot), inputs: behaviour.inputs, uses: behaviour.uses }, behaviour) as unknown as SlotV1;
   const kind = slot.targetKind ?? v1TargetKind(v1);
   if (!kind) return undefined;
@@ -243,7 +260,10 @@ function adoptedCurrent(agent: SyncAgent, id: string, slot: FoundrySlot, positio
     const holder = agents.includes(agent as AgentId) ? agent as AgentId : agents[0];
     return holder ? [{ to: `${holder}/${use}` as Ref["to"], rel: "uses" as const }] : [];
   });
-  return slotFromV1(v1, { kind, status: "starter", ia: positionIa(id, position), inputs, uses, createdBy: { actor: "code", cli: options.cli ?? "clossys ia sync", version: options.version }, at: options.at });
+  const made = slotFromV1(v1, { kind, status: "starter", ia: positionIa(id, position), inputs, uses, createdBy: { actor: "code", cli: options.cli ?? "clossys ia sync", version: options.version }, at: options.at });
+  if (!(CONTRACT_AGENTS as readonly string[]).includes(agent)) return made;
+  const family = familyFor(agent as (typeof CONTRACT_AGENTS)[number], id, `${position.l1}/${position.l2}`);
+  return { ...made, contract: seededPackageContract(consumerDir, agent, made.contract, made.standard) as Slot["contract"], ...(family ? { family } : {}) };
 }
 /** True when any slot.json the agent places is a clossys.slot/2 (a recut store): a sync then adopts as slot/2. */
 export function currentStore(consumerDir: string, agent: SyncAgent, positions: ReadonlyMap<string, SlotPosition>): boolean {
@@ -322,8 +342,9 @@ export function syncDrift(consumerDir: string, agent: SyncAgent, state: SyncStat
       // A slot/2 kind is judged by its family (and the package's own slot/2 kind when it names one).
       const family = current ? slotFamily(doc.kind) : doc.kind;
       if (family !== slot.kind || (current && slot.targetKind !== undefined && doc.kind !== slot.targetKind)) add("kind", `${id} is kind ${String(doc.kind)}, the package says ${slot.targetKind && current ? slot.targetKind : slot.kind}`, id);
-      if (!sameJson(current ? packageContract(doc.contract) : doc.contract, slot.contract)) add("contract", `${id} contract differs from the package`, id);
       const behaviour = packageBehaviour(agent, id, slot, position, ctx!);
+      const want = current ? seededPackageContract(consumerDir, agent, slot.contract, behaviour.standard ?? doc.standard) : slot.contract;
+      if (!sameJson(current ? packageContract(doc.contract) : doc.contract, want)) add("contract", `${id} contract differs from the package`, id);
       const off = behaviourOff(doc, behaviour);
       if (off.length) add("behaviour", `${id} ${off.map(item => item.key).join(", ")} differ from the package (${off.map(item => `${item.key} ${JSON.stringify(item.have ?? null)} vs ${JSON.stringify(item.want ?? null)}`).join("; ")})`, id);
     }
@@ -368,7 +389,7 @@ export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlyS
     if (!modelExists(file)) {
       if (!slot) continue;
       if (store) {
-        const made = adoptedCurrent(agent, id, slot, position, packageBehaviour(agent, id, slot, position, ctx), holderMap(), options ?? { at: new Date().toISOString() as Iso, version: "0.0.0" });
+        const made = adoptedCurrent(consumerDir, agent, id, slot, position, packageBehaviour(agent, id, slot, position, ctx), holderMap(), options ?? { at: new Date().toISOString() as Iso, version: "0.0.0" });
         if (!made) continue;
         bytes = serializeSlot(made);
       } else bytes = jsonBytes(adoptedSlotDoc(agent, id, slot, position, ctx).doc);
@@ -378,7 +399,7 @@ export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlyS
       const current = JSON.parse(text) as Doc;
       if (isCurrentSlot(current)) {
         const doc = current as unknown as Slot;
-        bytes = slot ? serializeSlot(syncedCurrent(doc, id, slot, position, packageBehaviour(agent, id, slot, position, ctx), holderMap(), agent)) : serializeSlot({ ...doc, ia: positionIa(id, position) });
+        bytes = slot ? serializeSlot(syncedCurrent(consumerDir, doc, id, slot, position, packageBehaviour(agent, id, slot, position, ctx), holderMap(), agent)) : serializeSlot({ ...doc, ia: positionIa(id, position) });
       } else {
         let doc: Doc = { ...current, ia: { ...position }, ...(slot ? packageFields(slot) : {}) };
         if (slot) doc = withBehaviour(doc, packageBehaviour(agent, id, slot, position, ctx));

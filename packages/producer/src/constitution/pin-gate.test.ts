@@ -38,6 +38,8 @@ ${heading}
 <!-- {"id":"actions.primary.label","bindings":[]} -->
 ${action}
 `;
+/** The candidate with its family tag (`vary: {"tone": <value>}` in its frontmatter). */
+const toned = (text: string, tone: string) => text.replace(/^---\n/, `---\nvary: {"tone":"${tone}"}\n`);
 const GOOD = copy("Ship your site this week", "Get started");
 const BAD = copy("The seamless, magical, best-in-class solution that effortlessly transforms absolutely everything you do", "Click here right now to start your totally free trial today");
 
@@ -126,20 +128,26 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
 
 describe("loop.create's exit, candidates.certified (computed by clossys run, never taken from a step's exit)", () => {
   const ctx = (root: string) => ({ root, state: { subject: { agent: "writer", slotId: SLOT }, startedAt: AT, vars: {} } as never });
-  it("fails while the slot holds no submitted, certified candidate, naming why, and passes once one is", () => {
+  it("fails while the slot holds fewer certified tones than its family owes, naming why, and passes once all three are", () => {
     const w = world();
+    const owed = "0 of 3 distinct tone values (plain, bold, warm)";
     const none = verifyCheck(ctx(w.root), "candidates.certified");
-    expect(none).toEqual({ ok: false, why: `candidates.certified: writer/${SLOT} holds 0 of 1 submitted, certified candidates` });
+    expect(none).toEqual({ ok: false, why: `candidates.certified: writer/${SLOT} holds ${owed} among 0 submitted, certified candidates` });
     w.submit(BAD);
     const bad = verifyCheck(ctx(w.root), "candidates.certified");
     expect(bad.ok).toBe(false);
-    expect(!bad.ok && bad.why).toMatch(/holds 0 of 1 .*not passing: copy-v1\.md \(\[limit\] en header\.heading is \d+ characters/);
-    // A hand-placed copy of the good text is no submit: still 0.
-    writeFileSync(join(w.dir, "candidates", "copy-v2.md"), GOOD);
+    expect(!bad.ok && bad.why).toMatch(/holds 0 of 3 .*not passing: copy-v1\.md \(\[limit\] en header\.heading is \d+ characters/);
+    // A hand-placed copy of the good text is no submit.
+    writeFileSync(join(w.dir, "candidates", "copy-v2.md"), toned(GOOD, "plain"));
     const placed = verifyCheck(ctx(w.root), "candidates.certified");
     expect(!placed.ok && placed.why).toMatch(/copy-v2\.md \(no matching submit record\)/);
     rmSync(join(w.dir, "candidates", "copy-v2.md"));
-    w.submit(GOOD);
+    // One certified tone, then a second candidate on the same tone: still one distinct value of three.
+    w.submit(toned(GOOD, "plain"));
+    w.submit(toned(copy("Ship your site in days", "Get started"), "plain"));
+    expect(verifyCheck(ctx(w.root), "candidates.certified")).toMatchObject({ ok: false, why: expect.stringContaining("1 of 3 distinct tone values") });
+    w.submit(toned(copy("Launch the site you meant to build", "Start building"), "bold"));
+    w.submit(toned(copy("Your site, ready when you are", "Come on in"), "warm"));
     expect(verifyCheck(ctx(w.root), "candidates.certified")).toEqual({ ok: true });
   });
 });
