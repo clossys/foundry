@@ -12,12 +12,8 @@
       "schema": "pin"
     },
     {
-      "glob": "consumer:agents/director/*/candidates/*",
-      "schema": "candidate-brief"
-    },
-    {
-      "glob": "consumer:agents/designer/*/candidates/*",
-      "schema": "candidate-element"
+      "glob": "consumer:agents/designer/*/pin.json",
+      "schema": "pin"
     },
     {
       "glob": "consumer:agents/writer/*/slot.json",
@@ -55,8 +51,7 @@
   "packet": {
     "inputs": [
       "consumer:agents/director/*/pin.json",
-      "consumer:agents/director/*/candidates/*",
-      "consumer:agents/designer/*/candidates/*",
+      "consumer:agents/designer/*/pin.json",
       "consumer:agents/writer/*/slot.json"
     ],
     "write": [

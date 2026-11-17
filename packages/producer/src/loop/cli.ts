@@ -5,6 +5,7 @@
  *   clossys run loop.refine [--slot <ref>] [--from <entry>] [--trigger T3|T5|T6|T7]
  *   clossys run loop.release --publication <id>
  *   clossys run loop.audit
+ *   clossys run loop.cascade --slot <ref>
  *   clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--step <id>] [--wrote <file>]...]
  *   common: [--root <dir>] [--json]
  *
@@ -24,7 +25,7 @@ import { isLoopName, LOOP_NAMES, RUN_ID, type LoopName } from "./names.js";
 import type { Finding } from "./route.js";
 import { fillAll, readRunState, resumeRun, runInit, startRun, waitingRuns, wroteFile, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult } from "./runner.js";
 
-export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|create|choose|release|audit> [--slot <agent>/<slot-id>] [--from <entry>] [--publication <id>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
+export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|create|choose|release|audit|cascade> [--slot <agent>/<slot-id>] [--from <entry>] [--publication <id>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
   + "       clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--step <id>] [--wrote <file>]...] [--root <dir>] [--json]\n"
   + "  Runs the loop version the consumer pins (else the package v1) one step at a time and writes one ledger entry per run.\n"
   + "  An agent step prints its packet and waits for --resume with its exit, files and serving model; a human step waits on its queue entry.\n"

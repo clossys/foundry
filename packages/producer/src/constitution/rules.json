@@ -417,8 +417,7 @@
       },
       {
         "id": "R07.5",
-        "status": "pending",
-        "owner": "W2-C",
+        "status": "enforced",
         "guard": [
           "submit",
           "pin",

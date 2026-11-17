@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadCatalog } from "../catalog.js";
@@ -99,7 +99,7 @@ describe("Director slot contracts", () => {
   });
 
   it("computes D-COVER from downstream Writer and Designer citations", () => {
-    const writer = (id: string, links: string[]) => `---\nid: ${id}\nversion: 1\nstatus: draft\nupdated: 2026-10-30\nlinks: [${links.join(", ")}]\nlocales: [en]\n---\n\n## en\n### ${id}.cta\n<!-- {"id":"ps.${id.replace(".", "-")}","leaf":"passages.call-to-action"} -->\n\`\`\`json\n{}\n\`\`\`\n`;
+    const writer = (id: string, links: string[]) => `---\nid: ${id}\nversion: 1\nstatus: draft\nupdated: 2026-10-30\nlinks: [${links.join(", ")}]\nlocales: [en]\n---\n\n## en\n### ${id}.cta\n<!-- {"id":"ps.${id.replace(".", "-")}","leaf":"sections.call-to-action.copy"} -->\n\`\`\`json\n{}\n\`\`\`\n`;
     const designer = `---\nid: sections.hero\nversion: 1\nstatus: draft\nupdated: 2026-10-30\nlinks: [director:advantage.proposition.promise@2]\noriginKinds: [authored]\nsources: []\n---\n`;
     const docs = [
       parseDownstream(writer("home.close", ["director:advantage.proposition.promise@2"]), "a.md"),
@@ -111,6 +111,23 @@ describe("Director slot contracts", () => {
     const { findings, coverage } = checkDirectorCoverage([{ id: "advantage.proposition.promise", version: 2 }], docs);
     expect(coverage).toEqual([{ cell: "advantage.proposition.promise", version: 2, expected: 3, citing: 1, citers: 3, ratio: 1 / 3 }]);
     expect(findings.map(f => [f.check, f.path, /current is/.test(f.message) ? "stale" : "missing"])).toEqual([["D-COVER", "b.md", "stale"], ["D-COVER", "c.md", "missing"]]);
+  });
+
+  it("feeds only live Writer leaves: a retired Writer id is a dangling D-COVER edge", () => {
+    const writerIa = (name: string) => JSON.parse(readFileSync(new URL(`../../../writer/src/catalog/ia/${name}.json`, import.meta.url), "utf8")) as unknown;
+    const live = new Set<string>();
+    const walk = (node: unknown): void => {
+      if (Array.isArray(node)) { node.forEach(walk); return; }
+      if (!node || typeof node !== "object") return;
+      for (const [key, value] of Object.entries(node)) {
+        if (key === "leaves" && Array.isArray(value)) for (const leaf of value) live.add(typeof leaf === "string" ? leaf : String((leaf as { id?: unknown }).id));
+        else walk(value);
+      }
+    };
+    for (const name of ["voice", "prose", "copy"]) walk(writerIa(name));
+    expect(live.size).toBeGreaterThan(90);
+    const dangling = loadDirectorContracts().slots.flatMap(contract => contract.feeds.filter(feed => !live.has(feed)).map(feed => `${contract.id} -> ${feed}`));
+    expect(dangling).toEqual([]);
   });
 
   it("lists exactly three checks", () => {

@@ -26,7 +26,7 @@ if (!["--check", "--write"].includes(mode) || extra.length) {
   });
   const { loadCatalog } = await import(pathToFileURL(resolve(src, "catalog-core/index.ts")).href);
   const { consumptionReport } = await import(pathToFileURL(resolve(src, "catalog-core/relationships.ts")).href);
-  const { buildUsageGraph, serializeUsageGraph } = await import(pathToFileURL(resolve(src, "catalog-core/usage-graph.ts")).href);
+  const { buildUsageGraph, graphFindings, serializeUsageGraph } = await import(pathToFileURL(resolve(src, "catalog-core/usage-graph.ts")).href);
   const { resolve: resolveValues } = await import(pathToFileURL(resolve(src, "catalog-core/resolve.ts")).href);
   const { emittedTokenProperties } = await import(pathToFileURL(resolve(src, "catalog-core/emit.ts")).href);
   const { loadCatalogBundles, installedHeadlessLibrary } = await import(pathToFileURL(resolve(src, "catalog-bundles.ts")).href);
@@ -60,7 +60,10 @@ if (!["--check", "--write"].includes(mode) || extra.length) {
       (parents[evidence] ??= []).push(id);
     }
   }
-  const inventory = Object.fromEntries(["themes", "assets", "components", "sections", "frames"].map(layer => [layer, json(`catalog/slots/${layer}.json`).map(slot => slot.id).sort()]));
+  const slotRows = Object.fromEntries(["themes", "assets", "components", "sections", "frames"].map(layer => [layer, json(`catalog/slots/${layer}.json`)]));
+  const inventory = Object.fromEntries(Object.entries(slotRows).map(([layer, rows]) => [layer, rows.map(slot => slot.id).sort()]));
+  // A read names a token member (`themes.background.default`); the slot's contract declares which members exist.
+  const members = Object.fromEntries(Object.values(slotRows).flat().filter(slot => Array.isArray(slot.contract?.members?.names)).map(slot => [slot.id, slot.contract.members.names]));
   // Resolve the package's value consumer before asking the production component
   // planner for defaults. Generic scale/asset offers fill gaps in Foundry values.
   // These are report inputs, never consumer-library mutations or approvals.
@@ -121,7 +124,7 @@ if (!["--check", "--write"].includes(mode) || extra.length) {
     }
   }
   const graph = buildUsageGraph({
-    inventory, selection,
+    inventory, selection, members,
     consumption: { leaves: consumptionReport({ catalog, library }).leaves },
     components: { fills: componentFills, reverseComposes },
     surfaces: { fills: surfaceFills, reverseComposes: surfaceComposes },
@@ -137,5 +140,9 @@ if (!["--check", "--write"].includes(mode) || extra.length) {
   const path = resolve(src, "catalog/reports/usage-graph.json");
   if (mode === "--write") { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, output); }
   else if (!existsSync(path) || readFileSync(path, "utf8") !== output) { console.error("usage-graph report is stale; run node scripts/usage-graph.mjs --write"); process.exitCode = 1; }
+  // A dangling endpoint is a declared edge to no slot: it fails the gate in both modes (the report still records it).
+  const dangling = graphFindings(graph).filter(finding => finding.code === "dangling-endpoint");
+  for (const finding of dangling) console.error(`usage-graph dangling edge: ${finding.subject} -${finding.kind}-> ${finding.target}: ${finding.message}`);
+  if (dangling.length) process.exitCode = 1;
   if (!process.exitCode) console.log(`usage-graph report ${mode === "--write" ? "written" : "current"}: ${graph.nodes.length} nodes; ${graph.edges.length} edges; ${JSON.stringify(graph.summary.edges)}`);
 }

@@ -17,7 +17,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { buildContext } from "./context.js";
-import { certify, certifyEnv } from "./certify/index.js";
+import { certify, certifyEnv, pinSetOf } from "./certify/index.js";
 import { submitOf } from "./rules/r03.js";
 import type { Reason } from "./certify/types.js";
 import type { Ref } from "../records/types.js";
@@ -38,6 +38,12 @@ export interface ScorecardRow {
   /** What judged the row: certify (the slot's certifier and standard) or release.ready (a release slot). */
   readonly verdict: "certify" | "release.ready";
   readonly reasons: readonly Reason[];
+  /**
+   * The pinSet the verdict was given on (certify/index.ts pinSetOf: the pins of everything the candidate reads).
+   * R07.5 re-verdicts a pinned candidate whose pinSet changed since (constitution/cascade.ts). Absent on a
+   * release.ready row.
+   */
+  readonly pinSet?: string;
 }
 export interface Scorecard {
   readonly schema: typeof SCORECARD_SCHEMA;
@@ -69,8 +75,9 @@ export function pinGate(root: string, consumer: string, agent: string, slotId: s
   const rows = slot.candidates.map(candidate => {
     const { submit } = submitOf(slot, candidate.name);
     const submitted = !!submit && submit.sha256 === candidate.sha256;
-    const { certified, reasons } = certify({ slot, candidate }, env);
-    return { candidate: candidate.name, sha256: candidate.sha256, submitted, certified, verdict: "certify" as const, reasons, submit };
+    const pinSet = pinSetOf({ slot, candidate }, env);
+    const { certified, reasons } = certify({ slot, candidate }, env, pinSet);
+    return { candidate: candidate.name, sha256: candidate.sha256, submitted, certified, verdict: "certify" as const, reasons, pinSet, submit };
   });
   const ranked = [...rows].sort((a, b) => Number(b.certified && b.submitted) - Number(a.certified && a.submitted) || a.reasons.length - b.reasons.length || a.candidate.localeCompare(b.candidate));
   const scorecard: Scorecard = { ...empty, candidates: ranked.map(({ submit: _submit, ...row }, index) => ({ rank: index + 1, ...row })) };

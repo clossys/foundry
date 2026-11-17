@@ -23,6 +23,11 @@ export interface CertifyEnv {
   readonly root: string;
   /** `<agent>:<slot-id>` → the live slot's pinned candidate (a pin whose sha256 matches its file). */
   readonly pins: ReadonlyMap<string, Pinned>;
+  /**
+   * `<agent>:<slot-id>` → the pinned candidate of each record of a live slot's `clossys.pin-map/1` (a Writer copy
+   * slot pins per record), sha256-matching only, in record order. A slot with a single pin is in `pins` instead.
+   */
+  readonly recordPins: ReadonlyMap<string, readonly CandidateRecord[]>;
   /** Live slot ids by agent. */
   readonly live: ReadonlyMap<string, ReadonlySet<string>>;
   /** Pinned Writer copy (first locale of each slot): key → text. */
@@ -52,6 +57,25 @@ export function pinnedOf(slot: SlotRecord): CandidateRecord | undefined {
   return candidate && candidate.sha256 === pin.sha256 ? candidate : undefined;
 }
 
+/** The record name to pinned candidate of a live slot's pin map (sha256-matching records only), in record order. */
+export function pinnedRecordsOf(slot: SlotRecord): Map<string, CandidateRecord> {
+  const out = new Map<string, CandidateRecord>();
+  const pin = slot.pin?.value;
+  if (!isObject(pin) || pin.schema !== "clossys.pin-map/1" || !isObject(pin.records)) return out;
+  for (const [record, value] of Object.entries(pin.records)) {
+    if (!isObject(value) || typeof value.candidate !== "string") continue;
+    const candidate = slot.candidates.find(item => item.name === value.candidate);
+    if (candidate && candidate.sha256 === value.sha256) out.set(record, candidate);
+  }
+  return out;
+}
+
+/** Every pinned candidate of a slot: its single pin, or each record of its pin map. */
+export function pinnedCandidates(slot: SlotRecord): CandidateRecord[] {
+  const single = pinnedOf(slot);
+  return single ? [single] : [...pinnedRecordsOf(slot).values()];
+}
+
 /** Writer records of a strings candidate: `[{locale, id, text?}]`, or the parse error. */
 export function writerRecords(candidate: CandidateRecord): { rows: { locale: string; id: string; text?: string }[]; locales: string[] } | { error: string } {
   const parsed = parseFrontmatter(candidate.text);
@@ -77,6 +101,8 @@ export function certifyEnv(ctx: ConstitutionContext): CertifyEnv {
   const hit = envs.get(ctx);
   if (hit) return hit;
   const pins = new Map<string, Pinned>();
+  const recordPins = new Map<string, CandidateRecord[]>();
+  const recordNames = new Map<string, string[]>();
   const live = new Map<string, Set<string>>();
   for (const slot of liveSlotRecords(ctx)) {
     let set = live.get(slot.agent);
@@ -84,19 +110,35 @@ export function certifyEnv(ctx: ConstitutionContext): CertifyEnv {
     set.add(slot.id);
     const candidate = pinnedOf(slot);
     if (candidate) pins.set(pinKey(slot.agent, slot.id), { slot, candidate });
+    else {
+      const records = pinnedRecordsOf(slot);
+      if (records.size) { recordPins.set(pinKey(slot.agent, slot.id), [...records.values()]); recordNames.set(pinKey(slot.agent, slot.id), [...records.keys()]); }
+    }
   }
   const copy = new Map<string, string>(), writerKeys = new Map<string, Set<string>>(), keyOwner = new Map<string, string>();
   const installers = new Map<string, string[]>();
+  const readWriter = (slotId: string, candidate: CandidateRecord, keys: Set<string>) => {
+    const read = writerRecords(candidate);
+    if ("error" in read) return false;
+    for (const row of read.rows) {
+      keys.add(row.id);
+      if (!keyOwner.has(row.id)) keyOwner.set(row.id, slotId);
+      if (row.locale === read.locales[0] && row.text !== undefined && !copy.has(row.id)) copy.set(row.id, row.text);
+    }
+    return true;
+  };
+  // A Writer pin map's record names are keys too: a page binds `<writer-slot>#<record>` (assemble.page).
+  for (const [key, candidates] of recordPins) {
+    const [agent, slotId] = [key.slice(0, key.indexOf(":")), key.slice(key.indexOf(":") + 1)];
+    if (agent !== "writer") continue;
+    const keys = new Set<string>(recordNames.get(key) ?? []);
+    for (const candidate of candidates) readWriter(slotId, candidate, keys);
+    writerKeys.set(slotId, keys);
+  }
   for (const { slot, candidate } of pins.values()) {
     if (slot.agent === "writer") {
-      const read = writerRecords(candidate);
-      if ("error" in read) continue;
       const keys = new Set<string>();
-      for (const row of read.rows) {
-        keys.add(row.id);
-        if (!keyOwner.has(row.id)) keyOwner.set(row.id, slot.id);
-        if (row.locale === read.locales[0] && row.text !== undefined && !copy.has(row.id)) copy.set(row.id, row.text);
-      }
+      if (!readWriter(slot.id, candidate, keys)) continue;
       writerKeys.set(slot.id, keys);
     } else if (slot.agent === "designer") {
       for (const file of registryFiles(candidate)) {
@@ -111,7 +153,7 @@ export function certifyEnv(ctx: ConstitutionContext): CertifyEnv {
   const graph = readGraph();
   let owners: ReadonlyMap<string, ReadonlySet<string>> | undefined;
   const env: CertifyEnv = {
-    root: ctx.root, pins, live, copy, writerKeys, keyOwner, installers, steps: graph.steps, graphSha: graph.sha,
+    root: ctx.root, pins, recordPins, live, copy, writerKeys, keyOwner, installers, steps: graph.steps, graphSha: graph.sha,
     standards: loadStandards(ctx.root), homes: slotHomes(ctx),
     installOwners: () => (owners ??= installOwners(ctx)),
   };

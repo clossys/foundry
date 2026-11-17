@@ -85,6 +85,14 @@
       "to": "director/identity.naming.name",
       "rel": "input",
       "key": "Name"
+    },
+    {
+      "to": "director/advantage.defensibility.differentiator",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.offer.included",
+      "rel": "input"
     }
   ],
   "base": null,
@@ -160,6 +168,14 @@
         "to": "director/identity.naming.name",
         "rel": "input",
         "key": "Name"
+      },
+      {
+        "to": "director/advantage.defensibility.differentiator",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.offer.included",
+        "rel": "input"
       }
     ],
     "acceptance": []

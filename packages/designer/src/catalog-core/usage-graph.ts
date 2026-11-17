@@ -36,7 +36,7 @@ export interface UsageGraph {
   /** Digest of every normalized input; a changed input always changes it. */
   readonly inputsHash: string;
   /** Per-input digest, or "absent" when the producer did not supply that input. */
-  readonly inputs: Readonly<Record<"inventory" | "selection" | "consumption" | "components" | "surfaces" | "pages" | "runtime", string>>;
+  readonly inputs: Readonly<Record<"inventory" | "selection" | "members" | "consumption" | "components" | "surfaces" | "pages" | "runtime", string>>;
   readonly nodes: readonly UsageNode[];
   readonly edges: readonly UsageEdge[];
   readonly summary: {
@@ -67,6 +67,11 @@ export interface UsageBindingLike {
 export interface UsageRuntimeObservation { readonly from: string; readonly to: string; readonly kind: UsageEdgeKind; readonly route: string; readonly selector: string }
 export interface UsageGraphInputs {
   readonly inventory: Partial<Record<Exclude<UsageLayer, "pages">, readonly string[]>>;
+  /**
+   * Leaf -> its contract's declared member names (`themes.shadow` -> `sm`, `md`, ...). A read of `<leaf>.<member>`
+   * resolves to the leaf only when the member is declared; an undeclared member stays a dangling endpoint.
+   */
+  readonly members?: Readonly<Record<string, readonly string[]>>;
   /** Leaf -> selected fill id. Only selected fills contribute edges. */
   readonly selection: Readonly<Record<string, string>>;
   /** relationships.ts consumptionReport: token/asset reads. */
@@ -113,7 +118,14 @@ export function buildUsageGraph(inputs: UsageGraphInputs): UsageGraph {
     if (node && fill.scanStatus && selected(fill.id)) nodes.set(fill.slot, { ...node, scan: fill.scanStatus });
   }
   const edges = new Map<string, { from: string; to: string; kind: UsageEdgeKind; evidence: Set<UsageEvidence>; at: Map<string, UsageEdgeSite> }>();
-  const add = (from: string, to: string, kind: UsageEdgeKind, evidence: UsageEvidence, at?: UsageEdgeSite): void => {
+  // A declared member id names its inventory leaf: the edge lands on the slot, the one unit a pin and a cascade move.
+  const endpoint = (id: string): string => {
+    if (nodes.has(id)) return id;
+    const leaf = leafOf(id);
+    return leaf !== id && nodes.get(leaf)?.origin === "inventory" && (inputs.members?.[leaf] ?? []).includes(id.slice(leaf.length + 1)) ? leaf : id;
+  };
+  const add = (rawFrom: string, rawTo: string, kind: UsageEdgeKind, evidence: UsageEvidence, at?: UsageEdgeSite): void => {
+    const from = endpoint(rawFrom), to = endpoint(rawTo);
     if (from === to) return;
     const key = stableStringify([from, to, kind]);
     const edge = edges.get(key) ?? { from, to, kind, evidence: new Set<UsageEvidence>(), at: new Map<string, UsageEdgeSite>() };
@@ -164,6 +176,7 @@ export function buildUsageGraph(inputs: UsageGraphInputs): UsageGraph {
   const normalized = {
     inventory: Object.fromEntries(LAYERS.filter(layer => layer !== "pages").map(layer => [layer, [...inputs.inventory[layer as Exclude<UsageLayer, "pages">] ?? []].sort(compare)])),
     selection: Object.fromEntries(Object.entries(selection).sort(([a], [b]) => compare(a, b))),
+    members: inputs.members && Object.fromEntries(Object.entries(inputs.members).sort(([a], [b]) => compare(a, b)).map(([leaf, names]) => [leaf, [...names].sort(compare)])),
     consumption: inputs.consumption && [...inputs.consumption.leaves].map(leaf => ({ id: leaf.id, themes: [...leaf.themes].sort(compare), assets: [...leaf.assets].sort(compare) })).sort((a, b) => compare(a.id, b.id)),
     components: inputs.components && normalizeSource(inputs.components),
     surfaces: inputs.surfaces && normalizeSource(inputs.surfaces),

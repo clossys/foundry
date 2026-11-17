@@ -10,10 +10,6 @@
     {
       "glob": "consumer:agents/director/*/pin.json",
       "schema": "pin"
-    },
-    {
-      "glob": "consumer:agents/director/*/candidates/*",
-      "schema": "candidate-brief"
     }
   ],
   "outputs": [],

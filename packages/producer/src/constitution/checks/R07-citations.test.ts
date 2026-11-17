@@ -1,5 +1,9 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { cleanSpec, contextOf, expectCatches, slotDoc, validPin, type WorkspaceSpec } from "../__fixtures__/workspace.js";
+import { buildContext } from "../context.js";
+import { NEEDS_REFRESH, pinChecks } from "../cascade.js";
+import { cleanSpec, contextOf, expectCatches, FIXTURE_SKILL_SHAS, NO_FOUNDRY_LEAVES, NO_HISTORY, slotDoc, validPin, type WorkspaceSpec } from "../__fixtures__/workspace.js";
 import { R07, acyclicUpstream, cycles, recitedPins, undeclaredCitations, versionCitations } from "./R07-citations.js";
 
 const clean = () => contextOf(cleanSpec());
@@ -63,7 +67,26 @@ describe("R07 citations", () => {
     expect(cycles(new Map([["a", ["b"]], ["b", ["c"]], ["c", ["a"]], ["d", ["a"]]]))).toEqual([["a", "b", "c"]]);
   });
 
-  it("keeps R07.5 (cascade) pending", () => {
-    expect(R07.checks["R07.5"]!(clean())).toEqual([expect.objectContaining({ pending: true })]);
+  it("R07.5 (cascade): a pin judged on another pinSet is stale until re-verdicted or marked needs-refresh; a legacy pin is not reported", () => {
+    const ctx = clean();
+    // Every pin of the clean workspace is legacy (no recorded pinSet): nothing to report.
+    expect(R07.checks["R07.5"]!(ctx)).toEqual([]);
+    const page = pinChecks(ctx).find(check => check.slot.agent === "publisher" && check.slot.id === "site.home")!;
+    expect(page.state).toBe("legacy");
+    const scorecard = (pinSet: string, certified = true) => {
+      const dir = join(ctx.root, ".clossys", "checks", "publisher", "site.home");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, "scorecard.json"), JSON.stringify({ schema: "clossys.scorecard/1", slot: "publisher/site.home", candidates: [{ rank: 1, candidate: page.candidate.name, sha256: page.candidate.sha256, submitted: true, certified, verdict: "certify", reasons: [], pinSet }] }));
+    };
+    scorecard(page.current);
+    expect(R07.checks["R07.5"]!(ctx)).toEqual([]);
+    scorecard("0".repeat(64));
+    expect(R07.checks["R07.5"]!(ctx).map(row => `${row.slot}: ${row.reason}`)).toEqual([expect.stringMatching(/^site\.home: pinned \S+ was judged on pinSet 000000000000, not the pinSet now [0-9a-f]{12}: a repin upstream was not re-verdicted/)]);
+    scorecard(page.current, false);
+    expect(R07.checks["R07.5"]!(ctx).map(row => row.reason)).toEqual([expect.stringMatching(/fails its re-verdict on the pinSet now, but the slot is not marked needs-refresh/)]);
+    // Marked needs-refresh: the cascade ran and flagged it (release refuses it instead).
+    const slotFile = join(ctx.root, page.slot.dir, "slot.json");
+    writeFileSync(slotFile, JSON.stringify({ ...(page.slot.slot!.value as object), status: NEEDS_REFRESH }, null, 2));
+    expect(R07.checks["R07.5"]!(buildContext(ctx.root, ctx.consumer, { history: () => NO_HISTORY, foundryLeaves: NO_FOUNDRY_LEAVES, skillShas: FIXTURE_SKILL_SHAS }))).toEqual([]);
   });
 });

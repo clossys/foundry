@@ -85,6 +85,18 @@
       "to": "director/identity.naming.name",
       "rel": "input",
       "key": "Name"
+    },
+    {
+      "to": "director/advantage.model.pricing",
+      "rel": "input"
+    },
+    {
+      "to": "director/context.competition.alternative",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.offer.included",
+      "rel": "input"
     }
   ],
   "base": null,
@@ -160,6 +172,18 @@
         "to": "director/identity.naming.name",
         "rel": "input",
         "key": "Name"
+      },
+      {
+        "to": "director/advantage.model.pricing",
+        "rel": "input"
+      },
+      {
+        "to": "director/context.competition.alternative",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.offer.included",
+        "rel": "input"
       }
     ],
     "acceptance": []

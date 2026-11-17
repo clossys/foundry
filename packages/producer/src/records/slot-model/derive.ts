@@ -9,8 +9,12 @@
  * - Publisher page `uses` are frame + sections + copy slots; a publication uses
  *   its pages. Their `inputs` equal their `uses`.
  *
- * A ref that names no IA slot is dropped (and counted). `usedBy` is computed by
- * the reader, never stored.
+ * A standard requirement (`dtcg#alias`, `wcag-2.2#1.4.3`) is no slot ref and is not an edge. A trailing-`*`
+ * ref (`assets.icon-*`, "any icon") resolves when a known slot has that prefix but adds no edge: it names a
+ * family the candidate picks from, not one input (expanding it to every match would make each a pinSet input).
+ * A glob no known slot matches, and any other ref that names no IA slot, is
+ * dropped and returned: a dangling edge, which `clossys ia --adopt` and `ia sync` refuse rather than
+ * leave out. `usedBy` is computed by the reader, never stored.
  */
 import { DESIGNER_LAYERS } from "./foundry-ia.js";
 import type { SlotAgent, SlotKind } from "./types.js";
@@ -32,12 +36,24 @@ export function toSlotId(ref: string, known: ReadonlySet<string>): string | unde
   return undefined;
 }
 
+/** A standard requirement id (`<standard>#<clause>`), which a contract's `requires` lists beside slot refs. */
+export const STANDARD_REF = /^[a-z0-9][a-z0-9.-]*#[^\s#]+$/i;
+
+/** Every known slot a trailing-`*` ref names (`assets.icon-*`), sorted; none for a plain ref. */
+export function globSlotIds(ref: string, known: ReadonlySet<string>): string[] {
+  if (!ref.endsWith("*")) return [];
+  const prefix = ref.replace(/^[a-z]+:/, "").replace(/^.*\//, "").slice(0, -1);
+  return prefix.includes(".") ? [...known].filter(id => id.startsWith(prefix)).sort() : [];
+}
+
 function mapAll(refs: readonly string[], self: string, ctx: DeriveContext, dropped: Set<string>): string[] {
   const out = new Set<string>();
   for (const ref of refs) {
-    const id = toSlotId(ref, ctx.known);
-    if (!id) { dropped.add(ref); continue; }
-    if (id !== self) out.add(id);
+    if (STANDARD_REF.test(ref)) continue;
+    if (ref.endsWith("*")) { if (!globSlotIds(ref, ctx.known).length) dropped.add(ref); continue; }
+    const ids = [toSlotId(ref, ctx.known)].filter((id): id is string => id !== undefined);
+    if (!ids.length) { dropped.add(ref); continue; }
+    for (const id of ids) if (id !== self) out.add(id);
   }
   return [...out].sort();
 }
