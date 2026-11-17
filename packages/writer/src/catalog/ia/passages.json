@@ -10,7 +10,13 @@
           "label": "Parts",
           "leaves": [
             "passages.band",
-            "passages.section-header",
+            "passages.section-header"
+          ]
+        },
+        {
+          "id": "sections-navigation",
+          "label": "Navigation",
+          "leaves": [
             "passages.pagination",
             "passages.table-of-contents"
           ]
@@ -27,6 +33,7 @@
             "passages.testimonials",
             "passages.logo-cloud",
             "passages.people",
+            "passages.comparison",
             "passages.logo-hero",
             "passages.logo-mark"
           ]
@@ -58,7 +65,6 @@
             "passages.stats",
             "passages.usage",
             "passages.account-summary",
-            "passages.comparison",
             "passages.status-list",
             "passages.activity-feed",
             "passages.audit-log",
@@ -106,8 +112,6 @@
     "passages.record-detail"
   ],
   "starter": [
-    "passages.band",
-    "passages.section-header",
     "passages.pagination",
     "passages.table-of-contents",
     "passages.hero",
@@ -117,11 +121,13 @@
     "passages.call-to-action",
     "passages.testimonials",
     "passages.logo-cloud",
+    "passages.people",
+    "passages.comparison",
     "passages.content",
     "passages.article",
-    "passages.sectioned-document",
     "passages.faq",
     "passages.steps",
+    "passages.timeline",
     "passages.link-index",
     "passages.data-table",
     "passages.stats",
@@ -130,7 +136,30 @@
     "passages.settings",
     "passages.empty-state",
     "passages.error-state",
+    "passages.notices",
     "passages.consent"
+  ],
+  "parked": [
+    {
+      "leaf": "sections.account-summary",
+      "basis": "foundry-build-0035 (IA audit 2026-11-16 P15, owner-approved 2026-11-16): not consumed today (consumed-only rule); no fill is required while parked"
+    },
+    {
+      "leaf": "sections.column-mapper",
+      "basis": "foundry-build-0035 (IA audit 2026-11-16 P15, owner-approved 2026-11-16): not consumed today (consumed-only rule); no fill is required while parked"
+    },
+    {
+      "leaf": "sections.explorer",
+      "basis": "foundry-build-0035 (IA audit 2026-11-16 P15, owner-approved 2026-11-16): not consumed today (consumed-only rule); no fill is required while parked"
+    },
+    {
+      "leaf": "sections.filter-builder",
+      "basis": "foundry-build-0035 (IA audit 2026-11-16 P15, owner-approved 2026-11-16): not consumed today (consumed-only rule); no fill is required while parked"
+    },
+    {
+      "leaf": "sections.wizard",
+      "basis": "foundry-build-0035 (IA audit 2026-11-16 P15, owner-approved 2026-11-16): not consumed today (consumed-only rule); no fill is required while parked"
+    }
   ],
   "status": "retired"
 }

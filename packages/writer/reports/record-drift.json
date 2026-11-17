@@ -11,7 +11,7 @@
     },
     {
       "path": "admin-meta.r1.en.json",
-      "sha256": "8d60c00edeca5b7cf7675e59bcd17a4cd598411f287dcf13ab1405b2c8d6fc15"
+      "sha256": "9a388fe7288c7be18932a40437eb0d3f77a67519992f777badf47598d7d4b30b"
     },
     {
       "path": "admin-pages.r1.en.json",
@@ -19,7 +19,7 @@
     },
     {
       "path": "admin-studio.r1.en.json",
-      "sha256": "002c704642c8ddcdc0a71cc5b6ab213bebcf04da65f045bd24c1c84a88bc5774"
+      "sha256": "04efb8b3596a27dbed07b898765adbe189448c95b1738b7b335eda4926cd89cf"
     },
     {
       "path": "admin-voice.r1.en.json",
@@ -85,7 +85,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 396
+      "records": 398
     },
     {
       "path": "admin-voice.r1.en.json",
@@ -153,7 +153,7 @@
       "records": 61
     }
   ],
-  "records": 1490,
+  "records": 1492,
   "locales": [
     "ar",
     "en"

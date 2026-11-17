@@ -225,6 +225,19 @@
       }
     },
     {
+      "parent": "publisher.frame",
+      "id": "frames.deck",
+      "role": "label",
+      "cellId": "publisher.frame.frames.deck",
+      "recordId": "st.d3ck7f9m2a",
+      "file": "admin-meta.r1.en.json",
+      "text": "Slide deck",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 1405
+      }
+    },
+    {
       "parent": "designer.boardName",
       "id": "designer.ia.frames.panels",
       "role": "label",
@@ -1054,6 +1067,19 @@
       "source": {
         "path": "packages/designer/src/catalog/slots/frames.json",
         "line": 952
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.deck",
+      "id": "aspect.16-9",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.deck.aspect.16-9",
+      "recordId": "st.d3ck16x9wq",
+      "file": "admin-studio.r1.en.json",
+      "text": "Widescreen slides",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 1428
       }
     },
     {

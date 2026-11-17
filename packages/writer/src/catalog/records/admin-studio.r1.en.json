@@ -2237,6 +2237,17 @@
       }
     },
     {
+      "id": "st.d3ck7f9m2a",
+      "leaf": "strings.names",
+      "context": "designer.item.frames.deck",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Slide deck",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
       "id": "st.q61fvrqvf9",
       "leaf": "strings.errors",
       "context": "designer.finding.C8.01",
@@ -3804,6 +3815,17 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Keyboard shortcut off",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.d3ck16x9wq",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.deck.aspect.16-9",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Widescreen slides",
       "limits": {
         "maxChars": 40
       }
@@ -9959,6 +9981,24 @@
       "budget": 60
     },
     {
+      "recordId": "st.d3ck7f9m2a",
+      "cellId": "designer.item.frames.deck",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "ee9bec2b904153c4f18d59fe3f5d3d294dd9fca7",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 1405,
+        "key": "designer.item.frames.deck"
+      },
+      "before": "frames.deck",
+      "after": "Slide deck",
+      "rationale": "Name frames.deck (registered by foundry-build-0032 P3) for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
       "recordId": "st.q61fvrqvf9",
       "cellId": "designer.finding.C8.01",
       "severity": "P1",
@@ -12087,6 +12127,24 @@
       },
       "before": "shortcut.off",
       "after": "Keyboard shortcut off",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.d3ck16x9wq",
+      "cellId": "designer.frameOption.frames.deck.aspect.16-9",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "ee9bec2b904153c4f18d59fe3f5d3d294dd9fca7",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 1428,
+        "key": "aspect.16-9"
+      },
+      "before": "aspect.16-9",
+      "after": "Widescreen slides",
       "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
       "role": "label",
       "budget": 40
@@ -14689,7 +14747,8 @@
       "cellId": "designer.item.assets.icon-institution",
       "recordId": "st.jrpe4bb37t",
       "target": "packages/designer/src/catalog/slots/assets.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.assets.icon-guide",
@@ -14743,7 +14802,8 @@
       "cellId": "designer.item.assets.icon-business",
       "recordId": "st.a2pf01z6r8",
       "target": "packages/designer/src/catalog/slots/assets.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.assets.icon-security",
@@ -15998,6 +16058,12 @@
       "kind": "item-name"
     },
     {
+      "cellId": "designer.item.frames.deck",
+      "recordId": "st.d3ck7f9m2a",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "item-name"
+    },
+    {
       "cellId": "designer.ia.layer.frames",
       "recordId": "st.7rv315vzjm",
       "target": "packages/designer/src/studio/system-canvas/DesignerPage.tsx",
@@ -16760,6 +16826,14 @@
       "kind": "display-name",
       "parent": "designer.frameOption.frames.command",
       "value": "shortcut.off"
+    },
+    {
+      "cellId": "designer.frameOption.frames.deck.aspect.16-9",
+      "recordId": "st.d3ck16x9wq",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.deck",
+      "value": "aspect.16-9"
     },
     {
       "cellId": "admin.library.foundry",
@@ -18041,7 +18115,7 @@
       "recordId": "st.jrpe4bb37t",
       "cellId": "designer.item.assets.icon-institution",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -18104,7 +18178,7 @@
       "recordId": "st.a2pf01z6r8",
       "cellId": "designer.item.assets.icon-business",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -19522,6 +19596,13 @@
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
+      "recordId": "st.d3ck7f9m2a",
+      "cellId": "designer.item.frames.deck",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
       "recordId": "st.q61fvrqvf9",
       "cellId": "designer.finding.C8.01",
       "severity": "P0",
@@ -20255,6 +20336,13 @@
     {
       "recordId": "st.f99jjh9znb",
       "cellId": "designer.frameOption.frames.command.shortcut.off",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.d3ck16x9wq",
+      "cellId": "designer.frameOption.frames.deck.aspect.16-9",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
@@ -21158,11 +21246,13 @@
         "st.g0stjcdq45",
         "st.1gh330mabf",
         "st.f99jjh9znb",
-        "st.bjtk9nxqc9"
+        "st.bjtk9nxqc9",
+        "st.d3ck7f9m2a",
+        "st.d3ck16x9wq"
       ],
       "sourceFiles": {
         "packages/designer/src/catalog/ia/frames.json": "a305de6514019a975a0adcd42107b88c047e0134e6feb37f49efffa45be014e8",
-        "packages/designer/src/catalog/slots/frames.json": "4afddf0f2ba37dbbd8156a16df3660d618f62d5e29f4e7fe3e2335674ce52db7",
+        "packages/designer/src/catalog/slots/frames.json": "79d33c0f3bb7e6ac18045ed7fee733f90bfb9900f1c8b80fbbc98d0a81fa679c",
         "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "3a0c0ade71b7188e2322500e48c551d78442863b533000f9ae96cd3f07cbe48b"
       },
       "revisions": [

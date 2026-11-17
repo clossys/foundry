@@ -9880,6 +9880,14 @@
       "value": "frames.command"
     },
     {
+      "cellId": "publisher.frame.frames.deck",
+      "recordId": "st.d3ck7f9m2a",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "publisher.frame",
+      "value": "frames.deck"
+    },
+    {
       "cellId": "publisher.layout.layouts.stack",
       "recordId": "st.ajxm6xb824",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
@@ -15460,7 +15468,7 @@
       ],
       "sourceFiles": {
         "packages/publisher/src/formats/slots/formats.ts": "2767f227c2c1cdf96e8d972e53c915e1879c654776e3c17188a92ee9ca2c4a8d",
-        "packages/designer/src/catalog/slots/frames.json": "5d54fe891496e161636a8a6ee408fffba1af12332cc44fba4516a70594b71b36",
+        "packages/designer/src/catalog/slots/frames.json": "79d33c0f3bb7e6ac18045ed7fee733f90bfb9900f1c8b80fbbc98d0a81fa679c",
         "packages/publisher/src/layouts/slots/layouts.json": "426bea89fb7f046ddffdbab34d2265b928e664638c30682060b44a39320983e6",
         "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "3a0c0ade71b7188e2322500e48c551d78442863b533000f9ae96cd3f07cbe48b",
         "packages/publisher/src/formats/contract.ts": "037ffa3d60f4a8de9dc490d9659b8623be3eebcc80fab2b2f8b00f54890880c5",
@@ -15807,6 +15815,11 @@
       "recordId": "st.b0jrfbc3my",
       "source": "admin-studio.r1.en.json",
       "sourceContext": "designer.item.frames.command"
+    },
+    {
+      "recordId": "st.d3ck7f9m2a",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.item.frames.deck"
     },
     {
       "recordId": "st.rd1wks5c2n",

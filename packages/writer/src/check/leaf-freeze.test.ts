@@ -36,7 +36,7 @@ describe("Writer group leaf freeze", () => {
 
   it("mutation: a Copy leaf id changed fails", () => {
     const next = clone(trees);
-    const l2 = group("copy", next).nodes[1]!.children[1]!;
+    const l2 = group("copy", next).nodes[1]!.children.find(child => child.id === "copy/section-copy/story")!;
     l2.leaves[0] = "sections.hero-banner.copy";
     expect(text(checkGroupLeafFreeze(next, freezes))).toContain("sections.hero.copy");
   });
