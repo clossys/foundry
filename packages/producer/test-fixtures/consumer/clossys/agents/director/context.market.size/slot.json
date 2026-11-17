@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "context.market.size",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "context",
-    "l2": "context.market",
+    "l1": "strategy/context",
+    "l2": "strategy/context/market",
     "order": 0
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.measure",
+  "brief": {
+    "purpose": "How big is the reachable market, counted in a unit you can check?",
+    "mustDo": [
+      "Answer Unit: what is counted: buyers, seats or spend",
+      "Answer Reachable: the number you can reach inside the horizon",
+      "Answer Method: how the number was derived, with its source"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "How big is the reachable market, counted in a unit you can check?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.measure"
+  "tighten": []
 }

@@ -1,0 +1,80 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.boundary-message",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.sections",
+    "l2": "sections-states",
+    "order": 124
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.boundary-message",
+    "passageSchema": "passages.boundary-message",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "status",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 80
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "title",
+          "kind": "plain",
+          "role": "heading",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "description",
+          "kind": "plain",
+          "role": "body",
+          "required": true,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions[].label",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "notes",
+          "kind": "plain",
+          "role": "body",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "context.company.constraint"
+  ],
+  "uses": [],
+  "standard": "passage"
+}

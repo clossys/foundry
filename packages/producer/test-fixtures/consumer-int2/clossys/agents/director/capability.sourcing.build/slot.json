@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.sourcing.build",
+  "agent": "director",
+  "ia": {
+    "l0": "execution",
+    "l1": "task-force",
+    "l2": "task-force.sourcing",
+    "order": 47
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What do we build ourselves, and why?",
+    "mustContain": [
+      {
+        "key": "Build",
+        "hint": "what we build"
+      },
+      {
+        "key": "Why",
+        "hint": "why we build it rather than buy it"
+      },
+      {
+        "key": "Cost",
+        "hint": "what building costs"
+      }
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "standard": "brief.list"
+}

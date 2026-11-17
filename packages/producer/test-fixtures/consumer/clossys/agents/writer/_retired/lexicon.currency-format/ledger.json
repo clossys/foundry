@@ -1,0 +1,49 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "slot",
+      "at": "2026-11-14T22:28:20.240Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "4822577b5f3fead9583adb8246122354503fb3ca8c8ec72a27e2c64223a0ec1f"
+        }
+      ]
+    },
+    {
+      "op": "not-needed",
+      "at": "2026-11-14T22:28:24.340Z",
+      "by": "planner",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.writer/skill.md",
+        "sha256": "f3954a64fffb29d6ed60e26fb83377e60dcd4a5f7565bb2dc23ece691524d2e4"
+      },
+      "model": "none",
+      "tier": "none",
+      "reason": "synthetic fixture: the example shop lists no prices",
+      "since": "2026-11-14",
+      "decidedBy": "planner",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "2fd3ec5dd1acdc6ee182b43644e6e63aa6c3680b068d36a0da6c9c97de331473"
+        },
+        {
+          "file": "pin.json",
+          "sha256": null
+        }
+      ]
+    }
+  ]
+}

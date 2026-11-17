@@ -46,8 +46,8 @@ const SLOTS: Record<string, { agent: AgentId; kind: Slot["kind"]; ia: Ia }> = {
   "designer/themes.background": { agent: "designer", kind: "element/token", ia: { l0: "themes", l1: "themes.colors", l2: "colors-surfaces", order: 0 } },
   "designer/components.button": { agent: "designer", kind: "element/component", ia: { l0: "components", l1: "components.actions", l2: "actions-buttons", order: 0 } },
   "designer/sections.features": { agent: "designer", kind: "element/section", ia: { l0: "sections", l1: "sections.explain", l2: "explain-promotion", order: 0 } },
-  "writer/lexicon.formality": { agent: "writer", kind: "voice", ia: { l0: "lexicon", l1: "lexicon.voice", l2: "voice-tone", order: 0 } },
-  "writer/passages.legal-prose": { agent: "writer", kind: "prose", ia: { l0: "passages", l1: "passages.explain", l2: "explain-reading", order: 3 } },
+  "writer/lexicon.formality": { agent: "writer", kind: "voice", ia: { l0: "voice", l1: "voice.tone", l2: "attitude", order: 0 } },
+  "writer/narratives.legal-document": { agent: "writer", kind: "prose", ia: { l0: "prose", l1: "prose.reference", l2: "policies", order: 0 } },
 };
 
 const SKILLS = (agent: AgentId): string[] => [`packages/${agent}/actions/${agent}.brief/skill.md`, `packages/${agent}/actions/${agent}.candidates/skill.md`, `packages/${agent}/actions/pick.${agent}/skill.md`];
@@ -303,7 +303,7 @@ describe("F3 tighten brief (T3) and F7 upstream cascade (T7)", () => {
 
 describe("F4 add L3 (T4)", () => {
   it("fills a consumer-added slot from the queue.fix that asked for it and answers the fix with the pin", async () => {
-    const w = world(["writer/passages.legal-prose"]);
+    const w = world(["writer/narratives.legal-document"]);
     const now = clock();
     // `clossys ia add` writes the new slot (base null); the downstream agent's request is a queue.fix to its owner.
     w.slot("designer/sections.features");
@@ -343,10 +343,10 @@ describe("F5 owner feedback (T5)", () => {
 
 describe("F6 failed check (T6)", () => {
   it("routes audit findings: queue.fix to the slot's agent, queue.clarify to the owner, deduped; then refine runs from the fix", async () => {
-    const w = world(["writer/passages.legal-prose"]);
+    const w = world(["writer/narratives.legal-document"]);
     const now = clock();
     const findings = [
-      { check: "constitution.strict", subject: "writer/passages.legal-prose/slot.json", detail: "placeholder finding" },
+      { check: "constitution.strict", subject: "writer/narratives.legal-document/slot.json", detail: "placeholder finding" },
       { check: "refs.dangling", subject: "facts", detail: "clossys/facts.json does not exist" },
     ];
     const audit = (): Stub => stub(w.root, { codeFor: call => call.step === "strict" ? { exit: 1, findings } : undefined });
@@ -354,7 +354,7 @@ describe("F6 failed check (T6)", () => {
     expect(first.exitCode).toBe(0);
     const raised = first.state!.raised;
     expect(raised).toHaveLength(2);
-    expect(w.entry(raised[0]!)).toMatchObject({ queue: "queue.fix", decider: "agent:writer", subject: { to: "writer/passages.legal-prose" } });
+    expect(w.entry(raised[0]!)).toMatchObject({ queue: "queue.fix", decider: "agent:writer", subject: { to: "writer/narratives.legal-document" } });
     expect(w.entry(raised[1]!)).toMatchObject({ queue: "queue.clarify", decider: "owner", subject: { to: "producer/queue.clarify" } });
     const second = await startRun(w.root, { loop: "loop.audit" }, audit(), { now });
     expect(second.state!.raised).toEqual([]);
@@ -372,9 +372,9 @@ describe("F6 failed check (T6)", () => {
   });
 
   it("G7: a built-in code step (route) appends its run record, and the ledger carries the sha256 of every file it wrote", async () => {
-    const w = world(["writer/passages.legal-prose"]);
+    const w = world(["writer/narratives.legal-document"]);
     writeFileSync(join(w.root, ".gitignore"), "/.clossys/runs/\n");
-    const findings = [{ check: "constitution.strict", subject: "writer/passages.legal-prose/slot.json", detail: "placeholder finding" }];
+    const findings = [{ check: "constitution.strict", subject: "writer/narratives.legal-document/slot.json", detail: "placeholder finding" }];
     const run = await startRun(w.root, { loop: "loop.audit" }, stub(w.root, { codeFor: call => call.step === "strict" ? { exit: 1, findings } : undefined }), { now: clock() });
     expect(run.state!.raised).toHaveLength(1);
     const store = join(w.root, ".clossys", "runs", "loop.audit.route.jsonl");
@@ -442,9 +442,9 @@ describe("F8 new release: loop.release (T8)", () => {
   });
 
   it("stops the release at failing gates, raising a queue.fix per finding for loop.refine", async () => {
-    const w = world(["writer/passages.legal-prose"]);
+    const w = world(["writer/narratives.legal-document"]);
     const now = clock();
-    const run = await startRun(w.root, { loop: "loop.release", publication: "site" }, release(w.root, { exit: 1, findings: [{ check: "copy.sample-remaining", subject: "writer/passages.legal-prose", detail: "still on sample" }] }), { now });
+    const run = await startRun(w.root, { loop: "loop.release", publication: "site" }, release(w.root, { exit: 1, findings: [{ check: "copy.sample-remaining", subject: "writer/narratives.legal-document", detail: "still on sample" }] }), { now });
     expect(run.exitCode).toBe(1);
     const ledger = w.ledger("loop.release")[0]!;
     expect(ledger).toMatchObject({ status: "stopped" });
@@ -541,7 +541,7 @@ const pinText = (root: string, ref: string): string | null => { const file = joi
 
 describe("review rulings (foundry-build-0013 fix r1)", () => {
   it("B1: the owner picks Director and legal-prose slots directly; the agent pick never runs for them", async () => {
-    for (const ref of ["director/context.market.size", "writer/passages.legal-prose"]) {
+    for (const ref of ["director/context.market.size", "writer/narratives.legal-document"]) {
       const w = world([ref]);
       const now = clock();
       const hooks = stub(w.root);

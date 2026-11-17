@@ -1,14 +1,44 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "focus.lifecycle.acquisition",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "focus",
-    "l2": "focus.lifecycle",
+    "l1": "strategy/focus",
+    "l2": "strategy/focus/lifecycle",
     "order": 20
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/focus.reach.channel",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "How does a stranger become a customer, and at what cost?",
+    "mustDo": [
+      "Answer Path: the steps from stranger to customer",
+      "Answer Hook: what pulls them in",
+      "Answer Cost: the acquisition cost or effort, estimated"
+    ],
+    "inputs": [
+      {
+        "to": "director/focus.reach.channel",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "question": "How does a stranger become a customer, and at what cost?",
     "mustContain": [
@@ -33,9 +63,5 @@
       ]
     }
   },
-  "inputs": [
-    "focus.reach.channel"
-  ],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

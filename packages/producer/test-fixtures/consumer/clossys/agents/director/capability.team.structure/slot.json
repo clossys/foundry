@@ -1,14 +1,33 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "capability.team.structure",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "execution",
-    "l1": "plan",
-    "l2": "plan.operation",
+    "l1": "execution/plan",
+    "l2": "execution/plan/operation",
     "order": 52
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "Who decides what, and how often is strategy reviewed?",
+    "mustDo": [
+      "Answer Decides: area: role (person)",
+      "Answer Rhythm: what is reviewed, how often"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "Who decides what, and how often is strategy reviewed?",
     "mustContain": [
@@ -29,7 +48,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

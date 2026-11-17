@@ -13,6 +13,7 @@ import { PACKAGE_ROOT } from "./options.js";
 import { ownerStep, runPipeline } from "./runner.js";
 import { STEPS } from "./steps/index.js";
 import { checkSlotModel } from "../records/slot-check.js";
+import { readSlot } from "../records/slots.js";
 import { directorIa } from "../records/slot-model/foundry-ia.js";
 import { appendRecord, buildRecord, readStore, STEP_ENV, storeFile } from "./trace.js";
 import { consumerPath } from "../consumer-root.js";
@@ -382,8 +383,10 @@ describe("clossys next", { timeout: 60_000 }, () => {
     expect(checkSlotModel(consumer)).toEqual([]);
     expect((await runPipeline(["ia", "director", "--adopt", ...at], root)).message).toContain("director ia.json exists");
     // The adopted records are the Foundry's own: the same contract and derived inputs this repository's consumer holds.
-    for (const rel of ["director/advantage.defensibility.differentiator", "designer/assets.icon-arrow-right"]) {
-      const read = (base: string) => JSON.parse(readFileSync(join(base, "agents", rel, "slot.json"), "utf8")) as { contract: unknown; inputs: string[]; kind: string };
+    // Each side is read through the one slot reader: the fixture consumer is on clossys.slot/2 (moved by `clossys
+    // migrate recut`, foundry-build-0048 U2), where the inputs are the slot's input refs, and a fresh adopt writes slot/1.
+    for (const [agent, id] of [["director", "advantage.defensibility.differentiator"], ["designer", "assets.icon-arrow-right"]] as const) {
+      const read = (base: string) => readSlot(base, agent, id);
       const [ours, foundry] = [read(consumer), read(FOUNDRY)];
       expect({ kind: ours.kind, contract: ours.contract, inputs: ours.inputs }).toEqual({ kind: foundry.kind, contract: foundry.contract, inputs: foundry.inputs });
     }

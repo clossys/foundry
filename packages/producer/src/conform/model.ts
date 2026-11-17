@@ -34,6 +34,8 @@ export interface TreeL1 { readonly id: string; readonly parked: boolean; readonl
 export interface PackageTree {
   readonly file: string;
   readonly l1: readonly TreeL1[];
+  /** Leaves the tree places and freezes but defines no slot for yet (a Writer `awaiting` row): not leaves to place. */
+  readonly awaiting?: readonly string[];
   /** Per-leaf slot data the tree file carries (Writer arrays, Director/Publisher maps). */
   readonly slots: Readonly<Record<string, Record<string, unknown>>>;
   readonly freeze: { readonly file: string; readonly exists: boolean; readonly ids: readonly string[] } | null;
@@ -131,12 +133,18 @@ export function readTree(file: string, value: unknown): Omit<PackageTree, "freez
   const slots: Record<string, Record<string, unknown>> = {};
   if (Array.isArray(doc.slots)) for (const slot of doc.slots.filter(object)) if (typeof slot.id === "string") slots[slot.id] = slot;
   if (object(doc.slots)) for (const [id, slot] of Object.entries(doc.slots)) if (object(slot)) slots[id] = slot;
-  return { file, l1, slots };
+  const awaiting = (Array.isArray(doc.awaiting) ? doc.awaiting : []).filter(object).map(row => row.id).filter((id): id is string => typeof id === "string");
+  return { file, l1, slots, awaiting };
 }
 
 /** The non-parked leaves of a tree. */
 export const treeLeaves = (tree: Pick<PackageTree, "l1">): string[] =>
   tree.l1.filter(l1 => !l1.parked).flatMap(l1 => l1.l2.filter(l2 => !l2.parked).flatMap(l2 => l2.leaves));
+/** The leaves a consumer places as slots: the non-parked ones but the awaiting ones (placed and frozen in the tree, no slot yet). */
+export const slotLeaves = (tree: Pick<PackageTree, "l1"> & { readonly awaiting?: readonly string[] }): string[] => {
+  const awaiting = new Set(tree.awaiting ?? []);
+  return treeLeaves(tree).filter(id => !awaiting.has(id));
+};
 
 /** Every agent-qualified ref anywhere in a value. */
 export function refsIn(value: unknown, out: string[] = []): string[] {
@@ -172,11 +180,15 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
   let live: LiveSlot[] = placedIds.map(id => {
     const slot = json(join(agentDir, id, "slot.json"));
     const doc = object(slot) ? slot : {};
+    // A clossys.slot/2 names its edges as refs (`{to: <agent>/<id>, rel}`); a slot/1 as bare `inputs` and `uses`.
+    const refs = Array.isArray(doc.refs) ? doc.refs.filter(object) : [];
+    const refsOf = (rel: string) => [...new Set(refs.filter(ref => ref.rel === rel && typeof ref.to === "string").map(ref => ref.to as string))];
     const ledger = json(join(agentDir, id, "ledger.json"));
     const pin = json(join(agentDir, id, "pin.json"));
     return {
       id, source: "placed" as const, ...(typeof doc.schema === "string" ? { schema: doc.schema } : {}), ...(typeof doc.kind === "string" ? { kind: doc.kind } : {}),
-      contract: object(doc.contract) ? doc.contract : {}, inputs: strings(doc.inputs), uses: strings(doc.uses),
+      contract: object(doc.contract) ? doc.contract : {},
+      inputs: doc.schema === "clossys.slot/2" ? refsOf("input") : strings(doc.inputs), uses: doc.schema === "clossys.slot/2" ? refsOf("uses") : strings(doc.uses),
       ...(typeof doc.standard === "string" ? { standard: doc.standard } : {}), ...(doc.family !== undefined ? { family: doc.family } : {}),
       ...(object(slot) ? { folder: `agents/${agent}/${id}` } : {}),
       ledger: object(ledger) && Array.isArray(ledger.events) ? ledger.events.filter(object) : [],
@@ -185,7 +197,7 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
   });
   if (!live.length) {
     // Nothing placed: the package tree's own slot data stands in, so the per-slot assertions still judge the package.
-    live = trees.flatMap(tree => treeLeaves(tree).map(id => {
+    live = trees.flatMap(tree => slotLeaves(tree).map(id => {
       const data = tree.slots[id] ?? {};
       const contract = object(data.contract) ? data.contract : data;
       return {

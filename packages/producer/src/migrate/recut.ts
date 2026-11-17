@@ -24,6 +24,12 @@
  *    ships a base slot for it (`ia sync` writes that one). A target the package defines no slot for is named
  *    (an `ia sync` finding of the result) and gets no slot.json; the rest of the plan still applies.
  * 5. Then slot-1-to-2, pin-1-to-2 and `ia sync` run over the result.
+ * 6. Tree. An agent whose package defines its slots (the `slots` rows of src/catalog/ia/<group>.json: the Writer
+ *    Voice, Prose and Copy trees, foundry-build-0048 U2) takes its package tree whole: the slot-model `ia sync`
+ *    (records/slot-model/ia-sync.ts) writes its ia.json as the package tree (extensions, `changes` and `retired`
+ *    kept), a `clossys.slot/2` folder for every placed slot (`clossys migrate recut` the creator), and the
+ *    package kind, contract, refs, standard and slash-path ia into every slot.json it already had. So every
+ *    placed slot has its folder, and no L2 of the old skeleton is left empty.
  *
  * A candidate's int2 provenance is kept in its header `source`, as it was (kind, ref, parts, hash, license):
  * the caller's int2 source, else the Designer JSON `meta.source`, else `meta.element.source`, else a derived
@@ -56,6 +62,7 @@ import { modelExists, readIa } from "../records/slots.js";
 import { PAGE_SCHEMA, PUBLICATION_SCHEMA, type IaDoc } from "../records/slot-model/types.js";
 import type { AgentId, CandidateHeader, Iso } from "../records/types.js";
 import { planIaSync } from "../cli/ia-sync.js";
+import { knownSlots, syncPlan, syncState, type SyncAgent } from "../records/slot-model/ia-sync.js";
 import { migratePins } from "./pin-1-to-2.js";
 import { migrateSlot1To2, planSlot1To2 } from "./slot-1-to-2.js";
 import { LIBRARY_DIR, planLibraryCells, removeLibraryCell, type CellRoute, type LibraryPlan } from "./library-cells.js";
@@ -150,16 +157,21 @@ export function packageTables(dir: string): Record<RecutAgent, PackageTable> {
   for (const agent of RECUT_AGENTS) {
     const root = agentPackageRoot(dir, agent);
     const placed = new Set<string>();
+    // An `awaiting` leaf (a Writer Copy leaf whose Designer unit declares no copy fields yet) is placed in the tree
+    // and frozen, but no slot: nothing moves to it, so a retired id that names it is retired.
+    const awaiting = new Set<string>();
     const iaDir = join(root, "src", "catalog", "ia");
     if (isDir(iaDir)) for (const file of readdirSync(iaDir).filter(name => name.endsWith(".json")).sort()) {
-      collectLeaves(JSON.parse(readFileSync(join(iaDir, file), "utf8")), placed);
+      const doc = JSON.parse(readFileSync(join(iaDir, file), "utf8")) as unknown;
+      collectLeaves(doc, placed);
+      if (object(doc) && Array.isArray(doc.awaiting)) for (const row of doc.awaiting) if (object(row) && typeof row.id === "string") awaiting.add(row.id);
     }
     // Producer's Studio publication defines Designer package leaves on top of the Designer catalog.
     if (agent === "designer") for (const slot of studioDesignerSlots()) placed.add(slot.id);
     const retiredFile = join(root, "src", "catalog", "retired.json");
     const rows: unknown[] = existsSync(retiredFile) ? JSON.parse(readFileSync(retiredFile, "utf8")) as unknown[] : [];
     const retiredIds = new Set(rows.flatMap(row => (object(row) && typeof row.id === "string" ? [row.id] : [])));
-    const live = new Set([...placed].filter(id => !retiredIds.has(id)));
+    const live = new Set([...placed].filter(id => !retiredIds.has(id) && !awaiting.has(id)));
     const targetOf = new Map<string, string | undefined>();
     for (const row of rows) if (object(row) && typeof row.id === "string") {
       const named = typeof row.target === "string" ? row.target : typeof row.replacedBy === "string" ? row.replacedBy : undefined;
@@ -643,15 +655,35 @@ export function recutPending(plan: RecutPlan): number {
 
 export interface FollowUp { slot1To2: number; slot1To2Findings: string[]; pins: number; pinRefused: string[]; iaSync: number; iaSyncFindings: string[] }
 
-/** What slot-1-to-2, pin-1-to-2 and ia sync would still write. */
+/** The agents whose package defines its slots (src/catalog/ia/*.json `slots` rows): step 6 places their package tree whole. */
+export function treeAgents(dir: string): SyncAgent[] {
+  return (["director", "designer", "writer"] as const).filter(agent => slotDefinitions(dir, agent).size > 0);
+}
+/** Step 6: the slot-model sync writes of every tree agent (ia.json and slot.json files), and why an agent's sync is refused. */
+export function planTreeSync(dir: string, at: Iso, version: string): { writes: [string, string][]; findings: string[] } {
+  const consumer = join(dir, "clossys");
+  const writes: [string, string][] = [];
+  const findings: string[] = [];
+  for (const agent of treeAgents(dir)) {
+    const state = syncState(consumer, agent);
+    if (!state.consumer) continue;
+    const plan = syncPlan(consumer, agent, knownSlots(consumer, agent, state), state, { at, version, cli: RECUT_CLI });
+    if ("error" in plan) findings.push(`${agent}: the package tree is not placed: ${plan.error}`);
+    else writes.push(...plan.writes);
+  }
+  return { writes, findings };
+}
+
+/** What slot-1-to-2, pin-1-to-2, ia sync and the tree step would still write. */
 export function planFollowUp(dir: string, at: Iso, version: string): FollowUp {
   const slots = planSlot1To2(dir, { at, version });
   const pins = migratePins(dir, { dryRun: true });
   const sync = planIaSync(dir, at);
+  const tree = planTreeSync(dir, at, version);
   return {
     slot1To2: slots.migrations.length, slot1To2Findings: slots.findings.map(finding => `${finding.subject}: ${finding.detail}`),
     pins: pins.rows.filter(row => row.outcome === "migrated").length, pinRefused: pins.rows.filter(row => row.outcome === "refused").map(row => row.slot),
-    iaSync: sync.changes.length, iaSyncFindings: sync.findings,
+    iaSync: sync.changes.length + tree.writes.length, iaSyncFindings: [...sync.findings, ...tree.findings],
   };
 }
 
@@ -693,7 +725,7 @@ export function recutProblems(plan: RecutPlan): string[] {
 
 /**
  * Applies a plan whole or not at all: refuses (throws, nothing written) while recutProblems names anything.
- * Then runs slot-1-to-2, pin-1-to-2 and ia sync.
+ * Then runs slot-1-to-2, pin-1-to-2, ia sync and the tree step.
  */
 export function applyRecut(plan: RecutPlan): RecutResult {
   if (plan.missingRetired.length) throw new Error(`STOP: ${plan.missingRetired.join(", ")} ship no src/catalog/retired.json row for ${plan.unknown.join(", ")}`);
@@ -745,10 +777,13 @@ export function applyRecut(plan: RecutPlan): RecutResult {
   const sync = planIaSync(plan.dir, plan.at);
   let synced = 0;
   for (const change of sync.changes) if (writeSlot(change.file, change.slotDoc)) synced++;
+  // Step 6 runs on the slot/2 result, so the tree agents' new folders are written as slot/2.
+  const tree = planTreeSync(plan.dir, plan.at, plan.version);
+  for (const [file, bytes] of tree.writes) { write(file, bytes); synced++; }
   return {
     written, events: added.length,
     slot1To2: slots.written.length, slot1To2Findings: slots.findings.map(finding => `${finding.subject}: ${finding.detail}`),
     pins: pins.written, pinRefused: pins.rows.filter(row => row.outcome === "refused").map(row => row.slot),
-    iaSync: synced, iaSyncFindings: [...plan.slotFindings, ...sync.findings],
+    iaSync: synced, iaSyncFindings: [...plan.slotFindings, ...sync.findings, ...tree.findings],
   };
 }

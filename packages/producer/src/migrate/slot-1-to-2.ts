@@ -4,7 +4,8 @@
  * so a second run writes no byte.
  *
  * - kind:    designer element by `contract.kind` (token, asset, component, section, frame); writer lexicon -> voice,
- *            narrative -> prose, passage/pattern/string -> copy; publisher by id prefix; director brief -> brief.
+ *            narrative -> prose, passage/pattern/string -> copy (and the Copy tree's components, sections, frames,
+ *            assets, page and publication prefixes); publisher by id prefix; director brief -> brief.
  *            A Producer `seat` has no slot/2 kind (seats become loop steps) and is reported, not migrated.
  * - ia:      `l0`, `l0/<l1>`, `l0/<l1>/<l2>` (slash paths) of the slot's position in the agent ia.json as it
  *            stands (positionIa: a recut that drops retired ids moves the order of every later slot), else of
@@ -65,6 +66,8 @@ const DESIGNER_PREFIXES: Record<string, TargetSlotKind> = {
 };
 const WRITER_KINDS: Record<string, TargetSlotKind> = {
   lexicon: "voice", narrative: "prose", narratives: "prose", passage: "copy", passages: "copy", pattern: "copy", patterns: "copy", string: "copy", strings: "copy",
+  // The Copy tree's id prefixes (src/catalog/ia/copy.json): the copy of a Designer unit, a page or a publication.
+  components: "copy", sections: "copy", frames: "copy", assets: "copy", page: "copy", publication: "copy",
 };
 const PUBLISHER_PREFIXES: Record<string, TargetSlotKind> = {
   page: "page", pages: "page", layout: "layout", layouts: "layout", chrome: "chrome", release: "release", publication: "publication",

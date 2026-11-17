@@ -1,7 +1,7 @@
 /**
  * foundry-build-0038 r1: a consumer store recut to clossys.slot/2 seats, pins, checks and compiles a publication
  * end to end, with no clossys.slot/1 or pin/1 file written on the way.
- * Synthetic: a tmp copy of test-fixtures/consumer (a git repository with no commit), and the Writer strings and
+ * Synthetic: a tmp copy of test-fixtures/consumer-int2 (a git repository with no commit), and the Writer strings and
  * Publisher record shapes of src/publish/__fixtures__/install-consumer.
  *  1. `clossys migrate recut --apply` moves the store to slot/2 and pin/2.
  *  2. `clossys ia` places a page, a publication and a Writer strings slot; each slot.json is slot/2 (the store is).
@@ -32,7 +32,7 @@ const rows = (message: string) => message.split("\n").filter(line => line.starts
 function store() {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "publication-slot2-")));
   roots.push(root);
-  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer", "clossys"), join(root, "clossys"), { recursive: true });
+  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer-int2", "clossys"), join(root, "clossys"), { recursive: true });
   execFileSync("git", ["init", "-q"], { cwd: root });
   const agent = (...rest: string[]) => join(root, "clossys", "agents", ...rest);
   const file = (name: string, value: unknown) => { const path = join(root, name); writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`); return path; };
@@ -55,7 +55,7 @@ async function seatAndPin(s: ReturnType<typeof store>) {
   const contract = (name: string, value: unknown) => s.file(name, value);
   await run(["ia", "publisher/page.home", "--contract", contract("page.json", { kind: "page", route: "/", frame: "required", sections: "ordered" }), "--standard", "page", "--under", "site/site-pages", "--kind", "page", "--at", AT]);
   await run(["ia", "publisher/publication.site", "--contract", contract("publication.json", { kind: "publication" }), "--standard", "publication", "--under", "site/site-pages", "--kind", "publication", "--inputs", "page.home", "--uses", "page.home", "--at", AT]);
-  await run(["ia", "writer/strings.site", "--contract", contract("strings.json", {}), "--under", "strings.identity/identity-names", "--kind", "strings", "--at", AT]);
+  await run(["ia", "writer/strings.site", "--contract", contract("strings.json", {}), "--under", "copy.page-metadata/site", "--kind", "strings", "--at", AT]);
 
   const strings = "site-v1.md";
   s.put(s.agent("writer", "strings.site", "candidates", strings), recutCandidateBytes(strings, readFileSync(join(INSTALL, "writer", "strings.site", "candidates", "site-v2.md"), "utf8"),

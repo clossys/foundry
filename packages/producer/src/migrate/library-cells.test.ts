@@ -1,6 +1,6 @@
 /**
  * The int2 library tree to slot candidates (`clossys migrate recut` step 3), on a tmp copy of
- * test-fixtures/consumer. Cells are built in tmp from a package default candidate (shape only, no new text).
+ * test-fixtures/consumer-int2. Cells are built in tmp from a package default candidate (shape only, no new text).
  */
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -20,7 +20,7 @@ afterEach(() => { if (root) rmSync(root, { recursive: true, force: true }); root
 
 function consumerWith(cells: Record<string, Record<string, string>>): { root: string; consumer: string } {
   root = mkdtempSync(join(tmpdir(), "library-cells-"));
-  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer", "clossys"), join(root, "clossys"), { recursive: true });
+  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer-int2", "clossys"), join(root, "clossys"), { recursive: true });
   const consumer = join(root, "clossys");
   for (const [dir, files] of Object.entries(cells)) {
     mkdirSync(join(consumer, "library", dir), { recursive: true });

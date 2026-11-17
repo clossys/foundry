@@ -1,14 +1,35 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "focus.reach.geography",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "focus",
-    "l2": "focus.reach",
+    "l1": "strategy/focus",
+    "l2": "strategy/focus/reach",
     "order": 19
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "Where do we sell first, and where not yet?",
+    "mustDo": [
+      "Answer Where: the first markets",
+      "Answer Not-yet: places we do not serve yet",
+      "Answer Why: why this order",
+      "Answer Language: the locale list and the register per locale"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "Where do we sell first, and where not yet?",
     "mustContain": [
@@ -37,7 +58,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

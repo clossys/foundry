@@ -1,14 +1,212 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "components.button",
   "agent": "designer",
+  "kind": "element/component",
+  "status": "starter",
   "ia": {
     "l0": "components",
-    "l1": "components.components",
-    "l2": "components-actions",
-    "order": 94
+    "l1": "components/components",
+    "l2": "components/components/components-actions",
+    "order": 92
   },
-  "kind": "element",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-chevron-right",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.category.definition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.essence",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.imagery",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.style",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.background",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.border",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.destructive",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.input",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.primary",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.primary-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.radius",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.ring",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.secondary",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.secondary-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.spacing",
+      "rel": "input"
+    },
+    {
+      "to": "designer/components.icon",
+      "rel": "uses"
+    }
+  ],
+  "base": null,
+  "standard": "component",
+  "brief": {
+    "purpose": "Fill designer/components.button to the component standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-chevron-right",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.category.definition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.essence",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.imagery",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.style",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.background",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.border",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.destructive",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.input",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.primary",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.primary-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.radius",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.ring",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.secondary",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.secondary-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.spacing",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "kind": "component",
     "root": "rac:Button",
@@ -75,32 +273,5 @@
     ],
     "apg": "button"
   },
-  "inputs": [
-    "advantage.proposition.promise",
-    "assets.icon-chevron-right",
-    "focus.category.definition",
-    "focus.segment.core",
-    "identity.brand.essence",
-    "identity.brand.personality",
-    "identity.verbal.voice",
-    "identity.visual.imagery",
-    "identity.visual.style",
-    "themes.background",
-    "themes.border",
-    "themes.destructive",
-    "themes.foreground",
-    "themes.input",
-    "themes.muted",
-    "themes.primary",
-    "themes.primary-foreground",
-    "themes.radius",
-    "themes.ring",
-    "themes.secondary",
-    "themes.secondary-foreground",
-    "themes.spacing"
-  ],
-  "uses": [
-    "components.icon"
-  ],
-  "standard": "component"
+  "tighten": []
 }

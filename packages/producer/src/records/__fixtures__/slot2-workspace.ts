@@ -7,7 +7,7 @@
  *   Tallyhouse slot/2 with a base, `packages/<agent>/package.json` (name, the base version) and the package base at
  *   `base.path`, derived from the consumer file by dropping what a consumer adds (`tighten`, `status`, stamps,
  *   `consumedBy` refs). Tallyhouse base shas are illustrative, so the copy starts out of sync.
- * - `consumerCopy()`: a temp copy of `test-fixtures/consumer` (470 slot/1 files).
+ * - `consumerCopy()`: a temp copy of `test-fixtures/consumer-int2` (470 slot/1 files: the int2 consumer as it was before `clossys migrate recut` moved `test-fixtures/consumer`).
  *
  * Tests mutate only these copies; the fixtures stay byte-identical.
  */
@@ -20,7 +20,7 @@ import type { AgentId, Slot } from "../types.js";
 
 export const FIXTURES = fileURLToPath(new URL("../../../test-fixtures/", import.meta.url));
 export const TALLYHOUSE = join(FIXTURES, "tallyhouse");
-export const CONSUMER = join(FIXTURES, "consumer");
+export const CONSUMER = join(FIXTURES, "consumer-int2");
 /** Timestamps taken from the Tallyhouse fixture. */
 export const AT = "2026-11-18T09:31:12Z";
 export const LATER = "2026-11-18T11:40:05Z";

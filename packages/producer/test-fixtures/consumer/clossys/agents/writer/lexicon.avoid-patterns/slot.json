@@ -1,23 +1,47 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "lexicon.avoid-patterns",
   "agent": "writer",
+  "kind": "voice",
+  "status": "starter",
   "ia": {
-    "l0": "lexicon",
-    "l1": "lexicon.terminology",
-    "l2": "terminology-avoid-list",
-    "order": 10
+    "l0": "voice",
+    "l1": "voice/wording",
+    "l2": "voice/wording/terms",
+    "order": 11
   },
-  "kind": "strings",
-  "contract": {
-    "kind": "lexicon",
-    "source": "writer",
-    "recordKind": "pattern-rule",
-    "valueType": "regex-list"
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
   },
-  "inputs": [
-    "identity.verbal.voice"
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input",
+      "key": "Never"
+    }
   ],
-  "uses": [],
-  "standard": "lexicon.term-list"
+  "base": null,
+  "standard": "lexicon.term-list",
+  "brief": {
+    "purpose": "Fill writer/lexicon.avoid-patterns to the lexicon.term-list standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input",
+        "key": "Never"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "shape": "voice.avoid-patterns",
+    "value": "regex list",
+    "check": "deterministic",
+    "defaults": "defaults/lexicon.avoid-patterns/"
+  },
+  "tighten": []
 }

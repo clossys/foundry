@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "context.competition.gap",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "context",
-    "l2": "context.competition",
+    "l1": "strategy/context",
+    "l2": "strategy/context/competition",
     "order": 5
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "What do current alternatives leave unsolved, and why is it still open?",
+    "mustDo": [
+      "Answer Gap: the unsolved part, specific",
+      "Answer Evidence: a finding or user message showing it",
+      "Answer Why-open: why nobody has closed it"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "What do current alternatives leave unsolved, and why is it still open?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

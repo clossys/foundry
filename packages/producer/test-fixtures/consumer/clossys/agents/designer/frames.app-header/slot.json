@@ -1,14 +1,228 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "frames.app-header",
   "agent": "designer",
+  "kind": "element/frame",
+  "status": "starter",
   "ia": {
     "l0": "frames",
-    "l1": "frames.frames",
-    "l2": "frames-bars",
-    "order": 245
+    "l1": "frames/frames",
+    "l2": "frames/frames/frames-bars",
+    "order": 202
   },
-  "kind": "element",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-chevron-down",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-external-link",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.category.definition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.essence",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.imagery",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.style",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.border",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.radius",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.sidebar-accent",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.sidebar-accent-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.sidebar-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.sidebar-primary-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.spacing",
+      "rel": "input"
+    },
+    {
+      "to": "designer/components.breadcrumbs",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.button",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.dialog",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.icon",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.link",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.menu",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.popover",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.semantic-content",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.status-mark",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.toggle-button",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.tooltip",
+      "rel": "uses"
+    }
+  ],
+  "base": null,
+  "standard": "frame",
+  "brief": {
+    "purpose": "Fill designer/frames.app-header to the frame standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-chevron-down",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-external-link",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.category.definition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.essence",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.imagery",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.style",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.border",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.radius",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.sidebar-accent",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.sidebar-accent-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.sidebar-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.sidebar-primary-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.spacing",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "kind": "frame",
     "root": "header",
@@ -188,39 +402,5 @@
       ]
     }
   },
-  "inputs": [
-    "advantage.proposition.promise",
-    "assets.icon-chevron-down",
-    "assets.icon-external-link",
-    "focus.category.definition",
-    "focus.segment.core",
-    "identity.brand.essence",
-    "identity.brand.personality",
-    "identity.verbal.voice",
-    "identity.visual.imagery",
-    "identity.visual.style",
-    "themes.border",
-    "themes.muted",
-    "themes.muted-foreground",
-    "themes.radius",
-    "themes.sidebar-accent",
-    "themes.sidebar-accent-foreground",
-    "themes.sidebar-foreground",
-    "themes.sidebar-primary-foreground",
-    "themes.spacing"
-  ],
-  "uses": [
-    "components.breadcrumbs",
-    "components.button",
-    "components.dialog",
-    "components.icon",
-    "components.link",
-    "components.menu",
-    "components.popover",
-    "components.semantic-content",
-    "components.status-mark",
-    "components.toggle-button",
-    "components.tooltip"
-  ],
-  "standard": "frame"
+  "tighten": []
 }

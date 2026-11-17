@@ -55,10 +55,10 @@ import { validateAgainst } from "../constitution/schema.js";
 import { IA_KIND, slotWriteKind } from "../constitution/green.js";
 import { resolveCandidate } from "./pin.js";
 import { consumerSlotFolders, positionIa, serializeSlot, SLOT_SCHEMA as SLOT_V2_SCHEMA, validateSlot } from "../records/slot.js";
-import { currentView } from "../records/slot-current.js";
+import { currentView, slotReadIssues } from "../records/slot-current.js";
 import { cliActor, toIsoZ } from "../records/pin.js";
 import { slotFromV1, targetKind, type SlotV1 } from "../migrate/slot-1-to-2.js";
-import type { AgentId, Ref, Slot, TargetSlotKind } from "../records/types.js";
+import type { AgentId, Iso, Ref, Slot, TargetSlotKind } from "../records/types.js";
 import { CliUsageError } from "./args.js";
 import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlot, packageStructureChange, planIaWrite, renameGroup, reorderGroup, setAxes, setExtension, setLayers, type Edit, type IaFile, type PositionFollow } from "./ia-regroup.js";
 import type { CliResult } from "./main.js";
@@ -465,11 +465,12 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
   const lines: string[] = [];
   for (const agent of agents) {
     const state = syncState(consumer, agent);
-    const plan = syncPlan(consumer, agent, knownSlots(consumer, agent, state), state);
+    const plan = syncPlan(consumer, agent, knownSlots(consumer, agent, state), state, { at: new Date().toISOString() as Iso, version: cliActor("clossys ia sync").version, cli: "clossys ia sync" });
     if ("error" in plan) return refuse("ia", `sync refused: ${plan.error}; declare them as extensions or upstream them into the package first`);
     for (const [path, bytes] of plan.writes) {
       if (path.endsWith("slot.json")) {
-        const issues = validateSlotDoc(JSON.parse(bytes), path);
+        // Either format, as the reader judges it: a recut store's slot.json is a clossys.slot/2.
+        const issues = slotReadIssues(JSON.parse(bytes), path);
         if (issues.length) return refuse("ia", `sync refused: ${relative(root, path)}: ${issues.map(issue => issue.message).join("; ")}`);
       }
     }

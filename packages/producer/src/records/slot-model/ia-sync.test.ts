@@ -65,12 +65,24 @@ describe("ia sync --check", () => {
       change(doc);
       writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
     };
-    edit("writer", "passages.hero", doc => { doc.standard = "string"; });
-    edit("director", "identity.naming.name", doc => { delete doc.options; delete doc.varyOn; });
-    edit("designer", "sections.hero", doc => { doc.inputs = doc.inputs.slice(1); });
+    // The fixture is a recut (clossys.slot/2) store: inputs are the slot's input refs, echoed in brief.inputs.
+    const dropFirstInput = (doc: any) => {
+      const first: string = doc.refs.find((ref: { rel: string }) => ref.rel === "input").to;
+      const kept = (ref: { to: string; rel: string }) => !(ref.rel === "input" && ref.to === first);
+      doc.refs = doc.refs.filter(kept);
+      doc.brief.inputs = doc.brief.inputs.filter(kept);
+    };
     const behaviour = (agent: typeof SYNC_AGENTS[number]) => syncDrift(consumer, agent).filter(finding => finding.kind === "behaviour").map(finding => finding.slot);
-    expect(behaviour("writer")).toEqual(["passages.hero"]);
+    // Drift the unedited copy already shows (the Designer residual of the recut: components.icon still names two
+    // icons Designer's retired.json retires) is not the edit's; each edit adds exactly its slot.
+    const before = Object.fromEntries(SYNC_AGENTS.map(agent => [agent, behaviour(agent)])) as Record<typeof SYNC_AGENTS[number], (string | undefined)[]>;
+    edit("writer", "sections.hero.copy", doc => { doc.standard = "string"; });
+    edit("director", "identity.naming.name", doc => { delete doc.options; delete doc.varyOn; });
+    edit("designer", "sections.hero", dropFirstInput);
+    expect(before.writer).toEqual([]);
+    expect(before.director).toEqual([]);
+    expect(behaviour("writer")).toEqual(["sections.hero.copy"]);
     expect(behaviour("director")).toEqual(["identity.naming.name"]);
-    expect(behaviour("designer")).toEqual(["sections.hero"]);
+    expect(behaviour("designer").filter(slot => !before.designer.includes(slot))).toEqual(["sections.hero"]);
   });
 });

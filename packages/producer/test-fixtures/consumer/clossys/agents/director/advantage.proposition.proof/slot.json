@@ -1,14 +1,37 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "advantage.proposition.proof",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "advantage",
-    "l2": "advantage.proposition",
+    "l1": "strategy/advantage",
+    "l2": "strategy/advantage/proposition",
     "order": 23
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "What evidence backs the promise, what is still missing, and what must we never claim?",
+    "mustDo": [
+      "Answer Proof: evidence we hold today",
+      "Answer Gap: evidence still missing",
+      "Answer Never-claim: claims we must never make, quoted",
+      "Answer Metrics: metric claims we can back",
+      "Answer Comparisons: comparison claims we can back",
+      "Answer Compliance: compliance statements we can make"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "What evidence backs the promise, what is still missing, and what must we never claim?",
     "mustContain": [
@@ -45,9 +68,7 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
+  "tighten": [],
   "options": 3,
-  "varyOn": "angle",
-  "standard": "brief.list"
+  "varyOn": "angle"
 }

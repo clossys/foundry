@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "execution.risk.mitigation",
+  "agent": "director",
+  "ia": {
+    "l0": "execution",
+    "l1": "plan",
+    "l2": "plan.risk",
+    "order": 54
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What do we do about each top threat, and who owns it?",
+    "mustContain": [
+      {
+        "key": "Threat",
+        "hint": "the threat it answers"
+      },
+      {
+        "key": "Action",
+        "hint": "the mitigating action"
+      },
+      {
+        "key": "Owner",
+        "hint": "who owns it"
+      }
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "standard": "brief.list"
+}

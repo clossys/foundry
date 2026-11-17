@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "focus.offer.included",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "focus",
-    "l2": "focus.offer",
+    "l1": "strategy/focus",
+    "l2": "strategy/focus/offer",
     "order": 16
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "What exactly do customers get, and what outcome does it produce?",
+    "mustDo": [
+      "Answer Offer: what they get, itemised",
+      "Answer Outcome: the result it produces",
+      "Answer Form: product, service or both, and how it is delivered"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "What exactly do customers get, and what outcome does it produce?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

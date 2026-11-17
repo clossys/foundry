@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "focus.segment.next",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "focus",
-    "l2": "focus.segment",
+    "l1": "strategy/focus",
+    "l2": "strategy/focus/segment",
     "order": 15
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.profile",
+  "brief": {
+    "purpose": "Which segment comes next, and what triggers the move?",
+    "mustDo": [
+      "Answer Who: the next segment",
+      "Answer Trigger: the evidence that starts the move",
+      "Answer Change: what we must change to serve them"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "Which segment comes next, and what triggers the move?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.profile"
+  "tighten": []
 }

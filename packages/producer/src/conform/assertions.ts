@@ -7,7 +7,7 @@ import { contractIssues } from "../records/slot-model/validate.js";
 import { validateValue } from "../pipeline/schema.js";
 import { EXEMPLARS_MAX, EXEMPLARS_MIN } from "../records/standards.js";
 import type { SlotKind } from "../records/slot-model/types.js";
-import { SLOT_REF, treeLeaves, type AgentModel, type ConformModel, type LiveSlot } from "./model.js";
+import { SLOT_REF, slotLeaves, treeLeaves, type AgentModel, type ConformModel, type LiveSlot } from "./model.js";
 
 export interface Judgement { readonly rows: readonly string[]; readonly evidence: number }
 export type Assertion = (agent: AgentModel, model: ConformModel) => Judgement;
@@ -47,7 +47,7 @@ export const FIXED_LIST_MIN = 5;
 
 export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
   S1: agent => {
-    const pkg = new Set(agent.trees.flatMap(treeLeaves)), placed = new Set(placedIds(agent));
+    const pkg = new Set(agent.trees.flatMap(tree => slotLeaves(tree))), placed = new Set(placedIds(agent));
     const rows = [...pkg].filter(id => !placed.has(id)).map(id => `${id}: in the package tree, not placed`)
       .concat([...placed].filter(id => !pkg.has(id)).map(id => `${id}: placed, not in the package tree`));
     if (pkg.size !== placed.size) rows.unshift(`package tree has ${pkg.size} leaves, the placed tree ${placed.size}`);

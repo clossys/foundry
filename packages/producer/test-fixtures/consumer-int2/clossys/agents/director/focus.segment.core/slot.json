@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "focus.segment.core",
+  "agent": "director",
+  "ia": {
+    "l0": "strategy",
+    "l1": "focus",
+    "l2": "focus.segment",
+    "order": 14
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Who exactly do we serve first, and who do we turn away?",
+    "mustContain": [
+      {
+        "key": "Who",
+        "hint": "the segment, specific enough to find"
+      },
+      {
+        "key": "Situation",
+        "hint": "the situation they are in"
+      },
+      {
+        "key": "Not",
+        "hint": "who we turn away"
+      }
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "standard": "brief.profile"
+}

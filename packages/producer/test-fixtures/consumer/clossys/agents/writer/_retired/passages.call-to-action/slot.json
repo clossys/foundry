@@ -1,0 +1,80 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.call-to-action",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.sections",
+    "l2": "sections-story",
+    "order": 81
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.call-to-action",
+    "passageSchema": "passages.call-to-action",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.title",
+          "kind": "plain",
+          "role": "heading",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "role": "eyebrow",
+          "required": false,
+          "maxLength": {
+            "en": 48
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "role": "lead",
+          "required": false,
+          "maxLength": {
+            "en": 200
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.primary.label",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.secondary.label",
+          "kind": "plain",
+          "role": "action",
+          "required": false,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.lifecycle.acquisition",
+    "identity.verbal.voice"
+  ],
+  "uses": [],
+  "standard": "passage"
+}

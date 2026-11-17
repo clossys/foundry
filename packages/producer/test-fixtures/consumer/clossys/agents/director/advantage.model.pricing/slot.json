@@ -1,14 +1,44 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "advantage.model.pricing",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "advantage",
-    "l2": "advantage.economics",
+    "l1": "strategy/advantage",
+    "l2": "strategy/advantage/economics",
     "order": 26
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/advantage.defensibility.differentiator",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "brief.measure",
+  "brief": {
+    "purpose": "What do we charge for, how much, and against which anchor?",
+    "mustDo": [
+      "Answer Metric: the unit we charge for",
+      "Answer Price: the price, or the range being tested",
+      "Answer Anchor: what the buyer compares the price to"
+    ],
+    "inputs": [
+      {
+        "to": "director/advantage.defensibility.differentiator",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "question": "What do we charge for, how much, and against which anchor?",
     "mustContain": [
@@ -33,9 +63,5 @@
       ]
     }
   },
-  "inputs": [
-    "advantage.defensibility.differentiator"
-  ],
-  "uses": [],
-  "standard": "brief.measure"
+  "tighten": []
 }

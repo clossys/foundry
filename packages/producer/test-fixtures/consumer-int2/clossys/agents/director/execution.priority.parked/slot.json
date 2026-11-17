@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "execution.priority.parked",
+  "agent": "director",
+  "ia": {
+    "l0": "roadmap",
+    "l1": "timeline",
+    "l2": "timeline.priority",
+    "order": 41
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What are we deliberately not doing now, and when do we look again?",
+    "mustContain": [
+      {
+        "key": "Parked",
+        "hint": "what is parked"
+      },
+      {
+        "key": "Why",
+        "hint": "why it waits"
+      },
+      {
+        "key": "Revisit",
+        "hint": "when or on what signal we look again"
+      }
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "standard": "brief.list"
+}

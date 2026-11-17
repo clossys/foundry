@@ -1,0 +1,72 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.specimen-ladder",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.components",
+    "l2": "components-specimens",
+    "order": 156
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "variant.type",
+        "variant.spacing",
+        "variant.radius"
+      ]
+    },
+    "props": [
+      "items",
+      "axes",
+      "context",
+      "need",
+      "renderParts",
+      "expanded",
+      "labels",
+      "variant"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.accent",
+        "themes.border",
+        "themes.card"
+      ],
+      "assets": [],
+      "components": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure"
+      ]
+    },
+    "composes": [
+      "components.semantic-content",
+      "components.grid-list",
+      "components.disclosure"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent",
+    "themes.border",
+    "themes.card",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.disclosure",
+    "components.grid-list",
+    "components.semantic-content"
+  ]
+}

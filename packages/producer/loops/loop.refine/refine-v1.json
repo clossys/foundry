@@ -116,7 +116,6 @@
             "director"
           ],
           "slots": [
-            "writer/passages.legal-prose",
             "writer/narratives.legal-document"
           ]
         }
@@ -162,7 +161,7 @@
           "ia": [
             "designer/themes",
             "designer/assets",
-            "writer/lexicon/lexicon.voice"
+            "writer/voice"
           ]
         }
       },

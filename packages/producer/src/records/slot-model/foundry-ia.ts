@@ -1,6 +1,6 @@
 /**
  * The Foundry IA as slot-model data (F1/F2). Director, Designer and Writer slot
- * lists are Foundry data read from the installed agent packages; the Publisher IA
+ * lists are Foundry data read from the installed agent packages (Writer: its Voice, Prose and Copy trees); the Publisher IA
  * is consumer data (publication, then collection, then page) built by migrate.
  */
 import { readFileSync } from "node:fs";
@@ -12,6 +12,7 @@ import { isAbsent } from "../../errors.js";
 import { DESIGN_BRIEF_INPUTS } from "./design-brief-inputs.js";
 import { packageIaSource } from "./ia-source.js";
 import { PRODUCER_IA_SOURCE, readPipelineSeats } from "./pipeline-seats.js";
+import type { TargetSlotKind } from "../types.js";
 import { IA_SCHEMA, type IaAxes, type IaDoc, type IaLayer, type IaLeafGroup, type IaNode, type ModelAgent, type SlotAgent, type SlotKind, type SlotPosition } from "./types.js";
 
 export interface FoundrySlot {
@@ -26,6 +27,10 @@ export interface FoundrySlot {
   readonly feeds: readonly string[];
   /** The package's per-slot defaults (src/catalog/slot-defaults.json): its standard and any non-derived inputs. */
   readonly defaults: SlotDefaults;
+  /** The clossys.slot/2 kind the package tree names (Writer voice, prose, copy); `kind` is its slot/1 family. */
+  readonly targetKind?: TargetSlotKind;
+  /** The package tree's own refs (`<agent>/<id>`, rel, key), in order: a clossys.slot/2 slot takes them as written. */
+  readonly refs?: readonly { readonly to: string; readonly rel: string; readonly key?: string }[];
 }
 /** One slot's row in a package's src/catalog/slot-defaults.json (schema clossys.slot-defaults/1). */
 export interface SlotDefaults {
@@ -45,11 +50,6 @@ const readOptionalJson = (root: string, path: string): any => {
   try { text = readFileSync(join(root, path), "utf8"); } catch (error) { if (isAbsent(error)) return undefined; throw error; }
   return JSON.parse(text);
 };
-/**
- * Writer: the frozen defaults of the retired five-layer store (foundry-build-0033). slot-defaults.json holds the
- * target leaves only; a consumer that still places a retired old id keeps that slot's standard from this file.
- */
-export const WRITER_RETIRED_DEFAULTS_FILE = "src/catalog/retired-slot-defaults.json";
 /** A package's per-slot defaults; empty when an older agent build ships none, a malformed file surfaces. */
 export function readSlotDefaults(root: string, agent: SlotAgent, file: string = SLOT_DEFAULTS_FILE): ReadonlyMap<string, SlotDefaults> {
   const doc = readOptionalJson(root, file) as { schema?: unknown; agent?: unknown; slots?: unknown } | undefined;
@@ -64,14 +64,14 @@ export function readSlotDefaults(root: string, agent: SlotAgent, file: string = 
   return out;
 }
 const strings = (value: unknown): string[] => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
-const stripAgent = (ref: string) => ref.replace(/^[a-z]+:/, "").replace(/@\d+$/, "");
+/** A ref without its agent (`director:x.y@2`, `director/x.y`): the bare slot id. */
+const stripAgent = (ref: string) => ref.replace(/^[a-z]+[:/]/, "").replace(/@\d+$/, "");
 
 /** The package IA files an ia.json `source` names (check:ia-source resolves them). */
 const DIRECTOR_IA_FILE = "src/catalog/ia/strategy.json";
 const CATALOG_IA_DIR = "src/catalog/ia";
 
 export const DESIGNER_LAYERS = ["themes", "assets", "components", "sections", "frames"] as const;
-export const WRITER_LAYERS = ["lexicon", "strings", "patterns", "passages", "narratives"] as const;
 
 /** Director: the director catalog (55 slots, 9 L1 / 27 L2). */
 export function directorIa(): FoundryIa {
@@ -184,32 +184,45 @@ export function studioDesignerSlots(): readonly StudioDesignerSlot[] {
   return doc.slots;
 }
 
+/** The Writer target groups (L0), in owner order: one package tree file each (src/catalog/ia/<group>.json). */
+export const WRITER_GROUPS = ["voice", "prose", "copy"] as const;
+
 /**
- * Writer: the five-layer placement every consumer that has not run `clossys migrate recut` still holds (137 leaves;
- * a slot is one Writer leaf, D5). Since foundry-build-0033 that store is retired as live IA: the Writer's live
- * leaves are its voice, prose and copy trees (`clossys write --brief` reads those), and recut moves or retires the
- * old ids. Each slot's behaviour is the Writer's own data: a kept id (one the target trees also place) takes its
- * target default from slot-defaults.json, a retired id its frozen default from retired-slot-defaults.json, so
- * `ia sync` never strips the standard of a slot the consumer has not yet recut.
+ * Writer: the Voice, Prose and Copy trees (foundry-build-0019 target trees, adopted by Producer in foundry-build-0048
+ * U2) in place of the retired five-layer store. Each group file is `{nodes: L1 > L2 > leaves, slots: [{id, kind,
+ * mark, inputs, contract}], awaiting?}`; a leaf is a slot when the file defines a `slots` row for it, and an
+ * `awaiting` leaf (a Designer unit with no copy fields yet) is not placed. The tree's slash ids become dotted node ids
+ * (`voice/tone` -> L1 `voice.tone`, L2 `attitude`), so the slot/1 position and the slot/2 slash path
+ * (positionIa: `voice`, `voice/tone`, `voice/tone/attitude`) both name the package tree. A slot's inputs are its row's
+ * inputs (inputs are per L3), its standard the Writer's slot-defaults.json row; the counts follow the files.
  */
 export function writerIa(): FoundryIa {
   const root = resolveAgent("writer").packageRoot;
-  type WriterNode = { id: string; label: string; children?: WriterNode[]; leaves?: string[] };
-  const flat = (node: WriterNode): string[] => node.leaves ? [...node.leaves] : (node.children ?? []).flatMap(flat);
+  type Row = { id: string; kind: TargetSlotKind; inputs?: { to: string; rel?: string; key?: string }[]; contract?: Record<string, unknown> };
+  type Tree = { group: string; nodes: { id: string; label: string; children: { id: string; label: string; leaves: string[] }[] }[]; slots: Row[] };
   const nodes: IaNode[] = [];
   const slots = new Map<string, FoundrySlot>();
-  const defaults = new Map([...readSlotDefaults(root, "writer", WRITER_RETIRED_DEFAULTS_FILE), ...readSlotDefaults(root, "writer")]);
-  for (const layer of WRITER_LAYERS) {
-    const placement = readJson(root, `src/catalog/ia/${layer}.json`) as { nodes: WriterNode[] };
-    const contracts = new Map((readJson(root, `src/catalog/slots/${layer}.json`) as { id: string; contract: Record<string, unknown>; requires: string[] }[]).map(slot => [slot.id, slot]));
-    for (const node of placement.nodes) {
-      const children: IaLeafGroup[] = node.leaves
-        ? [{ id: node.id, label: node.label, slots: [...node.leaves] }]
-        : (node.children ?? []).map(child => ({ id: child.id, label: child.label, slots: flat(child) }));
-      nodes.push({ id: `${layer}.${node.id}`, label: node.label, children });
+  const defaults = readSlotDefaults(root, "writer");
+  const dotted = (id: string) => id.split("/").join(".");
+  for (const group of WRITER_GROUPS) {
+    const tree = readJson(root, `${CATALOG_IA_DIR}/${group}.json`) as Tree;
+    if (tree.group !== group || !Array.isArray(tree.nodes) || !Array.isArray(tree.slots)) throw new Error(`writer ${CATALOG_IA_DIR}/${group}.json: expected the ${group} tree`);
+    const rows = new Map(tree.slots.map(row => [row.id, row]));
+    for (const node of tree.nodes) {
+      const children: IaLeafGroup[] = node.children
+        .map(child => ({ id: child.id.split("/").pop()!, label: child.label, slots: child.leaves.filter(id => rows.has(id)) }))
+        .filter(child => child.slots.length > 0);
+      if (!children.length) continue;
+      nodes.push({ id: dotted(node.id), label: node.label, children });
       for (const child of children) for (const id of child.slots) {
-        const slot = contracts.get(id);
-        slots.set(id, { id, kind: "strings", contract: slot?.contract ?? {}, declaredInputs: strings(slot?.requires).map(stripAgent), declaredUses: [], feeds: [], defaults: defaults.get(id) ?? {} });
+        const row = rows.get(id)!;
+        const refs = (row.inputs ?? []).filter(input => typeof input.to === "string").map(input => ({ to: input.to, rel: input.rel ?? "input", ...(input.key !== undefined ? { key: input.key } : {}) }));
+        const standard = defaults.get(id)?.standard;
+        slots.set(id, {
+          id, kind: "strings", targetKind: row.kind, contract: row.contract ?? {}, refs,
+          declaredInputs: [...new Set(refs.filter(ref => ref.rel === "input").map(ref => stripAgent(ref.to)))], declaredUses: [], feeds: [],
+          defaults: standard !== undefined ? { standard } : {},
+        });
       }
     }
   }

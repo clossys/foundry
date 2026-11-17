@@ -1,14 +1,44 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "execution.measure.north-star",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "roadmap",
-    "l1": "targets",
-    "l2": "targets.measure",
+    "l1": "roadmap/targets",
+    "l2": "roadmap/targets/measure",
     "order": 38
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/aspiration.goal.long-term",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "brief.measure",
+  "brief": {
+    "purpose": "Which one number shows we deliver value, and what is the target?",
+    "mustDo": [
+      "Answer Metric: the metric, defined",
+      "Answer Target: the target and date",
+      "Answer Why: why it tracks customer value"
+    ],
+    "inputs": [
+      {
+        "to": "director/aspiration.goal.long-term",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "question": "Which one number shows we deliver value, and what is the target?",
     "mustContain": [
@@ -33,9 +63,5 @@
       ]
     }
   },
-  "inputs": [
-    "aspiration.goal.long-term"
-  ],
-  "uses": [],
-  "standard": "brief.measure"
+  "tighten": []
 }

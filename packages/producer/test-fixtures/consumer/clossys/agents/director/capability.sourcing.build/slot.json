@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "capability.sourcing.build",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "execution",
-    "l1": "task-force",
-    "l2": "task-force.sourcing",
+    "l1": "execution/task-force",
+    "l2": "execution/task-force/sourcing",
     "order": 47
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "What do we build ourselves, and why?",
+    "mustDo": [
+      "Answer Build: what we build",
+      "Answer Why: why we build it rather than buy it",
+      "Answer Cost: what building costs"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "What do we build ourselves, and why?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

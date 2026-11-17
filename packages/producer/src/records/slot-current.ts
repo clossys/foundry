@@ -31,6 +31,8 @@ const FAMILY: Readonly<Partial<Record<TargetSlotKind, SlotKind>>> = {
   voice: "strings", prose: "strings", copy: "strings",
   page: "page", layout: "page", chrome: "page", publication: "publication", release: "publication",
 };
+/** The reader's kind family of a current kind (`copy` is `strings`), or the value itself when it names none. */
+export const slotFamily = (kind: unknown): unknown => typeof kind === "string" ? FAMILY[kind as TargetSlotKind] ?? kind : kind;
 /** The current kinds each slot-model agent holds. */
 export const CURRENT_AGENT_KINDS: Readonly<Record<ModelAgent, readonly TargetSlotKind[]>> = {
   director: ["brief"],

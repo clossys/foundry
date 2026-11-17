@@ -11,7 +11,7 @@ import { consumerPath } from "../consumer-root.js";
 import { openPackets } from "./chain.js";
 
 // A Writer slot: --classes walks only the agents with an option-table group (director, writer).
-const SLOT = "writer/lexicon.brand-names";
+const SLOT = "writer/lexicon.preferred-terms";
 const dirs: string[] = [];
 /** A copy of the package's consumer with one placed Writer slot's folder removed (temp copy only). */
 function workspace(): string {

@@ -1,7 +1,7 @@
 /**
  * foundry-build-0038 (G1): one slot model. After `clossys migrate recut --apply` every slot.json is `clossys.slot/2`,
  * and the readers that judge slot shape read that format: the constitution's R01.2 and R01.8, and the slot writes
- * behind `clossys options` and the not-needed decision. Synthetic: a tmp copy of test-fixtures/consumer, recut in tmp.
+ * behind `clossys options` and the not-needed decision. Synthetic: a tmp copy of test-fixtures/consumer-int2, recut in tmp.
  */
 import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -21,10 +21,10 @@ const AT = "2026-11-15T10:00:00Z";
 let root: string | undefined;
 afterEach(() => { if (root) rmSync(root, { recursive: true, force: true }); root = undefined; });
 
-/** A recut copy of test-fixtures/consumer. */
+/** A recut copy of test-fixtures/consumer-int2. */
 function recut() {
   root = mkdtempSync(join(tmpdir(), "recut-one-model-"));
-  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer", "clossys"), join(root, "clossys"), { recursive: true });
+  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer-int2", "clossys"), join(root, "clossys"), { recursive: true });
   applyRecut(planRecut(root, { at: AT }));
   const consumer = join(root, "clossys");
   const file = (agent: string, id: string) => join(consumer, "agents", agent, id, "slot.json");

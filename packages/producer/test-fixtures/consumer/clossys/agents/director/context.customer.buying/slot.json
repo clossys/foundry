@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "context.customer.buying",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "context",
-    "l2": "context.customer",
+    "l1": "strategy/context",
+    "l2": "strategy/context/customer",
     "order": 3
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.profile",
+  "brief": {
+    "purpose": "Who decides, how do they buy, and from which budget?",
+    "mustDo": [
+      "Answer Decider: the role that says yes",
+      "Answer Process: the steps from interest to payment",
+      "Answer Budget: the budget line the money comes from"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "Who decides, how do they buy, and from which budget?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.profile"
+  "tighten": []
 }

@@ -1,0 +1,41 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "identity.brand.personality",
+  "agent": "director",
+  "ia": {
+    "l0": "strategy",
+    "l1": "identity",
+    "l2": "identity.brand",
+    "order": 29
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "How would people describe us as a person, and what are we not?",
+    "mustContain": [
+      {
+        "key": "Traits",
+        "hint": "three to five traits"
+      },
+      {
+        "key": "Not",
+        "hint": "traits we avoid"
+      },
+      {
+        "key": "Example",
+        "hint": "one behavior that shows the traits"
+      }
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle",
+  "standard": "brief.profile"
+}

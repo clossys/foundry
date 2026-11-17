@@ -15,18 +15,35 @@
  *   CLI): 0032 P2 drafts copy fields on 14 awaiting units (slots 68 -> 82, awaiting 15 -> 1, only
  *   sections.sectioned-document stays copy-less); 0035 P14 re-derives section starters (Copy 61 / 22 -> 63 / 20);
  *   0035 P17 adds the sections Navigation L2 and P18 groups frames by role (Frame copy: Bars).
+ * - foundry-build-0048 U2 derives the counts instead of restating them: each group's leaves are its frozen leaf set
+ *   (<group>.leaf-freeze.json, amendments applied), every leaf is a slot or an awaiting leaf, every leaf has a mark,
+ *   and the old tree splits into the kept ids plus the retired.json rows. A count changes only with the freeze.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  WRITER_GROUPS, checkWriterRetired, checkWriterTrees, countWriterTrees, loadWriterRetired, loadWriterTrees,
-  oldWriterLeafIds, type GroupTree,
+  RETIRED_FATES, WRITER_GROUPS, WRITER_MARKS, checkWriterRetired, checkWriterTrees, countWriterTrees, leavesOf, loadWriterRetired,
+  loadWriterTrees, oldWriterLeafIds, type GroupTree,
 } from "./ia/target.js";
 
 const trees = loadWriterTrees();
 const group = (id: string, from: readonly GroupTree[] = trees) => from.find(tree => tree.group === id)!;
 const clone = <T>(value: T): T => structuredClone(value);
 
-describe("Writer tree counts (writer.md 2, Counts)", () => {
+interface Freeze { group: string; leafIds: string[]; amendments: { add?: string[]; remove?: string[] }[] }
+/** A group's frozen leaf set: the freeze file's leafIds with its amendments applied in order. */
+function frozenLeaves(id: string): string[] {
+  const freeze = JSON.parse(readFileSync(new URL(`./ia/${id}.leaf-freeze.json`, import.meta.url), "utf8")) as Freeze;
+  let leaves = [...freeze.leafIds];
+  for (const amendment of freeze.amendments) {
+    const removed = new Set(amendment.remove ?? []);
+    leaves = [...leaves.filter(leaf => !removed.has(leaf)), ...(amendment.add ?? [])];
+  }
+  return leaves;
+}
+const sorted = (ids: readonly string[]) => [...ids].sort();
+
+describe("Writer tree counts (writer.md 2, Counts), derived from the leaf freeze", () => {
   const counts = countWriterTrees(trees);
 
   it("has three groups in owner order: Voice, Prose, Copy", () => {
@@ -34,23 +51,25 @@ describe("Writer tree counts (writer.md 2, Counts)", () => {
     expect(trees.map(tree => tree.label)).toEqual(["Voice", "Prose", "Copy"]);
   });
 
-  it("totals 3 L0, 9 L1, 27 L2 and 100 L3 (75 + 25 Page metadata)", () => {
-    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 9, l2: 27, l3: 100 });
+  it("places exactly each group's frozen leaf set, and the totals are the sums of the groups", () => {
+    for (const id of WRITER_GROUPS) expect(sorted(leavesOf(group(id))), id).toEqual(sorted(frozenLeaves(id)));
+    const sum = (key: "l1" | "l2" | "l3") => WRITER_GROUPS.reduce((total, id) => total + counts.byGroup[id]![key], 0);
+    expect(counts).toMatchObject({ l0: WRITER_GROUPS.length, l1: sum("l1"), l2: sum("l2"), l3: sum("l3") });
+    expect(counts.l3).toBe(WRITER_GROUPS.reduce((total, id) => total + frozenLeaves(id).length, 0));
   });
 
-  it("counts per group", () => {
-    expect(counts.byGroup.voice).toMatchObject({ l1: 2, l2: 5, l3: 12, marks: { starter: 12, "other-live": 0, parked: 0 } });
-    expect(counts.byGroup.prose).toMatchObject({ l1: 2, l2: 4, l3: 5, marks: { starter: 3, "other-live": 1, parked: 1 } });
-    expect(counts.byGroup.copy).toMatchObject({ l1: 5, l2: 18, l3: 83 });
+  it("every leaf is a slot or an awaiting leaf, and has one mark", () => {
+    for (const id of WRITER_GROUPS) {
+      const count = counts.byGroup[id]!;
+      expect(count.slots + count.awaiting, id).toBe(count.l3);
+      expect(WRITER_MARKS.reduce((total, mark) => total + count.marks[mark], 0), id).toBe(count.l3);
+    }
   });
 
-  it("Copy marks follow the Designer unit (38 starter; parked sections pending in Designer) plus 25 starter Page metadata", () => {
-    expect(counts.byGroup.copy.marks).toEqual({ starter: 63, "other-live": 20, parked: 0 });
-  });
-
-  it("Copy has 82 derived slots (57 Designer units, 25 Page metadata) and 1 leaf waiting on Designer copy fields", () => {
-    expect(counts.byGroup.copy.slots).toBe(82);
-    expect(counts.byGroup.copy.awaiting).toBe(1);
+  it("only Copy has leaves waiting on Designer copy fields; Voice and Prose are all slots", () => {
+    expect(counts.byGroup.voice!.awaiting).toBe(0);
+    expect(counts.byGroup.prose!.awaiting).toBe(0);
+    expect(group("copy").awaiting?.map(leaf => leaf.id) ?? []).toEqual(leavesOf(group("copy")).filter(id => !group("copy").slots.some(slot => slot.id === id)));
   });
 
   it("labels the L1s and L2s by the target tree", () => {
@@ -66,17 +85,12 @@ describe("Writer tree counts (writer.md 2, Counts)", () => {
     ]);
   });
 
-  it("keeps the 12 lexicon ids in Voice and the 4 narratives ids in Prose; case-study is the one NEW id", () => {
-    const leaves = (id: string) => group(id).nodes.flatMap(l1 => l1.children.flatMap(l2 => l2.leaves));
-    expect(leaves("voice")).toEqual([
-      "lexicon.formality", "lexicon.warmth", "lexicon.energy", "lexicon.person", "lexicon.mood", "lexicon.sentence-length",
-      "lexicon.reading-level", "lexicon.capitalization", "lexicon.punctuation", "lexicon.preferred-terms", "lexicon.avoid-terms",
-      "lexicon.avoid-patterns",
-    ]);
-    expect(leaves("prose")).toEqual(["narratives.article", "narratives.case-study", "narratives.release-notes", "narratives.guide", "narratives.legal-document"]);
-    expect(group("prose").slots.filter(slot => slot.new).map(slot => slot.id)).toEqual(["narratives.case-study"]);
+  it("keeps the lexicon ids in Voice and the narratives ids in Prose; case-study is the one NEW id", () => {
     const old = new Set(oldWriterLeafIds());
-    expect([...leaves("voice"), ...leaves("prose")].filter(id => old.has(id))).toHaveLength(16);
+    expect(leavesOf(group("voice")).every(id => id.startsWith("lexicon.") && old.has(id))).toBe(true);
+    expect(leavesOf(group("prose")).every(id => id.startsWith("narratives."))).toBe(true);
+    expect(group("prose").slots.filter(slot => slot.new).map(slot => slot.id)).toEqual(["narratives.case-study"]);
+    expect(leavesOf(group("prose")).filter(id => !old.has(id))).toEqual(["narratives.case-study"]);
   });
 });
 
@@ -105,20 +119,23 @@ describe("Writer tree soundness", () => {
   });
 });
 
-describe("retired.json: the 121 old ids and where they went", () => {
+describe("retired.json: the old ids and where they went", () => {
   const retired = loadWriterRetired();
   const old = oldWriterLeafIds();
 
-  it("the old tree had 137 ids; 16 are kept and 121 retire with a fate and a target", () => {
-    expect(old).toHaveLength(137);
-    expect(retired).toHaveLength(121);
+  it("every old id is kept in the new tree or retires with a fate and a target, never both", () => {
+    const placed = new Set(trees.flatMap(leavesOf));
+    const kept = old.filter(id => placed.has(id));
+    expect(sorted(retired.map(entry => entry.id))).toEqual(sorted(old.filter(id => !placed.has(id))));
+    expect(kept.length + retired.length).toBe(old.length);
     expect(checkWriterRetired(retired, old, trees)).toEqual([]);
   });
 
-  it("splits by fate as the recut proves", () => {
+  it("splits by the known fates only, and the fates account for every retired row", () => {
     const byFate: Record<string, number> = {};
     for (const entry of retired) byFate[entry.fate] = (byFate[entry.fate] ?? 0) + 1;
-    expect(byFate).toEqual({ copy: 60, "purpose-shape": 23, dropped: 11, "field-role": 10, "intl-code": 9, "director-field": 7, prose: 1 });
+    expect(Object.keys(byFate).filter(fate => !(RETIRED_FATES as readonly string[]).includes(fate))).toEqual([]);
+    expect(Object.values(byFate).reduce((total, count) => total + count, 0)).toBe(retired.length);
   });
 
   it("mutation: an old id with no retired row fails", () => {

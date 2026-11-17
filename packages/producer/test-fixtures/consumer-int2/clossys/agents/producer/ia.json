@@ -1,0 +1,97 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "@clossys/producer#pipeline/seats.json",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "direct",
+      "label": "Direct",
+      "children": [
+        {
+          "id": "direct.brief",
+          "label": "Brief",
+          "slots": [
+            "seat.ia",
+            "seat.standard",
+            "seat.retire",
+            "seat.evidence",
+            "seat.workspace.config",
+            "seat.seats",
+            "seat.rules",
+            "seat.owner.decisions"
+          ]
+        },
+        {
+          "id": "direct.make",
+          "label": "Make",
+          "slots": [
+            "seat.director.candidates"
+          ]
+        },
+        {
+          "id": "direct.pin",
+          "label": "Pin",
+          "slots": [
+            "seat.pick.director",
+            "seat.pin.director"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "design",
+      "label": "Design",
+      "children": [
+        {
+          "id": "design.make",
+          "label": "Make",
+          "slots": [
+            "seat.designer.candidates",
+            "seat.writer.candidates"
+          ]
+        },
+        {
+          "id": "design.pin",
+          "label": "Pin",
+          "slots": [
+            "seat.pick.designer",
+            "seat.pick.writer",
+            "seat.writer.approve",
+            "seat.pin.designer",
+            "seat.pin.writer"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "publish",
+      "label": "Publish",
+      "children": [
+        {
+          "id": "publish.make",
+          "label": "Make",
+          "slots": [
+            "seat.publisher.candidates"
+          ]
+        },
+        {
+          "id": "publish.pin",
+          "label": "Pin",
+          "slots": [
+            "seat.pick.publisher",
+            "seat.pin.publisher"
+          ]
+        },
+        {
+          "id": "publish.assemble",
+          "label": "Assemble",
+          "slots": [
+            "seat.critic",
+            "seat.verdict",
+            "seat.reissue"
+          ]
+        }
+      ]
+    }
+  ]
+}

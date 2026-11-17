@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "focus.offer.excluded",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "focus",
-    "l2": "focus.offer",
+    "l1": "strategy/focus",
+    "l2": "strategy/focus/offer",
     "order": 17
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "What do we deliberately not offer, and where do we send people who want it?",
+    "mustDo": [
+      "Answer Not: what we do not offer",
+      "Answer Why: why we leave it out",
+      "Answer Redirect: where we send people who want it"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "What do we deliberately not offer, and where do we send people who want it?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

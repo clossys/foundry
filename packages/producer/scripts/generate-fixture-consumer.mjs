@@ -7,7 +7,9 @@
  *   node scripts/generate-fixture-consumer.mjs [--out <dir>]   (default test-fixtures/consumer)
  *
  * It creates a missing fixture only. An existing one is refreshed from the package with
- * `clossys ia sync --root <dir>`, which keeps its decisions.
+ * `clossys ia sync --root <dir>`, which keeps its decisions; a package tree change (a recut) moves it with
+ * `clossys migrate recut --apply --root <dir>`, as foundry-build-0048 U2 moved it to the Writer Voice/Prose/Copy
+ * tree. test-fixtures/consumer-int2 keeps the store as it was before that move, for the migration tests.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
@@ -33,7 +35,7 @@ const steps = [
   // The Producer seat tree is package-owned whole: the sync writes it from pipeline/seats.json.
   ["ia", "sync"],
   // Made-up decisions: the example shop is a synthetic consumer, not a real one.
-  ["pin", "writer/lexicon.currency-format", "--not-needed", "--reason", "synthetic fixture: the example shop lists no prices", "--by", "planner"],
+  ["pin", "writer/sections.pricing.copy", "--not-needed", "--reason", "synthetic fixture: the example shop lists no prices", "--by", "planner"],
 ];
 for (const argv of steps) {
   const run = spawnSync(process.execPath, [cli, ...argv, "--root", out], { encoding: "utf8" });

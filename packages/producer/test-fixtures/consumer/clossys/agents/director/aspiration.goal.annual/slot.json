@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "aspiration.goal.annual",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "roadmap",
-    "l1": "targets",
-    "l2": "targets.goal",
+    "l1": "roadmap/targets",
+    "l2": "roadmap/targets/goal",
     "order": 37
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.measure",
+  "brief": {
+    "purpose": "What must be true at the end of this year to stay on the long-term path?",
+    "mustDo": [
+      "Answer Target: the year-end target, with a number",
+      "Answer Date: the year-end date",
+      "Answer Path: how it steps toward the long-term target"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "What must be true at the end of this year to stay on the long-term path?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.measure"
+  "tighten": []
 }

@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { flatConsumer, repoConsumer, snapshot } from "../cli/__fixtures__/flat-consumer.js";
+import { flatConsumer, int2Consumer, repoConsumer, snapshot } from "../cli/__fixtures__/flat-consumer.js";
 import { runCli } from "../cli/main.js";
 import { sha256Hex } from "../records/hash.js";
 import { writerRecords } from "../records/slot-check.js";
@@ -11,12 +11,12 @@ const camel = (id: string) => id.replace(/-([a-z0-9])/g, (_, char: string) => ch
 const RENAMED = ["page.previous-label", "page.next-label", "page.page-text", "page.no-results-label", "page.page-size-label", "total.range-text"];
 
 /**
- * A copy of the repository consumer with the pagination slots put back in the legacy camelCase
+ * A copy of the int2 fixture consumer with the pagination slots put back in the legacy camelCase
  * form: Designer and Writer slot.json keys, the Writer candidate's record ids, and a pin that
  * matches those legacy bytes.
  */
 function legacyConsumer() {
-  const root = flatConsumer(["designer", "writer"]);
+  const root = flatConsumer(["designer", "writer"], int2Consumer);
   const consumer = join(root, "clossys");
   const designer = join(consumer, "agents", "designer", "sections.pagination", "slot.json");
   const writerDir = join(consumer, "agents", "writer", "passages.pagination");

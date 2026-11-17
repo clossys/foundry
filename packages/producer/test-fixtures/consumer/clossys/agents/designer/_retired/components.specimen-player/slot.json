@@ -1,0 +1,70 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.specimen-player",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.components",
+    "l2": "components-specimens",
+    "order": 157
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "props": [
+      "items",
+      "axes",
+      "context",
+      "need",
+      "renderParts",
+      "expanded",
+      "labels"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.accent",
+        "themes.border",
+        "themes.card"
+      ],
+      "assets": [],
+      "components": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.button"
+      ]
+    },
+    "composes": [
+      "components.semantic-content",
+      "components.grid-list",
+      "components.disclosure",
+      "components.button"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent",
+    "themes.border",
+    "themes.card",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.button",
+    "components.disclosure",
+    "components.grid-list",
+    "components.semantic-content"
+  ]
+}

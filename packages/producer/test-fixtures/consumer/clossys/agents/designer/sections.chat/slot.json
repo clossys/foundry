@@ -1,14 +1,164 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "sections.chat",
   "agent": "designer",
+  "kind": "element/section",
+  "status": "starter",
   "ia": {
     "l0": "sections",
-    "l1": "sections.sections",
-    "l2": "sections-forms",
-    "order": 228
+    "l1": "sections/sections",
+    "l2": "sections/sections/sections-forms",
+    "order": 188
   },
-  "kind": "element",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.category.definition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.essence",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.imagery",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.style",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.radius",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.spacing",
+      "rel": "input"
+    },
+    {
+      "to": "designer/components.avatar",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.button",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.file-trigger",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.icon",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.link",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.semantic-content",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.spinner",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.text-field",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.tooltip",
+      "rel": "uses"
+    }
+  ],
+  "base": null,
+  "standard": "section.app",
+  "brief": {
+    "purpose": "Fill designer/sections.chat to the section.app standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.category.definition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.essence",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.imagery",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.style",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.radius",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.spacing",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "kind": "section",
     "root": "section",
@@ -177,30 +327,5 @@
       ]
     }
   },
-  "inputs": [
-    "advantage.proposition.promise",
-    "focus.category.definition",
-    "focus.segment.core",
-    "identity.brand.essence",
-    "identity.brand.personality",
-    "identity.verbal.voice",
-    "identity.visual.imagery",
-    "identity.visual.style",
-    "themes.muted",
-    "themes.muted-foreground",
-    "themes.radius",
-    "themes.spacing"
-  ],
-  "uses": [
-    "components.avatar",
-    "components.button",
-    "components.file-trigger",
-    "components.icon",
-    "components.link",
-    "components.semantic-content",
-    "components.spinner",
-    "components.text-field",
-    "components.tooltip"
-  ],
-  "standard": "section.app"
+  "tighten": []
 }

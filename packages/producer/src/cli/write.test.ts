@@ -1,11 +1,24 @@
-import { createHash } from "node:crypto";
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { firstPinned, flatConsumer, runVerb, snapshot } from "./__fixtures__/flat-consumer.js";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { firstPinned, flatConsumer, repinSha, runVerb, seedWriterPins, snapshot } from "./__fixtures__/flat-consumer.js";
 
-let root: string;
-beforeEach(() => { root = flatConsumer(["director", "writer"]); });
+/** The Director slots the write brief reads (write.ts INPUTS); the fixture consumer pins none, so each test seeds them. */
+const DIRECTOR_INPUTS = ["identity.brand.essence", "identity.brand.personality", "identity.visual.style", "identity.verbal.voice", "focus.segment.core", "focus.category.stance", "advantage.proposition.proof"];
+
+let seeded: string, root: string;
+// Seed once (eight `clossys pin` runs), then give each test its own copy: one Prose record slot of the current
+// tree, pinned per record (clossys.pin-map/1), over the seeded Director inputs.
+beforeAll(() => {
+  seeded = flatConsumer(["director", "writer"]);
+  seedWriterPins(seeded, DIRECTOR_INPUTS, { slot: "narratives.legal-document", record: "terms" });
+}, 240_000);
+afterAll(() => rmSync(seeded, { recursive: true, force: true }));
+beforeEach(() => {
+  root = realpathSync(mkdtempSync(join(tmpdir(), "producer-write-")));
+  cpSync(join(seeded, "clossys"), join(root, "clossys"), { recursive: true });
+});
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 describe("clossys write over the flat slot model", () => {
@@ -55,8 +68,7 @@ describe("clossys write over the flat slot model", () => {
       const text = readFileSync(pinned.candidate, "utf8").replace(/^reason: .*\n/m, "");
       const bytes = reason === undefined ? text : text.replace(/\n---\n/, `\nreason: ${JSON.stringify(reason)}\n---\n`);
       writeFileSync(pinned.candidate, bytes);
-      const pinFile = join(pinned.dir, "pin.json");
-      writeFileSync(pinFile, `${JSON.stringify({ ...JSON.parse(readFileSync(pinFile, "utf8")), sha256: createHash("sha256").update(bytes).digest("hex") }, null, 2)}\n`);
+      repinSha(pinned, bytes);
     };
     const traceRows = (result: ReturnType<typeof runVerb>) => result.value.checks.findings.filter((finding: { rule: string; slot: string }) => finding.rule === "director-trace-missing" && finding.slot === pinned.id);
     repin();
