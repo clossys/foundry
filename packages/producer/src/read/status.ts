@@ -253,6 +253,8 @@ export function statusView(root: string, options: StatusOptions = {}): StatusWit
       if (pin) { digest.push(`pin ${agent}/${row.id} ${pin.candidate} ${pin.sha256} ${pin.basis}`); times.push(pin.at); }
       const state = slotState(row, pin, pin ? checkResult(root, agent, row.id, pin.candidate) : null, hasDefault(agent, row.id));
       byState[state]++;
+      // Every slot's state and candidate names are in the state hash, so a new candidate or a state change moves it (not only a pin).
+      digest.push(`slot ${agent}/${row.id} ${state} ${row.candidates.join(",")}`);
       const pinned = pin && row.pin === "valid" ? pin.candidate : null;
       if (inAgent(agent)) slots.push({ ref: `${agent}/${row.id}`, state, candidates: row.candidates.length, pinned });
       if (agent === "publisher" && row.id.startsWith("release.")) {
@@ -268,6 +270,7 @@ export function statusView(root: string, options: StatusOptions = {}): StatusWit
     if (loop.pin) { digest.push(`pin producer/${loop.id} ${loop.pin.candidate} ${loop.pin.sha256} ${loop.pin.basis}`); times.push(loop.pin.at); }
     const state: SlotState = loop.drift ? "failing" : loop.pin ? (pinStatus(loop.pin.basis) === "confirm" ? "confirm" : "pinned") : hasDefault("producer", loop.id) ? "sample" : "unresolved";
     producer[state]++;
+    digest.push(`slot producer/${loop.id} ${state} ${loop.candidates}`);
     if (inAgent("producer")) slots.push({ ref: `producer/${loop.id}`, state, candidates: loop.candidates, pinned: loop.pin && !loop.drift ? loop.pin.candidate : null });
   }
   agents.producer = { slots: loops.length, byState: producer };
@@ -275,7 +278,7 @@ export function statusView(root: string, options: StatusOptions = {}): StatusWit
   const allQueue = readQueue(consumer);
   for (const item of allQueue) { times.push(item.raisedAt); if (item.status === "open") digest.push(`queue ${item.id}`); }
   const ledgerAll = readLedger(consumer);
-  for (const item of ledgerAll) times.push(item.at);
+  for (const item of ledgerAll) { times.push(item.at); digest.push(`ledger ${item.id}`); }
   const queue = allQueue
     .filter(item => (options.queue === "all" || item.status === "open") && (!options.agent || item.subject.startsWith(`${options.agent}/`)))
     .map(({ status: _status, ...item }) => item);

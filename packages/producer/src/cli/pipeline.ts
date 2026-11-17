@@ -17,7 +17,7 @@ export const PIPELINE_USAGE = "Usage: clossys pipeline status [--json] [--root <
   + "       clossys pipeline wiring [--json] [--root <dir>]\n"
   + "       clossys pipeline check [--json] [--root <dir>]\n"
   + "       clossys pipeline graph [--json] [--root <dir>] [--out <graph.json>]\n"
-  + "       clossys pipeline trace <step | check:<id>> -- <command> [args]\n"
+  + "       clossys pipeline trace [--root <dir>] <step | check:<id>> -- <command> [args]\n"
   + "status prints each step's state from its latest run record (passed, failed, stale, never-run) with the record it cites, and the open decisions.\n"
   + "wiring prints what the pipeline page draws: the steps that exist and ran, the edges their runs read and wrote, the computed layout.\n"
   + "check exits 1 when a status the pipeline page shows cites no run record, a Studio section contract shows a status with no citation field,\n"
@@ -125,11 +125,18 @@ export function uncitedStatusFields(packageRoot = PACKAGE_ROOT): string[] {
 /** `clossys pipeline trace <step> -- <command>`: run it observed (trace-preload.js) and record the run. */
 function runTrace(argv: readonly string[], cwd: string): CliResult {
   const split = argv.indexOf("--");
-  const [id, ...extra] = split < 0 ? argv : argv.slice(0, split);
+  const head = [...(split < 0 ? argv : argv.slice(0, split))];
+  // --root <dir> names the chain root (clossys run passes it): a traced step runs from its package
+  // folder, so its cwd is not the workspace. CLOSSYS_ROOT is the same root from the environment.
+  const rootAt = head.indexOf("--root");
+  const rootArg = rootAt < 0 ? undefined : head.splice(rootAt, 2)[1];
+  if (rootAt >= 0 && !rootArg) return { exitCode: 2, message: `pipeline trace: --root needs a directory\n${PIPELINE_USAGE}` };
+  const [id, ...extra] = head;
   const command = split < 0 ? [] : argv.slice(split + 1);
   if (!id || extra.length || !command.length) return { exitCode: 2, message: `pipeline trace needs a step id, then -- and the command\n${PIPELINE_USAGE}` };
   let root: string;
-  try { root = discoverRoot(cwd); } catch (error) { return { exitCode: 2, message: error instanceof Error ? error.message : String(error) }; }
+  const named = rootArg ?? (process.env.CLOSSYS_ROOT || undefined);
+  try { root = discoverRoot(named === undefined ? cwd : resolve(cwd, named)); } catch (error) { return { exitCode: 2, message: error instanceof Error ? error.message : String(error) }; }
   const graph = buildGraph(root);
   const known = id.startsWith("check:") ? graph.nodes.some(node => node.checks.includes(id.slice("check:".length))) : graph.nodes.some(node => node.id === id);
   if (!known) return { exitCode: 2, message: `pipeline trace: ${id} is neither a step in the graph nor check:<id> of a check a step names` };
@@ -138,7 +145,7 @@ function runTrace(argv: readonly string[], cwd: string): CliResult {
   const start = new Date();
   const child = spawnSync(command[0]!, command.slice(1), {
     cwd, stdio: "inherit",
-    env: { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import ${preload}`.trim(), [SINK_ENV]: sink },
+    env: { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import ${preload}`.trim(), [SINK_ENV]: sink, CLOSSYS_ROOT: root },
   });
   const end = new Date();
   const observation = readSink(sink);

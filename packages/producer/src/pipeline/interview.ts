@@ -44,7 +44,7 @@ import type { Cell, StrategyModel } from "@clossys/director";
 import { checkSlotModel } from "../records/slot-check.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
 import type { SlotAgent } from "../records/slot-model/types.js";
-import { directorStoreReader, listSlots, readCandidate, readiness, readSlot, slotIndex } from "../records/slots.js";
+import { directorStoreReader, listSlots, modelExists, readCandidate, readiness, readSlot, slotIndex } from "../records/slots.js";
 import type { SlotEntry } from "../records/slots.js";
 import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
 import { writerWording, type WordingRow } from "../records/writer-wording.js";
@@ -292,6 +292,9 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
   const cited = new Map<string, { to: SlotAgent; from: SlotAgent; cell: string; need: string[] }>();
   const citations = new Map<string, number>();
   for (const [agent, list] of entries) for (const entry of list) {
+    // An IA slot with no folder (no slot.json) cites nothing yet: it is the open `ia` item above
+    // (coverage open.ia), asked as an ia packet, never read here.
+    if (!modelExists(join(entry.dir, "slot.json"))) continue;
     for (const input of readSlot(consumer, agent, entry.id).inputs) {
       const upstream = index.get(input);
       if (!upstream || upstream.agent === agent) continue;

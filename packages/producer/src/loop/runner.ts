@@ -19,7 +19,8 @@
  * Run state is kept in `.clossys/runs/loops/<runId>.json`; resuming never runs a finished step again. Every run that
  * ends (done, stopped or pinned-ready) writes one ledger entry, `clossys/agents/producer/ledger.<loop>/entries/<runId>.json`.
  */
-import { existsSync, mkdirSync, openSync, closeSync, writeSync, readFileSync, renameSync, writeFileSync, readdirSync, unlinkSync } from "node:fs";
+import { existsSync, mkdirSync, openSync, closeSync, writeSync, readFileSync, renameSync, writeFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
+import { appendRecord, buildRecord, invocationOf, observe } from "../pipeline/trace.js";
 import { dirname, join, relative, sep } from "node:path";
 import { checkPinsResolve, resolveAll } from "../check/pins-resolve.js";
 import { answerQueueEntry } from "../queue/answer.js";
@@ -32,7 +33,7 @@ import { validateAgainst } from "../records/schema.js";
 import { recordSchema, writeSlot } from "../records/slot.js";
 import type { AgentId, Decider, DeciderVerb, Iso, LedgerEntry, LoopStep, LoopVersion, QueueEntry, Ref, Tier } from "../records/types.js";
 import { RUN_BY, RUN_CLI, entryName, producerVersion, raiseEntry, routeFindings, type Finding, type Raise } from "./route.js";
-import { dependantsOf, fillNames, nextFillSlot, readSubject, refOf, skillFor, slotCandidates, slotVars, stepArgv, whenMatches, type SlotSubject } from "./slots.js";
+import { dependantsOf, fillNames, MissingSkillError, nextFillSlot, readSubject, refOf, skillFor, slotCandidates, slotVars, stepArgv, whenMatches, type SlotSubject } from "./slots.js";
 import {
   AGENT_PICK_VERB, CANDIDATE_NAME, ENTRY_NAME, EXIT_CHECKS, LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, OWNER_PICK_RAISE, PUBLICATION_ID, RELEASE_READY, RUN_ID,
   SLOT_REF, TRIGGER_CODE, TRIGGER_KINDS, VERIFIED_CHECKS, ledgerOf, loopStem, type LoopName,
@@ -199,12 +200,13 @@ function ledgerPath(root: string, file: string): string {
   if (!inAgents.startsWith("..")) return inAgents.split(sep).join("/");
   return relative(root, absolute).split(sep).join("/");
 }
+const isFile = (path: string): boolean => statSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
 function wroteOf(root: string, files: readonly string[] = []): LedgerStep["wrote"] {
   return files.map(file => {
     const rel = ledgerPath(root, file);
     const absolute = rel.startsWith(".clossys") ? join(root, rel) : join(agentsDir(root), rel);
-    const hashed = /\/candidates\/[^/]+$/.test(rel) && existsSync(absolute);
-    return { file: rel, sha256: hashed ? sha256Hex(readFileSync(absolute)) : null };
+    // Every file the step wrote is hashed as it stands when the step ends; null only when it no longer exists.
+    return { file: rel, sha256: isFile(absolute) ? sha256Hex(readFileSync(absolute)) : null };
   });
 }
 
@@ -466,7 +468,9 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     if (decider.by === "agent") {
       const agent = decider.agent === OWNER_OF_SLOT ? subject?.agent : decider.agent;
       if (!agent) return stop(ctx, `step ${step.id} names ${OWNER_OF_SLOT}, but ${state.loop} runs for no slot`, 2);
-      const skill = skillFor(root, decider.skill, agent);
+      let skill: string | undefined;
+      try { skill = skillFor(root, decider.skill, agent); }
+      catch (error) { if (error instanceof MissingSkillError) return stop(ctx, `step ${step.id}: ${error.message}`, 2); throw error; }
       const packet: AgentPacket = {
         runId: state.runId, step: step.id, agent, verb: decider.verb, tier: decider.tier, cli: filled.text, round: state.round,
         ...(skill ? { skill } : {}), ...(subject ? { ref: refOf(subject) } : {}), ...(state.from ? { from: state.from } : {}),
@@ -481,7 +485,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
       ledgerDecider = { by: "agent", agent, verb: decider.verb, tier: decider.tier, model: outcome.model, ...(skill ? { skill } : {}) };
     } else {
       ledgerDecider = { by: "code" };
-      const builtIn = codeBuiltIn(ctx, step, subject);
+      const builtIn = recordedBuiltIn(ctx, step, subject, filled);
       if (builtIn) ({ exit, wrote } = builtIn);
       else if (filled.unfilled.length) { exit = 2; wrote = []; }
       else {
@@ -544,6 +548,30 @@ function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefi
     return { exit: missing.length ? 1 : 0, wrote };
   }
   return undefined;
+}
+
+/**
+ * A built-in code step runs observed, like any traced step (pipeline/trace.ts): it appends one
+ * clossys.pipeline-run/1 record to `.clossys/runs/<loop>.<step>.jsonl` with every file it read and
+ * wrote and their sha256, so a loop's own writes (queue entries, slot status) are on the run record.
+ */
+function recordedBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefined, filled: { readonly argv: readonly string[]; readonly text: string }): { exit: Exit; wrote: string[] } | undefined {
+  const watch = observe();
+  // Wall time, not ctx.now(): the run clock dates entries and pins, and a record must not move it.
+  const start = new Date();
+  let result: { exit: Exit; wrote: string[] } | undefined;
+  try { result = codeBuiltIn(ctx, step, subject); }
+  finally { watch.stop(); }
+  if (!result) return undefined;
+  // The step's own files are writes too: a queue entry is created through a file descriptor (openSync "wx"), which
+  // the fs observer does not hook, so without this the record would list none of what route raised.
+  for (const file of result.wrote) {
+    const rel = ledgerPath(ctx.root, file);
+    watch.observation.writes.add(rel.startsWith(".clossys") ? join(ctx.root, rel) : join(agentsDir(ctx.root), rel));
+  }
+  const argv = filled.argv[0] === "clossys" ? filled.argv.slice(1) : filled.argv;
+  appendRecord(ctx.root, buildRecord({ root: ctx.root, step: `${ctx.state.loop}.${step.id}`, invocation: invocationOf(argv), argv, start, end: new Date(), exit: result.exit, observation: watch.observation }));
+  return result;
 }
 
 /** onFail and exit 2 (null: go on). */
