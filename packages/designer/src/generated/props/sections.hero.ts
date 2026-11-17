@@ -1,5 +1,5 @@
 // Generated from sections.hero by src/generated/props/generate.ts; do not edit.
-export const heroContractSha256 = "c70455c25db356733938106e71d15510bc62ef02fc1ecb64dab724218622c3c3";
+export const heroContractSha256 = "754ee7479eeedbb0e110db0bbbeff382ce2b4b71c02821154deab67512639a6a";
 
 export type HeroCopy = {
   header: {

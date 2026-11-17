@@ -612,7 +612,52 @@
         "components.badge",
         "components.disclosure",
         "components.dialog"
-      ]
+      ],
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "skip.label",
+            "kind": "plain",
+            "role": "label",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "navigation.label",
+            "kind": "plain",
+            "role": "label",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "navigation.open",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "navigation.close",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          }
+        ]
+      }
     },
     "requires": [],
     "status": "draft"
@@ -702,7 +747,102 @@
         "components.tooltip",
         "components.semantic-content",
         "components.dialog"
-      ]
+      ],
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "skip.label",
+            "kind": "plain",
+            "role": "label",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "breadcrumb.label",
+            "kind": "plain",
+            "role": "label",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "breadcrumb.collapsed",
+            "kind": "plain",
+            "role": "label",
+            "required": false,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "page.info",
+            "kind": "plain",
+            "role": "label",
+            "required": false,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "page.actions",
+            "kind": "plain",
+            "role": "label",
+            "required": false,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "navigation.open",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "navigation.close",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "panel.open",
+            "kind": "plain",
+            "role": "action",
+            "required": false,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "panel.close",
+            "kind": "plain",
+            "role": "action",
+            "required": false,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          }
+        ]
+      }
     },
     "requires": [],
     "status": "draft"
@@ -816,7 +956,52 @@
         "components.card",
         "components.icon",
         "components.semantic-content"
-      ]
+      ],
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "navigation.label",
+            "kind": "plain",
+            "role": "label",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "navigation.empty",
+            "kind": "plain",
+            "role": "label",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "navigation.expand",
+            "kind": "plain",
+            "role": "action",
+            "required": false,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "navigation.collapse",
+            "kind": "plain",
+            "role": "action",
+            "required": false,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          }
+        ]
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1016,7 +1201,32 @@
         "components.separator",
         "components.semantic-content",
         "components.button"
-      ]
+      ],
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "navigation.label",
+            "kind": "plain",
+            "role": "label",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "legal.notice",
+            "kind": "plain",
+            "role": "label",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1187,6 +1397,48 @@
         "components.command",
         "components.semantic-content"
       ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "frames.deck",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "main",
+      "landmarks": [
+        {
+          "slot": "slide",
+          "role": "main",
+          "topLevel": true,
+          "nameRequired": false
+        }
+      ],
+      "slots": [
+        {
+          "id": "slide",
+          "required": true,
+          "accepts": "sections.*"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "aspect.16-9"
+        ]
+      },
+      "statePorts": [],
+      "rendering": "server",
+      "breakpoints": [],
+      "allowedReads": {
+        "themes": [
+          "themes.background",
+          "themes.foreground"
+        ],
+        "assets": []
+      },
+      "composes": []
     },
     "requires": [],
     "status": "draft"

@@ -1,14 +1,8 @@
 {
   "schema": "clossys.designer-ia-extension/1",
   "id": "slides",
-  "owns": "The Slides medium (foundry-build-0027): one deck frame and six slide sections. Each slide section is one construct in two media, a 16:9 slide and a web section, picked by the `medium` axis. Additive to the five layer files: tree.ts merges each family under its L1. Engine slot registration (src/catalog/slots) follows in a later unit.",
+  "owns": "The Slides medium (foundry-build-0027). foundry-build-0032 (audit P3): the deck frame is registered in the frames layer (ia/frames.json, slots/frames.json), and the six slide sections are retired in place, each deduped into a medium config of its live twin (`retired` below): the twin's contract declares media slide and web, and Writer copy for a slide is the twin's section copy. The slide ids stay placed so they are never reused. `slots` and the slide package defaults stay as the record of what each slide was and the render source a deck reads until Publisher repoints its deck layout to the twins; frames.deck there mirrors its registered contract until Publisher reads slots/frames.json.",
   "families": [
-    {
-      "layer": "frames",
-      "l1": "frames",
-      "node": { "id": "frames-deck", "label": "Deck", "leaves": ["frames.deck"] },
-      "starter": ["frames.deck"]
-    },
     {
       "layer": "sections",
       "l1": "sections",
@@ -23,16 +17,16 @@
           "sections.slide-quote",
           "sections.slide-closing"
         ]
-      },
-      "starter": [
-        "sections.slide-title",
-        "sections.slide-agenda",
-        "sections.slide-statement",
-        "sections.slide-two-column",
-        "sections.slide-quote",
-        "sections.slide-closing"
-      ]
+      }
     }
+  ],
+  "retired": [
+    { "id": "sections.slide-title", "retiredAt": "2026-11-16", "replacedBy": "sections.hero", "config": "medium.slide", "decidedBy": "owner 2026-11-16 (go with your recommendation); foundry-build-0032 audit P3", "reason": "pairwise dedupe: a title slide is the hero on the slide medium" },
+    { "id": "sections.slide-agenda", "retiredAt": "2026-11-16", "replacedBy": "sections.table-of-contents", "config": "medium.slide", "decidedBy": "owner 2026-11-16 (go with your recommendation); foundry-build-0032 audit P3", "reason": "pairwise dedupe: an agenda slide is the table of contents on the slide medium" },
+    { "id": "sections.slide-statement", "retiredAt": "2026-11-16", "replacedBy": "sections.content", "config": "medium.slide layout.stacked", "decidedBy": "owner 2026-11-16 (go with your recommendation); foundry-build-0032 audit P3", "reason": "pairwise dedupe: a statement slide is stacked content on the slide medium (sections.band declares no copy)" },
+    { "id": "sections.slide-two-column", "retiredAt": "2026-11-16", "replacedBy": "sections.content", "config": "medium.slide layout.split-start", "decidedBy": "owner 2026-11-16 (go with your recommendation); foundry-build-0032 audit P3", "reason": "pairwise dedupe: a two-column slide is split content on the slide medium" },
+    { "id": "sections.slide-quote", "retiredAt": "2026-11-16", "replacedBy": "sections.testimonials", "config": "medium.slide layout.single", "decidedBy": "owner 2026-11-16 (go with your recommendation); foundry-build-0032 audit P3", "reason": "pairwise dedupe: a quote slide is a single testimonial on the slide medium" },
+    { "id": "sections.slide-closing", "retiredAt": "2026-11-16", "replacedBy": "sections.call-to-action", "config": "medium.slide", "decidedBy": "owner 2026-11-16 (go with your recommendation); foundry-build-0032 audit P3", "reason": "pairwise dedupe: a closing slide is the call to action on the slide medium" }
   ],
   "slots": {
     "frames.deck": {

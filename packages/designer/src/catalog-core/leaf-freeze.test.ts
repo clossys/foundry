@@ -27,7 +27,9 @@ const SPECIMEN_LEAVES = ["components.specimen-swatch", "components.specimen-ladd
 // planner:C5-DREC (owner LAD-3, 2026-11-11): CanvasZoom and CanvasMap join the pending components amendment;
 // loaded leaves 244 -> 246.
 const CANVAS_LEAVES = ["components.canvas-zoom", "components.canvas-map"] as const;
-const LOADED_LEAVES = OWNER_RESIGN.leaves + SPECIMEN_LEAVES.length + CANVAS_LEAVES.length;
+// foundry-build-0032 (audit P3, owner 2026-11-16 "go with your recommendation"): frames.deck registers; loaded leaves 246 -> 247.
+const DECK_LEAVES = ["frames.deck"] as const;
+const LOADED_LEAVES = OWNER_RESIGN.leaves + SPECIMEN_LEAVES.length + CANVAS_LEAVES.length + DECK_LEAVES.length;
 const loadedAssets = () => ({ ia: structuredClone(assetIA) as Placement, slots: structuredClone(assetSlots) });
 const view = (layer: string, ia: unknown, slots: unknown) => layer === "assets" ? loadedAssets() : { ia: structuredClone(ia) as Placement, slots: structuredClone(slots) as typeof assetSlots };
 

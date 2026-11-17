@@ -5,6 +5,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
 import { SPECIMEN_SECTION_EXPORTS } from "../importers/specimen-sections.js";
+import { FOUNDRY_FRAME_GAPS } from "../importers/foundry-frames.map.js";
 import { packageBarrelExports } from "../library-cli/surface-package-evidence.js";
 import { mergeRendererGroups, runtimeMember, runtimeRecord, runtimeText, surfaceRendererId, SURFACE_RUNTIME_POINTER, type SurfaceRendererEntry } from "./contract.js";
 import { ConsumerComponentProvider, surfaceRuntimeCallbacks, surfaceRuntimePointers, surfaceRuntimeRenderers } from "./index.js";
@@ -66,8 +67,12 @@ describe("surface runtime registry", () => {
     expect(Object.keys(sectionRenderers).sort()).toEqual(packaged);
     expect(packaged.length + otherPackage.length + nativeSpecimens.length).toBe(sectionSlots.length);
     for (const id of [...otherPackage, ...nativeSpecimens]) expect(ids(sectionSlots as readonly { id: string }[])).toContain(id);
-    expect(Object.keys(frameRenderers).sort()).toEqual(ids(frameSlots as readonly { id: string }[]));
-    expect(Object.keys(frameRenderers)).toHaveLength(frameSlots.length);
+    // foundry-build-0032 (audit P3): frames.deck is rendered by another package (Publisher's static slides build), the
+    // same way the sectioned document is; it is the importer's one named Frames gap and has no renderer here.
+    const frameGaps = Object.keys(FOUNDRY_FRAME_GAPS).map(leaf => `frames.${leaf}`).sort();
+    expect(frameGaps).toEqual(["frames.deck"]);
+    expect(Object.keys(frameRenderers).sort()).toEqual(ids(frameSlots as readonly { id: string }[]).filter(id => !frameGaps.includes(id)));
+    expect(Object.keys(frameRenderers).length + frameGaps.length).toBe(frameSlots.length);
   });
   it("ships the registry by name from the frames barrel the pointer names", () => {
     expect(SURFACE_RUNTIME_POINTER).toEqual({ module: "@clossys/designer/frames", export: "surfaceRuntimeRenderers" });

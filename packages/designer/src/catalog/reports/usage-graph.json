@@ -19335,15 +19335,15 @@
     }
   ],
   "inputs": {
-    "components": "sha256:97566b0b0267676b8239676f4b2f37ac1d256826e8b78cbcabaae6ec038882ea",
+    "components": "sha256:a36d3348932619f27a5ae5fef8d6a0c063287616b66a606155825269e7cd4531",
     "consumption": "sha256:4341fe1cf47891aed1b25386f5d7aec6395e0a43b9b09ca16e1bc39d74b6a5aa",
-    "inventory": "sha256:9695fecb739e3de12862d4dee6b2f8b504a9f925321784475f32c29126246e13",
+    "inventory": "sha256:3caf72f4a0cacd3e31fc1b43056e024d8e6bf839ca43298aa55d714fd534aedb",
     "pages": "absent",
     "runtime": "absent",
-    "selection": "sha256:f400278ffe96a6a739cd2dea2568d80091ef5feb135f26b2f979e2fd18d2995f",
+    "selection": "sha256:ca32945dc0a136609fb8a74cc9cb81c53300c3aa7282c00d829532a2834c43aa",
     "surfaces": "sha256:700a14e314a6ce95e021ba1636e0e5fc769bf9196847d61c1baded2ff47f126c"
   },
-  "inputsHash": "sha256:bd7fdee1ff1607d052b21ec010446242dcba9302c6578bb9ac7594393edf42e3",
+  "inputsHash": "sha256:e85aefd815eee0a267dd76592e7bb1e5c9eef69afbde323ac964cce63e9bb5fa",
   "nodes": [
     {
       "fill": {
@@ -19902,6 +19902,18 @@
       "scan": "lower-bound"
     },
     {
+      "id": "components.canvas-map",
+      "layer": "components",
+      "leaf": "components.canvas-map",
+      "origin": "inventory"
+    },
+    {
+      "id": "components.canvas-zoom",
+      "layer": "components",
+      "leaf": "components.canvas-zoom",
+      "origin": "inventory"
+    },
+    {
       "fill": {
         "id": "shadcn@aria/components.card",
         "source": "shadcn@aria"
@@ -20288,8 +20300,8 @@
     },
     {
       "fill": {
-        "id": "shadcn@aria/components.rich-text",
-        "source": "shadcn@aria"
+        "id": "foundry/components.rich-text",
+        "source": "foundry"
       },
       "id": "components.rich-text",
       "layer": "components",
@@ -20664,6 +20676,12 @@
       "leaf": "frames.command",
       "origin": "inventory",
       "scan": "lower-bound"
+    },
+    {
+      "id": "frames.deck",
+      "layer": "frames",
+      "leaf": "frames.deck",
+      "origin": "inventory"
     },
     {
       "fill": {
@@ -21950,8 +21968,8 @@
     },
     "nodes": {
       "assets": 49,
-      "components": 76,
-      "frames": 11,
+      "components": 78,
+      "frames": 12,
       "pages": 0,
       "sections": 66,
       "themes": 63
@@ -26772,12 +26790,16 @@
             "sha256": "f5ba36adeb1462a29cfcf8edd3f7456756756449d73fdbb91948ce1ac4939104"
           },
           {
+            "path": "packages/designer/src/runtime/absent-peer.ts",
+            "sha256": "1da7688cd478f99a721e0d0668d9df4a1d4ec22e334f1cd01203cdcc0df87f17"
+          },
+          {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
             "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           },
           {
             "path": "packages/designer/src/runtime/stock-link-button.tsx",
-            "sha256": "add91687706703a8c3999ddbcba7df3c061c9ae4ea3a1bc50b2490ccb9472d80"
+            "sha256": "dbd9a375c078056fada73ec9b9c9b928fbb6dbc4e95afd73201d9e15213622cc"
           },
           {
             "path": "packages/publisher/src/content/copy-provenance.ts",
@@ -26905,7 +26927,7 @@
             "code": "DF2",
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/stock-link-button.tsx",
-            "line": 3
+            "line": 4
           },
           {
             "code": "DF5",

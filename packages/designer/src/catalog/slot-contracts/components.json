@@ -281,6 +281,16 @@
         "description": "member flag"
       },
       {
+        "name": "navigation.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "more.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
         "name": "themes.foreground",
         "kind": "theme",
         "required": true
@@ -311,6 +321,8 @@
       "compose.components": "components.link",
       "members": "current,collapsed",
       "members.mode": "closed",
+      "more.label.maxLength.en": 40,
+      "navigation.label.maxLength.en": 60,
       "root": "rac:Breadcrumbs"
     },
     "references": [
@@ -2376,6 +2388,11 @@
         "description": "member flag"
       },
       {
+        "name": "close.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
         "name": "themes.border",
         "kind": "theme",
         "required": true
@@ -2423,6 +2440,7 @@
     ],
     "limits": {
       "apg": "dialog-modal",
+      "close.label.maxLength.en": 24,
       "members": "role.modal,dismissable",
       "members.mode": "closed",
       "root": "rac:Dialog"
@@ -5201,6 +5219,21 @@
     "purpose": "Sidebar component (root presentational), under Components / Navigation.",
     "inputs": [
       {
+        "name": "toggle.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "mobile.title",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "mobile.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
         "name": "themes.background",
         "kind": "theme",
         "required": true
@@ -5265,7 +5298,10 @@
       "compose.components": "components.icon,components.sheet",
       "members": "",
       "members.mode": "closed",
-      "root": "presentational"
+      "mobile.description.maxLength.en": 160,
+      "mobile.title.maxLength.en": 60,
+      "root": "presentational",
+      "toggle.label.maxLength.en": 24
     },
     "references": [
       {
@@ -5285,6 +5321,26 @@
     "layer": "components",
     "purpose": "Command component (root rac:Autocomplete), under Components / Actions.",
     "inputs": [
+      {
+        "name": "search.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "search.placeholder",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "results.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "empty.label",
+        "kind": "copy",
+        "required": false
+      },
       {
         "name": "themes.border",
         "kind": "theme",
@@ -5348,9 +5404,13 @@
     ],
     "limits": {
       "compose.components": "components.icon",
+      "empty.label.maxLength.en": 120,
       "members": "",
       "members.mode": "closed",
-      "root": "rac:Autocomplete"
+      "results.label.maxLength.en": 60,
+      "root": "rac:Autocomplete",
+      "search.label.maxLength.en": 60,
+      "search.placeholder.maxLength.en": 60
     },
     "references": [
       {
@@ -5370,6 +5430,11 @@
     "layer": "components",
     "purpose": "Sheet component (root rac:Dialog+Modal+ModalOverlay), under Components / Overlays.",
     "inputs": [
+      {
+        "name": "close.label",
+        "kind": "copy",
+        "required": true
+      },
       {
         "name": "themes.border",
         "kind": "theme",
@@ -5412,6 +5477,7 @@
       }
     ],
     "limits": {
+      "close.label.maxLength.en": 24,
       "compose.components": "components.icon",
       "members": "",
       "members.mode": "closed",
@@ -5922,6 +5988,46 @@
         "required": false
       },
       {
+        "name": "title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "play",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "pause",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "mute",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "seek",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "captions",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "error.title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "error.description",
+        "kind": "copy",
+        "required": true
+      },
+      {
         "name": "themes.accent",
         "kind": "theme",
         "required": true
@@ -5983,10 +6089,18 @@
       }
     ],
     "limits": {
+      "captions.maxLength.en": 24,
       "compose.components": "components.button,components.toggle-button,components.slider,components.icon,components.semantic-content",
+      "error.description.maxLength.en": 200,
+      "error.title.maxLength.en": 60,
       "members": "controls.full,controls.minimal",
       "members.mode": "closed",
-      "root": "presentational"
+      "mute.maxLength.en": 24,
+      "pause.maxLength.en": 24,
+      "play.maxLength.en": 24,
+      "root": "presentational",
+      "seek.maxLength.en": 60,
+      "title.maxLength.en": 60
     },
     "references": [
       {

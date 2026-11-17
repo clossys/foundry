@@ -41,12 +41,16 @@ const leafNodes = (nodes: readonly PlacementNode[]): PlacementNode[] => nodes.fl
 describe("component build IA registry", () => {
   it("records the consumed-only parked charts in IA data and rejects a parked id that is not placed (register H4c)", () => {
     const registry = loadComponentRegistry();
-    // planner:r2f-53 appends the six zero-caller charts whose Foundry implementations were deleted (leaf ids retained).
+    // foundry-build-0032 (audit P7): the six zero-caller charts planner:r2f-53 deleted are retired only, no longer also parked.
     const deleted = ["sparkline", "status-strip", "scatter", "heatmap", "range", "waterfall"].map(leaf => `components.chart-${leaf}`);
-    expect(registry.placement.parked?.map(entry => entry.leaf)).toEqual(["components.chart-area", "components.chart-bar", "components.chart-line", ...deleted]);
-    for (const entry of registry.placement.parked ?? []) expect(entry.basis).toMatch(deleted.includes(entry.leaf) ? /planner:r2f-53/ : /H4c/);
+    expect(registry.placement.parked?.map(entry => entry.leaf)).toEqual(["components.chart-area", "components.chart-bar", "components.chart-line"]);
+    for (const entry of registry.placement.parked ?? []) expect(entry.basis).toMatch(/H4c/);
+    for (const id of deleted) expect(registry.placement.retired, id).toContain(id);
     const forged = { ...registry, placement: { ...registry.placement, parked: [...registry.placement.parked!, { leaf: "components.unplaced", basis: "x" }] } };
     expect(componentRegistryFindings(forged)).toEqual(["parked: components.unplaced is not a placed component leaf"]);
+    // Mutation: re-parking a retired chart is a finding.
+    const reparked = { ...registry, placement: { ...registry.placement, parked: [...registry.placement.parked!, { leaf: deleted[0]!, basis: "x" }] } };
+    expect(componentRegistryFindings(reparked)).toEqual([`parked: ${deleted[0]} is retired; a retired leaf is not also parked`]);
   });
 
 
@@ -130,8 +134,8 @@ describe("component build IA registry", () => {
     expect(build.fills.every(fill => !fill.$extensions["com.clossys.fill"].slot.startsWith("components."))).toBe(true);
     expect(build.placements.filter(row => row.layer === "themes" || row.layer === "assets")).toEqual(runtime.placements);
     expect(build.retired).toEqual(retired);
-    // planner:C5-DREC: owner D2/LAD-1/LAD-2 retirements, plus foundry-build-0018 (22 studio-killed and 6 recut; frames.sheet and frames.command stay live, review r1 P1); retired-leaves.test.ts pins the ids.
-    expect(retired).toHaveLength(41);
+    // planner:C5-DREC: owner D2/LAD-1/LAD-2 retirements, plus foundry-build-0018 (22 studio-killed and 6 recut; frames.sheet and frames.command stay live, review r1 P1), plus foundry-build-0032 audit P12 (assets.icon-business and assets.icon-institution dedupe into assets.icon-organization); retired-leaves.test.ts pins the ids.
+    expect(retired).toHaveLength(43);
     const component = build.slots.find(slot => slot.layer === "components")!;
     component.id = "components.changed";
     expect(loadBuildCatalog().slots.some(slot => slot.id === "components.changed")).toBe(false);

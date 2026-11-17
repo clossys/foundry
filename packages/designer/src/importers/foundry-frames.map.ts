@@ -23,4 +23,6 @@ export const FOUNDRY_FRAME_MAP: Readonly<Record<string, FoundryFrameMapping>> = 
   inspector: { ...designer("InspectorFrame", { "presentation.docked": "presentation=docked", "presentation.collapsed": "collapsed=true", "presentation.overlay": "presentation=overlay" }, { content: "children" }, { collapsed: "collapsed/onCollapsedChange", width: "value/onChange", min: "min", max: "max", step: "step" }), subpath: "frames", notes: ["InspectorFrame is a named aside around a start-edge ResizablePane when docked and an end-placed Drawer when overlay; collapse and width are host-ownable state. AppFrame rightPanel does not yet compose it."] },
   command: designer("CommandMenu", {}, { search: "searchLabel", groups: "groups", empty: "emptyMessage" }, { open: "isOpen/onOpenChange", query: "query/onQueryChange" }, ["CommandMenu has no shortcut configuration. useCommandMenuShortcut is separately exported but requires host composition; no shortcut member is mapped. Search is a built-in SearchField the host adapts through searchLabel and the query state port; it is not replaceable by a host node. No RAC conformance is claimed."]),
 };
-export const FOUNDRY_FRAME_GAPS: Readonly<Record<string, string>> = {};
+export const FOUNDRY_FRAME_GAPS: Readonly<Record<string, string>> = {
+  deck: "Publisher renders frames.deck in its static slides build from the package canvas default; no Designer package export exists yet (foundry-build-0032, audit P3).",
+};

@@ -5,6 +5,7 @@ import sections from "./sections.json" with { type: "json" };
 import frames from "./frames.json" with { type: "json" };
 import slides from "./slides.json" with { type: "json" };
 import retiredList from "../retired.json" with { type: "json" };
+import retiredPieces from "../retired-pieces.json" with { type: "json" };
 
 /**
  * The Designer slot tree as three L0s (owner order: Theme, Art, Interface). The five layer files stay the storage
@@ -41,7 +42,9 @@ export const STUDIO_KILLED = "studio-killed";
  */
 export interface IAFamily { layer: DesignerLayer; l1: string; node: { id: string; label: string; leaves: readonly string[] }; starter?: readonly string[] }
 export interface ExtensionSlot { kind: "frame" | "section"; variants?: Readonly<Record<string, readonly string[]>>; [key: string]: unknown }
-export interface IAExtension { schema: string; id: string; owns: string; families: readonly IAFamily[]; slots: Record<string, ExtensionSlot> }
+/** An extension leaf retired in place (owner D2), with the live-twin config that replaces it (foundry-build-0032, audit P3). */
+export interface ExtensionRetired extends RetiredEntry { config?: string }
+export interface IAExtension { schema: string; id: string; owns: string; families: readonly IAFamily[]; slots: Record<string, ExtensionSlot>; retired?: readonly ExtensionRetired[] }
 
 /** The layer trees with each extension family appended under its L1 and its starter leaves added. */
 export function extendTrees(trees: readonly LayerTree[], extension: IAExtension): LayerTree[] {
@@ -53,13 +56,21 @@ export function extendTrees(trees: readonly LayerTree[], extension: IAExtension)
       return here.length && !("leaves" in node) ? { ...node, children: [...node.children, ...here.map(family => family.node)] } : node;
     });
     for (const family of families) if (!tree.nodes.some(node => node.id === family.l1)) throw new Error(`${extension.id}: ${tree.layer} L1 ${family.l1} not found`);
-    return { ...tree, nodes, starter: [...(tree.starter ?? []), ...families.flatMap(family => family.starter ?? [])] };
+    const leaves = new Set(families.flatMap(family => family.node.leaves));
+    const retired = (extension.retired ?? []).map(entry => entry.id).filter(id => leaves.has(id));
+    return {
+      ...tree,
+      nodes,
+      starter: [...(tree.starter ?? []), ...families.flatMap(family => family.starter ?? [])],
+      ...(retired.length ? { retired: [...(tree.retired ?? []), ...retired] } : {})
+    };
   });
 }
 
 export const DESIGNER_SLIDES: IAExtension = slides as unknown as IAExtension;
 export const DESIGNER_TREES: readonly LayerTree[] = extendTrees([themes, assets, components, sections, frames] as unknown as readonly LayerTree[], DESIGNER_SLIDES);
-export const DESIGNER_RETIRED: readonly RetiredEntry[] = retiredList as readonly RetiredEntry[];
+/** retired.json (the five layer files' retirements) plus the extension's in-place retirements. */
+export const DESIGNER_RETIRED: readonly RetiredEntry[] = [...(retiredList as readonly RetiredEntry[]), ...(DESIGNER_SLIDES.retired ?? [])];
 
 const leavesOf = (nodes: readonly TreeNode[]): string[] => nodes.flatMap(node => "leaves" in node ? [...node.leaves] : leavesOf(node.children));
 
@@ -160,6 +171,48 @@ export function checkTree(trees: readonly LayerTree[], retired: readonly Retired
   return findings;
 }
 
+/**
+ * Unplaced piece ids (Studio and flow pieces, owner decision 8; foundry-build-0032 audit P6 and P13) recorded as retired.
+ * They were never IA leaves, so they live in their own register instead of retired.json, which only holds placed leaves.
+ * Data only: the code that still renders them is removed by its own unit.
+ */
+export interface RetiredPiece { id: string; home: string; retiredAt: string; decidedBy: string; reason: string }
+export interface RetiredPieces { schema: string; about: string; pieces: readonly RetiredPiece[] }
+export const DESIGNER_RETIRED_PIECES: RetiredPieces = retiredPieces as RetiredPieces;
+const PIECE_ID = /^(?:components|sections|frames)\.[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The retired-piece register is sound: ids are well formed and unique, none is a placed leaf or a registered slot, every
+ * entry says who decided and why, and every piece folder Designer ships (`ui/pieces/<id>`) is recorded. `references` are
+ * the ids live slot contracts name (requires, composes, allowed composes); none may be a retired piece.
+ */
+export function retiredPieceFindings(
+  register: RetiredPieces,
+  trees: readonly LayerTree[],
+  options: { slotIds?: readonly string[]; pieceFolders?: readonly string[]; references?: ReadonlyMap<string, readonly string[]> } = {},
+): string[] {
+  const findings: string[] = [];
+  if (register.schema !== "clossys.designer-retired-pieces/1") findings.push(`retired-pieces: unexpected schema ${register.schema}`);
+  const placed = new Set(placedLeaves(trees));
+  const slots = new Set(options.slotIds ?? []);
+  const seen = new Set<string>();
+  for (const piece of register.pieces) {
+    if (!PIECE_ID.test(piece.id)) findings.push(`${piece.id}: not a piece id`);
+    if (seen.has(piece.id)) findings.push(`${piece.id}: recorded more than once`);
+    seen.add(piece.id);
+    if (placed.has(piece.id)) findings.push(`${piece.id}: a placed leaf retires through retired.json, not the piece register`);
+    if (slots.has(piece.id)) findings.push(`${piece.id}: registered as a slot`);
+    if (!DAY.test(piece.retiredAt)) findings.push(`${piece.id}: retiredAt must be a date`);
+    if (!piece.decidedBy?.trim()) findings.push(`${piece.id}: no decidedBy`);
+    if (!piece.reason?.trim()) findings.push(`${piece.id}: no reason`);
+    if (!piece.home?.trim()) findings.push(`${piece.id}: no home`);
+  }
+  for (const folder of options.pieceFolders ?? []) if (!seen.has(folder)) findings.push(`${folder}: piece folder is not recorded in retired-pieces.json`);
+  for (const [slot, ids] of options.references ?? new Map()) for (const id of ids) if (seen.has(id)) findings.push(`${slot}: names retired piece ${id}`);
+  return findings;
+}
+
 /** Live starter leaves, per layer. */
 export const starterLeaves = (trees: readonly LayerTree[]): string[] => trees.flatMap(tree => [...(tree.starter ?? [])]);
 
@@ -197,6 +250,58 @@ export function extensionDefaultFindings(extension: IAExtension, defaults: Reado
       if (!files.some(file => file.content.variants?.[axis]?.includes(value))) findings.push(`${id}: variant ${axis}=${value} has no package default`);
     }
   }
+  return findings;
+}
+
+/** A slot record as far as the extension retirement check reads it. */
+export interface MediumSlot { id: string; contract: { media?: readonly string[] } }
+
+/**
+ * Extension retirements (foundry-build-0032, audit P3): each retired extension leaf stays placed, names a live, placed
+ * twin in its own layer, and the medium config it becomes; the twin's contract declares that medium. A retired leaf is
+ * never a starter.
+ */
+export function extensionRetiredFindings(extension: IAExtension, trees: readonly LayerTree[], slots: readonly MediumSlot[]): string[] {
+  const findings: string[] = [];
+  const familyLeaves = new Set(extension.families.flatMap(family => family.node.leaves));
+  const starters = new Set(extension.families.flatMap(family => family.starter ?? []));
+  const placed = new Set(placedLeaves(trees));
+  const retired = new Set([...trees.flatMap(tree => tree.retired ?? [])]);
+  const byId = new Map(slots.map(slot => [slot.id, slot]));
+  const seen = new Set<string>();
+  for (const entry of extension.retired ?? []) {
+    const { id, replacedBy, config } = entry;
+    if (seen.has(id)) findings.push(`${id}: retired more than once`);
+    seen.add(id);
+    if (!familyLeaves.has(id)) findings.push(`${id}: not an extension leaf`);
+    if (starters.has(id)) findings.push(`${id}: retired but still a starter`);
+    if (!DAY.test(entry.retiredAt ?? "")) findings.push(`${id}: retiredAt is not a date`);
+    if (!entry.decidedBy?.trim()) findings.push(`${id}: no decidedBy`);
+    if (!entry.reason?.trim()) findings.push(`${id}: no reason`);
+    if (!replacedBy) { findings.push(`${id}: no replacedBy twin`); continue; }
+    if (replacedBy.split(".")[0] !== id.split(".")[0]) findings.push(`${id}: twin ${replacedBy} is in another layer`);
+    if (!placed.has(replacedBy) || familyLeaves.has(replacedBy)) findings.push(`${id}: twin ${replacedBy} is not a placed layer leaf`);
+    if (retired.has(replacedBy)) findings.push(`${id}: twin ${replacedBy} is retired`);
+    const medium = /(?:^|\s)medium\.([a-z]+)(?:\s|$)/.exec(config ?? "")?.[1];
+    if (!medium) { findings.push(`${id}: config names no medium`); continue; }
+    if (!byId.get(replacedBy)?.contract.media?.includes(medium)) findings.push(`${id}: twin ${replacedBy} does not declare medium ${medium}`);
+  }
+  return findings;
+}
+
+/**
+ * `slot-defaults.json` rows (foundry-build-0032, audit P9): one row per live placed leaf and none for a retired leaf, since
+ * retired means nothing reads it.
+ */
+export function slotDefaultFindings(rows: Readonly<Record<string, unknown>>, trees: readonly LayerTree[], retired: readonly RetiredEntry[]): string[] {
+  const retiredIds = new Set(retired.map(entry => entry.id));
+  const live = placedLeaves(trees).filter(id => !retiredIds.has(id));
+  const findings: string[] = [];
+  for (const id of Object.keys(rows)) {
+    if (retiredIds.has(id)) findings.push(`${id}: retired, but slot-defaults.json still has a row`);
+    else if (!live.includes(id)) findings.push(`${id}: slot-defaults.json row for a leaf that is not placed`);
+  }
+  for (const id of live) if (!Object.hasOwn(rows, id)) findings.push(`${id}: live leaf with no slot-defaults.json row`);
   return findings;
 }
 

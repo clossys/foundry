@@ -80,7 +80,9 @@ describe("S2-1 bounded section composition reconciliation", () => {
     }
     // SCROLL-1 A158/A159/A161: stats, TOC label, typed table cells and native band header are the exact new contract delta; keep existing normalization and unrelated pins unchanged.
     const invariant = slots.filter(slot => !isWaveOne(slot) && !isLater(slot) && slot.id !== "sections.logo-hero").map(slot => {
-      const { substrates: _substrates, substrateTests: _tests, copy: _copy, passageSchema: _passage, ...rest } = slot.contract;
+      // foundry-build-0032 (audit P3/P7): undo exactly its two edits (twin media, stats sparkline) so this pin stays the prior digest.
+      const { substrates: _substrates, substrateTests: _tests, copy: _copy, passageSchema: _passage, media: _media, ...unmedia } = slot.contract as typeof slot.contract & { media?: readonly string[] };
+      const rest = slot.id === "sections.stats" ? { ...unmedia, allowedComposes: ["components.chart-sparkline", ...unmedia.allowedComposes] } : unmedia;
       const base = slot.id === "sections.table-of-contents" ? { ...rest, slots: rest.slots.map(item => item.name === "active-id" ? { ...item, type: "copy" } : item) } : rest;
       const original = slot.id === "sections.comparison" ? { ...base, surface: "site", slots: base.slots.filter(item => item.name !== "controls"), members: { ...base.members, names: [] } } : base;
       if (!Object.hasOwn(reconciledComposes, slot.id.slice("sections.".length))) return { ...slot, contract: original };
@@ -97,7 +99,18 @@ describe("S2-1 bounded section composition reconciliation", () => {
     expect(original).toHaveLength(46);
     // SCROLL-1 A158/A159/A161 updates only section-header, table-of-contents and data-table; all 46 rows remain pinned, with no field projected out.
     // foundry-build-0018 (audit 0014): every copy field gains its role and role budget; re-pinned from the data.
+    // foundry-build-0032 (owner 2026-11-16, audit P3/P7): the five slide twins declare media slide and web, and stats drops the
+    // retired sparkline. Re-pinned from the data; undoing exactly those two edits restores the prior digest, so no other base
+    // field moved.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
+      .toBe("07423991983d04ee30d7665e4e819f52c92e1a1d6f485e631857b5f5a7352504");
+    type Row = (typeof original)[number] & { contract: Record<string, unknown> };
+    const prior = (original as Row[]).map(slot => {
+      const { media: _media, ...contract } = slot.contract;
+      if (slot.id === "sections.stats") return { ...slot, contract: { ...contract, allowedComposes: ["components.chart-sparkline", ...(contract.allowedComposes as string[])] } };
+      return { ...slot, contract };
+    });
+    expect(createHash("sha256").update(JSON.stringify(prior)).digest("hex"))
       .toBe("5e9dc00bb9c25f9ebd92757c9453a49a70f3f159f50ffed6913e245d7656506a");
     // Preserve the original contracts while allowing the three copy-only sign-in
     // configurations covered by sections/sign-in-copy.test.tsx.

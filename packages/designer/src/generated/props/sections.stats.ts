@@ -1,5 +1,5 @@
 // Generated from sections.stats by src/generated/props/generate.ts; do not edit.
-export const statsContractSha256 = "33cec29338a4875b9ee73bf6dd7cf22d3b81749aa33d217ed10ff97bccd12a5e";
+export const statsContractSha256 = "06e350f72645e6741828f964648a24e8b7f0c6e09ccc90f13e4f7639f2cd9cdb";
 
 export type StatsCopy = {
   header?: {
