@@ -123,7 +123,7 @@ export function readStrategyRoot(root: string, store: DirectorStoreReader, optio
     if (!names?.includes("pin.json")) continue;
     const pinPath = `${id}/pin.json`;
     const value = json(pinPath); if (value === undefined) continue;
-    const pin = parseSlotPin(value);
+    const pin = parseSlotPin(value, id);
     if (!pin.ok) { issue(pinPath, "invalid-format", pin.message); continue; }
     const version = slotCandidateVersion(pin.value.candidate);
     if (version === undefined) { issue(pinPath, "invalid-format", "Director candidates are Markdown: expected candidate <name>-v<n>.md"); continue; }
