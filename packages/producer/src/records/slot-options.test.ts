@@ -101,6 +101,35 @@ describe("checkSlotOptions", () => {
     expect(found).toContain(`options-short:${ID}`);
   });
 
+  it("judges a slot by its own family (slot/2 data) before the table, and names a family the table's class disagrees with", () => {
+    // family is slot/2 data: the slot is rewritten as the slot/1-to-2 migration writes it, plus its family.
+    const setFamily = (slotId: string, family: Record<string, unknown>) => {
+      const file = join(consumer(), "agents", "director", slotId, "slot.json");
+      const { ia } = JSON.parse(readFileSync(file, "utf8"));
+      writeFileSync(file, jsonBytes({
+        schema: "clossys.slot/2", id: slotId, agent: "director", kind: "brief", status: "starter",
+        ia: { l0: "strategy", l1: `strategy/${ia.l1}`, l2: `strategy/${ia.l1}/${ia.l2.split(".").pop()}`, order: ia.order },
+        createdBy: { actor: "code", cli: "clossys migrate slot-1-to-2", version: "0.1.0" }, createdAt: "2026-11-17T00:00:00Z", refs: [],
+        base: null, standard: "brief.statement", brief: { purpose: "p", mustDo: [], inputs: [], acceptance: [] }, contract: {}, tighten: [], family,
+      }));
+    };
+    // The table's choice class seeded the family: no drift, and its three values are the options to hold.
+    setFamily(ID, { options: 3, varyOn: "angle", values: ["grounded", "ambitious", "human"], class: "choice" });
+    expect(codes()).toEqual([`options-short:${ID}`]);
+    add("essence-ambitious-v1.md", brief({ angle: "ambitious" }));
+    add("essence-human-v1.md", brief({ angle: "human" }));
+    expect(codes()).toEqual([]);
+    // A slot the table does not class is judged by its family alone, never options-unclassified.
+    const unclassed: OptionTable = { ...TABLE, groups: { director: { "identity/identity.brand": "choice" } } };
+    setFamily("context.market.trend", { options: 1, varyOn: null, values: [] });
+    expect(checkSlotOptions(consumer(), unclassed).findings).toEqual([]);
+    // Mutation: the family says 2 on tone while the table's class says 3 on angle, so the drift is named.
+    setFamily(ID, { options: 2, varyOn: "tone", values: ["plain", "bold"], class: "choice" });
+    const drift = checkSlotOptions(consumer(), TABLE).findings.find(f => f.code === "options-drift");
+    expect(drift?.message).toBe("slot.json family 2/tone != class choice 3/angle; run clossys migrate contracts");
+    expect(slotOptions(consumer(), readSlotEntry(consumer(), "director", ID)!, TABLE)).toMatchObject({ options: 2, varyOn: "tone", values: ["plain", "bold"] });
+  });
+
   it("reports an L2 group the mapping does not class", () => {
     const table: OptionTable = { ...TABLE, groups: { director: { "identity/identity.brand": "choice" } } };
     expect(checkSlotOptions(consumer(), table).findings.map(f => f.code)).toContain("options-unclassified");

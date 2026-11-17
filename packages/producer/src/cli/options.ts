@@ -3,6 +3,10 @@
  *
  *   clossys options [--root <dir>] [--json]                     every choice slot: options held vs required
  *   clossys options --classes [--check] [--root <dir>] [--json] write (or check) slot.json options/varyOn from the class mapping
+ *   clossys options <agent>/<slot> --check [--root <dir>] [--json]
+ *       certifies every candidate of the slot (the pin gate's verdict: submit record and certify) and judges the
+ *       submitted, certified ones by the options rules: exit 0 when the slot holds the options its family owes
+ *       (loop.create's certify and loop.choose's rank step), 1 naming why; writes .clossys/checks/<agent>/<slot>/certify.json.
  *   clossys options <agent>/<slot> [--more | --redraft] [--root <dir>] [--json]
  *       lists the slot's candidates with their variation and pin status; --more prints the
  *       generation brief for 2-3 fresh candidates that keep the reference's sources (variety);
@@ -13,7 +17,9 @@
  *       a judge seat picks one candidate: pin.json with basis "agent", shown as "confirm"
  *       in Studio until the owner pins with `clossys pin`.
  */
-import { join, resolve } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { CERTIFY_REPORT_SCHEMA, certifiedOptions } from "../constitution/pin-gate.js";
 import { OPTION_TABLE, SLOT_AGENTS, pinStatus, type SlotAgent } from "../records/slot-model/index.js";
 import { checkSlotOptions, classCounts, classify, slotOptions, type SlotOptions } from "../records/slot-options.js";
 import { inspectSlot, listSlots, modelExists, readCandidate, readSlotEntry } from "../records/slots.js";
@@ -25,10 +31,12 @@ import type { CliResult } from "./main.js";
 import { resolveCandidate } from "./pin.js";
 import { discoverRoot } from "./root.js";
 
-export const OPTIONS_USAGE = "Usage: clossys options [<agent>/<slot> [--more | --redraft]] [--root <dir>] [--json]\n"
+export const OPTIONS_USAGE = "Usage: clossys options [<agent>/<slot> [--more | --redraft | --check]] [--root <dir>] [--json]\n"
   + "       clossys options --classes [--check] [--root <dir>] [--json]\n"
   + "  lists a slot's candidates by variation; --more prints the brief for 2-3 fresh candidates on the reference's sources,\n"
   + "  --redraft the brief for one re-drafted candidate that may cite new evidence (the owning agent submits each with clossys next --submit).\n"
+  + "  <agent>/<slot> --check certifies every candidate and exits 1 unless the submitted, certified ones hold the options\n"
+  + "  the slot's family owes (loop.create's certify step); it writes .clossys/checks/<agent>/<slot>/certify.json.\n"
   + "  --classes writes slot.json options/varyOn from the committed option-class mapping; --check only reports drift.";
 export const PICK_USAGE = "Usage: clossys pick <agent>/<slot> <candidate-id> --by agent:<seat> [--at <iso timestamp>] [--root <dir>] [--json]\n"
   + "  a judge seat picks one candidate (pin basis agent); Studio shows it as confirm until the owner pins.";
@@ -138,7 +146,21 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
     const open = unplaced.length ? `; ${unplaced.length} IA slot(s) have no slot.json yet (open ia items: clossys next)` : "";
     return { exitCode: flags.check && changed.length ? 1 : 0, message: [...changed.map(slot => `${verb} ${slot}`), ...unplaced.map(slot => `ia gap ${slot}: no slot.json`), `options --classes: ${changed.length} slot.json ${flags.check ? "drifted" : "updated"}${open}`].join("\n"), output: { changed, unplaced } };
   }
-  if (flags.check) throw new CliUsageError(`--check is only for --classes\n${OPTIONS_USAGE}`);
+  if (flags.check) {
+    if (flags.positional.length !== 1 || flags.more || flags.redraft) throw new CliUsageError(`--check takes --classes or one <agent>/<slot>\n${OPTIONS_USAGE}`);
+    const { agent, id } = target(flags.positional[0], OPTIONS_USAGE);
+    if (!readSlotEntry(consumer, agent, id)) return { exitCode: 1, message: `options refused: unknown slot ${agent}/${id} (not in ${agent} ia.json)` };
+    const root = dirname(consumer);
+    const at = new Date().toISOString();
+    const judged = certifiedOptions(root, consumer, agent, id, at);
+    const report = { schema: CERTIFY_REPORT_SCHEMA, slot: `${agent}/${id}`, at, ok: judged.ok, distinct: judged.distinct, options: judged.options, why: judged.why, candidates: judged.scorecard.candidates };
+    const dir = join(root, ".clossys", "checks", agent, id);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "certify.json"), `${JSON.stringify(report, null, 2)}\n`);
+    const rows = judged.scorecard.candidates.map(row => `  ${row.submitted && row.certified ? "pass" : "fail"} ${row.candidate}${row.submitted ? "" : " (no matching submit record)"}${row.reasons.length ? `: ${row.reasons.map(reason => `[${reason.code}] ${reason.message}`).join("; ")}` : ""}`);
+    const head = `${agent}/${id}: ${judged.ok ? "certified" : "not certified"}, ${judged.distinct}/${judged.options} option(s) among the submitted, certified candidates`;
+    return { exitCode: judged.ok ? 0 : 1, message: [head, ...rows, ...(judged.ok ? [] : judged.why.map(line => `  why: ${line}`))].join("\n"), output: report };
+  }
   if (!flags.positional.length) {
     if (flags.more || flags.redraft) throw new CliUsageError(`${flags.more ? "--more" : "--redraft"} needs <agent>/<slot>\n${OPTIONS_USAGE}`);
     const { findings, slots } = checkSlotOptions(consumer);

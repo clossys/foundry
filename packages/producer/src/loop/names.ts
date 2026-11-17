@@ -4,7 +4,13 @@
  */
 import type { AgentId } from "../records/types.js";
 
-export const LOOP_NAMES = ["loop.fill", "loop.refine", "loop.release", "loop.audit"] as const;
+/**
+ * The loops. `loop.create` and `loop.choose` (foundry-build-0048 U3) split a slot's build in two: CREATE writes the
+ * slot's family of candidates through the candidates verb and ends when that many are submitted and certified; CHOOSE
+ * pins one through the pin gate (constitution/pin-gate.ts) and ends on a resolving pin. `loop.fill` and `loop.refine`
+ * stay runnable (owner decision D9) and are the one-call form of the same two halves.
+ */
+export const LOOP_NAMES = ["loop.fill", "loop.refine", "loop.create", "loop.choose", "loop.release", "loop.audit"] as const;
 export type LoopName = (typeof LOOP_NAMES)[number];
 export const isLoopName = (value: string): value is LoopName => (LOOP_NAMES as readonly string[]).includes(value);
 
@@ -29,26 +35,32 @@ export const TRIGGER_KINDS: Readonly<Record<string, string>> = {
 export const LOOP_TRIGGERS: Readonly<Record<LoopName, readonly string[]>> = {
   "loop.fill": ["T1", "T2", "T4"],
   "loop.refine": ["T3", "T5", "T6", "T7"],
+  "loop.create": ["T2", "T3", "T4", "T5", "T6", "T7"],
+  "loop.choose": ["T2", "T3", "T4", "T5", "T6", "T7"],
   "loop.release": ["T8"],
   "loop.audit": ["T6"],
 };
 
-/** Each loop's run needs a slot (fill, refine), a publication (release) or neither (audit). */
+/** Each loop's run needs a slot (fill, refine, create, choose), a publication (release) or neither (audit). */
 export const LOOP_SUBJECT: Readonly<Record<LoopName, "slot" | "publication" | "none">> = {
   "loop.fill": "slot",
   "loop.refine": "slot",
+  "loop.create": "slot",
+  "loop.choose": "slot",
   "loop.release": "publication",
   "loop.audit": "none",
 };
 
 /**
  * The checks a loop's exit rests on. Each must sit on a step that runs whatever the slot (no `when`), or the
- * exit can be reached without it: fill and refine end on a resolving pin, release on the ready-pin, audit on
- * the orphan and dangling-ref checks.
+ * exit can be reached without it: fill, refine and choose end on a resolving pin, create on its certified family,
+ * release on the ready-pin, audit on the orphan and dangling-ref checks.
  */
 export const EXIT_CHECKS: Readonly<Record<LoopName, readonly string[]>> = {
   "loop.fill": ["pins.resolve"],
   "loop.refine": ["pins.resolve"],
+  "loop.create": ["candidates.certified"],
+  "loop.choose": ["pins.resolve"],
   "loop.release": ["release.ready"],
   "loop.audit": ["ia.orphans", "refs.dangling"],
 };
@@ -74,9 +86,12 @@ export const AGENT_PICK_VERB = "pick";
 /**
  * Checks `clossys run` computes itself instead of taking a step's exit for them: `pins.resolve` (the slot's pin, or
  * every consumer pin for a run with no slot, resolves to its candidate bytes) and `release.ready` (the publication's
- * pin is the owner's and names the manifest this run wrote). An agent's `--step-exit 0` never passes them.
+ * pin is the owner's and names the manifest this run wrote) and `candidates.certified` (the slot holds
+ * `family.options`, else one, candidates whose submit record matches their bytes and that pass certification, judged
+ * by the pin gate). An agent's `--step-exit 0` never passes them.
  */
-export const VERIFIED_CHECKS: readonly string[] = ["pins.resolve", RELEASE_READY];
+export const CANDIDATES_CERTIFIED = "candidates.certified";
+export const VERIFIED_CHECKS: readonly string[] = ["pins.resolve", RELEASE_READY, CANDIDATES_CERTIFIED];
 
 /** The release steps that must run, for every publication, before the owner's sign-off (cli prefix match). */
 export const RELEASE_BEFORE_SIGNOFF: readonly { readonly id: string; readonly cli: RegExp }[] = [

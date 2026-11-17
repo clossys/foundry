@@ -4,9 +4,11 @@
  * (`DF.<agent>.<LOOP>`), judged by probes of the repo. Each probe reproduces the row's failure as a fact
  * the repo either still has (red) or no longer has. The empty-L2 probe runs the real constitution over a
  * temporary copy of the consumer with one empty L2 group added per agent, and the contract probe runs the
- * real `clossys ia --contract --dry` on a temporary copy; the rest read files.
+ * real `clossys ia --contract --dry` on a temporary copy, and the pin probe runs every pin-writing verb (pin,
+ * pick, verdict, approve) on a temporary copy with a hand-placed and a submitted, uncertified candidate; the rest
+ * read files.
  */
-import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { standardTastePath } from "../cli/critique.js";
@@ -29,6 +31,22 @@ export interface ProbeFacts {
   readonly critiqueMonorepoPath: boolean;
   /** Per agent: what `clossys ia --contract` did with an invalid contract per held kind family, or why it could not run. */
   readonly iaContract?: Readonly<Record<string, readonly IaContractResult[] | string>>;
+  /** Per agent: what `clossys pin` did with a hand-placed candidate (no submit record), or why it could not run. */
+  readonly pinGate?: Readonly<Record<string, PinGateResult | string>>;
+}
+
+export interface PinGateResult { readonly target: string; readonly candidate: string; readonly accepted: boolean; readonly message: string; readonly verbs?: readonly VerbProbe[] }
+
+/** One pin-writing verb run by the pin probe on one candidate (hand-placed, or submitted and uncertified). */
+export interface VerbProbe {
+  readonly verb: "pin" | "pick" | "verdict" | "approve";
+  readonly case: "hand-placed" | "submitted-uncertified";
+  readonly target: string;
+  readonly candidate: string;
+  readonly exit: number;
+  /** Refused by the CHOOSE gate (GATE_REFUSAL), not for some other reason. */
+  readonly gated: boolean;
+  readonly message: string;
 }
 
 export interface IaContractResult { readonly target: string; readonly contract: string; readonly accepted: boolean; readonly message: string }
@@ -74,7 +92,9 @@ export async function probeIaContract(consumer: string, agents: readonly AgentMo
         const under = l1 ? `${l1.id}/${l1.l2[0]!.id}` : "conform/probe";
         const result = await runIaCli([target, "--under", under, "--kind", family, "--contract", file, "--dry"], temp);
         const message = (result.message ?? "").split("\n")[0]!;
-        if (result.exitCode !== 0 && !(result.exitCode === 1 && isContractRefusal(message, target, [temp, file]))) { out[agent.agent] = `ia --contract probe failed for ${target}: exit ${result.exitCode}: ${message}`; break; }
+        // An "already placed" refusal is the probe hitting a live slot, never a contract verdict: a failure, whatever else it says.
+        const placed = /\balready placed\b/.test(message);
+        if (placed || (result.exitCode !== 0 && !(result.exitCode === 1 && isContractRefusal(message, target, [temp, file])))) { out[agent.agent] = `ia --contract probe failed for ${target}: exit ${result.exitCode}: ${message}`; break; }
         results.push({ target, contract: JSON.stringify(contract), accepted: result.exitCode === 0, message });
       }
       out[agent.agent] ??= results;
@@ -89,6 +109,96 @@ export async function probeIaContract(consumer: string, agents: readonly AgentMo
 }
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** The name of the hand-placed candidate the pin probe writes. */
+export const PIN_PROBE_NAME = "conform-probe";
+
+/** The CHOOSE gate's refusals: no submit record, no passing verdict, or a non-gate verb refused on a slot/2 slot. */
+export const GATE_REFUSAL = /no submit record|no passing verdict|pinned only through the CHOOSE gate/;
+
+/** A schema-valid candidate that certifies against no contract (no keys, no derived source): submitted, never passing. */
+function uncertifiedBytes(slot: { readonly id: string; readonly kind?: string }, ext: string): unknown {
+  if (ext === "json") return { name: PIN_PROBE_NAME, type: "registry:file", files: [{ path: `${PIN_PROBE_NAME}.svg`, type: "registry:file", content: "<svg/>" }], meta: { source: { kind: "original", ref: [] } } };
+  const head = `---\nslot: "${slot.id}"\n`;
+  return slot.kind === "brief"
+    ? `${head}source: {"kind":"original","ref":[]}\nfeeds: []\nfunctions: []\n---\n## Direction\n- Probe: probe\n\n## Because\n- probe\n\n## Watch\n- probe\n`
+    : `${head}locales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n`;
+}
+
+/**
+ * Runs every verb that writes a pin on a temporary copy of the consumer, once per agent, against its first live slot/2
+ * slot (one with a candidate first): the real `clossys pin --by planner`, `clossys pick --by agent:<agent>`,
+ * `clossys verdict --record` (a pick) and, for Writer, `clossys approve --by owner`. Each runs on two candidates: one
+ * placed by hand (a copy of the slot's newest candidate under a new name, so it has no submit record) and one submitted
+ * through the candidates write that certifies against nothing (a submit record, no passing verdict). The first pin
+ * result is the cell's headline; `verbs` holds every run. A run counts as gated only when it exits non-zero with the
+ * CHOOSE gate's refusal (GATE_REFUSAL); exit 0 is an accepted pin, and any other refusal means the probe never reached
+ * the pin write, which is a failed probe, not a pass.
+ */
+export async function probePinGate(consumer: string, agents: readonly AgentModel[]): Promise<Record<string, PinGateResult | string>> {
+  await import("../cli/main.js");
+  const { runPinCli } = await import("../cli/pin.js");
+  const { runPickCli } = await import("../cli/options.js");
+  const { runVerdictCli } = await import("../cli/verdict.js");
+  const { runApproveCli } = await import("../cli/owner.js");
+  const { readStandard } = await import("../records/standards.js");
+  const { writeCandidate } = await import("../records/slot-write.js");
+  const { isRecordSlot } = await import("../records/resolve.js");
+  const temp = realpathSync(mkdtempSync(join(tmpdir(), "conform-pin-")));
+  const out: Record<string, PinGateResult | string> = {};
+  const AT = "2026-11-17T12:00:00Z";
+  try {
+    cpSync(consumer, join(temp, "clossys"), { recursive: true });
+    for (const agent of agents) {
+      const slots = agent.live.filter(slot => slot.schema === "clossys.slot/2" && slot.kind !== "release")
+        .map(slot => ({ slot, dir: join(temp, "clossys", "agents", agent.agent, slot.id, "candidates") }))
+        .map(item => ({ ...item, names: existsSync(item.dir) ? readdirSync(item.dir).filter(name => /-v\d+\.(md|json|svg)$/.test(name)).sort() : [] }));
+      const pick = slots.find(item => item.names.length) ?? slots[0];
+      if (!pick) { out[agent.agent] = `pin probe: ${agent.agent} has no live clossys.slot/2 slot`; continue; }
+      const source = pick.names.at(-1);
+      const ext = source?.split(".").pop() ?? (["director", "writer"].includes(agent.agent) ? "md" : "json");
+      const placed = `${PIN_PROBE_NAME}-v1.${ext}`;
+      mkdirSync(pick.dir, { recursive: true });
+      writeFileSync(join(pick.dir, placed), source ? readFileSync(join(pick.dir, source)) : ext === "json" ? "{}\n" : "---\n---\n");
+      let submitted: string;
+      try {
+        submitted = writeCandidate(join(temp, "clossys"), agent.agent as never, pick.slot.id, PIN_PROBE_NAME, uncertifiedBytes(pick.slot, ext), { at: AT, provenance: { by: `agent:${agent.agent}`, model: "conform-probe", tier: "high" } }).name;
+      } catch (error) { out[agent.agent] = `pin probe could not submit an uncertified candidate to ${agent.agent}/${pick.slot.id}: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`; continue; }
+      const record = isRecordSlot(temp, agent.agent as never, pick.slot.id) ? `#${PIN_PROBE_NAME}` : "";
+      const target = `${agent.agent}/${pick.slot.id}${record}`;
+      const slotTarget = `${agent.agent}/${pick.slot.id}`;
+      const standardId = pick.slot.standard;
+      const criterion = standardId ? readStandard(temp, agent.agent as never, standardId).taste?.criteria[0]?.id : undefined;
+      const verbs: VerbProbe[] = [];
+      for (const [kind, candidate] of [["hand-placed", placed], ["submitted-uncertified", submitted]] as const) {
+        const runs: [VerbProbe["verb"], () => Promise<{ exitCode: number; message?: string }>][] = [
+          ["pin", () => runPinCli([target, candidate, "--by", "planner", "--root", temp], temp)],
+          ["pick", () => runPickCli([slotTarget, candidate, "--by", `agent:${agent.agent}`, "--at", AT, "--root", temp], temp)],
+          ["verdict", async () => {
+            const file = join(temp, `verdict-${agent.agent}.json`);
+            writeFileSync(file, JSON.stringify({ schema: "clossys.verdict/1", slot: pick.slot.id, pick: candidate, reason: "conform probe", criteria: [criterion ?? "conform-probe"] }));
+            return runVerdictCli([slotTarget, "--record", file, "--model", "conform-probe", "--tier", "high", "--by", `agent:${agent.agent}`, "--at", AT, "--root", temp], temp);
+          }],
+          ...(agent.agent === "writer" ? [["approve", () => runApproveCli([slotTarget, candidate, "--by", "owner", "--at", AT, "--root", temp], temp)]] as [VerbProbe["verb"], () => Promise<{ exitCode: number; message?: string }>][] : []),
+        ];
+        for (const [verb, run] of runs) {
+          let result: { exitCode: number; message?: string };
+          try { result = await run(); } catch (error) { result = { exitCode: 2, message: error instanceof Error ? error.message : String(error) }; }
+          const message = (result.message ?? "").split("\n").slice(0, 2).join(" ").trim();
+          verbs.push({ verb, case: kind, target: verb === "pin" ? target : slotTarget, candidate, exit: result.exitCode, gated: result.exitCode !== 0 && GATE_REFUSAL.test(result.message ?? ""), message });
+        }
+      }
+      const head = verbs[0]!;
+      out[agent.agent] = { target, candidate: placed, accepted: head.exit === 0, message: head.message, verbs };
+    }
+  } catch (error) {
+    const message = `pin probe failed: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`;
+    for (const agent of agents) out[agent.agent] ??= message;
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+  return out;
+}
 
 /** Runs the real constitution over a copy of the consumer with one empty L2 group per agent. */
 export function probeEmptyL2(repo: string, consumer: string, agents: readonly string[]): Record<string, boolean | string> {
@@ -145,6 +255,7 @@ export async function readProbeFacts(model: ConformModel): Promise<ProbeFacts> {
     recipePages: await probeRecipePages(model),
     critiqueMonorepoPath: probeCritiquePath(model),
     iaContract: await probeIaContract(model.consumer, model.agents),
+    pinGate: await probePinGate(model.consumer, model.agents),
   };
 }
 
@@ -162,7 +273,7 @@ export const PROBES: Readonly<Record<string, Probe>> = {
   ]),
   "invalid-contract": (agent, model, facts) => ASSERTIONS.L3!(agent, model, facts),
   "critique-path": (_agent, _model, facts) => pass(facts.critiqueMonorepoPath ? ["critique-packet reads packages/<agent>/standards under the workspace root, absent from an install"] : []),
-  "pin-verdict": (agent, model) => ASSERTIONS.C3!(agent, model),
+  "pin-verdict": (agent, model, facts) => ASSERTIONS.C3!(agent, model, facts),
   "repin-stale": (agent, model) => ASSERTIONS.X1!(agent, model),
   "skill-craft": agent => {
     if (agent.skillText === undefined) return pass([`${agent.adapter?.skill ?? "skill"} is missing`]);

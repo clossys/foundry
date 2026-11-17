@@ -3,7 +3,8 @@
  * holds structure only: slot ids from the real package IA trees, placeholder candidates, no names, brands or prices.
  * The stub stands in for every agent skill and for the CLI verbs a code step runs; no model is called.
  */
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -21,6 +22,7 @@ import { runReleaseCli } from "../cli/release.js";
 import { releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
 import { sha256Hex } from "../records/hash.js";
 import { writeSlot } from "../records/slot.js";
+import { writeCandidate } from "../records/slot-write.js";
 import type { AgentId, LedgerEntry, QueueEntry, Slot } from "../records/types.js";
 import { readPackageLoop } from "./files.js";
 import { raiseEntry } from "./route.js";
@@ -532,7 +534,7 @@ describe("clossys run loop.<name> (cli/run.ts loop mode)", () => {
     expect(unknown.exitCode).toBe(2);
     expect(unknown.message).toMatch(/loop\.ship is not a loop/);
     const help = await runRunCli(["--help"], w.root);
-    expect(help.message).toMatch(/clossys run loop\.<fill\|refine\|release\|audit>/);
+    expect(help.message).toMatch(/clossys run loop\.<fill\|refine\|create\|choose\|release\|audit>/);
   });
 });
 
@@ -809,3 +811,74 @@ function pinConsumerLoop(root: string, loop: LoopName, change: (content: { maxRo
   writePinDoc(pinPath(root, "producer", loop), buildPin({ agent: "producer", slotId: loop, record: { candidate: name, sha256, decidedBy: `owner:queue.pick#${id}`, basis: "picked", at: "2026-11-20T07:00:00Z" }, refs: [{ to: "producer/queue.pick" as never, record: id, rel: "answers" }], createdBy: cliActor("clossys pin") }));
 }
 
+
+describe("loop.create through the operator CLI with the real certify step (no stub; foundry-build-0048 U3 fix r1)", () => {
+  const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
+  const SLOT = "sections.hero.copy";
+  const copy = (heading: string, action: string, tone?: string) => `---
+${tone ? `vary: {"tone":"${tone}"}\n` : ""}slot: "${SLOT}"
+locales: ["en"]
+reason: "realises director:advantage.proposition.promise for the hero"
+source: {"kind":"derived","ref":["director:identity.verbal.voice","director:advantage.proposition.promise","director:identity.naming.name"]}
+---
+
+## en
+### header.heading
+<!-- {"id":"header.heading","bindings":[]} -->
+${heading}
+### actions.primary.label
+<!-- {"id":"actions.primary.label","bindings":[]} -->
+${action}
+`;
+  function fixture() {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "loop-create-real-")));
+    roots.push(root);
+    cpSync(FIXTURE, root, { recursive: true });
+    const consumer = join(root, "clossys");
+    const submit = (text: string) => writeCandidate(consumer, "writer", SLOT, "copy", text, { at: "2026-11-17T12:00:00Z", provenance: { by: "agent:writer", model: MODEL, tier: "high" } });
+    const run = (...argv: string[]) => runRunCli(["loop.create", ...argv, "--root", root], root);
+    return { root, submit, run };
+  }
+  async function toCreate(w: ReturnType<typeof fixture>): Promise<string> {
+    const start = await w.run("--slot", `writer/${SLOT}`);
+    expect(start.message).toMatch(/step refine-brief waits for agent:writer/);
+    const runId = /run (\S+): step refine-brief/.exec(start.message ?? "")![1]!;
+    expect((await w.run("--resume", "--run", runId, "--step-exit", "0", "--model", MODEL)).message).toMatch(/step create waits for agent:writer/);
+    return runId;
+  }
+  const entry = (root: string, runId: string) => JSON.parse(readFileSync(join(root, "clossys", "agents", "producer", "ledger.create", "entries", `${runId}.json`), "utf8")) as LedgerEntry & { steps: { id: string; exit: number; cli: string; wrote: { file: string; sha256: string | null }[] }[]; checks: Record<string, string> };
+
+  it("reaches the exit once three certified tones are submitted: certify is `clossys options --check`, and --wrote hashes the submitted file", async () => {
+    const w = fixture();
+    const runId = await toCreate(w);
+    const made = [w.submit(copy("Ship your site this week", "Get started", "plain")), w.submit(copy("Launch the site you meant to build", "Start building", "bold")), w.submit(copy("Your site, ready when you are", "Come on in", "warm"))];
+    // A --wrote file that does not exist is refused before the step is answered (a null hash proves nothing).
+    const missing = await w.run("--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `clossys/agents/writer/${SLOT}/candidates/copy-v9.md`);
+    expect(missing.exitCode).toBe(2);
+    expect(missing.message).toMatch(/--wrote "clossys\/agents\/writer\/sections\.hero\.copy\/candidates\/copy-v9\.md" names no file/);
+    const done = await w.run("--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, ...made.flatMap(item => ["--wrote", `clossys/agents/writer/${SLOT}/candidates/${item.name}`]));
+    expect(done.message).toMatch(new RegExp(`run ${runId}: done: writer/sections\\.hero\\.copy done`));
+    expect(done.exitCode).toBe(0);
+    const ledger = entry(w.root, runId);
+    expect(ledger.steps.find(step => step.id === "certify")).toMatchObject({ cli: `clossys options writer/${SLOT} --check`, exit: 0 });
+    expect(ledger.steps.find(step => step.id === "create")!.wrote).toEqual(made.map(item => ({ file: `writer/${SLOT}/candidates/${item.name}`, sha256: item.sha256 })));
+    expect(ledger.checks["candidates.certified"]).toBe("pass");
+    const report = JSON.parse(readFileSync(join(w.root, ".clossys", "checks", "writer", SLOT, "certify.json"), "utf8"));
+    expect(report).toMatchObject({ schema: "clossys.certify/1", ok: true, distinct: 3, options: 3, why: [] });
+  });
+
+  it("gives a bad candidate a different verdict: certify exits 1 with the certifier's reason and the run never reaches done", async () => {
+    const w = fixture();
+    const runId = await toCreate(w);
+    const bad = w.submit(copy("The seamless, magical, best-in-class solution that effortlessly transforms absolutely everything you do", "Click here right now to start your totally free trial today", "plain"));
+    const result = await w.run("--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `clossys/agents/writer/${SLOT}/candidates/${bad.name}`);
+    expect(result.message).not.toMatch(/: done:/);
+    const state = readRunState(w.root, runId);
+    expect(state?.status).not.toBe("done");
+    expect(state?.steps.find(step => step.id === "certify")?.exit).toBe(1);
+    const report = JSON.parse(readFileSync(join(w.root, ".clossys", "checks", "writer", SLOT, "certify.json"), "utf8"));
+    expect(report.ok).toBe(false);
+    expect(report.why.join("; ")).toMatch(/\[options-short\] holds 0 distinct option\(s\) on tone, needs 3/);
+    expect(report.why.join("; ")).toMatch(new RegExp(`not passing: ${bad.name.replace(".", "\\.")} \\(\\[limit\\] en header\\.heading is \\d+ characters`));
+  });
+});

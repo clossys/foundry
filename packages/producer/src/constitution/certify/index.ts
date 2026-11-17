@@ -19,7 +19,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { fixtureShapeIssues, validateCandidate, type SlotKind } from "../../records/slot-model/index.js";
-import { standardFits, standardFor } from "../../records/standards.js";
+import { standardFits, standardFor, targetKindOf } from "../../records/standards.js";
 import { AGENT_CRITERIA } from "../criteria/agent-criteria.js";
 import { CORE_CRITERIA } from "../criteria/core/index.js";
 import { canonicalJson, certifyKey, type CertifyKey } from "../criteria/core/verdict.js";
@@ -81,7 +81,7 @@ export function standardReasons(input: CertifyInput, env: CertifyEnv, pinSet: st
   const standard = standardFor(env.standards, slot.agent, id);
   if (!standard) return [reason("standard", `standard ${id} does not exist under packages/${slot.agent}/standards/`)];
   if (!standard.doc || standard.issues.length) return [reason("standard", `standard ${id} is not well-formed${standard.issues.length ? `: ${standard.issues[0]}` : ""}`)];
-  if (!kind || !standardFits(standard.doc, kind, contract)) return [reason("standard", `standard ${id} serves ${standard.doc.kinds.join(", ")}, not this slot's kind`)];
+  if (!kind || !standardFits(standard.doc, kind, contract, targetKindOf(slot.slot?.value))) return [reason("standard", `standard ${id} serves ${standard.doc.kinds.join(", ")}, not this slot's kind`)];
   const verdict = requirementsVerdictSync({ candidate: { name: candidate.name, bytes: candidate.text }, kind, standard: { id, sha256: standard.sha256, requirements: standard.doc.requirements }, contract, pinSet });
   return verdict.results.filter(result => !result.pass).map(result => reason("requirement", `${result.check}: ${result.failures[0] ?? "fails"}`));
 }

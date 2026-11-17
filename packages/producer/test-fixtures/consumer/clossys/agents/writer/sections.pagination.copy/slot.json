@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "writer/lexicon.formality",
@@ -251,7 +252,51 @@
       ]
     },
     "fieldsSha256": "776c382a1b5aeb109cd3fc4ea77425cb8ee999b1a5bb768a6be9a9cb649b2284",
-    "candidate": "clossys.copy-candidate/1"
+    "candidate": "clossys.copy-candidate/1",
+    "requirements": [
+      {
+        "check": "copy.voice-derived"
+      },
+      {
+        "check": "copy.derived-upstream"
+      },
+      {
+        "check": "copy.entries"
+      },
+      {
+        "check": "copy.plain-values"
+      },
+      {
+        "check": "text.no-placeholder"
+      },
+      {
+        "check": "lexicon.clean"
+      },
+      {
+        "check": "copy.within-limits"
+      }
+    ],
+    "fixture": {
+      "keys": [
+        "page.label",
+        "page.previous-label",
+        "page.next-label",
+        "page.page-text",
+        "total.label",
+        "page.no-results-label",
+        "page.page-size-label",
+        "total.range-text"
+      ],
+      "locales": [
+        "en"
+      ]
+    }
   },
-  "tighten": []
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": [],
+    "class": "writer.system"
+  }
 }

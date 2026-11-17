@@ -22,9 +22,9 @@ import type { CliResult } from "../cli/main.js";
 import { discoverRoot } from "../cli/root.js";
 import { isLoopName, LOOP_NAMES, RUN_ID, type LoopName } from "./names.js";
 import type { Finding } from "./route.js";
-import { fillAll, readRunState, resumeRun, runInit, startRun, waitingRuns, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult } from "./runner.js";
+import { fillAll, readRunState, resumeRun, runInit, startRun, waitingRuns, wroteFile, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult } from "./runner.js";
 
-export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|release|audit> [--slot <agent>/<slot-id>] [--from <entry>] [--publication <id>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
+export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|create|choose|release|audit> [--slot <agent>/<slot-id>] [--from <entry>] [--publication <id>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
   + "       clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--step <id>] [--wrote <file>]...] [--root <dir>] [--json]\n"
   + "  Runs the loop version the consumer pins (else the package v1) one step at a time and writes one ledger entry per run.\n"
   + "  An agent step prints its packet and waits for --resume with its exit, files and serving model; a human step waits on its queue entry.\n"
@@ -205,6 +205,9 @@ export async function runLoopCli(argv: readonly string[], cwd: string, options: 
       const state = readRunState(root, runId);
       if (flags.stepExit !== undefined && state?.waiting?.on !== "agent") return { exitCode: 2, root, message: `run: ${runId} waits on ${state?.waiting?.on === "entry" ? state.waiting.entry : "nothing"}, not an agent step; --step-exit answers an agent step` };
       if (flags.step !== undefined && flags.step !== state?.waiting?.step) return { exitCode: 2, root, message: `run: ${runId} waits on step ${state?.waiting?.step ?? "none"}, not ${flags.step}` };
+      // A --wrote file the agent names must exist: the ledger hashes it, and a null hash proves nothing.
+      const missing = flags.wrote.filter(file => !(statSync(wroteFile(root, file), { throwIfNoEntry: false })?.isFile() ?? false));
+      if (missing.length) return { exitCode: 2, root, message: `run: --wrote ${missing.map(file => JSON.stringify(file)).join(", ")} names no file (clossys/agents/<agent>/<slot>/..., or a path relative to clossys/agents/)` };
       const answer = flags.stepExit !== undefined && state?.waiting ? { runId, step: state.waiting.step, exit: flags.stepExit, model: flags.model!, wrote: flags.wrote } : undefined;
       const hooks = cliHooks(root, answer, options.run);
       const result = await resumeRun(root, runId, hooks, runOptions);

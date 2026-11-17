@@ -81,6 +81,11 @@ only:
 
 A pinned candidate never changes. A change is a new candidate `<name>-v<N+1>.md`.
 
+A new cell goes through CREATE: record the slot's verdict first (`clossys verdict`), then
+craft it (brief, diverge, render, critique, at most two refine rounds) and submit; the
+certifier judges it against the slot's `contract.requirements` and fixture, and `pin`
+refuses a candidate without a passing verdict.
+
 ## Owner words are evidence
 
 There is no session log. What the owner says is recorded as findings:
@@ -148,7 +153,7 @@ There is no session log. What the owner says is recorded as findings:
    scope is visible in each command.
 3. Pins with basis `bulk`, `planner` or `agent` are hypotheses, not owner
    picks. Play each one back like a draft. When the owner keeps it unchanged,
-   re-pin the same candidate with `--basis picked`; when they change it, draft
+   re-pin the same candidate with `--by owner:queue.pick#<entry id>`; when they change it, draft
    a new version.
 4. Say in three or four lines what you will do, roughly how long the minimum
    takes, and where you are now (the progress line below). Then ask the first
@@ -184,7 +189,8 @@ There is no session log. What the owner says is recorded as findings:
    back. "Yes except 2" pins the rest and redrafts 2. Silence, a changed
    subject or "sounds fine I guess" is not a yes: ask again later. For each
    confirmed cell run
-   `npx clossys pin director/<id> <name>-v<N> --by owner --basis picked`.
+   `npx clossys pin director/<id> <name>-v<N> --by owner:queue.pick#<entry id>`
+   (the queue.pick entry that holds the yes).
 10. **Cascade.** After a pin, run `npx clossys director check review`. Any cell
     citing the old version is now stale; offer those re-cites as the next
     playback. Run `npx clossys director check cohere` and raise any
@@ -349,7 +355,7 @@ What the Director's rounds ask: the archetype first while none is recorded (each
 `clossys director check archetype <name> --by owner`); then every owner-held core cell with an open
 option round as "Pick <cell>", in dependency order (a cited cell before the cells citing it), one
 option per candidate with its one-line summary, each the exact
-`clossys pin director/<cell> <name> --basis picked`. A downstream request for an asked cell is
+`clossys pin director/<cell> <name> --by owner:queue.pick#<entry id>`. A downstream request for an asked cell is
 folded into that question ("also unblocks N designer/writer slots"). Non-core agent picks are one
 "Confirm N agent picks" question: confirm all (each `clossys pin director/<cell> <name> --confirm
 --ref <ref>`), review by group, or free text. A free-text answer records the owner's words as

@@ -91,7 +91,7 @@ export function readSlot(file: string): Slot {
 }
 
 /** Key order of a written slot.json (the system.md 6.1 template). Unknown keys never survive validation. */
-const SLOT_KEY_ORDER = ["schema", "id", "agent", "kind", "status", "ia", "createdBy", "createdAt", "updatedAt", "refs", "base", "standard", "brief", "contract", "tighten", "options", "varyOn"] as const;
+const SLOT_KEY_ORDER = ["schema", "id", "agent", "kind", "status", "ia", "createdBy", "createdAt", "updatedAt", "refs", "base", "standard", "brief", "contract", "tighten", "options", "varyOn", "family"] as const;
 
 /** The canonical bytes of a slot: template key order, two-space JSON, one trailing newline. */
 export function serializeSlot(slot: Slot): string {

@@ -4,7 +4,7 @@
  * - its content is a `clossys.loop-version/1` (every step has an id, a `does`, a decider, a cli, reads, writes, checks);
  * - every decider is code, one of the five live agents (or `<owner of slot>`, filled per slot by `clossys run`) or the owner;
  * - a package version names no `model` (system.md 14.6: package loops carry `tier` only);
- * - step ids are unique and every `onFail.then` is `retry` or one of the four loops;
+ * - step ids are unique and every `onFail.then` is `retry` or one of the loops;
  * - its triggers are a non-empty subset of the loop's triggers (flows.md 2), so the exit is reached from a trigger
  *   the loop answers to;
  * - every `when` names known slots and IA paths (the package IA, plus the consumer's slots), so no step it guards is

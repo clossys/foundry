@@ -176,6 +176,10 @@ export type SlotContract = {
   readonly references: readonly ReferenceRef[];
   readonly checkSuite: string;
   readonly specimenKind: SpecimenKind;
+  /** Requirement checks merged over the standard's by check id (records/standards.ts resolveRequirements). */
+  readonly requirements?: readonly { readonly check: string; readonly params?: Readonly<Record<string, unknown>> }[];
+  /** The certifier's sample (R05.1): an element-preview/1 fixture for a mounted element. */
+  readonly fixture?: Readonly<Record<string, unknown>>;
 };
 
 export type ReferenceFile = { readonly path: string; readonly sha256: string; readonly bytes: number; readonly origin: string };
@@ -335,7 +339,12 @@ export interface Slot<C = Record<string, unknown>> extends Common {
   tighten: Tighten[];
   options?: 1 | 2 | 3;
   varyOn?: string;
+  /** The option family as slot data (schemas/slot.json family): readers take it before the option table. */
+  family?: SlotFamily;
 }
+
+/** A slot's option family: distinct candidates offered, the axis they differ on, its allowed values, the seeding class. */
+export interface SlotFamily { options: 1 | 2 | 3; varyOn: string | null; values: string[]; class?: string }
 
 export interface CandidateHeader extends Common {
   schema: "clossys.candidate/1";
@@ -579,7 +588,7 @@ const keysOf = <T>() => (keys: { [K in keyof Required<T>]: true }): readonly str
 export const RECORD_KEYS: Readonly<Record<string, readonly string[]>> = {
   "clossys.slot/2": keysOf<Slot>()({
     schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,
-    ia: true, base: true, standard: true, brief: true, contract: true, tighten: true, options: true, varyOn: true,
+    ia: true, base: true, standard: true, brief: true, contract: true, tighten: true, options: true, varyOn: true, family: true,
   }),
   "clossys.candidate/1": keysOf<CandidateHeader>()({
     schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,

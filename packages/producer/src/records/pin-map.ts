@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { candidatePath, parseCandidateName, readCandidateFile, slotDir } from "./candidate.js";
 import { buildPin, pinIssues, pinMapIssues, pinPath, pinRecordIssues, pinRecordStatus, writePinDoc, type Pin1Doc } from "./pin.js";
 import { candidateIssues, readSlotValue } from "./slot-current.js";
+import { validateCandidate } from "./slot-model/validate.js";
 import type { Actor, AgentId, Pin, PinMap, PinRecord, Ref, SlotId, TargetSlotKind } from "./types.js";
 
 /** Writer slot kinds whose pin is a map keyed by record (Voice keeps a single pin). */
@@ -122,10 +123,10 @@ export function writeTargetPin(root: string, input: TargetPinInput): Pin | PinMa
   const candidate = readCandidateFile(path, { agent, slotId });
   // A Publisher page/1 or publication/1 record carries no candidate/1 header: recut keeps it as it is, and it is
   // judged by its kind's rules under the slot as stored (slot-current.ts candidateIssues), never by the header rule.
-  const record = pageRecordIssues(root, agent, slotId, input.candidate, path);
+  const record = pageRecordIssues(root, agent, slotId, input.candidate, path) ?? slotBodyIssues(root, agent, slotId, input.candidate, path, candidate.header);
   const issues = record ?? candidate.issues;
   if (issues.length) throw new Error(`${input.candidate}: ${issues.join("; ")}`);
-  if (input.record !== undefined && candidate.header!.record !== undefined && candidate.header!.record !== input.record) {
+  if (input.record !== undefined && candidate.header?.record !== undefined && candidate.header.record !== input.record) {
     throw new Error(`${input.candidate} header record ${candidate.header!.record} is not ${input.record}`);
   }
   const pinRecord: PinRecord = { candidate: input.candidate, sha256: candidate.sha256, decidedBy: input.decidedBy, basis: input.basis, at: input.at };
@@ -159,6 +160,25 @@ function pageRecordIssues(root: string, agent: AgentId, slotId: SlotId, name: st
   try { read = readSlotValue(JSON.parse(readFileSync(slotPath, "utf8")), slotPath); } catch { read = undefined; }
   if (!read) return [`${agent}/${slotId}/slot.json is not a valid slot`];
   return candidateIssues(read, agent, slotId, name, bytes).map(issue => issue.message);
+}
+
+/**
+ * The kind-rule issues of a slot-body candidate (no `clossys` header: the format the slot/2 candidates verb
+ * writes, `writeCandidate` in slot-write.ts) under a clossys.slot/2 slot, or undefined when the file has a header
+ * or the slot is not slot/2 (it then goes by its candidate/1 header). These are the rules its submit applied;
+ * that it came in through that verb at these bytes is the CHOOSE gate's check (constitution/pin-gate.ts).
+ */
+function slotBodyIssues(root: string, agent: AgentId, slotId: SlotId, name: string, path: string, header: unknown): string[] | undefined {
+  if (header !== undefined) return undefined;
+  const slotPath = join(slotDir(root, agent, slotId), "slot.json");
+  let value: unknown;
+  try { value = JSON.parse(readFileSync(slotPath, "utf8")); } catch { return undefined; }
+  if ((value as { schema?: unknown } | null)?.schema !== "clossys.slot/2") return undefined;
+  let read: ReturnType<typeof readSlotValue>;
+  try { read = readSlotValue(value, slotPath); } catch { read = undefined; }
+  if (!read) return undefined;
+  // The slot view's kind (copy reads as strings), as the candidates verb judged it.
+  return validateCandidate(read.doc.kind, slotId, name, readFileSync(path, "utf8")).map(issue => issue.message);
 }
 
 /** The `kind` of a consumer slot.json, "" when it has none, undefined when there is no slot.json. */

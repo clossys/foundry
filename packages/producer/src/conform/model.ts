@@ -330,8 +330,11 @@ function readMachinery(repo: string): Machinery {
   const contractSchemas = new Map<string, JsonSchema | undefined>();
   for (const family of ["brief", "element", "strings", "page", "publication", "seat"]) contractSchemas.set(family, json(join(producer, `pipeline/schemas/contract-${family}.schema.json`)) as JsonSchema | undefined);
   const criteria = new Set<string>();
-  for (const dir of dirs(join(producer, "src/constitution/criteria"))) {
-    const doc = json(join(producer, "src/constitution/criteria", dir, "index.json"));
+  // Core criteria sit at criteria/core/index.json, each agent's at criteria/<agent>/<group>/index.json.
+  const criteriaRoot = join(producer, "src/constitution/criteria");
+  const indexes = dirs(criteriaRoot).flatMap(dir => [join(criteriaRoot, dir), ...dirs(join(criteriaRoot, dir)).filter(sub => sub !== "__fixtures__").map(sub => join(criteriaRoot, dir, sub))]);
+  for (const dir of indexes) {
+    const doc = json(join(dir, "index.json"));
     for (const item of object(doc) && Array.isArray(doc.criteria) ? doc.criteria.filter(object) : []) criteria.add(String(item.id));
   }
   return { rules, loops, slotRequestSchema: existsSync(join(producer, "schemas/slot-request.schema.json")), certifiers, contractSchemas, criteria };

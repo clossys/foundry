@@ -560,6 +560,19 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
 }
 
 /**
+ * The one CHOOSE choke point (foundry-build-0048 U3): a `clossys.slot/2` slot is pinned only through the pin
+ * gate (`clossys pin`, constitution/pin-gate.ts: a submitted, certified candidate, a ranked scorecard the pin
+ * cites, a clossys.pin/2 record). Every slot/1 pin writer here (writePin for pin, approve and pick, a verdict
+ * pick, a confirmation, a reissue's repin) refuses such a slot and names the gated verb, so no verb writes a
+ * pin/1 a later recut could turn into a valid pin.
+ */
+export function refuseTargetPin(dir: string, agent: string, id: string, verb: string): void {
+  let value: unknown;
+  try { value = JSON.parse(readFileSync(slotFile(dir), "utf8")); } catch { return; }
+  if (isCurrentSlot(value)) throw new Error(`${verb} refused: ${agent}/${id} is a clossys.slot/2 slot, pinned only through the CHOOSE gate (a submitted candidate with a passing verdict and a scorecard): clossys pin ${agent}/${id} <candidate> --by owner:queue.<kind>#<id> | planner[:<ref>] | agent:${agent}`);
+}
+
+/**
  * Pin one existing, valid candidate. `decidedBy` names who decided (owner or planner, optionally
  * `:<message ref>`, `agent:<seat>`, or `migrated`); `basis` how (PIN_BASES). A `notNeeded` marker on
  * the slot is cleared: the pin replaces it.
@@ -576,6 +589,7 @@ export function writePin(consumer: string, agent: SlotAgent, id: string, candida
 /** writePin's body; the caller holds the slot lock (writePin, or writeVerdict for a pick). */
 function pinUnderLock(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; basis: PinBasis; at: string }, given: WriteProvenance | undefined, options: { readonly guard?: WriteGuard; readonly fields?: Readonly<Record<string, unknown>> }): PinDoc {
   const { doc, entry } = located(consumer, agent, id);
+  refuseTargetPin(entry.dir, agent, id, "pin"); // the choke point: every pin/1 writer (pin, pick, approve, verdict pick) passes here
   if (!entry.candidates.includes(candidate)) throw new Error(`${agent} slot ${id} has no candidate ${candidate}`);
   const read = readCandidate(consumer, agent, id, candidate);
   const issues = validateCandidate(doc.kind, id, candidate, read.bytes);
@@ -628,6 +642,7 @@ export function writeVerdict(consumer: string, agent: ModelAgent, id: string, ve
     if (input.inputsHash !== undefined && input.inputsHash !== inputsHash) throw new Error(`verdict refused: the record is for inputsHash ${input.inputsHash}, not the latest options packet's ${inputsHash ?? "none"}; re-run clossys options`);
     let fields: Record<string, unknown>;
     if (verdict.verdict === "pick") {
+      refuseTargetPin(current.dir, agent, id, "verdict");
       if (agent === SEAT_AGENT) throw new Error(`verdict refused: a Producer seat is pinned by clossys seat ${id.slice("seat.".length)}, not by a verdict pick`);
       if (!current.candidates.includes(verdict.pick)) throw new Error(`verdict refused: ${agent} slot ${id} has no candidate ${verdict.pick}`);
       fields = { verdict: "pick", pick: verdict.pick, sha256: readCandidate(consumer, agent, id, verdict.pick).sha256, reason: verdict.reason, criteria: [...verdict.criteria] };
@@ -723,6 +738,7 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
     const recordIssues = validateAgainst("retire", record);
     if (recordIssues.length) throw new Error(`reissue refused: the retire record does not validate against retire.schema.json: ${recordIssues.map(issue => `${issue.at || "/"} ${issue.message}`).join("; ")}`);
     const pinned = current.pin?.candidate === input.old ? current.pin : null;
+    if (pinned) refuseTargetPin(current.dir, agent, id, "reissue");
     if (current.pin === null && existsSync(pinFile(entry.dir))) throw new Error(`reissue refused: ${id} pin.json does not read as a valid pin; repin first`);
     const uses = input.uses ? [...input.uses] : undefined;
     const usesChanged = uses !== undefined && jsonBytes(uses) !== jsonBytes(doc.uses);
@@ -772,6 +788,7 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
 export function writeConfirm(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { by: string; ref: string; at: string }, given?: WriteProvenance): PinDoc {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
+    refuseTargetPin(entry.dir, agent, id, "confirm");
     const path = pinFile(entry.dir);
     if (!existsSync(path)) throw new Error(`confirm refused: ${agent}/${id} has no pin to confirm (an agent picks first with clossys pick)`);
     const current = JSON.parse(readFileSync(path, "utf8")) as PinDoc;
@@ -958,6 +975,25 @@ function currentSlotWrite(file: string, verb: string, at: string, change: (slot:
   const issues = slotReadIssues(next, file);
   if (issues.length) throw new Error(`${verb} refused: ${issues.map(issue => issue.message).join("; ")}`);
   return { before, after: serializeSlot(next), slot: next };
+}
+
+/**
+ * Rewrites one slot/2 slot.json through `change` (`clossys migrate contracts`: family, contract.requirements and
+ * contract.fixture seeded from package data) with one `slot` event of verb migrate carrying `fields` (R14.1).
+ * False when the change leaves the bytes as they are; refuses a slot/1 doc and a package-synced slot.
+ */
+export function writeSlotSeed(consumer: string, agent: ModelAgent, id: string, change: (slot: Slot) => Slot, input: { at: string; fields: Readonly<Record<string, unknown>> }, given?: WriteProvenance): boolean {
+  const { entry } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => {
+    const current = currentSlotWrite(slotFile(entry.dir), "migrate contracts", input.at, change);
+    if (!current) throw new Error(`migrate contracts refused: ${agent}/${id} slot.json is not a clossys.slot/2`);
+    if (current.before === current.after) return false;
+    const who = provenance({ verb: "migrate", by: "planner", skill: actionContractPath("producer", "migrate") }, given);
+    readLedger(entry.dir, "slot");
+    replaceFile(slotFile(entry.dir), current.after);
+    appendEvent(entry.dir, "slot", ledgerEvent("slot", input.at, who, { ...input.fields }, [recordState(entry.dir, "slot.json")]));
+    return true;
+  });
 }
 
 /** Mark a slot not needed: slot.json `notNeeded {reason, since, decidedBy}` (slot/2: `contract.notNeeded`, status parked), and any pin.json removed. */

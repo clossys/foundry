@@ -42,7 +42,7 @@ export function producerSlotPositions(layers: readonly ProducerIaLayer[] = readP
   return out;
 }
 
-/** The leaves each layer must hold, exactly: the four loops, the four queues, one ledger per loop. */
+/** The leaves each layer must hold, exactly: the six loops, the four queues, one ledger per loop. */
 export const PRODUCER_LEAVES: Readonly<Record<ProducerLayer, readonly string[]>> = {
   loops: LOOP_NAMES,
   queue: QUEUE_NAMES,

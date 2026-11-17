@@ -32,7 +32,7 @@ that is the first gap to report.
 
 ## Run a loop
 
-The four Producer loops run one step at a time from the loop version the consumer pins
+The six Producer loops run one step at a time from the loop version the consumer pins
 (`clossys/agents/producer/loop.<name>/pin.json`), else the package v1. Each run writes one ledger entry
 (`clossys/agents/producer/ledger.<name>/entries/<run-id>.json`).
 
@@ -42,6 +42,10 @@ The four Producer loops run one step at a time from the loop version the consume
   that request (T4).
 - `clossys run loop.refine --slot <ref>` (T3, or T7 for a `needs-refresh` dependant) or
   `--from queue.fix#<id>` (T5 owner feedback, T6 a routed finding).
+- `clossys run loop.create --slot <ref>` writes the slot's `family` of candidates through the candidates
+  verb and ends only when `family.options` of them are submitted and certified (`candidates.certified`);
+  `clossys run loop.choose --slot <ref>` then pins one through the pin gate (`clossys pin`, which refuses a
+  hand-placed or uncertified candidate and cites the slot's ranked scorecard).
 - `clossys run loop.release --publication <id>` (T8) ends only at the owner-signed ready-pin.
 - `clossys run loop.audit` runs the strict checks and routes each finding: a `queue.fix` to the slot's
   agent, a `queue.clarify` to the owner, one open entry per subject.

@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "writer/lexicon.formality",
@@ -158,9 +159,33 @@
       "sections.article.copy:content"
     ],
     "records": "many pieces per slot, keyed by type or release",
-    "exists": "only once placed"
+    "exists": "only once placed",
+    "requirements": [
+      {
+        "check": "copy.voice-derived"
+      },
+      {
+        "check": "copy.derived-upstream"
+      },
+      {
+        "check": "copy.entries"
+      },
+      {
+        "check": "narrative.sequence"
+      }
+    ]
   },
   "tighten": [],
   "options": 3,
-  "varyOn": "arc"
+  "varyOn": "arc",
+  "family": {
+    "options": 3,
+    "varyOn": "arc",
+    "values": [
+      "problem-first",
+      "proof-first",
+      "action-first"
+    ],
+    "class": "writer.narrative"
+  }
 }

@@ -118,15 +118,37 @@ describe(LOOP_REACHABLE, () => {
   });
 });
 
+describe("loop.create and loop.choose (foundry-build-0048 U3)", () => {
+  it("kills a create that can end without candidates.certified, and a choose that can end without a resolving pin", () => {
+    const create = packaged("loop.create");
+    step(create, "certify").checks = ["<slot standard>"];
+    expect(loopReachableIssues("loop.create", create, { packageVersion: true })).toEqual(["loop.create: the exit can be reached without candidates.certified: no step that runs for every slot checks it"]);
+    const choose = packaged("loop.choose");
+    step(choose, "pick").checks = [];
+    step(choose, "pick").when = { ia: ["designer/themes"] };
+    expect(loopReachableIssues("loop.choose", choose, { packageVersion: true })).toContain("loop.choose: the exit can be reached without pins.resolve: no step that runs for every slot checks it");
+    // The trigger set is the loop's own: release's T8 never starts CREATE.
+    const t8 = packaged("loop.create");
+    t8.trigger = ["T8"];
+    expect(loopReachableIssues("loop.create", t8, { packageVersion: true })).toEqual(["loop.create: trigger T8 does not start loop.create (it answers T2, T3, T4, T5, T6, T7)"]);
+  });
+  it("CHOOSE pins through the pin gate (clossys pin --by agent), and its rank step goes back to loop.create on a failure", () => {
+    const choose = packaged("loop.choose");
+    expect(step(choose, "pick")).toMatchObject({ cli: "clossys pin <ref> <candidate> --by agent:<agent>", decider: { by: "agent", verb: "pick" }, checks: ["pins.resolve"] });
+    expect(step(choose, "rank")).toMatchObject({ checks: ["candidates.certified"], onFail: { raise: "queue.fix", then: "loop.create" } });
+    expect(choose.steps.map(each => each.id)).toEqual(["rank", "owner-pick", "pick", "confirm", "cascade"]);
+  });
+});
+
 describe("Producer IA tree (producer.md 1)", () => {
-  it("places the four loops, the four queues and one ledger per loop: 6 L1, 12 L2, 12 L3", () => {
+  it("places the six loops, the four queues and one ledger per loop: 6 L1, 16 L2, 16 L3", () => {
     const layers = readProducerIa();
     expect(layers.map(layer => layer.layer)).toEqual(["loops", "queue", "ledger"]);
     expect(layers.flatMap(layer => layer.nodes)).toHaveLength(6);
-    expect(layers.flatMap(layer => layer.nodes.flatMap(node => node.children))).toHaveLength(12);
-    expect(producerSlotPositions(layers).size).toBe(12);
+    expect(layers.flatMap(layer => layer.nodes.flatMap(node => node.children))).toHaveLength(16);
+    expect(producerSlotPositions(layers).size).toBe(16);
     expect(producerIaIssues(layers)).toEqual([]);
-    expect(PRODUCER_LEAVES.ledger).toEqual(["ledger.fill", "ledger.refine", "ledger.release", "ledger.audit"]);
+    expect(PRODUCER_LEAVES.ledger).toEqual(["ledger.fill", "ledger.refine", "ledger.create", "ledger.choose", "ledger.release", "ledger.audit"]);
   });
 
   it("names a leaf placed twice, a missing loop and a stray leaf", () => {

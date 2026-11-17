@@ -131,7 +131,7 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    pin; a non-zero exit means unpin it (restore the previous `pin.json`), then
    re-source the item from a trusted reference, cut the failing hunks, or raise a NEED:
    ```sh
-   npx clossys pin designer/<slot> <element>-v<N> --by "owner:<owner message ref>"
+   npx clossys pin designer/<slot> <element>-v<N> --by "owner:queue.pick#<entry id>"
    npx designer-ref-verbatim --root clossys --pinned
    ```
    `--by` names the owner's approval message; never pin without it, and never

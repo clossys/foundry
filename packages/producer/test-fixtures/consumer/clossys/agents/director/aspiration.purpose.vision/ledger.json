@@ -38,6 +38,30 @@
           "sha256": "2f6d074c2a22066c265e614165d5b13c626bde4fc159c999b8234953c9da9652"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-17T00:00:00Z",
+      "by": "planner",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "contracts",
+      "changed": [
+        "family",
+        "requirements"
+      ],
+      "class": "director.choice",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "1b326e6ee1d19a93611b079730667268dce23d8e8496cc09a8a9b88a8bc0ada1"
+        }
+      ]
     }
   ]
 }

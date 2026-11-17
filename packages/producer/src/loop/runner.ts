@@ -35,11 +35,12 @@ import type { AgentId, Decider, DeciderVerb, Iso, LedgerEntry, LoopStep, LoopVer
 import { RUN_BY, RUN_CLI, entryName, producerVersion, raiseEntry, routeFindings, type Finding, type Raise } from "./route.js";
 import { dependantsOf, fillNames, MissingSkillError, nextFillSlot, readSubject, refOf, skillFor, slotCandidates, slotVars, stepArgv, whenMatches, type SlotSubject } from "./slots.js";
 import {
-  AGENT_PICK_VERB, CANDIDATE_NAME, ENTRY_NAME, EXIT_CHECKS, LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, OWNER_PICK_RAISE, PUBLICATION_ID, RELEASE_READY, RUN_ID,
+  AGENT_PICK_VERB, CANDIDATES_CERTIFIED, CANDIDATE_NAME, ENTRY_NAME, EXIT_CHECKS, LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, OWNER_PICK_RAISE, PUBLICATION_ID, RELEASE_READY, RUN_ID,
   SLOT_REF, TRIGGER_CODE, TRIGGER_KINDS, VERIFIED_CHECKS, ledgerOf, loopStem, type LoopName,
 } from "./names.js";
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
 import { checkReleaseReady } from "../release/ready.js";
+import { certifiedOptions } from "../constitution/pin-gate.js";
 
 export type Exit = 0 | 1 | 2;
 
@@ -194,8 +195,18 @@ export function waitingRuns(root: string): RunState[] {
 }
 
 /** A path as the ledger names it: relative to `clossys/agents/` when inside it, else to the root. */
+/**
+ * Where a step's wrote file lives: an absolute path as given; a root-relative `clossys/agents/...` or `.clossys/...`
+ * path under the root; any other relative path under clossys/agents/. Agents name the candidate the submit verb printed
+ * (clossys/agents/<agent>/<slot>/candidates/<name>), so both spellings hash the same file.
+ */
+export function wroteFile(root: string, file: string): string {
+  if (file.startsWith(sep)) return file;
+  if (file.startsWith("clossys/agents/") || file.startsWith(".clossys/")) return join(root, file);
+  return join(agentsDir(root), file);
+}
 function ledgerPath(root: string, file: string): string {
-  const absolute = file.startsWith(sep) ? file : join(agentsDir(root), file);
+  const absolute = wroteFile(root, file);
   const inAgents = relative(agentsDir(root), absolute);
   if (!inAgents.startsWith("..")) return inAgents.split(sep).join("/");
   return relative(root, absolute).split(sep).join("/");
@@ -204,7 +215,7 @@ const isFile = (path: string): boolean => statSync(path, { throwIfNoEntry: false
 function wroteOf(root: string, files: readonly string[] = []): LedgerStep["wrote"] {
   return files.map(file => {
     const rel = ledgerPath(root, file);
-    const absolute = rel.startsWith(".clossys") ? join(root, rel) : join(agentsDir(root), rel);
+    const absolute = wroteFile(root, file);
     // Every file the step wrote is hashed as it stands when the step ends; null only when it no longer exists.
     return { file: rel, sha256: isFile(absolute) ? sha256Hex(readFileSync(absolute)) : null };
   });
@@ -243,6 +254,8 @@ function triggerOf(loop: LoopName, input: StartInput, subject: SlotSubject | und
   if (loop === "loop.release") return "T8";
   if (loop === "loop.audit") return "T6";
   if (loop === "loop.fill") return from ? "T4" : "T2";
+  // CREATE and CHOOSE with no entry: a dependant marked needs-refresh (T7), else the slot's starter fill (T2).
+  if ((loop === "loop.create" || loop === "loop.choose") && !from) return subject?.slot.status === "needs-refresh" ? "T7" : "T2";
   if (from) return from.queue === "queue.fix" && from.createdBy.actor === "owner" ? "T5" : "T6";
   return subject?.slot.status === "needs-refresh" ? "T7" : "T3";
 }
@@ -423,6 +436,13 @@ export function verifyCheck(ctx: { readonly root: string; readonly state: RunSta
     const ready = checkReleaseReady(root, pub);
     if (ready.status === "fail") return { ok: false, why: `${RELEASE_READY}: ${ready.findings.map(row => `${row.subject} ${row.detail}`).join("; ")}` };
     return { ok: true };
+  }
+  if (name === CANDIDATES_CERTIFIED) {
+    if (!state.subject) return { ok: false, why: `${CANDIDATES_CERTIFIED}: the run has no slot` };
+    const { agent, slotId } = state.subject;
+    // The same judgement `clossys options <ref> --check` and check:slot-options make (constitution/pin-gate.ts).
+    const judged = certifiedOptions(root, join(root, "clossys"), agent, slotId, state.startedAt);
+    return judged.ok ? { ok: true } : { ok: false, why: `${CANDIDATES_CERTIFIED}: ${agent}/${slotId}: ${judged.why.join("; ")}` };
   }
   return { ok: false, why: `${name} is not a check clossys run computes` };
 }

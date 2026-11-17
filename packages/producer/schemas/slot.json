@@ -242,6 +242,43 @@
     "varyOn": {
       "type": "string",
       "minLength": 1
+    },
+    "family": {
+      "description": "The slot's option family as slot data (foundry-build-0048 U3): how many distinct candidates it offers (options), the axis they differ on (varyOn, null for one option), that axis's allowed values in display order, and the class it was seeded from (clossys options --classes). Readers take it before the committed option table.",
+      "type": "object",
+      "required": [
+        "options",
+        "varyOn",
+        "values"
+      ],
+      "properties": {
+        "options": {
+          "enum": [
+            1,
+            2,
+            3
+          ]
+        },
+        "varyOn": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+          }
+        },
+        "class": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false,

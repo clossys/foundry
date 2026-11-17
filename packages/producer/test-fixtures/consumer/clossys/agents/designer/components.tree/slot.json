@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -156,7 +157,23 @@
         "assets.icon-chevron-right"
       ]
     },
-    "apg": "treeview"
+    "apg": "treeview",
+    "requirements": [
+      {
+        "check": "source.ref"
+      },
+      {
+        "check": "compose.layers"
+      },
+      {
+        "check": "composes.allowed"
+      }
+    ]
   },
-  "tighten": []
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
 }

@@ -18,6 +18,20 @@
           "leaves": [
             "loop.refine"
           ]
+        },
+        {
+          "id": "build-create",
+          "label": "Create",
+          "leaves": [
+            "loop.create"
+          ]
+        },
+        {
+          "id": "build-choose",
+          "label": "Choose",
+          "leaves": [
+            "loop.choose"
+          ]
         }
       ]
     },

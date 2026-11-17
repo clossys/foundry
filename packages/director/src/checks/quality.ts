@@ -98,7 +98,7 @@ export function checkCell(cell: Cell, ctx: CheckContext): CellFinding[] {
       add('Q7', `Pinned candidate ${cell.id}@${cell.version} carries no pin decision`, undefined, 'pin-basis');
     else if (!pinSatisfiesDecider(cell.pin, decider))
       add('Q7', `Pin of ${cell.id}@${cell.version} is decided by "${cell.pin.decidedBy}" with basis ${cell.pin.basis}; ${decider === 'owner'
-        ? 'a core cell counts only when owner-picked (clossys pin --by owner --basis picked)'
+        ? 'a core cell counts only when owner-picked (clossys pin --by owner:queue.pick#<entry id>)'
         : 'this cell counts only when owner-picked or agent-picked (basis picked or agent)'}`, undefined, 'pin-basis');
   }
   if (cell.status === 'active' && !isSlotCandidatePath(cell.id, cell.path)) {

@@ -75,6 +75,7 @@ export function currentView(slot: Slot): SlotDoc {
     ...(notNeeded !== undefined ? { notNeeded: notNeeded as NotNeeded } : {}),
     ...(slot.options !== undefined ? { options: slot.options } : {}),
     ...(slot.varyOn !== undefined ? { varyOn: slot.varyOn } : {}),
+    ...(slot.family !== undefined ? { family: slot.family } : {}),
   };
 }
 

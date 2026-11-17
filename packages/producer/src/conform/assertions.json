@@ -122,7 +122,7 @@
     {
       "id": "C1",
       "lens": "choose",
-      "statement": "every slot carries family (options, varyOn, values) as slot data",
+      "statement": "every slot carries family as slot data: options 1, 2 or 3; a multi-option family names varyOn and one value per option, a single one varies on nothing",
       "check": "family-data",
       "status": "building",
       "enforcedFor": []
@@ -130,7 +130,7 @@
     {
       "id": "C2",
       "lens": "choose",
-      "statement": "every contract carries requirements (registered criteria)",
+      "statement": "every contract carries requirements, each a registered criterion check ({check})",
       "check": "contract-requirements",
       "status": "building",
       "enforcedFor": []
@@ -138,7 +138,7 @@
     {
       "id": "C3",
       "lens": "choose",
-      "statement": "a pin is refused unless its verdict passes",
+      "statement": "a pin is refused unless its candidate came in through a submit and its verdict passes (the real clossys pin, run on a temporary copy with a hand-placed candidate)",
       "check": "pin-verdict",
       "status": "building",
       "enforcedFor": []
@@ -146,7 +146,7 @@
     {
       "id": "C4",
       "lens": "choose",
-      "statement": "the pick writes a ranked scorecard, and basis cites it",
+      "statement": "the pick writes a ranked scorecard, and the pin cites it (refs producer/checks.scorecard)",
       "check": "pick-scorecard",
       "status": "building",
       "enforcedFor": []

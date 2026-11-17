@@ -4,6 +4,7 @@
  * Empty is red: an assertion that judged nothing (`evidence` 0) is red as vacuous, never green.
  */
 import { validateValue } from "../pipeline/schema.js";
+import { SCORECARD_REF_TO } from "../constitution/pin-gate.js";
 import { EXEMPLARS_MAX, EXEMPLARS_MIN } from "../records/standards.js";
 import type { ProbeFacts } from "./dogfood.js";
 import { refsIn, SLOT_REF, slotLeaves, treeLeaves, upstreamOf, type AgentModel, type ConformModel, type Edge, type LiveSlot } from "./model.js";
@@ -100,8 +101,28 @@ function subjectsOf(agent: string, slot: LiveSlot, inputs: readonly string[]): S
 const familyOf = (slot: LiveSlot) => KIND_FAMILY[slot.kind ?? ""] ?? slot.kind ?? "";
 const sameList = (a: readonly unknown[], b: readonly unknown[]) => a.length > 0 && JSON.stringify([...a].map(item => JSON.stringify(item)).sort()) === JSON.stringify([...b].map(item => JSON.stringify(item)).sort());
 const requirementsOf = (slot: LiveSlot): unknown[] => Array.isArray(slot.contract.requirements) ? slot.contract.requirements : [];
+/**
+ * The requirements a slot adds to its standard's: `clossys migrate contracts` seeds every check of the slot's
+ * standard into its contract as `{check}`, so an inherited check is shared by every sibling of that standard and
+ * says nothing about the slot's own purpose (S4 compares only these).
+ */
+const ownRequirementsOf = (agent: AgentModel, slot: LiveSlot): unknown[] => {
+  const inherited = new Set((standardOf(agent, slot)?.doc?.requirements ?? []).map(item => JSON.stringify({ check: item.check })));
+  return requirementsOf(slot).filter(item => !inherited.has(JSON.stringify(item)));
+};
 /** At this many slot-id literals one module holds a fixed list, not a derivation. */
 export const FIXED_LIST_MIN = 5;
+
+/** Why a slot's `family` is not the slot/2 shape {options 1|2|3, varyOn, values}, or undefined when it is. */
+export function familyIssue(family: unknown): string | undefined {
+  if (!object(family)) return "no family {options, varyOn, values}";
+  const { options, varyOn, values } = family;
+  if (options !== 1 && options !== 2 && options !== 3) return `family.options ${JSON.stringify(options)} is not 1, 2 or 3`;
+  if (!Array.isArray(values) || values.some(value => typeof value !== "string")) return "family.values is not a list of strings";
+  if (options === 1) return varyOn === null && values.length === 0 ? undefined : "a one-option family varies on nothing (varyOn null, values [])";
+  if (typeof varyOn !== "string" || !varyOn) return `a ${options}-option family names no varyOn`;
+  return values.length === options ? undefined : `a ${options}-option family lists ${values.length} values`;
+}
 
 export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
   S1: agent => {
@@ -132,12 +153,12 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     for (let i = 0; i < judged.length; i++) for (let j = i + 1; j < judged.length; j++) {
       const a = judged[i]!, b = judged[j]!;
       if (familyOf(a) !== familyOf(b)) continue;
-      // Purpose, whatever the name: both are for the same foreign slot, or one L2 holds both with the same inputs and requirements.
+      // Purpose, whatever the name: both are for the same foreign slot, or one L2 holds both with the same inputs and own requirements.
       const shared = [...subjects.get(a.id)!].filter(subject => subjects.get(b.id)!.has(subject));
       if (shared.length) { rows.push(`${a.id} and ${b.id}: both are for ${shared.join(", ")} (same purpose)`); continue; }
       const l2 = agent.l2Of.get(a.id);
       const inA = inputs.get(a)!, inB = inputs.get(b)!;
-      if (l2 !== undefined && l2 === agent.l2Of.get(b.id) && sameList(inA, inB) && sameList(requirementsOf(a), requirementsOf(b))) {
+      if (l2 !== undefined && l2 === agent.l2Of.get(b.id) && sameList(inA, inB) && sameList(ownRequirementsOf(agent, a), ownRequirementsOf(agent, b))) {
         rows.push(`${a.id} and ${b.id}: one L2 (${l2}), same inputs and requirements (same purpose)`); continue;
       }
       // Name: same kind and inputs, and ids that differ only past the threshold.
@@ -245,31 +266,43 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     evidence: agent.recipes.length,
   }),
   C1: agent => ({
-    rows: agent.live.filter(slot => !(object(slot.family) && ["options", "varyOn", "values"].every(key => Array.isArray((slot.family as Record<string, unknown>)[key]))))
-      .map(slot => `${slot.id}: no family {options, varyOn, values}`),
+    rows: agent.live.flatMap(slot => {
+      const issue = familyIssue(slot.family);
+      return issue ? [`${slot.id}: ${issue}`] : [];
+    }),
     evidence: agent.live.length,
   }),
   C2: (agent, model) => ({
     rows: agent.live.flatMap(slot => {
       const requirements = slot.contract.requirements;
       if (!Array.isArray(requirements) || !requirements.length) return [`${slot.id}: contract carries no requirements`];
-      const unknown = requirements.map(item => object(item) ? String(item.criterion ?? item.id ?? "") : String(item)).filter(id => !model.machinery.criteria.has(id));
-      return unknown.length ? [`${slot.id}: unregistered criteria ${unknown.join(", ")}`] : [];
+      const ids = requirements.map(item => object(item) && typeof item.check === "string" ? item.check : "");
+      const unknown = ids.filter(id => !model.machinery.criteria.has(id));
+      return unknown.length ? [`${slot.id}: unregistered requirement checks ${unknown.map(id => id || "(no check)").join(", ")}`] : [];
     }),
     evidence: agent.live.length,
   }),
-  C3: (agent, model) => {
-    const pinned = pins(agent);
+  C3: (agent, model, facts) => {
+    // The real path: every pin-writing verb (pin, pick, verdict, approve) run on a temporary consumer copy with a
+    // hand-placed and a submitted, uncertified candidate (dogfood.ts probePinGate). Red on any accepted pin, and on any
+    // refusal that is not the CHOOSE gate's: that verb never reached the pin write, so the gate is unproven for it.
+    const rows = ruleRow(model, "R05.2", agent.agent);
+    const probe = facts?.pinGate?.[agent.agent];
+    if (probe === undefined) return { rows: [...rows, "pin was not probed"], evidence: 0 };
+    if (typeof probe === "string") return { rows: [...rows, probe], evidence: 0 };
+    const verbs = probe.verbs ?? [{ verb: "pin", case: "hand-placed", target: probe.target, candidate: probe.candidate, exit: probe.accepted ? 0 : 1, gated: !probe.accepted, message: probe.message }];
+    const what = (run: { case: string }) => run.case === "hand-placed" ? "a hand-placed candidate with no submit record" : "a submitted candidate with no passing verdict";
     return {
-      rows: [...ruleRow(model, "R05.2", agent.agent), ...pinned.filter(slot => !(object(slot.pin!.verdict) && (slot.pin!.verdict as Record<string, unknown>).pass === true))
-        .map(slot => `${slot.id}: pinned without a passing verdict`)],
-      evidence: pinned.length,
+      rows: [...rows, ...verbs.flatMap(run => run.exit === 0 ? [`${run.verb} ${run.target} ${run.candidate} accepted ${what(run)} (exit 0)`]
+        : run.gated ? [] : [`${run.verb} ${run.target} ${run.candidate} (${run.case}) was refused before the CHOOSE gate (exit ${run.exit}): ${run.message}`])],
+      evidence: agent.live.length ? verbs.length : 0,
     };
   },
   C4: agent => {
     const pinned = pins(agent);
     return {
-      rows: pinned.filter(slot => !(typeof slot.pin!.basis === "string" && /scorecard/.test(slot.pin!.basis))).map(slot => `${slot.id}: pin basis cites no scorecard`),
+      rows: pinned.filter(slot => !(Array.isArray(slot.pin!.refs) && slot.pin!.refs.some(ref => object(ref) && ref.to === SCORECARD_REF_TO)))
+        .map(slot => `${slot.id}: pin cites no scorecard (${SCORECARD_REF_TO})`),
       evidence: pinned.length,
     };
   },
