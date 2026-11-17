@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -59,7 +59,7 @@ describe("clossys compile", () => {
     const ia = readFileSync(join(root, "clossys", "agents", "publisher", "ia.json"), "utf8");
     expect(lock).toMatchObject({ schema: "clossys.compile-lock/1", decisionInputs: ["clossys/agents/publisher/ia.json"] });
     expect(lock.inputs).toEqual([{ path: "clossys/agents/publisher/ia.json", sha256: createHash("sha256").update(ia).digest("hex") }]);
-    expect(lock.outputs.map((row: { path: string }) => row.path)).toEqual([".clossys/generated/publications.json"]);
+    expect(lock.outputs.map((row: { path: string }) => row.path)).toEqual(["publications.json"]);
     expect(lock.pinSetHash).toMatch(/^[a-f0-9]{64}$/);
   });
 
@@ -73,5 +73,114 @@ describe("clossys compile", () => {
       { id: "site", slot: "publisher/publication.site", state: "unresolved", reason: "publisher/publication.site has no pin yet; pins.resolve judges it at release" },
     ]);
     expect(existsSync(join(root, ".clossys"))).toBe(false);
+  });
+
+  it("records lock outputs relative to --out, also when --out is outside the root", async () => {
+    const root = snapshotStore(["publication.site"]);
+    const out = join(realpathSync(mkdtempSync(join(tmpdir(), "compile-out-"))), "site");
+    roots.push(join(out, ".."));
+    expect((await runCli(["compile", "--root", root, "--out", out])).exitCode).toBe(0);
+    const text = readFileSync(join(out, "publications.json"), "utf8");
+    expect(readJson(join(out, "compile.lock.json")).outputs).toEqual([{ path: "publications.json", sha256: createHash("sha256").update(text).digest("hex") }]);
+  });
+
+  it("skips a retired publication slot: neither listed as unresolved nor hiding compile.no-publication", async () => {
+    const root = snapshotStore(["publication.old"]);
+    const slot = join(root, "clossys", "agents", "publisher", "publication.old");
+    mkdirSync(slot, { recursive: true });
+    writeFileSync(join(slot, "slot.json"), `${JSON.stringify({ schema: "clossys.slot/2", id: "publication.old", agent: "publisher", kind: "publication", status: "retired" })}\n`);
+    const result = await runCli(["compile", "--root", root]);
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toContain("compile.no-publication: publisher/ia.json:");
+    expect(result.message).not.toContain("publication.old");
+    expect(readJson(join(root, ".clossys", "generated", "publications.json")).publications).toEqual([]);
+  });
+});
+
+describe("clossys compile --out deletes only what a previous compile recorded", () => {
+  const userFile = (dir: string, name = "user-essay.md") => { mkdirSync(dir, { recursive: true }); writeFileSync(join(dir, name), "my own words\n"); return join(dir, name); };
+
+  it("refuses, deleting and writing nothing, when <out>/publications exists and no prior lock lists it (--out = root)", async () => {
+    const root = snapshotStore(["publication.site"]);
+    const essay = userFile(join(root, "publications"));
+    const result = await runCli(["compile", "--root", root, "--out", root]);
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toContain("compile.out-unowned:");
+    expect(result.message).toContain("publications/user-essay.md");
+    expect(readFileSync(essay, "utf8")).toBe("my own words\n");
+    expect(existsSync(join(root, "compile.lock.json"))).toBe(false);
+    expect(existsSync(join(root, "publications.json"))).toBe(false);
+  });
+
+  it("keeps a user file added next to a prior compile's projections and refuses rather than delete it", async () => {
+    const root = snapshotStore(["publication.site"]);
+    const out = join(root, "out");
+    expect((await runCli(["compile", "--root", root, "--out", out])).exitCode).toBe(0);
+    const lockBefore = readFileSync(join(out, "compile.lock.json"), "utf8");
+    const essay = userFile(join(out, "publications"), "notes.json");
+    const result = await runCli(["compile", "--root", root, "--out", out]);
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toContain("compile.out-unowned:");
+    expect(readFileSync(essay, "utf8")).toBe("my own words\n");
+    expect(readFileSync(join(out, "compile.lock.json"), "utf8")).toBe(lockBefore);
+  });
+
+  it("clears the projections a prior compile recorded, and only those", async () => {
+    const root = snapshotStore(["publication.site"]);
+    const out = join(root, "out");
+    expect((await runCli(["compile", "--root", root, "--out", out])).exitCode).toBe(0);
+    // A projection the previous compile wrote and recorded (as a pinned publication would), now left the IA.
+    const stale = "{\"publicationId\":\"gone\"}\n";
+    writeFileSync(join(out, "publications", "gone.json"), stale);
+    const lockFile = join(out, "compile.lock.json");
+    const lock = readJson(lockFile);
+    lock.outputs.push({ path: "publications/gone.json", sha256: createHash("sha256").update(stale).digest("hex") });
+    writeFileSync(lockFile, `${JSON.stringify(lock, null, 2)}\n`);
+    const result = await runCli(["compile", "--root", root, "--out", out]);
+    expect(result.exitCode).toBe(0);
+    expect(readdirSync(join(out, "publications"))).toEqual([]);
+    expect(readJson(lockFile).outputs.map((row: { path: string }) => row.path)).toEqual(["publications.json"]);
+  });
+
+  it("refuses to delete a recorded projection whose bytes changed since that compile", async () => {
+    const root = snapshotStore(["publication.site"]);
+    const out = join(root, "out");
+    expect((await runCli(["compile", "--root", root, "--out", out])).exitCode).toBe(0);
+    const lockFile = join(out, "compile.lock.json");
+    const lock = readJson(lockFile);
+    lock.outputs.push({ path: "publications/gone.json", sha256: createHash("sha256").update("as compiled\n").digest("hex") });
+    writeFileSync(lockFile, `${JSON.stringify(lock, null, 2)}\n`);
+    writeFileSync(join(out, "publications", "gone.json"), "edited by hand\n");
+    expect((await runCli(["compile", "--root", root, "--out", out])).exitCode).toBe(1);
+    expect(readFileSync(join(out, "publications", "gone.json"), "utf8")).toBe("edited by hand\n");
+  });
+
+  it("is safe through a symlinked --out and a symlinked <out>/publications: nothing outside is deleted", async () => {
+    const root = snapshotStore(["publication.site"]);
+    const elsewhere = realpathSync(mkdtempSync(join(tmpdir(), "compile-elsewhere-")));
+    roots.push(elsewhere);
+    const essay = userFile(join(elsewhere, "publications"));
+    symlinkSync(elsewhere, join(root, "out-link"));
+    const viaLink = await runCli(["compile", "--root", root, "--out", join(root, "out-link")]);
+    expect(viaLink.exitCode).toBe(1);
+    expect(viaLink.message).toContain("compile.out-unowned:");
+    expect(readFileSync(essay, "utf8")).toBe("my own words\n");
+    expect(existsSync(join(elsewhere, "compile.lock.json"))).toBe(false);
+
+    // A real --out whose publications/ is a link out: a lock that even records the target's file does not reach it.
+    const out = join(root, "out");
+    expect((await runCli(["compile", "--root", root, "--out", out])).exitCode).toBe(0);
+    rmSync(join(out, "publications"), { recursive: true });
+    const keep = userFile(join(elsewhere, "linked"), "keep.json");
+    symlinkSync(join(elsewhere, "linked"), join(out, "publications"));
+    const lockFile = join(out, "compile.lock.json");
+    const lock = readJson(lockFile);
+    lock.outputs.push({ path: "publications/keep.json", sha256: createHash("sha256").update("my own words\n").digest("hex") });
+    writeFileSync(lockFile, `${JSON.stringify(lock, null, 2)}\n`);
+    const linked = await runCli(["compile", "--root", root, "--out", out]);
+    expect(linked.exitCode).toBe(1);
+    expect(linked.message).toContain("compile.out-unowned:");
+    expect(readFileSync(essay, "utf8")).toBe("my own words\n");
+    expect(readFileSync(keep, "utf8")).toBe("my own words\n");
   });
 });
