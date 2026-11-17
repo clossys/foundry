@@ -270,3 +270,49 @@ describe("environment errors exit 2 with a message (review r1 P2)", () => {
     expect(error?.message).not.toMatch(/build @clossys\/publisher first/);
   });
 });
+
+describe("publisher.check over clossys.page/1 records (DECISION 0048-PAGE-SHAPE, U4b)", () => {
+  /** assemble.page's fixture output: the one page shape, the record a Publisher candidate holds. */
+  const PAGE_FIXTURE = join(PRODUCER_ROOT, "..", "publisher", "recipes", "assemble.page", "fixture", "page.home.json");
+  const pageRecord = (): Record<string, any> => JSON.parse(readFileSync(PAGE_FIXTURE, "utf8"));
+  /** A consumer whose page.home pins the page record as `home-v1.json`. */
+  const pageConsumer = (edit?: (record: Record<string, any>) => void): string => {
+    const root = consumer([]);
+    const record = pageRecord();
+    edit?.(record);
+    const dir = join(root, "clossys", "agents", "publisher", "page.home");
+    mkdirSync(join(dir, "candidates"), { recursive: true });
+    writeFileSync(join(dir, "candidates", "home-v1.json"), `${JSON.stringify(record, null, 2)}\n`);
+    writeFileSync(join(dir, "pin.json"), `${JSON.stringify({ schema: "clossys.pin/2", candidate: "home-v1.json" })}\n`);
+    return root;
+  };
+  const band = (record: Record<string, any>) => {
+    record.sections[0] = "sections.band";
+    record.bindings["sections.band"] = { copy: { copy: "sections.band.copy#home.hero" } };
+    delete record.bindings["sections.hero"];
+  };
+  /** The real `clossys publisher check` bin, not the library call. */
+  const clossys = (...argv: string[]) => spawnSync(process.execPath, [CLI, "publisher", ...argv], { encoding: "utf8", cwd: tmpdir() });
+
+  it("the real clossys publisher check passes the assemble.page fixture record (exit 0)", () => {
+    const clean = clossys("check", "--root", pageConsumer());
+    expect(clean.status, `${clean.stdout}${clean.stderr}`).toBe(0);
+    expect(clean.stdout).toMatch(/publisher\.check: 1 page record, 0 findings/);
+  });
+
+  it("mutation: the real command fails a section the layout disallows (exit 1, page.role-allowed)", () => {
+    const bad = clossys("check", "--root", pageConsumer(band));
+    expect(bad.status, `${bad.stdout}${bad.stderr}`).toBe(1);
+    expect(`${bad.stdout}${bad.stderr}`).toMatch(/page\.role-allowed {2}publisher\/page\.home\/candidates\/home-v1\.json: page\.home: hero places designer\/sections\.band; the role allows designer\/sections\.hero/);
+  });
+
+  it("reads the record's frame, route, metadata and words: each fault is a finding", async () => {
+    const result = async (edit: (record: Record<string, any>) => void) => checks((await checkPublisherPages(pageConsumer(edit))).findings);
+    expect(await result(record => { record.frame = "frames.plain"; })).toContain("page.layout-allowed");
+    expect(await result(record => { record.path = "/home"; })).toEqual(["page.route"]);
+    expect(await result(record => { record.heading = "Welcome to our product"; })).toEqual(["page.no-inline-copy"]);
+    expect(await result(record => { record.title = "Welcome"; delete record.copy.meta; })).toEqual(["page.no-inline-copy"]);
+    expect(await result(record => { delete record.bindings["sections.steps"]; })).toEqual(["page.record-key"]);
+    expect(await result(record => { record.sections.splice(record.sections.indexOf("sections.features"), 1); delete record.bindings["sections.features"]; })).toEqual(["page.required-roles"]);
+  });
+});

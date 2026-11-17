@@ -1,0 +1,31 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/",
+  "title": "page.home.meta#home.meta",
+  "frame": "frames.site-shell",
+  "sections": [
+    "sections.hero",
+    "sections.logo-cloud",
+    "sections.features",
+    "sections.steps",
+    "sections.faq",
+    "sections.call-to-action"
+  ],
+  "copy": {
+    "meta": "page.home.meta#home.meta"
+  },
+  "bindings": {
+    "sections.hero": { "copy": { "copy": "sections.hero.copy#home.hero" } },
+    "sections.logo-cloud": { "copy": { "copy": "sections.logo-cloud.copy#home.proof" } },
+    "sections.features": { "copy": { "copy": "sections.features.copy#home.value" } },
+    "sections.steps": { "copy": { "copy": "sections.steps.copy#home.how" } },
+    "sections.faq": { "copy": { "copy": "sections.faq.copy#home.questions" } },
+    "sections.call-to-action": { "copy": { "copy": "sections.call-to-action.copy#home.closing" } }
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    }
+  }
+}
