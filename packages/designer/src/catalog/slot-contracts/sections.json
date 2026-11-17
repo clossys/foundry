@@ -5926,7 +5926,7 @@
     ],
     "limits": {
       "actions.back.maxLength.en": 24,
-      "actions.divider.maxLength.en": 24,
+      "actions.divider.maxLength.en": 160,
       "actions.pending.maxLength.en": 24,
       "actions.resend.maxLength.en": 24,
       "actions.submit.maxLength.en": 24,
