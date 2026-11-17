@@ -315,4 +315,60 @@ describe("publisher.check over clossys.page/1 records (DECISION 0048-PAGE-SHAPE,
     expect(await result(record => { delete record.bindings["sections.steps"]; })).toEqual(["page.record-key"]);
     expect(await result(record => { record.sections.splice(record.sections.indexOf("sections.features"), 1); delete record.bindings["sections.features"]; })).toEqual(["page.required-roles"]);
   });
+
+  /**
+   * Fix round 1: the read option keeps only refs, so words and styling anywhere in the record must still fail through
+   * the real command, and publisher.release (which refuses on any finding) must refuse them. Each is a review mutation.
+   */
+  const inline: readonly (readonly [string, (record: Record<string, any>) => void, RegExp])[] = [
+    ["an inline title (copy.meta present)", record => { record.title = "Welcome to the studio"; },
+      /page\.no-inline-copy {2}\S+: page\.home: page\.title: "Welcome to the studio" is not a Writer ref/],
+    ["an inline heading in a binding", record => { record.bindings["sections.hero"].heading = "Welcome to our product"; },
+      /page\.no-inline-copy {2}\S+: page\.home: page: bindings\.sections\.hero\.heading is inline text "Welcome to our product"/],
+    ["a className in a binding", record => { record.bindings["sections.hero"].className = "text-red-500"; },
+      /page\.no-style {2}\S+: page\.home: bindings\.sections\.hero\.className: a page record holds no styling/],
+    ["an inline meta.title", record => { record.meta.title = "Hello world"; },
+      /page\.no-inline-copy {2}\S+: page\.home: page: meta\.title is inline text "Hello world"/],
+    ["a section entry that is not an id", record => { record.sections.push({ text: "Hello there" }); },
+      /page\.no-inline-copy {2}\S+: page\.home: sections\[6\]: a section entry is a Designer section id/],
+  ];
+  for (const [name, edit, line] of inline) {
+    it(`mutation: the real command fails ${name} (exit 1)`, () => {
+      const bad = clossys("check", "--root", pageConsumer(edit));
+      expect(bad.status, `${bad.stdout}${bad.stderr}`).toBe(1);
+      expect(`${bad.stdout}${bad.stderr}`).toMatch(line);
+    });
+  }
+
+  it("publisher.release refuses a page record with styling; no release step runs", async () => {
+    const calls: (readonly string[])[] = [];
+    const release: ReleaseRunner = async argv => { calls.push(argv); return { exitCode: 0, message: "" }; };
+    const styled = await releasePublisher(pageConsumer(record => { record.bindings["sections.hero"].className = "text-red-500"; }), "site", [], { release });
+    expect(styled.released).toBe(false);
+    expect(styled.message).toMatch(/^publisher\.release: refused/);
+    expect(calls).toEqual([]);
+  });
+
+  it("judges style keys the way the option form does (the real Publisher inlineCopyFindings)", async () => {
+    const api = await loadPublisherCheckApi(PUBLISHER) as PublisherCheckApi & { inlineCopyFindings(content: Record<string, unknown>): readonly { check: string }[] };
+    for (const key of ["class", "className", "style", "styles", "css", "tw", "color", "background", "font", "fontSize", "padding", "margin", "spacing", "theme", "Style", "variant", "copy", "links", "tone", "size"]) {
+      const option = api.inlineCopyFindings({ meta: { copy: "writer/page.home.meta#home.meta" }, sections: [{ role: "hero", [key]: "x" }] }).some(finding => finding.check === "page.no-style");
+      const record = checks((await checkPublisherPages(pageConsumer(doc => { doc.bindings["sections.hero"][key] = "x"; }))).findings).includes("page.no-style");
+      expect(record, key).toBe(option);
+    }
+  });
+
+  it("a record with neither path nor slug fails page.route", async () => {
+    const findings = (await checkPublisherPages(pageConsumer(record => { delete record.path; }))).findings;
+    expect(findings.map(finding => finding.detail)).toContain("page.home: names no route: a page record carries a path or a slug");
+  });
+
+  it("finds a binding keyed by the section's instance key <slot>#n", async () => {
+    const keyed = await checkPublisherPages(pageConsumer(record => {
+      record.sections[record.sections.indexOf("sections.faq")] = "sections.faq#1";
+      record.bindings["sections.faq#1"] = record.bindings["sections.faq"];
+      delete record.bindings["sections.faq"];
+    }));
+    expect(keyed.findings).toEqual([]);
+  });
 });

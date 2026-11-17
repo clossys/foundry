@@ -74,6 +74,15 @@ describe("K4: the assemble.page fixture under the real Publisher page check", ()
     expect((await k4(doc)).rows.some(row => row.includes("fails page page.assembled"))).toBe(true);
   });
 
+  it("mutation: styling or words in a binding turn K4 red (fix round 1)", async () => {
+    const styled = record();
+    styled.bindings["sections.hero"].className = "text-red-500";
+    expect((await k4(styled)).rows).toContain(`${RECIPE}: fixture page.no-style page.home: bindings.sections.hero.className: a page record holds no styling`);
+    const worded = record();
+    worded.meta.title = "Hello world";
+    expect((await k4(worded)).rows.some(row => row.includes("fixture page.no-inline-copy page.home: page: meta.title is inline text"))).toBe(true);
+  });
+
   it("is red when the page check did not run or could not load", async () => {
     expect((await k4(record(), {})).rows).toEqual([`${RECIPE}: the Publisher page check did not run on the fixture`]);
     const { model } = withFixture(record());

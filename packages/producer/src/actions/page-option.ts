@@ -8,11 +8,17 @@
  * - a section's copy is its binding (`bindings.<section>.copy`) whose Writer slot is `<section>.copy`, else its first;
  * - a section's role is the `<role>` of that copy's record key `<page>.<role>`, else the first free role that admits
  *   the section, else the section's own leaf name (which no layout role then admits);
- * - the page metadata record is the record's `title` ref (else `copy.meta`);
+ * - the page metadata record is the record's `title`, which must be a Writer ref (never text, no fallback);
  * - the route is the record's own `path`, which must be the page slot's path.
+ *
+ * The option keeps only refs, so the record itself is scanned for words and styling before it is read (fix round 1):
+ * every display string anywhere in it must be a Writer key (the ST-P `page.no-inline-copy` scan), no key anywhere is a
+ * style key (the style keys the option form's `page.no-style` refuses), a binding carries only `copy` refs, and a
+ * section entry is a Designer section id string.
  *
  * Pure: the caller passes the page slot contract, a layout lookup and the Designer catalog.
  */
+import { noInlineCopy } from "../constitution/criteria/publisher/st-p/page.js";
 
 export const PAGE_SCHEMA = "clossys.page/1";
 
@@ -22,6 +28,13 @@ export interface PageSlotContract { readonly kind?: string; readonly path?: stri
 
 /** The fields a clossys.page/1 record carries; anything else is a place for words or styling. */
 const PAGE_RECORD_FIELDS = new Set(["schema", "path", "slug", "title", "frame", "sections", "copy", "bindings", "nav", "meta"]);
+/** The fields a section binding carries (validate.ts: section instance key -> copy slot -> Writer key). */
+const BINDING_FIELDS = new Set(["copy"]);
+/**
+ * Style keys: the same keys Publisher's option-form `inlineCopyFindings` refuses as `page.no-style`
+ * (packages/publisher/src/check/page-sections-instance.ts STYLE_KEYS); publisher.test.ts pins the two verdicts equal.
+ */
+const STYLE_KEYS = /^(?:class|className|style|styles|css|tw|color|colour|background|font|fontSize|padding|margin|spacing|theme)$/i;
 /** A Writer key ref `<writer slot>#<key>`. */
 const COPY_REF = /^[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}#[^\s#]+$/;
 const ROLE = /^[a-z][a-z0-9-]*$/;
@@ -46,10 +59,15 @@ export function pageOptionOf(
 ): { content: Record<string, unknown>; layoutId?: string; layout?: LayoutRoles; findings: PageOptionFinding[] } {
   const findings: PageOptionFinding[] = [];
   const add = (check: string, message: string) => findings.push({ check, message: `${slotId}: ${message}` });
-  for (const key of Object.keys(record)) if (!PAGE_RECORD_FIELDS.has(key)) add("page.no-inline-copy", `page.${key}: not a clossys.page/1 field; words come from a Writer record`);
-  if (typeof page.path === "string" && typeof record.path === "string" && record.path !== page.path) add("page.route", `routes ${record.path}, not the page slot's ${page.path}`);
+  for (const finding of recordWordsAndStyle(record)) add(finding.check, finding.message);
+  const hasPath = typeof record.path === "string", hasSlug = typeof record.slug === "string";
+  if (!hasPath && !hasSlug) add("page.route", "names no route: a page record carries a path or a slug");
+  else if (hasPath && hasSlug) add("page.route", "names both a path and a slug; a page record carries one");
+  if (typeof page.path === "string" && hasPath && record.path !== page.path) add("page.route", `routes ${String(record.path)}, not the page slot's ${page.path}`);
 
-  const sections = (Array.isArray(record.sections) ? record.sections : []).filter((id): id is string => typeof id === "string").map(id => id.split("#")[0]!);
+  // A section entry is its instance key `<slot>[#n]`; its binding is keyed by that key, its unit by the slot id.
+  const entries = (Array.isArray(record.sections) ? record.sections : []).filter((id): id is string => typeof id === "string");
+  const sections = entries.map(key => key.split("#")[0]!);
   const frame = typeof record.frame === "string" ? `designer/${record.frame}` : undefined;
   const layouts = (page.layouts ?? []).map(ref => ({ ref, layout: layoutOf(ref.replace(/^publisher\//, "")) }))
     .filter((entry): entry is { ref: string; layout: LayoutRoles } => entry.layout?.kind === "layout" && entry.layout.frame === frame);
@@ -60,10 +78,13 @@ export function pageOptionOf(
   const prefix = page.records?.pattern.replace(/\.<role>$/, "") ?? slotId.replace(/^page\./, "");
   const roles = chosen?.layout.roles ?? {};
   const taken = new Set<string>();
-  const placed = sections.map(id => {
-    const bound = isRecord(record.bindings) ? refsOf(isRecord(record.bindings[id]) ? (record.bindings[id] as Record<string, unknown>).copy : undefined) : [];
+  const bindingOf = (key: string): unknown => (isRecord(record.bindings) ? record.bindings[key] : undefined);
+  const placed = sections.map((id, index) => {
+    const key0 = entries[index]!;
+    const binding = bindingOf(key0);
+    const bound = refsOf(isRecord(binding) ? binding.copy : undefined);
     const copy = bound.find(ref => ref.startsWith(`${id}.copy#`)) ?? bound[0];
-    if (copy === undefined) add("page.record-key", `${id} binds no Writer record (bindings.${id}.copy)`);
+    if (copy === undefined) add("page.record-key", `${key0} binds no Writer record (bindings.${key0}.copy)`);
     const key = copy?.slice(copy.indexOf("#") + 1);
     const fromKey = key?.startsWith(`${prefix}.`) ? key.slice(prefix.length + 1) : undefined;
     const role = fromKey && ROLE.test(fromKey) ? fromKey
@@ -72,8 +93,8 @@ export function pageOptionOf(
     return { role, use: `designer/${id}`, ...(copy !== undefined ? { copy: `writer/${copy}` } : {}) };
   });
 
-  const meta = typeof record.title === "string" && COPY_REF.test(record.title) ? record.title
-    : isRecord(record.copy) && typeof record.copy.meta === "string" ? record.copy.meta : undefined;
+  // The metadata record is the title ref; a title that is not one is a finding (recordWordsAndStyle), never a fallback.
+  const meta = typeof record.title === "string" && COPY_REF.test(record.title) ? record.title : undefined;
   const content: Record<string, unknown> = {
     ...(typeof record.path === "string" ? { path: record.path } : {}),
     ...(chosen ? { layout: chosen.ref } : {}),
@@ -82,6 +103,44 @@ export function pageOptionOf(
     ...(meta !== undefined ? { meta: { copy: `writer/${meta}` } } : {}),
   };
   return { content, ...(chosen ? { layoutId: chosen.ref.replace(/^publisher\//, ""), layout: chosen.layout } : {}), findings };
+}
+
+/** Where a page record holds words or styling: the record form of `page.no-inline-copy` and `page.no-style`. */
+function recordWordsAndStyle(record: Record<string, unknown>): PageOptionFinding[] {
+  const findings: PageOptionFinding[] = [];
+  const copy = (where: string, detail: string) => findings.push({ check: "page.no-inline-copy", message: `${where}: ${detail}` });
+  const style = (where: string) => findings.push({ check: "page.no-style", message: `${where}: a page record holds no styling` });
+  for (const key of Object.keys(record)) if (!PAGE_RECORD_FIELDS.has(key) && !STYLE_KEYS.test(key)) copy(`page.${key}`, "not a clossys.page/1 field; words come from a Writer record");
+  // Style keys at any depth, outside the record's own provenance note.
+  const walk = (value: unknown, path: string[]): void => {
+    if (Array.isArray(value)) value.forEach((item, index) => walk(item, [...path, String(index)]));
+    else if (isRecord(value)) for (const [key, item] of Object.entries(value)) {
+      const next = [...path, key];
+      if (next.join(".") === "meta.source") continue;
+      if (STYLE_KEYS.test(key)) style(next.join("."));
+      else walk(item, next);
+    }
+  };
+  walk(record, []);
+  // Display strings at any depth are Writer keys (the ST-P scan); the title is judged on its own below.
+  for (const failure of noInlineCopy({ kind: "page", text: "", json: record }, {})) if (!failure.startsWith("title ")) copy("page", failure);
+  if (record.title !== undefined && (typeof record.title !== "string" || !COPY_REF.test(record.title))) {
+    copy("page.title", `${JSON.stringify(record.title)} is not a Writer ref <writer slot>#<key>; the title names the page's Writer meta record`);
+  }
+  if (Array.isArray(record.sections)) record.sections.forEach((entry, index) => {
+    if (typeof entry !== "string") copy(`sections[${index}]`, "a section entry is a Designer section id <slot>[#n], never an object or text");
+  });
+  if (record.bindings !== undefined && !isRecord(record.bindings)) copy("bindings", "bindings map section instance keys to Writer copy refs");
+  if (isRecord(record.bindings)) for (const [key, binding] of Object.entries(record.bindings)) {
+    if (!isRecord(binding)) { copy(`bindings.${key}`, "a binding is {copy: {<copy slot>: <writer slot>#<key>}}, never text"); continue; }
+    for (const [field, value] of Object.entries(binding)) {
+      if (STYLE_KEYS.test(field)) continue;
+      if (!BINDING_FIELDS.has(field)) { copy(`bindings.${key}.${field}`, "not a binding field; words come from the Writer record"); continue; }
+      if (!isRecord(value)) copy(`bindings.${key}.copy`, "maps copy slots to Writer refs <writer slot>#<key>");
+      else for (const [slot, ref] of Object.entries(value)) if (typeof ref !== "string" || !COPY_REF.test(ref)) copy(`bindings.${key}.copy.${slot}`, `${JSON.stringify(ref)} is not a Writer ref <writer slot>#<key>`);
+    }
+  }
+  return findings;
 }
 
 /** The Publisher check API slice the record checks call. */
