@@ -82,6 +82,18 @@ describe("strict registered route source closure (synthetic fixtures; no runtime
     expect(result.ok).toBe(false); expect(result.sourceEvidence).toEqual([]);
     if (process.env.ROUTE_GATE_DIAGNOSTIC === "1") console.info(JSON.stringify(findings.map(finding => ({ ...finding, file: "packages/publisher/src/web/layouts/Stack.tsx" }))));
   });
+  it("takes that one header lease from the registered route page binder itself; removing that lease fails DF8", async () => {
+    const r = await setup();
+    const input = await consumerDogfoodSources([r.entry.file], { version: 1, sources: { "@clossys/publisher/web/registered-route": join(import.meta.dirname, "registered-route.js") }, pages: [r.entry.file] }, root, root);
+    const leaseFiles = input.files.filter(file => /<PageHeaderModule\b/.test(file.content));
+    expect(leaseFiles.map(file => file.file)).toEqual([expect.stringMatching(/publisher\/src\/web\/registered-route-pages\.tsx$/)]);
+    expect(input.files.some(file => file.file.includes("/studio/"))).toBe(false);
+    expect(runConsumerDogfood(input).findings.filter(finding => finding.code === "DF8")).toEqual([]);
+    const binder = leaseFiles[0]!, removed = binder.content.replace(/<PageHeaderModule key="registered-page-header"[\s\S]*?\/>/, "null");
+    expect(removed).not.toBe(binder.content);
+    const without = { ...input, files: input.files.map(file => file === binder ? { ...file, content: removed } : file) };
+    expect(runConsumerDogfood(without).findings.some(finding => finding.code === "DF8")).toBe(true);
+  });
   it.each(["missing", "duplicate"])("still refuses a deliberately %s header lease", async mode => {
     const header = 'import { PageHeaderModule } from "@clossys/designer/shell";';
     await write("page.tsx", mode === "missing" ? 'export default function Page(){return null}' : `${header} export default function Page(){return <><PageHeaderModule id="one" header={{title:"One"}}/><PageHeaderModule id="two" header={{title:"Two"}}/></>}`);

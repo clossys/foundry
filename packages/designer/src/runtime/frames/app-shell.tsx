@@ -111,7 +111,8 @@ export function appShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conten
 export function renderAppShell(input: RuntimeRenderInput<ReactNode>): ReactNode {
   const props = appShellProps(input), header = input.pageHeader;
   // The leased page header is the only header source: PageHeaderModule registers it with this frame.
-  const lease = header && <PageHeaderModule id={header.id} header={{ ...header.data, ...(header.actions ? { actions: { render: header.actions.render } } : {}) }} />;
+  // A page composition that already leases it (leasedByPage) keeps that single lease.
+  const lease = header && !header.leasedByPage && <PageHeaderModule id={header.id} header={{ ...header.data, ...(header.actions ? { actions: { render: header.actions.render } } : {}) }} />;
   return <AppFrame {...props}>{lease}{props.children}</AppFrame>;
 }
 
