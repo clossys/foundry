@@ -71,7 +71,7 @@ export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--s
   + "       clossys ia producer/<seat> --move --under <l1>/<l2> --owner-ref <ref> [--dry] [--root <dir>]  (a placed seat; a new seat is placed by clossys seat <step>)\n"
   + "       clossys ia <agent>/<slot> --remove [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent> --adopt | --start [--dry] [--root <dir>]\n"
-  + "       clossys ia sync [--check] [--agent <agent>] [--dry] [--root <dir>]\n"
+  + "       clossys ia sync [--check] [--agent <agent>] [--at <iso>] [--dry] [--root <dir>]\n"
   + "  places a slot in its agent's ia.json (--under, when it is not placed yet) and writes its slot.json with the contract (a JSON object file).\n"
   + "  --standard names the standard the slot is judged by (packages/<agent>/standards/<id>/, R15.1): it must exist, be valid and serve the slot's kind; alone it keeps the written contract.\n"
   + "  producer/<seat>: names the standard of a seat slot clossys seat wrote (kind seat); --contract may add requirements but keeps the seat's step. Nothing else of a seat is written here.\n"
@@ -436,9 +436,11 @@ const isRecordValue = (value: unknown): value is Record<string, unknown> => type
 
 /** `clossys ia sync [--check] [--agent <a>]`: the package IA against the consumer (foundry-feedback-0022). */
 function runIaSync(flags: Flags, cwd: string): CliResult {
-  const allowed = ["--agent", "--root"];
+  const allowed = ["--agent", "--at", "--root"];
   const stray = [...[...flags.values.keys()].filter(flag => !allowed.includes(flag)), ...[...flags.bare].filter(flag => flag !== "--dry" && flag !== "--check")];
-  if (stray.length || flags.positional.length > 1) throw new CliUsageError(`ia sync takes only --check, --agent, --dry and --root\n${IA_USAGE}`);
+  if (stray.length || flags.positional.length > 1) throw new CliUsageError(`ia sync takes only --check, --agent, --at, --dry and --root\n${IA_USAGE}`);
+  // A fixed --at stamps the slot.json and ledger writes, so a generated fixture replays byte for byte.
+  const at = atOf(flags);
   const only = one(flags, "--agent");
   if (only !== undefined && !(SYNC_AGENTS as readonly string[]).includes(only)) throw new CliUsageError(`ia sync --agent takes one of ${SYNC_AGENTS.join(", ")}, got ${only}\n${IA_USAGE}`);
   const agents = (only === undefined ? SYNC_AGENTS : [only]) as SyncAgent[];
@@ -465,8 +467,12 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
   const lines: string[] = [];
   for (const agent of agents) {
     const state = syncState(consumer, agent);
-    const plan = syncPlan(consumer, agent, knownSlots(consumer, agent, state), state, { at: new Date().toISOString() as Iso, version: cliActor("clossys ia sync").version, cli: "clossys ia sync" });
-    if ("error" in plan) return refuse("ia", `sync refused: ${plan.error}; declare them as extensions or upstream them into the package first`);
+    const plan = syncPlan(consumer, agent, knownSlots(consumer, agent, state), state, { at: at as Iso, version: cliActor("clossys ia sync").version, cli: "clossys ia sync" });
+    if ("error" in plan) {
+      // A store still on the old trees places the retired leaves as undeclared: the recut, not an extension, moves them.
+      const hint = state.undeclared.length > 0 && !recutStore(root) ? "this store is not recut to the current trees: run clossys migrate recut first" : "declare them as extensions or upstream them into the package first";
+      return refuse("ia", `sync refused: ${plan.error}; ${hint}`);
+    }
     for (const [path, bytes] of plan.writes) {
       if (path.endsWith("slot.json")) {
         // Either format, as the reader judges it: a recut store's slot.json is a clossys.slot/2.
@@ -482,7 +488,7 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
     lines.push(`${repair.agent}: 1 file, source repointed to the workspace-owned IA`);
   }
   if (!writes.length) return { exitCode: 0, root, message: ["ia sync: in sync with the package IA; nothing written", ...summary.map(line => `  ${line}`)].join("\n") };
-  return commitIa(consumer, root, writes, flags.bare.has("--dry"), `sync ${agents.join(", ")} from the package IA (${findings.length + repairs.length} drift finding${findings.length + repairs.length === 1 ? "" : "s"})`, lines);
+  return commitIa(consumer, root, writes, flags.bare.has("--dry"), `sync ${agents.join(", ")} from the package IA (${findings.length + repairs.length} drift finding${findings.length + repairs.length === 1 ? "" : "s"})`, lines, undefined, { at });
 }
 
 export async function runIaCli(argv: readonly string[], cwd: string): Promise<CliResult> {

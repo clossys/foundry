@@ -1,6 +1,7 @@
 /**
  * foundry-build-0031: `clossys check` judges a recut consumer (clossys.slot/2). Synthetic: a tmp copy of
- * test-fixtures/consumer-legacy-tree, recut in tmp, then the slot resolve that `clossys check` runs.
+ * test-fixtures/consumer-legacy-tree recut in tmp, and a tmp copy of test-fixtures/consumer (committed recut), then
+ * the slot resolve that `clossys check` runs.
  */
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -26,19 +27,26 @@ const AT = "2026-11-15T10:00:00Z";
 let root: string | undefined;
 afterEach(() => { if (root) rmSync(root, { recursive: true, force: true }); root = undefined; });
 
-function recut() {
+const LEGACY_TREE = join(PRODUCER_ROOT, "test-fixtures", "consumer-legacy-tree", "clossys");
+const PROMISE = join("agents", "director", "advantage.proposition.promise", "slot.json");
+/** The recut consumer two ways: the old-tree fixture recut here, or the committed current fixture (already recut). */
+const STORES = [["recut in tmp from the old-tree fixture", "legacy-tree"], ["the committed current fixture", "current"]] as const;
+type Store = (typeof STORES)[number][1];
+
+function recut(store: Store = "legacy-tree") {
   root = mkdtempSync(join(tmpdir(), "check-current-"));
   const consumer = join(root, "clossys");
-  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer-legacy-tree", "clossys"), consumer, { recursive: true });
-  const slot = join(consumer, "agents", "director", "advantage.proposition.promise", "slot.json");
-  const before = readFileSync(slot, "utf8");
-  applyRecut(planRecut(root, { at: AT }));
+  cpSync(store === "current" ? join(PRODUCER_ROOT, "test-fixtures", "consumer", "clossys") : LEGACY_TREE, consumer, { recursive: true });
+  const slot = join(consumer, PROMISE);
+  // The old-format bytes of one slot: the old-tree fixture's, which the recut replaced.
+  const before = readFileSync(join(LEGACY_TREE, PROMISE), "utf8");
+  if (store === "legacy-tree") applyRecut(planRecut(root, { at: AT }));
   return { consumer, slot, before };
 }
 
-describe("clossys check on a recut consumer (current slot format)", () => {
+describe.each(STORES)("clossys check on a recut consumer (current slot format): %s", (_name, store) => {
   it("judges it: no schema-version rows, no unreadable inputs, no missing slot.json", async () => {
-    const w = recut();
+    const w = recut(store);
     expect(JSON.parse(readFileSync(w.slot, "utf8")).schema).toBe("clossys.slot/2");
     const result = await runSlotResolve(w.consumer);
     const messages = result.findings.map(row => row.message);
@@ -50,7 +58,7 @@ describe("clossys check on a recut consumer (current slot format)", () => {
   });
 
   it("names an old-format slot.json once, pointing at clossys migrate recut", async () => {
-    const w = recut();
+    const w = recut(store);
     writeFileSync(w.slot, w.before);
     const result = await runSlotResolve(w.consumer);
     const old = result.findings.filter(row => row.message === OLD_SLOT_FORMAT);
@@ -64,7 +72,7 @@ describe("clossys check on a recut consumer (current slot format)", () => {
  * Each candidate is written as `clossys migrate recut` writes it (int2 bytes through recutCandidateBytes), into a
  * slot of the recut fixture; each defect is one the old (slot/1) rules found, and is still a finding.
  */
-describe("a current-format candidate keeps every rule of its kind", () => {
+describe.each(STORES)("a current-format candidate keeps every rule of its kind: %s", (_name, store) => {
   const original = { kind: "original", ref: [] };
   const slots: Record<"brief" | "element" | "strings", [SlotAgent, string]> = {
     brief: ["director", "advantage.proposition.promise"],
@@ -88,7 +96,7 @@ describe("a current-format candidate keeps every rule of its kind", () => {
   }
 
   it("passes a well-formed brief, element and Writer file, and reads each through its view", () => {
-    const w = recut();
+    const w = recut(store);
     const ok = judge(w.consumer, "brief", "clean-v1.md", serializeFrontmatter({ slot: slots.brief[1], source: original, feeds: [], functions: ["gtm"], note: "kept" }, brief));
     expect(ok.found).toEqual([]);
     expect(ok.bytes.match(/^---$/gm)).toHaveLength(2);
@@ -98,25 +106,25 @@ describe("a current-format candidate keeps every rule of its kind", () => {
   });
 
   it("a brief with no sections is a finding", () => {
-    const w = recut();
+    const w = recut(store);
     expect(judge(w.consumer, "brief", "bare-v1.md", serializeFrontmatter({ slot: slots.brief[1], source: original, feeds: [], functions: [] }, "Just prose.\n")).found)
       .toContain("candidate-invalid: body must be ## Direction, ## Because, ## Watch");
   });
 
   it("a brief saved as .json is a finding", () => {
-    const w = recut();
+    const w = recut(store);
     expect(judge(w.consumer, "brief", "brief-v1.json", JSON.stringify({ text: brief, meta: { source: original } })).found).toContain("candidate-name: brief candidates are .md");
   });
 
   it("an element that is no registry item, with a registry source and no ref, is a finding for each", () => {
-    const w = recut();
+    const w = recut(store);
     const found = judge(w.consumer, "element", "nope-v1.json", JSON.stringify({ nope: true, meta: { source: { kind: "registry", ref: [] } } })).found;
     expect(found).toContain("candidate-invalid: registry-item name is required");
     expect(found).toContain("candidate-source: source.kind registry needs at least one ref");
   });
 
   it("pin state at the top level of a candidate is a finding (JSON beside the header, Markdown front matter)", () => {
-    const w = recut();
+    const w = recut(store);
     const json = judge(w.consumer, "element", "state-v1.json", JSON.stringify({ ...item, meta: { source: original } }), bytes => JSON.stringify({ ...JSON.parse(bytes), status: "active", pinned: true })).found;
     expect(json).toContain("candidate-status: status is pin state; pinning lives only in pin.json");
     expect(json).toContain("candidate-status: pinned is pin state; pinning lives only in pin.json");
@@ -125,7 +133,7 @@ describe("a current-format candidate keeps every rule of its kind", () => {
   });
 
   it("a Writer record carrying leaf, a bad vary and a second source beside the header are findings", () => {
-    const w = recut();
+    const w = recut(store);
     expect(judge(w.consumer, "strings", "leaf-v1.md", serializeFrontmatter({ slot: slots.strings[1], locales: ["en"], source: original }, '## en\n### avoid.one\n<!-- {"id":"avoid-one","bindings":[],"leaf":"lexicon.avoid-terms"} -->\nNever.\n')).found)
       .toContain("candidate-invalid: record avoid.one carries leaf; the slot is the leaf");
     expect(judge(w.consumer, "element", "vary-v1.json", JSON.stringify({ ...item, meta: { source: original, vary: { tone: "loud", size: "big" } } })).found)

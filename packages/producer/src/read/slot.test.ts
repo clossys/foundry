@@ -1,7 +1,7 @@
 /**
  * `clossys slot <ref> --json` (clossys.slot-view/1, system.md 12.3; parity step 2 of 14.4).
  *
- * Parity runs on a temporary copy of the int2 fixture consumer (test-fixtures/consumer-legacy-tree) with
+ * Parity runs on a temporary copy of the old-tree fixture consumer (test-fixtures/consumer-legacy-tree) with
  * synthetic candidates and pins added to one slot per agent that has slots there. Synthetic test
  * data only; never a consumer's copy.
  */

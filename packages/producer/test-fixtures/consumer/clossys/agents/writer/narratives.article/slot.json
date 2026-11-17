@@ -176,5 +176,7 @@
     "records": "many pieces per slot, keyed by type or release",
     "exists": "only once placed"
   },
-  "tighten": []
+  "tighten": [],
+  "options": 3,
+  "varyOn": "arc"
 }

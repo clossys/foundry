@@ -243,5 +243,7 @@
     "fieldsSha256": "13e712bcac9f0a5e1b37eba254b8c29ac0d413e0d39b82b08acfe59450ba529e",
     "candidate": "clossys.copy-candidate/1"
   },
-  "tighten": []
+  "tighten": [],
+  "options": 3,
+  "varyOn": "tone"
 }

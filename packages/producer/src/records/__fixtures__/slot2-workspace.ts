@@ -7,7 +7,7 @@
  *   Tallyhouse slot/2 with a base, `packages/<agent>/package.json` (name, the base version) and the package base at
  *   `base.path`, derived from the consumer file by dropping what a consumer adds (`tighten`, `status`, stamps,
  *   `consumedBy` refs). Tallyhouse base shas are illustrative, so the copy starts out of sync.
- * - `consumerCopy()`: a temp copy of `test-fixtures/consumer-legacy-tree` (470 slot/1 files: the int2 consumer as it was before `clossys migrate recut` moved `test-fixtures/consumer`).
+ * - `consumerCopy()`: a temp copy of `test-fixtures/consumer-legacy-tree` (470 slot/1 files: the fixture consumer as it was before `clossys migrate recut` moved `test-fixtures/consumer`).
  *
  * Tests mutate only these copies; the fixtures stay byte-identical.
  */

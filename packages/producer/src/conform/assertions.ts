@@ -44,11 +44,22 @@ const ID_LITERAL = /["'`]([a-z][a-z0-9-]*\.[a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-
 export const OVERLAP_MIN = 0.7;
 /** Contract fields that name the one slot a leaf is for (Writer's old `passages.*` name their section by `sectionId`). */
 const SUBJECT_FIELDS = ["sectionId", "subject", "for"] as const;
+/**
+ * One ref in one key form, `<agent>/<id>`. A clossys.slot/2 names its inputs agent-qualified and a slot/1 bare, so a
+ * store with both (or a placed slot/2 beside a package leaf) compares them only through this. A bare id resolves as
+ * dangling() resolves it: the agent itself, then its upstream agents, package or placed. One that resolves nowhere stays bare.
+ */
+export function qualifiedRef(agent: AgentModel, model: ConformModel, ref: string): string {
+  const match = SLOT_REF.exec(ref);
+  if (match) return `${match[1]}/${match[2]}`;
+  const owner = [agent.agent, ...upstreamOf(agent.agent)].find(name => model.packageIds.get(name)?.has(ref) || model.liveIds.get(name)?.has(ref));
+  return owner === undefined ? ref : `${owner}/${ref}`;
+}
 /** The foreign slots a leaf is for, whatever its name: a subject field, or a foreign ref its own id extends (`sections.hero.copy` is for `designer/sections.hero`). */
-function subjectsOf(agent: string, slot: LiveSlot): Set<string> {
+function subjectsOf(agent: string, slot: LiveSlot, inputs: readonly string[]): Set<string> {
   const out = new Set<string>();
   for (const field of SUBJECT_FIELDS) if (typeof slot.contract[field] === "string") out.add(slot.contract[field] as string);
-  for (const ref of refsIn([slot.contract, slot.inputs])) {
+  for (const ref of refsIn([slot.contract, inputs])) {
     const match = SLOT_REF.exec(ref)!;
     if (match[1] !== agent && slot.id.startsWith(`${match[2]}.`)) out.add(match[2]!);
   }
@@ -81,10 +92,11 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
       .concat([...folders].filter(id => !placed.has(id)).map(id => `${id}: slot folder not placed in ia.json (orphan)`));
     return { rows, evidence: l2s.length };
   },
-  S4: agent => {
+  S4: (agent, model) => {
     // Both trees count: the placed leaves and the package leaves the consumer has not placed (a dual tree overlaps across them).
     const judged = [...agent.live, ...agent.packageOnly];
-    const subjects = new Map(judged.map(slot => [slot.id, subjectsOf(agent.agent, slot)]));
+    const inputs = new Map(judged.map(slot => [slot, slot.inputs.map(ref => qualifiedRef(agent, model, ref))]));
+    const subjects = new Map(judged.map(slot => [slot.id, subjectsOf(agent.agent, slot, inputs.get(slot)!)]));
     const rows: string[] = [];
     for (let i = 0; i < judged.length; i++) for (let j = i + 1; j < judged.length; j++) {
       const a = judged[i]!, b = judged[j]!;
@@ -93,11 +105,12 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
       const shared = [...subjects.get(a.id)!].filter(subject => subjects.get(b.id)!.has(subject));
       if (shared.length) { rows.push(`${a.id} and ${b.id}: both are for ${shared.join(", ")} (same purpose)`); continue; }
       const l2 = agent.l2Of.get(a.id);
-      if (l2 !== undefined && l2 === agent.l2Of.get(b.id) && sameList(a.inputs, b.inputs) && sameList(requirementsOf(a), requirementsOf(b))) {
+      const inA = inputs.get(a)!, inB = inputs.get(b)!;
+      if (l2 !== undefined && l2 === agent.l2Of.get(b.id) && sameList(inA, inB) && sameList(requirementsOf(a), requirementsOf(b))) {
         rows.push(`${a.id} and ${b.id}: one L2 (${l2}), same inputs and requirements (same purpose)`); continue;
       }
       // Name: same kind and inputs, and ids that differ only past the threshold.
-      if (`${a.kind}/${String(a.contract.kind ?? "")}` !== `${b.kind}/${String(b.contract.kind ?? "")}` || !a.inputs.length || [...a.inputs].sort().join() !== [...b.inputs].sort().join()) continue;
+      if (`${a.kind}/${String(a.contract.kind ?? "")}` !== `${b.kind}/${String(b.contract.kind ?? "")}` || !inA.length || [...inA].sort().join() !== [...inB].sort().join()) continue;
       const purpose = jaccard(words(a.id.split(".").slice(1).join(".")), words(b.id.split(".").slice(1).join(".")));
       if (purpose > OVERLAP_MIN) rows.push(`${a.id} and ${b.id}: same kind and inputs, similar purpose (${purpose.toFixed(2)})`);
     }
