@@ -4,7 +4,7 @@
  * way Producer does: the Designer deck frame is rendered from its package default (TSX to static markup), its root and
  * canvas come from the Designer frame contract, and each section stands in as rendered markup.
  */
-import { mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
@@ -13,7 +13,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
-  loadDefaults, loadDesignerFrameContract, loadDesignerPackageDefaults, loadStarter, slotContract, type PageOption, type PageSlot,
+  designerPackageDir, loadDefaults, loadDesignerFrameContract, loadDesignerPackageDefaults, loadStarter, slotContract, type PageOption, type PageSlot,
 } from "../catalog/ia/tree.js";
 import { buildSlides, DECK_SLIDE_SLOT, slideRoutes, type DeckFrameInput, type SlidesBuildInput } from "./index.js";
 
@@ -88,7 +88,7 @@ describe("release slides --build", () => {
     const files = build(resolvedStarter());
     const first = files["slides/starter/1/index.html"]!;
     const body = first.slice(first.indexOf("<body"), first.indexOf("</body>"));
-    expect(body).toMatch(/<main data-slot="deck-frame" data-aspect="16:9" class="[^"]*aspect-video[^"]*">\s*<section data-slot="slide-title" data-medium="slide"><\/section>\s*<\/main>/);
+    expect(body).toMatch(/<main data-slot="deck-frame" data-aspect="16:9" class="[^"]*aspect-video[^"]*">\s*<section data-slot="hero" data-medium="slide"><\/section>\s*<\/main>/);
     expect(body.match(/<main\b/g)).toHaveLength(1);
     expect(first).not.toContain("deck-canvas");
     expect(first).not.toContain(DECK_SLIDE_SLOT);
@@ -107,6 +107,23 @@ describe("release slides --build", () => {
     const smaller = build(resolvedStarter({ ...resolvedFrame(), canvas: { width: 1280, height: 720 } }))["slides/print.css"]!;
     expect(smaller).toContain("@page { size: 1280px 720px; margin: 0; }");
     expect(smaller).not.toContain("1920");
+  });
+
+  it("reads frames.deck from Designer's registered slots/frames.json: root, slide slot and aspect member", () => {
+    const records = JSON.parse(readFileSync(join(designerPackageDir(), "src", "catalog", "slots", "frames.json"), "utf8")) as { id: string; contract: { members: { names: string[] } } }[];
+    const contract = loadDesignerFrameContract("frames.deck");
+    expect(contract).toMatchObject({ kind: "frame", root: "main", aspect: "16:9", slots: [{ id: "slide", required: true }] });
+    const withMembers = (names: string[]) => {
+      const dir = mkdtempSync(join(tmpdir(), "publisher-deck-frame-"));
+      mkdirSync(join(dir, "src", "catalog", "slots"), { recursive: true });
+      const edited = records.map(record => record.id === "frames.deck" ? { ...record, contract: { ...record.contract, members: { ...record.contract.members, names } } } : record);
+      writeFileSync(join(dir, "src", "catalog", "slots", "frames.json"), JSON.stringify(edited));
+      return dir;
+    };
+    expect(loadDesignerFrameContract("frames.deck", withMembers(["aspect.4-3"])).canvas).toEqual({ aspect: "4:3", width: 1920, height: 1440 });
+    expect(() => loadDesignerFrameContract("frames.deck", withMembers([]))).toThrow("designer: frame frames.deck declares no aspect member (aspect.<w>-<h>)");
+    expect(() => loadDesignerFrameContract("frames.site-shell")).toThrow(/declares no aspect member/);
+    expect(() => loadDesignerFrameContract("sections.hero")).toThrow("designer: sections.hero is not a registered frame in slots/frames.json");
   });
 
   it("changing the frame default changes the release output", () => {

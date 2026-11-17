@@ -25,51 +25,54 @@
     "sections": [
       {
         "role": "title",
-        "use": "designer/sections.slide-title",
+        "use": "designer/sections.hero",
         "variant": {
           "medium": "slide"
         },
-        "copy": "writer/sections.slide-title.copy#deck.title"
+        "copy": "writer/sections.hero.copy#deck.title"
       },
       {
         "role": "agenda",
-        "use": "designer/sections.slide-agenda",
+        "use": "designer/sections.table-of-contents",
         "variant": {
           "medium": "slide"
         },
-        "copy": "writer/sections.slide-agenda.copy#deck.agenda"
+        "copy": "writer/sections.table-of-contents.copy#deck.agenda"
       },
       {
         "role": "statement",
-        "use": "designer/sections.slide-statement",
+        "use": "designer/sections.content",
         "variant": {
-          "medium": "slide"
+          "medium": "slide",
+          "layout": "stacked"
         },
-        "copy": "writer/sections.slide-statement.copy#deck.statement"
+        "copy": "writer/sections.content.copy#deck.statement"
       },
       {
         "role": "two-column",
-        "use": "designer/sections.slide-two-column",
+        "use": "designer/sections.content",
         "variant": {
-          "medium": "slide"
+          "medium": "slide",
+          "layout": "split-start"
         },
-        "copy": "writer/sections.slide-two-column.copy#deck.two-column"
+        "copy": "writer/sections.content.copy#deck.two-column"
       },
       {
         "role": "quote",
-        "use": "designer/sections.slide-quote",
+        "use": "designer/sections.testimonials",
         "variant": {
-          "medium": "slide"
+          "medium": "slide",
+          "layout": "single"
         },
-        "copy": "writer/sections.slide-quote.copy#deck.quote"
+        "copy": "writer/sections.testimonials.copy#deck.quote"
       },
       {
         "role": "closing",
-        "use": "designer/sections.slide-closing",
+        "use": "designer/sections.call-to-action",
         "variant": {
           "medium": "slide"
         },
-        "copy": "writer/sections.slide-closing.copy#deck.closing"
+        "copy": "writer/sections.call-to-action.copy#deck.closing"
       }
     ],
     "meta": {

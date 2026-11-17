@@ -43,8 +43,8 @@ The tree has three L0s, one file each under `src/catalog/ia/`:
 | Directory | `page.*` (20), grouped by publication (`site`, `docs`, `app`) | each page's path, its allowed layout and the section per role |
 | Release | `release.*` (3) | one publication's exports, locales, gates and the owner's ready sign-off |
 
-Parked (`parked: true`): the one-pager layout, page and release; Decks, Slides and
-Video. Retired ids (`src/catalog/retired.json`: the five draft `layouts.*` slots and
+Parked (`parked: true`): the one-pager layout, page and release (the Documents
+L1s). The slides medium is labelled Slides in all three files. Retired ids (`src/catalog/retired.json`: the five draft `layouts.*` slots and
 the 18 frozen `sl_*` leaves) are never placed or reused.
 
 Three starter publications ship as package data: `starters/{site,docs,app}/publication.json`

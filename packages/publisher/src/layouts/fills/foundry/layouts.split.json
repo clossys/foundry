@@ -15,7 +15,7 @@
       },
       {
         "path": "src/layouts/slots/layouts.json",
-        "sha256": "426bea89fb7f046ddffdbab34d2265b928e664638c30682060b44a39320983e6"
+        "sha256": "7bdf3fb39f3bd4106d7ffec88ea2f61206fe5f9209fed1b72bfa68222e16cd52"
       },
       {
         "path": "src/web/layouts/Split.tsx",
