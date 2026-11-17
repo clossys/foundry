@@ -23,6 +23,7 @@ export const PUBLISHER_VALUE_NAME_REFS: Readonly<Record<string, Readonly<Record<
     "frames.site-footer": Object.freeze({ id: "st.b0empz5tp2" }),
     "frames.sheet": Object.freeze({ id: "st.njcj3qqb0e" }),
     "frames.command": Object.freeze({ id: "st.b0jrfbc3my" }),
+    "frames.deck": Object.freeze({ id: "st.d3ck7f9m2a" }),
   }),
   "designer.boardName": Object.freeze({
     "designer.ia.frames.panels": Object.freeze({ id: "st.dg3e6jc56v" }),
@@ -121,6 +122,9 @@ export const PUBLISHER_VALUE_NAME_REFS: Readonly<Record<string, Readonly<Record<
   "designer.frameOption.frames.command": Object.freeze({
     "shortcut.on": Object.freeze({ id: "st.1gh330mabf" }),
     "shortcut.off": Object.freeze({ id: "st.f99jjh9znb" }),
+  }),
+  "designer.frameOption.frames.deck": Object.freeze({
+    "aspect.16-9": Object.freeze({ id: "st.d3ck16x9wq" }),
   }),
   "publisher.screenSize": Object.freeze({
     "mobile": Object.freeze({ id: "st.txzn8z1qg7" }),

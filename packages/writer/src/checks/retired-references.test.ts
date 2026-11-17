@@ -39,8 +39,8 @@ describe("retired references in Writer records", () => {
       (bundles.find(bundle => bundle.path === path)!.value as any)[key].filter((row: any) => row.status === "retired").length;
     expect(flagged("admin-pages.r1.en.json", "bindings")).toBe(8);
     expect(flagged("section-defaults.r1.en.json", "bindings")).toBe(4);
-    expect(flagged("admin-studio.r1.en.json", "bindings")).toBe(41);
-    expect(flagged("admin-studio.r1.en.json", "needs")).toBe(36);
+    expect(flagged("admin-studio.r1.en.json", "bindings")).toBe(43);
+    expect(flagged("admin-studio.r1.en.json", "needs")).toBe(38);
     expect(flagged("admin-meta.r1.en.json", "bindings")).toBe(1);
     const sectionDefaults = (bundles.find(bundle => bundle.path === "section-defaults.r1.en.json")!.value as any).records;
     expect(sectionDefaults.filter((row: any) => row.status === "retired").map((row: any) => row.leaf).sort()).toEqual(["passages.logo-hero", "passages.record-detail"]);

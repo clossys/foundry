@@ -5,7 +5,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,8 +22,9 @@ export function flatConsumer(agents: readonly SlotAgent[]): string {
   mkdirSync(join(root, "clossys", "agents"), { recursive: true });
   writeFileSync(join(root, "clossys", "clossys.config.ts"), "throw new Error('Config must not execute');\n");
   for (const agent of agents) cpSync(join(repoConsumer, "agents", agent), join(root, "clossys", "agents", agent), { recursive: true });
-  // Director evidence lives outside the agent tree (clossys/evidence/director, rule R-GIT-CMS).
-  if (agents.includes("director")) cpSync(join(repoConsumer, "evidence", "director"), join(root, "clossys", "evidence", "director"), { recursive: true });
+  // Director evidence lives outside the agent tree (clossys/evidence/director, rule R-GIT-CMS). It is optional, as
+  // readDirectorEvidence treats a missing folder as no findings; the synthetic fixture consumer holds none.
+  if (agents.includes("director") && existsSync(join(repoConsumer, "evidence", "director"))) cpSync(join(repoConsumer, "evidence", "director"), join(root, "clossys", "evidence", "director"), { recursive: true });
   return root;
 }
 

@@ -156,7 +156,7 @@ describe("admin display-name drafts", () => {
 
   it("passes actual Writer lint, ICU, length and pseudo expansion for every authored or revised record", () => {
     expect(changed.length).toBeGreaterThan(340);
-    expect(changedIds.size).toBe(362);
+    expect(changedIds.size).toBe(364);
     expect(new Set(changed.map(record => record.id))).toEqual(canonicalChangedIds);
     for (const id of changedIds) {
       const record = changed.find(record => record.id === canonicalId(id))!;

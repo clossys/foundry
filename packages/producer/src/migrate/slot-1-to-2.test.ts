@@ -34,7 +34,7 @@ describe("migrate slot-1-to-2 on a copy of test-fixtures/consumer", () => {
     expect(result.findings).toEqual([]);
     expect(result.skipped).toHaveLength(24);
     expect(result.skipped.every(item => item.subject.startsWith("producer/seat."))).toBe(true);
-    expect(result.written).toHaveLength(444);
+    expect(result.written).toHaveLength(445);
     expect(tree(CONSUMER)).toEqual(original);
 
     const brief = ws.read("director", "advantage.defensibility.differentiator");
@@ -49,7 +49,7 @@ describe("migrate slot-1-to-2 on a copy of test-fixtures/consumer", () => {
     expect(brief.brief.inputs).toEqual(brief.refs);
 
     const icon = ws.read("designer", "assets.app-icon");
-    expect(icon).toMatchObject({ kind: "element/asset", ia: { l0: "assets", l1: "assets/app-identity", l2: "assets/app-identity/app-identity-application" } });
+    expect(icon).toMatchObject({ kind: "element/asset", ia: { l0: "assets", l1: "assets/logos", l2: "assets/logos/logos-app-icons" } });
     expect(icon.refs.map(item => item.to)).toContain("director/identity.brand.essence");
     expect(ws.read("writer", "lexicon.currency-format")).toMatchObject({ kind: "voice", status: "parked", contract: { notNeeded: { decidedBy: "planner" } } });
 
@@ -63,7 +63,7 @@ describe("migrate slot-1-to-2 on a copy of test-fixtures/consumer", () => {
     const twice = migrateSlot1To2(ws.root, { ...OPTIONS, at: "2026-12-01T00:00:00Z" });
     expect(twice.written).toEqual([]);
     expect(twice.migrations).toEqual([]);
-    expect(twice.current).toHaveLength(444);
+    expect(twice.current).toHaveLength(445);
     expect(tree(ws.root)).toEqual(once);
   });
 
