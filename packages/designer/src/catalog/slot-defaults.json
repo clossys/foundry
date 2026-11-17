@@ -12,9 +12,6 @@
     "assets.icon-arrow-right": {
       "standard": "asset.glyph"
     },
-    "assets.icon-business": {
-      "standard": "asset.glyph"
-    },
     "assets.icon-check": {
       "standard": "asset.glyph"
     },
@@ -61,9 +58,6 @@
       "standard": "asset.glyph"
     },
     "assets.icon-info": {
-      "standard": "asset.glyph"
-    },
-    "assets.icon-institution": {
       "standard": "asset.glyph"
     },
     "assets.icon-integration": {
@@ -168,12 +162,6 @@
     "components.calendar": {
       "standard": "component"
     },
-    "components.canvas-map": {
-      "standard": "component"
-    },
-    "components.canvas-zoom": {
-      "standard": "component"
-    },
     "components.card": {
       "standard": "component"
     },
@@ -183,25 +171,7 @@
     "components.chart-bar": {
       "standard": "component"
     },
-    "components.chart-heatmap": {
-      "standard": "component"
-    },
     "components.chart-line": {
-      "standard": "component"
-    },
-    "components.chart-range": {
-      "standard": "component"
-    },
-    "components.chart-scatter": {
-      "standard": "component"
-    },
-    "components.chart-sparkline": {
-      "standard": "component"
-    },
-    "components.chart-status-strip": {
-      "standard": "component"
-    },
-    "components.chart-waterfall": {
       "standard": "component"
     },
     "components.checkbox": {
@@ -226,9 +196,6 @@
       "standard": "component"
     },
     "components.disclosure": {
-      "standard": "component"
-    },
-    "components.dropdown-menu": {
       "standard": "component"
     },
     "components.empty": {
@@ -288,13 +255,7 @@
     "components.meter": {
       "standard": "component"
     },
-    "components.native-action": {
-      "standard": "component"
-    },
     "components.navigation-tree": {
-      "standard": "component"
-    },
-    "components.number-field": {
       "standard": "component"
     },
     "components.popover": {
@@ -337,30 +298,6 @@
       "standard": "component"
     },
     "components.slider": {
-      "standard": "component"
-    },
-    "components.specimen-copy-in-context": {
-      "standard": "component"
-    },
-    "components.specimen-grid": {
-      "standard": "component"
-    },
-    "components.specimen-ladder": {
-      "standard": "component"
-    },
-    "components.specimen-matrix": {
-      "standard": "component"
-    },
-    "components.specimen-passage": {
-      "standard": "component"
-    },
-    "components.specimen-player": {
-      "standard": "component"
-    },
-    "components.specimen-swatch": {
-      "standard": "component"
-    },
-    "components.specimen-viewport": {
       "standard": "component"
     },
     "components.spinner": {
@@ -440,7 +377,7 @@
     "frames.command": {
       "standard": "frame"
     },
-    "frames.document": {
+    "frames.deck": {
       "standard": "frame"
     },
     "frames.inspector": {
@@ -492,14 +429,8 @@
     "sections.band": {
       "standard": "section.adaptive"
     },
-    "sections.boundary-message": {
-      "standard": "section.app"
-    },
     "sections.call-to-action": {
       "standard": "section.site"
-    },
-    "sections.cards": {
-      "standard": "section.adaptive"
     },
     "sections.chat": {
       "standard": "section.app"
@@ -569,26 +500,14 @@
         "assets.pattern"
       ]
     },
-    "sections.legal-prose": {
-      "standard": "section.site"
-    },
     "sections.link-index": {
       "standard": "section.adaptive"
     },
     "sections.logo-cloud": {
       "standard": "section.site"
     },
-    "sections.logo-hero": {
-      "standard": "section.site"
-    },
-    "sections.logo-mark": {
-      "standard": "section.site"
-    },
     "sections.media": {
       "standard": "section.adaptive"
-    },
-    "sections.newsletter": {
-      "standard": "section.site"
     },
     "sections.notices": {
       "standard": "section.adaptive",
@@ -619,9 +538,6 @@
     "sections.pricing": {
       "standard": "section.site"
     },
-    "sections.record-detail": {
-      "standard": "section.app"
-    },
     "sections.resource-list": {
       "standard": "section.app"
     },
@@ -635,48 +551,6 @@
       "standard": "section.app"
     },
     "sections.sign-in-form": {
-      "standard": "section.app"
-    },
-    "sections.specimen-asset-grid": {
-      "standard": "section.app"
-    },
-    "sections.specimen-color-ramp": {
-      "standard": "section.app"
-    },
-    "sections.specimen-copy-in-context": {
-      "standard": "section.app"
-    },
-    "sections.specimen-frame-viewports": {
-      "standard": "section.app"
-    },
-    "sections.specimen-icon-grid": {
-      "standard": "section.app"
-    },
-    "sections.specimen-motion-player": {
-      "standard": "section.app"
-    },
-    "sections.specimen-page-viewports": {
-      "standard": "section.app"
-    },
-    "sections.specimen-radius-ladder": {
-      "standard": "section.app"
-    },
-    "sections.specimen-rich-passage": {
-      "standard": "section.app"
-    },
-    "sections.specimen-section-viewports": {
-      "standard": "section.app"
-    },
-    "sections.specimen-spacing-ladder": {
-      "standard": "section.app"
-    },
-    "sections.specimen-swatch": {
-      "standard": "section.app"
-    },
-    "sections.specimen-type-ladder": {
-      "standard": "section.app"
-    },
-    "sections.specimen-variant-matrix": {
       "standard": "section.app"
     },
     "sections.stats": {

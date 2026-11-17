@@ -20,7 +20,8 @@ interface FrameSlot {
 }
 const slots = slotData as unknown as readonly FrameSlot[];
 const placement = placementData as unknown as Placement;
-const expected = ["document", "site-shell", "app-shell", "auth-shell", "site-header", "app-header", "app-sidebar", "inspector", "site-footer", "sheet", "command"];
+const expected = ["document", "site-shell", "app-shell", "auth-shell", "site-header", "app-header", "app-sidebar", "inspector", "site-footer", "sheet", "command", "deck"];
+// foundry-build-0032 (audit P3, owner 2026-11-16): frames.deck registers as the twelfth frame, in its own Deck family.
 const byId = (id: string): FrameContract => {
   const found = slots.find(slot => slot.id === `frames.${id}`);
   if (!found) throw new Error(`Missing frame ${id}`);
@@ -79,7 +80,7 @@ describe("draft frame registry", () => {
     expect(byId("app-header").members.names).toEqual(["surface.glass", "fallback.opaque", "position.sticky", "position.static"]);
   });
 
-  it("contains exactly the eleven independent, unfrozen leaves", () => {
+  it("contains exactly the twelve independent, unfrozen leaves", () => {
     expect(slots.map(slot => slot.id)).toEqual(expected.map(id => `frames.${id}`));
     for (const slot of slots) {
       expect(SLOT_ID.test(slot.id)).toBe(true);
@@ -94,15 +95,15 @@ describe("draft frame registry", () => {
     }
   });
 
-  it("places each leaf once under the one Frames group and its Site and App families (foundry-build-0018)", () => {
+  it("places each leaf once under the one Frames group and its Site, App and Deck families (foundry-build-0018, foundry-build-0032)", () => {
     expect(placement.layer).toBe("frames");
     expect(placement.nodes.map(node => node.id)).toEqual(["frames"]);
-    expect(placementData.nodes[0]?.children?.map(node => node.id)).toEqual(["frames-site", "frames-app"]);
+    expect(placementData.nodes[0]?.children?.map(node => node.id)).toEqual(["frames-site", "frames-app", "frames-deck"]);
     expect(placementFindings(placement, slots.map(slot => slot.id))).toEqual([]);
   });
 
   it("preserves the original nine frame rows exactly and registers the standalone auth shell", () => {
-    const original = slots.filter(slot => slot.id !== "frames.auth-shell" && slot.id !== "frames.document");
+    const original = slots.filter(slot => slot.id !== "frames.auth-shell" && slot.id !== "frames.document" && slot.id !== "frames.deck");
     expect(original).toHaveLength(9);
     // SCROLL-1 A158/A159: exact app-shell page-module/state/progress ports and app-header actions changed; unrelated rows remain pinned.
     // foundry-build-0018 (audits 0021, 0022): site-shell consent accepts sections.consent in a named region; app-sidebar tree is components.sidebar.
@@ -172,8 +173,8 @@ describe("draft frame registry", () => {
   });
 
   it("records roots, server boundaries and ordered shell landmarks", () => {
-    expect(slots.map(slot => slot.contract.root)).toEqual(["html", "div", "div", "div", "header", "header", "nav", "aside", "footer", "dialog", "dialog"]);
-    expect(slots.filter(slot => slot.contract.rendering === "server").map(slot => slot.id)).toEqual(["frames.document", "frames.site-shell", "frames.auth-shell", "frames.site-header", "frames.site-footer"]);
+    expect(slots.map(slot => slot.contract.root)).toEqual(["html", "div", "div", "div", "header", "header", "nav", "aside", "footer", "dialog", "dialog", "main"]);
+    expect(slots.filter(slot => slot.contract.rendering === "server").map(slot => slot.id)).toEqual(["frames.document", "frames.site-shell", "frames.auth-shell", "frames.site-header", "frames.site-footer", "frames.deck"]);
     expect(byId("site-shell").landmarks.map(item => item.role)).toEqual(["region", "banner", "main", "contentinfo", "region"]);
     expect(byId("site-shell").landmarks[0]).toEqual({ slot: "consent", role: "region", topLevel: true, nameRequired: true });
     expect(byId("app-shell").landmarks.map(item => item.role)).toEqual(["banner", "navigation", "main", "complementary", "region"]);

@@ -7,6 +7,26 @@
     "purpose": "Marketing site header: brand, primary navigation and header actions, collapsing to a menu on small screens.",
     "inputs": [
       {
+        "name": "skip.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "navigation.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "navigation.open",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "navigation.close",
+        "kind": "copy",
+        "required": true
+      },
+      {
         "name": "brand",
         "kind": "cell",
         "required": true
@@ -69,8 +89,12 @@
     ],
     "limits": {
       "compose.measure": "sections.band",
+      "navigation.close.maxLength.en": 24,
+      "navigation.label.maxLength.en": 60,
+      "navigation.open.maxLength.en": 24,
       "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
-      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size"
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "skip.label.maxLength.en": 60
     },
     "references": [
       {
@@ -90,6 +114,16 @@
     "layer": "frames",
     "purpose": "Marketing site footer: link columns, legal line and social links.",
     "inputs": [
+      {
+        "name": "navigation.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "legal.notice",
+        "kind": "copy",
+        "required": false
+      },
       {
         "name": "columns",
         "kind": "cell",
@@ -143,6 +177,8 @@
     ],
     "limits": {
       "compose.measure": "sections.band",
+      "legal.notice.maxLength.en": 160,
+      "navigation.label.maxLength.en": 60,
       "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
       "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size"
     },
@@ -545,6 +581,51 @@
     "purpose": "Application header: context, breadcrumb trail, actions and info, sticky or static.",
     "inputs": [
       {
+        "name": "skip.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "breadcrumb.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "breadcrumb.collapsed",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "page.info",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "page.actions",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "navigation.open",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "navigation.close",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "panel.open",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "panel.close",
+        "kind": "copy",
+        "required": false
+      },
+      {
         "name": "context",
         "kind": "cell",
         "required": false
@@ -620,7 +701,17 @@
         "required": false
       }
     ],
-    "limits": {},
+    "limits": {
+      "breadcrumb.collapsed.maxLength.en": 60,
+      "breadcrumb.label.maxLength.en": 60,
+      "navigation.close.maxLength.en": 24,
+      "navigation.open.maxLength.en": 24,
+      "page.actions.maxLength.en": 60,
+      "page.info.maxLength.en": 60,
+      "panel.close.maxLength.en": 24,
+      "panel.open.maxLength.en": 24,
+      "skip.label.maxLength.en": 60
+    },
     "references": [
       {
         "registry": "shadcn",
@@ -639,6 +730,26 @@
     "layer": "frames",
     "purpose": "Application sidebar: header, navigation tree, account and theme controls, docked, collapsed or as an overlay.",
     "inputs": [
+      {
+        "name": "navigation.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "navigation.empty",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "navigation.expand",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "navigation.collapse",
+        "kind": "copy",
+        "required": false
+      },
       {
         "name": "header",
         "kind": "cell",
@@ -740,7 +851,12 @@
         "required": false
       }
     ],
-    "limits": {},
+    "limits": {
+      "navigation.collapse.maxLength.en": 24,
+      "navigation.empty.maxLength.en": 120,
+      "navigation.expand.maxLength.en": 24,
+      "navigation.label.maxLength.en": 60
+    },
     "references": [
       {
         "registry": "shadcn",
@@ -967,6 +1083,34 @@
         "hash": "sha256:549cd010f34024eea234a587e123b487112262775590c6e9baa82e3a6212545c"
       }
     ],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.deck",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "Deck frame: one 16:9 slide canvas whose single main region holds one section rendered on the slide medium (variant medium.slide).",
+    "inputs": [
+      {
+        "name": "slide",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {},
+    "references": [],
     "checkSuite": "designer.slot-contracts.frames",
     "specimenKind": "visual"
   }

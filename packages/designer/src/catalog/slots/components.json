@@ -206,7 +206,32 @@
       "composes": [
         "components.link"
       ],
-      "apg": "breadcrumb"
+      "apg": "breadcrumb",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "navigation.label",
+            "kind": "plain",
+            "role": "label",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "more.label",
+            "kind": "plain",
+            "role": "label",
+            "required": false,
+            "maxLength": {
+              "en": 40
+            },
+            "dir": "auto"
+          }
+        ]
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1186,7 +1211,22 @@
           "assets.icon-close"
         ]
       },
-      "apg": "dialog-modal"
+      "apg": "dialog-modal",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "close.label",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          }
+        ]
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2991,7 +3031,42 @@
       "composes": [
         "components.icon",
         "components.sheet"
-      ]
+      ],
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "toggle.label",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "mobile.title",
+            "kind": "plain",
+            "role": "heading",
+            "required": false,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "mobile.description",
+            "kind": "plain",
+            "role": "label",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3051,7 +3126,52 @@
       },
       "composes": [
         "components.icon"
-      ]
+      ],
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "search.label",
+            "kind": "plain",
+            "role": "label",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "search.placeholder",
+            "kind": "plain",
+            "role": "label",
+            "required": false,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "results.label",
+            "kind": "plain",
+            "role": "label",
+            "required": false,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "empty.label",
+            "kind": "plain",
+            "role": "label",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3108,7 +3228,22 @@
       },
       "composes": [
         "components.icon"
-      ]
+      ],
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "close.label",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          }
+        ]
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3426,7 +3561,92 @@
         "components.slider",
         "components.icon",
         "components.semantic-content"
-      ]
+      ],
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "title",
+            "kind": "plain",
+            "role": "heading",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "play",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "pause",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "mute",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "seek",
+            "kind": "plain",
+            "role": "label",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "captions",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.title",
+            "kind": "plain",
+            "role": "heading",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.description",
+            "kind": "plain",
+            "role": "lead",
+            "required": true,
+            "maxLength": {
+              "en": 200
+            },
+            "dir": "auto"
+          }
+        ]
+      }
     },
     "requires": [],
     "status": "draft"

@@ -1,0 +1,265 @@
+{
+  "schema": "clossys.designer-retired-pieces/1",
+  "about": "Unplaced Studio and flow piece ids recorded as retired (data only). They are not IA leaves: none is placed in a layer file or registered as a slot. Code that still renders them is removed by its own unit, not by this record.",
+  "pieces": [
+    {
+      "id": "components.flow.base-handle",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "foundry-build-0032 audit P13 (owner 2026-11-16: go with your recommendation)",
+      "reason": "flow canvas piece consumed only by the Studio pipeline view; no Publisher page or layout places it"
+    },
+    {
+      "id": "components.flow.base-node",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "foundry-build-0032 audit P13 (owner 2026-11-16: go with your recommendation)",
+      "reason": "flow canvas piece consumed only by the Studio pipeline view; no Publisher page or layout places it"
+    },
+    {
+      "id": "components.flow.canvas",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "foundry-build-0032 audit P13 (owner 2026-11-16: go with your recommendation)",
+      "reason": "flow canvas piece consumed only by the Studio pipeline view; no Publisher page or layout places it"
+    },
+    {
+      "id": "components.flow.edge",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "foundry-build-0032 audit P13 (owner 2026-11-16: go with your recommendation)",
+      "reason": "flow canvas piece consumed only by the Studio pipeline view; no Publisher page or layout places it"
+    },
+    {
+      "id": "components.flow.labeled-handle",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "foundry-build-0032 audit P13 (owner 2026-11-16: go with your recommendation)",
+      "reason": "flow canvas piece consumed only by the Studio pipeline view; no Publisher page or layout places it"
+    },
+    {
+      "id": "components.flow.node-header",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "foundry-build-0032 audit P13 (owner 2026-11-16: go with your recommendation)",
+      "reason": "flow canvas piece consumed only by the Studio pipeline view; no Publisher page or layout places it"
+    },
+    {
+      "id": "components.flow.node-status",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "foundry-build-0032 audit P13 (owner 2026-11-16: go with your recommendation)",
+      "reason": "flow canvas piece consumed only by the Studio pipeline view; no Publisher page or layout places it"
+    },
+    {
+      "id": "components.studio.block-viewer-iframe",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only piece; Studio code removal is a separate unit"
+    },
+    {
+      "id": "components.studio.card-grid",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only piece; Studio code removal is a separate unit"
+    },
+    {
+      "id": "components.studio.card-stack",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only piece; Studio code removal is a separate unit"
+    },
+    {
+      "id": "components.studio.home-grid",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only piece; Studio code removal is a separate unit"
+    },
+    {
+      "id": "components.studio.sidebar-static-row",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only piece; Studio code removal is a separate unit"
+    },
+    {
+      "id": "components.studio.specimen-document",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only piece; Studio code removal is a separate unit"
+    },
+    {
+      "id": "components.studio.specimen-figure",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only piece; Studio code removal is a separate unit"
+    },
+    {
+      "id": "components.studio.specimen-frame",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only piece; Studio code removal is a separate unit"
+    },
+    {
+      "id": "components.studio.text-link",
+      "home": "designer/ui/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only piece; Studio code removal is a separate unit"
+    },
+    {
+      "id": "frames.studio-shell",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only frame; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.module.checks",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.module.outline",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.producer.pipeline-flow",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.producer.pipeline-header",
+      "home": "producer/studio",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.producer.pipeline-legend",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.producer.step-sheet",
+      "home": "producer/studio",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.producer.system-empty",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.producer.team-strip",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.studio.checks",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.studio.contract",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.studio.history",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.studio.home",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.studio.leaf-header",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.studio.options",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.studio.page-header",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.studio.page-tabs",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.studio.publications",
+      "home": "producer/studio",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.studio.references",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.studio.slot-groups",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    },
+    {
+      "id": "sections.studio.specimen",
+      "home": "producer/studio/pieces",
+      "retiredAt": "2026-11-16",
+      "decidedBy": "owner decision 8 (no Studio); foundry-build-0032 audit P6",
+      "reason": "Studio-only section; Studio code removal is a separate unit"
+    }
+  ]
+}

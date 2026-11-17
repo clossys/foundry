@@ -1,5 +1,5 @@
 // Generated from sections.content by src/generated/props/generate.ts; do not edit.
-export const contentContractSha256 = "ec28de1b312f444a42766bb7ce655ad577cb7cac702c30bf6534aa0224510508";
+export const contentContractSha256 = "309330cea74fb6be98c2e429b620d34aa392a05f42ac2a40f65351808c85dfa2";
 
 export type ContentCopy = {
   header?: {

@@ -41,8 +41,11 @@ export function componentRegistryFindings(registry: ComponentRegistry): string[]
   for (const id of ids) if (!counts.has(id)) findings.push(`placement: missing component slot ${id}`);
   for (const [id, count] of counts) if (count !== 1) findings.push(`placement: ${id} appears ${count} times`);
   const parked = new Set<string>();
+  // foundry-build-0032 (audit P7): a leaf is parked or retired, never both; retired already means nothing reads it.
+  const retired = new Set(registry.placement.retired ?? []);
   for (const entry of registry.placement.parked ?? []) {
     if (!counts.has(entry.leaf)) findings.push(`parked: ${entry.leaf} is not a placed component leaf`);
+    if (retired.has(entry.leaf)) findings.push(`parked: ${entry.leaf} is retired; a retired leaf is not also parked`);
     if (parked.has(entry.leaf)) findings.push(`parked: duplicate ${entry.leaf}`);
     if (!entry.basis) findings.push(`parked: ${entry.leaf} has no basis`);
     parked.add(entry.leaf);

@@ -21,6 +21,8 @@ export interface SectionContract {
   /** Named source tests, not evidence that a current consumer run passed. */
   substrateTests?: readonly SectionSubstrateRenderTest[];
   root: "section" | "div" | "header" | "nav" | "article" | "figure";
+  /** Media the section renders on; absent means web only. A retired slide leaf names its twin's slide medium (foundry-build-0032, audit P3). */
+  media?: readonly ("slide" | "web")[];
   anatomy: { band: "sections.band" | null; header: "sections.section-header" | null };
   slots: readonly { name: string; type: "copy" | "media" | "records" | "action" | "region"; required: boolean; max?: number }[];
   members: { mode: "closed"; names: readonly string[] };

@@ -23,9 +23,9 @@ const committed = { themes, assets, components, sections, frames } as unknown as
 const LAYERS = ["themes", "assets", "components", "sections", "frames"] as const;
 
 describe("Designer slot contracts", () => {
-  it("has one record for each of the 246 canonical Designer slots (238 re-signed + 8 owner-signed specimen leaves), hand records first", () => {
+  it("has one record for each of the 247 canonical Designer slots (238 re-signed + 8 owner-signed specimen leaves + frames.deck, foundry-build-0032), hand records first", () => {
     for (const layer of LAYERS) expect(committed[layer].map(row => row.slot).sort(), layer).toEqual(catalog[layer].map(slot => slot.id).sort());
-    expect(LAYERS.map(layer => committed[layer].length)).toEqual([42, 49, 78, 66, 11]);
+    expect(LAYERS.map(layer => committed[layer].length)).toEqual([42, 49, 78, 66, 12]);
     expect(committed.sections.slice(0, 10).map(row => row.slot)).toEqual(["sections.band", "sections.section-header", "sections.hero", "sections.features", "sections.comparison", "sections.pricing", "sections.call-to-action", "sections.form", "sections.legal-prose", "sections.steps"]);
     expect(committed.frames.slice(0, 3).map(row => row.slot)).toEqual(["frames.site-header", "frames.site-footer", "frames.site-shell"]);
   });
@@ -54,7 +54,8 @@ describe("Designer slot contracts", () => {
     const favicon = committed.assets.find(row => row.slot === "assets.favicon")!;
     expect(favicon.specimenKind).toBe("media");
     expect(favicon.inputs.map(row => [row.name, row.required])).toEqual([["small", false], ["vector", true]]);
-    expect(committed.assets.find(row => row.slot === "assets.image")!.inputs.map(row => row.name)).toEqual(["entries"]);
+    // foundry-build-0032 (audit P2): the image asset declares alt and caption copy fields, derived as copy inputs after its data.
+    expect(committed.assets.find(row => row.slot === "assets.image")!.inputs.map(row => [row.name, row.kind])).toEqual([["entries", "data"], ["alt", "copy"], ["caption", "copy"]]);
     const button = committed.components.find(row => row.slot === "components.button")!;
     expect(button.inputs).toEqual(expect.arrayContaining([expect.objectContaining({ name: "variant", kind: "prop" }), expect.objectContaining({ name: "assets.icon-chevron-right", kind: "asset" })]));
     expect(button.limits["compose.components"]).toBe("components.icon");

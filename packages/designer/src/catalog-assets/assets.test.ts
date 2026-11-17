@@ -173,8 +173,10 @@ describe('coverage, scorecard and real asset files',()=>{
 describe('Media resources and patterns',()=>{
  it('registers image, video and pattern under Imagery with the signed contracts and the recut families (foundry-build-0018)',()=>{
   const slot=(id:string)=>catalog.slots.find(s=>s.id===id)!;
-  expect(slot('assets.image').contract).toEqual({kind:'asset',valueKind:'rules',members:{mode:'open',pattern:'^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$'},modes:['light']});
-  expect(slot('assets.video').contract).toEqual({kind:'asset',valueKind:'rules',members:{mode:'open',pattern:'^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$'},modes:['light']});
+  // foundry-build-0032 (audit P2): image and video gain draft copy fields; the signed asset contract is otherwise unchanged.
+  const signed=(id:string)=>{const {copy,...rest}=slot(id).contract as Record<string,unknown>&{copy?:{fields:{key:string}[]}};return {rest,copyKeys:copy?.fields.map(f=>f.key)};};
+  expect(signed('assets.image')).toEqual({rest:{kind:'asset',valueKind:'rules',members:{mode:'open',pattern:'^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$'},modes:['light']},copyKeys:['alt','caption']});
+  expect(signed('assets.video')).toEqual({rest:{kind:'asset',valueKind:'rules',members:{mode:'open',pattern:'^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$'},modes:['light']},copyKeys:['title','description']});
   expect(slot('assets.pattern').contract).toEqual({kind:'asset',valueKind:'rules',members:{mode:'closed',names:['dots','lines','grid','grain','noise','topo']},modes:['light']});
   const media=catalog.placements.find(p=>p.layer==='assets')!.nodes.find(n=>n.id==='imagery') as {label:string;children:{id:string;label:string;leaves:string[]}[]};
   expect(media.label).toBe('Imagery');

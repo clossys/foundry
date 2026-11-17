@@ -1,5 +1,31 @@
 [
   {
+    "id": "assets.icon-business",
+    "retiredAt": "2026-11-16",
+    "replacedBy": "assets.icon-organization",
+    "decidedBy": "owner 2026-11-16 (go with your recommendation); foundry-build-0032 audit P12",
+    "reason": "entity icon dedupe: business is the business config of assets.icon-organization"
+  },
+  {
+    "id": "assets.icon-institution",
+    "retiredAt": "2026-11-16",
+    "replacedBy": "assets.icon-organization",
+    "decidedBy": "owner 2026-11-16 (go with your recommendation); foundry-build-0032 audit P12",
+    "reason": "entity icon dedupe: institution is the institution config of assets.icon-organization"
+  },
+  {
+    "id": "components.canvas-map",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "withdrawn: no consumer (ia-target designer.md section 7)"
+  },
+  {
+    "id": "components.canvas-zoom",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "withdrawn: no consumer (ia-target designer.md section 7)"
+  },
+  {
     "id": "components.chart-heatmap",
     "retiredAt": "2026-11-11",
     "decidedBy": "owner:D2 2026-11-11",
@@ -36,6 +62,13 @@
     "reason": "chart leaf retired; chart code removed in R2F-53"
   },
   {
+    "id": "components.dropdown-menu",
+    "retiredAt": "2026-11-15",
+    "replacedBy": "components.menu",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "withdrawn: merged into components.menu (ia-target designer.md section 7)"
+  },
+  {
     "id": "components.native-action",
     "retiredAt": "2026-11-11",
     "replacedBy": "components.button",
@@ -49,16 +82,84 @@
     "reason": "R2F-50 source ladder: DELETE"
   },
   {
+    "id": "components.specimen-copy-in-context",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "studio-killed"
+  },
+  {
+    "id": "components.specimen-grid",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "studio-killed"
+  },
+  {
+    "id": "components.specimen-ladder",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "studio-killed"
+  },
+  {
+    "id": "components.specimen-matrix",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "studio-killed"
+  },
+  {
+    "id": "components.specimen-passage",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "studio-killed"
+  },
+  {
+    "id": "components.specimen-player",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "studio-killed"
+  },
+  {
+    "id": "components.specimen-swatch",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "studio-killed"
+  },
+  {
+    "id": "components.specimen-viewport",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "studio-killed"
+  },
+  {
+    "id": "frames.document",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "off tree: render plumbing, not a slot (ia-target designer.md section 7)"
+  },
+  {
     "id": "sections.boundary-message",
     "retiredAt": "2026-11-11",
     "decidedBy": "owner:LAD-1 2026-11-11T07:08Z",
     "reason": "R2F-50 source ladder: DELETE"
   },
   {
+    "id": "sections.cards",
+    "retiredAt": "2026-11-15",
+    "replacedBy": "sections.link-index",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "retired by merge into sections.link-index (ia-target designer.md section 7)"
+  },
+  {
     "id": "sections.legal-prose",
     "retiredAt": "2026-11-11",
     "decidedBy": "owner:LAD-1 2026-11-11T07:08Z",
     "reason": "R2F-50 source ladder: DELETE"
+  },
+  {
+    "id": "sections.logo-hero",
+    "retiredAt": "2026-11-15",
+    "replacedBy": "sections.hero",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "retired by merge into sections.hero (ia-target designer.md section 7)"
   },
   {
     "id": "sections.logo-mark",
@@ -79,74 +180,7 @@
     "reason": "R2F-50 source ladder: DELETE"
   },
   {
-    "id": "components.dropdown-menu",
-    "retiredAt": "2026-11-15",
-    "replacedBy": "components.menu",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "withdrawn: merged into components.menu (ia-target designer.md section 7)"
-  },
-  {
-    "id": "components.canvas-zoom",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "withdrawn: no consumer (ia-target designer.md section 7)"
-  },
-  {
-    "id": "components.canvas-map",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "withdrawn: no consumer (ia-target designer.md section 7)"
-  },
-  {
-    "id": "components.specimen-swatch",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "components.specimen-ladder",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "components.specimen-player",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "components.specimen-grid",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "components.specimen-matrix",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "components.specimen-viewport",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "components.specimen-passage",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "components.specimen-copy-in-context",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "sections.specimen-swatch",
+    "id": "sections.specimen-asset-grid",
     "retiredAt": "2026-11-15",
     "decidedBy": "planner:foundry-build-0018",
     "reason": "studio-killed"
@@ -158,49 +192,7 @@
     "reason": "studio-killed"
   },
   {
-    "id": "sections.specimen-type-ladder",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "sections.specimen-spacing-ladder",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "sections.specimen-radius-ladder",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "sections.specimen-motion-player",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "sections.specimen-asset-grid",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "sections.specimen-icon-grid",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "sections.specimen-variant-matrix",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "studio-killed"
-  },
-  {
-    "id": "sections.specimen-section-viewports",
+    "id": "sections.specimen-copy-in-context",
     "retiredAt": "2026-11-15",
     "decidedBy": "planner:foundry-build-0018",
     "reason": "studio-killed"
@@ -212,13 +204,13 @@
     "reason": "studio-killed"
   },
   {
-    "id": "sections.specimen-rich-passage",
+    "id": "sections.specimen-icon-grid",
     "retiredAt": "2026-11-15",
     "decidedBy": "planner:foundry-build-0018",
     "reason": "studio-killed"
   },
   {
-    "id": "sections.specimen-copy-in-context",
+    "id": "sections.specimen-motion-player",
     "retiredAt": "2026-11-15",
     "decidedBy": "planner:foundry-build-0018",
     "reason": "studio-killed"
@@ -230,23 +222,45 @@
     "reason": "studio-killed"
   },
   {
-    "id": "sections.logo-hero",
+    "id": "sections.specimen-radius-ladder",
     "retiredAt": "2026-11-15",
-    "replacedBy": "sections.hero",
     "decidedBy": "planner:foundry-build-0018",
-    "reason": "retired by merge into sections.hero (ia-target designer.md section 7)"
+    "reason": "studio-killed"
   },
   {
-    "id": "sections.cards",
+    "id": "sections.specimen-rich-passage",
     "retiredAt": "2026-11-15",
-    "replacedBy": "sections.link-index",
     "decidedBy": "planner:foundry-build-0018",
-    "reason": "retired by merge into sections.link-index (ia-target designer.md section 7)"
+    "reason": "studio-killed"
   },
   {
-    "id": "frames.document",
+    "id": "sections.specimen-section-viewports",
     "retiredAt": "2026-11-15",
     "decidedBy": "planner:foundry-build-0018",
-    "reason": "off tree: render plumbing, not a slot (ia-target designer.md section 7)"
+    "reason": "studio-killed"
+  },
+  {
+    "id": "sections.specimen-spacing-ladder",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "studio-killed"
+  },
+  {
+    "id": "sections.specimen-swatch",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "studio-killed"
+  },
+  {
+    "id": "sections.specimen-type-ladder",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "studio-killed"
+  },
+  {
+    "id": "sections.specimen-variant-matrix",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "planner:foundry-build-0018",
+    "reason": "studio-killed"
   }
 ]

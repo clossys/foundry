@@ -21,7 +21,8 @@ const BUILD_SLOTS = loadBuildCatalog().slots.map(slot => slot.id);
 // both were already 68 and 7/24/66 at 35c58c51f, so the old literals failed there too). Components
 // re-measured at d42a35110: the owner-signed display-specimens family holds the eight specimen leaves.
 // foundry-build-0018 recut (designer.md): each layer is one L1 under the Theme/Art/Interface L0; retired leaves stay placed.
-const counts = { themes: [4, 11, 42], assets: [3, 10, 49], components: [1, 8, 78], sections: [1, 6, 66], frames: [1, 2, 11] };
+const counts = { themes: [4, 11, 42], assets: [3, 10, 49], components: [1, 8, 78], sections: [1, 6, 66], frames: [1, 3, 12] };
+// foundry-build-0032 (audit P3): frames.deck registers in a third frames family (Deck): frames 1/2/11 -> 1/3/12.
 const leafIds = (tree: Placement): string[] => tree.nodes.flatMap(group => "children" in group ? group.children.flatMap(family => "leaves" in family ? family.leaves : []) : []);
 
 describe("IA1 exact three levels and IA2 unmixed nodes", () => {
