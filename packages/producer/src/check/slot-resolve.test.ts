@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -67,7 +67,19 @@ function fixture() {
     save(join(dir, "pin.json"), { ...JSON.parse(readFileSync(join(dir, "pin.json"), "utf8")), sha256: sha256Hex(bytes) });
   }
   migrateSlot1To2(root, { at, version: "0.0.0" });
+  commitFixture(root);
   return { root, consumer, dirs };
+}
+
+/**
+ * `clossys check --strict` runs ledger.append-only, which reads the git history of the Producer queue and ledger and
+ * fails closed outside a git repository. So the fixture is a git repository with everything it writes committed.
+ */
+function commitFixture(root: string): void {
+  const git = (...args: string[]) => execFileSync("git", ["-C", root, "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", ...args], { stdio: ["ignore", "pipe", "pipe"] });
+  git("init", "-q", "-b", "main");
+  git("add", "-A");
+  git("commit", "-q", "-m", "synthetic fixture");
 }
 const native = (root: string, flags: string[] = []) => spawnSync(process.execPath, [entry, "check", "--root", root, "--json", ...flags], { encoding: "utf8" });
 
