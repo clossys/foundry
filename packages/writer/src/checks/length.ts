@@ -1,4 +1,4 @@
-import { loadWriterCatalog } from "../catalog/ia/index.js";
+import { loadWriterStore } from "../catalog/ia/index.js";
 import type { Block, PassageRef, WriterLibrary, WriterRecord } from "../model/types.js";
 import { parseIcuMessage, type IcuNode } from "../icu/parse.js";
 import { resolveWriterRefText } from "./approval.js";
@@ -22,7 +22,7 @@ const narrow = (base: WriterTextLimits, override: WriterTextLimits): WriterTextL
 
 /** Each row is a single independently bounded field, never metadata or a serialized record. */
 export function writerTextFields(library: WriterLibrary, options: WriterCheckOptions = {}): WriterTextField[] {
-  const catalog = options.catalog ?? loadWriterCatalog();
+  const catalog = options.catalog ?? loadWriterStore();
   const slots = new Map(catalog.slots.map(slot => [slot.id, slot]));
   const source = library.locales[library.manifest.defaultLocale]?.records ?? [];
   const sourceById = new Map(source.map(record => [record.id, record]));

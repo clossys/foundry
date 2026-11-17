@@ -1168,7 +1168,7 @@
       "id": "ps.jrbpz6zcs1",
       "leaf": "passages.logo-hero",
       "context": "SU-9W draft logo-mark into logo-hero",
-      "status": "draft",
+      "status": "retired",
       "origin": "authored",
       "schema": "passages.logo-hero",
       "schemaDigest": "10c4e80128ecd99abcd4f646e1d2603878846948ff3b4418c719dfdf6dc44791",
@@ -1183,7 +1183,7 @@
       "id": "ps.avyhjvd2xr",
       "leaf": "passages.record-detail",
       "context": "SU-9W draft account-summary into record-detail",
-      "status": "draft",
+      "status": "retired",
       "origin": "authored",
       "schema": "passages.record-detail",
       "schemaDigest": "a1be644b39e14a8925348931640586cd2eac7e15d917977bd3e5c5d7cef01fa5",
@@ -1856,25 +1856,29 @@
       "cellId": "admin.writer.sections.merge.logo-hero.name",
       "recordId": "st.dchvjhvyep",
       "target": "sections.logo-hero",
-      "kind": "CopyRef"
+      "kind": "CopyRef",
+      "status": "retired"
     },
     {
       "cellId": "admin.writer.sections.merge.record-detail.header.heading",
       "recordId": "st.5nfgjmm0xx",
       "target": "sections.record-detail",
-      "kind": "CopyRef"
+      "kind": "CopyRef",
+      "status": "retired"
     },
     {
       "cellId": "admin.writer.sections.merge.record-detail.fields.label",
       "recordId": "st.78q8q8f05t",
       "target": "sections.record-detail",
-      "kind": "CopyRef"
+      "kind": "CopyRef",
+      "status": "retired"
     },
     {
       "cellId": "admin.writer.sections.merge.record-detail.fields.value",
       "recordId": "st.ttdxhv7jpb",
       "target": "sections.record-detail",
-      "kind": "CopyRef"
+      "kind": "CopyRef",
+      "status": "retired"
     },
     {
       "cellId": "admin.writer.sections.merge.error-state.header.heading",

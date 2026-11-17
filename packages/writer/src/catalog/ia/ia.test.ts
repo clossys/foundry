@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { createWriterIAReport, loadWriterCatalog, writerIAFindings, type WriterCatalog } from "./index.js";
+import { createWriterIAReport, loadWriterStore, writerIAFindings, type WriterCatalog } from "./index.js";
 import { mainWriterIA } from "./cli.js";
 import type { WriterLeafFreezeSnapshot } from "../../catalog-core/leaf-freeze.js";
 
@@ -50,7 +50,7 @@ describe("Writer IA structure and reporting", () => {
     expect(writerIAFindings(catalog, ["strings"]).some(f => f.message.includes("exactly one of children or leaves"))).toBe(true);
   });
   it("reports all five shipped layers, keeps layers 4/5 unfrozen, and never changes input", () => {
-    const catalog = loadWriterCatalog();
+    const catalog = loadWriterStore();
     const before = JSON.stringify(catalog);
     const report = createWriterIAReport(catalog);
     expect(report.findings).toEqual([]);
@@ -63,7 +63,7 @@ describe("Writer IA structure and reporting", () => {
 });
 
 describe("writer-check ia", () => {
-  const invoke = (args: string[], load = loadWriterCatalog) => {
+  const invoke = (args: string[], load = loadWriterStore) => {
     const stdout: string[] = [], stderr: string[] = [];
     const exit = mainWriterIA(args, { stdout: value => stdout.push(value), stderr: value => stderr.push(value) }, load);
     return { exit, stdout: stdout.join("\n"), stderr: stderr.join("\n") };
@@ -88,7 +88,7 @@ describe("writer-check ia", () => {
     expect(invoke(args).exit).toBe(2);
   });
   it("returns 1 for actual membership drift and 2 when inputs cannot load", () => {
-    const catalog = loadWriterCatalog();
+    const catalog = loadWriterStore();
     catalog.slots = catalog.slots.filter(slot => slot.id !== "strings.actions");
     const drift = invoke(["--layers", "strings", "--format", "json"], () => catalog);
     expect(drift.exit).toBe(1);

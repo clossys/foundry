@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { loadWriterCatalog, type WriterSlot } from "../catalog/ia/index.js";
+import { loadWriterStore, type WriterSlot } from "../catalog/ia/index.js";
 import { canonicalWriterJSON } from "../digest/index.js";
 import type { Block, PassageRef, PatternInstance, StringRecord, WriterLibrary, WriterRecord } from "../model/types.js";
 import type { WriterCheckFinding, WriterCheckOptions, WriterDesignerEvidence } from "./freeze.js";
@@ -31,7 +31,7 @@ export function writerPassageSchemaDigest(contract: Record<string, unknown>): st
  * document. Configs, including the empty default ID, must be explicitly listed.
  */
 export function checkWriterClosedWorld(library: WriterLibrary, options: WriterCheckOptions = {}): WriterCheckFinding[] {
-  const catalog = options.catalog ?? loadWriterCatalog();
+  const catalog = options.catalog ?? loadWriterStore();
   const findings: WriterCheckFinding[] = [];
   const slots = new Map<string, WriterSlot[]>();
   for (const slot of catalog.slots) slots.set(slot.id, [...(slots.get(slot.id) ?? []), slot]);

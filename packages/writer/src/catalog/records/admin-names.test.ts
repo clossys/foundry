@@ -8,7 +8,7 @@ import voice from "./admin-voice.r1.en.json" with { type: "json" };
 import common from "./common-labels.r1.en.json" with { type: "json" };
 import { ADMIN_COMMON_COPY_EN } from "../../admin-common.js";
 import terminology from "../admin-terminology.json" with { type: "json" };
-import { loadWriterCatalog } from "../ia/index.js";
+import { loadWriterStore } from "../ia/index.js";
 import { validateWriterRecord } from "../../model/validate.js";
 import type { StringRecord, WriterLibrary, WriterRecord } from "../../model/types.js";
 import { checkWriterLint } from "../../checks/lint/index.js";
@@ -55,7 +55,7 @@ function literalArray(name: string, path: string): string[] {
 
 describe("admin display-name drafts", () => {
   it("maps every listed value to exactly one unapproved record with no invented leaves", () => {
-    const known = new Set(loadWriterCatalog().slots.map(slot => slot.id));
+    const known = new Set(loadWriterStore().slots.map(slot => slot.id));
     expect(inventory.entries.length).toBeGreaterThan(400);
     expect(new Set(inventory.entries.map(entry => entry.cellId)).size).toBe(inventory.entries.length);
     for (const entry of inventory.entries) {

@@ -405,6 +405,43 @@
           "terms",
           "cookies",
           "license"
+        ],
+        "purposes": {
+          "privacy": [
+            "collect",
+            "use",
+            "share",
+            "keep",
+            "rights",
+            "contact",
+            "change"
+          ],
+          "terms": [
+            "service",
+            "fees",
+            "duties",
+            "liability",
+            "ending",
+            "law",
+            "change"
+          ]
+        },
+        "facts": {
+          "privacy": [
+            "effective.date",
+            "data.collected",
+            "processors",
+            "retention.years",
+            "contact.privacy"
+          ],
+          "terms": [
+            "effective.date",
+            "governing.law"
+          ]
+        },
+        "bindings": [
+          "director/identity.naming.name:Name",
+          "facts:*"
         ]
       }
     }

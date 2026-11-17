@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { validateWriterRecord } from "../../model/validate.js";
 import { checkWriterICU } from "../../checks/icu.js";
 import { writerPassageSchemaDigest } from "../../checks/closed-world.js";
-import { loadWriterCatalog } from "./index.js";
+import { loadWriterStore } from "./index.js";
 import type { WriterLibrary, WriterRecord } from "../../model/types.js";
 import { derivePassages, run } from "../../../scripts/derive-passages.mjs";
 
@@ -32,7 +32,7 @@ describe("passage derivation", () => {
     const source = fixture();
     const before = structuredClone(source);
     const result = derivePassages(source.ia, source.slots);
-    expect(result.ia).toEqual({ ...source.ia, layer: "passages", nodes: [{ ...source.ia.nodes[0], children: [{ ...source.ia.nodes[0]!.children[0], leaves: ["passages.article", "passages.band"] }] }] });
+    expect(result.ia).toEqual({ ...source.ia, layer: "passages", status: "retired", nodes: [{ ...source.ia.nodes[0], children: [{ ...source.ia.nodes[0]!.children[0], leaves: ["passages.article", "passages.band"] }] }] });
     expect(result.slots).toEqual(source.slots.map(section => ({
       id: section.contract.passageSchema, layer: "passages", contract: { kind: "passage", source: "writer", sectionId: section.id, passageSchema: section.contract.passageSchema, copy: section.contract.copy }, requires: [], status: "draft",
     })));
@@ -56,6 +56,18 @@ describe("passage derivation", () => {
     expect(result.ia).toEqual(derivePassages(fixture().ia, fixture().slots).ia);
     source.ia.nodes[1]!.children[0]!.leaves.pop();
     expect(() => derivePassages(source.ia, source.slots)).toThrow(/Missing section placement: sections.specimen-grid/);
+  });
+
+  it("names passages, not sections, in the retired and starter lists and leaves specimens out (foundry-build-0033)", () => {
+    const source = fixture();
+    Object.assign(source.ia, { retired: ["sections.band", "sections.specimen-swatch"], starter: ["sections.article"] });
+    const result = derivePassages(source.ia, source.slots);
+    expect(result.ia.retired).toEqual(["passages.band"]);
+    expect(result.ia.starter).toEqual(["passages.article"]);
+    const shipped = JSON.parse(readFileSync(new URL("./passages.json", import.meta.url), "utf8"));
+    for (const id of [...shipped.retired, ...shipped.starter]) expect(id).toMatch(/^passages\./);
+    Object.assign(source.ia, { retired: ["passages.band"] });
+    expect(() => derivePassages(source.ia, source.slots)).toThrow("Source retired must list section ids");
   });
 
   it.each([
@@ -140,7 +152,7 @@ describe("SU-9W section copy cascade", () => {
   const strings = allRecords.filter((r: WriterRecord) => r.id.startsWith("st."));
 
   it("pins 52 current live pairs separately from 52 approved projected pairs", () => {
-    const current = loadWriterCatalog().slots.filter(slot => slot.layer === "passages");
+    const current = loadWriterStore().slots.filter(slot => slot.layer === "passages");
     expect(source).toHaveLength(52);
     expect(current).toHaveLength(52);
     expect(new Set(current.map(slot => slot.id)).size).toBe(52);
@@ -174,8 +186,11 @@ describe("SU-9W section copy cascade", () => {
     const ids = allRecords.map((r: WriterRecord) => r.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(new Set(Object.values(aliases)).size).toBe(strings.length);
+    // Merged passages on a passage that Designer retired stay in place as status retired (foundry-build-0033); every
+    // other record stays draft.
+    const retiredPassages = new Set<string>(read("./passages.json").retired);
     for (const record of allRecords) {
-      expect(record.status).toBe("draft");
+      expect(record.status, record.id).toBe(retiredPassages.has(record.leaf) ? "retired" : "draft");
       expect(record).not.toHaveProperty("approval");
       expect(validateWriterRecord(record, record.id.startsWith("st.") ? "strings" : "passages"), record.context).toEqual([]);
     }
@@ -189,7 +204,7 @@ describe("SU-9W section copy cascade", () => {
       const record = allRecords.find((r: WriterRecord) => r.id === merge.recordId);
       expect(record.leaf).toBe(merge.toPassage);
       expect(record.schema).toBe(merge.toPassage);
-      const slot = loadWriterCatalog().slots.find(s => s.id === record.schema)!;
+      const slot = loadWriterStore().slots.find(s => s.id === record.schema)!;
       expect(record.schemaDigest).toBe(writerPassageSchemaDigest(slot.contract));
       for (const ref of Object.values(record.fields) as any[]) expect(ids).toContain(ref.id);
     }
@@ -214,7 +229,7 @@ describe("SU-9W section copy cascade", () => {
     expect(cascade).toMatchObject({ state: "draft", activation: "none", integration: "pending-designer-contracts" });
     expect(cascade.records.length).toBeGreaterThan(0);
     expect(cascade.records.every((record: WriterRecord) => record.id.startsWith("st."))).toBe(true);
-    const current = loadWriterCatalog();
+    const current = loadWriterStore();
     for (const addition of cascade.additions) {
       // The source leaf may land independently. This intent still has no
       // current digest and must not be mistaken for a registered record.

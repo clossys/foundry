@@ -7,7 +7,7 @@ import { resolveWriterRefText } from "../checks/approval.js";
 import type { WriterRecord } from "../model/types.js";
 import { renderToStaticMarkup } from "react-dom/server";
 import { writerPassageSchemaDigest } from "../checks/closed-world.js";
-import { loadWriterCatalog } from "./ia/index.js";
+import { loadWriterStore } from "./ia/index.js";
 import { renderErrorState, errorStateInputs } from "../../../designer/src/runtime/sections/error-state.js";
 import { ANATOMY_CONTENT_KEY } from "../../../designer/src/runtime/sections/group-c-content.js";
 
@@ -30,7 +30,7 @@ describe("draft site Writer records", () => {
     expect(passage).toMatchObject({ leaf: "passages.error-state", schema: "passages.error-state", status: "draft", origin: "authored" });
     expect(passage.approval).toBeUndefined();
     expect(validateWriterRecord(passage, "passages")).toEqual([]);
-    const schema = loadWriterCatalog().slots.find(slot => slot.id === passage.schema)!;
+    const schema = loadWriterStore().slots.find(slot => slot.id === passage.schema)!;
     const source = read("../../../designer/src/catalog/slots/sections.json").find((slot: { id: string }) => slot.id === "sections.error-state");
     expect(schema.contract).toEqual({ kind: "passage", source: "writer", sectionId: source.id, passageSchema: passage.schema, copy: source.contract.copy });
     expect(passage.schemaDigest).toBe(writerPassageSchemaDigest(schema.contract));
@@ -66,11 +66,13 @@ describe("draft site Writer records", () => {
     const data = read("./records/site.en.json");
     const records = withDeclaredCommonRecords(data);
     const byId = new Map(records.map(record => [record.id, record]));
+    const retiredPassages = new Set<string>(read("./ia/passages.json").retired);
     expect(byId.size).toBe(records.length);
     for (const record of records) {
       const layer = record.id.startsWith("st.") ? "strings" : record.id.startsWith("ps.") ? "passages" : record.id.startsWith("pt.") ? "patterns" : "narratives";
       expect(validateWriterRecord(record, layer), record.id).toEqual([]);
-      expect(record.status).toBe("draft"); expect(record.approval).toBeUndefined();
+      // Starter passages on a passage Designer retired stay in place as status retired (foundry-build-0033).
+      expect(record.status, record.id).toBe(retiredPassages.has(record.leaf) ? "retired" : "draft"); expect(record.approval).toBeUndefined();
       if ("fields" in record) for (const value of Object.values(record.fields)) for (const ref of Array.isArray(value) ? value : [value]) expect(resolveWriterRefText(ref, records).length).toBeGreaterThan(0);
     }
     for (const alias of ["ps.hero.home", "ps.features.about", "ps.faq.about", "ps.form.contact", "st.form.error.required", "nr.legal.privacy", "nr.legal.terms", "ps.status.not-found", "ps.status.unavailable", "ps.status.construction", "ps.error.global"]) expect(byId.has(data.aliases[alias]), alias).toBe(true);

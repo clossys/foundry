@@ -71,10 +71,10 @@ export async function run(argv = process.argv.slice(2)) {
     else if (argv[index] === "--records" && argv[index + 1]) recordsRoot = resolve(argv[++index]);
     else throw new Error("Usage: redigest-passage-records.mjs [--check|--write] [--records <directory>]");
   }
-  const { loadWriterCatalog } = await import(pathToFileURL(resolve(packageRoot, "dist/catalog/ia/index.js")).href);
+  const { loadWriterStore } = await import(pathToFileURL(resolve(packageRoot, "dist/catalog/ia/index.js")).href);
   const { writerPassageSchemaDigest } = await import(pathToFileURL(resolve(packageRoot, "dist/checks/closed-world.js")).href);
   const slots = new Map();
-  for (const slot of loadWriterCatalog().slots) slots.set(slot.id, [...(slots.get(slot.id) ?? []), slot]);
+  for (const slot of loadWriterStore().slots) slots.set(slot.id, [...(slots.get(slot.id) ?? []), slot]);
   const expected = schema => {
     const matches = slots.get(schema) ?? [];
     return matches.length === 1 && matches[0].contract.kind === "passage" ? writerPassageSchemaDigest(matches[0].contract) : undefined;

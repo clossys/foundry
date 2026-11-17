@@ -1,6 +1,6 @@
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { expect, it } from "vitest";
-import { loadWriterCatalog } from "../ia/index.js";
+import { loadWriterStore } from "../ia/index.js";
 import { checkWriterLeafSets } from "../../catalog-core/leaf-freeze.js";
 import { createAdminCopy, getAdminCopyRecord } from "../../admin-copy.js";
 import { ADMIN_COMMON_COPY_EN } from "../../admin-common.js";
@@ -17,7 +17,7 @@ it("shares one existing opaque ID across all page Writer title bindings", () => 
 });
 
 it("accepts only the explicit common-leaf amendment and refuses an undeclared addition", () => {
-  const catalog = loadWriterCatalog();
+  const catalog = loadWriterStore();
   expect(checkWriterLeafSets(catalog.placements, catalog.slots, ["strings"])).toEqual([]);
   expect(checkWriterLeafSets(catalog.placements, catalog.slots, ["strings"], { amendments: [] })).toContainEqual(expect.objectContaining({ unexpected: ["strings.common"] }));
   const tampered = structuredClone(read("../ia/strings.leaf-amendments.json"));

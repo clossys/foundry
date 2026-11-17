@@ -1,7 +1,7 @@
 import { lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { dirname, join, relative, resolve } from "node:path";
-import { loadWriterCatalog } from "../../catalog/ia/index.js";
+import { loadWriterStore } from "../../catalog/ia/index.js";
 import { loadWriterLibrary } from "../../loader/load.js";
 import { checkIACoverage } from "./index.js";
 import type { ConnectionSnapshot, CoverageInput, CoverageReport, DesignerCatalogShape } from "./types.js";
@@ -59,7 +59,7 @@ async function loadInput(options: Options): Promise<CoverageInput> {
     }
     for (const [locale, records] of locales) catalogRecords.push({ locale, records });
   }
-  return { catalog: loadWriterCatalog(), designer: designer as unknown as DesignerCatalogShape, connections, library: loaded?.library ?? undefined, catalogRecords };
+  return { catalog: loadWriterStore(), designer: designer as unknown as DesignerCatalogShape, connections, library: loaded?.library ?? undefined, catalogRecords };
 }
 
 export function coverageSummaryTable(report: CoverageReport): string {
