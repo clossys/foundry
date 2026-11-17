@@ -19,8 +19,8 @@ const find = (nodes: readonly IaNode[], id: string): IaNode | undefined => {
   for (const node of nodes) { if (node.id === id) return node; const hit = node.children && find(node.children, id); if (hit) return hit; }
   return undefined;
 };
-// foundry-build-0018: the recut files the three core charts under Components > Collections, beside the retired analytic charts.
-const coreLeaves = ["components.chart-bar", "components.chart-line", "components.chart-area"].filter(id => find((ia as unknown as { nodes: IaNode[] }).nodes, "components-collections")!.leaves!.includes(id));
+// foundry-build-0018: the recut files the three core charts beside the retired analytic charts; 0035 (audit P17) moves them to Components > Charts.
+const coreLeaves = ["components.chart-bar", "components.chart-line", "components.chart-area"].filter(id => find((ia as unknown as { nodes: IaNode[] }).nodes, "components-charts")!.leaves!.includes(id));
 const slotById = new Map((slots as unknown as ComponentSlot[]).map(slot => [slot.id, slot]));
 
 if (process.env.UPDATE_SHADCN_CHART_FILLS === "1") {

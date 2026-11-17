@@ -21,7 +21,8 @@ const BUILD_SLOTS = loadBuildCatalog().slots.map(slot => slot.id);
 // both were already 68 and 7/24/66 at 35c58c51f, so the old literals failed there too). Components
 // re-measured at d42a35110: the owner-signed display-specimens family holds the eight specimen leaves.
 // foundry-build-0018 recut (designer.md): each layer is one L1 under the Theme/Art/Interface L0; retired leaves stay placed.
-const counts = { themes: [4, 11, 42], assets: [3, 10, 49], components: [1, 8, 78], sections: [1, 6, 66], frames: [1, 3, 12] };
+// foundry-build-0035 (audit P16/P17): themes 11 -> 8 families, components 8 -> 10, sections 6 -> 7.
+const counts = { themes: [4, 8, 42], assets: [3, 10, 49], components: [1, 10, 78], sections: [1, 7, 66], frames: [1, 3, 12] };
 // foundry-build-0032 (audit P3): frames.deck registers in a third frames family (Deck): frames 1/2/11 -> 1/3/12.
 const leafIds = (tree: Placement): string[] => tree.nodes.flatMap(group => "children" in group ? group.children.flatMap(family => "leaves" in family ? family.leaves : []) : []);
 
@@ -103,7 +104,7 @@ describe("owner-signed IA moves (ledger #44, 2026-10-26)", () => {
   it("keeps tag-group, icon, logo, status-mark and the charts each in one recut component family", () => {
     const tree = components as Placement;
     for (const [id, home] of [["components.tag-group", "components-inputs"], ["components.icon", "components-text-and-media"], ["components.logo", "components-text-and-media"], ["components.status-mark", "components-text-and-media"]] as const) expect(homes(tree, id)).toEqual([home]);
-    for (const id of ["components.chart-bar", "components.chart-sparkline", "components.chart-scatter", "components.chart-waterfall"]) expect(homes(tree, id)).toEqual(["components-collections"]);
+    for (const id of ["components.chart-bar", "components.chart-sparkline", "components.chart-scatter", "components.chart-waterfall"]) expect(homes(tree, id)).toEqual(["components-charts"]);
     for (const old of ["charts-core", "charts-compact", "charts-analytic", "display-charts"]) expect(() => family(tree, old)).toThrow("missing family");
   });
   it("refuses a moved id placed as a leaf in a second layer", () => {

@@ -95,10 +95,10 @@ describe("draft frame registry", () => {
     }
   });
 
-  it("places each leaf once under the one Frames group and its Site, App and Deck families (foundry-build-0018, foundry-build-0032)", () => {
+  it("places each leaf once under the one Frames group and its Shells, Bars and Panels families (foundry-build-0018, 0032; 0035 audit P18 regroups by role)", () => {
     expect(placement.layer).toBe("frames");
     expect(placement.nodes.map(node => node.id)).toEqual(["frames"]);
-    expect(placementData.nodes[0]?.children?.map(node => node.id)).toEqual(["frames-site", "frames-app", "frames-deck"]);
+    expect(placementData.nodes[0]?.children?.map(node => node.id)).toEqual(["frames-shells", "frames-bars", "frames-panels"]);
     expect(placementFindings(placement, slots.map(slot => slot.id))).toEqual([]);
   });
 
@@ -120,7 +120,7 @@ describe("draft frame registry", () => {
         composes: [], skipTarget: "main-content",
       },
     });
-    expect(placementData.nodes[0]?.children?.find(node => node.id === "frames-site")?.leaves).toContain("frames.auth-shell");
+    expect(placementData.nodes[0]?.children?.find(node => node.id === "frames-shells")?.leaves).toContain("frames.auth-shell");
   });
 
   it("pins the scroll frame regions and bounded navigation state", () => {

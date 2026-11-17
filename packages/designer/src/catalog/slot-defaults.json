@@ -133,10 +133,32 @@
       "standard": "asset.media-rule"
     },
     "assets.lockup": {
-      "standard": "asset.logo-mark"
+      "standard": "asset.logo-mark",
+      "inputs": [
+        "advantage.proposition.promise",
+        "focus.category.definition",
+        "focus.segment.core",
+        "identity.brand.essence",
+        "identity.brand.personality",
+        "identity.verbal.voice",
+        "identity.visual.imagery",
+        "identity.visual.style",
+        "identity.naming.name"
+      ]
     },
     "assets.mark": {
-      "standard": "asset.logo-mark"
+      "standard": "asset.logo-mark",
+      "inputs": [
+        "advantage.proposition.promise",
+        "focus.category.definition",
+        "focus.segment.core",
+        "identity.brand.essence",
+        "identity.brand.personality",
+        "identity.verbal.voice",
+        "identity.visual.imagery",
+        "identity.visual.style",
+        "identity.naming.name"
+      ]
     },
     "assets.pattern": {
       "standard": "asset.media-rule"

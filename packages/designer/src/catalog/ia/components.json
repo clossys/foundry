@@ -49,7 +49,13 @@
             "components.table",
             "components.grid-list",
             "components.item",
-            "components.tree",
+            "components.tree"
+          ]
+        },
+        {
+          "id": "components-charts",
+          "label": "Charts (parked)",
+          "leaves": [
             "components.chart-bar",
             "components.chart-line",
             "components.chart-area",
@@ -99,7 +105,13 @@
             "components.avatar",
             "components.media-player",
             "components.icon",
-            "components.logo",
+            "components.logo"
+          ]
+        },
+        {
+          "id": "components-specimens",
+          "label": "Specimens (retired)",
+          "leaves": [
             "components.specimen-swatch",
             "components.specimen-ladder",
             "components.specimen-player",
@@ -204,6 +216,18 @@
     {
       "leaf": "components.chart-line",
       "basis": "register \u00a720 H4c (planner, 2026-11-06): not consumed today (consumed-only rule); no fill is required while parked"
+    },
+    {
+      "leaf": "components.color-picker",
+      "basis": "foundry-build-0035 (IA audit 2026-11-16 P15, owner-approved 2026-11-16): not consumed today (consumed-only rule); no fill is required while parked"
+    },
+    {
+      "leaf": "components.rich-text",
+      "basis": "foundry-build-0035 (IA audit 2026-11-16 P15, owner-approved 2026-11-16): not consumed today (consumed-only rule); no fill is required while parked"
+    },
+    {
+      "leaf": "components.tree",
+      "basis": "foundry-build-0035 (IA audit 2026-11-16 P15, owner-approved 2026-11-16): not consumed today (consumed-only rule); no fill is required while parked"
     }
   ]
 }

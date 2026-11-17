@@ -20,16 +20,17 @@ export interface LeafFreezeFinding {
   message: string;
 }
 
-// Explicit local additions do not alter or ratify the original signed baseline.
+// Explicit local additions do not alter the original signed baseline. The owner ratified them on 2026-11-07
+// (foundry-build-0035, audit P24), so the amendment is owner-signed and records that date.
 if (componentAmendments.schemaVersion !== 1 || componentAmendments.layer !== "components" ||
     componentAmendments.baseSignedHead !== components.signedHead ||
-    componentAmendments.status !== "pending-owner-ratification" ||
+    componentAmendments.status !== "owner-signed" || componentAmendments.ratifiedAt !== "2026-11-07" ||
     new Set(componentAmendments.addedLeafIds).size !== componentAmendments.addedLeafIds.length ||
     componentAmendments.addedLeafIds.some(id => !id.startsWith("components.") || components.leafIds.includes(id))) {
   throw new Error("LEAF_FREEZE: invalid explicit component amendment");
 }
 // The owner-signed specimen amendment (2026-11-05) adds only components.specimen-* leaves, disjoint from
-// the signed baseline and the pending component amendment.
+// the signed baseline and the ratified component amendment.
 if (specimenAmendments.schemaVersion !== 1 || specimenAmendments.layer !== "components" ||
     specimenAmendments.baseSignedHead !== components.signedHead ||
     specimenAmendments.status !== "owner-signed" || specimenAmendments.prefix !== "components.specimen-" ||
@@ -46,9 +47,10 @@ if (assetAmendments.schemaVersion !== 1 || assetAmendments.layer !== "assets" ||
     assetAmendments.addedLeafIds.some(id => !id.startsWith("assets.") || assets.leafIds.includes(id))) {
   throw new Error("LEAF_FREEZE: invalid explicit asset amendment");
 }
-// Draft icon additions do not inherit the separate Media signature.
+// The icon addition does not inherit the separate Media signature; the owner ratified it on 2026-11-07 (audit P24).
 if (draftAssetAmendments.schemaVersion !== 1 || draftAssetAmendments.layer !== "assets" ||
-    draftAssetAmendments.baseSignedHead !== assets.signedHead || draftAssetAmendments.status !== "pending-owner-ratification" ||
+    draftAssetAmendments.baseSignedHead !== assets.signedHead || draftAssetAmendments.status !== "owner-signed" ||
+    draftAssetAmendments.ratifiedAt !== "2026-11-07" ||
     new Set(draftAssetAmendments.addedLeafIds).size !== draftAssetAmendments.addedLeafIds.length ||
     draftAssetAmendments.addedLeafIds.some(id => !id.startsWith("assets.") || assets.leafIds.includes(id) || assetAmendments.addedLeafIds.includes(id))) {
   throw new Error("LEAF_FREEZE: invalid draft asset amendment");
