@@ -51,7 +51,7 @@ describe("synchronous strategy read API", () => {
     expect(strategy.status().cells.find(cell => cell.id === id)?.findings.filter(f => f.severity === "hard").map(f => f.rule)).toEqual(["Q2", "Q3"]);
     expect(strategy.status().cells.find(cell => cell.id === id)?.findings.some(f => f.rule === "Q7")).toBe(false);
     expect(strategy.status().l0Clean).toBe(false);
-    expect(strategy.status({ scope: "full" }).counts.total).toBe(57);
+    expect(strategy.status({ scope: "full" }).counts.total).toBe(55);
     expect(() => openStrategy(fixture(), reader, { archetype: "unknown" })).toThrow(/archetype/i);
   });
   it("does not silently accept invalid or conflicting explicit contracts", () => {

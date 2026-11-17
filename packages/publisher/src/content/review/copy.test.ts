@@ -23,6 +23,17 @@ describe("DG-1 copy and locale Review", () => {
     section(input).fields.push(field("subtitle", "en", "Sample"), field("subtitle", "fr", "Exemple"));
     expect(copyFindings(input)).toEqual([]);
   });
+  it("accepts the current Designer DG-1 field role and ICU bindings, and refuses an unknown role or key", () => {
+    const schema = (input: Fixture) => registration(input).copy!.fields[0]! as Record<string, unknown>;
+    const valid = reviewInput(); schema(valid).role = "heading";
+    expect(copyFindings(valid)).toEqual([]);
+    const icu = reviewInput(); Object.assign(schema(icu), { role: "heading", kind: "icu", bindings: ["brand"] });
+    expect(copyFindings(icu).some(f => f.rule === "invalid-copy-schema")).toBe(false);
+    for (const change of [{ role: "headline" }, { role: 1 }, { bindings: ["brand"] }, { kind: "icu", bindings: [] }, { kind: "icu", bindings: ["Brand name"] }, { kind: "icu", bindings: ["brand", "brand"] }, { tone: "warm" }]) {
+      const input = reviewInput(); Object.assign(schema(input), change);
+      expect(copyFindings(input).some(f => f.rule === "invalid-copy-schema"), JSON.stringify(change)).toBe(true);
+    }
+  });
   it("counts maxLength in Unicode code points at the exact boundary", () => {
     const input = reviewInput(); section(input).fields[0]!.value = "😀".repeat(12);
     expect(copyFindings(input)).toEqual([]);

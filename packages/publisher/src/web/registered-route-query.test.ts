@@ -117,7 +117,9 @@ describe("one stateless fixed Designer materializer", () => {
     const sources = await registeredDesignerQuerySources();
     expect(sources.implementation.source.entry).toBe("studio/designer-layer-boards.js");
     // The whole fixed query closure, named file by file: pure catalog-core helpers plus the board model, no Studio session or React graph.
-    expect(Object.keys(sources.implementation.source.files).sort()).toEqual(["blocks/library-board/model.js", "catalog-core/body-substrate.js", "catalog-core/breakpoints.js", "catalog-core/digest.js", "catalog-core/runtime-ports.js", "catalog-core/runtime-snapshot-identity.js", "catalog-core/stable.js", "studio/designer-layer-boards.js"]);
+    // 70c7c56f9 (foundry-build-0007) moved the query to queries/; studio/designer-layer-boards.js is its one-line re-export stub until unit 0008.
+    expect(Object.keys(sources.implementation.source.files).sort()).toEqual(["blocks/library-board/model.js", "catalog-core/body-substrate.js", "catalog-core/breakpoints.js", "catalog-core/digest.js", "catalog-core/runtime-ports.js", "catalog-core/runtime-snapshot-identity.js", "catalog-core/stable.js", "queries/designer-layer-boards.js", "studio/designer-layer-boards.js"]);
+    expect(sources.implementation.source.files["studio/designer-layer-boards.js"]).not.toMatch(/\bfunction\b|=>/);
     expect(Object.keys(sources.implementation.source.files).some(file => /WholeStudio|react/.test(file))).toBe(false);
     expect(sources.provider.source.files["studio/WholeStudioProvider.js"]).toContain("useDesignerLayerBoardProjection");
     expect(sources.implementation.sourceHash).toBe(runtimeHash(sources.implementation.source));

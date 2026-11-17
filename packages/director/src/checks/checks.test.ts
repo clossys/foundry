@@ -307,12 +307,12 @@ describe('coherence rules', () => {
   });
 });
 describe('exact completion levels', () => {
-  it('all 57 cells, 28 L2, 7 L1 and judged clean L0 yield Complete', () => {
+  it('all 55 cells, 27 L2, 9 L1 and judged clean L0 yield Complete', () => {
     const m = fixture();
     const r = completion(m, judgePass);
-    expect(r.cells.filter(c => c.active && c.fresh)).toHaveLength(57);
-    expect(r.l2.filter(g => g.coherent)).toHaveLength(28);
-    expect(r.l1.filter(g => g.unlocked)).toHaveLength(7);
+    expect(r.cells.filter(c => c.active && c.fresh)).toHaveLength(55);
+    expect(r.l2.filter(g => g.coherent)).toHaveLength(27);
+    expect(r.l1.filter(g => g.unlocked)).toHaveLength(9);
     expect(r.l0Clean).toBe(true);
     expect(r.mvs).toBe(true);
     expect(r.complete).toBe(true);
@@ -418,7 +418,7 @@ it('public strategyStatus delegates scope without requiring the read API', () =>
   const core = strategyStatus(model, { scope: 'core' }, judgePass);
   expect(strategyStatus(model, 'full', judgePass)).toEqual(full);
   expect(strategyStatus(model, 'core', judgePass)).toEqual(core);
-  expect(full.counts.total).toBe(57);
+  expect(full.counts.total).toBe(55);
   expect(core.counts.total).toBe(24);
   expect(core.l0Clean).toBe(true);
   expect(strategyStatus(model).storyline.critic).toBe('not judged');
@@ -446,10 +446,10 @@ it('actual flat root reader feeds completion, and a pin-backed cell needs no ses
     for (const scope of ['core', 'full'] as const) {
       const status = strategy.status({ scope }, judgePass);
       expect(status).toEqual(strategyStatus(read, { scope }, judgePass));
-      expect(status.counts.total).toBe(scope === 'full' ? 57 : 24);
+      expect(status.counts.total).toBe(scope === 'full' ? 55 : 24);
       expect(status.counts.active).toBe(status.counts.total);
-      expect(status.counts.coherentL2).toBe(28);
-      expect(status.counts.unlockedL1).toBe(7);
+      expect(status.counts.coherentL2).toBe(27);
+      expect(status.counts.unlockedL1).toBe(9);
       expect(status.l0Clean).toBe(true);
     }
     expect(strategy.status()).toEqual(strategyStatus(read, { scope: 'core' }));

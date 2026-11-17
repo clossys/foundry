@@ -1,17 +1,33 @@
 import { isContentLocale } from "../vocabulary.js";
 import { resolveCopy } from "../composition.js";
+import type { SectionCopyField } from "@clossys/designer/catalog";
 import type { ReviewContext, ReviewCopySchema, ReviewSectionRegistration } from "./types.js";
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const exact = (value: Record<string, unknown>, keys: readonly string[]) => Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
 const schemaKey = /^[a-z][a-zA-Z0-9-]*(?:\[\])?(?:\.[a-z][a-zA-Z0-9-]*(?:\[\])?)*$/;
+/** Closed Writer role list of the DG-1 field (Designer check/copy-fields-role.ts). The type
+ * assertions below fail the build when Designer adds or drops a role; no runtime import. */
+const COPY_ROLES = ["eyebrow", "heading", "lead", "body", "action", "label", "alt"] as const satisfies readonly SectionCopyField["role"][];
+type Same<A, B> = [A] extends [B] ? [B] extends [A] ? true : false : false;
+const rolesMatchDesigner: Same<(typeof COPY_ROLES)[number], SectionCopyField["role"]> = true;
+void rolesMatchDesigner;
+const bindingName = /^[a-z][a-zA-Z0-9]*$/;
+/** DG-1 field keys: the five base keys, plus the Designer role and optional Director bindings (ICU fields only). */
+function fieldShape(field: Record<string, unknown>): boolean {
+  const optional = ["role", "bindings"].filter(key => Object.hasOwn(field, key));
+  if (!exact(field, ["key", "kind", "required", "maxLength", "dir", ...optional])) return false;
+  if (Object.hasOwn(field, "role") && !(COPY_ROLES as readonly unknown[]).includes(field.role)) return false;
+  if (Object.hasOwn(field, "bindings") && (field.kind !== "icu" || !Array.isArray(field.bindings) || !field.bindings.length || field.bindings.some(name => typeof name !== "string" || !bindingName.test(name)) || new Set(field.bindings).size !== field.bindings.length)) return false;
+  return true;
+}
 
 /** Validate the supplied DG-1 snapshot; Designer is never a runtime dependency. */
 function validSchema(value: unknown): value is ReviewCopySchema {
   if (!object(value) || !exact(value, ["sourceLocale", "fields"]) || !isContentLocale(value.sourceLocale) || !Array.isArray(value.fields)) return false;
   const keys = new Set<string>();
   for (const field of value.fields) {
-    if (!object(field) || !exact(field, ["key", "kind", "required", "maxLength", "dir"])
+    if (!object(field) || !fieldShape(field)
       || typeof field.key !== "string" || !schemaKey.test(field.key) || keys.has(field.key)
       || !["plain", "rich", "icu"].includes(field.kind as string) || typeof field.required !== "boolean"
       || !["ltr", "rtl", "auto"].includes(field.dir as string) || !object(field.maxLength)
