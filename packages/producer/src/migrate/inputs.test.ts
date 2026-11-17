@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { flatConsumer, int2Consumer } from "../cli/__fixtures__/flat-consumer.js";
+import { flatConsumer, legacyTreeConsumer } from "../cli/__fixtures__/flat-consumer.js";
 import { runCli } from "../cli/main.js";
 import { readiness } from "../records/slots.js";
 import { DESIGN_BRIEF_INPUTS } from "../records/slot-model/design-brief-inputs.js";
@@ -11,11 +11,11 @@ import { applyInputsMigration, planInputsMigration } from "./inputs.js";
 const BRIEF = DESIGN_BRIEF_INPUTS.map(([, id]) => id as string);
 
 /**
- * A copy of the int2 fixture consumer with two slots put back to undeclared inputs. The Writer slot is one the old and
+ * A copy of the legacy-tree fixture consumer with two slots put back to undeclared inputs. The Writer slot is one the old and
  * the current Writer tree both place (lexicon.person), so the installed catalog still holds its read graph.
  */
 function undeclaredConsumer() {
-  const root = flatConsumer(["director", "designer", "writer"], int2Consumer);
+  const root = flatConsumer(["director", "designer", "writer"], legacyTreeConsumer);
   const consumer = join(root, "clossys");
   const designer = join(consumer, "agents", "designer", "sections.cards", "slot.json");
   const writer = join(consumer, "agents", "writer", "lexicon.person", "slot.json");

@@ -1,7 +1,7 @@
 /**
  * `clossys migrate recut` on a nested consumer (foundry-build-0030): slot folders sit under group folders at any
  * depth below `agents/<agent>/` and are found by their slot.json. The layout is built in tmp from
- * test-fixtures/consumer-int2 (folders only regrouped, no new text); the page candidate is the install fixture's
+ * test-fixtures/consumer-legacy-tree (folders only regrouped, no new text); the page candidate is the install fixture's
  * clossys.page/1 record.
  */
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -29,7 +29,7 @@ interface World { root: string; consumer: string; agent: (agent: string, ...rest
 function world(): World {
   const root = mkdtempSync(join(tmpdir(), "recut-nested-"));
   roots.push(root);
-  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer-int2", "clossys"), join(root, "clossys"), { recursive: true });
+  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer-legacy-tree", "clossys"), join(root, "clossys"), { recursive: true });
   const consumer = join(root, "clossys");
   return { root, consumer, agent: (agent, ...rest) => join(consumer, "agents", agent, ...rest) };
 }

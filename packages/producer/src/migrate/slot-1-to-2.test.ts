@@ -26,7 +26,7 @@ function tree(dir: string): Record<string, string> {
   return out;
 }
 
-describe("migrate slot-1-to-2 on a copy of test-fixtures/consumer-int2", () => {
+describe("migrate slot-1-to-2 on a copy of test-fixtures/consumer-legacy-tree", () => {
   it("rewrites every slot/1 with a slot/2 kind, leaves seats, and never touches the fixture", () => {
     const original = tree(CONSUMER);
     const ws = consumerCopy();

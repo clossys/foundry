@@ -1,5 +1,5 @@
 /**
- * `clossys migrate recut` on a tmp copy of test-fixtures/consumer-int2. The candidates and the library cell are
+ * `clossys migrate recut` on a tmp copy of test-fixtures/consumer-legacy-tree. The candidates and the library cell are
  * built in tmp from package default candidates (shape only, no new text).
  */
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -29,7 +29,7 @@ afterEach(() => { if (root) rmSync(root, { recursive: true, force: true }); root
 interface World { root: string; consumer: string; agent: (agent: string, ...rest: string[]) => string; put: (path: string, bytes: string) => void }
 function world(): World {
   root = mkdtempSync(join(tmpdir(), "recut-"));
-  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer-int2", "clossys"), join(root, "clossys"), { recursive: true });
+  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer-legacy-tree", "clossys"), join(root, "clossys"), { recursive: true });
   const consumer = join(root, "clossys");
   const put = (path: string, bytes: string) => { mkdirSync(join(path, ".."), { recursive: true }); writeFileSync(path, bytes); };
   return { root, consumer, agent: (agent, ...rest) => join(consumer, "agents", agent, ...rest), put };
@@ -100,7 +100,7 @@ describe("migrate recut: plan", () => {
   });
 
   it("follows a retired id to the live leaf its target names", () => {
-    const tables = packageTables(join(PRODUCER_ROOT, "test-fixtures", "consumer-int2"));
+    const tables = packageTables(join(PRODUCER_ROOT, "test-fixtures", "consumer-legacy-tree"));
     for (const agent of RECUT_AGENTS) for (const [id, target] of tables[agent].retired) {
       expect(tables[agent].live.has(id)).toBe(false);
       if (target !== undefined) expect(tables[agent].live.has(target)).toBe(true);

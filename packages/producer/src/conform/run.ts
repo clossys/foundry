@@ -5,7 +5,7 @@
  */
 import { readFileSync } from "node:fs";
 import { ASSERTIONS, type Judgement } from "./assertions.js";
-import { judgeDogfood, readProbeFacts, type DogfoodRow, type ProbeFacts } from "./dogfood.js";
+import { judgeDogfood, type DogfoodRow, type ProbeFacts } from "./dogfood.js";
 import type { ConformModel } from "./model.js";
 
 export interface AssertionEntry { readonly id: string; readonly lens: string; readonly statement: string; readonly check: string; readonly status: string; readonly enforcedFor: readonly string[] }
@@ -25,14 +25,15 @@ export function cellOf(id: string, label: string, judgement: Judgement): Cell {
   return { id, label, red: vacuous || judgement.rows.length > 0, vacuous, rows: vacuous ? [...judgement.rows, "vacuous: nothing to judge (empty is red)"] : judgement.rows, evidence: judgement.evidence };
 }
 
-export function conform(model: ConformModel, registry: Registry = readRegistry(), facts: ProbeFacts = readProbeFacts(model)): ConformReport {
+/** `facts` comes from readProbeFacts (dogfood.ts), which runs the real verbs on temporary copies; a test passes its own. */
+export function conform(model: ConformModel, registry: Registry, facts: ProbeFacts): ConformReport {
   const agents = model.agents.map(agent => {
     // An agent with no valid adapter is uncovered: every assertion is red with the adapter issues as its rows.
     const uncovered = agent.adapter === undefined;
     const cells = registry.assertions.map(entry => {
       const fn = ASSERTIONS[entry.id];
       const judgement: Judgement = uncovered ? { rows: agent.adapterIssues.map(issue => `uncovered: ${issue}`), evidence: 0 }
-        : fn ? fn(agent, model) : { rows: [`no assertion function for ${entry.id}`], evidence: 0 };
+        : fn ? fn(agent, model, facts) : { rows: [`no assertion function for ${entry.id}`], evidence: 0 };
       return cellOf(entry.id, `${entry.lens}  ${entry.statement}`, judgement);
     });
     const dogfood = registry.dogfood.filter(row => row.agent === agent.agent).map(row =>

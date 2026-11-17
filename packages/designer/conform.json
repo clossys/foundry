@@ -55,11 +55,30 @@
   ],
   "derive": [],
   "edgeFiles": [
-    "src/catalog/slot-contracts/themes.json",
-    "src/catalog/slot-contracts/assets.json",
-    "src/catalog/slot-contracts/components.json",
-    "src/catalog/slot-contracts/sections.json",
-    "src/catalog/slot-contracts/frames.json"
+    {
+      "file": "src/catalog/slot-contracts/themes.json",
+      "format": "slot-contracts"
+    },
+    {
+      "file": "src/catalog/slot-contracts/assets.json",
+      "format": "slot-contracts"
+    },
+    {
+      "file": "src/catalog/slot-contracts/components.json",
+      "format": "slot-contracts"
+    },
+    {
+      "file": "src/catalog/slot-contracts/sections.json",
+      "format": "slot-contracts"
+    },
+    {
+      "file": "src/catalog/slot-contracts/frames.json",
+      "format": "slot-contracts"
+    },
+    {
+      "file": "src/catalog/reports/usage-graph.json",
+      "format": "usage-graph"
+    }
   ],
   "skill": "skill/SKILL.md",
   "skills": {

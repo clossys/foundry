@@ -1,7 +1,7 @@
 /**
  * `clossys slot <ref> --json` (clossys.slot-view/1, system.md 12.3; parity step 2 of 14.4).
  *
- * Parity runs on a temporary copy of the int2 fixture consumer (test-fixtures/consumer-int2) with
+ * Parity runs on a temporary copy of the int2 fixture consumer (test-fixtures/consumer-legacy-tree) with
  * synthetic candidates and pins added to one slot per agent that has slots there. Synthetic test
  * data only; never a consumer's copy.
  */
@@ -20,7 +20,7 @@ import { validateAgainst, type JsonSchema } from "../records/schema.js";
 import { formatRef, parseRef, RefError } from "./ref.js";
 import { slotView, SlotViewError, type SlotView } from "./slot.js";
 
-const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer-int2", import.meta.url));
+const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer-legacy-tree", import.meta.url));
 const TALLYHOUSE = fileURLToPath(new URL("../../test-fixtures/tallyhouse", import.meta.url));
 const SCHEMA = JSON.parse(readFileSync(fileURLToPath(new URL("../../schemas/slot-view.json", import.meta.url)), "utf8")) as JsonSchema;
 const roots: string[] = [];

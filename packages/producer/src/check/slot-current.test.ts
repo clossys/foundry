@@ -1,6 +1,6 @@
 /**
  * foundry-build-0031: `clossys check` judges a recut consumer (clossys.slot/2). Synthetic: a tmp copy of
- * test-fixtures/consumer-int2, recut in tmp, then the slot resolve that `clossys check` runs.
+ * test-fixtures/consumer-legacy-tree, recut in tmp, then the slot resolve that `clossys check` runs.
  */
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -29,7 +29,7 @@ afterEach(() => { if (root) rmSync(root, { recursive: true, force: true }); root
 function recut() {
   root = mkdtempSync(join(tmpdir(), "check-current-"));
   const consumer = join(root, "clossys");
-  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer-int2", "clossys"), consumer, { recursive: true });
+  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer-legacy-tree", "clossys"), consumer, { recursive: true });
   const slot = join(consumer, "agents", "director", "advantage.proposition.promise", "slot.json");
   const before = readFileSync(slot, "utf8");
   applyRecut(planRecut(root, { at: AT }));

@@ -17,10 +17,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const entry = resolve(here, "../../../dist/cli/index.js");
 export const repoConsumer = consumerPath();
 /**
- * The int2 fixture consumer's clossys/ as it was before `clossys migrate recut` moved test-fixtures/consumer to the
+ * The fixture consumer's clossys/ on the old Writer tree, as it was before `clossys migrate recut` moved test-fixtures/consumer to the
  * current tree (foundry-build-0048 U2): the input of the tests that migrate a legacy store.
  */
-export const int2Consumer = resolve(here, "../../../test-fixtures/consumer-int2/clossys");
+export const legacyTreeConsumer = resolve(here, "../../../test-fixtures/consumer-legacy-tree/clossys");
 
 /** A temp root whose `clossys/` holds copies of the named agents' slot folders (from the repository consumer by default). */
 export function flatConsumer(agents: readonly SlotAgent[], from: string = repoConsumer): string {

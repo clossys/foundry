@@ -9,7 +9,7 @@
  * It creates a missing fixture only. An existing one is refreshed from the package with
  * `clossys ia sync --root <dir>`, which keeps its decisions; a package tree change (a recut) moves it with
  * `clossys migrate recut --apply --root <dir>`, as foundry-build-0048 U2 moved it to the Writer Voice/Prose/Copy
- * tree. test-fixtures/consumer-int2 keeps the store as it was before that move, for the migration tests.
+ * tree. test-fixtures/consumer-legacy-tree keeps the store as it was before that move, for the migration tests.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";

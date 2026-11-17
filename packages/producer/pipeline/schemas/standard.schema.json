@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://clossys.com/schemas/producer/standard.schema.json",
   "title": "Standard requirements (packages/<agent>/standards/<id>/requirements.json)",
-  "description": "The judge of one slot kind or answer shape (R15.2, slot-constitution.md section 3). Read by src/records/standards.ts. mode adopt-first carries createGaps (the gap classes a create may name, R03.5); a craft standard has none. Only Designer standards list seeds (R15.9, checked in code against the agent policy.json). Requirements name criteria registered under src/constitution/criteria/*/index.json (R15.3); counts the validator cannot express (seed registries, criterion ids) are checked in code. preview.card (optional here, foundry-feedback-0014 SC-0) is the kind's slot-card preview contract that R18.13 requires of every standard: method inline (rendered from candidate data, intrinsicWidth null) or frame (an iframe of /__specimen at intrinsicWidth px, scaled and top-cropped to the 4:3 box); mustContain CSS selectors (R18.15); states from the shared five-state set. Method/width pairing and duplicate entries are checked in code.",
+  "description": "The judge of one slot kind or answer shape (R15.2, slot-constitution.md section 3). Read by src/records/standards.ts. mode adopt-first carries createGaps (the gap classes a create may name, R03.5); a craft standard has none. Only Designer standards list seeds (R15.9, checked in code against the agent policy.json). createOnly (const true, with a non-empty createOnlyReason; the two come together; only on a craft standard, never adopt-first; with seeds empty, expressed as not minItems 1 since the validator reads no maxItems) marks a standard whose slots have no seed and no package default: every candidate is created, and the reason says why (R15, K2). Requirements name criteria registered under src/constitution/criteria/*/index.json (R15.3); counts the validator cannot express (seed registries, criterion ids) are checked in code. preview.card (optional here, foundry-feedback-0014 SC-0) is the kind's slot-card preview contract that R18.13 requires of every standard: method inline (rendered from candidate data, intrinsicWidth null) or frame (an iframe of /__specimen at intrinsicWidth px, scaled and top-cropped to the 4:3 box); mustContain CSS selectors (R18.15); states from the shared five-state set. Method/width pairing and duplicate entries are checked in code.",
   "type": "object",
   "required": [
     "schema",
@@ -50,6 +50,14 @@
         "pattern": "^\\S+$"
       }
     },
+    "createOnly": {
+      "const": true
+    },
+    "createOnlyReason": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
     "createGaps": {
       "type": "array",
       "items": {
@@ -76,7 +84,12 @@
       },
       "required": [
         "createGaps"
-      ]
+      ],
+      "not": {
+        "required": [
+          "createOnly"
+        ]
+      }
     },
     {
       "properties": {
@@ -168,5 +181,36 @@
         }
       }
     }
-  }
+  },
+  "anyOf": [
+    {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "createOnly"
+            ]
+          },
+          {
+            "required": [
+              "createOnlyReason"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "required": [
+        "createOnly",
+        "createOnlyReason"
+      ],
+      "properties": {
+        "seeds": {
+          "not": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
 }

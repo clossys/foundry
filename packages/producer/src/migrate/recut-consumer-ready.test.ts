@@ -1,6 +1,6 @@
 /**
  * foundry-build-0031: after `clossys migrate recut --apply` the consumer is one `clossys check` can judge.
- * Synthetic: a tmp copy of test-fixtures/consumer-int2, seeded in tmp with package default bodies (shape only).
+ * Synthetic: a tmp copy of test-fixtures/consumer-legacy-tree, seeded in tmp with package default bodies (shape only).
  */
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -26,7 +26,7 @@ afterEach(() => { if (root) rmSync(root, { recursive: true, force: true }); root
 
 function world() {
   root = mkdtempSync(join(tmpdir(), "recut-ready-"));
-  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer-int2", "clossys"), join(root, "clossys"), { recursive: true });
+  cpSync(join(PRODUCER_ROOT, "test-fixtures", "consumer-legacy-tree", "clossys"), join(root, "clossys"), { recursive: true });
   const consumer = join(root, "clossys");
   const agent = (name: string, ...rest: string[]) => join(consumer, "agents", name, ...rest);
   const put = (path: string, bytes: string) => { mkdirSync(join(path, ".."), { recursive: true }); writeFileSync(path, bytes); };

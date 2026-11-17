@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { flatConsumer, int2Consumer, repoConsumer, snapshot } from "../cli/__fixtures__/flat-consumer.js";
+import { flatConsumer, legacyTreeConsumer, repoConsumer, snapshot } from "../cli/__fixtures__/flat-consumer.js";
 import { runCli } from "../cli/main.js";
 import { sha256Hex } from "../records/hash.js";
 import { writerRecords } from "../records/slot-check.js";
@@ -16,7 +16,7 @@ const RENAMED = ["page.previous-label", "page.next-label", "page.page-text", "pa
  * matches those legacy bytes.
  */
 function legacyConsumer() {
-  const root = flatConsumer(["designer", "writer"], int2Consumer);
+  const root = flatConsumer(["designer", "writer"], legacyTreeConsumer);
   const consumer = join(root, "clossys");
   const designer = join(consumer, "agents", "designer", "sections.pagination", "slot.json");
   const writerDir = join(consumer, "agents", "writer", "passages.pagination");

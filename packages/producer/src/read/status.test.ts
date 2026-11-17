@@ -10,7 +10,7 @@ import { runStatusCli } from "../cli/status.js";
 import { validateAgainst, type JsonSchema } from "../records/schema.js";
 import { agentCensus, SLOT_STATES, STATUS_AGENTS, statusView } from "./status.js";
 
-const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer-int2", import.meta.url));
+const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer-legacy-tree", import.meta.url));
 const SLOT = "advantage.defensibility.moat";
 let root: string;
 

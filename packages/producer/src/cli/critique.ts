@@ -17,6 +17,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { manifestIssues } from "../constitution/rules/r16.js";
+import { packagePath } from "../package-path.js";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { SEAT_AGENT, SLOT_AGENTS, SLOT_ID, seatStepOf, type ModelAgent } from "../records/slot-model/index.js";
 import { readModelBytes, readSlotEntry } from "../records/slots.js";
@@ -72,6 +73,15 @@ const sha = (bytes: Buffer | string) => createHash("sha256").update(bytes).diges
 const refused = (verb: string, message: string): CliResult => ({ exitCode: 1, message: `${verb} refused: ${message}` });
 const posixRelative = (root: string, path: string) => relative(root, path).split("\\").join("/");
 
+/** The package ref of a standard folder (`packages/<agent>/standards/<id>`), as packets and records cite it. */
+export const standardRef = (agent: string, standard: string): string => `packages/${agent}/standards/${standard}`;
+
+/**
+ * Where critique-packet reads a standard's taste.md for `root`: the workspace's own packages/ folder when it
+ * has one (the Foundry repository, a test world), else the installed @clossys/<agent> package (a consumer).
+ */
+export const standardTastePath = (root: string, agent: string, standard: string): string => packagePath(root, `${standardRef(agent, standard)}/taste.md`);
+
 /** One packet item: what the critic sees under `label` (renders) or `role`. */
 export interface PacketItem { readonly role: "taste" | "exemplar" | "contract" | "render"; readonly ref: string; readonly sha256?: string; readonly label?: string }
 
@@ -88,16 +98,18 @@ export async function runCritiquePacketCli(argv: readonly string[], cwd: string)
   const entry = readSlotEntry(consumer, agent, slot);
   if (!entry) return refused("critique-packet", `unknown slot ${agent}/${slot} (not in ${agent} ia.json)`);
   const slotDir = posixRelative(root, entry.dir);
-  const base = `packages/${agent}/standards/${standard}`;
-  const taste = join(root, base, "taste.md");
+  // The packet cites the standard by its package ref; the bytes come from wherever that ref resolves
+  // for this root: the workspace's own packages/ folder, else the installed @clossys/<agent> package.
+  const base = standardRef(agent, standard);
+  const taste = standardTastePath(root, agent, standard);
   if (!existsSync(taste)) return refused("critique-packet", `${base}/taste.md is missing: a packet carries the standard's taste`);
   const given = flags.values.get("--exemplar") ?? [];
-  const folder = join(root, base, "exemplars");
+  const folder = packagePath(root, `${base}/exemplars`);
   const exemplars = given.length ? given : existsSync(folder) ? readdirSync(folder).sort().map(name => `${base}/exemplars/${name}`) : [];
   if (exemplars.length > PACKET_EXEMPLARS && given.length) return refused("critique-packet", `${given.length} exemplars; a packet carries at most ${PACKET_EXEMPLARS}`);
   const items: PacketItem[] = [
     { role: "taste", ref: `${base}/taste.md`, sha256: sha(readFileSync(taste)) },
-    ...exemplars.slice(0, PACKET_EXEMPLARS).map(ref => ({ role: "exemplar" as const, ref, ...(/^https?:\/\//.test(ref) || !existsSync(join(root, ref)) ? {} : { sha256: sha(readFileSync(join(root, ref))) }) })),
+    ...exemplars.slice(0, PACKET_EXEMPLARS).map(ref => ({ role: "exemplar" as const, ref, ...(/^https?:\/\//.test(ref) || !existsSync(packagePath(root, ref)) ? {} : { sha256: sha(readFileSync(packagePath(root, ref))) }) })),
     { role: "contract", ref: `${slotDir}/slot.json#contract`, sha256: sha(readModelBytes(join(entry.dir, "slot.json"))) },
   ];
   const seen = new Set<string>();

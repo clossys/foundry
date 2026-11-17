@@ -24,10 +24,20 @@ export interface Adapter {
   readonly defaults: readonly string[];
   readonly recipes: readonly { readonly dir: string; readonly fixture?: { readonly output: string; readonly slot: string } }[];
   readonly derive: readonly { readonly module: string }[];
-  readonly edgeFiles: readonly string[];
+  readonly edgeFiles: readonly EdgeFile[];
   readonly skill: string;
   readonly skills: Readonly<Record<LoopName, string | null>>;
 }
+
+/** A package file of declared edges (adapter.schema.json edgeFiles). */
+export interface EdgeFile { readonly file: string; readonly format: "slots" | "slot-contracts" | "usage-graph"; readonly feedsTo?: ConformAgent }
+
+/**
+ * One dependency edge. `target` is the agent a bare `to` resolves against (else the source agent and its
+ * upstream agents, never just any agent); `scope` package edges resolve in package trees only, placed edges
+ * also in the consumer's placed slots.
+ */
+export interface Edge { readonly from: string; readonly to: string; readonly target?: string; readonly scope: "package" | "placed" }
 
 export interface TreeL2 { readonly id: string; readonly parked: boolean; readonly leaves: readonly string[] }
 export interface TreeL1 { readonly id: string; readonly parked: boolean; readonly l2: readonly TreeL2[] }
@@ -68,12 +78,16 @@ export interface AgentModel {
   /** Slot folders under the consumer's `agents/<agent>/`. */
   readonly folders: readonly string[];
   readonly live: readonly LiveSlot[];
+  /** Package-tree leaves the consumer has not placed, from the tree's own slot data (S4 judges both trees together). */
+  readonly packageOnly: readonly LiveSlot[];
+  /** The L2 each placed or package leaf sits under (`<l1>/<l2>`). */
+  readonly l2Of: ReadonlyMap<string, string>;
   readonly defaults: ReadonlySet<string>;
   readonly standards: readonly Standard[];
   readonly recipes: readonly { readonly dir: string; readonly exists: boolean; readonly fixture?: { readonly output: string; readonly slot: string; readonly value?: unknown } }[];
   readonly derive: readonly { readonly module: string; readonly text?: string }[];
   readonly hasDeriveDir: boolean;
-  readonly edges: readonly { readonly from: string; readonly to: string }[];
+  readonly edges: readonly Edge[];
   readonly actions: readonly { readonly id: string; readonly reads: readonly string[] }[];
   readonly skillText?: string;
   readonly skills: readonly { readonly loop: LoopName; readonly path: string | null; readonly exists: boolean; readonly registered: boolean }[];
@@ -95,8 +109,10 @@ export interface ConformModel {
   readonly consumer: string;
   readonly agents: readonly AgentModel[];
   readonly machinery: Machinery;
-  /** Every live id per agent, for edge resolution. */
+  /** Every live id per agent (placed, or the package tree when nothing is placed), for placed-edge resolution. */
   readonly liveIds: ReadonlyMap<string, ReadonlySet<string>>;
+  /** Every package-tree leaf per agent (the producer: its placed seats), for package-edge resolution. */
+  readonly packageIds: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
@@ -108,6 +124,38 @@ function json(path: string): unknown {
   try { return JSON.parse(readFileSync(path, "utf8")); } catch { return undefined; }
 }
 const text = (path: string): string | undefined => existsSync(path) ? readFileSync(path, "utf8") : undefined;
+
+/** The agents upstream of one, in pipeline order: a bare id resolves against the agent itself and these only. */
+export const upstreamOf = (agent: string): string[] => {
+  const at = (CONFORM_AGENTS as readonly string[]).indexOf(agent);
+  return at < 0 ? [] : CONFORM_AGENTS.slice(0, at);
+};
+
+/** A package leaf's own slot data as a slot: `inputs` as ids or `{to}` rows, the contract nested or flat. */
+function packageSlot(id: string, data: Record<string, unknown>): LiveSlot {
+  const contract = object(data.contract) ? data.contract : data;
+  return {
+    id, source: "package", ...(typeof data.kind === "string" ? { kind: data.kind } : {}), contract,
+    inputs: strings(data.inputs).concat((Array.isArray(data.inputs) ? data.inputs : []).filter(object).map(item => String(item.to))),
+    uses: strings(data.uses), ...(typeof data.standard === "string" ? { standard: data.standard } : {}),
+    ...(data.family !== undefined ? { family: data.family } : {}), ledger: [],
+  };
+}
+
+/** Every path an adapter declares that does not exist: an adapter naming a missing file is invalid, never an empty set. */
+export function missingPaths(adapter: Adapter, repo: string, packageDir: string): string[] {
+  const at = (path: string) => existsSync(join(packageDir, path));
+  const declared: [string, boolean][] = [
+    ...adapter.trees.flatMap(tree => [[tree.file, at(tree.file)], ...(tree.freeze ? [[tree.freeze, at(tree.freeze)] as [string, boolean]] : [])] as [string, boolean][]),
+    ...adapter.defaults.map(dir => [dir, at(dir)] as [string, boolean]),
+    ...adapter.recipes.flatMap(recipe => [[recipe.dir, at(recipe.dir)], ...(recipe.fixture ? [[recipe.fixture.output, at(recipe.fixture.output)] as [string, boolean]] : [])] as [string, boolean][]),
+    ...adapter.derive.map(entry => [entry.module, at(entry.module)] as [string, boolean]),
+    ...adapter.edgeFiles.map(entry => [entry.file, at(entry.file)] as [string, boolean]),
+    [adapter.skill, at(adapter.skill)],
+    ...Object.values(adapter.skills).filter((path): path is string => path !== null).map(path => [path, existsSync(join(repo, path))] as [string, boolean]),
+  ];
+  return declared.filter(([, exists]) => !exists).map(([path]) => `conform.json declares ${path}, which does not exist`);
+}
 
 /** An agent-qualified slot ref (`designer/sections.hero`, or the `director:focus.segment.core` form). */
 export const SLOT_REF = /^(director|designer|writer|publisher|producer)[/:]([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
@@ -162,7 +210,8 @@ function readSkillHashes(repo: string): Set<string> {
 function readAgent(repo: string, consumer: string, agent: ConformAgent, standards: readonly Standard[], hashed: ReadonlySet<string>): AgentModel {
   const packageDir = join(repo, "packages", agent);
   const raw = json(join(packageDir, "conform.json"));
-  const issues = raw === undefined ? [`packages/${agent}/conform.json is missing or not JSON`] : adapterIssues(raw, agent);
+  const shapeIssues = raw === undefined ? [`packages/${agent}/conform.json is missing or not JSON`] : adapterIssues(raw, agent);
+  const issues = shapeIssues.length ? shapeIssues : missingPaths(raw as Adapter, repo, packageDir);
   const adapter = issues.length ? undefined : raw as Adapter;
   const trees: PackageTree[] = (adapter?.trees ?? []).map(entry => {
     const freezeDoc = entry.freeze ? json(join(packageDir, entry.freeze)) : undefined;
@@ -197,31 +246,37 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
   });
   if (!live.length) {
     // Nothing placed: the package tree's own slot data stands in, so the per-slot assertions still judge the package.
-    live = trees.flatMap(tree => slotLeaves(tree).map(id => {
-      const data = tree.slots[id] ?? {};
-      const contract = object(data.contract) ? data.contract : data;
-      return {
-        id, source: "package" as const, ...(typeof data.kind === "string" ? { kind: data.kind } : {}), contract,
-        inputs: strings(data.inputs).concat((Array.isArray(data.inputs) ? data.inputs : []).filter(object).map(item => String(item.to))),
-        uses: strings(data.uses), ...(typeof data.standard === "string" ? { standard: data.standard } : {}),
-        ...(data.family !== undefined ? { family: data.family } : {}), ledger: [],
-      };
-    }));
+    live = trees.flatMap(tree => slotLeaves(tree).map(id => packageSlot(id, tree.slots[id] ?? {})));
   }
   const defaults = new Set((adapter?.defaults ?? []).flatMap(dir => dirs(join(packageDir, dir))));
-  const edges: { from: string; to: string }[] = [];
+  const edges: Edge[] = [];
   for (const slot of live) {
-    for (const to of [...slot.inputs, ...slot.uses]) edges.push({ from: slot.id, to });
-    for (const to of refsIn(slot.contract)) edges.push({ from: slot.id, to });
+    const scope = slot.source;
+    for (const to of [...slot.inputs, ...slot.uses]) edges.push({ from: slot.id, to, scope });
+    for (const to of refsIn(slot.contract)) edges.push({ from: slot.id, to, scope });
   }
-  for (const file of adapter?.edgeFiles ?? []) {
-    const doc = json(join(packageDir, file));
-    // Either `{slots: [{id, inputs, feeds}]}` or a clossys.slot-contract/1 array `[{slot, inputs: [{name, kind}]}]`,
-    // whose slot-layer inputs (theme, asset, component, section, frame) are edges; props, data, cells and copy keys are not.
+  // The package trees' own slot data declares edges too, whatever the consumer placed.
+  if (live.some(slot => slot.source === "placed")) {
+    for (const tree of trees) for (const id of treeLeaves(tree)) {
+      const slot = packageSlot(id, tree.slots[id] ?? {});
+      for (const to of [...slot.inputs, ...slot.uses, ...refsIn(slot.contract)]) edges.push({ from: id, to, scope: "package" });
+    }
+  }
+  for (const entry of adapter?.edgeFiles ?? []) {
+    const doc = json(join(packageDir, entry.file));
+    if (entry.format === "usage-graph") {
+      // The package's usage graph: every edge stays within this agent.
+      for (const edge of (object(doc) && Array.isArray(doc.edges) ? doc.edges : []).filter(object)) edges.push({ from: String(edge.from), to: String(edge.to), target: agent, scope: "package" });
+      continue;
+    }
+    // slots: `{slots: [{id, inputs, feeds}]}`; slot-contracts: `[{slot, inputs: [{name, kind}]}]`, whose slot-layer
+    // inputs (theme, asset, component, section, frame) are edges; props, data, cells and copy keys are not.
     const rows = (Array.isArray(doc) ? doc : object(doc) && Array.isArray(doc.slots) ? doc.slots : []).filter(object);
     for (const row of rows) {
+      const from = String(row.id ?? row.slot);
       const named = (Array.isArray(row.inputs) ? row.inputs : []).filter(object).filter(input => SLOT_INPUT_KINDS.has(String(input.kind))).map(input => input.name).filter((name): name is string => typeof name === "string");
-      for (const to of [...strings(row.inputs), ...named, ...strings(row.feeds)]) edges.push({ from: String(row.id ?? row.slot), to });
+      for (const to of [...strings(row.inputs), ...named]) edges.push({ from, to, scope: "package" });
+      for (const to of strings(row.feeds)) edges.push({ from, to, target: entry.feedsTo ?? agent, scope: "package" });
     }
   }
   const actions = dirs(join(packageDir, "actions")).map(id => {
@@ -234,6 +289,11 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
     .filter(request => typeof request.requestedBy === "string" && request.requestedBy.startsWith(`${agent}/`)) : [];
   return {
     agent, packageDir, ...(adapter ? { adapter } : {}), adapterIssues: issues, trees, placedTree, folders, live, defaults,
+    packageOnly: trees.flatMap(tree => treeLeaves(tree).filter(id => !live.some(slot => slot.id === id)).map(id => packageSlot(id, tree.slots[id] ?? {}))),
+    l2Of: new Map([
+      ...trees.flatMap(tree => tree.l1.flatMap(l1 => l1.l2.flatMap(l2 => l2.leaves.map(id => [id, `${l1.id}/${l2.id}`] as [string, string])))),
+      ...placedTree.flatMap(l1 => l1.l2.flatMap(l2 => l2.slots.map(id => [id, `${l1.id}/${l2.id}`] as [string, string]))),
+    ]),
     standards: standards.filter(standard => standard.agent === agent),
     recipes: (adapter?.recipes ?? []).map(recipe => ({
       dir: recipe.dir, exists: existsSync(join(packageDir, recipe.dir, "recipe.json")),
@@ -282,11 +342,17 @@ export function readConformModel(repo: string, consumer: string, agents: readonl
   const standards = loadStandards(repo);
   const hashed = readSkillHashes(repo);
   const models = agents.map(agent => readAgent(repo, consumer, agent, standards, hashed));
-  const liveIds = new Map<string, Set<string>>();
-  // Edges resolve against every agent's live set, the producer's seats included (placed folders only).
+  const liveIds = new Map<string, Set<string>>(), packageIds = new Map<string, Set<string>>();
   for (const agent of [...CONFORM_AGENTS, "producer"] as const) {
-    const model = models.find(item => item.agent === agent);
-    liveIds.set(agent, new Set(model ? model.live.map(slot => slot.id) : agent === "producer" ? dirs(join(consumer, "agents/producer")) : readAgent(repo, consumer, agent as ConformAgent, standards, hashed).live.map(slot => slot.id)));
+    if (agent === "producer") {
+      // The producer has no package tree: its seats are the placed folders.
+      const seats = new Set(dirs(join(consumer, "agents/producer")));
+      liveIds.set(agent, seats); packageIds.set(agent, seats);
+      continue;
+    }
+    const model = models.find(item => item.agent === agent) ?? readAgent(repo, consumer, agent, standards, hashed);
+    liveIds.set(agent, new Set(model.live.map(slot => slot.id)));
+    packageIds.set(agent, new Set(model.trees.flatMap(treeLeaves)));
   }
-  return { repo, consumer, agents: models, machinery: readMachinery(repo), liveIds };
+  return { repo, consumer, agents: models, machinery: readMachinery(repo), liveIds, packageIds };
 }

@@ -23,7 +23,11 @@
   ],
   "derive": [],
   "edgeFiles": [
-    "src/slot-contracts/contracts.json"
+    {
+      "file": "src/slot-contracts/contracts.json",
+      "format": "slots",
+      "feedsTo": "writer"
+    }
   ],
   "skill": "skill/SKILL.md",
   "skills": {

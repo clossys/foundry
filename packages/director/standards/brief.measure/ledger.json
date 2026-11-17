@@ -36,6 +36,24 @@
         "requirements.json": "638e3b29c7fd668227b23c0adaca380a09c6e53b9e3a86402949c22ccfbf505f",
         "taste.md": "600eaafe97dece424f6dbb374f579e2b0a796931426ce5415bb54f490ad3f306"
       }
+    },
+    {
+      "op": "standard",
+      "at": "2026-11-17T19:00:00.000Z",
+      "by": "planner",
+      "verb": "standard",
+      "model": "none",
+      "tier": "none",
+      "standard": {
+        "agent": "director",
+        "id": "brief.measure",
+        "sha256": "ac8d7c9f54a098a160b7bf604612896cfbdc3284cbdf85b720394eb54419d222"
+      },
+      "files": {
+        "exemplars/exemplars.json": "478e120cbbdc3b2a5dd5dd190d762fa675cf4592e8d9931b1e8e475e524b4485",
+        "requirements.json": "497bfd27f7ff1ea83f406e91229ee709582acc7c91f518918417ede59f3ce677",
+        "taste.md": "600eaafe97dece424f6dbb374f579e2b0a796931426ce5415bb54f490ad3f306"
+      }
     }
   ]
 }
