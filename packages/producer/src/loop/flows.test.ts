@@ -25,7 +25,7 @@ import type { AgentId, LedgerEntry, QueueEntry, Slot } from "../records/types.js
 import { readPackageLoop } from "./files.js";
 import { raiseEntry } from "./route.js";
 import { cliHooks } from "./cli.js";
-import { stepArgv } from "./slots.js";
+import { MissingSkillError, skillFor, stepArgv } from "./slots.js";
 import { fillAll, ledgerDir, readRunState, resumeRun, runInit, runStatePath, runsDir, startRun, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks } from "./runner.js";
 import type { LoopName } from "./names.js";
 
@@ -278,13 +278,26 @@ describe("F3 tighten brief (T3) and F7 upstream cascade (T7)", () => {
     const refine = w.ledger("loop.refine")[0]!;
     expect(refine).toMatchObject({ trigger: { kind: "tighten-brief" }, loopVersion: "refine-v1.json" });
     expect(stepLine(refine)).toEqual(["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
-    expect(refine.steps.at(-1)!.wrote).toEqual([{ file: "designer/components.button/slot.json", sha256: null }]);
+    // G7: a code step's wrote carries the written file's real sha256 (formerly null for a non-candidate).
+    expect(refine.steps.at(-1)!.wrote).toEqual([{ file: "designer/components.button/slot.json", sha256: fileSha(join(w.root, "clossys", "agents", "designer", "components.button", "slot.json")) }]);
     expect(w.readSlot("designer/components.button").status).toBe("needs-refresh");
 
     const cascade = await startRun(w.root, { loop: "loop.refine", slot: "designer/components.button" }, hooks, { now });
     expect(cascade.state!.trigger.kind).toBe("upstream-cascade");
     expect(cascade.state!.status).toBe("done");
     expect(w.readSlot("designer/components.button").status).toBe("live");
+  });
+
+  it("G3: a declared refine-brief skill the agent package lacks stops the run (exit 2) naming it, never a packet without it", async () => {
+    const w = world(["designer/themes.background"]);
+    rmSync(join(w.root, "packages", "designer", "actions", "designer.brief", "skill.md"));
+    expect(() => skillFor(w.root, "packages/<agent>/actions/<agent>.brief/skill.md", "designer")).toThrow(MissingSkillError);
+    expect(skillFor(w.root, undefined, "designer")).toBeUndefined();
+    const hooks = stub(w.root);
+    const run = await startRun(w.root, { loop: "loop.refine", slot: "designer/themes.background" }, hooks, { now: clock() });
+    expect(run.exitCode).toBe(2);
+    expect(run.message).toContain("packages/designer/actions/designer.brief/skill.md");
+    expect(hooks.calls.filter(call => call.kind === "agent")).toEqual([]);
   });
 });
 
@@ -356,6 +369,24 @@ describe("F6 failed check (T6)", () => {
     ownerAnswer(w.root, refine.entry!, refine.entry!.startsWith("queue.pick") ? "placeholder-v1.json" : "approve", now);
     expect((await resumeRun(w.root, refine.state!.runId, hooks, { now })).state!.status).toBe("done");
     expect(w.entry(raised[0]!).status).toBe("answered");
+  });
+
+  it("G7: a built-in code step (route) appends its run record, and the ledger carries the sha256 of every file it wrote", async () => {
+    const w = world(["writer/passages.legal-prose"]);
+    writeFileSync(join(w.root, ".gitignore"), "/.clossys/runs/\n");
+    const findings = [{ check: "constitution.strict", subject: "writer/passages.legal-prose/slot.json", detail: "placeholder finding" }];
+    const run = await startRun(w.root, { loop: "loop.audit" }, stub(w.root, { codeFor: call => call.step === "strict" ? { exit: 1, findings } : undefined }), { now: clock() });
+    expect(run.state!.raised).toHaveLength(1);
+    const store = join(w.root, ".clossys", "runs", "loop.audit.route.jsonl");
+    expect(existsSync(store)).toBe(true);
+    const record = JSON.parse(readFileSync(store, "utf8").trim().split("\n").at(-1)!) as { schema: string; step: string; invocation: string; exit: number; writes: { path: string; sha256: string }[] };
+    expect(record).toMatchObject({ schema: "clossys.pipeline-run/1", step: "loop.audit.route", invocation: "check --route", exit: 0 });
+    const entry = `clossys/agents/producer/queue.fix/entries/${run.state!.raised[0]!.split("#")[1]}.json`;
+    const written = record.writes.find(row => row.path === entry);
+    expect(written?.sha256).toBe(fileSha(join(w.root, entry)));
+    const route = w.ledger("loop.audit")[0]!.steps.find(step => step.id === "route")!;
+    expect(route.wrote!.length).toBeGreaterThan(0);
+    for (const row of route.wrote!) expect(row.sha256).toMatch(/^[0-9a-f]{64}$/);
   });
 });
 

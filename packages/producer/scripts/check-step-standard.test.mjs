@@ -35,6 +35,8 @@ function fixture() {
       copyFileSync(join(from, skill), join(to, skill));
     }
   }
+  // The loop versions: their agent deciders declare the loop skills the registry admits.
+  cpSync(join(PKG, "loops"), join(packages, "producer", "loops"), { recursive: true });
   mkdirSync(join(packages, "producer", "pipeline"), { recursive: true });
   for (const file of ["actions.json", "manifest.json"]) copyFileSync(join(PKG, "pipeline", file), join(packages, "producer", "pipeline", file));
   const at = (...parts) => join(packages, ...parts);
@@ -72,6 +74,11 @@ test("an unmutated copy of the registry passes", () => {
 
 proves("action.invalid", f => f.action("producer", "compile", c => { c.extra = true; }));
 proves("action.folder", f => { writeFileSync(f.at("producer", "actions", "compile", "notes.txt"), "x"); });
+// A loop-declared skill is admitted only at its declared path: a skill.md in another plumb folder still fails.
+proves("action.folder", f => { writeFileSync(f.at("designer", "actions", "designer.compile", "skill.md"), "# designer.compile\n"); });
+// The loops' refine-brief skill: deleting one agent's (a skill-only folder or a plumb folder's) fails.
+proves("loop.skill-missing", f => { rmSync(f.at("director", "actions", "director.brief"), { recursive: true }); });
+proves("loop.skill-missing", f => { rmSync(f.at("writer", "actions", "writer.brief", "skill.md")); });
 proves("action.duplicate", f => { cpSync(f.at("producer", "actions", "compile"), f.at("designer", "actions", "compile"), { recursive: true }); });
 proves("action.agent", f => f.action("director", "director.check", c => { c.agent = "writer"; }));
 proves("action.manual", f => f.action("producer", "ia", c => { c.manual = "owner edits ia.json"; }));

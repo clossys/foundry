@@ -152,6 +152,16 @@ describe("clossys status: states, queue and stateSha256", () => {
     expect(detailed({ agent: "writer" }).stateSha256).toBe(detailed().stateSha256);
   });
 
+  it("G8: hashes the slot states and candidates, so a store with no pin never hashes the empty string", () => {
+    const EMPTY = sha256Hex("");
+    const before = detailed().stateSha256;
+    expect(before).not.toBe(EMPTY);
+    // A new candidate (no pin yet) moves the hash: the state is more than its pins.
+    mkdirSync(slotPath("director", SLOT, "candidates"), { recursive: true });
+    writeFileSync(slotPath("director", SLOT, "candidates", "moat-v1.md"), brief(1));
+    expect(detailed().stateSha256).not.toBe(before);
+  });
+
   it("orders ledger runs newest first and caps them", () => {
     const dir = join(root, "clossys", "agents", "producer", "ledger.fill", "entries");
     mkdirSync(dir, { recursive: true });

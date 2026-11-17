@@ -1,12 +1,18 @@
 {
   "schema": "clossys.skill-hashes/1",
   "skills": {
+    "packages/designer/actions/designer.brief/skill.md": [
+      "1171c39f1da094643cfe4f4258f2d62dbceece5d994080698de0a324ad8dba3b"
+    ],
     "packages/designer/actions/designer.candidates/skill.md": [
       "14788d4e59896ac23787044d75ccc27cb71c71d0ff6344054039e5808f7a87eb",
       "35b6185cd2e62b8f767b3721adde4d0bd9bef482d73d429cfa6924c460c0a3f4"
     ],
     "packages/designer/actions/pick.designer/skill.md": [
       "04300ddb671c88f7d5571c82d406ab649b9ccbc14045bb9c83110c45b26ab5dd"
+    ],
+    "packages/director/actions/director.brief/skill.md": [
+      "717170f4b86ce9e0a739badc766979e9e791237e9b645fe6b118553b6ec3917d"
     ],
     "packages/director/actions/director.candidates/skill.md": [
       "6f39005ec2cf6ddc107c7104f3409e0d0b952f7016b5ba0ad17e0f2969539cb6",
@@ -71,6 +77,9 @@
     "packages/publisher/actions/pick.publisher/skill.md": [
       "57c7590934758886f029372c3e9262e0afabc38f3c1dd9aa562000981272ff6f"
     ],
+    "packages/publisher/actions/publisher.brief/skill.md": [
+      "6f893ed6cdf81cf829f555d9e5c49fc180f642d559c1d555fb09cf771c16638c"
+    ],
     "packages/publisher/actions/publisher.candidates/skill.md": [
       "0aa3dec37c8073ce624cfd3f1fc28f44b62e6ec3a84add80eddc427cf807b95e",
       "59a01876c42af0dc901bff2602bed9f08729bf6f1c0c33eb5154731b28d8b02a",
@@ -78,6 +87,9 @@
     ],
     "packages/writer/actions/pick.writer/skill.md": [
       "e97f36eaf11dae908e84898ca7ccbdd35b434450e5010b4b00cf78330a808955"
+    ],
+    "packages/writer/actions/writer.brief/skill.md": [
+      "a75e323f098a3f8d741b68a9d290ce5224cb5376619a369a06402d02c806b2da"
     ],
     "packages/writer/actions/writer.candidates/skill.md": [
       "2d880ef67f0ec3bd20cd1feb43531197ff654b6d4d14ab836cf588e1af0be047",

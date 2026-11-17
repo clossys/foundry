@@ -25,6 +25,8 @@ export async function runMigrateCli(argv: readonly string[], cwd: string): Promi
   if (command === "--help" || command === undefined) return { exitCode: command ? 0 : 2, message: MIGRATE_USAGE };
   if (command !== "copy-keys" && command !== "inputs" && command !== "ledger" && command !== "citations-to-slots" && command !== "recut") return { exitCode: 2, message: `Unknown migrate command: ${command}\n${MIGRATE_USAGE}` };
   let check = false, apply = false, root: string | undefined, at: string | undefined;
+  // `clossys migrate <command> --help` prints the usage, like `clossys migrate --help`, and touches nothing.
+  if (rest.includes("--help") || rest.includes("-h")) return { exitCode: 0, message: MIGRATE_USAGE };
   for (let index = 0; index < rest.length; index++) {
     const arg = rest[index]!;
     if (arg === "--check") check = true;

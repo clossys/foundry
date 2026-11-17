@@ -20,6 +20,10 @@
 //   action.invalid     an action.json is not JSON or fails pipeline/schemas/action.schema.json
 //   action.folder      an action folder is not flat, is not named by its id, holds a file other than
 //                      action.json and (decide only) skill.md, or a stray file sits in actions/
+//                      (a skill.md a loop version's agent decider declares is admitted in a plumb
+//                      action's folder, or alone in a folder with no action.json)
+//   loop.skill-missing a skill a loop version's agent decider declares (packages/producer/loops/*/*.json
+//                      decider.skill, <agent> filled for each slot agent) does not exist
 //   action.duplicate   two contracts share one id
 //   action.agent       a contract's agent is not its package (producer holds producer and owner actions)
 //   action.manual      a contract names `manual`: a decision names the clossys verb that records it, or is a gap
@@ -81,7 +85,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
-  ACTION_FOLDER_FILES, ACTIONS_DIR, coverageOf, iaRows, manifestOf, orderActions, PACKAGES, packageBins, packageScripts,
+  ACTION_FOLDER_FILES, ACTIONS_DIR, coverageOf, iaRows, loopSkills, manifestOf, orderActions, PACKAGES, packageBins, packageScripts,
   packageSkills, PKG, readRegistry, REPO, SKILL_FILE, snapshotOf, stableJson, tracedCommand,
 } from "./action-registry.mjs";
 
@@ -162,6 +166,11 @@ const words = command => String(command ?? "").trim().split(/\s+/);
 // ---------------------------------------------------------------- registry
 const registry = readRegistry(PACKAGES_DIR);
 for (const problem of registry.problems) fail(problem.rule, problem.message);
+// The loops' agent skills: each declared path must exist (a loop step never goes out without its skill).
+const loopSkillSet = loopSkills(PACKAGES_DIR);
+const LOOP_SKILLS = loopSkillSet.skills;
+for (const problem of loopSkillSet.problems) fail(problem.rule, problem.message);
+for (const [path, loops] of LOOP_SKILLS) if (!existsSync(join(PACKAGES_DIR, path.slice("packages/".length)))) fail("loop.skill-missing", `${path} is declared by ${loops.join(", ")} but does not exist`);
 for (const file of registry.stray) fail("action.folder", `${file} is not an action folder; actions/ holds action folders, ia.json and exceptions.json only`);
 const loaded = registry.actions.filter(action => action.contract && typeof action.contract === "object");
 const ids = new Map();
@@ -211,7 +220,7 @@ for (const action of loaded) {
   for (const file of action.files.filter(file => !action.nested.includes(file) && !ACTION_FOLDER_FILES.includes(file))) fail("action.folder", `${where}: ${file} is not action.json or skill.md`);
   const decide = typeof contract.kind === "string" && contract.kind.startsWith("decide:");
   const hasSkill = action.files.includes(SKILL_FILE);
-  if (!decide && hasSkill) fail("action.folder", `${id} is plumb but holds ${SKILL_FILE}; only a decide action carries judgment`);
+  if (!decide && hasSkill && !LOOP_SKILLS.has(`packages/${action.package}/${ACTIONS_DIR}/${action.folder}/${SKILL_FILE}`)) fail("action.folder", `${id} is plumb but holds ${SKILL_FILE}; only a decide action (or a loop step that names this file) carries judgment`);
   // Agent.
   const agents = action.package === "producer" ? ["producer", "owner"] : [action.package];
   if (!agents.includes(contract.agent)) fail("action.agent", `${id} in packages/${action.package} has agent ${contract.agent}; expected ${agents.join(" or ")}`);
