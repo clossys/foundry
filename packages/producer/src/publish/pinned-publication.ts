@@ -10,14 +10,27 @@ import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
 
 export type { PinnedPublication };
 
-export async function readPinnedPublication(consumer: string, publicationId: string): Promise<PinnedPublication> {
+/**
+ * A file the projection read, relative to the `clossys/` folder (`agents/publisher/...`), with its text.
+ * `clossys compile` hashes these into its lock; nothing else depends on it.
+ */
+export type PublicationRead = (path: string, text: string) => void;
+
+export async function readPinnedPublication(consumer: string, publicationId: string, onRead?: PublicationRead): Promise<PinnedPublication> {
+  const seen = (path: string, text: string | undefined): string | undefined => {
+    if (text !== undefined) onRead?.(path, text);
+    return text;
+  };
   return projectPinnedPublication({
-    ia: () => readAgentFile(consumer, "publisher", "ia.json"),
-    record: (id, file) => readSlotRecordText(slotDir(consumer, "publisher", id), file),
+    ia: () => seen("agents/publisher/ia.json", readAgentFile(consumer, "publisher", "ia.json")),
+    record: (id, file) => seen(`agents/publisher/${id}/${file}`, readSlotRecordText(slotDir(consumer, "publisher", id), file)),
     candidate: (id, name) => {
       // The candidate as written: its citations are slot ids, resolved through each cited slot's pin.
-      try { return readCandidate(consumer, "publisher", id, name); }
-      catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error; }
+      try {
+        const read = readCandidate(consumer, "publisher", id, name);
+        onRead?.(`agents/publisher/${id}/candidates/${name}`, read.bytes);
+        return read;
+      } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error; }
     },
   }, publicationId);
 }
