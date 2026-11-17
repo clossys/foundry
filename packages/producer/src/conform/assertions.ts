@@ -3,14 +3,14 @@
  * one agent of a read model (model.ts). Each returns the red rows it found and how many facts it judged.
  * Empty is red: an assertion that judged nothing (`evidence` 0) is red as vacuous, never green.
  */
-import { contractIssues } from "../records/slot-model/validate.js";
 import { validateValue } from "../pipeline/schema.js";
 import { EXEMPLARS_MAX, EXEMPLARS_MIN } from "../records/standards.js";
-import type { SlotKind } from "../records/slot-model/types.js";
-import { SLOT_REF, treeLeaves, type AgentModel, type ConformModel, type LiveSlot } from "./model.js";
+import type { ProbeFacts } from "./dogfood.js";
+import { refsIn, SLOT_REF, treeLeaves, upstreamOf, type AgentModel, type ConformModel, type Edge, type LiveSlot } from "./model.js";
 
 export interface Judgement { readonly rows: readonly string[]; readonly evidence: number }
-export type Assertion = (agent: AgentModel, model: ConformModel) => Judgement;
+/** `facts` carries what the runner probed by running real verbs on a temporary copy (dogfood.ts readProbeFacts). */
+export type Assertion = (agent: AgentModel, model: ConformModel, facts?: ProbeFacts) => Judgement;
 
 /** Each held kind's certifier and contract family. */
 export const KIND_FAMILY: Readonly<Record<string, string>> = {
@@ -40,8 +40,24 @@ const standardOf = (agent: AgentModel, slot: LiveSlot) => slot.standard === unde
 const pins = (agent: AgentModel) => agent.live.filter(slot => slot.pin !== undefined);
 /** A slot id literal in source: `"a.b"`-shaped quoted strings. */
 const ID_LITERAL = /["'`]([a-z][a-z0-9-]*\.[a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)?)["'`]/g;
-/** Above this name similarity two same-kind, same-input leaves overlap (`primary-foreground` vs `sidebar-primary-foreground` is 0.67: token siblings, not overlap). */
+/** Above this name similarity two same-kind, same-input leaves overlap (`primary-foreground` vs `sidebar-primary-foreground` is 0.67: token siblings, not overlap). Pinned by conform.test.ts. */
 export const OVERLAP_MIN = 0.7;
+/** Contract fields that name the one slot a leaf is for (Writer's old `passages.*` name their section by `sectionId`). */
+const SUBJECT_FIELDS = ["sectionId", "subject", "for"] as const;
+/** The foreign slots a leaf is for, whatever its name: a subject field, or a foreign ref its own id extends (`sections.hero.copy` is for `designer/sections.hero`). */
+function subjectsOf(agent: string, slot: LiveSlot): Set<string> {
+  const out = new Set<string>();
+  for (const field of SUBJECT_FIELDS) if (typeof slot.contract[field] === "string") out.add(slot.contract[field] as string);
+  for (const ref of refsIn([slot.contract, slot.inputs])) {
+    const match = SLOT_REF.exec(ref)!;
+    if (match[1] !== agent && slot.id.startsWith(`${match[2]}.`)) out.add(match[2]!);
+  }
+  return out;
+}
+/** A kind's family (`copy` and old `strings` are one family), so the two trees compare. */
+const familyOf = (slot: LiveSlot) => KIND_FAMILY[slot.kind ?? ""] ?? slot.kind ?? "";
+const sameList = (a: readonly unknown[], b: readonly unknown[]) => a.length > 0 && JSON.stringify([...a].map(item => JSON.stringify(item)).sort()) === JSON.stringify([...b].map(item => JSON.stringify(item)).sort());
+const requirementsOf = (slot: LiveSlot): unknown[] => Array.isArray(slot.contract.requirements) ? slot.contract.requirements : [];
 /** At this many slot-id literals one module holds a fixed list, not a derivation. */
 export const FIXED_LIST_MIN = 5;
 
@@ -66,12 +82,22 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     return { rows, evidence: l2s.length };
   },
   S4: agent => {
-    const judged = agent.live.filter(slot => slot.inputs.length > 0);
+    // Both trees count: the placed leaves and the package leaves the consumer has not placed (a dual tree overlaps across them).
+    const judged = [...agent.live, ...agent.packageOnly];
+    const subjects = new Map(judged.map(slot => [slot.id, subjectsOf(agent.agent, slot)]));
     const rows: string[] = [];
     for (let i = 0; i < judged.length; i++) for (let j = i + 1; j < judged.length; j++) {
       const a = judged[i]!, b = judged[j]!;
-      const kindA = `${a.kind}/${String(a.contract.kind ?? "")}`, kindB = `${b.kind}/${String(b.contract.kind ?? "")}`;
-      if (kindA !== kindB || [...a.inputs].sort().join() !== [...b.inputs].sort().join()) continue;
+      if (familyOf(a) !== familyOf(b)) continue;
+      // Purpose, whatever the name: both are for the same foreign slot, or one L2 holds both with the same inputs and requirements.
+      const shared = [...subjects.get(a.id)!].filter(subject => subjects.get(b.id)!.has(subject));
+      if (shared.length) { rows.push(`${a.id} and ${b.id}: both are for ${shared.join(", ")} (same purpose)`); continue; }
+      const l2 = agent.l2Of.get(a.id);
+      if (l2 !== undefined && l2 === agent.l2Of.get(b.id) && sameList(a.inputs, b.inputs) && sameList(requirementsOf(a), requirementsOf(b))) {
+        rows.push(`${a.id} and ${b.id}: one L2 (${l2}), same inputs and requirements (same purpose)`); continue;
+      }
+      // Name: same kind and inputs, and ids that differ only past the threshold.
+      if (`${a.kind}/${String(a.contract.kind ?? "")}` !== `${b.kind}/${String(b.contract.kind ?? "")}` || !a.inputs.length || [...a.inputs].sort().join() !== [...b.inputs].sort().join()) continue;
       const purpose = jaccard(words(a.id.split(".").slice(1).join(".")), words(b.id.split(".").slice(1).join(".")));
       if (purpose > OVERLAP_MIN) rows.push(`${a.id} and ${b.id}: same kind and inputs, similar purpose (${purpose.toFixed(2)})`);
     }
@@ -103,18 +129,12 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
       evidence: placed.length,
     };
   },
-  L3: (agent, model) => {
-    const rows: string[] = [];
-    for (const kind of agent.adapter?.kinds ?? []) {
-      const family = KIND_FAMILY[kind];
-      if (!family) { rows.push(`${kind}: no contract family`); continue; }
-      const schema = model.machinery.contractSchemas.get(family);
-      if (!schema) { rows.push(`${kind}: no contract-${family}.schema.json`); continue; }
-      const probe = { kind: "nonsense" };
-      const refused = validateValue(probe, schema).length + contractIssues(family as SlotKind, probe, "", "probe").length;
-      if (!refused) rows.push(`${kind}: contract-${family} accepts an invalid contract (${JSON.stringify(probe)})`);
-    }
-    return { rows, evidence: agent.adapter?.kinds.length ?? 0 };
+  L3: (agent, _model, facts) => {
+    // The real path: `clossys ia --contract` (validateSlotDoc and contractIssues) run on a temporary consumer copy.
+    const probe = facts?.iaContract?.[agent.agent];
+    if (probe === undefined) return { rows: ["ia --contract was not probed"], evidence: 0 };
+    if (typeof probe === "string") return { rows: [probe], evidence: 0 };
+    return { rows: probe.filter(result => result.accepted).map(result => `ia ${result.target} --contract accepted an invalid contract ${result.contract} (exit 0)`), evidence: probe.length };
   },
   L4: agent => {
     const closed = agent.requests.filter(request => request.status === "closed" || request.placed !== undefined);
@@ -212,7 +232,7 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     rows: [...ruleRow(model, "R07.5", agent.agent), ...(model.machinery.loops.get("loop.cascade") ? [] : ["no loop.cascade version in packages/producer/loops/"])],
     evidence: 1,
   }),
-  X2: (agent, model) => ({ rows: dangling(agent, model).map(edge => `${edge.from} -> ${edge.to}: not a live slot`), evidence: agent.edges.length }),
+  X2: (agent, model) => ({ rows: dangling(agent, model).map(edge => `${edge.from} -> ${edge.to}${edge.target && edge.target !== agent.agent ? ` (${edge.target})` : ""}: no such ${edge.scope === "package" ? "package" : "live"} slot`), evidence: agent.edges.length }),
   X3: agent => {
     const other = new RegExp(`agents/(?!${agent.agent}/)[a-z]+/[^ ]*candidates/`);
     const reads = agent.actions.flatMap(action => action.reads.map(glob => ({ action: action.id, glob })));
@@ -244,13 +264,18 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
   },
 };
 
-/** Edges whose target is no live slot: agent-qualified against that agent, bare against every agent; a trailing `*` matches by prefix. */
-export function dangling(agent: AgentModel, model: ConformModel): { from: string; to: string }[] {
+/**
+ * Edges whose target is no slot: an agent-qualified `to` against that agent, a bare one against the edge's
+ * target agent, else against the source agent and its upstream agents only. A package edge resolves in the
+ * package trees; a placed edge also in the consumer's placed slots. A trailing `*` matches by prefix.
+ */
+export function dangling(agent: AgentModel, model: ConformModel): Edge[] {
   const resolves = (ids: ReadonlySet<string> | undefined, id: string) =>
     ids !== undefined && (id.endsWith("*") ? [...ids].some(live => live.startsWith(id.slice(0, -1))) : ids.has(id));
   return agent.edges.filter(edge => {
     const match = SLOT_REF.exec(edge.to);
-    if (match) return !resolves(model.liveIds.get(match[1]!), match[2]!);
-    return ![...model.liveIds.values()].some(ids => resolves(ids, edge.to));
+    const agents = match ? [match[1]!] : edge.target ? [edge.target] : [agent.agent, ...upstreamOf(agent.agent)];
+    const id = match ? match[2]! : edge.to;
+    return !agents.some(name => resolves(model.packageIds.get(name), id) || (edge.scope === "placed" && resolves(model.liveIds.get(name), id)));
   });
 }
