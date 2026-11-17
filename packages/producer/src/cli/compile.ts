@@ -46,7 +46,7 @@ export async function runCompileCli(argv: readonly string[], cwd: string): Promi
   const hash = () => pinSetHash(pinSet(buildContext(real, join(real, "clossys"))));
   if (!placesStudioPublication(join(real, "clossys"))) {
     const result = await compilePublications(real, out ? resolve(cwd, out) : join(real, GENERATED_DIR));
-    await recordPinSetHash(result.lock, hash());
+    if (result.written) await recordPinSetHash(result.lock, hash());
     const lines = [
       `compile: ${result.publications.length} publication(s), ${result.inputs} decision inputs -> ${result.outputs} outputs (${result.lock}); the Studio is not placed, so it is skipped`,
       ...result.publications.map(row => row.state === "compiled" ? `compiled ${row.slot} -> ${row.file}` : `unresolved ${row.slot}: ${row.reason}`),

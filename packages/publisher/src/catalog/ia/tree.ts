@@ -117,6 +117,7 @@ export function checkTree(trees: readonly L0Tree[] = PUBLISHER_TREES, retired: r
     for (const l1 of tree.nodes) {
       if (!l1.id.startsWith(`${tree.l0}/`) || l1.id.split("/").length !== 2) findings.push(`${l1.id}: L1 node id is not ${tree.l0}/<l1>`);
       if (l1.leaves) findings.push(`${l1.id}: an L1 holds L2 nodes, not leaves`);
+      else if (!(l1.children ?? []).length) findings.push(`${l1.id}: an L1 holds at least one L2; drop an empty L1 until a leaf exists`);
       for (const l2 of l1.children ?? []) {
         if (!l2.id.startsWith(`${l1.id}/`) || l2.id.split("/").length !== 3) findings.push(`${l2.id}: L2 node id is not ${l1.id}/<l2>`);
         if (l2.children) findings.push(`${l2.id}: an L2 holds leaves, not nodes`);
@@ -179,7 +180,11 @@ export function loadStarter(id: StarterId, root: string = PACKAGE_ROOT): Starter
 // ---------- The live Designer catalog ----------
 
 /** `withDefault`: slot ids with a Designer fill (`src/catalog/fills/<source>/<id>.json`) or a package default (`src/catalog/defaults/<id>/`). */
-export interface DesignerCatalog { placed: ReadonlySet<string>; retired: ReadonlySet<string>; live: ReadonlySet<string>; withDefault: ReadonlySet<string> }
+export interface DesignerCatalog {
+  placed: ReadonlySet<string>; retired: ReadonlySet<string>; live: ReadonlySet<string>; withDefault: ReadonlySet<string>;
+  /** Section ids whose registered contract (`slots/sections.json`) declares the `slide` medium; absent when not read. */
+  slideMedium?: ReadonlySet<string>;
+}
 
 /** The installed `@clossys/designer` package directory, found the way Node finds a dependency. */
 export function designerPackageDir(from: string = PACKAGE_ROOT): string {
@@ -222,20 +227,33 @@ export function loadDesignerPackageDefaults(id: string, dir: string = designerPa
   return readdirSync(slot).filter(name => name.endsWith(".json")).sort().map(name => readJson<CandidateFile>(join(slot, name)));
 }
 
-/** A Designer frame contract from its IA extension (`src/catalog/ia/slides.json`): root element, canvas and slots. */
+/**
+ * A Designer frame contract, read from its registered slot record (`src/catalog/slots/frames.json`): root element, slide
+ * slots and the closed aspect member. The contract names the aspect only; the print page box is a release concern, so
+ * the pixel canvas is the aspect at Publisher's print base width (`DECK_PRINT_WIDTH`).
+ */
 export interface DesignerFrameContract {
-  kind: "frame"; root: string; canvas: { aspect: string; width: number; height: number };
-  slots: readonly { id: string; accepts: string; required?: boolean; max?: number }[]; variants?: Readonly<Record<string, readonly string[]>>;
+  kind: "frame"; root: string; aspect: string; canvas: { aspect: string; width: number; height: number };
+  slots: readonly { id: string; accepts: string; required?: boolean; max?: number }[];
 }
+/** The print base width of a deck page box, in CSS pixels; the height follows the frame contract's aspect. */
+export const DECK_PRINT_WIDTH = 1920;
+interface DesignerSlotRecord { id: string; layer: string; contract?: { kind?: string; root?: string; slots?: DesignerFrameContract["slots"]; members?: { names?: readonly string[] } } }
 export function loadDesignerFrameContract(id: string, dir: string = designerPackageDir()): DesignerFrameContract {
-  const contract = readJson<{ slots: Record<string, { kind?: string }> }>(join(dir, "src", "catalog", "ia", "slides.json")).slots[id];
-  if (contract?.kind !== "frame") throw new Error(`designer: ${id} is not a frame in the Designer IA extension`);
-  return contract as DesignerFrameContract;
+  const record = readJson<DesignerSlotRecord[]>(join(dir, "src", "catalog", "slots", "frames.json")).find(entry => entry.id === id);
+  const contract = record?.contract;
+  if (record?.layer !== "frames" || contract?.kind !== "frame" || !contract.root) throw new Error(`designer: ${id} is not a registered frame in slots/frames.json`);
+  const member = (contract.members?.names ?? []).map(name => /^aspect\.(\d+)-(\d+)$/.exec(name)).find(Boolean);
+  if (!member) throw new Error(`designer: frame ${id} declares no aspect member (aspect.<w>-<h>)`);
+  const [w, h] = [Number(member[1]), Number(member[2])];
+  const aspect = `${w}:${h}`;
+  return { kind: "frame", root: contract.root, aspect, canvas: { aspect, width: DECK_PRINT_WIDTH, height: Math.round(DECK_PRINT_WIDTH * h / w) }, slots: contract.slots ?? [] };
 }
 
 /**
  * Designer's placed, retired and live slot ids, read from its shipped `src/catalog` tree (the live catalog), with the
- * families of its additive IA extension (`ia/slides.json`) merged in, and the ids that ship a package default.
+ * families and in-place retirements of its additive IA extension (`ia/slides.json`) merged in, and the ids that ship a
+ * package default.
  */
 export function loadDesignerCatalog(dir: string = designerPackageDir()): DesignerCatalog {
   const catalog = join(dir, "src", "catalog");
@@ -247,10 +265,15 @@ export function loadDesignerCatalog(dir: string = designerPackageDir()): Designe
   const extension = join(catalog, "ia", "slides.json");
   if (existsSync(extension)) for (const family of readJson<{ families: { node: TreeNode }[] }>(extension).families) for (const id of leavesOf([family.node])) placed.add(id);
   const retired = new Set(readJson<RetiredEntry[]>(join(catalog, "retired.json")).map(entry => entry.id));
+  // An extension retires its own leaves in place (foundry-build-0032: the six sections.slide-* became slide-medium configs of their twins).
+  if (existsSync(extension)) for (const entry of readJson<{ retired?: RetiredEntry[] }>(extension).retired ?? []) retired.add(entry.id);
   const withDefault = new Set<string>();
   const fills = join(catalog, "fills");
   if (existsSync(fills)) for (const source of readdirSync(fills)) for (const name of readdirSync(join(fills, source))) if (name.endsWith(".json")) withDefault.add(name.slice(0, -5));
   const defaults = designerDefaultsDir(dir);
   if (existsSync(defaults)) for (const id of readdirSync(defaults)) if (readdirSync(join(defaults, id)).some(name => name.endsWith(".json"))) withDefault.add(id);
-  return { placed, retired, live: new Set([...placed].filter(id => !retired.has(id))), withDefault };
+  const slideMedium = new Set<string>();
+  const sectionSlots = join(catalog, "slots", "sections.json");
+  if (existsSync(sectionSlots)) for (const record of readJson<{ id: string; contract?: { media?: readonly string[] } }[]>(sectionSlots)) if (record.contract?.media?.includes("slide")) slideMedium.add(record.id);
+  return { placed, retired, live: new Set([...placed].filter(id => !retired.has(id))), withDefault, slideMedium };
 }

@@ -89,6 +89,25 @@
       "supported": []
     },
     {
+      "missing": [
+        "aspect.16-9"
+      ],
+      "missingRequiredSlots": [
+        "slide"
+      ],
+      "missingSlots": [
+        "slide"
+      ],
+      "missingStatePorts": [],
+      "notes": [
+        "Publisher renders frames.deck in its static slides build from the package canvas default; no Designer package export exists yet (foundry-build-0032, audit P3).",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.deck",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
       "missing": [],
       "missingRequiredSlots": [],
       "missingSlots": [],

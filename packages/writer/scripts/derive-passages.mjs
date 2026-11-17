@@ -63,6 +63,16 @@ export function derivePassages(sourceIa, sourceSlots) {
     l1.children = l1.children.filter(l2 => l2.leaves.length > 0);
   }
   ia.nodes = ia.nodes.filter(l1 => l1.children.length > 0);
+  // Designer's retired and starter lists name sections; the Writer mirror names the passage that pairs with each
+  // content section and leaves specimens out, as it does for placements (foundry-build-0033).
+  for (const key of ["retired", "starter"]) {
+    if (!Object.hasOwn(ia, key)) continue;
+    requireSource(Array.isArray(ia[key]) && ia[key].every(sectionId), `Source ${key} must list section ids`);
+    ia[key] = ia[key].filter(id => !specimenId(id)).map(passageId);
+  }
+  // The five-layer store is retired as live IA (foundry-build-0033): the target voice, prose and copy trees
+  // are the live Writer IA, and this mirror stays only as record-validation storage.
+  ia.status = "retired";
   for (const id of specimens) requireSource(placements.has(id), `Missing section placement: ${id}`);
   for (const id of sections.keys()) requireSource(placements.has(id), `Missing section placement: ${id}`);
   const slots = sourceSlots.filter(row => !specimenId(row.id)).map(row => ({

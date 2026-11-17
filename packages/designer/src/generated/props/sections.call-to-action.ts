@@ -1,5 +1,5 @@
 // Generated from sections.call-to-action by src/generated/props/generate.ts; do not edit.
-export const callToActionContractSha256 = "e93d6e53b25a6c997d56d87466d62ffc6afd55c8c87c64a2b5354bb0034710f3";
+export const callToActionContractSha256 = "d8a760b5fa2e8b2cb674a9d3a0e8cd50dc97722e022bc04f0e12e89419ae05be";
 
 export type CallToActionCopy = {
   header: {

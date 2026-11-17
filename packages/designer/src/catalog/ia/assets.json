@@ -129,7 +129,10 @@
       ]
     }
   ],
-  "retired": [],
+  "retired": [
+    "assets.icon-business",
+    "assets.icon-institution"
+  ],
   "starter": [
     "assets.lockup",
     "assets.mark",

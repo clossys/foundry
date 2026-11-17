@@ -81,6 +81,9 @@ function themeInputs(definition, references) {
   return themeReads(references.map(referenceSource).join("\n")).filter(id => allowed.includes(id)).map(id => ({ name: id, kind: "theme", required: true }));
 }
 const assetInputs = definition => (definition.allowedReads?.assets ?? []).map(id => ({ name: id, kind: "asset", required: false }));
+// Copy keys a component, frame or asset declares (foundry-build-0032, audit P2): one copy input and one en budget each.
+const copyInputs = definition => (definition.copy?.fields ?? []).map(field => ({ name: field.key, kind: "copy", required: field.required === true }));
+const copyLimits = definition => Object.fromEntries((definition.copy?.fields ?? []).filter(field => field.maxLength?.en !== undefined).map(field => [`${field.key}.maxLength.en`, field.maxLength.en]));
 
 // Section and frame records: copy keys, regions, theme and asset reads, and the section shell.
 function composed(layer, override, definition, references) {
@@ -126,15 +129,18 @@ function asset(definition, where) {
   const members = open ? [] : definition.members.names;
   const optional = new Set(definition.optional ?? []);
   const kindOf = member => definition.memberKinds?.[member] ?? definition.valueKind;
-  const limits = { valueKind: definition.valueKind, modes: definition.modes.join(","), "members.mode": definition.members.mode };
+  const limits = { valueKind: definition.valueKind, modes: definition.modes.join(","), "members.mode": definition.members.mode, ...copyLimits(definition) };
   if (open) limits["members.pattern"] = definition.members.pattern;
   if (definition.grid !== undefined) limits.grid = definition.grid;
   for (const member of members) if (kindOf(member) !== definition.valueKind) limits[`member.${member}.kind`] = kindOf(member);
   return {
     purpose: `${VALUE[definition.valueKind]} asset ${open ? "with an open set of named entries" : `with ${members.length === 1 ? "member" : "members"} ${list(members)}`}${definition.grid ? ` on a ${definition.grid}px grid` : ""}, under ${where}.`,
-    inputs: open
-      ? [{ name: "entries", kind: "data", required: true, description: `named ${definition.valueKind} entries whose names match ${definition.members.pattern}` }]
-      : members.map(member => ({ name: member, kind: "data", required: !optional.has(member), description: `${kindOf(member)} file for the ${member} member` })),
+    inputs: [
+      ...(open
+        ? [{ name: "entries", kind: "data", required: true, description: `named ${definition.valueKind} entries whose names match ${definition.members.pattern}` }]
+        : members.map(member => ({ name: member, kind: "data", required: !optional.has(member), description: `${kindOf(member)} file for the ${member} member` }))),
+      ...copyInputs(definition),
+    ],
     limits,
   };
 }
@@ -144,7 +150,7 @@ function component(id, definition, where, references) {
   const axes = new Map();
   for (const name of definition.members?.names ?? []) { const [axis, value] = name.split("."); axes.set(axis, [...(axes.get(axis) ?? []), ...(value ? [value] : [])]); }
   const props = definition.props ?? [];
-  const limits = { root: definition.root, "members.mode": definition.members.mode, members: definition.members.names.join(",") };
+  const limits = { root: definition.root, "members.mode": definition.members.mode, members: definition.members.names.join(","), ...copyLimits(definition) };
   if (definition.apg) limits.apg = definition.apg;
   if (definition.composes?.length) limits["compose.components"] = definition.composes.join(",");
   return {
@@ -152,6 +158,7 @@ function component(id, definition, where, references) {
     inputs: [
       ...props.map(name => ({ name, kind: "prop", required: false })),
       ...[...axes].filter(([axis]) => !props.includes(axis)).map(([axis, values]) => ({ name: axis, kind: "prop", required: false, description: values.length ? `member axis: ${values.join(" | ")}` : "member flag" })),
+      ...copyInputs(definition),
       ...themeInputs(definition, references),
       ...assetInputs(definition),
     ],

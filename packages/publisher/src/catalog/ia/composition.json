@@ -43,7 +43,7 @@
         },
         {
           "id": "composition/layouts/deck",
-          "label": "Deck layouts",
+          "label": "Slides layouts",
           "leaves": [
             "layout.deck"
           ]
@@ -518,37 +518,37 @@
       "roles": {
         "title": {
           "kinds": [
-            "designer/sections.slide-title"
+            "designer/sections.hero"
           ],
           "required": true
         },
         "agenda": {
           "kinds": [
-            "designer/sections.slide-agenda"
+            "designer/sections.table-of-contents"
           ],
           "required": false
         },
         "statement": {
           "kinds": [
-            "designer/sections.slide-statement"
+            "designer/sections.content"
           ],
           "required": false
         },
         "two-column": {
           "kinds": [
-            "designer/sections.slide-two-column"
+            "designer/sections.content"
           ],
           "required": false
         },
         "quote": {
           "kinds": [
-            "designer/sections.slide-quote"
+            "designer/sections.testimonials"
           ],
           "required": false
         },
         "closing": {
           "kinds": [
-            "designer/sections.slide-closing"
+            "designer/sections.call-to-action"
           ],
           "required": true
         }

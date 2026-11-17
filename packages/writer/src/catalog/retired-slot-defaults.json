@@ -1,0 +1,483 @@
+{
+  "schema": "clossys.slot-defaults/1",
+  "agent": "writer",
+  "about": "Frozen per-slot defaults of the retired five-layer store (foundry-build-0033): the standard and listed inputs each retired old id carried at the recut (b4f796a38), unchanged. Not live IA and never a brief: Producer ia sync reads it only so a consumer that still places a retired id (one that has not run clossys migrate recut) keeps that slot.json's behaviour. Every key has a row in retired.json and none is a target leaf; the target leaves' defaults are slot-defaults.json.",
+  "slots": {
+    "lexicon.brand-names": {
+      "standard": "lexicon.term-list"
+    },
+    "lexicon.comparison-claims": {
+      "standard": "lexicon.claim-list"
+    },
+    "lexicon.compliance-statements": {
+      "standard": "lexicon.claim-list"
+    },
+    "lexicon.currency-format": {
+      "standard": "lexicon.format-rule"
+    },
+    "lexicon.date-format": {
+      "standard": "lexicon.format-rule"
+    },
+    "lexicon.direction": {
+      "standard": "lexicon.format-rule"
+    },
+    "lexicon.expansion-budget": {
+      "standard": "lexicon.format-rule"
+    },
+    "lexicon.metric-claims": {
+      "standard": "lexicon.claim-list",
+      "inputs": [
+        "advantage.proposition.proof",
+        "execution.measure.driver"
+      ]
+    },
+    "lexicon.number-format": {
+      "standard": "lexicon.format-rule"
+    },
+    "lexicon.plural-rules": {
+      "standard": "lexicon.format-rule"
+    },
+    "lexicon.product-claims": {
+      "standard": "lexicon.claim-list"
+    },
+    "lexicon.pronunciation": {
+      "standard": "lexicon.term-list"
+    },
+    "lexicon.spelling-variant": {
+      "standard": "lexicon.term-list"
+    },
+    "lexicon.time-format": {
+      "standard": "lexicon.format-rule"
+    },
+    "lexicon.unit-format": {
+      "standard": "lexicon.format-rule"
+    },
+    "narratives.app-chrome": {
+      "standard": "narrative",
+      "inputs": [
+        "identity.naming.architecture",
+        "identity.verbal.voice",
+        "identity.naming.name"
+      ]
+    },
+    "narratives.deck-script": {
+      "standard": "narrative"
+    },
+    "narratives.email": {
+      "standard": "narrative"
+    },
+    "narratives.notification": {
+      "standard": "narrative"
+    },
+    "narratives.page-story": {
+      "standard": "narrative",
+      "inputs": [
+        "advantage.proposition.promise",
+        "advantage.proposition.proof",
+        "focus.lifecycle.acquisition",
+        "identity.verbal.narrative",
+        "identity.naming.name"
+      ]
+    },
+    "narratives.screen": {
+      "standard": "narrative"
+    },
+    "narratives.site-chrome": {
+      "standard": "narrative"
+    },
+    "narratives.video-script": {
+      "standard": "narrative"
+    },
+    "passages.access-matrix": {
+      "standard": "passage",
+      "inputs": [
+        "identity.verbal.voice",
+        "capability.team.structure"
+      ]
+    },
+    "passages.account-summary": {
+      "standard": "passage"
+    },
+    "passages.activity-feed": {
+      "standard": "passage"
+    },
+    "passages.article": {
+      "standard": "passage"
+    },
+    "passages.audit-log": {
+      "standard": "passage"
+    },
+    "passages.band": {
+      "standard": "passage"
+    },
+    "passages.boundary-message": {
+      "standard": "passage",
+      "inputs": [
+        "identity.brand.personality",
+        "identity.verbal.voice",
+        "context.company.constraint"
+      ]
+    },
+    "passages.call-to-action": {
+      "standard": "passage"
+    },
+    "passages.cards": {
+      "standard": "passage"
+    },
+    "passages.chat": {
+      "standard": "passage",
+      "inputs": [
+        "identity.brand.personality",
+        "identity.verbal.voice",
+        "context.company.constraint"
+      ]
+    },
+    "passages.column-mapper": {
+      "standard": "passage"
+    },
+    "passages.comparison": {
+      "standard": "passage"
+    },
+    "passages.consent": {
+      "standard": "passage"
+    },
+    "passages.content": {
+      "standard": "passage",
+      "inputs": [
+        "identity.verbal.narrative",
+        "identity.verbal.voice",
+        "aspiration.goal.long-term",
+        "execution.measure.driver"
+      ]
+    },
+    "passages.data-grid": {
+      "standard": "passage"
+    },
+    "passages.data-table": {
+      "standard": "passage"
+    },
+    "passages.empty-state": {
+      "standard": "passage"
+    },
+    "passages.error-state": {
+      "standard": "passage"
+    },
+    "passages.explorer": {
+      "standard": "passage"
+    },
+    "passages.faq": {
+      "standard": "passage",
+      "inputs": [
+        "advantage.proposition.proof",
+        "context.customer.buying",
+        "identity.verbal.voice",
+        "context.company.constraint"
+      ]
+    },
+    "passages.features": {
+      "standard": "passage"
+    },
+    "passages.filter-builder": {
+      "standard": "passage"
+    },
+    "passages.form": {
+      "standard": "passage",
+      "inputs": [
+        "identity.verbal.voice",
+        "context.company.constraint",
+        "focus.offer.excluded"
+      ]
+    },
+    "passages.gallery": {
+      "standard": "passage",
+      "inputs": [
+        "identity.verbal.voice",
+        "identity.visual.imagery",
+        "focus.offer.included"
+      ]
+    },
+    "passages.hero": {
+      "standard": "copy.headline",
+      "inputs": [
+        "advantage.proposition.promise",
+        "focus.lifecycle.acquisition",
+        "focus.segment.core",
+        "identity.verbal.voice",
+        "context.company.constraint",
+        "identity.naming.name"
+      ]
+    },
+    "passages.legal-prose": {
+      "standard": "passage",
+      "inputs": [
+        "focus.reach.geography",
+        "identity.verbal.voice",
+        "advantage.proposition.proof"
+      ]
+    },
+    "passages.link-index": {
+      "standard": "passage"
+    },
+    "passages.logo-cloud": {
+      "standard": "passage"
+    },
+    "passages.logo-hero": {
+      "standard": "copy.headline"
+    },
+    "passages.logo-mark": {
+      "standard": "passage"
+    },
+    "passages.media": {
+      "standard": "passage"
+    },
+    "passages.newsletter": {
+      "standard": "passage"
+    },
+    "passages.notices": {
+      "standard": "passage",
+      "inputs": [
+        "identity.verbal.voice",
+        "execution.risk.mitigation"
+      ]
+    },
+    "passages.page-header": {
+      "standard": "copy.headline"
+    },
+    "passages.pagination": {
+      "standard": "passage"
+    },
+    "passages.people": {
+      "standard": "passage",
+      "inputs": [
+        "advantage.proposition.proof",
+        "identity.verbal.voice",
+        "capability.team.role"
+      ]
+    },
+    "passages.pricing": {
+      "standard": "passage"
+    },
+    "passages.record-detail": {
+      "standard": "passage"
+    },
+    "passages.resource-list": {
+      "standard": "passage"
+    },
+    "passages.section-header": {
+      "standard": "copy.headline"
+    },
+    "passages.sectioned-document": {
+      "standard": "passage",
+      "inputs": [
+        "identity.verbal.voice"
+      ]
+    },
+    "passages.settings": {
+      "standard": "passage",
+      "inputs": [
+        "identity.verbal.voice",
+        "focus.offer.included"
+      ]
+    },
+    "passages.sign-in-form": {
+      "standard": "passage"
+    },
+    "passages.stats": {
+      "standard": "passage"
+    },
+    "passages.status-list": {
+      "standard": "passage"
+    },
+    "passages.steps": {
+      "standard": "passage",
+      "inputs": [
+        "focus.offer.included",
+        "identity.verbal.voice",
+        "capability.operation.delivery"
+      ]
+    },
+    "passages.table-of-contents": {
+      "standard": "passage"
+    },
+    "passages.task-list": {
+      "standard": "passage"
+    },
+    "passages.testimonials": {
+      "standard": "passage"
+    },
+    "passages.timeline": {
+      "standard": "passage",
+      "inputs": [
+        "execution.roadmap.milestone",
+        "identity.verbal.voice",
+        "execution.measure.driver",
+        "execution.measure.north-star",
+        "execution.roadmap.release"
+      ]
+    },
+    "passages.usage": {
+      "standard": "passage"
+    },
+    "passages.wizard": {
+      "standard": "passage",
+      "inputs": [
+        "identity.verbal.voice",
+        "capability.operation.delivery"
+      ]
+    },
+    "patterns.confirmation": {
+      "standard": "pattern"
+    },
+    "patterns.consent-line": {
+      "standard": "pattern"
+    },
+    "patterns.empty-state": {
+      "standard": "pattern"
+    },
+    "patterns.error-message": {
+      "standard": "pattern"
+    },
+    "patterns.eyebrow-headline": {
+      "standard": "copy.headline"
+    },
+    "patterns.feature-bullet": {
+      "standard": "pattern"
+    },
+    "patterns.figure-caption": {
+      "standard": "pattern"
+    },
+    "patterns.form-field": {
+      "standard": "pattern"
+    },
+    "patterns.headline": {
+      "standard": "copy.headline"
+    },
+    "patterns.headline-subhead": {
+      "standard": "copy.headline"
+    },
+    "patterns.hint": {
+      "standard": "pattern"
+    },
+    "patterns.inline-link": {
+      "standard": "pattern"
+    },
+    "patterns.messaging-kit": {
+      "standard": "pattern",
+      "inputs": [
+        "advantage.proposition.promise",
+        "aspiration.purpose.mission",
+        "identity.brand.essence",
+        "identity.verbal.narrative",
+        "focus.category.definition",
+        "identity.naming.architecture"
+      ]
+    },
+    "patterns.pricing-item": {
+      "standard": "pattern"
+    },
+    "patterns.primary-action": {
+      "standard": "pattern"
+    },
+    "patterns.quote": {
+      "standard": "pattern"
+    },
+    "patterns.secondary-action": {
+      "standard": "pattern"
+    },
+    "patterns.section-title": {
+      "standard": "copy.headline"
+    },
+    "patterns.stat": {
+      "standard": "pattern"
+    },
+    "patterns.table-caption": {
+      "standard": "pattern"
+    },
+    "patterns.table-header": {
+      "standard": "pattern"
+    },
+    "patterns.testimonial": {
+      "standard": "pattern"
+    },
+    "patterns.tooltip": {
+      "standard": "pattern"
+    },
+    "patterns.warning-message": {
+      "standard": "pattern"
+    },
+    "strings.actions": {
+      "standard": "string"
+    },
+    "strings.alt-text": {
+      "standard": "string",
+      "inputs": [
+        "identity.visual.imagery",
+        "identity.naming.name"
+      ]
+    },
+    "strings.captions": {
+      "standard": "string"
+    },
+    "strings.common": {
+      "standard": "string",
+      "inputs": [
+        "identity.verbal.voice",
+        "identity.brand.personality"
+      ]
+    },
+    "strings.confirmations": {
+      "standard": "string"
+    },
+    "strings.counters": {
+      "standard": "string"
+    },
+    "strings.descriptions": {
+      "standard": "string"
+    },
+    "strings.email-preheaders": {
+      "standard": "string"
+    },
+    "strings.email-subjects": {
+      "standard": "string"
+    },
+    "strings.empty": {
+      "standard": "string"
+    },
+    "strings.errors": {
+      "standard": "string"
+    },
+    "strings.field-labels": {
+      "standard": "string"
+    },
+    "strings.legal-lines": {
+      "standard": "string"
+    },
+    "strings.loading": {
+      "standard": "string"
+    },
+    "strings.names": {
+      "standard": "string"
+    },
+    "strings.navigation": {
+      "standard": "string"
+    },
+    "strings.page-titles": {
+      "standard": "string"
+    },
+    "strings.share-text": {
+      "standard": "string"
+    },
+    "strings.statuses": {
+      "standard": "string"
+    },
+    "strings.taglines": {
+      "standard": "copy.headline"
+    },
+    "strings.transcripts": {
+      "standard": "string"
+    },
+    "strings.warnings": {
+      "standard": "string"
+    }
+  }
+}

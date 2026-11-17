@@ -1,4 +1,4 @@
-import { loadWriterCatalog, type WriterCatalog } from "../catalog/ia/index.js";
+import { loadWriterStore, type WriterCatalog } from "../catalog/ia/index.js";
 import { checkWriterLeafSets, loadWriterLeafFreezeSnapshots, loadWriterLeafAmendments, WRITER_LEAF_FREEZE_LAYERS, type WriterLeafFreezeOptions, type WriterLeafFreezeSnapshot } from "../catalog-core/leaf-freeze.js";
 import type { WriterLibrary } from "../model/types.js";
 import type { StringSplit } from "../catalog/dedupe.js";
@@ -17,7 +17,7 @@ export interface WriterCheckOptions { catalog?: WriterCatalog; freeze?: WriterLe
  */
 export function checkWriterFreeze(library: WriterLibrary, options: WriterCheckOptions = {}): WriterCheckFinding[] {
   try {
-    const catalog = options.catalog ?? loadWriterCatalog();
+    const catalog = options.catalog ?? loadWriterStore();
     const snapshots = options.freeze?.snapshots ?? loadWriterLeafFreezeSnapshots();
     // This API validates injected snapshots and amendments before comparing sets.
     const membership = checkWriterLeafSets(catalog.placements, catalog.slots, WRITER_LEAF_FREEZE_LAYERS, {

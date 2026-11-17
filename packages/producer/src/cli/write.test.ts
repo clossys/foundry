@@ -25,6 +25,21 @@ describe("clossys write over the flat slot model", () => {
     expect(snapshot(root)).toEqual(before);
   }, 120_000);
 
+  it("briefs the Writer's live leaves: every target tree (voice, prose, copy) with non-empty ids and role", () => {
+    const brief = runVerb(["write", "--brief"], root);
+    const leaves = brief.value.brief.leaves as { layer: string; role: string; ids: string[] }[];
+    expect(leaves.map(row => row.layer)).toEqual(["voice", "prose", "copy"]);
+    for (const row of leaves) {
+      expect(row.ids.length, row.layer).toBeGreaterThan(0);
+      expect(row.role, row.layer).toBe(row.layer);
+      expect(new Set(row.ids).size, row.layer).toBe(row.ids.length);
+    }
+    const ids = leaves.flatMap(row => row.ids);
+    expect(ids).toEqual(expect.arrayContaining(["lexicon.formality", "narratives.legal-document", "sections.hero.copy", "page.home.meta"]));
+    // The retired five-layer store is not briefed: passages.hero moved to sections.hero.copy.
+    expect(ids).not.toContain("passages.hero");
+  }, 60_000);
+
   it("reports hash drift on a pinned Writer candidate", () => {
     const pinned = firstPinned(root, "writer", id => !id.startsWith("lexicon."));
     writeFileSync(pinned.candidate, readFileSync(pinned.candidate, "utf8") + "\n");

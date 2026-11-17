@@ -39,7 +39,7 @@ export interface RetiredRow { id: string; fate: string; target: string }
 export const LEAF_FORM: Readonly<Record<WriterGroup, RegExp>> = {
   voice: /^lexicon\.[a-z0-9]+(?:-[a-z0-9]+)*$/,
   prose: /^narratives\.[a-z0-9]+(?:-[a-z0-9]+)*$/,
-  copy: /^(?:components|sections|frames|assets)\.[a-z0-9]+(?:-[a-z0-9]+)*\.copy$/,
+  copy: /^(?:(?:components|sections|frames|assets)\.[a-z0-9]+(?:-[a-z0-9]+)*\.copy|(?:page|publication)\.[a-z0-9]+(?:-[a-z0-9]+)*\.meta)$/,
 };
 const GROUP_LABELS: Readonly<Record<WriterGroup, string>> = { voice: "Voice", prose: "Prose", copy: "Copy" };
 const OLD_LAYERS = ["lexicon", "strings", "patterns", "passages", "narratives"] as const;

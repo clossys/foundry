@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loadWriterCatalog } from "../catalog/ia/index.js";
+import { loadWriterStore } from "../catalog/ia/index.js";
 import type { PassageRecord, PatternInstance, StringRecord, WriterLibrary, WriterRecord } from "../model/types.js";
 import { checkWriterLength, measureWriterText, writerTextFields } from "./length.js";
 
@@ -24,7 +24,7 @@ describe("Writer WR7 field length", () => {
   });
 
   it("reads actual derived passage field maxLength by locale, then source cap, including repeated refs", () => {
-    const catalog = loadWriterCatalog();
+    const catalog = loadWriterStore();
     const schema = catalog.slots.find(slot => slot.id === "passages.access-matrix")!;
     const copy = schema.contract.copy as { sourceLocale: string; fields: { key: string; maxLength: Record<string, number> }[] };
     const field = copy.fields.find(item => item.key === "roles[].label")!;
@@ -38,7 +38,7 @@ describe("Writer WR7 field length", () => {
   it("resolves pattern/string and passage/term references against the containing locale", () => {
     const pattern: PatternInstance = { id: "pt.0000000001", leaf: "patterns.primary-action", context: "Example", origin: "authored", status: "draft", parts: { verb: { ref: { kind: "string", id: "st.0000000001" } }, object: { text: "Example" } } };
     const records: WriterRecord[] = [string("x".repeat(25)), pattern, { id: "lx.0000000001", leaf: "lexicon.preferred-terms", context: "Example", origin: "authored", status: "draft", kind: "term", term: "sample", forms: [], termStatus: "preferred", reason: "Example" }];
-    const catalog = loadWriterCatalog();
+    const catalog = loadWriterStore();
     catalog.slots.push({ id: "passages.example", layer: "passages", status: "draft", requires: [], contract: { copy: { sourceLocale: "en", fields: [{ key: "label", maxLength: { en: 5 } }] } } });
     records.push({ id: "ps.0000000001", leaf: "passages.example", schema: "passages.example", schemaDigest: "example", context: "Example", origin: "authored", status: "draft", fields: { label: { ref: "term", id: "lx.0000000001" } } });
     expect(checkWriterLength(library(records), { catalog }).map(finding => finding.field)).toEqual(["parts.verb", "fields.label"]);

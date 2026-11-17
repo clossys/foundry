@@ -17,9 +17,15 @@
         "kind": "data",
         "required": true,
         "description": "svg file for the reversed member"
+      },
+      {
+        "name": "alt",
+        "kind": "copy",
+        "required": true
       }
     ],
     "limits": {
+      "alt.maxLength.en": 140,
       "members.mode": "closed",
       "modes": "light",
       "valueKind": "svg"
@@ -52,9 +58,15 @@
         "kind": "data",
         "required": true,
         "description": "svg file for the reversed member"
+      },
+      {
+        "name": "alt",
+        "kind": "copy",
+        "required": true
       }
     ],
     "limits": {
+      "alt.maxLength.en": 140,
       "members.mode": "closed",
       "modes": "light",
       "valueKind": "svg"
@@ -165,9 +177,21 @@
         "kind": "data",
         "required": true,
         "description": "named rules entries whose names match ^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      },
+      {
+        "name": "alt",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "caption",
+        "kind": "copy",
+        "required": false
       }
     ],
     "limits": {
+      "alt.maxLength.en": 140,
+      "caption.maxLength.en": 160,
       "members.mode": "open",
       "members.pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
       "modes": "light",
@@ -189,12 +213,24 @@
         "kind": "data",
         "required": true,
         "description": "named rules entries whose names match ^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      },
+      {
+        "name": "title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "description",
+        "kind": "copy",
+        "required": false
       }
     ],
     "limits": {
+      "description.maxLength.en": 200,
       "members.mode": "open",
       "members.pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
       "modes": "light",
+      "title.maxLength.en": 60,
       "valueKind": "rules"
     },
     "references": [],
@@ -948,13 +984,25 @@
     "slot": "assets.icon-organization",
     "package": "designer",
     "layer": "assets",
-    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Entities.",
+    "purpose": "Glyph asset with members default, business and institution on a 24px grid, under Icons / Entities.",
     "inputs": [
       {
         "name": "default",
         "kind": "data",
         "required": true,
         "description": "glyph file for the default member"
+      },
+      {
+        "name": "business",
+        "kind": "data",
+        "required": false,
+        "description": "glyph file for the business member"
+      },
+      {
+        "name": "institution",
+        "kind": "data",
+        "required": false,
+        "description": "glyph file for the institution member"
       }
     ],
     "limits": {

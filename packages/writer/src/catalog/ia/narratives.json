@@ -1,5 +1,6 @@
 {
   "layer": "narratives",
+  "status": "retired",
   "nodes": [
     {
       "id": "web",

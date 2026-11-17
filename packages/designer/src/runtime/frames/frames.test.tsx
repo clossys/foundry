@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import slots from "../../catalog/slots/frames.json" with { type: "json" };
 import type { RuntimeFrameHost, RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { specimenDataset } from "../../specimen/specimen-dataset.js";
-import { FOUNDRY_FRAME_MAP } from "../../importers/foundry-frames.map.js";
+import { FOUNDRY_FRAME_GAPS, FOUNDRY_FRAME_MAP } from "../../importers/foundry-frames.map.js";
 import { surfaceRuntimeRenderers } from "../index.js";
 import { frameRenderers } from "./index.js";
 import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
@@ -38,9 +38,14 @@ const draw = (leaf: string, options?: Parameters<typeof input>[1]) => render(<Sh
 
 describe("designer Frame runtime renderers", () => {
   it("cover every designer-owned Frames leaf, including site-shell", () => {
-    const designerLeaves = (slots as readonly { id: string }[]).map(slot => slot.id).filter(id => FOUNDRY_FRAME_MAP[id.slice("frames.".length)]!.package === "@clossys/designer");
+    const designerLeaves = (slots as readonly { id: string }[]).map(slot => slot.id).filter(id => FOUNDRY_FRAME_MAP[id.slice("frames.".length)]?.package === "@clossys/designer");
+    // foundry-build-0032 (audit P3): frames.deck is the one Frames leaf with no Designer export; Publisher's static
+    // slides build renders it, and the importer records it as a named gap. Every other leaf is Designer-owned.
+    const gaps = (slots as readonly { id: string }[]).map(slot => slot.id).filter(id => !FOUNDRY_FRAME_MAP[id.slice("frames.".length)]);
+    expect(gaps).toEqual(["frames.deck"]);
+    expect(Object.keys(FOUNDRY_FRAME_GAPS).map(leaf => `frames.${leaf}`)).toEqual(gaps);
     expect(Object.keys(frameRenderers).sort()).toEqual(designerLeaves.sort());
-    expect(designerLeaves).toHaveLength(slots.length);
+    expect(designerLeaves.length + gaps.length).toBe(slots.length);
     expect(frameRenderers["frames.site-shell"]).toBeDefined();
   });
 

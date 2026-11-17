@@ -1,70 +1,72 @@
 {
   "schema": "clossys.slot-defaults/1",
   "agent": "writer",
-  "about": "Per-slot package defaults the IA sync writes into every consumer slot.json: the standard that judges the slot, and inputs where the read graph does not derive them. Options and varyOn come from the producer option classes.",
+  "about": "Per-slot package defaults for the Writer target leaves (voice, prose and copy; foundry-build-0033): the standard that judges the slot, and inputs where the read graph does not derive them. The retired five-layer store has no rows here. Options and varyOn come from the producer option classes.",
   "slots": {
+    "assets.image.copy": {
+      "standard": "string"
+    },
+    "assets.lockup.copy": {
+      "standard": "string"
+    },
+    "assets.mark.copy": {
+      "standard": "string"
+    },
+    "assets.video.copy": {
+      "standard": "string"
+    },
+    "components.breadcrumbs.copy": {
+      "standard": "string"
+    },
+    "components.command.copy": {
+      "standard": "string"
+    },
+    "components.dialog.copy": {
+      "standard": "string"
+    },
+    "components.media-player.copy": {
+      "standard": "string"
+    },
+    "components.sheet.copy": {
+      "standard": "string"
+    },
+    "components.sidebar.copy": {
+      "standard": "string"
+    },
+    "frames.app-header.copy": {
+      "standard": "string"
+    },
+    "frames.app-sidebar.copy": {
+      "standard": "string"
+    },
+    "frames.site-footer.copy": {
+      "standard": "string"
+    },
+    "frames.site-header.copy": {
+      "standard": "string"
+    },
     "lexicon.avoid-patterns": {
       "standard": "lexicon.term-list"
     },
     "lexicon.avoid-terms": {
       "standard": "lexicon.term-list"
     },
-    "lexicon.brand-names": {
-      "standard": "lexicon.term-list"
-    },
     "lexicon.capitalization": {
-      "standard": "lexicon.format-rule"
-    },
-    "lexicon.comparison-claims": {
-      "standard": "lexicon.claim-list"
-    },
-    "lexicon.compliance-statements": {
-      "standard": "lexicon.claim-list"
-    },
-    "lexicon.currency-format": {
-      "standard": "lexicon.format-rule"
-    },
-    "lexicon.date-format": {
-      "standard": "lexicon.format-rule"
-    },
-    "lexicon.direction": {
       "standard": "lexicon.format-rule"
     },
     "lexicon.energy": {
       "standard": "lexicon.voice-rule"
     },
-    "lexicon.expansion-budget": {
-      "standard": "lexicon.format-rule"
-    },
     "lexicon.formality": {
       "standard": "lexicon.voice-rule"
-    },
-    "lexicon.metric-claims": {
-      "standard": "lexicon.claim-list",
-      "inputs": [
-        "advantage.proposition.proof",
-        "execution.measure.driver"
-      ]
     },
     "lexicon.mood": {
       "standard": "lexicon.voice-rule"
     },
-    "lexicon.number-format": {
-      "standard": "lexicon.format-rule"
-    },
     "lexicon.person": {
       "standard": "lexicon.voice-rule"
     },
-    "lexicon.plural-rules": {
-      "standard": "lexicon.format-rule"
-    },
     "lexicon.preferred-terms": {
-      "standard": "lexicon.term-list"
-    },
-    "lexicon.product-claims": {
-      "standard": "lexicon.claim-list"
-    },
-    "lexicon.pronunciation": {
       "standard": "lexicon.term-list"
     },
     "lexicon.punctuation": {
@@ -76,33 +78,13 @@
     "lexicon.sentence-length": {
       "standard": "lexicon.voice-rule"
     },
-    "lexicon.spelling-variant": {
-      "standard": "lexicon.term-list"
-    },
-    "lexicon.time-format": {
-      "standard": "lexicon.format-rule"
-    },
-    "lexicon.unit-format": {
-      "standard": "lexicon.format-rule"
-    },
     "lexicon.warmth": {
       "standard": "lexicon.voice-rule"
-    },
-    "narratives.app-chrome": {
-      "standard": "narrative",
-      "inputs": [
-        "identity.naming.architecture",
-        "identity.verbal.voice",
-        "identity.naming.name"
-      ]
     },
     "narratives.article": {
       "standard": "narrative"
     },
-    "narratives.deck-script": {
-      "standard": "narrative"
-    },
-    "narratives.email": {
+    "narratives.case-study": {
       "standard": "narrative"
     },
     "narratives.guide": {
@@ -116,19 +98,6 @@
         "advantage.proposition.proof"
       ]
     },
-    "narratives.notification": {
-      "standard": "narrative"
-    },
-    "narratives.page-story": {
-      "standard": "narrative",
-      "inputs": [
-        "advantage.proposition.promise",
-        "advantage.proposition.proof",
-        "focus.lifecycle.acquisition",
-        "identity.verbal.narrative",
-        "identity.naming.name"
-      ]
-    },
     "narratives.release-notes": {
       "standard": "narrative",
       "inputs": [
@@ -137,38 +106,104 @@
         "execution.roadmap.release"
       ]
     },
-    "narratives.screen": {
-      "standard": "narrative"
+    "page.about.meta": {
+      "standard": "string"
     },
-    "narratives.site-chrome": {
-      "standard": "narrative"
+    "page.app-home.meta": {
+      "standard": "string"
     },
-    "narratives.video-script": {
-      "standard": "narrative"
+    "page.app-not-found.meta": {
+      "standard": "string"
     },
-    "passages.access-matrix": {
+    "page.article.meta": {
+      "standard": "string"
+    },
+    "page.changelog.meta": {
+      "standard": "string"
+    },
+    "page.contact.meta": {
+      "standard": "string"
+    },
+    "page.deck.meta": {
+      "standard": "string"
+    },
+    "page.docs-index.meta": {
+      "standard": "string"
+    },
+    "page.error.meta": {
+      "standard": "string"
+    },
+    "page.guide.meta": {
+      "standard": "string"
+    },
+    "page.home.meta": {
+      "standard": "string"
+    },
+    "page.list.meta": {
+      "standard": "string"
+    },
+    "page.not-authorized.meta": {
+      "standard": "string"
+    },
+    "page.not-found.meta": {
+      "standard": "string"
+    },
+    "page.pricing.meta": {
+      "standard": "string"
+    },
+    "page.privacy.meta": {
+      "standard": "string"
+    },
+    "page.service-unavailable.meta": {
+      "standard": "string"
+    },
+    "page.settings.meta": {
+      "standard": "string"
+    },
+    "page.sign-in.meta": {
+      "standard": "string"
+    },
+    "page.sign-out-confirm.meta": {
+      "standard": "string"
+    },
+    "page.terms.meta": {
+      "standard": "string"
+    },
+    "publication.app.meta": {
+      "standard": "string"
+    },
+    "publication.docs.meta": {
+      "standard": "string"
+    },
+    "publication.site.meta": {
+      "standard": "string"
+    },
+    "publication.slides.meta": {
+      "standard": "string"
+    },
+    "sections.access-matrix.copy": {
       "standard": "passage",
       "inputs": [
         "identity.verbal.voice",
         "capability.team.structure"
       ]
     },
-    "passages.account-summary": {
+    "sections.account-summary.copy": {
       "standard": "passage"
     },
-    "passages.activity-feed": {
+    "sections.activity-feed.copy": {
       "standard": "passage"
     },
-    "passages.article": {
+    "sections.article.copy": {
       "standard": "passage"
     },
-    "passages.audit-log": {
+    "sections.audit-log.copy": {
       "standard": "passage"
     },
-    "passages.band": {
+    "sections.call-to-action.copy": {
       "standard": "passage"
     },
-    "passages.boundary-message": {
+    "sections.chat.copy": {
       "standard": "passage",
       "inputs": [
         "identity.brand.personality",
@@ -176,30 +211,16 @@
         "context.company.constraint"
       ]
     },
-    "passages.call-to-action": {
+    "sections.column-mapper.copy": {
       "standard": "passage"
     },
-    "passages.cards": {
+    "sections.comparison.copy": {
       "standard": "passage"
     },
-    "passages.chat": {
-      "standard": "passage",
-      "inputs": [
-        "identity.brand.personality",
-        "identity.verbal.voice",
-        "context.company.constraint"
-      ]
-    },
-    "passages.column-mapper": {
+    "sections.consent.copy": {
       "standard": "passage"
     },
-    "passages.comparison": {
-      "standard": "passage"
-    },
-    "passages.consent": {
-      "standard": "passage"
-    },
-    "passages.content": {
+    "sections.content.copy": {
       "standard": "passage",
       "inputs": [
         "identity.verbal.narrative",
@@ -208,22 +229,22 @@
         "execution.measure.driver"
       ]
     },
-    "passages.data-grid": {
+    "sections.data-grid.copy": {
       "standard": "passage"
     },
-    "passages.data-table": {
+    "sections.data-table.copy": {
       "standard": "passage"
     },
-    "passages.empty-state": {
+    "sections.empty-state.copy": {
       "standard": "passage"
     },
-    "passages.error-state": {
+    "sections.error-state.copy": {
       "standard": "passage"
     },
-    "passages.explorer": {
+    "sections.explorer.copy": {
       "standard": "passage"
     },
-    "passages.faq": {
+    "sections.faq.copy": {
       "standard": "passage",
       "inputs": [
         "advantage.proposition.proof",
@@ -232,13 +253,13 @@
         "context.company.constraint"
       ]
     },
-    "passages.features": {
+    "sections.features.copy": {
       "standard": "passage"
     },
-    "passages.filter-builder": {
+    "sections.filter-builder.copy": {
       "standard": "passage"
     },
-    "passages.form": {
+    "sections.form.copy": {
       "standard": "passage",
       "inputs": [
         "identity.verbal.voice",
@@ -246,7 +267,7 @@
         "focus.offer.excluded"
       ]
     },
-    "passages.gallery": {
+    "sections.gallery.copy": {
       "standard": "passage",
       "inputs": [
         "identity.verbal.voice",
@@ -254,7 +275,7 @@
         "focus.offer.included"
       ]
     },
-    "passages.hero": {
+    "sections.hero.copy": {
       "standard": "copy.headline",
       "inputs": [
         "advantage.proposition.promise",
@@ -265,46 +286,29 @@
         "identity.naming.name"
       ]
     },
-    "passages.legal-prose": {
-      "standard": "passage",
-      "inputs": [
-        "focus.reach.geography",
-        "identity.verbal.voice",
-        "advantage.proposition.proof"
-      ]
-    },
-    "passages.link-index": {
+    "sections.link-index.copy": {
       "standard": "passage"
     },
-    "passages.logo-cloud": {
+    "sections.logo-cloud.copy": {
       "standard": "passage"
     },
-    "passages.logo-hero": {
-      "standard": "copy.headline"
-    },
-    "passages.logo-mark": {
+    "sections.media.copy": {
       "standard": "passage"
     },
-    "passages.media": {
-      "standard": "passage"
-    },
-    "passages.newsletter": {
-      "standard": "passage"
-    },
-    "passages.notices": {
+    "sections.notices.copy": {
       "standard": "passage",
       "inputs": [
         "identity.verbal.voice",
         "execution.risk.mitigation"
       ]
     },
-    "passages.page-header": {
+    "sections.page-header.copy": {
       "standard": "copy.headline"
     },
-    "passages.pagination": {
+    "sections.pagination.copy": {
       "standard": "passage"
     },
-    "passages.people": {
+    "sections.people.copy": {
       "standard": "passage",
       "inputs": [
         "advantage.proposition.proof",
@@ -312,41 +316,38 @@
         "capability.team.role"
       ]
     },
-    "passages.pricing": {
+    "sections.pricing.copy": {
       "standard": "passage"
     },
-    "passages.record-detail": {
+    "sections.resource-list.copy": {
       "standard": "passage"
     },
-    "passages.resource-list": {
-      "standard": "passage"
-    },
-    "passages.section-header": {
+    "sections.section-header.copy": {
       "standard": "copy.headline"
     },
-    "passages.sectioned-document": {
+    "sections.sectioned-document.copy": {
       "standard": "passage",
       "inputs": [
         "identity.verbal.voice"
       ]
     },
-    "passages.settings": {
+    "sections.settings.copy": {
       "standard": "passage",
       "inputs": [
         "identity.verbal.voice",
         "focus.offer.included"
       ]
     },
-    "passages.sign-in-form": {
+    "sections.sign-in-form.copy": {
       "standard": "passage"
     },
-    "passages.stats": {
+    "sections.stats.copy": {
       "standard": "passage"
     },
-    "passages.status-list": {
+    "sections.status-list.copy": {
       "standard": "passage"
     },
-    "passages.steps": {
+    "sections.steps.copy": {
       "standard": "passage",
       "inputs": [
         "focus.offer.included",
@@ -354,16 +355,16 @@
         "capability.operation.delivery"
       ]
     },
-    "passages.table-of-contents": {
+    "sections.table-of-contents.copy": {
       "standard": "passage"
     },
-    "passages.task-list": {
+    "sections.task-list.copy": {
       "standard": "passage"
     },
-    "passages.testimonials": {
+    "sections.testimonials.copy": {
       "standard": "passage"
     },
-    "passages.timeline": {
+    "sections.timeline.copy": {
       "standard": "passage",
       "inputs": [
         "execution.roadmap.milestone",
@@ -373,169 +374,15 @@
         "execution.roadmap.release"
       ]
     },
-    "passages.usage": {
+    "sections.usage.copy": {
       "standard": "passage"
     },
-    "passages.wizard": {
+    "sections.wizard.copy": {
       "standard": "passage",
       "inputs": [
         "identity.verbal.voice",
         "capability.operation.delivery"
       ]
-    },
-    "patterns.confirmation": {
-      "standard": "pattern"
-    },
-    "patterns.consent-line": {
-      "standard": "pattern"
-    },
-    "patterns.empty-state": {
-      "standard": "pattern"
-    },
-    "patterns.error-message": {
-      "standard": "pattern"
-    },
-    "patterns.eyebrow-headline": {
-      "standard": "copy.headline"
-    },
-    "patterns.feature-bullet": {
-      "standard": "pattern"
-    },
-    "patterns.figure-caption": {
-      "standard": "pattern"
-    },
-    "patterns.form-field": {
-      "standard": "pattern"
-    },
-    "patterns.headline": {
-      "standard": "copy.headline"
-    },
-    "patterns.headline-subhead": {
-      "standard": "copy.headline"
-    },
-    "patterns.hint": {
-      "standard": "pattern"
-    },
-    "patterns.inline-link": {
-      "standard": "pattern"
-    },
-    "patterns.messaging-kit": {
-      "standard": "pattern",
-      "inputs": [
-        "advantage.proposition.promise",
-        "aspiration.purpose.mission",
-        "identity.brand.essence",
-        "identity.verbal.narrative",
-        "focus.category.definition",
-        "identity.naming.architecture"
-      ]
-    },
-    "patterns.pricing-item": {
-      "standard": "pattern"
-    },
-    "patterns.primary-action": {
-      "standard": "pattern"
-    },
-    "patterns.quote": {
-      "standard": "pattern"
-    },
-    "patterns.secondary-action": {
-      "standard": "pattern"
-    },
-    "patterns.section-title": {
-      "standard": "copy.headline"
-    },
-    "patterns.stat": {
-      "standard": "pattern"
-    },
-    "patterns.table-caption": {
-      "standard": "pattern"
-    },
-    "patterns.table-header": {
-      "standard": "pattern"
-    },
-    "patterns.testimonial": {
-      "standard": "pattern"
-    },
-    "patterns.tooltip": {
-      "standard": "pattern"
-    },
-    "patterns.warning-message": {
-      "standard": "pattern"
-    },
-    "strings.actions": {
-      "standard": "string"
-    },
-    "strings.alt-text": {
-      "standard": "string",
-      "inputs": [
-        "identity.visual.imagery",
-        "identity.naming.name"
-      ]
-    },
-    "strings.captions": {
-      "standard": "string"
-    },
-    "strings.common": {
-      "standard": "string",
-      "inputs": [
-        "identity.verbal.voice",
-        "identity.brand.personality"
-      ]
-    },
-    "strings.confirmations": {
-      "standard": "string"
-    },
-    "strings.counters": {
-      "standard": "string"
-    },
-    "strings.descriptions": {
-      "standard": "string"
-    },
-    "strings.email-preheaders": {
-      "standard": "string"
-    },
-    "strings.email-subjects": {
-      "standard": "string"
-    },
-    "strings.empty": {
-      "standard": "string"
-    },
-    "strings.errors": {
-      "standard": "string"
-    },
-    "strings.field-labels": {
-      "standard": "string"
-    },
-    "strings.legal-lines": {
-      "standard": "string"
-    },
-    "strings.loading": {
-      "standard": "string"
-    },
-    "strings.names": {
-      "standard": "string"
-    },
-    "strings.navigation": {
-      "standard": "string"
-    },
-    "strings.page-titles": {
-      "standard": "string"
-    },
-    "strings.share-text": {
-      "standard": "string"
-    },
-    "strings.statuses": {
-      "standard": "string"
-    },
-    "strings.taglines": {
-      "standard": "copy.headline"
-    },
-    "strings.transcripts": {
-      "standard": "string"
-    },
-    "strings.warnings": {
-      "standard": "string"
     }
   }
 }

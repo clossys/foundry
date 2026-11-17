@@ -15049,7 +15049,8 @@
       "cellId": "designer.item.components.chart-heatmap",
       "recordId": "st.8z6c2ygg4f",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.chart-line",
@@ -15061,31 +15062,36 @@
       "cellId": "designer.item.components.chart-range",
       "recordId": "st.0mn92hwz38",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.chart-scatter",
       "recordId": "st.kefsddq291",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.chart-sparkline",
       "recordId": "st.5s2s4z7gvg",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.chart-status-strip",
       "recordId": "st.d9jtzmdge0",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.chart-waterfall",
       "recordId": "st.bxzfd2qgye",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.checkbox",
@@ -15193,7 +15199,8 @@
       "cellId": "designer.item.components.native-action",
       "recordId": "st.xx789rndjs",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.navigation-tree",
@@ -15205,7 +15212,8 @@
       "cellId": "designer.item.components.number-field",
       "recordId": "st.24e3tp2d0j",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.popover",
@@ -15565,7 +15573,8 @@
       "cellId": "designer.item.sections.boundary-message",
       "recordId": "st.3xmga7mga8",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.call-to-action",
@@ -15577,7 +15586,8 @@
       "cellId": "designer.item.sections.cards",
       "recordId": "st.5x1am4hrfd",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.chat",
@@ -15685,7 +15695,8 @@
       "cellId": "designer.item.sections.legal-prose",
       "recordId": "st.6xzd3eeavg",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.link-index",
@@ -15703,13 +15714,15 @@
       "cellId": "designer.item.sections.logo-hero",
       "recordId": "st.yeqv32cpay",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.logo-mark",
       "recordId": "st.cm83f2fvc6",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.media",
@@ -15721,7 +15734,8 @@
       "cellId": "designer.item.sections.newsletter",
       "recordId": "st.wg4nvk9amp",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.notices",
@@ -15757,7 +15771,8 @@
       "cellId": "designer.item.sections.record-detail",
       "recordId": "st.g385gwchf1",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.resource-list",
@@ -15919,7 +15934,8 @@
       "cellId": "designer.item.frames.document",
       "recordId": "st.w3ddpdtqay",
       "target": "packages/designer/src/catalog/slots/frames.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.frames.site-shell",
@@ -16381,7 +16397,8 @@
       "target": "packages/designer/src/catalog/slots/frames.json",
       "kind": "display-name",
       "parent": "designer.frameOption.frames.document",
-      "value": "variant.page"
+      "value": "variant.page",
+      "status": "retired"
     },
     {
       "cellId": "designer.frameOption.frames.document.variant.status",
@@ -16389,7 +16406,8 @@
       "target": "packages/designer/src/catalog/slots/frames.json",
       "kind": "display-name",
       "parent": "designer.frameOption.frames.document",
-      "value": "variant.status"
+      "value": "variant.status",
+      "status": "retired"
     },
     {
       "cellId": "designer.frameOption.frames.site-shell.chrome.full",
@@ -16923,7 +16941,8 @@
       "cellId": "designer.item.components.dropdown-menu",
       "recordId": "st.2236py9b7a",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.empty",
@@ -17379,49 +17398,57 @@
       "cellId": "designer.item.components.specimen-swatch",
       "recordId": "st.cjqh0xwhnk",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.specimen-ladder",
       "recordId": "st.gr5z6m2rch",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.specimen-player",
       "recordId": "st.4z8j4g6a93",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.specimen-grid",
       "recordId": "st.91whqwsc29",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.specimen-matrix",
       "recordId": "st.wz9kb2dwjc",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.specimen-viewport",
       "recordId": "st.n9yfzh7sd4",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.specimen-passage",
       "recordId": "st.q2ap1p1dt2",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.components.specimen-copy-in-context",
       "recordId": "st.mb0qw39cd5",
       "target": "packages/designer/src/catalog/slots/components.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.sectioned-document",
@@ -17433,85 +17460,99 @@
       "cellId": "designer.item.sections.specimen-swatch",
       "recordId": "st.cjqh0xwhnk",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-color-ramp",
       "recordId": "st.7jafpb477w",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-type-ladder",
       "recordId": "st.h9ffj447ed",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-spacing-ladder",
       "recordId": "st.rymde5gdqj",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-radius-ladder",
       "recordId": "st.f4bcsks90s",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-motion-player",
       "recordId": "st.4z8j4g6a93",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-asset-grid",
       "recordId": "st.at8wzd8jdm",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-icon-grid",
       "recordId": "st.5mqkqzgpy0",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-variant-matrix",
       "recordId": "st.wz9kb2dwjc",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-section-viewports",
       "recordId": "st.2gwprmztsy",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-frame-viewports",
       "recordId": "st.b5883vry72",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-rich-passage",
       "recordId": "st.q2ap1p1dt2",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-copy-in-context",
       "recordId": "st.mb0qw39cd5",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.item.sections.specimen-page-viewports",
       "recordId": "st.w086w23spg",
       "target": "packages/designer/src/catalog/slots/sections.json",
-      "kind": "item-name"
+      "kind": "item-name",
+      "status": "retired"
     },
     {
       "cellId": "designer.ia.sections.specimens",
@@ -18406,7 +18447,7 @@
       "recordId": "st.8z6c2ygg4f",
       "cellId": "designer.item.components.chart-heatmap",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -18420,35 +18461,35 @@
       "recordId": "st.0mn92hwz38",
       "cellId": "designer.item.components.chart-range",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.kefsddq291",
       "cellId": "designer.item.components.chart-scatter",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.5s2s4z7gvg",
       "cellId": "designer.item.components.chart-sparkline",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.d9jtzmdge0",
       "cellId": "designer.item.components.chart-status-strip",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.bxzfd2qgye",
       "cellId": "designer.item.components.chart-waterfall",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -18574,7 +18615,7 @@
       "recordId": "st.xx789rndjs",
       "cellId": "designer.item.components.native-action",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -18588,7 +18629,7 @@
       "recordId": "st.24e3tp2d0j",
       "cellId": "designer.item.components.number-field",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -19001,7 +19042,7 @@
       "recordId": "st.3xmga7mga8",
       "cellId": "designer.item.sections.boundary-message",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -19015,7 +19056,7 @@
       "recordId": "st.5x1am4hrfd",
       "cellId": "designer.item.sections.cards",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -19141,7 +19182,7 @@
       "recordId": "st.6xzd3eeavg",
       "cellId": "designer.item.sections.legal-prose",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -19162,14 +19203,14 @@
       "recordId": "st.yeqv32cpay",
       "cellId": "designer.item.sections.logo-hero",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.cm83f2fvc6",
       "cellId": "designer.item.sections.logo-mark",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -19183,7 +19224,7 @@
       "recordId": "st.wg4nvk9amp",
       "cellId": "designer.item.sections.newsletter",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -19225,7 +19266,7 @@
       "recordId": "st.jsam2zzqwr",
       "cellId": "designer.item.sections.record-detail",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -19407,7 +19448,7 @@
       "recordId": "st.w3ddpdtqay",
       "cellId": "designer.item.frames.document",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -19942,14 +19983,14 @@
       "recordId": "st.dczaaf9s2z",
       "cellId": "designer.frameOption.frames.document.variant.page",
       "severity": "P1",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.zjekh6j231",
       "cellId": "designer.frameOption.frames.document.variant.status",
       "severity": "P1",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
@@ -20397,7 +20438,7 @@
       "recordId": "st.2236py9b7a",
       "cellId": "designer.item.components.dropdown-menu",
       "severity": "P1",
-      "status": "Need",
+      "status": "retired",
       "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
     },
     {
@@ -20922,21 +20963,21 @@
       "recordId": "st.gr5z6m2rch",
       "cellId": "designer.item.components.specimen-ladder",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.91whqwsc29",
       "cellId": "designer.item.components.specimen-grid",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.n9yfzh7sd4",
       "cellId": "designer.item.components.specimen-viewport",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
@@ -20950,98 +20991,98 @@
       "recordId": "st.cjqh0xwhnk",
       "cellId": "designer.item.sections.specimen-swatch",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.7jafpb477w",
       "cellId": "designer.item.sections.specimen-color-ramp",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.h9ffj447ed",
       "cellId": "designer.item.sections.specimen-type-ladder",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.rymde5gdqj",
       "cellId": "designer.item.sections.specimen-spacing-ladder",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.f4bcsks90s",
       "cellId": "designer.item.sections.specimen-radius-ladder",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.4z8j4g6a93",
       "cellId": "designer.item.sections.specimen-motion-player",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.at8wzd8jdm",
       "cellId": "designer.item.sections.specimen-asset-grid",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.5mqkqzgpy0",
       "cellId": "designer.item.sections.specimen-icon-grid",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.wz9kb2dwjc",
       "cellId": "designer.item.sections.specimen-variant-matrix",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.2gwprmztsy",
       "cellId": "designer.item.sections.specimen-section-viewports",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.b5883vry72",
       "cellId": "designer.item.sections.specimen-frame-viewports",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.q2ap1p1dt2",
       "cellId": "designer.item.sections.specimen-rich-passage",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.mb0qw39cd5",
       "cellId": "designer.item.sections.specimen-copy-in-context",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
       "recordId": "st.w086w23spg",
       "cellId": "designer.item.sections.specimen-page-viewports",
       "severity": "P0",
-      "status": "Need",
+      "status": "retired",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {

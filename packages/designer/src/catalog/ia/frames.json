@@ -27,6 +27,13 @@
             "frames.sheet",
             "frames.command"
           ]
+        },
+        {
+          "id": "frames-deck",
+          "label": "Deck",
+          "leaves": [
+            "frames.deck"
+          ]
         }
       ]
     }
@@ -41,6 +48,7 @@
     "frames.site-footer",
     "frames.app-shell",
     "frames.app-header",
-    "frames.app-sidebar"
+    "frames.app-sidebar",
+    "frames.deck"
   ]
 }

@@ -4,7 +4,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { COPY_TARGET_UNITS, checkCopyAgainstDesigner, deriveCopyTree, loadDesignerCopyInput, type DesignerCopyInput } from "./copy.js";
+import { COPY_TARGET_UNITS, PAGE_METADATA_L1, checkCopyAgainstDesigner, deriveCopyTree, loadDesignerCopyInput, type DesignerCopyInput } from "./copy.js";
 import { runDeriveCopy } from "./cli.js";
 
 const input = loadDesignerCopyInput();
@@ -26,7 +26,8 @@ describe("Copy is generated from the Designer catalog", () => {
   it("lists the 58 writer.md units, in Designer order, each once", () => {
     expect(COPY_TARGET_UNITS).toHaveLength(58);
     expect(new Set(COPY_TARGET_UNITS).size).toBe(58);
-    const placed = committed.nodes.flatMap((l1: { children: { leaves: string[] }[] }) => l1.children.flatMap(l2 => l2.leaves));
+    const placed = committed.nodes.filter((l1: { id: string }) => l1.id !== PAGE_METADATA_L1.id)
+      .flatMap((l1: { children: { leaves: string[] }[] }) => l1.children.flatMap(l2 => l2.leaves));
     expect(placed).toHaveLength(58);
     expect(new Set(placed)).toEqual(new Set(COPY_TARGET_UNITS.map(unit => `${unit}.copy`)));
   });
@@ -34,7 +35,8 @@ describe("Copy is generated from the Designer catalog", () => {
   it("every Designer unit with copy fields has exactly one Copy slot, and every Copy slot has Designer fields", () => {
     expect(checkCopyAgainstDesigner(committed, input)).toEqual([]);
     const withFields = input.slots.filter(slot => (slot.contract?.copy?.fields?.length ?? 0) > 0 && !input.retired.has(slot.id)).map(slot => slot.id);
-    expect(committed.slots.map((slot: { contract: { unit: string } }) => slot.contract.unit).sort()).toEqual(withFields.map(id => `designer/${id}`).sort());
+    const designerUnits = committed.slots.map((slot: { contract: { unit: string } }) => slot.contract.unit).filter((unit: string) => unit.startsWith("designer/"));
+    expect(designerUnits.sort()).toEqual(withFields.map(id => `designer/${id}`).sort());
   });
 
   it("projects each field with its role and budget and pins a fields digest", () => {
@@ -49,6 +51,56 @@ describe("Copy is generated from the Designer catalog", () => {
     expect(hero.inputs.filter((ref: { to: string }) => ref.to.startsWith("writer/lexicon.")).length).toBe(12);
     expect(hero.inputs.some((ref: { to: string }) => ref.to === "director/identity.verbal.voice")).toBe(false);
     expect(hero.inputs.filter((ref: { to: string }) => ref.to.startsWith("director/")).every((ref: { key?: string }) => typeof ref.key === "string")).toBe(true);
+  });
+});
+
+describe("Page metadata is generated from the Publisher directory (foundry-build-0033)", () => {
+  const pageMeta = committed.nodes.find((l1: { id: string }) => l1.id === PAGE_METADATA_L1.id);
+  const livePages = Object.entries(input.directory.slots).filter(([, page]) => page.kind === "page" && !page.parked && page.records?.meta);
+
+  it("is the last Copy L1, one L2 per live publication, labelled by the publication id", () => {
+    expect(committed.nodes.at(-1).id).toBe("copy/page-metadata");
+    expect(pageMeta.label).toBe("Page metadata");
+    expect(pageMeta.children.map((l2: { id: string; label: string }) => [l2.id, l2.label])).toEqual([
+      ["copy/page-metadata/site", "site"], ["copy/page-metadata/docs", "docs"], ["copy/page-metadata/app", "app"], ["copy/page-metadata/slides", "slides"],
+    ]);
+  });
+
+  it("has one page.<id>.meta per live Publisher page that names it (21) and one publication.<id>.meta per live publication (4)", () => {
+    expect(livePages).toHaveLength(21);
+    const leaves: string[] = pageMeta.children.flatMap((l2: { leaves: string[] }) => l2.leaves);
+    expect(leaves.filter(id => id.startsWith("page."))).toEqual(livePages.map(([id]) => `${id}.meta`));
+    expect(leaves.filter(id => id.startsWith("publication."))).toEqual(["publication.site.meta", "publication.docs.meta", "publication.app.meta", "publication.slides.meta"]);
+    expect(leaves).not.toContain("page.company-one-pager.meta");
+    for (const [id, page] of livePages) expect(page.records!.meta).toBe(`writer/${id}.meta#${id.slice("page.".length)}.meta`);
+  });
+
+  it("each slot is a starter Copy slot with its record, placement, fields digest and the Voice and Director inputs", () => {
+    const home = committed.slots.find((slot: { id: string }) => slot.id === "page.home.meta");
+    expect(home).toMatchObject({ kind: "copy", mark: "starter", contract: { unit: "publisher/page.home", records: { "home.meta": { placement: "publisher/page.home#meta" } }, candidate: "clossys.copy-candidate/1" } });
+    expect(home.contract.copy.fields.map((field: { key: string }) => field.key)).toEqual(["title", "description", "share.title", "share.description"]);
+    expect(home.contract.fieldsSha256).toMatch(/^[0-9a-f]{64}$/);
+    const site = committed.slots.find((slot: { id: string }) => slot.id === "publication.site.meta");
+    expect(site.contract.copy.fields.map((field: { key: string }) => field.key)).toEqual(["siteName", "share.title", "share.description"]);
+    expect(home.inputs.filter((ref: { to: string }) => ref.to.startsWith("writer/lexicon.")).length).toBe(12);
+  });
+
+  it("mutation: a live Publisher page with no Page metadata slot fails", () => {
+    const tree = clone(committed);
+    tree.slots = tree.slots.filter((slot: { id: string }) => slot.id !== "page.pricing.meta");
+    expect(messages(tree)).toContain("page.pricing.meta");
+  });
+
+  it("mutation: a Page metadata slot for a parked page fails", () => {
+    const next = clone(input);
+    next.directory.slots["page.about"]!.parked = true;
+    expect(messages(committed, next)).toContain("page.about.meta is a Page metadata slot with no live Publisher page");
+  });
+
+  it("mutation: a Publisher meta ref that is not writer/page.<id>.meta#<id>.meta fails", () => {
+    const next = clone(input);
+    next.directory.slots["page.home"]!.records!.meta = "writer/strings.page-titles#home.title";
+    expect(messages(committed, next)).toContain("does not name a writer/page.<id>.meta record");
   });
 });
 

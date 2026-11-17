@@ -2445,6 +2445,10 @@
     "contract": {
       "kind": "section",
       "root": "section",
+      "media": [
+        "slide",
+        "web"
+      ],
       "anatomy": {
         "band": "sections.band",
         "header": "sections.section-header"
@@ -3660,6 +3664,10 @@
     "contract": {
       "kind": "section",
       "root": "section",
+      "media": [
+        "slide",
+        "web"
+      ],
       "anatomy": {
         "band": "sections.band",
         "header": "sections.section-header"
@@ -5824,6 +5832,10 @@
     "contract": {
       "kind": "section",
       "root": "section",
+      "media": [
+        "slide",
+        "web"
+      ],
       "anatomy": {
         "band": "sections.band",
         "header": "sections.section-header"
@@ -9090,7 +9102,6 @@
         ]
       },
       "allowedComposes": [
-        "components.chart-sparkline",
         "components.meter",
         "components.card",
         "components.semantic-content"
@@ -9707,6 +9718,10 @@
     "contract": {
       "kind": "section",
       "root": "section",
+      "media": [
+        "slide",
+        "web"
+      ],
       "anatomy": {
         "band": "sections.band",
         "header": null
@@ -10090,6 +10105,10 @@
     "contract": {
       "kind": "section",
       "root": "section",
+      "media": [
+        "slide",
+        "web"
+      ],
       "anatomy": {
         "band": "sections.band",
         "header": "sections.section-header"

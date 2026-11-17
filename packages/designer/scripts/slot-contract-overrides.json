@@ -80,6 +80,7 @@
     "frames.app-sidebar": { "purpose": "Application sidebar: header, navigation tree, account and theme controls, docked, collapsed or as an overlay." },
     "frames.inspector": { "purpose": "Inspector panel beside the main region for detail content, docked, collapsed or as an overlay." },
     "frames.sheet": { "purpose": "Sheet dialog that slides in from the start, end or bottom, with a heading, body and footer." },
-    "frames.command": { "purpose": "Command palette dialog: search field, grouped commands and an empty state, with an optional keyboard shortcut." }
+    "frames.command": { "purpose": "Command palette dialog: search field, grouped commands and an empty state, with an optional keyboard shortcut." },
+    "frames.deck": { "purpose": "Deck frame: one 16:9 slide canvas whose single main region holds one section rendered on the slide medium (variant medium.slide)." }
   }
 }

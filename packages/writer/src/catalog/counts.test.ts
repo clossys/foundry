@@ -8,6 +8,9 @@
  * - A Copy mark is inherited from the Designer unit. Designer parks no section yet, so the five writer.md marks
  *   account-summary, explorer, filter-builder, wizard and column-mapper (~) read as other-live: Copy is 36 / 22 / 0,
  *   not 36 / 17 / 5.
+ * - foundry-build-0033 adds the Copy L1 Page metadata (writer.md 2 Copy, last row; IA audit 2026-11-16 proposal 1):
+ *   one L2 per live Publisher publication (site, docs, app, slides) and 25 starter slots (4 publication.<id>.meta and
+ *   21 page.<id>.meta), so the totals are 3 L0 / 9 L1 / 27 L2 / 100 L3 and Copy is 61 / 22 / 0.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -27,34 +30,35 @@ describe("Writer tree counts (writer.md 2, Counts)", () => {
     expect(trees.map(tree => tree.label)).toEqual(["Voice", "Prose", "Copy"]);
   });
 
-  it("totals 3 L0, 8 L1, 23 L2 and 75 L3", () => {
-    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 8, l2: 23, l3: 75 });
+  it("totals 3 L0, 9 L1, 27 L2 and 100 L3 (75 + 25 Page metadata)", () => {
+    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 9, l2: 27, l3: 100 });
   });
 
   it("counts per group", () => {
     expect(counts.byGroup.voice).toMatchObject({ l1: 2, l2: 5, l3: 12, marks: { starter: 12, "other-live": 0, parked: 0 } });
     expect(counts.byGroup.prose).toMatchObject({ l1: 2, l2: 4, l3: 5, marks: { starter: 3, "other-live": 1, parked: 1 } });
-    expect(counts.byGroup.copy).toMatchObject({ l1: 4, l2: 14, l3: 58 });
+    expect(counts.byGroup.copy).toMatchObject({ l1: 5, l2: 18, l3: 83 });
   });
 
-  it("Copy marks follow the Designer unit (36 starter; parked sections pending in Designer)", () => {
-    expect(counts.byGroup.copy.marks).toEqual({ starter: 36, "other-live": 22, parked: 0 });
+  it("Copy marks follow the Designer unit (36 starter; parked sections pending in Designer) plus 25 starter Page metadata", () => {
+    expect(counts.byGroup.copy.marks).toEqual({ starter: 61, "other-live": 22, parked: 0 });
   });
 
-  it("Copy has 43 derived slots and 15 leaves waiting on Designer copy fields", () => {
-    expect(counts.byGroup.copy.slots).toBe(43);
+  it("Copy has 68 derived slots (43 Designer units, 25 Page metadata) and 15 leaves waiting on Designer copy fields", () => {
+    expect(counts.byGroup.copy.slots).toBe(68);
     expect(counts.byGroup.copy.awaiting).toBe(15);
   });
 
   it("labels the L1s and L2s by the target tree", () => {
     const labels = (id: string) => group(id).nodes.map(l1 => [l1.label, l1.children.map(l2 => l2.label)]);
-    expect(labels("voice")).toEqual([["Tone", ["Attitude", "Address", "Rhythm"]], ["Wording", ["Mechanics", "Terms"]]]);
+    expect(labels("voice")).toEqual([["Tone", ["Attitude", "Address", "Readability"]], ["Wording", ["Mechanics", "Terms"]]]);
     expect(labels("prose")).toEqual([["Editorial", ["Narratives", "Changelog"]], ["Reference", ["Help", "Policies"]]]);
     expect(labels("copy")).toEqual([
       ["Component text", ["Actions", "Navigation", "Text and media", "Overlays"]],
       ["Section copy", ["Parts", "Story", "Reading", "Records", "Forms", "States"]],
       ["Frame copy", ["Site", "App"]],
       ["Asset text", ["Marks", "Media"]],
+      ["Page metadata", ["site", "docs", "app", "slides"]],
     ]);
   });
 

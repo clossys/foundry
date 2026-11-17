@@ -184,7 +184,7 @@
       "id": "ps.000000000a",
       "leaf": "passages.logo-hero",
       "context": "Generic draft site starter",
-      "status": "draft",
+      "status": "retired",
       "origin": "authored",
       "schema": "passages.logo-hero",
       "schemaDigest": "10c4e80128ecd99abcd4f646e1d2603878846948ff3b4418c719dfdf6dc44791",
@@ -479,7 +479,7 @@
       "id": "ps.000000001j",
       "leaf": "passages.legal-prose",
       "context": "Generic draft site starter",
-      "status": "draft",
+      "status": "retired",
       "origin": "authored",
       "schema": "passages.legal-prose",
       "schemaDigest": "a683c37d8bfac5fd864ec15592518be59b7021583fc71289bb6471d92970fc57",
@@ -514,7 +514,7 @@
       "id": "ps.000000001q",
       "leaf": "passages.legal-prose",
       "context": "Generic draft site starter",
-      "status": "draft",
+      "status": "retired",
       "origin": "authored",
       "schema": "passages.legal-prose",
       "schemaDigest": "a683c37d8bfac5fd864ec15592518be59b7021583fc71289bb6471d92970fc57",
@@ -612,7 +612,7 @@
       "id": "ps.0000000025",
       "leaf": "passages.boundary-message",
       "context": "Generic draft site starter",
-      "status": "draft",
+      "status": "retired",
       "origin": "authored",
       "schema": "passages.boundary-message",
       "schemaDigest": "531ccd74190871dd86da181172069622a71043a701254042c6443fc9b1a0dd6e",
@@ -659,7 +659,7 @@
       "id": "ps.000000002b",
       "leaf": "passages.boundary-message",
       "context": "Generic draft site starter",
-      "status": "draft",
+      "status": "retired",
       "origin": "authored",
       "schema": "passages.boundary-message",
       "schemaDigest": "531ccd74190871dd86da181172069622a71043a701254042c6443fc9b1a0dd6e",
@@ -714,7 +714,7 @@
       "id": "ps.000000002h",
       "leaf": "passages.boundary-message",
       "context": "Generic draft site starter",
-      "status": "draft",
+      "status": "retired",
       "origin": "authored",
       "schema": "passages.boundary-message",
       "schemaDigest": "531ccd74190871dd86da181172069622a71043a701254042c6443fc9b1a0dd6e",
@@ -865,7 +865,7 @@
         {
           "type": "paragraph",
           "designer": {
-            "id": "sections.legal-prose",
+            "id": "sections.article",
             "configId": "legal.privacy"
           },
           "text": "This is a draft for review. It does not describe a live service or provide legal advice."
@@ -886,7 +886,7 @@
         {
           "type": "paragraph",
           "designer": {
-            "id": "sections.legal-prose",
+            "id": "sections.article",
             "configId": "legal.terms"
           },
           "text": "This is a draft for review. It does not describe a live service or provide legal advice."

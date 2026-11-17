@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { WRITER_LAYERS, isValidWriterLeafId, type WriterLayer } from "../../catalog-core/ids.js";
 import { checkWriterLeafSets, loadWriterLeafFreezeSnapshots, type WriterLeafFreezeSnapshot } from "../../catalog-core/leaf-freeze.js";
 export type WriterNode = { id: string; label: string } & ({ children: WriterNode[] } | { leaves: string[] });
-export interface WriterPlacement { layer: string; nodes: WriterNode[] }
+export interface WriterPlacement { layer: string; status?: string; nodes: WriterNode[] }
 export interface WriterSlot { id: string; layer: string; status: string; requires: string[]; contract: Record<string, unknown> }
 export interface WriterCatalog { placements: WriterPlacement[]; slots: WriterSlot[] }
 export interface WriterIAFinding { code: string; severity: "error"; layer: string; message: string }
@@ -13,8 +13,14 @@ export interface WriterIAReport {
   layers: { layer: WriterLayer; count: number; tree: WriterNode[]; contracts: WriterSlot[]; freeze: { status: "proposed" | "owner-signed" | "unfrozen"; signedHead: string | null; ownerSignoffComment: string | null } }[];
   findings: WriterIAFinding[];
 }
-/** Source JSON ships with Writer; the same URL works from src/ and dist/. */
-export function loadWriterCatalog(): WriterCatalog {
+/**
+ * The old five-layer store (lexicon, strings, patterns, passages, narratives; 137 ids) is retired as live IA
+ * (foundry-build-0033): every old ia file is flagged `status: "retired"` and every old id either has a row in
+ * `src/catalog/retired.json` or is kept under the same id in the target voice, prose and copy trees. The store
+ * stays only so existing records keep validating; the live Writer IA is `loadWriterTrees()` in `target.ts`.
+ * Source JSON ships with Writer; the same URL works from src/ and dist/.
+ */
+export function loadWriterStore(): WriterCatalog {
   const read = (area: "ia" | "slots", layer: WriterLayer): unknown => JSON.parse(readFileSync(new URL(`../../../src/catalog/${area}/${layer}.json`, import.meta.url), "utf8"));
   const placements: WriterPlacement[] = [], slots: WriterSlot[] = [];
   for (const layer of WRITER_LAYERS) {
@@ -27,6 +33,25 @@ export function loadWriterCatalog(): WriterCatalog {
     slots.push(...contracts);
   }
   return { placements, slots };
+}
+
+/** Old-store ids recorded retired in `src/catalog/retired.json`. */
+export function loadWriterRetiredIds(): Set<string> {
+  const rows = JSON.parse(readFileSync(new URL("../../../src/catalog/retired.json", import.meta.url), "utf8")) as { id: string }[];
+  return new Set(rows.map(row => row.id));
+}
+
+/**
+ * The live part of the old store: layers not flagged retired and ids with no retired row. Since foundry-build-0033
+ * every layer is flagged retired, so this serves no old id; callers that brief or plan Writer work read the target
+ * trees instead, and record validators read `loadWriterStore()`.
+ */
+export function loadWriterCatalog(store: WriterCatalog = loadWriterStore(), retired: ReadonlySet<string> = loadWriterRetiredIds()): WriterCatalog {
+  const live = new Set(store.placements.filter(placement => placement.status !== "retired").map(placement => placement.layer));
+  return {
+    placements: store.placements.filter(placement => live.has(placement.layer)),
+    slots: store.slots.filter(slot => live.has(slot.layer) && !retired.has(slot.id)),
+  };
 }
 
 /** Placement and basic leaf contracts only; record validation belongs to library checks. */

@@ -11,14 +11,16 @@ import commonLabels from "./common-labels.r1.en.json" with { type: "json" };
 import terminology from "../admin-terminology.json" with { type: "json" };
 import { validateWriterRecord } from "../../model/validate.js";
 import type { StringRecord, WriterLibrary, WriterRecord } from "../../model/types.js";
-import { loadWriterCatalog } from "../ia/index.js";
+import { loadWriterStore } from "../ia/index.js";
 import { checkWriterLint } from "../../checks/lint/index.js";
 import { writerLintTargets } from "../../checks/lint/targets.js";
 import { checkWriterICU } from "../../checks/icu.js";
 import { checkWriterLength } from "../../checks/length.js";
 import { checkWriterExpansion, writerPseudoLocale } from "../../checks/expansion.js";
 import { resolveCopyRef } from "../../resolve.js";
+import { loadRetiredIds, retiredIdsIn } from "../../checks/retired-references.js";
 import { getAdminCopy } from "../../admin-copy.js";
+const retiredIds = loadRetiredIds();
 
 interface Review {
   recordId: string; cellId: string; before: string; after: string; rationale: string; budget: number;
@@ -69,7 +71,7 @@ function unwrapped(markup: string): string[] {
 
 for (const file of files) describe(file, () => {
   it("adds only unapproved draft strings with evidence and one rationale per record", () => {
-    const envelope = draft(file), known = new Set(loadWriterCatalog().slots.map(slot => slot.id));
+    const envelope = draft(file), known = new Set(loadWriterStore().slots.map(slot => slot.id));
     expect(envelope).toMatchObject({ version: 1, revision: 1, state: "draft", locale: "en", activation: "none",
       sourceCommit: "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae" });
     expect(envelope.records.length).toBeGreaterThan(0);
@@ -95,7 +97,10 @@ for (const file of files) describe(file, () => {
       expect(review.source.line).toBeGreaterThan(0);
       if (!retiredSources.has(review.source.path))
         expect(review.source.line).toBeLessThanOrEqual(read(review.source.path).split("\n").length);
-      expect(envelope.needs).toContainEqual(expect.objectContaining({ recordId: record.id, status: "Need" }));
+      // A need for a Designer item that was retired stays in place, flagged retired (foundry-build-0033).
+      const need = envelope.needs.find(row => row.recordId === record.id);
+      expect(need, record.id).toBeDefined();
+      expect(need!.status, record.id).toBe(retiredIdsIn(need!.cellId, retiredIds).length > 0 ? "retired" : "Need");
     }
     for (const [path, digest] of Object.entries(envelope.sourceFiles))
       expect(createHash("sha256").update(read(path)).digest("hex"), path).toBe(digest);

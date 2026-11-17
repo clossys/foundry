@@ -5,7 +5,7 @@ import { withDeclaredCommonRecords } from "../__fixtures__/shared-records.fixtur
 import terminology from "../admin-terminology.json" with { type: "json" };
 import { validateWriterRecord } from "../../model/validate.js";
 import type { WriterLibrary, WriterRecord, StringRecord } from "../../model/types.js";
-import { loadWriterCatalog } from "../ia/index.js";
+import { loadWriterStore } from "../ia/index.js";
 import { checkWriterLint } from "../../checks/lint/index.js";
 import { compileLexiconRules } from "../../checks/lint/rules.js";
 import { writerLintTargets } from "../../checks/lint/targets.js";
@@ -35,7 +35,7 @@ describe("admin voice draft revision", () => {
     expect(drafts.activation).toBe("none");
     expect(records.length).toBeGreaterThan(150);
     expect(drafts.records.length + usages.length).toBe(206);
-    const known = new Set(loadWriterCatalog().slots.map(slot => slot.id));
+    const known = new Set(loadWriterStore().slots.map(slot => slot.id));
     expect(new Set(records.map(record => record.id)).size).toBe(records.length);
     for (const record of [...lexicon, ...records]) {
       expect(record.status).toBe("draft");

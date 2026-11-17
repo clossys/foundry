@@ -4,6 +4,9 @@
  * (live / parked); every live L3 is a starter leaf with a package default, except releases (their manifest is computed).
  * foundry-build-0027 unparks Slides: Directory Decks and Release Slides go live, with layout.deck, page.deck and
  * release.slides and a fourth starter, slides: 8 / 3 L1, 14 / 3 L2, 46 / 3 L3.
+ * foundry-build-0036 (audit P20): the medium is labelled "Slides" in all three files (Directory L1 Slides, Composition
+ * L2 Slides layouts, Release L2 Slides releases), and the empty parked Release L1 Video is dropped until a leaf exists:
+ * 8 / 2 L1, 14 / 3 L2, 46 / 3 L3.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -22,9 +25,9 @@ const unit = (ref: string) => ref.replace(/^designer\//, "");
 describe("Publisher tree counts (publisher.md section 2)", () => {
   const counts = countTree();
 
-  it("has 3 L0 and 8/3 L1, 14/3 L2, 46/3 L3 (live / parked): Slides adds 2 L1, 3 L2 and 3 L3", () => {
+  it("has 3 L0 and 8/2 L1, 14/3 L2, 46/3 L3 (live / parked): Slides adds 2 L1, 3 L2 and 3 L3; the empty Video L1 is dropped", () => {
     expect(counts.l0).toBe(3);
-    expect(counts.total).toEqual({ l1: { live: 8, parked: 3 }, l2: { live: 14, parked: 3 }, l3: { live: 46, parked: 3 } });
+    expect(counts.total).toEqual({ l1: { live: 8, parked: 2 }, l2: { live: 14, parked: 3 }, l3: { live: 46, parked: 3 } });
   });
 
   it("counts per L0 in owner order: Composition, Directory, Release", () => {
@@ -32,7 +35,7 @@ describe("Publisher tree counts (publisher.md section 2)", () => {
     expect(counts.byL0).toEqual({
       composition: { l1: { live: 2, parked: 0 }, l2: { live: 6, parked: 1 }, l3: { live: 21, parked: 1 } },
       directory: { l1: { live: 4, parked: 1 }, l2: { live: 4, parked: 1 }, l3: { live: 21, parked: 1 } },
-      release: { l1: { live: 2, parked: 2 }, l2: { live: 4, parked: 1 }, l3: { live: 4, parked: 1 } },
+      release: { l1: { live: 2, parked: 1 }, l2: { live: 4, parked: 1 }, l3: { live: 4, parked: 1 } },
     });
   });
 
@@ -52,8 +55,20 @@ describe("Publisher tree counts (publisher.md section 2)", () => {
 
   it("labels the L1s by the target tree", () => {
     expect(PUBLISHER_TREES.map(t => t.nodes.map(node => node.label))).toEqual([
-      ["Layouts", "Chrome"], ["Sites", "Docs", "Apps", "Decks", "Documents"], ["Web", "Slides", "Documents", "Video"],
+      ["Layouts", "Chrome"], ["Sites", "Docs", "Apps", "Slides", "Documents"], ["Web", "Slides", "Documents"],
     ]);
+  });
+
+  it("labels the slides medium with one word, Slides, in all three files", () => {
+    const label = (l0: string, id: string) => {
+      for (const l1 of tree([...PUBLISHER_TREES], l0).nodes) {
+        if (l1.id === id) return l1.label;
+        for (const l2 of l1.children ?? []) if (l2.id === id) return l2.label;
+      }
+      return undefined;
+    };
+    expect([label("composition", "composition/layouts/deck"), label("directory", "directory/decks"), label("release", "release/slides"), label("release", "release/slides/slides")])
+      .toEqual(["Slides layouts", "Slides", "Slides", "Slides releases"]);
   });
 });
 
@@ -73,6 +88,12 @@ describe("Publisher tree soundness", () => {
     const trees = clone(PUBLISHER_TREES) as L0Tree[];
     const retired = [...PUBLISHER_RETIRED, { id: "layout.about", retiredAt: "2026-11-15" }] as RetiredEntry[];
     expect(checkTree(trees, retired)).toContain("layout.about: retired id placed in the tree; retired ids are never reused");
+  });
+
+  it("mutation: an empty L1 fails (a parked Video L1 with no L2 is dropped, not kept)", () => {
+    const trees = clone(PUBLISHER_TREES) as L0Tree[];
+    (tree(trees, "release").nodes as unknown as { id: string; label: string; parked: boolean; children: [] }[]).push({ id: "release/video", label: "Video", parked: true, children: [] });
+    expect(checkTree(trees)).toEqual(["release/video: an L1 holds at least one L2; drop an empty L1 until a leaf exists"]);
   });
 
   it("mutation: a leaf placed under another L0 fails", () => {

@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { validateWriterRecord } from "./model/validate.js";
-import { loadWriterCatalog } from "./catalog/ia/index.js";
+import { loadWriterStore } from "./catalog/ia/index.js";
 import { checkWriterICU } from "./checks/icu.js";
 
 /** A create-only command for unapproved English admin Writer strings. */
@@ -12,7 +12,7 @@ export function mainAdminCopyDraft(argv: string[], io = { stdout: console.log, s
     if (!input || typeof input !== "object" || Array.isArray(input) || !("locale" in input) || input.locale !== "en"
       || Object.keys(input).some(key => key !== "locale" && key !== "records") || !("records" in input)) throw new Error("Explicit English draft input required");
     const records: unknown = input.records;
-    const leaves = new Set(loadWriterCatalog().slots.map(slot => slot.id));
+    const leaves = new Set(loadWriterStore().slots.map(slot => slot.id));
     const ids = new Set<string>(), contexts = new Set<string>();
     if (!Array.isArray(records) || !records.length) throw new Error("Nonempty string record list required");
     for (const row of records) {

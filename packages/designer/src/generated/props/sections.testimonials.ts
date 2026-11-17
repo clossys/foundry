@@ -1,5 +1,5 @@
 // Generated from sections.testimonials by src/generated/props/generate.ts; do not edit.
-export const testimonialsContractSha256 = "39b3f5d21cf5c5b1824e934f4b9afb74e221ccfe59f7bfa525dffb0772ddbc35";
+export const testimonialsContractSha256 = "b5972838fd46b24f3edff03e57666b5b2bd494df73782b8a654774789679e94e";
 
 export type TestimonialsCopy = {
   header?: {

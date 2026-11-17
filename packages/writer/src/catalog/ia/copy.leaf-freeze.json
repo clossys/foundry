@@ -63,5 +63,38 @@
     "assets.image.copy",
     "assets.video.copy"
   ],
-  "amendments": []
+  "amendments": [
+    {
+      "id": "foundry-build-0033-page-metadata",
+      "remove": [],
+      "add": [
+        "publication.site.meta",
+        "page.home.meta",
+        "page.about.meta",
+        "page.pricing.meta",
+        "page.contact.meta",
+        "page.terms.meta",
+        "page.privacy.meta",
+        "page.not-found.meta",
+        "page.error.meta",
+        "publication.docs.meta",
+        "page.docs-index.meta",
+        "page.guide.meta",
+        "page.article.meta",
+        "page.changelog.meta",
+        "publication.app.meta",
+        "page.sign-in.meta",
+        "page.sign-out-confirm.meta",
+        "page.not-authorized.meta",
+        "page.service-unavailable.meta",
+        "page.app-home.meta",
+        "page.list.meta",
+        "page.settings.meta",
+        "page.app-not-found.meta",
+        "publication.slides.meta",
+        "page.deck.meta"
+      ],
+      "why": "IA audit 2026-11-16 proposal 1 (owner: go with your recomm): the Copy L1 Page metadata of ia-target writer.md 2; one publication.<id>.meta per live Publisher publication and one page.<id>.meta per live page whose records.meta names it, derived from the Publisher directory"
+    }
+  ]
 }
