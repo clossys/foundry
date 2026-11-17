@@ -5,9 +5,9 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { candidatePath, parseCandidateName, readCandidateFile, slotDir, targetSchema } from "./candidate.js";
-import { buildPin, pinIssues, pinPath, pinRecordIssues, pinRecordStatus, writePinDoc, type Pin1Doc } from "./pin.js";
-import { validateAgainst } from "./schema.js";
+import { candidatePath, parseCandidateName, readCandidateFile, slotDir } from "./candidate.js";
+import { buildPin, pinIssues, pinMapIssues, pinPath, pinRecordIssues, pinRecordStatus, writePinDoc, type Pin1Doc } from "./pin.js";
+import { candidateIssues, readSlotValue } from "./slot-current.js";
 import type { Actor, AgentId, Pin, PinMap, PinRecord, Ref, SlotId, TargetSlotKind } from "./types.js";
 
 /** Writer slot kinds whose pin is a map keyed by record (Voice keeps a single pin). */
@@ -15,21 +15,7 @@ export const PIN_MAP_KINDS: readonly TargetSlotKind[] = ["prose", "copy"];
 export const usesPinMap = (agent: AgentId, kind: string | undefined): boolean =>
   agent === "writer" && kind !== undefined && (PIN_MAP_KINDS as readonly string[]).includes(kind);
 
-/** Every issue of a `clossys.pin-map/1` document, expected at `<agent>/<slot-id>`. */
-export function pinMapIssues(doc: unknown, expect?: { agent: AgentId; slotId: SlotId }): string[] {
-  const issues = validateAgainst(targetSchema("pin-map"), doc).map(issue => `pin-map ${issue.path}: ${issue.message}`);
-  if (issues.length) return issues;
-  const map = doc as PinMap;
-  if (expect) {
-    if (map.agent !== expect.agent) issues.push(`pin-map agent ${map.agent} is not ${expect.agent}`);
-    if (map.id !== `${expect.agent}/${expect.slotId}/pin`) issues.push(`pin-map id ${map.id} is not ${expect.agent}/${expect.slotId}/pin`);
-  }
-  for (const [record, pin] of Object.entries(map.records)) {
-    if (parseCandidateName(pin.candidate)?.name !== record) issues.push(`pin-map record ${record}: candidate ${pin.candidate} is not a file of record ${record} (<record>-v<n>)`);
-    issues.push(...pinRecordIssues(pin, map.refs, `pin-map record ${record}`));
-  }
-  return issues;
-}
+export { pinMapIssues } from "./pin.js";
 
 export type PinFile =
   | { readonly kind: "none" }
@@ -134,24 +120,45 @@ export function writeTargetPin(root: string, input: TargetPinInput): Pin | PinMa
   const path = candidatePath(root, agent, slotId, input.candidate);
   if (!existsSync(path)) throw new Error(`${agent}/${slotId} has no candidate ${input.candidate}`);
   const candidate = readCandidateFile(path, { agent, slotId });
-  if (candidate.issues.length) throw new Error(`${input.candidate}: ${candidate.issues.join("; ")}`);
+  // A Publisher page/1 or publication/1 record carries no candidate/1 header: recut keeps it as it is, and it is
+  // judged by its kind's rules under the slot as stored (slot-current.ts candidateIssues), never by the header rule.
+  const record = pageRecordIssues(root, agent, slotId, input.candidate, path);
+  const issues = record ?? candidate.issues;
+  if (issues.length) throw new Error(`${input.candidate}: ${issues.join("; ")}`);
   if (input.record !== undefined && candidate.header!.record !== undefined && candidate.header!.record !== input.record) {
     throw new Error(`${input.candidate} header record ${candidate.header!.record} is not ${input.record}`);
   }
-  const record: PinRecord = { candidate: input.candidate, sha256: candidate.sha256, decidedBy: input.decidedBy, basis: input.basis, at: input.at };
+  const pinRecord: PinRecord = { candidate: input.candidate, sha256: candidate.sha256, decidedBy: input.decidedBy, basis: input.basis, at: input.at };
   const refs = [...(input.refs ?? [])];
   if (recordSlot) {
-    const map = setPinMapRecord(previous.kind === "pin-map" ? previous.doc : undefined, { agent, slotId, record: input.record!, pin: record, refs, createdBy: input.createdBy, at: input.at })!;
-    const issues = pinMapIssues(map, { agent, slotId });
-    if (issues.length) throw new Error(issues.join("; "));
+    const map = setPinMapRecord(previous.kind === "pin-map" ? previous.doc : undefined, { agent, slotId, record: input.record!, pin: pinRecord, refs, createdBy: input.createdBy, at: input.at })!;
+    const mapIssues = pinMapIssues(map, { agent, slotId });
+    if (mapIssues.length) throw new Error(mapIssues.join("; "));
     writePinDoc(file, map);
     return map;
   }
-  const pin = buildPin({ agent, slotId, record, refs, createdBy: input.createdBy, ...(previous.kind === "pin" ? { previous: previous.doc } : {}) });
-  const issues = pinIssues(pin, { agent, slotId });
-  if (issues.length) throw new Error(issues.join("; "));
+  const pin = buildPin({ agent, slotId, record: pinRecord, refs, createdBy: input.createdBy, ...(previous.kind === "pin" ? { previous: previous.doc } : {}) });
+  const pinIssueList = pinIssues(pin, { agent, slotId });
+  if (pinIssueList.length) throw new Error(pinIssueList.join("; "));
   writePinDoc(file, pin);
   return pin;
+}
+
+/**
+ * The kind-rule issues of a Publisher `clossys.page/1` or `clossys.publication/1` record under its slot.json, or
+ * undefined when the candidate is not such a record (it then goes by its candidate/1 header).
+ */
+function pageRecordIssues(root: string, agent: AgentId, slotId: SlotId, name: string, path: string): string[] | undefined {
+  if (agent !== "publisher" || !name.endsWith(".json")) return undefined;
+  const bytes = readFileSync(path, "utf8");
+  let schema: unknown;
+  try { schema = (JSON.parse(bytes) as { schema?: unknown }).schema; } catch { return undefined; }
+  if (schema !== "clossys.page/1" && schema !== "clossys.publication/1") return undefined;
+  const slotPath = join(slotDir(root, agent, slotId), "slot.json");
+  let read: ReturnType<typeof readSlotValue>;
+  try { read = readSlotValue(JSON.parse(readFileSync(slotPath, "utf8")), slotPath); } catch { read = undefined; }
+  if (!read) return [`${agent}/${slotId}/slot.json is not a valid slot`];
+  return candidateIssues(read, agent, slotId, name, bytes).map(issue => issue.message);
 }
 
 /** The `kind` of a consumer slot.json, "" when it has none, undefined when there is no slot.json. */

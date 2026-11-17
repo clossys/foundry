@@ -139,6 +139,51 @@ function legacySlot(slot: JsonObject, id: string, kind: "page" | "publication", 
   keys(slot.ia, ["l1", "l2", "order"], slotPath);
   return { inputs: slot.inputs, uses: slot.uses };
 }
+const iso = (value: unknown): boolean => typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value) && !Number.isNaN(Date.parse(value));
+/** Producer schemas/pin.json (`clossys.pin/2`), mirrored: COMMON block plus the int2 record fields, no `recited`. */
+const PIN_V2_KEYS = ["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "updatedAt", "refs", "candidate", "sha256", "decidedBy", "basis", "at", "confirmed"] as const;
+const PIN_V2_REQUIRED = ["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "refs", "candidate", "sha256", "decidedBy", "basis", "at"] as const;
+/** A `clossys.pin/2` Publisher pin.json for slot `id`: its COMMON block and confirmation (Producer records/pin.ts pinIssues, mirrored). */
+function currentPin(pin: JsonObject, id: string, pinPath: string) {
+  keys(pin, PIN_V2_KEYS, pinPath);
+  for (const key of PIN_V2_REQUIRED) if (!Object.hasOwn(pin, key)) fail(pinPath, `Missing pin key ${key}`);
+  if (pin.id !== `publisher/${id}/pin` || pin.agent !== "publisher" || pin.kind !== "pin" || !["pinned", "confirm"].includes(pin.status)) fail(pinPath, "Invalid pin identity, kind or status");
+  if (!object(pin.createdBy) || !text(pin.createdBy.actor) || !iso(pin.createdAt) || pin.updatedAt !== undefined && !iso(pin.updatedAt)) fail(pinPath, "Invalid pin provenance");
+  if (!Array.isArray(pin.refs) || pin.refs.some(ref => !object(ref) || typeof ref.to !== "string" || typeof ref.rel !== "string")) fail(pinPath, "Invalid pin refs");
+  if (typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner)(?::.+)?|agent:(?:director|designer|writer|publisher|producer)|migrated)$/.test(pin.decidedBy)) fail(pinPath, "Invalid pin");
+  if (pin.confirmed !== undefined) {
+    if (pin.basis !== "agent") fail(pinPath, "confirmed is only on an agent pick (basis agent)");
+    if (!object(pin.confirmed)) fail(pinPath, "Invalid pin confirmation");
+    keys(pin.confirmed, ["by", "ref", "at"], pinPath);
+    if (pin.confirmed.by !== "owner" || !text(pin.confirmed.ref) || !iso(pin.confirmed.at)) fail(pinPath, "Invalid pin confirmation");
+  }
+  recordFields(pin, pinPath);
+}
+/** An int2 pin.json (pin/1, no schema key): the record fields, an owner confirmation and a pointer-only re-cite. */
+function legacyPin(pin: JsonObject, pinPath: string) {
+  keys(pin, ["candidate", "sha256", "decidedBy", "basis", "at", "confirmed", "recited"], pinPath);
+  // The owner's confirmation of an agent pick (`clossys pin --confirm --ref`), same shape as the slot model's
+  // PinConfirmation: {by: owner[:<ref>], ref, at}, and only on a basis agent pin.
+  if (pin.confirmed !== undefined) {
+    const confirmed = pin.confirmed;
+    if (pin.basis !== "agent") fail(pinPath, "confirmed is only on an agent pick (basis agent)");
+    if (!object(confirmed)) fail(pinPath, "Invalid pin confirmation");
+    keys(confirmed, ["by", "ref", "at"], pinPath);
+    if (typeof confirmed.by !== "string" || !/^owner(?::\S.*)?$/.test(confirmed.by) || !text(confirmed.ref) || !iso(confirmed.at)) fail(pinPath, "Invalid pin confirmation");
+  }
+  // A pointer-only re-cite (`clossys migrate recite`): the slot-model reader validates it and hands over the
+  // candidate bytes with refs re-addressed; here it only has to be the {by, at, cites} record.
+  if (pin.recited !== undefined && (!object(pin.recited) || !text(pin.recited.by) || !text(pin.recited.at) || !object(pin.recited.cites))) fail(pinPath, "Invalid pin recite");
+  recordFields(pin, pinPath);
+}
+/** The record fields both pin formats share: hash, decider, basis (agent iff decidedBy agent:<id>) and time. */
+function recordFields(pin: JsonObject, pinPath: string) {
+  if (typeof pin.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(pin.sha256)
+    || typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/.test(pin.decidedBy)
+    || !["picked", "bulk", "planner", "agent"].includes(pin.basis as string)
+    || (pin.basis === "agent") !== pin.decidedBy.startsWith("agent:")
+    || !iso(pin.at)) fail(pinPath, "Invalid pin");
+}
 function pinned(records: PinnedPublicationSource, index: Map<string, Position>, id: string, kind: "page" | "publication") {
   const position = index.get(id); if (!position) fail(id, "Slot is not declared in Publisher IA");
   // Flat layout: agents/publisher/<slot-id>; grouping lives only in ia.json + slot.json ia.
@@ -149,26 +194,11 @@ function pinned(records: PinnedPublicationSource, index: Map<string, Position>, 
     : raw.schema === "clossys.slot/1" ? legacySlot(raw, id, kind, position, slotPath)
       : fail(slotPath, "Invalid slot identity, kind or IA position");
   const pinPath = `${dir}/pin.json`, pin = parse(present(records.record(id, "pin.json"), pinPath), pinPath);
-  keys(pin, ["candidate", "sha256", "decidedBy", "basis", "at", "confirmed", "recited"], pinPath);
-  // The owner's confirmation of an agent pick (`clossys pin --confirm --ref`), same shape as the slot model's
-  // PinConfirmation: {by: owner[:<ref>], ref, at}, and only on a basis agent pin.
-  if (pin.confirmed !== undefined) {
-    const confirmed = pin.confirmed;
-    if (pin.basis !== "agent") fail(pinPath, "confirmed is only on an agent pick (basis agent)");
-    if (!object(confirmed)) fail(pinPath, "Invalid pin confirmation");
-    keys(confirmed, ["by", "ref", "at"], pinPath);
-    if (typeof confirmed.by !== "string" || !/^owner(?::\S.*)?$/.test(confirmed.by) || !text(confirmed.ref)
-      || typeof confirmed.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(confirmed.at) || Number.isNaN(Date.parse(confirmed.at))) fail(pinPath, "Invalid pin confirmation");
-  }
-  // A pointer-only re-cite (`clossys migrate recite`): the slot-model reader validates it and hands over the
-  // candidate bytes with refs re-addressed; here it only has to be the {by, at, cites} record.
-  if (pin.recited !== undefined && (!object(pin.recited) || !text(pin.recited.by) || !text(pin.recited.at) || !object(pin.recited.cites))) fail(pinPath, "Invalid pin recite");
+  // The one pin format is `clossys.pin/2`; an int2 pin (no schema key) still reads until its store is recut.
+  if (pin.schema === "clossys.pin/2") currentPin(pin, id, pinPath);
+  else if (pin.schema === undefined) legacyPin(pin, pinPath);
+  else fail(pinPath, `Invalid pin schema ${String(pin.schema)}`);
   safeSegment(pin.candidate, CANDIDATE, pinPath);
-  if (typeof pin.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(pin.sha256)
-    || typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/.test(pin.decidedBy)
-    || !["picked", "bulk", "planner", "agent"].includes(pin.basis as string)
-    || (pin.basis === "agent") !== pin.decidedBy.startsWith("agent:")
-    || typeof pin.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(pin.at) || Number.isNaN(Date.parse(pin.at))) fail(pinPath, "Invalid pin");
   const path = `${dir}/candidates/${pin.candidate}`, bytes = present(records.candidate(id, pin.candidate), path);
   if (bytes.sha256 !== pin.sha256) fail(path, "Pinned candidate hash drift");
   const value = parse(bytes.bytes, path); candidate(value, kind, path);

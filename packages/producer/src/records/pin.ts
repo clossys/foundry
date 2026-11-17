@@ -15,7 +15,7 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ISO, slotDir, targetSchema } from "./candidate.js";
+import { ISO, parseCandidateName, slotDir, targetSchema } from "./candidate.js";
 import { validateAgainst } from "./schema.js";
 import type { Actor, AgentId, Iso, Pin, PinMap, PinRecord, Ref, SlotId } from "./types.js";
 
@@ -94,6 +94,22 @@ export function pinIssues(doc: unknown, expect?: { agent: AgentId; slotId: SlotI
     if (pin.id !== `${expect.agent}/${expect.slotId}/pin`) issues.push(`pin id ${pin.id} is not ${expect.agent}/${expect.slotId}/pin`);
   }
   return [...issues, ...pinRecordIssues(pin, pin.refs)];
+}
+
+/** Every issue of a `clossys.pin-map/1` document, expected at `<agent>/<slot-id>`. */
+export function pinMapIssues(doc: unknown, expect?: { agent: AgentId; slotId: SlotId }): string[] {
+  const issues = validateAgainst(targetSchema("pin-map"), doc).map(issue => `pin-map ${issue.path}: ${issue.message}`);
+  if (issues.length) return issues;
+  const map = doc as PinMap;
+  if (expect) {
+    if (map.agent !== expect.agent) issues.push(`pin-map agent ${map.agent} is not ${expect.agent}`);
+    if (map.id !== `${expect.agent}/${expect.slotId}/pin`) issues.push(`pin-map id ${map.id} is not ${expect.agent}/${expect.slotId}/pin`);
+  }
+  for (const [record, pin] of Object.entries(map.records)) {
+    if (parseCandidateName(pin.candidate)?.name !== record) issues.push(`pin-map record ${record}: candidate ${pin.candidate} is not a file of record ${record} (<record>-v<n>)`);
+    issues.push(...pinRecordIssues(pin, map.refs, `pin-map record ${record}`));
+  }
+  return issues;
 }
 
 export interface NewPin {

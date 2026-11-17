@@ -4,9 +4,9 @@
  * `design`, `write`, `publish`) read; nothing here writes into the consumer.
  */
 import { join, relative, sep } from "node:path";
-import { hasPinFile, listSlots, readCandidate, readSlot } from "./slots.js";
+import { hasPinFile, listSlots, readCandidate, readSlot, slotCandidateIssues } from "./slots.js";
 import {
-  CANDIDATE_NAME, candidatesDir, parseFrontmatter, validateCandidate,
+  CANDIDATE_NAME, candidatesDir, parseFrontmatter,
   type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 
@@ -56,7 +56,7 @@ export function readPinned(consumer: string, agent: SlotAgent): PinnedSet {
     try { ({ bytes, sha256 } = readCandidate(consumer, agent, entry.id, entry.pin.candidate)); }
     catch { issue(entry.id, "missing-candidate", `${agent}/${entry.id}: pinned candidate ${entry.pin.candidate} is missing`); continue; }
     if (sha256 !== entry.pin.sha256) { issue(entry.id, "hash-drift", `${agent}/${entry.id}: ${entry.pin.candidate} bytes differ from the pinned sha256`); continue; }
-    const invalid = validateCandidate(doc.kind, entry.id, entry.pin.candidate, bytes);
+    const invalid = slotCandidateIssues(consumer, agent, entry.id, entry.pin.candidate, bytes);
     if (invalid.length) { issue(entry.id, "invalid-candidate", `${agent}/${entry.id}: ${invalid[0]!.message}`); continue; }
     const name = entry.pin.candidate;
     const root = join(consumer, "..");

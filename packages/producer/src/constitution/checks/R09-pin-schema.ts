@@ -2,13 +2,18 @@
  * R09 One pin schema: every pin.json in every agent tree (Producer seats included) is valid against
  * schemas/pin.schema.json, keys exactly {candidate, sha256, decidedBy, basis, at, confirmed?}, plus the
  * pairing rules a schema cannot state: basis `agent` iff decidedBy `agent:<seat>`, and `confirmed`
- * only on an agent pick. One row per pin, every failure in its reason.
+ * only on an agent pick. One row per pin, every failure in its reason. A store migrated to the target
+ * formats holds `clossys.pin/2` and Writer `clossys.pin-map/1` pins instead: each is judged by its own target
+ * schema and the shared record rules (records/pin.ts, records/pin-map.ts), never by the int2 key list.
  */
+import { pinMapIssues, pinIssues as targetPinIssues } from "../../records/pin.js";
 import { validateAgainst } from "../schema.js";
 import type { ConstitutionContext, Row, RuleModule } from "../types.js";
 import { allSlots, isObject, listed, row } from "./shared.js";
 
 export function pinIssues(value: unknown): string[] {
+  if (isObject(value) && value.schema === "clossys.pin/2") return targetPinIssues(value);
+  if (isObject(value) && value.schema === "clossys.pin-map/1") return pinMapIssues(value);
   const issues = validateAgainst("pin", value).map(error => `${error.at} ${error.message}`);
   if (isObject(value)) {
     const agentBasis = value.basis === "agent";

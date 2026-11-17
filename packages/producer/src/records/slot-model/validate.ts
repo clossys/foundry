@@ -1,4 +1,5 @@
 import { pinIssues } from "@clossys/director";
+import { pinMapIssues, pinIssues as targetPinIssues } from "../pin.js";
 import { parseFrontmatter } from "./frontmatter.js";
 import { loadSchema, validateValue } from "../../pipeline/schema.js";
 import { contractFixtureIssues } from "./contract-fixture.js";
@@ -189,8 +190,40 @@ export function fixtureShapeIssues(kind: SlotKind, contract: Readonly<Record<str
 }
 
 /** pin.json against the one pin schema (planner R9): @clossys/director pinIssues, the same verdict Director's parseSlotPin and scripts/check-decisions.mjs give. */
+/**
+ * A slot's pin.json in any format a store holds: the int2 pin (pin/1, no schema key), the target `clossys.pin/2`
+ * or a Writer Prose or Copy slot's `clossys.pin-map/1`. Each is judged by its own schema and rules; readers then
+ * take the pinned record(s) through pinRecords / pinView, never the raw document.
+ */
 export function validatePin(value: unknown, path = "pin.json"): SlotModelIssue[] {
-  return pinIssues(value).map(message => ({ code: "pin-invalid", path, message }));
+  const schema = object(value) ? value.schema : undefined;
+  const found = schema === PIN2_SCHEMA ? targetPinIssues(value) : schema === PIN_MAP_SCHEMA ? pinMapIssues(value) : pinIssues(value);
+  return found.map(message => ({ code: "pin-invalid", path, message }));
+}
+
+const PIN2_SCHEMA = "clossys.pin/2", PIN_MAP_SCHEMA = "clossys.pin-map/1";
+const PIN_RECORD_KEYS = ["candidate", "sha256", "decidedBy", "basis", "at", "confirmed"] as const;
+
+/** The int2 PinDoc fields of one pinned record; a pin/2's COMMON block is dropped. */
+function recordView(record: Record<string, unknown>): PinDoc {
+  const out: Record<string, unknown> = {};
+  for (const key of PIN_RECORD_KEYS) if (record[key] !== undefined) out[key] = record[key];
+  return out as unknown as PinDoc;
+}
+
+/** Every pinned record of a pin.json that validatePin passed: pin/1 as it is, a pin/2's record, a pin map's records in record order. */
+export function pinRecords(value: unknown): PinDoc[] {
+  if (!object(value)) return [];
+  if (value.schema === PIN_MAP_SCHEMA) {
+    const records = object(value.records) ? value.records : {};
+    return Object.keys(records).sort().flatMap(key => object(records[key]) ? [recordView(records[key] as Record<string, unknown>)] : []);
+  }
+  return [recordView(value)];
+}
+
+/** The slot's pin as one record (a pin map's first record in record order); undefined when nothing is pinned. */
+export function pinView(value: unknown): PinDoc | undefined {
+  return pinRecords(value)[0];
 }
 
 /** The source kinds a candidate carries: the int2 kinds and the candidate/1 header's `package-default` (a package template adopted as it is). */

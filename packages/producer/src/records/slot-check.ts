@@ -16,7 +16,7 @@ import { validateAgainst } from "../constitution/schema.js";
 import { sha256Hex } from "./hash.js";
 import {
   AGENT_FILES, AGENT_KIND, CANDIDATE_NAME, CANDIDATES_DIR, IA_FILE, PIN_FILE, SLOT_AGENTS, SLOT_FILE, agentDir, candidatesDir, iaPath, isNonSlotEntry, slotDir, slotRel,
-  slotPositions, validateIa, validatePin,
+  slotPositions, validateIa, validatePin, pinRecords,
   type IaDoc, type PinDoc, type SlotAgent, type SlotModelIssue,
 } from "./slot-model/index.js";
 import { LEDGER_FILE } from "./ledger.js";
@@ -125,14 +125,14 @@ export function checkSlotModel(consumer: string, options: SlotModelCheckOptions 
       const pins = list(dir).filter(name => /^pin.*\.json$/.test(name));
       if (pins.some(name => name !== PIN_FILE)) issues.push({ code: "pin-invalid", path: rel, message: `one pin only: pin.json (found ${pins.join(", ")})` });
       if (pins.includes(PIN_FILE)) {
-        let pin: PinDoc | undefined;
+        let pins: PinDoc[] = [];
         try {
           const value = readJsonFile(join(dir, PIN_FILE));
           const found = validatePin(value, `${rel}/${PIN_FILE}`);
           issues.push(...found);
-          if (!found.length) pin = value as PinDoc;
+          if (!found.length) pins = pinRecords(value);
         } catch { issues.push({ code: "pin-invalid", path: `${rel}/${PIN_FILE}`, message: "pin.json is not JSON" }); }
-        if (pin) {
+        for (const pin of pins) {
           if (!names.includes(pin.candidate)) issues.push({ code: "pin-candidate", path: `${rel}/${PIN_FILE}`, message: `pinned candidate ${pin.candidate} does not exist` });
           else if (sha256Hex(readModelBytes(join(candidatesDir(dir), pin.candidate))) !== pin.sha256) issues.push({ code: "pin-hash", path: `${rel}/${PIN_FILE}`, message: `${pin.candidate} bytes do not match the pinned sha256` });
         }
