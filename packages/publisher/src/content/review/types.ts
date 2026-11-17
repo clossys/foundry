@@ -12,6 +12,10 @@ export interface ReviewCopySchema {
   readonly fields: readonly {
     readonly key: string;
     readonly kind: "plain" | "rich" | "icu";
+    /** Designer Writer role (DG-1); fixes the source-locale budget. */
+    readonly role?: "eyebrow" | "heading" | "lead" | "body" | "action" | "label" | "alt";
+    /** Director bindings the field admits. */
+    readonly bindings?: readonly string[];
     readonly required: boolean;
     readonly maxLength: Readonly<Record<string, number>>;
     readonly dir: "ltr" | "rtl" | "auto";
