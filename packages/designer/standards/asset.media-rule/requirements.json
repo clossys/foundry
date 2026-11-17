@@ -7,6 +7,8 @@
   "mode": "craft",
   "craftTier": "mid",
   "seeds": [],
+  "createOnly": true,
+  "createOnlyReason": "Media rules follow the consumer brand and content; this craft standard has no seed registry, so every rule without a package default is created.",
   "requirements": [
     {
       "check": "derive.director",

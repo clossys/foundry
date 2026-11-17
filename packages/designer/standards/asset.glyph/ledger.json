@@ -18,6 +18,24 @@
         "requirements.json": "6092b8f98a7a6d1874c0da4e5adf1f26521dfcaa2ecaabe1cc409c3bb6e25552",
         "taste.md": "43e82bc0f85613fa878874d33fbf7f3592bd5424e29f7b348314de5a72fc4667"
       }
+    },
+    {
+      "op": "standard",
+      "at": "2026-11-17T19:00:00.000Z",
+      "by": "planner",
+      "verb": "standard",
+      "model": "none",
+      "tier": "none",
+      "standard": {
+        "agent": "designer",
+        "id": "asset.glyph",
+        "sha256": "1978396d718e819082febfc02eee8c6f7fd805040bb9ec0b0940d25dd93610f3"
+      },
+      "files": {
+        "exemplars/exemplars.json": "24bbf335ff6bca459a881980df46c6a685271f8c0b3063210d31cca4a9b35531",
+        "requirements.json": "f7b3aeafd03c6944e984588abc4754bcd2f7b24a7138ed352d719be83c40303d",
+        "taste.md": "43e82bc0f85613fa878874d33fbf7f3592bd5424e29f7b348314de5a72fc4667"
+      }
     }
   ]
 }

@@ -7,6 +7,8 @@
   "mode": "craft",
   "craftTier": "mid",
   "seeds": [],
+  "createOnly": true,
+  "createOnlyReason": "Measures are the consumer own numbers derived from upstream briefs; no seed registry exists for a brief, so every measure without a package default is created by the Director craft recipe.",
   "requirements": [
     {
       "check": "brief.sections",

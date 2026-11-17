@@ -56,6 +56,18 @@ describe("records/standards", () => {
     expect(readStandard(empty, "writer", "bare").issues).toEqual(["no requirements.json", "no taste.md", "no exemplars/ folder"]);
   });
 
+  it("createOnly comes with a non-empty createOnlyReason, and neither alone", () => {
+    const root = workspace();
+    const file = join(root, "packages", "writer", "standards", "fixture-headline", "requirements.json");
+    const base = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+    const issuesWith = (extra: Record<string, unknown>) => { put(file, JSON.stringify({ ...base, ...extra })); return readStandard(root, "writer", "fixture-headline").issues.join("\n"); };
+    expect(issuesWith({ createOnly: true, createOnlyReason: "every candidate is crafted from the brief" })).toBe("");
+    expect(issuesWith({ createOnly: true })).toMatch(/anyOf/);
+    expect(issuesWith({ createOnlyReason: "why" })).toMatch(/anyOf/);
+    expect(issuesWith({ createOnly: true, createOnlyReason: "   " })).toMatch(/createOnlyReason/);
+    expect(issuesWith({ createOnly: false, createOnlyReason: "why" })).toMatch(/createOnly/);
+  });
+
   it("loads every agent's standards in agent then id order and finds one by agent", () => {
     const root = workspace();
     cpSync(FIXTURE, join(root, "packages", "director", "standards", "brief.voice"), { recursive: true });
