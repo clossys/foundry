@@ -1,23 +1,57 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "lexicon.punctuation",
   "agent": "writer",
+  "kind": "voice",
+  "status": "starter",
   "ia": {
-    "l0": "lexicon",
-    "l1": "lexicon.formats",
-    "l2": "formats-punctuation-and-capitalization",
-    "order": 24
+    "l0": "voice",
+    "l1": "voice/wording",
+    "l2": "voice/wording/mechanics",
+    "order": 8
   },
-  "kind": "strings",
-  "contract": {
-    "kind": "lexicon",
-    "source": "writer",
-    "recordKind": "format",
-    "valueType": "punctuation-rule"
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
   },
-  "inputs": [
-    "identity.verbal.voice"
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input",
+      "key": "Do"
+    },
+    {
+      "to": "director/focus.reach.geography",
+      "rel": "input",
+      "key": "Language"
+    }
   ],
-  "uses": [],
-  "standard": "lexicon.format-rule"
+  "base": null,
+  "standard": "lexicon.format-rule",
+  "brief": {
+    "purpose": "Fill writer/lexicon.punctuation to the lexicon.format-rule standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input",
+        "key": "Do"
+      },
+      {
+        "to": "director/focus.reach.geography",
+        "rel": "input",
+        "key": "Language"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "shape": "voice.punctuation",
+    "value": "rule set per locale",
+    "check": "deterministic",
+    "defaults": "defaults/lexicon.punctuation/"
+  },
+  "tighten": []
 }

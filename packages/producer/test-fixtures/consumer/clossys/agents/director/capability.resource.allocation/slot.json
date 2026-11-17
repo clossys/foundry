@@ -1,14 +1,44 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "capability.resource.allocation",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "execution",
-    "l1": "plan",
-    "l2": "plan.resource",
+    "l1": "execution/plan",
+    "l2": "execution/plan/resource",
     "order": 50
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/execution.priority.bet",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "How do we split time and money across the bets?",
+    "mustDo": [
+      "Answer Split: the split, in percentages",
+      "Answer Rule: the rule that sets it",
+      "Answer Reserve: what is held back"
+    ],
+    "inputs": [
+      {
+        "to": "director/execution.priority.bet",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "question": "How do we split time and money across the bets?",
     "mustContain": [
@@ -33,9 +63,5 @@
       ]
     }
   },
-  "inputs": [
-    "execution.priority.bet"
-  ],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

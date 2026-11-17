@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "capability.operation.delivery",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "execution",
-    "l1": "plan",
-    "l2": "plan.operation",
+    "l1": "execution/plan",
+    "l2": "execution/plan/operation",
     "order": 51
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "How do we deliver the offer, to what standard, and who owns it?",
+    "mustDo": [
+      "Answer Steps: the delivery steps",
+      "Answer Standard: the quality bar, testable",
+      "Answer Owner: who owns delivery"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "How do we deliver the offer, to what standard, and who owns it?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

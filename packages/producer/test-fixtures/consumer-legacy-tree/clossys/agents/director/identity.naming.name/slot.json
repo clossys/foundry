@@ -1,0 +1,45 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "identity.naming.name",
+  "agent": "director",
+  "ia": {
+    "l0": "strategy",
+    "l1": "identity",
+    "l2": "identity.naming",
+    "order": 30
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What is the name, how is it written and said, and what does it mean?",
+    "mustContain": [
+      {
+        "key": "Name",
+        "hint": "the name as customers see it"
+      },
+      {
+        "key": "Casing",
+        "hint": "every allowed written form and where"
+      },
+      {
+        "key": "Meaning",
+        "hint": "one plain sentence"
+      },
+      {
+        "key": "Pronunciation",
+        "hint": "respelled, stressed syllable in capitals"
+      }
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle",
+  "standard": "brief.statement"
+}

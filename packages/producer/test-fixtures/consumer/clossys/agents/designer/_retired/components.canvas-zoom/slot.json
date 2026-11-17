@@ -1,0 +1,68 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.canvas-zoom",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.components",
+    "l2": "components-navigation",
+    "order": 137
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "props": [
+      "value",
+      "min",
+      "max",
+      "onChange",
+      "onFit",
+      "labels",
+      "formatValue"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.radius",
+        "themes.foreground"
+      ],
+      "assets": [],
+      "components": [
+        "components.toolbar",
+        "components.button",
+        "components.icon",
+        "components.semantic-content"
+      ]
+    },
+    "composes": [
+      "components.toolbar",
+      "components.button",
+      "components.icon",
+      "components.semantic-content"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.foreground",
+    "themes.radius",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.button",
+    "components.icon",
+    "components.semantic-content",
+    "components.toolbar"
+  ]
+}

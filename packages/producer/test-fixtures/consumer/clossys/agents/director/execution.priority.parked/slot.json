@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "execution.priority.parked",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "roadmap",
-    "l1": "timeline",
-    "l2": "timeline.priority",
+    "l1": "roadmap/timeline",
+    "l2": "roadmap/timeline/priority",
     "order": 41
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "What are we deliberately not doing now, and when do we look again?",
+    "mustDo": [
+      "Answer Parked: what is parked",
+      "Answer Why: why it waits",
+      "Answer Revisit: when or on what signal we look again"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "What are we deliberately not doing now, and when do we look again?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

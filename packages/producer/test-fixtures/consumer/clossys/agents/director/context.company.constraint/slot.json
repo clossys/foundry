@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "context.company.constraint",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "context",
-    "l2": "context.company",
+    "l1": "strategy/context",
+    "l2": "strategy/context/company",
     "order": 7
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "Which limits shape every choice we make?",
+    "mustDo": [
+      "Answer Limit: the limit, named",
+      "Answer Bound: the number or rule that bounds it",
+      "Answer Effect: which choices it rules out"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "Which limits shape every choice we make?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

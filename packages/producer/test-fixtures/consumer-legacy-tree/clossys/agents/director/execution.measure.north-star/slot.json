@@ -1,0 +1,41 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "execution.measure.north-star",
+  "agent": "director",
+  "ia": {
+    "l0": "roadmap",
+    "l1": "targets",
+    "l2": "targets.measure",
+    "order": 38
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which one number shows we deliver value, and what is the target?",
+    "mustContain": [
+      {
+        "key": "Metric",
+        "hint": "the metric, defined"
+      },
+      {
+        "key": "Target",
+        "hint": "the target and date"
+      },
+      {
+        "key": "Why",
+        "hint": "why it tracks customer value"
+      }
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
+  },
+  "inputs": [
+    "aspiration.goal.long-term"
+  ],
+  "uses": [],
+  "standard": "brief.measure"
+}

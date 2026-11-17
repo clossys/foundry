@@ -2852,11 +2852,6 @@
         "required": false
       },
       {
-        "name": "assets.icon-institution",
-        "kind": "asset",
-        "required": false
-      },
-      {
         "name": "assets.icon-guide",
         "kind": "asset",
         "required": false
@@ -2893,11 +2888,6 @@
       },
       {
         "name": "assets.icon-receipt",
-        "kind": "asset",
-        "required": false
-      },
-      {
-        "name": "assets.icon-business",
         "kind": "asset",
         "required": false
       },

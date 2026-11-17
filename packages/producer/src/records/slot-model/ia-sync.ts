@@ -12,6 +12,12 @@
  * `inputs` from the agent's src/catalog/slot-defaults.json, `options`/`varyOn` from the producer
  * option classes, and every other `inputs` derived from the read graph. A consumer's `uses` stay its
  * own: they follow the candidates it pins.
+ *
+ * A `clossys.slot/2` slot.json (a recut store, foundry-build-0048 U2) is compared and written in its own terms:
+ * its kind family (Writer `copy` is the `strings` family), its contract without the consumer's
+ * `contract.notNeeded`, the slot ids of its `input` refs (as a set: refs keep their keys and order), and the
+ * slash-path `ia` the package position gives (positionIa: `themes/colors`, the position `themes.colors`). A
+ * sync writes a slot/2 file as slot/2 (and adopts a missing leaf of a slot/2 store as slot/2), never as slot/1.
  */
 import { isDeepStrictEqual } from "node:util";
 import { deriveRefs, feedsIndex } from "./derive.js";
@@ -20,6 +26,10 @@ import { iaPath, jsonBytes, slotDir, slotFile } from "./layout.js";
 import { resolveIaSource, WORKSPACE_OWNED_SOURCE } from "./ia-source.js";
 import { FOUNDRY_IA_AGENTS, SLOT_AGENTS, SLOT_SCHEMA, type IaDoc, type IaLeafGroup, type IaNode, type SlotAgent, type SlotPosition } from "./types.js";
 import { modelExists, readModelText } from "../slots.js";
+import { isCurrentSlot, refIds, slotFamily } from "../slot-current.js";
+import { positionIa, serializeSlot } from "../slot.js";
+import type { AgentId, Iso, Ref, Slot } from "../types.js";
+import { slotFromV1, targetKind as v1TargetKind, type SlotV1 } from "../../migrate/slot-1-to-2.js";
 import { classify } from "../slot-options.js";
 import { OPTION_TABLE } from "./option-classes.js";
 
@@ -68,7 +78,7 @@ function insertAfter<T extends { id: string }>(list: T[], item: T, before: reado
 /**
  * The target ia.json: the package IA with each declared extension at its consumer place (after
  * the nearest slot before it in its consumer group, or first; a group or L1 the package lacks is
- * added after the package's own), the consumer's `changes[]` history kept.
+ * added after the package's own), the consumer's `changes[]` and `retired[]` history kept.
  */
 export function targetIa(agent: SyncAgent, pkg: IaDoc, consumer: IaDoc | undefined): IaDoc {
   const extensions = [...(consumer?.extensions ?? [])];
@@ -90,6 +100,9 @@ export function targetIa(agent: SyncAgent, pkg: IaDoc, consumer: IaDoc | undefin
   if (pkg.layers !== undefined) doc.layers = pkg.layers;
   if (pkg.axes !== undefined) doc.axes = pkg.axes;
   if (consumer?.changes !== undefined) doc.changes = consumer.changes;
+  // The ids a recut or `clossys retire` took out of the tree stay on record (owner.ts retire reads them).
+  const retired = (consumer as { retired?: unknown } | undefined)?.retired;
+  if (retired !== undefined) doc.retired = retired;
   return doc as unknown as IaDoc;
 }
 
@@ -144,6 +157,102 @@ export function adoptedSlotDoc(agent: SyncAgent, id: string, slot: FoundrySlot, 
   const behaviour = packageBehaviour(agent, id, slot, position, ctx);
   const doc = withBehaviour({ schema: SLOT_SCHEMA, id, agent, ia: { ...position }, ...packageFields(slot), inputs: behaviour.inputs, uses: behaviour.uses }, behaviour);
   return { doc, dropped: behaviour.dropped };
+}
+
+/** A slot/2 contract as the package sees it: without the consumer's `notNeeded` marker. */
+const packageContract = (contract: unknown): unknown => {
+  if (!contract || typeof contract !== "object" || Array.isArray(contract)) return contract;
+  const { notNeeded: _marker, ...rest } = contract as Doc;
+  return rest;
+};
+/** A clossys.slot/2 file (a recut store), as a plain test: the doc keeps its Doc type. */
+const isCurrent = (doc: Doc): boolean => isCurrentSlot(doc);
+const sortedSet = (ids: readonly string[]): string[] => [...new Set(ids)].sort();
+/** A slot/2 doc's behaviour keys in slot/1 terms: its input-ref slot ids (as a set), options, varyOn, standard. */
+function currentBehaviour(doc: Doc): Doc {
+  return { inputs: sortedSet(refIds(doc as unknown as Slot, "input")), options: doc.options, varyOn: doc.varyOn, standard: doc.standard };
+}
+/** The behaviour keys a slot/2 doc is compared on: the package's (inputs as a set); a package with no standard leaves the slot's own. */
+function behaviourOff(doc: Doc, behaviour: SlotBehaviour): { key: string; have: unknown; want: unknown }[] {
+  if (!isCurrent(doc)) return BEHAVIOUR_KEYS.filter(key => !sameJson(doc[key], behaviour[key])).map(key => ({ key, have: doc[key], want: behaviour[key] }));
+  const view = currentBehaviour(doc);
+  const want: Doc = { inputs: sortedSet(behaviour.inputs), options: behaviour.options, varyOn: behaviour.varyOn, standard: behaviour.standard ?? doc.standard };
+  return BEHAVIOUR_KEYS.filter(key => !sameJson(view[key], want[key])).map(key => ({ key, have: view[key], want: want[key] }));
+}
+
+/**
+ * Which agent holds each placed slot id in the consumer (every slot agent's ia.json, this agent's target
+ * positions first): a slot/2 ref is `<agent>/<id>`.
+ */
+function holders(consumerDir: string, agent: SyncAgent, state: SyncState): Map<string, AgentId[]> {
+  const out = new Map<string, AgentId[]>();
+  const add = (id: string, holder: AgentId) => { const list = out.get(id) ?? []; if (!list.includes(holder)) out.set(id, [...list, holder]); };
+  for (const id of state.positions.keys()) add(id, agent);
+  for (const other of SLOT_AGENTS) if (other !== agent && modelExists(iaPath(consumerDir, other))) {
+    for (const id of slotPositions(other, readDoc(iaPath(consumerDir, other)) as unknown as IaDoc).keys()) add(id, other);
+  }
+  return out;
+}
+/**
+ * The input refs a slot/2 file takes for the package behaviour's inputs, in that order: the package's own refs to
+ * the id (keys kept), else the file's existing refs to it, else a new ref to the agent whose IA holds it.
+ */
+function inputRefs(id: string, slot: FoundrySlot, behaviour: SlotBehaviour, existing: readonly Ref[], held: ReadonlyMap<string, readonly AgentId[]>, agent: SyncAgent): Ref[] {
+  const idOf = (ref: { to: string }) => ref.to.replace(/^[a-z]+\//, "");
+  // The package's own input refs keep their order (the P2-1 recut writes them so); other inputs follow.
+  const order = [...new Set([...(slot.refs ?? []).filter(ref => ref.rel === "input").map(idOf), ...behaviour.inputs])].filter(input => behaviour.inputs.includes(input));
+  return order.flatMap(input => {
+    const own = (slot.refs ?? []).filter(ref => ref.rel === "input" && idOf(ref) === input);
+    if (own.length) return own.map(ref => ({ to: ref.to as Ref["to"], rel: "input" as const, ...(ref.key !== undefined ? { key: ref.key } : {}) }));
+    const kept = existing.filter(ref => ref.rel === "input" && idOf(ref) === input);
+    if (kept.length) return kept.map(ref => structuredClone(ref));
+    const agents = held.get(input) ?? [];
+    const holder = agents.includes(agent as AgentId) ? agent as AgentId : agents[0];
+    return holder && input !== id ? [{ to: `${holder}/${input}` as Ref["to"], rel: "input" as const }] : [];
+  });
+}
+/** An existing slot/2 file with the package's structure and behaviour: kind, contract (notNeeded kept), refs, ia, standard, options. */
+function syncedCurrent(current: Slot, id: string, slot: FoundrySlot, position: SlotPosition, behaviour: SlotBehaviour, held: ReadonlyMap<string, readonly AgentId[]>, agent: SyncAgent): Slot {
+  const marker = (current.contract as Doc | undefined)?.notNeeded;
+  const contract: Record<string, unknown> = { ...structuredClone(slot.contract as Record<string, unknown>), ...(marker !== undefined ? { notNeeded: marker } : {}) };
+  const inputs = inputRefs(id, slot, behaviour, current.refs, held, agent);
+  const next: Slot = {
+    ...current,
+    kind: slot.targetKind ?? current.kind,
+    ia: positionIa(id, position),
+    refs: [...inputs, ...current.refs.filter(ref => ref.rel !== "input")],
+    brief: { ...current.brief, inputs: structuredClone(inputs) },
+    contract,
+    standard: behaviour.standard ?? current.standard,
+  };
+  delete next.options; delete next.varyOn;
+  if (behaviour.options === 1 || behaviour.options === 2 || behaviour.options === 3) next.options = behaviour.options;
+  if (behaviour.varyOn !== undefined) next.varyOn = behaviour.varyOn;
+  return next;
+}
+/** The options a slot/2 adoption stamps: when it is written and the CLI version that writes it. */
+export interface CurrentSyncOptions { readonly at: Iso; readonly version: string; readonly cli?: string }
+/** A newly adopted package leaf in a slot/2 store: the slot/1 adoption, as slot-1-to-2 maps it, with the package refs and kind. */
+function adoptedCurrent(agent: SyncAgent, id: string, slot: FoundrySlot, position: SlotPosition, behaviour: SlotBehaviour, held: ReadonlyMap<string, readonly AgentId[]>, options: CurrentSyncOptions): Slot | undefined {
+  const v1 = withBehaviour({ schema: SLOT_SCHEMA, id, agent, ia: { ...position }, ...packageFields(slot), inputs: behaviour.inputs, uses: behaviour.uses }, behaviour) as unknown as SlotV1;
+  const kind = slot.targetKind ?? v1TargetKind(v1);
+  if (!kind) return undefined;
+  const inputs = inputRefs(id, slot, behaviour, [], held, agent);
+  const uses = behaviour.uses.flatMap(use => {
+    const agents = held.get(use) ?? [];
+    const holder = agents.includes(agent as AgentId) ? agent as AgentId : agents[0];
+    return holder ? [{ to: `${holder}/${use}` as Ref["to"], rel: "uses" as const }] : [];
+  });
+  return slotFromV1(v1, { kind, status: "starter", ia: positionIa(id, position), inputs, uses, createdBy: { actor: "code", cli: options.cli ?? "clossys ia sync", version: options.version }, at: options.at });
+}
+/** True when any slot.json the agent places is a clossys.slot/2 (a recut store): a sync then adopts as slot/2. */
+export function currentStore(consumerDir: string, agent: SyncAgent, positions: ReadonlyMap<string, SlotPosition>): boolean {
+  for (const id of positions.keys()) {
+    const file = slotFile(slotDir(consumerDir, agent, id));
+    if (!modelExists(file)) continue;
+    try { if (isCurrentSlot(readDoc(file))) return true; } catch { /* judged by clossys check */ }
+  }
+  return false;
 }
 
 export interface SyncState {
@@ -208,14 +317,18 @@ export function syncDrift(consumerDir: string, agent: SyncAgent, state: SyncStat
     if (!modelExists(file)) { if (placed.has(id)) add("slot-missing", `${id} is placed but has no slot.json`, id); continue; }
     const doc = readDoc(file);
     const slot = pkg.slots.get(id);
+    const current = isCurrent(doc);
     if (slot) {
-      if (doc.kind !== slot.kind) add("kind", `${id} is kind ${String(doc.kind)}, the package says ${slot.kind}`, id);
-      if (!sameJson(doc.contract, slot.contract)) add("contract", `${id} contract differs from the package`, id);
+      // A slot/2 kind is judged by its family (and the package's own slot/2 kind when it names one).
+      const family = current ? slotFamily(doc.kind) : doc.kind;
+      if (family !== slot.kind || (current && slot.targetKind !== undefined && doc.kind !== slot.targetKind)) add("kind", `${id} is kind ${String(doc.kind)}, the package says ${slot.targetKind && current ? slot.targetKind : slot.kind}`, id);
+      if (!sameJson(current ? packageContract(doc.contract) : doc.contract, slot.contract)) add("contract", `${id} contract differs from the package`, id);
       const behaviour = packageBehaviour(agent, id, slot, position, ctx!);
-      const off = BEHAVIOUR_KEYS.filter(key => !sameJson(doc[key], behaviour[key]));
-      if (off.length) add("behaviour", `${id} ${off.join(", ")} differ from the package (${off.map(key => `${key} ${JSON.stringify(doc[key] ?? null)} vs ${JSON.stringify(behaviour[key] ?? null)}`).join("; ")})`, id);
+      const off = behaviourOff(doc, behaviour);
+      if (off.length) add("behaviour", `${id} ${off.map(item => item.key).join(", ")} differ from the package (${off.map(item => `${item.key} ${JSON.stringify(item.have ?? null)} vs ${JSON.stringify(item.want ?? null)}`).join("; ")})`, id);
     }
-    if (!sameIa(doc.ia, position)) add("position", `${id} slot.json ia ${JSON.stringify(doc.ia)} is not ${JSON.stringify(position)}`, id);
+    const want = current ? positionIa(id, position) : position;
+    if (!sameIa(doc.ia, want)) add("position", `${id} slot.json ia ${JSON.stringify(doc.ia)} is not ${JSON.stringify(want)}`, id);
   }
   return findings;
 }
@@ -235,7 +348,7 @@ export function driftCounts(findings: readonly SyncFinding[]): Partial<Record<Sy
  * newly adopted leaf's slot.json with its derived refs. Undeclared leaves refuse the plan: they are
  * declared as extensions or upstreamed into the package first.
  */
-export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlySet<string>, state: SyncState = syncState(consumerDir, agent)): { writes: [string, string][]; adopted: string[] } | { error: string } {
+export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlySet<string>, state: SyncState = syncState(consumerDir, agent), options?: CurrentSyncOptions): { writes: [string, string][]; adopted: string[] } | { error: string } {
   if (!state.consumer && !CREATED_BY_SYNC.has(agent)) return { error: `${agent} has no ia.json: adopt the package IA first (clossys ia ${agent} --adopt)` };
   if (state.undeclared.length) return { error: `${agent} places ${state.undeclared.length} leaves that are neither package leaves nor declared extensions: ${state.undeclared.slice(0, 8).join(", ")}${state.undeclared.length > 8 ? ", ..." : ""}` };
   const writes: [string, string][] = [];
@@ -245,21 +358,36 @@ export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlyS
   if (!modelExists(iaFile) || readModelText(iaFile) !== iaBytes) writes.push([iaFile, iaBytes]);
   const feeds = feedsIndex([...(agent === "director" ? state.pkg : directorIa()).slots.values()].map(slot => [slot.id, slot.feeds] as const), known);
   const ctx: RefContext = { known, feeds };
+  const store = currentStore(consumerDir, agent, state.positions);
+  let held: Map<string, AgentId[]> | undefined;
+  const holderMap = () => held ??= holders(consumerDir, agent, state);
   for (const [id, position] of state.positions) {
     const file = slotFile(slotDir(consumerDir, agent, id));
     const slot = state.pkg.slots.get(id);
-    let doc: Doc;
+    let bytes: string;
     if (!modelExists(file)) {
       if (!slot) continue;
-      doc = adoptedSlotDoc(agent, id, slot, position, ctx).doc;
+      if (store) {
+        const made = adoptedCurrent(agent, id, slot, position, packageBehaviour(agent, id, slot, position, ctx), holderMap(), options ?? { at: new Date().toISOString() as Iso, version: "0.0.0" });
+        if (!made) continue;
+        bytes = serializeSlot(made);
+      } else bytes = jsonBytes(adoptedSlotDoc(agent, id, slot, position, ctx).doc);
       adopted.push(id);
     } else {
-      const current = readDoc(file);
-      doc = { ...current, ia: { ...position }, ...(slot ? packageFields(slot) : {}) };
-      if (slot) doc = withBehaviour(doc, packageBehaviour(agent, id, slot, position, ctx));
-      if (sameJson(current, doc) && Object.keys(current).join() === Object.keys(doc).join()) continue;
+      const text = readModelText(file);
+      const current = JSON.parse(text) as Doc;
+      if (isCurrentSlot(current)) {
+        const doc = current as unknown as Slot;
+        bytes = slot ? serializeSlot(syncedCurrent(doc, id, slot, position, packageBehaviour(agent, id, slot, position, ctx), holderMap(), agent)) : serializeSlot({ ...doc, ia: positionIa(id, position) });
+      } else {
+        let doc: Doc = { ...current, ia: { ...position }, ...(slot ? packageFields(slot) : {}) };
+        if (slot) doc = withBehaviour(doc, packageBehaviour(agent, id, slot, position, ctx));
+        if (sameJson(current, doc) && Object.keys(current).join() === Object.keys(doc).join()) continue;
+        bytes = jsonBytes(doc);
+      }
+      if (bytes === text) continue;
     }
-    writes.push([file, jsonBytes(doc)]);
+    writes.push([file, bytes]);
   }
   return { writes, adopted };
 }

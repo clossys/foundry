@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "execution.risk.mitigation",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "execution",
-    "l1": "plan",
-    "l2": "plan.risk",
+    "l1": "execution/plan",
+    "l2": "execution/plan/risk",
     "order": 54
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "What do we do about each top threat, and who owns it?",
+    "mustDo": [
+      "Answer Threat: the threat it answers",
+      "Answer Action: the mitigating action",
+      "Answer Owner: who owns it"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "What do we do about each top threat, and who owns it?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

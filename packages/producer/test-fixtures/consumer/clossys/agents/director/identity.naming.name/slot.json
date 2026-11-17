@@ -1,14 +1,35 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "identity.naming.name",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "identity",
-    "l2": "identity.naming",
+    "l1": "strategy/identity",
+    "l2": "strategy/identity/naming",
     "order": 30
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.statement",
+  "brief": {
+    "purpose": "What is the name, how is it written and said, and what does it mean?",
+    "mustDo": [
+      "Answer Name: the name as customers see it",
+      "Answer Casing: every allowed written form and where",
+      "Answer Meaning: one plain sentence",
+      "Answer Pronunciation: respelled, stressed syllable in capitals"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "What is the name, how is it written and said, and what does it mean?",
     "mustContain": [
@@ -37,9 +58,7 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
+  "tighten": [],
   "options": 3,
-  "varyOn": "angle",
-  "standard": "brief.statement"
+  "varyOn": "angle"
 }

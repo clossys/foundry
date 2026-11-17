@@ -1,14 +1,44 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "advantage.defensibility.differentiator",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "advantage",
-    "l2": "advantage.defensibility",
+    "l1": "strategy/advantage",
+    "l2": "strategy/advantage/defensibility",
     "order": 24
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "brief.statement",
+  "brief": {
+    "purpose": "What makes our way different, and why is it hard to copy?",
+    "mustDo": [
+      "Answer Difference: how we work differently",
+      "Answer Versus: who we differ from",
+      "Answer Why-hard: why it is hard to copy"
+    ],
+    "inputs": [
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "question": "What makes our way different, and why is it hard to copy?",
     "mustContain": [
@@ -33,11 +63,7 @@
       ]
     }
   },
-  "inputs": [
-    "advantage.proposition.promise"
-  ],
-  "uses": [],
+  "tighten": [],
   "options": 3,
-  "varyOn": "angle",
-  "standard": "brief.statement"
+  "varyOn": "angle"
 }

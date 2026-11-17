@@ -11,20 +11,26 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { SlotAgent } from "../../records/slot-model/index.js";
 import { consumerPath } from "../../consumer-root.js";
+import { recutCandidateBytes } from "../../migrate/recut.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const entry = resolve(here, "../../../dist/cli/index.js");
 export const repoConsumer = consumerPath();
+/**
+ * The fixture consumer's clossys/ on the old Writer tree, as it was before `clossys migrate recut` moved test-fixtures/consumer to the
+ * current tree (foundry-build-0048 U2): the input of the tests that migrate a legacy store.
+ */
+export const legacyTreeConsumer = resolve(here, "../../../test-fixtures/consumer-legacy-tree/clossys");
 
-/** A temp root whose `clossys/` holds copies of the named agents' slot folders. */
-export function flatConsumer(agents: readonly SlotAgent[]): string {
+/** A temp root whose `clossys/` holds copies of the named agents' slot folders (from the repository consumer by default). */
+export function flatConsumer(agents: readonly SlotAgent[], from: string = repoConsumer): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "producer-flat-")));
   mkdirSync(join(root, "clossys", "agents"), { recursive: true });
   writeFileSync(join(root, "clossys", "clossys.config.ts"), "throw new Error('Config must not execute');\n");
-  for (const agent of agents) cpSync(join(repoConsumer, "agents", agent), join(root, "clossys", "agents", agent), { recursive: true });
+  for (const agent of agents) cpSync(join(from, "agents", agent), join(root, "clossys", "agents", agent), { recursive: true });
   // Director evidence lives outside the agent tree (clossys/evidence/director, rule R-GIT-CMS). It is optional, as
   // readDirectorEvidence treats a missing folder as no findings; the synthetic fixture consumer holds none.
-  if (agents.includes("director") && existsSync(join(repoConsumer, "evidence", "director"))) cpSync(join(repoConsumer, "evidence", "director"), join(root, "clossys", "evidence", "director"), { recursive: true });
+  if (agents.includes("director") && existsSync(join(from, "evidence", "director"))) cpSync(join(from, "evidence", "director"), join(root, "clossys", "evidence", "director"), { recursive: true });
   return root;
 }
 
@@ -45,18 +51,67 @@ export function withBriefContracts(root: string): string {
   return root;
 }
 
-/** The first pinned slot of an agent, with its pinned candidate's path. */
-export function firstPinned(root: string, agent: SlotAgent, accept: (id: string) => boolean = () => true): { id: string; dir: string; candidate: string } {
+/**
+ * The first pinned slot of an agent, with its pinned candidate's path. A Writer Prose or Copy slot pins per record
+ * (`clossys.pin-map/1`); its first record in record order stands as the slot's pin, as the slot reader reads it
+ * (`pinView`), and `record` names it.
+ */
+export function firstPinned(root: string, agent: SlotAgent, accept: (id: string) => boolean = () => true): { id: string; dir: string; candidate: string; record?: string } {
   const base = join(root, "clossys", "agents", agent);
   for (const id of readdirSync(base).sort()) {
     const dir = join(base, id);
     if (!accept(id) || !statSync(dir).isDirectory()) continue;
     try {
-      const pin = JSON.parse(readFileSync(join(dir, "pin.json"), "utf8")) as { candidate: string };
-      return { id, dir, candidate: join(dir, "candidates", pin.candidate) };
+      const pin = JSON.parse(readFileSync(join(dir, "pin.json"), "utf8")) as { schema?: string; candidate?: string; records?: Record<string, { candidate: string }> };
+      if (pin.schema === "clossys.pin-map/1") {
+        const record = Object.keys(pin.records ?? {}).sort()[0];
+        if (record) return { id, dir, candidate: join(dir, "candidates", pin.records![record]!.candidate), record };
+        continue;
+      }
+      if (typeof pin.candidate === "string") return { id, dir, candidate: join(dir, "candidates", pin.candidate) };
     } catch { /* unpinned */ }
   }
   throw new Error(`No pinned ${agent} slot`);
+}
+
+/** Record new candidate bytes' sha256 in a pin found by `firstPinned` (the record's entry, for a pin map). */
+export function repinSha(pinned: { dir: string; record?: string }, bytes: string): void {
+  const file = join(pinned.dir, "pin.json");
+  const pin = JSON.parse(readFileSync(file, "utf8"));
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  if (pinned.record !== undefined) pin.records[pinned.record] = { ...pin.records[pinned.record], sha256 };
+  else pin.sha256 = sha256;
+  writeFileSync(file, `${JSON.stringify(pin, null, 2)}\n`);
+}
+
+/**
+ * Seed a temp consumer's pinned Writer set, for the verbs that read one: the synthetic fixture consumer pins nothing
+ * (it holds slot folders and package defaults only), and no Writer package default is a native Writer body
+ * (`## <locale>` records under `locales`, writer/skill/SKILL.md). Each named Director slot gets one synthetic
+ * Direction/Because/Watch candidate; one Writer record slot gets one native Writer candidate. Every candidate carries
+ * the candidate/1 header the migration writes, and every pin goes through `clossys pin` (its checks unchanged).
+ */
+export function seedWriterPins(root: string, director: readonly string[], writer: { slot: string; record: string }): void {
+  const at = "2026-11-17T00:00:00Z";
+  const put = (agent: SlotAgent, slotId: string, name: string, text: string) => {
+    const dir = join(root, "clossys", "agents", agent, slotId, "candidates");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, name), recutCandidateBytes(name, text, { agent, slotId, at, version: "0.0.0", sourceRef: `agents/${agent}/${slotId}/candidates/${name}` }));
+  };
+  const pin = (target: string, name: string) => {
+    const result = runVerb(["pin", target, name, "--by", "planner", "--at", at], root);
+    if (result.status !== 0) throw new Error(`seed pin ${target} refused: ${result.stdout}${result.stderr}`);
+  };
+  for (const id of director) {
+    put("director", id, "seed-v1.md", `---\nslot: "${id}"\nsource: {"kind":"original","ref":[]}\nfeeds: []\nfunctions: []\n---\n\n`
+      + "## Direction\n- Sound: plain and specific.\n\n## Because\n- The example site speaks to readers who want facts first.\n\n"
+      + "## Watch\n- If a page uses a word the voice rules out, then return it to Writer.\n");
+    pin(`director/${id}`, "seed-v1.md");
+  }
+  const name = `${writer.record}-v1.md`;
+  put("writer", writer.slot, name, `---\nslot: "${writer.slot}"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n`
+    + `## en\n\n### Heading\n<!-- {"id":"${writer.record}.heading","bindings":[]} -->\nA plain heading\n`);
+  pin(`writer/${writer.slot}#${writer.record}`, name);
 }
 
 export function runVerb(args: readonly string[], cwd: string): { status: number | null; stdout: string; stderr: string; value: any } {

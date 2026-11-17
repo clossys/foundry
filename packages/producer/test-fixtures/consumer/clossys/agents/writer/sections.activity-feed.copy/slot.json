@@ -1,0 +1,407 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "sections.activity-feed.copy",
+  "agent": "writer",
+  "kind": "copy",
+  "status": "starter",
+  "ia": {
+    "l0": "copy",
+    "l1": "copy/section-copy",
+    "l2": "copy/section-copy/records",
+    "order": 51
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate recut",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "writer/lexicon.formality",
+      "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.warmth",
+      "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.energy",
+      "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.person",
+      "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.mood",
+      "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.sentence-length",
+      "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.reading-level",
+      "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.capitalization",
+      "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.punctuation",
+      "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.preferred-terms",
+      "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.avoid-terms",
+      "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.avoid-patterns",
+      "rel": "input"
+    },
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input",
+      "key": "Promise"
+    },
+    {
+      "to": "director/advantage.proposition.proof",
+      "rel": "input",
+      "key": "Proof"
+    },
+    {
+      "to": "director/advantage.proposition.proof",
+      "rel": "input",
+      "key": "Never-claim"
+    },
+    {
+      "to": "director/identity.naming.name",
+      "rel": "input",
+      "key": "Name"
+    }
+  ],
+  "base": null,
+  "standard": "passage",
+  "brief": {
+    "purpose": "Fill writer/sections.activity-feed.copy to the passage standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "writer/lexicon.formality",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.warmth",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.energy",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.person",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.mood",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.sentence-length",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.reading-level",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.capitalization",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.punctuation",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.preferred-terms",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.avoid-terms",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.avoid-patterns",
+        "rel": "input"
+      },
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input",
+        "key": "Promise"
+      },
+      {
+        "to": "director/advantage.proposition.proof",
+        "rel": "input",
+        "key": "Proof"
+      },
+      {
+        "to": "director/advantage.proposition.proof",
+        "rel": "input",
+        "key": "Never-claim"
+      },
+      {
+        "to": "director/identity.naming.name",
+        "rel": "input",
+        "key": "Name"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "unit": "designer/sections.activity-feed",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "role": "eyebrow",
+          "required": false,
+          "maxLength": {
+            "en": 48
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "role": "heading",
+          "required": false,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "role": "lead",
+          "required": false,
+          "maxLength": {
+            "en": 200
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "grouping[].label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "filters.links[].label",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.label",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "states.loading.label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "states.loading.description",
+          "kind": "plain",
+          "role": "body",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "states.empty.label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "states.empty.description",
+          "kind": "plain",
+          "role": "body",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "states.error.label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "states.error.description",
+          "kind": "plain",
+          "role": "body",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "events[].actor.name",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "events[].summary",
+          "kind": "rich",
+          "role": "body",
+          "required": true,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "events[].time-text",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "events[].changes[].field",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "events[].changes[].from",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "events[].changes[].to",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "events[].detail",
+          "kind": "rich",
+          "role": "body",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.unread",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.changed-from",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.changed-to",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.cleared",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    },
+    "fieldsSha256": "fa7a5267e444a5f9618cd900c0acc93656147ccace34aa6c69081debe25de2be",
+    "candidate": "clossys.copy-candidate/1"
+  },
+  "tighten": []
+}

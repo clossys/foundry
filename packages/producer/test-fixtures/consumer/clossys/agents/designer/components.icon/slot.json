@@ -1,14 +1,408 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "components.icon",
   "agent": "designer",
+  "kind": "element/component",
+  "status": "starter",
   "ia": {
     "l0": "components",
-    "l1": "components.components",
-    "l2": "components-text-and-media",
-    "order": 153
+    "l1": "components/components",
+    "l2": "components/components/components-text-and-media",
+    "order": 140
   },
-  "kind": "element",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-arrow-right",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-check",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-chevron-down",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-chevron-left",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-chevron-right",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-chevron-up",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-close",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-danger",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-date",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-document",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-document-approved",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-external-link",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-folder",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-grid-view",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-guide",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-home",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-info",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-integration",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-layers",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-legal",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-list-view",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-locked",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-organization",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-package",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-payment",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-receipt",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-search",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-security",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-settings",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-success",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-team",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-theme-dark",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-theme-light",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-theme-system",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-time",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-user",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-warning",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-website",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.category.definition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.essence",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.imagery",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.style",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.spacing",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "component",
+  "brief": {
+    "purpose": "Fill designer/components.icon to the component standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-arrow-right",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-check",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-chevron-down",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-chevron-left",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-chevron-right",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-chevron-up",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-close",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-danger",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-date",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-document",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-document-approved",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-external-link",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-folder",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-grid-view",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-guide",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-home",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-info",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-integration",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-layers",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-legal",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-list-view",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-locked",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-organization",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-package",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-payment",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-receipt",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-search",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-security",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-settings",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-success",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-team",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-theme-dark",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-theme-light",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-theme-system",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-time",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-user",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-warning",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-website",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.category.definition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.essence",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.imagery",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.style",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.spacing",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "kind": "component",
     "root": "presentational",
@@ -50,7 +444,6 @@
         "assets.icon-team",
         "assets.icon-organization",
         "assets.icon-website",
-        "assets.icon-institution",
         "assets.icon-guide",
         "assets.icon-document",
         "assets.icon-document-approved",
@@ -59,7 +452,6 @@
         "assets.icon-time",
         "assets.icon-payment",
         "assets.icon-receipt",
-        "assets.icon-business",
         "assets.icon-security",
         "assets.icon-locked",
         "assets.icon-legal",
@@ -69,57 +461,5 @@
       ]
     }
   },
-  "inputs": [
-    "advantage.proposition.promise",
-    "assets.icon-arrow-right",
-    "assets.icon-business",
-    "assets.icon-check",
-    "assets.icon-chevron-down",
-    "assets.icon-chevron-left",
-    "assets.icon-chevron-right",
-    "assets.icon-chevron-up",
-    "assets.icon-close",
-    "assets.icon-danger",
-    "assets.icon-date",
-    "assets.icon-document",
-    "assets.icon-document-approved",
-    "assets.icon-external-link",
-    "assets.icon-folder",
-    "assets.icon-grid-view",
-    "assets.icon-guide",
-    "assets.icon-home",
-    "assets.icon-info",
-    "assets.icon-institution",
-    "assets.icon-integration",
-    "assets.icon-layers",
-    "assets.icon-legal",
-    "assets.icon-list-view",
-    "assets.icon-locked",
-    "assets.icon-organization",
-    "assets.icon-package",
-    "assets.icon-payment",
-    "assets.icon-receipt",
-    "assets.icon-search",
-    "assets.icon-security",
-    "assets.icon-settings",
-    "assets.icon-success",
-    "assets.icon-team",
-    "assets.icon-theme-dark",
-    "assets.icon-theme-light",
-    "assets.icon-theme-system",
-    "assets.icon-time",
-    "assets.icon-user",
-    "assets.icon-warning",
-    "assets.icon-website",
-    "focus.category.definition",
-    "focus.segment.core",
-    "identity.brand.essence",
-    "identity.brand.personality",
-    "identity.verbal.voice",
-    "identity.visual.imagery",
-    "identity.visual.style",
-    "themes.spacing"
-  ],
-  "uses": [],
-  "standard": "component"
+  "tighten": []
 }

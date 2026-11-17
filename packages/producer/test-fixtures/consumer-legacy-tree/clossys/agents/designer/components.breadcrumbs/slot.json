@@ -1,0 +1,94 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.breadcrumbs",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.components",
+    "l2": "components-navigation",
+    "order": 133
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:Breadcrumbs",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "current",
+        "collapsed"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": [
+        "assets.icon-chevron-right",
+        "assets.icon-chevron-down"
+      ]
+    },
+    "composes": [
+      "components.link"
+    ],
+    "apg": "breadcrumb",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "navigation.label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "more.label",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 40
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-chevron-down",
+    "assets.icon-chevron-right",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.foreground",
+    "themes.muted-foreground",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.link"
+  ],
+  "standard": "component"
+}

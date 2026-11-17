@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.competency.gap",
+  "agent": "director",
+  "ia": {
+    "l0": "execution",
+    "l1": "task-force",
+    "l2": "task-force.team",
+    "order": 46
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which critical capability is missing, how big is the gap, and when do we close it?",
+    "mustContain": [
+      {
+        "key": "Gap",
+        "hint": "the missing capability"
+      },
+      {
+        "key": "Size",
+        "hint": "how far we are from the bar"
+      },
+      {
+        "key": "Close-by",
+        "hint": "the date and route to close it"
+      }
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "standard": "brief.list"
+}

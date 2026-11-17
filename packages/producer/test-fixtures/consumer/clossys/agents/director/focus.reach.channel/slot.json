@@ -1,14 +1,44 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "focus.reach.channel",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "focus",
-    "l2": "focus.reach",
+    "l1": "strategy/focus",
+    "l2": "strategy/focus/reach",
     "order": 18
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "Through which channels does the core segment find and buy from us?",
+    "mustDo": [
+      "Answer Primary: the main channel",
+      "Answer Secondary: the supporting channel",
+      "Answer Not: channels we do not use"
+    ],
+    "inputs": [
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "question": "Through which channels does the core segment find and buy from us?",
     "mustContain": [
@@ -33,9 +63,5 @@
       ]
     }
   },
-  "inputs": [
-    "focus.segment.core"
-  ],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

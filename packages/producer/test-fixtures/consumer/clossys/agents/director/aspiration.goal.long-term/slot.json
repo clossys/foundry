@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "aspiration.goal.long-term",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "roadmap",
-    "l1": "targets",
-    "l2": "targets.goal",
+    "l1": "roadmap/targets",
+    "l2": "roadmap/targets/goal",
     "order": 36
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.measure",
+  "brief": {
+    "purpose": "What measurable position do we aim to hold, and by when?",
+    "mustDo": [
+      "Answer Target: the position, with a number",
+      "Answer Date: the date it is due",
+      "Answer Scope: what the target covers and excludes"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "What measurable position do we aim to hold, and by when?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.measure"
+  "tighten": []
 }

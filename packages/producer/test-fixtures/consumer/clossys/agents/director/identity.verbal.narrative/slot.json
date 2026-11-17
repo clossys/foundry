@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "identity.verbal.narrative",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "identity",
-    "l2": "identity.verbal",
+    "l1": "strategy/identity",
+    "l2": "strategy/identity/verbal",
     "order": 32
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.statement",
+  "brief": {
+    "purpose": "What change in the world do we describe, what is at stake, and what is our way through?",
+    "mustDo": [
+      "Answer Change: the change in the world",
+      "Answer Stakes: what happens to people who ignore it",
+      "Answer Way: our way through"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "What change in the world do we describe, what is at stake, and what is our way through?",
     "mustContain": [
@@ -33,9 +53,7 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
+  "tighten": [],
   "options": 3,
-  "varyOn": "angle",
-  "standard": "brief.statement"
+  "varyOn": "angle"
 }

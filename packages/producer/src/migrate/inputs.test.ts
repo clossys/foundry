@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { flatConsumer } from "../cli/__fixtures__/flat-consumer.js";
+import { flatConsumer, legacyTreeConsumer } from "../cli/__fixtures__/flat-consumer.js";
 import { runCli } from "../cli/main.js";
 import { readiness } from "../records/slots.js";
 import { DESIGN_BRIEF_INPUTS } from "../records/slot-model/design-brief-inputs.js";
@@ -10,12 +10,15 @@ import { applyInputsMigration, planInputsMigration } from "./inputs.js";
 
 const BRIEF = DESIGN_BRIEF_INPUTS.map(([, id]) => id as string);
 
-/** A copy of the repository consumer with two slots put back to undeclared inputs. */
+/**
+ * A copy of the legacy-tree fixture consumer with two slots put back to undeclared inputs. The Writer slot is one the old and
+ * the current Writer tree both place (lexicon.person), so the installed catalog still holds its read graph.
+ */
 function undeclaredConsumer() {
-  const root = flatConsumer(["director", "designer", "writer"]);
+  const root = flatConsumer(["director", "designer", "writer"], legacyTreeConsumer);
   const consumer = join(root, "clossys");
-  const designer = join(consumer, "agents", "designer", "sections.cards", "slot.json");
-  const writer = join(consumer, "agents", "writer", "passages.sectioned-document", "slot.json");
+  const designer = join(consumer, "agents", "designer", "sections.features", "slot.json");
+  const writer = join(consumer, "agents", "writer", "lexicon.person", "slot.json");
   const declared = { designer: readFileSync(designer, "utf8"), writer: readFileSync(writer, "utf8") };
   const clear = (path: string) => writeFileSync(path, `${JSON.stringify({ ...JSON.parse(readFileSync(path, "utf8")), inputs: [] }, null, 2)}\n`);
   clear(designer); clear(writer);
@@ -24,22 +27,23 @@ function undeclaredConsumer() {
 
 describe("clossys migrate inputs", () => {
   it("declares Designer inputs from the brief and the slot contract's theme and asset reads", () => {
-    const cards = designerIa().slots.get("sections.cards")!;
-    expect(cards.declaredInputs).toEqual(expect.arrayContaining([...BRIEF, "assets.image", "themes.card"]));
-    expect(cards.declaredInputs).not.toContain("sections.cards");
+    // A live (not retired) Designer leaf: sections.cards is retired on the new tree, so designerIa() no longer places it.
+    const features = designerIa().slots.get("sections.features")!;
+    expect(features.declaredInputs).toEqual(expect.arrayContaining([...BRIEF, "assets.image", "themes.primary", "themes.radius"]));
+    expect(features.declaredInputs).not.toContain("sections.features");
   }, 60_000);
 
   it("restores undeclared inputs from the read graph, and a second run plans nothing", () => {
     const fixture = undeclaredConsumer();
-    expect(readiness(fixture.consumer, "writer", "passages.sectioned-document").blockedBy).toEqual([{ slot: "passages.sectioned-document", reason: "inputs-undeclared" }]);
+    expect(readiness(fixture.consumer, "writer", "lexicon.person").blockedBy).toEqual([{ slot: "lexicon.person", reason: "inputs-undeclared" }]);
     const plan = planInputsMigration(fixture.consumer);
     expect(plan.findings).toEqual([]);
-    expect(plan.changes.find(change => change.slot === "passages.sectioned-document")?.added).toEqual(["identity.verbal.voice"]);
-    expect(plan.changes.find(change => change.slot === "sections.cards")?.added).toEqual(expect.arrayContaining([...BRIEF, "assets.image"]));
+    expect(plan.changes.find(change => change.slot === "lexicon.person")?.added).toEqual(["identity.verbal.voice"]);
+    expect(plan.changes.find(change => change.slot === "sections.features")?.added).toEqual(expect.arrayContaining([...BRIEF, "assets.image"]));
     applyInputsMigration(fixture.consumer, plan);
     expect(readFileSync(fixture.designer, "utf8")).toBe(fixture.declared.designer);
     expect(readFileSync(fixture.writer, "utf8")).toBe(fixture.declared.writer);
-    expect(readiness(fixture.consumer, "writer", "passages.sectioned-document").blockedBy).toEqual([]);
+    expect(readiness(fixture.consumer, "writer", "lexicon.person").blockedBy).toEqual([]);
     expect(planInputsMigration(fixture.consumer).files).toEqual([]);
   }, 60_000);
 

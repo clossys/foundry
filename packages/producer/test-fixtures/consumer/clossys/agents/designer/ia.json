@@ -220,8 +220,6 @@
             "assets.icon-user",
             "assets.icon-team",
             "assets.icon-organization",
-            "assets.icon-business",
-            "assets.icon-institution",
             "assets.icon-website"
           ]
         },
@@ -266,9 +264,7 @@
             "components.toggle-group",
             "components.toolbar",
             "components.menu",
-            "components.command",
-            "components.native-action",
-            "components.dropdown-menu"
+            "components.command"
           ]
         },
         {
@@ -290,8 +286,7 @@
             "components.color-picker",
             "components.date-field",
             "components.date-picker",
-            "components.calendar",
-            "components.number-field"
+            "components.calendar"
           ]
         },
         {
@@ -310,13 +305,7 @@
           "slots": [
             "components.chart-bar",
             "components.chart-line",
-            "components.chart-area",
-            "components.chart-sparkline",
-            "components.chart-status-strip",
-            "components.chart-scatter",
-            "components.chart-heatmap",
-            "components.chart-range",
-            "components.chart-waterfall"
+            "components.chart-area"
           ]
         },
         {
@@ -327,9 +316,7 @@
             "components.breadcrumbs",
             "components.tabs",
             "components.sidebar",
-            "components.navigation-tree",
-            "components.canvas-zoom",
-            "components.canvas-map"
+            "components.navigation-tree"
           ]
         },
         {
@@ -363,16 +350,7 @@
         {
           "id": "components-specimens",
           "label": "Specimens (retired)",
-          "slots": [
-            "components.specimen-swatch",
-            "components.specimen-ladder",
-            "components.specimen-player",
-            "components.specimen-grid",
-            "components.specimen-matrix",
-            "components.specimen-viewport",
-            "components.specimen-passage",
-            "components.specimen-copy-in-context"
-          ]
+          "slots": []
         },
         {
           "id": "components-structure",
@@ -429,9 +407,7 @@
             "sections.testimonials",
             "sections.logo-cloud",
             "sections.people",
-            "sections.comparison",
-            "sections.logo-hero",
-            "sections.logo-mark"
+            "sections.comparison"
           ]
         },
         {
@@ -445,22 +421,7 @@
             "sections.gallery",
             "sections.faq",
             "sections.steps",
-            "sections.timeline",
-            "sections.legal-prose",
-            "sections.specimen-swatch",
-            "sections.specimen-color-ramp",
-            "sections.specimen-type-ladder",
-            "sections.specimen-spacing-ladder",
-            "sections.specimen-radius-ladder",
-            "sections.specimen-motion-player",
-            "sections.specimen-asset-grid",
-            "sections.specimen-icon-grid",
-            "sections.specimen-variant-matrix",
-            "sections.specimen-section-viewports",
-            "sections.specimen-frame-viewports",
-            "sections.specimen-rich-passage",
-            "sections.specimen-copy-in-context",
-            "sections.specimen-page-viewports"
+            "sections.timeline"
           ]
         },
         {
@@ -479,9 +440,7 @@
             "sections.activity-feed",
             "sections.audit-log",
             "sections.explorer",
-            "sections.filter-builder",
-            "sections.cards",
-            "sections.record-detail"
+            "sections.filter-builder"
           ]
         },
         {
@@ -494,8 +453,7 @@
             "sections.chat",
             "sections.settings",
             "sections.access-matrix",
-            "sections.column-mapper",
-            "sections.newsletter"
+            "sections.column-mapper"
           ]
         },
         {
@@ -505,8 +463,7 @@
             "sections.empty-state",
             "sections.error-state",
             "sections.notices",
-            "sections.consent",
-            "sections.boundary-message"
+            "sections.consent"
           ]
         }
       ]
@@ -522,8 +479,7 @@
             "frames.site-shell",
             "frames.app-shell",
             "frames.auth-shell",
-            "frames.deck",
-            "frames.document"
+            "frames.deck"
           ]
         },
         {
@@ -573,6 +529,352 @@
           ]
         }
       ]
+    }
+  ],
+  "retired": [
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/assets.icon-business",
+      "sha256": "0f4f1253c7bee4fa118c8a2e479132f26f435a7652dfd0be939af257e15a15ef",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/designer retired.json moves it to designer/assets.icon-organization",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/assets.icon-institution",
+      "sha256": "49166faf1ed2ce8efa13774d393b9c77b0ffe4b0f8bc9b02f434b22ba22bd518",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/designer retired.json moves it to designer/assets.icon-organization",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.canvas-map",
+      "sha256": "11d2c47ece24f48e031569a8b682f42c707d05dfac0526cb18bbbb9d19921fdd",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.canvas-zoom",
+      "sha256": "28283abaa604aef6f7f11815863a5ef9e850f6d12babe8408e7046f3df10d91d",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.chart-heatmap",
+      "sha256": "cd00aab85e6f3be6d25520feab53a8650a01d1e24bb49b787718789b62fd57ed",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.chart-range",
+      "sha256": "4584ceeb8c48a500423a713683a7962ba5ec727132615f5fe4b0cdd502506de8",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.chart-scatter",
+      "sha256": "f84b48e8eabe9166c1fb5eb88d8ecafefc79810e8b4127d1729f482fef2656db",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.chart-sparkline",
+      "sha256": "a47262bc75be78aaddb04dd113b9da3f2329ad5911de571dc2fd5a33d50aa30b",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.chart-status-strip",
+      "sha256": "ab183ed5e91792427a060883513393aa9639ad5f322f5c1bfa7f776b5d71e941",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.chart-waterfall",
+      "sha256": "23b6cf2a10477bbf7cf4720defaad56755b4f8959bc9107a3df4d8a38547871d",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.dropdown-menu",
+      "sha256": "970f51c89f60fbf0258452adb7947c560a158e2c8eeddd31dfb73032d38ff88d",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/designer retired.json moves it to designer/components.menu",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.native-action",
+      "sha256": "45ed94dd68319220d8635b57196d50c784c1c8f1f2d71c88a39c4f0509299206",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/designer retired.json moves it to designer/components.button",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.number-field",
+      "sha256": "6d1e8dbe6ea2f61ebf923db8e5afe16fbbd0c626d5595ace26851cb6aae94b89",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.specimen-copy-in-context",
+      "sha256": "2874182cb2e03df1ac64d5cfbafa58934159c8dcf772f393145501f53441b9d6",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.specimen-grid",
+      "sha256": "126abbae0f596e654b86d80610f3a7a9e5cd18300ed6e08169cc5ca67e98fe72",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.specimen-ladder",
+      "sha256": "b99fc2e41b31d4ef13cfb89b74df92a6f3e713acdd442eb8324739252071588c",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.specimen-matrix",
+      "sha256": "6854b934a22676e1ff7859ac12e16d339dcbca30ccebe18e1c0f5c62d8ca04d8",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.specimen-passage",
+      "sha256": "1029510352851f7c1a38c42651b552625d910b0cb258f1e9c70f915444af6761",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.specimen-player",
+      "sha256": "e73b73d4786ee0a768bf807a4f272f499f488ff037e07bdd9b9de8d3cebd1859",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.specimen-swatch",
+      "sha256": "1ab9923b62d75b00ba28a2757a58fef1057400089ed022131171b31b08552b31",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.specimen-viewport",
+      "sha256": "d476c6f2efb19fe2a48561566a87f00c697bfac0ba775383ab6e81f95c69eeaf",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/frames.document",
+      "sha256": "597d7e8a301aa420ef0519d04d8546d3b61a7c30e74b533f4f6b83c0f6e51ec2",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.boundary-message",
+      "sha256": "59e37757d4a2b5295fc2659a4306abe3406a7ce5f63c8dbba92af4c9d05e8e94",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.cards",
+      "sha256": "a92733c32d00fcdf05975f74ce3a89108260041d12c157a2345f5a2af1f078f8",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/designer retired.json moves it to designer/sections.link-index",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.legal-prose",
+      "sha256": "5e064444ce6b3e60135c7e8f63119284d5724b19af3251adec5873e87f9b1ded",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.logo-hero",
+      "sha256": "ec2d95f1ce4387f4482c79b62d9f5923558a14ead4332b6f5bdab6954da43d85",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/designer retired.json moves it to designer/sections.hero",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.logo-mark",
+      "sha256": "67d700b4b4ee04143f09d7fb3aa119ab55486d07a75744a0295b609db5eda4c3",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.newsletter",
+      "sha256": "3da772eea90fedc9659b62ec12e88a76f7fc45fe6e5dbd711cb9a815ecaee0f0",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.record-detail",
+      "sha256": "e3ea81b005f9ff7fbe5420f3dcad2da90617167d11cfedb424dc748c7013a626",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-asset-grid",
+      "sha256": "25fd57e4f671e16a714c576b9cd25fb8a554de85e66795b7e077c13001e699f1",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-color-ramp",
+      "sha256": "529dcd9e9be826caf6a07a45576f4233d861190f4e61fe3a06d153a1d3e80bea",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-copy-in-context",
+      "sha256": "f718172aae44ad4891fcc86ab7d48fa306ed9369a068e4cb5b5c30dd9ca831f9",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-frame-viewports",
+      "sha256": "0dfb23cbc6f5b7117bc97e6607d8cdced7060ecd50c3d9968ef424ae550ff70e",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-icon-grid",
+      "sha256": "ef011acc654fca72f2bc3720c3eeea0456c06bb22676dde32a64fb11c91c73dd",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-motion-player",
+      "sha256": "0202fb09bcef6d8b7ccb4530ce013c7a658905b590267c9c86602dfb2a8ece9d",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-page-viewports",
+      "sha256": "ea9753d07e21ebeaebd1edf13a87070bd9848937263dca9bb28bcb360e6fe266",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-radius-ladder",
+      "sha256": "f2b2ba6bcfd5a0cfc925a91d4841e12e9e754b02f3d7c3ab1be053f46ddeb9e2",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-rich-passage",
+      "sha256": "97b607071516632a88d3e94cdadd2e1ab5fdb14ae1e9c7c7ad9686f0273576ee",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-section-viewports",
+      "sha256": "ba2e250d2c8e0c6753bc7336230c16a2a267236193312eb0a094082f9ad72e5a",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-spacing-ladder",
+      "sha256": "c53f4addaa69dfaad0c8772d35ddbe76e71b7e75883f3e39f0b0786a84f8f31a",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-swatch",
+      "sha256": "e830e50a979f1656b6314c4a788358471591c25e224751136150c94b4e8b23ae",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-type-ladder",
+      "sha256": "bc2fd9042dbf3be02e8cb66603e7ce86875b8ac62a0b3b928d1f02712446654a",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/sections.specimen-variant-matrix",
+      "sha256": "8dcd210d7ac2dea236711e97452294c691570d0a48751cb6ca66e3406daae9b4",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/designer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
     }
   ]
 }

@@ -1,0 +1,53 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "advantage.proposition.proof",
+  "agent": "director",
+  "ia": {
+    "l0": "strategy",
+    "l1": "advantage",
+    "l2": "advantage.proposition",
+    "order": 23
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What evidence backs the promise, what is still missing, and what must we never claim?",
+    "mustContain": [
+      {
+        "key": "Proof",
+        "hint": "evidence we hold today"
+      },
+      {
+        "key": "Gap",
+        "hint": "evidence still missing"
+      },
+      {
+        "key": "Never-claim",
+        "hint": "claims we must never make, quoted"
+      },
+      {
+        "key": "Metrics",
+        "hint": "metric claims we can back"
+      },
+      {
+        "key": "Comparisons",
+        "hint": "comparison claims we can back"
+      },
+      {
+        "key": "Compliance",
+        "hint": "compliance statements we can make"
+      }
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle",
+  "standard": "brief.list"
+}

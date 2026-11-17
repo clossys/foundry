@@ -1,0 +1,168 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.error-state",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.sections",
+    "l2": "sections-states",
+    "order": 234
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "code",
+        "type": "copy",
+        "required": false
+      },
+      {
+        "name": "retry",
+        "type": "action",
+        "required": false
+      },
+      {
+        "name": "report",
+        "type": "action",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "kind.not-found",
+        "kind.failure",
+        "kind.forbidden",
+        "kind.offline"
+      ]
+    },
+    "allowedComposes": [
+      "components.button",
+      "components.link",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "both",
+    "substrates": [
+      "flow"
+    ],
+    "substrateTests": [
+      {
+        "substrate": "flow",
+        "file": "packages/publisher/src/web/publisher/PublisherSection.test.tsx",
+        "name": "renders typed Publisher error-state in flow"
+      }
+    ],
+    "passageSchema": "passages.error-state",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "role": "eyebrow",
+          "required": false,
+          "maxLength": {
+            "en": 48
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "role": "heading",
+          "required": false,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "role": "lead",
+          "required": false,
+          "maxLength": {
+            "en": 200
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "code",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "retry.label",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "report.label",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.muted",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.button",
+    "components.link",
+    "components.semantic-content"
+  ],
+  "standard": "section.adaptive"
+}

@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "execution.priority.bet",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "roadmap",
-    "l1": "timeline",
-    "l2": "timeline.priority",
+    "l1": "roadmap/timeline",
+    "l2": "roadmap/timeline/priority",
     "order": 40
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "What is the one bet we are making now, what should it produce, and when do we kill it?",
+    "mustDo": [
+      "Answer Bet: the bet",
+      "Answer Outcome: the outcome it must produce",
+      "Answer Kill: the condition that ends it"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "What is the one bet we are making now, what should it produce, and when do we kill it?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.list"
+  "tighten": []
 }

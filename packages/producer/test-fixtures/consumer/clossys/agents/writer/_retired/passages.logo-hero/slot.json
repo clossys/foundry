@@ -1,0 +1,38 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.logo-hero",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.sections",
+    "l2": "sections-story",
+    "order": 85
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.logo-hero",
+    "passageSchema": "passages.logo-hero",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "name",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.naming.name"
+  ],
+  "uses": [],
+  "standard": "copy.headline"
+}

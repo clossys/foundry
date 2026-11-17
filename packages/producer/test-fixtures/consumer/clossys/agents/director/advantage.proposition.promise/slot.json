@@ -1,14 +1,44 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "advantage.proposition.promise",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "advantage",
-    "l2": "advantage.proposition",
+    "l1": "strategy/advantage",
+    "l2": "strategy/advantage/proposition",
     "order": 22
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/context.customer.need",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "brief.statement",
+  "brief": {
+    "purpose": "What do we promise the core segment that the alternative does not deliver?",
+    "mustDo": [
+      "Answer Promise: the promise, one sentence",
+      "Answer For: the segment it is made to",
+      "Answer Versus: the alternative it beats"
+    ],
+    "inputs": [
+      {
+        "to": "director/context.customer.need",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "question": "What do we promise the core segment that the alternative does not deliver?",
     "mustContain": [
@@ -33,11 +63,7 @@
       ]
     }
   },
-  "inputs": [
-    "context.customer.need"
-  ],
-  "uses": [],
+  "tighten": [],
   "options": 3,
-  "varyOn": "angle",
-  "standard": "brief.statement"
+  "varyOn": "angle"
 }

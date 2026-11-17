@@ -1,0 +1,338 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.sign-in-form",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.sections",
+    "l2": "sections-forms",
+    "order": 226
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "passageSchema": "passages.sign-in-form",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "role": "heading",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "role": "lead",
+          "required": false,
+          "maxLength": {
+            "en": 200
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "providers[].label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "credentials.identifier-label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "credentials.identifier-placeholder",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "credentials.password-label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "credentials.password-placeholder",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "verification.code-label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "verification.description",
+          "kind": "plain",
+          "role": "body",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "verification.placeholder",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.submit",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.verify",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.pending",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.back",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.resend",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.divider",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "error.message",
+          "kind": "plain",
+          "role": "body",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "error.identifier",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "error.password",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "error.code",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    },
+    "root": "div",
+    "anatomy": {
+      "band": null,
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "header",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "providers",
+        "type": "records",
+        "required": false,
+        "max": 4
+      },
+      {
+        "name": "credentials",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "verification",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "actions",
+        "type": "action",
+        "required": true
+      },
+      {
+        "name": "error",
+        "type": "copy",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "sign-in.password",
+        "sign-in.provider",
+        "sign-in.verify"
+      ]
+    },
+    "allowedComposes": [
+      "components.text-field",
+      "components.button",
+      "components.form",
+      "components.link",
+      "components.semantic-content",
+      "components.banner",
+      "components.field"
+    ],
+    "parts": [],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.primary",
+        "themes.radius",
+        "themes.destructive",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "app"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.card",
+    "themes.muted",
+    "themes.primary",
+    "themes.primary-foreground",
+    "themes.radius",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.banner",
+    "components.button",
+    "components.field",
+    "components.form",
+    "components.link",
+    "components.semantic-content",
+    "components.text-field"
+  ],
+  "standard": "section.app"
+}

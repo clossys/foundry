@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.operation.delivery",
+  "agent": "director",
+  "ia": {
+    "l0": "execution",
+    "l1": "plan",
+    "l2": "plan.operation",
+    "order": 51
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "How do we deliver the offer, to what standard, and who owns it?",
+    "mustContain": [
+      {
+        "key": "Steps",
+        "hint": "the delivery steps"
+      },
+      {
+        "key": "Standard",
+        "hint": "the quality bar, testable"
+      },
+      {
+        "key": "Owner",
+        "hint": "who owns delivery"
+      }
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "standard": "brief.list"
+}

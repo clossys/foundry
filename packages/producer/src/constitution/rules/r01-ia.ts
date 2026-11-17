@@ -16,8 +16,8 @@
  *   publication id or a provenance word, unless the L1 axis is `instance`.
  * - R01.10 IA-NO-MIRROR: Publisher ia.json holds no page grouping: no node repeats a nav group of the
  *   Studio publication map, and no node spreads its pages over more than one L2 group.
- * - R01.11 IA-SHARED-AXIS: Writer Passages L1 = Designer Sections L1 and Writer Narratives L1 =
- *   Publisher Publications L1 (same ids, labels and order), and the Writer axis declares `mirrors`.
+ * - R01.11 IA-SHARED-AXIS: Writer Section copy L2 groups = Designer Sections L2 groups (same keys, labels
+ *   and order, IA_MIRRORS); an axis that declares `mirrors` holds its L0's L1 list equal to the source's.
  * - R01.12 IA-LABEL-UNIQUE: an L0 or L1 label names one concept within and across agents unless the
  *   agent declares it in `axes.shared` or a declared mirror links the two; its slug equals the id.
  * - R01.13 NAV-IA-PARITY: the Studio nav groups are Workspace plus each agent with an ia.json, in
@@ -50,10 +50,17 @@ export const STUDIO_PUBLICATION = "publication.studio";
 export const WORKSPACE_GROUP = "workspace";
 /** Nav order of the agent groups: chain order (proposal (c), owner Q-order). */
 export const NAV_AGENT_ORDER: readonly ModelAgent[] = ["producer", "director", "designer", "writer", "publisher"];
-/** The mirrors IA-SHARED-AXIS holds (R01.11): the mirror's L1 list must equal the source's. */
-export const IA_MIRRORS: readonly { readonly mirror: { readonly agent: ModelAgent; readonly l0: string }; readonly source: { readonly agent: ModelAgent; readonly l0: string } }[] = [
-  { mirror: { agent: "writer", l0: "passages" }, source: { agent: "designer", l0: "sections" } },
-  { mirror: { agent: "writer", l0: "narratives" }, source: { agent: "publisher", l0: "publications" } },
+/**
+ * One side of an IA mirror: an L0 (its L1 tabs are the list), or with `l1` one L1 of it (its L2 groups are the
+ * list, an L2 id read without its L1's `<key>-` prefix).
+ */
+export interface MirrorSide { readonly agent: ModelAgent; readonly l0: string; readonly l1?: string }
+/**
+ * The mirrors IA-SHARED-AXIS holds (R01.11): the mirror's list must equal the source's. Writer Section copy
+ * groups its leaves as Designer Sections does (the Voice/Prose/Copy tree, foundry-build-0048 U2).
+ */
+export const IA_MIRRORS: readonly { readonly mirror: MirrorSide; readonly source: MirrorSide }[] = [
+  { mirror: { agent: "writer", l0: "copy", l1: "copy.section-copy" }, source: { agent: "designer", l0: "sections", l1: "sections.sections" } },
 ];
 
 // ---- the level view ------------------------------------------------------------------------------
@@ -350,7 +357,7 @@ export function iaSharedAxis(ctx: ConstitutionContext): Row[] {
   const views = viewsOf(ctx);
   const viewOf = (agent: string) => views.find(each => each.agent.agent === agent);
   const l0In = (view: IaView | undefined, id: string) => view?.l0s.find(node => node.id === id);
-  const pairs = [...IA_MIRRORS];
+  const pairs: { mirror: MirrorSide; source: MirrorSide }[] = [...IA_MIRRORS];
   for (const view of views) for (const node of view.l0s) {
     const declared = l1AxisOf(view, node.id)?.mirrors;
     if (!declared) continue;
@@ -360,6 +367,7 @@ export function iaSharedAxis(ctx: ConstitutionContext): Row[] {
     }
   }
   for (const { mirror, source } of pairs) {
+    if (mirror.l1 !== undefined || source.l1 !== undefined) { rows.push(...l1Mirror(mirror, source, viewOf(mirror.agent), viewOf(source.agent))); continue; }
     const mirrorView = viewOf(mirror.agent), sourceView = viewOf(source.agent);
     const mine = l0In(mirrorView, mirror.l0), theirs = l0In(sourceView, source.l0);
     const name = `${mirror.agent}/${mirror.l0}`, sourceName = `${source.agent}/${source.l0}`;
@@ -382,6 +390,33 @@ export function iaSharedAxis(ctx: ConstitutionContext): Row[] {
   return rows;
 }
 
+/**
+ * R01.11 for an L1 mirror: the mirror L1's L2 groups equal the source L1's (keys, labels, order). The pair is
+ * package data (IA_MIRRORS), so no axis declares it; a side that is missing is named only when the other is placed.
+ */
+function l1Mirror(mirror: MirrorSide, source: MirrorSide, mirrorView: IaView | undefined, sourceView: IaView | undefined): Row[] {
+  const side = (at: MirrorSide) => `${at.agent}/${at.l1 ?? at.l0}`;
+  const l1In = (view: IaView | undefined, at: MirrorSide) => view?.l0s.find(node => node.id === at.l0)?.l1s.find(tab => tab.id === (at.l1 ?? at.l0));
+  const mine = l1In(mirrorView, mirror), theirs = l1In(sourceView, source);
+  const name = side(mirror), sourceName = side(source);
+  if (!mine && !theirs) return [];
+  if (!theirs) return sourceView ? [iaRow("R01.11", sourceView, `L1 ${source.l1} is missing: ${name} mirrors its L2 groups`)] : mirrorView ? [iaRow("R01.11", mirrorView, `${name} mirrors ${sourceName}, which has no ia.json`)] : [];
+  if (!mine) return mirrorView ? [iaRow("R01.11", mirrorView, `L1 ${mirror.l1} is missing: it must mirror the L2 groups of ${sourceName}`)] : [];
+  const groups = (tab: L1View) => tab.l2s.map(group => ({ key: group.id.startsWith(`${keyOf(tab.id)}-`) ? group.id.slice(keyOf(tab.id).length + 1) : group.id, label: group.label }));
+  const want = groups(theirs), have = groups(mine);
+  const rows: Row[] = [];
+  const view = mirrorView!;
+  for (const group of want) if (!have.some(each => each.key === group.key)) rows.push(iaRow("R01.11", view, `${sourceName} L2 ${group.key} (${group.label}) has no mirror in ${name}`));
+  for (const group of have) {
+    const match = want.find(each => each.key === group.key);
+    if (!match) rows.push(iaRow("R01.11", view, `${name} L2 ${group.key} (${group.label}) is not in ${sourceName}`));
+    else if (match.label !== group.label) rows.push(iaRow("R01.11", view, `${name} L2 ${group.key} is labelled ${group.label}, ${sourceName} labels it ${match.label}`));
+  }
+  const common = (list: { key: string }[], other: { key: string }[]) => list.map(each => each.key).filter(key => other.some(each => each.key === key));
+  if (common(have, want).join() !== common(want, have).join()) rows.push(iaRow("R01.11", view, `${name} orders its L2 groups ${common(have, want).join(", ")}; ${sourceName} orders them ${common(want, have).join(", ")}`));
+  return rows;
+}
+
 /** R01.12 IA-LABEL-UNIQUE: one label, one concept, within and across agents; the label's slug is the id. */
 export function iaLabelUnique(ctx: ConstitutionContext): Row[] {
   const rows: Row[] = [];
@@ -392,7 +427,7 @@ export function iaLabelUnique(ctx: ConstitutionContext): Row[] {
     if (node.label !== undefined) entries.push({ view, level: "L0", id: node.id, label: node.label, parent: "", at: `${view.agent.agent} ${where(node)}` });
     for (const tab of node.l1s) if (!tab.partial) entries.push({ view, level: "L1", id: tab.id, label: tab.label, parent: node.id, at: `${view.agent.agent} ${where(node, tab)}` });
   }
-  const linked = (a: Entry, b: Entry) => a.level === "L1" && b.level === "L1" && keyOf(a.id) === keyOf(b.id) && [...IA_MIRRORS, ...views.flatMap(view => view.l0s.flatMap(node => {
+  const linked = (a: Entry, b: Entry) => a.level === "L1" && b.level === "L1" && keyOf(a.id) === keyOf(b.id) && [...IA_MIRRORS.filter(pair => pair.mirror.l1 === undefined), ...views.flatMap(view => view.l0s.flatMap(node => {
     const declared = l1AxisOf(view, node.id)?.mirrors?.split("/");
     return declared ? [{ mirror: { agent: view.agent.agent, l0: node.id }, source: { agent: declared[0] as ModelAgent, l0: declared[1] ?? "" } }] : [];
   }))].some(({ mirror, source }) => [[a, b], [b, a]].some(([x, y]) => x!.view.agent.agent === mirror.agent && x!.parent === mirror.l0 && y!.view.agent.agent === source.agent && y!.parent === source.l0));

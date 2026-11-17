@@ -1,0 +1,62 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.deck",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.frames",
+    "l2": "frames-shells",
+    "order": 241
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "frame",
+    "root": "main",
+    "landmarks": [
+      {
+        "slot": "slide",
+        "role": "main",
+        "topLevel": true,
+        "nameRequired": false
+      }
+    ],
+    "slots": [
+      {
+        "id": "slide",
+        "required": true,
+        "accepts": "sections.*"
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "aspect.16-9"
+      ]
+    },
+    "statePorts": [],
+    "rendering": "server",
+    "breakpoints": [],
+    "allowedReads": {
+      "themes": [
+        "themes.background",
+        "themes.foreground"
+      ],
+      "assets": []
+    },
+    "composes": []
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.background",
+    "themes.foreground"
+  ],
+  "uses": [],
+  "standard": "frame"
+}

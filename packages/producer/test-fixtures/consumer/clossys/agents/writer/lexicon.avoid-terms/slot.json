@@ -1,23 +1,57 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "lexicon.avoid-terms",
   "agent": "writer",
+  "kind": "voice",
+  "status": "starter",
   "ia": {
-    "l0": "lexicon",
-    "l1": "lexicon.terminology",
-    "l2": "terminology-avoid-list",
-    "order": 9
+    "l0": "voice",
+    "l1": "voice/wording",
+    "l2": "voice/wording/terms",
+    "order": 10
   },
-  "kind": "strings",
-  "contract": {
-    "kind": "lexicon",
-    "source": "writer",
-    "recordKind": "term",
-    "valueType": "term-list"
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
   },
-  "inputs": [
-    "identity.verbal.voice"
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input",
+      "key": "Never"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input",
+      "key": "Not"
+    }
   ],
-  "uses": [],
-  "standard": "lexicon.term-list"
+  "base": null,
+  "standard": "lexicon.term-list",
+  "brief": {
+    "purpose": "Fill writer/lexicon.avoid-terms to the lexicon.term-list standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input",
+        "key": "Never"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input",
+        "key": "Not"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "shape": "voice.avoid-terms",
+    "value": "term list (absorbs the quoted words from Director voice Never)",
+    "check": "deterministic",
+    "defaults": "defaults/lexicon.avoid-terms/"
+  },
+  "tighten": []
 }

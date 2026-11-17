@@ -4,12 +4,12 @@
   "extensions": [],
   "nodes": [
     {
-      "id": "lexicon.voice",
-      "label": "Voice",
+      "id": "voice.tone",
+      "label": "Tone",
       "children": [
         {
-          "id": "voice-tone",
-          "label": "Tone",
+          "id": "attitude",
+          "label": "Attitude",
           "slots": [
             "lexicon.formality",
             "lexicon.warmth",
@@ -17,16 +17,16 @@
           ]
         },
         {
-          "id": "voice-person-and-mood",
-          "label": "Person and mood",
+          "id": "address",
+          "label": "Address",
           "slots": [
             "lexicon.person",
             "lexicon.mood"
           ]
         },
         {
-          "id": "voice-rhythm",
-          "label": "Rhythm",
+          "id": "rhythm",
+          "label": "Readability",
           "slots": [
             "lexicon.sentence-length",
             "lexicon.reading-level"
@@ -35,620 +35,1258 @@
       ]
     },
     {
-      "id": "lexicon.terminology",
-      "label": "Terminology",
+      "id": "voice.wording",
+      "label": "Wording",
       "children": [
         {
-          "id": "terminology-brand-names",
-          "label": "Brand names",
-          "slots": [
-            "lexicon.brand-names"
-          ]
-        },
-        {
-          "id": "terminology-glossary",
-          "label": "Glossary",
-          "slots": [
-            "lexicon.preferred-terms"
-          ]
-        },
-        {
-          "id": "terminology-avoid-list",
-          "label": "Avoid list",
-          "slots": [
-            "lexicon.avoid-terms",
-            "lexicon.avoid-patterns"
-          ]
-        },
-        {
-          "id": "terminology-spelling",
-          "label": "Spelling",
-          "slots": [
-            "lexicon.spelling-variant"
-          ]
-        },
-        {
-          "id": "terminology-pronunciation",
-          "label": "Pronunciation",
-          "slots": [
-            "lexicon.pronunciation"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "lexicon.claims",
-      "label": "Claims",
-      "children": [
-        {
-          "id": "claims-product-facts",
-          "label": "Product facts",
-          "slots": [
-            "lexicon.product-claims"
-          ]
-        },
-        {
-          "id": "claims-metrics",
-          "label": "Metrics",
-          "slots": [
-            "lexicon.metric-claims"
-          ]
-        },
-        {
-          "id": "claims-legal-and-compliance",
-          "label": "Legal and compliance",
-          "slots": [
-            "lexicon.compliance-statements"
-          ]
-        },
-        {
-          "id": "claims-comparisons",
-          "label": "Comparisons",
-          "slots": [
-            "lexicon.comparison-claims"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "lexicon.formats",
-      "label": "Formats",
-      "children": [
-        {
-          "id": "formats-numbers-and-plurals",
-          "label": "Numbers and plurals",
-          "slots": [
-            "lexicon.number-format",
-            "lexicon.plural-rules"
-          ]
-        },
-        {
-          "id": "formats-dates-and-times",
-          "label": "Dates and times",
-          "slots": [
-            "lexicon.date-format",
-            "lexicon.time-format"
-          ]
-        },
-        {
-          "id": "formats-currency-and-units",
-          "label": "Currency and units",
-          "slots": [
-            "lexicon.currency-format",
-            "lexicon.unit-format"
-          ]
-        },
-        {
-          "id": "formats-punctuation-and-capitalization",
-          "label": "Punctuation and capitalization",
+          "id": "mechanics",
+          "label": "Mechanics",
           "slots": [
             "lexicon.capitalization",
             "lexicon.punctuation"
           ]
         },
         {
-          "id": "formats-direction-and-expansion",
-          "label": "Direction and expansion",
+          "id": "terms",
+          "label": "Terms",
           "slots": [
-            "lexicon.direction",
-            "lexicon.expansion-budget"
+            "lexicon.preferred-terms",
+            "lexicon.avoid-terms",
+            "lexicon.avoid-patterns"
           ]
         }
       ]
     },
     {
-      "id": "strings.interface",
-      "label": "Interface",
+      "id": "prose.editorial",
+      "label": "Editorial",
       "children": [
         {
-          "id": "interface-actions",
-          "label": "Actions",
-          "slots": [
-            "strings.actions"
-          ]
-        },
-        {
-          "id": "interface-navigation",
-          "label": "Navigation",
-          "slots": [
-            "strings.navigation"
-          ]
-        },
-        {
-          "id": "interface-field-labels",
-          "label": "Field labels",
-          "slots": [
-            "strings.field-labels",
-            "strings.common"
-          ]
-        },
-        {
-          "id": "interface-statuses",
-          "label": "Statuses",
-          "slots": [
-            "strings.statuses"
-          ]
-        },
-        {
-          "id": "interface-counters",
-          "label": "Counters",
-          "slots": [
-            "strings.counters"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "strings.feedback",
-      "label": "Feedback",
-      "children": [
-        {
-          "id": "feedback-errors",
-          "label": "Errors",
-          "slots": [
-            "strings.errors"
-          ]
-        },
-        {
-          "id": "feedback-warnings",
-          "label": "Warnings",
-          "slots": [
-            "strings.warnings"
-          ]
-        },
-        {
-          "id": "feedback-confirmations",
-          "label": "Confirmations",
-          "slots": [
-            "strings.confirmations"
-          ]
-        },
-        {
-          "id": "feedback-empty",
-          "label": "Empty",
-          "slots": [
-            "strings.empty"
-          ]
-        },
-        {
-          "id": "feedback-loading",
-          "label": "Loading",
-          "slots": [
-            "strings.loading"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "strings.identity",
-      "label": "Identity",
-      "children": [
-        {
-          "id": "identity-names",
-          "label": "Names",
-          "slots": [
-            "strings.names"
-          ]
-        },
-        {
-          "id": "identity-taglines",
-          "label": "Taglines",
-          "slots": [
-            "strings.taglines"
-          ]
-        },
-        {
-          "id": "identity-legal-lines",
-          "label": "Legal lines",
-          "slots": [
-            "strings.legal-lines"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "strings.media-text",
-      "label": "Media text",
-      "children": [
-        {
-          "id": "media-text-alt-text",
-          "label": "Alt text",
-          "slots": [
-            "strings.alt-text"
-          ]
-        },
-        {
-          "id": "media-text-captions",
-          "label": "Captions",
-          "slots": [
-            "strings.captions"
-          ]
-        },
-        {
-          "id": "media-text-transcripts",
-          "label": "Transcripts",
-          "slots": [
-            "strings.transcripts"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "strings.metadata",
-      "label": "Metadata",
-      "children": [
-        {
-          "id": "metadata-page-titles",
-          "label": "Page titles",
-          "slots": [
-            "strings.page-titles"
-          ]
-        },
-        {
-          "id": "metadata-descriptions",
-          "label": "Descriptions",
-          "slots": [
-            "strings.descriptions"
-          ]
-        },
-        {
-          "id": "metadata-share-text",
-          "label": "Share text",
-          "slots": [
-            "strings.share-text"
-          ]
-        },
-        {
-          "id": "metadata-email-subject-and-preheader",
-          "label": "Email subject and preheader",
-          "slots": [
-            "strings.email-subjects",
-            "strings.email-preheaders"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "patterns.headings",
-      "label": "Headings",
-      "children": [
-        {
-          "id": "headings-headlines",
-          "label": "Headlines",
-          "slots": [
-            "patterns.headline",
-            "patterns.headline-subhead",
-            "patterns.eyebrow-headline"
-          ]
-        },
-        {
-          "id": "headings-section-titles",
-          "label": "Section titles",
-          "slots": [
-            "patterns.section-title"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "patterns.actions",
-      "label": "Actions",
-      "children": [
-        {
-          "id": "actions-calls-to-action",
-          "label": "Calls to action",
-          "slots": [
-            "patterns.primary-action",
-            "patterns.secondary-action"
-          ]
-        },
-        {
-          "id": "actions-links",
-          "label": "Links",
-          "slots": [
-            "patterns.inline-link"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "patterns.messages",
-      "label": "Messages",
-      "children": [
-        {
-          "id": "messages-problems",
-          "label": "Problems",
-          "slots": [
-            "patterns.error-message",
-            "patterns.warning-message"
-          ]
-        },
-        {
-          "id": "messages-outcomes",
-          "label": "Outcomes",
-          "slots": [
-            "patterns.confirmation"
-          ]
-        },
-        {
-          "id": "messages-states",
-          "label": "States",
-          "slots": [
-            "patterns.empty-state"
-          ]
-        },
-        {
-          "id": "messages-help",
-          "label": "Help",
-          "slots": [
-            "patterns.hint",
-            "patterns.tooltip"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "patterns.forms",
-      "label": "Forms",
-      "children": [
-        {
-          "id": "forms-fields",
-          "label": "Fields",
-          "slots": [
-            "patterns.form-field"
-          ]
-        },
-        {
-          "id": "forms-consent",
-          "label": "Consent",
-          "slots": [
-            "patterns.consent-line"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "patterns.data-and-lists",
-      "label": "Data and lists",
-      "children": [
-        {
-          "id": "data-and-lists-items",
-          "label": "Items",
-          "slots": [
-            "patterns.feature-bullet",
-            "patterns.stat",
-            "patterns.pricing-item"
-          ]
-        },
-        {
-          "id": "data-and-lists-tables",
-          "label": "Tables",
-          "slots": [
-            "patterns.table-header",
-            "patterns.table-caption"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "patterns.attribution",
-      "label": "Attribution",
-      "children": [
-        {
-          "id": "attribution-quotes",
-          "label": "Quotes",
-          "slots": [
-            "patterns.quote",
-            "patterns.testimonial"
-          ]
-        },
-        {
-          "id": "attribution-figures",
-          "label": "Figures",
-          "slots": [
-            "patterns.figure-caption"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "patterns.identity",
-      "label": "Identity",
-      "children": [
-        {
-          "id": "identity-messaging-kit",
-          "label": "Messaging kit",
-          "slots": [
-            "patterns.messaging-kit"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "passages.sections",
-      "label": "Sections",
-      "children": [
-        {
-          "id": "sections-parts",
-          "label": "Parts",
-          "slots": [
-            "passages.band",
-            "passages.section-header",
-            "passages.pagination",
-            "passages.table-of-contents"
-          ]
-        },
-        {
-          "id": "sections-story",
-          "label": "Story",
-          "slots": [
-            "passages.hero",
-            "passages.page-header",
-            "passages.features",
-            "passages.pricing",
-            "passages.call-to-action",
-            "passages.testimonials",
-            "passages.logo-cloud",
-            "passages.people",
-            "passages.logo-hero",
-            "passages.logo-mark"
-          ]
-        },
-        {
-          "id": "sections-reading",
-          "label": "Reading",
-          "slots": [
-            "passages.content",
-            "passages.article",
-            "passages.sectioned-document",
-            "passages.media",
-            "passages.gallery",
-            "passages.faq",
-            "passages.steps",
-            "passages.timeline",
-            "passages.legal-prose"
-          ]
-        },
-        {
-          "id": "sections-records",
-          "label": "Records",
-          "slots": [
-            "passages.link-index",
-            "passages.resource-list",
-            "passages.task-list",
-            "passages.data-table",
-            "passages.data-grid",
-            "passages.stats",
-            "passages.usage",
-            "passages.account-summary",
-            "passages.comparison",
-            "passages.status-list",
-            "passages.activity-feed",
-            "passages.audit-log",
-            "passages.explorer",
-            "passages.filter-builder",
-            "passages.cards",
-            "passages.record-detail"
-          ]
-        },
-        {
-          "id": "sections-forms",
-          "label": "Forms",
-          "slots": [
-            "passages.form",
-            "passages.sign-in-form",
-            "passages.wizard",
-            "passages.chat",
-            "passages.settings",
-            "passages.access-matrix",
-            "passages.column-mapper",
-            "passages.newsletter"
-          ]
-        },
-        {
-          "id": "sections-states",
-          "label": "States",
-          "slots": [
-            "passages.empty-state",
-            "passages.error-state",
-            "passages.notices",
-            "passages.consent",
-            "passages.boundary-message"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "narratives.web",
-      "label": "Web",
-      "children": [
-        {
-          "id": "web-site-and-demo",
-          "label": "Site and demo",
-          "slots": [
-            "narratives.page-story"
-          ]
-        },
-        {
-          "id": "web-app-and-admin",
-          "label": "App and admin",
-          "slots": [
-            "narratives.screen"
-          ]
-        },
-        {
-          "id": "web-chrome",
-          "label": "Chrome",
-          "slots": [
-            "narratives.site-chrome",
-            "narratives.app-chrome"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "narratives.documents",
-      "label": "Documents",
-      "children": [
-        {
-          "id": "documents-docs",
-          "label": "Docs",
+          "id": "narratives",
+          "label": "Narratives",
           "slots": [
             "narratives.article",
-            "narratives.guide",
-            "narratives.release-notes",
-            "narratives.legal-document"
+            "narratives.case-study"
           ]
         },
         {
-          "id": "documents-slides",
-          "label": "Slides",
+          "id": "changelog",
+          "label": "Changelog",
           "slots": [
-            "narratives.deck-script"
+            "narratives.release-notes"
           ]
         }
       ]
     },
     {
-      "id": "narratives.communications",
-      "label": "Communications",
+      "id": "prose.reference",
+      "label": "Reference",
       "children": [
         {
-          "id": "communications-messages",
-          "label": "Messages",
+          "id": "help",
+          "label": "Help",
           "slots": [
-            "narratives.email",
-            "narratives.notification"
+            "narratives.guide"
           ]
         },
         {
-          "id": "communications-videos",
-          "label": "Videos",
+          "id": "policies",
+          "label": "Policies",
           "slots": [
-            "narratives.video-script"
+            "narratives.legal-document"
           ]
         }
       ]
+    },
+    {
+      "id": "copy.component-text",
+      "label": "Component text",
+      "children": [
+        {
+          "id": "actions",
+          "label": "Actions",
+          "slots": [
+            "components.command.copy"
+          ]
+        },
+        {
+          "id": "navigation",
+          "label": "Navigation",
+          "slots": [
+            "components.breadcrumbs.copy",
+            "components.sidebar.copy"
+          ]
+        },
+        {
+          "id": "text-and-media",
+          "label": "Text and media",
+          "slots": [
+            "components.media-player.copy"
+          ]
+        },
+        {
+          "id": "overlays",
+          "label": "Overlays",
+          "slots": [
+            "components.dialog.copy",
+            "components.sheet.copy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "copy.section-copy",
+      "label": "Section copy",
+      "children": [
+        {
+          "id": "parts",
+          "label": "Parts",
+          "slots": [
+            "sections.section-header.copy"
+          ]
+        },
+        {
+          "id": "navigation",
+          "label": "Navigation",
+          "slots": [
+            "sections.pagination.copy",
+            "sections.table-of-contents.copy"
+          ]
+        },
+        {
+          "id": "story",
+          "label": "Story",
+          "slots": [
+            "sections.hero.copy",
+            "sections.page-header.copy",
+            "sections.features.copy",
+            "sections.pricing.copy",
+            "sections.call-to-action.copy",
+            "sections.testimonials.copy",
+            "sections.logo-cloud.copy",
+            "sections.people.copy",
+            "sections.comparison.copy"
+          ]
+        },
+        {
+          "id": "reading",
+          "label": "Reading",
+          "slots": [
+            "sections.content.copy",
+            "sections.article.copy",
+            "sections.media.copy",
+            "sections.gallery.copy",
+            "sections.faq.copy",
+            "sections.steps.copy",
+            "sections.timeline.copy"
+          ]
+        },
+        {
+          "id": "records",
+          "label": "Records",
+          "slots": [
+            "sections.link-index.copy",
+            "sections.resource-list.copy",
+            "sections.task-list.copy",
+            "sections.data-table.copy",
+            "sections.data-grid.copy",
+            "sections.stats.copy",
+            "sections.usage.copy",
+            "sections.account-summary.copy",
+            "sections.status-list.copy",
+            "sections.activity-feed.copy",
+            "sections.audit-log.copy",
+            "sections.explorer.copy",
+            "sections.filter-builder.copy"
+          ]
+        },
+        {
+          "id": "forms",
+          "label": "Forms",
+          "slots": [
+            "sections.form.copy",
+            "sections.sign-in-form.copy",
+            "sections.wizard.copy",
+            "sections.chat.copy",
+            "sections.settings.copy",
+            "sections.access-matrix.copy",
+            "sections.column-mapper.copy"
+          ]
+        },
+        {
+          "id": "states",
+          "label": "States",
+          "slots": [
+            "sections.empty-state.copy",
+            "sections.error-state.copy",
+            "sections.notices.copy",
+            "sections.consent.copy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "copy.frame-copy",
+      "label": "Frame copy",
+      "children": [
+        {
+          "id": "bars",
+          "label": "Bars",
+          "slots": [
+            "frames.site-header.copy",
+            "frames.site-footer.copy",
+            "frames.app-header.copy",
+            "frames.app-sidebar.copy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "copy.asset-text",
+      "label": "Asset text",
+      "children": [
+        {
+          "id": "marks",
+          "label": "Marks",
+          "slots": [
+            "assets.lockup.copy",
+            "assets.mark.copy"
+          ]
+        },
+        {
+          "id": "media",
+          "label": "Media",
+          "slots": [
+            "assets.image.copy",
+            "assets.video.copy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "copy.page-metadata",
+      "label": "Page metadata",
+      "children": [
+        {
+          "id": "site",
+          "label": "site",
+          "slots": [
+            "publication.site.meta",
+            "page.home.meta",
+            "page.about.meta",
+            "page.pricing.meta",
+            "page.contact.meta",
+            "page.terms.meta",
+            "page.privacy.meta",
+            "page.not-found.meta",
+            "page.error.meta"
+          ]
+        },
+        {
+          "id": "docs",
+          "label": "docs",
+          "slots": [
+            "publication.docs.meta",
+            "page.docs-index.meta",
+            "page.guide.meta",
+            "page.article.meta",
+            "page.changelog.meta"
+          ]
+        },
+        {
+          "id": "app",
+          "label": "app",
+          "slots": [
+            "publication.app.meta",
+            "page.sign-in.meta",
+            "page.sign-out-confirm.meta",
+            "page.not-authorized.meta",
+            "page.service-unavailable.meta",
+            "page.app-home.meta",
+            "page.list.meta",
+            "page.settings.meta",
+            "page.app-not-found.meta"
+          ]
+        },
+        {
+          "id": "slides",
+          "label": "slides",
+          "slots": [
+            "publication.slides.meta",
+            "page.deck.meta"
+          ]
+        }
+      ]
+    }
+  ],
+  "retired": [
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.brand-names",
+      "sha256": "0095f3feb7474e3198c917db694c7ca56750a1cedc8cd6159f54ea81cde6b7b2",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.comparison-claims",
+      "sha256": "0e294a0a7bcf02db643f0abd1c96e076773a582e87e1b0637cd937f58e7085bb",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.compliance-statements",
+      "sha256": "576a91a0e1de76043f71f0edd61ac8f3d745c9181a8d7ad0ab743eed816c7a90",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.currency-format",
+      "sha256": "2fd3ec5dd1acdc6ee182b43644e6e63aa6c3680b068d36a0da6c9c97de331473",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.date-format",
+      "sha256": "f88544b4f3cd617299734736577b7d33ad36234e5cc601aab53f6df273e483cb",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.direction",
+      "sha256": "9ba5bfa77e48cb6d026b7088f4beccb24427566c734c673c3d096de2128a0eee",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.expansion-budget",
+      "sha256": "b84aeb3980025a17df58f5318ba072485e584a47a8aa2de7fed47b2c4772f32c",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.metric-claims",
+      "sha256": "a48c01f3eef474fae29493515acd7d775245e0fcc2e325c1cd188d8ab4b56941",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.number-format",
+      "sha256": "de2c29a8ea542140e0b57781e10e1e6a98b73784f1ebad9f886fd658a1db358a",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.plural-rules",
+      "sha256": "ed42f27cedc424b3c78797577fc04c1d98eb367b0bed7d29e8a0ce1b546796ff",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.product-claims",
+      "sha256": "a390a1ae04eb30abe1e48e387565dc5095c1e397b8270af76bd3b195e22bb587",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.pronunciation",
+      "sha256": "115add3702249fcc357765a2dd9b0e3d329e7850f4b2db6223c7e72112b3172d",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.spelling-variant",
+      "sha256": "d94b6b08c5ea82b38e6d57c2a1a6ce52e4e325d8c7265536f4201ab486c44758",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.time-format",
+      "sha256": "94475becbde0127ae41eb842ba7f9b4b56308bb8e8420135022dfbca8e6165fb",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/lexicon.unit-format",
+      "sha256": "2b0ca2cd4e567b7d8989d91a76df9bfd0c84e859a159af934b57cd7d4101c542",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/narratives.app-chrome",
+      "sha256": "5c95eee4eaf878aa35cb48cffbc1854fc9faf6654f59b379c413301ecdca5f51",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/narratives.deck-script",
+      "sha256": "5b81e7958fd2901cfc958fc39d6318f8e4926aa4a17a17799c4fc3c7c12f04c1",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/narratives.email",
+      "sha256": "035dbada53763279b44bb951b00975933d74bb003fc882671f08ecdf2ccfbe2a",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/narratives.notification",
+      "sha256": "8ab4636635d282b05cdf0ed5ac832eac8ee8f1bd97ef03ce2c08e847bc46327d",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/narratives.page-story",
+      "sha256": "1e9e760f5ccf8d19cb15ec6852d90830d457678d95131c5850833f846b0b6be0",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/narratives.screen",
+      "sha256": "db8ce7131e0ff6c4ee8a612bf182d44e5cc7b8deb977f55408a8d5b9ac2c3959",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/narratives.site-chrome",
+      "sha256": "46d84539da2ede166b807dff8226e8b5b3ec52d61079686775c02d8757918b42",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/narratives.video-script",
+      "sha256": "95cc25ad239991a76821ca7ef0f37388a8e7bc4273b33620385c5acb8d0e1e89",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.access-matrix",
+      "sha256": "9b7dc65d41d199a75c30e74760c58af4588f2cb6aea49393e860e5d211fb5d52",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.access-matrix.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.account-summary",
+      "sha256": "53d818f1805729ddc1eeff071dd6eb659186e1f99de8fa35b8682c34bb7a9d4e",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.account-summary.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.activity-feed",
+      "sha256": "6f5ecdc7078b6ab5133a52393f0e485345fbb9a56368983f927f34b29ed75b02",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.activity-feed.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.article",
+      "sha256": "e2a6b9018ce7148704d10cc974c8522971ca657476d3e9cbe5c0d45efd73e7fc",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.article.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.audit-log",
+      "sha256": "aa306e2add16ffb00810e548cc34ecd7a9d98f5cc94668945d5fb31b584f9e34",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.audit-log.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.band",
+      "sha256": "e94621596931f5cb45e488e172f316c370231a5e90ba9d560293881d0de815a4",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.boundary-message",
+      "sha256": "1bfe1fcd300fdd73d299f3a9f284cb11a8d4d6401867e22d8ea81beb696c0d18",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.error-state.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.call-to-action",
+      "sha256": "e34c1219f7a098301dbe8a38eb7c249d9aac79568acdd04c101ad40e3661990e",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.call-to-action.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.cards",
+      "sha256": "9a266111416df9c27701429f07944136904153e155773d826f58ca6b96825ad5",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.link-index.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.chat",
+      "sha256": "5642e8e38d7886392c15f770b0705941039e263b821ac1776d3b378a1ec2adf4",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.chat.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.column-mapper",
+      "sha256": "bd162cb5b816afa739a7b4d87a1b627acb6803301d06d273f8770d12ebdff087",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.column-mapper.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.comparison",
+      "sha256": "d940181421555c3dca315f3e248aa52ee7867eac47b27743db6209ac30272eb8",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.comparison.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.consent",
+      "sha256": "b3af69ec2eac67f39669c322bfda075bf4bafb8f56494d5a7a5f570bedb73745",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.consent.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.content",
+      "sha256": "a973eb1b56d9ecdeb1e8577bf64f3448dc6386ebc9998a79e30e12d9d8626da0",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.content.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.data-grid",
+      "sha256": "032a9d5a4dff37f231a723307a8192039eb930876130e38a5c580e18dc23d29c",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.data-grid.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.data-table",
+      "sha256": "a5aa6d3c657df9cd2da7cc5d780e1fe09f9c58a4c0c944fe4c471bbd12082369",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.data-table.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.empty-state",
+      "sha256": "f2e8189aa3a1011a9aa4e48e57e5ee1e6f98d2f0b2dff21fdb9fe9a540ac4f00",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.empty-state.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.error-state",
+      "sha256": "823a8b0143d944ad9a638f5ee866c8fa90727197cf7685760e8333838d158da2",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.error-state.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.explorer",
+      "sha256": "d6cec0aee56183233ec58a0231d085c3bad6b6e6f119af229dbd411a178311bb",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.explorer.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.faq",
+      "sha256": "455175d1b3c2f23665313ae50dae4d64ab0b804164e06435f9720aa696b8c29f",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.faq.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.features",
+      "sha256": "f8069af51344d78cc5f7f1ca1897674e94f61ce5b3be52c82af943cebc9395d4",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.features.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.filter-builder",
+      "sha256": "070713f1d503e7eab371145967cb349e721bcb621eaf74d32d13b699d9c98cd7",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.filter-builder.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.form",
+      "sha256": "d412ca8bee01179bba2be00ce3c9e0e6ecad5f823bf9677668cc799535afec78",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.form.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.gallery",
+      "sha256": "8fa2247056b17098f6a6e0f2fc58ff1c6da4c954cb569597c37fff81ef343190",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.gallery.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.hero",
+      "sha256": "f0055d6ac39639a4ddd6ef7988bab5348968556462f3c8981281345d78a7176e",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.hero.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.legal-prose",
+      "sha256": "1525c13ed012e6d7e8ef4850ca9ad39a53b40641e78b5f7192b13bd9d7e27984",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/narratives.legal-document",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.link-index",
+      "sha256": "59793c6109b87895e9688d3457aec1abc7d1f066ab5f8ecdf3e63d6f53e9ad34",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.link-index.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.logo-cloud",
+      "sha256": "f5631d03f34a7bab300be5a535539119aa36f9b6b4f7b9b5f343dd715a325465",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.logo-cloud.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.logo-hero",
+      "sha256": "e8efdc08ee7c0d60168ddc2a8d03e6cdf0cd8340d7f74ae8a6f2a77c99961e94",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.hero.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.logo-mark",
+      "sha256": "3164f3e517872f49ac967bd30996219cbedb62d999ba847499d21ca34a6ae705",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.media",
+      "sha256": "aac59322b20605fc2056242b6ec272b2ee7d175d3e2ec4502eca7b3a737a0f71",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.media.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.newsletter",
+      "sha256": "487cc1c9a188f24302940fc24c0215804cb1fad64b5378f88ff7ae0047f81bfb",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.form.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.notices",
+      "sha256": "d86b8120b35313284871abcdc246f2699cdc7834c160fa0b2af814b6aaebba94",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.notices.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.page-header",
+      "sha256": "6ab60c6c8f3d8ffa7b5259a88cdb2b117c26e83bb6e1197656db0995c73b24c7",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.page-header.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.pagination",
+      "sha256": "2ea7c20cad441121e63bf2cd6ca6df71e349278552fbb3bc6c09a2454c5d210d",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.pagination.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.people",
+      "sha256": "e5a64a7160c847cf3fd50673104586a3b7e5732f709952cffa10a7c14f935e77",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.people.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.pricing",
+      "sha256": "6d41ef744928bb2ede74de348534ec5dd259ab60a58c5362f5fc7c9f92360f7f",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.pricing.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.record-detail",
+      "sha256": "f5381ba3e64210154f4f1831492c550872437835b0fc3bd3c6a2a45e9451217c",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.resource-list",
+      "sha256": "ab06528996257b5b9f58cabb79ea56d97394ef41a389623ffcf862038afca7fe",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.resource-list.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.section-header",
+      "sha256": "05e92033882a58740b532e260e9a8618c7667e3d5190ca2a06abf1a42d6f5e5c",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.section-header.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.sectioned-document",
+      "sha256": "ef83ba4fd2352335c64b9c33ad1074dfdfb7896925af4b7459b3d61550c47c21",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.settings",
+      "sha256": "e02faedf195be7b2bc88f70d1c8aa5034fa65fce9df6e520e80c94032b7d98d1",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.settings.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.sign-in-form",
+      "sha256": "28264ac1cb13f1bc4a4c16309f31634c154f7e4894462599574dc45b668a04cb",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.sign-in-form.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.stats",
+      "sha256": "393c0b417cae77a683db7149c67110dd62cb24d0016904f972884b93735933ca",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.stats.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.status-list",
+      "sha256": "719e6375f11276ffc85703d5dcaf632d655206c9122caa5bdec95ebb425a116d",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.status-list.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.steps",
+      "sha256": "7f581c185ff05da850791f16080a45ca67f4174fe44a6a5d34b543da77aae3aa",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.steps.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.table-of-contents",
+      "sha256": "bd04a983694e4381d1b52f6664bc69b87ec4e8e7fef2714a375b510957771098",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.table-of-contents.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.task-list",
+      "sha256": "5ed566d50524b574571c7853b46dfdce2e9b7838cadd024343ec348834d24479",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.task-list.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.testimonials",
+      "sha256": "228a631e7f79adcc56308f78ea226cea733a3fe194bb36170d9c8094394f2065",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.testimonials.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.timeline",
+      "sha256": "65dcd7b19190c0437a39d6e75c6a0782dbe11af63588934b5854e4d7cd6246c2",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.timeline.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.usage",
+      "sha256": "51be6b643216d897a870abf46b8892aec14cf26c0d57dd6e25576282f933ebc9",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.usage.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/passages.wizard",
+      "sha256": "a1fde4ad49bcba9f4b92756600b82d2ddc164e7762ac03e955261da52b506d6a",
+      "by": "migration:recut",
+      "reason": "superseded: recut, @clossys/writer retired.json moves it to writer/sections.wizard.copy",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.confirmation",
+      "sha256": "11c38c097404b1eec347e02070641590ea4f294d3899b3690a6c1ea14fda7df4",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.consent-line",
+      "sha256": "f27f59499395025128e3679a4698ad09de96ede7921a99b3293d3477ddb9a263",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.empty-state",
+      "sha256": "760b1b16b598a43739bee24331209a2743e890af70881f561a014faa94e98c87",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.error-message",
+      "sha256": "a0c4f52bd00f394c8f8c2401eb5071d9f71349d19def220b9309ca75811041cd",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.eyebrow-headline",
+      "sha256": "a1f7b5b141206e9b5de6fa755a652d2df8879b1620b5fc4f84becaed15497081",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.feature-bullet",
+      "sha256": "3d09f1b9ebfda123ac835533fca52e6b24c02195c8577d270d971a14467b54a8",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.figure-caption",
+      "sha256": "b3a24093b2effc1ce1121b74912f0d6e09a41035e99b574d93dd5316ca2640c3",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.form-field",
+      "sha256": "63886ef2380b2683532bb3aa8eea8647969145bf1d15732738e5c89b781441af",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.headline",
+      "sha256": "2a3865402271aab94e5a1bb0b05c3d4dd5d90390222f65592d8729f434a79069",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.headline-subhead",
+      "sha256": "5ac72ed9fd2794d4106ae625447b99352ef13e824a4f7f2ad31cdf6e64d2b0ea",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.hint",
+      "sha256": "3aaaeb487176d6864fb8237e1583038976f7c743d35f2e1282123c0812a59eb1",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.inline-link",
+      "sha256": "b9423646e9694628c29b14070cced3e7a0ace3aaffc84387262485b6895402a1",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.messaging-kit",
+      "sha256": "ee002e8a1a379775ff81888f3cec28055322ba8884ece3bb5132ea86b367b40a",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.pricing-item",
+      "sha256": "8d73b54a0d45b4cfe04c668f1e54b907e402bceaa5ef8e82a4718db0c454afc2",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.primary-action",
+      "sha256": "0d7dff82a4cce1ac53bc5e2319701bbbfdb8d44a269395edd4c4511c2ac1855c",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.quote",
+      "sha256": "ffcd0be015f784bb3ad9ba16a634e955959f832cecb641c339d2966d377e4dd5",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.secondary-action",
+      "sha256": "6350b73eb421cdf751cb095c7554218459e0cb46b8b9a60af20f8bb77b47aa8f",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.section-title",
+      "sha256": "9fa8c82bb7ca4fdd656d9e71790070ab415363d17a9e4c6e1f809d966ffcc145",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.stat",
+      "sha256": "ebe3448a005f128c372c87013a70620ef5a11f06af6e535ac4c1eec528227e63",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.table-caption",
+      "sha256": "d37a2923a1f8f586e7a322df26bc33d06a2935dece9ec0d93f680b2a450da079",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.table-header",
+      "sha256": "a77959d03f1800cb8b3312c444701447061e447d41d54299445b353f4d229c45",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.testimonial",
+      "sha256": "bf3aab1b3fe2ebe5935fd45cb6a41a270ad422bc98400df50ac281482e2699ef",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.tooltip",
+      "sha256": "6e91cf2e8efa26745050c2e1fdf064c9fe253a9cc6313c274dad2fa6d086bf30",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/patterns.warning-message",
+      "sha256": "c09ee2ed13a50e6fedb70bc5867012308b4b25e2b30d4d8732f4ab575e2f2489",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.actions",
+      "sha256": "4d35e29e7768291edba8a0054d60d6bcea0a014d3b2bb168bfa212b90d7332a9",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.alt-text",
+      "sha256": "474fcffa668295dbe001da21216bcc288d54709d5c9d5b574a66b9156748ad7c",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.captions",
+      "sha256": "57c8be69374b02751a23bd8526c43c2c770ba8f5843bdb52b9aab95d9a1a74f6",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.common",
+      "sha256": "72dbb555aec06383ad87494b225e41c2cdf995fd35ff10551b5235be7eb87ba2",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.confirmations",
+      "sha256": "08b8d5b9403a28ceec916c5796b40f0773494da41b1400befbc8bbd7d12b773e",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.counters",
+      "sha256": "358afc6c48c228e4279da714315004b6c81ba8966dd78e0a1fce9d1e717a52df",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.descriptions",
+      "sha256": "2cf0cfdf57e4714685ffa259a4df3f7982e27d413dfc983c6c3eff615a0b326e",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.email-preheaders",
+      "sha256": "0a3fb36a39e2ead7b7c4a2ca27e7af0dafceefce58b7b5691f6f03134d47dfd2",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.email-subjects",
+      "sha256": "d0fd191c60a89b876eeffff714f2620715178359702a96b98a4c2a17c1ac2241",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.empty",
+      "sha256": "32cb2e13a2490fc084af51c9450d912d64c1aa21dc7fb5c18ac565fbca6dd561",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.errors",
+      "sha256": "5e262f860367301a8e972ac5fc601881d997b72ea93f1b0ead01d67449dd8c50",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.field-labels",
+      "sha256": "145af1873523a225fa984838209473e3870ff3525dd063017195332fabd98f59",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.legal-lines",
+      "sha256": "4a398003911ec182c16ff6490b3ce1ea9266af1dae360f8d16c03c02d7fa984b",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.loading",
+      "sha256": "51dbe56d0c03a9e3abc1f7ce0ad10dc460a3242a1cd9f9cce43f33de4297e7b9",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.names",
+      "sha256": "44adf49145d6e3e40ba905aa87fe0bc78798c2847da831aca4c8e8533c48b3d6",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.navigation",
+      "sha256": "bda29efa77d068ac2f4c12d44c4f53b289f8c290c4b6d5311b0441304969e7f8",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.page-titles",
+      "sha256": "5c367c6858047702a071b294629f734393b778168379071ccfa9a5cd0f0941bb",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.share-text",
+      "sha256": "068bba5727b9219a83b189dd9590d538f1812bda38e9f476bfa095c030348d89",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.statuses",
+      "sha256": "76a5b6a2106dd8409cd245badab2d97bb00e56f6bbd11a23e248525865a35b43",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.taglines",
+      "sha256": "beaa3298b2832c7a890d056f54f70dbbab45f63bc273d6e615401ab882144448",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.transcripts",
+      "sha256": "9fa97f1f3c3d3b6d4c5284761deae3586cc6230d5691e29325b85280f179dd67",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/strings.warnings",
+      "sha256": "071416be8b8e31ffd249dde80570c4fdb653ec735e175411e11792ed11812746",
+      "by": "migration:recut",
+      "reason": "not-needed: recut, @clossys/writer retired.json retires it",
+      "at": "2026-11-17T00:00:00Z"
     }
   ]
 }

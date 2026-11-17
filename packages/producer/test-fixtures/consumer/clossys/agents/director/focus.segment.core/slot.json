@@ -1,14 +1,34 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "focus.segment.core",
   "agent": "director",
+  "kind": "brief",
+  "status": "starter",
   "ia": {
     "l0": "strategy",
-    "l1": "focus",
-    "l2": "focus.segment",
+    "l1": "strategy/focus",
+    "l2": "strategy/focus/segment",
     "order": 14
   },
-  "kind": "brief",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "brief.profile",
+  "brief": {
+    "purpose": "Who exactly do we serve first, and who do we turn away?",
+    "mustDo": [
+      "Answer Who: the segment, specific enough to find",
+      "Answer Situation: the situation they are in",
+      "Answer Not: who we turn away"
+    ],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "question": "Who exactly do we serve first, and who do we turn away?",
     "mustContain": [
@@ -33,7 +53,5 @@
       ]
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "brief.profile"
+  "tighten": []
 }

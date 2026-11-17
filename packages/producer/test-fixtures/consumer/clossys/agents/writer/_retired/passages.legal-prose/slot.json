@@ -1,0 +1,70 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.legal-prose",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.sections",
+    "l2": "sections-reading",
+    "order": 95
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.legal-prose",
+    "passageSchema": "passages.legal-prose",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "heading",
+          "kind": "plain",
+          "role": "heading",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "revision.label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "revision.value",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "body",
+          "kind": "rich",
+          "role": "body",
+          "required": true,
+          "maxLength": {
+            "en": 48000
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "focus.reach.geography",
+    "identity.verbal.voice",
+    "advantage.proposition.proof"
+  ],
+  "uses": [],
+  "standard": "passage"
+}

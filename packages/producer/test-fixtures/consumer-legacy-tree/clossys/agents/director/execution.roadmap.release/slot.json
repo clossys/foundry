@@ -1,0 +1,45 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "execution.roadmap.release",
+  "agent": "director",
+  "ia": {
+    "l0": "roadmap",
+    "l1": "timeline",
+    "l2": "timeline.schedule",
+    "order": 43
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What is the next release, by when, and what is in and out?",
+    "mustContain": [
+      {
+        "key": "Release",
+        "hint": "a short name"
+      },
+      {
+        "key": "Target date",
+        "hint": "ISO date"
+      },
+      {
+        "key": "Scope",
+        "hint": "publications and pages"
+      },
+      {
+        "key": "Not in scope",
+        "hint": "what waits for a later release"
+      }
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
+  },
+  "inputs": [
+    "focus.lifecycle.acquisition"
+  ],
+  "uses": [],
+  "standard": "brief.list"
+}

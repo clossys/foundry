@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { flatConsumer, repoConsumer, snapshot } from "../cli/__fixtures__/flat-consumer.js";
+import { flatConsumer, legacyTreeConsumer, repoConsumer, snapshot } from "../cli/__fixtures__/flat-consumer.js";
 import { runCli } from "../cli/main.js";
 import { sha256Hex } from "../records/hash.js";
 import { writerRecords } from "../records/slot-check.js";
@@ -11,12 +11,12 @@ const camel = (id: string) => id.replace(/-([a-z0-9])/g, (_, char: string) => ch
 const RENAMED = ["page.previous-label", "page.next-label", "page.page-text", "page.no-results-label", "page.page-size-label", "total.range-text"];
 
 /**
- * A copy of the repository consumer with the pagination slots put back in the legacy camelCase
+ * A copy of the old-tree fixture consumer with the pagination slots put back in the legacy camelCase
  * form: Designer and Writer slot.json keys, the Writer candidate's record ids, and a pin that
  * matches those legacy bytes.
  */
 function legacyConsumer() {
-  const root = flatConsumer(["designer", "writer"]);
+  const root = flatConsumer(["designer", "writer"], legacyTreeConsumer);
   const consumer = join(root, "clossys");
   const designer = join(consumer, "agents", "designer", "sections.pagination", "slot.json");
   const writerDir = join(consumer, "agents", "writer", "passages.pagination");
@@ -31,6 +31,22 @@ function legacyConsumer() {
   writeFileSync(candidate, legacyCandidate);
   writeFileSync(join(writerDir, "pin.json"), migrated.pin.replace(pin.sha256, sha256Hex(legacyCandidate)));
   return { root, consumer, designer, writerDir, candidate, migrated, legacyCandidate };
+}
+
+/**
+ * A copy of the current fixture consumer (recut, clossys.slot/2) with the pagination slot.json keys put back in the
+ * legacy camelCase form, Designer and Writer. The fixture holds no candidate or pin there, so none is carried.
+ */
+function currentConsumer() {
+  const root = flatConsumer(["designer", "writer"]);
+  const consumer = join(root, "clossys");
+  const designer = join(consumer, "agents", "designer", "sections.pagination", "slot.json");
+  const writer = join(consumer, "agents", "writer", "sections.pagination.copy", "slot.json");
+  const migrated = { designer: readFileSync(designer, "utf8"), writer: readFileSync(writer, "utf8") };
+  const legacyKeys = (text: string) => RENAMED.reduce((out, key) => out.split(`"key": "${key}"`).join(`"key": "${camel(key)}"`), text);
+  writeFileSync(designer, legacyKeys(migrated.designer));
+  writeFileSync(writer, legacyKeys(migrated.writer));
+  return { root, consumer, designer, writer, migrated };
 }
 
 describe("clossys migrate copy-keys", () => {
@@ -97,6 +113,29 @@ describe("clossys migrate copy-keys", () => {
     const plan = planCopyKeyMigration(fixture.consumer);
     expect(plan.repinned).toEqual([]);
     expect(plan.files.some(file => file.path.endsWith("pin.json"))).toBe(false);
+  }, 60_000);
+
+  it("on the current fixture: renames only catalog-declared ids in the Copy tree and restores the migrated bytes", async () => {
+    const fixture = currentConsumer();
+    const catalog = foundryCopyKeyCatalog();
+    for (const key of RENAMED) expect(catalog.writer.get("sections.pagination.copy")?.has(key)).toBe(true);
+    const plan = planCopyKeyMigration(fixture.consumer, catalog);
+    expect(plan.findings).toEqual([]);
+    expect(plan.renames.filter(rename => rename.agent === "writer").map(rename => `${rename.slot} ${rename.to}`).sort()).toEqual(RENAMED.map(key => `sections.pagination.copy ${key}`).sort());
+    expect(plan.repinned).toEqual([]);
+    applyCopyKeyMigration(fixture.consumer, plan);
+    expect(readFileSync(fixture.designer, "utf8")).toBe(fixture.migrated.designer);
+    expect(readFileSync(fixture.writer, "utf8")).toBe(fixture.migrated.writer);
+    const second = await runCli(["migrate", "copy-keys", "--check", "--root", fixture.root], fixture.root);
+    expect(second.exitCode, second.message).toBe(0);
+  }, 60_000);
+
+  it("on the current fixture: reports a camelCase key the catalog does not declare", async () => {
+    const fixture = currentConsumer();
+    writeFileSync(fixture.writer, readFileSync(fixture.writer, "utf8").replace('"key": "page.label"', '"key": "page.ariaLabel"'));
+    const check = await runCli(["migrate", "copy-keys", "--check", "--root", fixture.root], fixture.root);
+    expect(check.exitCode).toBe(1);
+    expect(check.message).toContain("copy key page.ariaLabel has no catalog id (page.aria-label is not declared)");
   }, 60_000);
 
   it("leaves nothing pending on the repository consumer", () => {

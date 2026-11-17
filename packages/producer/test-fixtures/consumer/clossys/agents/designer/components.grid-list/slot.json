@@ -1,14 +1,140 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "components.grid-list",
   "agent": "designer",
+  "kind": "element/component",
+  "status": "starter",
   "ia": {
     "l0": "components",
-    "l1": "components.components",
-    "l2": "components-collections",
-    "order": 120
+    "l1": "components/components",
+    "l2": "components/components/components-collections",
+    "order": 115
   },
-  "kind": "element",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.category.definition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.essence",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.imagery",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.style",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.border",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.primary",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.spacing",
+      "rel": "input"
+    },
+    {
+      "to": "designer/components.checkbox",
+      "rel": "uses"
+    }
+  ],
+  "base": null,
+  "standard": "component",
+  "brief": {
+    "purpose": "Fill designer/components.grid-list to the component standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.category.definition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.essence",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.imagery",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.style",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.border",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.primary",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.spacing",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "kind": "component",
     "root": "rac:GridList",
@@ -54,23 +180,5 @@
     ],
     "apg": "grid"
   },
-  "inputs": [
-    "advantage.proposition.promise",
-    "focus.category.definition",
-    "focus.segment.core",
-    "identity.brand.essence",
-    "identity.brand.personality",
-    "identity.verbal.voice",
-    "identity.visual.imagery",
-    "identity.visual.style",
-    "themes.border",
-    "themes.muted",
-    "themes.muted-foreground",
-    "themes.primary",
-    "themes.spacing"
-  ],
-  "uses": [
-    "components.checkbox"
-  ],
-  "standard": "component"
+  "tighten": []
 }

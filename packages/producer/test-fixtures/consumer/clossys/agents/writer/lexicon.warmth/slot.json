@@ -1,24 +1,57 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "lexicon.warmth",
   "agent": "writer",
+  "kind": "voice",
+  "status": "starter",
   "ia": {
-    "l0": "lexicon",
-    "l1": "lexicon.voice",
-    "l2": "voice-tone",
+    "l0": "voice",
+    "l1": "voice/tone",
+    "l2": "voice/tone/attitude",
     "order": 1
   },
-  "kind": "strings",
-  "contract": {
-    "kind": "lexicon",
-    "source": "writer",
-    "recordKind": "voice-rule",
-    "valueType": "categorical-rule"
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
   },
-  "inputs": [
-    "identity.brand.personality",
-    "identity.verbal.voice"
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input",
+      "key": "Sound"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input",
+      "key": "Traits"
+    }
   ],
-  "uses": [],
-  "standard": "lexicon.voice-rule"
+  "base": null,
+  "standard": "lexicon.voice-rule",
+  "brief": {
+    "purpose": "Fill writer/lexicon.warmth to the lexicon.voice-rule standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input",
+        "key": "Sound"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input",
+        "key": "Traits"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "shape": "voice.warmth",
+    "value": "1-5 anchored scale",
+    "check": "owner rubric",
+    "defaults": "defaults/lexicon.warmth/"
+  },
+  "tighten": []
 }

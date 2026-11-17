@@ -1,23 +1,57 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "lexicon.capitalization",
   "agent": "writer",
+  "kind": "voice",
+  "status": "starter",
   "ia": {
-    "l0": "lexicon",
-    "l1": "lexicon.formats",
-    "l2": "formats-punctuation-and-capitalization",
-    "order": 23
+    "l0": "voice",
+    "l1": "voice/wording",
+    "l2": "voice/wording/mechanics",
+    "order": 7
   },
-  "kind": "strings",
-  "contract": {
-    "kind": "lexicon",
-    "source": "writer",
-    "recordKind": "format",
-    "valueType": "capitalization-rule"
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
   },
-  "inputs": [
-    "identity.verbal.voice"
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input",
+      "key": "Do"
+    },
+    {
+      "to": "director/identity.naming.name",
+      "rel": "input",
+      "key": "Casing"
+    }
   ],
-  "uses": [],
-  "standard": "lexicon.format-rule"
+  "base": null,
+  "standard": "lexicon.format-rule",
+  "brief": {
+    "purpose": "Fill writer/lexicon.capitalization to the lexicon.format-rule standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input",
+        "key": "Do"
+      },
+      {
+        "to": "director/identity.naming.name",
+        "rel": "input",
+        "key": "Casing"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "shape": "voice.capitalization",
+    "value": "case per role; exceptions from Director naming.name:Casing",
+    "check": "deterministic",
+    "defaults": "defaults/lexicon.capitalization/"
+  },
+  "tighten": []
 }

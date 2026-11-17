@@ -1,14 +1,248 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "frames.site-shell",
   "agent": "designer",
+  "kind": "element/frame",
+  "status": "starter",
   "ia": {
     "l0": "frames",
-    "l1": "frames.frames",
-    "l2": "frames-shells",
-    "order": 238
+    "l1": "frames/frames",
+    "l2": "frames/frames/frames-shells",
+    "order": 196
   },
-  "kind": "element",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.image",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.category.definition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.essence",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.imagery",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.style",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.accent-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.background",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.border",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.font-heading",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.primary",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.radius",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.ring",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.shadow",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.spacing",
+      "rel": "input"
+    },
+    {
+      "to": "designer/components.avatar",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.badge",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.card",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.disclosure",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.icon",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.logo",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.progress-bar",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.semantic-content",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.status-mark",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.toast",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/frames.site-footer",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/frames.site-header",
+      "rel": "uses"
+    }
+  ],
+  "base": null,
+  "standard": "frame",
+  "brief": {
+    "purpose": "Fill designer/frames.site-shell to the frame standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.image",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.category.definition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.essence",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.imagery",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.style",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.accent-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.background",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.border",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.font-heading",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.primary",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.radius",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.ring",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.shadow",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.spacing",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "kind": "frame",
     "root": "div",
@@ -158,42 +392,5 @@
     ],
     "skipTarget": "main-content"
   },
-  "inputs": [
-    "advantage.proposition.promise",
-    "assets.image",
-    "focus.category.definition",
-    "focus.segment.core",
-    "identity.brand.essence",
-    "identity.brand.personality",
-    "identity.verbal.voice",
-    "identity.visual.imagery",
-    "identity.visual.style",
-    "themes.accent-foreground",
-    "themes.background",
-    "themes.border",
-    "themes.font-heading",
-    "themes.foreground",
-    "themes.muted",
-    "themes.muted-foreground",
-    "themes.primary",
-    "themes.radius",
-    "themes.ring",
-    "themes.shadow",
-    "themes.spacing"
-  ],
-  "uses": [
-    "components.avatar",
-    "components.badge",
-    "components.card",
-    "components.disclosure",
-    "components.icon",
-    "components.logo",
-    "components.progress-bar",
-    "components.semantic-content",
-    "components.status-mark",
-    "components.toast",
-    "frames.site-footer",
-    "frames.site-header"
-  ],
-  "standard": "frame"
+  "tighten": []
 }

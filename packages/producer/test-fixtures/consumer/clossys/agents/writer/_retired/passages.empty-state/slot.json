@@ -1,0 +1,79 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.empty-state",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.sections",
+    "l2": "sections-states",
+    "order": 120
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.empty-state",
+    "passageSchema": "passages.empty-state",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "role": "eyebrow",
+          "required": false,
+          "maxLength": {
+            "en": 48
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "role": "heading",
+          "required": false,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "role": "lead",
+          "required": false,
+          "maxLength": {
+            "en": 200
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions[].label",
+          "kind": "plain",
+          "role": "action",
+          "required": false,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "illustration.label",
+          "kind": "plain",
+          "role": "label",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "focus.offer.included",
+    "identity.verbal.voice"
+  ],
+  "uses": [],
+  "standard": "passage"
+}

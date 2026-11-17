@@ -1,23 +1,57 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "lexicon.sentence-length",
   "agent": "writer",
+  "kind": "voice",
+  "status": "starter",
   "ia": {
-    "l0": "lexicon",
-    "l1": "lexicon.voice",
-    "l2": "voice-rhythm",
+    "l0": "voice",
+    "l1": "voice/tone",
+    "l2": "voice/tone/rhythm",
     "order": 5
   },
-  "kind": "strings",
-  "contract": {
-    "kind": "lexicon",
-    "source": "writer",
-    "recordKind": "voice-rule",
-    "valueType": "word-range"
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
   },
-  "inputs": [
-    "identity.verbal.voice"
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input",
+      "key": "Do"
+    },
+    {
+      "to": "director/focus.reach.geography",
+      "rel": "input",
+      "key": "Language"
+    }
   ],
-  "uses": [],
-  "standard": "lexicon.voice-rule"
+  "base": null,
+  "standard": "lexicon.voice-rule",
+  "brief": {
+    "purpose": "Fill writer/lexicon.sentence-length to the lexicon.voice-rule standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input",
+        "key": "Do"
+      },
+      {
+        "to": "director/focus.reach.geography",
+        "rel": "input",
+        "key": "Language"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "shape": "voice.sentence-length",
+    "value": "max and mean words per sentence, per locale and role",
+    "check": "deterministic",
+    "defaults": "defaults/lexicon.sentence-length/"
+  },
+  "tighten": []
 }

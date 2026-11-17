@@ -1,0 +1,195 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.media-player",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.components",
+    "l2": "components-text-and-media",
+    "order": 152
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "controls.full",
+        "controls.minimal"
+      ]
+    },
+    "props": [
+      "video",
+      "poster",
+      "passage",
+      "captions",
+      "muted",
+      "autoplay",
+      "loop",
+      "controls",
+      "className",
+      "decorative"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.radius",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.spacing",
+        "themes.ring",
+        "themes.sidebar-ring"
+      ],
+      "assets": [
+        "assets.image",
+        "assets.video",
+        "assets.icon-chevron-right"
+      ],
+      "components": [
+        "components.button",
+        "components.toggle-button",
+        "components.slider",
+        "components.icon",
+        "components.semantic-content"
+      ]
+    },
+    "composes": [
+      "components.button",
+      "components.toggle-button",
+      "components.slider",
+      "components.icon",
+      "components.semantic-content"
+    ],
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "title",
+          "kind": "plain",
+          "role": "heading",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "play",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "pause",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "mute",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "seek",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "captions",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "error.title",
+          "kind": "plain",
+          "role": "heading",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "error.description",
+          "kind": "plain",
+          "role": "lead",
+          "required": true,
+          "maxLength": {
+            "en": 200
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-chevron-right",
+    "assets.image",
+    "assets.video",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent",
+    "themes.background",
+    "themes.foreground",
+    "themes.muted-foreground",
+    "themes.popover",
+    "themes.radius",
+    "themes.ring",
+    "themes.secondary",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.button",
+    "components.icon",
+    "components.semantic-content",
+    "components.slider",
+    "components.toggle-button"
+  ],
+  "standard": "component"
+}

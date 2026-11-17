@@ -1,14 +1,104 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "assets.mark",
   "agent": "designer",
+  "kind": "element/asset",
+  "status": "starter",
   "ia": {
     "l0": "assets",
-    "l1": "assets.logos",
-    "l2": "logos-marks",
+    "l1": "assets/logos",
+    "l2": "assets/logos/logos-marks",
     "order": 46
   },
-  "kind": "element",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.category.definition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.essence",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.imagery",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.style",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.naming.name",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "asset.logo-mark",
+  "brief": {
+    "purpose": "Fill designer/assets.mark to the asset.logo-mark standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.category.definition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.essence",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.imagery",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.style",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.naming.name",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
   "contract": {
     "kind": "asset",
     "valueKind": "svg",
@@ -39,17 +129,5 @@
       ]
     }
   },
-  "inputs": [
-    "advantage.proposition.promise",
-    "focus.category.definition",
-    "focus.segment.core",
-    "identity.brand.essence",
-    "identity.brand.personality",
-    "identity.verbal.voice",
-    "identity.visual.imagery",
-    "identity.visual.style",
-    "identity.naming.name"
-  ],
-  "uses": [],
-  "standard": "asset.logo-mark"
+  "tighten": []
 }

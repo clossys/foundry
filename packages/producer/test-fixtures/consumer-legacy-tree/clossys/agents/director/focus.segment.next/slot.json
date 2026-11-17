@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "focus.segment.next",
+  "agent": "director",
+  "ia": {
+    "l0": "strategy",
+    "l1": "focus",
+    "l2": "focus.segment",
+    "order": 15
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which segment comes next, and what triggers the move?",
+    "mustContain": [
+      {
+        "key": "Who",
+        "hint": "the next segment"
+      },
+      {
+        "key": "Trigger",
+        "hint": "the evidence that starts the move"
+      },
+      {
+        "key": "Change",
+        "hint": "what we must change to serve them"
+      }
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "standard": "brief.profile"
+}

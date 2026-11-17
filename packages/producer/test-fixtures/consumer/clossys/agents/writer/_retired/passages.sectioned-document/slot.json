@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.sectioned-document",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.sections",
+    "l2": "sections-reading",
+    "order": 89
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.sectioned-document",
+    "passageSchema": "passages.sectioned-document",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": []
+    }
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": [],
+  "standard": "passage"
+}
