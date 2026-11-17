@@ -324,7 +324,8 @@
           "leaves": [
             "capability.team.role",
             "capability.competency.critical",
-            "capability.competency.gap"
+            "capability.competency.gap",
+            "capability.team.structure"
           ]
         },
         {
@@ -354,8 +355,7 @@
           "id": "plan.operation",
           "name": "Operation",
           "leaves": [
-            "capability.operation.delivery",
-            "capability.team.structure"
+            "capability.operation.delivery"
           ]
         },
         {
