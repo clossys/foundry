@@ -25,7 +25,7 @@ import { AGENT_KIND, fixtureShapeIssues, SLOT_KINDS, validateIa, validateSlotDoc
 import { CURRENT_AGENT_KINDS, isCurrentSlot, slotReadIssues } from "../../records/slot-current.js";
 import type { AgentRecord, ConstitutionContext, FoundryAgent, Row, RuleModule, SlotRecord } from "../types.js";
 import { R01_IA_CHECKS } from "../rules/r01-ia.js";
-import { isObject, listed, liveSlots, row, slotDoc } from "./shared.js";
+import { allSlots, isObject, listed, liveSlots, row, slotDoc } from "./shared.js";
 
 const AGENT_FILES = new Set(["ia.json", "ledger.json", "policy.json"]);
 const SLOT_ENTRIES = new Set(["slot.json", "pin.json", "candidates", "ledger.json", "retired"]);
@@ -143,6 +143,7 @@ export function treeShape(ctx: ConstitutionContext): Row[] {
 /** R01.5 Designer, Director and Writer live slots are Foundry-placed leaves or listed extensions. */
 export function foundryPlaced(ctx: ConstitutionContext): Row[] {
   const rows: Row[] = [];
+  let recut: boolean | undefined;
   for (const agent of ctx.agents) {
     if (!(FOUNDRY_AGENTS as readonly string[]).includes(agent.agent)) continue;
     const extensions = new Set(isObject(agent.ia?.value) && Array.isArray(agent.ia.value.extensions) ? agent.ia.value.extensions.filter((id): id is string => typeof id === "string") : []);
@@ -153,7 +154,10 @@ export function foundryPlaced(ctx: ConstitutionContext): Row[] {
     catch (error) { rows.push(agentRow("R01.5", agent, `the Foundry ${agent.agent} IA is unreadable: ${error instanceof Error ? error.message : String(error)}`, `${agent.dir}/ia.json`)); continue; }
     for (const { id, record } of outside) {
       if (leaves.has(id)) continue;
-      rows.push(row("R01", "R01.5", { agent: agent.agent, id }, "live slot is neither a Foundry-placed leaf nor listed in ia.json extensions", record?.dir ?? `${agent.dir}/ia.json`));
+      // On a store still on the old trees (no clossys.slot/2 slot), the likely cause is the recut, not a stray slot.
+      recut ??= [...allSlots(ctx)].some(slot => isCurrentSlot(slot.slot?.value));
+      const hint = recut ? "" : "; this store is not recut to the current trees: run clossys migrate recut first";
+      rows.push(row("R01", "R01.5", { agent: agent.agent, id }, `live slot is neither a Foundry-placed leaf nor listed in ia.json extensions${hint}`, record?.dir ?? `${agent.dir}/ia.json`));
     }
   }
   return rows;

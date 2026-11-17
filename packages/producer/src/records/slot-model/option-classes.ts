@@ -24,61 +24,46 @@ export interface OptionClass {
 export const OPTION_CLASSES: Readonly<Record<string, OptionClass>> = {
   "director.choice": { id: "director.choice", options: 3, varyOn: "angle", values: ["grounded", "ambitious", "human"], summary: "Director identity, aspiration and advantage: three framings of the same recorded findings." },
   "director.single": { id: "director.single", options: 1, summary: "Director context, focus, capability and execution: one sourced candidate." },
-  "writer.choice": { id: "writer.choice", options: 3, varyOn: "tone", values: ["plain", "bold", "warm"], summary: "Writer headlines, taglines, calls to action, hero and page intros, messaging kit: three tones of the same keys." },
-  "writer.narrative": { id: "writer.narrative", options: 3, varyOn: "arc", values: ["problem-first", "proof-first", "action-first"], summary: "Writer narratives: three orderings of the same passages and beats." },
+  "writer.choice": { id: "writer.choice", options: 3, varyOn: "tone", values: ["plain", "bold", "warm"], summary: "Writer story section copy (hero, page intros, calls to action, pricing): three tones of the same keys." },
+  "writer.narrative": { id: "writer.narrative", options: 3, varyOn: "arc", values: ["problem-first", "proof-first", "action-first"], summary: "Writer editorial narratives (articles, case studies): three orderings of the same beats." },
   "writer.system": { id: "writer.system", options: 1, summary: "Writer system strings: one candidate, bulk-pinned; Studio shows confirm." },
 };
 
-/** Agent -> `<l1>/<l2>` -> class id. Every Director and Writer L2 group is listed. */
+/** Agent -> `<l1>/<l2>` -> class id. Every Director and Writer L2 group is listed, keyed by the current trees. */
 export const OPTION_GROUPS: Readonly<Partial<Record<SlotAgent, Readonly<Record<string, string>>>>> = {
   director: {
     "context/context.market": "director.single", "context/context.customer": "director.single", "context/context.competition": "director.single", "context/context.company": "director.single",
-    "aspiration/aspiration.purpose": "director.choice", "aspiration/aspiration.culture": "director.choice", "aspiration/aspiration.goal": "director.choice",
+    "aspiration/aspiration.purpose": "director.choice", "aspiration/aspiration.culture": "director.choice",
     "focus/focus.category": "director.single", "focus/focus.segment": "director.single", "focus/focus.offer": "director.single", "focus/focus.reach": "director.single", "focus/focus.lifecycle": "director.single",
-    "advantage/advantage.proposition": "director.choice", "advantage/advantage.defensibility": "director.choice", "advantage/advantage.model": "director.choice",
+    "advantage/advantage.proposition": "director.choice", "advantage/advantage.defensibility": "director.choice", "advantage/advantage.economics": "director.single",
     "identity/identity.brand": "director.choice", "identity/identity.naming": "director.choice", "identity/identity.verbal": "director.choice", "identity/identity.visual": "director.choice",
-    "capability/capability.competency": "director.single", "capability/capability.sourcing": "director.single", "capability/capability.operation": "director.single", "capability/capability.team": "director.single", "capability/capability.resource": "director.single",
-    "execution/execution.priority": "director.single", "execution/execution.roadmap": "director.single", "execution/execution.measure": "director.single", "execution/execution.risk": "director.single",
+    // The regrouped L2s (economics, targets, timeline, task force, plan) are single: none of their leaves offered options before the regroup.
+    "targets/targets.goal": "director.single", "targets/targets.measure": "director.single",
+    "timeline/timeline.priority": "director.single", "timeline/timeline.schedule": "director.single",
+    "task-force/task-force.team": "director.single", "task-force/task-force.sourcing": "director.single",
+    "plan/plan.resource": "director.single", "plan/plan.operation": "director.single", "plan/plan.risk": "director.single",
   },
   writer: {
-    "lexicon.voice/voice-tone": "writer.system", "lexicon.voice/voice-person-and-mood": "writer.system", "lexicon.voice/voice-rhythm": "writer.system",
-    "lexicon.terminology/terminology-brand-names": "writer.system", "lexicon.terminology/terminology-glossary": "writer.system", "lexicon.terminology/terminology-avoid-list": "writer.system", "lexicon.terminology/terminology-spelling": "writer.system", "lexicon.terminology/terminology-pronunciation": "writer.system",
-    "lexicon.claims/claims-product-facts": "writer.system", "lexicon.claims/claims-metrics": "writer.system", "lexicon.claims/claims-legal-and-compliance": "writer.system", "lexicon.claims/claims-comparisons": "writer.system",
-    "lexicon.formats/formats-numbers-and-plurals": "writer.system", "lexicon.formats/formats-dates-and-times": "writer.system", "lexicon.formats/formats-currency-and-units": "writer.system", "lexicon.formats/formats-punctuation-and-capitalization": "writer.system", "lexicon.formats/formats-direction-and-expansion": "writer.system",
-    "strings.interface/interface-actions": "writer.system", "strings.interface/interface-navigation": "writer.system", "strings.interface/interface-field-labels": "writer.system", "strings.interface/interface-statuses": "writer.system", "strings.interface/interface-counters": "writer.system",
-    "strings.feedback/feedback-errors": "writer.system", "strings.feedback/feedback-warnings": "writer.system", "strings.feedback/feedback-confirmations": "writer.system", "strings.feedback/feedback-empty": "writer.system", "strings.feedback/feedback-loading": "writer.system",
-    "strings.identity/identity-names": "writer.system", "strings.identity/identity-taglines": "writer.choice", "strings.identity/identity-legal-lines": "writer.system",
-    "strings.media-text/media-text-alt-text": "writer.system", "strings.media-text/media-text-captions": "writer.system", "strings.media-text/media-text-transcripts": "writer.system",
-    "strings.metadata/metadata-page-titles": "writer.system", "strings.metadata/metadata-descriptions": "writer.system", "strings.metadata/metadata-share-text": "writer.system", "strings.metadata/metadata-email-subject-and-preheader": "writer.system",
-    "patterns.headings/headings-headlines": "writer.choice", "patterns.headings/headings-section-titles": "writer.system",
-    "patterns.actions/actions-calls-to-action": "writer.choice", "patterns.actions/actions-links": "writer.system",
-    "patterns.messages/messages-problems": "writer.system", "patterns.messages/messages-outcomes": "writer.system", "patterns.messages/messages-states": "writer.system", "patterns.messages/messages-help": "writer.system",
-    "patterns.forms/forms-fields": "writer.system", "patterns.forms/forms-consent": "writer.system",
-    "patterns.data-and-lists/data-and-lists-items": "writer.system", "patterns.data-and-lists/data-and-lists-tables": "writer.system",
-    "patterns.attribution/attribution-quotes": "writer.system", "patterns.attribution/attribution-figures": "writer.system",
-    "patterns.identity/identity-messaging-kit": "writer.choice",
-    "passages.parts/parts-structure": "writer.system", "passages.parts/parts-navigation": "writer.system",
-    "passages.explain/explain-introductions": "writer.choice", "passages.explain/explain-reading": "writer.system", "passages.explain/explain-promotion": "writer.choice", "passages.explain/explain-social-proof": "writer.system", "passages.explain/explain-media": "writer.system", "passages.explain/explain-guidance": "writer.system",
-    "passages.organize/organize-collections": "writer.system", "passages.organize/organize-comparison": "writer.system", "passages.organize/organize-summaries": "writer.system", "passages.organize/organize-records": "writer.system", "passages.organize/organize-history": "writer.system",
-    "passages.collect/collect-forms": "writer.system", "passages.collect/collect-workflows": "writer.system", "passages.collect/collect-preferences": "writer.system", "passages.collect/collect-configuration": "writer.system", "passages.collect/collect-conversation": "writer.system", "passages.collect/collect-inputs": "writer.system",
-    "passages.navigate/navigate-indexes": "writer.system", "passages.navigate/navigate-discovery": "writer.system",
-    "passages.respond/respond-states": "writer.system", "passages.respond/respond-messages": "writer.system",
-    "narratives.web/web-site-and-demo": "writer.narrative", "narratives.web/web-app-and-admin": "writer.narrative", "narratives.web/web-chrome": "writer.system",
-    "narratives.documents/documents-docs": "writer.system", "narratives.documents/documents-slides": "writer.narrative",
-    "narratives.communications/communications-messages": "writer.system", "narratives.communications/communications-videos": "writer.narrative",
+    "voice.tone/attitude": "writer.system", "voice.tone/address": "writer.system", "voice.tone/rhythm": "writer.system",
+    "voice.wording/mechanics": "writer.system", "voice.wording/terms": "writer.system",
+    "prose.editorial/narratives": "writer.narrative", "prose.editorial/changelog": "writer.system",
+    "prose.reference/help": "writer.system", "prose.reference/policies": "writer.system",
+    "copy.component-text/actions": "writer.system", "copy.component-text/navigation": "writer.system", "copy.component-text/text-and-media": "writer.system", "copy.component-text/overlays": "writer.system",
+    // Hero, page intro, call to action and pricing copy carry the headline, tagline and call-to-action shapes.
+    "copy.section-copy/story": "writer.choice",
+    "copy.section-copy/parts": "writer.system", "copy.section-copy/navigation": "writer.system", "copy.section-copy/reading": "writer.system", "copy.section-copy/records": "writer.system", "copy.section-copy/forms": "writer.system", "copy.section-copy/states": "writer.system",
+    "copy.frame-copy/bars": "writer.system",
+    "copy.asset-text/marks": "writer.system", "copy.asset-text/media": "writer.system",
+    "copy.page-metadata/site": "writer.system", "copy.page-metadata/docs": "writer.system", "copy.page-metadata/app": "writer.system", "copy.page-metadata/slides": "writer.system",
   },
 };
 
 /**
- * Per-slot exceptions to the group class, each with its reason. The logo name
- * slots carry the pinned Director name verbatim, so they offer no tone choice.
+ * Per-slot exceptions to the group class, each with its reason. None today: the logo name copy
+ * (assets.lockup.copy, assets.mark.copy) renders the pinned Director name verbatim and its group,
+ * copy.asset-text/marks, is already writer.system.
  */
-export const OPTION_OVERRIDES: Readonly<Partial<Record<SlotAgent, Readonly<Record<string, { readonly class: string; readonly reason: string }>>>>> = {
-  writer: {
-    "passages.logo-hero": { class: "writer.system", reason: "renders the pinned identity.naming.name verbatim" },
-    "passages.logo-mark": { class: "writer.system", reason: "renders the pinned identity.naming.name verbatim" },
-  },
-};
+export const OPTION_OVERRIDES: Readonly<Partial<Record<SlotAgent, Readonly<Record<string, { readonly class: string; readonly reason: string }>>>>> = {};
 
 export interface OptionTable {
   readonly classes: Readonly<Record<string, OptionClass>>;

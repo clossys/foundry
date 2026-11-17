@@ -184,6 +184,30 @@ describe("conformance runner", () => {
     });
     expect(ASSERTIONS.S4!(twoL2.agent, twoL2.model).rows).toEqual([]);
   });
+  it("S4 keys a slot/1 bare input and a slot/2 agent-qualified input as one ref (a mixed store)", () => {
+    const requirements = { requirements: [{ criterion: "text.nonempty" }] };
+    // The agent's own leaf: bare `a.x` (slot/1) and `director/a.x` (slot/2) are one input.
+    const own = world(agent => {
+      agent.live.push(slot("a.one-two-three", ["a.x"]), slot("a.one-two-three-four", ["director/a.x"]));
+      agent.live.push(slot("a.alpha", ["a.x"], { contract: requirements, schema: "clossys.slot/1" }), slot("a.omega", ["director:a.x"], { contract: requirements }));
+      agent.l2Of.set("a.alpha", "a/a3"); agent.l2Of.set("a.omega", "a/a3");
+    });
+    expect(ASSERTIONS.S4!(own.agent, own.model).rows).toEqual([
+      "a.one-two-three and a.one-two-three-four: same kind and inputs, similar purpose (0.75)",
+      "a.alpha and a.omega: one L2 (a/a3), same inputs and requirements (same purpose)",
+    ]);
+    // An upstream leaf, from a downstream agent: the bare id resolves to the upstream agent that holds it.
+    const upstream = world((_agent, _machinery, other) => {
+      other.live.push(slot("b.one-two-three", ["a.x"]), slot("b.one-two-three-four", ["director/a.x"]));
+    });
+    const writer = upstream.model.agents[1]!;
+    expect(ASSERTIONS.S4!(writer, upstream.model).rows).toEqual(["b.one-two-three and b.one-two-three-four: same kind and inputs, similar purpose (0.75)"]);
+    // A bare id no agent holds stays bare: it is not the qualified ref of another agent's leaf.
+    const unresolved = world((_agent, _machinery, other) => {
+      other.live.push(slot("b.one-two-three", ["z.none"]), slot("b.one-two-three-four", ["director/z.none"]));
+    });
+    expect(ASSERTIONS.S4!(unresolved.model.agents[1]!, unresolved.model).rows).toEqual([]);
+  });
   it("prints RED/GREEN per assertion with every red row, and is ok only when all green", () => {
     const report = conform(world(MUTATIONS.X2).model, readRegistry(), GOOD_FACTS);
     const text = formatReport(report);

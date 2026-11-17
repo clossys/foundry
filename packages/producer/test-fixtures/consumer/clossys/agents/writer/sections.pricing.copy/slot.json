@@ -328,5 +328,17 @@
       ]
     }
   },
-  "tighten": []
+  "tighten": [],
+  "options": 3,
+  "varyOn": "tone",
+  "family": {
+    "options": 3,
+    "varyOn": "tone",
+    "values": [
+      "plain",
+      "bold",
+      "warm"
+    ],
+    "class": "writer.choice"
+  }
 }

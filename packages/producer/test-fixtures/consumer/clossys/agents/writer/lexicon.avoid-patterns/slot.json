@@ -58,5 +58,11 @@
       }
     ]
   },
-  "tighten": []
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": [],
+    "class": "writer.system"
+  }
 }

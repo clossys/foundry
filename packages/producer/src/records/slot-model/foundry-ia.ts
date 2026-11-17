@@ -101,6 +101,20 @@ export function directorIa(): FoundryIa {
   return { agent: "director", ia: { schema: IA_SCHEMA, source: packageIaSource("@clossys/director", DIRECTOR_IA_FILE), extensions: [], nodes, ...levels }, slots };
 }
 
+/**
+ * The ids Designer's src/catalog/retired.json lists; none when the installed package ships no such file. A file that is
+ * there but is not an array is a broken package, not an empty list: it throws rather than place every retired leaf.
+ */
+export function designerRetired(root: string): ReadonlySet<string> {
+  let rows: unknown;
+  try { rows = readJson(root, "src/catalog/retired.json"); } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    return new Set();
+  }
+  if (!Array.isArray(rows)) throw new Error(`${join(root, "src/catalog/retired.json")} is not an array of retired leaves`);
+  return new Set(rows.flatMap(row => (row && typeof row === "object" && typeof (row as { id?: unknown }).id === "string" ? [(row as { id: string }).id] : [])));
+}
+
 /** Flatten a placement subtree: groups below L2 fold into their L2 ancestor. */
 function leavesOf(node: PlacementNode): string[] {
   return "leaves" in node ? [...node.leaves] : node.children.flatMap(leavesOf);
@@ -127,12 +141,17 @@ export function designerIa(): FoundryIa {
   const catalog = loadBuildCatalog();
   const root = resolveAgent("designer").packageRoot;
   const contracts = new Map(catalog.slots.map(slot => [slot.id, slot]));
+  // Designer keeps its retired leaves placed (loadBuildCatalog enforces it); its retired.json marks them, and the
+  // package tree leaves them out, as `migrate recut` does, so ia sync neither reports nor re-adds them.
+  const retired = designerRetired(root);
   const nodes: IaNode[] = [];
   const order = [...catalog.placements].sort((a, b) => DESIGNER_LAYERS.indexOf(a.layer as typeof DESIGNER_LAYERS[number]) - DESIGNER_LAYERS.indexOf(b.layer as typeof DESIGNER_LAYERS[number]));
   for (const placement of order) for (const node of placement.nodes) {
+    const live = (ids: readonly string[]) => ids.filter(id => !retired.has(id));
+    // A group whose leaves all retired stays, empty, as recut leaves it.
     const children: IaLeafGroup[] = "leaves" in node
-      ? [{ id: node.id, label: node.label, slots: [...node.leaves] }]
-      : node.children.map(child => ({ id: child.id, label: child.label, slots: leavesOf(child) }));
+      ? [{ id: node.id, label: node.label, slots: live(node.leaves) }]
+      : node.children.map(child => ({ id: child.id, label: child.label, slots: live(leavesOf(child)) }));
     nodes.push({ id: `${placement.layer}.${node.id}`, label: node.label, children });
   }
   // The read graph: every Designer decision reads the Designer brief's Director slots, and each

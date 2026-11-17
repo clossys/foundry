@@ -175,5 +175,17 @@
       }
     ]
   },
-  "tighten": []
+  "tighten": [],
+  "options": 3,
+  "varyOn": "arc",
+  "family": {
+    "options": 3,
+    "varyOn": "arc",
+    "values": [
+      "problem-first",
+      "proof-first",
+      "action-first"
+    ],
+    "class": "writer.narrative"
+  }
 }

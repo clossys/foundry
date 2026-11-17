@@ -51,6 +51,22 @@ const mirrored = (consumer: string) => {
   editIa(consumer, "writer", ia => addL0(ia, { id: "passages", label: "Passages" }, PASSAGES, { mirrors: "designer/sections" }));
 };
 
+/** Adds one L1 node whose L2 groups are `groups` to an L0 layer, adding the layer when the IA has none (R01.11 L1 mirrors). */
+const addGroups = (ia: Json, l0: { id: string; label: string }, tab: { id: string; label: string }, groups: { id: string; label: string }[]) => {
+  ia.nodes.push({ id: tab.id, label: tab.label, children: groups.map(group => ({ id: group.id, label: group.label, slots: [] })) });
+  const layer = (ia.layers as Json[]).find(each => each.id === l0.id);
+  if (layer) { layer.nodes.push(tab.id); ia.axes.L1[l0.id].values.push(tab.label); return; }
+  ia.layers.push({ id: l0.id, label: l0.label, nodes: [tab.id] });
+  ia.axes.L0.values.push(l0.label);
+  ia.axes.L1[l0.id] = { name: "kind", values: [tab.label] };
+};
+const SECTION_GROUPS = [{ id: "sections-parts", label: "Parts" }, { id: "sections-story", label: "Story" }];
+const COPY_GROUPS = [{ id: "parts", label: "Parts" }, { id: "story", label: "Story" }];
+const designerSections = (groups = SECTION_GROUPS) => (consumer: string) => editIa(consumer, "designer", ia => addGroups(ia, { id: "sections", label: "Sections" }, { id: "sections.sections", label: "Sections" }, groups));
+const writerSectionCopy = (groups = COPY_GROUPS) => (consumer: string) => editIa(consumer, "writer", ia => addGroups(ia, { id: "copy", label: "Copy" }, { id: "copy.section-copy", label: "Section copy" }, groups));
+/** Designer Sections and Writer Section copy, the same L2 groups: the IA_MIRRORS pass fixture. */
+const sectionCopy = (consumer: string) => { designerSections()(consumer); writerSectionCopy()(consumer); };
+
 /**
  * The R01.13 pass fixture: the clean workspace plus a pinned Studio publication whose nav groups are
  * Workspace then the five agents in chain order, one page per agent L0, and a hidden runs page.
@@ -230,18 +246,36 @@ describe("R01.10 IA-NO-MIRROR", () => {
 });
 
 describe("R01.11 IA-SHARED-AXIS", () => {
-  it("passes the clean workspace and the declared Sections/Passages mirror", () => {
+  it("passes the clean workspace, Section copy mirroring Sections, and a declared L0 mirror", () => {
     expect(iaSharedAxis(clean())).toEqual([]);
+    expect(iaSharedAxis(broken(sectionCopy))).toEqual([]);
     expect(iaSharedAxis(broken(mirrored))).toEqual([]);
   });
 
-  it("flags a Passages L1 list that differs from Sections, and an undeclared mirror", () => {
-    const rows = expectCatches(iaSharedAxis, broken(mirrored), broken(consumer => {
-      editIa(consumer, "designer", ia => addL0(ia, { id: "sections", label: "Sections" }, [...SECTIONS, { id: "sections.collect", label: "Collect" }]));
-      editIa(consumer, "writer", ia => addL0(ia, { id: "passages", label: "Passages" }, [PASSAGES[1]!, { ...PASSAGES[0]!, label: "Explainers" }, { id: "passages.parts", label: "Parts" }]));
+  it("flags Section copy L2 groups that differ from Designer Sections", () => {
+    const rows = expectCatches(iaSharedAxis, broken(sectionCopy), broken(consumer => {
+      designerSections([...SECTION_GROUPS, { id: "sections-forms", label: "Forms" }])(consumer);
+      writerSectionCopy([COPY_GROUPS[1]!, { ...COPY_GROUPS[0]!, label: "Pieces" }, { id: "states", label: "States" }])(consumer);
     }));
     expect(reasons(rows)).toEqual([
-      "writer:*: axes.L1.passages does not declare mirrors: designer/sections",
+      "writer:*: designer/sections.sections L2 forms (Forms) has no mirror in writer/copy.section-copy",
+      "writer:*: writer/copy.section-copy L2 parts is labelled Pieces, designer/sections.sections labels it Parts",
+      "writer:*: writer/copy.section-copy L2 states (States) is not in designer/sections.sections",
+      "writer:*: writer/copy.section-copy orders its L2 groups story, parts; designer/sections.sections orders them parts, story",
+    ]);
+  });
+
+  it("names a missing Section copy only when Designer places Sections, and no L0 passages", () => {
+    expect(reasons(iaSharedAxis(broken(designerSections())))).toEqual(["writer:*: L1 copy.section-copy is missing: it must mirror the L2 groups of designer/sections.sections"]);
+    expect(reasons(iaSharedAxis(broken(writerSectionCopy())))).toEqual(["designer:*: L1 sections.sections is missing: writer/copy.section-copy mirrors its L2 groups"]);
+  });
+
+  it("flags a declared L0 mirror whose L1 list differs from its source", () => {
+    const rows = expectCatches(iaSharedAxis, broken(mirrored), broken(consumer => {
+      editIa(consumer, "designer", ia => addL0(ia, { id: "sections", label: "Sections" }, [...SECTIONS, { id: "sections.collect", label: "Collect" }]));
+      editIa(consumer, "writer", ia => addL0(ia, { id: "passages", label: "Passages" }, [PASSAGES[1]!, { ...PASSAGES[0]!, label: "Explainers" }, { id: "passages.parts", label: "Parts" }], { mirrors: "designer/sections" }));
+    }));
+    expect(reasons(rows)).toEqual([
       "writer:*: designer/sections L1 collect (Collect) has no mirror in writer/passages",
       "writer:*: writer/passages L1 explain is labelled Explainers, designer/sections labels it Explain",
       "writer:*: writer/passages L1 parts (Parts) is not in designer/sections",
@@ -255,7 +289,7 @@ describe("R01.11 IA-SHARED-AXIS", () => {
   });
 
   it("mutation proof: a disabled R01.11 fails the failing-first contract", () => {
-    const bad = broken(consumer => editIa(consumer, "writer", ia => addL0(ia, { id: "passages", label: "Passages" }, PASSAGES)));
+    const bad = broken(designerSections());
     expect(iaSharedAxis(bad).length).toBeGreaterThan(0);
     expect(() => expectCatches(() => [], clean(), bad)).toThrow(/silent on the broken workspace/);
   });
@@ -443,7 +477,7 @@ const CATCHES: Record<string, [() => ConstitutionContext, () => ConstitutionCont
   "R01.8": [clean, () => broken(consumer => editIa(consumer, "producer", ia => { delete ia.layers; }))],
   "R01.9": [clean, () => broken(consumer => editIa(consumer, "designer", ia => renameL1(ia, "producer", "Producer")))],
   "R01.10": [() => tree(navSpec()), () => tree(navSpec(), consumer => editIa(consumer, "publisher", ia => renameL1(ia, "writer", "Writer")))],
-  "R01.11": [() => broken(mirrored), () => broken(consumer => editIa(consumer, "designer", ia => addL0(ia, { id: "sections", label: "Sections" }, SECTIONS)))],
+  "R01.11": [() => broken(sectionCopy), () => broken(designerSections())],
   "R01.12": [clean, () => broken(consumer => editIa(consumer, "director", ia => renameL1(ia, "controls", "Controls")))],
   "R01.13": [() => tree(navSpec()), () => tree(navSpec(NAV_PAGES.filter(page => page.id !== "page.runs")), consumer => editJson(join(consumer, "agents", "publisher", "publication.studio", "candidates", "publication-v1.json"), doc => { doc.meta.tree.children[0].cells.push("page.ghost"); }))],
   "R01.14": [clean, () => broken(consumer => editIa(consumer, "writer", ia => { ia.extensions = []; }))],

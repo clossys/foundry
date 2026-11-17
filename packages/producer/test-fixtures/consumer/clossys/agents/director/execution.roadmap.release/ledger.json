@@ -52,12 +52,14 @@
       "tier": "none",
       "migration": "contracts",
       "changed": [
+        "family",
         "requirements"
       ],
+      "class": "director.single",
       "records": [
         {
           "file": "slot.json",
-          "sha256": "dbf84cebcc851ccc4d5845f3afa950a5163720cbd35d37e9f717115f7b3227a0"
+          "sha256": "f93d3806573d7e2b2674466c2835f0af5e8600f9ce638733cc6c4897a0453f41"
         }
       ]
     }

@@ -14,13 +14,15 @@
       "tier": "none",
       "migration": "contracts",
       "changed": [
+        "family",
         "requirements",
         "fixture"
       ],
+      "class": "writer.system",
       "records": [
         {
           "file": "slot.json",
-          "sha256": "ce4c52d69f8aebc42436ea6c550839b00fe432b792080ec4f076b310e5dbd49f"
+          "sha256": "08c0cbf16ef0a6ed2d4dd9e5de173d70c85377259fe27879f702a71709e8e83e"
         }
       ]
     }

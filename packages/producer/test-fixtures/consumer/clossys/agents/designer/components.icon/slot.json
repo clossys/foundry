@@ -27,10 +27,6 @@
       "rel": "input"
     },
     {
-      "to": "designer/assets.icon-organization",
-      "rel": "input"
-    },
-    {
       "to": "designer/assets.icon-check",
       "rel": "input"
     },
@@ -112,6 +108,10 @@
     },
     {
       "to": "designer/assets.icon-locked",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-organization",
       "rel": "input"
     },
     {
@@ -222,10 +222,6 @@
         "rel": "input"
       },
       {
-        "to": "designer/assets.icon-organization",
-        "rel": "input"
-      },
-      {
         "to": "designer/assets.icon-check",
         "rel": "input"
       },
@@ -307,6 +303,10 @@
       },
       {
         "to": "designer/assets.icon-locked",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-organization",
         "rel": "input"
       },
       {
@@ -445,7 +445,6 @@
         "assets.icon-team",
         "assets.icon-organization",
         "assets.icon-website",
-        "assets.icon-institution",
         "assets.icon-guide",
         "assets.icon-document",
         "assets.icon-document-approved",
@@ -454,7 +453,6 @@
         "assets.icon-time",
         "assets.icon-payment",
         "assets.icon-receipt",
-        "assets.icon-business",
         "assets.icon-security",
         "assets.icon-locked",
         "assets.icon-legal",

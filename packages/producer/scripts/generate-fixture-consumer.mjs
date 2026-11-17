@@ -6,13 +6,15 @@
  *
  *   node scripts/generate-fixture-consumer.mjs [--out <dir>]   (default test-fixtures/consumer)
  *
- * It creates a missing fixture only. An existing one is refreshed from the package with
- * `clossys ia sync --root <dir>`, which keeps its decisions; a package tree change (a recut) moves it with
- * `clossys migrate recut --apply --root <dir>`, as foundry-build-0048 U2 moved it to the Writer Voice/Prose/Copy
- * tree. test-fixtures/consumer-legacy-tree keeps the store as it was before that move, for the migration tests.
+ * It creates a missing fixture only. The current package trees ship as clossys.slot/2, which only the recut writes,
+ * so the fixture is replayed from test-fixtures/consumer-legacy-tree (the store that config --init, ia --adopt/--start,
+ * ia sync and one not-needed pin built on the old trees, before foundry-build-0048 U2) on a fixed clock: `clossys migrate recut --apply`, then `clossys ia sync` for
+ * the package changes since the recut. The made-up not-needed decision (writer/lexicon.currency-format, "the example
+ * shop lists no prices") is carried by the recut into writer/_retired/, with its ledger. An existing fixture is
+ * refreshed with `clossys ia sync --root <dir>`, which keeps its decisions.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,22 +22,19 @@ const here = dirname(fileURLToPath(import.meta.url));
 const cli = join(here, "..", "dist", "cli", "index.js");
 const at = process.argv.indexOf("--out");
 const out = resolve(at > 0 ? process.argv[at + 1] : join(here, "..", "test-fixtures", "consumer"));
+const legacy = join(here, "..", "test-fixtures", "consumer-legacy-tree");
+// The recut's clock: every createdAt and ledger event the replay writes carries it.
+const RECUT_AT = "2026-11-17T00:00:00Z";
 
 if (existsSync(join(out, "clossys"))) {
   console.log(`generate-fixture-consumer: ${out} exists; refresh it with clossys ia sync --root ${out}`);
   process.exit(0);
 }
 mkdirSync(out, { recursive: true });
+cpSync(join(legacy, "clossys"), join(out, "clossys"), { recursive: true });
 const steps = [
-  ["config", "--init"],
-  ["ia", "director", "--adopt"],
-  ["ia", "designer", "--adopt"],
-  ["ia", "writer", "--adopt"],
-  ["ia", "publisher", "--start"],
-  // The Producer seat tree is package-owned whole: the sync writes it from pipeline/seats.json.
-  ["ia", "sync"],
-  // Made-up decisions: the example shop is a synthetic consumer, not a real one.
-  ["pin", "writer/sections.pricing.copy", "--not-needed", "--reason", "synthetic fixture: the example shop lists no prices", "--by", "planner"],
+  ["migrate", "recut", "--apply", "--at", RECUT_AT],
+  ["ia", "sync", "--at", RECUT_AT],
 ];
 for (const argv of steps) {
   const run = spawnSync(process.execPath, [cli, ...argv, "--root", out], { encoding: "utf8" });
