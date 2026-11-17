@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +8,8 @@ import { resolveSlots, runSlotResolve, slotResolveSummary, type SlotCandidate, t
 import { sha256Hex } from "../records/hash.js";
 import { serializeFrontmatter, slotPositions, type IaDoc, type SlotAgent } from "../records/slot-model/index.js";
 import { parseArgs } from "../cli/args.js";
+import { migrateSlot1To2 } from "../migrate/slot-1-to-2.js";
+import { recutCandidateBytes } from "../migrate/recut.js";
 
 const hash = "a".repeat(64);
 const source = { kind: "original" as const, ref: [] };
@@ -53,6 +55,18 @@ function fixture() {
     writeFileSync(join(dir, "candidates", name), bytes);
     save(join(dir, "pin.json"), { candidate: name, sha256: sha256Hex(bytes), decidedBy: "migrated", basis: "bulk", at: "2026-10-31T00:00:00Z" });
   }
+  // `clossys check` reads the current format only: the fixture is the one `clossys migrate recut` writes
+  // (slot/2 slot.json, clossys.candidate/1 headers; a Publisher page/1 record stays as it is).
+  const at = "2026-11-15T10:00:00Z" as const;
+  for (const [agent, id] of slots) {
+    const dir = dirs[agent]!;
+    const name = readdirSync(join(dir, "candidates"))[0]!;
+    const path = join(dir, "candidates", name);
+    const bytes = recutCandidateBytes(name, readFileSync(path, "utf8"), { agent, slotId: id, at, version: "0.0.0", sourceRef: `agents/${agent}/${id}/candidates/${name}` });
+    writeFileSync(path, bytes);
+    save(join(dir, "pin.json"), { ...JSON.parse(readFileSync(join(dir, "pin.json"), "utf8")), sha256: sha256Hex(bytes) });
+  }
+  migrateSlot1To2(root, { at, version: "0.0.0" });
   return { root, consumer, dirs };
 }
 const native = (root: string, flags: string[] = []) => spawnSync(process.execPath, [entry, "check", "--root", root, "--json", ...flags], { encoding: "utf8" });

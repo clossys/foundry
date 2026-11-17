@@ -192,11 +192,16 @@ export function readCandidateFile(file: string, expect: { agent: AgentId; slotId
   const name = file.split(/[\\/]/).pop()!;
   const bytes = readFileSync(file);
   const sha256 = sha256Hex(bytes);
+  const { header, issues } = checkedHeader(name, bytes.toString("utf8"), expect);
+  return { file, name, sha256, ...(header ? { header } : {}), issues };
+}
+
+function checkedHeader(name: string, text: string, expect: { agent: AgentId; slotId: SlotId; packageDefault?: boolean }): { header?: CandidateHeader; issues: string[] } {
   const issues: string[] = [];
   if (!parseCandidateName(name)) issues.push(`${name} is not a candidate file name (<name>-v<n>.md|json|svg)`);
   let header: CandidateHeader | undefined;
   try {
-    const raw = readRecordHeader(name, bytes.toString("utf8"));
+    const raw = readRecordHeader(name, text);
     for (const issue of validateAgainst(targetSchema("candidate"), raw)) issues.push(`header ${issue.path}: ${issue.message}`);
     header = raw as CandidateHeader;
   } catch (error) {
@@ -209,5 +214,10 @@ export function readCandidateFile(file: string, expect: { agent: AgentId; slotId
     if (header.slot !== `${expect.agent}/${expect.slotId}`) issues.push(`header slot ${header.slot} is not ${expect.agent}/${expect.slotId}`);
     if (expect.packageDefault && header.createdBy.actor !== "package") issues.push(`a package default is created by the package, not ${header.createdBy.actor}`);
   }
-  return { file, name, sha256, ...(header ? { header } : {}), issues };
+  return { ...(header ? { header } : {}), issues };
+}
+
+/** The issues of candidate bytes read in place (readCandidateFile's header check, from text already read). */
+export function candidateHeaderIssues(name: string, text: string, expect: { agent: AgentId; slotId: SlotId }): string[] {
+  return checkedHeader(name, text, expect).issues;
 }

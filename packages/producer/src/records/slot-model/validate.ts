@@ -95,6 +95,13 @@ function validateLayers(layers: unknown, nodes: unknown[], fail: (message: strin
   }
 }
 
+/** True when a `notNeeded` marker is not {reason, since, decidedBy} with a non-empty reason, an ISO date and who decided. */
+export function notNeededIssue(marker: unknown): boolean {
+  return !object(marker) || Object.keys(marker).some(key => key !== "reason" && key !== "since" && key !== "decidedBy") || !nonEmpty(marker.reason)
+    || typeof marker.since !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(marker.since) || Number.isNaN(Date.parse(marker.since))
+    || typeof marker.decidedBy !== "string" || !DECIDED_BY.test(marker.decidedBy);
+}
+
 export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIssue[] {
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "slot-invalid", path, message });
@@ -118,14 +125,7 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
     if (!strings(value[key])) fail(`${key} must be a list of slot ids`);
     else for (const id of value[key] as string[]) if (!SLOT_ID.test(id)) fail(`${key} names an invalid slot id ${id}`);
   }
-  if (value.notNeeded !== undefined) {
-    const marker = value.notNeeded;
-    if (!object(marker) || Object.keys(marker).some(key => key !== "reason" && key !== "since" && key !== "decidedBy") || !nonEmpty(marker.reason)
-      || typeof marker.since !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(marker.since) || Number.isNaN(Date.parse(marker.since))
-      || typeof marker.decidedBy !== "string" || !DECIDED_BY.test(marker.decidedBy)) {
-      fail("notNeeded must be {reason, since, decidedBy} with a non-empty reason, an ISO date and who decided");
-    }
-  }
+  if (value.notNeeded !== undefined && notNeededIssue(value.notNeeded)) fail("notNeeded must be {reason, since, decidedBy} with a non-empty reason, an ISO date and who decided");
   if (value.options !== undefined && !(OPTION_COUNTS as readonly unknown[]).includes(value.options)) fail("options must be 1, 2 or 3");
   if (value.varyOn !== undefined && (typeof value.varyOn !== "string" || !VARY_ID.test(value.varyOn))) fail("varyOn must be an axis id such as tone");
   if (typeof value.options === "number" && value.options > 1 && value.varyOn === undefined) fail("varyOn is required when options > 1");

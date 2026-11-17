@@ -6,7 +6,9 @@
  * - kind:    designer element by `contract.kind` (token, asset, component, section, frame); writer lexicon -> voice,
  *            narrative -> prose, passage/pattern/string -> copy; publisher by id prefix; director brief -> brief.
  *            A Producer `seat` has no slot/2 kind (seats become loop steps) and is reported, not migrated.
- * - ia:      `l0`, `l0/<l1>`, `l0/<l1>/<l2>` (slash paths); a missing `l0` is the id's first segment.
+ * - ia:      `l0`, `l0/<l1>`, `l0/<l1>/<l2>` (slash paths) of the slot's position in the agent ia.json as it
+ *            stands (positionIa: a recut that drops retired ids moves the order of every later slot), else of
+ *            the slot/1 `ia`; a missing `l0` is the id's first segment.
  * - refs:    slot/1 `inputs` -> rel `input`, `uses` -> rel `uses`; a bare id resolves to the agent whose consumer
  *            folder holds it (same agent first). An id no folder holds is a finding and the file is not migrated.
  * - base:    the installed package base when the package ships one (the file is then exactly what `ia sync`
@@ -19,8 +21,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  SLOT_SCHEMA, SLOT_V1_SCHEMA, consumerSlotFolders, readBaseSlot, serializeSlot, syncedSlot, validateSlot, writeSlot,
+  SLOT_SCHEMA, SLOT_V1_SCHEMA, consumerSlotFolders, positionIa, readBaseSlot, serializeSlot, syncedSlot, validateSlot, writeSlot,
 } from "../records/slot.js";
+import { readIa } from "../records/slots.js";
+import { slotPositions, type SlotAgent, type SlotPosition } from "../records/slot-model/index.js";
 import type { AgentId, Iso, Ref, Slot, TargetSlotKind } from "../records/types.js";
 
 export const SLOT_1_TO_2 = "slot-1-to-2";
@@ -79,33 +83,23 @@ export function targetKind(doc: SlotV1): TargetSlotKind | undefined {
   }
 }
 
-const segment = (value: string): string => {
-  const cleaned = value.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
-  return /^[a-z]/.test(cleaned) ? cleaned : `x${cleaned || "slot"}`;
-};
-const stripPrefix = (value: string, prefix: string): string => value.startsWith(`${prefix}.`) && value.length > prefix.length + 1 ? value.slice(prefix.length + 1) : value;
-
 /** slot/1 `ia` as slot/2 slash paths. */
 export function targetIa(doc: SlotV1): Slot["ia"] {
-  const rawL0 = doc.ia?.l0 ?? doc.id.split(".")[0]!;
-  const rawL1 = doc.ia?.l1 ?? doc.id.split(".").slice(0, 2).join(".");
-  const rawL2 = doc.ia?.l2 ?? rawL1;
-  const l0 = segment(rawL0);
-  const l1 = `${l0}/${segment(stripPrefix(rawL1, rawL0))}`;
-  const l2 = `${l1}/${segment(stripPrefix(stripPrefix(rawL2, rawL1), rawL0))}`;
-  return { l0, l1, l2, order: Number.isInteger(doc.ia?.order) && doc.ia!.order! >= 0 ? doc.ia!.order! : 0 };
+  return positionIa(doc.id, doc.ia);
 }
 
-function purposeOf(doc: SlotV1, standard: string): string {
+/** A slot/2 brief purpose from a contract: `purpose`, else `question`, else a sentence from the standard. */
+export function briefPurpose(agent: AgentId, id: string, contract: Readonly<Record<string, unknown>> | undefined, standard: string): string {
   for (const key of ["purpose", "question"]) {
-    const value = doc.contract?.[key];
+    const value = contract?.[key];
     if (typeof value === "string" && value.trim()) return value.trim();
   }
-  return `Fill ${doc.agent}/${doc.id} to the ${standard} standard.`;
+  return `Fill ${agent}/${id} to the ${standard} standard.`;
 }
 
-function mustDoOf(doc: SlotV1): string[] {
-  const list = doc.contract?.mustContain;
+/** A slot/2 brief mustDo from a contract's `mustContain` (`Answer <key>[: <hint>]`). */
+export function briefMustDo(contract: Readonly<Record<string, unknown>> | undefined): string[] {
+  const list = contract?.mustContain;
   if (!Array.isArray(list)) return [];
   return list.flatMap(item => {
     if (typeof item === "string") return item.trim() ? [`Answer ${item.trim()}`] : [];
@@ -115,9 +109,24 @@ function mustDoOf(doc: SlotV1): string[] {
   });
 }
 
+/** The ia.json positions of one agent, or none when it has no ia.json or one that is not valid. */
+function placedPositions(root: string, agent: AgentId): ReadonlyMap<string, SlotPosition> {
+  if (agent === "producer") return new Map();
+  try {
+    const ia = readIa(join(root, "clossys"), agent as SlotAgent);
+    return ia ? slotPositions(agent as SlotAgent, ia) : new Map();
+  } catch { return new Map(); }
+}
+
 /** What the migration would write under `root` (a directory holding `clossys/agents/`), without writing it. */
 export function planSlot1To2(root: string, options: { at: Iso; version: string }): Slot1To2Plan {
   const plan: Slot1To2Plan = { root, migrations: [], current: [], skipped: [], findings: [] };
+  const positions = new Map<AgentId, ReadonlyMap<string, SlotPosition>>();
+  const iaOf = (doc: SlotV1): Slot["ia"] => {
+    if (!positions.has(doc.agent)) positions.set(doc.agent, placedPositions(root, doc.agent));
+    const position = positions.get(doc.agent)!.get(doc.id);
+    return position ? positionIa(doc.id, position) : targetIa(doc);
+  };
   const folders = consumerSlotFolders(root).filter(folder => folder.hasSlot);
   const holders = new Map<string, AgentId[]>();
   for (const folder of folders) holders.set(folder.id, [...(holders.get(folder.id) ?? []), folder.agent]);
@@ -152,16 +161,16 @@ export function planSlot1To2(root: string, options: { at: Iso; version: string }
     if (base) {
       slot = syncedSlot(base, undefined, options.at);
       slot.status = status;
-      slot.ia.order = targetIa(doc).order;
+      slot.ia.order = iaOf(doc).order;
     } else {
       const standard = typeof doc.standard === "string" && doc.standard ? doc.standard : kind;
       const contract: Record<string, unknown> = structuredClone(doc.contract ?? {});
       if (doc.notNeeded !== undefined) contract.notNeeded = structuredClone(doc.notNeeded);
       slot = {
-        schema: SLOT_SCHEMA, id: doc.id, agent: doc.agent, kind, status, ia: targetIa(doc),
+        schema: SLOT_SCHEMA, id: doc.id, agent: doc.agent, kind, status, ia: iaOf(doc),
         createdBy: { actor: "code", cli: SLOT_1_TO_2_CLI, version: options.version },
         createdAt: options.at, refs: [...inputs, ...uses], base: null, standard,
-        brief: { purpose: purposeOf(doc, standard), mustDo: mustDoOf(doc), inputs: structuredClone(inputs), acceptance: [] },
+        brief: { purpose: briefPurpose(doc.agent, doc.id, doc.contract, standard), mustDo: briefMustDo(doc.contract), inputs: structuredClone(inputs), acceptance: [] },
         contract, tighten: [],
       };
       if (doc.options === 1 || doc.options === 2 || doc.options === 3) slot.options = doc.options;

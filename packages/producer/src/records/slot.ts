@@ -21,6 +21,32 @@ export const SLOT_V1_SCHEMA = "clossys.slot/1";
 export const SLOT_AGENTS: readonly AgentId[] = ["director", "designer", "writer", "publisher", "producer"];
 
 // ---------------------------------------------------------------------------
+// IA position
+// ---------------------------------------------------------------------------
+
+const iaSegment = (value: string): string => {
+  const cleaned = value.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  return /^[a-z]/.test(cleaned) ? cleaned : `x${cleaned || "slot"}`;
+};
+const stripPrefix = (value: string, prefix: string): string => value.startsWith(`${prefix}.`) && value.length > prefix.length + 1 ? value.slice(prefix.length + 1) : value;
+
+/**
+ * The slot/2 slash-path `ia` of an ia.json position (`{l0?, l1, l2, order}`: the layer, the node id, the
+ * child id and the global order): `l0`, `l0/<l1>`, `l0/<l1>/<l2>`, each segment without its parent's
+ * dotted prefix. A missing `l0` is the id's first segment, a missing `l1` its first two, a missing `l2` the
+ * `l1`; an order that is no non-negative integer is 0.
+ */
+export function positionIa(id: string, position: { readonly l0?: string; readonly l1?: string; readonly l2?: string; readonly order?: number } = {}): Slot["ia"] {
+  const rawL0 = position.l0 ?? id.split(".")[0]!;
+  const rawL1 = position.l1 ?? id.split(".").slice(0, 2).join(".");
+  const rawL2 = position.l2 ?? rawL1;
+  const l0 = iaSegment(rawL0);
+  const l1 = `${l0}/${iaSegment(stripPrefix(rawL1, rawL0))}`;
+  const l2 = `${l1}/${iaSegment(stripPrefix(stripPrefix(rawL2, rawL1), rawL0))}`;
+  return { l0, l1, l2, order: Number.isInteger(position.order) && position.order! >= 0 ? position.order! : 0 };
+}
+
+// ---------------------------------------------------------------------------
 // Reader and writer
 // ---------------------------------------------------------------------------
 

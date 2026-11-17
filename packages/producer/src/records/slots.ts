@@ -5,6 +5,9 @@
  *
  * When no `agents/<agent>/ia.json` exists the consumer is still on the old
  * stores and `hasSlotModel` is false; callers keep the old-store behavior.
+ *
+ * A slot.json is read in either format (./slot-current.ts): `clossys.slot/2` through the reader's view of
+ * it, `clossys.slot/1` as before. `clossys check` judges the current format only (records/slot-check.ts).
  */
 import { execFileSync } from "node:child_process";
 import { closeSync, constants, existsSync, fstatSync, lstatSync, openSync, readdirSync, readFileSync, realpathSync, statSync, watch, type FSWatcher, type Stats } from "node:fs";
@@ -15,10 +18,12 @@ import { sha256Hex } from "./hash.js";
 import { LEDGER_FILE, ledgerIssues, type LedgerDoc } from "./ledger.js";
 import {
   CANDIDATE_NAME, MODEL_AGENTS, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, isNonSlotEntry, pinFile, retiredSeatFile, seatDir, seatSlotId, seatStepOf, slotDir, slotFile, slotPositions,
-  validateCandidate, validateIa, validatePin, validateSlotDoc,
+  validateIa, validatePin, validateSlotDoc,
   type IaDoc, type ModelAgent, type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
 import { isAbsent, parseJson } from "../errors.js";
+import { candidateIssues, isCurrentSlot, placedAt, readSlotValue } from "./slot-current.js";
+import { notNeededIssue } from "./slot-model/validate.js";
 
 export interface SlotEntry<A extends ModelAgent = SlotAgent> {
   readonly id: string;
@@ -402,6 +407,13 @@ function readNotNeeded(dir: string): NotNeeded | "invalid" | { readonly unreadab
   if (!fsExists(path)) return undefined;
   let value: unknown;
   try { value = readJson(path); } catch (error) { return { unreadable: error instanceof Error ? error.message : String(error) }; }
+  if (isCurrentSlot(value)) {
+    // clossys.slot/2 keeps the marker in its contract (clossys migrate slot-1-to-2).
+    const contract = (value as { contract?: unknown }).contract;
+    if (!contract || typeof contract !== "object" || Array.isArray(contract) || !Object.hasOwn(contract, "notNeeded")) return undefined;
+    const marker = (contract as Record<string, unknown>).notNeeded;
+    return notNeededIssue(marker) ? "invalid" : marker as NotNeeded;
+  }
   if (!value || typeof value !== "object" || !Object.hasOwn(value, "notNeeded")) return undefined;
   if (validateSlotDoc(value, path).some(issue => issue.message.startsWith("notNeeded"))) return "invalid";
   return (value as SlotDoc).notNeeded;
@@ -451,13 +463,9 @@ export function inspectSlot(consumer: string, agent: ModelAgent, id: string): { 
   return withSlotReadScope(() => {
     const { position, dir } = locate(consumer, agent, id);
     const path = slotFile(dir);
-    const value: unknown = readJson(path);
-    if (validateSlotDoc(value, path).length) throw new Error(`Invalid ${agent} slot ${id}`);
-    const doc = value as SlotDoc;
-    const placed = doc.id === id && doc.agent === agent
-      && doc.ia.l0 === position.l0 && doc.ia.l1 === position.l1
-      && doc.ia.l2 === position.l2 && doc.ia.order === position.order;
-    return { doc, placed };
+    const read = readSlotValue(readJson(path), path);
+    if (!read) throw new Error(`Invalid ${agent} slot ${id}`);
+    return { doc: read.doc, placed: placedAt(read, id, agent, position) };
   });
 }
 
@@ -722,14 +730,12 @@ function inputBlocker(entry: SlotEntry): BlockReason | undefined {
   }
   catch { return "missing-candidate"; }
   if (candidate.sha256 !== pin.sha256) return "hash-drift";
-  let doc: SlotDoc;
+  let read: ReturnType<typeof readSlotValue>;
   try {
-    doc = readJson(slotFile(entry.dir)) as SlotDoc;
-    if (validateSlotDoc(doc).length) return "invalid-slot";
-    if (doc.id !== entry.id || doc.agent !== entry.agent) return "invalid-slot";
-    if (doc.ia.l1 !== entry.position.l1 || doc.ia.l2 !== entry.position.l2 || doc.ia.l0 !== entry.position.l0 || doc.ia.order !== entry.position.order) return "invalid-slot";
+    read = readSlotValue(readJson(slotFile(entry.dir)));
+    if (!read || !placedAt(read, entry.id, entry.agent, entry.position)) return "invalid-slot";
   } catch { return "invalid-slot"; }
-  if (validateCandidate(doc.kind, entry.id, candidate.name, candidate.bytes).length) return "invalid-candidate";
+  if (candidateIssues(read, entry.agent, entry.id, candidate.name, candidate.bytes).length) return "invalid-candidate";
   return undefined;
 }
 

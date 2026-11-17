@@ -4,17 +4,24 @@
  * check: folder == agents/<agent>/<slot-id> for every IA slot, slot.json ia == ia.json position, one pin, pin hash matches, a single `source`
  * key, no candidate-side status, inputs/uses name real slots, no orphans (ledger.json is a record of
  * the slot folder and the agent tree, records/ledger.ts); a slot's retired/ holds only well-formed retired candidates.
+ *
+ * Formats (foundry-build-0031): with `current` (what `clossys check` runs) a slot.json is judged in the
+ * current format only: `clossys.slot/2` against schemas/slot.json, its candidates by their
+ * clossys.candidate/1 header; a `clossys.slot/1` file is one finding naming `clossys migrate recut`. Without
+ * it (the int2 verbs that still write slot/1 until their cutover) a slot/1 file is judged by the slot/1 rules
+ * and a slot/2 file by the current ones.
  */
 import { join } from "node:path";
 import { validateAgainst } from "../constitution/schema.js";
 import { sha256Hex } from "./hash.js";
 import {
   AGENT_FILES, AGENT_KIND, CANDIDATE_NAME, CANDIDATES_DIR, IA_FILE, PIN_FILE, SLOT_AGENTS, SLOT_FILE, agentDir, candidatesDir, iaPath, isNonSlotEntry, slotDir, slotRel,
-  slotPositions, validateCandidate, validateIa, validatePin, validateSlotDoc,
-  type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotModelIssue,
+  slotPositions, validateIa, validatePin,
+  type IaDoc, type PinDoc, type SlotAgent, type SlotModelIssue,
 } from "./slot-model/index.js";
 import { LEDGER_FILE } from "./ledger.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readiness, slotIndex, type Readiness } from "./slots.js";
+import { CURRENT_AGENT_KINDS, OLD_SLOT_FORMAT, candidateIssues, isOldSlot, placedAt, readSlotValue, slotReadIssues, type SlotRead } from "./slot-current.js";
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const readJsonFile = (path: string): any => JSON.parse(readModelText(path));
@@ -68,7 +75,11 @@ function checkRetired(dir: string, rel: string, id: string, live: readonly strin
 }
 
 // ---------------- check ----------------
-export function checkSlotModel(consumer: string): SlotModelIssue[] {
+export interface SlotModelCheckOptions {
+  /** Judge the current format only: a clossys.slot/1 slot.json is one OLD_SLOT_FORMAT finding. */
+  readonly current?: boolean;
+}
+export function checkSlotModel(consumer: string, options: SlotModelCheckOptions = {}): SlotModelIssue[] {
   const issues: SlotModelIssue[] = [];
   const ias = new Map<SlotAgent, IaDoc>();
   for (const agent of SLOT_AGENTS) {
@@ -91,24 +102,25 @@ export function checkSlotModel(consumer: string): SlotModelIssue[] {
       const rel = `agents/${agent}/${slotRel(id)}`;
       const dir = slotDir(consumer, agent, id);
       if (!isDir(dir)) { issues.push({ code: "slot-missing", path: rel, message: `IA slot ${id} has no folder at agents/${agent}/${id}` }); continue; }
-      let doc: SlotDoc | undefined;
+      let read: SlotRead | undefined;
       try {
         const value = readJsonFile(join(dir, SLOT_FILE));
-        const found = validateSlotDoc(value, `${rel}/${SLOT_FILE}`);
+        const path = `${rel}/${SLOT_FILE}`;
+        const found = options.current && isOldSlot(value) ? [{ code: "slot-invalid" as const, path, message: OLD_SLOT_FORMAT }] : slotReadIssues(value, path);
         issues.push(...found);
-        if (!found.length) doc = value as SlotDoc;
+        if (!found.length) read = readSlotValue(value, path);
       } catch { issues.push({ code: "slot-invalid", path: `${rel}/${SLOT_FILE}`, message: "slot.json is missing or not JSON" }); }
-      if (doc) {
-        if (doc.id !== id || doc.agent !== agent || doc.ia.l1 !== position.l1 || doc.ia.l2 !== position.l2 || doc.ia.order !== position.order || (doc.ia.l0 ?? undefined) !== position.l0) {
-          issues.push({ code: "slot-mismatch", path: `${rel}/${SLOT_FILE}`, message: `slot.json disagrees with ia.json position for ${id}` });
-        }
-        if (!AGENT_KIND[agent].includes(doc.kind)) issues.push({ code: "slot-mismatch", path: `${rel}/${SLOT_FILE}`, message: `kind ${doc.kind} does not belong to ${agent}` });
+      if (read) {
+        const doc = read.doc;
+        if (!placedAt(read, id, agent, position)) issues.push({ code: "slot-mismatch", path: `${rel}/${SLOT_FILE}`, message: `slot.json disagrees with ia.json position for ${id}` });
+        const kind = read.current?.kind ?? doc.kind;
+        if (read.current ? !CURRENT_AGENT_KINDS[agent].includes(read.current.kind) : !AGENT_KIND[agent].includes(doc.kind)) issues.push({ code: "slot-mismatch", path: `${rel}/${SLOT_FILE}`, message: `kind ${kind} does not belong to ${agent}` });
         for (const key of ["inputs", "uses"] as const) for (const ref of doc[key]) if (!known.has(ref)) issues.push({ code: "ref-unknown", path: `${rel}/${SLOT_FILE}`, message: `${key} names ${ref}, which is not an IA slot` });
       }
       const names = list(candidatesDir(dir));
-      if (doc) for (const name of names) {
+      if (read) for (const name of names) {
         const bytes = readModelText(join(candidatesDir(dir), name));
-        issues.push(...validateCandidate(doc.kind, id, name, bytes, `${rel}/${CANDIDATES_DIR}/${name}`));
+        issues.push(...candidateIssues(read, agent, id, name, bytes, `${rel}/${CANDIDATES_DIR}/${name}`));
       }
       const pins = list(dir).filter(name => /^pin.*\.json$/.test(name));
       if (pins.some(name => name !== PIN_FILE)) issues.push({ code: "pin-invalid", path: rel, message: `one pin only: pin.json (found ${pins.join(", ")})` });

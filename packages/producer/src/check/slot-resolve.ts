@@ -1,4 +1,9 @@
-/** Slot integrity over the common IA / slot / candidate / pin model. */
+/**
+ * Slot integrity over the common IA / slot / candidate / pin model. The model check runs in the current
+ * format only (records/slot-check.ts `current`): a clossys.slot/1 slot.json is a finding naming
+ * `clossys migrate recut`. A clossys.candidate/1 candidate's source is its header `source` (a `{"hash"}` ref
+ * is its hash, records/slot-current.ts sourceView) and its body or JSON `content` is what is read.
+ */
 import { lstatSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -7,6 +12,8 @@ import { resolveAgent } from "../agents.js";
 import { buildCheckOutputEnvelope, envelopeToExitCode } from "../generated/check-output-envelope.js";
 import { sha256Hex } from "../records/hash.js";
 import { loadReferencesManifest } from "../records/validate.js";
+import { readRecordHeader } from "../records/schema.js";
+import { sourceView } from "../records/slot-current.js";
 import { assertModelTree, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
 import { agentModule } from "../read/cells.js";
 import { checkSlotModel, formatCoverage, slotCoverage, writerRecords, type AgentCoverage } from "../records/slot-check.js";
@@ -102,11 +109,30 @@ function safe(path: string): string {
   }
   return path;
 }
-function document(bytes: string, markdown: boolean): Record<string, any> {
-  if (!markdown) return JSON.parse(bytes);
+const FRONT_MATTER = /^---\r?\n[\s\S]*?\r?\n---(\r?\n|$)/;
+/** A clossys.candidate/1 header, or undefined for an int2 candidate (or a record such as clossys.page/1). */
+function candidateHeader(name: string, bytes: string): Record<string, any> | undefined {
+  try {
+    const header = readRecordHeader(name, bytes) as Record<string, any> | undefined;
+    return header && typeof header === "object" && header.schema === "clossys.candidate/1" ? header : undefined;
+  } catch { return undefined; }
+}
+/** What a candidate is read as: its source, and the document (Markdown fields and body, or JSON) its rules read. */
+function document(name: string, bytes: string): { source: SlotSource | undefined; doc: Record<string, any> } {
+  const markdown = name.endsWith(".md");
+  const header = candidateHeader(name, bytes);
+  if (header) {
+    const source = sourceView(header.source) as SlotSource | undefined;
+    if (markdown) return { source, doc: { body: bytes.replace(FRONT_MATTER, "") } };
+    if (!name.endsWith(".json")) return { source, doc: {} };
+    const content = (JSON.parse(bytes) as { content?: unknown }).content;
+    return { source, doc: content && typeof content === "object" && !Array.isArray(content) ? content as Record<string, any> : {} };
+  }
+  if (!markdown) { const doc = JSON.parse(bytes); return { source: doc.meta?.source, doc }; }
   const parsed = parseFrontmatter(bytes);
   if (!parsed.ok) throw new Error("Invalid candidate frontmatter.");
-  return { ...parsed.value.fields, body: parsed.value.body };
+  const doc = { ...parsed.value.fields, body: parsed.value.body } as Record<string, any>;
+  return { source: doc.source, doc };
 }
 
 function modelStores(root: string, writer: Map<string, string[]>): SlotStore[] {
@@ -125,8 +151,8 @@ function modelStores(root: string, writer: Map<string, string[]>): SlotStore[] {
         const normalized: SlotCandidate = { id: name, hash: candidate.sha256, schemaIssues: [], copyKeys: [] };
         store.candidates[entry.id]!.push(normalized);
         try {
-          const doc = document(candidate.bytes, name.endsWith(".md"));
-          normalized.source = name.endsWith(".md") ? doc.source : doc.meta?.source;
+          const { source, doc } = document(name, candidate.bytes);
+          normalized.source = source;
           const slot = readSlot(root, agent, entry.id);
           if (slot.kind === "strings") {
             const records = writerRecords(doc.body);
@@ -184,7 +210,7 @@ export async function runSlotResolve(rootIn: string) {
   let referenceSource = "not required (no registry sources)";
   try {
     assertModelTree(root);
-    modelIssues = checkSlotModel(root);
+    modelIssues = checkSlotModel(root, { current: true });
     stores = modelStores(root, writer);
     if (stores.some(store => Object.values(store.candidates).flat().some(candidate => candidate.source?.kind === "registry"))) {
       referenceSource = "Foundry Designer references manifest";

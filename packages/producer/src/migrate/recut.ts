@@ -16,7 +16,15 @@
  *    that name with other bytes; it then takes the next free version. Each rewritten file is one `migrated`
  *    event (migration `recut`, old and new sha256 and blob ids) in `clossys/evidence/migrations.json`.
  * 3. Library. Each int2 library cell becomes one candidate in its slot's target (./library-cells.ts).
- * 4. Then slot-1-to-2, pin-1-to-2 and `ia sync` run over the result.
+ * 4. Slot file. A target the recut places with no slot.json (a retired id moved to a live leaf the consumer
+ *    had no folder for) gets the `clossys.slot/2` its package defines (./recut-slots.ts), unless the package
+ *    ships a base slot for it (`ia sync` writes that one). A target the package defines no slot for is named
+ *    (an `ia sync` finding of the result) and gets no slot.json; the rest of the plan still applies.
+ * 5. Then slot-1-to-2, pin-1-to-2 and `ia sync` run over the result.
+ *
+ * A candidate's int2 provenance is kept in its header `source`: the caller's int2 source, else the Designer
+ * JSON `meta.source`, else `meta.element.source`, else a derived source naming where the bytes came from.
+ * A registry `hash` (no candidate/1 source key) is carried as one more ref, `{"hash":"<hash>"}`.
  *
  * Slot/1 `inputs` and `uses` naming a moved id are repointed to its target; a retired id is dropped from them.
  * A second `--apply` changes no byte.
@@ -36,15 +44,17 @@ import { dirname, join, relative, sep } from "node:path";
 import { CANDIDATE_NAME, buildCandidateHeader, parseCandidateName, serializeCandidate, targetSchema } from "../records/candidate.js";
 import { fileState, type FileState } from "../records/migrations.js";
 import { parseYamlSubset, validateAgainst } from "../records/schema.js";
-import { agentPackageRoot, packageVersion, writeSlot, SLOT_V1_SCHEMA } from "../records/slot.js";
+import { agentPackageRoot, packageVersion, readBaseSlot, serializeSlot, writeSlot, SLOT_V1_SCHEMA } from "../records/slot.js";
 import { RETIRE_SCHEMA, appendMigrationEvents, type RewrittenFile } from "../records/slot-write.js";
-import { studioDesignerSlots } from "../records/slot-model/foundry-ia.js";
-import { PAGE_SCHEMA } from "../records/slot-model/types.js";
+import { slotPositions, studioDesignerSlots } from "../records/slot-model/foundry-ia.js";
+import { modelExists, readIa } from "../records/slots.js";
+import { PAGE_SCHEMA, type IaDoc } from "../records/slot-model/types.js";
 import type { AgentId, CandidateHeader, Iso } from "../records/types.js";
 import { planIaSync } from "../cli/ia-sync.js";
 import { migratePins } from "./pin-1-to-2.js";
 import { migrateSlot1To2, planSlot1To2 } from "./slot-1-to-2.js";
 import { LIBRARY_DIR, planLibraryCells, removeLibraryCell, type CellRoute, type LibraryPlan } from "./library-cells.js";
+import { definedSlot, slotDefinitions, type SlotDefinition } from "./recut-slots.js";
 
 export const RECUT = "recut";
 export const RECUT_CLI = "clossys migrate recut";
@@ -101,6 +111,10 @@ export interface RecutPlan {
   readonly slotRefs: FileWrite[];
   readonly folders: FolderMove[];
   readonly ia: FileWrite[];
+  /** The slot.json of each target the recut places that has none, from the package's slot definition. */
+  readonly slots: FileWrite[];
+  /** `<agent>/<id>: ...` for each such target the package defines no slot for: no slot.json is written for it. */
+  readonly slotFindings: string[];
   readonly library: LibraryPlan;
   readonly findings: string[];
   readonly skipped: string[];
@@ -187,11 +201,21 @@ export interface HeaderContext {
   readonly sourceRef: string;
 }
 
-function sourceOf(value: unknown, fallback: string): CandidateHeader["source"] {
-  if (object(value) && typeof value.kind === "string" && SOURCE_KINDS.has(value.kind) && Array.isArray(value.ref)
-    && value.ref.every(ref => typeof ref === "string" && ref.length > 0)
-    && Object.keys(value).every(key => key === "kind" || key === "ref" || (key === "license" && typeof value.license === "string" && value.license.length > 0))) {
-    return structuredClone(value) as CandidateHeader["source"];
+const nonEmpty = (value: unknown): value is string => typeof value === "string" && value.length > 0;
+
+/** One int2 source as a candidate/1 source, or undefined when it is not one: a `hash` rides as a last `{"hash"}` ref. */
+function headerSource(value: unknown): CandidateHeader["source"] | undefined {
+  if (!object(value) || typeof value.kind !== "string" || !SOURCE_KINDS.has(value.kind) || !Array.isArray(value.ref) || !value.ref.every(nonEmpty)) return undefined;
+  if (!Object.keys(value).every(key => key === "kind" || key === "ref" || ((key === "license" || key === "hash") && nonEmpty(value[key])))) return undefined;
+  const ref = [...value.ref as string[], ...(nonEmpty(value.hash) ? [JSON.stringify({ hash: value.hash })] : [])];
+  return { kind: value.kind, ref, ...(nonEmpty(value.license) ? { license: value.license } : {}) } as CandidateHeader["source"];
+}
+
+/** The first of `values` that is a source, in order; else a derived source naming `fallback`. */
+function sourceOf(values: readonly unknown[], fallback: string): CandidateHeader["source"] {
+  for (const value of values) {
+    const source = headerSource(value);
+    if (source) return source;
   }
   return { kind: "derived", ref: [fallback] };
 }
@@ -229,9 +253,9 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
         if (Object.keys(front).length > 1) throw new Error(`${name}: front matter holds keys beside clossys; not rewritten`);
         return serializeCandidate(name, readdressed(front.clossys), body);
       }
-      if (object(front) && Object.keys(front).every(key => INT2_FRONT.has(key))) return serializeCandidate(name, fresh(sourceOf(front.source ?? int2?.source, context.sourceRef)), body);
+      if (object(front) && Object.keys(front).every(key => INT2_FRONT.has(key))) return serializeCandidate(name, fresh(sourceOf([front.source, int2?.source], context.sourceRef)), body);
     }
-    return serializeCandidate(name, fresh(sourceOf(int2?.source, context.sourceRef)), text);
+    return serializeCandidate(name, fresh(sourceOf([int2?.source], context.sourceRef)), text);
   }
   if (parts.ext === "json") {
     const doc = JSON.parse(text) as unknown;
@@ -244,14 +268,15 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
     if (context.agent === "publisher" && object(doc) && doc.schema === PAGE_SCHEMA) return text;
     if (object(doc) && typeof doc.schema === "string") throw new Error(`${name}: a top-level schema key (${doc.schema}) is a record, not an int2 candidate`);
     let content: unknown = doc;
-    let source: unknown = int2?.source;
+    const sources: unknown[] = [int2?.source];
     if (object(doc) && "meta" in doc) {
-      const element = object(doc.meta) && object(doc.meta.element) ? doc.meta.element : undefined;
-      source ??= element?.source;
+      const meta = object(doc.meta) ? doc.meta : undefined;
+      const element = meta && object(meta.element) ? meta.element : undefined;
+      sources.push(meta?.source, element?.source);
       const rest = Object.fromEntries(Object.entries(doc).filter(([key]) => key !== "meta"));
       content = Object.keys(rest).length === 1 && "content" in rest ? rest.content : rest;
     } else if (object(doc) && Object.keys(doc).length === 1 && "content" in doc) content = doc.content;
-    return serializeCandidate(name, fresh(sourceOf(source, context.sourceRef)), content);
+    return serializeCandidate(name, fresh(sourceOf(sources, context.sourceRef)), content);
   }
   const meta = SVG_META.exec(text);
   if (meta) {
@@ -261,7 +286,7 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
     if (current(value.clossys)) return text;
     return text.replace(meta[0], `<metadata>${JSON.stringify({ clossys: readdressed(value.clossys) })}</metadata>`);
   }
-  return serializeCandidate(name, fresh(sourceOf(int2?.source, context.sourceRef)), text);
+  return serializeCandidate(name, fresh(sourceOf([int2?.source], context.sourceRef)), text);
 }
 
 // ---------------------------------------------------------------------------
@@ -398,7 +423,7 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
   const tables = packageTables(dir);
   const counts = Object.fromEntries(RECUT_AGENTS.map(agent => [agent, emptyCounts()])) as Record<RecutAgent, RecutCounts>;
   const plan: RecutPlan = {
-    dir, consumer, at: options.at, version, rows: [], unknown: [], flatten: [], duplicates: [], missingRetired: [], candidates: [], slotRefs: [], folders: [], ia: [],
+    dir, consumer, at: options.at, version, rows: [], unknown: [], flatten: [], duplicates: [], missingRetired: [], candidates: [], slotRefs: [], folders: [], ia: [], slots: [], slotFindings: [],
     library: { conversions: [], findings: [] }, findings: [], skipped: slotFolders(consumer, "producer").map(id => `producer/${id}`), counts,
   };
   const planned = new Set<string>();
@@ -550,13 +575,58 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
     const write = recutIa(join(consumer, "agents", agent, "ia.json"), agent, tables[agent], plan.folders, options.at, plan.unknown, present[agent], real);
     if (write) plan.ia.push(write);
   }
+  planTargetSlots(plan, real);
   plan.unknown.splice(0, plan.unknown.length, ...[...new Set(plan.unknown)].sort());
   return plan;
 }
 
+/**
+ * The slot.json of every target that candidates or library cells land in and that has none: from the package
+ * slot definition (./recut-slots.ts) at the target's place in the planned ia.json. A target with a package base
+ * slot is left to `ia sync`; one with no definition, or not placed, is a slot finding and gets no file.
+ */
+function planTargetSlots(plan: RecutPlan, real: (path: string) => string): void {
+  const landing = new Map<string, { agent: RecutAgent; id: string }>();
+  const prefix = join(plan.consumer, "agents") + sep;
+  const add = (file: string) => {
+    if (!file.startsWith(prefix)) return;
+    const [agent, id, folder] = file.slice(prefix.length).split(sep);
+    if (!agent || !id || folder !== "candidates" || id.startsWith("_") || !(RECUT_AGENTS as readonly string[]).includes(agent)) return;
+    landing.set(`${agent}/${id}`, { agent: agent as RecutAgent, id });
+  };
+  for (const change of plan.candidates) if (change.from !== change.to) add(change.to);
+  for (const conversion of plan.library.conversions) if (conversion.record) add(conversion.file);
+  const definitions = new Map<RecutAgent, Map<string, SlotDefinition>>();
+  const positions = new Map<RecutAgent, ReturnType<typeof slotPositions>>();
+  for (const [subject, { agent, id }] of [...landing].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+    const file = join(plan.consumer, "agents", agent, id, "slot.json");
+    let present: boolean;
+    try { present = modelExists(real(file)); } catch (error) { plan.slotFindings.push(`${subject}: ${(error as Error).message}; no slot.json written`); continue; }
+    if (present) continue;
+    let base;
+    try { base = readBaseSlot(plan.dir, agent, id); } catch { base = undefined; }
+    if (base) continue;
+    if (!definitions.has(agent)) definitions.set(agent, slotDefinitions(plan.dir, agent));
+    const definition = definitions.get(agent)!.get(id);
+    if (!definition) { plan.slotFindings.push(`${subject}: @clossys/${agent} defines no slot for it (no base slot, no src/catalog/ia slots row); no slot.json written`); continue; }
+    if (!positions.has(agent)) {
+      const iaFile = join(plan.consumer, "agents", agent, "ia.json");
+      const planned = plan.ia.find(write => write.file === iaFile)?.bytes;
+      let ia: IaDoc | undefined;
+      try { ia = planned === undefined ? readIa(plan.consumer, agent) ?? undefined : JSON.parse(planned) as IaDoc; } catch { ia = undefined; }
+      positions.set(agent, ia && Array.isArray(ia.nodes) ? slotPositions(agent, ia) : new Map());
+    }
+    const position = positions.get(agent)!.get(id);
+    if (!position) { plan.slotFindings.push(`${subject}: not placed in agents/${agent}/ia.json; no slot.json written`); continue; }
+    try {
+      plan.slots.push({ file, bytes: serializeSlot(definedSlot(definition, agent, position, { at: plan.at, cli: RECUT_CLI, version: plan.version })) });
+    } catch (error) { plan.slotFindings.push(`${subject}: ${(error as Error).message}; no slot.json written`); }
+  }
+}
+
 /** The recut writes a plan holds (0 when the consumer is on the recut trees). */
 export function recutPending(plan: RecutPlan): number {
-  return plan.flatten.length + plan.candidates.length + plan.slotRefs.length + plan.folders.length + plan.ia.length + plan.library.conversions.length;
+  return plan.flatten.length + plan.candidates.length + plan.slotRefs.length + plan.folders.length + plan.ia.length + plan.slots.length + plan.library.conversions.length;
 }
 
 export interface FollowUp { slot1To2: number; slot1To2Findings: string[]; pins: number; pinRefused: string[]; iaSync: number; iaSyncFindings: string[] }
@@ -605,6 +675,7 @@ export function recutProblems(plan: RecutPlan): string[] {
     if (existsSync(folder.to)) problems.push(`${posix(plan.consumer, folder.to)}: the folder move would land on one that exists`);
   }
   for (const conversion of plan.library.conversions) claim(conversion.file);
+  for (const slot of plan.slots) claim(slot.file);
   return problems;
 }
 
@@ -654,6 +725,7 @@ export function applyRecut(plan: RecutPlan): RecutResult {
     if (conversion.record) record(conversion.file, conversion.from, fileState(conversion.bytes));
   }
   for (const file of [...plan.slotRefs, ...plan.ia]) { write(file.file, file.bytes); written++; }
+  for (const slot of plan.slots) { write(slot.file, slot.bytes, "wx"); written++; }
   const added = events.length ? appendMigrationEvents(plan.consumer, RECUT, events, { by: RECUT_BY, at: plan.at }) : [];
 
   const slots = migrateSlot1To2(plan.dir, { at: plan.at, version: plan.version });
@@ -665,6 +737,6 @@ export function applyRecut(plan: RecutPlan): RecutResult {
     written, events: added.length,
     slot1To2: slots.written.length, slot1To2Findings: slots.findings.map(finding => `${finding.subject}: ${finding.detail}`),
     pins: pins.written, pinRefused: pins.rows.filter(row => row.outcome === "refused").map(row => row.slot),
-    iaSync: synced, iaSyncFindings: sync.findings,
+    iaSync: synced, iaSyncFindings: [...plan.slotFindings, ...sync.findings],
   };
 }
