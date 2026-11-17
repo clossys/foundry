@@ -1,0 +1,1 @@
+Glossary: "release" means three things. Director `execution.roadmap.release` is the next release planned in the roadmap; Publisher `release.*` is the readiness of one publication (exports, locales, sign-off), never going live; Producer `loop.release` is the loop step that confirms a change is ready to ship.

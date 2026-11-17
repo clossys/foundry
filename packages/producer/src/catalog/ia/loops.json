@@ -27,14 +27,14 @@
       "children": [
         {
           "id": "assure-ready",
-          "label": "Ready",
+          "label": "Release",
           "leaves": [
             "loop.release"
           ]
         },
         {
           "id": "assure-inspect",
-          "label": "Inspect",
+          "label": "Audit",
           "leaves": [
             "loop.audit"
           ]

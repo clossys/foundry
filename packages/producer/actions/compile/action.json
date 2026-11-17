@@ -4,7 +4,7 @@
   "agent": "producer",
   "kind": "plumb",
   "stage": "publish.assemble",
-  "summary": "Compile the Studio from decision files only into the compile lock.",
+  "summary": "Compile the consumer's own publications (the Studio only when the consumer places it) from decision files only into the compile lock.",
   "run": "clossys compile",
   "inputs": [
     {
