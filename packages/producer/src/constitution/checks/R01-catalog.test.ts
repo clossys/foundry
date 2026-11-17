@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildContext } from "../context.js";
 import type { ConstitutionContext } from "../types.js";
+import { SLOT_SCHEMA } from "../../records/slot.js";
 import { cleanSpec, contextOf, expectCatches, NO_FOUNDRY_LEAVES, NO_HISTORY, SAMPLE_SEAT, slotDoc, writeWorkspace, type Agent, type WorkspaceSpec } from "../__fixtures__/workspace.js";
 import { canonicalJson, contractDedupe, contractFixture, contractHash, foundryPlaced, iaValid, isTombstone, R01, slotContract, treeShape } from "./R01-catalog.js";
 
@@ -194,8 +195,17 @@ describe("R01.5 Designer, Director and Writer live slots are Foundry leaves or l
 
   it("flags a live slot that is neither a Foundry leaf nor an extension, and passes it once it is a leaf", () => {
     const rows = expectCatches(foundryPlaced, clean(), editedTree(unlisted));
-    expect(reasons(rows)).toEqual(["director:brand.voice: live slot is neither a Foundry-placed leaf nor listed in ia.json extensions"]);
+    expect(reasons(rows)).toEqual(["director:brand.voice: live slot is neither a Foundry-placed leaf nor listed in ia.json extensions; this store is not recut to the current trees: run clossys migrate recut first"]);
     expect(foundryPlaced(editedTree(unlisted, agent => new Set(agent === "director" ? ["brand.voice"] : [])))).toEqual([]);
+  });
+
+  it("points a store still on the old trees at clossys migrate recut, and drops the hint once the store is recut", () => {
+    const recut = (consumer: string) => {
+      unlisted(consumer);
+      const file = join(consumer, "agents", "director", "brand.voice", "slot.json");
+      writeFileSync(file, `${JSON.stringify({ ...JSON.parse(readFileSync(file, "utf8")), schema: SLOT_SCHEMA }, null, 2)}\n`);
+    };
+    expect(reasons(foundryPlaced(editedTree(recut)))).toEqual(["director:brand.voice: live slot is neither a Foundry-placed leaf nor listed in ia.json extensions"]);
   });
 
   it("reports an unreadable Foundry IA as one agent row, and never reads it when every live slot is an extension", () => {

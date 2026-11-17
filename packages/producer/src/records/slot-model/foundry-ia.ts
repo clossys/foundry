@@ -101,14 +101,18 @@ export function directorIa(): FoundryIa {
   return { agent: "director", ia: { schema: IA_SCHEMA, source: packageIaSource("@clossys/director", DIRECTOR_IA_FILE), extensions: [], nodes, ...levels }, slots };
 }
 
-/** The ids Designer's src/catalog/retired.json lists; none when the installed package ships no such file. */
-function designerRetired(root: string): ReadonlySet<string> {
+/**
+ * The ids Designer's src/catalog/retired.json lists; none when the installed package ships no such file. A file that is
+ * there but is not an array is a broken package, not an empty list: it throws rather than place every retired leaf.
+ */
+export function designerRetired(root: string): ReadonlySet<string> {
   let rows: unknown;
   try { rows = readJson(root, "src/catalog/retired.json"); } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     return new Set();
   }
-  return new Set((Array.isArray(rows) ? rows : []).flatMap(row => (row && typeof row === "object" && typeof (row as { id?: unknown }).id === "string" ? [(row as { id: string }).id] : [])));
+  if (!Array.isArray(rows)) throw new Error(`${join(root, "src/catalog/retired.json")} is not an array of retired leaves`);
+  return new Set(rows.flatMap(row => (row && typeof row === "object" && typeof (row as { id?: unknown }).id === "string" ? [(row as { id: string }).id] : [])));
 }
 
 /** Flatten a placement subtree: groups below L2 fold into their L2 ancestor. */
