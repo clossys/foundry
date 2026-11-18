@@ -33,8 +33,8 @@ export function relativeSpecifier(from: string, to: string): string {
   return path.startsWith(".") ? path : `./${path}`;
 }
 
-/** Writer copy for Designer shell references (skip link, navigation, banner labels), by ref id. */
-async function shellText(copy: Readonly<Record<string, string>>): Promise<Record<string, string>> {
+/** The Writer key of every Designer shell reference (skip link, navigation, breadcrumb, theme, dock, banner labels), sorted. */
+export async function shellCopyIds(): Promise<readonly string[]> {
   const { SHELL_COPY_REFS } = await import("@clossys/designer/frames");
   const ids = new Set<string>();
   const walk = (value: unknown): void => {
@@ -43,12 +43,20 @@ async function shellText(copy: Readonly<Record<string, string>>): Promise<Record
     for (const item of Object.values(value)) walk(item);
   };
   walk(SHELL_COPY_REFS);
-  return Object.fromEntries([...ids].sort().filter(id => Object.hasOwn(copy, id)).map(id => [id, copy[id]!]));
+  return [...ids].sort();
+}
+
+/** Writer copy for Designer shell references, by ref id: only the keys this one copy table holds. */
+async function shellText(copy: Readonly<Record<string, string>>): Promise<Record<string, string>> {
+  return Object.fromEntries((await shellCopyIds()).filter(id => Object.hasOwn(copy, id)).map(id => [id, copy[id]!]));
 }
 
 export interface PageHostModuleOptions {
   readonly selection: PageHostSelection;
-  /** Writer copy by key; the entries for Designer shell references are embedded. */
+  /**
+   * Writer copy by key, in the one locale this host serves; the entries for Designer shell references are
+   * embedded. A publication with more than one locale installs one host per locale, each from its own copy.
+   */
   readonly copy: Readonly<Record<string, string>>;
   /** Substrate-relative path the host module is written to. */
   readonly file: string;
