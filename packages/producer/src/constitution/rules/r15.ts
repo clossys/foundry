@@ -16,6 +16,7 @@ import {
   type Standard, type StandardPolicy,
 } from "../../records/standards.js";
 import { criterionIds } from "../criteria/core/catalog.js";
+import { isAgentLoopRecord, loopStandardReasons } from "../certify/loop.js";
 import { isObject, liveSlotRecords, slotDoc, stringList } from "../checks/shared.js";
 import type { Check, ConstitutionContext, Row, RuleModule, SlotRecord } from "../types.js";
 
@@ -72,6 +73,8 @@ export const r15_1: Check = ctx => {
     const fields = slotFields(slot);
     if (!fields) continue; // no parseable slot.json: R01 reports it
     if (!fields.standard) { rows.push(slotRow("R15.1", slot, "slot.json names no standard")); continue; }
+    // An agent loop slot's standard is Producer's loop of the same name (`standard: "loop"`), not a packages/<agent>/standards/ folder.
+    if (isAgentLoopRecord(slot)) { for (const why of loopStandardReasons(slot, slotDoc(slot)!)) rows.push(slotRow("R15.1", slot, why.message)); continue; }
     const standard = standardFor(world.standards, slot.agent, fields.standard);
     if (!standard) { rows.push(slotRow("R15.1", slot, `standard ${fields.standard} does not exist under packages/${slot.agent}/standards/`)); continue; }
     if (!standard.doc) continue; // invalid standard: R15.2
@@ -153,6 +156,8 @@ export const r15_7: Check = ctx => {
   const world = standardsWorld(ctx);
   const rows: Row[] = [];
   for (const slot of liveSlotRecords(ctx)) {
+    // An agent loop version is no P2 candidate: it has no standard folder, recipe or render to craft against; certifyLoop judges it.
+    if (isAgentLoopRecord(slot)) continue;
     const events = ledgerEvents(slot.ledger?.value);
     let since: Record<string, unknown>[] = [];
     for (const event of events) {

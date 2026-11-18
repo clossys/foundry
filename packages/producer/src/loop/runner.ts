@@ -279,9 +279,9 @@ export type StartPlan = { ok: true; state: RunState; loaded: LoadedLoop } | { ok
 
 /** Checks the input and builds a new run's state. Writes nothing. */
 export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
-  const load = loadLoopVersion(root, input.loop);
+  let load = loadLoopVersion(root, input.loop);
   if (!load.ok) return { ok: false, reason: load.reason };
-  const version = load.loaded.content;
+  let version = load.loaded.content;
   const needs = LOOP_SUBJECT[input.loop];
   // B8: every id the caller hands in is checked before it reaches a path or an argv.
   if (input.slot !== undefined && !SLOT_REF.test(input.slot)) return { ok: false, reason: `--slot ${JSON.stringify(input.slot)} is not a slot ref (<agent>/<slot-id>)` };
@@ -305,6 +305,10 @@ export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
     const [agent, slotId] = ref.split("/") as [AgentId, string];
     subject = slotId ? readSubject(root, agent, slotId) : undefined;
     if (!subject) return { ok: false, reason: `${ref} is not a consumer slot (clossys/agents/${ref}/slot.json, slot/2)` };
+    // The slot's agent runs its own pinned version of this loop when it holds one (U9a).
+    load = loadLoopVersion(root, input.loop, subject.agent);
+    if (!load.ok) return { ok: false, reason: load.reason };
+    version = load.loaded.content;
   }
   let request: SlotRequest | undefined;
   if (input.request !== undefined) {
@@ -373,7 +377,7 @@ async function resumeLocked(root: string, runId: string, hooks: RunHooks, now: (
   // B9: a run that wrote its ledger entry but stopped before saving its state has ended: adopt the entry, run nothing.
   const ended = adoptLedger(root, state);
   if (ended) return ended;
-  const load = loadLoopVersion(root, state.loop);
+  const load = loadLoopVersion(root, state.loop, state.subject?.agent);
   if (!load.ok) return { exitCode: 2, state, message: `run: ${load.reason}` };
   if (load.loaded.sha256 !== state.version.sha256) {
     return { exitCode: 2, state, message: `run: ${runId} started on ${state.version.ref} (${state.version.sha256.slice(0, 12)}); the loop now runs ${load.loaded.ref}. Finish or stop the run before the version changes` };

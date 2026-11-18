@@ -25,6 +25,14 @@ catch (error) {
 }
 if (resolved) reader = await import(resolved);
 
+/**
+ * Designer's own loop slots (`loop.scope` ... `loop.cascade`, kind `loop`, foundry-build-0048 U9a) hold loop versions,
+ * not design elements: Producer's `loop.agent-standard` judges them against its standard loops, so the element
+ * checks that read Designer pins do not. Only a placed slot of kind `loop` under one of the five ids is one.
+ */
+const AGENT_LOOP_IDS = new Set(["loop.scope", "loop.slot", "loop.create", "loop.choose", "loop.cascade"]);
+export const isOwnLoopSlot = (id, slotDoc) => AGENT_LOOP_IDS.has(id) && slotDoc?.kind === "loop";
+
 /** A candidate's registry item: its bytes as the reader's candidate view reads them (a reader without one reads int2 bytes only). */
 const itemOf = (candidate, read = slotReader()) => JSON.parse(read.candidateView ? read.candidateView(candidate.name, candidate.bytes) : candidate.bytes);
 
@@ -41,9 +49,11 @@ export function slotReader() {
 export function designerSlotRecords(root) {
   const { hasPinFile, isModelDir, listModelDir, listSlots, readCandidate, readSlot, readSlotRecordText } = slotReader();
   const records = new Map();
+  const ownLoops = new Set();
   for (const entry of listSlots(root, "designer")) {
     let slotDoc;
     try { slotDoc = readSlot(root, "designer", entry.id); } catch { slotDoc = undefined; }
+    if (isOwnLoopSlot(entry.id, slotDoc)) { ownLoops.add(entry.id); continue; }
     let pinned;
     if (!entry.pin) pinned = { error: hasPinFile(entry.dir) ? "has a pin.json the slot model rejects" : "is not pinned" };
     else {
@@ -60,7 +70,7 @@ export function designerSlotRecords(root) {
   const agentDir = join(root, "agents", "designer");
   for (const name of listModelDir(agentDir)) {
     const dir = join(agentDir, name);
-    if (records.has(name) || !isModelDir(dir)) continue;
+    if (records.has(name) || ownLoops.has(name) || !isModelDir(dir)) continue;
     if (readSlotRecordText(dir, "slot.json") === undefined && readSlotRecordText(dir, "pin.json") === undefined) continue;
     records.set(name, { dir, slotDoc: undefined, pinned: { error: "is a slot folder the Designer ia.json does not place" } });
   }
@@ -79,6 +89,7 @@ export function designerPins(root, { all = false } = {}) {
     const names = all ? entry.candidates : entry.pin ? [entry.pin.candidate] : [];
     let slotDoc;
     try { slotDoc = readSlot(root, "designer", entry.id); } catch { slotDoc = undefined; }
+    if (isOwnLoopSlot(entry.id, slotDoc)) continue;
     for (const name of names) {
       const pinned = entry.pin?.candidate === name;
       try {

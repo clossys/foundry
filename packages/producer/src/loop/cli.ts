@@ -20,6 +20,7 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { REFS_DANGLING, checkRefsDangling } from "../check/refs-dangling.js";
 import { LOOP_REACHABLE, loopReachable } from "../check/loop-reachable.js";
+import { LOOP_AGENT_STANDARD, LOOP_CONNECTED, loopAgentStandard, loopConnected } from "../check/loop-connected.js";
 import { TREE_CHECKS, runIaSyncCli } from "../cli/ia-sync.js";
 import type { CliResult } from "../cli/main.js";
 import { discoverRoot } from "../cli/root.js";
@@ -87,12 +88,12 @@ function parse(argv: readonly string[]): LoopFlags {
 const SAFE_WROTE = /^(?:\.clossys\/)?[A-Za-z0-9_][A-Za-z0-9_.@+-]*(?:\/[A-Za-z0-9_.@+-]+)*$/;
 
 /** The checks `clossys check --strict` runs inside a loop (B7): a step check outside this list is recorded as not run. */
-export const STRICT_RAN: readonly string[] = [...Object.keys(TREE_CHECKS), LOOP_REACHABLE, REFS_DANGLING];
+export const STRICT_RAN: readonly string[] = [...Object.keys(TREE_CHECKS), LOOP_REACHABLE, LOOP_AGENT_STANDARD, LOOP_CONNECTED, REFS_DANGLING];
 
-/** Tree-wide findings for `clossys check --strict` inside a loop: the slot/2 tree checks, loop.reachable and refs.dangling. */
+/** Tree-wide findings for `clossys check --strict` inside a loop: the slot/2 tree checks, loop.reachable, the agent loop checks and refs.dangling. */
 export function strictFindings(root: string): Finding[] {
   const findings: Finding[] = [];
-  for (const check of [...Object.values(TREE_CHECKS), loopReachable]) {
+  for (const check of [...Object.values(TREE_CHECKS), loopReachable, loopAgentStandard, loopConnected]) {
     for (const finding of check.run(root).findings) findings.push({ check: check.id, subject: finding.subject, detail: finding.detail });
   }
   for (const finding of checkRefsDangling(root).findings) findings.push({ check: finding.check, subject: finding.subject, detail: finding.detail });

@@ -6,6 +6,7 @@ import { ASSERTIONS, OVERLAP_MIN } from "./assertions.js";
 import { isContractRefusal, judgeDogfood, probeIaContract, probePinGate, PROBES, type PinGateResult, type ProbeFacts, type VerbProbe } from "./dogfood.js";
 import { adapterIssues, CONFORM_AGENTS, missingPaths, readConformModel, type Adapter, type AgentModel, type ConformModel, type LiveSlot } from "./model.js";
 import { cellOf, conform, formatReport, readRegistry } from "./run.js";
+import { AGENT_LOOPS, agentLoopIssues, readAgentPackageLoop } from "../loop/agent-loops.js";
 
 const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
 const FIXTURE = join(REPO, "packages/producer/test-fixtures/consumer/clossys");
@@ -20,12 +21,26 @@ const slot = (id: string, inputs: string[], extra: Partial<LiveSlot> = {}): Live
   pin: { basis: "picked", refs: [{ to: "producer/checks.scorecard", rel: "cites", record: `director/${id}` }] }, ...extra,
 });
 
+/**
+ * Director's own five loops (U9a), as its package candidates hold them; the cascade gains a Director step of its own
+ * (the standard cascade is all code, so no step would reach the agent and W1 would be red).
+ */
+function ownLoops(): Record<string, any>[] {
+  return AGENT_LOOPS.map(loop => {
+    const read = readAgentPackageLoop("director", loop);
+    if (!read.ok) throw new Error(read.reason);
+    const content = structuredClone(read.content) as Record<string, any>;
+    if (loop === "loop.cascade") content.steps.push({ id: "director-notes", does: "note the repinned briefs for the owner", decider: { by: "agent", agent: "director", verb: "check", tier: "low", skill: "packages/director/skills/director/SKILL.md" }, cli: "clossys next", reads: ["<slot>/slot.json"], writes: ["<slot>/ledger.json"], checks: [] });
+    return { loop, declared: true, package: { ok: true, ref: `director/${loop}/package:v1`, content }, placed: false };
+  });
+}
+
 /** An agent and world on which every assertion and probe is green; each test mutates one fact. */
 type Mutation = (agent: Record<string, any>, machinery: Record<string, any>, other: Record<string, any>, facts: Record<string, any>) => void;
 function world(mutate: Mutation = () => {}): { agent: AgentModel; model: ConformModel; facts: ProbeFacts } {
   const agent: Record<string, any> = {
     agent: "director", packageDir: "/p", adapterIssues: [],
-    adapter: { schema: "clossys.conform-adapter/1", agent: "director", trees: [], kinds: ["brief"], defaults: [], recipes: [], derive: [], edgeFiles: [], skill: "skill/SKILL.md", skills: {} },
+    adapter: { schema: "clossys.conform-adapter/1", agent: "director", trees: [], kinds: ["brief"], defaults: [], recipes: [], derive: [], edgeFiles: [], loops: [...AGENT_LOOPS], skill: "skill/SKILL.md", skills: {} },
     trees: [{ file: "t.json", slots: {}, freeze: { file: "f.json", exists: true, ids: ["a.x", "a.y"] }, l1: [{ id: "a", parked: false, l2: [{ id: "a1", parked: false, leaves: ["a.x"] }, { id: "a2", parked: false, leaves: ["a.y"] }] }] }],
     placedTree: [{ id: "a", l2: [{ id: "a1", slots: ["a.x"] }, { id: "a2", slots: ["a.y"] }] }],
     folders: ["a.x", "a.y"],
@@ -39,6 +54,7 @@ function world(mutate: Mutation = () => {}): { agent: AgentModel; model: Conform
     actions: [{ id: "act", reads: ["consumer:agents/director/*/candidates/*", "consumer:agents/writer/*/pin.json"] }],
     skillText: "submit, then verdict, critique-packet and the craft stages",
     skills: ["scope", "slot", "create", "choose", "cascade"].map(loop => ({ loop, path: `s/${loop}.md`, exists: true, registered: true })),
+    loops: ownLoops(),
     requests: [{ id: "q1", kind: "slot", from: "director/a.x", target: "director/z", status: "closed", link: "director/a.x", closed: "q1#3", notified: { to: "director/a.x", at: "2026-11-17T00:00:00Z" } }],
   };
   const other: Record<string, any> = { ...agent, agent: "writer", live: [slot("b.in", []), slot("b.other", [])] };
@@ -88,11 +104,38 @@ const MUTATIONS: Record<string, Mutation> = {
   X3: agent => { agent.actions[0].reads.push("consumer:agents/writer/*/candidates/*"); },
   X4: (_agent, machinery) => { machinery.loops.set("loop.release", { steps: [{ checks: ["types.compile"] }] }); },
   W1: agent => { agent.skills[0].registered = false; },
+  // Director's own create drops Producer's required certify step.
+  W2: agent => { const create = agent.loops.find((loop: any) => loop.loop === "loop.create").package.content; create.steps = create.steps.filter((step: any) => step.id !== "certify"); },
 };
+
+describe("own loops (W2, foundry-build-0048 U9a)", () => {
+  it("the world's own loops extend Producer's standard (the cascade's added Director step included)", () => {
+    for (const loop of ownLoops()) expect(agentLoopIssues("director", loop.loop, loop.package.content, { packageVersion: true }), loop.loop).toEqual([]);
+  });
+  const w2 = (mutate: Mutation) => ASSERTIONS.W2!(world(mutate).agent, world(mutate).model, GOOD_FACTS).rows;
+  it("refuses an undeclared loop", () => {
+    expect(w2(agent => { agent.loops[0].declared = false; })).toEqual(["loop.scope: conform.json does not declare director's loop.scope"]);
+  });
+  it("once the consumer holds one loop slot, refuses a missing one, an unpinned one and a pinned version that drops a required step", () => {
+    const placed = (agent: Record<string, any>) => { for (const loop of agent.loops) { loop.placed = true; loop.pin = structuredClone(loop.package); } };
+    expect(w2(placed)).toEqual([]);
+    expect(w2(agent => { placed(agent); agent.loops[1].placed = false; delete agent.loops[1].pin; })).toEqual(["director/loop.slot: missing (the consumer holds director's other loop slots, not this one)"]);
+    expect(w2(agent => { placed(agent); agent.loops[2].pin = { ok: false, reason: "director/loop.create is not pinned" }; })).toEqual(["director/loop.create: unpinned: director/loop.create is not pinned"]);
+    const dropped = w2(agent => { placed(agent); const choose = agent.loops[3].pin.content; choose.steps = choose.steps.slice(1); });
+    expect(dropped.length).toBeGreaterThan(0);
+    expect(dropped.every(row => row.startsWith("pinned director/loop.choose/package:v1: "))).toBe(true);
+  });
+  it("W1 judges the agent's own version where it declares one, not Producer's standard", () => {
+    const rows = (mutate: Mutation) => ASSERTIONS.W1!(world(mutate).agent, world(mutate).model, GOOD_FACTS).rows;
+    // Producer's standard still reaches Director for every loop; Director's own cascade without its step does not.
+    expect(rows(agent => { const cascade = agent.loops[4].package.content; cascade.steps = cascade.steps.filter((step: any) => step.id !== "director-notes"); })).toEqual(["loop.cascade: no step reaches director"]);
+    expect(rows(agent => { agent.loops[2].package = { ok: false, reason: "gone" }; })).toEqual(["loop.create: director's own version cannot be read"]);
+  });
+});
 
 describe("conformance registry", () => {
   const registry = readRegistry();
-  it("declares the 23 assertions of the standard, each with a function and a mutation proof", () => {
+  it("declares the 24 assertions of the standard, each with a function and a mutation proof", () => {
     expect(registry.assertions.map(entry => entry.id)).toEqual(Object.keys(MUTATIONS));
     expect(Object.keys(ASSERTIONS).sort()).toEqual(registry.assertions.map(entry => entry.id).sort());
     // Report-only: nothing is enforced yet.
@@ -134,7 +177,7 @@ describe("conformance runner", () => {
     const built = world(agent => { delete agent.adapter; agent.adapterIssues = ["packages/director/conform.json is missing or not JSON"]; });
     const report = conform(built.model, readRegistry(), GOOD_FACTS);
     const director = report.agents.find(agent => agent.agent === "director")!;
-    expect(director.red).toBe(23);
+    expect(director.red).toBe(24);
     expect(director.cells[0]!.rows[0]).toMatch(/^uncovered: /);
     expect(report.ok).toBe(false);
   });
@@ -261,7 +304,7 @@ describe("conformance over the repo and its fixture", () => {
     const accepted = (agent: string) => [{ target: `${agent}/conform.contract-probe`, contract: "{}", accepted: true, message: "ia --dry" }];
     const report = conform(model, readRegistry(), { emptyL2Detected: Object.fromEntries(CONFORM_AGENTS.map(agent => [agent, false])), requestVerb: false, critiqueMonorepoPath: true, iaContract: Object.fromEntries(CONFORM_AGENTS.map(agent => [agent, accepted(agent)])) });
     for (const agent of report.agents) {
-      expect(agent.cells).toHaveLength(23);
+      expect(agent.cells).toHaveLength(24);
       expect(agent.dogfood).toHaveLength(5);
       // Shared today: placement records no decision; create, choose and cascade name the slot's owner, not a literal
       // agent, and the cascade step names no skill.
@@ -271,6 +314,10 @@ describe("conformance over the repo and its fixture", () => {
       // The cascade rows (U6): a repin re-verdicts its dependants, every edge resolves, no input reads a candidate
       // file, release refuses needs-refresh.
       for (const id of ["X1", "X2", "X3", "X4"]) expect(agent.cells.find(cell => cell.id === id)!.rows, `${agent.agent} ${id}`).toEqual([]);
+      // U9a: every agent declares its five own loops, each extending Producer's standard; W1 judges them, so only the
+      // all-code cascade (no agent step, no skill) stays red.
+      expect(agent.cells.find(cell => cell.id === "W2")!.red, agent.agent).toBe(false);
+      expect(agent.cells.find(cell => cell.id === "W1")!.rows, agent.agent).toEqual([`loop.cascade: no step reaches ${agent.agent}`, "cascade: names no skill"]);
     }
     // L1: the queue-entry/2 schema and loop.slot exist (U5), and no package slot edge names a slot no tree holds (U6
     // resolved every dangling edge), so no agent has an unfiled slotless need.

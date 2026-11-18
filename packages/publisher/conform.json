@@ -36,6 +36,7 @@
   ],
   "derive": [],
   "edgeFiles": [],
+  "loops": ["loop.scope", "loop.slot", "loop.create", "loop.choose", "loop.cascade"],
   "skill": "skill/SKILL.md",
   "skills": {
     "scope": "packages/publisher/actions/publisher.scope/skill.md",
