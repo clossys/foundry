@@ -65,10 +65,8 @@ images; it does not treat an image as a control or write to the library.
 | `receipt --root <library> [--base <receipt.json>] [--json]` | Check the manifest, carried drift and optional append-only history. |
 | `graph --root <library> --check` | Check usage graph drift. |
 | `graph --root <library> --write` | Write and stamp the derived usage graph. |
-| `dogfood --root <library> <path...> [--write-needs] [--json]` | Derive findings; only the explicit flag writes stamped needs. |
-| `dogfood-consumer --root <library> <path...> --contract <file> [--json]` | Check reachable consumer sources without exceptions. |
-| `needs --root <library> [--status open,proposed] [--json]` | Read needs and blocked parents. |
-| `needs --root <library> set NEED-NNN --status <status> [--candidate <json>] [--closed-by <ref>]` | Record a guarded, stamped status transition. |
+| `dogfood --root <library> <path...> [--consumer <dir>] [--json]` | Derive findings and link them to open queue requests; writes nothing. |
+| `dogfood-consumer --root <library> <path...> --contract <file> [--consumer <dir>] [--json]` | Check reachable consumer sources without exceptions. |
 | `recommend --root <library>` | Unavailable; no recommendation is synthesized. |
 
 Exit codes are 0 for success, 1 for a failed verdict or conflict, and 2 for

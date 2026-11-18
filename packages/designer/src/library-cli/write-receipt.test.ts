@@ -5,8 +5,7 @@ import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { libraryHash, loadCatalog, stableStringify, type ChangeSet } from "../catalog-core/index.js";
 import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-catalog-library.js";
-import type { DogfoodFinding } from "../catalog-core/dogfood.js";
-import { checkLibraryReceipt, emitLibrary, libraryFiles, readLibrary, setNeed, writeLibrary, writeNeeds } from "./fs-library.js";
+import { checkLibraryReceipt, emitLibrary, libraryFiles, readLibrary, writeLibrary } from "./fs-library.js";
 import { DESIGNER_RECEIPT_FILE, type DesignerReceipt } from "./write-receipt.js";
 import { main } from "./cli.js";
 
@@ -26,7 +25,6 @@ afterEach(async () => { await fs.rm(temporary, { recursive: true, force: true })
 
 const author = (base: string, px = 18): ChangeSet => ({ baseHash: base, changes: [{ op: "author", slot: "themes.radius", tokens: { default: { $type: "dimension", $value: { value: px, unit: "px" } } } }] });
 const receipt = async (): Promise<DesignerReceipt> => JSON.parse(await fs.readFile(join(root, DESIGNER_RECEIPT_FILE), "utf8"));
-const gap = (line: number): DogfoodFinding => ({ code: "DF5", file: "src/Page.tsx", line, tag: "Widget", elementId: `src/Page.tsx#Widget@${line}`, raisedBy: "src/Page.tsx#Page", slotId: null, evidence: "Unknown visual Widget", missing: "Widget capability" });
 async function cli(...args: string[]) {
   const out: string[] = [], error: string[] = [];
   const code = await main([...args, "--root", root], { out: text => out.push(text), error: text => error.push(text) });
@@ -62,14 +60,9 @@ describe("designer write receipt: stamping at the source", () => {
     expect((await receipt()).writes.map(row => row.command)).toEqual(["designer-library apply"]);
   });
 
-  it("stamps emit, NEED writes and the usage graph with their commands", async () => {
+  it("stamps emit and the usage graph with their commands", async () => {
     await emitLibrary(root, catalog);
     expect((await receipt()).writes.map(row => row.command)).toEqual(["emitLibrary"]);
-    await writeNeeds(root, [gap(1)], "2026-10-27T00:00:00Z");
-    await setNeed(root, "NEED-001", { status: "proposed", candidate: { library: "shadcn@aria", slotId: "components.widget", reason: "React Aria candidate" } }, "2026-10-27T00:00:00Z");
-    const stamped = await receipt();
-    expect(stamped.writes.map(row => row.command)).toEqual(["emitLibrary", "writeNeeds", "setNeed"]);
-    expect(stamped.writes[2]!.inputs).toMatchObject({ id: "NEED-001", status: "proposed" });
     expect(await cli("graph", "--write")).toMatchObject({ code: 0 });
     expect((await receipt()).writes.at(-1)!.command).toBe("designer-library graph --write");
     expect(await checkLibraryReceipt(root)).toMatchObject({ ok: true });

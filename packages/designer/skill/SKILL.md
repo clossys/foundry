@@ -96,7 +96,7 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    `original` is allowed only in a consumer-asset slot (the logo, brand marks
    and the consumer's own images and video; the list is `consumerAssets` in
    `src/catalog/rules/provenance.json`). When no trusted reference fits the
-   contract, raise a NEED for the owner ([Library needs](library-needs.md))
+   contract, file a request for the owner ([Library needs](library-needs.md))
    naming the slot and the missing reference, and leave the slot as it is;
    never invent an item. Stock shadcn first. Read every copy input from props, never hard-coded
    text; mark each copy element with `data-copy="<key>"`; use only the
@@ -129,7 +129,7 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
 7. **Pin the approved option** only after the owner's explicit yes, and only
    when its provenance and its code pass. Pin it, then run the gate over every
    pin; a non-zero exit means unpin it (restore the previous `pin.json`), then
-   re-source the item from a trusted reference, cut the failing hunks, or raise a NEED:
+   re-source the item from a trusted reference, cut the failing hunks, or file a request:
    ```sh
    npx clossys pin designer/<slot> <element>-v<N> --by "owner:queue.pick#<entry id>"
    npx designer-ref-verbatim --root clossys --pinned

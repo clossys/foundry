@@ -49,6 +49,32 @@ describe("flat slot root reader", () => {
     expect(model.findings.map(finding => finding.id)).toEqual(["signups"]);
     expect(paths.filter(path => /^(tree\.json|cells|sessions|requests|findings)(\/|$)/.test(path))).toEqual([]);
   });
+  it("reads requests from Producer's queue (queue-entry/2 about Director slots), never a store of its own, and leaves them out of the fingerprinted files (U8)", () => {
+    const root = strategyRoot(base());
+    stageSlot(root, SEGMENT, 1, "Who: owner-led studios.");
+    const queue = (kind: string, name: string, doc: unknown) => {
+      const dir = join(root, "..", "producer", `queue.${kind}`, "entries");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, name), typeof doc === "string" ? doc : JSON.stringify(doc));
+    };
+    const entry = (id: string, kind: string, target: string, status = "open") => ({ schema: "clossys.queue-entry/2", id, kind, from: "owner", target, status, why: `sample ${id}` });
+    queue("fix", "20261029T0900Z-fix-focus-segment-core.json", entry("20261029T0900Z-fix-focus-segment-core", "fix", `director/${SEGMENT}`));
+    queue("change", "20261029T0901Z-change-focus-segment-core.json", entry("20261029T0901Z-change-focus-segment-core", "change", `director/${SEGMENT}`, "closed"));
+    // Skipped: another agent's entry, a queue-entry/1 fix in the same folder, a file that does not parse, a kind in the wrong folder.
+    queue("fix", "20261029T0902Z-fix-hero.json", entry("20261029T0902Z-fix-hero", "fix", "writer/sections.hero.copy"));
+    queue("fix", "20261029T0903Z-legacy.json", { schema: "clossys.queue-entry/1", id: "20261029T0903Z-legacy", queue: "queue.fix", status: "open", subject: { to: `director/${SEGMENT}` } });
+    queue("fix", "20261029T0904Z-broken.json", "{");
+    queue("change", "20261029T0905Z-fix-misfiled.json", entry("20261029T0905Z-fix-misfiled", "fix", `director/${SEGMENT}`));
+    const model = readStrategyRoot(root, reader);
+    expect(model.issues).toEqual([]);
+    expect(model.requests).toEqual([
+      { id: "20261029T0900Z-fix-focus-segment-core", kind: "fix", from: "owner", cell: SEGMENT, status: "open", why: "sample 20261029T0900Z-fix-focus-segment-core" },
+      { id: "20261029T0901Z-change-focus-segment-core", kind: "change", from: "owner", cell: SEGMENT, status: "closed", why: "sample 20261029T0901Z-change-focus-segment-core" },
+    ]);
+    expect(Object.keys(model.files).filter(path => path.includes("queue."))).toEqual([]);
+    // A root that is not <consumer>/agents/director reaches no queue.
+    expect(readStrategyRoot(base(), reader).requests).toEqual([]);
+  });
   it("leaves an unpinned slot without an active cell", () => {
     const root = strategyRoot(base());
     stageSlot(root, SEGMENT, 1, "Who: owner-led studios.", { unpinned: true });

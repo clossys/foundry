@@ -105,11 +105,11 @@ describe('validated model contracts', () => {
     expect(evaluateModelReview(source,index(),{today:'2026-10-29'}).requests.find(r => r.kind === 'drift')?.cells).toEqual([cell]);
     expect(JSON.stringify(source)).toBe(before);
   });
-  it.each(['open','drafted','resolved','declined'] as const)('retains durable deduplication from %s request details', status => {
+  it.each(['open','closed'] as const)('retains durable deduplication from %s queue entries (Producer\'s queue, U8)', status => {
     const source = model();
     const first = evaluateModelReview(source,index(),{today:'2026-10-29'}).requests;
-    source.requests = first.map((request,n) => ({id:`REQ-000${n}`,raisedBy:'review',kind:request.kind,cells:request.cells,
-      detail:reviewRequestDetail(request),status,opened:'2026-10-29',resolvedBy:null}));
+    source.requests = first.map((request,n) => ({id:`20261029T090${n}Z-change-review`,kind:'change' as const,from:'owner',cell:request.cells[0]!,
+      why:reviewRequestDetail(request),status}));
     expect(evaluateModelReview(source,index(),{today:'2026-10-29'}).requests).toEqual([]);
   });
   it('fails closed on an invalid store before evaluating findings', () => {

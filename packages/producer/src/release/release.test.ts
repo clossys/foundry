@@ -11,7 +11,7 @@ import { runReleaseCli } from "../cli/release.js";
 import { cliHooks } from "../loop/cli.js";
 import { ledgerDir, resumeRun, startRun } from "../loop/runner.js";
 import { answerQueueEntry } from "../queue/answer.js";
-import { raiseFeedback } from "../queue/feedback.js";
+import { raiseEntry } from "../loop/route.js";
 import { readdirSync } from "node:fs";
 import type { LedgerEntry } from "../records/types.js";
 import { closeWork, raiseWork } from "../records/request.js";
@@ -194,8 +194,9 @@ describe("requests.open-fix", () => {
 
   it("refuses a release over an open queue-entry/1 fix about a Writer record (the older fix path)", async () => {
     const world = make();
-    const entry = raiseFeedback(world.root, { ref: "writer/sections.hero.copy#home.hero", words: "the hero heading is too long", via: "chat" }, new Date("2026-11-20T07:35:00Z"));
-    expect(entry).toMatchObject({ queue: "queue.fix", decider: "agent:writer", subject: { to: "writer/sections.hero.copy", record: "home.hero" } });
+    // A consumer may still hold a queue-entry/1 fix written before Q10 (nothing in Producer raises one now).
+    const { entry } = raiseEntry(world.root, { queue: "queue.fix", subject: { to: "writer/sections.hero.copy", record: "home.hero", rel: "input" }, decider: "agent:writer", ask: "the hero heading is too long", slug: "sections-hero-copy" }, "2026-11-20T07:35:00Z");
+    expect(entry).toMatchObject({ schema: "clossys.queue-entry/1", queue: "queue.fix", decider: "agent:writer", subject: { to: "writer/sections.hero.copy", record: "home.hero" } });
     await release(world, "--build");
     await release(world, "--manifest");
     const result = await release(world, "--gates");

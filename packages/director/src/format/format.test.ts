@@ -5,7 +5,6 @@ import { parseCell, serializeCell } from "./cell.js";
 import { parseRef, formatRef } from "./ref.js";
 import { parseSession } from "./session.js";
 import { parseFinding, validateFinding } from "./finding.js";
-import { validateRequest } from "./request.js";
 import { validateTree } from "./tree.js";
 import { SLOT_CANDIDATE_NAME, slotCandidateCell } from "./slot.js";
 
@@ -188,13 +187,6 @@ describe("sessions, findings and requests", () => {
   ] as const)("rejects a judgement finding with %s", (_label, from, to) => {
     expect(parseFinding(judgement.replace(from, to)).ok).toBe(false);
   });
-  const request = { id: "REQ-0007", raisedBy: "@clossys/writer", kind: "missing", cells: ["identity.verbal.voice"], detail: "Voice has no active version", status: "open", opened: "2026-10-29", resolvedBy: null };
-  it("validates requests and converts their resolving ref", () => {
-    expect(validateRequest(request)).toMatchObject({ ok: true, value: { resolvedBy: null } });
-    expect(validateRequest({ ...request, status: "resolved", resolvedBy: "focus.segment.core@2" })).toMatchObject({ ok: true, value: { resolvedBy: { kind: "cell", ref: { cell: "focus.segment.core", version: 2 } } } });
-    expect(validateRequest({ ...request, resolvedBy: "msg:2026-10-29-1#U7" }).ok).toBe(true);
-  });
-  it.each([{ id: "REQ-x" }, { kind: "other" }, { status: "other" }, { cells: ["not-a-cell"] }, { cells: ["identity.verbal.unknown"] }, { resolvedBy: "finding:source" }, { opened: "2026-02-30" }, { detail: "" }, { status: "resolved" }])("rejects invalid request fields %j", fields => expect(validateRequest({ ...request, ...fields }, catalog).ok).toBe(false));
 });
 
 describe("consumer tree", () => {

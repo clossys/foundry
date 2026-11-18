@@ -204,20 +204,18 @@ describe("the request lens on disk", () => {
     expect(judge("Q6", "writer", { consumer: dir, repo: at }).rows).toContainEqual(expect.stringMatching(/raised change to designer with no declared issuing edge/));
   });
 
-  it("Q1 finds the Director and Designer request stores of their own; Q2 lists the interview gaps that only print", () => {
-    expect(localStores(join(REPO, "packages/director")).rows).toContainEqual(expect.stringMatching(/^src\/format\/request\.ts: a request record id of its own/));
-    expect(localStores(join(REPO, "packages/designer")).rows).toContainEqual(expect.stringMatching(/^src\/library-cli\/fs-library\.ts: a request store folder of its own/));
-    expect(localStores(join(REPO, "packages/writer")).rows).toEqual([]);
+  it("Q1 finds no agent request store of its own (U8 moved Director and Designer onto the queue); Q2 lists the interview gaps that only print", () => {
+    for (const agent of ["director", "designer", "writer", "publisher"]) expect(localStores(join(REPO, "packages", agent)).rows, agent).toEqual([]);
     const printed = printedGapCodes(readFileSync(join(REPO, "packages/producer/src/pipeline/interview.ts"), "utf8"));
     expect(printed).toContain("request.input-unpinned");
     // SLOT-CREATE files a slotless need as a kind slot entry: it is recorded, not only printed.
     expect(printed).not.toContain("request.slot-missing");
   });
 
-  it("Q10 lists today's queue-entry/1 fix raisers; Q11 is green with the requests.open-fix gate", () => {
+  it("Q10 finds no queue-entry/1 fix raiser in Producer (U8: cascade, audit, failed steps and feedback raise queue-entry/2); Q11 is green with the requests.open-fix gate", () => {
     const dir = consumer();
     const requests = readRequestMachinery(REPO, dir);
-    expect(requests.fixRaisers).toEqual(["packages/producer/src/loop/route.ts", "packages/producer/src/loop/runner.ts", "packages/producer/src/queue/feedback.ts"]);
+    expect(requests.fixRaisers).toEqual([]);
     expect(requests.releaseGates).toContain("requests.open-fix");
     expect(judge("Q11", "publisher", { consumer: dir })).toMatchObject({ rows: [], evidence: 1 });
   });

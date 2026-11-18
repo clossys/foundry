@@ -268,9 +268,9 @@ export interface ReadRequest { readonly file: string; readonly request?: SlotReq
 
 /**
  * Every entry of one work kind under clossys/agents/producer/queue.<kind>/entries, read and judged (an unreadable one
- * is listed with its issue). queue.fix still holds clossys.queue-entry/1 fix entries the runner raises; those (schema
- * exactly clossys.queue-entry/1) are the /1 queue's (queue/entry.ts) and are skipped here (`legacyFixEntries` lists
- * them). Any other file there (no schema, a wrong one) is listed as an entry that does not read, never dropped.
+ * is listed with its issue). queue.fix may still hold clossys.queue-entry/1 fix entries raised before U8 (nothing raises
+ * one now); those (schema exactly clossys.queue-entry/1) are the /1 queue's (queue/entry.ts) and are skipped here
+ * (`legacyFixEntries` lists them). Any other file there (no schema, a wrong one) is listed as an entry that does not read, never dropped.
  */
 export function listRequests(consumer: string, kind: WorkKind = "slot"): ReadRequest[] {
   const dir = requestsDir(consumer, kind);

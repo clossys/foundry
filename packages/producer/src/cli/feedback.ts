@@ -1,4 +1,4 @@
-/** `clossys feedback <ref> "<words>" --via chat|app|cli` (flows.md F5 step 1): opens a queue.fix entry. See queue/feedback.ts. */
+/** `clossys feedback <ref> "<words>" --via chat|app|cli` (flows.md F5 step 1): opens a kind change from the owner. See queue/feedback.ts. */
 import { resolve } from "node:path";
 import { VIAS, type Via } from "../queue/answer.js";
 import { FeedbackRefused, raiseFeedbackOrRequest, type FeedbackInput } from "../queue/feedback.js";
@@ -6,12 +6,12 @@ import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
-export const FEEDBACK_USAGE = "Usage: clossys feedback <agent>/<slot-id>[/<candidate>][#<record>] \"<the owner's words, verbatim>\" --via chat|app|cli [--quote <words>] [--slug <slug>] [--ref <where said>] [--root <dir>] [--json]\n"
-  + "  opens one queue.fix entry: ask = the words, decider = the agent that owns the ref, no default. --via app also needs --quote.\n"
+export const FEEDBACK_USAGE = "Usage: clossys feedback <agent>/<slot-id>[/<candidate>][#<record>] \"<the owner's words, verbatim>\" --via chat|app|cli [--quote <words>] [--ref <where said>] [--root <dir>] [--json]\n"
+  + "  opens one queue.change entry from the owner: why = the words, routed to the agent that owns the slot (or back to the owner as options). --via app also needs --quote.\n"
   + "  A ref to a slot the consumer does not hold raises a slot request to its agent instead (clossys request).\n"
   + "  Exit 1 when the ref dangles or the entry would not be valid; nothing is written then.";
 
-const VALUE_FLAGS = ["--via", "--quote", "--slug", "--ref", "--root"] as const;
+const VALUE_FLAGS = ["--via", "--quote", "--ref", "--root"] as const;
 type ValueFlag = typeof VALUE_FLAGS[number];
 
 export async function runFeedbackCli(argv: readonly string[], cwd: string, now?: Date): Promise<CliResult> {
@@ -38,24 +38,17 @@ export async function runFeedbackCli(argv: readonly string[], cwd: string, now?:
   const input: FeedbackInput = {
     ref: positional[0]!, words: positional[1]!, via: via as Via,
     ...(flags["--quote"] !== undefined ? { quote: flags["--quote"] } : {}),
-    ...(flags["--slug"] !== undefined ? { slug: flags["--slug"] } : {}),
     ...(flags["--ref"] !== undefined ? { where: flags["--ref"] } : {}),
   };
   const root = discoverRoot(resolve(cwd, flags["--root"] ?? "."));
   try {
-    const raised = raiseFeedbackOrRequest(root, input, now);
-    if ("request" in raised) {
-      const request = raised.request;
-      return {
-        exitCode: 0, root, output: request,
-        message: `${raised.created ? "raised" : "already open"}  request  ${request.id}\n  target  ${request.target} (no slot holds it)\n  decider  agent:${request.target.split("/")[0]} (${request.target.split("/")[0]}.slot: reuse or create)`,
-      };
-    }
-    const entry = raised.entry;
-    const subject = `${entry.subject.to}${entry.subject.record ? `#${entry.subject.record}` : ""}`;
+    const { request, created } = raiseFeedbackOrRequest(root, input, now);
+    const queue = `queue.${request.kind}`;
     return {
-      exitCode: 0, root, output: entry,
-      message: `raised  ${entry.queue}  ${entry.id}\n  subject  ${subject}\n  decider  ${entry.decider}`,
+      exitCode: 0, root, output: request,
+      message: request.kind === "slot"
+        ? `${created ? "raised" : "already open"}  request  ${request.id}\n  target  ${request.target} (no slot holds it)\n  decider  agent:${request.target.split("/")[0]} (${request.target.split("/")[0]}.slot: reuse or create)`
+        : `${created ? "raised" : "already open"}  ${queue}  ${request.id}\n  target  ${request.target}\n  assignee  ${request.assignee}`,
     };
   } catch (error) {
     if (error instanceof FeedbackRefused) return { exitCode: 1, root, message: `feedback refused: ${error.message}` };

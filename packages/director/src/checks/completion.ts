@@ -48,8 +48,9 @@ export function strategyStatus(model: StrategyModel, selection: { scope?: Scope 
   const headlines = model.catalog.coherence.storyline.filter(id => selected.has(id)).map(id => { const cell = activeCell(model, id); return { cell: id, text: cell?.direction[0]?.text, fresh: Boolean(cell && fresh(cell, model)) }; });
   const critic = options.judgeVerdicts?.C4 ?? 'not judged';
   const storyline: StorylineReport = { headlines, critic, clean: critic === 'pass' && !findings.some(finding => finding.rule === 'C4' && blocks(finding)) };
-  const openContradiction = model.requests.some(request => request.kind === 'contradiction' && (request.status === 'open' || request.status === 'drafted') && request.cells.some(id => selected.has(id)));
-  const l0Clean = l1.every(group => group.unlocked) && storyline.clean && !findings.some(finding => finding.rule === 'C3' && blocks(finding)) && !openContradiction && cells.every(cell => !activeCell(model, cell.id) || cell.fresh);
+  // An open fix in Producer's queue on a selected cell (the cell is known broken) holds L0 (U8: no Director request store).
+  const openFix = model.requests.some(request => request.kind === 'fix' && request.status === 'open' && selected.has(request.cell));
+  const l0Clean = l1.every(group => group.unlocked) && storyline.clean && !findings.some(finding => finding.rule === 'C3' && blocks(finding)) && !openFix && cells.every(cell => !activeCell(model, cell.id) || cell.fresh);
   const nextUnlock = l1.find(group => !group.unlocked)?.id;
   return { scope, cells, l2, l1, l0Clean, storyline, findings, nextUnlock, counts: { active: cells.filter(cell => cell.active).length, fresh: cells.filter(cell => cell.active && cell.fresh).length, total: cells.length, coherentL2: l2.filter(group => group.coherent).length, unlockedL1: l1.filter(group => group.unlocked).length } };
 }

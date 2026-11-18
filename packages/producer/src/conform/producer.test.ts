@@ -113,7 +113,10 @@ describe("Producer conformance rows (U9)", () => {
     const change = world(model => { model.queueKinds = [...model.queueKinds, "queue.change"]; });
     expect(PRODUCER_ASSERTIONS.P1!(change).rows).toEqual(["producer IA queue: queue.change is not placed"]);
     expect(PRODUCER_ASSERTIONS.P3!(change).rows).toEqual(["queue.change: no loop fills it (no owner step raises it, no failure routes to it, no step writes it)"]);
-    expect(PRODUCER_ASSERTIONS.P5!(change).rows).toEqual(["queue.change: no loop takes its entries back (clossys run --from or a request run)"]);
+    // foundry-build-0048 U8 (Q10): `clossys run --from queue.change#<id>` takes a change back, so P5 holds for it.
+    expect(PRODUCER_ASSERTIONS.P5!(change).rows).toEqual([]);
+    const unserved = world(model => { model.queueKinds = [...model.queueKinds, "queue.unserved"]; });
+    expect(PRODUCER_ASSERTIONS.P5!(unserved).rows).toEqual(["queue.unserved: no loop takes its entries back (clossys run --from or a request run)"]);
     const dir = mkdtempSync(join(tmpdir(), "u9-schema-"));
     writeFileSync(join(dir, "kinds.json"), JSON.stringify({ properties: { kind: { enum: ["fix", "change"] } } }));
     writeFileSync(join(dir, "none.json"), JSON.stringify({ properties: {} }));
@@ -135,7 +138,7 @@ describe("Producer conformance rows (U9)", () => {
 });
 
 describe("Producer over the repo and its fixture (U9)", () => {
-  it("reports Producer first, and today's known reds: the unserved change queue, the steps whose failure lands in no queue, the broken handoffs", () => {
+  it("reports Producer first, and today's known reds: the unplaced, unfilled change queue, the steps whose failure lands in no queue, the broken handoffs", () => {
     const report = conform(readConformModel(REPO, FIXTURE, []), readRegistry(), { emptyL2Detected: {}, requestVerb: true, critiqueMonorepoPath: false }, readProducerModel(FIXTURE));
     const producer = report.producer!;
     expect(producer.cells.map(cell => cell.id)).toEqual(["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"]);
@@ -144,7 +147,8 @@ describe("Producer over the repo and its fixture (U9)", () => {
     expect(rows("P3")).toEqual(["queue.change: no loop fills it (no owner step raises it, no failure routes to it, no step writes it)"]);
     expect(rows("P4")).toHaveLength(26);
     expect(rows("P4")).toEqual(expect.arrayContaining(["loop.fill: step create has no failure route: a failed run stops and lands in no queue", "loop.audit: step route has no failure route: a failed run stops and lands in no queue"]));
-    expect(rows("P5")).toEqual(["queue.change: no loop takes its entries back (clossys run --from or a request run)"]);
+    // U8 (Q10): the run takes a queue.change back (--from), so only P1 and P3 still name the change queue.
+    expect(rows("P5")).toEqual([]);
     // U9 fix r1 (P8): the skill names every loop and queue leaf, loop.scope, loop.slot, queue.pick, queue.approve and queue.slot among them.
     for (const id of ["P2", "P7", "P8"]) expect(rows(id), id).toEqual([]);
     expect(report.ok).toBe(false);

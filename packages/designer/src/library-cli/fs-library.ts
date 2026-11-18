@@ -11,7 +11,6 @@ import type { CompositeCatalogData, CompositeLibraryData, CompositeChangeSet, Co
 import { canonicalSurfacePortion, isSurfacePackageEntry, surfaceEntryOf, surfaceOutputs, surfaceSelection, verifySurfaceFiles } from "../catalog-core/surface-library.js";
 import { runtimeSnapshot } from "../catalog-core/runtime-ports.js";
 import type { SurfaceResolutionOptions, SurfaceDocument, SurfaceEntry, SurfaceFile } from "../catalog-core/surface-types.js";
-import type { DogfoodFinding, NeedRecord, NeedStatus, NeedCandidate } from "../catalog-core/dogfood.js";
 import { foundrySurfaceCatalog } from "./surface-catalog.js";
 import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
 import { verifySurfacePackageInputs } from "./surface-pin-context.js";
@@ -187,7 +186,7 @@ function compositeFiles(catalog: CompositeCatalogData, input: CompositeLibraryDa
   return files;
 }
 async function readCompositeUnlocked(root: string, catalog: CompositeCatalogData): Promise<CompositeLibraryData> {
-  await evidenceFiles(root); await readNeedsUnlocked(root);
+  await evidenceFiles(root);
   const parse = async (name: string): Promise<unknown> => JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(await regularFile(containedPath(root, name))));
   const metadata = await parse("metadata.json");
   if (record(metadata) && metadata.format === undefined) {
@@ -242,7 +241,6 @@ async function checkCompositeUnlocked(root: string, catalog: CompositeCatalogDat
 
 async function readUnlocked(root: string, catalog: CatalogData): Promise<LibraryData> {
   await evidenceFiles(root);
-  await readNeedsUnlocked(root);
   const parse = async (name: string): Promise<unknown> => JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(await regularFile(containedPath(root, name))));
   const source = await parse("source.json"), metadata = await parse("metadata.json"), selection = await parse("selection.json");
   if (!record(source) || source.kind !== "consumer" || source.author !== "consumer" || typeof source.id !== "string" || typeof source.license !== "string" || !record(metadata) || !exactKeys(metadata, [], ["complete", "baseline", "adoptedAt", "rubricVersion", "strategy", "rationale"])) throw new LibraryInputError("Invalid library metadata");
@@ -386,73 +384,15 @@ export async function emitLibrary(root: string, hostCatalog: CatalogData | Compo
 }
 
 
-export const NEED_STATUSES: readonly NeedStatus[] = ["open", "proposed", "approved", "built", "closed"];
-const needId = (value: unknown): value is string => typeof value === "string" && /^NEED-(?:00[1-9]|0[1-9]\d|[1-9]\d{2,})$/.test(value) && Number.isSafeInteger(Number(value.slice(5))) && Number(value.slice(5)) < Number.MAX_SAFE_INTEGER;
-const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0 && !/[\u0000-\u001f]/.test(value);
-export function isNeedCandidate(value: unknown): value is NeedCandidate {
-  return record(value) && exactKeys(value, ["library", "slotId", "reason"]) && ["shadcn@aria", "starter", "foundry"].includes(String(value.library)) && typeof value.slotId === "string" && /^(components|sections|frames|assets|tokens)\.[a-z][a-z0-9-]*$/.test(value.slotId) && text(value.reason);
-}
-export function isNeedRecord(value: unknown): value is NeedRecord {
-  if (!record(value) || !exactKeys(value, ["id", "raisedBy", "missing", "kind", "status", "candidate", "evidence", "createdBy", "createdAt", "updatedAt", "closedBy"])) return false;
-  if (!needId(value.id) || !text(value.raisedBy) || !text(value.missing) || !["slot", "member", "leaf"].includes(String(value.kind)) || !NEED_STATUSES.includes(value.status as NeedStatus) || !["dogfood-check", "skill", "owner"].includes(String(value.createdBy))) return false;
-  if (!(value.candidate === null || isNeedCandidate(value.candidate)) || value.status !== "open" && value.candidate === null || !text(value.createdAt) || !Number.isFinite(Date.parse(value.createdAt)) || !text(value.updatedAt) || !Number.isFinite(Date.parse(value.updatedAt)) || Date.parse(value.updatedAt) < Date.parse(value.createdAt as string) || !(value.closedBy === null || text(value.closedBy)) || value.status === "closed" && !text(value.closedBy)) return false;
-  return Array.isArray(value.evidence) && value.evidence.length > 0 && value.evidence.every(row => record(row) && exactKeys(row, ["file", "line", "code"], ["benchmark"]) && text(row.file) && Number.isInteger(row.line) && Number(row.line) > 0 && /^DF[1-6]$/.test(String(row.code)) && (row.benchmark === undefined || text(row.benchmark)));
-}
-async function readNeedsUnlocked(root: string): Promise<NeedRecord[]> {
-  const directory = containedPath(root, "needs");
-  try { if (!(await fs.lstat(directory)).isDirectory()) throw new LibraryInputError("Needs must be a regular directory"); }
-  catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return []; throw error; }
-  const needs: NeedRecord[] = [];
-  for (const name of (await fs.readdir(directory)).sort()) {
-    const id = name.replace(/\.json$/, "");
-    if (!needId(id) || name !== `${id}.json`) throw new LibraryInputError("Invalid NEED filename");
-    let value: unknown;
-    try { value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(await regularFile(containedPath(root, `needs/${name}`)))); }
-    catch { throw new LibraryInputError("Invalid NEED file"); }
-    if (!isNeedRecord(value) || value.id !== id) throw new LibraryInputError("Invalid NEED record");
-    if (needs.some(row => row.raisedBy === value.raisedBy && row.missing === value.missing)) throw new LibraryInputError("Duplicate NEED capability");
-    needs.push(value);
-  }
-  return needs;
-}
-/** Read under the shared transaction lock; no NEED or consumer output is created/changed. */
-export async function readNeeds(input: string): Promise<NeedRecord[]> {
-  return locked(input, async root => { await evidenceFiles(root); return readNeedsUnlocked(root); });
-}
-/** Writes only an explicit root, under the existing transaction/containment boundary. */
-export async function writeNeeds(input: string, findings: readonly DogfoodFinding[], now = new Date().toISOString(), stamp?: DesignerWriteStamp): Promise<NeedRecord[]> {
-  return locked(input, async root => {
-    await evidenceFiles(root);
-    const needs = await readNeedsUnlocked(root), changed = new Map<string, string>();
-    let next = Math.max(0, ...needs.map(row => Number(row.id.slice(5)))) + 1;
-    for (const finding of findings) {
-      if (!["DF1", "DF3", "DF5"].includes(finding.code) || finding.slotId || !finding.missing) continue;
-      let need = needs.find(row => row.raisedBy === finding.raisedBy && row.missing === finding.missing);
-      if (!need) { need = { id: `NEED-${String(next++).padStart(3, "0")}`, raisedBy: finding.raisedBy, missing: finding.missing, kind: "leaf", status: "open", candidate: null, evidence: [], createdBy: "dogfood-check", createdAt: now, updatedAt: now, closedBy: null }; needs.push(need); }
-      const evidence = { file: finding.file, line: finding.line, code: finding.code };
-      if (!need.evidence.some(row => row.file === evidence.file && row.line === evidence.line && row.code === evidence.code)) {
-        need.evidence.push(evidence); need.updatedAt = now;
-        if (!isNeedRecord(need)) throw new LibraryInputError("Invalid NEED evidence");
-        changed.set(`needs/${need.id}.json`, stableStringify(need));
-      }
-    }
-    if (changed.size) await persistLibrary(root, changed, false, undefined, resolveStamp("writeNeeds", { findings: inputDigest(findings), now }, stamp));
-    return needs;
-  });
-}
-export async function setNeed(input: string, id: string, change: { status: NeedStatus; candidate?: NeedCandidate; closedBy?: string }, now = new Date().toISOString(), stamp?: DesignerWriteStamp): Promise<NeedRecord> {
-  if (!needId(id) || !record(change) || !exactKeys(change, ["status"], ["candidate", "closedBy"]) || !NEED_STATUSES.includes(change.status) || change.candidate !== undefined && !isNeedCandidate(change.candidate)) throw new LibraryInputError("Invalid NEED update");
-  return locked(input, async root => {
-    await evidenceFiles(root); const needs = await readNeedsUnlocked(root), need = needs.find(row => row.id === id);
-    if (!need) throw new LibraryInputError("NEED does not exist");
-    const before = NEED_STATUSES.indexOf(need.status), after = NEED_STATUSES.indexOf(change.status);
-    if (after < before || after > before + 1) throw new LibraryInputError("NEED status must move one step forward");
-    const updated = { ...need, ...change, updatedAt: now };
-    if (!isNeedRecord(updated)) throw new LibraryInputError("Invalid NEED update: candidate or closure evidence required");
-    await persistLibrary(root, new Map([[`needs/${id}.json`, stableStringify(updated)]]), false, undefined, resolveStamp("setNeed", { id, ...change, now }, stamp)); return updated;
-  });
-}
 /** usage-graph.json through the same locked, stamped generation as every other designer write. */
+/**
+ * The real path of an existing library root, under the same lock and unfinished-transaction refusal a library read
+ * uses. Dogfood reads no library store of its own (requests live in Producer's queue), so it opens the root here to
+ * keep refusing a missing root or a half-written library before deriving findings.
+ */
+export async function libraryRoot(input: string): Promise<string> {
+  return locked(input, async root => { await evidenceFiles(root); return root; });
+}
 export async function writeUsageGraph(input: string, content: string, stamp?: DesignerWriteStamp): Promise<void> {
   return locked(input, root => persistLibrary(root, new Map([["usage-graph.json", content]]), false, undefined, resolveStamp("writeUsageGraph", { output: digest(content) }, stamp)));
 }

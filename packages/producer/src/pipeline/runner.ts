@@ -150,7 +150,7 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     if (head === "brief") return await (await import("../cli/brief.js")).runBriefCli(argv.slice(1), cwd);
     // The preview builds a publication from resolved pins and serves it (system.md 12.5); it records nothing.
     if (head === "preview") return await (await import("../cli/preview.js")).runPreviewCli(argv.slice(1), cwd);
-    // The queue write path (system.md 12.6, flows.md F5): feedback opens a queue.fix entry, answer closes one entry.
+    // The queue write path (system.md 12.6, flows.md F5): feedback opens a kind change from the owner, answer closes one entry.
     if (head === "feedback") return await (await import("../cli/feedback.js")).runFeedbackCli(argv.slice(1), cwd);
     if (head === "answer") return await (await import("../cli/answer.js")).runAnswerCli(argv.slice(1), cwd);
     // View discovery for chat agents (system.md 14.9) reads only; init adds the views pointer to AGENTS.md once.

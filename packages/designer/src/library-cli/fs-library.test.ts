@@ -245,45 +245,15 @@ describe("composite consumer library disk format", () => {
     expect(button.every(isObservationPending)).toBe(true);
     await expect(emitLibrary(root, input.catalog)).rejects.toThrow(/unavailable named import Button/);
   });
-  function needRecord(id = "NEED-001") {
-    return { id, raisedBy: "components.button", missing: "disabled state", kind: "leaf", status: "open", candidate: null, evidence: [{ file: "src/Page.tsx", line: 1, code: "DF5" }], createdBy: "owner", createdAt: "2026-10-01T00:00:00Z", updatedAt: "2026-10-01T00:00:00Z", closedBy: null };
-  }
-  it("reads composite libraries without creating NEED storage or changing valid NEED bytes", async () => {
+  it("reads composite libraries without creating, reading or changing a stray needs folder", async () => {
+    // foundry-build-0048 U8: requests live in Producer's queue; the library keeps no request store and never reads one.
     const input = compositeFixture(); await save(libraryFiles(input.catalog, input.library, []));
     expect(await readLibrary(root, input.catalog)).toEqual(input.library);
     await expect(fs.stat(join(root, "needs"))).rejects.toMatchObject({ code: "ENOENT" });
-    await fs.mkdir(join(root, "needs"));
-    const bytes = JSON.stringify(needRecord(), null, 3) + "\n";
-    await fs.writeFile(join(root, "needs/NEED-001.json"), bytes);
+    await fs.mkdir(join(root, "needs")); await fs.writeFile(join(root, "needs", "bad.json"), "{");
     expect(await readLibrary(root, input.catalog)).toEqual(input.library);
-    expect(await fs.readFile(join(root, "needs/NEED-001.json"), "utf8")).toBe(bytes);
-    expect(await fs.readdir(join(root, "needs"))).toEqual(["NEED-001.json"]);
-  });
-  it.each([
-    ["bad.json", "{}", "Invalid NEED filename"],
-    ["NEED-001.json", "{", "Invalid NEED file"],
-    ["NEED-001.json", JSON.stringify({ ...needRecord(), status: "invented" }), "Invalid NEED record"],
-  ])("refuses malformed NEED evidence %s before serving a composite library", async (name, bytes, message) => {
-    const input = compositeFixture(); await save(libraryFiles(input.catalog, input.library, []));
-    await fs.mkdir(join(root, "needs")); await fs.writeFile(join(root, "needs", name), bytes);
-    await expect(readLibrary(root, input.catalog)).rejects.toThrow(message);
-    expect(await fs.readFile(join(root, "needs", name), "utf8")).toBe(bytes);
-  });
-  it("refuses duplicate NEED capabilities without altering their records", async () => {
-    const input = compositeFixture(); await save(libraryFiles(input.catalog, input.library, []));
-    await fs.mkdir(join(root, "needs"));
-    for (const id of ["NEED-001", "NEED-002"]) await fs.writeFile(join(root, `needs/${id}.json`), JSON.stringify(needRecord(id)));
-    await expect(readLibrary(root, input.catalog)).rejects.toThrow("Duplicate NEED capability");
-    expect((await fs.readdir(join(root, "needs"))).sort()).toEqual(["NEED-001.json", "NEED-002.json"]);
-  });
-  it("refuses symlinked NEED storage without following or replacing it", async () => {
-    const input = compositeFixture(); await save(libraryFiles(input.catalog, input.library, []));
-    const outside = join(temporary, "outside-needs"); await fs.mkdir(outside);
-    const bytes = JSON.stringify(needRecord()); await fs.writeFile(join(outside, "NEED-001.json"), bytes);
-    await fs.symlink(outside, join(root, "needs"));
-    await expect(readLibrary(root, input.catalog)).rejects.toThrow(/symlink|regular directory/);
-    expect((await fs.lstat(join(root, "needs"))).isSymbolicLink()).toBe(true);
-    expect(await fs.readFile(join(outside, "NEED-001.json"), "utf8")).toBe(bytes);
+    expect(await fs.readFile(join(root, "needs", "bad.json"), "utf8")).toBe("{");
+    expect(await fs.readdir(join(root, "needs"))).toEqual(["bad.json"]);
   });
   it("emits adopted components with caller supplied independent engine observations", async () => {
     const input = adoptedComponentIntegration();

@@ -178,11 +178,11 @@ export function evaluateModelReview(model: StrategyModel, index: CitationIndex, 
       detail:`Stale citation ${entry.ref.cell}@${entry.ref.version} in ${entry.by.path}.`}] : [];
   });
   const existingKeys = [...(options.existingKeys ?? []), ...model.requests.flatMap(request =>
-    [...request.detail.matchAll(/\[review:([a-f0-9]{64})\]/g)].map(match => match[1]!))];
+    [...request.why.matchAll(/\[review:([a-f0-9]{64})\]/g)].map(match => match[1]!))];
   return evaluateReview({...options, existingKeys, cells:model.cells, active:model.tree.active, findings:model.findings, stale});
 }
 
-/** Stable marker fits the existing request schema and survives status changes. */
+/** Stable marker a queue entry's `why` carries (Producer's queue, U8); it survives status changes. */
 export function reviewRequestDetail(request: ReviewRequest): string {
   return `${request.detail} [review:${request.key}]`;
 }

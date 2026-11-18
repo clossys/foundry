@@ -37,5 +37,5 @@ embedded in a leaf id or used as a replacement identity. Regrouping a leaf chang
 its board without changing its selection, URL, fill, or membership.
 
 The source dogfood report is a diagnostic, not a conformance grant. Unresolved
-recognition of reused compositions or token utilities remains a named NEED in
+recognition of reused compositions or token utilities remains a named finding in
 that report; regenerating it proves freshness, not that those findings are clear.
