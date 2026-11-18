@@ -1,0 +1,19 @@
+{
+  "id": "advisor/loop.onboard",
+  "status": "draft",
+  "extends": null,
+  "extendsNote": "Producer has no standard onboarding loop to extend yet; this loop ends by handing T1 to producer/loop.fill.",
+  "content": {
+    "trigger": ["T1"],
+    "steps": [
+      { "id": "doctor", "does": "check the machine prerequisites; read no file", "decider": { "by": "check" }, "cli": "advisor doctor", "reads": ["host:node", "host:npm", "host:git"], "writes": [], "checks": ["machine.tools.node", "machine.tools.npm", "machine.tools.git", "machine.repo.root"] },
+      { "id": "install", "does": "install Producer and the agent packages from tarballs packed at one foundry commit", "decider": { "by": "check" }, "cli": "advisor install --from <pack-dir>", "reads": ["<pack-dir>/artifacts.json"], "writes": ["vendor/clossys/", "clossys/advisor/install.json"], "checks": ["packages.source.manifest", "packages.source.tarball", "packages.record.install"] },
+      { "id": "init", "does": "let Producer write the workspace config and views pointer", "decider": { "by": "check" }, "cli": "advisor init", "reads": ["clossys/advisor/install.json"], "writes": ["clossys/clossys.config.ts", "AGENTS.md"], "checks": ["workspace.files.config", "workspace.files.pointer"] },
+      { "id": "intake", "does": "record the owner's one-time answers as Director evidence through clossys evidence", "decider": { "by": "owner" }, "cli": "advisor intake --answers <file>", "reads": ["<answers file>"], "writes": ["clossys/advisor/intake.json"], "checks": ["intake.business.offer", "intake.business.audience", "intake.business.name", "intake.limits.constraint", "intake.limits.horizon"] }
+    ],
+    "exit": "every step exits 0; then producer/loop.fill takes T1",
+    "handoff": "producer/loop.fill",
+    "repeat": false,
+    "maxRounds": 1
+  }
+}

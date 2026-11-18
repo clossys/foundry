@@ -14,6 +14,7 @@
     }
   },
   "bin": {
+    "advisor": "dist/front-door/cli.js",
     "advisor-check": "dist/cli.js",
     "advisor-execution-readiness": "dist/execution-readiness-cli.js",
     "advisor-package-request": "dist/package-request-cli.js",
@@ -25,6 +26,8 @@
     "dist",
     "src",
     "!src/**/*.test.ts",
+    "front-door",
+    "conform.json",
     "README.md",
     "LICENSE",
     "skill"

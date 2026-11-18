@@ -1,0 +1,17 @@
+{
+  "id": "advisor/loop.update",
+  "status": "draft",
+  "extends": null,
+  "extendsNote": "Producer's release loop publishes; it does not install a new pack into a consumer. This loop ends by handing T8 to producer/loop.audit.",
+  "content": {
+    "trigger": ["T8"],
+    "steps": [
+      { "id": "doctor", "does": "check the machine prerequisites; read no file", "decider": { "by": "check" }, "cli": "advisor doctor", "reads": ["host:node", "host:npm", "host:git"], "writes": [], "checks": ["machine.tools.node", "machine.tools.npm", "machine.tools.git", "machine.repo.root"] },
+      { "id": "update", "does": "install a newer pack; the same head and tree changes nothing", "decider": { "by": "check" }, "cli": "advisor update --from <pack-dir>", "reads": ["clossys/advisor/install.json", "<pack-dir>/artifacts.json"], "writes": ["vendor/clossys/", "clossys/advisor/install.json"], "checks": ["packages.record.update"] }
+    ],
+    "exit": "every step exits 0; then producer/loop.audit takes the new release",
+    "handoff": "producer/loop.audit",
+    "repeat": false,
+    "maxRounds": 1
+  }
+}
