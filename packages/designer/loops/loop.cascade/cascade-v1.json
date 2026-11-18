@@ -1,0 +1,56 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/loop.cascade/package:cascade-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/loop.cascade",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    },
+    "createdAt": "2026-11-17T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "trigger": [
+      "T7"
+    ],
+    "steps": [
+      {
+        "id": "reverdict",
+        "does": "judge again, by the one certifier, every pinned candidate whose pinSet a repin changed; a failure marks its slot needs-refresh and goes to the slot's owner",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys check <dependants>",
+        "reads": [
+          "<slot>/slot.json",
+          ".clossys/checks/"
+        ],
+        "writes": [
+          "<dependant>/slot.json",
+          ".clossys/checks/"
+        ],
+        "checks": [
+          "cascade.clean",
+          "refs.dangling"
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "loop.choose"
+        }
+      }
+    ],
+    "exit": "every pinned candidate whose pinSet changed is judged on the pinSet now and certifies; release can run",
+    "repeat": "to a fixed point inside the step; past maxRounds a queue.clarify to the owner",
+    "maxRounds": 3
+  }
+}

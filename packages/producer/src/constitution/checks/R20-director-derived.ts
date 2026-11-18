@@ -17,6 +17,7 @@
 import { candidateReason, directorTraceProblem, owesDirectorTrace } from "../../records/director-trace.js";
 import type { ConstitutionContext, Row, RuleModule, SlotRecord } from "../types.js";
 import { pinBlocker } from "./R02-pins-order.js";
+import { isAgentLoopRecord } from "../certify/loop.js";
 import { focusCandidates, focusedSlots, row } from "./shared.js";
 
 /** Director slots whose pin is intact. */
@@ -43,6 +44,7 @@ function traceRows(ctx: ConstitutionContext, check: "R20.1" | "R20.2", accept: (
 }
 
 export const designerTrace = (ctx: ConstitutionContext): Row[] => traceRows(ctx, "R20.1", slot => slot.agent === "designer");
-export const writerTrace = (ctx: ConstitutionContext): Row[] => traceRows(ctx, "R20.2", slot => slot.agent === "writer");
+// A Writer loop slot holds a loop version, not copy: it realises no Director slot.
+export const writerTrace = (ctx: ConstitutionContext): Row[] => traceRows(ctx, "R20.2", slot => slot.agent === "writer" && !isAgentLoopRecord(slot));
 
 export const R20: RuleModule = { rule: "R20", checks: { "R20.1": designerTrace, "R20.2": writerTrace } };

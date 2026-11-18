@@ -39,6 +39,7 @@ import { classify } from "../slot-options.js";
 import { OPTION_TABLE } from "./option-classes.js";
 import { CONTRACT_AGENTS, familyFor, seededContract } from "../../migrate/contracts.js";
 import { readStandard } from "../standards.js";
+import { AGENT_LOOPS, holdsAgentLoops, isLoopAgent, withAgentLoopsIa } from "../../loop/agent-loops-ia.js";
 
 /**
  * The agents whose IA a package owns: the three catalog agents and the Producer seat tree
@@ -110,6 +111,8 @@ export function targetIa(agent: SyncAgent, pkg: IaDoc, consumer: IaDoc | undefin
   // The ids a recut or `clossys retire` took out of the tree stay on record (owner.ts retire reads them).
   const retired = (consumer as { retired?: unknown } | undefined)?.retired;
   if (retired !== undefined) doc.retired = retired;
+  // An agent's own loops L1 is Producer-standard, not a package leaf: the consumer that adopted it keeps it (U9a).
+  if (isLoopAgent(agent) && holdsAgentLoops(agent, consumer)) return withAgentLoopsIa(agent, doc as unknown as IaDoc);
   return doc as unknown as IaDoc;
 }
 
@@ -287,7 +290,7 @@ export interface SyncState {
 export function syncState(consumerDir: string, agent: SyncAgent, pkg: FoundryIa = PACKAGE_IA[agent]()): SyncState {
   const file = iaPath(consumerDir, agent);
   const consumer = modelExists(file) ? readDoc(file) as unknown as IaDoc : undefined;
-  const packaged = new Set(pkg.slots.keys());
+  const packaged = new Set<string>([...pkg.slots.keys(), ...(isLoopAgent(agent) ? AGENT_LOOPS : [])]);
   const declared = new Set(consumer?.extensions ?? []);
   const undeclared = consumer ? placedIds(consumer).filter(id => !packaged.has(id) && !declared.has(id)) : [];
   const target = targetIa(agent, pkg.ia, consumer);

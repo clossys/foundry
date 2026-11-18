@@ -6,6 +6,7 @@ vi.mock("./slot-resolve.js", () => ({ runSlotResolve: async () => ({ exitCode: 0
 import { runCheck } from "../cli/check.js";
 import { parseArgs } from "../cli/args.js";
 import { runInitCli } from "../cli/init.js";
+import { runLoopCli } from "../cli/loop.js";
 // @ts-expect-error untyped test-support module
 import { writeDesignerSlot } from "../../../designer/scripts/__fixtures__/slot-model.mjs";
 const roots: string[] = [];
@@ -23,15 +24,28 @@ it("default check enforces the actual reference gate without --suites or --stric
   expect(failed.exitCode).toBe(1);
   expect(failed.message).toContain("REF-NO-SOURCE");
   expect(failed.suites?.suites[0]?.suite).toBe("ref-verbatim");
-  // Unpinned, the same candidate is no pin to check: the default gate passes.
+  // Unpinned, the same candidate is no pin to check: the default reference gate passes.
   rmSync(join(slot, "pin.json"));
   const unseated = await runCheck(args, root);
+  expect(unseated.message).not.toContain("REF-NO-SOURCE");
   expect(unseated.suites?.suites[0]).toMatchObject({ suite: "ref-verbatim", exitCode: 0 });
+  // U9a: this consumer's IA places Designer (writeDesignerSlot writes it) and it never adopted Designer's loops, so it is
+  // red in loop.agent-standard (no vacuous pass).
   // foundry-build-0048: publisher.admin-seated judges every slot-model workspace, so this one is red until clossys init
-  // seats the admin workspace. Seated, it exits 0 here only because this file mocks slot integrity: unmocked, a fresh
-  // init stays red on the admin slots' missing candidates and pins (pinned in cli/init-admin.test.ts).
-  expect(Object.keys(unseated.checks ?? {})).toEqual(["publisher.admin-seated"]);
+  // seats the admin workspace. Those two are the check's only reds, and the exit follows them.
+  expect(Object.keys(unseated.checks ?? {})).toEqual(["loop.agent-standard", "publisher.admin-seated"]);
   expect(unseated.exitCode).toBe(1);
   expect((await runInitCli(["--root", root, "--at", "2026-11-18T00:00:00Z"], root)).exitCode).toBe(0);
-  expect((await runCheck(args, root)).exitCode).toBe(0);
+  // Seated, publisher.admin-seated passes. init also places Publisher but adopts no agent loops, so the loop checks are
+  // the only reds: loop.agent-standard (Designer's and Publisher's loops) and loop.connected (the Designer -> Publisher handoff).
+  const seated = await runCheck(args, root);
+  expect(Object.keys(seated.checks ?? {})).toEqual(["loop.agent-standard", "loop.connected"]);
+  expect(seated.exitCode).toBe(1);
+  // clossys loop <agent>/loop.scope adopts and pins that agent's five loops. With both placed agents adopted, the default
+  // check exits 0 here only because this file mocks slot integrity: unmocked, a fresh init stays red on the admin slots'
+  // missing candidates and pins (pinned in cli/init-admin.test.ts).
+  for (const agent of ["designer", "publisher"]) expect((await runLoopCli([`${agent}/loop.scope`, "--root", root, "--at", "2026-11-18T00:00:00Z"], root)).exitCode).toBe(0);
+  const adopted = await runCheck(args, root);
+  expect(Object.keys(adopted.checks ?? {})).toEqual([]);
+  expect(adopted.exitCode).toBe(0);
 });

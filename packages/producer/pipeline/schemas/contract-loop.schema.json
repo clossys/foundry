@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/contract-loop.schema.json",
+  "title": "Agent loop slot contract (contract in clossys/agents/<agent>/loop.<name>/slot.json)",
+  "description": "Derived from src/loop/agent-loops.ts. The loop the slot holds the agent's own version of, the Producer standard loop it extends, and any extra requirements the agent adds. The steps themselves are the pinned candidate; the extension rules (required steps, exit checks, owner-class when data) are judged by the loop certifier and loop.agent-standard.",
+  "type": "object",
+  "required": [
+    "loop",
+    "extends"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "loop": {
+      "type": "string",
+      "pattern": "^loop\\.(scope|slot|create|choose|cascade)$"
+    },
+    "extends": {
+      "type": "string",
+      "pattern": "^producer/loop\\.(scope|slot|create|choose|cascade)$"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}
