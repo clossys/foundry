@@ -3755,7 +3755,7 @@
       "compose.band": "sections.band",
       "reads.access": "read-only",
       "reads.port": "questions",
-      "reads.records": "clossys.queue-entry/2 (pick, approve, clarify)",
+      "reads.records": "clossys.queue-entry/1 (queue.pick, queue.approve, queue.clarify)",
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
       "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
       "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",

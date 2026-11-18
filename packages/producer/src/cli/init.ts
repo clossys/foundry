@@ -52,6 +52,6 @@ export async function runInitCli(argv: readonly string[], cwd: string): Promise<
     : "the admin workspace is already seated";
   return {
     exitCode: 0, root: workspace, output: { ...pointer, admin: seat },
-    message: [admin, ...(raised.length ? [`raised ${raised.length} Designer slot request${raised.length === 1 ? "" : "s"} for admin units no workspace slot holds: ${raised.map(item => item.target).join(", ")}`] : []), said].join("\n"),
+    message: [admin, ...(seat.rewired.length ? [`rewired ${seat.rewired.length} admin slot${seat.rewired.length === 1 ? "" : "s"} to the units the workspace now holds: ${seat.rewired.join(", ")}`] : []), ...(raised.length ? [`raised ${raised.length} Designer slot request${raised.length === 1 ? "" : "s"} for admin units no workspace slot holds: ${raised.map(item => item.target).join(", ")}`] : []), said].join("\n"),
   };
 }

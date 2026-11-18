@@ -82,6 +82,21 @@ function commitFixture(root: string): void {
   git("commit", "-q", "-m", "synthetic fixture");
 }
 const native = (root: string, flags: string[] = []) => spawnSync(process.execPath, [entry, "check", "--root", root, "--json", ...flags], { encoding: "utf8" });
+/**
+ * foundry-build-0048 (publisher.admin-seated judges every slot-model workspace): the synthetic store holds no admin
+ * workspace, so `clossys check` exits 1 on it (aggregate verdict violated) with publisher.admin-seated as its one red
+ * check. Seating it would add six unpinned Publisher slots, so the store cannot be clean overall without filled admin
+ * pages; slot integrity is judged on `report.slots` and the reference gate on `report.suites`, which a clean store
+ * keeps at exit 0, and a mutation's own rule must appear in the findings.
+ */
+const ADMIN_SEAT = ["page.admin-home", "page.admin-gallery", "page.admin-slot", "page.admin-requests", "page.admin-questions", "publication.admin"].map(id => `publisher/${id}`);
+function unseated(report: any): void {
+  expect(Object.keys(report.checks ?? {})).toEqual(["publisher.admin-seated"]);
+  const admin = report.checks["publisher.admin-seated"];
+  expect(admin.status).toBe("fail");
+  expect(admin.findings.map((row: any) => row.subject).sort()).toEqual([...ADMIN_SEAT].sort());
+  for (const row of admin.findings) expect(row.detail).toMatch(/^not placed in the Publisher IA/);
+}
 
 describe("uniform slot resolution", () => {
   it.each(["director", "designer", "writer", "publisher"] as const)("applies the identical rule to %s", agent => {
@@ -150,17 +165,25 @@ describe("default native model enforcement", () => {
     const f = fixture();
     try {
       const result = native(f.root, ["--readiness"]);
-      expect(result.status, result.stderr).toBe(0);
+      expect(result.status, result.stderr).toBe(1);
       const report = JSON.parse(result.stdout);
-      expect(report).toMatchObject({ exitCode: 0, verdict: "satisfied", findings: [] });
-      expect(report.slots).toMatchObject({ reportOnly: false });
+      expect(report.exitCode).toBe(1);
+      unseated(report);
+      // The one aggregate finding is the check message: slot integrity clean, the admin seat the only red row.
+      expect(report.findings.map((row: any) => row.rule)).toEqual(["check"]);
+      expect(report.findings[0].message).toContain("Slot integrity found 0 findings across 4 slots");
+      expect(report.findings[0].message).toContain("publisher.admin-seated: fail (6)");
+      expect(report.slots).toMatchObject({ reportOnly: false, exitCode: 0, verdict: "satisfied", findings: [] });
       expect(report.slots.rows).toHaveLength(4);
       expect(report.suites.suites).toMatchObject([{ suite: "ref-verbatim", exitCode: 0 }]);
       expect(report.slots.coverage.map((row: any) => [row.agent, row.slots, row.withCandidate, row.pinned])).toEqual(["director", "designer", "writer", "publisher"].map(agent => [agent, 1, 1, 1]));
       const slots = await runSlotResolve(f.consumer);
       expect(slots).toMatchObject({ reportOnly: false, exitCode: 0, verdict: "satisfied", findings: [] });
       expect(slotResolveSummary(slots, true)).toContain("publisher blocked-by: none");
-      expect(native(f.consumer, ["--slots", "--strict"]).status).toBe(0);
+      const strict = native(f.consumer, ["--slots", "--strict"]);
+      expect(strict.status, strict.stderr).toBe(1);
+      unseated(JSON.parse(strict.stdout));
+      expect(JSON.parse(strict.stdout).slots).toMatchObject({ exitCode: 0, verdict: "satisfied" });
     } finally { rmSync(f.root, { recursive: true, force: true }); }
   });
 
@@ -169,26 +192,30 @@ describe("default native model enforcement", () => {
     try {
       const path = join(f.dirs.designer!, "candidates/sample-v1.json");
       const original = JSON.parse(readFileSync(path, "utf8"));
-      const run = (item: any, exit: number, verdict: string) => {
+      const refRules = (report: any) => report.findings.filter((row: any) => String(row.rule).startsWith("REF-"));
+      const run = (item: any, exit: number) => {
         save(path, item);
         const pin = JSON.parse(readFileSync(join(f.dirs.designer!, "pin.json"), "utf8"));
         save(join(f.dirs.designer!, "pin.json"), { ...pin, sha256: sha256Hex(readFileSync(path)) });
         const result = native(f.root);
-        expect(result.status, result.stderr).toBe(exit);
+        // The unseated admin workspace holds the aggregate at exit 1 (violated); the reference gate follows the bytes.
+        expect(result.status, result.stderr).toBe(1);
         const report = JSON.parse(result.stdout);
-        expect(report).toMatchObject({ exitCode: exit, verdict });
-        expect(report.slots).toMatchObject({ verdict: "satisfied", findings: [] });
+        expect(report).toMatchObject({ exitCode: 1, verdict: "violated" });
+        unseated(report);
+        expect(report.slots).toMatchObject({ exitCode: 0, verdict: "satisfied", findings: [] });
+        expect(report.suites.suites).toMatchObject([{ suite: "ref-verbatim", exitCode: exit }]);
         return report;
       };
-      expect(run(original, 0, "satisfied").findings).toEqual([]);
+      expect(refRules(run(original, 0))).toEqual([]);
       const altered = structuredClone(original);
       // A recut candidate wraps the registry item in `content`; the header carries only identity and source.
       altered.content.files[0].content = altered.content.files[0].content.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl");
       expect(altered.content.files[0].content).not.toBe(original.content.files[0].content);
-      const failed = run(altered, 1, "violated");
+      const failed = run(altered, 1);
       expect(failed.findings.some((finding: any) => finding.rule === "REF-HUNK-CLASS" && finding.severity === "error")).toBe(true);
       expect(failed.summary).not.toContain("passed");
-      expect(run(original, 0, "satisfied").findings).toEqual([]);
+      expect(refRules(run(original, 0))).toEqual([]);
     } finally { rmSync(f.root, { recursive: true, force: true }); }
   });
 
@@ -206,7 +233,10 @@ describe("default native model enforcement", () => {
   it.each(mutations)("mutation proof: %s returns native rc 1", async (_name, mutate, code) => {
     const f = fixture();
     try {
-      expect(native(f.root).status).toBe(0);
+      const before = JSON.parse(native(f.root).stdout);
+      expect(before).toMatchObject({ exitCode: 1, slots: { exitCode: 0, verdict: "satisfied" } });
+      unseated(before);
+      expect(before.findings.some((row: any) => row.rule === code)).toBe(false);
       mutate(f.dirs.designer!);
       const slots = await runSlotResolve(f.consumer);
       expect(slots).toMatchObject({ reportOnly: false, exitCode: 1, verdict: "violated" });

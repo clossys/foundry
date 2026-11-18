@@ -399,6 +399,28 @@ describe("publisher.check over clossys.page/1 records (DECISION 0048-PAGE-SHAPE,
     expect(findings.map(finding => finding.detail)).toContain("page.home: names no route: a page record carries a path or a slug");
   });
 
+  // foundry-build-0048: the admin workspace is in every consumer at /admin, so the generic <slug> page may not take it.
+  it("mutation: a <slug> page refuses the reserved admin slug (no /admin overlap); another slug routes clean", async () => {
+    const sitePage = (slug: string): string => {
+      const root = consumer([]);
+      const record = pageRecord();
+      delete record.path;
+      record.slug = slug;
+      const dir = join(root, "clossys", "agents", "publisher", "page.site-page");
+      mkdirSync(join(dir, "candidates"), { recursive: true });
+      writeFileSync(join(dir, "candidates", "site-page-v1.json"), `${JSON.stringify(record, null, 2)}\n`);
+      writeFileSync(join(dir, "pin.json"), `${JSON.stringify({ schema: "clossys.pin/2", candidate: "site-page-v1.json" })}\n`);
+      return root;
+    };
+    const routes = async (slug: string) => (await checkPublisherPages(sitePage(slug))).findings.filter(finding => finding.check === "page.route").map(finding => finding.detail);
+    expect(await routes("admin")).toEqual(["page.site-page: slug admin is reserved: /admin is a route of a publication every consumer holds (the admin workspace); pick another slug"]);
+    expect(await routes("about-us")).toEqual([]);
+    // The reserved list is derived from the Publisher directory contracts (the fixed admin publication's routes).
+    const api = await loadPublisherCheckApi(PUBLISHER);
+    expect(api.reservedSlugs?.("site")).toEqual(["admin"]);
+    expect(api.reservedSlugs?.("admin")).toEqual([]);
+  });
+
   it("finds a binding keyed by the section's instance key <slot>#n", async () => {
     const keyed = await checkPublisherPages(pageConsumer(record => {
       record.sections[record.sections.indexOf("sections.faq")] = "sections.faq#1";

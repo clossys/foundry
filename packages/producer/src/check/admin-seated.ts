@@ -1,15 +1,24 @@
 /**
  * `publisher.admin-seated` (foundry-build-0048 Amendment 2026-11-18b, A1): the admin workspace is a fixed Publisher
- * responsibility, so an initialised consumer (its `AGENTS.md` carries the views pointer `clossys init` writes) fails
- * when its Publisher IA lacks the admin publication or any admin page the Publisher `admin` starter names. A
- * workspace `clossys init` has not run in is not judged (status `skip`): it has no admin workspace to lack yet.
- * `clossys init` seats what is missing (cli/init-admin.ts).
+ * responsibility of every consumer, so every workspace with a slot model (`clossys/agents/`) is judged, whether or not
+ * its AGENTS.md carries the views pointer `clossys init` writes. The check is structural, against the installed
+ * Publisher package's own `admin` starter, routes and compositions (cli/admin-plan.ts):
+ *
+ * - each admin page and the admin publication is placed, under the `admin` tab, as a page (publication) slot;
+ * - each page contract names publication `admin`, the package route, package and layout, and composes the package
+ *   composition; the publication contract names publication `admin`, the package root, and pages that cover the plan;
+ * - each admin slot cites, as inputs and uses, every composition unit the workspace holds (a held unit not cited is a
+ *   finding, `clossys init` rewires it) and nothing outside its composition (an undeclared input).
+ *
+ * A workspace with no slot model and no views pointer has no admin workspace to lack yet: `skip`, printed.
+ * `clossys init` seats and rewires what is missing (cli/init-admin.ts).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { adminPlan } from "../cli/admin-plan.js";
+import { ADMIN_L1, adminPlan, adminRefs, readAdminSlot } from "../cli/admin-plan.js";
 import { iaPath } from "../records/slot-model/layout.js";
-import { listSlots, modelExists } from "../records/slots.js";
+import { SLOT_AGENTS } from "../records/slot-model/types.js";
+import { hasModelRoot, listSlots, modelExists } from "../records/slots.js";
 import { POINTER_START } from "../views/agents-pointer.js";
 
 export const ADMIN_SEATED = "publisher.admin-seated";
@@ -23,10 +32,13 @@ export function initialised(root: string): boolean {
   try { return existsSync(file) && readFileSync(file, "utf8").includes(POINTER_START); } catch { return false; }
 }
 
+const same = (a: readonly unknown[], b: readonly unknown[]): boolean => a.length === b.length && a.every((value, index) => value === b[index]);
+const list = (value: unknown): readonly unknown[] | undefined => Array.isArray(value) ? value : undefined;
+
 /** Judges the workspace at `root` (its consumer folder `<root>/clossys`). */
 export function runAdminSeated(root: string): AdminSeatedResult {
-  if (!initialised(root)) return { check: ADMIN_SEATED, status: "skip", findings: [] };
   const consumer = join(root, "clossys");
+  if (!hasModelRoot(consumer) && !initialised(root)) return { check: ADMIN_SEATED, status: "skip", findings: [] };
   let plan: ReturnType<typeof adminPlan>;
   try { plan = adminPlan(root); }
   catch (error) { return { check: ADMIN_SEATED, status: "fail", findings: [{ subject: "publisher/starters/admin", detail: `the admin workspace plan could not be read from the installed Publisher package (${(error as Error).message})` }] }; }
@@ -35,10 +47,60 @@ export function runAdminSeated(root: string): AdminSeatedResult {
   if (!modelExists(iaPath(consumer, "publisher"))) {
     return { check: ADMIN_SEATED, status: "fail", findings: [{ subject: "publisher/ia.json", detail: `missing: no Publisher IA, so no admin publication (${wanted.length} slots); ${fix}` }] };
   }
-  const placed = new Set(listSlots(consumer, "publisher").map(entry => entry.id));
-  const findings = wanted.filter(id => !placed.has(id)).map(id => ({ subject: `publisher/${id}`, detail: `not placed in the Publisher IA; ${fix}` }));
+  let entries: Map<string, ReturnType<typeof listSlots>[number]>;
+  try { entries = new Map(listSlots(consumer, "publisher").map(entry => [entry.id, entry])); }
+  catch (error) { return { check: ADMIN_SEATED, status: "fail", findings: [{ subject: "publisher/ia.json", detail: `unreadable (${(error as Error).message}), so no admin publication can be judged; ${fix}` }] }; }
+  // An agent IA that cannot be read holds nothing here; slot integrity reports it (indeterminate), this check never throws.
+  const held = new Set(SLOT_AGENTS.flatMap(agent => { try { return listSlots(consumer, agent).map(entry => entry.id); } catch { return []; } }));
+  const findings: AdminSeatedFinding[] = [];
+  const judge = (id: string, kind: "page" | "publication", contract: (value: Readonly<Record<string, unknown>>) => string[], composition: readonly string[]) => {
+    const subject = `publisher/${id}`;
+    const entry = entries.get(id);
+    if (!entry) { findings.push({ subject, detail: `not placed in the Publisher IA; ${fix}` }); return; }
+    const issues: string[] = [];
+    if (entry.position.l1 !== ADMIN_L1) issues.push(`sits under the ${entry.position.l1} tab, not ${ADMIN_L1}`);
+    const read = readAdminSlot(entry.dir);
+    if (!read) { findings.push({ subject, detail: [...issues, "slot.json is missing or not a valid slot"].join("; ") }); return; }
+    if (read.doc.kind !== kind) issues.push(`kind is ${String(read.doc.kind)}, not ${kind}`);
+    issues.push(...contract(read.doc.contract));
+    // Wiring: every held composition unit is cited as an input and a use; nothing outside the composition is.
+    const cited = adminRefs(composition, held);
+    const wiring = (refs: readonly string[]) => ({ uncited: cited.filter(ref => !refs.includes(ref)).join(", "), undeclared: refs.filter(ref => !composition.includes(ref)).join(", ") });
+    const inputs = wiring(read.doc.inputs), uses = wiring(read.doc.uses);
+    for (const field of ["uncited", "undeclared"] as const) {
+      const rels = inputs[field] && inputs[field] === uses[field] ? [["inputs and uses", inputs[field]]] : [["inputs", inputs[field]], ["uses", uses[field]]].filter(([, ids]) => ids);
+      for (const [rel, ids] of rels) issues.push(field === "uncited"
+        ? `${rel} cite no ${ids}, which the workspace holds (run clossys init to rewire)`
+        : `${rel} name ${ids}, outside its package composition (undeclared input)`);
+    }
+    if (issues.length) findings.push({ subject, detail: `${issues.join("; ")}; the admin seat is the Publisher package's, not the workspace's` });
+  };
+  for (const page of plan.pages) {
+    judge(page.id, "page", contract => {
+      const issues: string[] = [];
+      if (contract.publication !== "admin") issues.push(`contract publication is ${JSON.stringify(contract.publication)}, not "admin"`);
+      if (contract.route !== page.route) issues.push(`contract route is ${JSON.stringify(contract.route)}, not the package route ${page.route}`);
+      if (contract.package !== `publisher/${page.id}`) issues.push(`contract package is ${JSON.stringify(contract.package)}, not publisher/${page.id}`);
+      if (contract.layout !== `publisher/${page.layout}`) issues.push(`contract layout is ${JSON.stringify(contract.layout)}, not publisher/${page.layout}`);
+      const composes = list(contract.composes);
+      const expected = page.uses.map(id => `designer/${id}`);
+      if (!composes || !same(composes, expected)) issues.push(`contract composes ${JSON.stringify(contract.composes ?? null)}, not the package composition ${expected.join(", ")}`);
+      return issues;
+    }, page.uses);
+  }
+  const pageIds = plan.pages.map(page => page.id);
+  judge(plan.publication, "publication", contract => {
+    const issues: string[] = [];
+    if (contract.publication !== "admin") issues.push(`contract publication is ${JSON.stringify(contract.publication)}, not "admin"`);
+    if (contract.root !== plan.root) issues.push(`contract root is ${JSON.stringify(contract.root)}, not the package root ${plan.root}`);
+    const pages = list(contract.pages) ?? [];
+    const absent = pageIds.filter(id => !pages.includes(id));
+    if (absent.length) issues.push(`contract pages lack ${absent.join(", ")}`);
+    return issues;
+  }, pageIds);
   return { check: ADMIN_SEATED, status: findings.length ? "fail" : "pass", findings };
 }
 
-export const adminSeatedSummary = (result: AdminSeatedResult): string | undefined => result.status === "skip" ? undefined
+/** The `clossys check` line: always printed, a skip included. */
+export const adminSeatedSummary = (result: AdminSeatedResult): string => result.status === "skip" ? `${ADMIN_SEATED}: skip (no slot model and no clossys init: no admin workspace to judge)`
   : result.status === "pass" ? `${ADMIN_SEATED}: pass` : [`${ADMIN_SEATED}: fail (${result.findings.length})`, ...result.findings.map(finding => `  ${finding.subject}: ${finding.detail}`)].join("\n");

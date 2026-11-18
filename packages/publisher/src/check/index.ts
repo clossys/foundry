@@ -8,6 +8,6 @@ export {
   type DesignerIds, type LayoutContract, type PageContract, type PageFinding, type PageOptionContent, type PlacedSection, type RoleContract,
 } from "./page-sections-instance.js";
 export {
-  PUBLISHER_TREES, designerPackageDir, loadDefaults, loadDesignerCatalog, slotContract,
+  PUBLISHER_TREES, designerPackageDir, loadDefaults, loadDesignerCatalog, reservedSlugs, slotContract,
   type CandidateFile, type DesignerCatalog, type LayoutSlot, type PageSlot, type SlotContract,
 } from "../catalog/ia/tree.js";

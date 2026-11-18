@@ -498,7 +498,11 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
   return commitIa(consumer, root, writes, flags.bare.has("--dry"), `sync ${agents.join(", ")} from the package IA (${findings.length + repairs.length} drift finding${findings.length + repairs.length === 1 ? "" : "s"})`, lines, undefined, { at });
 }
 
-export async function runIaCli(argv: readonly string[], cwd: string): Promise<CliResult> {
+/**
+ * `current`: the slot.json this write leaves is `clossys.slot/2` even on a store not yet recut (a new slot, or a
+ * stored slot/1 rewritten). Only the admin seat (init-admin.ts) asks it; the verb itself keeps the store's format.
+ */
+export async function runIaCli(argv: readonly string[], cwd: string, options: { readonly current?: boolean } = {}): Promise<CliResult> {
   const flags = parseIa(argv);
   if (flags.help) return { exitCode: 0, message: IA_USAGE };
   if (flags.positional[0] === "sync") return runIaSync(flags, cwd);
@@ -657,7 +661,7 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   const recorded = [...overlaps, ...((request?.overlaps ?? []).filter(listed => !overlaps.some(item => item.slot === listed.slot)))];
   let slotBytes = jsonBytes(doc);
   let missing: readonly { id: string; rel: "input" | "uses"; owner: string }[] = [];
-  if (storedV2 || (!stored && recutStore(root))) {
+  if (storedV2 || (options.current && (!stored || stored.schema === SLOT_SCHEMA)) || (!stored && recutStore(root))) {
     const written = currentSlotWrite(root, doc as unknown as SlotV1, position, storedV2, {
       kind: flags.values.has("--kind") ? undefined : storedV2?.kind, live: modelExists(pinFile(dir)), at: eventAt || new Date().toISOString(),
     });

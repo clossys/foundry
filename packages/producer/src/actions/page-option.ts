@@ -24,7 +24,7 @@ export const PAGE_SCHEMA = "clossys.page/1";
 
 export interface PageOptionFinding { readonly check: string; readonly message: string }
 export interface LayoutRoles { readonly kind?: string; readonly frame?: string; readonly roles?: Readonly<Record<string, { readonly kinds: readonly string[]; readonly required: boolean }>> }
-export interface PageSlotContract { readonly kind?: string; readonly path?: string; readonly layouts?: readonly string[]; readonly records?: { readonly pattern: string; readonly meta: string } }
+export interface PageSlotContract { readonly kind?: string; readonly publication?: string; readonly path?: string; readonly layouts?: readonly string[]; readonly records?: { readonly pattern: string; readonly meta: string } }
 
 /** The fields a clossys.page/1 record carries; anything else is a place for words or styling. */
 const PAGE_RECORD_FIELDS = new Set(["schema", "path", "slug", "title", "frame", "sections", "copy", "bindings", "nav", "meta"]);
@@ -63,6 +63,8 @@ export function pageOptionOf(
   record: Record<string, unknown>,
   page: PageSlotContract,
   layoutOf: (id: string) => LayoutRoles | undefined,
+  /** The slugs a `<slug>` route may not take (Publisher `reservedSlugs`: the routes of a fixed publication, `/admin`). */
+  reserved: readonly string[] = [],
 ): { content: Record<string, unknown>; layoutId?: string; layout?: LayoutRoles; findings: PageOptionFinding[] } {
   const findings: PageOptionFinding[] = [];
   const add = (check: string, message: string) => findings.push({ check, message: `${slotId}: ${message}` });
@@ -71,6 +73,9 @@ export function pageOptionOf(
   if (!hasPath && !hasSlug) add("page.route", "names no route: a page record carries a path or a slug");
   else if (hasPath && hasSlug) add("page.route", "names both a path and a slug; a page record carries one");
   if (typeof page.path === "string" && hasPath && record.path !== page.path) add("page.route", `routes ${String(record.path)}, not the page slot's ${page.path}`);
+  if (hasSlug && typeof page.path === "string" && page.path.includes("<slug>") && reserved.includes(record.slug as string)) {
+    add("page.route", `slug ${String(record.slug)} is reserved: ${page.path.replace("<slug>", String(record.slug))} is a route of a publication every consumer holds (the admin workspace); pick another slug`);
+  }
 
   // A section entry is its instance key `<slot>[#n]`; its binding is keyed by that key, its unit by the slot id.
   const entries = (Array.isArray(record.sections) ? record.sections : []).filter((id): id is string => typeof id === "string");
@@ -169,11 +174,13 @@ function recordWordsAndStyle(record: Record<string, unknown>): PageOptionFinding
 export interface PageCheckApi {
   checkPageOption(pageId: string, content: Record<string, unknown>, page: unknown, layout: unknown, designer: unknown): readonly PageOptionFinding[];
   slotContract(id: string): unknown;
+  /** The slugs a `<slug>` route of the publication may not take; absent in a Publisher packed before foundry-build-0048. */
+  reservedSlugs?(publication?: string): readonly string[];
 }
 
 /** Every finding of one clossys.page/1 record: the adapter's own, then Publisher's `checkPageOption` over the read option. */
 export function pageRecordFindings(api: PageCheckApi, slotId: string, record: Record<string, unknown>, page: PageSlotContract, designer: unknown): { findings: PageOptionFinding[]; layoutId?: string; layout?: LayoutRoles } {
-  const option = pageOptionOf(slotId, record, page, id => api.slotContract(id) as LayoutRoles | undefined);
+  const option = pageOptionOf(slotId, record, page, id => api.slotContract(id) as LayoutRoles | undefined, api.reservedSlugs?.(page.publication) ?? []);
   const findings = [...option.findings, ...api.checkPageOption(slotId, option.content, page, option.layout, designer)];
   return { findings, ...(option.layoutId ? { layoutId: option.layoutId, layout: option.layout } : {}) };
 }

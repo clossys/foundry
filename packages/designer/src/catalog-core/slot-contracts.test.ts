@@ -96,6 +96,20 @@ describe("Designer slot contracts", () => {
     for (const slot of ["frames.site-header", "frames.site-footer"]) expect(committed.frames.find(row => row.slot === slot)!.limits["compose.measure"]).toBe("sections.band");
   });
 
+  // foundry-build-0048: each admin record section names the record schema it reads. Owner questions (choices + default)
+  // are clossys.queue-entry/1 records on the pick, approve and clarify queues; slot requests are clossys.queue-entry/2.
+  it("pins the record schema each admin record section reads", () => {
+    const reads = Object.fromEntries(["slot-gallery", "slot-detail", "candidate-preview", "question-packet", "queue-list"]
+      .map(leaf => [leaf, committed.sections.find(row => row.slot === `sections.${leaf}`)!.limits["reads.records"]]));
+    expect(reads).toEqual({
+      "slot-gallery": "clossys.ia/1, clossys.slot/2",
+      "slot-detail": "clossys.slot/2, clossys.pin/2",
+      "candidate-preview": "clossys.candidate/1",
+      "question-packet": "clossys.queue-entry/1 (queue.pick, queue.approve, queue.clarify)",
+      "queue-list": "clossys.queue-entry/2",
+    });
+  });
+
   it("fails a section contract that points at a missing reference folder", () => {
     const [band, header, hero, ...rest] = committed.sections;
     const moved = { ...hero!, references: [{ ...hero!.references[0]!, version: "0000000" }] };

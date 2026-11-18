@@ -5,6 +5,7 @@ import { afterEach, expect, it, vi } from "vitest";
 vi.mock("./slot-resolve.js", () => ({ runSlotResolve: async () => ({ exitCode: 0 }), slotResolveSummary: () => "slot integrity passed" }));
 import { runCheck } from "../cli/check.js";
 import { parseArgs } from "../cli/args.js";
+import { runInitCli } from "../cli/init.js";
 // @ts-expect-error untyped test-support module
 import { writeDesignerSlot } from "../../../designer/scripts/__fixtures__/slot-model.mjs";
 const roots: string[] = [];
@@ -24,5 +25,12 @@ it("default check enforces the actual reference gate without --suites or --stric
   expect(failed.suites?.suites[0]?.suite).toBe("ref-verbatim");
   // Unpinned, the same candidate is no pin to check: the default gate passes.
   rmSync(join(slot, "pin.json"));
+  const unseated = await runCheck(args, root);
+  expect(unseated.suites?.suites[0]).toMatchObject({ suite: "ref-verbatim", exitCode: 0 });
+  // foundry-build-0048: publisher.admin-seated judges every slot-model workspace, so this one is red until clossys init
+  // seats the admin workspace; seated, the default check passes.
+  expect(Object.keys(unseated.checks ?? {})).toEqual(["publisher.admin-seated"]);
+  expect(unseated.exitCode).toBe(1);
+  expect((await runInitCli(["--root", root, "--at", "2026-11-18T00:00:00Z"], root)).exitCode).toBe(0);
   expect((await runCheck(args, root)).exitCode).toBe(0);
 });

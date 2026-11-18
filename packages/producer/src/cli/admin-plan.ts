@@ -7,6 +7,9 @@
  */
 import { readFileSync } from "node:fs";
 import { packagePath } from "../package-path.js";
+import { slotFile } from "../records/slot-model/layout.js";
+import { readSlotValue, type SlotRead } from "../records/slot-current.js";
+import { modelExists, readModelText } from "../records/slots.js";
 
 export const ADMIN_PUBLICATION_SLOT = "publication.admin";
 /** The workspace Publisher IA tab (L1) the admin slots sit in. */
@@ -64,3 +67,13 @@ export function adminPlan(root: string): AdminPlan {
   });
   return { pages, publication: ADMIN_PUBLICATION_SLOT, root: starter.root };
 }
+
+/** The reader's view of the slot.json in one slot folder (either format), or undefined when it is missing or not valid. */
+export function readAdminSlot(dir: string): SlotRead | undefined {
+  const file = slotFile(dir);
+  if (!modelExists(file)) return undefined;
+  try { return readSlotValue(JSON.parse(readModelText(file)), file); } catch { return undefined; }
+}
+
+/** The refs one admin slot cites (its inputs and its uses, the same list): the composition units the workspace holds, in plan order. */
+export const adminRefs = (wanted: readonly string[], held: ReadonlySet<string>): string[] => wanted.filter(id => held.has(id));
