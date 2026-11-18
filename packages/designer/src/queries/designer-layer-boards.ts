@@ -26,7 +26,7 @@ export interface DesignerLayerSectionFill {
   readonly content: Readonly<Record<string, RuntimeContentRef>>;
 }
 export interface DesignerSelectedStateLayout {
-  readonly leaf: `layouts.${string}`;
+  readonly leaf: string;
   readonly config: string;
   readonly members?: Readonly<Record<string, string>>;
   readonly slot: string;
@@ -87,7 +87,7 @@ export function deriveDesignerLayerBoardsV1(value: DesignerLayerBoardsInput): De
     const leaf = phase === 'loading' ? 'sections.notices' : phase === 'error' ? 'sections.error-state' : 'sections.empty-state';
     if (selected.fill.section !== leaf) throw new TypeError('Designer state must use its registered Section');
     const layout = selected.layout;
-    if (!layout || !text(layout.config) || !text(layout.slot) || !['layouts.stack','layouts.split','layouts.sidebar-content','layouts.bento'].includes(layout.leaf)) return { status: 'pending', reason: 'Actual selected Designer state flow Layout unavailable' };
+    if (!layout || !text(layout.config) || !text(layout.slot) || !['stack','split','sidebar-content','bento'].includes(layout.leaf)) return { status: 'pending', reason: 'Actual selected Designer state flow Layout unavailable' };
     closed(layout, ['leaf','config','members','slot']);
     closed(selected.fill, ['section','config','content']);
     const references = Object.values(selected.fill.content);

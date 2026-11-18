@@ -55,6 +55,8 @@ export const OPTION_GROUPS: Readonly<Partial<Record<SlotAgent, Readonly<Record<s
     "copy.frame-copy/bars": "writer.system",
     "copy.asset-text/marks": "writer.system", "copy.asset-text/media": "writer.system",
     "copy.page-metadata/site": "writer.system", "copy.page-metadata/docs": "writer.system", "copy.page-metadata/app": "writer.system", "copy.page-metadata/slides": "writer.system",
+    // foundry-build-0048 (Amendment 2026-11-18b, A1): the fixed admin workspace publication's page metadata.
+    "copy.page-metadata/admin": "writer.system",
   },
 };
 

@@ -1,0 +1,47 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "slot",
+      "at": "2026-11-18T09:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "0721da20e922fc784a7ea5808e5e44f665b58af40df81174ed9c70a9a2a87290"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-18T00:00:00Z",
+      "by": "planner",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "contracts",
+      "changed": [
+        "family"
+      ],
+      "class": "writer.system",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "e6fbbd6729a9cacbfa6db3b9ded782edd3bfef427da03980ba30e9623f86f24e"
+        }
+      ]
+    }
+  ]
+}

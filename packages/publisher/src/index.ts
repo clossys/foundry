@@ -56,7 +56,7 @@ export type {
 export type { SiteLinkInput, SiteBrandInput, SiteShellInput, SiteFooterInput } from "@clossys/designer/frames";
 export type { SectionedViewHeroSection } from "./core/sectioned-view.js";
 
-export * from "./layouts/index.js";
+export * from "./engines/index.js";
 
 // Consumer-owned publication maps and their public protocol projections.
 export { checkContentMap, projectRoutes, projectNavigation, projectCommands, projectBreadcrumbs, projectSitemap, projectOutline, projectToc, projectRedirects, projectStaticParams, projectRobots, buildSecurityTxt, CONTENT_MAP_MAX_DEPTH } from "./content-map/index.js";

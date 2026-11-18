@@ -23,9 +23,9 @@ const committed = { themes, assets, components, sections, frames } as unknown as
 const LAYERS = ["themes", "assets", "components", "sections", "frames"] as const;
 
 describe("Designer slot contracts", () => {
-  it("has one record for each of the 247 canonical Designer slots (238 re-signed + 8 owner-signed specimen leaves + frames.deck, foundry-build-0032), hand records first", () => {
+  it("has one record for each of the 252 canonical Designer slots (238 re-signed + 8 owner-signed specimen leaves + frames.deck, foundry-build-0032, + five admin record sections, foundry-build-0048), hand records first", () => {
     for (const layer of LAYERS) expect(committed[layer].map(row => row.slot).sort(), layer).toEqual(catalog[layer].map(slot => slot.id).sort());
-    expect(LAYERS.map(layer => committed[layer].length)).toEqual([42, 49, 78, 66, 12]);
+    expect(LAYERS.map(layer => committed[layer].length)).toEqual([42, 49, 78, 71, 12]);
     expect(committed.sections.slice(0, 10).map(row => row.slot)).toEqual(["sections.band", "sections.section-header", "sections.hero", "sections.features", "sections.comparison", "sections.pricing", "sections.call-to-action", "sections.form", "sections.legal-prose", "sections.steps"]);
     expect(committed.frames.slice(0, 3).map(row => row.slot)).toEqual(["frames.site-header", "frames.site-footer", "frames.site-shell"]);
   });
@@ -94,6 +94,20 @@ describe("Designer slot contracts", () => {
     expect(committed.sections.find(row => row.slot === "sections.legal-prose")!.limits["compose.header"]).toBeUndefined();
     expect(committed.sections.find(row => row.slot === "sections.comparison")!.limits["compose.header"]).toBe("sections.section-header");
     for (const slot of ["frames.site-header", "frames.site-footer"]) expect(committed.frames.find(row => row.slot === slot)!.limits["compose.measure"]).toBe("sections.band");
+  });
+
+  // foundry-build-0048: each admin record section names the record schema it reads. Owner questions (choices + default)
+  // are clossys.queue-entry/1 records on the pick, approve and clarify queues; slot requests are clossys.queue-entry/2.
+  it("pins the record schema each admin record section reads", () => {
+    const reads = Object.fromEntries(["slot-gallery", "slot-detail", "candidate-preview", "question-packet", "queue-list"]
+      .map(leaf => [leaf, committed.sections.find(row => row.slot === `sections.${leaf}`)!.limits["reads.records"]]));
+    expect(reads).toEqual({
+      "slot-gallery": "clossys.ia/1, clossys.slot/2",
+      "slot-detail": "clossys.slot/2, clossys.pin/2",
+      "candidate-preview": "clossys.candidate/1",
+      "question-packet": "clossys.queue-entry/1 (queue.pick, queue.approve, queue.clarify)",
+      "queue-list": "clossys.queue-entry/2",
+    });
   });
 
   it("fails a section contract that points at a missing reference folder", () => {

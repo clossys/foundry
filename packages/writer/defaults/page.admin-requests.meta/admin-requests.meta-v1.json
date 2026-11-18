@@ -1,0 +1,41 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "writer/page.admin-requests.meta/package:admin-requests.meta-v1.json",
+    "agent": "writer",
+    "kind": "candidate",
+    "status": "draft",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/writer",
+      "version": "0.6.0"
+    },
+    "createdAt": "2026-11-18T00:00:00Z",
+    "refs": [],
+    "slot": "writer/page.admin-requests.meta",
+    "record": "admin-requests.meta",
+    "source": {
+      "kind": "package-default",
+      "ref": [
+        "ia-target/writer.md#2-copy"
+      ]
+    },
+    "rationale": [
+      {
+        "purpose": "package default",
+        "why": "Claim-free sample copy, a DRAFT pending owner approval (foundry-build-0048 Amendment 2026-11-18b); a consumer Writer run replaces it before release.",
+        "sources": []
+      }
+    ]
+  },
+  "content": {
+    "fields": {
+      "title": {
+        "en": "Requests"
+      },
+      "description": {
+        "en": "Open requests for {brand}, oldest first."
+      }
+    }
+  }
+}

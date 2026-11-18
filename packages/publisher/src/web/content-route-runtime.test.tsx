@@ -114,14 +114,14 @@ describe("content route server rendering", () => {
     expect(prepareContentRoute(second).needs).toEqual([]); expect(markup(second)).toContain("Sign in to continue");
   });
 
-  it("has no adapter for the retired sections.logo-hero (merged into sections.hero): it needs a binding, never renders", () => {
+  it("has no adapter for an unbound sections.hero: it needs a binding, never renders", () => {
     const base = content();
-    const input = contentRouteFixture({ composition: { ...base.composition!, sections: [{ key: "logo", sectionId: "sections.logo-hero", configId: "default", intent: "continues", fields: [writerField("name", "Example logo")], assets: [{ assetId: "assets.example-mark", libraryVersion: "1" }] }] } });
-    const registered = { ...input, libraries: input.libraries.map(library => ({ ...library, sections: [{ id: "sections.logo-hero", configIds: ["default"] }], assetIds: ["assets.example-mark"] })), assets: [{ assetId: "assets.example-mark", libraryVersion: "1", src: "/artwork/example-mark.svg" }] };
+    const input = contentRouteFixture({ composition: { ...base.composition!, sections: [{ key: "logo", sectionId: "sections.hero", configId: "default", intent: "continues", fields: [writerField("name", "Example logo")], assets: [{ assetId: "assets.example-mark", libraryVersion: "1" }] }] } });
+    const registered = { ...input, libraries: input.libraries.map(library => ({ ...library, sections: [{ id: "sections.hero", configIds: ["default"] }], assetIds: ["assets.example-mark"] })), assets: [{ assetId: "assets.example-mark", libraryVersion: "1", src: "/artwork/example-mark.svg" }] };
     const prepared = prepareContentRoute(registered);
     expect(prepared.status).toBe("needs-input"); expect(prepared.node).toBeUndefined();
-    expect(prepared.needs).toContainEqual(expect.objectContaining({ kind: "section", target: "designer", detail: "Designer section export adapter is unavailable: sections.logo-hero" }));
-    expect(prepared.needs).toContainEqual(expect.objectContaining({ kind: "config", target: "designer", detail: "Section config has no asset adapter: sections.logo-hero/default" }));
+    expect(prepared.needs).toContainEqual(expect.objectContaining({ kind: "section", target: "designer", detail: "Designer section export adapter is unavailable: sections.hero" }));
+    expect(prepared.needs).toContainEqual(expect.objectContaining({ kind: "config", target: "designer", detail: "Section config has no asset adapter: sections.hero/default" }));
   });
 
   it("uses the pinned historical section instead of a source candidate's live copy", () => {

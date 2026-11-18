@@ -113,10 +113,7 @@ export function createConsumerPageRecords(config: ConsumerPageConfig, options: C
       const read = page.read(reference); return read.status === "ready" ? read.content : staticContent.find(content => content.reference.kind === reference.kind && content.reference.ref === reference.ref);
     };
     const sectionHosts = (existing: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {}) => {
-      const fieldRef = config.item?.sections.find(section => section.fill.section === "sections.record-detail")?.fill.content.fields;
-      const fields = fieldRef ? resolveContent(fieldRef) : undefined;
-      if (isItem && fieldRef && !fields && page.frameState()?.main === "ready") throw new TypeError("Ready item omitted Writer-bound fields");
-      const hosts = adminPageSectionHosts({ copy: options.copy, title: isItem ? options.itemTitle! : config.title, bindings: config.copy, item: isItem, includeRecordDetail: !!fieldRef && !(isItem && !fields), fields });
+      const hosts = adminPageSectionHosts({ copy: options.copy, title: isItem ? options.itemTitle! : config.title, bindings: config.copy, item: isItem });
       return { ...existing, ...Object.fromEntries(Object.entries(hosts).map(([leaf, host]) => [leaf, { ...existing[leaf], ...host }])) };
     };
     return { page, itemPath: concretePath, resolveContent, sectionHosts, copyProvenance: options.copy.provenance };

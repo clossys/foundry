@@ -21,7 +21,7 @@ describe("Designer-only inspector", () => {
     expect(element.textContent).toContain("Bonjour");
     expect(element.textContent).toContain("Finish the heading");
     for (const value of ["Candidate detail", "Revision history", "r1", "r2", "Locale copy en", "Locale copy fr", "Approval record", "Approval differs", "Release history", "example-target"]) expect(element.textContent).toContain(value);
-    expect(element.querySelectorAll('[data-ds-leaf="sections.record-detail"]').length).toBeGreaterThan(5);
+    expect(element.querySelectorAll('[data-record-detail]').length).toBeGreaterThan(5);
     expect(element.querySelector("button, input, textarea, select, a[href], [contenteditable]")).toBeNull();
     expect(renderToStaticMarkup(<PublisherInspector model={{ ...model, ready: false }} />)).toBe("");
   });

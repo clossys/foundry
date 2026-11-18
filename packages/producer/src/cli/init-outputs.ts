@@ -24,7 +24,8 @@ import { discoverRoot } from "./root.js";
 
 export const INIT_OUTPUTS_USAGE = "Usage: clossys init --publication <id> [--forms contact,newsletter] [--share] [--meta json-ld,llms,rss|atom]\n"
   + "                    [--locales <default>,<locale>...] [--origin https://<host>] [--identity <name key>,<summary key>]\n"
-  + "                    --model <id> --tier low|mid|high --basis agent|owner|planner --skill <path> [--rung adapt|create] [--seed <id>] [--reason <text>] [--root <dir>] [--json]\n"
+  + "                    --model <id> --tier low|mid|high --basis agent|owner|planner --skill <path> [--rung adapt|create] [--seed <id>] [--reason <text>] [--root <dir>] [--at <iso>] [--json]\n"
+  + "  runs plain clossys init first (the views pointer and the admin workspace seat; --at stamps those writes), then\n"
   + "  records the publication's install outputs on a new submitted candidate of publisher/publication.<id> (never pinned).\n"
   + "  The candidate goes through clossys next --submit (schema, slot model, write guard, symlink refusal, ladder): --rung\n"
   + "  defaults to adapt with --seed the pinned candidate, so the slot's latest verdict must be create (P2).\n"
@@ -137,7 +138,12 @@ export async function initPublicationOutputs(root: string, options: InitOutputsO
 
 const list = (value: string) => value.split(",").map(item => item.trim()).filter(Boolean);
 
-export async function runInitOutputsCli(argv: readonly string[], cwd: string): Promise<CliResult> {
+/**
+ * `prepare` is plain init (init.ts: the views pointer and the admin seat). It runs once every argument is valid and
+ * before the outputs are recorded, so the admin workspace is seated in every consumer first (owner A1); its refusal
+ * ends the run. An outputs refusal after it leaves the seat in place, as plain init would.
+ */
+export async function runInitOutputsCli(argv: readonly string[], cwd: string, prepare?: (workspace: string) => Promise<CliResult>): Promise<CliResult> {
   let root: string | undefined, publication: string | undefined;
   const submit: { model?: string; tier?: string; basis?: string; skill?: string; rung?: string; seed?: string; reason?: string } = {};
   const SUBMIT_FLAGS = { "--model": "model", "--tier": "tier", "--basis": "basis", "--skill": "skill", "--rung": "rung", "--seed": "seed", "--reason": "reason" } as const;
@@ -183,19 +189,27 @@ export async function runInitOutputsCli(argv: readonly string[], cwd: string): P
   if (publication === undefined) throw new CliUsageError(`--publication is required\n${INIT_OUTPUTS_USAGE}`);
   for (const flag of ["--model", "--tier", "--basis", "--skill"] as const) if (submit[SUBMIT_FLAGS[flag]] === undefined) throw new CliUsageError(`init --publication requires ${flag} (its candidate is submitted)\n${INIT_OUTPUTS_USAGE}`);
   const workspace = discoverRoot(resolve(cwd, root ?? "."));
+  const prepared = prepare ? await prepare(workspace) : undefined;
+  if (prepared && prepared.exitCode !== 0) return prepared;
+  // Plain init's report rides along: its output as `init`, its lines after a refusal's and before a submit's.
+  const init = prepared ? { init: prepared.output } : {};
+  const said = prepared ? [prepared.message] : [];
   let result: InitOutputsResult;
   try { result = await initPublicationOutputs(workspace, { publication, ...options }, submit as InitSubmit); }
   catch (error) {
-    if (error instanceof InitOutputsRefusal) return { ...error.result, root: workspace };
+    if (error instanceof InitOutputsRefusal) {
+      return { ...error.result, root: workspace, ...(prepared ? { output: { ...(error.result.output as object | undefined), ...init }, message: [error.result.message, ...said].join("\n") } : {}) };
+    }
     if (error instanceof CliUsageError) throw error;
-    // Every other refusal (no pin, a drifted pin, refused outputs, a symlinked slot folder) writes nothing.
-    return { exitCode: 1, root: workspace, message: `init --publication refused: ${(error instanceof Error ? error.message : String(error)).replace(/^init: /, "")}` };
+    // Every other refusal (no pin, a drifted pin, refused outputs, a symlinked slot folder) writes no outputs candidate.
+    return { exitCode: 1, root: workspace, ...(prepared ? { output: init } : {}), message: [`init --publication refused: ${(error instanceof Error ? error.message : String(error)).replace(/^init: /, "")}`, ...said].join("\n") };
   }
   const lines = [
+    ...said,
     `submitted publisher/${result.slot}/${result.candidate} with the recorded outputs (pin it to install them)`,
     ...(result.outputs.forms ?? []).map(form => `  form ${form.id}: set ${form.targetEnv} in the host environment to its https delivery target`),
     ...result.writerDrafts.map(row => `  Writer draft needed: ${row.key} (${row.locale})`),
     ...(result.needsMark ? ["  Designer pin needed: assets.mark (share images draw it)"] : []),
   ];
-  return { exitCode: 0, root: workspace, output: result, message: lines.join("\n") };
+  return { exitCode: 0, root: workspace, output: { ...result, ...init }, message: lines.join("\n") };
 }

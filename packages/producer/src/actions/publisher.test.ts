@@ -119,8 +119,8 @@ describe("publisher.release refuses when publisher.check fails", () => {
     expect(result.exit).toBe(0);
     expect(result.released).toBe(true);
     expect(calls).toEqual([["site", "--gates", "--root", root]]);
-    expect(result.checked.every(subject => /^publisher\/page\.(?:home|about|pricing|contact|terms|privacy|not-found|error)\//.test(subject))).toBe(true);
-    expect(result.checked).toHaveLength(8);
+    expect(result.checked.every(subject => /^publisher\/page\.(?:home|about|pricing|contact|terms|privacy|not-found|error|site-page)\//.test(subject))).toBe(true);
+    expect(result.checked).toHaveLength(9);
     const failing: ReleaseRunner = async () => ({ exitCode: 1, message: "release: gate failed" });
     expect((await releasePublisher(root, "site", ["--build", "--manifest"], { release: failing })).exit).toBe(1);
   });
@@ -313,7 +313,7 @@ describe("publisher.check over clossys.page/1 records (DECISION 0048-PAGE-SHAPE,
     expect(await result(record => { record.heading = "Welcome to our product"; })).toEqual(["page.no-inline-copy"]);
     expect(await result(record => { record.title = "Welcome"; delete record.copy.meta; })).toEqual(["page.no-inline-copy"]);
     expect(await result(record => { delete record.bindings["sections.steps"]; })).toEqual(["page.record-key"]);
-    expect(await result(record => { record.sections.splice(record.sections.indexOf("sections.features"), 1); delete record.bindings["sections.features"]; })).toEqual(["page.required-roles"]);
+    expect(await result(record => { record.sections.splice(record.sections.indexOf("sections.hero"), 1); delete record.bindings["sections.hero"]; })).toEqual(["page.required-roles"]);
   });
 
   /**
@@ -397,6 +397,32 @@ describe("publisher.check over clossys.page/1 records (DECISION 0048-PAGE-SHAPE,
   it("a record with neither path nor slug fails page.route", async () => {
     const findings = (await checkPublisherPages(pageConsumer(record => { delete record.path; }))).findings;
     expect(findings.map(finding => finding.detail)).toContain("page.home: names no route: a page record carries a path or a slug");
+  });
+
+  // foundry-build-0048: the admin workspace is in every consumer at /admin, so the generic <slug> page may not take it.
+  const sitePage = (slug: string): string => {
+    const root = consumer([]);
+    const record = pageRecord();
+    delete record.path;
+    record.slug = slug;
+    const dir = join(root, "clossys", "agents", "publisher", "page.site-page");
+    mkdirSync(join(dir, "candidates"), { recursive: true });
+    writeFileSync(join(dir, "candidates", "site-page-v1.json"), `${JSON.stringify(record, null, 2)}\n`);
+    writeFileSync(join(dir, "pin.json"), `${JSON.stringify({ schema: "clossys.pin/2", candidate: "site-page-v1.json" })}\n`);
+    return root;
+  };
+  const routes = async (slug: string) => (await checkPublisherPages(sitePage(slug))).findings.filter(finding => finding.check === "page.route").map(finding => finding.detail);
+  it("mutation: a <slug> page refuses the reserved admin slug (no /admin overlap); another slug routes clean", async () => {
+    expect(await routes("admin")).toEqual(["page.site-page: slug admin is reserved: /admin is a route of a publication every consumer holds (the admin workspace); pick another slug"]);
+    expect(await routes("about-us")).toEqual([]);
+    // The reserved list is derived from the Publisher directory contracts (the fixed admin publication's routes).
+    const api = await loadPublisherCheckApi(PUBLISHER);
+    expect(api.reservedSlugs?.("site")).toEqual(["admin"]);
+    expect(api.reservedSlugs?.("admin")).toEqual([]);
+  });
+
+  it.each(["admin/requests", "admin/designer", "/admin", "admin/", " admin", "Admin", "ADMIN", "about.us", ""])("mutation: a <slug> page refuses slug %j, which is not one lower-case path segment", async slug => {
+    expect(await routes(slug)).toEqual([`page.site-page: slug ${JSON.stringify(slug)} is not one lower-case path segment (a-z, 0-9, single hyphens); a page record's slug is one route segment`]);
   });
 
   it("finds a binding keyed by the section's instance key <slot>#n", async () => {

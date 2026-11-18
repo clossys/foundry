@@ -1,4 +1,4 @@
-import { freeze } from "../layouts/resolve.js";
+import { freeze } from "../engines/resolve.js";
 import type { CopyRef } from "@clossys/writer";
 import { publisherValueRef } from "../web/publisher/value-names.js";
 import { getFormatLeaf } from "../formats/index.js";
@@ -82,7 +82,7 @@ export function publisherMenuDisplay(item: PublisherMenuItem): PublisherMenuDisp
   });
 }
 const web = { sections: ["Page sections"], frames: ["frames.site-shell"], formats: ["web.page.responsive"] };
-const webConfiguration = (config: string, app = false): PublisherConfiguration => ({ kind: "web", format: "web.page.responsive", frame: { leaf: app ? "frames.app-shell" : "frames.site-shell", ...(!app ? { config: "site" } : {}) }, layout: { leaf: config.startsWith("split.") ? "layouts.split" : config.startsWith("bento.") ? "layouts.bento" : config.startsWith("sidebar-content.") ? "layouts.sidebar-content" : "layouts.stack", config }, media: { size: getFormatLeaf("web.page.responsive")!.size }, deliveries: [{ id: "static-site-bundle" }] });
+const webConfiguration = (config: string, app = false): PublisherConfiguration => ({ kind: "web", format: "web.page.responsive", frame: { leaf: app ? "frames.app-shell" : "frames.site-shell", ...(!app ? { config: "site" } : {}) }, layout: { leaf: config.startsWith("split.") ? "split" : config.startsWith("bento.") ? "bento" : config.startsWith("sidebar-content.") ? "sidebar-content" : "stack", config }, media: { size: getFormatLeaf("web.page.responsive")!.size }, deliveries: [{ id: "static-site-bundle" }] });
 const requirements = (purpose: string, legal = false, integration?: string): PublisherRequirements => ({ brandAssets: ["logo", "favicon", "share-image"], contentRefs: [{ slot: "lead", purpose: `${purpose} heading and purpose`, length: "short", requiredFacts: ["audience", "subject"] }, { slot: "body", purpose, length: legal ? "long" : "medium", requiredFacts: legal ? ["applicable terms", "responsible contact"] : ["offering or topic", "next action"] }], integrations: integration ? [integration] : [] });
 const laneConfig = (lane: PublisherPlanLane): string => lane === "Landing" ? "stack.landing" : lane === "Showcase" || lane === "Collection" ? "stack.index" : lane === "Contact" ? "split.default" : lane === "Status" || lane === "Auth" || lane === "Settings" || lane === "Studio" ? "stack.focus" : lane === "Dashboard" ? "bento.default" : lane === "Record" ? "sidebar-content.record" : "stack.document";
 const page = (id: string, label: string, lane: PublisherPlanLane): PublisherMenuItem => ({ id, label, milestone: "M1", pack: "pack.standard-website", lanes: [lane], status: "built", kind: "page", needs: web, recommendations: [{ lane, configuration: webConfiguration(laneConfig(lane)) }], requirements: requirements(label, id === "website.terms" || id === "website.privacy", lane === "Contact" ? "contact-inbox" : undefined) });

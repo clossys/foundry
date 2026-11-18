@@ -775,6 +775,9 @@ export function readiness(consumer: string, agent: SlotAgent, id: string, index 
     const doc = readSlot(consumer, agent, id);
     // Director slots are the roots of the chain: no inputs is their declared state (planner, 2026-10-31).
     if (!doc.inputs.length && agent === "director") return { ready: true, blockedBy: [] };
+    // An agent's own loop slot (kind loop, foundry-build-0048 U9a) is a root too: its version extends Producer's
+    // standard loop, which it names in its contract, and no upstream pin feeds it.
+    if (!doc.inputs.length && (doc.kind as string) === "loop") return { ready: true, blockedBy: [] };
     if (!doc.inputs.length) return { ready: false, blockedBy: [{ slot: id, reason: "inputs-undeclared" }] };
     const blockedBy: { slot: string; reason: BlockReason }[] = [];
     for (const input of doc.inputs) {

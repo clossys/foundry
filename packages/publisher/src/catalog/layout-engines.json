@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.publisher-layout-engines/1",
+  "note": "The one map from a live layout.* Composition slot to the render engine Publisher lays its pages out with. Engines are internal render primitives with no slot identity; a page reaches one only through the layout.* slot it pins. Paged layouts render through their format and have no flow engine.",
+  "layouts": {
+    "layout.marketing-home": { "engine": "stack", "config": "stack.landing" },
+    "layout.about": { "engine": "stack", "config": "stack.landing" },
+    "layout.pricing": { "engine": "stack", "config": "stack.landing" },
+    "layout.contact": { "engine": "stack", "config": "stack.focus" },
+    "layout.legal": { "engine": "stack", "config": "stack.document" },
+    "layout.site-state": { "engine": "stack", "config": "stack.focus" },
+    "layout.site-page": { "engine": "stack", "config": "stack.landing" },
+    "layout.docs-index": { "engine": "stack", "config": "stack.index" },
+    "layout.docs-guide": { "engine": "sidebar-content", "config": "sidebar-content.docs" },
+    "layout.docs-article": { "engine": "sidebar-content", "config": "sidebar-content.docs" },
+    "layout.changelog": { "engine": "stack", "config": "stack.document" },
+    "layout.auth": { "engine": "stack", "config": "stack.focus" },
+    "layout.app-home": { "engine": "stack", "config": "stack.workspace" },
+    "layout.app-list": { "engine": "stack", "config": "stack.index" },
+    "layout.app-settings": { "engine": "sidebar-content", "config": "sidebar-content.record" },
+    "layout.app-state": { "engine": "stack", "config": "stack.focus" },
+    "layout.admin-home": { "engine": "stack", "config": "stack.workspace" },
+    "layout.admin-gallery": { "engine": "stack", "config": "stack.index" },
+    "layout.admin-slot": { "engine": "stack", "config": "stack.workspace" },
+    "layout.admin-requests": { "engine": "stack", "config": "stack.index" },
+    "layout.admin-questions": { "engine": "stack", "config": "stack.index" }
+  },
+  "paged": ["layout.deck"]
+}

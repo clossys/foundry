@@ -1,10 +1,12 @@
 import type { Composition, CopyField } from "./composition.js";
 import type { ContentJson, ContentJsonObject, SourceAnswer } from "./json.js";
-import type { ContentPlacement, SlotId } from "./taxonomy.js";
+import type { ContentPlacement, ContentTree, SlotId } from "./taxonomy.js";
 import type { CandidateOrigin, CandidateState, LinkRelation, RevisionId, SlotKind } from "./vocabulary.js";
 
 export interface ContentWorkspace {
   readonly consumerId: string;
+  /** The consumer's content tree: the L1/L2 placements its slots use. Publisher ships no tree of its own. */
+  readonly tree: ContentTree;
   readonly defaultLocale: string;
   readonly locales: readonly string[];
   readonly currentMilestoneTag?: string;

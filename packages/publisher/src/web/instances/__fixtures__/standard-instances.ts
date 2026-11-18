@@ -1,5 +1,5 @@
 import { TAILWIND_BREAKPOINTS } from "@clossys/designer/catalog";
-import { LAYOUT_LEAVES } from "../../../layouts/resolve.js";
+import { LAYOUT_ENGINES } from "../../../engines/resolve.js";
 import { FORMAT_LEAVES } from "../../../formats/index.js";
 import type { ConsumerInstanceLibrary, FlowInstanceBinding as InstanceBinding, InstanceRegistries, SectionFill } from "../../../core/instance-binding.js";
 
@@ -18,7 +18,7 @@ export const STANDARD_INSTANCE_FIXTURES: readonly InstanceBinding[] = pages.map(
     instanceId: `standard.${id}`, label, ...(path === undefined ? {} : { path }), surface: "site", packIds: ["pack.standard-website"], context: { medium: "web" },
     format: "web.page.responsive",
     frame: { leaf: "frames.site-shell", config: id === "sign-in" ? "front-door" : "site" },
-    layout: { leaf: id === "contact" ? "layouts.split" : "layouts.stack", config: id === "home" ? "stack.landing" : id === "contact" ? "split.default" : document ? "stack.document" : focus ? "stack.focus" : "stack.default" },
+    layout: { leaf: id === "contact" ? "split" : "stack", config: id === "home" ? "stack.landing" : id === "contact" ? "split.default" : document ? "stack.document" : focus ? "stack.focus" : "stack.default" },
     fills: id === "contact" ? { lead: [section("sections.page-header", "copy.contact.title")], start: [section("sections.content", "copy.contact.details")], end: [section("sections.form", "copy.contact.form", "contact")] }
       : focus ? { body: [fill] }
       : { lead: [section(id === "home" ? "sections.hero" : "sections.page-header", `copy.${id}.title`)], body: [section(document ? "sections.article" : "sections.content", `copy.${id}.body`)] },
@@ -26,7 +26,7 @@ export const STANDARD_INSTANCE_FIXTURES: readonly InstanceBinding[] = pages.map(
   };
 });
 /** Actual layout and format registries only. Frame/section projections stay absent. */
-export const FIXTURE_INSTANCE_REGISTRIES: InstanceRegistries = { formats: FORMAT_LEAVES, frames: [], layouts: LAYOUT_LEAVES, sections: [], themes: [] };
+export const FIXTURE_INSTANCE_REGISTRIES: InstanceRegistries = { formats: FORMAT_LEAVES, frames: [], layouts: LAYOUT_ENGINES, sections: [], themes: [] };
 /** Empty on purpose. Missing implementations, source, and content remain real refusals. */
 export const FIXTURE_INSTANCE_LIBRARY: ConsumerInstanceLibrary = { id: "fixture-library", role: "consumer", resolveFill: () => undefined, resolveContent: () => undefined };
 export const FIXTURE_BREAKPOINTS = { ...TAILWIND_BREAKPOINTS } as const;

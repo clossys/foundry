@@ -27,5 +27,19 @@
     "page.deck",
     "page.company-one-pager"
   ],
-  "amendments": []
+  "amendments": [
+    {
+      "id": "foundry-build-0048-amendment-2026-11-18b",
+      "remove": [],
+      "add": [
+        "page.site-page",
+        "page.admin-home",
+        "page.admin-gallery",
+        "page.admin-slot",
+        "page.admin-requests",
+        "page.admin-questions"
+      ],
+      "why": "owner words 2026-11-18b (spec Amendment 2026-11-18b), recorded 2026-11-18: A1 fixed admin workspace publication, A2 generic page slot, A3 admin record sections"
+    }
+  ]
 }

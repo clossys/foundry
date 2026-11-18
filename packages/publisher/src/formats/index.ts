@@ -3,8 +3,8 @@ import { FORMAT_IDS, FORMAT_DELIVERY_IDS } from "./contract.js";
 import type { FormatBindingFinding, FormatFinding, FormatIA, FormatLeaf } from "./contract.js";
 import { formatLeaves } from "./slots/formats.js";
 import { formatIA } from "./ia/formats.js";
-import { LAYOUT_LEAVES } from "../layouts/resolve.js";
-import type { LayoutLeaf } from "../layouts/contract.js";
+import { LAYOUT_ENGINES } from "../engines/resolve.js";
+import type { LayoutEngine } from "../engines/contract.js";
 
 export * from "./contract.js";
 function freeze<T>(value: T): T {
@@ -42,13 +42,13 @@ function data(value: unknown, seen = new Set<object>()): boolean {
 }
 
 /** Check configuration data against actual registered compositions; concepts cannot admit instances. */
-export function checkFormatRegistry(registry: readonly FormatLeaf[] = FORMAT_LEAVES, tree: FormatIA = FORMAT_IA, layouts: readonly LayoutLeaf[] = LAYOUT_LEAVES): FormatFinding[] {
+export function checkFormatRegistry(registry: readonly FormatLeaf[] = FORMAT_LEAVES, tree: FormatIA = FORMAT_IA, layouts: readonly LayoutEngine[] = LAYOUT_ENGINES): FormatFinding[] {
   if (!data(registry)) return [{ code: "contract", subject: "formats", message: "Format registry must be plain configuration data" }];
   if (!data(tree)) return [{ code: "ia", subject: "formats", message: "Format IA must be plain configuration data" }];
   try { return validateRegistry(registry, tree, layouts); }
   catch { return [{ code: "contract", subject: "formats", message: "Malformed format registry or IA" }]; }
 }
-function validateRegistry(registry: readonly FormatLeaf[], tree: FormatIA, layouts: readonly LayoutLeaf[]): FormatFinding[] {
+function validateRegistry(registry: readonly FormatLeaf[], tree: FormatIA, layouts: readonly LayoutEngine[]): FormatFinding[] {
   const findings: FormatFinding[] = [];
   const add = (code: FormatFinding["code"], subject: string, message: string) => findings.push({ code, subject, message });
   if (!unique(registry.map(leaf => leaf.id)) || registry.length !== FORMAT_IDS.length || FORMAT_IDS.some(id => !registry.some(leaf => leaf.id === id))) add("id", "formats", "Expected each registered format exactly once");
@@ -70,7 +70,7 @@ function validateRegistry(registry: readonly FormatLeaf[], tree: FormatIA, layou
   return findings;
 }
 
-function leafFindings(leaf: FormatLeaf, layouts: readonly LayoutLeaf[]): FormatFinding[] {
+function leafFindings(leaf: FormatLeaf, layouts: readonly LayoutEngine[]): FormatFinding[] {
   const findings: FormatFinding[] = [];
   const add = (code: FormatFinding["code"], subject: string, message: string) => findings.push({ code, subject, message });
   if (!(FORMAT_IDS as readonly string[]).includes(leaf.id)) add("id", leaf.id, "Unknown format id");
@@ -96,17 +96,17 @@ function leafFindings(leaf: FormatLeaf, layouts: readonly LayoutLeaf[]): FormatF
   if (!validSize || (leaf.fps !== undefined && (!positive(leaf.fps) || leaf.outputType !== "mp4"))) add("contract", leaf.id, "Invalid size, units, breakpoint tokens or frame rate");
   if (![leaf.allowedCompositions, leaf.heldCompositions, leaf.frames, leaf.usedByPacks].every(names)) add("contract", leaf.id, "References must be unique nonempty names");
   for (const id of leaf.allowedCompositions) {
-    const layout = layouts.find(entry => entry.id === id);
+    const layout = layouts.find(entry => entry.engine === id);
     if (!layout || !["draft", "stable"].includes(layout.status) || layout.contract.arrangement !== leaf.arrangement || leaf.heldCompositions.includes(id)) add("contract", leaf.id, "Allowed composition must be active and match the arrangement");
   }
-  for (const id of leaf.heldCompositions) if (layouts.find(entry => entry.id === id)?.status !== "held") add("contract", leaf.id, "Held composition must be registered as held");
+  for (const id of leaf.heldCompositions) if (layouts.find(entry => entry.engine === id)?.status !== "held") add("contract", leaf.id, "Held composition must be registered as held");
   if (leaf.status === "concept" && (leaf.allowedCompositions.length || leaf.frames.length || leaf.usedByPacks.length)) add("contract", leaf.id, "Concept formats have no compositions, frames or pack usage");
   if (leaf.status === "built" && (leaf.id !== "web.page.responsive" || leaf.arrangement !== "page" || leaf.outputType !== "html" || leaf.size.kind !== "responsive" || !leaf.allowedCompositions.length || !leaf.frames.length || leaf.frames.some(id => !["frames.site-shell", "frames.app-shell"].includes(id)))) add("contract", leaf.id, "Only responsive web pages have a built page-shell contract");
   return findings;
 }
 
 /** LK16 reads only the supplied format projection; an absent registry is never a catalog lookup. */
-export function checkFormatBinding(formatId: unknown, layoutId: string, frameId: string, registry: unknown, layouts: readonly LayoutLeaf[]): readonly FormatBindingFinding[] {
+export function checkFormatBinding(formatId: unknown, layoutId: string, frameId: string, registry: unknown, layouts: readonly LayoutEngine[]): readonly FormatBindingFinding[] {
   const refusal = (message: string): readonly FormatBindingFinding[] => [{ path: "format", message }];
   if (!text(formatId)) return refusal("An explicit registered format is required");
   if (!Array.isArray(registry) || !data(registry)) return refusal("A plain supplied format registry is required");

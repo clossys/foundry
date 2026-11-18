@@ -50,7 +50,7 @@ function freeze<T>(value: T): T {
 export const PAGE_FORMATS: Readonly<Record<PageFormatId, PageFormat>> = freeze({
   "vertical-page": {
     id: "vertical-page", delivery: "web.page.responsive", scroll: "document", stickyHeader: true, aspectRatio: null,
-    frames: ["frames.site-shell", "frames.app-shell", "frames.auth-shell", "frames.document", "frames.studio-shell"], frameRequired: true,
+    frames: ["frames.site-shell", "frames.app-shell", "frames.auth-shell", "frames.studio-shell"], frameRequired: true,
     copy: { unit: null, maxWords: null, longForm: true },
     requiredActions: [],
   },

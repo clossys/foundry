@@ -8,10 +8,10 @@ import { checkLayoutRender } from "./layout-render.js";
 import type { LayoutRenderOptions, LayoutRenderResult } from "./layout-render.js";
 import type { LayoutRendererSource } from "../core/instance-binding.js";
 import { instanceFixture } from "../core/__fixtures__/instance-binding/fixtures.js";
-import { getEffectiveLayoutContract, LAYOUT_LEAVES } from "../layouts/resolve.js";
+import { getEffectiveLayoutContract, LAYOUT_ENGINES } from "../engines/resolve.js";
 
 const browserExecutable = process.env.CHROME_PATH ?? ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/usr/bin/chromium", "/usr/bin/google-chrome"].find(existsSync)!;
-const names = { "layouts.stack": "Stack", "layouts.split": "Split", "layouts.sidebar-content": "SidebarContent", "layouts.bento": "Bento" } as const;
+const names = { "stack": "Stack", "split": "Split", "sidebar-content": "SidebarContent", "bento": "Bento" } as const;
 const breakpoints = { "tokens.breakpoint.mobile": 381, "tokens.breakpoint.tablet": 731, "tokens.breakpoint.tablet-lg": 1009, "tokens.breakpoint.desktop": 1259 };
 function closure(entry: string): LayoutRendererSource {
   const files: Record<string, string> = {}, pending = [entry];
@@ -40,7 +40,7 @@ beforeAll(async () => {
   expect(browserExecutable, "Rendered fixtures require an installed Chromium executable").toBeTruthy();
   // Actual Tailwind compiler over the exact renderer closure's classes, not mock CSS geometry.
   const candidates = new Set<string>();
-  for (const name of Object.values(names)) for (const source of Object.values(closure(`web/layouts/${name}.tsx`).files)) {
+  for (const name of Object.values(names)) for (const source of Object.values(closure(`web/engines/${name}.tsx`).files)) {
     for (const literal of source.matchAll(/["']([^"'\n]+)["']/g)) for (const candidate of literal[1]!.split(/\s+/)) candidates.add(candidate);
   }
   css = `${(await compile("@tailwind utilities;")).build([...candidates])}
@@ -48,7 +48,7 @@ beforeAll(async () => {
     *,::before,::after{box-sizing:border-box}html,body{margin:0}h1,h2,p{margin:0}[data-lk12-fill]{min-height:64px;overflow-wrap:anywhere}`;
 });
 
-function fixture(leafId: keyof typeof names = "layouts.split", configId = "split.default", members?: Record<string, string>) {
+function fixture(leafId: keyof typeof names = "split", configId = "split.default", members?: Record<string, string>) {
   const f = instanceFixture();
   f.binding.layout = { leaf: leafId, config: configId, ...(members ? { members } : {}) };
   const contract = getEffectiveLayoutContract(leafId, configId, members);
@@ -66,7 +66,7 @@ function fixture(leafId: keyof typeof names = "layouts.split", configId = "split
     { id: "tokens.region-width.aside", property: "--ui-layout-aside-w" },
     ...Object.keys(breakpoints).map(id => ({ id: id as keyof typeof breakpoints, property: `--breakpoint-${id.split(".").at(-1)}` })),
   ];
-  const renderer = closure(`web/layouts/${names[leafId]}.tsx`);
+  const renderer = closure(`web/engines/${names[leafId]}.tsx`);
   f.put(leafId, configId, { leadGround: "base", renderer });
   const options: LayoutRenderOptions = { browserExecutable, exportName: names[leafId], breakpointValues: structuredClone(breakpoints), css,
     renderSection: (_, path) => <article><p>{path} audience content that wraps across narrow columns</p></article> };
@@ -74,7 +74,7 @@ function fixture(leafId: keyof typeof names = "layouts.split", configId = "split
 }
 const run = (f: ReturnType<typeof fixture>, overrides: Partial<LayoutRenderOptions> = {}) => checkLayoutRender(f.binding, f.library, f.registries, { ...f.options, ...overrides });
 const paths = (result: LayoutRenderResult, width: number) => result.measurements.find(measurement => measurement.width === width)!.fills.map(fill => fill.path);
-const configs = LAYOUT_LEAVES.filter(leaf => leaf.status === "draft" || leaf.status === "stable").flatMap(leaf => leaf.contract.configs.map(config => [leaf.id as keyof typeof names, config.id] as const));
+const configs = LAYOUT_ENGINES.filter(leaf => leaf.status === "draft" || leaf.status === "stable").flatMap(leaf => leaf.contract.configs.map(config => [leaf.engine as keyof typeof names, config.id] as const));
 
 describe("LK12 actual Chromium layout assembly", () => {
   it.each(configs)("measures exact %s %s source at every consumer breakpoint edge", async (leaf, config) => {
@@ -101,10 +101,10 @@ describe("LK12 actual Chromium layout assembly", () => {
     ["overflow", "[data-lk12-fill]{min-width:1800px}"],
     ["hidden overflow", "body{overflow-x:hidden}[data-lk12-fill]{min-width:1800px}"],
     ["order", "[data-layout-slot=start]{order:3}"],
-    ["reverse", "[data-layout=\"layouts.split\"]>div:last-child{flex-direction:row-reverse!important}"],
-    ["dense", "[data-layout=\"layouts.split\"]{grid-auto-flow:row dense}"],
+    ["reverse", "[data-layout=\"split\"]>div:last-child{flex-direction:row-reverse!important}"],
+    ["dense", "[data-layout=\"split\"]{grid-auto-flow:row dense}"],
     ["overlapping placement", "[data-layout-slot=start],[data-layout-slot=end]{position:absolute;left:0;top:0}"],
-    ["grid placement", "[data-layout=\"layouts.split\"]{display:flex;flex-direction:column}[data-layout-slot=lead]{position:absolute;top:500px}"],
+    ["grid placement", "[data-layout=\"split\"]{display:flex;flex-direction:column}[data-layout-slot=lead]{position:absolute;top:500px}"],
   ])("rejects the actual %s CSS mutation", async (_, mutation) => {
     const result = await run(fixture(), { css: css + mutation });
     expect(result.measurements).toHaveLength(result.requiredWidths.length);
@@ -113,7 +113,7 @@ describe("LK12 actual Chromium layout assembly", () => {
   }, 60000);
 
   it("preserves visual order for unequal-height centered panels and column reading groups", async () => {
-    const result = await run(fixture("layouts.split", "split.default", { align: "center" }), {
+    const result = await run(fixture("split", "split.default", { align: "center" }), {
       renderSection: (_, path) => <article style={{ minHeight: path.includes("start") ? 128 : 64 }}>{path}</article>,
     });
     expect(result.findings).toEqual([]);
@@ -127,7 +127,7 @@ describe("LK12 actual Chromium layout assembly", () => {
 
   it("collapse changes DOM order and never relies on CSS order", async () => {
     const normal = await run(fixture());
-    const reversed = await run(fixture("layouts.split", "split.default", { collapse: "end-first" }));
+    const reversed = await run(fixture("split", "split.default", { collapse: "end-first" }));
     expect(reversed.findings).toEqual([]);
     expect(paths(normal, 320)).toEqual(["fills.lead.0", "fills.start.0", "fills.end.0"]);
     expect(paths(reversed, 320)).toEqual(["fills.lead.0", "fills.end.0", "fills.start.0"]);
@@ -136,13 +136,13 @@ describe("LK12 actual Chromium layout assembly", () => {
 
   it("stacked aside changes DOM order across its resolved breakpoint", async () => {
     // Use an unconstrained config projection to exercise the closed member variant.
-    const f = fixture("layouts.sidebar-content", "sidebar-content.record");
-    const leaf = f.registries.layouts.find(leaf => leaf.id === "layouts.sidebar-content")!;
+    const f = fixture("sidebar-content", "sidebar-content.record");
+    const leaf = f.registries.layouts.find(leaf => leaf.engine === "sidebar-content")!;
     leaf.contract.configs.find(config => config.id === "sidebar-content.record")!.members["stacked-aside"] = "before";
     f.binding.layout.members = { "stacked-aside": "before" };
-    const sourceRegistry = JSON.parse(f.renderer.files["layouts/slots/layouts.json"]!);
-    sourceRegistry.find((item: any) => item.id === "layouts.sidebar-content").contract.configs.find((config: any) => config.id === "sidebar-content.record").members["stacked-aside"] = "before";
-    f.renderer.files["layouts/slots/layouts.json"] = JSON.stringify(sourceRegistry);
+    const sourceRegistry = JSON.parse(f.renderer.files["engines/engines.json"]!);
+    sourceRegistry.find((item: any) => item.id === "sidebar-content").contract.configs.find((config: any) => config.id === "sidebar-content.record").members["stacked-aside"] = "before";
+    f.renderer.files["engines/engines.json"] = JSON.stringify(sourceRegistry);
     const result = await run(f);
     expect(result.findings).toEqual([]);
     expect(paths(result, 730)).toEqual(["fills.lead.0", "fills.aside.0", "fills.main.0"]);
@@ -169,7 +169,7 @@ describe("LK12 actual Chromium layout assembly", () => {
     expect(result.layoutStatus).toBe("pending");
     expect(result.findings.every(item => item.includes("incomplete"))).toBe(true);
     const empty = fixture();
-    empty.put("layouts.split", "split.default", { leadGround: "base", renderer: { entry: "Layout.tsx", files: { "Layout.tsx": 'export const Split = () => <div className="grid" />;' } } });
+    empty.put("split", "split.default", { leadGround: "base", renderer: { entry: "Layout.tsx", files: { "Layout.tsx": 'export const Split = () => <div className="grid" />;' } } });
     expect((await run(empty)).layoutStatus).toBe("pending");
   }, 60000);
 
@@ -208,7 +208,7 @@ describe("LK12 actual Chromium layout assembly", () => {
     expect(absent.layoutStatus).toBe("pending");
     expect(absent.measurements).toEqual([]);
     const dependency = fixture();
-    delete dependency.renderer.files["web/layouts/preview/structure.tsx"];
+    delete dependency.renderer.files["web/engines/preview/structure.tsx"];
     expect((await run(dependency)).layoutStatus).toBe("refused");
     const escape = fixture();
     escape.renderer.files["../outside.ts"] = "export const secret = 1";

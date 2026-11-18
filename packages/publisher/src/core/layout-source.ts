@@ -1,5 +1,5 @@
 import { isTailwindBreakpoint } from "@clossys/designer/catalog";
-import type { PageLayoutContract } from "../layouts/contract.js";
+import type { PageLayoutContract } from "../engines/contract.js";
 import type { BindingToken, LayoutRendererSource } from "./instance-binding.js";
 
 /** Host adapter for an installed parser. It supplies syntax, never a verdict or a value evaluator. */

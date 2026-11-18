@@ -11,15 +11,15 @@
     },
     {
       "path": "admin-meta.r1.en.json",
-      "sha256": "9a388fe7288c7be18932a40437eb0d3f77a67519992f777badf47598d7d4b30b"
+      "sha256": "e4e5f189553344de99f52161e054b3d6eeb8430d26b05b5a989f9559ed9245af"
     },
     {
       "path": "admin-pages.r1.en.json",
-      "sha256": "84449a07f0575abed942a646efb6217c7b040b2e8a266ab01ca126eb0800ee3c"
+      "sha256": "9c3e720bbbd79973888b6fca9f9dd36e6c38e24ebd061b6c9daa5b69d90fe493"
     },
     {
       "path": "admin-studio.r1.en.json",
-      "sha256": "04efb8b3596a27dbed07b898765adbe189448c95b1738b7b335eda4926cd89cf"
+      "sha256": "b9d1f1c9110ae5e4ebf1d0a98a8f3e41e456dbe6240d9a225cfcf257154afc20"
     },
     {
       "path": "admin-voice.r1.en.json",
@@ -35,7 +35,7 @@
     },
     {
       "path": "common-labels.r1.en.json",
-      "sha256": "b6ab82971317c7e13420d820ba842f28d3dc883a06775fdfe7951de8fc035c37"
+      "sha256": "0f1da9751945c4aba6d7adcb628d781c536640895ed640d49e2531007498270b"
     },
     {
       "path": "pending/sections-upgrade.r1.en.json",
@@ -43,7 +43,7 @@
     },
     {
       "path": "section-defaults.r1.en.json",
-      "sha256": "678fa7c251f2afbf5391d753f784e5bbe9ba6a3ad89aaf2094d4525ef26a69c8"
+      "sha256": "c516495518b8056af922b49defc9fadc38cfc9b9afebc9db5101bb1defcf1e4d"
     },
     {
       "path": "sign-in.json",

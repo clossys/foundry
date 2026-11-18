@@ -1,0 +1,43 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "slot",
+      "at": "2026-11-18T09:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "a38a66a9a9cd2eb1217dce6d3f940ea6f1fe6f141d7a66b51803dc0f329fa102"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-18T11:46:00.878Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "5c852cd2d77f24f40e65822820e62a32fdc2f3d93e99fb294e8fe5e5112e1abb"
+        }
+      ]
+    }
+  ]
+}

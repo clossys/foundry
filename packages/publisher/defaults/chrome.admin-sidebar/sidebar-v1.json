@@ -1,0 +1,31 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/chrome.admin-sidebar/package:sidebar-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/chrome.admin-sidebar",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-18T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "unit": "designer/frames.app-sidebar",
+    "copy": "writer/frames.app-sidebar.copy#admin.sidebar",
+    "links": {
+      "nav.0": "publisher/page.admin-home",
+      "nav.1": "publisher/page.admin-requests",
+      "nav.2": "publisher/page.admin-questions"
+    },
+    "brand": "designer/assets.lockup"
+  }
+}

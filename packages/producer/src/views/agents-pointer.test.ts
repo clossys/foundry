@@ -20,7 +20,7 @@ describe("clossys init: the AGENTS.md views pointer", () => {
     const root = workspace();
     const result = await runInitCli([], root);
     expect(result.exitCode).toBe(0);
-    expect(result.output).toEqual({ file: join(root, "AGENTS.md"), outcome: "added" });
+    expect(result.output).toMatchObject({ file: join(root, "AGENTS.md"), outcome: "added" });
     expect(readFileSync(join(root, "AGENTS.md"), "utf8")).toBe(`${AGENTS_POINTER}\n`);
   });
 
@@ -28,7 +28,7 @@ describe("clossys init: the AGENTS.md views pointer", () => {
     const root = workspace();
     writeFileSync(join(root, "AGENTS.md"), "# Repository rules\n\nKeep commits small.");
     expect(ensureAgentsPointer(root).outcome).toBe("added");
-    expect((await runInitCli(["--root", root], join(root, "clossys"))).output).toEqual({ file: join(root, "AGENTS.md"), outcome: "present" });
+    expect((await runInitCli(["--root", root], join(root, "clossys"))).output).toMatchObject({ file: join(root, "AGENTS.md"), outcome: "present" });
     expect(ensureAgentsPointer(root).outcome).toBe("present");
     const text = readFileSync(join(root, "AGENTS.md"), "utf8");
     expect(text.startsWith("# Repository rules\n\nKeep commits small.\n\n")).toBe(true);

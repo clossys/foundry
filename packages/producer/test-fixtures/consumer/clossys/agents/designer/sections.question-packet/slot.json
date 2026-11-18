@@ -1,0 +1,251 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "sections.question-packet",
+  "agent": "designer",
+  "kind": "element/section",
+  "status": "starter",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections/sections",
+    "l2": "sections/sections/sections-records",
+    "order": 188
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia sync",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-18T09:00:00Z",
+  "refs": [
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.category.definition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.essence",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.imagery",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.style",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.background",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.border",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.card",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.card-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.font-sans",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.radius",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.spacing",
+      "rel": "input"
+    },
+    {
+      "to": "designer/components.badge",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.link",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.semantic-content",
+      "rel": "uses"
+    }
+  ],
+  "base": null,
+  "standard": "section.app",
+  "brief": {
+    "purpose": "Fill designer/sections.question-packet to the section.app standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.category.definition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.essence",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.imagery",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.style",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.background",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.border",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.card",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.card-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.font-sans",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.radius",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.spacing",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "questions",
+        "type": "records",
+        "required": true
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "allowedComposes": [
+      "components.link",
+      "components.badge",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.band"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.muted",
+        "themes.border",
+        "themes.radius",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.muted-foreground",
+        "themes.font-sans"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "app",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": []
+    },
+    "requirements": [
+      {
+        "check": "compose.layers"
+      },
+      {
+        "check": "source.ref"
+      },
+      {
+        "check": "tokens.only"
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

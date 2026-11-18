@@ -123,11 +123,12 @@ it("preserves all original common records and usage evidence through the frozen 
   expect(ADMIN_COMMON_COPY_EN.records).toHaveLength(177);
   expect(read("common-labels.r1.en.json").usages).toHaveLength(442);
   // Exact canonical content/provenance, independent of record ownership; re-pinned
-  // after the tokens-to-themes rename retired two usages and renamed their copy.
+  // after the tokens-to-themes rename retired two usages and renamed their copy, and again after the layout
+  // leaf ids lost their retired `layouts.` prefix in two record contexts (foundry-build-0042; text unchanged).
   expect(digest([...ADMIN_COMMON_COPY_EN.records].sort((a, b) => a.id.localeCompare(b.id))))
-    .toBe("9889bcc47e14f46c6f9633c602ea9f2f7fce7b96e8b7ae2948e322016a3d6f6a");
+    .toBe("d7abfe834aaaa50795b10f8dde6472c2eff6c3129b471c29037bca023a87c338");
   expect(digest(read("common-labels.r1.en.json").usages))
-    .toBe("6a0deb69923d5947ac14a50b4989ab8c770520bdddf95696b8d79cd3d40522eb");
+    .toBe("9b025ec45b59b29fc48de8ded170be29eed80d71f7b05bd0c61a2af1f75e3815");
   for (const record of ADMIN_COMMON_COPY_EN.records) {
     expect(getAdminCopyRecord(record.id)).toEqual(record);
     expect(Object.isFrozen(record)).toBe(true);

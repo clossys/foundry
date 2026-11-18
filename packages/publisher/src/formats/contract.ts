@@ -1,5 +1,6 @@
-import type { LayoutBreakpoint } from "../layouts/contract.js";
-import type { ArrangementModel, LayoutId } from "../layouts/ids.js";
+import type { LayoutBreakpoint } from "../engines/contract.js";
+import type { ArrangementModel } from "../layouts/ids.js";
+import type { EngineKey } from "../engines/keys.js";
 
 export const FORMAT_IDS = ["web.page.responsive", "email.html", "image.og", "document.pdf-a4", "video.16x9", "deck.16x9"] as const;
 export type FormatId = (typeof FORMAT_IDS)[number];
@@ -44,8 +45,8 @@ export interface FormatLeaf {
   readonly deliveries: readonly FormatDelivery[];
   readonly fps?: number;
   readonly arrangement: ArrangementModel;
-  readonly allowedCompositions: readonly LayoutId[];
-  readonly heldCompositions: readonly LayoutId[];
+  readonly allowedCompositions: readonly EngineKey[];
+  readonly heldCompositions: readonly EngineKey[];
   readonly frames: readonly `frames.${string}`[];
   readonly usedByPacks: readonly string[];
 }

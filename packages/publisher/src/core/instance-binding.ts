@@ -1,6 +1,6 @@
 import type { FlowBody, CanvasBody, FrameStageContract, BodySubstrate, SectionSubstrateRenderTest } from "@clossys/designer/catalog";
-import type { LayoutLeaf, LayoutRead, LayoutSpan, SectionLeafId } from "../layouts/contract.js";
-import type { LayoutId } from "../layouts/ids.js";
+import type { LayoutEngine, LayoutRead, LayoutSpan, SectionLeafId } from "../engines/contract.js";
+import type { EngineKey } from "../engines/keys.js";
 import type { FormatId, FormatLeaf } from "../formats/contract.js";
 import { runtimeHash } from "@clossys/designer/catalog";
 import type { RuntimeContent } from "@clossys/designer/catalog";
@@ -51,7 +51,7 @@ export interface InstanceBindingBase {
 }
 /** Existing flow instances remain valid; registered routes additionally require body. */
 export interface FlowInstanceBinding extends InstanceBindingBase {
-  readonly layout: { readonly leaf: LayoutId; readonly config: string; readonly members?: Readonly<Record<string, string>> };
+  readonly layout: { readonly leaf: EngineKey; readonly config: string; readonly members?: Readonly<Record<string, string>> };
   readonly body?: FlowBody<InstanceSectionRef>;
 }
 /** A canvas has an arrangement, never a dummy page Layout configuration. */
@@ -248,7 +248,7 @@ export interface BindingToken {
 export interface InstanceRegistries {
   readonly formats: readonly FormatLeaf[];
   readonly frames: readonly BindingFrameLeaf[];
-  readonly layouts: readonly LayoutLeaf[];
+  readonly layouts: readonly LayoutEngine[];
   readonly sections: readonly BindingSectionLeaf[];
   /** Actual consumer theme addresses, not a catalog fallback. */
   readonly themes: readonly BindingToken[];

@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { canonicalLocale } from "@clossys/writer/locale";
 import { validateContentSlot, validateContentWorkspace } from "./validate.js";
 import { isContentLocale } from "./vocabulary.js";
+import { contentTreeFixture } from "./__fixtures__/content-tree.js";
 
 function workspaceFixture() {
   return {
-    consumerId: "sample", defaultLocale: "en", locales: ["en", "fr"],
+    consumerId: "sample", tree: contentTreeFixture(), defaultLocale: "en", locales: ["en", "fr"],
     deployTargets: [{ id: "sample", repo: "sample", app: "site" }], destinations: [],
   };
 }
@@ -49,7 +50,7 @@ describe("stored content locale findings", () => {
     const slot = slotFixture();
     slot.locales = ["zh-Hant-TW", "ar-XB"];
     expect(validateContentWorkspace(workspace)).toEqual([]);
-    expect(validateContentSlot(slot)).toEqual([]);
+    expect(validateContentSlot(slot, contentTreeFixture())).toEqual([]);
   });
 
   it("names noncanonical workspace default and selection findings without rewriting them", () => {
@@ -68,7 +69,7 @@ describe("stored content locale findings", () => {
     const slot = slotFixture();
     slot.locales = ["iw-IL"];
     const before = structuredClone(slot);
-    expect(validateContentSlot(slot).map(({ path, rule }) => ({ path, rule }))).toEqual([
+    expect(validateContentSlot(slot, contentTreeFixture()).map(({ path, rule }) => ({ path, rule }))).toEqual([
       { path: "slot.locales[0]", rule: "non-canonical-locale" },
     ]);
     expect(slot).toEqual(before);
@@ -87,7 +88,7 @@ describe("stored content locale findings", () => {
   it.each(["", "en_US"])("keeps the existing locale rule for invalid slot tags %j", locale => {
     const slot = slotFixture();
     slot.locales = [locale];
-    expect(validateContentSlot(slot).map(({ path, rule }) => ({ path, rule }))).toEqual([
+    expect(validateContentSlot(slot, contentTreeFixture()).map(({ path, rule }) => ({ path, rule }))).toEqual([
       { path: "slot.locales[0]", rule: "locale" },
     ]);
   });
@@ -100,7 +101,7 @@ describe("stored content locale findings", () => {
     ]));
     const slot = slotFixture();
     slot.locales = [];
-    expect(validateContentSlot(slot).map(({ path, rule }) => ({ path, rule }))).toEqual([
+    expect(validateContentSlot(slot, contentTreeFixture()).map(({ path, rule }) => ({ path, rule }))).toEqual([
       { path: "slot.locales", rule: "nonempty-locales" },
     ]);
   });

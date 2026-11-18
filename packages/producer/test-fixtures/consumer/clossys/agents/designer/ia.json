@@ -440,7 +440,12 @@
             "sections.activity-feed",
             "sections.audit-log",
             "sections.explorer",
-            "sections.filter-builder"
+            "sections.filter-builder",
+            "sections.slot-gallery",
+            "sections.slot-detail",
+            "sections.candidate-preview",
+            "sections.question-packet",
+            "sections.queue-list"
           ]
         },
         {

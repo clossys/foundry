@@ -1,0 +1,73 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/loop.scope/package:scope-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/loop.scope",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher",
+      "version": "0.13.0"
+    },
+    "createdAt": "2026-11-17T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "trigger": [
+      "T4",
+      "T6",
+      "T7"
+    ],
+    "steps": [
+      {
+        "id": "scope-publisher",
+        "does": "the Publisher files every need its tree does not hold (a page input or an owner ask with no slot) and reports suspicious splits with their leaf ids; it moves no leaf",
+        "decider": {
+          "by": "agent",
+          "agent": "publisher",
+          "verb": "decide",
+          "tier": "mid",
+          "skill": "packages/publisher/actions/publisher.scope/skill.md"
+        },
+        "cli": "clossys request --target <agent>/<slot> --from <agent>/<slot>|owner --why <words>",
+        "reads": [
+          "publisher/ia.json",
+          "publisher/*/slot.json",
+          "producer/queue.slot/entries/*"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/*"
+        ],
+        "checks": []
+      },
+      {
+        "id": "demand",
+        "does": "file a queue.slot entry for every consumer slot input or uses edge that names no slot (the demand diff); an edge no agent can hold fails",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys request --scan",
+        "reads": [
+          "*/*/slot.json",
+          "producer/queue.slot/entries/*"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/*"
+        ],
+        "checks": [
+          "requests.filed"
+        ]
+      }
+    ],
+    "exit": "every slotless need of the consumer tree is filed as a queue.slot entry; each entry starts its own loop.slot run",
+    "repeat": "once per run; loop.slot answers each filed entry",
+    "maxRounds": 1
+  }
+}

@@ -88,6 +88,7 @@
       "format": "usage-graph"
     }
   ],
+  "loops": ["loop.scope", "loop.slot", "loop.create", "loop.choose", "loop.cascade"],
   "skill": "skill/SKILL.md",
   "skills": {
     "scope": "packages/designer/actions/designer.scope/skill.md",

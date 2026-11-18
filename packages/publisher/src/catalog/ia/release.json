@@ -28,6 +28,13 @@
           "leaves": [
             "release.app"
           ]
+        },
+        {
+          "id": "release/web/admin",
+          "label": "Admin releases",
+          "leaves": [
+            "release.admin"
+          ]
         }
       ]
     },
@@ -173,6 +180,30 @@
       "parked": true,
       "publication": "company-one-pager",
       "parkedBecause": "Documents are parked"
+    },
+    "release.admin": {
+      "kind": "release",
+      "publication": "admin",
+      "exports": [
+        {
+          "kind": "react-static"
+        }
+      ],
+      "locales": {
+        "from": "director/focus.reach.geography:Language"
+      },
+      "gates": [
+        "copy.sample-remaining",
+        "pins.resolve",
+        "constitution.strict",
+        "copy.locales",
+        "release.locales"
+      ],
+      "signoff": {
+        "by": "owner",
+        "raise": "queue.approve"
+      },
+      "readyMeans": "pinned; not live (Distribution parked)"
     }
   }
 }

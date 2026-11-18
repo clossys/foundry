@@ -1,0 +1,41 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "writer/page.admin-gallery.meta/package:admin-gallery.meta-v1.json",
+    "agent": "writer",
+    "kind": "candidate",
+    "status": "draft",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/writer",
+      "version": "0.6.0"
+    },
+    "createdAt": "2026-11-18T00:00:00Z",
+    "refs": [],
+    "slot": "writer/page.admin-gallery.meta",
+    "record": "admin-gallery.meta",
+    "source": {
+      "kind": "package-default",
+      "ref": [
+        "ia-target/writer.md#2-copy"
+      ]
+    },
+    "rationale": [
+      {
+        "purpose": "package default",
+        "why": "Claim-free sample copy, a DRAFT pending owner approval (foundry-build-0048 Amendment 2026-11-18b); a consumer Writer run replaces it before release.",
+        "sources": []
+      }
+    ]
+  },
+  "content": {
+    "fields": {
+      "title": {
+        "en": "Slots"
+      },
+      "description": {
+        "en": "Every slot an agent holds for {brand}, with its state."
+      }
+    }
+  }
+}

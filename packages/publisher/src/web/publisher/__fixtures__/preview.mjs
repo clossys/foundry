@@ -12,7 +12,7 @@ if (process.env.PUBLISHER_APP_INVENTORY) {
   const { loadExternalAppInventory } = await import(`data:text/javascript;base64,${Buffer.from(loader.outputFiles[0].text).toString("base64")}`);
   ({ inventory } = await loadExternalAppInventory());
 }
-const renderers = { "layouts.stack": layoutSourceClosure("web/layouts/Stack.tsx"), "layouts.split": layoutSourceClosure("web/layouts/Split.tsx") };
+const renderers = { "stack": layoutSourceClosure("web/engines/Stack.tsx"), "split": layoutSourceClosure("web/engines/Split.tsx") };
 const result = await build({ entryPoints: [fileURLToPath(new URL("./preview.tsx", import.meta.url))], bundle: true, write: false, outdir: "preview", format: "esm", platform: "browser", define: { __PUBLISHER_FIXTURE_RENDERERS__: JSON.stringify(renderers), __PUBLISHER_APP_INVENTORY__: JSON.stringify(inventory ?? null) } });
 const js = result.outputFiles.find(file => file.path.endsWith(".js")).text;
 const { generatePreviewCss } = await import("../../../../scripts/preview-css.mjs");

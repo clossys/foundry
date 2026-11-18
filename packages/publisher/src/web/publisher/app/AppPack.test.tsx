@@ -142,7 +142,7 @@ it("keeps twenty-six detail tabs out of the eight-page matrix until their own pa
 
 it("configures only parent pages, keeps tabs at their five own stages, and resets without adoption", () => {
   const inventory = projectAppInventory(genericInventory());
-  const settings = { format: "web.page.responsive" as const, frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "layouts.stack" as const, config: "stack.index" } };
+  const settings = { format: "web.page.responsive" as const, frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "stack" as const, config: "stack.index" } };
   const { rerender } = render(<AppPack inventory={inventory} productionSettings={{ "sample.record": settings }} />);
   const chip = screen.getByRole("button", { name: /^Open Sample record/ });
   expect(chip.closest("td")?.cellIndex).toBe(2);
@@ -206,7 +206,7 @@ it("lets the host override new evidence copy and input questions", () => {
 });
 
 it("shows explicitly supplied planning questions on a configured App chip and drill-in", () => {
-  const settings = { format: "web.page.responsive" as const, frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "layouts.stack" as const, config: "stack.index" } };
+  const settings = { format: "web.page.responsive" as const, frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "stack" as const, config: "stack.index" } };
   const request = { slot: "record.primary-action", question: "Which action should open this record?" };
   render(<AppPack inventory={projectAppInventory(genericInventory())} productionSettings={{ "sample.record": settings }} inputRequests={{ "sample.record": [request] }} />);
   const chip = screen.getByRole("button", { name: /Open Sample record .* needs input/ });
