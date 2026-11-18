@@ -17,15 +17,15 @@
  * *  5. Repinning the section to a web candidate and running the cascade again passes the page: needs-refresh goes to live.
  */
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { hostname, tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { runCli } from "../cli/main.js";
 import { buildContext } from "../constitution/context.js";
 import { staleRows } from "../constitution/cascade.js";
 import { PRODUCER_ROOT } from "../package-path.js";
-import { writeCandidate } from "../records/slot-write.js";
+import { SLOT_LOCK, writeCandidate } from "../records/slot-write.js";
 import { runGates, SLOTS_STALE } from "../release/gates.js";
 
 const AT = "2026-11-17T12:00:00Z";
@@ -158,4 +158,27 @@ describe("loop.cascade: a repin re-verdicts its dependants (R07.5)", () => {
     expect(r075(w.root)).toEqual([]);
     expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("pass");
   }, 300_000);
+});
+
+describe("the pin gate and the pin are one critical section (U6)", () => {
+  it("a pin refuses while another write holds the slot lock, and pins once it is free", async () => {
+    const w = world();
+    const candidate = w.submit("designer", "sections.hero", "hero", element("sections/hero.tsx"));
+    const slot = join(w.consumer, "agents", "designer", "sections.hero");
+    const pinFile = join(slot, "pin.json");
+    const before = existsSync(pinFile) ? readFileSync(pinFile, "utf8") : undefined;
+    // A live writer (this process) holds the slot's write lock, as a submit or a second pin does mid-write.
+    const lock = join(slot, SLOT_LOCK);
+    mkdirSync(lock);
+    writeFileSync(join(lock, "owner.json"), JSON.stringify({ pid: process.pid, host: hostname(), at: Date.now() }));
+    const held = await w.pin("designer/sections.hero", candidate);
+    expect(held.exitCode).toBe(1);
+    expect(held.message).toMatch(/pin refused: Slot is unavailable or another decision write is in progress/);
+    expect(existsSync(pinFile) ? readFileSync(pinFile, "utf8") : undefined).toBe(before);
+    expect(existsSync(join(w.root, ".clossys", "checks", "designer", "sections.hero", "scorecard.json"))).toBe(false);
+    rmSync(lock, { recursive: true, force: true });
+    const free = await w.pin("designer/sections.hero", candidate);
+    expect(free.exitCode, free.message).toBe(0);
+    expect(w.readJson(pinFile)).toMatchObject({ candidate });
+  }, 120_000);
 });
