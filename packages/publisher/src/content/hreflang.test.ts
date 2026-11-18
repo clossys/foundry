@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildLocaleRoutePlan, buildSitemapAlternates, localePathFor } from "./hreflang.js";
 import type { LocaleRouteOptions } from "./hreflang.js";
 import type { ContentSlot } from "./model.js";
+import { contentTreeFixture } from "./__fixtures__/content-tree.js";
 
 const slot = (patch: Partial<ContentSlot> = {}): ContentSlot => ({
   id: "sl_aaaaaaaaaa", aliases: [], locales: ["en-US", "fr-CA"], l1: "websites", l2: "site",
@@ -9,7 +10,7 @@ const slot = (patch: Partial<ContentSlot> = {}): ContentSlot => ({
   deployTarget: "site", devOnly: false, tags: [], releases: [], createdAt: "2026-01-01T00:00:00Z", ...patch,
 });
 const options = (patch: Partial<LocaleRouteOptions> = {}): LocaleRouteOptions => ({
-  workspace: { consumerId: "sample", defaultLocale: "en-US", locales: ["en-US", "fr-CA"], destinations: [],
+  workspace: { consumerId: "sample", tree: contentTreeFixture(), defaultLocale: "en-US", locales: ["en-US", "fr-CA"], destinations: [],
     deployTargets: [{ id: "site", repo: "sample", app: "site", origin: "https://example.com/" }] },
   manifest: { defaultLocale: "en-US", locales: [{ tag: "en-US", dir: "ltr", state: "active" }, { tag: "fr-CA", dir: "ltr", state: "active" }], fallback: {} },
   bodyServedLocales: { "en-US": ["en-US"], "fr-CA": ["fr-CA"] },

@@ -38,7 +38,7 @@ async function readRegistry(root: string): Promise<ContentRegistry> {
     const id = name.slice(0, -5);
     if (!name.endsWith(".json") || !isSlotId(id)) throw new TypeError("Invalid slot filename");
     const slot = await readStoreJson(root, `_registry/slots/${name}`);
-    assertValid(validateContentSlot(slot));
+    assertValid(validateContentSlot(slot, (workspace as ContentRegistry["workspace"]).tree));
     if ((slot as ContentSlot).id !== id) throw new TypeError("Slot filename and identity differ");
     slots.push(slot as ContentSlot);
   }

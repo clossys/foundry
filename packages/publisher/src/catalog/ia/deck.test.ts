@@ -87,10 +87,12 @@ describe("slides starter: one deck of six slides", () => {
 
   it("mutation: a slide naming a retired sections.slide-* fails", () => {
     const page = deck();
-    page.sections[4]!.use = "designer/sections.slide-quote";
-    expect(checkDeck("page.deck", page, layout, designer)).toEqual(["page.deck: quote places designer/sections.slide-quote, which the Designer catalog does not have"]);
+    const retiredQuote = RETIRED_SLIDES[ROLES.indexOf("quote")]!;
+    expect(designer.retired.has(retiredQuote)).toBe(true);
+    page.sections[4]!.use = `designer/${retiredQuote}`;
+    expect(checkDeck("page.deck", page, layout, designer)).toEqual([`page.deck: quote places designer/${retiredQuote}, which the Designer catalog does not have`]);
     expect(checkPageOption("page.deck", page as unknown as PageOptionContent, slotContract("page.deck") as PageSlot, layout as LayoutContract, designer).map(finding => finding.message))
-      .toContain("page.deck: quote places retired designer/sections.slide-quote");
+      .toContain(`page.deck: quote places retired designer/${retiredQuote}`);
   });
 
   it("mutation: a twin whose Designer contract lacks the slide medium fails", () => {

@@ -1,12 +1,12 @@
-import freezeData from "./slots.leaf-freeze.json" with { type: "json" };
 import type { ContentFinding } from "./composition.js";
 import type { ContentSlot } from "./model.js";
 import { isSlotId } from "./taxonomy.js";
 
-/** Compare identities only; placement, ordering and content readiness are independent. */
+/** Compare identities only; placement, ordering and content readiness are independent. The caller supplies the freeze
+ * record: Publisher reads no freeze of its own (the signed src/content/slots.leaf-freeze.json lists only retired ids). */
 export function checkSlotLeafFreeze(
   slots: readonly Pick<ContentSlot, "id">[],
-  freeze: unknown = freezeData,
+  freeze: unknown,
 ): ContentFinding[] {
   const findings: ContentFinding[] = [];
   const finding = (path: string, message: string): ContentFinding => ({ path, rule: "LEAF_FREEZE", message });

@@ -6,7 +6,7 @@ import { fixtureCompiler } from "../__fixtures__/compiler.js";
 import { layoutSourceClosure } from "../__fixtures__/source-closure.mjs";
 import { ASSEMBLY_OWNERS, deriveItemAssembly } from "./assembly.js";
 
-const renderers = { "layouts.stack": layoutSourceClosure("web/layouts/Stack.tsx"), "layouts.split": layoutSourceClosure("web/layouts/Split.tsx") };
+const renderers = { "stack": layoutSourceClosure("web/engines/Stack.tsx"), "split": layoutSourceClosure("web/engines/Split.tsx") };
 const library = createStandardPackLibrary(renderers);
 const configured = Object.fromEntries(STANDARD_PACK_INSTANCES.map(binding => [binding.instanceId, productionSettingsFromBinding(binding)]));
 const instances = STANDARD_PACK_INSTANCES;
@@ -28,7 +28,7 @@ it("derives all owner lanes from actual inputs and keeps absent dependencies pen
 it("retains About LK2 and short-circuited evidence without a fallback config", () => {
   const about = items().find(item => item.binding.instanceId === "standard.about")!;
   const nodes = deriveItemAssembly(about, registries);
-  expect(nodes.find(node => node.owner === "Layouts")).toMatchObject({ status: "failed", references: ["layouts.stack", "stack.default"] });
+  expect(nodes.find(node => node.owner === "Layouts")).toMatchObject({ status: "failed", references: ["stack", "stack.default"] });
   expect(nodes.find(node => node.owner === "Layouts")?.findings.map(finding => finding.code)).toContain("LK2");
   expect(nodes.find(node => node.owner === "Tokens")).toMatchObject({ status: "pending", references: [] });
   expect(nodes.find(node => node.owner === "Content")?.status).toBe("pending");
@@ -39,7 +39,7 @@ it("exposes missing referenced tokens and real renderer mutations as failures", 
   const contact = derivePackPipeline(instances, library, missing, fixtureCompiler, configured).items[2]!;
   expect(deriveItemAssembly(contact, missing).find(node => node.owner === "Tokens")?.status).toBe("failed");
   const broken = structuredClone(renderers);
-  broken["layouts.stack"].files[broken["layouts.stack"].entry] += '\nexport const Regression = () => <div className="bg-red-500" />;';
+  broken["stack"].files[broken["stack"].entry] += '\nexport const Regression = () => <div className="bg-red-500" />;';
   const mutated = derivePackPipeline(instances, createStandardPackLibrary(broken), registries, fixtureCompiler, configured).items[0]!;
   expect(deriveItemAssembly(mutated, registries).find(node => node.owner === "Layouts")?.findings.some(finding => finding.code === "LK11")).toBe(true);
 });

@@ -100,7 +100,7 @@ it("copies only missing-decision presentation fields and rejects duplicate ident
 it("adds derived delivery states only to parent pages and keeps detail tabs at their five owned stages", async () => {
   const { STANDARD_PACK_REGISTRIES } = await import("../__fixtures__/standard-website.js");
   const inventory = projectAppInventory(genericInventory());
-  const settings = { format: "web.page.responsive" as const, frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "layouts.stack" as const, config: "stack.index" }, deliveries: [{ id: "static-site-bundle" as const }], deploymentSurface: "fixture.app-preview" };
+  const settings = { format: "web.page.responsive" as const, frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "stack" as const, config: "stack.index" }, deliveries: [{ id: "static-site-bundle" as const }], deploymentSurface: "fixture.app-preview" };
   const parent = inventory.routes.find(route => route.kind === "details")!;
   expect(deriveAppRouteStages(parent, settings, STANDARD_PACK_REGISTRIES).slice(-2)).toMatchObject([{ name: "Export", status: "concept-only" }, { name: "Deploy", status: "unknown" }]);
   expect(deriveAppRouteStages(inventory.routes.find(route => route.kind === "detail-tab")!, settings, STANDARD_PACK_REGISTRIES)).toHaveLength(5);

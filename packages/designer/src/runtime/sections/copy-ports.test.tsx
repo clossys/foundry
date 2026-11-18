@@ -2,7 +2,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { SectionRenderInput } from "./group-b-support.js";
-import { renderRecordDetail } from "./record-detail.js";
 import { renderDataTable } from "./data-table.js";
 import { renderChat } from "./chat.js";
 import { CHAT_LABEL_KEYS } from "./copy-ports.js";
@@ -12,19 +11,12 @@ function input(leaf: string, values: Record<string, unknown>, sectionHost?: Reco
   return { fill: { leaf }, selection: { leaf, members: [] }, cell: { state: "default" }, content: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, { value }])), sectionHost, slots: {} } as unknown as SectionRenderInput;
 }
 const chatCopy = () => ({ label: "W1 conversation", placeholder: "W1 placeholder", labels: Object.fromEntries(CHAT_LABEL_KEYS.map(key => [key, `W1 ${key}`])) });
-it("renders only the bound record title and fields, never specimen copy", () => {
-  const value = input("sections.record-detail", { fields: [{ label: "Wrong specimen", value: "Wrong value" }], actions: [{ id: "inspect", label: "W1 inspect" }] }, { recordDetail: { title: "Bound item", fields: [{ label: "W1 key", value: "Selected value" }], actionsLabel: "W1 actions" } });
-  const html = renderToStaticMarkup(renderRecordDetail(value));
-  expect(html).toContain("Bound item"); expect(html).toContain("Selected value"); expect(html).toContain("W1 actions");
-  expect(html).not.toMatch(/Order #?1042|Wrong specimen|Wrong value/);
-});
 it("renders both empty-table strings from the explicit copy port", () => {
   const value = input("sections.data-table", { columns: [{ id: "name", label: "W1 name" }], rows: [] }, { tableCopy: { label: "W1 records", emptyTitle: "W1 empty title", emptyDescription: "W1 empty body", paginationLabel: "W1 pages" } });
   const html = renderToStaticMarkup(renderDataTable(value));
   expect(html).toContain("W1 empty title"); expect(html).toContain("W1 empty body"); expect(html).not.toContain("No orders yet");
 });
 it("refuses each absent selected-runtime copy port", () => {
-  expect(() => renderRecordDetail(input("sections.record-detail", { fields: [] }))).toThrow(/recordDetail host port/);
   expect(() => renderToStaticMarkup(renderDataTable(input("sections.data-table", { rows: [], columns: [] })))).toThrow(/tableCopy host port/);
   expect(() => renderChat(input("sections.chat", { parts: [], composer: {} }))).toThrow(/chatCopy host port/);
 });

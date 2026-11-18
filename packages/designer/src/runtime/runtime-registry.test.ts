@@ -13,6 +13,7 @@ import { sectionRenderers } from "./sections/index.js";
 import { frameRenderers } from "./frames/index.js";
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
+import retired from "../catalog/retired.json" with { type: "json" };
 
 const entry = (leaf: SurfaceRendererEntry["leaf"]): SurfaceRendererEntry => ({ leaf, render: () => leaf, sample: () => ({}) });
 
@@ -63,9 +64,14 @@ describe("surface runtime registry", () => {
     const nativeSpecimens = SPECIMEN_SECTION_EXPORTS.map(row => row.id).sort();
     expect(otherPackage).toEqual(["sections.sectioned-document"]);
     expect(nativeSpecimens.length).toBeGreaterThan(0);
-    const packaged = ids(sectionSlots as readonly { id: string }[]).filter(id => !otherPackage.includes(id) && !nativeSpecimens.includes(id));
+    // A leaf the owner retired by DELETE (no successor) may have its renderer dropped (foundry-build-0042:
+    // sections.record-detail); every live leaf, and every retired leaf that still ships, keeps the exact match.
+    const deleted = new Set((retired as { id: string; replacedBy?: string; reason: string }[]).filter(row => !row.replacedBy && /: DELETE$/.test(row.reason)).map(row => row.id));
+    const dropped = ids(sectionSlots as readonly { id: string }[]).filter(id => deleted.has(id) && !Object.hasOwn(sectionRenderers, id));
+    expect(dropped).toEqual(["sections.record-detail"]);
+    const packaged = ids(sectionSlots as readonly { id: string }[]).filter(id => !otherPackage.includes(id) && !nativeSpecimens.includes(id) && !dropped.includes(id));
     expect(Object.keys(sectionRenderers).sort()).toEqual(packaged);
-    expect(packaged.length + otherPackage.length + nativeSpecimens.length).toBe(sectionSlots.length);
+    expect(packaged.length + otherPackage.length + nativeSpecimens.length + dropped.length).toBe(sectionSlots.length);
     for (const id of [...otherPackage, ...nativeSpecimens]) expect(ids(sectionSlots as readonly { id: string }[])).toContain(id);
     // foundry-build-0032 (audit P3): frames.deck is rendered by another package (Publisher's static slides build), the
     // same way the sectioned document is; it is the importer's one named Frames gap and has no renderer here.

@@ -54,7 +54,7 @@ it("opens current item assembly, follows host owner links and reveals nested For
   fireEvent.click(screen.getByRole("button", { name: "Apply configuration" }));
   expect(screen.getByRole("region", { name: "Home · item details" })).toHaveFocus();
   expect(screen.getByRole("link", { name: "Open Layouts in Designer" })).toHaveAttribute("href", "/host/designer/layouts");
-  expect(ownerHref).toHaveBeenCalledWith(expect.objectContaining({ owner: "Layouts", references: ["layouts.stack", "stack.landing"], instanceId: "standard.home" }));
+  expect(ownerHref).toHaveBeenCalledWith(expect.objectContaining({ owner: "Layouts", references: ["stack", "stack.landing"], instanceId: "standard.home" }));
   expect(screen.getAllByRole("complementary", { name: "Instance inspector" })).toHaveLength(1);
   expect(screen.getByRole("region", { name: "Assembly render result" })).toHaveTextContent("Ready remains pending");
   expect(screen.getByRole("region", { name: "Assembly check results" })).toHaveTextContent("LK12");

@@ -83,19 +83,6 @@
     },
     {
       "parent": "publisher.frame",
-      "id": "frames.document",
-      "role": "label",
-      "cellId": "publisher.frame.frames.document",
-      "recordId": "st.w3ddpdtqay",
-      "file": "admin-meta.r1.en.json",
-      "text": "Document page",
-      "source": {
-        "path": "packages/designer/src/catalog/slots/frames.json",
-        "line": 3
-      }
-    },
-    {
-      "parent": "publisher.frame",
       "id": "frames.site-shell",
       "role": "label",
       "cellId": "publisher.frame.frames.site-shell",
@@ -265,9 +252,9 @@
     },
     {
       "parent": "publisher.layout",
-      "id": "layouts.stack",
+      "id": "stack",
       "role": "label",
-      "cellId": "publisher.layout.layouts.stack",
+      "cellId": "publisher.layout.stack",
       "recordId": "st.ajxm6xb824",
       "file": "admin-meta.r1.en.json",
       "text": "Vertical stack",
@@ -278,9 +265,9 @@
     },
     {
       "parent": "publisher.layout",
-      "id": "layouts.split",
+      "id": "split",
       "role": "label",
-      "cellId": "publisher.layout.layouts.split",
+      "cellId": "publisher.layout.split",
       "recordId": "st.gc39szvkj1",
       "file": "admin-meta.r1.en.json",
       "text": "Two columns",
@@ -291,9 +278,9 @@
     },
     {
       "parent": "publisher.layout",
-      "id": "layouts.sidebar-content",
+      "id": "sidebar-content",
       "role": "label",
-      "cellId": "publisher.layout.layouts.sidebar-content",
+      "cellId": "publisher.layout.sidebar-content",
       "recordId": "st.jgvacmfx3y",
       "file": "admin-meta.r1.en.json",
       "text": "Side panel",
@@ -304,9 +291,9 @@
     },
     {
       "parent": "publisher.layout",
-      "id": "layouts.bento",
+      "id": "bento",
       "role": "label",
-      "cellId": "publisher.layout.layouts.bento",
+      "cellId": "publisher.layout.bento",
       "recordId": "st.wbydgfcmr3",
       "file": "admin-meta.r1.en.json",
       "text": "Card grid",
@@ -317,9 +304,9 @@
     },
     {
       "parent": "publisher.layout",
-      "id": "layouts.staggered-grid",
+      "id": "staggered-grid",
       "role": "label",
-      "cellId": "publisher.layout.layouts.staggered-grid",
+      "cellId": "publisher.layout.staggered-grid",
       "recordId": "st.hfnrqcnec8",
       "file": "admin-meta.r1.en.json",
       "text": "Staggered grid",
@@ -329,10 +316,10 @@
       }
     },
     {
-      "parent": "publisher.layoutConfig.layouts.stack",
+      "parent": "publisher.layoutConfig.stack",
       "id": "stack.landing",
       "role": "label",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.landing",
+      "cellId": "publisher.layoutConfig.stack.stack.landing",
       "recordId": "st.h42b0qvyfe",
       "file": "admin-meta.r1.en.json",
       "text": "Landing page",
@@ -342,10 +329,10 @@
       }
     },
     {
-      "parent": "publisher.layoutConfig.layouts.stack",
+      "parent": "publisher.layoutConfig.stack",
       "id": "stack.document",
       "role": "label",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.document",
+      "cellId": "publisher.layoutConfig.stack.stack.document",
       "recordId": "st.4vkyd92vs4",
       "file": "admin-meta.r1.en.json",
       "text": "Reading page",
@@ -355,10 +342,10 @@
       }
     },
     {
-      "parent": "publisher.layoutConfig.layouts.stack",
+      "parent": "publisher.layoutConfig.stack",
       "id": "stack.focus",
       "role": "label",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.focus",
+      "cellId": "publisher.layoutConfig.stack.stack.focus",
       "recordId": "st.evecaayeqq",
       "file": "admin-meta.r1.en.json",
       "text": "Focused task",
@@ -368,10 +355,10 @@
       }
     },
     {
-      "parent": "publisher.layoutConfig.layouts.stack",
+      "parent": "publisher.layoutConfig.stack",
       "id": "stack.index",
       "role": "label",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.index",
+      "cellId": "publisher.layoutConfig.stack.stack.index",
       "recordId": "st.6fwq660ah7",
       "file": "admin-meta.r1.en.json",
       "text": "Item list",
@@ -381,10 +368,10 @@
       }
     },
     {
-      "parent": "publisher.layoutConfig.layouts.stack",
+      "parent": "publisher.layoutConfig.stack",
       "id": "stack.workspace",
       "role": "label",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.workspace",
+      "cellId": "publisher.layoutConfig.stack.stack.workspace",
       "recordId": "st.txjd1pf34b",
       "file": "admin-meta.r1.en.json",
       "text": "Workspace",
@@ -394,10 +381,10 @@
       }
     },
     {
-      "parent": "publisher.layoutConfig.layouts.split",
+      "parent": "publisher.layoutConfig.split",
       "id": "split.default",
       "role": "label",
-      "cellId": "publisher.layoutConfig.layouts.split.split.default",
+      "cellId": "publisher.layoutConfig.split.split.default",
       "recordId": "st.pbs86jv07a",
       "file": "admin-meta.r1.en.json",
       "text": "Balanced columns",
@@ -407,10 +394,10 @@
       }
     },
     {
-      "parent": "publisher.layoutConfig.layouts.sidebar-content",
+      "parent": "publisher.layoutConfig.sidebar-content",
       "id": "sidebar-content.record",
       "role": "label",
-      "cellId": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record",
+      "cellId": "publisher.layoutConfig.sidebar-content.sidebar-content.record",
       "recordId": "st.g385gwchf1",
       "file": "admin-meta.r1.en.json",
       "text": "Record details",
@@ -420,10 +407,10 @@
       }
     },
     {
-      "parent": "publisher.layoutConfig.layouts.sidebar-content",
+      "parent": "publisher.layoutConfig.sidebar-content",
       "id": "sidebar-content.docs",
       "role": "label",
-      "cellId": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.docs",
+      "cellId": "publisher.layoutConfig.sidebar-content.sidebar-content.docs",
       "recordId": "st.9axe6qwytm",
       "file": "admin-meta.r1.en.json",
       "text": "Document navigation",
@@ -433,10 +420,10 @@
       }
     },
     {
-      "parent": "publisher.layoutConfig.layouts.bento",
+      "parent": "publisher.layoutConfig.bento",
       "id": "bento.default",
       "role": "label",
-      "cellId": "publisher.layoutConfig.layouts.bento.bento.default",
+      "cellId": "publisher.layoutConfig.bento.bento.default",
       "recordId": "st.7bf87rzb6j",
       "file": "admin-meta.r1.en.json",
       "text": "Dashboard cards",
@@ -469,32 +456,6 @@
       "source": {
         "path": "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts",
         "line": 34
-      }
-    },
-    {
-      "parent": "designer.frameOption.frames.document",
-      "id": "variant.page",
-      "role": "label",
-      "cellId": "designer.frameOption.frames.document.variant.page",
-      "recordId": "st.dczaaf9s2z",
-      "file": "admin-studio.r1.en.json",
-      "text": "Page document",
-      "source": {
-        "path": "packages/designer/src/catalog/slots/frames.json",
-        "line": 29
-      }
-    },
-    {
-      "parent": "designer.frameOption.frames.document",
-      "id": "variant.status",
-      "role": "label",
-      "cellId": "designer.frameOption.frames.document.variant.status",
-      "recordId": "st.zjekh6j231",
-      "file": "admin-studio.r1.en.json",
-      "text": "Status document",
-      "source": {
-        "path": "packages/designer/src/catalog/slots/frames.json",
-        "line": 30
       }
     },
     {
@@ -1226,10 +1187,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "parent": "publisher.layoutOption.stack.measure",
       "id": "full",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.full",
+      "cellId": "publisher.layoutOption.stack.measure.full",
       "recordId": "st.ana61jy0p8",
       "file": "admin-meta.r1.en.json",
       "text": "Full width",
@@ -1239,10 +1200,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "parent": "publisher.layoutOption.stack.measure",
       "id": "wide",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.wide",
+      "cellId": "publisher.layoutOption.stack.measure.wide",
       "recordId": "st.8dyaww7dzk",
       "file": "admin-meta.r1.en.json",
       "text": "Wide content",
@@ -1252,10 +1213,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "parent": "publisher.layoutOption.stack.measure",
       "id": "content",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.content",
+      "cellId": "publisher.layoutOption.stack.measure.content",
       "recordId": "st.vhkjr72c56",
       "file": "admin-meta.r1.en.json",
       "text": "Content width",
@@ -1265,10 +1226,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "parent": "publisher.layoutOption.stack.measure",
       "id": "prose",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.prose",
+      "cellId": "publisher.layoutOption.stack.measure.prose",
       "recordId": "st.4e2fw2re1h",
       "file": "admin-meta.r1.en.json",
       "text": "Reading width",
@@ -1278,10 +1239,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "parent": "publisher.layoutOption.stack.measure",
       "id": "form",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.form",
+      "cellId": "publisher.layoutOption.stack.measure.form",
       "recordId": "st.j3cstzxqbm",
       "file": "admin-meta.r1.en.json",
       "text": "Form width",
@@ -1291,10 +1252,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.stack.align",
+      "parent": "publisher.layoutOption.stack.align",
       "id": "start",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.stack.align.start",
+      "cellId": "publisher.layoutOption.stack.align.start",
       "recordId": "st.rd1wks5c2n",
       "file": "admin-meta.r1.en.json",
       "text": "At start",
@@ -1304,10 +1265,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.stack.align",
+      "parent": "publisher.layoutOption.stack.align",
       "id": "center",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.stack.align.center",
+      "cellId": "publisher.layoutOption.stack.align.center",
       "recordId": "st.19r4rps8z4",
       "file": "admin-meta.r1.en.json",
       "text": "Centered",
@@ -1317,10 +1278,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.stack.lead",
+      "parent": "publisher.layoutOption.stack.lead",
       "id": "required",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.stack.lead.required",
+      "cellId": "publisher.layoutOption.stack.lead.required",
       "recordId": "st.hkp1srfq0x",
       "file": "admin-meta.r1.en.json",
       "text": "Required",
@@ -1330,10 +1291,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.stack.lead",
+      "parent": "publisher.layoutOption.stack.lead",
       "id": "optional",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.stack.lead.optional",
+      "cellId": "publisher.layoutOption.stack.lead.optional",
       "recordId": "st.8grbg3g8mq",
       "file": "admin-meta.r1.en.json",
       "text": "Optional",
@@ -1343,10 +1304,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.split.ratio",
+      "parent": "publisher.layoutOption.split.ratio",
       "id": "1:1",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.split.ratio.1:1",
+      "cellId": "publisher.layoutOption.split.ratio.1:1",
       "recordId": "st.j1x20g5ma9",
       "file": "admin-meta.r1.en.json",
       "text": "Equal columns",
@@ -1356,10 +1317,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.split.ratio",
+      "parent": "publisher.layoutOption.split.ratio",
       "id": "3:2",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.split.ratio.3:2",
+      "cellId": "publisher.layoutOption.split.ratio.3:2",
       "recordId": "st.mkw5r8sdh7",
       "file": "admin-meta.r1.en.json",
       "text": "Wider first column",
@@ -1369,10 +1330,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.split.ratio",
+      "parent": "publisher.layoutOption.split.ratio",
       "id": "2:3",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.split.ratio.2:3",
+      "cellId": "publisher.layoutOption.split.ratio.2:3",
       "recordId": "st.yqadfrrjf9",
       "file": "admin-meta.r1.en.json",
       "text": "Wider second column",
@@ -1382,10 +1343,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.split.collapse",
+      "parent": "publisher.layoutOption.split.collapse",
       "id": "start-first",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.split.collapse.start-first",
+      "cellId": "publisher.layoutOption.split.collapse.start-first",
       "recordId": "st.6mdn92wcyk",
       "file": "admin-meta.r1.en.json",
       "text": "First column on top",
@@ -1395,10 +1356,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.split.collapse",
+      "parent": "publisher.layoutOption.split.collapse",
       "id": "end-first",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.split.collapse.end-first",
+      "cellId": "publisher.layoutOption.split.collapse.end-first",
       "recordId": "st.av8qx33gjs",
       "file": "admin-meta.r1.en.json",
       "text": "Second column on top",
@@ -1408,10 +1369,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.split.align",
+      "parent": "publisher.layoutOption.split.align",
       "id": "top",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.split.align.top",
+      "cellId": "publisher.layoutOption.split.align.top",
       "recordId": "st.p7xaz60gtc",
       "file": "admin-meta.r1.en.json",
       "text": "At top",
@@ -1421,10 +1382,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.split.align",
+      "parent": "publisher.layoutOption.split.align",
       "id": "center",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.split.align.center",
+      "cellId": "publisher.layoutOption.split.align.center",
       "recordId": "st.19r4rps8z4",
       "file": "admin-meta.r1.en.json",
       "text": "Centered",
@@ -1434,10 +1395,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.sidebar-content.side",
+      "parent": "publisher.layoutOption.sidebar-content.side",
       "id": "start",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.side.start",
+      "cellId": "publisher.layoutOption.sidebar-content.side.start",
       "recordId": "st.rd1wks5c2n",
       "file": "admin-meta.r1.en.json",
       "text": "At start",
@@ -1447,10 +1408,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.sidebar-content.side",
+      "parent": "publisher.layoutOption.sidebar-content.side",
       "id": "end",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.side.end",
+      "cellId": "publisher.layoutOption.sidebar-content.side.end",
       "recordId": "st.q8zq27jzn6",
       "file": "admin-meta.r1.en.json",
       "text": "At end",
@@ -1460,10 +1421,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.sidebar-content.aside-width",
+      "parent": "publisher.layoutOption.sidebar-content.aside-width",
       "id": "region",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.aside-width.region",
+      "cellId": "publisher.layoutOption.sidebar-content.aside-width.region",
       "recordId": "st.ya04kydxn7",
       "file": "admin-meta.r1.en.json",
       "text": "Saved panel width",
@@ -1473,10 +1434,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.sidebar-content.aside-width",
+      "parent": "publisher.layoutOption.sidebar-content.aside-width",
       "id": "third",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.aside-width.third",
+      "cellId": "publisher.layoutOption.sidebar-content.aside-width.third",
       "recordId": "st.p35pa5phkx",
       "file": "admin-meta.r1.en.json",
       "text": "One third",
@@ -1486,10 +1447,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.sidebar-content.sticky",
+      "parent": "publisher.layoutOption.sidebar-content.sticky",
       "id": "none",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.sticky.none",
+      "cellId": "publisher.layoutOption.sidebar-content.sticky.none",
       "recordId": "st.qw7keqyzgs",
       "file": "admin-meta.r1.en.json",
       "text": "Not sticky",
@@ -1499,10 +1460,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.sidebar-content.sticky",
+      "parent": "publisher.layoutOption.sidebar-content.sticky",
       "id": "aside",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.sticky.aside",
+      "cellId": "publisher.layoutOption.sidebar-content.sticky.aside",
       "recordId": "st.mz5vrchgfx",
       "file": "admin-meta.r1.en.json",
       "text": "Sticky side panel",
@@ -1512,10 +1473,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.sidebar-content.stacked-aside",
+      "parent": "publisher.layoutOption.sidebar-content.stacked-aside",
       "id": "before",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.stacked-aside.before",
+      "cellId": "publisher.layoutOption.sidebar-content.stacked-aside.before",
       "recordId": "st.1vjd1q75gn",
       "file": "admin-meta.r1.en.json",
       "text": "Before content",
@@ -1525,10 +1486,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.sidebar-content.stacked-aside",
+      "parent": "publisher.layoutOption.sidebar-content.stacked-aside",
       "id": "after",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.stacked-aside.after",
+      "cellId": "publisher.layoutOption.sidebar-content.stacked-aside.after",
       "recordId": "st.v7t7c2pr8y",
       "file": "admin-meta.r1.en.json",
       "text": "After content",
@@ -1538,10 +1499,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.sidebar-content.breakpoint",
+      "parent": "publisher.layoutOption.sidebar-content.breakpoint",
       "id": "md",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.md",
+      "cellId": "publisher.layoutOption.sidebar-content.breakpoint.md",
       "recordId": "st.j57xeagqqc",
       "file": "admin-meta.r1.en.json",
       "text": "Tablet",
@@ -1551,10 +1512,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.sidebar-content.breakpoint",
+      "parent": "publisher.layoutOption.sidebar-content.breakpoint",
       "id": "lg",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.lg",
+      "cellId": "publisher.layoutOption.sidebar-content.breakpoint.lg",
       "recordId": "st.psm20y3g29",
       "file": "admin-meta.r1.en.json",
       "text": "Large tablet",
@@ -1564,10 +1525,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.bento.density",
+      "parent": "publisher.layoutOption.bento.density",
       "id": "airy",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.bento.density.airy",
+      "cellId": "publisher.layoutOption.bento.density.airy",
       "recordId": "st.8ac2dy1j6t",
       "file": "admin-meta.r1.en.json",
       "text": "Spacious",
@@ -1577,10 +1538,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.bento.density",
+      "parent": "publisher.layoutOption.bento.density",
       "id": "standard",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.bento.density.standard",
+      "cellId": "publisher.layoutOption.bento.density.standard",
       "recordId": "st.208gg0xrk7",
       "file": "admin-meta.r1.en.json",
       "text": "Standard spacing",
@@ -1590,10 +1551,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.bento.density",
+      "parent": "publisher.layoutOption.bento.density",
       "id": "dense",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.bento.density.dense",
+      "cellId": "publisher.layoutOption.bento.density.dense",
       "recordId": "st.0rj8qzqqr1",
       "file": "admin-meta.r1.en.json",
       "text": "Compact",
@@ -1603,10 +1564,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.bento.rhythm",
+      "parent": "publisher.layoutOption.bento.rhythm",
       "id": "uniform",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.bento.rhythm.uniform",
+      "cellId": "publisher.layoutOption.bento.rhythm.uniform",
       "recordId": "st.s9f5fst22q",
       "file": "admin-meta.r1.en.json",
       "text": "Even cards",
@@ -1616,10 +1577,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.bento.rhythm",
+      "parent": "publisher.layoutOption.bento.rhythm",
       "id": "feature-first",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.bento.rhythm.feature-first",
+      "cellId": "publisher.layoutOption.bento.rhythm.feature-first",
       "recordId": "st.1t0mm884hr",
       "file": "admin-meta.r1.en.json",
       "text": "Featured card first",
@@ -1629,10 +1590,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.staggered-grid.columns",
+      "parent": "publisher.layoutOption.staggered-grid.columns",
       "id": "2",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.2",
+      "cellId": "publisher.layoutOption.staggered-grid.columns.2",
       "recordId": "st.gc39szvkj1",
       "file": "admin-meta.r1.en.json",
       "text": "Two columns",
@@ -1642,10 +1603,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.staggered-grid.columns",
+      "parent": "publisher.layoutOption.staggered-grid.columns",
       "id": "3",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.3",
+      "cellId": "publisher.layoutOption.staggered-grid.columns.3",
       "recordId": "st.v54z11633r",
       "file": "admin-meta.r1.en.json",
       "text": "Three columns",
@@ -1655,10 +1616,10 @@
       }
     },
     {
-      "parent": "publisher.layoutOption.layouts.staggered-grid.columns",
+      "parent": "publisher.layoutOption.staggered-grid.columns",
       "id": "4",
       "role": "label",
-      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.4",
+      "cellId": "publisher.layoutOption.staggered-grid.columns.4",
       "recordId": "st.5waybca904",
       "file": "admin-meta.r1.en.json",
       "text": "Four columns",

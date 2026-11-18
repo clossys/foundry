@@ -124,7 +124,7 @@ export async function executePublisherCommand(request: PublisherCommandInput): P
     if (request.command === "slot-create") {
       const slot = { ...(input.slot as object), id: createSlotId(new Set([...registry.slots.map(value => value.id), ...registry.slots.flatMap(value => value.aliases)])), releases: [], createdAt: request.at } as unknown as ContentSlot;
       const next = { ...registry, slots: [...registry.slots, slot] };
-      const findings = [...validateContentSlot(slot), ...validateContentRegistry(next)];
+      const findings = [...validateContentSlot(slot, registry.workspace.tree), ...validateContentRegistry(next)];
       if (findings.length) return failure(findings);
       await writeContentStore(request.root, next);
       return success({ slot });

@@ -128,7 +128,7 @@ export function ProductionSettingsFields({ draft, setDraft, configured, registri
   const frames = registries?.frames ?? [];
   const layouts = registries?.layouts ?? [];
   const frame = frames.find(frame => frame.id === draft.frame.leaf);
-  const layout = layouts.find(layout => layout.id === draft.layout.leaf);
+  const layout = layouts.find(layout => layout.engine === draft.layout.leaf);
   /** @default "Configured" or "to do". */
   const statusLabel = configured ? configuredLabel : toDoLabel;
   /** @default Built-format or unverified-renderer evidence description. */
@@ -151,8 +151,8 @@ export function ProductionSettingsFields({ draft, setDraft, configured, registri
       ]} />
       <NamedValueComboBox label={frameConfigLabel} value={draft.frame.config ?? ""} onChange={value => setDraft({ ...draft, frame: { leaf: draft.frame.leaf, ...(value ? { config: value } : {}) } })} parent={`publisher.frameConfig.${draft.frame.leaf}`} names={names} ids={frame?.contract.configs ?? []} />
       <StockSelect label={layoutLabel} selectedKey={draft.layout.leaf} onSelectionChange={key => { if (key != null) setDraft({ ...draft, layout: { leaf: String(key) as ProductionSettings["layout"]["leaf"], config: "" } }); }} options={[
-        ...(!layouts.some(layout => layout.id === draft.layout.leaf) ? [{ id: draft.layout.leaf, label: selectedLayoutLabel }] : []),
-        ...layouts.map(layout => ({ id: layout.id, label: withStatus(valueName(names, "publisher.layout", layout.id, layoutLabel), layout.status) })),
+        ...(!layouts.some(layout => layout.engine === draft.layout.leaf) ? [{ id: draft.layout.leaf, label: selectedLayoutLabel }] : []),
+        ...layouts.map(layout => ({ id: layout.engine, label: withStatus(valueName(names, "publisher.layout", layout.engine, layoutLabel), layout.status) })),
       ]} />
       <NamedValueComboBox label={layoutConfigLabel} isRequired value={draft.layout.config} onChange={value => setDraft({ ...draft, layout: { ...draft.layout, config: value } })} parent={`publisher.layoutConfig.${draft.layout.leaf}`} names={names} ids={layout?.contract.configs.map(config => config.id) ?? []} />
     </FieldGroup></FieldSet>

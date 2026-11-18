@@ -44,16 +44,16 @@ describe("LK16 format-bound assemblies", () => {
       const fixture = instanceFixture(); fixture.binding.format = id;
       expect(codes(run(fixture))).toContain("LK16");
       const format = fixture.registries.formats.find(format => format.id === id)!;
-      format.status = "built"; format.allowedCompositions = ["layouts.stack"]; format.frames = ["frames.site-shell"];
+      format.status = "built"; format.allowedCompositions = ["stack"]; format.frames = ["frames.site-shell"];
       expect(codes(run(fixture))).toContain("LK16");
     }
   });
   it("uses the supplied format restrictions for layouts and frames", () => {
     const fixture = instanceFixture();
-    web(fixture).allowedCompositions = ["layouts.split"];
+    web(fixture).allowedCompositions = ["split"];
     expect(codes(run(fixture))).toContain("LK16");
     expect(run(fixture).findings.filter(finding => finding.code === "LK16").map(finding => finding.path)).toEqual(["layout"]);
-    web(fixture).allowedCompositions = ["layouts.stack"];
+    web(fixture).allowedCompositions = ["stack"];
     web(fixture).frames = ["frames.app-shell"];
     expect(codes(run(fixture))).toContain("LK16");
     expect(run(fixture).findings.filter(finding => finding.code === "LK16").map(finding => finding.path)).toEqual(["frame"]);
@@ -74,14 +74,14 @@ describe("LK16 format-bound assemblies", () => {
   });
   it("refuses malformed contracts, held compositions and successful flags", () => {
     for (const change of [
-      { allowedCompositions: null }, { allowedCompositions: "layouts.stack" }, { frames: ["frames.site-shell", "frames.site-shell"] },
+      { allowedCompositions: null }, { allowedCompositions: "stack" }, { frames: ["frames.site-shell", "frames.site-shell"] },
       { size: null }, { label: 42 }, { status: "pass" }, { pass: true }, { skip: true }, { fallback: "web.page.responsive" },
-      { renderer: "Layout.tsx" }, { allowedCompositions: ["layouts.stack", "layouts.staggered-grid"] },
+      { renderer: "Layout.tsx" }, { allowedCompositions: ["stack", "staggered-grid"] },
     ]) {
       const fixture = instanceFixture(); Object.assign(web(fixture), change);
       expect(codes(run(fixture))).toContain("LK16");
     }
-    const fixture = instanceFixture(); fixture.binding.layout.leaf = "layouts.staggered-grid";
+    const fixture = instanceFixture(); fixture.binding.layout.leaf = "staggered-grid";
     expect(codes(run(fixture))).toContain("LK16"); expect(codes(run(fixture))).toContain("LK2");
   });
   it("rejects registry and format getters or prototypes without reading them", () => {

@@ -86,7 +86,6 @@ it("opens selected item details only in the frame inspector, then restores focus
   expect(stage.contains(detail)).toBe(false);
   expect(detail).toHaveFocus();
   expect(unregisteredCopy(detail)).toEqual([]);
-  expect(detail.querySelector('[data-ds-leaf="sections.record-detail"]')).not.toBeNull();
   expect(detail.querySelector('[data-ds-leaf="sections.data-table"]')).not.toBeNull();
   fireEvent.click(within(detail).getByRole("button", { name: "Close item details" }));
   expect(screen.queryByRole("region", { name: "Home" })).toBeNull();

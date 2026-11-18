@@ -97,7 +97,7 @@ describe("pure release preparation", () => {
   it("does not release unselected active slots and deterministically groups targets and entries", () => {
     const input = fixture(); const registry = input.registry;
     for (const [id, target] of [["other", "site"], ["third", "aaa"]]) {
-      const slot = { ...structuredClone(registry.slots[0]), id: id === "other" ? "sl_2xv4y3uo7k" : "sl_ke6mhs5hmu", aliases: [], activeCandidateId: id, deployTarget: target };
+      const slot = { ...structuredClone(registry.slots[0]), id: id === "other" ? "sl_fixturesaa" : "sl_fixturesah", aliases: [], activeCandidateId: id, deployTarget: target };
       registry.slots.push(slot); registry.candidates.push({ ...structuredClone(registry.candidates[0]), id, slotId: slot.id });
     }
     registry.workspace.deployTargets.push({ id: "aaa", repo: "sample", app: "other" });
@@ -159,7 +159,7 @@ describe("pure release preparation", () => {
     expect(prepareContentRelease(input)).toMatchObject({ ok: true, releases: [{ handover: { receiver: "messenger" } }] });
     input.registry.slots[0].destination = "missing"; expect(rules(input)).toContain("release-destination");
     input.registry.slots[0].destination = "social";
-    const slot = { ...structuredClone(input.registry.slots[0]), id: "sl_2xv4y3uo7k", aliases: [], activeCandidateId: "other" }; delete slot.destination;
+    const slot = { ...structuredClone(input.registry.slots[0]), id: "sl_fixturesaa", aliases: [], activeCandidateId: "other" }; delete slot.destination;
     input.registry.slots.push(slot); input.registry.candidates.push({ ...structuredClone(input.registry.candidates[0]), id: "other", slotId: slot.id }); input.selections.push(report(input.registry, 1));
     expect(rules(input)).toContain("release-receiver");
   });

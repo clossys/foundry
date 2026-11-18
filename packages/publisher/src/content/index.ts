@@ -1,5 +1,5 @@
 /** Provider-neutral stored content. Library Review and publishing run separately. */
-export { CONTENT_TREE, CONTENT_TAXONOMY, loadContentTree, isContentL1, isContentL2, isContentPlacement, createSlotId, isSlotId } from "./taxonomy.js";
+export { loadContentTree, isContentL1, isContentL2, isContentPlacement, createSlotId, isSlotId } from "./taxonomy.js";
 export type { ContentTree, ContentTreeNode, ContentTreeChild, ContentL1, ContentL2, ContentPlacement, SlotId } from "./taxonomy.js";
 export { checkSlotLeafFreeze } from "./leaf-freeze.js";
 export { robotsFor, outputPathFor, checkPageMetadata } from "./metadata.js";

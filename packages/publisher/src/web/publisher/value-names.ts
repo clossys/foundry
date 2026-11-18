@@ -12,7 +12,6 @@ export const PUBLISHER_VALUE_NAME_REFS: Readonly<Record<string, Readonly<Record<
     "deck.16x9": Object.freeze({ id: "st.fwfhte7vjh" }),
   }),
   "publisher.frame": Object.freeze({
-    "frames.document": Object.freeze({ id: "st.w3ddpdtqay" }),
     "frames.site-shell": Object.freeze({ id: "st.njmrezf88j" }),
     "frames.app-shell": Object.freeze({ id: "st.rtxryd7cfz" }),
     "frames.auth-shell": Object.freeze({ id: "st.0szhqxn9xp" }),
@@ -30,36 +29,32 @@ export const PUBLISHER_VALUE_NAME_REFS: Readonly<Record<string, Readonly<Record<
     "designer.ia.frames.overlay-shells-panels": Object.freeze({ id: "st.n3jkssxad5" }),
   }),
   "publisher.layout": Object.freeze({
-    "layouts.stack": Object.freeze({ id: "st.ajxm6xb824" }),
-    "layouts.split": Object.freeze({ id: "st.gc39szvkj1" }),
-    "layouts.sidebar-content": Object.freeze({ id: "st.jgvacmfx3y" }),
-    "layouts.bento": Object.freeze({ id: "st.wbydgfcmr3" }),
-    "layouts.staggered-grid": Object.freeze({ id: "st.hfnrqcnec8" }),
+    "stack": Object.freeze({ id: "st.ajxm6xb824" }),
+    "split": Object.freeze({ id: "st.gc39szvkj1" }),
+    "sidebar-content": Object.freeze({ id: "st.jgvacmfx3y" }),
+    "bento": Object.freeze({ id: "st.wbydgfcmr3" }),
+    "staggered-grid": Object.freeze({ id: "st.hfnrqcnec8" }),
   }),
-  "publisher.layoutConfig.layouts.stack": Object.freeze({
+  "publisher.layoutConfig.stack": Object.freeze({
     "stack.landing": Object.freeze({ id: "st.h42b0qvyfe" }),
     "stack.document": Object.freeze({ id: "st.4vkyd92vs4" }),
     "stack.focus": Object.freeze({ id: "st.evecaayeqq" }),
     "stack.index": Object.freeze({ id: "st.6fwq660ah7" }),
     "stack.workspace": Object.freeze({ id: "st.txjd1pf34b" }),
   }),
-  "publisher.layoutConfig.layouts.split": Object.freeze({
+  "publisher.layoutConfig.split": Object.freeze({
     "split.default": Object.freeze({ id: "st.pbs86jv07a" }),
   }),
-  "publisher.layoutConfig.layouts.sidebar-content": Object.freeze({
+  "publisher.layoutConfig.sidebar-content": Object.freeze({
     "sidebar-content.record": Object.freeze({ id: "st.g385gwchf1" }),
     "sidebar-content.docs": Object.freeze({ id: "st.9axe6qwytm" }),
   }),
-  "publisher.layoutConfig.layouts.bento": Object.freeze({
+  "publisher.layoutConfig.bento": Object.freeze({
     "bento.default": Object.freeze({ id: "st.7bf87rzb6j" }),
   }),
   "publisher.frameConfig.frames.site-shell": Object.freeze({
     "site": Object.freeze({ id: "st.ytw831pdry" }),
     "front-door": Object.freeze({ id: "st.0szhqxn9xp" }),
-  }),
-  "designer.frameOption.frames.document": Object.freeze({
-    "variant.page": Object.freeze({ id: "st.dczaaf9s2z" }),
-    "variant.status": Object.freeze({ id: "st.zjekh6j231" }),
   }),
   "designer.frameOption.frames.site-shell": Object.freeze({
     "chrome.full": Object.freeze({ id: "st.w1wk8f1k2h" }),
@@ -141,64 +136,64 @@ export const PUBLISHER_VALUE_NAME_REFS: Readonly<Record<string, Readonly<Record<
     "xl": Object.freeze({ id: "st.646wxbsgag" }),
     "2xl": Object.freeze({ id: "st.m8rb9g7ftb" }),
   }),
-  "publisher.layoutOption.layouts.stack.measure": Object.freeze({
+  "publisher.layoutOption.stack.measure": Object.freeze({
     "full": Object.freeze({ id: "st.ana61jy0p8" }),
     "wide": Object.freeze({ id: "st.8dyaww7dzk" }),
     "content": Object.freeze({ id: "st.vhkjr72c56" }),
     "prose": Object.freeze({ id: "st.4e2fw2re1h" }),
     "form": Object.freeze({ id: "st.j3cstzxqbm" }),
   }),
-  "publisher.layoutOption.layouts.stack.align": Object.freeze({
+  "publisher.layoutOption.stack.align": Object.freeze({
     "start": Object.freeze({ id: "st.rd1wks5c2n" }),
     "center": Object.freeze({ id: "st.19r4rps8z4" }),
   }),
-  "publisher.layoutOption.layouts.stack.lead": Object.freeze({
+  "publisher.layoutOption.stack.lead": Object.freeze({
     "required": Object.freeze({ id: "st.hkp1srfq0x" }),
     "optional": Object.freeze({ id: "st.8grbg3g8mq" }),
   }),
-  "publisher.layoutOption.layouts.split.ratio": Object.freeze({
+  "publisher.layoutOption.split.ratio": Object.freeze({
     "1:1": Object.freeze({ id: "st.j1x20g5ma9" }),
     "3:2": Object.freeze({ id: "st.mkw5r8sdh7" }),
     "2:3": Object.freeze({ id: "st.yqadfrrjf9" }),
   }),
-  "publisher.layoutOption.layouts.split.collapse": Object.freeze({
+  "publisher.layoutOption.split.collapse": Object.freeze({
     "start-first": Object.freeze({ id: "st.6mdn92wcyk" }),
     "end-first": Object.freeze({ id: "st.av8qx33gjs" }),
   }),
-  "publisher.layoutOption.layouts.split.align": Object.freeze({
+  "publisher.layoutOption.split.align": Object.freeze({
     "top": Object.freeze({ id: "st.p7xaz60gtc" }),
     "center": Object.freeze({ id: "st.19r4rps8z4" }),
   }),
-  "publisher.layoutOption.layouts.sidebar-content.side": Object.freeze({
+  "publisher.layoutOption.sidebar-content.side": Object.freeze({
     "start": Object.freeze({ id: "st.rd1wks5c2n" }),
     "end": Object.freeze({ id: "st.q8zq27jzn6" }),
   }),
-  "publisher.layoutOption.layouts.sidebar-content.aside-width": Object.freeze({
+  "publisher.layoutOption.sidebar-content.aside-width": Object.freeze({
     "region": Object.freeze({ id: "st.ya04kydxn7" }),
     "third": Object.freeze({ id: "st.p35pa5phkx" }),
   }),
-  "publisher.layoutOption.layouts.sidebar-content.sticky": Object.freeze({
+  "publisher.layoutOption.sidebar-content.sticky": Object.freeze({
     "none": Object.freeze({ id: "st.qw7keqyzgs" }),
     "aside": Object.freeze({ id: "st.mz5vrchgfx" }),
   }),
-  "publisher.layoutOption.layouts.sidebar-content.stacked-aside": Object.freeze({
+  "publisher.layoutOption.sidebar-content.stacked-aside": Object.freeze({
     "before": Object.freeze({ id: "st.1vjd1q75gn" }),
     "after": Object.freeze({ id: "st.v7t7c2pr8y" }),
   }),
-  "publisher.layoutOption.layouts.sidebar-content.breakpoint": Object.freeze({
+  "publisher.layoutOption.sidebar-content.breakpoint": Object.freeze({
     "md": Object.freeze({ id: "st.j57xeagqqc" }),
     "lg": Object.freeze({ id: "st.psm20y3g29" }),
   }),
-  "publisher.layoutOption.layouts.bento.density": Object.freeze({
+  "publisher.layoutOption.bento.density": Object.freeze({
     "airy": Object.freeze({ id: "st.8ac2dy1j6t" }),
     "standard": Object.freeze({ id: "st.208gg0xrk7" }),
     "dense": Object.freeze({ id: "st.0rj8qzqqr1" }),
   }),
-  "publisher.layoutOption.layouts.bento.rhythm": Object.freeze({
+  "publisher.layoutOption.bento.rhythm": Object.freeze({
     "uniform": Object.freeze({ id: "st.s9f5fst22q" }),
     "feature-first": Object.freeze({ id: "st.1t0mm884hr" }),
   }),
-  "publisher.layoutOption.layouts.staggered-grid.columns": Object.freeze({
+  "publisher.layoutOption.staggered-grid.columns": Object.freeze({
     "2": Object.freeze({ id: "st.gc39szvkj1" }),
     "3": Object.freeze({ id: "st.v54z11633r" }),
     "4": Object.freeze({ id: "st.5waybca904" }),

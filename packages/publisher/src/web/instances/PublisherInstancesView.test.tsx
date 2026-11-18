@@ -114,10 +114,10 @@ describe("Publisher Instances", () => {
   });
 
   it("shows actual unknown configs and missing required fills without a preview crash", () => {
-    const bad = { ...STANDARD_INSTANCE_FIXTURES[0]!, layout: { leaf: "layouts.stack" as const, config: "missing" }, fills: {} };
+    const bad = { ...STANDARD_INSTANCE_FIXTURES[0]!, layout: { leaf: "stack" as const, config: "missing" }, fills: {} };
     const { rerender } = render(<PublisherInstancesView {...base} instances={[bad]} />);
     expect(screen.getByRole("region", { name: "Structure checks" })).toHaveTextContent("LK2 · layout: Unknown config");
-    rerender(<PublisherInstancesView {...base} instances={[{ ...bad, layout: { leaf: "layouts.stack", config: "stack.landing" } }]} />);
+    rerender(<PublisherInstancesView {...base} instances={[{ ...bad, layout: { leaf: "stack", config: "stack.landing" } }]} />);
     expect(screen.getByRole("region", { name: "Structure checks" })).toHaveTextContent("LK5 · fills.body:");
   });
 
@@ -166,7 +166,7 @@ describe("Publisher Instances", () => {
 
   it("focuses the named slot heading from a layout-position finding and keeps render evidence pending", () => {
     const fixture = instanceFixture();
-    const layout = fixture.registries.layouts.find(leaf => leaf.id === fixture.binding.layout.leaf)!;
+    const layout = fixture.registries.layouts.find(leaf => leaf.engine === fixture.binding.layout.leaf)!;
     const slot = layout.contract.slots[0]!;
     const registries = { ...fixture.registries, layouts: fixture.registries.layouts.map(leaf => leaf === layout ? {
       ...leaf, contract: { ...leaf.contract, slots: leaf.contract.slots.map(entry => entry.id === slot.id ? { ...entry, position: "last" as const } : entry) },

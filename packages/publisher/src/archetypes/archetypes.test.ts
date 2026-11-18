@@ -8,7 +8,8 @@ import { EXTENSION_FRAMES, EXTENSION_PACKAGES, EXTENSION_SECTION_CLASSES } from 
 
 const packages = resolve(import.meta.dirname, "../../..");
 const ids = (path: string): Set<string> => new Set((JSON.parse(readFileSync(resolve(packages, path), "utf8")) as { id: string }[]).map(row => row.id));
-const designerSections = ids("designer/src/catalog/slots/sections.json");
+const designerRetired = ids("designer/src/catalog/retired.json");
+const designerSections = new Set([...ids("designer/src/catalog/slots/sections.json")].filter(id => !designerRetired.has(id)));
 const designerFrames = ids("designer/src/catalog/slots/frames.json");
 const writerPassages = ids("writer/src/catalog/slots/passages.json");
 const directorCells = ids("director/src/catalog/cells/strategy.json");
@@ -32,7 +33,7 @@ describe("page archetype and format data", () => {
     expect(PAGE_FORMATS.canvas.requiredActions).toEqual(expect.arrayContaining(["canvas.zoom", "canvas.minimap"]));
   });
 
-  it("keeps the section-format sidecar equal to Designer's section slot ids", () => {
+  it("keeps the section-format sidecar equal to Designer's live section slot ids", () => {
     expect(new Set(Object.keys(SECTION_CLASSES))).toEqual(designerSections);
   });
 

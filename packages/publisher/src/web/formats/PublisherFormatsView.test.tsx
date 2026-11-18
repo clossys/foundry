@@ -46,7 +46,7 @@ it("keeps concept deliveries inspectable without a renderer or production readin
 
 it("uses replacement registry data and refuses an empty allowed composition set", () => {
   const web = FORMAT_LEAVES[0]!;
-  const { rerender } = render(<PublisherFormatsView {...props} formats={[{ ...web, allowedCompositions: ["layouts.split"] }]} instances={[STANDARD_INSTANCE_FIXTURES[2]!]} />);
+  const { rerender } = render(<PublisherFormatsView {...props} formats={[{ ...web, allowedCompositions: ["split"] }]} instances={[STANDARD_INSTANCE_FIXTURES[2]!]} />);
   expect(screen.getByText(/1 instance references/)).toBeVisible();
   expect(screen.getByRole("heading", { name: "Skeleton preview · split.default" })).toBeVisible();
   rerender(<PublisherFormatsView {...props} formats={[{ ...web, allowedCompositions: [] }]} />);

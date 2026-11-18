@@ -485,7 +485,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "generate:preview-css": "node scripts/preview-css.mjs --write",
-    "check:preview-css": "node scripts/preview-css.mjs --check"
+    "check:preview-css": "node scripts/preview-css.mjs --check",
+    "check:retired-reads": "vitest run src/checks/retired-reads"
   },
   "dependencies": {
     "@clossys/writer": "^0.6.0",

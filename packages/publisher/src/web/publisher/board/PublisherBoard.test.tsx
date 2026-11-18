@@ -11,7 +11,7 @@ import { loadContentStore, writeContentStore } from "../../../content/store/inde
 import { readConsumerLibrarySnapshot } from "../../../content/store/library.js";
 import type { ContentStoreOptions } from "../../../content/store/index.js";
 import type { PublisherBoardModel } from "../../../content/board/types.js";
-import { CONTENT_TREE, loadContentTree } from "../../../content/taxonomy.js";
+import { loadContentTree } from "../../../content/taxonomy.js";
 import { PublisherBoard } from "./PublisherBoard.js";
 import { boardFixture, boardWriterCopy, boardEvidence, boardLibraries, boardSlotIds } from "./__fixtures__/board.js";
 
@@ -104,7 +104,7 @@ describe("Publisher board real-store rendering", () => {
       ? { ...value, l1: "documents", l2: "docs", position: { ...value.position, order: 99 } } : value) };
     await writeContentStore(fixture.root, registry);
     const loaded = await loadContentStore(fixture.root, options);
-    const tree = loadContentTree({ ...CONTENT_TREE, nodes: [...CONTENT_TREE.nodes].reverse().map(node => ({ ...node, children: [...node.children].reverse() })) });
+    const tree = loadContentTree({ ...loaded.registry.workspace.tree, nodes: [...loaded.registry.workspace.tree.nodes].reverse().map(node => ({ ...node, children: [...node.children].reverse() })) });
     const moved = buildPublisherBoard({ registry: loaded.registry, copy: fixture.copy, evidence: fixture.evidence, tree, locale: "en" });
     expect(moved.ready).toBe(true);
     expect(moved.lanes.map(lane => lane.id)).toEqual(["documents", "websites"]);

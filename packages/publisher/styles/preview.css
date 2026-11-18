@@ -3826,9 +3826,6 @@
   .pb-sm {
     padding-bottom: var(--spacing-sm, 8px);
   }
-  .pl-md {
-    padding-left: var(--spacing-md, 12px);
-  }
   .text-center {
     text-align: center;
   }

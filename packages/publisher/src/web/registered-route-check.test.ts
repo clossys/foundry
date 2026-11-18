@@ -75,12 +75,12 @@ describe("strict registered route source closure (synthetic fixtures; no runtime
   });
   it("follows the actual installed binder without a provenance waiver; its one imported header passes DF8 while missing CSS stays pending", async () => {
     await setup(); const result = await check();
-    const findings = result.dogfood?.findings.filter(finding => finding.code === "DF2" && finding.file.endsWith("publisher/src/web/layouts/Stack.tsx") && finding.evidence.includes("inline styles")) ?? [];
+    const findings = result.dogfood?.findings.filter(finding => finding.code === "DF2" && finding.file.endsWith("publisher/src/web/engines/Stack.tsx") && finding.evidence.includes("inline styles")) ?? [];
     expect(findings).toEqual([]);
     expect(result.dogfood?.findings.some(finding => finding.code === "DF2" && finding.evidence.includes("unresolved class utilities"))).toBe(true);
     expect(result.dogfood?.findings.filter(finding => finding.code === "DF8")).toEqual([]);
     expect(result.ok).toBe(false); expect(result.sourceEvidence).toEqual([]);
-    if (process.env.ROUTE_GATE_DIAGNOSTIC === "1") console.info(JSON.stringify(findings.map(finding => ({ ...finding, file: "packages/publisher/src/web/layouts/Stack.tsx" }))));
+    if (process.env.ROUTE_GATE_DIAGNOSTIC === "1") console.info(JSON.stringify(findings.map(finding => ({ ...finding, file: "packages/publisher/src/web/engines/Stack.tsx" }))));
   });
   it("takes that one header lease from the registered route page binder itself; removing that lease fails DF8", async () => {
     const r = await setup();

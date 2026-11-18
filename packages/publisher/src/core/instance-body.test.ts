@@ -22,7 +22,7 @@ describe("closed canonical InstanceBinding body schema (synthetic declaration te
     if (mutation === "arrangement-extra") Object.assign(body.arrangement, { positions: {} });
     if (mutation === "gap-extra") Object.assign(body.arrangement, { gap: { x: 8, y: 8, extra: true } });
     if (mutation === "groups-array") Object.assign(body.boards[0]!, { groups: [] });
-    if (mutation === "layout") Object.assign(binding, { layout: { leaf: "layouts.stack", config: "stack.focus" } });
+    if (mutation === "layout") Object.assign(binding, { layout: { leaf: "stack", config: "stack.focus" } });
     if (mutation === "duplicate") Object.assign(body, { boards: [...body.boards, { ...body.boards[0]!, id: "second" }] });
     if (mutation === "unknown") Object.assign(body.boards[0]!, { section: { slot: "other", index: 0 } });
     if (mutation === "missing") Object.assign(body, { boards: [] });

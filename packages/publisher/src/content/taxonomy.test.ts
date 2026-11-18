@@ -1,37 +1,25 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  CONTENT_TREE, CONTENT_TAXONOMY, createSlotId, isContentL1, isContentL2, isContentPlacement, isSlotId, loadContentTree,
+  createSlotId, isContentL1, isContentL2, isContentPlacement, isSlotId, loadContentTree,
 } from "./taxonomy.js";
 import type { ContentPlacement, SlotId } from "./taxonomy.js";
-import treeData from "./tree.json" with { type: "json" };
+import { contentTreeFixture } from "./__fixtures__/content-tree.js";
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("content taxonomy", () => {
-  it("loads the seed JSON in presentation order and derives the compatibility view", () => {
-    const { retired, ...placement } = treeData;
-    expect(retired).toMatchObject({ retiredAt: "2026-11-17", decidedBy: expect.stringContaining("audit P10") });
-    expect(CONTENT_TREE).toEqual(placement);
-    expect(loadContentTree()).toEqual(placement);
-    expect(CONTENT_TAXONOMY).toEqual({
-      websites: ["site", "admin", "auth", "app", "demo"],
-      documents: ["docs"],
-      presentations: ["decks"],
-      videos: ["clips"],
-      messages: ["email"],
-      social: ["posts"],
-    });
-    expect(Object.keys(CONTENT_TAXONOMY)).toEqual([
-      "websites", "documents", "presentations", "videos", "messages", "social",
-    ]);
-    expect(Object.isFrozen(CONTENT_TAXONOMY)).toBe(true);
-    expect(Object.values(CONTENT_TAXONOMY).every(Object.isFrozen)).toBe(true);
-    const kinds = Object.values(CONTENT_TAXONOMY).flat();
+  it("ships no content tree: the consumer supplies one, and a missing tree is refused", () => {
+    expect(() => loadContentTree(undefined)).toThrow(/Invalid content tree/);
+  });
+
+  it("loads a consumer tree in presentation order, frozen, with exact L1/L2 pairing", () => {
+    const tree = contentTreeFixture();
+    expect(tree.nodes.map(node => node.id)).toEqual(["websites", "documents", "presentations", "videos", "messages", "social"]);
+    expect(Object.isFrozen(tree.nodes)).toBe(true);
+    const kinds = tree.nodes.flatMap(node => node.children.map(child => child.id));
     expect(kinds).toHaveLength(10);
-    for (const [l1, registered] of Object.entries(CONTENT_TAXONOMY)) {
-      for (const l2 of kinds) {
-        expect(isContentPlacement(l1, l2)).toBe((registered as readonly string[]).includes(l2));
-      }
+    for (const node of tree.nodes) {
+      for (const l2 of kinds) expect(isContentPlacement(node.id, l2, tree)).toBe(node.children.some(child => child.id === l2));
     }
   });
 
@@ -42,18 +30,18 @@ describe("content taxonomy", () => {
     ["social", "email"], ["unknown", "site"], ["toString", "site"],
     [null, "site"], ["websites", null], ["websites", 1],
   ])("rejects unregistered placement %s/%s", (l1, l2) => {
-    expect(isContentPlacement(l1, l2)).toBe(false);
+    expect(isContentPlacement(l1, l2, contentTreeFixture())).toBe(false);
   });
 
   it("checks editable string placements at runtime", () => {
     const valid: ContentPlacement = { l1: "presentations", l2: "decks" };
     const invalid: ContentPlacement = { l1: "documents", l2: "decks" };
-    expect(isContentPlacement(valid.l1, valid.l2)).toBe(true);
-    expect(isContentPlacement(invalid.l1, invalid.l2)).toBe(false);
+    expect(isContentPlacement(valid.l1, valid.l2, contentTreeFixture())).toBe(true);
+    expect(isContentPlacement(invalid.l1, invalid.l2, contentTreeFixture())).toBe(false);
   });
 
   it("accepts custom groups, child IDs, labels, ordering and optional frame references", () => {
-    const editable = structuredClone(treeData);
+    const editable = structuredClone({ schemaVersion: 1, nodes: contentTreeFixture().nodes.map(node => ({ ...node, children: node.children.map(child => ({ ...child })) })) });
     const group = editable.nodes[0]!;
     group.id = "custom";
     group.label = "Custom group";
@@ -67,7 +55,7 @@ describe("content taxonomy", () => {
     expect(isContentL2("custom", "landing", tree)).toBe(true);
     expect(isContentPlacement("custom", "landing", tree)).toBe(true);
     expect(isContentPlacement("websites", "site", tree)).toBe(false);
-    expect(isContentPlacement("custom", "landing")).toBe(false);
+    expect(isContentPlacement("custom", "landing", contentTreeFixture())).toBe(false);
     group.label = "Edited afterward";
     expect(tree.nodes.at(-1)?.label).toBe("Custom group");
     expect(Object.isFrozen(tree.nodes)).toBe(true);
@@ -80,6 +68,12 @@ describe("content taxonomy", () => {
   it.each([
     null, {}, { schemaVersion: 2, nodes: [] }, { schemaVersion: 1, nodes: {} },
     { schemaVersion: 1, nodes: [], extra: true },
+    { schemaVersion: 1, retired: "yes", nodes: [] },
+    { schemaVersion: 1, retired: { retiredAt: "2026-11-17", decidedBy: "owner" }, nodes: [] },
+    { schemaVersion: 1, retired: { retiredAt: 20261117, decidedBy: "owner", reason: "legacy" }, nodes: [] },
+    { schemaVersion: 1, retired: { retiredAt: "2026-11-17", decidedBy: " ", reason: "legacy" }, nodes: [] },
+    { schemaVersion: 1, retired: { retiredAt: "2026-11-17", decidedBy: "owner", reason: "legacy", extra: true }, nodes: [] },
+    { schemaVersion: 1, retired: { retiredAt: "2026-11-17", decidedBy: "owner", reason: "legacy" }, nodes: [] },
     { schemaVersion: 1, nodes: [{ id: "", label: "Group", children: [] }] },
     { schemaVersion: 1, nodes: [{ id: "group", label: " ", children: [] }] },
     { schemaVersion: 1, nodes: [{ id: "group", label: "Group" }] },
@@ -88,6 +82,11 @@ describe("content taxonomy", () => {
     { schemaVersion: 1, nodes: [{ id: "group", label: "Group", children: [{ id: "kind", label: "Kind", extra: true }] }] },
   ])("rejects malformed tree data %#", input => {
     expect(() => loadContentTree(input)).toThrow(/Invalid content tree/);
+  });
+
+  it("refuses a retired tree as placement data, even when its nodes are otherwise valid", () => {
+    const marker = { retiredAt: "2026-11-17", decidedBy: "owner", reason: "legacy" };
+    expect(() => loadContentTree({ ...contentTreeFixture(), retired: marker })).toThrow(/a retired tree is a record and cannot be loaded as placement data/);
   });
 
   it("rejects duplicate group and sibling child IDs", () => {

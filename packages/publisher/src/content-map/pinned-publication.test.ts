@@ -1,7 +1,7 @@
 import { afterEach, expect, it } from "vitest";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -109,7 +109,8 @@ async function selectedBytes(path: string, ids: string[]) {
 it("NATIVE projection equals the authored map exactly from slot folders alone, without changing candidate or pin bytes", async () => {
   const f = await fixture(), before = await selectedBytes(f.path, f.ids);
   expect(f.map).toEqual(ordinary());
-  for (const name of ["tree.json", "cells", "content-map", "route-pack", "compile.json"]) await expect(readFile(join(f.path, name))).rejects.toThrow(/ENOENT|EISDIR/);
+  // Slot folders alone: the fixture root holds the IA file and one folder per slot, and nothing else.
+  expect((await readdir(f.path)).sort()).toEqual(["ia.json", ...f.ids].sort());
   expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
   expect(await selectedBytes(f.path, f.ids)).toEqual(before);
   expect(JSON.parse((await readFile(candidatePath(f.path, "page.designer"))).toString()).copy).toEqual({ heading: "strings.headings#heading" });
