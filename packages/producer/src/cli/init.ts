@@ -9,6 +9,7 @@ import { resolve } from "node:path";
 import { ensureAgentsPointer } from "../views/agents-pointer.js";
 import { CliUsageError } from "./args.js";
 import { seatAdmin } from "./init-admin.js";
+import { adoptInitLoops } from "./init-loops.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
@@ -17,7 +18,8 @@ export const INIT_USAGE = "Usage: clossys init [--root <dir>] [--at <iso>] [--js
   + "  run clossys views list, follow clossys views show <id>, answer only through clossys answer.\n"
   + "  seats the admin workspace (Publisher admin pages and publication.admin in the admin tab) through clossys ia,\n"
   + "  and raises one Designer slot request for each frame or section those pages compose that no workspace slot holds\n"
-  + "  (the data-bound admin sections among them); --at stamps those writes.";
+  + "  (the data-bound admin sections among them), then adopts and pins the five loops of every agent the workspace\n"
+  + "  places (Publisher always) through the pin gate; --at stamps those writes.";
 
 export async function runInitCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   let root: string | undefined, at: string | undefined;
@@ -46,12 +48,14 @@ export async function runInitCli(argv: readonly string[], cwd: string): Promise<
   // or home folder reached through a link still seats).
   const { result, seat } = await seatAdmin(realpathSync(workspace), at ?? new Date().toISOString());
   if (result) return { ...result, output: { ...pointer, admin: seat }, message: [said, result.message].join("\n") };
+  const loops = await adoptInitLoops(realpathSync(workspace), at ?? new Date().toISOString(), cwd);
+  if (loops.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, admin: seat, loops }, message: [said, ...loops.issues.map(issue => `init refused: loops ${issue}`)].join("\n") };
   const raised = seat.requests.filter(item => item.created);
   const admin = seat.placed.length
     ? `seated the admin workspace: ${seat.placed.length} Publisher slot${seat.placed.length === 1 ? "" : "s"} placed${seat.started ? " in a new Publisher IA" : ""}`
     : "the admin workspace is already seated";
   return {
-    exitCode: 0, root: workspace, output: { ...pointer, admin: seat },
-    message: [admin, ...(seat.rewired.length ? [`rewired ${seat.rewired.length} admin slot${seat.rewired.length === 1 ? "" : "s"} to the units the workspace now holds: ${seat.rewired.join(", ")}`] : []), ...(raised.length ? [`raised ${raised.length} Designer slot request${raised.length === 1 ? "" : "s"} for admin units no workspace slot holds: ${raised.map(item => item.target).join(", ")}`] : []), said].join("\n"),
+    exitCode: 0, root: workspace, output: { ...pointer, admin: seat, loops },
+    message: [admin, ...(seat.rewired.length ? [`rewired ${seat.rewired.length} admin slot${seat.rewired.length === 1 ? "" : "s"} to the units the workspace now holds: ${seat.rewired.join(", ")}`] : []), ...(raised.length ? [`raised ${raised.length} Designer slot request${raised.length === 1 ? "" : "s"} for admin units no workspace slot holds: ${raised.map(item => item.target).join(", ")}`] : []), ...(seat.seeded.length || seat.waiting.length ? [`seeded ${seat.seeded.length} admin record${seat.seeded.length === 1 ? "" : "s"}; pinned ${seat.pinned.length}${seat.waiting.length ? `; ${seat.waiting.length} wait for upstream pins: ${seat.waiting.map(item => item.slot).join(", ")}` : ""}`] : []), ...(loops.pinned.length ? [`adopted and pinned ${loops.pinned.length} agent loop${loops.pinned.length === 1 ? "" : "s"} (${loops.agents.join(", ")})`] : []), said].join("\n"),
   };
 }
