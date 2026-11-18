@@ -47,8 +47,8 @@ describe("page-meta builders fail closed", () => {
 });
 
 describe("planSiteOutputs", () => {
-  it("installs the form endpoint, share images and opted-in page-meta routes per locale", () => {
-    const plan = planSiteOutputs({ map, outputs: outputs({ forms: [publicationFormDefaults("contact")], share: true, jsonLd: true, llms: true, feed: "rss", locales: { default: "en", all: ["en", "fr"] } }), text, share });
+  it("installs the form endpoint, share images and opted-in page-meta routes per locale", async () => {
+    const plan = await planSiteOutputs({ map, outputs: outputs({ forms: [publicationFormDefaults("contact")], share: true, jsonLd: true, llms: true, feed: "rss", locales: { default: "en", all: ["en", "fr"] } }), text, share });
     expect(plan.findings).toEqual([]);
     expect(files(plan)).toEqual(["api/forms/contact/route.ts", "feed.xml/route.ts", "fr/feed.xml/route.ts", "fr/opengraph-image.tsx", "fr/twitter-image.tsx", "llms.txt/route.ts", "opengraph-image.tsx", "twitter-image.tsx"]);
     for (const row of plan.files) expect(row.content.split("\n", 1)[0]).toBe(NEXT_ROUTE_MARKER);
@@ -61,25 +61,37 @@ describe("planSiteOutputs", () => {
     expect(feed).toContain("https://example.com/fr/about");
     expect(feed).not.toContain("Mentions");
     expect(JSON.parse(plan.jsonLd!)["@graph"][0].name).toBe("Example & Co");
+    // Each locale's layout mounts its own JSON-LD, from that locale's Writer text.
+    expect(Object.keys(plan.jsonLdByLocale!)).toEqual(["en", "fr"]);
+    expect(JSON.parse(plan.jsonLdByLocale!.fr!)["@graph"][0].name).toBe("Exemple & Cie");
+    expect(plan.jsonLdByLocale!.en).toBe(plan.jsonLd);
   });
-  it("emits nothing for a publication that opted into nothing", () => {
-    expect(planSiteOutputs({ map, outputs: {}, text })).toEqual({ files: [], findings: [] });
+  it("emits nothing for a publication that opted into nothing", async () => {
+    expect(await planSiteOutputs({ map, outputs: {}, text })).toEqual({ files: [], findings: [] });
   });
-  it("blocks on a Writer key the locale does not hold instead of falling back", () => {
-    const plan = planSiteOutputs({ map, outputs: outputs({ llms: true, feed: "atom", locales: { default: "en", all: ["en", "de"] } }), text });
+  it("blocks on a Writer key the locale does not hold instead of falling back", async () => {
+    const plan = await planSiteOutputs({ map, outputs: outputs({ llms: true, feed: "atom", locales: { default: "en", all: ["en", "de"] } }), text });
     expect(plan.files).toEqual([]);
     expect(plan.findings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "missing-copy-key", detail: expect.stringMatching(/de/) })]));
   });
-  it("blocks share images without a Designer mark and an invalid outputs record", () => {
-    expect(planSiteOutputs({ map, outputs: outputs({ share: true }), text }).findings).toEqual([expect.objectContaining({ code: "site-contract", detail: expect.stringMatching(/assets\.mark/) })]);
-    expect(planSiteOutputs({ map, outputs: { jsonLd: true } as PublicationOutputs, text }).findings).toEqual([expect.objectContaining({ code: "site-contract" })]);
+  it("blocks share images without a Designer mark and an invalid outputs record", async () => {
+    expect((await planSiteOutputs({ map, outputs: outputs({ share: true }), text })).findings).toEqual([expect.objectContaining({ code: "site-contract", detail: expect.stringMatching(/assets\.mark/) })]);
+    expect((await planSiteOutputs({ map, outputs: { jsonLd: true } as PublicationOutputs, text })).findings).toEqual([expect.objectContaining({ code: "site-contract" })]);
+  });
+  it("builds each share card at install, so Writer text the card refuses blocks instead of breaking the site build", async () => {
+    const broken = (key: string, locale: string) => (locale === "fr" && key === "site.name" ? "Exemple\n& Cie" : text(key, locale));
+    const plan = await planSiteOutputs({ map, outputs: outputs({ share: true, locales: { default: "en", all: ["en", "fr"] } }), text: broken, share });
+    expect(plan.files).toEqual([]);
+    expect(plan.findings).toEqual([expect.objectContaining({ code: "site-contract", detail: expect.stringMatching(/fr share card refused: .*line break/) })]);
+    expect((await planSiteOutputs({ map, outputs: outputs({ share: true, locales: { default: "en", all: ["en", "fr"] } }), text, share })).findings).toEqual([]);
   });
 });
 
 describe("planNextRoutes locales and JSON-LD", () => {
   const base = { map, assembly: "../clossys/publication.tsx", states: "../clossys/states.tsx" };
   it("installs every page once per extra locale and passes the locale to the assembly", () => {
-    const plan = planNextRoutes({ ...base, locales: { default: "en", all: ["en", "fr"] } });
+    // No shell: the consumer's document; the default locale's pages are the root routes.
+    const plan = planNextRoutes({ map, assembly: base.assembly, locales: { default: "en", all: ["en", "fr"] } });
     expect(plan.findings).toEqual([]);
     expect(plan.files.filter(row => row.kind === "page").map(row => row.file).sort()).toEqual(["about/page.tsx", "fr/about/page.tsx", "fr/legal/page.tsx", "fr/page.tsx", "legal/page.tsx", "page.tsx"]);
     expect(plan.files.find(row => row.file === "fr/about/page.tsx")!.content).toContain(`locale: "fr"`);
@@ -89,6 +101,38 @@ describe("planNextRoutes locales and JSON-LD", () => {
   it("refuses a locale segment that collides with a page path", () => {
     const plan = planNextRoutes({ ...base, locales: { default: "en", all: ["en", "about"] } });
     expect(plan.findings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "site-contract", detail: expect.stringMatching(/about/) })]));
+  });
+  it("folds case: a locale and a page at the same folder in another case, or two spellings of one locale, are refused", () => {
+    const upper: ContentMap = { ...map, entries: [...map.entries, { id: "fr-page", order: 3, title: "page.fr.title", kind: "page", path: "/FR", source: { frameId: "frames.site-shell", sectionIds: [] } }] };
+    expect(planNextRoutes({ ...base, map: upper, locales: { default: "en", all: ["en", "fr"] } }).findings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "site-contract", detail: expect.stringMatching(/locale fr collides/) })]));
+    const region: ContentMap = { ...map, entries: [...map.entries, { id: "fr-ca-page", order: 3, title: "page.fr.title", kind: "page", path: "/fr-ca", source: { frameId: "frames.site-shell", sectionIds: [] } }] };
+    expect(planNextRoutes({ ...base, map: region, locales: { default: "en", all: ["en", "fr-CA"] } }).findings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "site-contract", detail: expect.stringMatching(/locale fr-CA collides/) })]));
+    expect(planNextRoutes({ ...base, locales: { default: "en", all: ["en", "en-US", "en-us"] } }).findings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "site-contract", detail: expect.stringMatching(/case-insensitively/) })]));
+    const about: ContentMap = { ...map, entries: [...map.entries, { id: "about-upper", order: 3, title: "page.about.title", kind: "page", path: "/About", source: { frameId: "frames.site-shell", sectionIds: [] } }] };
+    expect(planNextRoutes({ ...base, map: about }).findings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "site-route-duplicate" })]));
+  });
+  it("installs one document per locale: each layout passes its locale and serves that locale's metadata and states (no default-locale fallback)", () => {
+    const ld = (locale: string) => buildJsonLd({ origin: "https://example.com", name: `Example ${locale}`, summary: "S", locale });
+    const plan = planNextRoutes({ ...base, locales: { default: "en", all: ["en", "fr"] }, jsonLd: ld("en"), localeJsonLd: { en: ld("en"), fr: ld("fr") } });
+    expect(plan.findings).toEqual([]);
+    const shell = plan.files.filter(row => row.kind === "shell").map(row => row.file).sort();
+    expect(shell).toEqual(["(en)/error.tsx", "(en)/layout.tsx", "(en)/loading.tsx", "(en)/not-found.tsx", "fr/error.tsx", "fr/layout.tsx", "fr/loading.tsx", "fr/not-found.tsx", "global-error.tsx"]);
+    expect(plan.files.some(row => row.file === "layout.tsx")).toBe(false);
+    expect(plan.files.filter(row => row.kind === "page").map(row => row.file).sort()).toEqual(["(en)/about/page.tsx", "(en)/legal/page.tsx", "(en)/page.tsx", "fr/about/page.tsx", "fr/legal/page.tsx", "fr/page.tsx"]);
+    expect(plan.files.find(row => row.file === "(en)/about/page.tsx")!.route).toBe("/about");
+    const fr = plan.files.find(row => row.file === "fr/layout.tsx")!.content;
+    expect(fr).toContain(`export const metadata = publishedLocaleMetadata("fr");`);
+    expect(fr).toContain(`locale: "fr", children`);
+    expect(fr).toContain(JSON.stringify(ld("fr")));
+    expect(fr).toContain(`from "../../clossys/publication"`);
+    expect(plan.files.find(row => row.file === "(en)/layout.tsx")!.content).toContain(`publishedLocaleMetadata("en")`);
+    expect(plan.files.find(row => row.file === "fr/not-found.tsx")!.content).toContain(`state: "not-found", locale: "fr"`);
+    expect(plan.files.find(row => row.file === "global-error.tsx")!.content).not.toContain("locale");
+    // A locale with no JSON-LD of its own is refused, never served the default's.
+    expect(planNextRoutes({ ...base, locales: { default: "en", all: ["en", "fr"] }, jsonLd: ld("en"), localeJsonLd: { en: ld("en") } }).findings)
+      .toEqual([expect.objectContaining({ code: "site-contract", detail: expect.stringMatching(/no fr JSON-LD/) })]);
+    // A single locale keeps the one root layout.
+    expect(planNextRoutes({ ...base, locales: { default: "en", all: ["en"] } }).files.some(row => row.file === "layout.tsx")).toBe(true);
   });
   it("mounts checked JSON-LD in the installed layout and refuses it without the shell or when malformed", () => {
     const ld = buildJsonLd({ origin: "https://example.com", name: "Example", summary: "S", locale: "en" });

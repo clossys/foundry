@@ -152,7 +152,8 @@ export function checkPublicationOutputs(value: unknown): readonly string[] {
     else {
       for (const key of Object.keys(locales)) if (!["default", "all"].includes(key)) issues.push(`outputs.locales: unknown key ${key}`);
       const all = locales.all;
-      if (!Array.isArray(all) || !all.length || all.some(tag => typeof tag !== "string" || !OUTPUT_LOCALE.test(tag)) || new Set(all).size !== all.length) issues.push(`outputs.locales.all must list unique canonical locales (${OUTPUT_LOCALE})`);
+      // Unique case-insensitively: `en-US` and `en-us` install to one folder on a case-insensitive file system.
+      if (!Array.isArray(all) || !all.length || all.some(tag => typeof tag !== "string" || !OUTPUT_LOCALE.test(tag)) || new Set(all.map(tag => (tag as string).toLowerCase())).size !== all.length) issues.push(`outputs.locales.all must list unique canonical locales (${OUTPUT_LOCALE}), case-insensitively`);
       else if (typeof locales.default !== "string" || !all.includes(locales.default)) issues.push("outputs.locales.default must be one of outputs.locales.all");
     }
   }

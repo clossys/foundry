@@ -111,15 +111,17 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
   const assembly = bound ? bound.assembly : options.assembly!;
   const states = bound ? bound.states : options.states;
   const outputs = pinned.outputs ? await planPublicationOutputs(root, map, pinned.outputs) : undefined;
-  const routes = planNextRoutes({ map, leafTemplates, assembly, live: options.live === true, ...(states !== undefined ? { states } : {}), ...(locales ? { locales } : {}), ...(outputs?.jsonLd !== undefined ? { jsonLd: outputs.jsonLd } : {}) });
+  const routes = planNextRoutes({ map, leafTemplates, assembly, live: options.live === true, ...(states !== undefined ? { states } : {}), ...(locales ? { locales } : {}), ...(outputs?.jsonLd !== undefined ? { jsonLd: outputs.jsonLd } : {}), ...(outputs?.jsonLdByLocale !== undefined ? { localeJsonLd: outputs.jsonLdByLocale } : {}) });
   const plan = { ...routes, files: [...routes.files, ...(outputs?.files ?? [])] };
   const findings: InstallFinding[] = [...(bound?.findings ?? []), ...plan.findings, ...(outputs?.findings ?? [])];
   // An output never shares a file with a page route, and a route handler never shares a segment with a page.
-  const served = new Set(routes.files.map(row => row.file));
-  const segment = (file: string) => file.split("/").slice(0, -1).join("/");
+  // Compared as served: a route group folder (`(en)`) is no path segment, and case folds (a case-insensitive file system).
+  const servedPath = (file: string) => file.split("/").filter(part => !/^\(.+\)$/.test(part)).join("/").toLowerCase();
+  const served = new Set(routes.files.map(row => servedPath(row.file)));
+  const segment = (file: string) => servedPath(file).split("/").slice(0, -1).join("/");
   const pageSegments = new Set(routes.files.filter(row => /^page\.[cm]?[jt]sx?$/.test(row.file.split("/").pop()!)).map(row => segment(row.file)));
   for (const row of outputs?.files ?? []) {
-    if (served.has(row.file)) findings.push({ code: "site-contract", slot: map.publicationId, detail: `${row.file}: a publication output collides with a page route of the same file` });
+    if (served.has(servedPath(row.file))) findings.push({ code: "site-contract", slot: map.publicationId, detail: `${row.file}: a publication output collides with a page route of the same file` });
     else if (/^route\.[cm]?[jt]s$/.test(row.file.split("/").pop()!) && pageSegments.has(segment(row.file))) findings.push({ code: "site-contract", slot: map.publicationId, detail: `${row.route}: a publication output collides with a page served at the same path` });
   }
   const files: PublishNextFile[] = [];

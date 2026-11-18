@@ -92,9 +92,10 @@ function initPublicationOutputs(root: string, options: InitOutputsOptions) {
 }
 const OUTPUTS = { publication: "example-site", forms: ["contact"] as const, share: true, meta: ["json-ld", "llms", "rss"] as const, locales: ["en", "fr"], origin: "https://example.com", identity: { name: "site.name", summary: "home.hero.body" } };
 
-async function render(site: string, route: string): Promise<string> {
+/** A route rendered inside its own root layout, with the layout's metadata export (what Next sets as <title>). */
+async function render(site: string, route: string, layout: string): Promise<{ html: string; title?: string }> {
   const here = createRequire(import.meta.url);
-  const entry = `import { createElement } from "react"; import Layout from "./app/layout"; import Page from "./app/${route}"; export default function Root() { return createElement(Layout, null, createElement(Page)); }`;
+  const entry = `import { createElement } from "react"; import Layout, { metadata } from "./app/${layout}"; import Page from "./app/${route}"; export { metadata }; export default function Root() { return createElement(Layout, null, createElement(Page)); }`;
   const result = await build({
     stdin: { contents: entry, resolveDir: site, loader: "tsx" }, bundle: true, write: false, format: "esm", platform: "node", jsx: "automatic", logLevel: "silent",
     banner: { js: `import { createRequire as __createRequire } from "node:module"; const require = __createRequire(${JSON.stringify(import.meta.filename)});` },
@@ -105,8 +106,8 @@ async function render(site: string, route: string): Promise<string> {
   const out = join(site, ".render", `${route.replace(/\W/g, "-")}-${Date.now()}.mjs`);
   mkdirSync(join(site, ".render"), { recursive: true });
   writeFileSync(out, result.outputFiles[0]!.text);
-  const module = await import(pathToFileURL(out).href) as { default: ComponentType };
-  return renderToStaticMarkup(createElement(module.default));
+  const module = await import(pathToFileURL(out).href) as { default: ComponentType; metadata?: { title?: string } };
+  return { html: renderToStaticMarkup(createElement(module.default)), ...(module.metadata?.title !== undefined ? { title: module.metadata.title } : {}) };
 }
 
 describe("publication outputs (U18)", () => {
@@ -161,7 +162,7 @@ describe("publication outputs (U18)", () => {
     draftFrench(root);
     const result = await install(root, app);
     expect(blocking(result)).toEqual([]);
-    for (const file of ["api/forms/contact/route.ts", "opengraph-image.tsx", "twitter-image.tsx", "fr/opengraph-image.tsx", "fr/twitter-image.tsx", "llms.txt/route.ts", "feed.xml/route.ts", "fr/feed.xml/route.ts", "fr/page.tsx", "fr/about/page.tsx"]) {
+    for (const file of ["api/forms/contact/route.ts", "opengraph-image.tsx", "twitter-image.tsx", "fr/opengraph-image.tsx", "fr/twitter-image.tsx", "llms.txt/route.ts", "feed.xml/route.ts", "fr/feed.xml/route.ts", "(en)/layout.tsx", "(en)/page.tsx", "(en)/about/page.tsx", "fr/layout.tsx", "fr/page.tsx", "fr/about/page.tsx", "fr/not-found.tsx", "global-error.tsx"]) {
       expect(readFileSync(join(app, file), "utf8").split("\n", 1)[0], file).toBe(NEXT_ROUTE_MARKER);
     }
     const form = readFileSync(join(app, "api", "forms", "contact", "route.ts"), "utf8");
@@ -170,19 +171,36 @@ describe("publication outputs (U18)", () => {
     expect(readFileSync(join(app, "fr", "opengraph-image.tsx"), "utf8")).toContain('"headline":"FR Example Studio"');
     expect(readFileSync(join(app, "llms.txt", "route.ts"), "utf8")).toContain("https://example.com/about");
     expect(readFileSync(join(app, "fr", "feed.xml", "route.ts"), "utf8")).toContain("https://example.com/fr/about");
-    expect(readFileSync(join(app, "layout.tsx"), "utf8")).toContain("application/ld+json");
+    // No app-root layout: each locale's document is its own root layout, with its own JSON-LD.
+    expect(existsSync(join(app, "layout.tsx"))).toBe(false);
+    expect(readFileSync(join(app, "(en)", "layout.tsx"), "utf8")).toContain("application/ld+json");
+    expect(readFileSync(join(app, "fr", "layout.tsx"), "utf8")).toContain("FR Example Studio");
+    expect(readFileSync(join(app, "(en)", "layout.tsx"), "utf8")).not.toContain("FR Example Studio");
     expect(readFileSync(join(app, "fr", "page.tsx"), "utf8")).toContain('locale: "fr"');
     expect(readFileSync(join(site, NEXT_BIND_ASSEMBLY), "utf8")).toContain("const localized");
     const report = JSON.parse(readFileSync(join(root, ".out", "install-report.json"), "utf8"));
     expect(report.outputs.map((row: { route: string }) => row.route)).toEqual(expect.arrayContaining(["/api/forms/contact", "/opengraph-image", "/fr/feed.xml", "/llms.txt"]));
     expect(report.pages.map((row: { route: string }) => row.route)).toEqual(expect.arrayContaining(["/", "/about", "/fr", "/fr/about"]));
 
-    const french = await render(site, "fr/page");
-    expect(french).toContain("FR Pages assembled from records");
-    expect(french).toContain('type="application/ld+json"');
-    const english = await render(site, "page");
-    expect(english).toContain("Pages assembled from records");
-    expect(english).not.toContain("FR Pages assembled from records");
+    // The French route's document is French: its language, its title and its body, never the default's.
+    const french = await render(site, "fr/page", "fr/layout");
+    expect(french.html).toContain("FR Pages assembled from records");
+    expect(french.html).toContain('type="application/ld+json"');
+    expect(french.html).toMatch(/^<html lang="fr"/);
+    expect(french.title).toMatch(/^FR /);
+    const english = await render(site, "(en)/page", "(en)/layout");
+    expect(english.html).toContain("Pages assembled from records");
+    expect(english.html).not.toContain("FR Pages assembled from records");
+    expect(english.html).toMatch(/^<html lang="en"/);
+    expect(english.title).toBeDefined();
+    expect(english.title).not.toMatch(/^FR /);
+    // The French not-found state mounts the French frame copy in the French document.
+    const missing = await render(site, "fr/not-found", "fr/layout");
+    expect(missing.html).toMatch(/^<html lang="fr"/);
+    expect(missing.html).toContain("FR About Example Studio");
+    const englishMissing = await render(site, "(en)/not-found", "(en)/layout");
+    expect(englishMissing.html).toContain("About Example Studio");
+    expect(englishMissing.html).not.toContain("FR About Example Studio");
 
     // Reinstalling is stable, and a dropped output's marked files are removed.
     expect((await install(root, app, true)).files.filter(file => file.state === "drift")).toEqual([]);
@@ -196,6 +214,17 @@ describe("publication outputs (U18)", () => {
     expect(dropped.files.filter(file => file.state === "removed").map(file => file.file).sort()).toEqual(["fr/opengraph-image.tsx", "fr/twitter-image.tsx", "opengraph-image.tsx", "twitter-image.tsx"]);
     expect(existsSync(join(app, "opengraph-image.tsx"))).toBe(false);
   });
+  it("a French document title the Writer has not drafted blocks the install; the default title never stands in (B3)", { timeout: 120_000 }, async () => {
+    const { root, app } = await consumer();
+    const { candidate } = await initPublicationOutputs(root, OUTPUTS);
+    pin(root, "publisher", "publication.example-site", candidate);
+    // The home page's content-map title key (page.home's pinned record).
+    const title = "site.studio.name";
+    draftFrench(root, [title]);
+    const result = await install(root, app);
+    expect(blocking(result)).toEqual(expect.arrayContaining([expect.objectContaining({ code: "missing-copy-key", detail: expect.stringMatching(new RegExp(`^fr: example-site: the document title ${title.replace(/\./g, "\\.")} has no fr text`)) })]));
+    expect(existsSync(join(app, "fr", "layout.tsx"))).toBe(false);
+  });
   it("refuses an output route that would share its path with a page", { timeout: 120_000 }, async () => {
     const { root, app } = await consumer();
     const about = slotDir(root, "publisher", "page.about");
@@ -206,6 +235,14 @@ describe("publication outputs (U18)", () => {
     pin(root, "publisher", "publication.example-site", candidate);
     const result = await install(root, app);
     expect(blocking(result)).toEqual(expect.arrayContaining([expect.objectContaining({ code: "site-contract", detail: expect.stringMatching(/\/feed\.xml: a publication output collides with a page served at the same path/) })]));
+    expect(existsSync(join(app, "feed.xml", "route.ts"))).toBe(false);
+
+    // With locales the default's page sits in its route group, `(en)/feed.xml/page.tsx`: still served at /feed.xml, still refused.
+    const localized = await initPublicationOutputs(root, { publication: "example-site", meta: ["rss"], locales: ["en", "fr"], origin: "https://example.com", identity: { name: "site.name", summary: "home.hero.body" } });
+    pin(root, "publisher", "publication.example-site", localized.candidate);
+    draftFrench(root);
+    const grouped = await install(root, app);
+    expect(blocking(grouped)).toEqual(expect.arrayContaining([expect.objectContaining({ code: "site-contract", detail: expect.stringMatching(/^\/feed\.xml: a publication output collides with a page served at the same path/) })]));
     expect(existsSync(join(app, "feed.xml", "route.ts"))).toBe(false);
   });
 });

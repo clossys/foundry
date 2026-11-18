@@ -37,5 +37,7 @@ describe("checkPublicationOutputs", () => {
     expect(with_(value => { value.locales.all = ["en", "en"]; })).toEqual([expect.stringMatching(/locales/)]);
     expect(with_(value => { value.locales.default = "de"; })).toEqual([expect.stringMatching(/locales\.default/)]);
     expect(with_(value => { value.locales.all = ["en", "FR"]; })).toEqual([expect.stringMatching(/locales\.all/)]);
+    // Round 1: two spellings of one locale are one folder on a case-insensitive file system.
+    expect(with_(value => { value.locales.all = ["en", "en-US", "en-us"]; })).toEqual([expect.stringMatching(/locales\.all.*case-insensitively/)]);
   });
 });

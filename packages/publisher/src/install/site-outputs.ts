@@ -8,7 +8,11 @@
  *   Designer's mark (the caller resolves the pinned `assets.mark`) and the Writer's name and summary.
  * - `llms.txt/route.ts`, and `feed.xml/route.ts` (RSS) or `atom.xml/route.ts` per locale: checked
  *   text built at install from the content map and Writer text.
- * - JSON-LD (Organization, WebSite) as checked text the installed layout mounts (`jsonLd`).
+ * - JSON-LD (Organization, WebSite) as checked text the installed layout mounts (`jsonLd`), and per
+ *   locale for the per-locale layouts (`jsonLdByLocale`).
+ *
+ * A share card is built at install too (`buildBrandShareCard`), so Writer text the card refuses (a
+ * line break, a control character) is a blocking finding here rather than a failed site build.
  *
  * Every visible string comes from `text(key, locale)`, the caller's pinned Writer copy. A key a
  * locale does not hold is a blocking `missing-copy-key` finding, never a fallback to another
@@ -46,8 +50,10 @@ export interface SiteOutputsOptions {
 export interface SiteOutputsPlan {
   readonly files: readonly NextRouteFile[];
   readonly findings: readonly InstallFinding[];
-  /** Checked JSON-LD for `planNextRoutes({ jsonLd })` to mount in the layout. */
+  /** Checked JSON-LD for `planNextRoutes({ jsonLd })` to mount in the layout: the default locale's. */
   readonly jsonLd?: string;
+  /** Checked JSON-LD per recorded locale, for `planNextRoutes({ localeJsonLd })`. */
+  readonly jsonLdByLocale?: Readonly<Record<string, string>>;
 }
 
 export const SITE_OUTPUT_WEB = "@clossys/publisher/web";
@@ -92,7 +98,7 @@ export function GET(): Response {
 }
 
 /** Plan a publication's install outputs; an outputs record that opts into nothing plans nothing. */
-export function planSiteOutputs(options: SiteOutputsOptions): SiteOutputsPlan {
+export async function planSiteOutputs(options: SiteOutputsOptions): Promise<SiteOutputsPlan> {
   const { map, outputs } = options;
   const findings: InstallFinding[] = [];
   const files: NextRouteFile[] = [];
@@ -126,12 +132,18 @@ export function planSiteOutputs(options: SiteOutputsOptions): SiteOutputsPlan {
     if (!visual || typeof visual.markSrc !== "string" || !MARK_SRC.test(visual.markSrc)) {
       findings.push({ code: "site-contract", slot: map.publicationId, detail: `${map.publicationId}: share images draw the Designer's pinned assets.mark as an svg or png data URL, and none was resolved; request assets.mark from the Designer` });
     } else {
+      // Loaded only when share images install: the card builder renders with React.
+      const { buildBrandShareCard } = await import("../web/shareCard.js");
       for (const locale of locales.all) {
         const headline = text(outputs.identity!.name, locale), supporting = text(outputs.identity!.summary, locale);
         for (const name of ["opengraph-image", "twitter-image"]) {
           const route = `/${[...prefix(locale), name].join("/")}`;
           const card = { markSrc: visual.markSrc, ...(visual.wordmark ? { wordmark: visual.wordmark } : {}), headline, supporting, path: route,
             ...(visual.tokenOverrides ? { tokenOverrides: visual.tokenOverrides } : {}), ...(visual.displayFontFamily ? { displayFontFamily: visual.displayFontFamily } : {}) };
+          if (!headline || !supporting) continue;
+          // The card the installed route builds, built now: a refusal is a finding, never a broken build.
+          try { buildBrandShareCard(card); }
+          catch (error) { findings.push({ code: "site-contract", slot: map.publicationId, detail: `${map.publicationId}: ${locale} share card refused: ${error instanceof Error ? error.message : String(error)}; the Writer redrafts ${outputs.identity!.name} or ${outputs.identity!.summary}` }); break; }
           add([...prefix(locale), `${name}.tsx`].join("/"), route, shareModule(card, web));
         }
       }
@@ -166,16 +178,18 @@ export function planSiteOutputs(options: SiteOutputsOptions): SiteOutputsPlan {
     }
   }
 
-  let jsonLd: string | undefined;
+  const jsonLdByLocale: Record<string, string> = {};
   if (outputs.jsonLd) {
-    const locale = locales.default;
-    const name = text(outputs.identity!.name, locale), summary = text(outputs.identity!.summary, locale);
-    if (name && summary) {
-      const built = buildJsonLd({ origin: origin!, name, summary, locale });
-      if (refuse("JSON-LD", checkJsonLd(built))) jsonLd = built;
+    for (const locale of locales.all) {
+      const name = text(outputs.identity!.name, locale), summary = text(outputs.identity!.summary, locale);
+      if (name && summary) {
+        const built = buildJsonLd({ origin: origin!, name, summary, locale });
+        if (refuse(`${locale} JSON-LD`, checkJsonLd(built))) jsonLdByLocale[locale] = built;
+      }
     }
   }
 
   if (findings.length) return { files: [], findings };
-  return { files, findings, ...(jsonLd === undefined ? {} : { jsonLd }) };
+  const jsonLd = jsonLdByLocale[locales.default];
+  return { files, findings, ...(jsonLd === undefined ? {} : { jsonLd, jsonLdByLocale }) };
 }
