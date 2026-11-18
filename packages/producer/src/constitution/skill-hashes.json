@@ -100,6 +100,7 @@
   "actions": {
     "packages/designer/actions/designer.brief/action.json": [
       "4f476cd6f63394412ce298170b747e5765b2d8c706fcf7db0193820292720e7c",
+      "c1560bf87f944bdc8f56c12fcfc1d6ef370151e97739e5d3346dd7e6f216ca1a",
       "f1f0dbd0c6989c736f90428c9d47956c7466c276b98a1b363af2cc508d1efbfd"
     ],
     "packages/designer/actions/designer.check/action.json": [
@@ -219,6 +220,7 @@
       "c1c3ad2a18acdacbc6c3540b7ec15ed33959360f909967e90a1f816ec2ff63e3"
     ],
     "packages/writer/actions/writer.brief/action.json": [
+      "ea2d66f1a723923a96c80ee3189aebc92a7cf4520a2438619c9d1fd686f877f1",
       "ecb47dda003d5692b8fe95fd2f911be5a6770821afb7228df3b55b7939a7b073",
       "ef3e43a41659a4e6acaa4c3759e1d8dcdb4dc45b9003626d29dfce858b253b13"
     ],

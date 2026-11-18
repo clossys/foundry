@@ -534,7 +534,7 @@ describe("clossys run loop.<name> (cli/run.ts loop mode)", () => {
     expect(unknown.exitCode).toBe(2);
     expect(unknown.message).toMatch(/loop\.ship is not a loop/);
     const help = await runRunCli(["--help"], w.root);
-    expect(help.message).toMatch(/clossys run loop\.<fill\|refine\|create\|choose\|release\|audit>/);
+    expect(help.message).toMatch(/clossys run loop\.<fill\|refine\|create\|choose\|release\|audit\|cascade>/);
   });
 });
 

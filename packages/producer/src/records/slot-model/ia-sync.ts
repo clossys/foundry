@@ -388,6 +388,9 @@ export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlyS
     let bytes: string;
     if (!modelExists(file)) {
       if (!slot) continue;
+      // A newly adopted leaf whose declared refs name no slot carries a dangling edge: refuse, never leave it out.
+      const dropped = packageBehaviour(agent, id, slot, position, ctx).dropped;
+      if (dropped.length) return { error: `${agent}/${id}: declared refs name no slot (dangling edges): ${dropped.join(", ")}` };
       if (store) {
         const made = adoptedCurrent(consumerDir, agent, id, slot, position, packageBehaviour(agent, id, slot, position, ctx), holderMap(), options ?? { at: new Date().toISOString() as Iso, version: "0.0.0" });
         if (!made) continue;

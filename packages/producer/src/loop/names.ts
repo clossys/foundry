@@ -10,7 +10,7 @@ import type { AgentId } from "../records/types.js";
  * pins one through the pin gate (constitution/pin-gate.ts) and ends on a resolving pin. `loop.fill` and `loop.refine`
  * stay runnable (owner decision D9) and are the one-call form of the same two halves.
  */
-export const LOOP_NAMES = ["loop.fill", "loop.refine", "loop.create", "loop.choose", "loop.release", "loop.audit"] as const;
+export const LOOP_NAMES = ["loop.fill", "loop.refine", "loop.create", "loop.choose", "loop.release", "loop.audit", "loop.cascade"] as const;
 export type LoopName = (typeof LOOP_NAMES)[number];
 export const isLoopName = (value: string): value is LoopName => (LOOP_NAMES as readonly string[]).includes(value);
 
@@ -39,6 +39,7 @@ export const LOOP_TRIGGERS: Readonly<Record<LoopName, readonly string[]>> = {
   "loop.choose": ["T2", "T3", "T4", "T5", "T6", "T7"],
   "loop.release": ["T8"],
   "loop.audit": ["T6"],
+  "loop.cascade": ["T7"],
 };
 
 /** Each loop's run needs a slot (fill, refine, create, choose), a publication (release) or neither (audit). */
@@ -49,6 +50,7 @@ export const LOOP_SUBJECT: Readonly<Record<LoopName, "slot" | "publication" | "n
   "loop.choose": "slot",
   "loop.release": "publication",
   "loop.audit": "none",
+  "loop.cascade": "slot",
 };
 
 /**
@@ -63,6 +65,7 @@ export const EXIT_CHECKS: Readonly<Record<LoopName, readonly string[]>> = {
   "loop.choose": ["pins.resolve"],
   "loop.release": ["release.ready"],
   "loop.audit": ["ia.orphans", "refs.dangling"],
+  "loop.cascade": ["cascade.clean"],
 };
 
 /** The release ready-pin check: the last step of `loop.release`, after an owner sign-off. */
@@ -91,7 +94,12 @@ export const AGENT_PICK_VERB = "pick";
  * by the pin gate). An agent's `--step-exit 0` never passes them.
  */
 export const CANDIDATES_CERTIFIED = "candidates.certified";
-export const VERIFIED_CHECKS: readonly string[] = ["pins.resolve", RELEASE_READY, CANDIDATES_CERTIFIED];
+/**
+ * `cascade.clean` (foundry-build-0048 U6): no pinned candidate in the workspace is stale (judged on a pinSet that is
+ * not the pinSet now) or failed on a slot not marked needs-refresh (R07.5, constitution/cascade.ts).
+ */
+export const CASCADE_CLEAN = "cascade.clean";
+export const VERIFIED_CHECKS: readonly string[] = ["pins.resolve", RELEASE_READY, CANDIDATES_CERTIFIED, CASCADE_CLEAN];
 
 /** The release steps that must run, for every publication, before the owner's sign-off (cli prefix match). */
 export const RELEASE_BEFORE_SIGNOFF: readonly { readonly id: string; readonly cli: RegExp }[] = [

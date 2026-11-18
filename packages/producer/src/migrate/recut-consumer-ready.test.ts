@@ -39,6 +39,12 @@ function writerDefinition(dir: string, id: string): { kind: string; contract: Re
   return tree.slots.find(slot => slot.id === id)!;
 }
 
+/** The Director briefs whose contract `feeds` name a Writer slot (src/slot-contracts/contracts.json), sorted. */
+function directorFeeding(dir: string, id: string): string[] {
+  const contracts = JSON.parse(readFileSync(join(agentPackageRoot(dir, "director"), "src", "slot-contracts", "contracts.json"), "utf8")) as { slots: { id: string; feeds?: string[] }[] };
+  return contracts.slots.filter(slot => (slot.feeds ?? []).some(ref => ref.replace(/^writer[:/]/, "") === id)).map(slot => slot.id).sort();
+}
+
 describe("migrate recut: a moved-to slot gets its slot.json (P2-1)", () => {
   it("writes the current-format slot.json of a target the recut places, from the package's own slot definition", () => {
     const w = world();
@@ -55,7 +61,11 @@ describe("migrate recut: a moved-to slot gets its slot.json (P2-1)", () => {
     const position = slotPositions("writer", ia).get("sections.hero.copy")!;
     expect(doc).toMatchObject({ schema: "clossys.slot/2", id: "sections.hero.copy", agent: "writer", kind: definition.kind, status: "starter", base: null, contract: definition.contract });
     expect(doc.ia).toEqual(positionIa("sections.hero.copy", position));
-    expect(doc.refs).toEqual(definition.inputs.map(ref => ({ to: ref.to, rel: ref.rel ?? "input", ...(ref.key !== undefined ? { key: ref.key } : {}) })));
+    // The package inputs, then every Director brief whose contract feeds name the slot (ia sync's derived inputs).
+    const declared = definition.inputs.map(ref => ({ to: ref.to, rel: ref.rel ?? "input", ...(ref.key !== undefined ? { key: ref.key } : {}) }));
+    const fed = directorFeeding(w.root, "sections.hero.copy").map(id => `director/${id}`).filter(to => !declared.some(ref => ref.to === to));
+    expect(fed.length).toBeGreaterThan(0);
+    expect(doc.refs).toEqual([...declared, ...fed.map(to => ({ to, rel: "input" }))]);
     expect(doc.brief.inputs).toEqual(doc.refs);
     expect(readSlot(file).id).toBe("sections.hero.copy");
 

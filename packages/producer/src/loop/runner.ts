@@ -5,8 +5,10 @@
  *
  * - a step whose `when` does not match the slot is skipped and left out of the ledger;
  * - a code step runs through `hooks.code` (the CLI runs the verb); two are built in: `clossys check --route` routes the
- *   previous step's findings (route.ts) and `clossys check <dependants>` marks every `consumedBy` dependant
- *   `needs-refresh` when this run changed the slot's pin (flows.md F7 step 1);
+ *   previous step's findings (route.ts) and `clossys check <dependants>` runs the cascade (cascade.ts): every pin
+ *   whose pinSet a repin changed is judged again by the one certifier, a failure marks its slot `needs-refresh` and is
+ *   a `queue.fix` for the slot's owner (CHOOSE or CREATE), to a fixed point within `maxRounds`, then a `queue.clarify`;
+ *   a legacy `consumedBy` dependant is marked `needs-refresh` when this run changed the slot's pin (flows.md F7 step 1);
  * - an agent step hands `hooks.agent` a packet (agent, verb, tier, skill, cli); the agent answers with its exit, the
  *   files it wrote and the model that served it, or `wait`;
  * - a human step raises a queue entry for the owner and the run waits. It resumes only from the entry: open keeps
@@ -35,12 +37,14 @@ import type { AgentId, Decider, DeciderVerb, Iso, LedgerEntry, LoopStep, LoopVer
 import { RUN_BY, RUN_CLI, entryName, producerVersion, raiseEntry, routeFindings, type Finding, type Raise } from "./route.js";
 import { dependantsOf, fillNames, MissingSkillError, nextFillSlot, readSubject, refOf, skillFor, slotCandidates, slotVars, stepArgv, whenMatches, type SlotSubject } from "./slots.js";
 import {
-  AGENT_PICK_VERB, CANDIDATES_CERTIFIED, CANDIDATE_NAME, ENTRY_NAME, EXIT_CHECKS, LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, OWNER_PICK_RAISE, PUBLICATION_ID, RELEASE_READY, RUN_ID,
+  AGENT_PICK_VERB, CANDIDATES_CERTIFIED, CASCADE_CLEAN, CANDIDATE_NAME, ENTRY_NAME, EXIT_CHECKS, LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, OWNER_PICK_RAISE, PUBLICATION_ID, RELEASE_READY, RUN_ID,
   SLOT_REF, TRIGGER_CODE, TRIGGER_KINDS, VERIFIED_CHECKS, ledgerOf, loopStem, type LoopName,
 } from "./names.js";
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { certifiedOptions } from "../constitution/pin-gate.js";
+import { cascadeClean, runCascade } from "./cascade.js";
+import { CASCADE_REVERDICT } from "../constitution/cascade.js";
 
 export type Exit = 0 | 1 | 2;
 
@@ -253,6 +257,7 @@ function triggerOf(loop: LoopName, input: StartInput, subject: SlotSubject | und
   if (input.trigger) return input.trigger;
   if (loop === "loop.release") return "T8";
   if (loop === "loop.audit") return "T6";
+  if (loop === "loop.cascade") return "T7";
   if (loop === "loop.fill") return from ? "T4" : "T2";
   // CREATE and CHOOSE with no entry: a dependant marked needs-refresh (T7), else the slot's starter fill (T2).
   if ((loop === "loop.create" || loop === "loop.choose") && !from) return subject?.slot.status === "needs-refresh" ? "T7" : "T2";
@@ -444,6 +449,8 @@ export function verifyCheck(ctx: { readonly root: string; readonly state: RunSta
     const judged = certifiedOptions(root, join(root, "clossys"), agent, slotId, state.startedAt);
     return judged.ok ? { ok: true } : { ok: false, why: `${CANDIDATES_CERTIFIED}: ${agent}/${slotId}: ${judged.why.join("; ")}` };
   }
+  // No pin anywhere is stale or fails its re-verdict on the pinSet now (constitution/cascade.ts).
+  if (name === CASCADE_CLEAN) return cascadeClean(root);
   return { ok: false, why: `${name} is not a check clossys run computes` };
 }
 
@@ -483,7 +490,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
       continue;
     }
 
-    let exit: Exit; let wrote: readonly string[] | undefined; let findings: readonly Finding[] = []; let ledgerDecider: Decider; let cli = filled.text;
+    let exit: Exit; let wrote: readonly string[] | undefined; let findings: readonly Finding[] = []; let raisedByStep = false; let ledgerDecider: Decider; let cli = filled.text;
     let ran: readonly string[] | undefined;
     if (decider.by === "agent") {
       const agent = decider.agent === OWNER_OF_SLOT ? subject?.agent : decider.agent;
@@ -506,7 +513,12 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     } else {
       ledgerDecider = { by: "code" };
       const builtIn = recordedBuiltIn(ctx, step, subject, filled);
-      if (builtIn) ({ exit, wrote } = builtIn);
+      if (builtIn) {
+        ({ exit, wrote } = builtIn);
+        findings = builtIn.findings ?? [];
+        for (const entry of builtIn.raised ?? []) state.raised.push(entryName(entry));
+        raisedByStep = !!builtIn.raised?.length;
+      }
       else if (filled.unfilled.length) { exit = 2; wrote = []; }
       else {
         const outcome = await hooks.code({ runId: state.runId, step: step.id, cli: filled.text, argv: filled.argv, ...(subject ? { ref: refOf(subject) } : {}), ...(state.publication ? { publication: state.publication } : {}) });
@@ -523,7 +535,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     const recorded = recordStep(ctx, step, ledgerDecider, cli, exit, wrote, vars, ran);
     state.findings = [...findings];
     if (recorded.why && !step.onFail) return stop(ctx, `step ${step.id} failed: ${recorded.why}`, 1);
-    const result = await afterStep(ctx, step, recorded.exit, findings, subject);
+    const result = await afterStep(ctx, step, recorded.exit, findings, subject, raisedByStep);
     if (result) return result;
   }
   return finish(ctx);
@@ -542,7 +554,8 @@ function manifestOf(root: string, publication: string, wrote: readonly string[] 
 }
 
 /** The two code steps the runner runs itself. */
-function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefined): { exit: Exit; wrote: string[] } | undefined {
+type BuiltIn = { exit: Exit; wrote: string[]; findings?: readonly Finding[]; raised?: readonly QueueEntry[] };
+function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefined): BuiltIn | undefined {
   const { root, state } = ctx;
   if (step.cli === "clossys check --route") {
     const raised = routeFindings(root, state.findings, iso(ctx.now()), state.loop);
@@ -551,21 +564,24 @@ function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefi
   }
   if (step.cli.includes("<dependants>")) {
     if (!subject) return { exit: 2, wrote: [] };
-    const wrote: string[] = [];
+    const at = iso(ctx.now());
     const missing = subject.slot.refs.filter(ref => ref.rel === "consumedBy" && !readSubject(root, ref.to.split("/")[0] as AgentId, ref.to.split("/")[1] ?? ""));
-    if (pinSha(root, subject) !== state.startPin) {
-      for (const dependant of dependantsOf(root, subject)) {
-        if (dependant.slot.status === "retired" || dependant.slot.status === "parked" || dependant.slot.status === "needs-refresh") continue;
-        const file = join(root, "clossys", "agents", dependant.agent, dependant.slotId, "slot.json");
-        if (writeSlot(file, { ...dependant.slot, status: "needs-refresh", updatedAt: iso(ctx.now()) })) wrote.push(`${refOf(dependant)}/slot.json`);
-      }
+    // loop.cascade runs because a repin upstream changed pinSets (T7); any other loop, when this run moved the pin.
+    const repinned = state.loop === "loop.cascade" || pinSha(root, subject) !== state.startPin;
+    const cascade = runCascade(root, at, { maxRounds: ctx.version.maxRounds, cause: subject, repinned });
+    const raised: QueueEntry[] = [];
+    if (!cascade.converged) {
+      const entry = raiseFor(ctx, "queue.clarify", subject, `${ctx.version.maxRounds} rounds of the cascade after ${refOf(subject)} did not reach a fixed point; still stale: ${cascade.stale.join(", ")}`, at, false);
+      if (entry) raised.push(entry);
     }
-    // flows.md F7 step 2: a dependant that ran clean goes back to live.
-    if (subject.slot.status === "needs-refresh") {
-      const file = join(root, "clossys", "agents", subject.agent, subject.slotId, "slot.json");
-      if (writeSlot(file, { ...subject.slot, status: "live", updatedAt: iso(ctx.now()) })) wrote.push(`${refOf(subject)}/slot.json`);
+    const gate = (step.checks ?? []).includes(CASCADE_CLEAN);
+    if (!gate && cascade.findings.length) {
+      // CHOOSE, FILL and REFINE: the run's own slot is done; each failing dependant goes to its owner as a queue.fix.
+      raised.push(...routeFindings(root, cascade.findings, at, `${state.loop} ${step.id}`));
     }
-    return { exit: missing.length ? 1 : 0, wrote };
+    const wrote = [...cascade.wrote, ...raised.map(entry => `producer/${entry.queue}/entries/${entry.id}.json`)];
+    const failed = missing.length > 0 || (gate && (cascade.findings.length > 0 || !cascade.converged));
+    return { exit: failed ? 1 : 0, wrote, ...(gate ? { findings: cascade.findings } : {}), raised };
   }
   return undefined;
 }
@@ -575,11 +591,11 @@ function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefi
  * clossys.pipeline-run/1 record to `.clossys/runs/<loop>.<step>.jsonl` with every file it read and
  * wrote and their sha256, so a loop's own writes (queue entries, slot status) are on the run record.
  */
-function recordedBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefined, filled: { readonly argv: readonly string[]; readonly text: string }): { exit: Exit; wrote: string[] } | undefined {
+function recordedBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefined, filled: { readonly argv: readonly string[]; readonly text: string }): BuiltIn | undefined {
   const watch = observe();
   // Wall time, not ctx.now(): the run clock dates entries and pins, and a record must not move it.
   const start = new Date();
-  let result: { exit: Exit; wrote: string[] } | undefined;
+  let result: BuiltIn | undefined;
   try { result = codeBuiltIn(ctx, step, subject); }
   finally { watch.stop(); }
   if (!result) return undefined;
@@ -595,7 +611,7 @@ function recordedBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | un
 }
 
 /** onFail and exit 2 (null: go on). */
-async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: readonly Finding[], subject: SlotSubject | undefined): Promise<RunResult | null> {
+async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: readonly Finding[], subject: SlotSubject | undefined, raisedByStep = false): Promise<RunResult | null> {
   const { root, state, version } = ctx;
   if (exit === 0) { state.cursor++; saveState(root, state); return null; }
   if (exit === 2) return stop(ctx, `step ${step.id} could not run (exit 2)`, 2);
@@ -608,7 +624,8 @@ async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: rea
   const at = iso(ctx.now());
   const label = `${state.loop} ${step.id}`;
   if (step.onFail.then !== "retry") {
-    const raised = findings.length ? routeFindings(root, findings, at, label) : [raiseFor(ctx, step.onFail.raise, subject, `${label} failed${state.publication ? ` for ${state.publication}` : ""}`, at)].filter((e): e is QueueEntry => e !== undefined);
+    // A step that raised its own entries (the cascade's queue.clarify) needs no fallback entry.
+    const raised = findings.length ? routeFindings(root, findings, at, label) : raisedByStep ? [] : [raiseFor(ctx, step.onFail.raise, subject, `${label} failed${state.publication ? ` for ${state.publication}` : ""}`, at)].filter((e): e is QueueEntry => e !== undefined);
     for (const entry of raised) state.raised.push(entryName(entry));
     const names = raised.map(entryName);
     return stop(ctx, `${step.id} failed; ${names.length ? `raised ${names.join(", ")}; ` : ""}${step.onFail.then} runs from ${names[0] ?? "the open entry"}`, 1);
@@ -831,6 +848,8 @@ async function finish(ctx: Context): Promise<RunResult> {
     for (const name of [state.from, ...state.raised].filter((n): n is string => n !== undefined)) {
       const entry = readEntry(root, name);
       if (!entry || entry.status !== "open" || entry.queue !== "queue.fix" || !entry.decider.startsWith("agent:")) continue;
+      // A fix the cascade routed to a dependant's owner is that slot's to close, not this run's.
+      if (entry.subject.to !== refOf(subject) && entry.ask.includes(CASCADE_REVERDICT)) continue;
       answerQueueEntry(root, { entry: name, by: RUN_BY, answer: `${state.loop} ${state.runId} done`, answers: refOf(subject) }, ctx.now());
       state.refs.push({ to: `producer/${entry.queue}` as Ref["to"], record: entry.id, rel: "answers" });
     }

@@ -117,7 +117,8 @@ export function checkDirectorCell(cell: Pick<Cell, "id" | "direction" | "path">,
 }
 
 const DESIGNER_SLOT = /^(tokens|assets|components|sections|frames)\.[a-z][a-z0-9-]*$/;
-const WRITER_LEAF = /"leaf"\s*:\s*"((?:lexicon|strings|patterns|passages|narratives)\.[a-z0-9-]+)"/g;
+/** A Writer leaf on the Voice/Prose/Copy tree: `lexicon.*`, `narratives.*`, `<layer>.<id>.copy`, `<page|publication>.<id>.meta`. */
+const WRITER_LEAF = /"leaf"\s*:\s*"((?:lexicon|narratives)\.[a-z0-9-]+|(?:assets|components|frames|sections)\.[a-z0-9-]+\.copy|(?:page|publication)\.[a-z0-9-]+\.meta)"/g;
 const DIRECTOR_AGENTS = new Set(["director", "director"]);
 const DIRECTOR_ID = /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/;
 

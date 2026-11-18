@@ -85,6 +85,22 @@
       "to": "director/identity.naming.name",
       "rel": "input",
       "key": "Name"
+    },
+    {
+      "to": "director/focus.lifecycle.acquisition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.essence",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
     }
   ],
   "base": null,
@@ -160,6 +176,22 @@
         "to": "director/identity.naming.name",
         "rel": "input",
         "key": "Name"
+      },
+      {
+        "to": "director/focus.lifecycle.acquisition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.essence",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
       }
     ],
     "acceptance": []

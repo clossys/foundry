@@ -49,6 +49,10 @@ The six Producer loops run one step at a time from the loop version the consumer
 - `clossys run loop.release --publication <id>` (T8) ends only at the owner-signed ready-pin.
 - `clossys run loop.audit` runs the strict checks and routes each finding: a `queue.fix` to the slot's
   agent, a `queue.clarify` to the owner, one open entry per subject.
+- `clossys run loop.cascade --slot <ref>` (T7, after `<ref>` repinned) judges again, by the one certifier,
+  every pinned candidate whose pinSet changed; a failure marks its slot `needs-refresh` and is a `queue.fix`
+  for that slot's owner (CHOOSE when another submitted candidate certifies, else CREATE). Release refuses
+  while any slot is `needs-refresh`.
 - An agent step prints its packet (agent, verb, tier, skill under
   `packages/<agent>/actions/<action-id>/skill.md`): run that skill, then
   `clossys run loop.<name> --resume --run <run-id> --step-exit <0|1|2> --model <serving model> [--wrote <file>]...`.

@@ -92,6 +92,8 @@ test("current surface descriptors select all measured surfaces and retain their 
     assert.ok(report.edges.some(edge => edge.from === "sections.pagination" && edge.to === to && edge.evidence.includes("declared") && edge.evidence.includes("scanned")));
   }
   assert.deepEqual(report.findings.filter(finding => /^(?:sections|frames)\./.test(finding.subject) && ["dangling-endpoint", "unselected-endpoint"].includes(finding.code)), []);
+  // Every declared edge lands on a catalog slot: token member reads resolve to their declared slot.
+  assert.deepEqual(report.findings.filter(finding => finding.code === "dangling-endpoint"), []);
   assert.equal(report.surfaceEvidence.measurement, "source-only lower-bound");
   assert.equal(report.surfaceEvidence.runtime, "unmeasured");
   assert.deepEqual(report.surfaceEvidence.fills, descriptors.map(({ meta, body }) => ({ id: meta.id, slot: meta.slot, pin: meta.pin, ...body.consumption })));
@@ -125,8 +127,11 @@ test("actual descriptor and measured references remain strict while contract per
     const slotsPath = resolve(fixture, "src/catalog/slots/sections.json"), slots = json(slotsPath);
     slots.find(slot => slot.id === "sections.features").contract.allowedReads.assets.push("assets.usage-graph-permission-*");
     writeFileSync(slotsPath, JSON.stringify(slots));
+    // A dangling endpoint fails the gate; --write still records it so the report names every edge.
     const result = run(fixture, "--write");
-    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stderr, /usage-graph dangling edge: sections\.features -reads-> assets\.usage-graph-declared-unknown/);
+    assert.equal(run(fixture, "--check").status, 1);
     const report = json(resolve(fixture, "src/catalog/reports/usage-graph.json"));
     for (const [target, evidence] of [["assets.usage-graph-declared-unknown", "declared"], ["assets.usage-graph-scanned-unknown", "scanned"], ["assets.usage-graph-actual-*", "declared"]]) {
       assert.ok(report.edges.some(edge => edge.from === "sections.features" && edge.to === target && edge.evidence.includes(evidence)), target);

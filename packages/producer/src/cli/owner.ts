@@ -305,21 +305,23 @@ function adoptIa(agent: string, root: string, dry: boolean): CliResult {
   }
   const feeds = feedsIndex([...(agent === "director" ? foundry : directorIa()).slots.values()].map(slot => [slot.id, slot.feeds] as const), known);
   const writes: [string, string][] = [[iaFile, jsonBytes(foundry.ia)]];
-  let dropped = 0;
+  const dangling: string[] = [];
   for (const [id, position] of slotPositions(agent as SlotAgent, foundry.ia)) {
     const slot = foundry.slots.get(id)!, file = slotFile(slotDir(consumer, agent as SlotAgent, id));
     if (modelExists(file)) return refuse("ia", `clossys/agents/${agent}/${id}/slot.json exists with no ${agent} ia.json; place it with --under or remove it first`);
     // The same slot.json `ia sync` writes for a newly adopted leaf: structure, derived refs and the package behaviour.
     const adopted = adoptedSlotDoc(agent as SyncAgent, id, slot, position, { known, feeds });
-    dropped += adopted.dropped.length;
+    for (const ref of adopted.dropped) dangling.push(`${id} -> ${ref}`);
     const doc = adopted.doc;
     const issues = validateSlotDoc(doc, file);
     if (issues.length) return refuse("ia", `${agent}/${id}: ${issues.map(issue => issue.message).join("; ")}`);
     writes.push([file, jsonBytes(doc)]);
   }
+  // A declared ref that names no slot is a dangling edge: refuse it rather than leave it out of the read graph.
+  if (dangling.length) return refuse("ia", `${agent}: ${dangling.length} declared refs name no slot (dangling edges): ${dangling.slice(0, 8).join(", ")}${dangling.length > 8 ? ", ..." : ""}`);
   const slots = writes.length - 1;
   return commitIa(consumer, root, writes, dry, `adopt the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots)`, [],
-    `ia: adopted the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots with their contracts)${dropped ? `; ${dropped} declared refs name no placed slot and were left out` : ""}`);
+    `ia: adopted the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots with their contracts)`);
 }
 const ids = (value: string | undefined) => value ? value.split(",").map(id => id.trim()).filter(Boolean) : [];
 type AgentIaFile = { extensions?: string[]; nodes: { id: string; label: string; children: { id: string; label: string; slots: string[] }[] }[] } & Record<string, unknown>;

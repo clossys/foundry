@@ -124,6 +124,22 @@ describe("usage graph", () => {
     ]);
   });
 
+  it("lands a declared member read on its slot and keeps an undeclared member dangling", () => {
+    const input = fixture();
+    const graph = buildUsageGraph({
+      ...input, members: { "themes.color": ["default"], "themes.radius": ["sm", "md"] },
+      components: { ...input.components, fills: [...input.components!.fills!, { id: "foundry/components.dialog", slot: "components.dialog", declaredReads: { themes: ["themes.color.default", "themes.radius.md", "themes.radius.xl"], assets: [] } }] },
+      selection: { ...input.selection, "components.dialog": "foundry/components.dialog" },
+    });
+    expect(rows(uses(graph, "components.dialog")).filter(row => row.includes("-reads/"))).toEqual([
+      "components.dialog -reads/declared-> themes.color",
+      "components.dialog -reads/declared-> themes.radius",
+      "components.dialog -reads/declared-> themes.radius.xl",
+    ]);
+    expect(graphFindings(graph).filter(finding => finding.code === "dangling-endpoint").map(finding => finding.target)).toEqual(["themes.missing", "themes.radius.xl"]);
+    expect(buildUsageGraph({ ...input, members: { "themes.color": ["default"] } }).inputsHash).not.toBe(buildUsageGraph(input).inputsHash);
+  });
+
   it("merges runtime observations onto existing edges without inventing a new kind", () => {
     const graph = buildUsageGraph({ ...fixture(), runtime: [{ from: "pages.home", to: "sections.form", kind: "renders", route: "home", selector: "[data-ds-leaf=\"sections.form\"]" }] });
     expect(uses(graph, "pages.home").find(edge => edge.to === "sections.form")).toMatchObject({ evidence: ["declared", "runtime"], at: [{ route: "home", selector: "[data-ds-leaf=\"sections.form\"]" }, { route: "home", slot: "main" }] });

@@ -85,6 +85,14 @@
       "to": "director/identity.naming.name",
       "rel": "input",
       "key": "Name"
+    },
+    {
+      "to": "director/identity.verbal.narrative",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
     }
   ],
   "base": null,
@@ -160,6 +168,14 @@
         "to": "director/identity.naming.name",
         "rel": "input",
         "key": "Name"
+      },
+      {
+        "to": "director/identity.verbal.narrative",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
       }
     ],
     "acceptance": []

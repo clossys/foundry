@@ -1,5 +1,5 @@
 /**
- * The release gates (publisher.md 9.4.3 `gates`, flows.md F8 step 4). The five gates below always run: a release
+ * The release gates (publisher.md 9.4.3 `gates`, flows.md F8 step 4). The six gates below always run: a release
  * slot's contract may add gates but never drop one, and a gate this code does not know fails (fail closed). There is
  * no flag that skips a gate.
  *
@@ -10,8 +10,16 @@
  * - `copy.locales`: every Writer copy record carries a non-empty value for each field it uses in every release locale
  *   and every locale its own contract requires.
  * - `release.locales`: the release locales resolve and the build carries every one.
+ * - `slots.stale`: no slot is `needs-refresh` and no pinned candidate is stale or fails its re-verdict on the pinSet
+ *   now (R07.5, constitution/cascade.ts): a release never ships a dependant a repin upstream left unjudged.
  */
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { buildContext } from "../constitution/context.js";
+import { NEEDS_REFRESH, pinChecks } from "../constitution/cascade.js";
+import { liveSlotRecords } from "../constitution/checks/shared.js";
+import { readSubject } from "../loop/slots.js";
+import { consumerSlotFolders } from "../records/slot.js";
 import { checkPinsResolve, PINS_RESOLVE } from "../check/pins-resolve.js";
 import { strictFindings } from "../loop/cli.js";
 import type { Finding } from "../loop/route.js";
@@ -24,8 +32,9 @@ export const COPY_SAMPLE_REMAINING = "copy.sample-remaining";
 export const CONSTITUTION_STRICT = "constitution.strict";
 export const COPY_LOCALES = "copy.locales";
 export const RELEASE_LOCALES = "release.locales";
+export const SLOTS_STALE = "slots.stale";
 /** The gates every release runs, in the order the spec lists them. */
-export const RELEASE_GATES: readonly string[] = [COPY_SAMPLE_REMAINING, PINS_RESOLVE, CONSTITUTION_STRICT, COPY_LOCALES, RELEASE_LOCALES];
+export const RELEASE_GATES: readonly string[] = [COPY_SAMPLE_REMAINING, PINS_RESOLVE, CONSTITUTION_STRICT, COPY_LOCALES, RELEASE_LOCALES, SLOTS_STALE];
 
 export type GateStatus = "pass" | "fail";
 export interface GateRun { readonly checks: Record<string, GateStatus>; readonly findings: Finding[] }
@@ -82,6 +91,24 @@ function localesGate(root: string, publication: string, build: { readonly locale
   return findings;
 }
 
+function slotsStale(root: string): Finding[] {
+  const findings: Finding[] = [];
+  for (const folder of consumerSlotFolders(root)) {
+    if (!folder.hasSlot) continue;
+    const subject = readSubject(root, folder.agent, folder.id);
+    if (subject?.slot.status === NEEDS_REFRESH) findings.push({ check: SLOTS_STALE, subject: `${folder.agent}/${folder.id}`, detail: "is needs-refresh: a repin upstream left it to be judged again (run its loop.choose or loop.create)" });
+  }
+  const flagged = new Set(findings.map(finding => finding.subject));
+  const ctx = buildContext(root, join(root, "clossys"));
+  for (const check of pinChecks(ctx, undefined, liveSlotRecords(ctx))) {
+    const subject = `${check.slot.agent}/${check.slot.id}`;
+    if (flagged.has(subject) || (check.state !== "stale" && check.state !== "failed")) continue;
+    flagged.add(subject);
+    findings.push({ check: SLOTS_STALE, subject, detail: check.state === "stale" ? `pinned ${check.candidate.name} was judged on a pinSet a repin upstream changed (run clossys run loop.cascade)` : `pinned ${check.candidate.name} fails its re-verdict on the pinSet now` });
+  }
+  return findings;
+}
+
 /** Runs every gate of the release now. A gate with any finding is `fail`. */
 export function runGates(root: string, publication: string, build: { readonly locales: readonly string[] } | undefined): GateRun {
   const { locales } = releaseLocales(root, publication);
@@ -94,6 +121,7 @@ export function runGates(root: string, publication: string, build: { readonly lo
     [CONSTITUTION_STRICT]: () => strictFindings(root),
     [COPY_LOCALES]: () => copyLocales(root, locales),
     [RELEASE_LOCALES]: () => localesGate(root, publication, build),
+    [SLOTS_STALE]: () => slotsStale(root),
   };
   const checks: Record<string, GateStatus> = {};
   const findings: Finding[] = [];
