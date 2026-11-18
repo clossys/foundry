@@ -210,20 +210,38 @@ describe("kind slot entries: requester, assignee and overlap gates", () => {
     expect(readRequest(consumer, request.id).decision).toBeUndefined();
   });
 
-  it("the placement overlap check: one L1/L2 and kind family with equal, subset, superset, Jaccard >= 0.8 or empty inputs", () => {
+  it("the placement overlap check: one L1/L2 and kind family with equal, subset, superset or Jaccard >= 0.8 inputs; one side empty is no overlap", () => {
     const { consumer } = world();
     const guide = inputsOf(consumer, "writer/narratives.guide");
     expect(guide).toHaveLength(15);
-    const at = (inputs: readonly string[], l2 = "help", l1 = "prose.reference") => placementOverlaps(consumer, "writer", { slot: "narratives.new-leaf", kind: "strings", l1, l2, inputs }).map(item => `${item.slot}: ${item.why}`);
+    const at = (inputs: readonly string[], l2 = "help", l1 = "prose.reference") => placementOverlaps(consumer, "writer", { slot: "narratives.new-leaf", kind: "strings", l1, l2, inputs, contract: CONTRACT }).map(item => `${item.slot}: ${item.why}`);
     expect(at(guide)).toEqual(["writer/narratives.guide: one L2 (prose.reference/help) and kind family, inputs equal"]);
     expect(at(guide.slice(1))).toEqual(["writer/narratives.guide: one L2 (prose.reference/help) and kind family, inputs a subset"]);
     expect(at([...guide, "director/focus.segment.core"])).toEqual(["writer/narratives.guide: one L2 (prose.reference/help) and kind family, inputs a superset"]);
     expect(at([...guide.slice(1), "director/focus.segment.core"])).toEqual(["writer/narratives.guide: one L2 (prose.reference/help) and kind family, inputs Jaccard 0.88"]);
-    expect(at([])).toEqual(["writer/narratives.guide: one L2 (prose.reference/help) and kind family, inputs empty"]);
+    // Exactly one side empty (a new input-less leaf beside a slot with inputs): no overlap by inputs alone.
+    expect(at([])).toEqual([]);
     // Below the threshold, another L2, or another L1 with the same L2 id: no overlap.
     expect(at([...guide.slice(0, 10), "director/focus.segment.core", "director/focus.segment.next"])).toEqual([]);
     expect(at(guide.slice(1), "policies")).toEqual([]);
     expect(at(guide.slice(1), "help", "prose.editorial")).toEqual([]);
+  });
+
+  it("two input-less slots of one L2 and kind family overlap only when their contract requirement sets are equal", () => {
+    const { consumer } = world();
+    const doc = (id: string) => JSON.parse(readFileSync(join(consumer, "agents", "director", id, "slot.json"), "utf8")) as { refs: { rel: string }[]; contract: { requirements: unknown[] } };
+    const size = doc("context.market.size"), trend = doc("context.market.trend");
+    expect(size.refs.filter(ref => ref.rel === "input")).toEqual([]);
+    expect(trend.refs.filter(ref => ref.rel === "input")).toEqual([]);
+    expect(size.contract.requirements).not.toEqual(trend.contract.requirements);
+    const at = (inputs: readonly string[], requirements: unknown[]) => placementOverlaps(consumer, "director", { slot: "context.market.share", kind: "brief", l1: "context", l2: "context.market", inputs, contract: { ...size.contract, requirements } }).map(item => `${item.slot}: ${item.why}`);
+    // Different requirements from every input-less sibling: placed, no owner ask.
+    expect(at([], [{ check: "brief.sections" }])).toEqual([]);
+    // Equal requirement sets (order aside): the one sibling it duplicates.
+    expect(at([], [...size.contract.requirements].reverse())).toEqual(["director/context.market.size: one L2 (context/market) and kind family, inputs empty on both sides, requirements equal"]);
+    expect(at([], trend.contract.requirements)).toEqual(["director/context.market.trend: one L2 (context/market) and kind family, inputs empty on both sides, requirements equal"]);
+    // One side empty: a leaf with inputs beside input-less siblings, even with equal requirements.
+    expect(at(["director/identity.brand.essence"], size.contract.requirements)).toEqual([]);
   });
 
   it("decide create over a listed overlap refuses without a reason; with one, the overlap ids and reason are on the entry and its event", () => {

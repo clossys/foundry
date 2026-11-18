@@ -646,7 +646,7 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   // SLOT-CREATE: placement runs the overlap check over the agent's placed slots and records the create decision.
   // A listed overlap stands only with a reason the owner signs: the request's decision (its overlap ids cover every one
   // found here) under --approved or --owner-ref, or --overlap-reason with --owner-ref on a direct placement.
-  const overlaps = !placed && isContentAgent(agent) ? placementOverlaps(consumer, agent, { slot, kind, l1: position.l1, l2: position.l2, inputs: doc.inputs }) : [];
+  const overlaps = !placed && isContentAgent(agent) ? placementOverlaps(consumer, agent, { slot, kind, l1: position.l1, l2: position.l2, inputs: doc.inputs, contract }) : [];
   const directReason = one(flags, "--overlap-reason")?.trim();
   if (directReason !== undefined && (request || !owner.ref)) throw new CliUsageError(`--overlap-reason is the owner's reason on a direct placement: it takes --owner-ref and no --request (a request carries its decision's reason)\n${IA_USAGE}`);
   const overlapReason = request ? request.overlapReason : directReason || undefined;

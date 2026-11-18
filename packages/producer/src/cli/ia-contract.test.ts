@@ -106,3 +106,43 @@ describe("clossys ia: the kind's contract gate on a new leaf", () => {
     expect(slot.contract).toEqual({ requirements: [{ check: "text.nonempty" }] });
   });
 });
+
+// The empty-input overlap clause (foundry-build-0048 U5, fix round 1 correction): two input-less leaves
+// of one L2 and kind family overlap only when their contract requirement sets are equal; exactly one side
+// empty is no overlap by inputs alone. No owner ref and no overlap reason on any of these calls.
+describe("clossys ia: input-less leaves of one L2 overlap only on equal requirement sets", () => {
+  async function seeded(): Promise<string> {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "ia-empty-overlap-")));
+    put(join(root, "clossys", "clossys.config.ts"), "export default {};\n");
+    expect((await runIaCli(["designer", "--start"], root)).exitCode).toBe(0);
+    const first = await place(root, "sections.first", { requirements: [{ check: "text.nonempty" }] });
+    expect(first.exitCode, first.message).toBe(0);
+    return root;
+  }
+  const place = (root: string, slot: string, contract: unknown, extra: readonly string[] = []) => {
+    put(join(root, `${slot}.json`), JSON.stringify(contract));
+    return runIaCli([`designer/${slot}`, "--contract", join(root, `${slot}.json`), "--under", "sections/fixture", "--kind", "element", ...extra], root);
+  };
+
+  it("places a second input-less leaf with different requirements, with no owner ask", async () => {
+    const root = await seeded();
+    const result = await place(root, "sections.second", { requirements: [{ check: "text.word-limit", params: { min: 1, max: 8 } }] });
+    expect(result.exitCode, result.message).toBe(0);
+    expect(result.message).not.toMatch(/overlap|cite it instead|owner/);
+  });
+
+  it("refuses a second input-less leaf with equal requirements: cite it instead, nothing written", async () => {
+    const root = await seeded();
+    const before = tree(join(root, "clossys"));
+    const result = await place(root, "sections.second", { requirements: [{ check: "text.nonempty" }] });
+    expect(result.exitCode, result.message).toBe(1);
+    expect(result.message).toMatch(/designer\/sections\.first.*inputs empty on both sides, requirements equal.*cite it instead/s);
+    expect(tree(join(root, "clossys"))).toEqual(before);
+  });
+
+  it("places a leaf with inputs beside an input-less sibling, even with equal requirements", async () => {
+    const root = await seeded();
+    const result = await place(root, "sections.second", { requirements: [{ check: "text.nonempty" }] }, ["--inputs", "sections.first"]);
+    expect(result.exitCode, result.message).toBe(0);
+  });
+});

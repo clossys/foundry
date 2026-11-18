@@ -355,22 +355,40 @@ const bare = (ref: string) => ref.includes("/") ? ref.slice(ref.indexOf("/") + 1
 
 /** An L2 id as its own segment: a workspace IA may spell the child `<l1>.<l2>`. */
 const l2Of = (l1: string, l2: string) => l2.startsWith(`${l1}.`) ? l2.slice(l1.length + 1) : l2;
-interface OwnerSlot { readonly id: string; readonly kind: string; readonly l1: string; readonly l2: string; readonly inputs: readonly string[] }
+interface OwnerSlot { readonly id: string; readonly kind: string; readonly l1: string; readonly l2: string; readonly inputs: readonly string[]; readonly requirements: ReadonlySet<string> }
+
+/** Canonical JSON (sorted keys), so two requirement entries compare by content. */
+const canonical = (value: unknown): string => Array.isArray(value) ? `[${value.map(canonical).join(",")}]`
+  : value && typeof value === "object" ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical((value as Record<string, unknown>)[key])}`).join(",")}}`
+  : JSON.stringify(value);
+/** A contract's requirement set: each `requirements` entry by content (a clossys.slot-contract/1 names its checkSuite). */
+function requirementSet(contract: unknown): ReadonlySet<string> {
+  if (!contract || typeof contract !== "object") return new Set();
+  const doc = contract as { requirements?: unknown; checkSuite?: unknown };
+  if (Array.isArray(doc.requirements)) return new Set(doc.requirements.map(canonical));
+  return typeof doc.checkSuite === "string" ? new Set([canonical({ checkSuite: doc.checkSuite })]) : new Set();
+}
+const sameSet = (a: ReadonlySet<string>, b: ReadonlySet<string>) => a.size === b.size && [...a].every(item => b.has(item));
 function ownerSlots(consumer: string, agent: ContentAgent): OwnerSlot[] {
   const out: OwnerSlot[] = [];
   for (const entry of listSlots(consumer, agent)) {
     const l1 = entry.position.l1, l2 = l2Of(entry.position.l1, entry.position.l2);
     try {
       const doc = readSlot(consumer, agent, entry.id);
-      out.push({ id: entry.id, kind: String(doc.kind), l1, l2, inputs: doc.inputs.map(bare) });
-    } catch { out.push({ id: entry.id, kind: "", l1, l2, inputs: [] }); }
+      out.push({ id: entry.id, kind: String(doc.kind), l1, l2, inputs: doc.inputs.map(bare), requirements: requirementSet(doc.contract) });
+    } catch { out.push({ id: entry.id, kind: "", l1, l2, inputs: [], requirements: new Set() }); }
   }
   return out;
 }
 
-/** How two input lists of one L2 and kind family relate, when they read one material; undefined when they do not. */
-function inputRelation(leaf: readonly string[], slot: readonly string[]): string | undefined {
-  if (!leaf.length || !slot.length) return "empty";
+/**
+ * How two slots of one L2 and kind family relate, when they read one material; undefined when they do not. Inputs equal,
+ * a subset or superset, or past INPUT_OVERLAP_MIN; with no inputs on either side, equal contract requirement sets (two
+ * input-less slots checked the same way). One side empty is no overlap by inputs alone.
+ */
+function inputRelation(leaf: readonly string[], slot: readonly string[], leafRequirements: ReadonlySet<string>, slotRequirements: ReadonlySet<string>): string | undefined {
+  if (!leaf.length && !slot.length) return sameSet(leafRequirements, slotRequirements) ? "empty on both sides, requirements equal" : undefined;
+  if (!leaf.length || !slot.length) return undefined;
   const a = new Set(leaf), b = new Set(slot);
   const shared = [...a].filter(ref => b.has(ref)).length;
   if (shared === a.size && shared === b.size) return "equal";
@@ -382,18 +400,19 @@ function inputRelation(leaf: readonly string[], slot: readonly string[]): string
 
 /**
  * The placement overlap check: the target agent's placed slots the new leaf would duplicate. The same id; one L1/L2
- * and kind family with inputs equal, a subset or superset, past INPUT_OVERLAP_MIN, or empty on either side; or another
+ * and kind family with inputs equal, a subset or superset, past INPUT_OVERLAP_MIN, or empty on both sides with equal
+ * contract requirements; or another
  * L2 with the same kind family and inputs and ids past PLACEMENT_OVERLAP_MIN.
  */
-export function placementOverlaps(consumer: string, agent: ContentAgent, leaf: { readonly slot: string; readonly kind: string; readonly l1: string; readonly l2: string; readonly inputs: readonly string[] }): Overlap[] {
+export function placementOverlaps(consumer: string, agent: ContentAgent, leaf: { readonly slot: string; readonly kind: string; readonly l1: string; readonly l2: string; readonly inputs: readonly string[]; readonly contract: unknown }): Overlap[] {
   const out: Overlap[] = [];
-  const family = familyOfKind(leaf.kind), inputs = leaf.inputs.map(bare), l2 = l2Of(leaf.l1, leaf.l2);
+  const family = familyOfKind(leaf.kind), inputs = leaf.inputs.map(bare), l2 = l2Of(leaf.l1, leaf.l2), requirements = requirementSet(leaf.contract);
   for (const slot of ownerSlots(consumer, agent)) {
     const ref = `${agent}/${slot.id}`;
     if (slot.id === leaf.slot) { out.push({ slot: ref, why: "same id" }); continue; }
     if (familyOfKind(slot.kind) !== family) continue;
     if (slot.l1 === leaf.l1 && slot.l2 === l2) {
-      const relation = inputRelation(inputs, slot.inputs);
+      const relation = inputRelation(inputs, slot.inputs, requirements, slot.requirements);
       if (relation) out.push({ slot: ref, why: `one L2 (${leaf.l1}/${l2}) and kind family, inputs ${relation}` });
       continue;
     }
@@ -532,7 +551,7 @@ export function decideRequest(consumer: string, id: string, input: ({ readonly d
       if (!under) throw new RequestError(`--under must be <l1>/<l2>, got ${proposal.under}`);
       if (!proposal.inputs?.length) throw new RequestError("a create proposal names the new leaf's inputs (--inputs <ref,...>): the placement overlap check compares them with the placed slots");
       const leaf = `${target.agent}/${proposal.slot}`;
-      const placed = placementOverlaps(consumer, target.agent, { slot: proposal.slot, kind: proposal.kind ?? kinds[0]!, l1: under.l1, l2: under.l2, inputs: proposal.inputs });
+      const placed = placementOverlaps(consumer, target.agent, { slot: proposal.slot, kind: proposal.kind ?? kinds[0]!, l1: under.l1, l2: under.l2, inputs: proposal.inputs, contract: proposal.contract });
       const overlaps = [...needs, ...placed.filter(item => !needs.some(need => need.slot === item.slot))];
       const reason = input.overlapReason?.trim();
       if (overlaps.length && !reason) throw new RequestError(`create ${overlapRefusal(leaf, overlaps, `clossys request ${id} --decide reuse --slot <ref>`)}`);

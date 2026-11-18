@@ -942,12 +942,12 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     expect(ledger.checks).toEqual({ "answer.quote-required": "pass", "request.closed": "pass" });
   });
 
-  it("refuses an overlapping proposal (equal, subset or no inputs in one L2 and kind family); a reuse links with no owner sign", async () => {
+  it("refuses an overlapping proposal (equal or subset inputs in one L2 and kind family); a reuse links with no owner sign", async () => {
     const w = fixture();
     cite(w, "writer/narratives.how-to");
     const id = ((await w.cli("request", "--target", "writer/narratives.how-to", "--from", REQUESTER, "--why", "a how-to the article links", "--by", "writer")).output as { id: string }).id;
     const runId = waitingRun((await w.run("loop.slot", "--request", id)).message);
-    // Mutation: the proposal copies narratives.guide (one L2 prose.reference/help, same family), with all, all but one, or none of its inputs.
+    // Mutation: the proposal copies narratives.guide (one L2 prose.reference/help, same family), with all or all but one of its inputs (none: refused as inputless).
     const guide = w.read("writer/narratives.guide/slot.json");
     const inputs = (guide.refs as { to: string; rel: string }[]).filter(ref => ref.rel === "input").map(ref => ref.to);
     expect(inputs).toHaveLength(15);
@@ -960,12 +960,12 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     }
     expect((await propose()).exitCode).toBe(2);
     expect(w.read(`producer/queue.slot/entries/${id}.json`).decision).toBeUndefined();
-    // clossys ia applies the same check (its --inputs are slot ids): no inputs, or a subset, in the guide's L2 is refused; disjoint inputs place.
-    for (const given of [[], inputs.slice(1).map(ref => ref.slice(ref.indexOf("/") + 1))]) {
-      const direct = await w.cli("ia", "writer/narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", ...(given.length ? ["--inputs", given.join(",")] : []), "--contract", join(w.root, "contract.json"), "--dry");
-      expect(direct.exitCode).toBe(1);
-      expect(direct.message).toMatch(/writer\/narratives\.how-to overlaps writer\/narratives\.guide \(one L2 \(prose\.reference\/help\) and kind family, inputs (empty|a subset)\): cite it instead/);
-    }
+    // clossys ia applies the same check (its --inputs are slot ids): a subset in the guide's L2 is refused; disjoint inputs,
+    // or none beside the guide's (one side empty), place.
+    const direct = await w.cli("ia", "writer/narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", "--inputs", inputs.slice(1).map(ref => ref.slice(ref.indexOf("/") + 1)).join(","), "--contract", join(w.root, "contract.json"), "--dry");
+    expect(direct.exitCode).toBe(1);
+    expect(direct.message).toMatch(/writer\/narratives\.how-to overlaps writer\/narratives\.guide \(one L2 \(prose\.reference\/help\) and kind family, inputs a subset\): cite it instead/);
+    expect((await w.cli("ia", "writer/narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", "--contract", join(w.root, "contract.json"), "--dry")).exitCode).toBe(0);
     expect((await w.cli("ia", "writer/narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", "--inputs", "focus.segment.core", "--contract", join(w.root, "contract.json"), "--dry")).exitCode).toBe(0);
     // Reuse instead: no owner entry is raised, the requester is linked, the reused slot is not written.
     const reused = readFileSync(join(w.root, "clossys", "agents", "writer", "narratives.guide", "ledger.json"), "utf8");
