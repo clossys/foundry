@@ -87,7 +87,11 @@ export interface LiveSlot {
   readonly folder?: string;
   readonly ledger: readonly Record<string, unknown>[];
   readonly pin?: Record<string, unknown>;
-  /** U9 (S6): the agent and id the slot record names (a package leaf: its tree's agent and its own id). */
+  /**
+   * U9 (S6): the agent and id the slot record names. A package leaf (U9 fix r1, blind2 B1): its slot data's own `agent`,
+   * else the agent its package's conform.json declares; its data's own `id`, else the key its tree file maps the data
+   * under; no id when the tree holds no slot data for the leaf. Read from the files, never set to what S6 compares.
+   */
   readonly owner?: string;
   readonly recordId?: string;
   /** U9 (S6): the record lists its inputs (slot/2 `refs`, slot/1 `inputs`, a package leaf `inputs` or `refs`), empty or not. */
@@ -160,12 +164,22 @@ export const upstreamOf = (agent: string): string[] => {
   return at < 0 ? [] : CONFORM_AGENTS.slice(0, at);
 };
 
-/** A package leaf's own slot data as a slot: `inputs` as ids or `{to}` rows, the contract nested or flat. */
-function packageSlot(id: string, data: Record<string, unknown>, agent: string): LiveSlot {
+/**
+ * A package leaf's own slot data as a slot: `inputs` as ids or `{to}` rows (or slot/2 `refs` with rel input, which also
+ * declare the list), the contract nested or flat. `held` is the
+ * tree file's data for the leaf (undefined: the tree holds none); `declared` the agent the package's conform.json names.
+ * The owner and id come from that data (S6 judges them), never from the leaf being read.
+ */
+export function packageSlot(id: string, held: Record<string, unknown> | undefined, declared: string | undefined): LiveSlot {
+  const data = held ?? {};
   const contract = object(data.contract) ? data.contract : data;
+  const owner = typeof data.agent === "string" ? data.agent : declared;
+  const recordId = typeof data.id === "string" ? data.id : held !== undefined ? id : undefined;
   return {
-    id, source: "package", owner: agent, recordId: id, inputsDeclared: Array.isArray(data.inputs) || Array.isArray(data.refs), ...(typeof data.kind === "string" ? { kind: data.kind } : {}), contract,
-    inputs: strings(data.inputs).concat((Array.isArray(data.inputs) ? data.inputs : []).filter(object).map(item => String(item.to))),
+    id, source: "package", ...(owner !== undefined ? { owner } : {}), ...(recordId !== undefined ? { recordId } : {}),
+    inputsDeclared: Array.isArray(data.inputs) || Array.isArray(data.refs), ...(typeof data.kind === "string" ? { kind: data.kind } : {}), contract,
+    inputs: [...new Set(strings(data.inputs).concat((Array.isArray(data.inputs) ? data.inputs : []).filter(object).map(item => String(item.to)),
+      (Array.isArray(data.refs) ? data.refs : []).filter(object).filter(ref => ref.rel === "input" && typeof ref.to === "string").map(ref => ref.to as string)))],
     uses: strings(data.uses), ...(typeof data.standard === "string" ? { standard: data.standard } : {}),
     ...(data.family !== undefined ? { family: data.family } : {}), ledger: [],
   };
@@ -298,7 +312,7 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
   });
   if (!live.length) {
     // Nothing placed: the package tree's own slot data stands in, so the per-slot assertions still judge the package.
-    live = trees.flatMap(tree => slotLeaves(tree).map(id => packageSlot(id, tree.slots[id] ?? {}, agent)));
+    live = trees.flatMap(tree => slotLeaves(tree).map(id => packageSlot(id, tree.slots[id], adapter?.agent)));
   }
   const defaults = new Set((adapter?.defaults ?? []).flatMap(dir => dirs(join(packageDir, dir))));
   const edges: Edge[] = [];
@@ -310,7 +324,7 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
   // The package trees' own slot data declares edges too, whatever the consumer placed.
   if (live.some(slot => slot.source === "placed")) {
     for (const tree of trees) for (const id of treeLeaves(tree)) {
-      const slot = packageSlot(id, tree.slots[id] ?? {}, agent);
+      const slot = packageSlot(id, tree.slots[id], adapter?.agent);
       for (const to of [...slot.inputs, ...slot.uses, ...refsIn(slot.contract)]) edges.push({ from: id, to, scope: "package" });
     }
   }
@@ -341,7 +355,7 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
     .filter(request => typeof request.from === "string" && request.from.startsWith(`${agent}/`)) : [];
   return {
     agent, packageDir, ...(adapter ? { adapter } : {}), adapterIssues: issues, trees, placedTree, folders, live, defaults,
-    packageOnly: trees.flatMap(tree => treeLeaves(tree).filter(id => !live.some(slot => slot.id === id)).map(id => packageSlot(id, tree.slots[id] ?? {}, agent))),
+    packageOnly: trees.flatMap(tree => treeLeaves(tree).filter(id => !live.some(slot => slot.id === id)).map(id => packageSlot(id, tree.slots[id], adapter?.agent))),
     l2Of: new Map([
       ...trees.flatMap(tree => tree.l1.flatMap(l1 => l1.l2.flatMap(l2 => l2.leaves.map(id => [id, `${l1.id}/${l2.id}`] as [string, string])))),
       ...placedTree.flatMap(l1 => l1.l2.flatMap(l2 => l2.slots.map(id => [id, `${l1.id}/${l2.id}`] as [string, string]))),

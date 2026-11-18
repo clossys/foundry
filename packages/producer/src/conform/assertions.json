@@ -26,7 +26,7 @@
     {
       "id": "S3",
       "lens": "scope",
-      "statement": "every L2 has a live L3; no orphan or unplaced leaf",
+      "statement": "every L2 that lists L3s has a live one; no orphan or unplaced leaf (an L2 that lists none is reported, not failed: owner 2026-11-17)",
       "check": "placed-integrity",
       "status": "building",
       "enforcedFor": []
@@ -50,7 +50,7 @@
     {
       "id": "S6",
       "lens": "scope",
-      "statement": "every L3 is placed once, in its own agent's tree (the slot names that agent and its folder), and declares its inputs (a list; empty for a root leaf)",
+      "statement": "every L3 is placed once, in its own agent's tree (the slot names that agent and its folder, a package leaf by its own data), and declares its inputs: a list, with at least one input for an agent that has an upstream agent (only a root agent's slots may read nothing)",
       "check": "placed-once-owned",
       "status": "building",
       "enforcedFor": []
@@ -212,7 +212,7 @@
     {
       "id": "P1",
       "lens": "tree",
-      "statement": "Producer's own L0-L3 round: the loops, queue and ledger trees each hold an L1, every leaf is placed once, and the leaves are the runner's loop names, one ledger per loop and every queue kind it reads and writes",
+      "statement": "Producer's own L0-L3 round: the loops, queue and ledger trees each hold an L1, every leaf is placed once, and the leaves are the runner's loop names, one ledger per loop, every queue kind it reads and writes, and every kind the queue-entry/2 schema admits",
       "check": "producer-tree",
       "status": "building",
       "enforcedFor": []
@@ -228,7 +228,7 @@
     {
       "id": "P3",
       "lens": "queue",
-      "statement": "every queue kind the runner reads, and every one a loop routes to, is filled by some loop (an owner step's raise, a failure route or a queue write)",
+      "statement": "every queue kind the runner reads or the queue-entry/2 schema admits, and every one a loop routes to, is filled by some loop (an owner step's raise, a failure route or a queue write)",
       "check": "queue-kind-loop",
       "status": "building",
       "enforcedFor": []
@@ -236,7 +236,7 @@
     {
       "id": "P4",
       "lens": "exits",
-      "statement": "every loop reads, and every route out of it lands in a queue kind the runner reads, then retries or goes on to a loop",
+      "statement": "every loop reads, every route out of it lands in a queue kind the runner reads, then retries or goes on to a loop, and every step that can fail has such a route (no onFail and no route step after it: a failed run stops and lands in no queue; an owner step's raise is its route)",
       "check": "loop-exit-queue",
       "status": "building",
       "enforcedFor": []
@@ -244,7 +244,7 @@
     {
       "id": "P5",
       "lens": "resume",
-      "statement": "every queue kind is taken back by a loop (clossys run --from or a request run), and every open entry on the consumer resumes one",
+      "statement": "every queue kind (the runner's and the queue-entry/2 schema's) is taken back by a loop (clossys run --from or a request run), and every open entry on the consumer resumes one",
       "check": "queue-entry-resume",
       "status": "building",
       "enforcedFor": []

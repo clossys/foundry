@@ -36,7 +36,7 @@
           "tier": "mid",
           "skill": "packages/director/actions/director.scope/skill.md"
         },
-        "cli": "clossys request --target <agent>/<slot> --from <agent>/<slot>|owner --why <words>",
+        "cli": "clossys request --target <agent>/<slot> --from <agent>/<slot> --why <words>",
         "reads": [
           "director/ia.json",
           "director/*/slot.json",

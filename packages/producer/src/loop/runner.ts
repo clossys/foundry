@@ -45,7 +45,7 @@ import { agentWriteClass, currentStandardOf, isAgentLoop, isLoopAgent, pathPatte
 import { judgeSnapshot, keepSnapshot, keptSnapshot, snapshotKey, treeSnapshot, type AgentSnapshot, type TreeFiles } from "./agent-snapshot.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { certifiedOptions } from "../constitution/pin-gate.js";
-import { readRequest, REQUEST_ID, RequestError, requestIssues, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
+import { agentRaiseIssues, isContentAgent, readRequest, REQUEST_ID, RequestError, requestIssues, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
 import { cascadeClean, runCascade } from "./cascade.js";
 import { CASCADE_REVERDICT } from "../constitution/cascade.js";
 
@@ -736,6 +736,9 @@ function recordedBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | un
   return result;
 }
 
+/** Whether a step is the code route step a failing step with no `onFail` hands its findings to (flows.md F6). */
+export const routesFindings = (next: Pick<LoopStep, "cli" | "decider"> | undefined): boolean => next?.cli === "clossys check --route" && next.decider.by === "code";
+
 /**
  * U9a: a failing step hands its findings to the route step after it only as Producer's standard has it. A Producer
  * version is the standard; an agent's own version hands on only where the standard runs the same route step right after
@@ -779,30 +782,22 @@ export function agentWriteRef(root: string, file: string): { segments: string[] 
 }
 
 /**
- * U9a fix round 3, U9 (sweep N1): a slot request an agent step raised itself, in exactly the shape `clossys request
- * --by <agent>` writes for that agent's seat: a schema-valid `clossys.queue-entry/2` kind slot entry (requestIssues),
- * named by its file, open, from one of the agent's own slots (never `owner`), with its one `raised` event by the agent
- * (no owner quote), opened by that event, filed by a code verb (`cli` or `scope`) or by the agent itself, and nothing
- * a later step writes (no decision, link, notice or close). Any other entry (an owner answer queue's, another agent's
- * request, an owner-origin ask, or one already checked, decided, answered or closed) is Producer's.
+ * U9a fix round 3, U9 (sweep N1), U9 fix r1 (review-u9-blind1 #1): a slot request an agent step raised itself, exactly
+ * the entry `clossys request --from <agent>/<slot> --by <agent>` (or its `--scan`) writes for that agent: a schema-valid
+ * `clossys.queue-entry/2` kind slot entry (requestIssues), named by its file, that the request verb's own validator
+ * accepts for this agent (agentRaiseIssues: from one of the agent's own placed slots citing the target, never `owner`;
+ * the target not placed; the verb's own draft rebuilt from the entry's fields and equal to it, so its id, refs,
+ * timestamps, its one raised event by the agent via cli, its code actor and nothing a later step writes; no other open
+ * entry raising the same target from the same slot). Any other entry (an owner answer queue's, another agent's request,
+ * an owner-origin ask, or one already checked, decided, answered or closed) is Producer's.
  */
-const AGENT_RAISE_SOURCES: Readonly<Record<string, string>> = { cli: "clossys request", scope: "clossys request --scan" };
-const LATER_FIELDS = ["closed", "link", "notified", "closedAt", "decision", "reuse", "proposal", "overlaps", "overlapReason"] as const;
 function ownNewRequest(root: string, file: string, agent: LoopAgent): boolean {
   try {
     const doc = JSON.parse(readFileSync(wroteFile(root, file), "utf8")) as unknown;
-    if (requestIssues(doc).length) return false;
+    if (requestIssues(doc).length || !isContentAgent(agent)) return false;
     const entry = doc as SlotRequest;
     const name = file.split(/[\\/]/).at(-1) ?? "";
-    if (`${entry.id}.json` !== name || entry.status !== "open" || !entry.from.startsWith(`${agent}/`)) return false;
-    if (entry.events.length !== 1) return false;
-    const [event] = entry.events;
-    if (event!.op !== "raised" || event!.by !== agent || event!.quote !== undefined || entry.opened !== event!.id) return false;
-    const cli = AGENT_RAISE_SOURCES[entry.source];
-    if (cli === undefined) return false;
-    const by = entry.createdBy;
-    if (!((by.actor === "code" && by.cli === cli) || (by.actor === "agent" && by.agent === agent))) return false;
-    return LATER_FIELDS.every(field => (entry as unknown as Record<string, unknown>)[field] === undefined);
+    return `${entry.id}.json` === name && agentRaiseIssues(join(root, "clossys"), entry, agent).length === 0;
   } catch {
     return false;
   }
@@ -863,7 +858,7 @@ async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: rea
   const next = version.steps[state.cursor + 1];
   if (!step.onFail) {
     // A failing check whose next step routes findings hands them on (flows.md F6: route after check).
-    if (next?.cli === "clossys check --route" && next.decider.by === "code" && routeHandsOn(state, step, next, root)) { state.cursor++; saveState(root, state); return null; }
+    if (routesFindings(next) && routeHandsOn(state, step, next!, root)) { state.cursor++; saveState(root, state); return null; }
     return stop(ctx, `step ${step.id} failed`, 1);
   }
   const at = iso(ctx.now());

@@ -2,8 +2,11 @@
  * Producer as a conformance subject (foundry-build-0048 U9, amendment 17b): one `clossys conform --all` judges
  * Producer beside the four content agents. Producer decides no content, so its rows judge wiring only: its own
  * L0-L3 tree (loops, queue, ledger), loop<->ledger parity, every queue kind mapped to a loop that fills it, every loop
- * exit landing in a queue its tree places, every queue entry resuming a loop, its connection loops joining every
- * agent (`loop.connected`), and its skill naming every leaf it runs. Splits are report-only (S2's rule).
+ * exit landing in a queue kind the runner reads (and every step that can fail having such an exit), every queue entry
+ * resuming a loop, its connection loops joining every agent (`loop.connected`), and its skill naming every leaf it
+ * runs. Splits are report-only (S2's rule). The queue kinds are the runner's and every kind the queue-entry/2 schema
+ * admits (U9 fix r1, blind2 B4), so a kind the schema allows but no loop serves is red. Parity covers loops and
+ * ledgers; the queue is judged by kind, not by place.
  *
  * Pure judges over a read model, like assertions.ts: `readProducerModel` reads the package data and the consumer,
  * each `PRODUCER_ASSERTIONS` row returns a Judgement (empty is red). Report-only: nothing here gates.
@@ -13,7 +16,7 @@ import { dirname, join } from "node:path";
 import { PRODUCER_ROOT } from "../package-path.js";
 import { CONNECTION_LOOPS, consumerLoopSet, loopConnectedIssues, type LoopSet } from "../loop/agent-loops.js";
 import { readPackageLoop } from "../loop/files.js";
-import { runsDir } from "../loop/runner.js";
+import { routesFindings, runsDir } from "../loop/runner.js";
 import { ENTRY_NAME, LOOP_NAMES, LOOP_SUBJECT, SLOT_REF, ledgerOf, type LoopName } from "../loop/names.js";
 import { PRODUCER_LAYERS, producerSlotPositions, readProducerIa, type ProducerIaLayer, type ProducerLayer } from "../loop/producer-ia.js";
 import { QUEUE_NAMES } from "../queue/entry.js";
@@ -31,8 +34,10 @@ export interface ProducerModel {
   /** `readProducerIa` failed: every row that reads the tree is red with this reason. */
   readonly iaIssue?: string;
   readonly loops: ReadonlyMap<LoopName, ProducerLoop>;
-  /** The queue kinds the consumer and the runner use: the queue-entry/1 queues and the slot request queue. */
+  /** The queue kinds: the runner's (the queue-entry/1 queues, the slot request queue) and every kind queue-entry/2 admits. */
   readonly queueKinds: readonly string[];
+  /** The queue-entry/2 schema's kind enum could not be read: P1 is red with this reason. */
+  readonly queueSchemaIssue?: string;
   readonly loopSet: LoopSet;
   readonly entries: readonly QueueEntryFact[];
   /** The waiting runs' raised and awaited entry names (`queue.<kind>#<id>`). */
@@ -66,6 +71,24 @@ export function loopRoutes(steps: readonly LoopStep[]): { step: string; queue: s
   return out;
 }
 
+/**
+ * U9 fix r1 (blind2 B2): the steps whose failure lands in no queue. A step with no `onFail` that fails stops the run
+ * (a "stopped" ledger entry, no queue entry, read by no loop) unless the step right after is the code route step that
+ * hands its findings on (the runner's `routesFindings`). An owner step is no dead end: its raise is the queue entry the
+ * owner answers, so its outcome is already on the queue.
+ */
+export function deadEndSteps(steps: readonly LoopStep[]): string[] {
+  return steps.filter((step, at) => !step.onFail && step.decider?.by !== "human" && !routesFindings(steps[at + 1])).map(step => step.id);
+}
+
+/** The `queue.<kind>` names the queue-entry/2 schema's `kind` enum admits, or why they cannot be read. */
+export function schemaQueueKinds(file = join(PRODUCER_ROOT, "schemas", "queue-entry-2.json")): { kinds: string[] } | { issue: string } {
+  const doc = json(file);
+  const kinds = object(doc) && object(doc.properties) && object(doc.properties.kind) ? doc.properties.kind.enum : undefined;
+  if (!Array.isArray(kinds) || !kinds.length || kinds.some(kind => typeof kind !== "string")) return { issue: `${file} names no kind enum` };
+  return { kinds: (kinds as string[]).map(kind => `queue.${kind}`) };
+}
+
 /** True when a loop takes an entry of this queue kind back: `clossys run --from` (queue-entry/1) or a request run (loop.slot). */
 export function kindResumes(kind: string, loops: ReadonlyMap<LoopName, ProducerLoop>): boolean {
   if (kind === SLOT_QUEUE) return LOOP_NAMES.some(loop => LOOP_SUBJECT[loop] === "request" && loops.get(loop)?.ok === true);
@@ -80,7 +103,7 @@ export const PRODUCER_ASSERTIONS: Readonly<Record<string, ProducerAssertion>> = 
   // queue-entry/1 queues and the slot request queue).
   P1: model => {
     if (model.iaIssue) return { rows: [`producer IA cannot be read: ${model.iaIssue}`], evidence: 0 };
-    const rows: string[] = [];
+    const rows: string[] = model.queueSchemaIssue ? [`queue kinds cannot be read: ${model.queueSchemaIssue}`] : [];
     try { producerSlotPositions(model.ia); } catch (error) { rows.push((error as Error).message); }
     const want: Record<ProducerLayer, readonly string[]> = { loops: LOOP_NAMES, ledger: LOOP_NAMES.map(ledgerOf), queue: model.queueKinds };
     for (const layer of PRODUCER_LAYERS) {
@@ -115,7 +138,8 @@ export const PRODUCER_ASSERTIONS: Readonly<Record<string, ProducerAssertion>> = 
     const kinds = [...new Set([...model.queueKinds, ...routes.map(route => route.queue)])].sort();
     return { rows: kinds.filter(kind => !routes.some(route => route.queue === kind)).map(kind => `${kind}: no loop fills it (no owner step raises it, no failure routes to it, no step writes it)`), evidence: kinds.length };
   },
-  // P4 exits: every loop reads, and every route out of it lands in a queue kind the runner reads, then retries or goes on to a loop.
+  // P4 exits: every loop reads, every route out of it lands in a queue kind the runner reads, then retries or goes on to a
+  // loop, and every step that can fail has such a route (U9 fix r1, blind2 B2: a failed run must land in the queue).
   P4: model => {
     const known = new Set(model.queueKinds);
     const rows: string[] = [];
@@ -125,7 +149,8 @@ export const PRODUCER_ASSERTIONS: Readonly<Record<string, ProducerAssertion>> = 
       if (!read) { rows.push(`${loop}: Producer ships no version`); continue; }
       if (!read.ok) { rows.push(`${loop}: cannot be read: ${read.reason}`); continue; }
       const routes = loopRoutes(read.steps);
-      evidence += 1 + routes.length;
+      evidence += 1 + routes.length + read.steps.length;
+      for (const step of deadEndSteps(read.steps)) rows.push(`${loop}: step ${step} has no failure route: a failed run stops and lands in no queue`);
       for (const route of routes) {
         if (!known.has(route.queue)) rows.push(`${loop}: step ${route.step} lands in ${route.queue} (${route.how}), which is no queue the runner reads`);
         if (route.then !== undefined && route.then !== "retry" && !(LOOP_NAMES as readonly string[]).includes(route.then)) rows.push(`${loop}: step ${route.step} goes on to ${route.then}, which is no loop`);
@@ -212,13 +237,14 @@ export function readProducerModel(consumer: string): ProducerModel {
     const read = readPackageLoop(loop);
     loops.set(loop, read.ok ? { ok: true, steps: object(read.content) && Array.isArray(read.content.steps) ? read.content.steps as LoopStep[] : [] } : { ok: false, reason: read.reason });
   }
-  const queueKinds = [...QUEUE_NAMES, SLOT_QUEUE];
+  const fromSchema = schemaQueueKinds();
+  const queueKinds = [...new Set([...QUEUE_NAMES, SLOT_QUEUE, ...("kinds" in fromSchema ? fromSchema.kinds : [])])];
   const root = dirname(consumer);
   const skillPath = join(PRODUCER_ROOT, "skill", "SKILL.md");
   let text: string | undefined;
   try { text = readFileSync(skillPath, "utf8"); } catch { text = undefined; }
   return {
-    ia, ...(iaIssue ? { iaIssue } : {}), loops, queueKinds, loopSet: consumerLoopSet(root),
+    ia, ...(iaIssue ? { iaIssue } : {}), loops, queueKinds, ...("issue" in fromSchema ? { queueSchemaIssue: fromSchema.issue } : {}), loopSet: consumerLoopSet(root),
     entries: readEntries(consumer, queueKinds), awaited: awaitedEntries(root),
     skill: { path: "packages/producer/skill/SKILL.md", ...(text !== undefined ? { text } : {}) },
   };
