@@ -8,9 +8,12 @@ import type { AgentId } from "../records/types.js";
  * The loops. `loop.create` and `loop.choose` (foundry-build-0048 U3) split a slot's build in two: CREATE writes the
  * slot's family of candidates through the candidates verb and ends when that many are submitted and certified; CHOOSE
  * pins one through the pin gate (constitution/pin-gate.ts) and ends on a resolving pin. `loop.fill` and `loop.refine`
- * stay runnable (owner decision D9) and are the one-call form of the same two halves.
+ * stay runnable (owner decision D9) and are the one-call form of the same two halves. `loop.scope` and `loop.slot`
+ * (U5) shape the tree: SCOPE files every slotless need and has each agent judge its own tree; SLOT answers one
+ * clossys.queue-entry/2 kind slot (overlap check, the assignee's reuse-or-create decision, the owner's sign,
+ * placement, close).
  */
-export const LOOP_NAMES = ["loop.fill", "loop.refine", "loop.create", "loop.choose", "loop.release", "loop.audit"] as const;
+export const LOOP_NAMES = ["loop.fill", "loop.refine", "loop.create", "loop.choose", "loop.scope", "loop.slot", "loop.release", "loop.audit"] as const;
 export type LoopName = (typeof LOOP_NAMES)[number];
 export const isLoopName = (value: string): value is LoopName => (LOOP_NAMES as readonly string[]).includes(value);
 
@@ -37,19 +40,26 @@ export const LOOP_TRIGGERS: Readonly<Record<LoopName, readonly string[]>> = {
   "loop.refine": ["T3", "T5", "T6", "T7"],
   "loop.create": ["T2", "T3", "T4", "T5", "T6", "T7"],
   "loop.choose": ["T2", "T3", "T4", "T5", "T6", "T7"],
+  "loop.scope": ["T4", "T6", "T7"],
+  "loop.slot": ["T4", "T5"],
   "loop.release": ["T8"],
   "loop.audit": ["T6"],
 };
 
-/** Each loop's run needs a slot (fill, refine, create, choose), a publication (release) or neither (audit). */
-export const LOOP_SUBJECT: Readonly<Record<LoopName, "slot" | "publication" | "none">> = {
+/** Each loop's run needs a slot (fill, refine, create, choose), a request (slot), a publication (release) or neither (scope, audit). */
+export const LOOP_SUBJECT: Readonly<Record<LoopName, "slot" | "request" | "publication" | "none">> = {
   "loop.fill": "slot",
   "loop.refine": "slot",
   "loop.create": "slot",
   "loop.choose": "slot",
+  "loop.scope": "none",
+  "loop.slot": "request",
   "loop.release": "publication",
   "loop.audit": "none",
 };
+
+/** `requests.filed` (loop.scope): every consumer slot edge naming no slot is filed as a kind slot queue entry. */
+export const REQUESTS_FILED = "requests.filed";
 
 /**
  * The checks a loop's exit rests on. Each must sit on a step that runs whatever the slot (no `when`), or the
@@ -61,6 +71,8 @@ export const EXIT_CHECKS: Readonly<Record<LoopName, readonly string[]>> = {
   "loop.refine": ["pins.resolve"],
   "loop.create": ["candidates.certified"],
   "loop.choose": ["pins.resolve"],
+  "loop.scope": [REQUESTS_FILED],
+  "loop.slot": ["request.closed"],
   "loop.release": ["release.ready"],
   "loop.audit": ["ia.orphans", "refs.dangling"],
 };
@@ -91,7 +103,9 @@ export const AGENT_PICK_VERB = "pick";
  * by the pin gate). An agent's `--step-exit 0` never passes them.
  */
 export const CANDIDATES_CERTIFIED = "candidates.certified";
-export const VERIFIED_CHECKS: readonly string[] = ["pins.resolve", RELEASE_READY, CANDIDATES_CERTIFIED];
+/** `request.closed` (loop.slot): the run's request is closed with a link to a placed slot and a notify event to its requester. */
+export const REQUEST_CLOSED = "request.closed";
+export const VERIFIED_CHECKS: readonly string[] = ["pins.resolve", RELEASE_READY, CANDIDATES_CERTIFIED, REQUEST_CLOSED, REQUESTS_FILED];
 
 /** The release steps that must run, for every publication, before the owner's sign-off (cli prefix match). */
 export const RELEASE_BEFORE_SIGNOFF: readonly { readonly id: string; readonly cli: RegExp }[] = [

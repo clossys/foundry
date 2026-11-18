@@ -18,8 +18,8 @@
     {
       "id": "S2",
       "lens": "scope",
-      "statement": "each L1 has at least 2 L2",
-      "check": "l1-breadth",
+      "statement": "report-only: a split with one part is listed as suspicious (an L1 with one L2, an L2 with one or zero live L3), never red",
+      "check": "split-report",
       "status": "building",
       "enforcedFor": []
     },

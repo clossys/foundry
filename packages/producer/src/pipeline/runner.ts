@@ -142,6 +142,8 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     // The conformance report (foundry-build-0048) reads only; report-only, no gate runs it.
     if (head === "conform") return await (await import("../cli/conform.js")).runConformCli(argv.slice(1), cwd);
     if (head === "slot") return await (await import("../cli/slot.js")).runSlotCli(argv.slice(1), cwd);
+    // SLOT-CREATE (foundry-build-0048 U5): a slotless need is a clossys.queue-entry/2 kind slot entry, closed with a link.
+    if (head === "request") return await (await import("../cli/request.js")).runRequestCli(argv.slice(1), cwd);
     // The brief read and its append-only tighten (system.md 6.1): the loops' refine-brief step writes through it.
     if (head === "brief") return await (await import("../cli/brief.js")).runBriefCli(argv.slice(1), cwd);
     // The preview builds a publication from resolved pins and serves it (system.md 12.5); it records nothing.

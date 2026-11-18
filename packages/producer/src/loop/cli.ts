@@ -3,6 +3,8 @@
  *
  *   clossys run loop.fill [--slot <ref>] [--from <entry>] [--init]
  *   clossys run loop.refine [--slot <ref>] [--from <entry>] [--trigger T3|T5|T6|T7]
+ *   clossys run loop.slot --request <id>
+ *   clossys run loop.scope
  *   clossys run loop.release --publication <id>
  *   clossys run loop.audit
  *   clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--step <id>] [--wrote <file>]...]
@@ -24,16 +26,17 @@ import { isLoopName, LOOP_NAMES, RUN_ID, type LoopName } from "./names.js";
 import type { Finding } from "./route.js";
 import { fillAll, readRunState, resumeRun, runInit, startRun, waitingRuns, wroteFile, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult } from "./runner.js";
 
-export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|create|choose|release|audit> [--slot <agent>/<slot-id>] [--from <entry>] [--publication <id>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
+export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|create|choose|scope|slot|release|audit> [--slot <agent>/<slot-id>] [--request <id>] [--from <entry>] [--publication <id>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
   + "       clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--step <id>] [--wrote <file>]...] [--root <dir>] [--json]\n"
   + "  Runs the loop version the consumer pins (else the package v1) one step at a time and writes one ledger entry per run.\n"
   + "  An agent step prints its packet and waits for --resume with its exit, files and serving model; a human step waits on its queue entry.\n"
-  + "  loop.fill with no --slot fills the next slot still on a package default, in chain order, until none is left or a run waits.";
+  + "  loop.fill with no --slot fills the next slot still on a package default, in chain order, until none is left or a run waits.\n"
+  + "  loop.slot answers one open slot request (clossys request --list --open); loop.scope files every slotless need and gates the IA fan-out.";
 
 class LoopUsage extends Error {}
 
 interface LoopFlags {
-  loop: LoopName; slot?: string; from?: string; publication?: string; trigger?: string; init: boolean;
+  loop: LoopName; slot?: string; request?: string; from?: string; publication?: string; trigger?: string; init: boolean;
   resume: boolean; run?: string; stepExit?: Exit; model?: string; step?: string; wrote: string[]; root?: string; json: boolean; help: boolean;
 }
 
@@ -54,6 +57,7 @@ function parse(argv: readonly string[]): LoopFlags {
     else if (arg === "--resume") flags.resume = true;
     else if (arg === "--slot") flags.slot = value(++index, arg);
     else if (arg === "--from") flags.from = value(++index, arg);
+    else if (arg === "--request") flags.request = value(++index, arg);
     else if (arg === "--publication") flags.publication = value(++index, arg);
     else if (arg === "--trigger") flags.trigger = value(++index, arg);
     else if (arg === "--run") flags.run = value(++index, arg);
@@ -225,7 +229,7 @@ export async function runLoopCli(argv: readonly string[], cwd: string, options: 
       } else {
         results.push(await startRun(root, {
           loop: flags.loop,
-          ...(flags.slot ? { slot: flags.slot } : {}), ...(flags.from ? { from: flags.from } : {}),
+          ...(flags.slot ? { slot: flags.slot } : {}), ...(flags.request ? { request: flags.request } : {}), ...(flags.from ? { from: flags.from } : {}),
           ...(flags.publication ? { publication: flags.publication } : {}), ...(flags.trigger ? { trigger: flags.trigger } : {}),
         }, hooks, runOptions));
       }

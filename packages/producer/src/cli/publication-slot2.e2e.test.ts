@@ -53,9 +53,9 @@ async function seatAndPin(s: ReturnType<typeof store>) {
   const steps: { args: string[]; exitCode: number; message: string }[] = [];
   const run = async (args: string[]) => { const result = await runCli([...args, "--root", s.root]); steps.push({ args, ...result }); return result; };
   const contract = (name: string, value: unknown) => s.file(name, value);
-  await run(["ia", "publisher/page.home", "--contract", contract("page.json", { kind: "page", route: "/", frame: "required", sections: "ordered" }), "--standard", "page", "--under", "site/site-pages", "--kind", "page", "--at", AT]);
-  await run(["ia", "publisher/publication.site", "--contract", contract("publication.json", { kind: "publication" }), "--standard", "publication", "--under", "site/site-pages", "--kind", "publication", "--inputs", "page.home", "--uses", "page.home", "--at", AT]);
-  await run(["ia", "writer/strings.site", "--contract", contract("strings.json", {}), "--under", "copy.page-metadata/site", "--kind", "strings", "--at", AT]);
+  await run(["ia", "publisher/page.home", "--contract", contract("page.json", { kind: "page", route: "/", frame: "required", sections: "ordered", requirements: [{ check: "page.assembled" }] }), "--standard", "page", "--under", "site/site-pages", "--kind", "page", "--at", AT]);
+  await run(["ia", "publisher/publication.site", "--contract", contract("publication.json", { kind: "publication", requirements: [{ check: "publication.routes" }] }), "--standard", "publication", "--under", "site/site-pages", "--kind", "publication", "--inputs", "page.home", "--uses", "page.home", "--at", AT]);
+  await run(["ia", "writer/strings.site", "--contract", contract("strings.json", { requirements: [{ check: "copy.entries" }] }), "--under", "copy.page-metadata/site", "--kind", "strings", "--at", AT]);
 
   const strings = "site-v1.md";
   s.put(s.agent("writer", "strings.site", "candidates", strings), recutCandidateBytes(strings, readFileSync(join(INSTALL, "writer", "strings.site", "candidates", "site-v2.md"), "utf8"),

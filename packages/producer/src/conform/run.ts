@@ -15,14 +15,14 @@ export function readRegistry(): Registry {
   return JSON.parse(readFileSync(new URL("../../src/conform/assertions.json", import.meta.url), "utf8")) as Registry;
 }
 
-export interface Cell { readonly id: string; readonly label: string; readonly red: boolean; readonly vacuous: boolean; readonly rows: readonly string[]; readonly evidence: number }
+export interface Cell { readonly id: string; readonly label: string; readonly red: boolean; readonly vacuous: boolean; readonly rows: readonly string[]; readonly evidence: number; readonly findings: readonly string[] }
 export interface AgentReport { readonly agent: string; readonly adapterIssues: readonly string[]; readonly cells: readonly Cell[]; readonly dogfood: readonly Cell[]; readonly red: number; readonly green: number; readonly dogfoodRed: number; readonly dogfoodGreen: number }
 export interface ConformReport { readonly schema: "clossys.conform-report/1"; readonly ok: boolean; readonly agents: readonly AgentReport[] }
 
 /** Empty is red: a judgement with no evidence is vacuous and red, whatever its rows. */
 export function cellOf(id: string, label: string, judgement: Judgement): Cell {
   const vacuous = judgement.evidence === 0;
-  return { id, label, red: vacuous || judgement.rows.length > 0, vacuous, rows: vacuous ? [...judgement.rows, "vacuous: nothing to judge (empty is red)"] : judgement.rows, evidence: judgement.evidence };
+  return { id, label, red: vacuous || judgement.rows.length > 0, vacuous, rows: vacuous ? [...judgement.rows, "vacuous: nothing to judge (empty is red)"] : judgement.rows, evidence: judgement.evidence, findings: judgement.findings ?? [] };
 }
 
 /** `facts` comes from readProbeFacts (dogfood.ts), which runs the real verbs on temporary copies; a test passes its own. */
@@ -46,7 +46,7 @@ export function conform(model: ConformModel, registry: Registry, facts: ProbeFac
 
 export function formatReport(report: ConformReport): string {
   const lines: string[] = [];
-  const cellLines = (cell: Cell) => [`  ${cell.red ? "RED  " : "GREEN"} ${cell.id.padEnd(22)} ${cell.label}`, ...cell.rows.map(row => `        - ${row}`)];
+  const cellLines = (cell: Cell) => [`  ${cell.red ? "RED  " : "GREEN"} ${cell.id.padEnd(22)} ${cell.label}`, ...cell.rows.map(row => `        - ${row}`), ...cell.findings.map(row => `        ~ ${row} (report-only)`)];
   for (const agent of report.agents) {
     lines.push(`conform ${agent.agent}`);
     for (const cell of agent.cells) lines.push(...cellLines(cell));

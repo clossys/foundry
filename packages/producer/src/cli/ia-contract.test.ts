@@ -55,3 +55,39 @@ describe("clossys ia --contract with a clossys.slot-contract/1 contract", () => 
     expect(tree(join(root, "clossys"))).toEqual(before);
   });
 });
+
+// SLOT-CREATE (foundry-build-0048 U5): a new leaf's contract passes its kind family's contract schema
+// (pipeline/schemas/contract-<family>.schema.json) and names registered criteria as requirements.
+describe("clossys ia: the kind's contract gate on a new leaf", () => {
+  async function started(): Promise<string> {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "ia-kind-gate-")));
+    put(join(root, "clossys", "clossys.config.ts"), "export default {};\n");
+    expect((await runIaCli(["designer", "--start"], root)).exitCode).toBe(0);
+    return root;
+  }
+  const place = (root: string, contract: unknown, slot = "sections.gated") => {
+    put(join(root, "gate.json"), JSON.stringify(contract));
+    return runIaCli([`designer/${slot}`, "--contract", join(root, "gate.json"), "--under", "sections/fixture", "--kind", "element"], root);
+  };
+
+  it.each([
+    ["no requirements", { props: ["title"] }, /contract \$\.requirements must be a non-empty list of \{check\} naming registered criteria \(contract-element\)/],
+    ["an unregistered criterion", { requirements: [{ check: "no.such-criterion" }] }, /contract \$\.requirements\[0\]\.check "no\.such-criterion" is not a registered criterion \(contract-element\)/],
+    ["a shape outside the element contract schema", { requirements: [{ check: "text.nonempty" }], fixture: { schema: "clossys.element-preview/1" } }, /contract \$\.fixture.*\(contract-element\)/],
+  ])("refuses %s and writes nothing", async (_what, contract, message) => {
+    const root = await started();
+    const before = tree(join(root, "clossys"));
+    const result = await place(root, contract);
+    expect(result.exitCode, result.message).toBe(1);
+    expect(result.message).toMatch(message);
+    expect(tree(join(root, "clossys"))).toEqual(before);
+  });
+
+  it("places a leaf whose contract names registered criteria", async () => {
+    const root = await started();
+    const result = await place(root, { requirements: [{ check: "text.nonempty" }] });
+    expect(result.exitCode, result.message).toBe(0);
+    const slot = JSON.parse(readFileSync(join(root, "clossys", "agents", "designer", "sections.gated", "slot.json"), "utf8")) as { contract: unknown };
+    expect(slot.contract).toEqual({ requirements: [{ check: "text.nonempty" }] });
+  });
+});

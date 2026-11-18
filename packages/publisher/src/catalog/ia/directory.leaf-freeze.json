@@ -1,0 +1,31 @@
+{
+  "schema": "clossys.leaf-freeze/2",
+  "group": "directory",
+  "basis": "foundry-build-0048 U5 SCOPE: membership snapshot of every leaf this tree lists, so the leaf freeze covers every L0; owner signature pending (no signature is claimed)",
+  "signed": null,
+  "leafIds": [
+    "page.home",
+    "page.about",
+    "page.pricing",
+    "page.contact",
+    "page.terms",
+    "page.privacy",
+    "page.not-found",
+    "page.error",
+    "page.docs-index",
+    "page.guide",
+    "page.article",
+    "page.changelog",
+    "page.sign-in",
+    "page.sign-out-confirm",
+    "page.not-authorized",
+    "page.service-unavailable",
+    "page.app-home",
+    "page.list",
+    "page.settings",
+    "page.app-not-found",
+    "page.deck",
+    "page.company-one-pager"
+  ],
+  "amendments": []
+}

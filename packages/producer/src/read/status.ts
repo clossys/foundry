@@ -155,7 +155,7 @@ export function slotState(row: CensusRow, pin: PinDoc | undefined, check: Return
   return hasDefault ? "sample" : "unresolved";
 }
 
-const QUEUES: readonly string[] = ["queue.pick", "queue.approve", "queue.clarify", "queue.fix"];
+const QUEUES: readonly string[] = ["queue.pick", "queue.approve", "queue.clarify", "queue.fix", "queue.slot"];
 function readQueue(consumer: string): QueueItem[] {
   const producer = join(consumer, "agents", "producer");
   const items: QueueItem[] = [];
@@ -167,10 +167,12 @@ function readQueue(consumer: string): QueueItem[] {
       if (!doc) continue;
       const events = Array.isArray(doc.events) ? doc.events as Record<string, unknown>[] : [];
       const queue = (QUEUES.includes(str(doc.queue) ?? "") ? doc.queue : folder) as QueueItem["queue"];
-      const status = str(doc.status) === "answered" || str(doc.status) === "withdrawn" ? doc.status as "answered" | "withdrawn" : "open";
+      // A clossys.queue-entry/2 entry (queue.slot, U5) names its executor as assignee and closes as closed.
+      const status = str(doc.status) === "answered" || str(doc.status) === "withdrawn" ? doc.status as "answered" | "withdrawn" : str(doc.status) === "closed" ? "answered" : "open";
+      const assignee = str(doc.assignee);
       items.push({
-        id: str(doc.id) ?? basename(file, ".json"), queue, decider: (str(doc.decider) ?? "owner") as QueueItem["decider"],
-        subject: str(doc.subject) ?? "", ask: str(doc.ask) ?? "", default: str(doc.default) ?? null,
+        id: str(doc.id) ?? basename(file, ".json"), queue, decider: (str(doc.decider) ?? (assignee && assignee !== "owner" ? `agent:${assignee}` : "owner")) as QueueItem["decider"],
+        subject: str(doc.subject) ?? str(doc.target) ?? "", ask: str(doc.ask) ?? str(doc.why) ?? "", default: str(doc.default) ?? null,
         raisedAt: str(events.find(event => event?.op === "raised")?.at) ?? str(doc.createdAt) ?? "", status,
       });
     }

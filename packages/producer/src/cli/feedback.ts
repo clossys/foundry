@@ -1,13 +1,14 @@
 /** `clossys feedback <ref> "<words>" --via chat|app|cli` (flows.md F5 step 1): opens a queue.fix entry. See queue/feedback.ts. */
 import { resolve } from "node:path";
 import { VIAS, type Via } from "../queue/answer.js";
-import { FeedbackRefused, raiseFeedback, type FeedbackInput } from "../queue/feedback.js";
+import { FeedbackRefused, raiseFeedbackOrRequest, type FeedbackInput } from "../queue/feedback.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
 export const FEEDBACK_USAGE = "Usage: clossys feedback <agent>/<slot-id>[/<candidate>][#<record>] \"<the owner's words, verbatim>\" --via chat|app|cli [--quote <words>] [--slug <slug>] [--ref <where said>] [--root <dir>] [--json]\n"
   + "  opens one queue.fix entry: ask = the words, decider = the agent that owns the ref, no default. --via app also needs --quote.\n"
+  + "  A ref to a slot the consumer does not hold raises a slot request to its agent instead (clossys request).\n"
   + "  Exit 1 when the ref dangles or the entry would not be valid; nothing is written then.";
 
 const VALUE_FLAGS = ["--via", "--quote", "--slug", "--ref", "--root"] as const;
@@ -42,7 +43,15 @@ export async function runFeedbackCli(argv: readonly string[], cwd: string, now?:
   };
   const root = discoverRoot(resolve(cwd, flags["--root"] ?? "."));
   try {
-    const entry = raiseFeedback(root, input, now);
+    const raised = raiseFeedbackOrRequest(root, input, now);
+    if ("request" in raised) {
+      const request = raised.request;
+      return {
+        exitCode: 0, root, output: request,
+        message: `${raised.created ? "raised" : "already open"}  request  ${request.id}\n  target  ${request.target} (no slot holds it)\n  decider  agent:${request.target.split("/")[0]} (${request.target.split("/")[0]}.slot: reuse or create)`,
+      };
+    }
+    const entry = raised.entry;
     const subject = `${entry.subject.to}${entry.subject.record ? `#${entry.subject.record}` : ""}`;
     return {
       exitCode: 0, root, output: entry,

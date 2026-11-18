@@ -4,15 +4,15 @@
   "trees": [
     {
       "file": "src/catalog/ia/composition.json",
-      "freeze": null
+      "freeze": "src/catalog/ia/composition.leaf-freeze.json"
     },
     {
       "file": "src/catalog/ia/directory.json",
-      "freeze": null
+      "freeze": "src/catalog/ia/directory.leaf-freeze.json"
     },
     {
       "file": "src/catalog/ia/release.json",
-      "freeze": null
+      "freeze": "src/catalog/ia/release.leaf-freeze.json"
     }
   ],
   "kinds": [
@@ -38,8 +38,8 @@
   "edgeFiles": [],
   "skill": "skill/SKILL.md",
   "skills": {
-    "scope": null,
-    "slot": "packages/producer/actions/ia/skill.md",
+    "scope": "packages/publisher/actions/publisher.scope/skill.md",
+    "slot": "packages/publisher/actions/publisher.slot/skill.md",
     "create": "packages/publisher/actions/publisher.candidates/skill.md",
     "choose": "packages/publisher/actions/pick.publisher/skill.md",
     "cascade": null

@@ -42,8 +42,8 @@
   "edgeFiles": [],
   "skill": "skill/SKILL.md",
   "skills": {
-    "scope": null,
-    "slot": "packages/producer/actions/ia/skill.md",
+    "scope": "packages/writer/actions/writer.scope/skill.md",
+    "slot": "packages/writer/actions/writer.slot/skill.md",
     "create": "packages/writer/actions/writer.candidates/skill.md",
     "choose": "packages/writer/actions/pick.writer/skill.md",
     "cascade": null

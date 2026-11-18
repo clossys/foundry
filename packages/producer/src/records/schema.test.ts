@@ -17,7 +17,7 @@ const FIXTURE = join(PACKAGE, "test-fixtures", "tallyhouse");
 
 const FORMATS = [
   "clossys.slot/2", "clossys.candidate/1", "clossys.pin/2", "clossys.pin-map/1", "clossys.check-result/1",
-  "clossys.queue-entry/1", "clossys.ledger-entry/1", "clossys.view/1", "clossys.status/1", "clossys.slot-view/1",
+  "clossys.queue-entry/1", "clossys.queue-entry/2", "clossys.ledger-entry/1", "clossys.view/1", "clossys.status/1", "clossys.slot-view/1",
   "clossys.render/1", "clossys.preview/1", "clossys.theme/1", "clossys.ia/1",
   // Also needed by the literal files: facts.json (writer.md 9.4) and loop candidate content (producer.md 10.2).
   "clossys.facts/1", "clossys.loop-version/1",
@@ -108,6 +108,20 @@ const all = fixtures();
 
 /** Read models have no committed file; these are the spec examples (system.md 12.2-12.5, designer.md 9.8), `…` filled in. */
 const READ_SAMPLES: Record<string, Record<string, unknown>> = {
+  // A kind slot entry (foundry-build-0048 U5) after a reuse close: clossys/agents/producer/queue.slot/entries/<id>.json.
+  "clossys.queue-entry/2": {
+    schema: "clossys.queue-entry/2", id: "20261117T1000Z-narratives-how-to", kind: "slot", from: "writer/sections.article.copy", assignee: "writer",
+    target: "writer/narratives.how-to", status: "closed", opened: "20261117T1000Z-narratives-how-to#1", closed: "20261117T1000Z-narratives-how-to#4",
+    link: "writer/narratives.guide", rel: "input", why: "the article links a how-to", source: "cli", createdAt: "2026-11-17T10:00:00Z",
+    overlaps: [{ slot: "writer/narratives.guide", why: "similar purpose (0.75)" }], decision: "reuse", reuse: "writer/narratives.guide",
+    notified: { to: "writer/sections.article.copy", at: "2026-11-17T10:05:00Z" }, closedAt: "2026-11-17T10:05:00Z",
+    events: [
+      { id: "20261117T1000Z-narratives-how-to#1", at: "2026-11-17T10:00:00Z", op: "raised", by: "producer", detail: "the article links a how-to" },
+      { id: "20261117T1000Z-narratives-how-to#2", at: "2026-11-17T10:01:00Z", op: "checked", by: "writer" },
+      { id: "20261117T1000Z-narratives-how-to#3", at: "2026-11-17T10:02:00Z", op: "decided", by: "writer", detail: "reuse writer/narratives.guide" },
+      { id: "20261117T1000Z-narratives-how-to#4", at: "2026-11-17T10:05:00Z", op: "closed", by: "producer", detail: "linked writer/sections.article.copy to writer/narratives.guide" },
+    ],
+  },
   "clossys.status/1": {
     schema: "clossys.status/1", at: "2026-11-18T10:05:00Z", workspace: "tallyhouse",
     agents: {

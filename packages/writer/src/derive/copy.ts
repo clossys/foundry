@@ -1,6 +1,6 @@
 /**
  * Copy is derived, never hand-authored (writer.md 2 Copy, 9.4.3). One `<unit>.copy` slot per live Designer unit in
- * the 58-unit target list that declares `contract.copy.fields`; L1 by Designer layer, L2 = the unit's Designer L2,
+ * the Copy leaf freeze (copyTargetUnits) that declares `contract.copy.fields`; L1 by Designer layer, L2 = the unit's Designer L2,
  * mark inherited, fields projected with a sha256 digest. A target unit with no fields yet is an awaiting leaf: placed
  * and frozen, not a slot, until the Designer line declares fields (request up the chain).
  *
@@ -12,20 +12,26 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import type { AwaitingLeaf, GroupL1, GroupSlot, GroupTree, WriterMark, WriterRef, WriterTreeFinding } from "../catalog/ia/target.js";
 
-export const COPY_TARGET_UNITS = [
-  "components.command", "components.breadcrumbs", "components.sidebar", "components.media-player", "components.dialog", "components.sheet",
-  "sections.section-header", "sections.pagination", "sections.table-of-contents",
-  "sections.hero", "sections.page-header", "sections.features", "sections.pricing", "sections.call-to-action", "sections.testimonials", "sections.logo-cloud", "sections.people",
-  "sections.content", "sections.article", "sections.sectioned-document", "sections.media", "sections.gallery", "sections.faq", "sections.steps", "sections.timeline",
-  "sections.link-index", "sections.resource-list", "sections.task-list", "sections.data-table", "sections.data-grid", "sections.stats", "sections.usage", "sections.account-summary",
-  "sections.comparison", "sections.status-list", "sections.activity-feed", "sections.audit-log", "sections.explorer", "sections.filter-builder",
-  "sections.form", "sections.sign-in-form", "sections.wizard", "sections.chat", "sections.settings", "sections.access-matrix", "sections.column-mapper",
-  "sections.empty-state", "sections.error-state", "sections.notices", "sections.consent",
-  "frames.site-header", "frames.site-footer", "frames.app-header", "frames.app-sidebar",
-  "assets.lockup", "assets.mark", "assets.image", "assets.video",
-] as const;
-
 const DESIGNER_LAYERS = ["components", "sections", "frames", "assets"] as const;
+
+/**
+ * The Designer units Copy holds, in order: the Designer-unit leaves of the Copy leaf freeze (its `leafIds`, then each
+ * amendment's removes and adds), each `<unit>.copy`. Membership is the freeze's data (a new unit is a recorded
+ * amendment, a SLOT-CREATE request answered by Writer), never a list in this module; the rest is Designer data.
+ */
+export function copyTargetUnits(freeze: { leafIds: readonly string[]; amendments?: readonly { remove?: readonly string[]; add?: readonly string[] }[] }): string[] {
+  const ids = [...freeze.leafIds];
+  for (const amendment of freeze.amendments ?? []) {
+    for (const id of amendment.remove ?? []) { const at = ids.indexOf(id); if (at >= 0) ids.splice(at, 1); }
+    for (const id of amendment.add ?? []) if (!ids.includes(id)) ids.push(id);
+  }
+  const layer = new RegExp(`^(?:${DESIGNER_LAYERS.join("|")})\\.`);
+  return ids.filter(id => id.endsWith(".copy") && layer.test(id)).map(id => id.slice(0, -".copy".length));
+}
+const COPY_FREEZE = new URL("../../src/catalog/ia/copy.leaf-freeze.json", import.meta.url);
+/** The shipped Copy freeze's Designer units (copyTargetUnits over `src/catalog/ia/copy.leaf-freeze.json`). */
+export const COPY_TARGET_UNITS: readonly string[] = Object.freeze(copyTargetUnits(JSON.parse(readFileSync(COPY_FREEZE, "utf8"))));
+
 type DesignerLayer = (typeof DESIGNER_LAYERS)[number];
 const COPY_L1: Readonly<Record<DesignerLayer, { id: string; label: string }>> = {
   components: { id: "copy/component-text", label: "Component text" },

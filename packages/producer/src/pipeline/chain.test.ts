@@ -438,13 +438,16 @@ describe("clossys next", { timeout: 60_000 }, () => {
     dirs.push(root);
     const at = ["--root", root], consumer = join(root, "clossys");
     expect((await runPipeline(["config", "--init", ...at], root)).exitCode).toBe(0);
-    writeFileSync(join(root, "contract.json"), "{}\n");
+    // A new content-agent leaf takes a full contract: requirements naming registered criteria (foundry-build-0048 U5).
+    writeFileSync(join(root, "contract.json"), `${JSON.stringify({ requirements: [{ check: "brief.sections" }] })}\n`);
     const place = (slot: string, under: string) => runPipeline(["ia", slot, "--under", under, "--contract", join(root, "contract.json"), ...at], root);
     expect((await place("director/focus.segment.core", "focus/focus.segment")).message).toContain("director has no ia.json");
     expect((await runPipeline(["ia", "director", "--start", ...at], root)).exitCode).toBe(0);
     expect(openPackets(root).some(packet => packet.step === "ia" && packet.item === "director")).toBe(false);
-    expect((await place("director/focus.segment.core", "focus/focus.segment")).exitCode).toBe(0);
-    expect((await place("director/focus.segment.edge", "focus/focus.segment")).exitCode).toBe(0);
+    for (const slot of ["director/focus.segment.core", "director/focus.segment.edge"]) {
+      const placed = await place(slot, "focus/focus.segment");
+      expect(placed.exitCode, placed.message).toBe(0);
+    }
     const ia = JSON.parse(readFileSync(join(consumer, "agents", "director", "ia.json"), "utf8")) as { nodes: { id: string; children: { id: string; slots: string[] }[] }[] };
     expect(ia.nodes).toEqual([{ id: "focus", label: "focus", children: [{ id: "focus.segment", label: "focus.segment", slots: ["focus.segment.core", "focus.segment.edge"] }] }]);
     expect(checkSlotModel(consumer)).toEqual([]);

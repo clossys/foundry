@@ -1,0 +1,31 @@
+{
+  "schema": "clossys.leaf-freeze/2",
+  "group": "composition",
+  "basis": "foundry-build-0048 U5 SCOPE: membership snapshot of every leaf this tree lists, so the leaf freeze covers every L0; owner signature pending (no signature is claimed)",
+  "signed": null,
+  "leafIds": [
+    "layout.marketing-home",
+    "layout.about",
+    "layout.pricing",
+    "layout.contact",
+    "layout.legal",
+    "layout.site-state",
+    "layout.docs-index",
+    "layout.docs-guide",
+    "layout.docs-article",
+    "layout.changelog",
+    "layout.auth",
+    "layout.app-home",
+    "layout.app-list",
+    "layout.app-settings",
+    "layout.app-state",
+    "layout.deck",
+    "chrome.site-header",
+    "chrome.site-footer",
+    "chrome.docs-sidebar",
+    "chrome.app-sidebar",
+    "chrome.app-user-menu",
+    "layout.one-pager"
+  ],
+  "amendments": []
+}

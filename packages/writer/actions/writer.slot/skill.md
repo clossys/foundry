@@ -1,0 +1,9 @@
+# writer.slot
+
+Answer one slot entry assigned to the Writer (loop.slot, the decide step): a requester names a slot the Writer tree does not hold; decide reuse or create.
+
+- Read the entry first: `clossys request <id> --json` (from, target, why, rel) and its overlap check (`clossys request <id> --check` lists the Writer slots the need may already be).
+- Reuse when a placed Writer slot already serves the need, even under another name: `clossys request <id> --decide reuse --slot writer/<slot>`.
+- Create only when no placed slot serves it. Propose one leaf under the L2 whose splitting rule it belongs to, with a full contract of its kind (requirements naming registered criteria): `clossys request <id> --decide create --propose <slot id> --under <l1>/<l2> --kind <kind> --contract <file>`.
+- Never place the leaf here: the owner signs the new leaf, then `clossys request <id> --close` places it through `clossys ia` (overlap and contract gates) and links the requester.
+- Never edit the requester's slot or another agent's tree; the close writes the link and the notify event.

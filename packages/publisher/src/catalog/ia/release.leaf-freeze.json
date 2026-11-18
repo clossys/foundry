@@ -1,0 +1,14 @@
+{
+  "schema": "clossys.leaf-freeze/2",
+  "group": "release",
+  "basis": "foundry-build-0048 U5 SCOPE: membership snapshot of every leaf this tree lists, so the leaf freeze covers every L0; owner signature pending (no signature is claimed)",
+  "signed": null,
+  "leafIds": [
+    "release.site",
+    "release.docs",
+    "release.app",
+    "release.slides",
+    "release.company-one-pager"
+  ],
+  "amendments": []
+}

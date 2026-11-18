@@ -39,7 +39,7 @@ function world(mutate: Mutation = () => {}): { agent: AgentModel; model: Conform
     actions: [{ id: "act", reads: ["consumer:agents/director/*/candidates/*", "consumer:agents/writer/*/pin.json"] }],
     skillText: "submit, then verdict, critique-packet and the craft stages",
     skills: ["scope", "slot", "create", "choose", "cascade"].map(loop => ({ loop, path: `s/${loop}.md`, exists: true, registered: true })),
-    requests: [{ id: "q1", need: "z", status: "closed", placed: "director/a.x", notified: "2026-11-17" }],
+    requests: [{ id: "q1", kind: "slot", from: "director/a.x", target: "director/z", status: "closed", link: "director/a.x", closed: "q1#3", notified: { to: "director/a.x", at: "2026-11-17T00:00:00Z" } }],
   };
   const other: Record<string, any> = { ...agent, agent: "writer", live: [slot("b.in", []), slot("b.other", [])] };
   const enforced = { status: "enforced", enforcedFor: [] };
@@ -66,7 +66,7 @@ const red = (id: string, built: ReturnType<typeof world>): boolean => {
 /** One mutation per assertion: the fact that turns it red on the all-green world. */
 const MUTATIONS: Record<string, Mutation> = {
   S1: agent => { agent.placedTree[0].l2[0].slots.push("a.z"); agent.folders.push("a.z"); },
-  S2: agent => { agent.trees[0].l1[0].l2.pop(); },
+  S2: agent => { agent.trees[0].l1 = []; },
   S3: agent => { agent.folders = ["a.x"]; },
   S4: agent => { agent.live.push(slot("b.x", ["b.in"])); agent.defaults.add("b.x"); },
   S5: agent => { agent.trees[0].freeze.ids = ["a.x"]; },
@@ -208,6 +208,14 @@ describe("conformance runner", () => {
     });
     expect(ASSERTIONS.S4!(unresolved.model.agents[1]!, unresolved.model).rows).toEqual([]);
   });
+  it("lists a one-part split as a report-only finding, never red (S2, owner 2026-11-17)", () => {
+    const built = world(agent => { agent.trees[0].l1[0].l2.pop(); agent.placedTree[0].l2[1].slots = []; });
+    const judgement = ASSERTIONS.S2!(built.agent, built.model);
+    expect(judgement.rows).toEqual([]);
+    expect(judgement.findings).toEqual([expect.stringMatching(/^suspicious split: .* has one L2/), "suspicious split: a/a1 has one live L3", "suspicious split: a/a2 has no live L3"]);
+    expect(cellOf("S2", "S2", judgement)).toMatchObject({ red: false, findings: judgement.findings });
+    expect(formatReport(conform(built.model, readRegistry(), GOOD_FACTS))).toMatch(/GREEN S2 .*\n {8}~ suspicious split: /);
+  });
   it("prints RED/GREEN per assertion with every red row, and is ok only when all green", () => {
     const report = conform(world(MUTATIONS.X2).model, readRegistry(), GOOD_FACTS);
     const text = formatReport(report);
@@ -255,9 +263,16 @@ describe("conformance over the repo and its fixture", () => {
     for (const agent of report.agents) {
       expect(agent.cells).toHaveLength(23);
       expect(agent.dogfood).toHaveLength(5);
-      // Shared today: placement records no decision, no cascade, no five loops.
-      for (const id of ["L1", "L2", "X1", "X4", "W1"]) expect(agent.cells.find(cell => cell.id === id)!.red, `${agent.agent} ${id}`).toBe(true);
+      // Shared today: placement records no decision, no cascade loop, and create and choose name the slot's owner, not a literal agent.
+      for (const id of ["L2", "X1", "X4", "W1"]) expect(agent.cells.find(cell => cell.id === id)!.red, `${agent.agent} ${id}`).toBe(true);
+      // U5: the scope and slot loops reach every agent through its own skill, so W1 keeps only create, choose and cascade rows.
+      expect(agent.cells.find(cell => cell.id === "W1")!.rows.filter(row => /^loop\.(scope|slot)\b|^(scope|slot):/.test(row)), agent.agent).toEqual([]);
     }
+    // L1: the queue-entry/2 schema and loop.slot exist; Director and Designer package trees still name slots no tree holds.
+    const l1 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "L1")!;
+    for (const agent of ["director", "designer"]) expect(l1(agent).red, agent).toBe(true);
+    for (const agent of ["writer", "publisher"]) expect(l1(agent).rows, agent).toEqual([]);
+    for (const agent of CONFORM_AGENTS) expect(l1(agent).rows.filter(row => /queue-entry\/2|loop\.slot/.test(row)), agent).toEqual([]);
     // C1 (family): every Director, Designer and Writer slot carries the family the contracts migration seeded from the
     // option table (the re-keyed table classes every Director and Writer group); Publisher's slot/1 slots carry none.
     const c1 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "C1")!;
@@ -324,15 +339,20 @@ describe("adapter paths", () => {
 
 describe("ia --contract probe (the real verb on a temporary copy)", () => {
   const model = readConformModel(REPO, FIXTURE);
-  it("records today's acceptance of an invalid contract for every agent, and a refusal once the contract is one the verb checks", async () => {
-    const accepted = await probeIaContract(FIXTURE, model.agents);
+  it("refuses an invalid contract for every agent through the kind's contract gate, and accepts one the gate passes (U5)", async () => {
+    // SLOT-CREATE (foundry-build-0048 U5): a new leaf's contract must be valid for its kind family and name registered requirements.
+    const refused = await probeIaContract(FIXTURE, model.agents);
     for (const agent of CONFORM_AGENTS) {
-      const results = accepted[agent];
-      expect(Array.isArray(results), `${agent}: ${String(results)}`).toBe(true);
-      expect((results as { accepted: boolean }[]).every(result => result.accepted), agent).toBe(true);
+      const results = refused[agent] as { target: string; accepted: boolean; message: string }[];
+      expect(Array.isArray(results), `${agent}: ${String(refused[agent])}`).toBe(true);
+      for (const result of results) {
+        expect(result.accepted, result.target).toBe(false);
+        expect(result.message, result.target).toMatch(/contract \$\.requirements must be a non-empty list of \{check\} naming registered criteria \(contract-(brief|element|strings|page|publication)\)/);
+        expect(isContractRefusal(result.message, result.target), result.target).toBe(true);
+      }
     }
-    // Mutation: a clossys.slot-contract/1 contract missing its fields is refused by the same path, so the probe sees refusals.
-    const refusedAll = await probeIaContract(FIXTURE, model.agents, { schema: "clossys.slot-contract/1" });
+    // A clossys.slot-contract/1 contract that names a registered requirement but misses its fields is refused by the same path.
+    const refusedAll = await probeIaContract(FIXTURE, model.agents, { schema: "clossys.slot-contract/1", requirements: [{ check: "text.nonempty" }] });
     for (const agent of CONFORM_AGENTS) {
       const results = refusedAll[agent] as { target: string; accepted: boolean; message: string }[];
       expect(Array.isArray(results), `${agent}: ${String(refusedAll[agent])}`).toBe(true);
@@ -342,6 +362,13 @@ describe("ia --contract probe (the real verb on a temporary copy)", () => {
         expect(result.message, result.target).toMatch(/contract \$\.slot is required \(clossys\.slot-contract\/1\)/);
         expect(isContractRefusal(result.message, result.target), result.target).toBe(true);
       }
+    }
+    // Mutation (the gate is not a blanket refusal): a contract naming a registered requirement is accepted for every family.
+    const passed = await probeIaContract(FIXTURE, model.agents, { requirements: [{ check: "text.nonempty" }] });
+    for (const agent of CONFORM_AGENTS) {
+      const results = passed[agent] as { target: string; accepted: boolean; message: string }[];
+      expect(Array.isArray(results), `${agent}: ${String(passed[agent])}`).toBe(true);
+      for (const result of results) expect(result.accepted, `${result.target}: ${result.message}`).toBe(true);
     }
   });
 

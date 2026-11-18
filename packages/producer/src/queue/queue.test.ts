@@ -356,9 +356,21 @@ describe("clossys feedback", () => {
     expect(entry.subject).toEqual({ to: "writer/sections.hero.copy", record: "home.hero", rel: "input" });
   });
 
-  it("refuses a dangling ref, empty words, and --via app with no quote; nothing is written", async () => {
+  // SLOT-CREATE (foundry-build-0048 U5): feedback on a slot the consumer does not hold is a slot request, never a refusal.
+  it("raises a slot request for feedback on a missing content-agent slot; a second run finds it open", async () => {
     const w = world();
-    expect(await runFeedbackCli(["writer/no.such-slot", "test words", "--via", "chat"], w.root, NOW)).toMatchObject({ exitCode: 1, message: expect.stringContaining("no such slot") as unknown as string });
+    const first = await runFeedbackCli(["writer/no.such-slot", "test words", "--via", "chat"], w.root, NOW);
+    expect(first).toMatchObject({ exitCode: 0, output: { schema: "clossys.queue-entry/2", kind: "slot", from: "owner", assignee: "writer", target: "writer/no.such-slot", status: "open", source: "feedback", why: "test words" } });
+    const request = first.output as { id: string };
+    expect(existsSync(join(w.root, "clossys/agents/producer/queue.slot/entries", `${request.id}.json`))).toBe(true);
+    expect(existsSync(join(w.root, "clossys/agents/producer/queue.fix"))).toBe(false);
+    const again = await runFeedbackCli(["writer/no.such-slot", "test words", "--via", "chat"], w.root, NOW);
+    expect(again).toMatchObject({ exitCode: 0, output: { id: request.id }, message: expect.stringContaining("already open") as unknown as string });
+  });
+
+  it("refuses a dangling candidate ref, empty words, and --via app with no quote; nothing is written", async () => {
+    const w = world();
+    expect(await runFeedbackCli(["writer/sections.hero.copy/no-such-candidate.v9.md", "test words", "--via", "chat"], w.root, NOW)).toMatchObject({ exitCode: 1 });
     expect(() => raiseFeedback(w.root, { ref: "writer/sections.hero.copy", words: "  ", via: "chat" }, NOW)).toThrow(FeedbackRefused);
     expect(() => raiseFeedback(w.root, { ref: "writer/sections.hero.copy", words: "test words", via: "app" }, NOW)).toThrow("--quote");
     expect(() => raiseFeedback(w.root, { ref: "producer/queue.fix", words: "test words", via: "chat" }, NOW)).toThrow(FeedbackRefused);

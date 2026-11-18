@@ -88,6 +88,18 @@
                   "type": "string",
                   "minLength": 1
                 }
+              },
+              "owner": {
+                "description": "A request run (loop.slot): the step runs only when the request's target agent is one of these.",
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "director",
+                    "designer",
+                    "writer",
+                    "publisher"
+                  ]
+                }
               }
             },
             "additionalProperties": false
@@ -189,7 +201,8 @@
                 "create-candidates",
                 "check",
                 "pin",
-                "pick"
+                "pick",
+                "decide"
               ]
             },
             "tier": {

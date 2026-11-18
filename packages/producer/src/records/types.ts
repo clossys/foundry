@@ -393,7 +393,7 @@ export interface CheckResultDoc {
   results: { check: string; status: "pass" | "fail" | "skip"; field?: string; locale?: string; detail?: string }[];
 }
 
-export type DeciderVerb = "refine-brief" | "create-candidates" | "check" | "pin" | "pick";
+export type DeciderVerb = "refine-brief" | "create-candidates" | "check" | "pin" | "pick" | "decide";
 export type HumanRaise = "queue.pick" | "queue.approve" | "queue.clarify";
 
 export type Decider =
@@ -415,7 +415,8 @@ export interface LoopStep {
   reads: string[];
   writes: string[];
   checks: string[];
-  when?: { ia?: string[]; slots?: string[] };
+  /** `owner`: a request run (loop.slot) runs the step only for a request whose target agent is listed. */
+  when?: { ia?: string[]; slots?: string[]; owner?: string[] };
   onFail?: { raise: "queue.fix" | "queue.clarify"; then: "retry" | `loop.${string}` };
 }
 
@@ -520,7 +521,7 @@ export interface StatusView {
   workspace: string;
   stateSha256?: Sha256;                   // system.md 14.9
   agents: Record<AgentId, AgentCensus>;
-  queue: { id: string; queue: QueueName; decider: QueueEntry["decider"]; subject: string; ask: string; default: string | null; raisedAt: Iso }[];
+  queue: { id: string; queue: QueueName | "queue.slot"; decider: QueueEntry["decider"]; subject: string; ask: string; default: string | null; raisedAt: Iso }[];
   ledger: { id: string; loop: string; status: LedgerEntry["status"]; outcome: string; at: Iso }[];
   releases: { publication: string; pinned: CandidateName | null; stale: boolean; reason?: string }[];
 }
@@ -581,6 +582,38 @@ export interface ThemeProjection {
   inputsSha256: Sha256;
 }
 
+/** A kind slot entry (clossys.queue-entry/2, foundry-build-0048 U5): records/request.ts reads and writes it. */
+export type RequestOp = "raised" | "checked" | "decided" | "placed" | "closed";
+export interface RequestEvent { readonly id: string; readonly at: string; readonly op: RequestOp; readonly by?: string; readonly detail?: string }
+export interface Overlap { readonly slot: string; readonly why: string }
+export interface Proposal { readonly slot: string; readonly under: string; readonly kind?: string; readonly contract: Record<string, unknown> }
+export interface SlotRequest {
+  readonly schema: "clossys.queue-entry/2";
+  readonly id: string;
+  readonly kind: "slot";
+  /** The requester slot ref, or `owner`. */
+  readonly from: string;
+  /** Who executes: for kind slot, the agent whose tree would hold the slot (the target's agent). */
+  readonly assignee: "director" | "designer" | "writer" | "publisher";
+  /** `<agent>/<slot id>`: the slot the requester names. */
+  readonly target: string;
+  readonly status: "open" | "closed";
+  readonly opened: string;
+  readonly closed?: string;
+  readonly link?: string;
+  readonly rel: "input" | "uses";
+  readonly why: string;
+  readonly source: "cli" | "ia" | "interview" | "feedback" | "scope";
+  readonly createdAt: string;
+  readonly overlaps?: readonly Overlap[];
+  readonly decision?: "reuse" | "create";
+  readonly reuse?: string;
+  readonly proposal?: Proposal;
+  readonly notified?: { readonly to: string; readonly at: string };
+  readonly closedAt?: string;
+  readonly events: readonly RequestEvent[];
+}
+
 /** Exactly the keys of T: a missing or extra key fails the build. */
 const keysOf = <T>() => (keys: { [K in keyof Required<T>]: true }): readonly string[] => Object.keys(keys);
 
@@ -608,6 +641,11 @@ export const RECORD_KEYS: Readonly<Record<string, readonly string[]>> = {
   "clossys.queue-entry/1": keysOf<QueueEntry>()({
     schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,
     queue: true, ask: true, subject: true, decider: true, default: true, options: true, events: true,
+  }),
+  "clossys.queue-entry/2": keysOf<SlotRequest>()({
+    schema: true, id: true, kind: true, from: true, assignee: true, target: true, status: true, opened: true, closed: true, link: true,
+    rel: true, why: true, source: true, createdAt: true, overlaps: true, decision: true, reuse: true, proposal: true, notified: true,
+    closedAt: true, events: true,
   }),
   "clossys.ledger-entry/1": keysOf<LedgerEntry>()({
     schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,

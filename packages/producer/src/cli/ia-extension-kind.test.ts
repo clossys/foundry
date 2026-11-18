@@ -18,7 +18,7 @@ function workspace() {
   dirs.push(root);
   cpSync(repoConsumer, join(root, "clossys"), { recursive: true });
   const contract = join(root, "contract.json");
-  writeFileSync(contract, JSON.stringify({ purpose: "An owner rule beside the package's own." }));
+  writeFileSync(contract, JSON.stringify({ purpose: "An owner rule beside the package's own.", requirements: [{ check: "text.nonempty" }] }));
   return { root, contract };
 }
 

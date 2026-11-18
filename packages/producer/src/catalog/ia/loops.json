@@ -36,6 +36,26 @@
       ]
     },
     {
+      "id": "shape",
+      "label": "Shape",
+      "children": [
+        {
+          "id": "shape-scope",
+          "label": "Scope",
+          "leaves": [
+            "loop.scope"
+          ]
+        },
+        {
+          "id": "shape-slot",
+          "label": "Slot",
+          "leaves": [
+            "loop.slot"
+          ]
+        }
+      ]
+    },
+    {
       "id": "assure",
       "label": "Assure",
       "children": [

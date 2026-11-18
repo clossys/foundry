@@ -78,7 +78,8 @@
               "queue.pick",
               "queue.approve",
               "queue.clarify",
-              "queue.fix"
+              "queue.fix",
+              "queue.slot"
             ]
           },
           "decider": {

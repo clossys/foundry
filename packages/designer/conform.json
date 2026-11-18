@@ -8,19 +8,27 @@
     },
     {
       "file": "src/catalog/ia/assets.json",
-      "freeze": "src/catalog/ia/assets.leaf-freeze.json"
+      "freeze": "src/catalog/ia/assets.leaf-freeze.json",
+      "amendments": [
+        "src/catalog/ia/assets.leaf-amendments.json",
+        "src/catalog/ia/assets.draft-leaf-amendments.json"
+      ]
     },
     {
       "file": "src/catalog/ia/components.json",
-      "freeze": "src/catalog/ia/components.leaf-freeze.json"
+      "freeze": "src/catalog/ia/components.leaf-freeze.json",
+      "amendments": [
+        "src/catalog/ia/components.leaf-amendments.json",
+        "src/catalog/ia/components.specimen-leaf-amendments.json"
+      ]
     },
     {
       "file": "src/catalog/ia/sections.json",
-      "freeze": null
+      "freeze": "src/catalog/ia/sections.leaf-freeze.json"
     },
     {
       "file": "src/catalog/ia/frames.json",
-      "freeze": null
+      "freeze": "src/catalog/ia/frames.leaf-freeze.json"
     }
   ],
   "kinds": [
@@ -82,8 +90,8 @@
   ],
   "skill": "skill/SKILL.md",
   "skills": {
-    "scope": null,
-    "slot": "packages/producer/actions/ia/skill.md",
+    "scope": "packages/designer/actions/designer.scope/skill.md",
+    "slot": "packages/designer/actions/designer.slot/skill.md",
     "create": "packages/designer/actions/designer.candidates/skill.md",
     "choose": "packages/designer/actions/pick.designer/skill.md",
     "cascade": null

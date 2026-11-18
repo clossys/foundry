@@ -31,8 +31,8 @@
   ],
   "skill": "skill/SKILL.md",
   "skills": {
-    "scope": null,
-    "slot": "packages/producer/actions/ia/skill.md",
+    "scope": "packages/director/actions/director.scope/skill.md",
+    "slot": "packages/director/actions/director.slot/skill.md",
     "create": "packages/director/actions/director.candidates/skill.md",
     "choose": "packages/director/actions/pick.director/skill.md",
     "cascade": null

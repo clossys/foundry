@@ -60,8 +60,10 @@ export function nextRefreshSlot(root: string, skip: ReadonlySet<string> = new Se
  * either `<agent>[/<l0>[/<l1>[/<l2>]]]` or `<l0>[/<l1>[/<l2>]]`. Either list matching is enough. A run with no slot
  * (release, audit) skips every step that has a `when`.
  */
-export function whenMatches(when: LoopStep["when"], subject: SlotSubject | undefined): boolean {
+export function whenMatches(when: LoopStep["when"], subject: SlotSubject | undefined, requestOwner?: string): boolean {
   if (when === undefined) return true;
+  // A request run (loop.slot) has no slot yet: `owner` names the target agents the step runs for.
+  if (when.owner !== undefined) return requestOwner !== undefined && when.owner.includes(requestOwner);
   if (!subject) return false;
   const ref = refOf(subject);
   if ((when.slots ?? []).includes(ref)) return true;

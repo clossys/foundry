@@ -401,7 +401,8 @@
                 "create-candidates",
                 "check",
                 "pin",
-                "pick"
+                "pick",
+                "decide"
               ]
             },
             "tier": {

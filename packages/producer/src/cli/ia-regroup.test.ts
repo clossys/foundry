@@ -389,7 +389,7 @@ describe("--contract --under: a slot placed before the end renumbers every later
   const later = ["assets.favicon", "assets.app-icon", "frames.studio-shell", "frames.workspace"];
   const orders = () => Object.fromEntries(["assets.logo-mark", "assets.logo-word", "assets.logo-glyph", ...later].filter(id => tree()[`clossys/agents/designer/${id}/slot.json`]).map(id => [id, slotOf("designer", id).ia.order]));
   let contract: string;
-  beforeEach(() => { contract = join(workspace, "contract.json"); writeFileSync(contract, jsonBytes({ shape: "svg" })); });
+  beforeEach(() => { contract = join(workspace, "contract.json"); writeFileSync(contract, jsonBytes({ shape: "svg", requirements: [{ check: "svg.viewbox" }] })); });
 
   it("places a slot in the middle, renumbers the later slots (order only) and passes the slot model check", async () => {
     const result = await owned("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork");

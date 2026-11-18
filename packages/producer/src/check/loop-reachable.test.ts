@@ -141,14 +141,14 @@ describe("loop.create and loop.choose (foundry-build-0048 U3)", () => {
 });
 
 describe("Producer IA tree (producer.md 1)", () => {
-  it("places the six loops, the four queues and one ledger per loop: 6 L1, 16 L2, 16 L3", () => {
+  it("places the eight loops, the four queues and one ledger per loop: 8 L1, 20 L2, 20 L3", () => {
     const layers = readProducerIa();
     expect(layers.map(layer => layer.layer)).toEqual(["loops", "queue", "ledger"]);
-    expect(layers.flatMap(layer => layer.nodes)).toHaveLength(6);
-    expect(layers.flatMap(layer => layer.nodes.flatMap(node => node.children))).toHaveLength(16);
-    expect(producerSlotPositions(layers).size).toBe(16);
+    expect(layers.flatMap(layer => layer.nodes)).toHaveLength(8);
+    expect(layers.flatMap(layer => layer.nodes.flatMap(node => node.children))).toHaveLength(20);
+    expect(producerSlotPositions(layers).size).toBe(20);
     expect(producerIaIssues(layers)).toEqual([]);
-    expect(PRODUCER_LEAVES.ledger).toEqual(["ledger.fill", "ledger.refine", "ledger.create", "ledger.choose", "ledger.release", "ledger.audit"]);
+    expect(PRODUCER_LEAVES.ledger).toEqual(["ledger.fill", "ledger.refine", "ledger.create", "ledger.choose", "ledger.scope", "ledger.slot", "ledger.release", "ledger.audit"]);
   });
 
   it("names a leaf placed twice, a missing loop and a stray leaf", () => {

@@ -105,6 +105,35 @@ describe("interview (next --owner) and gaps", { timeout: 120_000 }, () => {
     expect(director.some(question => question.items.includes(`director/${cited}`) && question.requestedBy.includes("designer"))).toBe(true);
   });
 
+  it("a slot input naming a slot no agent holds is a request.slot-missing gap to the owning agent, until a slot request files it (U5)", async () => {
+    const root = workspace();
+    const agents = join(root, "clossys", "agents", "writer");
+    const requester = readdirSync(agents).find(id => {
+      try { return JSON.parse(readFileSync(join(agents, id, "slot.json"), "utf8")).schema === "clossys.slot/2"; } catch { return false; }
+    });
+    expect(requester).toBeTruthy();
+    const need = "writer/narratives.unheld-need";
+    const missing = (gaps: readonly Gap[]) => gaps.filter(gap => gap.code === "request.slot-missing" && gap.item === need);
+    expect(missing(gapsOf(root).gaps)).toEqual([]);
+    // Mutation: the requester cites a slot no agent holds.
+    const file = join(agents, requester!, "slot.json");
+    const doc = JSON.parse(readFileSync(file, "utf8")) as { refs: { to: string; rel: string }[] };
+    doc.refs.push({ to: need, rel: "input" });
+    writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    const gaps = missing(gapsOf(root).gaps);
+    expect(gaps).toHaveLength(1);
+    expect(gaps[0]).toMatchObject({ kind: "coverage", from: "writer", to: "writer", agent: "writer", need: [`writer/${requester}`] });
+    // The agent's own slot skill answers it (reuse or create), so the owner's interview asks nothing for it.
+    expect(gaps[0]).toMatchObject({ decider: "agent", message: expect.stringContaining(`clossys request --target ${need} --from writer/${requester}`) });
+    const interview = interviewOf(root, { agent: "writer" });
+    expect(interview.rounds.flat().some(item => item.items.includes(need))).toBe(false);
+    expect(interviewIssues(interview, gapsOf(root))).toEqual([]);
+    // Filed, the need is no longer a gap: the kind slot entry carries it.
+    const filed = await runPipeline(["request", "--target", need, "--from", `writer/${requester}`, "--why", "fixture: cited before it exists", "--at", "2026-11-17T10:00:00Z", "--root", root], root);
+    expect(filed.exitCode, filed.message).toBe(0);
+    expect(missing(gapsOf(root).gaps)).toEqual([]);
+  });
+
   it("mutation proofs: an option with no argv fails owner.argv, a request with no addressee fails request.addressee", () => {
     const root = workspace();
     const interview = interviewOf(root, { agent: "producer" });

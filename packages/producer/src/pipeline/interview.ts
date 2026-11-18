@@ -12,7 +12,8 @@
  *                                steps whose latest run failed or went stale (chain drift), recorded
  *                                candidates whose selection-ladder record does not hold (a created one
  *                                with no reason no seed fit; candidate-ladder.ts).
- *                      request   a downstream agent's need only an upstream agent can answer: a slot
+ *                      request   a downstream agent's need only an upstream agent can answer (a slot input
+ *                                naming a slot no agent holds is request.slot-missing: file a slot request): a slot
  *                                input citing an upstream slot with no candidates, not needed, or
  *                                unclear (a pinned Director cell with TODO-OWNER lines or blocking
  *                                findings); a pinned Publisher record naming a Writer key the pinned
@@ -41,6 +42,7 @@
 import { join } from "node:path";
 import { blocks, checkCell, readStrategyRoot } from "@clossys/director";
 import type { Cell, StrategyModel } from "@clossys/director";
+import { listRequests, slotlessNeeds } from "../records/request.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
 import type { SlotAgent } from "../records/slot-model/types.js";
@@ -291,12 +293,22 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
   // requests: a downstream slot citing an upstream slot only its agent can settle.
   const cited = new Map<string, { to: SlotAgent; from: SlotAgent; cell: string; need: string[] }>();
   const citations = new Map<string, number>();
+  // SLOT-CREATE (foundry-build-0048 U5): an input naming a slot no agent holds is a slotless need, never skipped.
+  const filed = new Set(listRequests(consumer).flatMap(item => item.request && item.request.status === "open" ? [`${item.request.target}<${item.request.from}`] : []));
+  for (const need of slotlessNeeds(consumer)) {
+    if (need.rel !== "input" || !need.target || filed.has(`${need.target}<${need.from}`)) continue;
+    const owner = need.target.slice(0, need.target.indexOf("/")) as InterviewAgent, requester = need.from.slice(0, need.from.indexOf("/"));
+    // Across agents it is a request upstream; an agent's own missing slot is its coverage, with no upstream addressee.
+    gaps.push({ kind: requester === owner ? "coverage" : "request", code: "request.slot-missing", agent: owner, from: requester, to: owner, item: need.target, step: null, decider: "agent", need: [need.from],
+      message: `${need.from} cites ${need.to}, which no slot holds; the ${owner} answers it (clossys request --target ${need.target} --from ${need.from}, then ${owner}.slot)` });
+  }
   for (const [agent, list] of entries) for (const entry of list) {
     // An IA slot with no folder (no slot.json) cites nothing yet: it is the open `ia` item above
     // (coverage open.ia), asked as an ia packet, never read here.
     if (!modelExists(join(entry.dir, "slot.json"))) continue;
     for (const input of readSlot(consumer, agent, entry.id).inputs) {
       const upstream = index.get(input);
+      // A slotless input is asked above from slotlessNeeds, which reads the refs with their agent prefix.
       if (!upstream || upstream.agent === agent) continue;
       citations.set(`${agent}>${upstream.agent}`, (citations.get(`${agent}>${upstream.agent}`) ?? 0) + 1);
       const key = `${agent}>${upstream.agent}/${input}`;

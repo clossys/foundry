@@ -269,7 +269,7 @@ export const PROBES: Readonly<Record<string, Probe>> = {
   },
   "request-path": (_agent, model, facts) => pass([
     ...(facts.requestVerb ? [] : ["no request verb: a missing slot cannot be requested (feedback needs an existing slot folder)"]),
-    ...(model.machinery.slotRequestSchema ? [] : ["no clossys.slot-request/1 schema"]),
+    ...(model.machinery.slotRequestSchema ? [] : ["no clossys.queue-entry/2 schema"]),
   ]),
   "invalid-contract": (agent, model, facts) => ASSERTIONS.L3!(agent, model, facts),
   "critique-path": (_agent, _model, facts) => pass(facts.critiqueMonorepoPath ? ["critique-packet reads packages/<agent>/standards under the workspace root, absent from an install"] : []),

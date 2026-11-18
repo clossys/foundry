@@ -36,6 +36,26 @@
       ]
     },
     {
+      "id": "shape-runs",
+      "label": "Shape runs",
+      "children": [
+        {
+          "id": "shape-runs-scope",
+          "label": "Scope runs",
+          "leaves": [
+            "ledger.scope"
+          ]
+        },
+        {
+          "id": "shape-runs-slot",
+          "label": "Slot runs",
+          "leaves": [
+            "ledger.slot"
+          ]
+        }
+      ]
+    },
+    {
       "id": "assure-runs",
       "label": "Assure runs",
       "children": [

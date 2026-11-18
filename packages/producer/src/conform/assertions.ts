@@ -14,7 +14,11 @@ import { requirementsVerdictSync } from "../constitution/certify/requirements.js
 import type { JsonSchema } from "../pipeline/schema.js";
 import { recipePageKey } from "./recipe-page.js";
 
-export interface Judgement { readonly rows: readonly string[]; readonly evidence: number }
+/**
+ * `rows` are red; `findings` are report-only (listed, never red): a pattern worth a look that a rule cannot call wrong,
+ * such as a split with one part (owner, 2026-11-17: groups split by their own rule into any number of parts).
+ */
+export interface Judgement { readonly rows: readonly string[]; readonly evidence: number; readonly findings?: readonly string[] }
 /** `facts` carries what the runner probed by running real verbs on a temporary copy (dogfood.ts readProbeFacts). */
 export type Assertion = (agent: AgentModel, model: ConformModel, facts?: ProbeFacts) => Judgement;
 
@@ -132,9 +136,15 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     if (pkg.size !== placed.size) rows.unshift(`package tree has ${pkg.size} leaves, the placed tree ${placed.size}`);
     return { rows, evidence: Math.min(pkg.size, placed.size) };
   },
+  // Report-only (owner, 2026-11-17): a group splits by its own rule into any number of parts, so a one-part split is
+  // listed as suspicious, never red, and no tree move is made to satisfy it. Red only when there is no L1 to judge.
   S2: agent => {
     const l1s = agent.trees.flatMap(tree => tree.l1.filter(l1 => !l1.parked).map(l1 => ({ tree: tree.file, l1 })));
-    return { rows: l1s.filter(({ l1 }) => l1.l2.filter(l2 => !l2.parked).length < 2).map(({ tree, l1 }) => `${tree} ${l1.id}: ${l1.l2.filter(l2 => !l2.parked).length} L2`), evidence: l1s.length };
+    const live = new Set(agent.folders);
+    const findings = l1s.filter(({ l1 }) => l1.l2.filter(l2 => !l2.parked).length === 1).map(({ tree, l1 }) => `suspicious split: ${tree} ${l1.id} has one L2 (${l1.l2.find(l2 => !l2.parked)!.id})`)
+      .concat(agent.placedTree.flatMap(l1 => l1.l2.map(l2 => ({ l1: l1.id, l2, count: l2.slots.filter(id => live.has(id)).length })))
+        .filter(({ count }) => count <= 1).map(({ l1, l2, count }) => `suspicious split: ${l1}/${l2.id} has ${count === 0 ? "no" : "one"} live L3`));
+    return { rows: [], evidence: l1s.length, findings };
   },
   S3: agent => {
     const folders = new Set(agent.folders), placed = new Set(placedIds(agent));
@@ -180,10 +190,14 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
   }),
   L1: (agent, model) => {
     const rows: string[] = [];
-    if (!model.machinery.slotRequestSchema) rows.push("no clossys.slot-request/1 schema under packages/producer/schemas/");
+    if (!model.machinery.slotRequestSchema) rows.push("no clossys.queue-entry/2 schema under packages/producer/schemas/");
     if (!model.machinery.loops.get("loop.slot")) rows.push("no loop.slot version in packages/producer/loops/");
-    const filed = new Set(agent.requests.map(request => String(request.need ?? "")));
-    for (const edge of dangling(agent, model)) if (!filed.has(edge.to)) rows.push(`${edge.from} needs ${edge.to}: no slot, no slot-request`);
+    // A clossys.queue-entry/2 kind slot names its need as target <agent>/<id>; an edge may name it bare or as a ref.
+    const filed = new Set(agent.requests.filter(request => request.kind === "slot").flatMap(request => {
+      const target = String(request.target ?? "");
+      return [target, target.slice(target.indexOf("/") + 1)];
+    }));
+    for (const edge of dangling(agent, model)) if (!filed.has(edge.to)) rows.push(`${edge.from} needs ${edge.to}: no slot, no slot request`);
     return { rows, evidence: 1 + agent.edges.length };
   },
   L2: agent => {
@@ -202,9 +216,9 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     return { rows: probe.filter(result => result.accepted).map(result => `ia ${result.target} --contract accepted an invalid contract ${result.contract} (exit 0)`), evidence: probe.length };
   },
   L4: agent => {
-    const closed = agent.requests.filter(request => request.status === "closed" || request.placed !== undefined);
+    const closed = agent.requests.filter(request => request.status === "closed" || request.link !== undefined);
     return {
-      rows: closed.filter(request => !(typeof request.placed === "string" && SLOT_REF.test(request.placed) && request.notified !== undefined))
+      rows: closed.filter(request => !(typeof request.link === "string" && SLOT_REF.test(request.link) && request.notified !== undefined && typeof request.closed === "string"))
         .map(request => `${String(request.id)}: closed without a slot-to-slot link and notify event`),
       evidence: closed.length,
     };

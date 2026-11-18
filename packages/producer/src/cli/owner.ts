@@ -64,12 +64,14 @@ import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlo
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 import { RULES_FILE } from "./rules-file.js";
+import { closeRequest, isContentAgent, ownerOfNeed, placementContractIssues, placementOverlaps, raiseRequest, readRequest, RequestError, signedApproval, targetOf, type SlotRequest } from "../records/request.js";
 
 export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent>/<slot> --standard <id> [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia producer/<seat> --standard <id> [--contract <file>] [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia producer/<seat> --move --under <l1>/<l2> --owner-ref <ref> [--dry] [--root <dir>]  (a placed seat; a new seat is placed by clossys seat <step>)\n"
   + "       clossys ia <agent>/<slot> --remove [--owner-ref <ref>] [--dry] [--root <dir>]\n"
+  + "       clossys ia <agent>/<slot> --request <id> --approved queue.approve#<id> [--at <iso>] [--dry] [--root <dir>]  (places the leaf a create decision proposes; clossys request <id> --close runs it)\n"
   + "       clossys ia <agent> --adopt | --start [--dry] [--root <dir>]\n"
   + "       clossys ia sync [--check] [--agent <agent>] [--at <iso>] [--dry] [--root <dir>]\n"
   + "  places a slot in its agent's ia.json (--under, when it is not placed yet) and writes its slot.json with the contract (a JSON object file).\n"
@@ -190,7 +192,7 @@ const readModelJson = (path: string): unknown => JSON.parse(readModelText(path))
 
 // ---------------------------------------------------------------- clossys ia
 const parseIa = parser(IA_USAGE, [
-  "--contract", "--standard", "--under", "--kind", "--inputs", "--uses", "--root", "--owner-ref", "--at", "--extension",
+  "--contract", "--standard", "--under", "--kind", "--inputs", "--uses", "--root", "--owner-ref", "--at", "--extension", "--request", "--approved",
   "--add", "--rename", "--merge", "--into", "--drop", "--reorder", "--order", "--assign", "--layer", "--label", "--id", "--layers", "--axes", "--agent",
 ], ["--remove", "--adopt", "--start", "--move", "--dry", "--check"]);
 const FOUNDRY_IA: Readonly<Record<keyof typeof FOUNDRY_IA_AFTER, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa };
@@ -208,7 +210,7 @@ const GATE_FLAGS = ["--owner-ref", "--at", "--root"];
  * A dry run validates what a write validates and runs the same slot model check on the planned files in
  * memory: it refuses (exit 1) exactly where the write would be refused, and lists the files either way.
  */
-function commitIa(consumer: string, root: string, writes: readonly (readonly [string, string])[], dry: boolean, summary: string, lines: readonly string[] = [], message = `ia: ${summary}`, who: IaWho = {}): CliResult {
+function commitIa(consumer: string, root: string, writes: readonly (readonly [string, string])[], dry: boolean, summary: string, lines: readonly string[] = [], message = `ia: ${summary}`, who: IaWho = {}, extra: ReadonlyMap<string, Readonly<Record<string, unknown>>> = new Map()): CliResult {
   const rel = (path: string) => relative(root, path).split(sep).join("/");
   if (dry) {
     const files = writes.map(([path]) => rel(path));
@@ -232,7 +234,7 @@ function commitIa(consumer: string, root: string, writes: readonly (readonly [st
     for (const [path, bytes] of writes) replaceFile(path, bytes);
     for (const target of targets) {
       if (target.slot === undefined) appendIaEvent(consumer, target.agent, { by, at, fields: { kind: target.kind } });
-      else appendSlotDocEvent(consumer, target.agent, target.slot, { by, at, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: target.kind } });
+      else appendSlotDocEvent(consumer, target.agent, target.slot, { by, at, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: target.kind, ...(extra.get(`${target.agent}/${target.slot}`) ?? {}) } });
     }
   });
   if (added.length) return refuse("ia", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);
@@ -526,6 +528,22 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   }
   if (!(SLOT_AGENTS as readonly string[]).includes(agent) || !SLOT_ID.test(slot)) throw new CliUsageError(`ia target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")} and a slot id, got ${target}\n${IA_USAGE}`);
   const root = rootOf(cwd, flags), consumer = join(root, "clossys");
+  // SLOT-CREATE: --request <id> places the new leaf an open create decision proposes (its L2, kind and contract), then closes it.
+  const requestId = one(flags, "--request");
+  let request: SlotRequest | undefined;
+  if (requestId !== undefined) {
+    try { request = readRequest(consumer, requestId); } catch (error) { if (error instanceof RequestError) return refuse("ia", error.message); throw error; }
+    const proposed = targetOf(request);
+    if (request.status !== "open" || request.decision !== "create" || !request.proposal) return refuse("ia", `--request ${requestId} is not an open create decision (clossys request ${requestId} --decide create ...)`);
+    if (proposed?.agent !== agent || request.proposal.slot !== slot) return refuse("ia", `--request ${requestId} proposes ${proposed?.agent}/${request.proposal.slot}, not ${target}`);
+  }
+  // The owner's signature on the new leaf (loop.slot step sign): checked before anything is written.
+  const approved = one(flags, "--approved");
+  if (approved !== undefined) {
+    if (!request) throw new CliUsageError(`--approved signs a request placement: ia ${target} --request <id> --approved queue.approve#<id>\n${IA_USAGE}`);
+    const approval = signedApproval(consumer, approved, request);
+    if ("error" in approval) return refuse("ia", approval.error);
+  } else if (request && !flags.values.has("--owner-ref")) return refuse("ia", `--request ${request.id} places a new leaf, which takes the owner's signature: --approved queue.approve#<id> (loop.slot step sign) or a registered --owner-ref`);
   const iaFile = iaPath(consumer, agent);
   if (!modelExists(iaFile)) return refuse("ia", `${agent} has no ia.json: ${(FOUNDRY_IA_AGENTS as readonly string[]).includes(agent) ? `adopt the Foundry IA (clossys ia ${agent} --adopt) or start` : "start"} an empty one (clossys ia ${agent} --start)`);
   const ia = readModelJson(iaFile) as AgentIaFile;
@@ -558,12 +576,15 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   const standardId = one(flags, "--standard");
   if (standardId !== undefined && !STANDARD_ID.test(standardId)) throw new CliUsageError(`--standard must be a standard id such as element.button, got ${standardId}\n${IA_USAGE}`);
   // --standard alone keeps the slot's written contract; otherwise the contract file is required.
-  const contractFile = standardId !== undefined && !flags.values.has("--contract") ? undefined : need(flags, "--contract", IA_USAGE);
-  let contract: unknown;
+  const fromRequest = request !== undefined && !flags.values.has("--contract");
+  const contractFile = (standardId !== undefined && !flags.values.has("--contract")) || fromRequest ? undefined : need(flags, "--contract", IA_USAGE);
+  let contract: unknown = fromRequest ? request!.proposal!.contract : undefined;
   if (contractFile !== undefined) { try { contract = readJsonFile(resolve(cwd, contractFile)); } catch { return refuse("ia", `--contract ${contractFile} is not a readable JSON file`); } }
+  const underFlag = one(flags, "--under") ?? request?.proposal?.under;
+  if (request && placed) return refuse("ia", `${target} is already placed: close request ${request.id} with a reuse decision instead`);
   let next = ia;
   if (!placed) {
-    const under = one(flags, "--under");
+    const under = underFlag;
     if (!under) throw new CliUsageError(`${target} is not placed yet: --under <l1>/<l2> names where\n${IA_USAGE}`);
     const [l1, l2] = [under.slice(0, under.indexOf("/")), under.slice(under.indexOf("/") + 1)];
     // A workspace IA (--start) gains the L1/L2 groups its slots name; a Foundry IA only takes slots under the groups it lists.
@@ -575,11 +596,11 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
     const child = node?.children.find(each => each.id === l2 || each.id === `${l1}.${l2}`);
     if (!node || !child) return refuse("ia", `${agent} ia.json has no ${under} (L1/L2 ids as ia.json lists them)`);
     next = { ...ia, nodes: base.map(each => each !== node ? each : { ...each, children: each.children.map(group => group !== child ? group : { ...group, slots: [...group.slots, slot] }) }) };
-  } else if (one(flags, "--under")) return refuse("ia", `${target} is already placed; --under only places a new slot`);
+  } else if (underFlag) return refuse("ia", `${target} is already placed; --under only places a new slot`);
   // A slot placed before the end shifts every later slot's agent-wide order: their slot.json positions follow (order only).
   const follow = followPositions(consumer, agent, ia as unknown as IaFile, next as unknown as IaFile, undefined, slot);
   if ("error" in follow) return refuse("ia", follow.error);
-  if (owner.ref) next = withChange(next, { op: placed ? "contract" : "place", ownerRef: owner.ref, at, detail: placed ? (contractFile === undefined ? `named the standard ${standardId} of ${slot}` : `wrote the contract of ${slot}`) : `placed ${slot} under ${one(flags, "--under")}${renumbered(follow)}`, slotFiles: 1 + follow.writes.length });
+  if (owner.ref) next = withChange(next, { op: placed ? "contract" : "place", ownerRef: owner.ref, at, detail: placed ? (contractFile === undefined ? `named the standard ${standardId} of ${slot}` : `wrote the contract of ${slot}`) : `placed ${slot} under ${underFlag}${renumbered(follow)}`, slotFiles: 1 + follow.writes.length });
   const iaIssues = validateIa(next, iaFile);
   if (iaIssues.length) return refuse("ia", iaIssues.map(issue => issue.message).join("; "));
   const position = slotPositions(agent, next as unknown as IaDoc).get(slot);
@@ -590,11 +611,18 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   const storedV2 = stored?.schema === SLOT_V2_SCHEMA && !validateSlot(stored).length ? stored as unknown as Slot : undefined;
   if (stored?.schema === SLOT_V2_SCHEMA && !storedV2) return refuse("ia", `${target} slot.json is not a valid ${SLOT_V2_SCHEMA}; clossys check names why`);
   const existing = storedV2 ? currentView(storedV2) as unknown as Record<string, unknown> : stored;
-  const kind = (one(flags, "--kind") ?? (existing?.kind as string | undefined) ?? AGENT_KIND[agent][0]) as SlotKind;
+  const proposedKind = request?.proposal?.kind !== undefined && (SLOT_KINDS as readonly string[]).includes(request.proposal.kind) ? request.proposal.kind : undefined;
+  const kind = (one(flags, "--kind") ?? proposedKind ?? (existing?.kind as string | undefined) ?? AGENT_KIND[agent][0]) as SlotKind;
   if (!(SLOT_KINDS as readonly string[]).includes(kind)) throw new CliUsageError(`--kind must be one of ${SLOT_KINDS.join(", ")}\n${IA_USAGE}`);
-  if (contractFile === undefined) {
+  if (contractFile === undefined && !fromRequest) {
     if (existing?.contract === undefined) return refuse("ia", `${target} has no written contract: --standard alone names the standard of a written slot (add --contract <file>)`);
     contract = existing.contract;
+  }
+  // SLOT-CREATE gate (spec L3): a content agent's new leaf's contract is valid for its kind family and names registered
+  // requirements (a Producer seat contract is package data with no requirements key).
+  if (!placed && isContentAgent(agent)) {
+    const contractGate = placementContractIssues(kind, contract);
+    if (contractGate.length) return refuse("ia", contractGate.join("; "));
   }
   if (standardId !== undefined) {
     // The standard lives in the slot's own agent package (R15.1): it must exist, read clean and serve this kind.
@@ -610,19 +638,47 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   };
   const docIssues = validateSlotDoc(doc, slotFile(dir));
   if (docIssues.length) return refuse("ia", docIssues.map(issue => issue.message).join("; "));
+  // SLOT-CREATE: placement runs the overlap check over the agent's placed slots and records the create decision.
+  const overlaps = !placed && isContentAgent(agent) ? placementOverlaps(consumer, agent, { slot, kind, l2: position.l2, inputs: doc.inputs }) : [];
+  if (overlaps.length) return refuse("ia", `${target} overlaps ${overlaps.map(item => `${item.slot} (${item.why})`).join(", ")}: cite it instead (clossys request <id> --decide reuse --slot <ref>), or propose a leaf that does not duplicate it`);
   let slotBytes = jsonBytes(doc);
+  let missing: readonly { id: string; rel: "input" | "uses"; owner: string }[] = [];
   if (storedV2 || (!stored && recutStore(root))) {
     const written = currentSlotWrite(root, doc as unknown as SlotV1, position, storedV2, {
       kind: flags.values.has("--kind") ? undefined : storedV2?.kind, live: modelExists(pinFile(dir)), at: eventAt || new Date().toISOString(),
     });
     if ("error" in written) return refuse("ia", written.error);
     slotBytes = written.bytes;
+    // A slotless input is a request to the agent that would hold it, never a refusal: the edge is linked when it closes.
+    const unowned = written.missing.filter(item => !ownerOfNeed(consumer, item.id));
+    if (unowned.length) return refuse("ia", `no consumer slot folder holds ${unowned.map(item => item.id).join(", ")}, and no agent holds its first id segment: raise it with clossys request --target <agent>/<slot> --from ${target} --why <text>`);
+    missing = written.missing.map(item => ({ ...item, owner: ownerOfNeed(consumer, item.id)! }));
   }
   const writes: [string, string][] = [...(next !== ia ? [[iaFile, jsonBytes(next)] as [string, string]] : []), [slotFile(dir), slotBytes], ...follow.writes];
   const named = standardId !== undefined ? `, standard ${standardId} named` : "";
-  const what = contractFile === undefined ? `standard ${standardId} named` : `${placed ? "contract written" : `placed under ${one(flags, "--under")} and its contract written`}${named}`;
-  const summary = contractFile === undefined ? `${target} standard ${standardId}` : `${target} ${placed ? "contract" : `placed under ${one(flags, "--under")} and contract`}${standardId !== undefined ? `, standard ${standardId}` : ""}`;
-  return commitIa(consumer, root, writes, dry, summary, followLines(follow), `ia: ${target} ${what} (clossys/agents/${agent}/${slot}/slot.json)`, iaWho(owner.ref, eventAt));
+  const contractWritten = contractFile !== undefined || fromRequest;
+  const what = !contractWritten ? `standard ${standardId} named` : `${placed ? "contract written" : `placed under ${underFlag} and its contract written`}${named}`;
+  const summary = !contractWritten ? `${target} standard ${standardId}` : `${target} ${placed ? "contract" : `placed under ${underFlag} and contract`}${standardId !== undefined ? `, standard ${standardId}` : ""}`;
+  const requestLines = missing.map(item => `${dry ? "would raise" : "raise"} a slot request to ${item.owner} for ${item.id} (${item.rel})`);
+  const decision = placed ? new Map<string, Record<string, unknown>>() : new Map([[target, { decision: "create", overlaps: [], ...(request ? { request: request.id } : {}) }]]);
+  const committed = commitIa(consumer, root, writes, dry, summary, [...followLines(follow), ...requestLines], `ia: ${target} ${what} (clossys/agents/${agent}/${slot}/slot.json)`, iaWho(owner.ref ?? approved, eventAt), decision);
+  if (committed.exitCode !== 0 || dry) return committed;
+  const closeAt = toIsoZ(eventAt || new Date().toISOString()) ?? new Date().toISOString();
+  const after: string[] = [];
+  try {
+    for (const item of missing) {
+      const raised = raiseRequest(consumer, { target: `${item.owner}/${item.id}`, from: target, rel: item.rel, why: `${target} names ${item.id} as ${item.rel === "input" ? "an input" : "a used slot"}; no slot holds it`, source: "ia", by: owner.ref ? "owner" : "planner", at: closeAt });
+      after.push(`  request ${raised.request.id} ${raised.created ? "raised" : "already open"}: ${item.owner}/${item.id} for ${target}`);
+    }
+    if (request) {
+      const closed = closeRequest(consumer, request.id, { by: owner.ref || approved !== undefined ? "owner" : "planner", at: closeAt, ...(approved !== undefined ? { approved } : {}), ...(owner.ref ? { ownerRef: owner.ref } : {}) });
+      after.push(`  request ${request.id} closed: ${closed.request.from} linked to ${closed.request.link}`);
+    }
+  } catch (error) {
+    if (error instanceof RequestError) return { exitCode: 1, root, message: [committed.message, `ia: placed, but the request step failed: ${error.message}`].join("\n") };
+    throw error;
+  }
+  return after.length ? { ...committed, message: [committed.message, ...after].join("\n") } : committed;
 }
 
 /** True when the workspace holds a recut store: some slot.json under clossys/agents is `clossys.slot/2`. */
@@ -657,7 +713,7 @@ function placedKind(root: string, agent: AgentId, l1: string): TargetSlotKind | 
  * An existing slot/2 file keeps its createdBy, createdAt, status, base, brief (inputs follow the refs), tighten and
  * refs of other rels, and gains updatedAt; a new one is created by this verb, `live` when a pin is already there.
  */
-function currentSlotWrite(root: string, doc: SlotV1, position: { l1: string; l2: string; order: number }, stored: Slot | undefined, options: { kind?: TargetSlotKind; live: boolean; at: string }): { bytes: string } | { error: string } {
+function currentSlotWrite(root: string, doc: SlotV1, position: { l1: string; l2: string; order: number }, stored: Slot | undefined, options: { kind?: TargetSlotKind; live: boolean; at: string }): { bytes: string; missing: { id: string; rel: "input" | "uses" }[] } | { error: string } {
   const at = toIsoZ(options.at);
   if (!at) return { error: `--at ${options.at} is not an ISO timestamp` };
   const holders = new Map<string, AgentId[]>();
@@ -666,15 +722,15 @@ function currentSlotWrite(root: string, doc: SlotV1, position: { l1: string; l2:
   // A Publisher --kind (page, publication) is itself a slot/2 kind, judged by validateSlot below.
   const kind = options.kind ?? targetKind(doc) ?? placedKind(root, doc.agent, ia.l1) ?? (doc.agent === "publisher" ? doc.kind as TargetSlotKind : undefined);
   if (!kind) return { error: `${doc.agent}/${doc.id} kind ${doc.kind} has no ${SLOT_V2_SCHEMA} kind` };
-  const unresolved: string[] = [];
-  const refsOf = (ids: readonly string[] | undefined, rel: Ref["rel"]): Ref[] => (ids ?? []).flatMap(id => {
+  // An id no consumer slot folder holds is left out of the refs and returned: the caller raises a slot request for it.
+  const missing: { id: string; rel: "input" | "uses" }[] = [];
+  const refsOf = (ids: readonly string[] | undefined, rel: "input" | "uses"): Ref[] => (ids ?? []).flatMap(id => {
     const agents = holders.get(id) ?? [];
     const agent = agents.includes(doc.agent) ? doc.agent : agents[0];
-    if (!agent) { unresolved.push(id); return []; }
+    if (!agent) { missing.push({ id, rel }); return []; }
     return [{ to: `${agent}/${id}` as Ref["to"], rel }];
   });
   const inputs = refsOf(doc.inputs, "input"), uses = refsOf(doc.uses, "uses");
-  if (unresolved.length) return { error: `no consumer slot folder holds ${unresolved.join(", ")}` };
   const made = slotFromV1(doc, { kind, status: stored?.status ?? (options.live ? "live" : "starter"), ia, inputs, uses, createdBy: stored?.createdBy ?? cliActor("clossys ia"), at: stored?.createdAt ?? at });
   const slot: Slot = !stored ? made : {
     ...made,
@@ -685,7 +741,7 @@ function currentSlotWrite(root: string, doc: SlotV1, position: { l1: string; l2:
   };
   const issues = validateSlot(slot);
   if (issues.length) return { error: `the ${SLOT_V2_SCHEMA} file would be invalid: ${issues.slice(0, 5).map(issue => `${issue.path} ${issue.message}`).join("; ")}` };
-  return { bytes: serializeSlot(slot) };
+  return { bytes: serializeSlot(slot), missing };
 }
 
 // ---------------------------------------------------------------- clossys evidence

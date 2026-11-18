@@ -10,7 +10,10 @@
       "type": "array", "minItems": 1,
       "items": {
         "type": "object", "required": ["file", "freeze"], "additionalProperties": false,
-        "properties": { "file": { "type": "string", "minLength": 1 }, "freeze": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] } }
+        "properties": {
+          "file": { "type": "string", "minLength": 1 }, "freeze": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+          "amendments": { "$comment": "separate amendment files to the freeze (owner-signed additions on its signed head)", "type": "array", "items": { "type": "string", "minLength": 1 } }
+        }
       }
     },
     "kinds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },

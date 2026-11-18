@@ -7,8 +7,12 @@
  * existing entry is never overwritten (a colliding id takes the next free suffix).
  * `--via app` (a consumer-built page ran the CLI) also records `--quote`, the owner's words as typed on the page.
  */
+import { join } from "node:path";
 import { danglingReason } from "../check/refs-dangling.js";
+import { isContentAgent, raiseRequest, RequestError, type SlotRequest } from "../records/request.js";
 import { parseRefString, resolveSlot } from "../records/resolve.js";
+import { slotDir, slotFile } from "../records/slot-model/layout.js";
+import { modelExists, readSlotEntry } from "../records/slots.js";
 import type { QueueEntry, Ref } from "../records/types.js";
 import type { Via } from "./answer.js";
 import { createQueueEntry, entryStamp, FeedbackRefused, slugOf } from "./entry.js";
@@ -29,6 +33,27 @@ export { FeedbackRefused };
 
 const isoSeconds = (now: Date): string => now.toISOString().replace(/\.\d{3}Z$/, "Z");
 const blank = (value: string | undefined): boolean => value === undefined || value.trim() === "";
+
+/**
+ * SLOT-CREATE (foundry-build-0048 U5): feedback on a content-agent slot the consumer does not hold (no IA places it and
+ * it has no slot folder) is a slotless need,
+ * so it raises a clossys.queue-entry/2 kind slot from the owner (the owner agent answers reuse or create) instead of a
+ * refusal. Every other ref goes to raiseFeedback.
+ */
+export function raiseFeedbackOrRequest(root: string, input: FeedbackInput, now: Date = new Date()): { entry: QueueEntry } | { request: SlotRequest; created: boolean } {
+  const parsed = parseRefString(input.ref);
+  if (parsed && !blank(input.words) && !parsed.candidate && isContentAgent(parsed.agent)
+    && !readSlotEntry(join(root, "clossys"), parsed.agent, parsed.slotId) && !modelExists(slotFile(slotDir(join(root, "clossys"), parsed.agent, parsed.slotId)))) {
+    if (input.via === "app" && blank(input.quote)) throw new FeedbackRefused("--via app records the owner's words as typed: --quote \"<words>\"");
+    try {
+      return raiseRequest(join(root, "clossys"), { target: `${parsed.agent}/${parsed.slotId}`, from: "owner", why: input.words, source: "feedback", by: "owner", at: isoSeconds(now) });
+    } catch (error) {
+      if (error instanceof RequestError) throw new FeedbackRefused(error.message);
+      throw error;
+    }
+  }
+  return { entry: raiseFeedback(root, input, now) };
+}
 
 export function raiseFeedback(root: string, input: FeedbackInput, now: Date = new Date()): QueueEntry {
   if (blank(input.words)) throw new FeedbackRefused("feedback needs the owner's words");

@@ -1,0 +1,21 @@
+{
+  "schema": "clossys.leaf-freeze/2",
+  "group": "frames",
+  "basis": "foundry-build-0048 U5 SCOPE: membership snapshot of every leaf this tree lists, so the leaf freeze covers every L0; owner signature pending (no signature is claimed)",
+  "signed": null,
+  "leafIds": [
+    "frames.site-shell",
+    "frames.app-shell",
+    "frames.auth-shell",
+    "frames.deck",
+    "frames.document",
+    "frames.site-header",
+    "frames.site-footer",
+    "frames.app-header",
+    "frames.app-sidebar",
+    "frames.inspector",
+    "frames.sheet",
+    "frames.command"
+  ],
+  "amendments": []
+}

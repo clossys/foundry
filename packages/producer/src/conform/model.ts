@@ -19,7 +19,8 @@ export const ADAPTER_SCHEMA = "clossys.conform-adapter/1";
 export interface Adapter {
   readonly schema: typeof ADAPTER_SCHEMA;
   readonly agent: ConformAgent;
-  readonly trees: readonly { readonly file: string; readonly freeze: string | null }[];
+  /** `amendments`: the package's separate amendment files to its freeze (owner-signed additions on the freeze's signed head). */
+  readonly trees: readonly { readonly file: string; readonly freeze: string | null; readonly amendments?: readonly string[] }[];
   readonly kinds: readonly string[];
   readonly defaults: readonly string[];
   readonly recipes: readonly { readonly dir: string; readonly fixture?: { readonly output: string; readonly slot: string } }[];
@@ -146,7 +147,7 @@ function packageSlot(id: string, data: Record<string, unknown>): LiveSlot {
 export function missingPaths(adapter: Adapter, repo: string, packageDir: string): string[] {
   const at = (path: string) => existsSync(join(packageDir, path));
   const declared: [string, boolean][] = [
-    ...adapter.trees.flatMap(tree => [[tree.file, at(tree.file)], ...(tree.freeze ? [[tree.freeze, at(tree.freeze)] as [string, boolean]] : [])] as [string, boolean][]),
+    ...adapter.trees.flatMap(tree => [[tree.file, at(tree.file)], ...(tree.freeze ? [[tree.freeze, at(tree.freeze)] as [string, boolean]] : []), ...(tree.amendments ?? []).map(file => [file, at(file)] as [string, boolean])] as [string, boolean][]),
     ...adapter.defaults.map(dir => [dir, at(dir)] as [string, boolean]),
     ...adapter.recipes.flatMap(recipe => [[recipe.dir, at(recipe.dir)], ...(recipe.fixture ? [[recipe.fixture.output, at(recipe.fixture.output)] as [string, boolean]] : [])] as [string, boolean][]),
     ...adapter.derive.map(entry => [entry.module, at(entry.module)] as [string, boolean]),
@@ -202,6 +203,25 @@ export function refsIn(value: unknown, out: string[] = []): string[] {
   return out;
 }
 
+/**
+ * The leaf ids a freeze holds: its `leafIds` (or `leaves`), then its inline amendments in order (a Writer
+ * `clossys.leaf-freeze/2`: `remove`, then `add`), then each separate amendment file that is owner-signed on the
+ * freeze's own signed head (a Designer `addedLeafIds` file, as its leaf-freeze check reads it). An unsigned or
+ * mismatched amendment file adds nothing.
+ */
+export function frozenIds(freeze: Record<string, unknown>, amendmentFiles: readonly unknown[] = []): string[] {
+  const ids = new Set(strings(freeze.leafIds ?? freeze.leaves));
+  for (const amendment of Array.isArray(freeze.amendments) ? freeze.amendments.filter(object) : []) {
+    for (const id of strings(amendment.remove)) ids.delete(id);
+    for (const id of strings(amendment.add)) ids.add(id);
+  }
+  for (const file of amendmentFiles) {
+    if (!object(file) || file.status !== "owner-signed" || typeof freeze.signedHead !== "string" || file.baseSignedHead !== freeze.signedHead || (file.layer !== undefined && file.layer !== freeze.layer)) continue;
+    for (const id of strings(file.addedLeafIds)) ids.add(id);
+  }
+  return [...ids];
+}
+
 function readSkillHashes(repo: string): Set<string> {
   const doc = json(join(repo, "packages/producer/src/constitution/skill-hashes.json"));
   return new Set(object(doc) && object(doc.skills) ? Object.keys(doc.skills) : []);
@@ -215,7 +235,7 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
   const adapter = issues.length ? undefined : raw as Adapter;
   const trees: PackageTree[] = (adapter?.trees ?? []).map(entry => {
     const freezeDoc = entry.freeze ? json(join(packageDir, entry.freeze)) : undefined;
-    const freezeIds = object(freezeDoc) ? strings(freezeDoc.leafIds ?? freezeDoc.leaves) : [];
+    const freezeIds = object(freezeDoc) ? frozenIds(freezeDoc, (entry.amendments ?? []).map(file => json(join(packageDir, file)))) : [];
     return { ...readTree(entry.file, json(join(packageDir, entry.file))), freeze: entry.freeze ? { file: entry.freeze, exists: freezeDoc !== undefined, ids: freezeIds } : null };
   });
   const agentDir = join(consumer, "agents", agent);
@@ -284,9 +304,9 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
     const inputs = object(action) && Array.isArray(action.inputs) ? action.inputs.filter(object) : [];
     return { id, reads: inputs.map(input => String(input.glob ?? "")) };
   });
-  const requestsDir = join(consumer, "requests");
+  const requestsDir = join(consumer, "agents", "producer", "queue.slot", "entries");
   const requests = existsSync(requestsDir) ? readdirSync(requestsDir).filter(name => name.endsWith(".json")).map(name => json(join(requestsDir, name))).filter(object)
-    .filter(request => typeof request.requestedBy === "string" && request.requestedBy.startsWith(`${agent}/`)) : [];
+    .filter(request => typeof request.from === "string" && request.from.startsWith(`${agent}/`)) : [];
   return {
     agent, packageDir, ...(adapter ? { adapter } : {}), adapterIssues: issues, trees, placedTree, folders, live, defaults,
     packageOnly: trees.flatMap(tree => treeLeaves(tree).filter(id => !live.some(slot => slot.id === id)).map(id => packageSlot(id, tree.slots[id] ?? {}))),
@@ -337,7 +357,7 @@ function readMachinery(repo: string): Machinery {
     const doc = json(join(dir, "index.json"));
     for (const item of object(doc) && Array.isArray(doc.criteria) ? doc.criteria.filter(object) : []) criteria.add(String(item.id));
   }
-  return { rules, loops, slotRequestSchema: existsSync(join(producer, "schemas/slot-request.schema.json")), certifiers, contractSchemas, criteria };
+  return { rules, loops, slotRequestSchema: existsSync(join(producer, "schemas/queue-entry-2.json")), certifiers, contractSchemas, criteria };
 }
 
 /** Reads the whole model: the repo's packages and the consumer's placed records. */

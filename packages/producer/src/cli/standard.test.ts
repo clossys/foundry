@@ -125,7 +125,7 @@ describe("clossys ia --standard", () => {
     const root = workspace();
     expect((await runIaCli(["writer", "--start"], root)).exitCode).toBe(0);
     const contract = join(root, "contract.json");
-    put(contract, JSON.stringify({ summary: "strings home.hero", fixture: { keys: ["title"], locales: ["en"] } }));
+    put(contract, JSON.stringify({ summary: "strings home.hero", fixture: { keys: ["title"], locales: ["en"] }, requirements: [{ check: "text.nonempty" }] }));
     const result = await runIaCli(["writer/home.hero", "--contract", contract, "--under", "copy/hero", "--kind", "strings"], root);
     expect(result.exitCode, result.message).toBe(0);
     return root;

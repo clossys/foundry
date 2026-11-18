@@ -43,6 +43,7 @@ export function unreachableWhen(when: LoopStep["when"], known: KnownSlots): stri
   if (when === undefined) return [];
   const out: string[] = [];
   for (const ref of when.slots ?? []) if (!known.refs.has(ref)) out.push(`slots ${ref}`);
+  for (const agent of when.owner ?? []) if (!["director", "designer", "writer", "publisher"].includes(agent)) out.push(`owner ${agent}`);
   for (const path of when.ia ?? []) {
     if (!known.places.some(place => whenMatches({ ia: [path] }, asSubject(place)))) out.push(`ia ${path}`);
   }

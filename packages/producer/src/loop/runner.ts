@@ -35,12 +35,13 @@ import type { AgentId, Decider, DeciderVerb, Iso, LedgerEntry, LoopStep, LoopVer
 import { RUN_BY, RUN_CLI, entryName, producerVersion, raiseEntry, routeFindings, type Finding, type Raise } from "./route.js";
 import { dependantsOf, fillNames, MissingSkillError, nextFillSlot, readSubject, refOf, skillFor, slotCandidates, slotVars, stepArgv, whenMatches, type SlotSubject } from "./slots.js";
 import {
-  AGENT_PICK_VERB, CANDIDATES_CERTIFIED, CANDIDATE_NAME, ENTRY_NAME, EXIT_CHECKS, LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, OWNER_PICK_RAISE, PUBLICATION_ID, RELEASE_READY, RUN_ID,
+  AGENT_PICK_VERB, CANDIDATES_CERTIFIED, REQUEST_CLOSED, REQUESTS_FILED, CANDIDATE_NAME, ENTRY_NAME, EXIT_CHECKS, LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, OWNER_PICK_RAISE, PUBLICATION_ID, RELEASE_READY, RUN_ID,
   SLOT_REF, TRIGGER_CODE, TRIGGER_KINDS, VERIFIED_CHECKS, ledgerOf, loopStem, type LoopName,
 } from "./names.js";
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { certifiedOptions } from "../constitution/pin-gate.js";
+import { readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
 
 export type Exit = 0 | 1 | 2;
 
@@ -58,6 +59,8 @@ export interface AgentPacket {
   readonly round: number;
   /** The entry that triggered the run (`queue.fix#<id>`), for refine-brief to read the owner's words. */
   readonly from?: string;
+  /** A request run (loop.slot): the clossys.queue-entry/2 kind slot id the agent decides. */
+  readonly request?: string;
 }
 export type AgentOutcome = { readonly exit: Exit; readonly model: string; readonly wrote?: readonly string[]; readonly cli?: string } | "wait";
 
@@ -91,6 +94,8 @@ export interface RunState {
   loop: LoopName;
   version: { candidate: string; ref: string; sha256: string; source: "pin" | "package" };
   subject?: { agent: AgentId; slotId: string };
+  /** A request run (loop.slot): the clossys.queue-entry/2 kind slot entry it answers (clossys/agents/producer/queue.slot/entries/<id>.json). */
+  request?: string;
   publication?: string;
   trigger: { code: string; kind: string; ref?: Ref };
   from?: string;
@@ -123,6 +128,8 @@ export interface StartInput {
   readonly from?: string;
   readonly publication?: string;
   readonly trigger?: string;
+  /** loop.slot: the open request the run answers. */
+  readonly request?: string;
 }
 
 export interface RunResult {
@@ -256,6 +263,9 @@ function triggerOf(loop: LoopName, input: StartInput, subject: SlotSubject | und
   if (loop === "loop.fill") return from ? "T4" : "T2";
   // CREATE and CHOOSE with no entry: a dependant marked needs-refresh (T7), else the slot's starter fill (T2).
   if ((loop === "loop.create" || loop === "loop.choose") && !from) return subject?.slot.status === "needs-refresh" ? "T7" : "T2";
+  // SLOT answers a need for a new L3 (T4), or the owner's feedback on a slot no agent holds (T5).
+  if (loop === "loop.slot") return input.request && !from ? "T4" : "T5";
+  if (loop === "loop.scope") return from ? "T6" : "T4";
   if (from) return from.queue === "queue.fix" && from.createdBy.actor === "owner" ? "T5" : "T6";
   return subject?.slot.status === "needs-refresh" ? "T7" : "T3";
 }
@@ -291,6 +301,14 @@ export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
     subject = slotId ? readSubject(root, agent, slotId) : undefined;
     if (!subject) return { ok: false, reason: `${ref} is not a consumer slot (clossys/agents/${ref}/slot.json, slot/2)` };
   }
+  let request: SlotRequest | undefined;
+  if (input.request !== undefined) {
+    if (needs !== "request") return { ok: false, reason: `${input.loop} takes no --request` };
+    if (!REQUEST_ID.test(input.request)) return { ok: false, reason: `--request ${JSON.stringify(input.request)} is not a request id` };
+    try { request = readRequest(join(root, "clossys"), input.request); } catch (error) { if (error instanceof RequestError) return { ok: false, reason: error.message }; throw error; }
+    if (request.status !== "open") return { ok: false, reason: `--request ${input.request} is ${request.status}; a run answers an open request` };
+  }
+  if (needs === "request" && !request) return { ok: false, reason: `${input.loop} runs for one request: --request <id> (clossys request --list --open)` };
   if (needs === "publication" && !input.publication) return { ok: false, reason: `${input.loop} runs for one publication: --publication <id>` };
   if (needs !== "slot" && input.slot) return { ok: false, reason: `${input.loop} takes no --slot` };
   if (needs !== "slot" && from) {
@@ -302,13 +320,14 @@ export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
   if (!LOOP_TRIGGERS[input.loop].includes(code)) return { ok: false, reason: `trigger ${code} does not start ${input.loop} (it answers ${LOOP_TRIGGERS[input.loop].join(", ")})` };
   if (!version.trigger.includes(code)) return { ok: false, reason: `${load.loaded.ref} does not answer trigger ${code} (it answers ${version.trigger.join(", ")})` };
   const fromRef: Ref | undefined = from ? { to: `producer/${from.queue}` as Ref["to"], record: from.id, rel: "raisedBy" } : undefined;
-  const slug = `${loopStem(input.loop)}-${subject ? subject.slotId.replace(/\./g, "-") : input.publication ?? loopStem(input.loop)}`;
+  const slug = `${loopStem(input.loop)}-${subject ? subject.slotId.replace(/\./g, "-") : request ? targetOf(request)!.need.replace(/[./]/g, "-") : input.publication ?? loopStem(input.loop)}`;
   const state: RunState = {
     schema: "clossys.loop-run/1",
     runId: uniqueRunId(root, input.loop, entryStamp(at), slug),
     loop: input.loop,
     version: { candidate: load.loaded.candidate, ref: load.loaded.ref, sha256: load.loaded.sha256, source: load.loaded.source },
     ...(subject ? { subject: { agent: subject.agent, slotId: subject.slotId } } : {}),
+    ...(request ? { request: request.id } : {}),
     ...(input.publication ? { publication: input.publication } : {}),
     trigger: { code, kind: TRIGGER_KINDS[code]!, ...(fromRef ? { ref: fromRef } : {}) },
     ...(from ? { from: entryName(from) } : {}),
@@ -363,9 +382,26 @@ function subjectOf(ctx: Context): SlotSubject | undefined {
   return ctx.state.subject ? readSubject(ctx.root, ctx.state.subject.agent, ctx.state.subject.slotId) : undefined;
 }
 
+/** A request run's request, read fresh (its decision and proposal change as the run goes). */
+function requestOf(ctx: { readonly root: string; readonly state: RunState }): SlotRequest | undefined {
+  if (!ctx.state.request) return undefined;
+  try { return readRequest(join(ctx.root, "clossys"), ctx.state.request); } catch (error) { if (error instanceof RequestError) return undefined; throw error; }
+}
+const requestOwner = (request: SlotRequest | undefined): AgentId | undefined => request ? targetOf(request)?.agent as AgentId | undefined : undefined;
+/** What a request run asks about: the reused slot or the proposed leaf once the agent decided, else the need. */
+const requestTo = (request: SlotRequest): string | undefined => {
+  const target = targetOf(request)!;
+  if (request.decision === "reuse" && request.reuse) return request.reuse;
+  if (request.proposal) return `${target.agent}/${request.proposal.slot}`;
+  // An L2 home (<agent>/<l1>/<l2>) names no slot yet: ask about the requester's slot.
+  return !target.need.includes("/") ? `${target.agent}/${target.need}` : SLOT_REF.test(request.from) ? request.from : undefined;
+};
+
 function varsOf(ctx: Context, subject: SlotSubject | undefined): Record<string, string> {
+  const request = requestOf(ctx);
   return {
     ...(subject ? slotVars(subject) : {}),
+    ...(request ? { request: request.id, need: request.target, "owner of slot": requestOwner(request)!, agent: requestOwner(request)!, requester: request.from } : {}),
     ...(ctx.state.publication ? { pub: ctx.state.publication } : {}),
     ...ctx.state.vars,
   };
@@ -437,6 +473,20 @@ export function verifyCheck(ctx: { readonly root: string; readonly state: RunSta
     if (ready.status === "fail") return { ok: false, why: `${RELEASE_READY}: ${ready.findings.map(row => `${row.subject} ${row.detail}`).join("; ")}` };
     return { ok: true };
   }
+  if (name === REQUEST_CLOSED) {
+    if (!state.request) return { ok: false, why: `${REQUEST_CLOSED}: the run has no request` };
+    const request = requestOf(ctx);
+    if (!request) return { ok: false, why: `${REQUEST_CLOSED}: clossys/agents/producer/queue.slot/entries/${state.request}.json does not read as a clossys.queue-entry/2 kind slot` };
+    if (request.status !== "closed" || !request.link || !request.notified || !request.closed) return { ok: false, why: `${REQUEST_CLOSED}: ${request.id} is ${request.status}${request.link ? "" : ", with no link"}${request.notified ? "" : ", with no notify event"}` };
+    const [agent, slotId] = request.link.split("/") as [AgentId, string];
+    if (!existsSync(join(root, "clossys", "agents", agent, slotId, "slot.json"))) return { ok: false, why: `${REQUEST_CLOSED}: ${request.id} links ${request.link}, which is no consumer slot` };
+    return { ok: true };
+  }
+  if (name === REQUESTS_FILED) {
+    // The same demand diff `clossys request --scan` files from (records/request.ts slotlessNeeds).
+    const unfiled = unfiledNeeds(join(root, "clossys"));
+    return unfiled.length ? { ok: false, why: `${REQUESTS_FILED}: ${unfiled.length} slotless need(s) not filed: ${unfiled.slice(0, 5).map(need => `${need.from} -> ${need.to}${need.target ? "" : " (no owner)"}`).join("; ")}` } : { ok: true };
+  }
   if (name === CANDIDATES_CERTIFIED) {
     if (!state.subject) return { ok: false, why: `${CANDIDATES_CERTIFIED}: the run has no slot` };
     const { agent, slotId } = state.subject;
@@ -471,7 +521,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     if (state.subject && !subject) return stop(ctx, `${state.subject.agent}/${state.subject.slotId} is no longer a consumer slot`, 2);
     // B9: the step the run waits on (or was raising an entry for) runs, whatever its `when` now says.
     const held = state.waiting?.step === step.id || state.pendingRaise?.step === step.id;
-    if (!held && !whenMatches(step.when, subject)) { state.cursor++; continue; }
+    if (!held && !whenMatches(step.when, subject, requestOwner(requestOf(ctx)))) { state.cursor++; continue; }
     if (!held && ownerPicks(version, step, subject)) { state.cursor++; continue; }
     const vars = varsOf(ctx, subject);
     const filled = stepArgv(step.cli, vars);
@@ -486,7 +536,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     let exit: Exit; let wrote: readonly string[] | undefined; let findings: readonly Finding[] = []; let ledgerDecider: Decider; let cli = filled.text;
     let ran: readonly string[] | undefined;
     if (decider.by === "agent") {
-      const agent = decider.agent === OWNER_OF_SLOT ? subject?.agent : decider.agent;
+      const agent = decider.agent === OWNER_OF_SLOT ? subject?.agent ?? requestOwner(requestOf(ctx)) : decider.agent;
       if (!agent) return stop(ctx, `step ${step.id} names ${OWNER_OF_SLOT}, but ${state.loop} runs for no slot`, 2);
       let skill: string | undefined;
       try { skill = skillFor(root, decider.skill, agent); }
@@ -494,6 +544,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
       const packet: AgentPacket = {
         runId: state.runId, step: step.id, agent, verb: decider.verb, tier: decider.tier, cli: filled.text, round: state.round,
         ...(skill ? { skill } : {}), ...(subject ? { ref: refOf(subject) } : {}), ...(state.from ? { from: state.from } : {}),
+        ...(state.request ? { request: state.request } : {}),
       };
       const outcome = await hooks.agent(packet);
       if (outcome === "wait") {
@@ -728,8 +779,9 @@ async function humanStep(ctx: Context, step: LoopStep, subject: SlotSubject | un
     saveState(root, state);
     return null;
   }
-  const to = subject ? refOf(subject) : state.publication ? `publisher/release.${state.publication}` : undefined;
-  if (!to) return stop(ctx, `step ${step.id} needs a slot or a publication to ask about`, 2);
+  const request = requestOf(ctx);
+  const to = subject ? refOf(subject) : state.publication ? `publisher/release.${state.publication}` : request ? requestTo(request) : undefined;
+  if (!to) return stop(ctx, `step ${step.id} needs a slot, a request or a publication to ask about`, 2);
   let options: QueueEntry["options"];
   let refs: Ref[] | undefined;
   let fallback: string | null = null;
@@ -743,7 +795,9 @@ async function humanStep(ctx: Context, step: LoopStep, subject: SlotSubject | un
     const manifest = release ? state.vars.manifest : undefined;
     const file = manifest ? join(root, "clossys", "agents", to, "candidates", manifest) : undefined;
     if (manifest && file && existsSync(file)) refs = [{ to: `${to}/${manifest}` as Ref["to"], sha256: sha256Hex(readFileSync(file)) as Ref["sha256"], rel: "input" }];
-    options = release
+    options = request
+      ? [{ id: "approve", summary: request.decision === "create" ? `sign the new leaf ${to} under ${request.proposal?.under ?? "its L2"} (request ${request.id})` : `sign the ${request.decision ?? "pending"} answer to request ${request.id}` }, { id: "reject", summary: "leave the request open" }]
+      : release
       ? [{ id: "ready", ...(manifest ? { candidate: manifest as NonNullable<QueueEntry["options"]>[number]["candidate"] } : {}), summary: `mark ${manifest ?? "the manifest"} ready` }, { id: "not-ready", summary: "keep the current ready pin" }]
       : [{ id: "approve", summary: `confirm the agent's pick for ${to}` }, { id: "reject", summary: "keep looking" }];
     fallback = release ? "not-ready" : null;
