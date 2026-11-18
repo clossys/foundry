@@ -21,6 +21,21 @@ describe("layout.* slots select the render engine through one data map", () => {
     expect(LAYOUT_ENGINE_MAP.paged).toEqual(["layout.deck"]);
   });
 
+  it("U19 layouts resolve to their mapped engines", () => {
+    const expected = {
+      "layout.site-page": { engine: "stack", config: "stack.landing" },
+      "layout.admin-home": { engine: "stack", config: "stack.workspace" },
+      "layout.admin-gallery": { engine: "stack", config: "stack.index" },
+      "layout.admin-slot": { engine: "stack", config: "stack.workspace" },
+      "layout.admin-requests": { engine: "stack", config: "stack.index" },
+      "layout.admin-questions": { engine: "stack", config: "stack.index" },
+    } as const;
+    for (const [slot, choice] of Object.entries(expected)) {
+      expect(liveLayouts).toContain(slot);
+      expect(pageLayoutEngine({ layout: `publisher/${slot}` })).toEqual({ slot, ...choice });
+    }
+  });
+
   it("changing a page's layout.* pin changes the engine the page renders with", () => {
     const page = homePage();
     expect(page.layout).toBe("publisher/layout.marketing-home");

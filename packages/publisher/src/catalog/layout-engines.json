@@ -8,6 +8,7 @@
     "layout.contact": { "engine": "stack", "config": "stack.focus" },
     "layout.legal": { "engine": "stack", "config": "stack.document" },
     "layout.site-state": { "engine": "stack", "config": "stack.focus" },
+    "layout.site-page": { "engine": "stack", "config": "stack.landing" },
     "layout.docs-index": { "engine": "stack", "config": "stack.index" },
     "layout.docs-guide": { "engine": "sidebar-content", "config": "sidebar-content.docs" },
     "layout.docs-article": { "engine": "sidebar-content", "config": "sidebar-content.docs" },
@@ -16,7 +17,12 @@
     "layout.app-home": { "engine": "stack", "config": "stack.workspace" },
     "layout.app-list": { "engine": "stack", "config": "stack.index" },
     "layout.app-settings": { "engine": "sidebar-content", "config": "sidebar-content.record" },
-    "layout.app-state": { "engine": "stack", "config": "stack.focus" }
+    "layout.app-state": { "engine": "stack", "config": "stack.focus" },
+    "layout.admin-home": { "engine": "stack", "config": "stack.workspace" },
+    "layout.admin-gallery": { "engine": "stack", "config": "stack.index" },
+    "layout.admin-slot": { "engine": "stack", "config": "stack.workspace" },
+    "layout.admin-requests": { "engine": "stack", "config": "stack.index" },
+    "layout.admin-questions": { "engine": "stack", "config": "stack.index" }
   },
   "paged": ["layout.deck"]
 }
