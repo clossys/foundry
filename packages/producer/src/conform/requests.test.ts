@@ -305,7 +305,7 @@ describe("the request lens on the closure rule, the inputs digest and the strict
     writeFileSync(pinFile, pinBytes);
     // The record's contract gains a field the pinned record lacks; its fresh verdict still stands, so nothing re-judges it.
     requireMissingCopyField(made.root);
-    // A forged close over today's bytes, while the pin no longer certifies (the verdicts, not a judged input): red.
+    // A forged close over today's bytes, while the pin no longer certifies (the scorecard, not a judged input): red.
     writeFileSync(file, `${JSON.stringify({ ...JSON.parse(readFileSync(file, "utf8")), status: "open" })}\n`);
     const reopened = (({ outcome: _o, result: _r, notified: _n, closedAt: _c, closed: _d, ...doc }) => ({ ...doc, events: doc.events.filter((event: { op: string }) => event.op !== "verified" && event.op !== "closed") }))(JSON.parse(readFileSync(file, "utf8")));
     writeFileSync(file, `${JSON.stringify(reopened)}\n`);

@@ -15,7 +15,7 @@
  *
  * Structure and real slot ids only; nothing outside the tmp root is written.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runRequestCli } from "../../cli/request.js";
@@ -97,18 +97,11 @@ function recordPinVerdicts(root: string): void {
   }
 }
 
-/**
- * Makes every recorded verdict of a slot stale: each scorecard row's and each cascade re-verdict's pinSet becomes
- * zeros, so the pinned candidate no longer has a verdict on the pinSet now (constitution/cascade.ts recordedVerdict
- * reads the cascade re-verdict first, and the release world's repins run the cascade).
- */
+/** Makes a slot's scorecard verdicts stale: each row's pinSet becomes zeros, so the pinned candidate is re-judged. */
 export function staleVerdicts(root: string, agent: string, slotId: string): void {
-  for (const [name, key] of [["scorecard.json", "candidates"], ["cascade.json", "verdicts"]] as const) {
-    const file = join(root, ".clossys/checks", agent, slotId, name);
-    if (!existsSync(file)) continue;
-    const doc = JSON.parse(readFileSync(file, "utf8")) as Record<string, { pinSet: string }[]>;
-    writeFileSync(file, `${JSON.stringify({ ...doc, [key]: doc[key]!.map(row => ({ ...row, pinSet: "0".repeat(64) })) })}\n`);
-  }
+  const file = join(root, ".clossys/checks", agent, slotId, "scorecard.json");
+  const doc = JSON.parse(readFileSync(file, "utf8")) as { candidates: { pinSet: string }[] };
+  writeFileSync(file, `${JSON.stringify({ ...doc, candidates: doc.candidates.map(row => ({ ...row, pinSet: "0".repeat(64) })) })}\n`);
 }
 
 /**
