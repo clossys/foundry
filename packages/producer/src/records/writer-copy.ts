@@ -1,6 +1,6 @@
 /**
- * The consumer's pinned Writer copy, read on the Producer side: every record of every pinned Writer
- * `strings.*` candidate whose bytes match its pin, keyed by record id in any namespace the consumer
+ * The consumer's pinned Writer copy, read on the Producer side: every record of every pinned record body of every
+ * Writer copy slot (`writer-copy-slots.ts`: Writer's tree data, never an id prefix) whose bytes match its pin, keyed by record id in any namespace the consumer
  * registers (`studio.<key>`, `site.<key>`, ...), resolved by the Writer's own resolver. This is how the Producer turns a Writer key into text where it writes
  * text itself (the content-map projection, a plain-text response, a frame's title); Studio resolves
  * the same keys in the browser through `studio/lib/studio-copy.ts`.
@@ -17,7 +17,8 @@ import { parseWriterSlotBody } from "@clossys/writer/slot-body";
 import { createCopyResolver } from "@clossys/writer/resolve";
 import { computeCopyFingerprint, COPY_FINGERPRINT_ALGORITHM } from "@clossys/writer";
 import { parseFrontmatter, pinApproved } from "./slot-model/index.js";
-import { candidateStamp, listSlots, readCandidate } from "./slots.js";
+import { candidateStamp, readCandidate } from "./slots.js";
+import { writerCopyPins } from "./writer-copy-slots.js";
 
 /**
  * The shape of a Writer key: `<namespace>.<key>`, lower case, dot or dash joined, in any namespace.
@@ -46,15 +47,15 @@ type Values = Readonly<Record<string, string | number | boolean>>;
 const cache = new Map<string, { key: string; stamp: string; copy: WriterCopy }>();
 
 /**
- * Every Writer key that more than one pinned `strings.*` slot records (source locale), with the slots that
+ * Every Writer key that more than one pinned Writer copy slot records (source locale), with the slots that
  * record it, sorted. One slot owns a key: `writerCopy` refuses a duplicate, and `owner.wiring` uses this to fail
  * an owner option whose answer would create one. Unreadable or drifted candidates are left to `writerCopy`.
  */
 export function writerCopyDuplicates(consumer: string): { id: string; slots: string[] }[] {
   const holders = new Map<string, string[]>();
-  for (const entry of listSlots(consumer, "writer").filter(entry => entry.pin && entry.id.startsWith("strings."))) {
+  for (const { entry, pin } of writerCopyPins(consumer)) {
     let bytes: string;
-    try { bytes = readCandidate(consumer, "writer", entry.id, entry.pin!.candidate).bytes; } catch { continue; }
+    try { bytes = readCandidate(consumer, "writer", entry.id, pin.candidate).bytes; } catch { continue; }
     const parsed = parseFrontmatter(bytes);
     if (!parsed.ok) continue;
     const locales = parsed.value.fields.locales as readonly string[];
@@ -72,10 +73,10 @@ export function writerCopyDuplicates(consumer: string): { id: string; slots: str
 
 /** The pinned Writer copy of one consumer (`<root>/clossys`). */
 export function writerCopy(consumer: string): WriterCopy {
-  const pinned = listSlots(consumer, "writer").filter(entry => entry.pin && entry.id.startsWith("strings."));
-  const key = pinned.map(entry => `${entry.id}@${entry.pin!.sha256}#${entry.pin!.basis}`).join("|");
+  const pinned = writerCopyPins(consumer);
+  const key = pinned.map(({ entry, pin }) => `${entry.id}/${pin.candidate}@${pin.sha256}#${pin.basis}`).join("|");
   // An unstampable candidate is never served from cache: the full read below raises its real error.
-  const stamps = pinned.map(entry => { try { return candidateStamp(consumer, "writer", entry.id, entry.pin!.candidate); } catch (error) { return { unreadable: error }; } });
+  const stamps = pinned.map(({ entry, pin }) => { try { return candidateStamp(consumer, "writer", entry.id, pin.candidate); } catch (error) { return { unreadable: error }; } });
   const stamp = stamps.map(row => typeof row === "string" ? row : "-").join("|");
   const hit = cache.get(consumer);
   if (hit?.key === key && hit.stamp === stamp && stamps.every(row => typeof row === "string")) return hit.copy;
@@ -84,13 +85,13 @@ export function writerCopy(consumer: string): WriterCopy {
   const approvedIds = new Set<string>();
   const seen = new Set<string>();
   let locale: string | undefined;
-  for (const entry of pinned) {
-    const candidate = readCandidate(consumer, "writer", entry.id, entry.pin!.candidate);
-    if (candidate.sha256 !== entry.pin!.sha256) throw new Error(`Writer copy: ${entry.id} candidate drifted from its pin`);
+  for (const { entry, pin } of pinned) {
+    const candidate = readCandidate(consumer, "writer", entry.id, pin.candidate);
+    if (candidate.sha256 !== pin.sha256) throw new Error(`Writer copy: ${entry.id} candidate drifted from its pin`);
     const parsed = parseFrontmatter(candidate.bytes);
     if (!parsed.ok) throw new Error(`Writer copy: ${entry.id} candidate has no frontmatter`);
     const locales = parsed.value.fields.locales as readonly string[];
-    const approved = pinApproved(entry.pin!.basis);
+    const approved = pinApproved(pin.basis);
     locale ??= locales[0];
     for (const row of parseWriterSlotBody(parsed.value.body, locales)) {
       if (row.locale !== locale || typeof row.record.text !== "string") continue;
@@ -99,7 +100,7 @@ export function writerCopy(consumer: string): WriterCopy {
       if (approved) approvedIds.add(row.record.id);
       entries.push(approved
         ? { id: row.record.id, text: row.record.text, context: row.record.context, status: "approved",
-            approval: { approvedBy: "owner", approvedAt: entry.pin!.at, textFingerprint: computeCopyFingerprint(row.record.text), fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM } }
+            approval: { approvedBy: "owner", approvedAt: pin.at, textFingerprint: computeCopyFingerprint(row.record.text), fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM } }
         : { id: row.record.id, text: row.record.text, context: row.record.context, status: "draft" });
     }
   }

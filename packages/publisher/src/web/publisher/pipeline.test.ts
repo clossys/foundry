@@ -166,7 +166,7 @@ describe("pack pipeline evidence", () => {
   it.each(["format", "layout", "frame"] as const)("projects LK16 %s findings into Layout", path => {
     const f = instanceFixture();
     const registries = { ...f.registries, formats: f.registries.formats.map(format => format.id === f.binding.format ? {
-      ...format, ...(path === "layout" ? { allowedCompositions: ["layouts.split" as const] } : {}),
+      ...format, ...(path === "layout" ? { allowedCompositions: ["split" as const] } : {}),
       ...(path === "frame" ? { frames: ["frames.app-shell" as const] } : {}),
     } : format) };
     const binding = { ...f.binding, ...(path === "format" ? { format: "email.html" } : {}) } as InstanceBinding;
@@ -199,7 +199,7 @@ it("changes the effective binding without mutating source inputs or losing origi
   const f = instanceFixture();
   f.binding.layout.config = "stack.default";
   const before = structuredClone(f.binding);
-  const settings = { ...productionSettingsFromBinding(f.binding), layout: { leaf: "layouts.stack" as const, config: "stack.landing" } };
+  const settings = { ...productionSettingsFromBinding(f.binding), layout: { leaf: "stack" as const, config: "stack.landing" } };
   const item = derivePackPipeline([f.binding], f.library, f.registries, undefined, { [f.binding.instanceId]: settings }).items[0]!;
   expect(item.binding.layout.config).toBe("stack.landing");
   expect(item.sourceBinding.layout.config).toBe("stack.default");

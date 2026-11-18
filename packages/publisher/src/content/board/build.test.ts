@@ -4,12 +4,12 @@ import { leafRegistryFixture, reviewFixture } from "../__fixtures__/review.js";
 import { stageEvidence } from "../__fixtures__/stage-engine.js";
 import type { ContentRegistry } from "../model.js";
 import { STAGE_STATUSES } from "../stages.js";
-import { CONTENT_TREE, loadContentTree } from "../taxonomy.js";
+import { loadContentTree } from "../taxonomy.js";
 import type { ContentTree } from "../taxonomy.js";
 import { buildPublisherBoard } from "./build.js";
 
 const stages = ["define", "assemble", "review", "approve", "publish"] as const;
-function copy(registry: ContentRegistry, tree: ContentTree = CONTENT_TREE): CopyField[] {
+function copy(registry: ContentRegistry, tree: ContentTree = registry.workspace.tree): CopyField[] {
   const keys = ["board.title", "board.canvas", "board.instructions", "board.empty", "board.no-candidate", "columns.slot", "columns.candidate",
     ...stages.map(key => `stages.${key}`), ...STAGE_STATUSES.map(key => `statuses.${key}`),
     ...tree.nodes.flatMap(node => [`tree.${node.id}`, ...node.children.map(child => `tree.${node.id}.${child.id}`)]),
@@ -80,7 +80,7 @@ describe("buildPublisherBoard", () => {
   it("does not mutate any input, including arrays sorted for presentation", () => {
     const registry = reviewFixture();
     const evidence = [stageEvidence(registry.candidates[0]!)];
-    const input = { registry, tree: CONTENT_TREE, locale: "en", copy: copy(registry), evidence };
+    const input = { registry, tree: registry.workspace.tree, locale: "en", copy: copy(registry), evidence };
     const before = JSON.stringify(input);
     buildPublisherBoard(input);
     expect(JSON.stringify(input)).toBe(before);

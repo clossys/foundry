@@ -8,7 +8,7 @@ import { projectOutline, projectToc, projectNavigation, projectCommands, project
 import { projectPageOutline } from "../../content/taxonomy.js";
 
 const copy = adminCopyFixture();
-const publication = { id: "catalog", mainSlot: "body", frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "layouts.stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: "example", medium: "web" as const }, packIds: [] };
+const publication = { id: "catalog", mainSlot: "body", frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: "example", medium: "web" as const }, packIds: [] };
 const skeleton = { l0: [{ id: "records", label: { id: "strings.admin.group.writer.strings" }, count: 0, estimate: 120, l1: [] }] };
 function fixture() {
   const config = structuredClone(examples[1]!);

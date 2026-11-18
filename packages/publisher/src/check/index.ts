@@ -11,3 +11,4 @@ export {
   PUBLISHER_TREES, designerPackageDir, loadDefaults, loadDesignerCatalog, reservedSlugs, slotContract,
   type CandidateFile, type DesignerCatalog, type LayoutSlot, type PageSlot, type SlotContract,
 } from "../catalog/ia/tree.js";
+export { LAYOUT_ENGINE_MAP, checkLayoutEngineMap, layoutEngineFor, pageLayoutEngine, type LayoutEngineChoice, type LayoutEngineMap } from "../engines/layout-slots.js";

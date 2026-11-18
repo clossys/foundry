@@ -5,7 +5,7 @@ import { checkPublisherIACoverage } from "./check.js";
 import { loadPublisherIAInput, publisherPackageRoot } from "./load.js";
 import type { LoadOptions } from "./load.js";
 
-export const usage = "node <publisher>/dist/content/node.js ia-coverage --out ia-coverage.json [--registry ContentRegistry.json] [--libraries ReviewLibrarySnapshot[].json] [--evidence CandidateStageEvidence[].json] [--designer-catalog path] [--writer-catalog path]";
+export const usage = "node <publisher>/dist/content/node.js ia-coverage --out ia-coverage.json [--registry ContentRegistry.json] [--membership SlotMembership.json] [--libraries ReviewLibrarySnapshot[].json] [--evidence CandidateStageEvidence[].json] [--designer-catalog path] [--writer-catalog path]";
 const within = (path: string, root: string): boolean => { const difference = relative(root, path); return difference === "" || (!difference.startsWith(`..${sep}`) && difference !== ".." && !difference.startsWith(sep)); };
 /** Resolve existing ancestors so a symlink cannot turn a report write into a source write. */
 function physical(path: string): string {
@@ -21,15 +21,15 @@ export async function mainIACoverage(argv: readonly string[]): Promise<Publisher
     const flags = new Map<string, string>();
     for (let index = 0; index < argv.length; index += 2) {
       const key = argv[index]!, value = argv[index + 1];
-      if (!["--out", "--registry", "--libraries", "--evidence", "--designer-catalog", "--writer-catalog"].includes(key) || flags.has(key) || !value || value.startsWith("--")) throw new TypeError("Expected unique check options with a file/directory value");
+      if (!["--out", "--registry", "--membership", "--libraries", "--evidence", "--designer-catalog", "--writer-catalog"].includes(key) || flags.has(key) || !value || value.startsWith("--")) throw new TypeError("Expected unique check options with a file/directory value");
       flags.set(key, value);
     }
     if (!flags.has("--out")) throw new TypeError("--out is required; catalogs are never report destinations");
-    const options: LoadOptions = { registry: flags.get("--registry"), libraries: flags.get("--libraries"), evidence: flags.get("--evidence"), designerCatalog: flags.get("--designer-catalog"), writerCatalog: flags.get("--writer-catalog") };
+    const options: LoadOptions = { registry: flags.get("--registry"), membership: flags.get("--membership"), libraries: flags.get("--libraries"), evidence: flags.get("--evidence"), designerCatalog: flags.get("--designer-catalog"), writerCatalog: flags.get("--writer-catalog") };
     const out = physical(resolve(flags.get("--out")!));
     const sourceRoots = ["src", "dist", "../designer/src", "../designer/dist", "../writer/src", "../writer/dist"].map(path => resolve(publisherPackageRoot, path))
       .concat([options.designerCatalog, options.writerCatalog].filter((path): path is string => !!path)).map(path => physical(resolve(path)));
-    if (sourceRoots.some(root => within(out, root)) || [options.registry, options.evidence, options.libraries].some(path => path && physical(resolve(path)) === out)) throw new TypeError("Report output must not replace source/catalog/check inputs");
+    if (sourceRoots.some(root => within(out, root)) || [options.registry, options.membership, options.evidence, options.libraries].some(path => path && physical(resolve(path)) === out)) throw new TypeError("Report output must not replace source/catalog/check inputs");
     if (existsSync(out)) {
       const prior: unknown = JSON.parse(readFileSync(out, "utf8"));
       if (!prior || typeof prior !== "object" || !("kind" in prior) || prior.kind !== "publisher-ia-coverage") throw new TypeError("Only a previous IA report may be replaced");

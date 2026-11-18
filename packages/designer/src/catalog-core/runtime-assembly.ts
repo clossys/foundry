@@ -31,10 +31,12 @@ export interface RuntimeAssemblyBinding {
   /** Canonical body references, retained in exact runtime evidence. */
   readonly body?: CompositionBody<{ readonly slot: string; readonly index: number }>;
 }
+/** A layout leaf is a bare engine name (stack, split, sidebar-content): never a dotted Section, Frame or retired layouts.* id. */
+const LAYOUT_LEAF = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 export interface RuntimeLayoutDescriptor {
   readonly library: string;
   readonly fill: string;
-  readonly leaf: `layouts.${string}`;
+  readonly leaf: string;
   readonly config: string;
   readonly members: Readonly<Record<string, string>>;
   readonly slots: readonly { readonly id: string; readonly min: number; readonly max: number; readonly accepts: readonly `sections.${string}`[] }[];
@@ -188,7 +190,7 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
         if(runtimeHash(measurement.runtime!.renderer)!==runtimeHash(descriptor.renderer)||runtimeHash(measurement.compiled)!==runtimeHash(descriptor.renderer.source))fail("refused","S7 runtime compiled closure differs");
       }
     }
-    if (!binding.id?.trim() || layout && (layout.library !== profile.consumer || !layout.fill?.trim() || !layout.leaf.startsWith("layouts.") || !layout.config?.trim())) fail("refused", "foreign or missing layout/binding identity");
+    if (!binding.id?.trim() || layout && (layout.library !== profile.consumer || !layout.fill?.trim() || !LAYOUT_LEAF.test(layout.leaf ?? "") || !layout.config?.trim())) fail("refused", "foreign or missing layout/binding identity");
     if (layout && runtimeSourceFindings(layout.renderer).length) fail("refused", "layout source binding invalid");
     if (layout && (typeof input.layout?.render !== "function" || typeof input.layout?.expectedOrder !== "function")) fail("pending", "layout render and order ports required");
     if (input.runner && runtimeSourceFindings(input.runner).length) fail("refused", "runner source binding invalid");

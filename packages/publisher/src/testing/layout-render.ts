@@ -7,8 +7,8 @@ import { checkInstance } from "../core/instance-binding.check.js";
 import type { ConsumerInstanceLibrary, FlowInstanceBinding as InstanceBinding, InstanceCheckResult, InstanceRegistries, LayoutRendererSource, SectionFill } from "../core/instance-binding.js";
 import type { LayoutCompilerPort } from "../core/layout-source.js";
 import { planFlowStage } from "../core/flow-stage.js";
-import { getEffectiveLayoutContract } from "../layouts/resolve.js";
-import type { EffectivePageLayoutContract } from "../layouts/resolve.js";
+import { getEffectiveLayoutContract } from "../engines/resolve.js";
+import type { EffectivePageLayoutContract } from "../engines/resolve.js";
 import type { BreakpointValues } from "../core/flow-stage.js";
 import { withLayoutBrowser } from "./layout-render.browser.js";
 import type { LayoutMeasurement } from "./layout-render.browser.js";
@@ -69,7 +69,7 @@ function snapshot<T>(input: T): T {
 function widths(binding: InstanceBinding, contract: EffectivePageLayoutContract, values: BreakpointValues): number[] {
   const addresses = contract.reflow.map(step => step.at);
   // Stack also changes its measure at the sm screen, outside its column reflow.
-  if (binding.layout.leaf === "layouts.stack") addresses.push("sm");
+  if (binding.layout.leaf === "stack") addresses.push("sm");
   const result = new Set([320]);
   let previous = 0;
   for (const address of addresses) {
@@ -83,8 +83,8 @@ function widths(binding: InstanceBinding, contract: EffectivePageLayoutContract,
 function expectedOrder(binding: InstanceBinding, contract: EffectivePageLayoutContract, width: number, values: BreakpointValues): string[] {
   const members = { ...Object.fromEntries(Object.entries(contract.members).map(([key, allowed]) => [key, allowed[0]])), ...contract.memberValues };
   let slots = contract.slots.map(slot => slot.id);
-  if (binding.layout.leaf === "layouts.split") slots = members.collapse === "end-first" ? ["lead", "end", "start"] : ["lead", "start", "end"];
-  if (binding.layout.leaf === "layouts.sidebar-content") {
+  if (binding.layout.leaf === "split") slots = members.collapse === "end-first" ? ["lead", "end", "start"] : ["lead", "start", "end"];
+  if (binding.layout.leaf === "sidebar-content") {
     const wide = contract.reflow.some(step => width >= values[step.at]!);
     const before = wide ? members.side === "start" : members["stacked-aside"] === "before";
     slots = before ? ["lead", "aside", "main"] : ["lead", "main", "aside"];
@@ -178,7 +178,7 @@ export async function checkLayoutRender(binding: InstanceBinding, library: Consu
     const snapshotLibrary: ConsumerInstanceLibrary = { ...library, resolveFill: (leaf, config) => leaf === binding.layout.leaf && config === binding.layout.config ? { ...resolved, renderer: source } : snapshot(library.resolveFill(leaf, config)), resolveContent: reference => snapshot(library.resolveContent(reference)) };
     staticResult = checkInstance(binding, snapshotLibrary, registries, toolkit.compiler);
     if (staticResult.staticStatus !== "valid") return finish("refused", ["Instance static checks refused rendering"]);
-    const contract = getEffectiveLayoutContract(registries.layouts.find(leaf => leaf.id === binding.layout.leaf)!, binding.layout.config, binding.layout.members);
+    const contract = getEffectiveLayoutContract(registries.layouts.find(leaf => leaf.engine === binding.layout.leaf)!, binding.layout.config, binding.layout.members);
     stage = "consumer breakpoint measurements";
     requiredWidths = widths(binding, contract, options.breakpointValues);
     stage = "section content preparation";
@@ -197,8 +197,8 @@ export async function checkLayoutRender(binding: InstanceBinding, library: Consu
       for (const width of requiredWidths) {
         stage = `browser measurement at ${width}px`;
         const props = { config: binding.layout.config, members: binding.layout.members, stage: planFlowStage(binding.layout.leaf, binding.layout.config, binding.layout.members, width, options.breakpointValues),
-          ...(binding.layout.leaf === "layouts.bento" && binding.fills.tiles?.some(fill => fill.span !== undefined) ? { spans: binding.fills.tiles.map(fill => fill.span) } : {}),
-          ...(binding.layout.leaf === "layouts.sidebar-content" ? { asideSections: binding.fills.aside?.map(fill => fill.section) ?? [] } : {}) };
+          ...(binding.layout.leaf === "bento" && binding.fills.tiles?.some(fill => fill.span !== undefined) ? { spans: binding.fills.tiles.map(fill => fill.span) } : {}),
+          ...(binding.layout.leaf === "sidebar-content" ? { asideSections: binding.fills.aside?.map(fill => fill.section) ?? [] } : {}) };
         const payload = JSON.stringify({ slots, props });
         let observation: LayoutMeasurement;
         try { observation = await browser.measure(width, options.css, bundle, payload); }

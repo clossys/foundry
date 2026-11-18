@@ -42,7 +42,7 @@ function assembly(host: unknown, calls: { path: string; host: boolean }[]): Runt
     identity: { kind: "artifact", name: "l9 manifest assembly", sha256: runtimeHash(packages) }, engine, contracts,
     ports: { manifest, renderers: Object.fromEntries(manifest.fills.map(fill => [fill.renderer.id, record])), resolveContent: (reference: RuntimeContentRef) => ({ reference, value: reference.ref, hash: runtimeHash(reference.ref) }), ...(host === undefined ? {} : { frameHost: host }) },
     binding: { id: "l9-host", frame: select(frame), frameSlots: {}, sections: { body: [select(section)] } },
-    layout: { descriptor: { library: engine.library.source.id, fill: "l9/layout", leaf: "layouts.stack", config: "single", members: {}, slots: [{ id: "body", min: 1, max: 1, accepts: [section!.leaf as `sections.${string}`] }], breakpoints: [], states: ["default"], renderer: frame!.renderer }, render: ({ slots }) => slots.body!.join(""), expectedOrder: (_cell, paths) => paths.body! },
+    layout: { descriptor: { library: engine.library.source.id, fill: "l9/layout", leaf: "stack", config: "single", members: {}, slots: [{ id: "body", min: 1, max: 1, accepts: [section!.leaf as `sections.${string}`] }], breakpoints: [], states: ["default"], renderer: frame!.renderer }, render: ({ slots }) => slots.body!.join(""), expectedOrder: (_cell, paths) => paths.body! },
     themes: ["light"], states: ["default"], css: [{ id: "explicit", contents: "/* explicit */" }], assets: [],
   } as unknown as RuntimeAssemblyInput<string>;
 }

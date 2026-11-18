@@ -2,8 +2,8 @@
  * Publisher-owned sidecar: which page formats each Designer section slot may
  * be placed on. Designer owns the section contract; Publisher owns the
  * substrate, so the compatibility rule lives here and never edits Designer
- * files. The key set must equal Designer's `sections` slot ids (pinned by a
- * catalog-parity test); package extension sections are classed in
+ * files. The key set must equal Designer's live `sections` slot ids, its
+ * retired ids excluded (pinned by a catalog-parity test); package extension sections are classed in
  * `extensions.ts` and resolve through the same lookup.
  */
 import { EXTENSION_SECTION_CLASSES } from "./extensions.js";
@@ -23,30 +23,14 @@ export const SECTION_CLASS_FORMATS: Readonly<Record<SectionClass, readonly PageF
 
 /** Designer section slot id → Publisher section class. */
 export const SECTION_CLASSES: Readonly<Record<string, SectionClass>> = Object.freeze({
-  "sections.specimen-swatch": "specimen",
-  "sections.specimen-color-ramp": "specimen",
-  "sections.specimen-type-ladder": "specimen",
-  "sections.specimen-spacing-ladder": "specimen",
-  "sections.specimen-radius-ladder": "specimen",
-  "sections.specimen-motion-player": "specimen",
-  "sections.specimen-asset-grid": "specimen",
-  "sections.specimen-icon-grid": "specimen",
-  "sections.specimen-variant-matrix": "specimen",
-  "sections.specimen-section-viewports": "specimen",
-  "sections.specimen-frame-viewports": "specimen",
-  "sections.specimen-rich-passage": "specimen",
-  "sections.specimen-copy-in-context": "specimen",
-  "sections.specimen-page-viewports": "specimen",
   "sections.access-matrix": "data",
   "sections.account-summary": "data",
   "sections.activity-feed": "data",
   "sections.article": "long-form",
   "sections.audit-log": "data",
   "sections.band": "display",
-  "sections.boundary-message": "utility",
   "sections.call-to-action": "display",
   "sections.candidate-preview": "data",
-  "sections.cards": "display",
   "sections.chat": "interactive",
   "sections.column-mapper": "interactive",
   "sections.comparison": "display",
@@ -63,13 +47,9 @@ export const SECTION_CLASSES: Readonly<Record<string, SectionClass>> = Object.fr
   "sections.form": "interactive",
   "sections.gallery": "display",
   "sections.hero": "display",
-  "sections.legal-prose": "long-form",
   "sections.link-index": "long-form",
   "sections.logo-cloud": "display",
-  "sections.logo-hero": "display",
-  "sections.logo-mark": "display",
   "sections.media": "display",
-  "sections.newsletter": "interactive",
   "sections.notices": "utility",
   "sections.page-header": "utility",
   "sections.pagination": "utility",
@@ -77,7 +57,6 @@ export const SECTION_CLASSES: Readonly<Record<string, SectionClass>> = Object.fr
   "sections.pricing": "display",
   "sections.question-packet": "data",
   "sections.queue-list": "data",
-  "sections.record-detail": "data",
   "sections.resource-list": "data",
   "sections.section-header": "display",
   "sections.sectioned-document": "long-form",

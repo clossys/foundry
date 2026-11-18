@@ -67,7 +67,7 @@ function assembly(sectionLeaves: readonly string[], overrides: Readonly<Record<s
     } },
     binding,
     layout: {
-      descriptor: { library: engine.library.source.id, fill: "wave-one/layout", leaf: "layouts.stack", config: "single", members: {}, slots: [{ id: "body", min: 1, max: sectionLeaves.length, accepts: sectionLeaves as `sections.${string}`[] }], breakpoints: [], states: ["default"], renderer: frame.renderer },
+      descriptor: { library: engine.library.source.id, fill: "wave-one/layout", leaf: "stack", config: "single", members: {}, slots: [{ id: "body", min: 1, max: sectionLeaves.length, accepts: sectionLeaves as `sections.${string}`[] }], breakpoints: [], states: ["default"], renderer: frame.renderer },
       render: ({ slots }) => <>{slots.body}</>, expectedOrder: (_cell, paths) => paths.body!,
     },
     themes: ["light"], states: ["default"], css,

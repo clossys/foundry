@@ -3,11 +3,11 @@ import type { RouteSourceExport, RouteRegistration } from "../core/route-registr
 import type { InstanceRegistries } from "../core/instance-binding.js";
 import type { CopyRef } from "@clossys/writer";
 import { publisherValueRef } from "../web/publisher/value-names.js";
-import { getEffectiveLayoutContract, freeze } from "../layouts/resolve.js";
+import { getEffectiveLayoutContract, freeze } from "../engines/resolve.js";
 import type { FormatId } from "../formats/contract.js";
 import { recommendPlanItem, validateItemRecommendation } from "./configuration.js";
 import type { PublisherConfiguration, PublisherRecommendation, PublisherConfigurationOverride } from "./configuration.js";
-import type { LayoutId } from "../layouts/ids.js";
+import type { EngineKey } from "../engines/keys.js";
 import { MILESTONE_IDS, PUBLISHER_MENU, PUBLISHER_MENU_VERSION, PUBLISHER_PACKS } from "./menu.js";
 import type { MilestoneId, PublisherDisplayNeed, PublisherPlanLane, PublisherPlanPackId } from "./menu.js";
 
@@ -36,7 +36,7 @@ export interface PublisherPlanItem {
   readonly completeRoute?: PublisherCompleteRoutePlan;
   readonly assetId?: string;
   readonly format?: FormatId;
-  readonly layout?: { readonly leaf: LayoutId; readonly config: string };
+  readonly layout?: { readonly leaf: EngineKey; readonly config: string };
   readonly frame?: { readonly leaf: `frames.${string}`; readonly config?: string };
 }
 export interface PublisherPlanPack { readonly id: PublisherPlanPackId; readonly items: readonly PublisherPlanItem[] }
@@ -116,7 +116,7 @@ export function validatePublisherPlan(plan: PublisherPlanDraft, registries: Inst
           if ("completeRoute" in item) add(path, "Complete page plan registration is retired; use a consumer region page");
           if (item.layout) {
             if (!fields(item.layout, ["leaf", "config"])) add(path, "Unknown layout fields");
-            try { getEffectiveLayoutContract(registries.layouts.find(leaf => leaf.id === item.layout!.leaf)!, item.layout.config); }
+            try { getEffectiveLayoutContract(registries.layouts.find(leaf => leaf.engine === item.layout!.leaf)!, item.layout.config); }
             catch { add(path, "Unknown or unavailable layout/config"); }
           }
           const format = item.format !== undefined ? registries.formats.find(leaf => leaf.id === item.format) : undefined;

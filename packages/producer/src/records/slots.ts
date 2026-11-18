@@ -533,6 +533,17 @@ export function readPin(consumer: string, agent: SlotAgent, id: string): PinDoc 
     return readPinAt(locate(consumer, agent, id).dir);
   });
 }
+/** Every pinned record of a slot: a pin map's records in record order, or the single pin; none when unpinned or invalid. */
+export function readPins(consumer: string, agent: SlotAgent, id: string): PinDoc[] {
+  return withSlotReadScope(() => {
+    const path = pinFile(locate(consumer, agent, id).dir);
+    assertModelPath(path);
+    if (!fsExists(path)) return [];
+    const parsed = parseJson(readBytes(path));
+    if (!parsed.ok || validatePin(parsed.value, path).length) return [];
+    return pinRecords(parsed.value);
+  });
+}
 
 /**
  * Git access for pin history. Studio asks for the history of every slot page it serves (a

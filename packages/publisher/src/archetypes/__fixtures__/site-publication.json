@@ -9,9 +9,9 @@
       { "id": "contact", "order": 1, "title": "example.site.nav-contact", "kind": "page", "path": "/contact", "pin": { "nav": true },
         "source": { "frameId": "frames.site-shell", "sectionIds": ["sections.page-header", "sections.form"] } },
       { "id": "terms", "order": 2, "title": "example.site.nav-terms", "kind": "page", "path": "/terms",
-        "source": { "frameId": "frames.site-shell", "sectionIds": ["sections.legal-prose"] } },
+        "source": { "frameId": "frames.site-shell", "sectionIds": ["sections.article"] } },
       { "id": "privacy", "order": 3, "title": "example.site.nav-privacy", "kind": "page", "path": "/privacy",
-        "source": { "frameId": "frames.site-shell", "sectionIds": ["sections.legal-prose"] } }
+        "source": { "frameId": "frames.site-shell", "sectionIds": ["sections.article"] } }
     ]
   },
   "routePack": {
@@ -29,8 +29,8 @@
         { "section": "sections.page-header", "config": "contact.header" },
         { "section": "sections.form", "config": "contact.form" }
       ] },
-      { "instanceId": "terms", "path": "/terms", "slots": [{ "section": "sections.legal-prose", "config": "legal.terms" }] },
-      { "instanceId": "privacy", "path": "/privacy", "slots": [{ "section": "sections.legal-prose", "config": "legal.privacy" }] }
+      { "instanceId": "terms", "path": "/terms", "slots": [{ "section": "sections.article", "config": "legal.terms" }] },
+      { "instanceId": "privacy", "path": "/privacy", "slots": [{ "section": "sections.article", "config": "legal.privacy" }] }
     ]
   },
   "sectionBindings": [
@@ -42,8 +42,8 @@
     { "sectionId": "sections.call-to-action", "configId": "home.closing", "fields": [{ "key": "header.heading", "ref": { "id": "example.home.closing-heading" } }] },
     { "sectionId": "sections.page-header", "configId": "contact.header", "fields": [{ "key": "title", "ref": { "id": "example.contact.title" } }] },
     { "sectionId": "sections.form", "configId": "contact.form", "fields": [{ "key": "submit.label", "ref": { "id": "example.contact.submit" } }] },
-    { "sectionId": "sections.legal-prose", "configId": "legal.terms", "fields": [{ "key": "heading", "ref": { "id": "example.legal.terms-heading" } }] },
-    { "sectionId": "sections.legal-prose", "configId": "legal.privacy", "fields": [{ "key": "heading", "ref": { "id": "example.legal.privacy-heading" } }] }
+    { "sectionId": "sections.article", "configId": "legal.terms", "fields": [{ "key": "heading", "ref": { "id": "example.legal.terms-heading" } }] },
+    { "sectionId": "sections.article", "configId": "legal.privacy", "fields": [{ "key": "heading", "ref": { "id": "example.legal.privacy-heading" } }] }
   ],
   "pageCopy": {
     "home": { "meta-title": "example.home.meta-title", "meta-description": "example.home.meta-description", "nav-label": "example.site.nav-home" },

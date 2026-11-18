@@ -196,26 +196,6 @@
       "entryId": "admin.designer.item",
       "sections": [
         {
-          "id": "details",
-          "label": {
-            "id": "strings.admin.item.details"
-          },
-          "estimate": 200,
-          "fill": {
-            "section": "sections.record-detail",
-            "content": {
-              "fields": {
-                "kind": "records",
-                "ref": "admin.designer/item/fields"
-              },
-              "status": {
-                "kind": "copy",
-                "ref": "admin.designer/item/status"
-              }
-            }
-          }
-        },
-        {
           "id": "preview",
           "label": {
             "id": "strings.admin.column.preview"
@@ -443,26 +423,6 @@
       "entryId": "admin.writer.item",
       "sections": [
         {
-          "id": "details",
-          "label": {
-            "id": "strings.admin.item.details"
-          },
-          "estimate": 200,
-          "fill": {
-            "section": "sections.record-detail",
-            "content": {
-              "fields": {
-                "kind": "records",
-                "ref": "admin.writer/item/fields"
-              },
-              "status": {
-                "kind": "copy",
-                "ref": "admin.writer/item/status"
-              }
-            }
-          }
-        },
-        {
           "id": "locales",
           "label": {
             "id": "strings.admin.item.locales"
@@ -689,26 +649,6 @@
     "item": {
       "entryId": "admin.publisher.item",
       "sections": [
-        {
-          "id": "details",
-          "label": {
-            "id": "strings.admin.item.details"
-          },
-          "estimate": 200,
-          "fill": {
-            "section": "sections.record-detail",
-            "content": {
-              "fields": {
-                "kind": "records",
-                "ref": "admin.publisher/item/fields"
-              },
-              "status": {
-                "kind": "copy",
-                "ref": "admin.publisher/item/status"
-              }
-            }
-          }
-        },
         {
           "id": "sections",
           "label": {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import data from "./tree.json" with { type: "json" };
+import { contentTreeFixture } from "./__fixtures__/content-tree.js";
 import { loadContentTree, isContentL2 } from "./taxonomy.js";
 import { checkSlotLeafFreeze } from "./leaf-freeze.js";
 import { leafRegistryFixture, reviewFixture } from "./__fixtures__/review.js";
@@ -19,7 +19,7 @@ describe("regrouping independently of leaf membership and approval", () => {
     const digest = computeContentDigest(candidate);
     const approval = structuredClone(candidate.approval);
     expect(checkContentActivation(registry)).toEqual([]);
-    const editable = structuredClone(data);
+    const editable = { schemaVersion: 1, nodes: contentTreeFixture().nodes.map(node => ({ ...node, children: node.children.map(child => ({ ...child })) })) };
     const app = editable.nodes[0]!.children.find(child => child.id === "app")!;
     app.id = "application"; app.label = "Application pages";
     editable.nodes[0]!.children.reverse();
@@ -29,7 +29,9 @@ describe("regrouping independently of leaf membership and approval", () => {
     expect(isContentL2("websites", "app", tree)).toBe(false);
     expect(validateContentRegistry(moved, tree)).toEqual([]);
     expect(moved.slots.map(slot => slot.id)).toEqual(ids);
-    expect(checkSlotLeafFreeze(moved.slots)).toEqual([]);
+    // Membership against a caller-supplied record of the fixture's own identities; Publisher reads no freeze of its own.
+    const freeze = { schemaVersion: 1, layer: "slots", scope: "leaf-membership-only", policy: "regrouping is not membership", signedHead: null, ownerSignoffComment: "fixture sign-off" };
+    expect(checkSlotLeafFreeze(moved.slots, { ...freeze, leafIds: [...ids].sort() })).toEqual([]);
     expect(computeContentDigest(moved.candidates[0]!)).toBe(digest);
     expect(moved.candidates[0]!.approval).toEqual(approval);
     expect(checkContentActivation(moved)).toEqual([]);

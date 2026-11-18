@@ -4,7 +4,6 @@ import type { ContentFinding, ResolveCopyOptions } from "./composition.js";
 import { buildLocaleRoutePlan, localePathFor } from "./hreflang.js";
 import type { LocaleRouteOptions } from "./hreflang.js";
 import type { CandidateContent, ContentSlot } from "./model.js";
-import { CONTENT_TREE } from "./taxonomy.js";
 import type { ContentTree } from "./taxonomy.js";
 
 /** Canonical URLs are slot workflow metadata, outside candidate revision content. */
@@ -17,7 +16,7 @@ export function isCanonicalUrl(value: unknown): value is string {
 }
 
 /** Console routes stay private to search; explicit policy governs other slots. */
-export function robotsFor(slot: ContentSlot, tree: ContentTree = CONTENT_TREE): "index" | "noindex" {
+export function robotsFor(slot: ContentSlot, tree: ContentTree): "index" | "noindex" {
   if (adminPageForRoute(slot.route) !== undefined) return "noindex";
   if (slot.meta?.robots !== undefined) return slot.meta.robots;
   const child = tree.nodes.find(node => node.id === slot.l1)?.children.find(node => node.id === slot.l2);
@@ -55,7 +54,7 @@ function hasLocaleOptions(options: PageMetadataOptions): options is ResolveCopyO
   return ["workspace", "manifest", "bodyServedLocales", "existingUrls"].some(key => key in options);
 }
 
-export function checkPageMetadata(slot: ContentSlot, candidate: CandidateContent, tree: ContentTree = CONTENT_TREE, options: PageMetadataOptions = {}): ContentFinding[] {
+export function checkPageMetadata(slot: ContentSlot, candidate: CandidateContent, tree: ContentTree, options: PageMetadataOptions = {}): ContentFinding[] {
   const findings: ContentFinding[] = [...validateCopyFields(candidate.pageMeta ?? [], "content.pageMeta", PAGE_META_FIELDS)];
   const appendLocaleFindings = (): ContentFinding[] => {
     if (hasLocaleOptions(options)) findings.push(...buildLocaleRoutePlan(slot, options).findings);

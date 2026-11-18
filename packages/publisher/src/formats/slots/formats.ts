@@ -5,8 +5,8 @@ export const formatLeaves = [
     id: "web.page.responsive", medium: "screen", family: "web-page", label: "Responsive web page", status: "built", outputType: "html",
     deliveries: [{ id: "static-site-bundle", label: "Static site bundle", status: "concept-only" }],
     size: { kind: "responsive", breakpoints: ["sm", "md", "lg", "xl", "2xl"] },
-    arrangement: "page", allowedCompositions: ["layouts.stack", "layouts.split", "layouts.sidebar-content", "layouts.bento"],
-    heldCompositions: ["layouts.staggered-grid"], frames: ["frames.site-shell", "frames.app-shell"], usedByPacks: [],
+    arrangement: "page", allowedCompositions: ["stack", "split", "sidebar-content", "bento"],
+    heldCompositions: ["staggered-grid"], frames: ["frames.site-shell", "frames.app-shell"], usedByPacks: [],
   },
   {
     id: "email.html", medium: "email", family: "message", label: "HTML email", status: "concept", outputType: "html",

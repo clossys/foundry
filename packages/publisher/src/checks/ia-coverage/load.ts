@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CONTENT_TREE } from "../../content/taxonomy.js";
+import { workspaceTree } from "../../content/validate.js";
 import { FORMAT_IA, FORMAT_LEAVES, checkFormatRegistry } from "../../formats/index.js";
 import type { ContentRegistry } from "../../content/model.js";
 import type { CandidateStageEvidence } from "../../content/stage-engine.js";
@@ -23,27 +23,32 @@ const strings = (value: unknown) => Array.isArray(value) ? value.filter((entry):
 const id = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
 const files = (path: string): string[] => existsSync(path) ? readdirSync(path, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name)).flatMap(entry =>
   entry.isDirectory() ? files(join(path, entry.name)) : entry.isFile() && entry.name.endsWith(".json") ? [join(path, entry.name)] : []) : [];
-export interface LoadOptions { registry?: string; evidence?: string; libraries?: string; designerCatalog?: string; writerCatalog?: string }
+export interface LoadOptions { registry?: string; membership?: string; evidence?: string; libraries?: string; designerCatalog?: string; writerCatalog?: string }
 
 /** Source catalogs are registrations, never a substitute for a live consumer library or registry. */
 export function loadPublisherIAInput(options: LoadOptions = {}): CoverageInput {
-  const input: CoverageInput = { contentTree: CONTENT_TREE, declaredSlots: [], formatTree: FORMAT_IA, formats: FORMAT_LEAVES,
+  // Publisher ships neither a content tree nor a slot membership: both are the consumer's (the signed
+  // src/content/slots.leaf-freeze.json lists only retired slot ids and is kept as a record with no readers).
+  const input: CoverageInput = { contentTree: { schemaVersion: 1, nodes: [] }, declaredSlots: [], formatTree: FORMAT_IA, formats: FORMAT_LEAVES,
     designer: [], writer: [], libraries: [], evidence: [], edges: [], needs: [], unavailable: [], diagnostics: [], inputHashes: {} };
   const read = (path: string, label: string): unknown => {
     const bytes = readFileSync(path); input.inputHashes![label] = createHash("sha256").update(bytes).digest("hex");
     return JSON.parse(bytes.toString("utf8")) as unknown;
   };
-  const freeze = [join(publisherPackageRoot, "src/content/slots.leaf-freeze.json"), join(publisherPackageRoot, "dist/content/slots.leaf-freeze.json")].find(path => existsSync(path));
-  if (!freeze) throw new TypeError("Publisher slot membership snapshot is unavailable");
-  const membership = read(freeze, "publisher/slots.leaf-freeze.json");
-  if (!object(membership) || !Array.isArray(membership.leafIds) || !membership.leafIds.every(id)) throw new TypeError("Invalid Publisher slot membership snapshot");
-  input.declaredSlots = membership.leafIds as string[];
+  if (options.membership) {
+    const membership = read(resolve(options.membership), "input/membership.json");
+    if (!object(membership) || !Array.isArray(membership.leafIds) || !membership.leafIds.every(id)) throw new TypeError("Invalid consumer slot membership");
+    input.declaredSlots = membership.leafIds as string[];
+  } else input.needs.push("No consumer slot membership supplied. Publisher declares no slot membership of its own; missing slots are not reported without one.");
   if (options.registry) {
     const registry = read(resolve(options.registry), "input/registry.json");
     if (!object(registry) || !object(registry.workspace)) throw new TypeError("Registry requires a workspace, slots and candidates");
     rows(registry.slots, "Registry slots"); rows(registry.candidates, "Registry candidates");
     input.registry = registry as unknown as ContentRegistry;
-  } else input.needs.push("No consumer ContentRegistry supplied. Frozen slot membership has no placement/route records; observed missing slots do not establish deployed host absence. No fixture is loaded.");
+    const tree = workspaceTree(registry.workspace);
+    if (tree) input.contentTree = tree;
+    else input.needs.push("The supplied ContentRegistry workspace has no valid content tree; every registered slot placement is outside the tree.");
+  } else input.needs.push("No consumer ContentRegistry supplied. Slot membership has no placement/route records; observed missing slots do not establish deployed host absence. No fixture is loaded.");
   if (options.evidence) input.evidence = rows(read(resolve(options.evidence), "input/evidence.json"), "Candidate evidence") as unknown as CandidateStageEvidence[];
   else input.needs.push("No executed candidate-stage evidence supplied. Missing proof remains Waiting; candidate state labels do not establish checked/approved.");
   if (options.libraries) input.libraries = rows(read(resolve(options.libraries), "input/libraries.json"), "Consumer libraries") as unknown as ReviewLibrarySnapshot[];

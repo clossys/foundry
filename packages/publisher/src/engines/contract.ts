@@ -1,5 +1,5 @@
 import type { TailwindBreakpoint } from "@clossys/designer/catalog";
-import type { ArrangementModel, LayoutId } from "./ids.js";
+import type { EngineKey } from "./keys.js";
 
 export type SectionLeafId = `sections.${string}`;
 export type LayoutSpan = "1x1" | "2x1" | "1x2" | "2x2";
@@ -34,33 +34,15 @@ export interface PageLayoutContract {
   readonly allowedReads: readonly LayoutRead[];
   readonly requiresSection?: { readonly container: "adaptive" };
 }
-export interface LayoutLeaf {
-  readonly id: LayoutId;
-  readonly layer: "layouts";
+/** A render engine: an internal primitive keyed by its engine key, with no slot identity, layer or pin. */
+export interface LayoutEngine {
+  readonly engine: EngineKey;
   readonly contract: PageLayoutContract;
   readonly requires: readonly string[];
   readonly status: "draft" | "stable" | "held" | "deprecated";
 }
-export interface LayoutIA {
-  readonly layer: "layouts";
-  /** The shipped legacy tree is retired in place (foundry-build-0036, audit P10): layouts.* are retired leaves. */
-  readonly retired?: { readonly retiredAt: string; readonly decidedBy: string; readonly reason: string };
-  readonly nodes: readonly {
-    readonly id: ArrangementModel;
-    readonly label: string;
-    readonly children: readonly {
-      readonly id: string;
-      readonly label: string;
-      readonly leaves: readonly LayoutId[];
-    }[];
-  }[];
-}
-export interface RetiredLayout {
-  readonly replacedBy: LayoutId;
-  readonly config?: string;
-}
 export interface LayoutFinding {
-  readonly code: "id" | "contract" | "section" | "config" | "ia" | "retired";
+  readonly code: "id" | "contract" | "section" | "config";
   readonly subject: string;
   readonly message: string;
 }

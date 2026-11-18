@@ -3,6 +3,7 @@ import type { CopyResolver } from "@clossys/writer";
 import { checkPageMetadata } from "../metadata.js";
 import { reviewCandidate } from "./index.js";
 import { resnapshot, reviewInput } from "./__fixtures__/review.js";
+import { contentTreeFixture } from "../__fixtures__/content-tree.js";
 
 function referencedInput() {
   const input = reviewInput();
@@ -82,7 +83,7 @@ describe("Review Writer references", () => {
       { key: "description", locale: "en", source: "writer" as const, ref: { id: "meta.description" } },
     ] };
     const metaResolver: CopyResolver = ref => ({ ref, text: "Metadata", recordId: ref.id, entryId: ref.id, revision: "1", locale: "de", servedLocale: "de", chain: [ref.locale!, "de"], source: { kind: "consumer", reference: "copy-fixture" } });
-    expect(checkPageMetadata({ ...input.registry.slots[0]!, locales: ["en"] }, candidate, undefined, { resolver: metaResolver }).length).toBeGreaterThan(0);
+    expect(checkPageMetadata({ ...input.registry.slots[0]!, locales: ["en"] }, candidate, contentTreeFixture(), { resolver: metaResolver }).length).toBeGreaterThan(0);
   });
 
   it("compares the full pinned CopyRef identity including argument values", () => {

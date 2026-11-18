@@ -63,7 +63,7 @@ function assembly({ body, values = {}, sectionHosts, seen = [] }: Options): Runt
       ...(sectionHosts ? { sectionHosts } : {}),
     },
     binding: { id: "section-channels", frame: { leaf: FRAME, fill: fillId(FRAME), config: null, members: [], content: required(FRAME) }, frameSlots: {}, sections: { body: sections } },
-    layout: { descriptor: { library: engine.library.source.id, fill: "section-channels/layout", leaf: "layouts.stack", config: "single", members: {}, slots: [{ id: "body", min: 1, max: sections.length, accepts: sections.map(row => row.leaf as `sections.${string}`) }], breakpoints: [], states: ["default"], renderer: frame.renderer }, render: ({ slots }) => slots.body!.join("|"), expectedOrder: (_cell, paths) => paths.body! },
+    layout: { descriptor: { library: engine.library.source.id, fill: "section-channels/layout", leaf: "stack", config: "single", members: {}, slots: [{ id: "body", min: 1, max: sections.length, accepts: sections.map(row => row.leaf as `sections.${string}`) }], breakpoints: [], states: ["default"], renderer: frame.renderer }, render: ({ slots }) => slots.body!.join("|"), expectedOrder: (_cell, paths) => paths.body! },
     themes: ["light"], states: ["default"], css: [{ id: "explicit", contents: "/* explicit */" }], assets: [],
   } as unknown as RuntimeAssemblyInput<string>;
 }

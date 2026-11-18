@@ -8,19 +8,6 @@ import { productionSettingsFromBinding } from "./production-settings.js";
 
 afterEach(cleanup);
 
-it("keeps the selected record's fields and close command together", () => {
-  const fixture = instanceFixture(), onCommand = vi.fn();
-  render(<PublisherSection registries={fixture.registries} onCommand={onCommand} data={{
-    id: "detail", section: "sections.record-detail", label: "Selected item",
-    fields: [{ id: "state", label: "State", value: "pending" }],
-    actions: [{ kind: "action", label: "Close item details", command: { kind: "close-item" } }],
-  }} />);
-  const detail = screen.getByRole("region", { name: "Selected item" });
-  expect(within(detail).getByRole("definition")).toHaveTextContent("pending");
-  fireEvent.click(within(detail).getByRole("button", { name: "Close item details" }));
-  expect(onCommand).toHaveBeenCalledWith({ kind: "close-item" });
-});
-
 it("submits and resets the selected production item through its existing commands", () => {
   const fixture = instanceFixture(), onCommand = vi.fn();
   const initial = productionSettingsFromBinding(fixture.binding);

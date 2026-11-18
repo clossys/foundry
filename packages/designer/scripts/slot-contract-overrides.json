@@ -32,7 +32,7 @@
     "sections.specimen-page-viewports": { "purpose": "Studio specimen that renders a whole page at several viewport widths side by side." },
     "sections.pagination": { "purpose": "Pagination control for a list or table: previous and next, page position and total, in pages, load-more or cursor mode." },
     "sections.logo-hero": { "purpose": "Brand band that shows the logo mark large beside the product or company name." },
-    "sections.page-header": { "purpose": "Top of an inner page: title, optional eyebrow and description, breadcrumbs, up to two actions and meta label-value pairs." },
+    "sections.page-header": { "purpose": "Top of an inner page: title, optional eyebrow and description, breadcrumbs, up to two actions and meta label-value pairs.", "references": ["tailark-oss/mist-features-1", "shadcn/breadcrumb"] },
     "sections.logo-mark": { "purpose": "Band that shows the brand mark alone on the section ground." },
     "sections.content": { "purpose": "General content band: optional header, a body of paragraphs and lists, optional media, a footnote and an aside of label-value pairs, stacked or split." },
     "sections.article": { "purpose": "Long-form article: header, a typographic body of text blocks and an optional table of contents." },

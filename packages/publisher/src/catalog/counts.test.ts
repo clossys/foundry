@@ -151,8 +151,9 @@ describe("starters resolve against the live Designer catalog", () => {
 
   it("mutation: a layout naming a retired Designer section fails", () => {
     const layout = clone(slotContract("layout.legal") as LayoutSlot) as { roles: Record<string, { kinds: string[] }> };
-    layout.roles.body!.kinds = ["designer/sections.legal-prose"];
-    expect(checkLayoutUnits("layout.legal", layout as LayoutSlot, designer)).toEqual(["layout.legal: role body kind designer/sections.legal-prose is retired"]);
+    const retiredSection = [...designer.retired].filter(id => id.startsWith("sections.")).sort()[0]!;
+    layout.roles.body!.kinds = [`designer/${retiredSection}`];
+    expect(checkLayoutUnits("layout.legal", layout as LayoutSlot, designer)).toEqual([`layout.legal: role body kind designer/${retiredSection} is retired`]);
   });
 
   it("mutation: a layout on a frame Designer does not have fails", () => {
