@@ -10,10 +10,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { runCli } from "../cli/main.js";
 import { runReleaseCli } from "../cli/release.js";
 import { PRODUCER_ROOT } from "../package-path.js";
-import { clock, releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
+import { clock, geographyBrief, releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
 import { buildCandidateHeader, candidatePath, serializeCandidate } from "../records/candidate.js";
 import { cliActor } from "../records/pin.js";
-import { positionIa } from "../records/slot.js";
 import { readSlotEntry, readiness } from "../records/slots.js";
 import { applyRecut, planRecut, recutCandidateBytes } from "../migrate/recut.js";
 import { checkSlotModel } from "../records/slot-check.js";
@@ -177,24 +176,21 @@ describe("a target-format candidate is judged by the target rules", () => {
     const world = make();
     const now = clock();
     const consumer = join(world.root, "clossys");
-    // The slot reader (slots.ts, and the check's slot resolve) places publisher slots by int2 IA nodes: the world's
-    // publisher ia.json gains them (release.site, then page.home), and each slot.json takes the ia of its position.
-    const ia = JSON.parse(world.read("clossys/agents/publisher/ia.json"));
-    world.write("clossys/agents/publisher/ia.json", `${JSON.stringify({
-      ...ia, source: "workspace#owner", extensions: [],
-      nodes: [{ id: "releases", label: "Releases", children: [{ id: "site", label: "Site", slots: ["release.site"] }] }, { id: "pages", label: "Pages", children: [{ id: "site", label: "Site", slots: ["page.home"] }] }],
-    }, null, 2)}\n`);
-    const place = (id: string, l1: string, order: number, edit: (slot: Record<string, unknown>) => Record<string, unknown> = slot => slot) => {
+    // The world places every slot in its agent's IA (release.site under releases/site, page.home under pages/site), each
+    // slot.json at the ia of its position. `place` keeps that ia and edits the rest of a slot.json.
+    const place = (id: string, edit: (slot: Record<string, unknown>) => Record<string, unknown>) => {
       const rel = `clossys/agents/publisher/${id}/slot.json`;
-      world.write(rel, `${JSON.stringify(edit({ ...JSON.parse(world.read(rel)), ia: positionIa(id, { l1, l2: "site", order }) }), null, 2)}\n`);
+      world.write(rel, `${JSON.stringify(edit(JSON.parse(world.read(rel))), null, 2)}\n`);
     };
-    place("release.site", "releases", 0);
-    place("page.home", "pages", 1);
     const findings = (message: string) => message.split("\n").filter(line => /^\s+agents\//.test(line));
     const before = await runCli(["check", "--root", world.root], world.root);
     expect((await release(world, "--build", now)).exitCode).toBe(0);
+    // The candidate findings before any release step: release --manifest and the ready-pin add none.
+    const baseline = rows(world);
     const manifest = await release(world, "--manifest", now);
     expect(manifest.exitCode, manifest.message).toBe(0);
+    // Every input pin of the world went through the CHOOSE gate (pinGate, its scorecard) and the cascade: none is
+    // legacy, so the gates below pass on the real certifier's verdicts, and nothing here records a verdict by hand.
     // The manifest alone: clossys check gains no finding at all.
     const written = await runCli(["check", "--root", world.root], world.root);
     expect(written.exitCode, written.message).toBeLessThanOrEqual(before.exitCode);
@@ -203,7 +199,8 @@ describe("a target-format candidate is judged by the target rules", () => {
     const name = (manifest.output as { wrote: string[] }).wrote[0]!.split("/").pop()!;
     const pinned = await runCli(["pin", "publisher/release.site", name, "--by", `owner:${world.signoff(now)}`, "--root", world.root], world.root);
     expect(pinned.exitCode, pinned.message).toBe(0);
-    expect(rows(world)).toEqual([]);
+    expect(rows(world)).toEqual(baseline);
+    expect(rows(world).filter(row => row.includes("release.site"))).toEqual([]);
     const after = await runCli(["check", "--root", world.root], world.root);
     // After the pin: no new finding at all, the clossys.pin/2 pin.json that `clossys pin` wrote included.
     expect(JSON.parse(world.read("clossys/agents/publisher/release.site/pin.json"))).toMatchObject({ schema: "clossys.pin/2", candidate: name });
@@ -215,17 +212,19 @@ describe("a target-format candidate is judged by the target rules", () => {
     expect(candidateIssues(releaseRead, "publisher", "release.site", name, manifestBytes)).toEqual([]);
     // Through slots.ts itself: page.home takes the release as an input, and inputBlocker reads the clossys.pin/2
     // pin.json `clossys pin` wrote, through to the candidate verdict at :740, and clears.
-    place("page.home", "pages", 1, slot => ({ ...slot, refs: [...(slot.refs as unknown[]), { to: "publisher/release.site", rel: "input" }] }));
+    place("page.home", slot => ({ ...slot, refs: [...(slot.refs as unknown[]), { to: "publisher/release.site", rel: "input" }] }));
     expect(readSlotEntry(consumer, "publisher", "release.site")).toBeDefined();
     expect(readiness(consumer, "publisher", "page.home")).toEqual({ ready: true, blockedBy: [] });
   });
 
-  it("passes the release world's Writer JSON record, Director brief and Designer content, and a Designer SVG", () => {
+  it("passes a Writer JSON record, the release world's Director brief, Designer content and a Designer SVG", () => {
     const world = make();
-    expect(rows(world)).toEqual([]);
+    // The world's own candidates come in through the submit verb (writeCandidate), in the shape it validates; the
+    // target rules are judged here on target-format files beside them.
+    expect(judge(world, "director/focus.reach.geography", "geography-v3.md", geographyBrief("en, fr").body)).toEqual([]);
     expect(judge(world, "designer/sections.hero", "hero-v2.svg", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><rect width="1" height="1"/></svg>')).toEqual([]);
     expect(judge(world, "writer/sections.hero.copy", "home.hero-v2.json", { fields: { "header.heading": { en: "a", fr: "b" } } }, { record: "home.hero" })).toEqual([]);
-    expect(judge(world, "director/focus.reach.geography", "geography-v2.md", "## Language\nen, fr\n")).toEqual([]);
+    expect(judge(world, "director/focus.reach.geography", "geography-v2.md", "## Direction\n- Language: en, fr\n")).toEqual([]);
     expect(judge(world, "designer/sections.hero", "hero-v3.json", { placeholder: 3 }, { source: { kind: "package-default", ref: [] } })).toEqual([]);
   });
 

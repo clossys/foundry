@@ -13,10 +13,12 @@ clossys:
   rationale: []
 ---
 
-## Where
+## Direction
+- Where:
+- Not-yet:
+- Why:
+- Language:
 
-## Not-yet
+## Because
 
-## Why
-
-## Language
+## Watch

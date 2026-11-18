@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Promise
+## Direction
+- Promise:
+- For:
+- Versus:
 
-## For
+## Because
 
-## Versus
+## Watch

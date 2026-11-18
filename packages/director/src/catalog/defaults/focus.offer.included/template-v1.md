@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Offer
+## Direction
+- Offer:
+- Outcome:
+- Form:
 
-## Outcome
+## Because
 
-## Form
+## Watch

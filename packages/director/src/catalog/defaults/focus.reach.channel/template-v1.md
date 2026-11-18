@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Primary
+## Direction
+- Primary:
+- Secondary:
+- Not:
 
-## Secondary
+## Because
 
-## Not
+## Watch

@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Partner
+## Direction
+- Partner:
+- Gives:
+- Risk:
 
-## Gives
+## Because
 
-## Risk
+## Watch

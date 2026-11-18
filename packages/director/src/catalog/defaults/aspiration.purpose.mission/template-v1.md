@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Do
+## Direction
+- Do:
+- For:
+- Why:
 
-## For
+## Because
 
-## Why
+## Watch

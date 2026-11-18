@@ -63,6 +63,8 @@ export interface PinCheck {
   readonly current: string;
   /** Where the recorded verdict is. */
   readonly from?: "cascade" | "scorecard";
+  /** Legacy only: a verdict is recorded for this candidate name on other bytes (the file changed after it was judged). */
+  readonly bytesChanged?: true;
 }
 
 const checksDir = (root: string, agent: string, slotId: string) => join(root, ".clossys", "checks", agent, slotId);
@@ -109,6 +111,13 @@ export function recordedVerdict(root: string, slot: Pick<SlotRecord, "agent" | "
   return scored ? { pinSet: scored.pinSet, certified: scored.certified, from: "scorecard" } : undefined;
 }
 
+/** Whether a verdict is recorded for the candidate's name with a different sha256: its bytes changed after the verdict. */
+export function verdictOnOtherBytes(root: string, slot: Pick<SlotRecord, "agent" | "id">, candidate: Pick<CandidateRecord, "name" | "sha256">): boolean {
+  const scorecard = readJson(scorecardPath(root, slot.agent, slot.id));
+  const rows = [...(readReverdict(root, slot.agent, slot.id)?.verdicts ?? []), ...(Array.isArray(scorecard?.candidates) ? scorecard!.candidates as unknown[] : [])];
+  return rows.some(item => isObject(item) && item.candidate === candidate.name && typeof item.sha256 === "string" && item.sha256 !== candidate.sha256);
+}
+
 /** The pinned candidates of a slot: its single pin, or each record of its pin map. */
 export function pinnedEntries(slot: SlotRecord): { candidate: CandidateRecord; record?: string }[] {
   const single = pinnedOf(slot);
@@ -125,7 +134,8 @@ export function pinChecks(ctx: ConstitutionContext, env: CertifyEnv = certifyEnv
       const current = pinSetOf({ slot, candidate }, env);
       const recorded = recordedVerdict(ctx.root, slot, candidate);
       const state: PinState = !recorded ? "legacy" : recorded.pinSet !== current ? "stale" : recorded.certified ? "fresh" : "failed";
-      out.push({ slot, candidate, ...(record !== undefined ? { record } : {}), state, current, ...(recorded ? { recorded: recorded.pinSet, from: recorded.from } : {}) });
+      const bytesChanged = !recorded && verdictOnOtherBytes(ctx.root, slot, candidate);
+      out.push({ slot, candidate, ...(record !== undefined ? { record } : {}), state, current, ...(recorded ? { recorded: recorded.pinSet, from: recorded.from } : {}), ...(bytesChanged ? { bytesChanged: true as const } : {}) });
     }
   }
   return out;

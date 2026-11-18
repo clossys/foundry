@@ -7,7 +7,7 @@
  * - `ia/strategy.json`: L0 layers, L1 nodes, L2 children, slot labels and marks, the default forbid list.
  * - `cells/strategy.json`: each slot's question and mustContain keys, and the slots it reads (`links`).
  * - `retired.json`: ids that never return as live slots.
- * - `defaults/<slot-id>/template-v1.md`: one template per starter slot, the keys with no answers.
+ * - `defaults/<slot-id>/template-v1.md`: one template per starter slot, the brief shape with its keys unanswered.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import type { DirectorContract, DirectorL0, DirectorRetired, DirectorSlot, DirectorSlotMark } from "../../types.js";
@@ -29,6 +29,8 @@ export type DirectorTreeRule =
 export interface DirectorTreeIssue { rule: DirectorTreeRule; path: string; message: string }
 
 export const TEMPLATE_FILE = "template-v1.md";
+/** The brief body sections, in order (the Producer brief validator's shape). */
+export const BRIEF_SECTIONS = ["Direction", "Because", "Watch"] as const;
 const L0_IDS: readonly DirectorL0[] = ["strategy", "roadmap", "execution"];
 const ISO = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$/;
 
@@ -139,7 +141,9 @@ export function checkDirectorTree(tree: DirectorTree): DirectorTreeIssue[] {
 
 /**
  * A package template passes its own slot checks when its header is the package-default candidate/1 header of that
- * slot, and its body is one empty `## <Key>` section per mustContain key, in order: the keys with no answers.
+ * slot, and its body is the brief shape with no answers: `## Direction` holding one empty `- <Key>:` line per
+ * mustContain key, in order, then an empty `## Because` and an empty `## Watch`. A key that lists values (such as
+ * focus.reach.geography's Language, the release locales) is answered on its one line, comma-separated.
  */
 export function checkTemplate(slot: DirectorSlot, text: string, packageVersion: string): string[] {
   const problems: string[] = [];
@@ -169,11 +173,18 @@ export function checkTemplate(slot: DirectorSlot, text: string, packageVersion: 
   const allowed = new Set(["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "refs", "slot", "source", "rationale"]);
   for (const key of Object.keys(header)) if (!allowed.has(key)) problems.push(`header ${key} is not a package-default field`);
   const sections = body.split(/^## /m);
-  if (sections[0]!.trim() !== "") problems.push("text before the first key section");
+  if (sections[0]!.trim() !== "") problems.push("text before ## Direction");
   const keys = slot.brief?.mustContain.map(item => item.key) ?? [];
   const headings = sections.slice(1).map(section => section.split("\n")[0]!.trim());
-  if (headings.join("|") !== keys.join("|")) problems.push(`sections [${headings.join(", ")}] must be the mustContain keys [${keys.join(", ")}] in order`);
-  for (const section of sections.slice(1)) if (section.split("\n").slice(1).join("\n").trim() !== "") problems.push(`section ${section.split("\n")[0]!.trim()} must stay unanswered`);
+  if (headings.join("|") !== BRIEF_SECTIONS.join("|")) return [...problems, `sections [${headings.join(", ")}] must be ## ${BRIEF_SECTIONS.join(", ## ")}`];
+  const [direction = "", ...rest] = sections.slice(1).map(section => section.split("\n").slice(1).join("\n").trim());
+  const keyLines = direction ? direction.split("\n").map(line => line.trim()) : [];
+  const named = keyLines.map(line => /^- ([^:]+):(.*)$/.exec(line));
+  if (named.some(match => !match)) problems.push("## Direction holds only \"- <Key>:\" lines");
+  const found = named.flatMap(match => match ? [match[1]!.trim()] : []);
+  if (found.join("|") !== keys.join("|")) problems.push(`## Direction keys [${found.join(", ")}] must be the mustContain keys [${keys.join(", ")}] in order`);
+  for (const match of named) if (match && match[2]!.trim() !== "") problems.push(`key ${match[1]!.trim()} must stay unanswered`);
+  for (const [i, text] of rest.entries()) if (text !== "") problems.push(`section ${BRIEF_SECTIONS[i + 1]} must stay unanswered`);
   return problems;
 }
 
@@ -185,6 +196,7 @@ export function renderTemplate(slot: DirectorSlot, packageVersion: string, creat
     ["refs", []], ["slot", `director/${slot.id}`], ["source", { kind: "package-default", ref: [] }], ["rationale", []],
   ];
   const front = header.map(([key, value]) => `  ${key}: ${JSON.stringify(value).replace(/":/g, "\": ").replace(/,"/g, ", \"")}`).join("\n");
-  const body = (slot.brief?.mustContain ?? []).map(item => `## ${item.key}\n`).join("\n");
+  const keys = (slot.brief?.mustContain ?? []).map(item => `- ${item.key}:\n`).join("");
+  const body = `## Direction\n${keys}\n## Because\n\n## Watch\n`;
   return `---\nclossys:\n${front}\n---\n\n${body}`;
 }

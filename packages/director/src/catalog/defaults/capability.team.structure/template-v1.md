@@ -13,6 +13,10 @@ clossys:
   rationale: []
 ---
 
-## Decides
+## Direction
+- Decides:
+- Rhythm:
 
-## Rhythm
+## Because
+
+## Watch
