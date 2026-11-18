@@ -68,6 +68,30 @@ export function adminPlan(root: string): AdminPlan {
   return { pages, publication: ADMIN_PUBLICATION_SLOT, root: starter.root };
 }
 
+/** The consumer-side contract `clossys ia` places for one admin page (free-form besides its fixture and requirements). */
+function pageContract(page: AdminPage): Record<string, unknown> {
+  return {
+    kind: "page", publication: "admin", route: page.route, package: `publisher/${page.id}`, layout: `publisher/${page.layout}`,
+    frame: "required", sections: "ordered", meta: "required", composes: page.uses.map(id => `designer/${id}`),
+    ...(page.dataBound.length ? { reads: { access: "read-only", sections: page.dataBound, binding: "declared requirement: the data-bound section contract and its runtime binding are not built yet" } } : {}),
+    ...(page.route.includes("<") ? { routeFormat: "declared requirement: a dynamic route page format is not built yet" } : {}),
+    requirements: [{ check: "page.assembled" }], fixture: { route: { path: page.sample } },
+  };
+}
+
+/**
+ * The one contract `clossys init` writes for admin slot `id` (a page or the admin publication) and
+ * `publisher.admin-seated` holds the seat to, key for key.
+ */
+export function adminContract(plan: AdminPlan, id: string): Record<string, unknown> {
+  if (id === plan.publication) {
+    return { kind: "publication", publication: "admin", root: plan.root, pages: plan.pages.map(page => page.id), requirements: [{ check: "publication.routes" }], fixture: { route: { path: plan.pages[0]?.route ?? "/admin" } } };
+  }
+  const page = plan.pages.find(each => each.id === id);
+  if (!page) throw new Error(`${id} is not an admin slot of the Publisher admin plan`);
+  return pageContract(page);
+}
+
 /** The reader's view of the slot.json in one slot folder (either format), or undefined when it is missing or not valid. */
 export function readAdminSlot(dir: string): SlotRead | undefined {
   const file = slotFile(dir);

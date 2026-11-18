@@ -6,7 +6,9 @@
  *
  * - each admin page and the admin publication is placed, under the `admin` tab, as a page (publication) slot;
  * - each page contract names publication `admin`, the package route, package and layout, and composes the package
- *   composition; the publication contract names publication `admin`, the package root, and pages that cover the plan;
+ *   composition; the publication contract names publication `admin`, the package root, and exactly the plan's pages
+ *   in plan order; every other contract key equals the contract `clossys init` writes (admin-plan.ts adminContract),
+ *   with no key extra or missing; the slot is clossys.slot/2, its standard is its kind, and it carries no tighten entry;
  * - each admin slot cites, as inputs and uses, every composition unit the workspace holds (a held unit not cited is a
  *   finding, `clossys init` rewires it) and nothing outside its composition (an undeclared input).
  *
@@ -15,7 +17,8 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ADMIN_L1, adminPlan, adminRefs, readAdminSlot } from "../cli/admin-plan.js";
+import { ADMIN_L1, adminContract, adminPlan, adminRefs, readAdminSlot } from "../cli/admin-plan.js";
+import { sameJson } from "../records/slot.js";
 import { iaPath } from "../records/slot-model/layout.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
 import { hasModelRoot, listSlots, modelExists } from "../records/slots.js";
@@ -68,7 +71,18 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
     }
   }));
   const findings: AdminSeatedFinding[] = [...unreadable];
-  const judge = (id: string, kind: "page" | "publication", contract: (value: Readonly<Record<string, unknown>>) => string[], composition: readonly string[]) => {
+  // The named checks (`named` keys) give a precise message; every other contract key is held to the package contract
+  // (admin-plan.ts adminContract, the one `clossys init` writes): no extra key, none missing, each equal.
+  const closed = (id: string, actual: unknown, named: readonly string[]): string[] => {
+    const expected = adminContract(plan, id);
+    const have = actual !== null && typeof actual === "object" && !Array.isArray(actual) ? actual as Readonly<Record<string, unknown>> : {};
+    const extra = Object.keys(have).filter(key => !named.includes(key) && !Object.hasOwn(expected, key));
+    const missing = Object.keys(expected).filter(key => !named.includes(key) && !Object.hasOwn(have, key));
+    const differ = Object.keys(expected).filter(key => !named.includes(key) && Object.hasOwn(have, key) && !sameJson(have[key], expected[key]));
+    const parts = ([["extra", extra], ["missing", missing], ["differs", differ]] as const).filter(([, keys]) => keys.length).map(([label, keys]) => `${label} ${keys.join(", ")}`);
+    return parts.length ? [`contract differs from the package contract: ${parts.join("; ")} (run clossys init to restore it)`] : [];
+  };
+  const judge = (id: string, kind: "page" | "publication", contract: (value: Readonly<Record<string, unknown>>) => string[], composition: readonly string[], named: readonly string[]) => {
     const subject = `publisher/${id}`;
     const entry = entries.get(id);
     if (!entry) { findings.push({ subject, detail: `not placed in the Publisher IA; ${fix}` }); return; }
@@ -76,8 +90,14 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
     if (entry.position.l1 !== ADMIN_L1) issues.push(`sits under the ${entry.position.l1} tab, not ${ADMIN_L1}`);
     const read = readAdminSlot(entry.dir);
     if (!read) { findings.push({ subject, detail: [...issues, "slot.json is missing or not a valid slot"].join("; ") }); return; }
+    if (!read.current) issues.push(`slot.json is ${String(read.doc.schema)}; run clossys init to rewrite it as clossys.slot/2`);
     if (read.doc.kind !== kind) issues.push(`kind is ${String(read.doc.kind)}, not ${kind}`);
-    issues.push(...contract(read.doc.contract));
+    if (read.doc.standard !== kind) issues.push(`standard is ${String(read.doc.standard)}, not ${kind} (run clossys init to restore it)`);
+    const raw = read.doc.contract as unknown;
+    issues.push(...contract(raw !== null && typeof raw === "object" ? raw as Readonly<Record<string, unknown>> : {}));
+    issues.push(...closed(id, raw, named));
+    const tighten = read.current?.tighten.length ?? 0;
+    if (tighten) issues.push(`carries ${tighten} tighten entries; the admin seat is the Publisher package's and takes none (remove them)`);
     // Wiring: every held composition unit is cited as an input and a use; nothing outside the composition is.
     const cited = adminRefs(composition, held);
     const wiring = (refs: readonly string[]) => ({ uncited: cited.filter(ref => !refs.includes(ref)).join(", "), undeclared: refs.filter(ref => !composition.includes(ref)).join(", ") });
@@ -101,7 +121,7 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
       const expected = page.uses.map(id => `designer/${id}`);
       if (!composes || !same(composes, expected)) issues.push(`contract composes ${JSON.stringify(contract.composes ?? null)}, not the package composition ${expected.join(", ")}`);
       return issues;
-    }, page.uses);
+    }, page.uses, ["publication", "route", "package", "layout", "composes"]);
   }
   const pageIds = plan.pages.map(page => page.id);
   judge(plan.publication, "publication", contract => {
@@ -111,8 +131,11 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
     const pages = list(contract.pages) ?? [];
     const absent = pageIds.filter(id => !pages.includes(id));
     if (absent.length) issues.push(`contract pages lack ${absent.join(", ")}`);
+    const outside = pages.filter(id => !pageIds.includes(id as string));
+    if (outside.length) issues.push(`contract pages name ${outside.map(String).join(", ")} outside the package plan`);
+    if (!absent.length && !outside.length && !same(pages, pageIds)) issues.push(`contract pages are not in package order (${pageIds.join(", ")})`);
     return issues;
-  }, pageIds);
+  }, pageIds, ["publication", "root", "pages"]);
   return { check: ADMIN_SEATED, status: findings.length ? "fail" : "pass", findings };
 }
 

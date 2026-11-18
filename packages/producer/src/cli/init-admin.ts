@@ -19,8 +19,10 @@
  *
  * - Each admin slot is written as `clossys.slot/2` (runIaCli `current`), whatever format the rest of the store holds.
  * - A later run rewires each held admin slot whose inputs and uses are not the composition units the workspace now
- *   holds (the Designer adopted its IA after the first init), through `clossys ia` again (`--inputs`/`--uses`, the
- *   stored contract kept): `publisher.admin-seated` fails a held unit an admin slot does not cite.
+ *   holds (the Designer adopted its IA after the first init), through `clossys ia` again (`--inputs`/`--uses`):
+ *   `publisher.admin-seated` fails a held unit an admin slot does not cite. A held slot whose contract or standard is
+ *   not the package's (admin-plan.ts adminContract: tampered, or written by an older package) gets the package's back
+ *   (`--contract`, `--standard`), so the check's advice to re-run init is true.
  *
  * A second run on an unchanged workspace places, rewires and raises nothing new (a raise is idempotent).
  */
@@ -31,20 +33,10 @@ import { raiseRequest, RequestError } from "../records/request.js";
 import { iaPath } from "../records/slot-model/layout.js";
 import { listSlots, modelExists } from "../records/slots.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
-import { adminPlan, adminRefs, adminUnder, readAdminSlot, type AdminPage } from "./admin-plan.js";
+import { sameJson } from "../records/slot.js";
+import { adminContract, adminPlan, adminRefs, adminUnder, readAdminSlot } from "./admin-plan.js";
 import type { CliResult } from "./main.js";
 import { runIaCli } from "./owner.js";
-
-/** The consumer-side contract `clossys ia` places for one admin page (free-form besides its fixture and requirements). */
-function pageContract(page: AdminPage): Record<string, unknown> {
-  return {
-    kind: "page", publication: "admin", route: page.route, package: `publisher/${page.id}`, layout: `publisher/${page.layout}`,
-    frame: "required", sections: "ordered", meta: "required", composes: page.uses.map(id => `designer/${id}`),
-    ...(page.dataBound.length ? { reads: { access: "read-only", sections: page.dataBound, binding: "declared requirement: the data-bound section contract and its runtime binding are not built yet" } } : {}),
-    ...(page.route.includes("<") ? { routeFormat: "declared requirement: a dynamic route page format is not built yet" } : {}),
-    requirements: [{ check: "page.assembled" }], fixture: { route: { path: page.sample } },
-  };
-}
 
 export interface AdminSeat {
   readonly started: boolean;
@@ -86,14 +78,23 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
       placed.push(slot);
       return undefined;
     };
-    // A held slot keeps its contract; only its refs follow the composition units the workspace holds now.
+    // A held slot's refs follow the composition units the workspace holds now; a contract or standard that is not the
+    // package's (tampered, or an older package's) is restored to it.
     const rewire = async (slot: string, kind: "page" | "publication", refs: readonly string[]) => {
       if (placed.includes(slot)) return undefined;
       const entry = listSlots(consumer, "publisher").find(each => each.id === slot);
       const read = entry && readAdminSlot(entry.dir);
       if (!read) return undefined;
-      if (same(read.doc.inputs, refs) && same(read.doc.uses, refs) && read.current) return undefined;
-      const args = [`publisher/${slot}`, "--standard", read.doc.standard ?? kind, "--inputs", refs.join(","), "--uses", refs.join(","), "--at", at, "--root", root];
+      const expected = adminContract(plan, slot);
+      const restore = !sameJson(read.doc.contract, expected) || read.doc.standard !== kind;
+      if (same(read.doc.inputs, refs) && same(read.doc.uses, refs) && read.current && !restore) return undefined;
+      let contractArgs: string[] = [];
+      if (restore) {
+        const file = join(dir, `${slot}.json`);
+        writeFileSync(file, `${JSON.stringify(expected, null, 2)}\n`);
+        contractArgs = ["--contract", file];
+      }
+      const args = [`publisher/${slot}`, ...contractArgs, "--standard", restore ? kind : read.doc.standard ?? kind, "--inputs", refs.join(","), "--uses", refs.join(","), "--at", at, "--root", root];
       const result = await runIaCli(args, root, { current: true });
       if (result.exitCode !== 0) return result.message ?? `ia publisher/${slot} failed`;
       rewired.push(slot);
@@ -101,12 +102,11 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
     };
     for (const page of plan.pages) {
       const refs = adminRefs(page.uses, known);
-      const refused = await place(page.id, "page", pageContract(page), refs) ?? await rewire(page.id, "page", refs);
+      const refused = await place(page.id, "page", adminContract(plan, page.id), refs) ?? await rewire(page.id, "page", refs);
       if (refused) return fail(refused);
     }
-    const publication = { kind: "publication", publication: "admin", root: plan.root, pages: plan.pages.map(page => page.id), requirements: [{ check: "publication.routes" }], fixture: { route: { path: plan.pages[0]?.route ?? "/admin" } } };
     const pageRefs = adminRefs(plan.pages.map(page => page.id), held());
-    const refused = await place(plan.publication, "publication", publication, pageRefs) ?? await rewire(plan.publication, "publication", pageRefs);
+    const refused = await place(plan.publication, "publication", adminContract(plan, plan.publication), pageRefs) ?? await rewire(plan.publication, "publication", pageRefs);
     if (refused) return fail(refused);
   } finally { rmSync(dir, { recursive: true, force: true }); }
   // The gap: each used Designer unit no workspace slot holds is one request to the Designer, naming the pages that use it.

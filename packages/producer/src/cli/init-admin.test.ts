@@ -12,7 +12,8 @@ import { ADMIN_SEATED, adminSeatedSummary, runAdminSeated } from "../check/admin
 import { listRequests } from "../records/request.js";
 import { resolveSlot } from "../records/resolve.js";
 import { listSlots } from "../records/slots.js";
-import { ADMIN_PUBLICATION_SLOT, adminPlan, adminUnder, readAdminSlot } from "./admin-plan.js";
+import { currentView } from "../records/slot-current.js";
+import { ADMIN_PUBLICATION_SLOT, adminContract, adminPlan, adminUnder, readAdminSlot } from "./admin-plan.js";
 import { runInitCli } from "./init.js";
 import { runCli } from "./main.js";
 
@@ -298,6 +299,58 @@ describe("publisher.admin-seated", () => {
     const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
     expect(again.exitCode).toBe(1);
     expect(again.message).toContain("designer/ia.json is unreadable");
+  }, 60_000);
+
+  // Each row tampers one seat of a freshly seated workspace; the admin row fails on that slot, never passes.
+  const TAMPERS: readonly (readonly [string, string, (doc: Record<string, any>) => void, readonly string[]])[] = [
+    ["T3 reads.access read-write", "page.admin-gallery", doc => { doc.contract.reads.access = "read-write"; }, ["differs reads"]],
+    ["T4 reads and routeFormat removed", "page.admin-slot", doc => { delete doc.contract.reads; delete doc.contract.routeFormat; }, ["missing reads, routeFormat"]],
+    ["T5 an extra page in publication.admin", ADMIN_PUBLICATION_SLOT, doc => { doc.contract.pages = [...doc.contract.pages, "page.home"]; }, ["contract pages name page.home outside the package plan"]],
+    ["T5b publication.admin pages reversed", ADMIN_PUBLICATION_SLOT, doc => { doc.contract.pages = [...doc.contract.pages].reverse(); }, ["contract pages are not in package order"]],
+    ["T11 standard other, requirements removed", "page.admin-gallery", doc => { doc.standard = "other"; delete doc.contract.requirements; }, ["standard is other, not page", "missing requirements"]],
+    ["T13 a contract writes key", "page.admin-requests", doc => { doc.contract.writes = {}; }, ["extra writes"]],
+    ["contract package repointed", "page.admin-home", doc => { doc.contract.package = "publisher/page.home"; }, ["contract package is \"publisher/page.home\", not publisher/page.admin-home"]],
+    ["contract layout repointed", "page.admin-home", doc => { doc.contract.layout = "publisher/layout.app-home"; }, ["contract layout is \"publisher/layout.app-home\", not publisher/layout.admin-home"]],
+    ["page kind publication", "page.admin-home", doc => { doc.kind = "publication"; }, ["kind is publication, not page"]],
+    ["publication kind page", ADMIN_PUBLICATION_SLOT, doc => { doc.kind = "page"; }, ["kind is page, not publication"]],
+    ["publication root /x", ADMIN_PUBLICATION_SLOT, doc => { doc.contract.root = "/x"; }, ["contract root is \"/x\", not the package root"]],
+    ["slot.json {} (invalid)", "page.admin-questions", doc => { for (const key of Object.keys(doc)) delete doc[key]; }, ["slot.json is missing or not a valid slot"]],
+    ["a tighten entry that detaches page.assembled", "page.admin-home", doc => { doc.tighten = [{ path: "contract.requirements", op: "remove", value: { check: "page.assembled" }, why: "x", by: { actor: "owner", ref: "owner-chat" }, at: AT }]; }, ["carries 1 tighten entries; the admin seat is the Publisher package's and takes none (remove them)"]],
+  ];
+  it.each(TAMPERS)("mutation: every admin seat tamper fails (%s)", async (_name, slot, edit, details) => {
+    const root = workspace();
+    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    expect(runAdminSeated(root).status).toBe("pass");
+    editSlot(root, slot, edit);
+    const result = runAdminSeated(root);
+    expect(result.status).toBe("fail");
+    const finding = result.findings.find(each => each.subject === `publisher/${slot}`);
+    expect(finding, JSON.stringify(result.findings)).toBeDefined();
+    for (const detail of details) expect(finding!.detail).toContain(detail);
+  }, 60_000);
+
+  it("mutation: a clossys.slot/1 admin seat fails (planner decision 5: admin seats are slot/2)", async () => {
+    const root = workspace();
+    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    const read = readAdminSlot(join(root, "clossys", "agents", "publisher", "page.admin-home"))!;
+    writeFileSync(slotPath(root, "page.admin-home"), `${JSON.stringify({ ...currentView(read.current!), schema: "clossys.slot/1" }, null, 2)}\n`);
+    expect(readAdminSlot(join(root, "clossys", "agents", "publisher", "page.admin-home"))?.current).toBeUndefined();
+    const result = runAdminSeated(root);
+    expect(result.status).toBe("fail");
+    expect(result.findings.find(each => each.subject === "publisher/page.admin-home")?.detail).toContain("slot.json is clossys.slot/1; run clossys init to rewrite it as clossys.slot/2");
+  });
+
+  it("re-running init restores a tampered contract", async () => {
+    const root = workspace();
+    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    editSlot(root, "page.admin-gallery", doc => { doc.contract.reads.access = "read-write"; doc.standard = "other"; });
+    expect(runAdminSeated(root).status).toBe("fail");
+    const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
+    expect(again.exitCode, again.message).toBe(0);
+    expect(seatOf(again.output).rewired).toEqual(["page.admin-gallery"]);
+    expect(view(root, "page.admin-gallery").contract).toEqual(adminContract(adminPlan(root), "page.admin-gallery"));
+    expect(view(root, "page.admin-gallery").standard).toBe("page");
+    expect(runAdminSeated(root)).toEqual({ check: ADMIN_SEATED, status: "pass", findings: [] });
   }, 60_000);
 
   it("passes once clossys init has seated the admin workspace", async () => {
