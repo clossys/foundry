@@ -7,19 +7,23 @@
  *   refuses sample copy).
  * - `pins.resolve`: every consumer slot resolves (check/pins-resolve.ts), release slots aside (release.ready judges them).
  * - `constitution.strict`: the strict tree checks, `loop.reachable` and `refs.dangling` (loop/cli.ts strictFindings).
- * - `copy.locales`: every Writer copy record carries a non-empty value for each field it uses in every release locale
+ * - `copy.locales`: every Writer copy record (`.md` or `.json`) carries a non-empty value for each field it uses in every release locale
  *   and every locale its own contract requires.
  * - `release.locales`: the release locales resolve and the build carries every one.
  * - `slots.stale`: no slot is `needs-refresh` and no pinned candidate is stale or fails its re-verdict on the pinSet
  *   now (R07.5, constitution/cascade.ts): a release never ships a dependant a repin upstream left unjudged. A legacy
- *   pin (no recorded pinSet or verdict, what `clossys migrate pin-1-to-2` writes) fails closed too: nothing says it
- *   holds on the pinSet now, so it fails until the owning agent's loop.choose re-verdicts it (foundry-build-0048 U8).
+ *   pin (no recorded pinSet or verdict, what `clossys migrate recut` writes for a pin/1) fails closed too: nothing says
+ *   it holds on the pinSet now, so it fails until the owning agent's loop.choose re-verdicts it (foundry-build-0048 U8).
+ *   The slots judged are every IA-placed slot and every slot a pinned release input resolves from (so a pin outside
+ *   the IA that the manifest would ship is judged too), release slots aside (release.ready judges those).
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { buildContext } from "../constitution/context.js";
 import { NEEDS_REFRESH, pinChecks, type PinCheck } from "../constitution/cascade.js";
-import { liveSlotRecords } from "../constitution/checks/shared.js";
+import { allSlots, liveSlotRecords } from "../constitution/checks/shared.js";
+import type { CandidateRecord, ConstitutionContext, SlotRecord } from "../constitution/types.js";
+import { writerRecords } from "../constitution/certify/env.js";
 import { readSubject } from "../loop/slots.js";
 import { consumerSlotFolders } from "../records/slot.js";
 import { checkPinsResolve, PINS_RESOLVE } from "../check/pins-resolve.js";
@@ -56,14 +60,36 @@ function sampleRemaining(root: string): Finding[] {
     .map(resolution => ({ check: COPY_SAMPLE_REMAINING, subject: refOf(resolution), detail: `still on its package default ${"candidate" in resolution ? resolution.candidate : ""}`.trim() }));
 }
 
+/**
+ * A Writer copy record's text as `{<key>: {<locale>: text}}`: a `.md` record (frontmatter locales, one `## <locale>`
+ * section per locale) or a `.json` record's `content.fields`. A string is why it cannot be read; undefined, a record
+ * with no copy fields to check.
+ */
+function copyFieldsOf(file: string, candidate: string): Record<string, Record<string, unknown>> | string | undefined {
+  if (file.endsWith(".md")) {
+    let text: string;
+    try { text = readFileSync(file, "utf8"); } catch { return `${candidate} cannot be read`; }
+    const read = writerRecords({ text } as CandidateRecord);
+    if ("error" in read) return `${candidate} is not a Writer copy record: ${read.error}`;
+    const fields: Record<string, Record<string, unknown>> = {};
+    for (const row of read.rows) (fields[row.id] ??= {})[row.locale] = row.text;
+    return fields;
+  }
+  if (!file.endsWith(".json")) return undefined;
+  let content: unknown;
+  try { content = (JSON.parse(readFileSync(file, "utf8")) as { content?: unknown }).content; } catch { return `${candidate} is not JSON`; }
+  return isObject(content) && isObject(content.fields) ? content.fields as Record<string, Record<string, unknown>> : undefined;
+}
+
 function copyLocales(root: string, releaseList: readonly string[]): Finding[] {
   const findings: Finding[] = [];
   for (const resolution of releaseResolutions(root)) {
-    if (resolution.agent !== "writer" || resolution.state === "unresolved" || !resolution.file.endsWith(".json")) continue;
+    if (resolution.agent !== "writer" || resolution.state === "unresolved") continue;
     const subject = refOf(resolution);
-    let content: unknown;
-    try { content = (JSON.parse(readFileSync(resolution.file, "utf8")) as { content?: unknown }).content; } catch { findings.push({ check: COPY_LOCALES, subject, detail: `${resolution.candidate} is not JSON` }); continue; }
-    if (!isObject(content) || !isObject(content.fields)) continue;
+    const read = copyFieldsOf(resolution.file, resolution.candidate);
+    if (read === undefined) continue;
+    if (typeof read === "string") { findings.push({ check: COPY_LOCALES, subject, detail: read }); continue; }
+    const content = { fields: read };
     const slot = readSlotJson(root, resolution.agent, resolution.slotId) as { contract?: unknown } | undefined;
     const contract = isObject(slot?.contract) ? slot!.contract : {};
     const declared = isObject(contract.locales) && Array.isArray(contract.locales.required) ? contract.locales.required.filter((l): l is string => typeof l === "string") : [];
@@ -99,10 +125,25 @@ function staleDetail(check: PinCheck): string {
   switch (check.state) {
     case "stale": return `${pinned} was judged on a pinSet a repin upstream changed (run clossys run loop.cascade)`;
     case "failed": return `${pinned} fails its re-verdict on the pinSet now`;
-    // Fail closed: a pin with no recorded verdict (a pin/1 migrated by clossys migrate pin-1-to-2) is not known to
-    // hold on the pinSet now. Only its owner's CHOOSE gate records one.
-    default: return `${pinned} is a legacy pin with no recorded pinSet or verdict (as clossys migrate pin-1-to-2 writes it): agent:${check.slot.agent} must re-verdict it (run its loop.choose: clossys run loop.choose --slot ${check.slot.agent}/${check.slot.id})`;
+    // Fail closed: a pin with no recorded verdict for its bytes (a pin/1 migrated by clossys migrate recut, or a file
+    // changed after its verdict) is not known to hold on the pinSet now. Only its owner's CHOOSE gate records one.
+    default: {
+      const why = check.bytesChanged
+        ? "has no verdict for its bytes: the candidate file changed after it was judged"
+        : "is a legacy pin with no recorded pinSet or verdict (as clossys migrate recut writes a pin/1)";
+      return `${pinned} ${why}: agent:${check.slot.agent} must re-verdict it (run its loop.choose: clossys run loop.choose --slot ${check.slot.agent}/${check.slot.id})`;
+    }
   }
+}
+
+/**
+ * The slots slots.stale judges: every IA-placed slot and every slot a pinned release input resolves from, release
+ * slots aside. A release slot's ready-pin is judged by release.ready, and the manifest never lists it.
+ */
+function gateSlots(root: string, ctx: ConstitutionContext): SlotRecord[] {
+  const shipped = new Set(releaseResolutions(root).filter(resolution => resolution.state === "pinned").map(resolution => `${resolution.agent}/${resolution.slotId}`));
+  const live = new Set([...liveSlotRecords(ctx)]);
+  return [...allSlots(ctx)].filter(slot => !isReleaseSlot(slot.agent, slot.id) && (live.has(slot) || shipped.has(`${slot.agent}/${slot.id}`)));
 }
 
 function slotsStale(root: string): Finding[] {
@@ -114,7 +155,7 @@ function slotsStale(root: string): Finding[] {
   }
   const flagged = new Set(findings.map(finding => finding.subject));
   const ctx = buildContext(root, join(root, "clossys"));
-  for (const check of pinChecks(ctx, undefined, liveSlotRecords(ctx))) {
+  for (const check of pinChecks(ctx, undefined, gateSlots(root, ctx))) {
     const subject = `${check.slot.agent}/${check.slot.id}`;
     if (flagged.has(subject) || check.state === "fresh") continue;
     flagged.add(subject);

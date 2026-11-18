@@ -19,7 +19,7 @@ import { buildPin, cliActor, pinIssues, pinPath, writePinDoc } from "../records/
 import { readPinFile } from "../records/pin-map.js";
 import { runCli, type CliResult } from "../cli/main.js";
 import { runReleaseCli } from "../cli/release.js";
-import { releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
+import { releaseWorld, geographyBrief, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
 import { sha256Hex } from "../records/hash.js";
 import { writeSlot } from "../records/slot.js";
 import { writeCandidate } from "../records/slot-write.js";
@@ -587,10 +587,10 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     const w = realRelease();
     const now = clock();
     const verbs = releaseVerbs([], now);
-    // The pin verb succeeds, then a copy slot is repinned to a sample-only candidate: the gates the manifest recorded are red now.
+    // The pin verb succeeds, then the geography brief adds a locale the copy lacks: the gates the manifest recorded are red now.
     const hooks = cliHooks(w.root, undefined, async (argv, cwd) => {
       const result = await verbs(argv, cwd);
-      if (argv[0] === "pin") w.repin("writer/sections.hero.copy", 2, { fields: { "header.heading": { en: "placeholder" } } });
+      if (argv[0] === "pin") w.repin("director/focus.reach.geography", 2, geographyBrief("en, fr, de"));
       return result;
     });
     const started = await startRun(w.root, { loop: "loop.release", publication: "site" }, hooks, { now });

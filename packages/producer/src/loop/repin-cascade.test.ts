@@ -187,7 +187,7 @@ describe("the pin gate and the pin are one critical section (U6)", () => {
 });
 
 describe("a legacy pin fails closed (U8)", () => {
-  it("a pin/2 that clossys migrate pin-1-to-2 wrote (no recorded pinSet or verdict) fails slots.stale until the owner's CHOOSE gate re-verdicts it", async () => {
+  it("a pin/2 that clossys migrate recut wrote from a pin/1 (no recorded pinSet or verdict) fails slots.stale until the owner's CHOOSE gate re-verdicts it", async () => {
     const { w, ok } = await seated();
     expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("pass");
     // Back to what an int2 consumer held before the pin gate: a pin/1 and no scorecard or re-verdict.
@@ -208,7 +208,7 @@ describe("a legacy pin fails closed (U8)", () => {
     expect(gates.checks[SLOTS_STALE]).toBe("fail");
     expect(gates.findings.filter(finding => finding.check === SLOTS_STALE)).toEqual([expect.objectContaining({
       subject: "publisher/page.home",
-      detail: expect.stringMatching(/legacy pin with no recorded pinSet or verdict.*agent:publisher must re-verdict it \(run its loop\.choose: clossys run loop\.choose --slot publisher\/page\.home\)/),
+      detail: expect.stringMatching(/legacy pin with no recorded pinSet or verdict \(as clossys migrate recut writes a pin\/1\): agent:publisher must re-verdict it \(run its loop\.choose: clossys run loop\.choose --slot publisher\/page\.home\)/),
     })]);
 
     // Re-verdicted through the CHOOSE gate (the pin loop.choose ends on): the scorecard records the pinSet now.
@@ -217,7 +217,7 @@ describe("a legacy pin fails closed (U8)", () => {
     expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("pass");
   }, 300_000);
 
-  it("a legacy pin re-verdicted by loop.cascade (a passing clossys.reverdict/1 on the pinSet now) passes slots.stale", async () => {
+  it("a legacy pin given the real certifier's passing verdict on the pinSet now, written as loop.cascade writes one (reverdictOf, a clossys.reverdict/1), passes slots.stale", async () => {
     const { w } = await seated();
     rmSync(join(w.root, ".clossys", "checks", "publisher", "page.home", "scorecard.json"), { force: true });
     expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("fail");
