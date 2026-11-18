@@ -375,3 +375,16 @@ it.each(["wrong id", "wrong agent", "wrong kind", "bad status", "no refs", "no c
   });
   await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Invalid pin|Missing pin key|Unknown key|Invalid pin schema|hash drift/);
 });
+
+it("OUTPUTS projects a checked outputs record and refuses a malformed one (fail closed)", async () => {
+  const f = await fixture();
+  const outputs = { origin: "https://example.com", identity: { name: "site.name", summary: "site.summary" }, share: true, jsonLd: true, llms: true, feed: "rss",
+    forms: [{ id: "contact", kind: "contact", fields: [{ name: "email", type: "email", required: true, maxLength: 254 }, { name: "message", type: "message", required: true, maxLength: 5000 }], maxBytes: 8192, targetEnv: "CONTACT_FORM_TARGET", honeypot: "website" }],
+    locales: { default: "en", all: ["en", "fr"] } };
+  await edit(candidatePath(f.path, f.pubId), value => { value.outputs = outputs; });
+  await repin(f.path, f.pubId);
+  expect((await readPinnedPublication(f.path, f.map.publicationId)).outputs).toEqual(outputs);
+  await edit(candidatePath(f.path, f.pubId), value => { value.outputs.forms[0].targetEnv = "https://hooks.example.com/secret"; });
+  await repin(f.path, f.pubId);
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Invalid publication outputs.*targetEnv/);
+});

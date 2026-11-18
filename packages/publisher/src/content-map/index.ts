@@ -17,3 +17,5 @@ export type { SecurityTxtOptions } from "./security.js";
 
 export { projectPinnedPublication } from "./pinned-publication.js";
 export type { PinnedPublication, PinnedPublicationSource } from "./pinned-publication.js";
+export { checkPublicationOutputs, publicationFormDefaults, FORM_MAX_BYTES, FORM_MAX_FIELD_LENGTH, FORM_MAX_FIELDS, OUTPUT_ENV_NAME, OUTPUT_LOCALE, OUTPUT_WRITER_KEY, PUBLICATION_FEEDS, PUBLICATION_FORM_FIELD_TYPES, PUBLICATION_FORM_KINDS } from "./outputs.js";
+export type { PublicationFeed, PublicationForm, PublicationFormField, PublicationFormFieldType, PublicationFormKind, PublicationLocales, PublicationOutputs } from "./outputs.js";

@@ -193,3 +193,6 @@ export type { AppInventory, AppRoute, AppLane, AppMissingDecision, AppInventoryP
 export { SiteFrame, siteShellFor, SITE_SURFACE_KINDS, SITE_PAGE_LAYERS, SITE_MAIN_ID, SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions, type SiteBrandInput, type SiteChromeGround, type SiteEnvironmentLinkInput, type SiteFooterInput, type SiteFrameConfig, type SiteFrameInput, type SiteFrameProps, type SiteIconLinkInput, type SiteLinkInput, type SitePageLayer, type SiteShellInput, type SiteSurfaceKind, type SiteFramePresentationConfig } from "@clossys/designer/frames"; // removed by CX-2
 
 export { projectSiteShellNavigation, type SiteShellNavigationOptions, type SiteShellNavigationProjection } from "./frame/registered-navigation.js";
+// The form endpoint is server-only: an installed `api/forms/<id>/route.ts` imports it, never a client bundle.
+export { createFormEndpoint } from "./forms/formEndpoint.js";
+export type { FormEndpoint, FormEndpointOptions, FormFieldCode, FormFieldIssue } from "./forms/formEndpoint.js";

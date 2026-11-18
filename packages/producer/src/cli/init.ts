@@ -1,19 +1,23 @@
 /**
  * `clossys init [--root <dir>] [--json]`: prepares a consumer workspace for chat agents. Today it adds the
  * agent-neutral views pointer to the consumer's `AGENTS.md` (system.md 14.9), once; a second run changes nothing.
+ * With `--publication <id>` it records that publication's install outputs instead (`init-outputs.ts`).
  * Expanding starters (`--starters`) is separate later work.
  */
 import { resolve } from "node:path";
 import { ensureAgentsPointer } from "../views/agents-pointer.js";
 import { CliUsageError } from "./args.js";
+import { INIT_OUTPUTS_USAGE, runInitOutputsCli } from "./init-outputs.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
 export const INIT_USAGE = "Usage: clossys init [--root <dir>] [--json]\n"
   + "  adds the views pointer block to the workspace AGENTS.md (created when missing) unless it is already there:\n"
-  + "  run clossys views list, follow clossys views show <id>, answer only through clossys answer.";
+  + "  run clossys views list, follow clossys views show <id>, answer only through clossys answer.\n"
+  + INIT_OUTPUTS_USAGE;
 
 export async function runInitCli(argv: readonly string[], cwd: string): Promise<CliResult> {
+  if (argv.includes("--publication")) return runInitOutputsCli(argv, cwd);
   let root: string | undefined;
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;

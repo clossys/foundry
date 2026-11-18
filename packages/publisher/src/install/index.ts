@@ -612,3 +612,5 @@ export type { NextRouteFile, NextRouteLeaf, NextRouteLeafTemplate, NextRoutesOpt
 export { NEXT_BOUNDARY_RUNTIME, NEXT_SHELL_TIME_SCRIPT, nextStreamingScriptShape } from "./next-streaming.js";
 export type { NextStreamingScript } from "./next-streaming.js";
 export type { NativeNextFontBinding, NativeNextFontsOptions, NativeNextFontsResult } from "./native-next-fonts.js";
+export { buildFeed, buildJsonLd, buildLlmsTxt, checkFeed, checkJsonLd, checkLlmsTxt, planSiteOutputs, SITE_OUTPUT_WEB } from "./site-outputs.js";
+export type { FeedFormat, FeedInput, FeedItem, JsonLdInput, LlmsTxtInput, LlmsTxtPage, SiteOutputText, SiteOutputsOptions, SiteOutputsPlan, SiteShareVisual } from "./site-outputs.js";
