@@ -26,7 +26,9 @@ import type { ContentMap, ContentMapEntry } from "@clossys/publisher/content-map
 const contentMapPath = (entry: { readonly path?: string; readonly slug?: string }) => entry.path ?? `/${entry.slug}`;
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { specimenRoots } from "./publish.js";
-import { designerPins, pageModule, pageRecordFromCell, shadcnRunner, SUBSTRATE_HOST_FILE, writerCopy } from "./install.js";
+import { dataBoundReads, scopeParams } from "../cli/admin-plan.js";
+import { ADMIN_RECORD_PORTS, adminRouteParams, readAdminRecords, type AdminRecords } from "./admin-records.js";
+import { designerPins, pageModule, pageRecordFromCell, shadcnRunner, SUBSTRATE_HOST_FILE, writerCopy, type PageModuleRecords } from "./install.js";
 
 /** The generated directory, relative to the site project. */
 export const NEXT_BIND_DIR = "clossys";
@@ -34,6 +36,8 @@ export const NEXT_BIND_ASSEMBLY = `${NEXT_BIND_DIR}/publication.tsx`;
 export const NEXT_BIND_STATES = `${NEXT_BIND_DIR}/states.tsx`;
 export const NEXT_BIND_PROJECTION = `${NEXT_BIND_DIR}/publication.json`;
 export const NEXT_BIND_PAGES = `${NEXT_BIND_DIR}/pages`;
+/** The consumer's records the data-bound sections read (admin-records.ts), as one generated module (U20b). */
+export const NEXT_BIND_RECORDS = `${NEXT_BIND_DIR}/records.ts`;
 /** The bound page every state mounts: the home record's frame, no sections. */
 export const NEXT_BIND_STATE_PAGE = "state";
 export const NEXT_BIND_SCHEMA = "clossys.next-publication/1";
@@ -60,7 +64,11 @@ export interface NextBindProjection {
   readonly state: { readonly module: string; readonly frame: string };
   readonly titleKey?: string;
 }
-export interface NextBindPlan { readonly files: readonly NextBindFile[]; readonly findings: readonly InstallFinding[]; readonly assembly: string; readonly states: string }
+export interface NextBindPlan {
+  readonly files: readonly NextBindFile[]; readonly findings: readonly InstallFinding[]; readonly assembly: string; readonly states: string;
+  /** Each dynamic page's route parameter values, from the consumer's records (the route files' `generateStaticParams`). */
+  readonly routeParams?: Readonly<Record<string, readonly Readonly<Record<string, string>>[]>>;
+}
 
 const marked = (content: string) => `${NEXT_ROUTE_MARKER}\n${content}`;
 const pathOf = (map: ContentMap, id: string) => contentMapPath(map.entries.find(row => row.id === id) as ContentMapEntry);
@@ -76,13 +84,13 @@ function assemblyModule(pages: readonly { id: string; module: string }[], title:
     ...(fonts ? [`import { nativeFontVariables } from ${JSON.stringify(relativeSpecifier(NEXT_BIND_ASSEMBLY, NEXT_BIND_FONTS))};`] : []),
     ...pages.map((page, index) => `import Page${index} from ${JSON.stringify(relativeSpecifier(NEXT_BIND_ASSEMBLY, page.module))};`),
     "",
-    `const pages: Record<string, () => ReactNode> = { ${pages.map((page, index) => `${JSON.stringify(page.id)}: Page${index}`).join(", ")} };`,
+    `const pages: Record<string, (props: { params?: Record<string, string> }) => ReactNode> = { ${pages.map((page, index) => `${JSON.stringify(page.id)}: Page${index}`).join(", ")} };`,
     "",
-    "/** The bound page for a content-map page id; an id the install did not bind is an error, never a fallback. */",
-    "export function PublishedPage({ page }: { page: string; slug?: string }): ReactNode {",
+    "/** The bound page for a content-map page id, with a dynamic route's parameters; an id the install did not bind is an error, never a fallback. */",
+    "export function PublishedPage({ page, params }: { page: string; slug?: string; params?: Record<string, string> }): ReactNode {",
     "  const Page = Object.hasOwn(pages, page) ? pages[page] : undefined;",
     "  if (!Page) throw new Error(`publication: no bound page ${page}`);",
-    "  return createElement(Page);",
+    "  return createElement(Page, params ? { params } : {});",
     "}",
     "",
     "/** A bound install serves the leaves it was installed with: none at request time. */",
@@ -166,9 +174,46 @@ export async function planNextBind(options: { root: string; site: string; map: C
   }
   if (findings.some(isBlocking) || bound.length !== records.length + 1) return empty();
 
+  // Host-injected records (U20b): each data-bound section a bound page places reads its port from the consumer's
+  // records under its route scope, and each dynamic page serves the parameter values those records hold.
+  // Unreadable Designer section contracts mean no section is known to be data-bound: nothing is injected (a placed
+  // record section then renders its own empty state) and the install says so, never crashing a publication that binds none.
+  let reads: ReadonlyMap<string, { port: string; scope: string }> = new Map();
+  try { reads = dataBoundReads(root); } catch (error) {
+    findings.push({ code: "site-contract", severity: "info", detail: `${map.publicationId}: the Designer section contracts are unreadable (${error instanceof Error ? error.message : String(error)}), so no data-bound section is filled from records` });
+  }
+  const injected = new Map<string, { port: string; scope: string[] }>();
+  for (const page of bound) for (const slot of page.sections) {
+    const read = reads.get(slot.slot);
+    if (!read) continue;
+    if (!(ADMIN_RECORD_PORTS as readonly string[]).includes(read.port)) { findings.push({ code: "site-contract", slot: page.id, detail: `${page.id}: data-bound section ${slot.slot} reads port ${read.port}, which the records reader does not fill` }); continue; }
+    injected.set(slot.slot, { port: read.port, scope: scopeParams(read.scope) });
+  }
+  const paths = entries.map(entry => contentMapPath(entry));
+  const dynamic = entries.filter(entry => /<[a-z][a-z0-9]*>/.test(contentMapPath(entry)));
+  let snapshot: AdminRecords | undefined;
+  const routeParams: Record<string, Record<string, string>[]> = {};
+  if (injected.size || dynamic.length) {
+    snapshot = readAdminRecords(root);
+    for (const entry of dynamic) {
+      const values = adminRouteParams(snapshot, contentMapPath(entry), paths);
+      if (values) routeParams[entry.id] = values;
+    }
+  }
+  if (findings.some(isBlocking)) return empty();
+
   const files: NextBindFile[] = [];
   const moduleOf = (id: string) => `${NEXT_BIND_PAGES}/${id}.tsx`;
-  for (const page of bound) files.push({ file: moduleOf(page.id), pageId: page.id, content: marked(pageModule(page, site)) });
+  const recordsOption: PageModuleRecords | undefined = injected.size ? { module: NEXT_BIND_RECORDS, reads: Object.fromEntries(injected) } : undefined;
+  for (const page of bound) files.push({ file: moduleOf(page.id), pageId: page.id, content: marked(pageModule(page, site, recordsOption ? { records: recordsOption } : {})) });
+  if (recordsOption && snapshot) {
+    const { issues: _issues, ...data } = snapshot;
+    files.push({ file: NEXT_BIND_RECORDS, pageId: "", content: marked([
+      "// Generated by clossys publish --install --next --bind from the consumer's clossys records (read-only). Reinstall rather than editing this file.",
+      `export const records = ${JSON.stringify(data, null, 2)} as const;`,
+      "",
+    ].join("\n")) });
+  }
   const cwd = options.bind.cwd ?? process.cwd();
   const selectionModule = /\.(?:[cm]?[jt]sx?)$/.test(options.bind.selection.module)
     ? posixRelative(site, isAbsolute(options.bind.selection.module) ? options.bind.selection.module : resolve(cwd, options.bind.selection.module))
@@ -193,7 +238,7 @@ export async function planNextBind(options: { root: string; site: string; map: C
     ...(titleKey !== undefined ? { titleKey } : {}),
   };
   files.push({ file: NEXT_BIND_PROJECTION, pageId: "", content: `${JSON.stringify(projection, null, 2)}\n` });
-  return { files, findings, assembly, states };
+  return { files, findings, assembly, states, ...(Object.keys(routeParams).length ? { routeParams } : {}) };
 }
 
 function posixRelative(from: string, to: string): string {

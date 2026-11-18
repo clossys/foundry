@@ -4,6 +4,7 @@ import type { InstallPins } from "@clossys/publisher/install";
 import { hasPinFile, hasSlotModel, listSlots, readCandidate, readSlot, viewPlacedAt } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate } from "../records/slot-model/index.js";
 import { hostPackageImports } from "./host-packages.js";
+import { isAgentLoop } from "../loop/agent-loops.js";
 
 /** One recorded candidate of a slot, by element and version (its file is `<element>-v<version>.json`). */
 export interface SlotOption { readonly element: string; readonly version: number }
@@ -36,6 +37,9 @@ export function slotInstallInputs(consumer: string): SlotInstallInputs | undefin
     const fail = (reason: string): never => { throw new Error(`Specimen slot ${entry.id}: ${reason}`); };
     const pinPresent = hasPinFile(entry.dir);
     if (pinPresent && !entry.pin) fail("invalid native pin");
+    // An agent loop slot (`clossys init` and `clossys loop` adopt five per placed agent) is no Designer element and no
+    // install input: it is judged by loop.agent-standard, never installed. Only the loop ids qualify (isAgentLoop).
+    if (isAgentLoop(entry.id)) continue;
     let doc: ReturnType<typeof readSlot>;
     try { doc = readSlot(consumer, "designer", entry.id); }
     catch { if (pinPresent) throw new Error(`Specimen slot ${entry.id}: missing or invalid slot`); continue; }

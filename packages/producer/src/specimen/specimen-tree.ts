@@ -18,6 +18,7 @@
  */
 
 import { parseWriterSlotBody } from "@clossys/writer/slot-body";
+import { isAgentLoop } from "../loop/agent-loops.js";
 import { listSlots, readCandidate } from "../records/slots.js";
 import { parseFrontmatter } from "../records/slot-model/index.js";
 
@@ -141,7 +142,8 @@ export function specimenTreeIssues(tree: unknown, exports: ReadonlySet<string>, 
 export function pinnedWriterCopy(consumer: string, locale = "en"): Record<string, string> {
   const copy: Record<string, string> = {};
   for (const entry of listSlots(consumer, "writer")) {
-    if (!entry.pin) continue;
+    // An adopted agent loop slot holds no copy (loop.agent-standard judges it), so it binds nothing here.
+    if (!entry.pin || isAgentLoop(entry.id)) continue;
     // A drifted pin binds nothing (the pin check flags it); an unreadable or malformed pinned
     // candidate is an error, never a silently missing string.
     const candidate = readCandidate(consumer, "writer", entry.id, entry.pin.candidate);

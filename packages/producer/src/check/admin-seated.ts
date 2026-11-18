@@ -12,7 +12,8 @@
  * - each admin slot cites, as inputs and uses, every composition unit the workspace holds (a held unit not cited is a
  *   finding, `clossys init` rewires it) and nothing outside its composition (an undeclared input);
  * - the plan itself holds (admin-plan.ts adminPlanFindings): each data-bound section reads under route parameters its
- *   page supplies, and no agent id is a value a static admin route reserves for `<agent>`.
+ *   page supplies, and no agent id is a value a static admin route reserves for `<agent>`; the admin publication is fixed,
+ *   so its root (the plan's, and the seated contract's) is a static prefix, never `/`, with every page route under it.
  *
  * A workspace with no slot model and no views pointer has no admin workspace to lack yet: `skip`, printed.
  * `clossys init` seats and rewires what is missing (cli/init-admin.ts).
@@ -20,6 +21,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ADMIN_L1, adminContract, adminPlan, adminPlanFindings, adminRefs, readAdminSlot } from "../cli/admin-plan.js";
+import { publicationRootFindings } from "../constitution/certify/route.js";
 import { sameJson } from "../records/slot.js";
 import { iaPath } from "../records/slot-model/layout.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
@@ -131,6 +133,8 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
     const issues: string[] = [];
     if (contract.publication !== "admin") issues.push(`contract publication is ${JSON.stringify(contract.publication)}, not "admin"`);
     if (contract.root !== plan.root) issues.push(`contract root is ${JSON.stringify(contract.root)}, not the package root ${plan.root}`);
+    // The admin publication is fixed: whatever root the seat names, it is a static prefix, never /, over every page route.
+    if (typeof contract.root === "string") issues.push(...publicationRootFindings("contract", contract.root, plan.pages.map(page => page.route), true));
     const pages = list(contract.pages) ?? [];
     const absent = pageIds.filter(id => !pages.includes(id));
     if (absent.length) issues.push(`contract pages lack ${absent.join(", ")}`);

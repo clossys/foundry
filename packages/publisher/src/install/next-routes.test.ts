@@ -55,6 +55,49 @@ describe("planNextRoutes", () => {
     expect(plan.files.some(row => row.pageId === "odd")).toBe(false);
   });
 
+  it("installs a <param> page as a [param] folder route over the install's values; an unknown value is notFound()", () => {
+    const admin = {
+      version: 1, publicationId: "admin", format: "web.page.responsive",
+      entries: [
+        { id: "admin-home", kind: "page", title: "Admin", order: 0, path: "/admin", source },
+        { id: "admin-requests", kind: "page", title: "Requests", order: 1, path: "/admin/requests", source },
+        { id: "admin-gallery", kind: "page", title: "Gallery", order: 2, path: "/admin/<agent>", source },
+        { id: "admin-slot", kind: "page", title: "Slot", order: 3, path: "/admin/<agent>/<slot>", source },
+      ],
+    } as unknown as ContentMap;
+    const plan = planNextRoutes({
+      map: admin, assembly: "../a.tsx",
+      routeParams: {
+        "admin-gallery": [{ agent: "designer" }, { agent: "writer" }, { agent: "designer" }, { agent: "Bad" }],
+        "admin-slot": [{ agent: "designer", slot: "sections.hero" }, { agent: "designer" }],
+      },
+    });
+    expect(plan.files.map(row => [row.file, row.route, row.params ?? []])).toEqual([
+      ["admin/page.tsx", "/admin", []],
+      ["admin/requests/page.tsx", "/admin/requests", []],
+      ["admin/[agent]/page.tsx", "/admin/[agent]", ["agent"]],
+      ["admin/[agent]/[slot]/page.tsx", "/admin/[agent]/[slot]", ["agent", "slot"]],
+    ]);
+    expect(plan.findings.map(row => row.slot)).toEqual(["admin-gallery", "admin-slot"]);
+    const gallery = plan.files[2]!.content;
+    expect(gallery.split("\n")[0]).toBe(NEXT_ROUTE_MARKER);
+    expect(gallery).toContain('const known: { agent: string }[] = [\n  { agent: "designer" },\n  { agent: "writer" },\n];');
+    expect(gallery).toContain("export const dynamicParams = false;");
+    expect(gallery).toContain("if (!known.some(row => row.agent === route.agent)) notFound();");
+    expect(gallery).toContain('createElement(PublishedPage, { page: "admin-gallery", params: { agent: route.agent } })');
+    const slot = plan.files[3]!.content;
+    expect(slot).toContain('from "../../../../a"');
+    expect(slot).toContain('{ agent: "designer", slot: "sections.hero" },');
+    expect(slot).toContain("row.agent === route.agent && row.slot === route.slot");
+  });
+
+  it("refuses a dynamic page the install supplies no values for", () => {
+    const admin = { ...map, entries: [...map.entries, { id: "gallery", kind: "page", title: "Gallery", order: 2, path: "/a/<agent>", source }] } as unknown as ContentMap;
+    const plan = planNextRoutes({ map: admin, assembly: "../a.tsx" });
+    expect(plan.findings).toEqual([expect.objectContaining({ code: "site-contract", slot: "gallery", detail: expect.stringContaining("supplies no values") })]);
+    expect(plan.files.some(row => row.pageId === "gallery")).toBe(false);
+  });
+
   it("without a states module installs no shell; with one installs the root layout and every state, each marked", () => {
     expect(planNextRoutes({ map, assembly: "../a.tsx" }).files.some(row => row.kind === "shell")).toBe(false);
     const plan = planNextRoutes({ map, assembly: "../components/Assembly.tsx", states: "../components/Renderer.tsx", live: true });

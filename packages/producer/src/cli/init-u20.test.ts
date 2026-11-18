@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { pageOptionOf } from "../actions/page-option.js";
+import { checkPublisherPages } from "../actions/publisher.js";
 import { LOOP_AGENT_STANDARD, runLoopAgentStandard } from "../check/loop-connected.js";
 import { AGENT_LOOPS } from "../loop/agent-loops.js";
 import { ADMIN_PUBLICATION_SLOT, adminContract, adminPlan, adminPlanFindings, dataBoundSections, type AdminPlan } from "./admin-plan.js";
@@ -62,6 +63,14 @@ describe("the admin plan states each data-bound binding and each dynamic route",
     expect(adminPlanFindings(plan, ["designer", "requests"])).toEqual([{ subject: "publisher/page.admin-gallery", detail: "agent requests is a value static admin routes reserve for <agent> (questions, requests): /admin/requests would never reach this page" }]);
   });
 
+  it("mutation: the fixed admin publication rooted at /, or a page route outside its root, is a plan finding", () => {
+    const plan = adminPlan(workspace());
+    const subject = `publisher/${ADMIN_PUBLICATION_SLOT}`;
+    expect(adminPlanFindings({ ...plan, root: "/" })).toEqual([{ subject, detail: `${ADMIN_PUBLICATION_SLOT}: a fixed publication roots under its own static prefix, never /` }]);
+    expect(adminPlanFindings({ ...plan, root: "/x" }).map(finding => finding.detail)).toContain(`${ADMIN_PUBLICATION_SLOT}: page route /admin is outside the publication root /x`);
+    expect(adminPlanFindings({ ...plan, root: "/Admin" })).toEqual([{ subject, detail: `${ADMIN_PUBLICATION_SLOT}: root "/Admin" is not a static route` }]);
+  });
+
   it("the seeded page record binds Writer copy to every section but the data-bound ones, and titles itself from the default's meta", () => {
     const plan = adminPlan(workspace());
     for (const page of plan.pages) {
@@ -73,7 +82,7 @@ describe("the admin plan states each data-bound binding and each dynamic route",
       expect(Object.keys(record.bindings ?? {}).filter(key => BOUND.includes(key)), page.id).toEqual([]);
       expect(record.meta.source.ref, page.id).toEqual([`@clossys/publisher:defaults/${page.id}/starter-v1.json`]);
     }
-    expect(plan.record).toMatchObject({ schema: "clossys.publication/1", entryOrder: ["home", "gallery", "slot", "requests", "questions"], routePack: { packId: "admin", homeRouteId: "home" } });
+    expect(plan.record).toMatchObject({ schema: "clossys.publication/1", entryOrder: ["admin-home", "admin-gallery", "admin-slot", "admin-requests", "admin-questions"], routePack: { packId: "admin", homeRouteId: "admin-home" } });
   });
 
   it("mutation: a page option holding a data-bound section is exempt from the Writer-binding rule only while the section is data-bound, and may bind no copy", () => {
@@ -128,6 +137,41 @@ describe("clossys init seeds the admin slots and adopts the loops of the agents 
     // page.admin-home holds the consumer's candidate and publication.admin is pinned: neither is retried.
     expect(admin.waiting.map(item => item.slot)).toEqual(PAGES.slice(1));
     expect([...PAGES, ADMIN_PUBLICATION_SLOT].map(seed)).toEqual(before);
+  }, 120_000);
+
+  it("a stray non-candidate file (.DS_Store) in an admin slot's candidates/ is ignored: the slot is still retried, not silently skipped", async () => {
+    const root = workspace();
+    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    writeFileSync(join(publisherSlot(root, "page.admin-gallery"), "candidates", ".DS_Store"), "\0\0\0\1Bud1");
+    const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
+    expect(again.exitCode, again.message).toBe(0);
+    expect(outputOf(again).admin.waiting.map(item => item.slot)).toEqual(PAGES);
+  }, 120_000);
+
+  it("on a workspace placing Director, Designer and Writer too, a fresh init adopts and pins all four agents' loops", async () => {
+    const root = workspace();
+    for (const agent of ["director", "designer", "writer"]) {
+      mkdirSync(join(root, "clossys", "agents", agent), { recursive: true });
+      writeFileSync(join(root, "clossys", "agents", agent, "ia.json"), `${JSON.stringify({
+        schema: "clossys.ia/1", source: `consumer#agents/${agent}/tree.json`, extensions: [], nodes: [{ id: "main", label: "Main", children: [] }],
+      }, null, 2)}\n`);
+    }
+    const result = await runInitCli(["--at", AT], root);
+    expect(result.exitCode, result.message).toBe(0);
+    const { loops } = outputOf(result);
+    expect([...loops.agents].sort()).toEqual(["designer", "director", "publisher", "writer"]);
+    expect(loops.issues).toEqual([]);
+    expect(loops.pinned).toHaveLength(4 * AGENT_LOOPS.length);
+    expect(runLoopAgentStandard(root)).toEqual({ check: LOOP_AGENT_STANDARD, status: "pass", findings: [] });
+  }, 180_000);
+
+  it("publisher.check judges each seeded admin record with the data-bound set: no data-bound section is asked for a Writer binding", async () => {
+    const root = workspace();
+    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    const result = await checkPublisherPages(root);
+    for (const page of PAGES) expect(result.checked, page).toContain(`publisher/${page}/candidates/${ADMIN_SEED}`);
+    const asked = result.findings.filter(finding => finding.check === "page.record-key" && BOUND.some(section => finding.detail.includes(`${section} binds no Writer record`)));
+    expect(asked).toEqual([]);
   }, 120_000);
 
   it("adopts and pins Publisher's five loops on a fresh init, so loop.agent-standard passes; a second init changes nothing", async () => {

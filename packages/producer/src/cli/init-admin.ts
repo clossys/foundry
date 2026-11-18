@@ -28,7 +28,7 @@
  *
  * A second run on an unchanged workspace places, rewires and raises nothing new (a raise is idempotent).
  */
-import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { raiseRequest, RequestError } from "../records/request.js";
@@ -154,7 +154,8 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
   for (const [slot, record] of seeds) {
     const entry = listSlots(consumer, "publisher").find(each => each.id === slot);
     if (!entry || existsSync(join(entry.dir, "pin.json"))) continue;
-    const held = existsSync(join(entry.dir, "candidates")) ? readdirSync(join(entry.dir, "candidates")) : [];
+    // The slot's candidates are its candidate-named files only: a stray file (.DS_Store) is not a candidate.
+    const held = entry.candidates;
     if (held.some(name => name !== ADMIN_SEED)) continue;
     if (!held.includes(ADMIN_SEED)) {
       try { writeCandidateBytes(consumer, "publisher", slot, ADMIN_SEED, `${JSON.stringify(record, null, 2)}\n`, { at: when, fields: { reason: "clossys init: the Publisher package default, as a record" } }); }

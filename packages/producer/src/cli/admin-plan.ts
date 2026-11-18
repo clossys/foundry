@@ -8,9 +8,10 @@
  * foundry-build-0048 U20: each page contract states its data binding (`reads`: per data-bound section, the port the host
  * fills, the record schemas and the route scope) and, for a dynamic route, its route format (`routeFormat`: the
  * pattern, its parameters, the collection they range over and the values a static sibling route reserves).
- * `adminPlanFindings` holds the plan to two rules `publisher.admin-seated` reports: every scope parameter a data-bound
- * section reads under is a parameter of its page's route, and no agent id is a value a static admin route reserves
- * (`/admin/requests` wins over `/admin/<agent>`, so an agent named `requests` would have no gallery).
+ * `adminPlanFindings` holds the plan to the rules `publisher.admin-seated` reports: every scope parameter a data-bound
+ * section reads under is a parameter of its page's route, no agent id is a value a static admin route reserves
+ * (`/admin/requests` wins over `/admin/<agent>`, so an agent named `requests` would have no gallery), and the admin
+ * publication, being fixed, roots under its own static prefix with every page route under it (U20b).
  */
 import { readFileSync } from "node:fs";
 import { packagePath } from "../package-path.js";
@@ -18,6 +19,7 @@ import { slotFile } from "../records/slot-model/layout.js";
 import { readSlotValue, type SlotRead } from "../records/slot-current.js";
 import { modelExists, readModelText } from "../records/slots.js";
 import { MODEL_AGENTS } from "../records/slot-model/types.js";
+import { publicationRootFindings } from "../constitution/certify/route.js";
 
 export const ADMIN_PUBLICATION_SLOT = "publication.admin";
 /** The workspace Publisher IA tab (L1) the admin slots sit in. */
@@ -119,13 +121,21 @@ export function adminPageRecord(id: string, route: string, frame: string, fill: 
   return {
     schema: "clossys.page/1", path: route, ...(title ? { title } : {}), frame, sections,
     copy: title ? { "meta-title": title } : {}, ...(Object.keys(bindings).length ? { bindings } : {}),
-    meta: { source: { kind: "derived", ref: [`@clossys/publisher:defaults/${id}/starter-v1.json`] } },
+    meta: {
+      source: { kind: "derived", ref: [`@clossys/publisher:defaults/${id}/starter-v1.json`] },
+      // The native entry the pinned projection reads: the page's route metadata (its sections, active), under the admin publication.
+      entry: { fields: { kind: "page" }, blocks: { Route: { slots: sections.map(section => ({ section, state: "active" })) } }, publication: "admin", entryId: id.replace(/^page\./, "") },
+    },
   };
 }
 
-/** The clossys.publication/1 record `clossys init` seeds for the admin publication: its pages in plan order, home first. */
+/**
+ * The clossys.publication/1 record `clossys init` seeds for the admin publication: its pages in plan order, home first.
+ * Each entry id is its page cell less the `page.` prefix (`admin-home` is cell `page.admin-home`), so the pinned
+ * projection finds every placed page by a stable entryOrder identity.
+ */
 export function adminPublicationRecord(pages: readonly string[]): Record<string, unknown> {
-  const routeId = (page: string) => page.replace(/^page\.admin-/, "");
+  const routeId = (page: string) => page.replace(/^page\./, "");
   return {
     schema: "clossys.publication/1", format: "web.page.responsive", entryOrder: pages.map(routeId),
     routePack: { packId: "admin", homeRouteId: routeId(pages[0] ?? "page.admin-home") },
@@ -135,6 +145,10 @@ export function adminPublicationRecord(pages: readonly string[]): Record<string,
 
 /** The data-bound record section ids the installed Designer package declares (they bind no Writer copy on a page). */
 export const dataBoundSections = (root: string): ReadonlySet<string> => new Set(boundOf(readContracts(root)).keys());
+/** Each data-bound record section's binding (port, records, scope), as the installed Designer contracts state it (U20b: the bound install injects by it). */
+export const dataBoundReads = (root: string): ReadonlyMap<string, AdminRead> => boundOf(readContracts(root));
+/** The route scope parameters a `reads.scope` names (`workspace` names none). */
+export const scopeParams = (scope: string): string[] => scope === "workspace" ? [] : scope.split(",").map(part => part.trim()).filter(Boolean);
 
 /** The admin seat plan, as the installed Publisher (and Designer) packages state it for `root`. */
 export function adminPlan(root: string): AdminPlan {
@@ -192,8 +206,6 @@ export function adminContract(plan: AdminPlan, id: string): Record<string, unkno
   return pageContract(page);
 }
 
-/** The route scope parameters a `reads.scope` names (`workspace` names none). */
-const scopeParams = (scope: string): string[] => scope === "workspace" ? [] : scope.split(",").map(part => part.trim()).filter(Boolean);
 
 /**
  * The plan's own rule findings (`publisher.admin-seated` reports them): a data-bound section reads under route
@@ -209,6 +221,8 @@ export function adminPlanFindings(plan: AdminPlan, agents: readonly string[] = M
     const clash = agents.filter(agent => (page.reserved.agent ?? []).includes(agent));
     if (clash.length) findings.push({ subject: `publisher/${page.id}`, detail: `agent ${clash.join(", ")} is a value static admin routes reserve for <agent> (${(page.reserved.agent ?? []).join(", ")}): ${page.route.replace("<agent>", clash[0]!)} would never reach this page` });
   }
+  // The admin publication is fixed (every consumer holds it): it roots under /admin and every page route sits there.
+  for (const detail of publicationRootFindings(plan.publication, plan.root, plan.pages.map(page => page.route), true)) findings.push({ subject: `publisher/${plan.publication}`, detail });
   return findings;
 }
 

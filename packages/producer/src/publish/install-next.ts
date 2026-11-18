@@ -102,7 +102,7 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
   const bound = options.bind ? await planNextBind({ root, site, map, check: options.check === true, bind: options.bind, leafTemplates }) : undefined;
   const assembly = bound ? bound.assembly : options.assembly!;
   const states = bound ? bound.states : options.states;
-  const plan = planNextRoutes({ map, leafTemplates, assembly, live: options.live === true, ...(states !== undefined ? { states } : {}) });
+  const plan = planNextRoutes({ map, leafTemplates, assembly, live: options.live === true, ...(states !== undefined ? { states } : {}), ...(bound?.routeParams ? { routeParams: bound.routeParams } : {}) });
   const findings: InstallFinding[] = [...(bound?.findings ?? []), ...plan.findings];
   const files: PublishNextFile[] = [];
   if (findings.some(isBlocking)) return { app, files, findings };

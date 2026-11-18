@@ -13,6 +13,11 @@
  * slug is a 404. A static install serves exactly the leaves it was installed with.
  * Installed files carry `NEXT_ROUTE_MARKER`; anything without it was not written by Publisher.
  *
+ * A page whose path holds `<param>` segments (the dynamic route format, `catalog/ia/route-format.ts`) installs as
+ * one `[param]` folder route. Its values come from the install (`routeParams`, the consumer's records at install
+ * time): the route exports them as `generateStaticParams`, keeps `dynamicParams` off, and an unknown value is a
+ * 404 (`notFound()`). A dynamic page with no values supplied is a finding, never a route that serves anything.
+ *
  * With a `states` module, the install also writes the publication's shell at the app root
  * (`NEXT_SHELL_FILES`): the root `layout.tsx` mounts the assembly's document export and re-exports
  * its metadata, and `loading.tsx`, `not-found.tsx`, `error.tsx` and `global-error.tsx` each mount
@@ -21,6 +26,7 @@
 import { projectStaticParams } from "../content-map/projections.js";
 import { contentMapPath } from "../content-map/check.js";
 import type { ContentMap, ContentMapEntry } from "../content-map/contract.js";
+import { parseRoute } from "../catalog/ia/route-format.js";
 import { relativeSpecifier } from "./host.js";
 import type { InstallFinding } from "./index.js";
 
@@ -68,6 +74,11 @@ export interface NextRoutesOptions {
    * directory. When set, the publication's shell (`NEXT_SHELL_FILES`) installs at the app root.
    */
   readonly states?: string;
+  /**
+   * The values of each dynamic page's parameters, by page id: one record per served URL, keyed by parameter name
+   * (`{ agent: "designer" }` for `/admin/<agent>`). Read by the caller from the consumer's records at install time.
+   */
+  readonly routeParams?: Readonly<Record<string, readonly Readonly<Record<string, string>>[]>>;
 }
 /** One installed route file, relative to the app directory. */
 export interface NextRouteFile {
@@ -77,8 +88,10 @@ export interface NextRouteFile {
   readonly kind: "page" | "leaf" | "shell";
   /** The state a shell file serves. */
   readonly state?: NextShellState;
-  /** The served route, `[slug]` standing for the leaf parameter. */
+  /** The served route, `[slug]` standing for the leaf parameter and `[name]` for a route parameter. */
   readonly route: string;
+  /** A dynamic page's parameter names, in path order. */
+  readonly params?: readonly string[];
   readonly content: string;
 }
 export interface NextRoutesPlan { readonly files: readonly NextRouteFile[]; readonly findings: readonly InstallFinding[] }
@@ -87,6 +100,9 @@ export interface NextRoutesPlan { readonly files: readonly NextRouteFile[]; read
 const LEAF_SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 /** A static route segment Next serves verbatim: no route groups, parameters, private or reserved folders. */
 const SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+/** A route parameter segment (`<agent>`), and the value one takes: one lower-case URL segment (route-format.ts). */
+const PARAM_SEGMENT = /^<([a-z][a-z0-9]*)>$/;
+const PARAM_VALUE = /^[a-z0-9][a-z0-9.-]*$/;
 const pageEntries = (map: ContentMap) => map.entries.filter((entry): entry is ContentMapEntry => entry.kind === "page");
 const segmentsOf = (path: string) => path.split("/").filter(Boolean);
 const folder = (segments: readonly string[]) => segments.map(segment => (segment.startsWith("_") ? `%5F${segment.slice(1)}` : segment));
@@ -122,6 +138,30 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { slug } = await params;
   if (!(${known})) notFound();
   return createElement(${NEXT_PAGE_EXPORT}, { page: ${literal(pageId)}, slug });
+}
+`;
+}
+
+function paramModule(file: string, assembly: string, pageId: string, names: readonly string[], values: readonly Readonly<Record<string, string>>[]): string {
+  const type = `{ ${names.map(name => `${name}: string`).join("; ")} }`;
+  const rows = values.map(row => `  { ${names.map(name => `${name}: ${literal(row[name])}`).join(", ")} },`);
+  const known = names.map(name => `row.${name} === route.${name}`).join(" && ");
+  return `${NEXT_ROUTE_MARKER}
+import { createElement } from "react";
+import { notFound } from "next/navigation";
+import { ${NEXT_PAGE_EXPORT} } from ${literal(relativeSpecifier(file, assembly))};
+
+/** The parameter values the consumer's records held at install; any other value is not a page. */
+const known: ${type}[] = ${rows.length ? `[\n${rows.join("\n")}\n]` : "[]"};
+export const dynamicParams = false;
+export function generateStaticParams() {
+  return known;
+}
+
+export default async function Page({ params }: { params: Promise<${type}> }) {
+  const route = await params;
+  if (!known.some(row => ${known})) notFound();
+  return createElement(${NEXT_PAGE_EXPORT}, { page: ${literal(pageId)}, params: { ${names.map(name => `${name}: route.${name}`).join(", ")} } });
 }
 `;
 }
@@ -167,11 +207,37 @@ export function planNextRoutes(options: NextRoutesOptions): NextRoutesPlan {
     files.push(row);
   };
   for (const page of pages) {
-    const segments = segmentsOf(contentMapPath(page));
-    const bad = segments.find(segment => !SEGMENT.test(segment));
+    const path = contentMapPath(page);
+    const segments = segmentsOf(path);
+    const names = segments.map(segment => PARAM_SEGMENT.exec(segment)?.[1]);
+    const bad = segments.find((segment, at) => names[at] === undefined && !SEGMENT.test(segment));
     if (bad !== undefined) { findings.push({ code: "site-contract", slot: page.id, detail: `${page.id}: path segment "${bad}" is not a static route segment` }); continue; }
-    const file = [...folder(segments), "page.tsx"].join("/");
-    add({ file, pageId: page.id, kind: "page", route: `/${segments.join("/")}`, content: pageModule(file, options.assembly, page.id) });
+    const params = names.filter((name): name is string => name !== undefined);
+    if (!params.length) {
+      const file = [...folder(segments), "page.tsx"].join("/");
+      add({ file, pageId: page.id, kind: "page", route: `/${segments.join("/")}`, content: pageModule(file, options.assembly, page.id) });
+      continue;
+    }
+    const parsed = parseRoute(path);
+    if (!parsed.ok) { findings.push({ code: "site-contract", slot: page.id, detail: `${page.id}: route ${parsed.reason}` }); continue; }
+    const supplied = options.routeParams?.[page.id];
+    if (!supplied) { findings.push({ code: "site-contract", slot: page.id, detail: `${page.id}: route ${path} has parameters but the install supplies no values for them` }); continue; }
+    const values: Readonly<Record<string, string>>[] = [];
+    const held = new Set<string>();
+    for (const row of supplied) {
+      const keys = Object.keys(row).sort();
+      if (keys.join(",") !== [...params].sort().join(",") || params.some(name => !PARAM_VALUE.test(row[name] ?? ""))) {
+        findings.push({ code: "site-contract", slot: page.id, detail: `${page.id}: route value ${JSON.stringify(row)} is not one lower-case segment for each of ${params.map(name => `<${name}>`).join(", ")}` });
+        continue;
+      }
+      const key = params.map(name => row[name]).join("/");
+      if (held.has(key)) continue;
+      held.add(key);
+      values.push(row);
+    }
+    const routeSegments = segments.map((segment, at) => (names[at] === undefined ? segment : `[${names[at]}]`));
+    const file = [...folder(routeSegments), "page.tsx"].join("/");
+    add({ file, pageId: page.id, kind: "page", route: `/${routeSegments.join("/")}`, params, content: paramModule(file, options.assembly, page.id, params, values) });
   }
   const extra: ContentMapEntry[] = [];
   const templates: { page: ContentMapEntry; segments: string[] }[] = [];

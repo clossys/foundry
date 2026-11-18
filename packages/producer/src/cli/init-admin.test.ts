@@ -336,7 +336,8 @@ describe("publisher.admin-seated", () => {
     ["contract layout repointed", "page.admin-home", doc => { doc.contract.layout = "publisher/layout.app-home"; }, ["contract layout is \"publisher/layout.app-home\", not publisher/layout.admin-home"]],
     ["page kind publication", "page.admin-home", doc => { doc.kind = "publication"; }, ["kind is publication, not page"]],
     ["publication kind page", ADMIN_PUBLICATION_SLOT, doc => { doc.kind = "page"; }, ["kind is page, not publication"]],
-    ["publication root /x", ADMIN_PUBLICATION_SLOT, doc => { doc.contract.root = "/x"; }, ["contract root is \"/x\", not the package root"]],
+    ["publication root /x", ADMIN_PUBLICATION_SLOT, doc => { doc.contract.root = "/x"; }, ["contract root is \"/x\", not the package root", "contract: page route /admin is outside the publication root /x"]],
+    ["publication root / (a fixed publication)", ADMIN_PUBLICATION_SLOT, doc => { doc.contract.root = "/"; }, ["contract: a fixed publication roots under its own static prefix, never /"]],
     ["slot.json {} (invalid)", "page.admin-questions", doc => { for (const key of Object.keys(doc)) delete doc[key]; }, ["slot.json is missing or not a valid slot"]],
     ["a tighten entry that detaches page.assembled", "page.admin-home", doc => { doc.tighten = [{ path: "contract.requirements", op: "remove", value: { check: "page.assembled" }, why: "x", by: { actor: "owner", ref: "owner-chat" }, at: AT }]; }, ["carries 1 tighten entries; the admin seat is the Publisher package's and takes none (remove them)"]],
   ];

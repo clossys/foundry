@@ -6,6 +6,7 @@
 import { join } from "node:path";
 import type { WriterSlotBodyRecord } from "@clossys/writer/slot-body";
 import { agentModule } from "../read/cells.js";
+import { isAgentLoop } from "../loop/agent-loops.js";
 import { readPinnedPublication } from "./pinned-publication.js";
 import { writerDeclarationsText } from "./studio-defaults.js";
 import { hasPinFile, hasSlotModel, listSlots, readCandidate, readIa, readSlot, viewPlacedAt } from "../records/slots.js";
@@ -61,6 +62,8 @@ async function pinnedWriterRows(consumer: string): Promise<{ rows: WriterSlotBod
   const rows: WriterSlotBodyRecord[] = [];
   const selectedLocales = new Set<string>();
   for (const entry of entries) {
+    // An adopted agent loop slot (clossys init, clossys loop) holds no copy: loop.agent-standard judges it, never this reader.
+    if (isAgentLoop(entry.id)) continue;
     if (!entry.pin) {
       if (hasPinFile(entry.dir)) throw new Error(`Invalid Writer pin: ${entry.id}`);
       continue;
