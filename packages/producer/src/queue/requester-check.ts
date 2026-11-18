@@ -10,6 +10,7 @@
  * - every pinned candidate certifies on the pinSet now: a fresh recorded verdict is taken, a stale or legacy one is
  *   re-judged (certify, the slot's own contract checks), and a failed one fails.
  */
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { briefTightenOnly } from "../check/brief-tighten-only.js";
 import { iaOrphans } from "../check/ia-orphans.js";
@@ -21,10 +22,14 @@ import { pinChecks, reverdictOf, slotStatus, NEEDS_REFRESH } from "../constituti
 import { certifyEnv } from "../constitution/certify/index.js";
 import { buildContext } from "../constitution/context.js";
 import { liveSlotRecords } from "../constitution/checks/shared.js";
+import { currentStandardOf, isAgentLoop, isLoopAgent } from "../loop/agent-loops.js";
 import { readSubject } from "../loop/slots.js";
+import { parseCandidateName } from "../records/candidate.js";
 import { isRecordSlot, resolveSlot, slotRecords } from "../records/resolve.js";
+import { SLOT_LOCK } from "../records/slot-write.js";
 import { pinGate } from "../constitution/pin-gate.js";
-import { readRequest, targetOf } from "../records/request.js";
+import { readRequest, requestLockPath, resultRefusal, targetOf } from "../records/request.js";
+import { isReleaseSlot } from "../release/pins.js";
 import type { AgentId, OwnerOption, SlotRequest } from "../records/types.js";
 import { consumerFacts, routeEntry, RoutingError } from "./routing.js";
 
@@ -121,12 +126,82 @@ function citedAnswer(root: string, entry: FixEntry): { change: SlotRequest; opti
 }
 const isFinding = (value: object): value is Finding => "detail" in value;
 
+type PinStep = { readonly verb: "pin"; readonly args: readonly string[] };
+const nowIso = () => new Date().toISOString().replace(/\.\d+Z$/, "Z");
+
+/** The pin gate (constitution/pin-gate.ts, no write) on the candidate a pin step names, its refusals on the fix's target. */
+function pinGateFindings(root: string, entry: FixEntry, step: PinStep): Finding[] {
+  const [agent, slotId] = step.args[0]!.split("/") as [string, string];
+  const gate = pinGate(root, join(root, "clossys"), agent, slotId.split("#")[0]!, step.args[1]!, nowIso());
+  return gate.refusals.map(detail => ({ subject: entry.target, detail: `pin gate on ${step.args[1]}: ${detail}` }));
+}
+
 /**
- * The answer-step checks (foundry-build-0048 U7 r5, blind1 B3): a fix raised on a failed owner answer re-runs the
- * check that refused the answer's step, on the change entry it cites, so it can close fixed.
+ * The pin verb's own rules (cli/pin.ts runTargetPin) that hold whoever runs the pin, re-run with no write, then the pin
+ * gate: the slot is a clossys.slot/2 target slot, the candidate is a candidate file name, the slot is no release slot
+ * (a ready-pin answers queue.approve through release.ready, never a change answer), its write lock is free, an agent
+ * loop's Producer standard reads, and the gate passes. The answer binding (the owner's answer as the change's last
+ * event) is the owner's to give again, not a check the fix's assignee can make pass.
+ */
+function pinStepFindings(root: string, entry: FixEntry, step: PinStep): Finding[] {
+  const on = (detail: string): Finding => ({ subject: entry.target, detail: `pin ${step.args[0]} ${step.args[1]}: ${detail}` });
+  const [agent, target] = step.args[0]!.split("/") as [AgentId, string];
+  const slotId = target.split("#")[0]!;
+  const record = target.includes("#") ? target.slice(target.indexOf("#") + 1) : undefined;
+  if (!readSubject(root, agent, slotId)) return [on(`${agent}/${slotId} has no clossys.slot/2 slot.json`)];
+  if (!parseCandidateName(step.args[1]!)) return [on(`${step.args[1]} is not a candidate file name (<name>-v<n>.md|json|svg)`)];
+  if (agent === "publisher" && isReleaseSlot(agent, slotId) && record === undefined) return [on("a release slot takes its ready-pin through an owner answer on queue.approve (release.ready), not a change answer")];
+  const out: Finding[] = [];
+  const lock = join(root, "clossys", "agents", agent, slotId, SLOT_LOCK);
+  if (existsSync(lock)) out.push(on(`the slot's write lock ${lock} is held (another decision write is running; if none is, remove it by hand)`));
+  if (isLoopAgent(agent) && isAgentLoop(slotId) && record === undefined) {
+    const standard = currentStandardOf(root, slotId);
+    if (!standard.ok) out.push(on(`producer/${slotId} cannot be read: ${standard.reason}`));
+  }
+  return [...out, ...pinGateFindings(root, entry, step)];
+}
+
+/**
+ * The closure an owner answer's step ends in (records/request.ts runAnswer, closeWork), re-run on the cited change with
+ * no write: passes when the change has closed since; else its entry lock is free and, by the step's verb, a handoff
+ * routes (any router error a finding), a pin's step passes (pinStepFindings) and its result resolves and requester
+ * check passes, a close's result resolves and (unless declined) its requester check passes. A reject only needs the lock.
+ */
+function closureFindings(root: string, entry: FixEntry): Finding[] {
+  const cited = citedAnswer(root, entry);
+  if (isFinding(cited)) return [cited];
+  const { change, option } = cited;
+  if (change.status !== "open") return [];
+  const on = (detail: string): Finding => ({ subject: entry.target, detail: `closure of queue.change#${change.id}: ${detail}` });
+  const step = option?.then;
+  if (!step) return [on("its latest owner answer names no option")];
+  const consumer = join(root, "clossys");
+  const out: Finding[] = [];
+  const lock = requestLockPath(consumer, change.id);
+  if (existsSync(lock)) out.push(on(`the entry is locked by another writer (${lock}; if none is running, remove it by hand)`));
+  if (step.verb === "handoff") {
+    try { out.push(...ANSWER_RUNNERS.route!(root, entry)); } catch (error) { out.push(on(`the router fails: ${error instanceof Error ? error.message : String(error)}`)); }
+    return out;
+  }
+  if (step.verb === "reject") return out;
+  const outcome = step.verb === "close" ? step.args[0] : "changed";
+  const result = step.verb === "pin" ? step.args[0]! : outcome === "fixed" ? change.target : `queue.change#${change.id}`;
+  if (step.verb === "pin") out.push(...pinStepFindings(root, entry, step as PinStep));
+  const why = resultRefusal(consumer, result);
+  if (why) out.push(on(`result ${result} ${why}`));
+  if (outcome !== "declined") out.push(...requesterCheck(root, change).failures.map(detail => on(`requester check: ${detail}`)));
+  return out;
+}
+
+/**
+ * The answer-step checks (foundry-build-0048 U7 r5 blind1 B3, r7): a fix raised on a failed owner answer re-runs the
+ * check that refused the answer's step, on the change entry it cites, so it can close fixed. Every label
+ * records/request.ts StepFailure gives has one, so no failed step's fix turns into an owner question.
  * - `pin.gate`: the pin gate (constitution/pin-gate.ts, no write) on the candidate the latest answer pins.
+ * - `pin`: the pin verb's own rules that hold whoever pins (pinStepFindings), then the pin gate.
  * - `requester.check`: the requester check of the cited change.
  * - `route`: the router, the owner reservation set aside, routes the cited change to the agent the latest answer hands it to.
+ * - `closure`: the closure the step ends in (closureFindings).
  */
 const ANSWER_RUNNERS: Readonly<Record<string, (root: string, entry: FixEntry) => readonly Finding[]>> = {
   "pin.gate": (root, entry) => {
@@ -134,9 +209,14 @@ const ANSWER_RUNNERS: Readonly<Record<string, (root: string, entry: FixEntry) =>
     if (isFinding(cited)) return [cited];
     const step = cited.option?.then;
     if (step?.verb !== "pin") return [{ subject: entry.target, detail: `the latest answer on queue.change#${cited.change.id} pins nothing` }];
-    const [agent, slotId] = step.args[0]!.split("/") as [string, string];
-    const gate = pinGate(root, join(root, "clossys"), agent, slotId.split("#")[0]!, step.args[1]!, new Date().toISOString().replace(/\.\d+Z$/, "Z"));
-    return gate.refusals.map(detail => ({ subject: entry.target, detail: `pin gate on ${step.args[1]}: ${detail}` }));
+    return pinGateFindings(root, entry, step as PinStep);
+  },
+  pin: (root, entry) => {
+    const cited = citedAnswer(root, entry);
+    if (isFinding(cited)) return [cited];
+    const step = cited.option?.then;
+    if (step?.verb !== "pin") return [{ subject: entry.target, detail: `the latest answer on queue.change#${cited.change.id} pins nothing` }];
+    return pinStepFindings(root, entry, step as PinStep);
   },
   "requester.check": (root, entry) => {
     const cited = citedAnswer(root, entry);
@@ -156,6 +236,7 @@ const ANSWER_RUNNERS: Readonly<Record<string, (root: string, entry: FixEntry) =>
       return [{ subject: entry.target, detail: `the router refuses ${cited.change.target}: ${error.message}` }];
     }
   },
+  closure: closureFindings,
 };
 
 /**

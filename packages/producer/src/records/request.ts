@@ -806,24 +806,37 @@ function fixFor(consumer: string, request: SlotRequest, option: OwnerOption, fai
   }, options).request;
 }
 
-/** A failed answer step: a rejected event (unless the step wrote one), and for a change a kind fix on its target. */
+/**
+ * A failed answer step: a rejected event (unless the step wrote one), and for a change a kind fix on its target. When
+ * the entry's lock is still held (the step itself timed out on it, U7 r7), the rejected event cannot be written (the
+ * lock is never broken): the fix still records the failed step, with a finding that the event is missing, and the
+ * entry, read as it stands, stays open.
+ */
 function failedStep(consumer: string, id: string, option: OwnerOption, failure: StepFailure, at: string): AnswerResult {
-  const request = withRequestLock(consumer, id, () => {
-    const now = readRequest(consumer, id);
-    if (now.events.at(-1)?.op === "rejected" || now.status !== "open") return now;
-    const next = withEvent(now, "rejected", at, "producer", `the owner's answer ${option.id} failed (${failure.check}): ${failure.findings.slice(0, 3).join("; ")}`).request;
-    writeRequest(consumer, next);
-    return next;
-  });
-  const findings = failure.findings.length ? [...failure.findings] : [failure.check];
+  let request: SlotRequest;
+  let failed = failure;
+  try {
+    request = withRequestLock(consumer, id, () => {
+      const now = readRequest(consumer, id);
+      if (now.events.at(-1)?.op === "rejected" || now.status !== "open") return now;
+      const next = withEvent(now, "rejected", at, "producer", `the owner's answer ${option.id} failed (${failure.check}): ${failure.findings.slice(0, 3).join("; ")}`).request;
+      writeRequest(consumer, next);
+      return next;
+    });
+  } catch (error) {
+    if (!(error instanceof RequestError)) throw error;
+    request = readRequest(consumer, id);
+    failed = new StepFailure(failure.check, [...failure.findings, `no rejected event was written on ${workQueue("change")}#${id}: ${error.message}`]);
+  }
+  const findings = failed.findings.length ? [...failed.findings] : [failed.check];
   let fix: SlotRequest | undefined;
   let unrouted = "";
   if (request.kind === "change" && request.status === "open") {
-    try { fix = fixFor(consumer, request, option, failure, at); } catch (error) {
+    try { fix = fixFor(consumer, request, option, failed, at); } catch (error) {
       unrouted = `; no fix could be raised (${error instanceof Error ? error.message : String(error)})`;
     }
   }
-  return { request, option, ok: false, ...(fix ? { fix } : {}), message: `request ${id} stays open: the owner's answer ${option.id} failed ${failure.check} (${findings.slice(0, 3).join("; ")})${fix ? `; fix ${fix.id} routed to ${fix.assignee}` : unrouted}` };
+  return { request, option, ok: false, ...(fix ? { fix } : {}), message: `request ${id} stays open: the owner's answer ${option.id} failed ${failed.check} (${findings.slice(0, 4).join("; ")})${fix ? `; fix ${fix.id} routed to ${fix.assignee}` : unrouted}` };
 }
 
 /** Why a result ref does not resolve: a placed slot ref, or a `<queue>#<id>` entry that exists. Undefined when it does. */

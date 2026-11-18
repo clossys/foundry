@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { hostname, tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -8,16 +8,23 @@ import { REQUESTS_FILED } from "../loop/names.js";
 import { raiseEntry } from "../loop/route.js";
 import { runPinCli } from "../cli/pin.js";
 import { consumerFacts, rederive } from "../queue/routing.js";
-import { writeCandidate } from "./slot-write.js";
+import { SLOT_LOCK, writeCandidate } from "./slot-write.js";
 import { verifyCheck } from "../loop/runner.js";
 import { FIX_CHECKS } from "../queue/requester-check.js";
 import { OPEN_FIX, requestsWorld, type RequestsWorld } from "../conform/__fixtures__/requests-world.js";
 import { answerQueueEntry } from "../queue/answer.js";
 import { readLegacyFixes } from "../queue/legacy-fix.js";
 import {
-  answerRequest, checkRequest, closeRequest, closeWork, raiseWork, decideRequest, placementOverlaps, raiseRequest, readRequest, requestIssues, requestsDir, signedApproval, slotlessNeeds,
+  answerRequest, checkRequest, closeRequest, closeWork, raiseWork, decideRequest, placementOverlaps, raiseRequest, readRequest, requestIssues, requestLockPath, requestsDir, signedApproval, slotlessNeeds,
   unfiledNeeds, type SlotRequest,
 } from "./request.js";
+
+// U7 r7: a hook run right after the pin verb writes a pin (cli/pin.ts clears the slot's re-verdict next), unset by default.
+const pinHook = vi.hoisted(() => ({ after: undefined as undefined | (() => void) }));
+vi.mock("../constitution/cascade.js", async importOriginal => {
+  const actual = await importOriginal<typeof import("../constitution/cascade.js")>();
+  return { ...actual, clearReverdict: (...args: Parameters<typeof actual.clearReverdict>) => { actual.clearReverdict(...args); pinHook.after?.(); } };
+});
 
 // SLOT-CREATE (foundry-build-0048 U5): a slotless need is a clossys.queue-entry/2 kind slot entry under
 // clossys/agents/producer/queue.slot/entries, decided by the target's agent and closed with a link.
@@ -614,6 +621,58 @@ describe("owner-assigned change entries (U7 r4, typed answers)", () => {
     expect(result).toMatchObject({ ok: false });
     expect(result.message).toMatch(/failed closure \(/);
     expect(readRequest(made.consumer, entry.id).events.at(-1)).toMatchObject({ op: "rejected", by: "producer", detail: expect.stringMatching(/failed \(closure\)/) });
+  });
+  it("T20 (U7 r7, B3): a fix raised on a refused pin verb (no gate verdict) re-runs the pin's rules and gate, stays open while they refuse and closes fixed once repaired", { timeout: 60_000 }, async () => {
+    const { made, entry } = await raised(bytes => bytes);
+    const pin = entry.options!.find(option => option.then.verb === "pin")!;
+    // Another decision write holds the slot's write lock (a live owner, so never broken as stale): the pin verb refuses.
+    const lock = join(made.consumer, DIRECTOR, SLOT_LOCK);
+    mkdirSync(lock);
+    writeFileSync(join(lock, "owner.json"), JSON.stringify({ pid: process.pid, host: hostname(), at: Date.now() }));
+    const result = await answerRequest(made.consumer, entry.id, { option: pin.id, at: "2026-11-20T11:02:00Z", via: "cli", quote: "pin that one" });
+    expect(result).toMatchObject({ ok: false });
+    expect(result.message).toMatch(/failed pin \(pin refused: Slot is unavailable/);
+    const fix = result.fix!;
+    expect(fix).toMatchObject({ kind: "fix", check: "pin", assignee: "director", status: "open" });
+    // Unrepaired, the assignee's fixed close re-runs the pin's rules and is refused; it is no claim for the owner.
+    expect(() => closeWork(made.consumer, fix.id, { by: "director", at: "2026-11-20T11:03:00Z", outcome: "fixed", result: entry.target })).toThrow(/its check pin still fails .*write lock .* is held/);
+    expect(readRequest(made.consumer, fix.id)).toMatchObject({ status: "open" });
+    expect(readRequest(made.consumer, fix.id).events.some(event => event.op === "asked")).toBe(false);
+    rmSync(lock, { recursive: true, force: true });
+    const closed = closeWork(made.consumer, fix.id, { by: "director", at: "2026-11-20T11:04:00Z", outcome: "fixed", result: entry.target });
+    expect(closed).toMatchObject({ status: "closed", outcome: "fixed" });
+    expect(closed.events.find(event => event.op === "verified")?.detail).toMatch(/fix check pin passes on director\/focus\.reach\.geography/);
+    expect(requestIssues(readRequest(made.consumer, fix.id), made.root)).toEqual([]);
+    expect(FIX_CHECKS).toEqual(expect.arrayContaining(["pin", "closure"]));
+  });
+
+  it("T21 (U7 r7, final note and B3): after a pin applies, a held entry lock times out the close and the rejected event: the fix still records the failed step, and that closure fix closes fixed once the lock is gone", { timeout: 60_000 }, async () => {
+    const { made, entry } = await raised(bytes => bytes);
+    const pin = entry.options!.find(option => option.then.verb === "pin")!;
+    const entryLock = requestLockPath(made.consumer, entry.id);
+    // Another writer takes the entry's lock right after the pin is written, and keeps it.
+    pinHook.after = () => writeFileSync(entryLock, `${JSON.stringify({ pid: process.pid, at: new Date().toISOString() })}\n`);
+    let result: Awaited<ReturnType<typeof answerRequest>>;
+    try { result = await answerRequest(made.consumer, entry.id, { option: pin.id, at: "2026-11-20T11:02:00Z", via: "cli", quote: "pin that one" }); } finally { pinHook.after = undefined; }
+    expect(result).toMatchObject({ ok: false });
+    expect(JSON.parse(readFileSync(join(made.consumer, DIRECTOR, "pin.json"), "utf8"))).toMatchObject({ candidate: pin.then.args[1] });
+    expect(result.message).toMatch(/failed closure \(pin director\/focus\.reach\.geography .* is applied .*locked by another writer.*no rejected event was written on queue\.change#/);
+    // The entry could not take its rejected event (the lock is never broken): it stays open on the owner's answer.
+    const stays = readRequest(made.consumer, entry.id);
+    expect(stays).toMatchObject({ status: "open" });
+    expect(stays.events.at(-1)).toMatchObject({ op: "answered", option: pin.id });
+    const fix = result.fix!;
+    expect(fix).toMatchObject({ kind: "fix", check: "closure", assignee: "director", status: "open" });
+    expect(fix.refs).toContainEqual(expect.objectContaining({ to: "producer/queue.change", record: entry.id, rel: "cites" }));
+    expect(JSON.stringify(readRequest(made.consumer, fix.id))).toMatch(/no rejected event was written on queue\.change#/);
+    // The closure re-runs on the cited change: refused while the entry's lock is held, a pass once it is gone.
+    expect(() => closeWork(made.consumer, fix.id, { by: "director", at: "2026-11-20T11:03:00Z", outcome: "fixed", result: entry.target })).toThrow(/its check closure still fails .*locked by another writer/);
+    expect(readRequest(made.consumer, fix.id).events.some(event => event.op === "asked")).toBe(false);
+    rmSync(entryLock, { force: true });
+    const closed = closeWork(made.consumer, fix.id, { by: "director", at: "2026-11-20T11:04:00Z", outcome: "fixed", result: entry.target });
+    expect(closed).toMatchObject({ status: "closed", outcome: "fixed" });
+    expect(closed.events.find(event => event.op === "verified")?.detail).toMatch(/fix check closure passes on director\/focus\.reach\.geography/);
+    expect(requestIssues(readRequest(made.consumer, fix.id), made.root)).toEqual([]);
   });
 });
 
