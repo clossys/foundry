@@ -61,12 +61,16 @@
             "sha256": "fa4480c786198ee013a20fe7f711bbea7aaa1701ecd0b6961500b148e8c86c46"
           },
           {
+            "path": "packages/designer/src/blocks/backdrop/interactive-backdrop-boundary.tsx",
+            "sha256": "4e4ddae3101c889b4fdc8bba7fc427eea678657e76181540c2f618358fd6fd57"
+          },
+          {
             "path": "packages/designer/src/blocks/Hero.tsx",
-            "sha256": "3521d1885b64c1e8803ebefc663321eefbe082efa0f8d365e19d3f3d88944363"
+            "sha256": "da68db05eb49897b75d44e500e7d51cb7f38d47957d503db4a9902e16e2ca51f"
           },
           {
             "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
-            "sha256": "7a3c2031e7a084536d96f49bcaef4110e834e7337b631c6e8c4b6e18db0780dd"
+            "sha256": "ad7e5f6e8a10c7dec780b0009ba9cb01b0873348ecddcdaa449129c657ab8b61"
           },
           {
             "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -113,6 +117,10 @@
             "sha256": "e182d455492aa9ddb222a623655a8d5e4cc2229b2cd975444882c59375657b56"
           },
           {
+            "path": "packages/designer/src/tokens/interactive-backdrops.ts",
+            "sha256": "1219263b3faf78776c8815403491bf79ca00db0f718197e26eeb575e9907fef2"
+          },
+          {
             "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",
             "sha256": "f275a93674312946c0fa1c73c827dae315d11578be1d2c675669924f3466dfc8"
           },
@@ -139,6 +147,12 @@
             "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
             "file": "packages/designer/src/backdrop/still-backdrop-policy.ts",
             "line": 9
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/blocks/backdrop/interactive-backdrop-boundary.tsx",
+            "line": 4
           },
           {
             "code": "DF2",

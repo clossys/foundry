@@ -8,7 +8,7 @@ import type { SectionIntroProps } from "./SectionIntro.js";
 import { HeroIntro } from "./hero/HeroIntro.js";
 import { StillBackdrop, HERO_SCRIM_PASSES, type HeroBackdropScrim } from "./hero/StillBackdrop.js";
 import { resolveHeroBackdrop, type HeroBackdrop } from "./hero/hero-backdrop.js";
-import { InteractiveBackdrop } from "./backdrop/InteractiveBackdrop.js";
+import { InteractiveBackdrop } from "./backdrop/interactive-backdrop-boundary.js";
 export type { HeroBackdrop, HeroBackdropKind, HeroImageBackdrop, HeroVideoBackdrop, HeroGraphicBackdrop, HeroInteractiveBackdrop } from "./hero/hero-backdrop.js";
 export type { HeroBackdropScrim } from "./hero/StillBackdrop.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";

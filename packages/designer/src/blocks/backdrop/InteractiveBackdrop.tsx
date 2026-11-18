@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import {
   interactiveBackdropDescriptorIssues,
@@ -134,9 +136,9 @@ export function ParticleField({ params }: { params: InteractiveBackdropParams<"p
 }
 
 const MESH_BLOBS = [
-  { place: "-left-1/4 -top-1/4 size-3/4", drift: ["translate(0%, 0%)", "translate(18%, 12%)"] },
-  { place: "-right-1/4 top-1/4 size-2/3", drift: ["translate(0%, 0%)", "translate(-16%, -10%)"] },
-  { place: "-bottom-1/3 left-1/4 size-3/4", drift: ["translate(0%, 0%)", "translate(10%, -14%)"] },
+  { place: "-start-1/4 -top-1/4 size-3/4", drift: ["translate(0%, 0%)", "translate(18%, 12%)"] },
+  { place: "-end-1/4 top-1/4 size-2/3", drift: ["translate(0%, 0%)", "translate(-16%, -10%)"] },
+  { place: "-bottom-1/3 start-1/4 size-3/4", drift: ["translate(0%, 0%)", "translate(10%, -14%)"] },
 ] as const;
 
 /** Three soft colour fields that slowly drift; fixed in place under reduced motion. */
