@@ -138,6 +138,20 @@ describe("init --publication submits through the guarded candidates verb (slot/2
     expect(usage.message).toMatch(/--forms: unknown form webhook/);
     expect(existsSync(join(bare.root, "AGENTS.md"))).toBe(false);
     expect(adminSeatedSummary(runAdminSeated(bare.root))).toMatch(new RegExp(`^${ADMIN_SEATED}: fail`));
+    // So does a --tier or --basis the submit refuses: checked by the submit's own rule before plain init writes (M1).
+    const submits = bare.events().filter(event => event.op === "submit").length;
+    for (const [flag, value, pattern] of [["--tier", "bogus", /^init --publication: --tier must be low, mid, high, got bogus\n/], ["--basis", "bogus", /^init --publication: --basis must be agent, owner, planner, got bogus\n/]] as const) {
+      const argv = INIT.map((arg, index) => (INIT[index - 1] === flag ? value : arg));
+      expect(argv).toContain(value);
+      const refused = await runCli([...argv, "--root", bare.root]);
+      expect(refused.exitCode, refused.message).toBe(2);
+      expect(refused.message).toMatch(pattern);
+      expect(refused.message).toContain("Usage: clossys init --publication <id>");
+      expect(existsSync(join(bare.root, "AGENTS.md"))).toBe(false);
+      expect(adminSeatedSummary(runAdminSeated(bare.root))).toMatch(new RegExp(`^${ADMIN_SEATED}: fail`));
+      expect(existsSync(bare.agent("publisher", "publication.site", "candidates", "site-v2.json"))).toBe(false);
+      expect(bare.events().filter(event => event.op === "submit").length).toBe(submits);
+    }
     expect(INIT_USAGE).toContain("Usage: clossys init [--root <dir>] [--at <iso>] [--json]");
     expect(INIT_USAGE).toContain("Usage: clossys init --publication <id>");
     expect(INIT_USAGE).toContain("runs plain clossys init first");

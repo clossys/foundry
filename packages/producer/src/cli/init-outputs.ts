@@ -19,7 +19,7 @@ import { readPinnedPublication } from "../publish/pinned-publication.js";
 import { designerShareMark, writerLocaleCopy } from "../publish/install-outputs.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
-import { runNextSubmitCli } from "./next.js";
+import { runNextSubmitCli, submitValueIssue } from "./next.js";
 import { discoverRoot } from "./root.js";
 
 export const INIT_OUTPUTS_USAGE = "Usage: clossys init --publication <id> [--forms contact,newsletter] [--share] [--meta json-ld,llms,rss|atom]\n"
@@ -188,6 +188,9 @@ export async function runInitOutputsCli(argv: readonly string[], cwd: string, pr
   }
   if (publication === undefined) throw new CliUsageError(`--publication is required\n${INIT_OUTPUTS_USAGE}`);
   for (const flag of ["--model", "--tier", "--basis", "--skill"] as const) if (submit[SUBMIT_FLAGS[flag]] === undefined) throw new CliUsageError(`init --publication requires ${flag} (its candidate is submitted)\n${INIT_OUTPUTS_USAGE}`);
+  // The submit's own value rule, before plain init writes the pointer and seats the admin workspace: a usage error writes nothing.
+  const valueIssue = submitValueIssue(submit);
+  if (valueIssue !== undefined) throw new CliUsageError(`init --publication: ${valueIssue}\n${INIT_OUTPUTS_USAGE}`);
   const workspace = discoverRoot(resolve(cwd, root ?? "."));
   const prepared = prepare ? await prepare(workspace) : undefined;
   if (prepared && prepared.exitCode !== 0) return prepared;

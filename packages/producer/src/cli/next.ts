@@ -69,6 +69,16 @@ export const NEXT_USAGE = "Usage: clossys next [--json] [--root <dir>]\n"
 const TIERS = ["low", "mid", "high"] as const;
 const BASES = ["agent", "owner", "planner"] as const;
 
+/**
+ * The submit's `--tier` and `--basis` value rule, shared with every caller that submits through this verb (`init
+ * --publication` checks it before it writes anything), so the two cannot drift: the usage problem, or undefined.
+ */
+export function submitValueIssue(flags: { readonly tier?: string; readonly basis?: string }): string | undefined {
+  if (!(TIERS as readonly string[]).includes(flags.tier!)) return `--tier must be ${TIERS.join(", ")}, got ${flags.tier}`;
+  if (!(BASES as readonly string[]).includes(flags.basis!)) return `--basis must be ${BASES.join(", ")}, got ${flags.basis}`;
+  return undefined;
+}
+
 interface Flags {
   positional: string[]; json: boolean; owner: boolean; help: boolean; root?: string; agent?: string;
   submit?: string; model?: string; models: Record<string, string>; tier?: string; basis?: string; skill?: string; name?: string; rung?: string; seed?: string; reason?: string;
@@ -202,8 +212,8 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   const owning = step ?? STEPS.find(each => each.id === `${agent}.candidates`);
   if (!owning || owning.id !== `${agent}.candidates`) return reject(`${target} is not a candidates slot of a defined step`);
   for (const [flag, given] of [["--model", flags.model], ["--tier", flags.tier], ["--basis", flags.basis], ["--skill", flags.skill]] as const) if (!given) throw new CliUsageError(`next --submit requires ${flag}\n${NEXT_USAGE}`);
-  if (!(TIERS as readonly string[]).includes(flags.tier!)) throw new CliUsageError(`--tier must be ${TIERS.join(", ")}, got ${flags.tier}\n${NEXT_USAGE}`);
-  if (!(BASES as readonly string[]).includes(flags.basis!)) throw new CliUsageError(`--basis must be ${BASES.join(", ")}, got ${flags.basis}\n${NEXT_USAGE}`);
+  const valueIssue = submitValueIssue(flags);
+  if (valueIssue !== undefined) throw new CliUsageError(`${valueIssue}\n${NEXT_USAGE}`);
   // The selection ladder: a seed adopted or adapted is named, a created candidate says why no seed fit.
   const ladder: CandidateLadder | undefined = flags.rung === undefined ? undefined
     : { rung: flags.rung, ...(flags.seed !== undefined ? { seed: flags.seed } : {}), ...(flags.reason !== undefined ? { reason: flags.reason } : {}) };

@@ -94,8 +94,28 @@ const OUTPUTS = { publication: "example-site", forms: ["contact"] as const, shar
 
 /** A route rendered inside its own root layout, with the layout's metadata export (what Next sets as <title>). */
 async function render(site: string, route: string, layout: string): Promise<{ html: string; title?: string }> {
+  return renderEntry(site, route, `import { createElement } from "react"; import Layout, { metadata } from "./app/${layout}"; import Page from "./app/${route}"; export { metadata }; export default function Root() { return createElement(Layout, null, createElement(Page)); }`);
+}
+/** The Designer shell context the frames read (`useShellCopy`), by file: the same module the Designer frames entry imports. */
+const SHELL_CONTEXT = join(import.meta.dirname, "..", "..", "..", "designer", "dist", "components", "Banner.copy-context.js");
+/**
+ * Designer shell strings as a frame reads them (`useShellCopy`), inside a locale's root layout and the Publisher host a page
+ * module of that locale imports: the skip link text and the banner-dismiss aria-label.
+ */
+async function renderShell(site: string, layout: string, page: string): Promise<string> {
+  const host = /from "(\.\.\/publisher-host[^"]*)"/.exec(readFileSync(join(site, "clossys", "pages", `${page}.tsx`), "utf8"))![1]!;
+  return (await renderEntry(site, `shell-${page}`, [
+    'import { createElement } from "react";',
+    'import { SHELL_COPY_REFS } from "@clossys/designer/frames";',
+    `import { useShellCopy } from ${JSON.stringify(SHELL_CONTEXT)};`,
+    `import Layout from "./app/${layout}";`,
+    `import { PageHost } from ${JSON.stringify(`./clossys/pages/${host}`)};`,
+    'function Probe() { const copy = useShellCopy(); return createElement("a", { href: "#main", "aria-label": copy(SHELL_COPY_REFS.banner.dismiss) }, copy(SHELL_COPY_REFS.frame.skip)); }',
+    "export default function Root() { return createElement(Layout, null, createElement(PageHost, null, createElement(Probe))); }",
+  ].join("\n"))).html;
+}
+async function renderEntry(site: string, route: string, entry: string): Promise<{ html: string; title?: string }> {
   const here = createRequire(import.meta.url);
-  const entry = `import { createElement } from "react"; import Layout, { metadata } from "./app/${layout}"; import Page from "./app/${route}"; export { metadata }; export default function Root() { return createElement(Layout, null, createElement(Page)); }`;
   const result = await build({
     stdin: { contents: entry, resolveDir: site, loader: "tsx" }, bundle: true, write: false, format: "esm", platform: "node", jsx: "automatic", logLevel: "silent",
     banner: { js: `import { createRequire as __createRequire } from "node:module"; const require = __createRequire(${JSON.stringify(import.meta.filename)});` },
@@ -213,6 +233,57 @@ describe("publication outputs (U18)", () => {
     expect(blocking(dropped)).toEqual([]);
     expect(dropped.files.filter(file => file.state === "removed").map(file => file.file).sort()).toEqual(["fr/opengraph-image.tsx", "fr/twitter-image.tsx", "opengraph-image.tsx", "twitter-image.tsx"]);
     expect(existsSync(join(app, "opengraph-image.tsx"))).toBe(false);
+  });
+  it("French routes mount the French host: Designer shell strings come from the French Writer copy, and a missing French shell key blocks (B1)", { timeout: 120_000 }, async () => {
+    const { root, site, app } = await consumer();
+    const { candidate } = await initPublicationOutputs(root, OUTPUTS);
+    pin(root, "publisher", "publication.example-site", candidate);
+    // The Writer pins two Designer shell strings (the skip link and the banner-dismiss label) in the default locale.
+    const strings = join(slotDir(root, "writer", "strings.site"), "candidates", "site-v2.md");
+    const shell = { "st.z4jcxtzczb": "Skip to content", "st.ev3xsrhrwe": "Dismiss notice" };
+    writeFileSync(strings, `${readFileSync(strings, "utf8").trimEnd()}\n${Object.entries(shell).map(([key, text]) => `\n### ${key}\n<!-- {"id":"${key}","bindings":[]} -->\n${text}\n`).join("")}`);
+    pin(root, "writer", "strings.site", "site-v2.md");
+
+    // A shell key French lacks blocks the install; the English text never stands in.
+    draftFrench(root, ["st.ev3xsrhrwe"]);
+    const undrafted = await install(root, app);
+    expect(blocking(undrafted)).toEqual([expect.objectContaining({ code: "missing-copy-key", detail: "fr: example-site: the shell string st.ev3xsrhrwe has no fr text; the Writer drafts it before fr installs" })]);
+    expect(existsSync(join(site, "clossys", "publisher-host@fr.tsx"))).toBe(false);
+
+    draftFrench(root);
+    expect(blocking(await install(root, app))).toEqual([]);
+    // Each locale's page modules import that locale's host; the default locale keeps the substrate host.
+    for (const page of ["home", "about"]) {
+      expect(readFileSync(join(site, "clossys", "pages", `${page}@fr.tsx`), "utf8")).toContain('import { PageHost } from "../publisher-host@fr";');
+      expect(readFileSync(join(site, "clossys", "pages", `${page}.tsx`), "utf8")).toContain('import { PageHost } from "../publisher-host";');
+    }
+    const frenchHost = readFileSync(join(site, "clossys", "publisher-host@fr.tsx"), "utf8");
+    expect(frenchHost.split("\n", 1)[0]).toBe(NEXT_ROUTE_MARKER);
+    expect(frenchHost).toContain('"st.z4jcxtzczb": "FR Skip to content"');
+    expect(frenchHost).not.toContain('"Skip to content"');
+
+    // Rendered: the French document's shell strings, text and aria-label, are French; the English document's are English.
+    const french = await renderShell(site, "fr/layout", "home@fr");
+    expect(french).toMatch(/^<html lang="fr"/);
+    expect(french).toContain('aria-label="FR Dismiss notice"');
+    expect(french).toContain(">FR Skip to content</a>");
+    expect(french).not.toMatch(/"Dismiss notice"|>Skip to content</);
+    const english = await renderShell(site, "(en)/layout", "home");
+    expect(english).toMatch(/^<html lang="en"/);
+    expect(english).toContain('aria-label="Dismiss notice"');
+    expect(english).toContain(">Skip to content</a>");
+    expect(english).not.toContain("FR ");
+
+    // A locale dropped from the publication takes its host with it.
+    const dir = slotDir(root, "publisher", "publication.example-site");
+    const value = JSON.parse(readFileSync(join(dir, "candidates", candidate), "utf8"));
+    delete value.outputs.locales;
+    writeFileSync(join(dir, "candidates", "publication-v4.json"), `${JSON.stringify(value, null, 2)}\n`);
+    pin(root, "publisher", "publication.example-site", "publication-v4.json");
+    const single = await install(root, app);
+    expect(blocking(single)).toEqual([]);
+    expect(single.files.filter(file => file.state === "removed").map(file => file.file)).toContain("clossys/publisher-host@fr.tsx");
+    expect(existsSync(join(site, "clossys", "publisher-host@fr.tsx"))).toBe(false);
   });
   it("a French document title the Writer has not drafted blocks the install; the default title never stands in (B3)", { timeout: 120_000 }, async () => {
     const { root, app } = await consumer();

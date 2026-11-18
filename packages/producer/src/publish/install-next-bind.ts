@@ -16,8 +16,10 @@
  * With more than one recorded locale (`outputs.locales`) every page and the state page bind once per
  * locale, and the assembly serves each locale its own document language and title
  * (`publishedLocaleMetadata`, `PublishedDocument({ locale })`), as the per-locale root layouts
- * `planNextRoutes` installs ask. A title key the default locale holds and another locale lacks is a
- * blocking finding.
+ * `planNextRoutes` installs ask. Each locale's pages mount inside that locale's own Publisher host
+ * (`clossys/publisher-host@<locale>.tsx`), whose Designer shell strings (skip link, navigation,
+ * breadcrumb, theme, dock and banner labels) are that locale's Writer copy. A title or shell key the
+ * default locale holds and another locale lacks is a blocking finding.
  *
  * Nothing here authors a visible string: every word is a bound Writer key. A record, a pin or a
  * key the install needs and the consumer lacks is a finding, never a fallback.
@@ -25,7 +27,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { bindPage, installPage, isBlocking, NEXT_ROUTE_MARKER, pageHostModule, relativeSpecifier, resolvePage, type BoundPage, type InstallFinding, type InstallPageRecord, type PageHostSelection, type ShadcnRunner } from "@clossys/publisher/install";
+import { bindPage, installPage, isBlocking, NEXT_ROUTE_MARKER, pageHostModule, relativeSpecifier, resolvePage, shellCopyIds, type BoundPage, type InstallFinding, type InstallPageRecord, type PageHostSelection, type ShadcnRunner } from "@clossys/publisher/install";
 import type { ContentMap, ContentMapEntry } from "@clossys/publisher/content-map";
 
 /** The content map's own path rule (`contentMapPath`): a declared path, else `/<slug>`. */
@@ -41,6 +43,10 @@ export const NEXT_BIND_ASSEMBLY = `${NEXT_BIND_DIR}/publication.tsx`;
 export const NEXT_BIND_STATES = `${NEXT_BIND_DIR}/states.tsx`;
 export const NEXT_BIND_PROJECTION = `${NEXT_BIND_DIR}/publication.json`;
 export const NEXT_BIND_PAGES = `${NEXT_BIND_DIR}/pages`;
+/** The Publisher host a locale's pages mount inside: the default locale's is the substrate host, every other locale has its own. */
+export const nextBindHostFile = (locale: string, defaultLocale: string) => (locale === defaultLocale ? SUBSTRATE_HOST_FILE : `${NEXT_BIND_DIR}/publisher-host@${locale}.tsx`);
+/** Whether a generated bind file is a non-default locale's host (`nextBindHostFile`). */
+export const isLocaleHostFile = (file: string) => /^clossys\/publisher-host@[^/]+\.tsx$/.test(file);
 /** The bound page every state mounts: the home record's frame, no sections. */
 export const NEXT_BIND_STATE_PAGE = "state";
 export const NEXT_BIND_SCHEMA = "clossys.next-publication/1";
@@ -215,6 +221,16 @@ export async function planNextBind(options: { root: string; site: string; map: C
       titles[locale] = held && Object.hasOwn(localeCopy, titleKey!) ? localeCopy[titleKey!] : undefined;
       if (held && titles[locale] === undefined) findings.push({ code: "missing-copy-key", slot: map.publicationId, detail: `${locale}: ${map.publicationId}: the document title ${titleKey} has no ${locale} text; the Writer drafts it before ${locale} installs` });
     }
+    // The Designer shell strings each locale's host serves: a shell key the default locale holds and another lacks is the
+    // Writer's to draft; that locale's host never serves the default's text.
+    const shellIds = await shellCopyIds();
+    for (const locale of locales.all) {
+      if (locale === locales.default) continue;
+      const localeCopy = perLocale.copy(locale);
+      for (const id of shellIds) {
+        if (Object.hasOwn(copy, id) && !Object.hasOwn(localeCopy, id)) findings.push({ code: "missing-copy-key", slot: map.publicationId, detail: `${locale}: ${map.publicationId}: the shell string ${id} has no ${locale} text; the Writer drafts it before ${locale} installs` });
+      }
+    }
   }
   const source = libraryRecordSource({ roots: specimenRoots(root, options.bind.records ? [...options.bind.records] : undefined), slotStates: false });
   const entries = map.entries.filter((entry): entry is ContentMapEntry => entry.kind === "page");
@@ -256,12 +272,17 @@ export async function planNextBind(options: { root: string; site: string; map: C
   const moduleOf = (id: string) => `${NEXT_BIND_PAGES}/${id}.tsx`;
   const localeModuleOf = (id: string, locale: string) => `${NEXT_BIND_PAGES}/${id}@${locale}.tsx`;
   for (const page of bound) files.push({ file: moduleOf(page.id), pageId: page.id, content: marked(pageModule(page, site)) });
-  for (const { locale, page } of localizedBound) files.push({ file: localeModuleOf(page.id, locale), pageId: page.id, content: marked(pageModule(page, site)) });
+  for (const { locale, page } of localizedBound) files.push({ file: localeModuleOf(page.id, locale), pageId: page.id, content: marked(pageModule(page, site, { hostFile: nextBindHostFile(locale, locales!.default) })) });
   const cwd = options.bind.cwd ?? process.cwd();
   const selectionModule = /\.(?:[cm]?[jt]sx?)$/.test(options.bind.selection.module)
     ? posixRelative(site, isAbsolute(options.bind.selection.module) ? options.bind.selection.module : resolve(cwd, options.bind.selection.module))
     : options.bind.selection.module;
   files.push({ file: SUBSTRATE_HOST_FILE, pageId: "", content: marked(await pageHostModule({ selection: { ...options.bind.selection, module: selectionModule }, copy, file: SUBSTRATE_HOST_FILE })) });
+  // Every other locale's host, from that locale's own Writer copy.
+  for (const locale of others) {
+    const file = nextBindHostFile(locale, locales!.default);
+    files.push({ file, pageId: "", content: marked(await pageHostModule({ selection: { ...options.bind.selection, module: selectionModule }, copy: perLocale!.copy(locale), file })) });
+  }
   const title = titleKey !== undefined && Object.hasOwn(copy, titleKey) ? copy[titleKey] : undefined;
   if (title === undefined) findings.push({ code: "unbound-copy-slot", severity: "info", detail: `${map.publicationId}: the home title ${titleKey ?? "(none)"} is not a Writer key, so the document has no title (CREATIVE: Writer title key)` });
   const css = existsSync(join(site, "app", "globals.css")) ? "app/globals.css" : undefined;

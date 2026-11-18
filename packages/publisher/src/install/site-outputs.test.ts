@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ContentMap } from "../content-map/contract.js";
 import { publicationFormDefaults, type PublicationOutputs } from "../content-map/outputs.js";
-import { NEXT_ROUTE_MARKER, planNextRoutes } from "./next-routes.js";
+import { NEXT_MISSING_ROUTE, NEXT_ROUTE_MARKER, planNextRoutes } from "./next-routes.js";
 import { buildFeed, buildJsonLd, buildLlmsTxt, checkFeed, checkJsonLd, checkLlmsTxt, planSiteOutputs } from "./site-outputs.js";
 
 const map: ContentMap = { version: 1, publicationId: "site", format: "web.page.responsive", entries: [
@@ -116,7 +116,7 @@ describe("planNextRoutes locales and JSON-LD", () => {
     const plan = planNextRoutes({ ...base, locales: { default: "en", all: ["en", "fr"] }, jsonLd: ld("en"), localeJsonLd: { en: ld("en"), fr: ld("fr") } });
     expect(plan.findings).toEqual([]);
     const shell = plan.files.filter(row => row.kind === "shell").map(row => row.file).sort();
-    expect(shell).toEqual(["(en)/error.tsx", "(en)/layout.tsx", "(en)/loading.tsx", "(en)/not-found.tsx", "fr/error.tsx", "fr/layout.tsx", "fr/loading.tsx", "fr/not-found.tsx", "global-error.tsx"]);
+    expect(shell).toEqual(["(en)/[...missing]/page.tsx", "(en)/error.tsx", "(en)/layout.tsx", "(en)/loading.tsx", "(en)/not-found.tsx", "fr/[...missing]/page.tsx", "fr/error.tsx", "fr/layout.tsx", "fr/loading.tsx", "fr/not-found.tsx", "global-error.tsx"]);
     expect(plan.files.some(row => row.file === "layout.tsx")).toBe(false);
     expect(plan.files.filter(row => row.kind === "page").map(row => row.file).sort()).toEqual(["(en)/about/page.tsx", "(en)/legal/page.tsx", "(en)/page.tsx", "fr/about/page.tsx", "fr/legal/page.tsx", "fr/page.tsx"]);
     expect(plan.files.find(row => row.file === "(en)/about/page.tsx")!.route).toBe("/about");
@@ -133,6 +133,26 @@ describe("planNextRoutes locales and JSON-LD", () => {
       .toEqual([expect.objectContaining({ code: "site-contract", detail: expect.stringMatching(/no fr JSON-LD/) })]);
     // A single locale keeps the one root layout.
     expect(planNextRoutes({ ...base, locales: { default: "en", all: ["en"] } }).files.some(row => row.file === "layout.tsx")).toBe(true);
+  });
+  it("sends an unmatched URL of each locale to that locale's own not-found state, never the framework's default 404 (B2)", () => {
+    const plan = planNextRoutes({ ...base, locales: { default: "en", all: ["en", "fr"] } });
+    expect(plan.findings).toEqual([]);
+    const missing = plan.files.filter(row => row.file.includes(NEXT_MISSING_ROUTE));
+    expect(missing.map(row => [row.file, row.route, row.kind, row.state])).toEqual([
+      ["(en)/[...missing]/page.tsx", "/[...missing]", "shell", "not-found"],
+      ["fr/[...missing]/page.tsx", "/fr/[...missing]", "shell", "not-found"],
+    ]);
+    for (const row of missing) {
+      // Each sits under its locale's root layout beside that locale's not-found.tsx, and only calls notFound().
+      const dir = row.file.split("/").slice(0, -2).join("/");
+      expect(plan.files.map(each => each.file)).toEqual(expect.arrayContaining([`${dir}/layout.tsx`, `${dir}/not-found.tsx`]));
+      expect(row.content.split("\n", 1)[0]).toBe(NEXT_ROUTE_MARKER);
+      expect(row.content).toContain('import { notFound } from "next/navigation";');
+      expect(row.content).toMatch(/export default function Missing\(\): never \{\n {2}notFound\(\);\n\}/);
+    }
+    // One layout catches every URL itself: no catch-all with one locale or no shell.
+    expect(planNextRoutes({ ...base, locales: { default: "en", all: ["en"] } }).files.some(row => row.file.includes(NEXT_MISSING_ROUTE))).toBe(false);
+    expect(planNextRoutes({ map, assembly: base.assembly, locales: { default: "en", all: ["en", "fr"] } }).files.some(row => row.file.includes(NEXT_MISSING_ROUTE))).toBe(false);
   });
   it("mounts checked JSON-LD in the installed layout and refuses it without the shell or when malformed", () => {
     const ld = buildJsonLd({ origin: "https://example.com", name: "Example", summary: "S", locale: "en" });

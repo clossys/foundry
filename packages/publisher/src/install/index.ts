@@ -602,12 +602,12 @@ export async function installAndBind(options: InstallOptions & Omit<BindOptions,
 export { planSite, applySiteNavigation, siteLinkFindings } from "./site.js";
 export type { SitePlan, SitePlanRoute, SiteLink, SiteRoutePack, SiteRoutePackRoute, SiteRouteSlot } from "./site.js";
 export { NATIVE_NEXT_HOST_FILE, resolveNativeNextDraft } from "./native-next-draft.js";
-export { needComponentSelection, PAGE_HOST_EXPORT, pageHostModule, relativeSpecifier } from "./host.js";
+export { needComponentSelection, PAGE_HOST_EXPORT, pageHostModule, relativeSpecifier, shellCopyIds } from "./host.js";
 export type { PageHostModuleOptions, PageHostSelection } from "./host.js";
 export type { NativeNextDraftCandidate, NativeNextDraftOptions, NativeNextDraftResult } from "./native-next-draft.js";
 
 export { resolveNativeNextFonts } from "./native-next-fonts.js";
-export { NEXT_DOCUMENT_EXPORT, NEXT_LEAF_EXPORT, NEXT_METADATA_EXPORT, NEXT_PAGE_EXPORT, NEXT_ROUTE_MARKER, NEXT_SHELL_FILES, NEXT_STATE_EXPORT, planNextRoutes } from "./next-routes.js";
+export { NEXT_DOCUMENT_EXPORT, NEXT_LEAF_EXPORT, NEXT_METADATA_EXPORT, NEXT_MISSING_ROUTE, NEXT_PAGE_EXPORT, NEXT_ROUTE_MARKER, NEXT_SHELL_FILES, NEXT_STATE_EXPORT, planNextRoutes } from "./next-routes.js";
 export type { NextRouteFile, NextRouteLeaf, NextRouteLeafTemplate, NextRoutesOptions, NextRoutesPlan, NextShellState } from "./next-routes.js";
 export { NEXT_BOUNDARY_RUNTIME, NEXT_SHELL_TIME_SCRIPT, nextStreamingScriptShape } from "./next-streaming.js";
 export type { NextStreamingScript } from "./next-streaming.js";

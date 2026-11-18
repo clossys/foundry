@@ -25,7 +25,7 @@ import { isBlocking, NEXT_ROUTE_MARKER, planNextRoutes, type InstallFinding, typ
 import { readPinnedPublication } from "./pinned-publication.js";
 import { expandPublication } from "./expand-tabs.js";
 import { INSTALL_MARKER, installOutRoot } from "@clossys/publisher/build";
-import { isBindGenerated, NEXT_BIND_PAGES, planNextBind, type NextBindOptions } from "./install-next-bind.js";
+import { isBindGenerated, isLocaleHostFile, NEXT_BIND_DIR, NEXT_BIND_PAGES, planNextBind, type NextBindOptions } from "./install-next-bind.js";
 import { planPublicationOutputs } from "./install-outputs.js";
 
 export const NEXT_INSTALL_REPORT = "install-report.json";
@@ -145,6 +145,14 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
       const file = `${NEXT_BIND_PAGES}/${name}`;
       if (generated.has(file) || !isBindGenerated(file, await readFile(join(pagesDir, name), "utf8").catch(() => ""))) continue;
       if (!options.check) await unlink(join(pagesDir, name));
+      files.push({ file, pageId: "", kind: "bind", route: "", state: options.check ? "drift" : "removed" });
+    }
+    // So is the host of a locale the publication no longer installs.
+    const bindDir = join(site, NEXT_BIND_DIR);
+    for (const name of existsSync(bindDir) ? await readdir(bindDir) : []) {
+      const file = `${NEXT_BIND_DIR}/${name}`;
+      if (!isLocaleHostFile(file) || generated.has(file) || !isBindGenerated(file, await readFile(join(bindDir, name), "utf8").catch(() => ""))) continue;
+      if (!options.check) await unlink(join(bindDir, name));
       files.push({ file, pageId: "", kind: "bind", route: "", state: options.check ? "drift" : "removed" });
     }
   }

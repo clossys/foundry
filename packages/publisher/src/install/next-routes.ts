@@ -23,7 +23,10 @@
  * the route group `(<default>)` with its own `layout.tsx` and states, and every other locale's first
  * segment holds its own. Each layout passes its locale to the document export and serves the
  * assembly's metadata for that locale (`publishedLocaleMetadata`); each state passes its locale to
- * the states export. Only `global-error.tsx` stays at the app root (Next allows one).
+ * the states export. Only `global-error.tsx` stays at the app root (Next allows one). With no app-root
+ * layout Next serves an unmatched URL its own default 404, so each locale also installs a catch-all
+ * (`NEXT_MISSING_ROUTE`) that calls `notFound()`: any path under a locale no route serves renders that
+ * locale's own not-found state in that locale's document.
  */
 import { projectStaticParams } from "../content-map/projections.js";
 import { contentMapPath } from "../content-map/check.js";
@@ -60,6 +63,13 @@ export const NEXT_SHELL_FILES: readonly { readonly file: string; readonly state:
   Object.freeze({ file: "error.tsx", state: "error", client: true }),
   Object.freeze({ file: "global-error.tsx", state: "global-error", client: true }),
 ] as const);
+
+/**
+ * With more than one locale: the catch-all folder each locale's document holds (`(<default>)/[...missing]`,
+ * `<locale>/[...missing]`), so an unmatched URL reaches that locale's `not-found.tsx`, never the framework's page.
+ * Its brackets keep it clear of every page folder (`SEGMENT`); a static route of the locale still wins.
+ */
+export const NEXT_MISSING_ROUTE = "[...missing]";
 
 /** One leaf the record store holds under a gallery page. */
 export interface NextRouteLeaf { readonly slug: string; readonly title: string }
@@ -188,6 +198,17 @@ export default function ${SHELL_NAMES[state]}() {
 `;
 }
 
+function missingModule(): string {
+  return `${NEXT_ROUTE_MARKER}
+import { notFound } from "next/navigation";
+
+/** A path no route of this locale serves: this locale's not-found state, in this locale's document. */
+export default function Missing(): never {
+  notFound();
+}
+`;
+}
+
 /** Plan the route files a publication installs into a Next app; blocking findings mean nothing installs. */
 export function planNextRoutes(options: NextRoutesOptions): NextRoutesPlan {
   const findings: InstallFinding[] = [];
@@ -279,6 +300,11 @@ export function planNextRoutes(options: NextRoutesOptions): NextRoutesPlan {
           ? layoutModule(file, options.assembly, options.live === true, jsonLd.get(locale), locale)
           : stateModule(file, options.states, shell.state, shell.client, locale);
         add({ file, pageId: options.map.publicationId, kind: "shell", state: shell.state, route, content });
+      }
+      // No app-root layout catches an unmatched URL in split mode: the locale's own catch-all sends it to its not-found state.
+      if (split) {
+        const file = [...base, NEXT_MISSING_ROUTE, "page.tsx"].join("/");
+        add({ file, pageId: options.map.publicationId, kind: "shell", state: "not-found", route: `/${[...under(locale), NEXT_MISSING_ROUTE].join("/")}`, content: missingModule() });
       }
     }
     // The one app-root global error (Next allows one), outside every locale's document.
