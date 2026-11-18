@@ -1,7 +1,8 @@
 /**
- * `advisor install --from <pack-dir>` and `advisor update --from <pack-dir>`: install Producer and the
- * agent packages from tarballs packed at one foundry commit (Producer's pack-five script in the foundry
- * repository; it does not ship in this package).
+ * `advisor install --from <pack-dir>` and `advisor update --from <pack-dir>`: install Producer, the agent
+ * packages and Advisor itself from tarballs packed at one foundry commit (Producer's pack-five script in the
+ * foundry repository; it does not ship in this package). Advisor is in the pack so the front door that a
+ * fresh repository first runs from the pack's own advisor tarball is recorded, and moved by update, like the rest.
  * Only a complete pack of a clean commit (artifacts.json) is accepted; every tarball's SHA-256 is checked
  * before npm sees it. The record is clossys/advisor/install.json. Update never deletes a vendored file.
  */
@@ -11,7 +12,8 @@ import { basename, join, resolve } from "node:path";
 import { isSecretPath } from "./guard.js";
 import { ok, refused, tail, type Host, type VerbResult } from "./host.js";
 
-export const MVP_ROLES = ["producer", "director", "designer", "writer", "publisher"] as const;
+/** Every role a pack holds, each exactly once (pack-five's PACK_ROLES). */
+export const PACK_ROLES = ["controller", "producer", "director", "designer", "writer", "publisher", "advisor"] as const;
 export const INSTALL_RECORD = "clossys/advisor/install.json";
 export const VENDOR_DIR = "vendor/clossys";
 const HEX40 = /^[0-9a-f]{40}$/;
@@ -38,8 +40,9 @@ export function readPack(from: string): { manifest?: PackManifest; issues: strin
   const issues: string[] = [];
   if (doc.schemaVersion !== 1) issues.push("artifacts.json schemaVersion must be 1");
   if (doc.complete !== true) issues.push("artifacts.json is not a complete pack");
-  const source = doc.source as Record<string, unknown> | undefined;
-  if (source && source.dirty !== false) issues.push("artifacts.json was packed from a dirty checkout");
+  const source = doc.source;
+  if (typeof source !== "object" || source === null || Array.isArray(source)) issues.push("artifacts.json names no source checkout");
+  else if ((source as Record<string, unknown>).dirty !== false) issues.push("artifacts.json was packed from a dirty checkout");
   const head = typeof doc.head === "string" ? doc.head : "";
   const tree = typeof doc.tree === "string" ? doc.tree : "";
   if (!HEX40.test(head) || !HEX40.test(tree)) issues.push("artifacts.json must name a 40-character head and tree");
@@ -58,11 +61,39 @@ export function readPack(from: string): { manifest?: PackManifest; issues: strin
     if (actual !== artifact.sha256) { issues.push(`${artifact.filename} SHA-256 does not match artifacts.json`); continue; }
     artifacts.push(artifact);
   }
-  for (const role of MVP_ROLES) {
+  for (const role of PACK_ROLES) {
     const count = list.filter(entry => entry.role === role).length;
     if (count !== 1) issues.push(`the pack must hold ${role} exactly once (found ${count})`);
   }
   return issues.length ? { issues } : { manifest: { head, tree, artifacts }, issues };
+}
+
+/** a < b for plain x.y.z versions (a pre-release tag sorts before its release); null when either is not semver. */
+export function versionBelow(a: string, b: string): boolean | null {
+  const parse = (value: string) => /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/.exec(value);
+  const left = parse(a); const right = parse(b);
+  if (!left || !right) return null;
+  for (let index = 1; index <= 3; index++) {
+    const diff = Number(left[index]) - Number(right[index]);
+    if (diff !== 0) return diff < 0;
+  }
+  if (left[4] === right[4]) return false;
+  if (left[4] === undefined) return false;
+  if (right[4] === undefined) return true;
+  return left[4] < right[4];
+}
+
+/** Packages the new pack would move to a lower (or unreadable) version than the install record holds. */
+export function downgrades(current: InstallRecord, manifest: PackManifest): string[] {
+  const lines: string[] = [];
+  for (const artifact of manifest.artifacts) {
+    const was = current.packages.find(entry => entry.role === artifact.role);
+    if (!was) continue;
+    const below = versionBelow(artifact.version, was.version);
+    if (below === null) lines.push(`${artifact.name} ${was.version} -> ${artifact.version} is not a plain x.y.z version change`);
+    else if (below) lines.push(`${artifact.name} ${was.version} -> ${artifact.version} is a downgrade`);
+  }
+  return lines;
 }
 
 function readRecord(root: string): InstallRecord | undefined {
@@ -106,6 +137,8 @@ export function runUpdate(root: string, from: string | undefined, host: Host): V
   const { manifest, issues } = readPack(resolve(from));
   if (!manifest) return refused(issues.map(issue => `update: refused: ${issue}`));
   if (manifest.head === current.foundry.head && manifest.tree === current.foundry.tree) return ok([`update: already at foundry ${manifest.head.slice(0, 12)}; nothing changed`], current);
+  const lower = downgrades(current, manifest);
+  if (lower.length) return refused([...lower.map(line => `update: refused: ${line}`), "update: a pack never moves a package to a lower version; pack a newer foundry commit"]);
   const installed = vendorAndInstall(root, resolve(from), manifest, host);
   if (installed.issues.length) return refused(installed.issues.map(issue => `update: ${issue}`));
   const record: InstallRecord = { schema: "clossys.advisor-install/1", foundry: { head: manifest.head, tree: manifest.tree }, packages: installed.packages, at: host.now(), previous: { head: current.foundry.head, tree: current.foundry.tree, at: current.at } };
