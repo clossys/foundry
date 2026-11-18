@@ -13,14 +13,14 @@ clossys:
   rationale: []
 ---
 
-## Proof
+## Direction
+- Proof:
+- Gap:
+- Never-claim:
+- Metrics:
+- Comparisons:
+- Compliance:
 
-## Gap
+## Because
 
-## Never-claim
-
-## Metrics
-
-## Comparisons
-
-## Compliance
+## Watch

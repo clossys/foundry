@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Change
+## Direction
+- Change:
+- Stakes:
+- Way:
 
-## Stakes
+## Because
 
-## Way
+## Watch

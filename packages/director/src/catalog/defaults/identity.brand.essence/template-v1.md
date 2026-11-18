@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Essence
+## Direction
+- Essence:
+- Meaning:
+- Not:
 
-## Meaning
+## Because
 
-## Not
+## Watch

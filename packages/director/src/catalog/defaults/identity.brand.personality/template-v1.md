@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Traits
+## Direction
+- Traits:
+- Not:
+- Example:
 
-## Not
+## Because
 
-## Example
+## Watch

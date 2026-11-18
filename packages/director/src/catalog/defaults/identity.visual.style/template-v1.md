@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Feel
+## Direction
+- Feel:
+- Signature:
+- Avoid:
 
-## Signature
+## Because
 
-## Avoid
+## Watch

@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Not
+## Direction
+- Not:
+- Why:
+- Redirect:
 
-## Why
+## Because
 
-## Redirect
+## Watch
