@@ -13,7 +13,7 @@ import type { AgentId } from "../records/types.js";
  * clossys.queue-entry/2 kind slot (overlap check, the assignee's reuse-or-create decision, the owner's sign,
  * placement, close).
  */
-export const LOOP_NAMES = ["loop.fill", "loop.refine", "loop.create", "loop.choose", "loop.scope", "loop.slot", "loop.release", "loop.audit"] as const;
+export const LOOP_NAMES = ["loop.fill", "loop.refine", "loop.create", "loop.choose", "loop.scope", "loop.slot", "loop.release", "loop.audit", "loop.cascade"] as const;
 export type LoopName = (typeof LOOP_NAMES)[number];
 export const isLoopName = (value: string): value is LoopName => (LOOP_NAMES as readonly string[]).includes(value);
 
@@ -44,9 +44,10 @@ export const LOOP_TRIGGERS: Readonly<Record<LoopName, readonly string[]>> = {
   "loop.slot": ["T4", "T5"],
   "loop.release": ["T8"],
   "loop.audit": ["T6"],
+  "loop.cascade": ["T7"],
 };
 
-/** Each loop's run needs a slot (fill, refine, create, choose), a request (slot), a publication (release) or neither (scope, audit). */
+/** Each loop's run needs a slot (fill, refine, create, choose, cascade), a request (slot), a publication (release) or neither (scope, audit). */
 export const LOOP_SUBJECT: Readonly<Record<LoopName, "slot" | "request" | "publication" | "none">> = {
   "loop.fill": "slot",
   "loop.refine": "slot",
@@ -56,6 +57,7 @@ export const LOOP_SUBJECT: Readonly<Record<LoopName, "slot" | "request" | "publi
   "loop.slot": "request",
   "loop.release": "publication",
   "loop.audit": "none",
+  "loop.cascade": "slot",
 };
 
 /** `requests.filed` (loop.scope): every consumer slot edge naming no slot is filed as a kind slot queue entry. */
@@ -75,6 +77,7 @@ export const EXIT_CHECKS: Readonly<Record<LoopName, readonly string[]>> = {
   "loop.slot": ["request.closed"],
   "loop.release": ["release.ready"],
   "loop.audit": ["ia.orphans", "refs.dangling"],
+  "loop.cascade": ["cascade.clean"],
 };
 
 /** The release ready-pin check: the last step of `loop.release`, after an owner sign-off. */
@@ -105,7 +108,12 @@ export const AGENT_PICK_VERB = "pick";
 export const CANDIDATES_CERTIFIED = "candidates.certified";
 /** `request.closed` (loop.slot): the run's request is closed with a link to a placed slot and a notify event to its requester. */
 export const REQUEST_CLOSED = "request.closed";
-export const VERIFIED_CHECKS: readonly string[] = ["pins.resolve", RELEASE_READY, CANDIDATES_CERTIFIED, REQUEST_CLOSED, REQUESTS_FILED];
+/**
+ * `cascade.clean` (foundry-build-0048 U6): no pinned candidate in the workspace is stale (judged on a pinSet that is
+ * not the pinSet now) or failed on a slot not marked needs-refresh (R07.5, constitution/cascade.ts).
+ */
+export const CASCADE_CLEAN = "cascade.clean";
+export const VERIFIED_CHECKS: readonly string[] = ["pins.resolve", RELEASE_READY, CANDIDATES_CERTIFIED, REQUEST_CLOSED, REQUESTS_FILED, CASCADE_CLEAN];
 
 /** The release steps that must run, for every publication, before the owner's sign-off (cli prefix match). */
 export const RELEASE_BEFORE_SIGNOFF: readonly { readonly id: string; readonly cli: RegExp }[] = [

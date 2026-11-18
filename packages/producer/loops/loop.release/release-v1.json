@@ -92,7 +92,8 @@
           "copy.sample-remaining",
           "pins.resolve",
           "constitution.strict",
-          "release.locales"
+          "release.locales",
+          "slots.stale"
         ],
         "onFail": {
           "raise": "queue.fix",

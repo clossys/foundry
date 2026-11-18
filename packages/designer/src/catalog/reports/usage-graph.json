@@ -363,6 +363,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.avatar",
@@ -371,27 +372,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.avatar",
-      "kind": "reads",
-      "to": "themes.background.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.avatar",
       "kind": "reads",
       "to": "themes.border"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.avatar",
-      "kind": "reads",
-      "to": "themes.border.default"
     },
     {
       "evidence": [
@@ -427,6 +413,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.avatar",
@@ -435,27 +422,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.avatar",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.avatar",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.avatar",
-      "kind": "reads",
-      "to": "themes.muted.default"
     },
     {
       "evidence": [
@@ -475,6 +447,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.avatar",
@@ -483,27 +456,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.avatar",
       "kind": "reads",
       "to": "themes.primary-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.avatar",
-      "kind": "reads",
-      "to": "themes.primary-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.avatar",
-      "kind": "reads",
-      "to": "themes.primary.default"
     },
     {
       "evidence": [
@@ -579,19 +537,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.avatar",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.avatar",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -603,19 +554,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.badge",
       "kind": "reads",
       "to": "themes.accent-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.badge",
-      "kind": "reads",
-      "to": "themes.accent-foreground.default"
     },
     {
       "evidence": [
@@ -627,19 +571,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.badge",
       "kind": "reads",
       "to": "themes.border"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.badge",
-      "kind": "reads",
-      "to": "themes.border.default"
     },
     {
       "evidence": [
@@ -659,6 +596,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.badge",
@@ -667,27 +605,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.badge",
-      "kind": "reads",
-      "to": "themes.destructive.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.badge",
       "kind": "reads",
       "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.badge",
-      "kind": "reads",
-      "to": "themes.foreground.default"
     },
     {
       "evidence": [
@@ -699,6 +622,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.badge",
@@ -707,27 +631,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.badge",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.badge",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.badge",
-      "kind": "reads",
-      "to": "themes.muted.default"
     },
     {
       "evidence": [
@@ -747,6 +656,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.badge",
@@ -755,6 +665,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.badge",
@@ -763,22 +674,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.badge",
-      "kind": "reads",
-      "to": "themes.primary-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.badge",
-      "kind": "reads",
-      "to": "themes.primary.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.badge",
@@ -787,14 +683,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.badge",
-      "kind": "reads",
-      "to": "themes.ring.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.badge",
@@ -808,14 +697,6 @@
       "from": "components.badge",
       "kind": "reads",
       "to": "themes.secondary-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.badge",
-      "kind": "reads",
-      "to": "themes.secondary.default"
     },
     {
       "evidence": [
@@ -883,19 +764,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.badge",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.badge",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -923,6 +797,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.banner",
@@ -939,14 +814,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.banner",
-      "kind": "reads",
-      "to": "themes.card.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.banner",
@@ -955,27 +823,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.banner",
-      "kind": "reads",
-      "to": "themes.destructive.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.banner",
       "kind": "reads",
       "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.banner",
-      "kind": "reads",
-      "to": "themes.foreground.default"
     },
     {
       "evidence": [
@@ -987,19 +840,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.banner",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.banner",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
     },
     {
       "evidence": [
@@ -1027,19 +873,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.banner",
       "kind": "reads",
       "to": "themes.radius"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.banner",
-      "kind": "reads",
-      "to": "themes.radius.default"
     },
     {
       "evidence": [
@@ -1099,19 +938,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.banner",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.banner",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -1157,6 +989,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.breadcrumbs",
@@ -1165,27 +998,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.breadcrumbs",
-      "kind": "reads",
-      "to": "themes.foreground.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.breadcrumbs",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.breadcrumbs",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
     },
     {
       "evidence": [
@@ -1237,19 +1055,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.breadcrumbs",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.breadcrumbs",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -1261,6 +1072,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.button",
@@ -1269,14 +1081,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.button",
-      "kind": "reads",
-      "to": "themes.accent-foreground.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.button",
@@ -1285,27 +1090,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.button",
-      "kind": "reads",
-      "to": "themes.background.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.button",
       "kind": "reads",
       "to": "themes.border"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.button",
-      "kind": "reads",
-      "to": "themes.border.default"
     },
     {
       "evidence": [
@@ -1325,6 +1115,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.button",
@@ -1333,27 +1124,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.button",
-      "kind": "reads",
-      "to": "themes.destructive.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.button",
       "kind": "reads",
       "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.button",
-      "kind": "reads",
-      "to": "themes.foreground.default"
     },
     {
       "evidence": [
@@ -1365,6 +1141,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.button",
@@ -1378,14 +1155,6 @@
       "from": "components.button",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.button",
-      "kind": "reads",
-      "to": "themes.muted.default"
     },
     {
       "evidence": [
@@ -1405,6 +1174,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.button",
@@ -1413,6 +1183,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.button",
@@ -1421,22 +1192,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.button",
-      "kind": "reads",
-      "to": "themes.primary-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.button",
-      "kind": "reads",
-      "to": "themes.primary.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.button",
@@ -1445,14 +1201,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.button",
-      "kind": "reads",
-      "to": "themes.radius.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.button",
@@ -1461,14 +1210,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.button",
-      "kind": "reads",
-      "to": "themes.ring.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.button",
@@ -1482,14 +1224,6 @@
       "from": "components.button",
       "kind": "reads",
       "to": "themes.secondary-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.button",
-      "kind": "reads",
-      "to": "themes.secondary.default"
     },
     {
       "evidence": [
@@ -1557,19 +1291,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.button",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.button",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -1634,19 +1361,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.calendar",
       "kind": "reads",
       "to": "themes.background"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.calendar",
-      "kind": "reads",
-      "to": "themes.background.default"
     },
     {
       "evidence": [
@@ -1666,6 +1386,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.calendar",
@@ -1674,14 +1395,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.calendar",
-      "kind": "reads",
-      "to": "themes.foreground.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.calendar",
@@ -1690,27 +1404,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.calendar",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.calendar",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.calendar",
-      "kind": "reads",
-      "to": "themes.muted.default"
     },
     {
       "evidence": [
@@ -1730,6 +1429,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.calendar",
@@ -1738,6 +1438,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.calendar",
@@ -1746,22 +1447,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.calendar",
-      "kind": "reads",
-      "to": "themes.primary-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.calendar",
-      "kind": "reads",
-      "to": "themes.primary.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.calendar",
@@ -1770,27 +1456,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.calendar",
-      "kind": "reads",
-      "to": "themes.radius.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.calendar",
       "kind": "reads",
       "to": "themes.ring"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.calendar",
-      "kind": "reads",
-      "to": "themes.ring.default"
     },
     {
       "evidence": [
@@ -1866,19 +1537,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.calendar",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.calendar",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -1906,6 +1570,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.card",
@@ -1922,14 +1587,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.card",
-      "kind": "reads",
-      "to": "themes.card.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.card",
@@ -1938,14 +1596,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.card",
-      "kind": "reads",
-      "to": "themes.foreground.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.card",
@@ -1954,27 +1605,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.card",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.card",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.card",
-      "kind": "reads",
-      "to": "themes.muted.default"
     },
     {
       "evidence": [
@@ -2002,19 +1638,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.card",
       "kind": "reads",
       "to": "themes.radius"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.card",
-      "kind": "reads",
-      "to": "themes.radius.default"
     },
     {
       "evidence": [
@@ -2074,19 +1703,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.card",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.card",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -2958,19 +2580,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.checkbox",
       "kind": "reads",
       "to": "themes.destructive"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.checkbox",
-      "kind": "reads",
-      "to": "themes.destructive.default"
     },
     {
       "evidence": [
@@ -3006,6 +2621,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.checkbox",
@@ -3014,6 +2630,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.checkbox",
@@ -3026,39 +2643,16 @@
       ],
       "from": "components.checkbox",
       "kind": "reads",
-      "to": "themes.primary-foreground.default"
+      "to": "themes.radius"
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.checkbox",
-      "kind": "reads",
-      "to": "themes.primary.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.checkbox",
-      "kind": "reads",
-      "to": "themes.radius.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.checkbox",
       "kind": "reads",
       "to": "themes.ring"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.checkbox",
-      "kind": "reads",
-      "to": "themes.ring.default"
     },
     {
       "evidence": [
@@ -3118,19 +2712,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.checkbox",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.checkbox",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -3387,6 +2974,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.combo-box",
@@ -3403,14 +2991,6 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.combo-box",
-      "kind": "reads",
-      "to": "themes.accent.default"
-    },
-    {
-      "evidence": [
         "scanned"
       ],
       "from": "components.combo-box",
@@ -3419,19 +2999,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.combo-box",
       "kind": "reads",
       "to": "themes.border"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.combo-box",
-      "kind": "reads",
-      "to": "themes.border.default"
     },
     {
       "evidence": [
@@ -3451,19 +3024,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.combo-box",
       "kind": "reads",
       "to": "themes.destructive"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.combo-box",
-      "kind": "reads",
-      "to": "themes.destructive.default"
     },
     {
       "evidence": [
@@ -3483,6 +3049,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.combo-box",
@@ -3491,27 +3058,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.combo-box",
-      "kind": "reads",
-      "to": "themes.font-sans.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.combo-box",
       "kind": "reads",
       "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.combo-box",
-      "kind": "reads",
-      "to": "themes.foreground.default"
     },
     {
       "evidence": [
@@ -3523,6 +3075,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.combo-box",
@@ -3531,6 +3084,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.combo-box",
@@ -3539,22 +3093,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.combo-box",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.combo-box",
-      "kind": "reads",
-      "to": "themes.muted.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.combo-box",
@@ -3568,14 +3107,6 @@
       "from": "components.combo-box",
       "kind": "reads",
       "to": "themes.popover-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.combo-box",
-      "kind": "reads",
-      "to": "themes.popover.default"
     },
     {
       "evidence": [
@@ -3595,6 +3126,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.combo-box",
@@ -3603,27 +3135,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.combo-box",
-      "kind": "reads",
-      "to": "themes.radius.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.combo-box",
       "kind": "reads",
       "to": "themes.ring"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.combo-box",
-      "kind": "reads",
-      "to": "themes.ring.default"
     },
     {
       "evidence": [
@@ -3643,19 +3160,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.combo-box",
       "kind": "reads",
       "to": "themes.shadow"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.combo-box",
-      "kind": "reads",
-      "to": "themes.shadow.md"
     },
     {
       "evidence": [
@@ -3715,19 +3225,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.combo-box",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.combo-box",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -3767,7 +3270,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.accent-foreground.default"
+      "to": "themes.accent-foreground"
     },
     {
       "evidence": [
@@ -3775,7 +3278,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.background.default"
+      "to": "themes.background"
     },
     {
       "evidence": [
@@ -3783,7 +3286,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.border.default"
+      "to": "themes.border"
     },
     {
       "evidence": [
@@ -3791,7 +3294,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.destructive.default"
+      "to": "themes.destructive"
     },
     {
       "evidence": [
@@ -3799,7 +3302,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.foreground.default"
+      "to": "themes.foreground"
     },
     {
       "evidence": [
@@ -3807,7 +3310,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.muted-foreground.default"
+      "to": "themes.muted"
     },
     {
       "evidence": [
@@ -3815,7 +3318,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.muted.default"
+      "to": "themes.muted-foreground"
     },
     {
       "evidence": [
@@ -3823,7 +3326,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.popover.default"
+      "to": "themes.popover"
     },
     {
       "evidence": [
@@ -3831,7 +3334,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.primary-foreground.default"
+      "to": "themes.primary"
     },
     {
       "evidence": [
@@ -3839,7 +3342,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.primary.default"
+      "to": "themes.primary-foreground"
     },
     {
       "evidence": [
@@ -3847,7 +3350,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.radius.default"
+      "to": "themes.radius"
     },
     {
       "evidence": [
@@ -3855,7 +3358,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.ring.default"
+      "to": "themes.ring"
     },
     {
       "evidence": [
@@ -3863,7 +3366,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.secondary.default"
+      "to": "themes.secondary"
     },
     {
       "evidence": [
@@ -3871,7 +3374,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.spacing.default"
+      "to": "themes.spacing"
     },
     {
       "evidence": [
@@ -3879,7 +3382,7 @@
       ],
       "from": "components.command",
       "kind": "reads",
-      "to": "themes.tracking-tight.default"
+      "to": "themes.tracking-tight"
     },
     {
       "evidence": [
@@ -4240,6 +3743,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.dialog",
@@ -4248,14 +3752,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.dialog",
-      "kind": "reads",
-      "to": "themes.foreground.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.dialog",
@@ -4264,6 +3761,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.dialog",
@@ -4272,22 +3770,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.dialog",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.dialog",
-      "kind": "reads",
-      "to": "themes.muted.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.dialog",
@@ -4304,14 +3787,6 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.dialog",
-      "kind": "reads",
-      "to": "themes.popover.default"
-    },
-    {
-      "evidence": [
         "scanned"
       ],
       "from": "components.dialog",
@@ -4320,6 +3795,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.dialog",
@@ -4332,15 +3808,7 @@
       ],
       "from": "components.dialog",
       "kind": "reads",
-      "to": "themes.radius.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.dialog",
-      "kind": "reads",
-      "to": "themes.ring.default"
+      "to": "themes.ring"
     },
     {
       "evidence": [
@@ -4400,19 +3868,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.dialog",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.dialog",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -4459,6 +3920,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.disclosure",
@@ -4467,27 +3929,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.disclosure",
-      "kind": "reads",
-      "to": "themes.foreground.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.disclosure",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.disclosure",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
     },
     {
       "evidence": [
@@ -4515,6 +3962,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.disclosure",
@@ -4523,27 +3971,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.disclosure",
-      "kind": "reads",
-      "to": "themes.radius.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.disclosure",
       "kind": "reads",
       "to": "themes.ring"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.disclosure",
-      "kind": "reads",
-      "to": "themes.ring.default"
     },
     {
       "evidence": [
@@ -4587,19 +4020,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.disclosure",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.disclosure",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -4631,7 +4057,7 @@
       ],
       "from": "components.dropdown-menu",
       "kind": "reads",
-      "to": "themes.accent.default"
+      "to": "themes.accent"
     },
     {
       "evidence": [
@@ -4639,7 +4065,7 @@
       ],
       "from": "components.dropdown-menu",
       "kind": "reads",
-      "to": "themes.border.default"
+      "to": "themes.border"
     },
     {
       "evidence": [
@@ -4647,7 +4073,7 @@
       ],
       "from": "components.dropdown-menu",
       "kind": "reads",
-      "to": "themes.destructive.default"
+      "to": "themes.destructive"
     },
     {
       "evidence": [
@@ -4655,7 +4081,7 @@
       ],
       "from": "components.dropdown-menu",
       "kind": "reads",
-      "to": "themes.foreground.default"
+      "to": "themes.foreground"
     },
     {
       "evidence": [
@@ -4663,7 +4089,7 @@
       ],
       "from": "components.dropdown-menu",
       "kind": "reads",
-      "to": "themes.muted-foreground.default"
+      "to": "themes.muted-foreground"
     },
     {
       "evidence": [
@@ -4671,7 +4097,7 @@
       ],
       "from": "components.dropdown-menu",
       "kind": "reads",
-      "to": "themes.popover.default"
+      "to": "themes.popover"
     },
     {
       "evidence": [
@@ -4679,7 +4105,7 @@
       ],
       "from": "components.dropdown-menu",
       "kind": "reads",
-      "to": "themes.radius.default"
+      "to": "themes.radius"
     },
     {
       "evidence": [
@@ -4687,7 +4113,7 @@
       ],
       "from": "components.dropdown-menu",
       "kind": "reads",
-      "to": "themes.ring.default"
+      "to": "themes.ring"
     },
     {
       "evidence": [
@@ -4695,7 +4121,7 @@
       ],
       "from": "components.dropdown-menu",
       "kind": "reads",
-      "to": "themes.shadow.lg"
+      "to": "themes.shadow"
     },
     {
       "evidence": [
@@ -4703,7 +4129,7 @@
       ],
       "from": "components.dropdown-menu",
       "kind": "reads",
-      "to": "themes.shadow.md"
+      "to": "themes.spacing"
     },
     {
       "evidence": [
@@ -4711,15 +4137,7 @@
       ],
       "from": "components.dropdown-menu",
       "kind": "reads",
-      "to": "themes.spacing.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.dropdown-menu",
-      "kind": "reads",
-      "to": "themes.tracking-tight.default"
+      "to": "themes.tracking-tight"
     },
     {
       "evidence": [
@@ -4727,7 +4145,7 @@
       ],
       "from": "components.empty",
       "kind": "reads",
-      "to": "themes.foreground.default"
+      "to": "themes.foreground"
     },
     {
       "evidence": [
@@ -4735,7 +4153,7 @@
       ],
       "from": "components.empty",
       "kind": "reads",
-      "to": "themes.muted-foreground.default"
+      "to": "themes.muted"
     },
     {
       "evidence": [
@@ -4743,7 +4161,7 @@
       ],
       "from": "components.empty",
       "kind": "reads",
-      "to": "themes.muted.default"
+      "to": "themes.muted-foreground"
     },
     {
       "evidence": [
@@ -4751,7 +4169,7 @@
       ],
       "from": "components.empty",
       "kind": "reads",
-      "to": "themes.primary.default"
+      "to": "themes.primary"
     },
     {
       "evidence": [
@@ -4759,7 +4177,7 @@
       ],
       "from": "components.empty",
       "kind": "reads",
-      "to": "themes.radius.default"
+      "to": "themes.radius"
     },
     {
       "evidence": [
@@ -4767,7 +4185,7 @@
       ],
       "from": "components.empty",
       "kind": "reads",
-      "to": "themes.spacing.default"
+      "to": "themes.spacing"
     },
     {
       "evidence": [
@@ -4775,7 +4193,7 @@
       ],
       "from": "components.empty",
       "kind": "reads",
-      "to": "themes.tracking-tight.default"
+      "to": "themes.tracking-tight"
     },
     {
       "evidence": [
@@ -4791,7 +4209,7 @@
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.background.default"
+      "to": "themes.background"
     },
     {
       "evidence": [
@@ -4799,7 +4217,7 @@
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.destructive.default"
+      "to": "themes.destructive"
     },
     {
       "evidence": [
@@ -4807,7 +4225,7 @@
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.muted-foreground.default"
+      "to": "themes.muted"
     },
     {
       "evidence": [
@@ -4815,7 +4233,7 @@
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.muted.default"
+      "to": "themes.muted-foreground"
     },
     {
       "evidence": [
@@ -4823,7 +4241,7 @@
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.primary.default"
+      "to": "themes.primary"
     },
     {
       "evidence": [
@@ -4831,7 +4249,7 @@
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.radius.default"
+      "to": "themes.radius"
     },
     {
       "evidence": [
@@ -4839,7 +4257,7 @@
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.ring.default"
+      "to": "themes.ring"
     },
     {
       "evidence": [
@@ -4847,7 +4265,7 @@
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.spacing.default"
+      "to": "themes.spacing"
     },
     {
       "evidence": [
@@ -5119,7 +4537,7 @@
       ],
       "from": "components.item",
       "kind": "reads",
-      "to": "themes.border.default"
+      "to": "themes.border"
     },
     {
       "evidence": [
@@ -5127,7 +4545,7 @@
       ],
       "from": "components.item",
       "kind": "reads",
-      "to": "themes.muted-foreground.default"
+      "to": "themes.muted"
     },
     {
       "evidence": [
@@ -5135,7 +4553,7 @@
       ],
       "from": "components.item",
       "kind": "reads",
-      "to": "themes.muted.default"
+      "to": "themes.muted-foreground"
     },
     {
       "evidence": [
@@ -5143,7 +4561,7 @@
       ],
       "from": "components.item",
       "kind": "reads",
-      "to": "themes.primary.default"
+      "to": "themes.primary"
     },
     {
       "evidence": [
@@ -5151,7 +4569,7 @@
       ],
       "from": "components.item",
       "kind": "reads",
-      "to": "themes.radius.default"
+      "to": "themes.radius"
     },
     {
       "evidence": [
@@ -5159,7 +4577,7 @@
       ],
       "from": "components.item",
       "kind": "reads",
-      "to": "themes.ring.default"
+      "to": "themes.ring"
     },
     {
       "evidence": [
@@ -5167,7 +4585,7 @@
       ],
       "from": "components.item",
       "kind": "reads",
-      "to": "themes.spacing.default"
+      "to": "themes.spacing"
     },
     {
       "evidence": [
@@ -5187,19 +4605,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.keyboard",
       "kind": "reads",
       "to": "themes.background"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.keyboard",
-      "kind": "reads",
-      "to": "themes.background.default"
     },
     {
       "evidence": [
@@ -5223,7 +4634,7 @@
       ],
       "from": "components.keyboard",
       "kind": "reads",
-      "to": "themes.font-sans.default"
+      "to": "themes.font-sans"
     },
     {
       "evidence": [
@@ -5235,6 +4646,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.keyboard",
@@ -5243,27 +4655,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.keyboard",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.keyboard",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.keyboard",
-      "kind": "reads",
-      "to": "themes.muted.default"
     },
     {
       "evidence": [
@@ -5291,19 +4688,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.keyboard",
       "kind": "reads",
       "to": "themes.radius"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.keyboard",
-      "kind": "reads",
-      "to": "themes.radius.default"
     },
     {
       "evidence": [
@@ -5363,19 +4753,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.keyboard",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.keyboard",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -6048,6 +5431,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.menu",
@@ -6064,14 +5448,6 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.menu",
-      "kind": "reads",
-      "to": "themes.accent.default"
-    },
-    {
-      "evidence": [
         "scanned"
       ],
       "from": "components.menu",
@@ -6080,19 +5456,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.menu",
       "kind": "reads",
       "to": "themes.border"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.menu",
-      "kind": "reads",
-      "to": "themes.border.default"
     },
     {
       "evidence": [
@@ -6112,6 +5481,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.menu",
@@ -6120,27 +5490,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.menu",
-      "kind": "reads",
-      "to": "themes.destructive.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.menu",
       "kind": "reads",
       "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.menu",
-      "kind": "reads",
-      "to": "themes.foreground.default"
     },
     {
       "evidence": [
@@ -6160,6 +5515,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.menu",
@@ -6168,14 +5524,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.menu",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.menu",
@@ -6192,14 +5541,6 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.menu",
-      "kind": "reads",
-      "to": "themes.popover.default"
-    },
-    {
-      "evidence": [
         "scanned"
       ],
       "from": "components.menu",
@@ -6208,6 +5549,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.menu",
@@ -6220,15 +5562,7 @@
       ],
       "from": "components.menu",
       "kind": "reads",
-      "to": "themes.radius.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.menu",
-      "kind": "reads",
-      "to": "themes.ring.default"
+      "to": "themes.ring"
     },
     {
       "evidence": [
@@ -6248,27 +5582,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.menu",
       "kind": "reads",
       "to": "themes.shadow"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.menu",
-      "kind": "reads",
-      "to": "themes.shadow.lg"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.menu",
-      "kind": "reads",
-      "to": "themes.shadow.md"
     },
     {
       "evidence": [
@@ -6320,6 +5639,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.menu",
@@ -6332,15 +5652,7 @@
       ],
       "from": "components.menu",
       "kind": "reads",
-      "to": "themes.spacing.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.menu",
-      "kind": "reads",
-      "to": "themes.tracking-tight.default"
+      "to": "themes.tracking-tight"
     },
     {
       "evidence": [
@@ -7212,19 +6524,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.popover",
       "kind": "reads",
       "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.popover",
-      "kind": "reads",
-      "to": "themes.foreground.default"
     },
     {
       "evidence": [
@@ -7236,6 +6541,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.popover",
@@ -7244,14 +6550,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.popover",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.popover",
@@ -7268,14 +6567,6 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.popover",
-      "kind": "reads",
-      "to": "themes.popover.default"
-    },
-    {
-      "evidence": [
         "scanned"
       ],
       "from": "components.popover",
@@ -7284,6 +6575,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.popover",
@@ -7296,15 +6588,7 @@
       ],
       "from": "components.popover",
       "kind": "reads",
-      "to": "themes.radius.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.popover",
-      "kind": "reads",
-      "to": "themes.ring.default"
+      "to": "themes.ring"
     },
     {
       "evidence": [
@@ -7324,19 +6608,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.popover",
       "kind": "reads",
       "to": "themes.shadow"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.popover",
-      "kind": "reads",
-      "to": "themes.shadow.md"
     },
     {
       "evidence": [
@@ -7384,7 +6661,7 @@
       ],
       "from": "components.popover",
       "kind": "reads",
-      "to": "themes.spacing.default"
+      "to": "themes.spacing"
     },
     {
       "evidence": [
@@ -7436,6 +6713,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.progress-bar",
@@ -7444,27 +6722,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.progress-bar",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.progress-bar",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.progress-bar",
-      "kind": "reads",
-      "to": "themes.muted.default"
     },
     {
       "evidence": [
@@ -7484,6 +6747,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.progress-bar",
@@ -7497,14 +6761,6 @@
       "from": "components.progress-bar",
       "kind": "reads",
       "to": "themes.primary-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.progress-bar",
-      "kind": "reads",
-      "to": "themes.primary.default"
     },
     {
       "evidence": [
@@ -7572,19 +6828,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.progress-bar",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.progress-bar",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -7612,19 +6861,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.radio-group",
       "kind": "reads",
       "to": "themes.destructive"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.radio-group",
-      "kind": "reads",
-      "to": "themes.destructive.default"
     },
     {
       "evidence": [
@@ -7660,6 +6902,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.radio-group",
@@ -7668,6 +6911,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.radio-group",
@@ -7676,35 +6920,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.radio-group",
-      "kind": "reads",
-      "to": "themes.primary-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.radio-group",
-      "kind": "reads",
-      "to": "themes.primary.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.radio-group",
       "kind": "reads",
       "to": "themes.ring"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.radio-group",
-      "kind": "reads",
-      "to": "themes.ring.default"
     },
     {
       "evidence": [
@@ -7764,19 +6985,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.radio-group",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.radio-group",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -8060,7 +7274,7 @@
       ],
       "from": "components.scroll-area",
       "kind": "reads",
-      "to": "themes.border.default"
+      "to": "themes.border"
     },
     {
       "evidence": [
@@ -8068,7 +7282,7 @@
       ],
       "from": "components.scroll-area",
       "kind": "reads",
-      "to": "themes.ring.default"
+      "to": "themes.ring"
     },
     {
       "evidence": [
@@ -8391,6 +7605,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.select",
@@ -8407,14 +7622,6 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.select",
-      "kind": "reads",
-      "to": "themes.accent.default"
-    },
-    {
-      "evidence": [
         "scanned"
       ],
       "from": "components.select",
@@ -8423,19 +7630,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.select",
       "kind": "reads",
       "to": "themes.border"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.select",
-      "kind": "reads",
-      "to": "themes.border.default"
     },
     {
       "evidence": [
@@ -8455,19 +7655,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.select",
       "kind": "reads",
       "to": "themes.destructive"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.select",
-      "kind": "reads",
-      "to": "themes.destructive.default"
     },
     {
       "evidence": [
@@ -8487,6 +7680,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.select",
@@ -8495,27 +7689,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.select",
-      "kind": "reads",
-      "to": "themes.font-sans.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.select",
       "kind": "reads",
       "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.select",
-      "kind": "reads",
-      "to": "themes.foreground.default"
     },
     {
       "evidence": [
@@ -8535,6 +7714,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.select",
@@ -8543,14 +7723,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.select",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.select",
@@ -8564,14 +7737,6 @@
       "from": "components.select",
       "kind": "reads",
       "to": "themes.popover-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.select",
-      "kind": "reads",
-      "to": "themes.popover.default"
     },
     {
       "evidence": [
@@ -8591,6 +7756,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.select",
@@ -8599,27 +7765,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.select",
-      "kind": "reads",
-      "to": "themes.radius.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.select",
       "kind": "reads",
       "to": "themes.ring"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.select",
-      "kind": "reads",
-      "to": "themes.ring.default"
     },
     {
       "evidence": [
@@ -8639,19 +7790,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.select",
       "kind": "reads",
       "to": "themes.shadow"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.select",
-      "kind": "reads",
-      "to": "themes.shadow.md"
     },
     {
       "evidence": [
@@ -8711,6 +7855,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.select",
@@ -8719,27 +7864,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.select",
-      "kind": "reads",
-      "to": "themes.spacing.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.separator",
       "kind": "reads",
       "to": "themes.border"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.separator",
-      "kind": "reads",
-      "to": "themes.border.default"
     },
     {
       "evidence": [
@@ -8779,7 +7909,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.accent-foreground.default"
+      "to": "themes.accent-foreground"
     },
     {
       "evidence": [
@@ -8787,7 +7917,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.background.default"
+      "to": "themes.background"
     },
     {
       "evidence": [
@@ -8795,7 +7925,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.border.default"
+      "to": "themes.border"
     },
     {
       "evidence": [
@@ -8803,7 +7933,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.destructive.default"
+      "to": "themes.destructive"
     },
     {
       "evidence": [
@@ -8811,7 +7941,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.foreground.default"
+      "to": "themes.foreground"
     },
     {
       "evidence": [
@@ -8819,7 +7949,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.muted-foreground.default"
+      "to": "themes.muted"
     },
     {
       "evidence": [
@@ -8827,7 +7957,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.muted.default"
+      "to": "themes.muted-foreground"
     },
     {
       "evidence": [
@@ -8835,7 +7965,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.popover.default"
+      "to": "themes.popover"
     },
     {
       "evidence": [
@@ -8843,7 +7973,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.primary-foreground.default"
+      "to": "themes.primary"
     },
     {
       "evidence": [
@@ -8851,7 +7981,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.primary.default"
+      "to": "themes.primary-foreground"
     },
     {
       "evidence": [
@@ -8859,7 +7989,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.radius.default"
+      "to": "themes.radius"
     },
     {
       "evidence": [
@@ -8867,7 +7997,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.ring.default"
+      "to": "themes.ring"
     },
     {
       "evidence": [
@@ -8875,7 +8005,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.secondary.default"
+      "to": "themes.secondary"
     },
     {
       "evidence": [
@@ -8883,7 +8013,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.shadow.lg"
+      "to": "themes.shadow"
     },
     {
       "evidence": [
@@ -8891,7 +8021,7 @@
       ],
       "from": "components.sheet",
       "kind": "reads",
-      "to": "themes.spacing.default"
+      "to": "themes.spacing"
     },
     {
       "evidence": [
@@ -8923,7 +8053,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.accent-foreground.default"
+      "to": "themes.accent"
     },
     {
       "evidence": [
@@ -8931,7 +8061,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.accent.default"
+      "to": "themes.accent-foreground"
     },
     {
       "evidence": [
@@ -8939,7 +8069,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.background.default"
+      "to": "themes.background"
     },
     {
       "evidence": [
@@ -8947,7 +8077,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.border.default"
+      "to": "themes.border"
     },
     {
       "evidence": [
@@ -8955,7 +8085,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.destructive.default"
+      "to": "themes.destructive"
     },
     {
       "evidence": [
@@ -8963,7 +8093,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.foreground.default"
+      "to": "themes.foreground"
     },
     {
       "evidence": [
@@ -8971,7 +8101,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.muted-foreground.default"
+      "to": "themes.muted"
     },
     {
       "evidence": [
@@ -8979,7 +8109,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.muted.default"
+      "to": "themes.muted-foreground"
     },
     {
       "evidence": [
@@ -8987,7 +8117,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.primary-foreground.default"
+      "to": "themes.primary"
     },
     {
       "evidence": [
@@ -8995,7 +8125,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.primary.default"
+      "to": "themes.primary-foreground"
     },
     {
       "evidence": [
@@ -9003,7 +8133,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.radius.default"
+      "to": "themes.radius"
     },
     {
       "evidence": [
@@ -9011,7 +8141,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.ring.default"
+      "to": "themes.ring"
     },
     {
       "evidence": [
@@ -9019,7 +8149,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.secondary.default"
+      "to": "themes.secondary"
     },
     {
       "evidence": [
@@ -9027,7 +8157,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.shadow.sm"
+      "to": "themes.shadow"
     },
     {
       "evidence": [
@@ -9035,7 +8165,7 @@
       ],
       "from": "components.sidebar",
       "kind": "reads",
-      "to": "themes.spacing.default"
+      "to": "themes.spacing"
     },
     {
       "evidence": [
@@ -9063,19 +8193,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.skeleton",
       "kind": "reads",
       "to": "themes.muted"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.skeleton",
-      "kind": "reads",
-      "to": "themes.muted.default"
     },
     {
       "evidence": [
@@ -9087,19 +8210,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.skeleton",
       "kind": "reads",
       "to": "themes.radius"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.skeleton",
-      "kind": "reads",
-      "to": "themes.radius.default"
     },
     {
       "evidence": [
@@ -9143,6 +8259,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.slider",
@@ -9151,27 +8268,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.slider",
-      "kind": "reads",
-      "to": "themes.card.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.slider",
       "kind": "reads",
       "to": "themes.muted"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.slider",
-      "kind": "reads",
-      "to": "themes.muted.default"
     },
     {
       "evidence": [
@@ -9183,6 +8285,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.slider",
@@ -9191,27 +8294,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.slider",
-      "kind": "reads",
-      "to": "themes.primary.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.slider",
       "kind": "reads",
       "to": "themes.ring"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.slider",
-      "kind": "reads",
-      "to": "themes.ring.default"
     },
     {
       "evidence": [
@@ -9255,19 +8343,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.slider",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.slider",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -10000,19 +9081,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.switch",
       "kind": "reads",
       "to": "themes.background"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.switch",
-      "kind": "reads",
-      "to": "themes.background.default"
     },
     {
       "evidence": [
@@ -10040,6 +9114,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.switch",
@@ -10048,27 +9123,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.switch",
-      "kind": "reads",
-      "to": "themes.destructive.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.switch",
       "kind": "reads",
       "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.switch",
-      "kind": "reads",
-      "to": "themes.foreground.default"
     },
     {
       "evidence": [
@@ -10112,6 +9172,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.switch",
@@ -10120,6 +9181,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.switch",
@@ -10128,35 +9190,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.switch",
-      "kind": "reads",
-      "to": "themes.primary-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.switch",
-      "kind": "reads",
-      "to": "themes.primary.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.switch",
       "kind": "reads",
       "to": "themes.ring"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.switch",
-      "kind": "reads",
-      "to": "themes.ring.default"
     },
     {
       "evidence": [
@@ -10240,19 +9279,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.switch",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.switch",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -10296,6 +9328,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.table",
@@ -10304,14 +9337,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.table",
-      "kind": "reads",
-      "to": "themes.foreground.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.table",
@@ -10320,27 +9346,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.table",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.table",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.table",
-      "kind": "reads",
-      "to": "themes.muted.default"
     },
     {
       "evidence": [
@@ -10424,19 +9435,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.table",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.table",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -10456,19 +9460,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.tabs",
       "kind": "reads",
       "to": "themes.background"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.tabs",
-      "kind": "reads",
-      "to": "themes.background.default"
     },
     {
       "evidence": [
@@ -10496,19 +9493,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.tabs",
       "kind": "reads",
       "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.tabs",
-      "kind": "reads",
-      "to": "themes.foreground.default"
     },
     {
       "evidence": [
@@ -10520,6 +9510,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.tabs",
@@ -10528,27 +9519,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.tabs",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.tabs",
-      "kind": "reads",
-      "to": "themes.muted-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.tabs",
-      "kind": "reads",
-      "to": "themes.muted.default"
     },
     {
       "evidence": [
@@ -10584,6 +9560,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.tabs",
@@ -10592,27 +9569,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.tabs",
-      "kind": "reads",
-      "to": "themes.radius.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.tabs",
       "kind": "reads",
       "to": "themes.ring"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.tabs",
-      "kind": "reads",
-      "to": "themes.ring.default"
     },
     {
       "evidence": [
@@ -10632,19 +9594,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.tabs",
       "kind": "reads",
       "to": "themes.shadow"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.tabs",
-      "kind": "reads",
-      "to": "themes.shadow.sm"
     },
     {
       "evidence": [
@@ -10704,19 +9659,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.tabs",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.tabs",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -10940,7 +9888,7 @@
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.destructive.default"
+      "to": "themes.destructive"
     },
     {
       "evidence": [
@@ -10948,7 +9896,7 @@
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.foreground.default"
+      "to": "themes.foreground"
     },
     {
       "evidence": [
@@ -10956,7 +9904,7 @@
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.muted-foreground.default"
+      "to": "themes.muted-foreground"
     },
     {
       "evidence": [
@@ -10964,7 +9912,7 @@
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.radius.default"
+      "to": "themes.radius"
     },
     {
       "evidence": [
@@ -10972,7 +9920,7 @@
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.ring.default"
+      "to": "themes.ring"
     },
     {
       "evidence": [
@@ -10980,7 +9928,7 @@
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.spacing.default"
+      "to": "themes.spacing"
     },
     {
       "evidence": [
@@ -11313,6 +10261,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.toggle-button",
@@ -11321,27 +10270,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.toggle-button",
-      "kind": "reads",
-      "to": "themes.destructive.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.toggle-button",
       "kind": "reads",
       "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.toggle-button",
-      "kind": "reads",
-      "to": "themes.foreground.default"
     },
     {
       "evidence": [
@@ -11353,6 +10287,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.toggle-button",
@@ -11366,14 +10301,6 @@
       "from": "components.toggle-button",
       "kind": "reads",
       "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.toggle-button",
-      "kind": "reads",
-      "to": "themes.muted.default"
     },
     {
       "evidence": [
@@ -11393,6 +10320,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.toggle-button",
@@ -11401,6 +10329,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.toggle-button",
@@ -11409,22 +10338,7 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.toggle-button",
-      "kind": "reads",
-      "to": "themes.primary-foreground.default"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.toggle-button",
-      "kind": "reads",
-      "to": "themes.primary.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.toggle-button",
@@ -11433,27 +10347,12 @@
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.toggle-button",
-      "kind": "reads",
-      "to": "themes.radius.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.toggle-button",
       "kind": "reads",
       "to": "themes.ring"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.toggle-button",
-      "kind": "reads",
-      "to": "themes.ring.default"
     },
     {
       "evidence": [
@@ -11537,19 +10436,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.toggle-button",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.toggle-button",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -11562,6 +10454,7 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.toggle-group",
@@ -11574,31 +10467,16 @@
       ],
       "from": "components.toggle-group",
       "kind": "reads",
-      "to": "themes.radius.default"
+      "to": "themes.ring"
     },
     {
       "evidence": [
-        "declared"
-      ],
-      "from": "components.toggle-group",
-      "kind": "reads",
-      "to": "themes.ring.default"
-    },
-    {
-      "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.toggle-group",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.toggle-group",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -11650,19 +10528,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.tooltip",
       "kind": "reads",
       "to": "themes.background"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.tooltip",
-      "kind": "reads",
-      "to": "themes.background.default"
     },
     {
       "evidence": [
@@ -11682,19 +10553,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.tooltip",
       "kind": "reads",
       "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.tooltip",
-      "kind": "reads",
-      "to": "themes.foreground.default"
     },
     {
       "evidence": [
@@ -11738,19 +10602,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.tooltip",
       "kind": "reads",
       "to": "themes.radius"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.tooltip",
-      "kind": "reads",
-      "to": "themes.radius.default"
     },
     {
       "evidence": [
@@ -11810,19 +10667,12 @@
     },
     {
       "evidence": [
+        "declared",
         "scanned"
       ],
       "from": "components.tooltip",
       "kind": "reads",
       "to": "themes.spacing"
-    },
-    {
-      "evidence": [
-        "declared"
-      ],
-      "from": "components.tooltip",
-      "kind": "reads",
-      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -15042,2262 +13892,6 @@
   ],
   "findings": [
     {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.background.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.avatar",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.avatar",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.avatar",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.avatar",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.avatar",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.avatar",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.avatar",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.accent-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.badge",
-      "target": "themes.accent-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.badge",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.badge",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.badge",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.badge",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.badge",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.badge",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.badge",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.badge",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.secondary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.badge",
-      "target": "themes.secondary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.badge",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.card.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.banner",
-      "target": "themes.card.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.banner",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.banner",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.banner",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.banner",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.banner",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.breadcrumbs",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.breadcrumbs",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.breadcrumbs",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.accent-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.button",
-      "target": "themes.accent-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.background.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.button",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.button",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.button",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.button",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.button",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.button",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.button",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.button",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.button",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.secondary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.button",
-      "target": "themes.secondary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.button",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.background.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.calendar",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.calendar",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.calendar",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.calendar",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.calendar",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.calendar",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.calendar",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.calendar",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.calendar",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.card.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.card",
-      "target": "themes.card.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.card",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.card",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.card",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.card",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.card",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.checkbox",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.checkbox",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.checkbox",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.checkbox",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.checkbox",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.checkbox",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.accent.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.combo-box",
-      "target": "themes.accent.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.combo-box",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.combo-box",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.font-sans.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.combo-box",
-      "target": "themes.font-sans.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.combo-box",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.combo-box",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.combo-box",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.popover.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.combo-box",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.combo-box",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.combo-box",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.shadow.md is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.combo-box",
-      "target": "themes.shadow.md"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.combo-box",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.accent-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.accent-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.background.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.popover.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.secondary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.secondary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.tracking-tight.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.command",
-      "target": "themes.tracking-tight.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dialog",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dialog",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dialog",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.popover.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dialog",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dialog",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dialog",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dialog",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.disclosure",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.disclosure",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.disclosure",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.disclosure",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.disclosure",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.accent.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dropdown-menu",
-      "target": "themes.accent.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dropdown-menu",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dropdown-menu",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dropdown-menu",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dropdown-menu",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.popover.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dropdown-menu",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dropdown-menu",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dropdown-menu",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.shadow.lg is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dropdown-menu",
-      "target": "themes.shadow.lg"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.shadow.md is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dropdown-menu",
-      "target": "themes.shadow.md"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dropdown-menu",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.tracking-tight.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.dropdown-menu",
-      "target": "themes.tracking-tight.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.empty",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.empty",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.empty",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.empty",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.empty",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.empty",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.tracking-tight.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.empty",
-      "target": "themes.tracking-tight.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.background.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.field",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.field",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.field",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.field",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.field",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.field",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.field",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.field",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.item",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.item",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.item",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.item",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.item",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.item",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.item",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.background.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.keyboard",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.font-sans.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.keyboard",
-      "target": "themes.font-sans.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.keyboard",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.keyboard",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.keyboard",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.keyboard",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.accent.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.menu",
-      "target": "themes.accent.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.menu",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.menu",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.menu",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.menu",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.popover.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.menu",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.menu",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.menu",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.shadow.lg is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.menu",
-      "target": "themes.shadow.lg"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.shadow.md is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.menu",
-      "target": "themes.shadow.md"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.menu",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.tracking-tight.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.menu",
-      "target": "themes.tracking-tight.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.popover",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.popover",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.popover.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.popover",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.popover",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.popover",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.shadow.md is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.popover",
-      "target": "themes.shadow.md"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.popover",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.progress-bar",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.progress-bar",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.progress-bar",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.progress-bar",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.radio-group",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.radio-group",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.radio-group",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.radio-group",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.radio-group",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.scroll-area",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.scroll-area",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.accent.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.select",
-      "target": "themes.accent.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.select",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.select",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.font-sans.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.select",
-      "target": "themes.font-sans.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.select",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.select",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.popover.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.select",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.select",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.select",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.shadow.md is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.select",
-      "target": "themes.shadow.md"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.select",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.separator",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.accent-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.accent-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.background.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.popover.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.secondary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.secondary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.shadow.lg is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.shadow.lg"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sheet",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.accent-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.accent-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.accent.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.accent.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.background.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.border.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.secondary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.secondary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.shadow.sm is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.shadow.sm"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.sidebar",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.skeleton",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.skeleton",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.card.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.slider",
-      "target": "themes.card.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.slider",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.slider",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.slider",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.slider",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.background.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.switch",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.switch",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.switch",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.switch",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.switch",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.switch",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.switch",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.table",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.table",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.table",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.table",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.background.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.tabs",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.tabs",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.tabs",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.tabs",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.tabs",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.tabs",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.shadow.sm is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.tabs",
-      "target": "themes.shadow.sm"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.tabs",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.text-field",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.text-field",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.text-field",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.text-field",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.text-field",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.text-field",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.destructive.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.toggle-button",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.toggle-button",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.muted.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.toggle-button",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary-foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.toggle-button",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.primary.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.toggle-button",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.toggle-button",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.toggle-button",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.toggle-button",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.toggle-group",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.ring.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.toggle-group",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.toggle-group",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.background.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.tooltip",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.foreground.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.tooltip",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.radius.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.tooltip",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "dangling-endpoint",
-      "kind": "reads",
-      "message": "themes.spacing.default is not in the catalog inventory",
-      "severity": "warning",
-      "subject": "components.tooltip",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.avatar",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.avatar",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.avatar",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.avatar",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.avatar",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.avatar",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.avatar",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.badge",
-      "target": "themes.accent-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.badge",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.badge",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.badge",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.badge",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.badge",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.badge",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.badge",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.badge",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.badge",
-      "target": "themes.secondary.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.badge",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.banner",
-      "target": "themes.card.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.banner",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.banner",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.banner",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.banner",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.banner",
-      "target": "themes.spacing.default"
-    },
-    {
       "code": "unused-declaration",
       "kind": "reads",
       "message": "declared reads not observed in the scanned source",
@@ -17310,246 +13904,6 @@
       "kind": "reads",
       "message": "declared reads not observed in the scanned source",
       "severity": "notice",
-      "subject": "components.breadcrumbs",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.breadcrumbs",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.breadcrumbs",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.button",
-      "target": "themes.accent-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.button",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.button",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.button",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.button",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.button",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.button",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.button",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.button",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.button",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.button",
-      "target": "themes.secondary.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.button",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.calendar",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.calendar",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.calendar",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.calendar",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.calendar",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.calendar",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.calendar",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.calendar",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.calendar",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.card",
-      "target": "themes.card.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.card",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.card",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.card",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.card",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.card",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
       "subject": "components.chart-area",
       "target": "themes.accent"
     },
@@ -17679,143 +14033,7 @@
       "message": "declared reads not observed in the scanned source",
       "severity": "notice",
       "subject": "components.checkbox",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.checkbox",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.checkbox",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.checkbox",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.checkbox",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.checkbox",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.combo-box",
-      "target": "themes.accent.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.combo-box",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.combo-box",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.combo-box",
-      "target": "themes.font-sans.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.combo-box",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.combo-box",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.combo-box",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.combo-box",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.combo-box",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.combo-box",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.combo-box",
-      "target": "themes.shadow.md"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.combo-box",
-      "target": "themes.spacing.default"
+      "target": "themes.radius"
     },
     {
       "code": "unused-declaration",
@@ -17831,95 +14049,7 @@
       "message": "declared reads not observed in the scanned source",
       "severity": "notice",
       "subject": "components.dialog",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.dialog",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.dialog",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.dialog",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.dialog",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.dialog",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.dialog",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.disclosure",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.disclosure",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.disclosure",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.disclosure",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.disclosure",
-      "target": "themes.spacing.default"
+      "target": "themes.ring"
     },
     {
       "code": "unused-declaration",
@@ -17927,47 +14057,7 @@
       "message": "declared reads not observed in the scanned source",
       "severity": "notice",
       "subject": "components.keyboard",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.keyboard",
-      "target": "themes.font-sans.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.keyboard",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.keyboard",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.keyboard",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.keyboard",
-      "target": "themes.spacing.default"
+      "target": "themes.font-sans"
     },
     {
       "code": "unused-declaration",
@@ -17975,7 +14065,7 @@
       "message": "declared reads not observed in the scanned source",
       "severity": "notice",
       "subject": "components.menu",
-      "target": "themes.accent.default"
+      "target": "themes.ring"
     },
     {
       "code": "unused-declaration",
@@ -17983,87 +14073,7 @@
       "message": "declared reads not observed in the scanned source",
       "severity": "notice",
       "subject": "components.menu",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.menu",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.menu",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.menu",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.menu",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.menu",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.menu",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.menu",
-      "target": "themes.shadow.lg"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.menu",
-      "target": "themes.shadow.md"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.menu",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.menu",
-      "target": "themes.tracking-tight.default"
+      "target": "themes.tracking-tight"
     },
     {
       "code": "unused-declaration",
@@ -18071,7 +14081,7 @@
       "message": "declared reads not observed in the scanned source",
       "severity": "notice",
       "subject": "components.popover",
-      "target": "themes.foreground.default"
+      "target": "themes.ring"
     },
     {
       "code": "unused-declaration",
@@ -18079,119 +14089,7 @@
       "message": "declared reads not observed in the scanned source",
       "severity": "notice",
       "subject": "components.popover",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.popover",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.popover",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.popover",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.popover",
-      "target": "themes.shadow.md"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.popover",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.progress-bar",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.progress-bar",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.progress-bar",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.progress-bar",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.radio-group",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.radio-group",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.radio-group",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.radio-group",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.radio-group",
-      "target": "themes.spacing.default"
+      "target": "themes.spacing"
     },
     {
       "code": "unused-declaration",
@@ -18206,424 +14104,8 @@
       "kind": "reads",
       "message": "declared reads not observed in the scanned source",
       "severity": "notice",
-      "subject": "components.select",
-      "target": "themes.accent.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.select",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.select",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.select",
-      "target": "themes.font-sans.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.select",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.select",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.select",
-      "target": "themes.popover.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.select",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.select",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.select",
-      "target": "themes.shadow.md"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.select",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.separator",
-      "target": "themes.border.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.skeleton",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.skeleton",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.slider",
-      "target": "themes.card.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.slider",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.slider",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.slider",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.slider",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.switch",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.switch",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.switch",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.switch",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.switch",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.switch",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.switch",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.table",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.table",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.table",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.table",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.tabs",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.tabs",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.tabs",
-      "target": "themes.muted-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.tabs",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.tabs",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.tabs",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.tabs",
-      "target": "themes.shadow.sm"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.tabs",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.toggle-button",
-      "target": "themes.destructive.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.toggle-button",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.toggle-button",
-      "target": "themes.muted.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.toggle-button",
-      "target": "themes.primary-foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.toggle-button",
-      "target": "themes.primary.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.toggle-button",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.toggle-button",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.toggle-button",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
       "subject": "components.toggle-group",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.toggle-group",
-      "target": "themes.ring.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.toggle-group",
-      "target": "themes.spacing.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.tooltip",
-      "target": "themes.background.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.tooltip",
-      "target": "themes.foreground.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.tooltip",
-      "target": "themes.radius.default"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
-      "subject": "components.tooltip",
-      "target": "themes.spacing.default"
+      "target": "themes.ring"
     },
     {
       "code": "used-nowhere",
@@ -19338,12 +14820,13 @@
     "components": "sha256:a36d3348932619f27a5ae5fef8d6a0c063287616b66a606155825269e7cd4531",
     "consumption": "sha256:4341fe1cf47891aed1b25386f5d7aec6395e0a43b9b09ca16e1bc39d74b6a5aa",
     "inventory": "sha256:3caf72f4a0cacd3e31fc1b43056e024d8e6bf839ca43298aa55d714fd534aedb",
+    "members": "sha256:d870912d0eb69f40aefda486c031eb465db467ad71ae65b19a6760b0a522ac22",
     "pages": "absent",
     "runtime": "absent",
     "selection": "sha256:ca32945dc0a136609fb8a74cc9cb81c53300c3aa7282c00d829532a2834c43aa",
     "surfaces": "sha256:700a14e314a6ce95e021ba1636e0e5fc769bf9196847d61c1baded2ff47f126c"
   },
-  "inputsHash": "sha256:e85aefd815eee0a267dd76592e7bb1e5c9eef69afbde323ac964cce63e9bb5fa",
+  "inputsHash": "sha256:d4700a4a6e2da2038c9accbcc3c3c35c7b34f3a029bc84cf39e851cf1f0f23c4",
   "nodes": [
     {
       "fill": {
@@ -21426,18 +16909,6 @@
       "origin": "inventory"
     },
     {
-      "id": "themes.accent-foreground.default",
-      "layer": "themes",
-      "leaf": "themes.accent-foreground",
-      "origin": "reference"
-    },
-    {
-      "id": "themes.accent.default",
-      "layer": "themes",
-      "leaf": "themes.accent",
-      "origin": "reference"
-    },
-    {
       "fill": {
         "id": "foundry/themes.animate-marquee",
         "source": "foundry"
@@ -21478,12 +16949,6 @@
       "origin": "inventory"
     },
     {
-      "id": "themes.background.default",
-      "layer": "themes",
-      "leaf": "themes.background",
-      "origin": "reference"
-    },
-    {
       "fill": {
         "id": "shadcn@aria/themes.border",
         "source": "shadcn@aria"
@@ -21492,12 +16957,6 @@
       "layer": "themes",
       "leaf": "themes.border",
       "origin": "inventory"
-    },
-    {
-      "id": "themes.border.default",
-      "layer": "themes",
-      "leaf": "themes.border",
-      "origin": "reference"
     },
     {
       "fill": {
@@ -21518,12 +16977,6 @@
       "layer": "themes",
       "leaf": "themes.card-foreground",
       "origin": "inventory"
-    },
-    {
-      "id": "themes.card.default",
-      "layer": "themes",
-      "leaf": "themes.card",
-      "origin": "reference"
     },
     {
       "fill": {
@@ -21586,12 +17039,6 @@
       "origin": "inventory"
     },
     {
-      "id": "themes.destructive.default",
-      "layer": "themes",
-      "leaf": "themes.destructive",
-      "origin": "reference"
-    },
-    {
       "fill": {
         "id": "tailwind-default/themes.font-heading",
         "source": "tailwind-default"
@@ -21622,12 +17069,6 @@
       "origin": "inventory"
     },
     {
-      "id": "themes.font-sans.default",
-      "layer": "themes",
-      "leaf": "themes.font-sans",
-      "origin": "reference"
-    },
-    {
       "fill": {
         "id": "tailwind-default/themes.font-serif",
         "source": "tailwind-default"
@@ -21646,12 +17087,6 @@
       "layer": "themes",
       "leaf": "themes.foreground",
       "origin": "inventory"
-    },
-    {
-      "id": "themes.foreground.default",
-      "layer": "themes",
-      "leaf": "themes.foreground",
-      "origin": "reference"
     },
     {
       "fill": {
@@ -21684,18 +17119,6 @@
       "origin": "inventory"
     },
     {
-      "id": "themes.muted-foreground.default",
-      "layer": "themes",
-      "leaf": "themes.muted-foreground",
-      "origin": "reference"
-    },
-    {
-      "id": "themes.muted.default",
-      "layer": "themes",
-      "leaf": "themes.muted",
-      "origin": "reference"
-    },
-    {
       "fill": {
         "id": "shadcn@aria/themes.popover",
         "source": "shadcn@aria"
@@ -21714,12 +17137,6 @@
       "layer": "themes",
       "leaf": "themes.popover-foreground",
       "origin": "inventory"
-    },
-    {
-      "id": "themes.popover.default",
-      "layer": "themes",
-      "leaf": "themes.popover",
-      "origin": "reference"
     },
     {
       "fill": {
@@ -21742,18 +17159,6 @@
       "origin": "inventory"
     },
     {
-      "id": "themes.primary-foreground.default",
-      "layer": "themes",
-      "leaf": "themes.primary-foreground",
-      "origin": "reference"
-    },
-    {
-      "id": "themes.primary.default",
-      "layer": "themes",
-      "leaf": "themes.primary",
-      "origin": "reference"
-    },
-    {
       "fill": {
         "id": "shadcn@aria/themes.radius",
         "source": "shadcn@aria"
@@ -21764,12 +17169,6 @@
       "origin": "inventory"
     },
     {
-      "id": "themes.radius.default",
-      "layer": "themes",
-      "leaf": "themes.radius",
-      "origin": "reference"
-    },
-    {
       "fill": {
         "id": "shadcn@aria/themes.ring",
         "source": "shadcn@aria"
@@ -21778,12 +17177,6 @@
       "layer": "themes",
       "leaf": "themes.ring",
       "origin": "inventory"
-    },
-    {
-      "id": "themes.ring.default",
-      "layer": "themes",
-      "leaf": "themes.ring",
-      "origin": "reference"
     },
     {
       "fill": {
@@ -21806,12 +17199,6 @@
       "origin": "inventory"
     },
     {
-      "id": "themes.secondary.default",
-      "layer": "themes",
-      "leaf": "themes.secondary",
-      "origin": "reference"
-    },
-    {
       "fill": {
         "id": "tailwind-default/themes.shadow",
         "source": "tailwind-default"
@@ -21820,24 +17207,6 @@
       "layer": "themes",
       "leaf": "themes.shadow",
       "origin": "inventory"
-    },
-    {
-      "id": "themes.shadow.lg",
-      "layer": "themes",
-      "leaf": "themes.shadow",
-      "origin": "reference"
-    },
-    {
-      "id": "themes.shadow.md",
-      "layer": "themes",
-      "leaf": "themes.shadow",
-      "origin": "reference"
-    },
-    {
-      "id": "themes.shadow.sm",
-      "layer": "themes",
-      "leaf": "themes.shadow",
-      "origin": "reference"
     },
     {
       "fill": {
@@ -21930,12 +17299,6 @@
       "origin": "inventory"
     },
     {
-      "id": "themes.spacing.default",
-      "layer": "themes",
-      "leaf": "themes.spacing",
-      "origin": "reference"
-    },
-    {
       "fill": {
         "id": "tailwind-default/themes.tracking-tight",
         "source": "tailwind-default"
@@ -21944,12 +17307,6 @@
       "layer": "themes",
       "leaf": "themes.tracking-tight",
       "origin": "inventory"
-    },
-    {
-      "id": "themes.tracking-tight.default",
-      "layer": "themes",
-      "leaf": "themes.tracking-tight",
-      "origin": "reference"
     }
   ],
   "schemaVersion": 1,
@@ -21958,11 +17315,11 @@
     "edges": {
       "composes": 337,
       "hosts": 0,
-      "reads": 1466,
+      "reads": 1302,
       "renders": 0
     },
     "evidence": {
-      "declared": 1223,
+      "declared": 1221,
       "runtime": 0,
       "scanned": 1194
     },
@@ -21972,7 +17329,7 @@
       "frames": 12,
       "pages": 0,
       "sections": 66,
-      "themes": 63
+      "themes": 42
     }
   },
   "surfaceEvidence": {

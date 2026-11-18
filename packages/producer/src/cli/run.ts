@@ -11,7 +11,7 @@
  * Exit 0 when the chain ran to its end or stopped at an open decide step (printed with its packet),
  * 1 when a plumb step failed (its failed run record cited), 2 when it could not run.
  *
- * Loop mode (system.md 14.5): `clossys run loop.<fill|refine|create|choose|scope|slot|release|audit> ...` runs a Producer loop version one
+ * Loop mode (system.md 14.5): `clossys run loop.<fill|refine|create|choose|scope|slot|release|audit|cascade> ...` runs a Producer loop version one
  * step at a time and writes one ledger entry per run (src/loop/cli.ts). Any other argv is the chain mode above,
  * unchanged until the stage verbs retire.
  */
@@ -31,7 +31,7 @@ export const RUN_USAGE = "Usage: clossys run [--from <step>] [--until <step>] [-
   + "  the walk stops red at a failed plumb step and stops at the first decide step with open work (clossys next prints it).\n"
   + "  --dry: run nothing; list what would run.  --explain: the whole graph as a table (step, agent, kind, decider, chain, last run); it runs nothing.\n"
   + "  --capture: also run the on-demand capture step (before an owner preview or a landing); without it the chain skips capture.\n"
-  + "       clossys run loop.<fill|refine|create|choose|scope|slot|release|audit> [--slot <ref>] [--request <id>] [--from <entry>] [--publication <id>] [--resume] ...\n"
+  + "       clossys run loop.<fill|refine|create|choose|scope|slot|release|audit|cascade> [--slot <ref>] [--request <id>] [--from <entry>] [--publication <id>] [--resume] ...\n"
   + "  Loop mode: runs a Producer loop version step by step, one ledger entry per run (clossys run loop.fill --help).";
 
 interface Flags { from?: string; until?: string; dry: boolean; explain: boolean; capture: boolean; json: boolean; help: boolean; root?: string }

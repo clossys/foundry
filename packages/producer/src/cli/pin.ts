@@ -18,9 +18,10 @@ import { readyFindings } from "../release/ready.js";
 import type { AgentId, PinRecord } from "../records/types.js";
 import { CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, PIN_BASES, SLOT_AGENTS, type PinBasis, type PinConfirmation, type SlotAgent } from "../records/slot-model/index.js";
 import { listSlots, readSlotEntry } from "../records/slots.js";
-import { GuardRefusal, writeConfirm, writeNotNeeded, writePin, type WriteGuard } from "../records/slot-write.js";
+import { GuardRefusal, SLOT_LOCK, withDirLock, writeConfirm, writeNotNeeded, writePin, type WriteGuard } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { pinGate, writeScorecard } from "../constitution/pin-gate.js";
+import { clearReverdict } from "../constitution/cascade.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -223,16 +224,23 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
   }
   // CHOOSE gate (foundry-build-0048 U3): a submitted candidate with a passing verdict, or no pin; the ranked scorecard is cited.
   // A release slot's verdict is the release.ready check above (owner answer bound to the manifest's bytes).
-  const gate = pinGate(root, join(root, "clossys"), agent, slotId, candidate, toIsoZ(at)!, releasePin ? { verdict: "release.ready" } : {});
-  if (gate.refusals.length) return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate}:\n${gate.refusals.map(line => `  ${line}`).join("\n")}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals: gate.refusals, scorecard: gate.scorecard } };
+  // The gate, the scorecard and the pin are one critical section under the slot's write lock (the lock a candidate
+  // submit takes), so no submit or second pin lands between the verdict and the pin it allows (U6).
+  const lock = join(root, "clossys", "agents", agent, slotId, SLOT_LOCK);
   try {
-    const scorecard = writeScorecard(root, agent, slotId, gate.scorecard);
-    const doc = writeTargetPin(root, {
-      agent: agent as AgentId, slotId, ...(record !== undefined ? { record } : {}),
-      candidate, decidedBy: by, basis, at: toIsoZ(at)!, refs: [...(answer ? [answer] : []), scorecard], createdBy: cliActor("clossys pin"),
+    return withDirLock(lock, "Slot is unavailable or another decision write is in progress", (): CliResult => {
+      const gate = pinGate(root, join(root, "clossys"), agent, slotId, candidate, toIsoZ(at)!, releasePin ? { verdict: "release.ready" } : {});
+      if (gate.refusals.length) return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate}:\n${gate.refusals.map(line => `  ${line}`).join("\n")}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals: gate.refusals, scorecard: gate.scorecard } };
+      const scorecard = writeScorecard(root, agent, slotId, gate.scorecard);
+      const doc = writeTargetPin(root, {
+        agent: agent as AgentId, slotId, ...(record !== undefined ? { record } : {}),
+        candidate, decidedBy: by, basis, at: toIsoZ(at)!, refs: [...(answer ? [answer] : []), scorecard], createdBy: cliActor("clossys pin"),
+      });
+      // A new pin carries the verdict the gate just gave (its scorecard row); an older re-verdict no longer holds.
+      clearReverdict(root, agent, slotId);
+      const pinned = doc.kind === "pin-map" ? doc.records[record!]! : doc;
+      return { exitCode: 0, message: `${agent}/${target}: pinned ${pinned.candidate} (${pinned.sha256.slice(0, 12)}), decided by ${pinned.decidedBy} (${pinned.basis})`, output: doc };
     });
-    const pinned = doc.kind === "pin-map" ? doc.records[record!]! : doc;
-    return { exitCode: 0, message: `${agent}/${target}: pinned ${pinned.candidate} (${pinned.sha256.slice(0, 12)}), decided by ${pinned.decidedBy} (${pinned.basis})`, output: doc };
   } catch (error) {
     return { exitCode: 1, message: `pin refused: ${error instanceof Error ? error.message : String(error)}` };
   }

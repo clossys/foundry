@@ -72,6 +72,13 @@
           "leaves": [
             "ledger.audit"
           ]
+        },
+        {
+          "id": "assure-runs-cascade",
+          "label": "Cascade runs",
+          "leaves": [
+            "ledger.cascade"
+          ]
         }
       ]
     }

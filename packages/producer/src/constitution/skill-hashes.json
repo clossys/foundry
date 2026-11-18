@@ -13,7 +13,8 @@
     ],
     "packages/designer/actions/designer.slot/skill.md": [
       "0dfe0b00be41b83d0d9d28222ff4ecfbbce9631760bff6feef7cd79749ec5d6e",
-      "7d39e734fe332ce3c033071493a6b136ae9fd52e607377cebf5aa4115da3e02f"
+      "7d39e734fe332ce3c033071493a6b136ae9fd52e607377cebf5aa4115da3e02f",
+      "be69a6e617329884473c43595b0b57fe4abcfb3f58cb0480e94ef1d4e7494257"
     ],
     "packages/designer/actions/pick.designer/skill.md": [
       "04300ddb671c88f7d5571c82d406ab649b9ccbc14045bb9c83110c45b26ab5dd"
@@ -30,6 +31,7 @@
       "3e0eaf03a9d3d8e371e7e85720c70eeabb7ee8eb8e0725f3fc084cc48d1e255a"
     ],
     "packages/director/actions/director.slot/skill.md": [
+      "2e238753f3bee82eb54663eec250f1fa22c4392d402fb6d147495b8e9a460c45",
       "52984f1771c8ca412ae9a2559e6c42a807300f155ba1b6d456a5808a949e374a",
       "63a670b051caff680d62df8aacc9c4c84d4359f95226e70694fe2b19f6ebe3b7"
     ],
@@ -104,7 +106,8 @@
     ],
     "packages/publisher/actions/publisher.slot/skill.md": [
       "3b491eb5b372a102f2886e1c8be2c2e1f2ac50f71312f890b910db01e9bf2ee2",
-      "5b7fba2d691b4c337382b6b29ee55b5f4d0c5c1abcec7d3949f186329defb9a5"
+      "5b7fba2d691b4c337382b6b29ee55b5f4d0c5c1abcec7d3949f186329defb9a5",
+      "e88ff453b10273cd9334c8e5b501ce7ca52a2ef4b0d0da2886712a94e991b520"
     ],
     "packages/writer/actions/pick.writer/skill.md": [
       "e97f36eaf11dae908e84898ca7ccbdd35b434450e5010b4b00cf78330a808955"
@@ -121,6 +124,7 @@
       "93a93a08e111e2afeb8cd3ff79b1662f8ff01cb58e423459d5f72d7ca85f51b0"
     ],
     "packages/writer/actions/writer.slot/skill.md": [
+      "1fce7d1d79d5d2cc45aca8bbd7a59faffb099b39e6d57a78f5af23b75b006ea4",
       "9e677b35add50c612a16fde62bb5e74d66a5cd2a08c57b5d8de3b861bb058c9f",
       "feed4a67e5526912219d890b55842d73080831269ec765dca837bc5d798f7e2c"
     ]
@@ -128,6 +132,7 @@
   "actions": {
     "packages/designer/actions/designer.brief/action.json": [
       "4f476cd6f63394412ce298170b747e5765b2d8c706fcf7db0193820292720e7c",
+      "c1560bf87f944bdc8f56c12fcfc1d6ef370151e97739e5d3346dd7e6f216ca1a",
       "f1f0dbd0c6989c736f90428c9d47956c7466c276b98a1b363af2cc508d1efbfd"
     ],
     "packages/designer/actions/designer.check/action.json": [
@@ -247,6 +252,7 @@
       "c1c3ad2a18acdacbc6c3540b7ec15ed33959360f909967e90a1f816ec2ff63e3"
     ],
     "packages/writer/actions/writer.brief/action.json": [
+      "ea2d66f1a723923a96c80ee3189aebc92a7cf4520a2438619c9d1fd686f877f1",
       "ecb47dda003d5692b8fe95fd2f911be5a6770821afb7228df3b55b7939a7b073",
       "ef3e43a41659a4e6acaa4c3759e1d8dcdb4dc45b9003626d29dfce858b253b13"
     ],

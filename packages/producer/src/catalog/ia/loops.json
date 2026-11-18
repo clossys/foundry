@@ -72,6 +72,13 @@
           "leaves": [
             "loop.audit"
           ]
+        },
+        {
+          "id": "assure-cascade",
+          "label": "Cascade",
+          "leaves": [
+            "loop.cascade"
+          ]
         }
       ]
     }

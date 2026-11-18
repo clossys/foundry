@@ -390,8 +390,9 @@ describe("--contract --under: a slot placed before the end renumbers every later
   const later = ["assets.favicon", "assets.app-icon", "frames.studio-shell", "frames.workspace"];
   const orders = () => Object.fromEntries(["assets.logo-mark", "assets.logo-word", "assets.logo-glyph", ...later].filter(id => tree()[`clossys/agents/designer/${id}/slot.json`]).map(id => [id, slotOf("designer", id).ia.order]));
   let contract: string;
-  // The new leaf and its two L2 siblings read different material (U5 fix round 1: the placement overlap check refuses a
-  // leaf whose inputs equal, nest in or are as empty as a sibling's of one L2 and kind family).
+  // The new leaf and its two L2 siblings read different material (U5: the placement overlap check refuses a leaf whose
+  // inputs equal or nest in a sibling's of one L2 and kind family; two input-less leaves overlap only on equal contract
+  // requirements, and one input-less side is no overlap).
   const glyph = ["--inputs", "execution.plan.milestones"];
   beforeEach(() => {
     contract = join(workspace, "contract.json"); writeFileSync(contract, jsonBytes({ shape: "svg", requirements: [{ check: "svg.viewbox" }] }));

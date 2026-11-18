@@ -263,16 +263,19 @@ describe("conformance over the repo and its fixture", () => {
     for (const agent of report.agents) {
       expect(agent.cells).toHaveLength(23);
       expect(agent.dogfood).toHaveLength(5);
-      // Shared today: placement records no decision, no cascade loop, and create and choose name the slot's owner, not a literal agent.
-      for (const id of ["L2", "X1", "X4", "W1"]) expect(agent.cells.find(cell => cell.id === id)!.red, `${agent.agent} ${id}`).toBe(true);
-      // U5: the scope and slot loops reach every agent through its own skill, so W1 keeps only create, choose and cascade rows.
+      // Shared today: placement records no decision; create, choose and cascade name the slot's owner, not a literal
+      // agent, and the cascade step names no skill.
+      for (const id of ["L2", "W1"]) expect(agent.cells.find(cell => cell.id === id)!.red, `${agent.agent} ${id}`).toBe(true);
+      // U5: the scope and slot loops reach every agent through its own skill, so W1 keeps no scope or slot rows.
       expect(agent.cells.find(cell => cell.id === "W1")!.rows.filter(row => /^loop\.(scope|slot)\b|^(scope|slot):/.test(row)), agent.agent).toEqual([]);
+      // The cascade rows (U6): a repin re-verdicts its dependants, every edge resolves, no input reads a candidate
+      // file, release refuses needs-refresh.
+      for (const id of ["X1", "X2", "X3", "X4"]) expect(agent.cells.find(cell => cell.id === id)!.rows, `${agent.agent} ${id}`).toEqual([]);
     }
-    // L1: the queue-entry/2 schema and loop.slot exist; Director and Designer package trees still name slots no tree holds.
+    // L1: the queue-entry/2 schema and loop.slot exist (U5), and no package slot edge names a slot no tree holds (U6
+    // resolved every dangling edge), so no agent has an unfiled slotless need.
     const l1 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "L1")!;
-    for (const agent of ["director", "designer"]) expect(l1(agent).red, agent).toBe(true);
-    for (const agent of ["writer", "publisher"]) expect(l1(agent).rows, agent).toEqual([]);
-    for (const agent of CONFORM_AGENTS) expect(l1(agent).rows.filter(row => /queue-entry\/2|loop\.slot/.test(row)), agent).toEqual([]);
+    for (const agent of CONFORM_AGENTS) expect(l1(agent).rows, agent).toEqual([]);
     // C1 (family): every Director, Designer and Writer slot carries the family the contracts migration seeded from the
     // option table (the re-keyed table classes every Director and Writer group); Publisher's slot/1 slots carry none.
     const c1 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "C1")!;
@@ -280,13 +283,6 @@ describe("conformance over the repo and its fixture", () => {
     expect(c1("publisher").red).toBe(true);
     const director = report.agents.find(agent => agent.agent === "director")!;
     expect(director.cells.find(cell => cell.id === "K3")!.red).toBe(false);
-    expect(report.agents.find(agent => agent.agent === "publisher")!.cells.find(cell => cell.id === "X3")!.red).toBe(true);
-    // X2 over the package trees: Director feeds name Writer ids its package tree lacks; Designer's usage graph reads missing endpoints.
-    const x2 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "X2")!;
-    expect(x2("director").red).toBe(true);
-    expect(x2("director").rows.filter(row => row.includes("(writer)")).length).toBeGreaterThanOrEqual(120);
-    expect(x2("designer").red).toBe(true);
-    expect(x2("designer").rows.filter(row => / -> themes\.[a-z-]+\.[a-z]+: no such package slot$/.test(row)).length).toBe(258);
     expect(report.ok).toBe(false);
   });
 });

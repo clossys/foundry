@@ -183,7 +183,7 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "passages.faq"
+        "sections.faq.copy"
       ]
     },
     {
@@ -222,8 +222,7 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "lexicon.comparison-claims",
-        "passages.comparison"
+        "sections.comparison.copy"
       ]
     },
     {
@@ -373,8 +372,27 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "patterns.messaging-kit",
-        "strings.page-titles"
+        "page.about.meta",
+        "page.app-home.meta",
+        "page.app-not-found.meta",
+        "page.article.meta",
+        "page.changelog.meta",
+        "page.contact.meta",
+        "page.deck.meta",
+        "page.docs-index.meta",
+        "page.error.meta",
+        "page.guide.meta",
+        "page.home.meta",
+        "page.list.meta",
+        "page.not-authorized.meta",
+        "page.not-found.meta",
+        "page.pricing.meta",
+        "page.privacy.meta",
+        "page.service-unavailable.meta",
+        "page.settings.meta",
+        "page.sign-in.meta",
+        "page.sign-out-confirm.meta",
+        "page.terms.meta"
       ]
     },
     {
@@ -681,9 +699,28 @@
       "specimenKind": "text",
       "feeds": [
         "lexicon.reading-level",
-        "passages.hero",
-        "patterns.headline-subhead",
-        "strings.descriptions"
+        "sections.hero.copy",
+        "page.about.meta",
+        "page.app-home.meta",
+        "page.app-not-found.meta",
+        "page.article.meta",
+        "page.changelog.meta",
+        "page.contact.meta",
+        "page.deck.meta",
+        "page.docs-index.meta",
+        "page.error.meta",
+        "page.guide.meta",
+        "page.home.meta",
+        "page.list.meta",
+        "page.not-authorized.meta",
+        "page.not-found.meta",
+        "page.pricing.meta",
+        "page.privacy.meta",
+        "page.service-unavailable.meta",
+        "page.settings.meta",
+        "page.sign-in.meta",
+        "page.sign-out-confirm.meta",
+        "page.terms.meta"
       ]
     },
     {
@@ -760,19 +797,14 @@
       "specimenKind": "text",
       "feeds": [
         "narratives.guide",
-        "narratives.screen",
-        "passages.cards",
-        "passages.comparison",
-        "passages.empty-state",
-        "passages.features",
-        "passages.pricing",
-        "passages.status-list",
-        "passages.steps",
-        "passages.task-list",
-        "patterns.empty-state",
-        "patterns.feature-bullet",
-        "patterns.pricing-item",
-        "strings.empty"
+        "sections.link-index.copy",
+        "sections.comparison.copy",
+        "sections.empty-state.copy",
+        "sections.features.copy",
+        "sections.pricing.copy",
+        "sections.status-list.copy",
+        "sections.steps.copy",
+        "sections.task-list.copy"
       ]
     },
     {
@@ -848,18 +880,7 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "lexicon.compliance-statements",
-        "lexicon.currency-format",
-        "lexicon.date-format",
-        "lexicon.direction",
-        "lexicon.expansion-budget",
-        "lexicon.number-format",
-        "lexicon.plural-rules",
-        "lexicon.spelling-variant",
-        "lexicon.time-format",
-        "lexicon.unit-format",
-        "narratives.legal-document",
-        "passages.legal-prose"
+        "narratives.legal-document"
       ]
     },
     {
@@ -939,14 +960,10 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "narratives.email",
-        "narratives.page-story",
-        "passages.call-to-action",
-        "passages.hero",
-        "passages.newsletter",
-        "passages.pricing",
-        "patterns.primary-action",
-        "patterns.secondary-action"
+        "sections.call-to-action.copy",
+        "sections.hero.copy",
+        "sections.form.copy",
+        "sections.pricing.copy"
       ]
     },
     {
@@ -984,9 +1001,7 @@
       ],
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
-      "feeds": [
-        "strings.email-subjects"
-      ]
+      "feeds": []
     },
     {
       "id": "advantage.proposition.promise",
@@ -1026,20 +1041,31 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "lexicon.product-claims",
-        "narratives.deck-script",
-        "narratives.page-story",
-        "narratives.video-script",
-        "passages.call-to-action",
-        "passages.features",
-        "passages.hero",
-        "patterns.eyebrow-headline",
-        "patterns.headline",
-        "patterns.headline-subhead",
-        "patterns.messaging-kit",
-        "strings.descriptions",
-        "strings.share-text",
-        "strings.taglines"
+        "assets.video.copy",
+        "sections.call-to-action.copy",
+        "sections.features.copy",
+        "sections.hero.copy",
+        "page.about.meta",
+        "page.app-home.meta",
+        "page.app-not-found.meta",
+        "page.article.meta",
+        "page.changelog.meta",
+        "page.contact.meta",
+        "page.deck.meta",
+        "page.docs-index.meta",
+        "page.error.meta",
+        "page.guide.meta",
+        "page.home.meta",
+        "page.list.meta",
+        "page.not-authorized.meta",
+        "page.not-found.meta",
+        "page.pricing.meta",
+        "page.privacy.meta",
+        "page.service-unavailable.meta",
+        "page.settings.meta",
+        "page.sign-in.meta",
+        "page.sign-out-confirm.meta",
+        "page.terms.meta"
       ]
     },
     {
@@ -1078,26 +1104,16 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "lexicon.comparison-claims",
-        "lexicon.compliance-statements",
-        "lexicon.metric-claims",
-        "lexicon.product-claims",
-        "narratives.deck-script",
-        "narratives.page-story",
         "narratives.release-notes",
-        "passages.consent",
-        "passages.faq",
-        "passages.logo-cloud",
-        "passages.people",
-        "passages.stats",
-        "passages.testimonials",
-        "patterns.consent-line",
-        "patterns.quote",
-        "patterns.stat",
-        "patterns.table-caption",
-        "patterns.testimonial",
-        "strings.captions",
-        "strings.legal-lines"
+        "sections.consent.copy",
+        "sections.faq.copy",
+        "sections.logo-cloud.copy",
+        "sections.people.copy",
+        "sections.stats.copy",
+        "sections.testimonials.copy",
+        "assets.image.copy",
+        "assets.video.copy",
+        "frames.site-footer.copy"
       ]
     },
     {
@@ -1138,8 +1154,7 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "passages.features",
-        "patterns.feature-bullet"
+        "sections.features.copy"
       ]
     },
     {
@@ -1217,11 +1232,9 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "lexicon.currency-format",
-        "passages.comparison",
-        "passages.pricing",
-        "passages.usage",
-        "patterns.pricing-item"
+        "sections.comparison.copy",
+        "sections.pricing.copy",
+        "sections.usage.copy"
       ]
     },
     {
@@ -1297,8 +1310,7 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "patterns.messaging-kit",
-        "strings.taglines"
+        "sections.hero.copy"
       ]
     },
     {
@@ -1340,12 +1352,9 @@
         "lexicon.energy",
         "lexicon.formality",
         "lexicon.warmth",
-        "narratives.video-script",
-        "passages.boundary-message",
-        "passages.chat",
-        "passages.error-state",
-        "patterns.error-message",
-        "strings.errors"
+        "assets.video.copy",
+        "sections.error-state.copy",
+        "sections.chat.copy"
       ]
     },
     {
@@ -1386,12 +1395,28 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "lexicon.brand-names",
-        "lexicon.pronunciation",
-        "passages.logo-hero",
-        "passages.logo-mark",
-        "strings.names",
-        "strings.page-titles"
+        "sections.hero.copy",
+        "page.about.meta",
+        "page.app-home.meta",
+        "page.app-not-found.meta",
+        "page.article.meta",
+        "page.changelog.meta",
+        "page.contact.meta",
+        "page.deck.meta",
+        "page.docs-index.meta",
+        "page.error.meta",
+        "page.guide.meta",
+        "page.home.meta",
+        "page.list.meta",
+        "page.not-authorized.meta",
+        "page.not-found.meta",
+        "page.pricing.meta",
+        "page.privacy.meta",
+        "page.service-unavailable.meta",
+        "page.settings.meta",
+        "page.sign-in.meta",
+        "page.sign-out-confirm.meta",
+        "page.terms.meta"
       ]
     },
     {
@@ -1430,11 +1455,10 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "lexicon.brand-names",
-        "narratives.app-chrome",
-        "narratives.site-chrome",
-        "strings.names",
-        "strings.navigation"
+        "frames.app-header.copy",
+        "frames.app-sidebar.copy",
+        "frames.site-header.copy",
+        "frames.site-footer.copy"
       ]
     },
     {
@@ -1474,13 +1498,9 @@
       "specimenKind": "text",
       "feeds": [
         "narratives.article",
-        "narratives.deck-script",
-        "narratives.page-story",
-        "narratives.video-script",
-        "passages.article",
-        "passages.content",
-        "patterns.messaging-kit",
-        "strings.transcripts"
+        "assets.video.copy",
+        "sections.article.copy",
+        "sections.content.copy"
       ]
     },
     {
@@ -1533,88 +1553,72 @@
         "lexicon.reading-level",
         "lexicon.sentence-length",
         "lexicon.warmth",
-        "narratives.app-chrome",
+        "frames.app-header.copy",
+        "frames.app-sidebar.copy",
         "narratives.article",
-        "narratives.email",
         "narratives.guide",
         "narratives.legal-document",
-        "narratives.notification",
         "narratives.release-notes",
-        "narratives.screen",
-        "narratives.site-chrome",
-        "passages.access-matrix",
-        "passages.account-summary",
-        "passages.activity-feed",
-        "passages.article",
-        "passages.audit-log",
-        "passages.boundary-message",
-        "passages.call-to-action",
-        "passages.cards",
-        "passages.chat",
-        "passages.column-mapper",
-        "passages.consent",
-        "passages.content",
-        "passages.data-grid",
-        "passages.data-table",
-        "passages.empty-state",
-        "passages.error-state",
-        "passages.explorer",
-        "passages.faq",
-        "passages.filter-builder",
-        "passages.form",
-        "passages.gallery",
-        "passages.hero",
-        "passages.legal-prose",
-        "passages.link-index",
-        "passages.media",
-        "passages.newsletter",
-        "passages.notices",
-        "passages.page-header",
-        "passages.pagination",
-        "passages.people",
-        "passages.record-detail",
-        "passages.resource-list",
-        "passages.section-header",
-        "passages.settings",
-        "passages.sign-in-form",
-        "passages.status-list",
-        "passages.steps",
-        "passages.table-of-contents",
-        "passages.task-list",
-        "passages.timeline",
-        "passages.usage",
-        "passages.wizard",
-        "patterns.confirmation",
-        "patterns.consent-line",
-        "patterns.empty-state",
-        "patterns.error-message",
-        "patterns.eyebrow-headline",
-        "patterns.form-field",
-        "patterns.headline",
-        "patterns.headline-subhead",
-        "patterns.hint",
-        "patterns.inline-link",
-        "patterns.primary-action",
-        "patterns.secondary-action",
-        "patterns.section-title",
-        "patterns.table-caption",
-        "patterns.table-header",
-        "patterns.tooltip",
-        "patterns.warning-message",
-        "strings.actions",
-        "strings.common",
-        "strings.confirmations",
-        "strings.counters",
-        "strings.email-preheaders",
-        "strings.email-subjects",
-        "strings.empty",
-        "strings.errors",
-        "strings.field-labels",
-        "strings.loading",
-        "strings.navigation",
-        "strings.share-text",
-        "strings.statuses",
-        "strings.warnings"
+        "frames.site-header.copy",
+        "frames.site-footer.copy",
+        "sections.access-matrix.copy",
+        "sections.account-summary.copy",
+        "sections.activity-feed.copy",
+        "sections.article.copy",
+        "sections.audit-log.copy",
+        "sections.error-state.copy",
+        "sections.call-to-action.copy",
+        "sections.link-index.copy",
+        "sections.chat.copy",
+        "sections.column-mapper.copy",
+        "sections.consent.copy",
+        "sections.content.copy",
+        "sections.data-grid.copy",
+        "sections.data-table.copy",
+        "sections.empty-state.copy",
+        "sections.explorer.copy",
+        "sections.faq.copy",
+        "sections.filter-builder.copy",
+        "sections.form.copy",
+        "sections.gallery.copy",
+        "sections.hero.copy",
+        "sections.media.copy",
+        "sections.notices.copy",
+        "sections.page-header.copy",
+        "sections.pagination.copy",
+        "sections.people.copy",
+        "sections.resource-list.copy",
+        "sections.section-header.copy",
+        "sections.settings.copy",
+        "sections.sign-in-form.copy",
+        "sections.status-list.copy",
+        "sections.steps.copy",
+        "sections.table-of-contents.copy",
+        "sections.task-list.copy",
+        "sections.timeline.copy",
+        "sections.usage.copy",
+        "sections.wizard.copy",
+        "page.about.meta",
+        "page.app-home.meta",
+        "page.app-not-found.meta",
+        "page.article.meta",
+        "page.changelog.meta",
+        "page.contact.meta",
+        "page.deck.meta",
+        "page.docs-index.meta",
+        "page.error.meta",
+        "page.guide.meta",
+        "page.home.meta",
+        "page.list.meta",
+        "page.not-authorized.meta",
+        "page.not-found.meta",
+        "page.pricing.meta",
+        "page.privacy.meta",
+        "page.service-unavailable.meta",
+        "page.settings.meta",
+        "page.sign-in.meta",
+        "page.sign-out-confirm.meta",
+        "page.terms.meta"
       ]
     },
     {
@@ -1655,9 +1659,7 @@
       ],
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
-      "feeds": [
-        "passages.logo-mark"
-      ]
+      "feeds": []
     },
     {
       "id": "identity.visual.imagery",
@@ -1695,12 +1697,10 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "passages.band",
-        "passages.gallery",
-        "passages.media",
-        "patterns.figure-caption",
-        "strings.alt-text",
-        "strings.captions"
+        "sections.gallery.copy",
+        "sections.media.copy",
+        "assets.image.copy",
+        "assets.video.copy"
       ]
     },
     {
@@ -2147,7 +2147,7 @@
       "checkSuiteId": "director.cell.v1",
       "specimenKind": "text",
       "feeds": [
-        "passages.timeline"
+        "sections.timeline.copy"
       ]
     },
     {

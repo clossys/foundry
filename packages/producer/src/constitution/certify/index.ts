@@ -159,15 +159,21 @@ export function pinSetOf(input: CertifyInput, env: CertifyEnv): string {
     for (const ref of [...refs(page.copy), ...(isObject(page.bindings) ? Object.values(page.bindings).flatMap(binding => (isObject(binding) ? refs(binding.copy) : [])) : [])]) reads.add(ref.split("#")[0]!);
   }
   if (kind === "brief") for (const cite of candidateCitations(slot, candidate, env.homes, env.installOwners())) for (const id of cite.slots) reads.add(id);
+  // A slot pinned per record (a Writer pin map) reads as the sha256 of every pinned record, in record order.
+  const shaOf = (agent: string, id: string): string | undefined => {
+    const pinned = env.pins.get(pinKey(agent, id));
+    if (pinned) return pinned.candidate.sha256;
+    const records = env.recordPins.get(pinKey(agent, id));
+    return records?.length ? records.map(item => item.sha256).join("+") : undefined;
+  };
   const pinOf = (id: string) => {
     const agent = env.homes.get(id)?.agent;
-    const pinned = agent ? env.pins.get(pinKey(agent, id)) : undefined;
-    return `${id}=${pinned ? pinned.candidate.sha256 : "none"}`;
+    return `${id}=${(agent ? shaOf(agent, id) : undefined) ?? "none"}`;
   };
   const copyOf = (key: string) => {
     const owner = env.keyOwner.get(key);
-    const pinned = owner ? env.pins.get(pinKey("writer", owner)) : undefined;
-    return `#${key}=${owner && pinned ? `${owner}@${pinned.candidate.sha256}` : "none"}`;
+    const pinned = owner ? shaOf("writer", owner) : undefined;
+    return `#${key}=${owner && pinned ? `${owner}@${pinned}` : "none"}`;
   };
   return sha(canonicalJson({
     slot: `${slot.agent}/${slot.id}`, kind: kind ?? null, inputs: stringList(doc.inputs), uses: stringList(doc.uses),

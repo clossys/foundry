@@ -166,7 +166,7 @@
       },
       {
         "id": "cascade",
-        "does": "mark every consumedBy dependant needs-refresh",
+        "does": "re-verdict every pin whose pinSet this repin changed (loop.cascade); a failing dependant is marked needs-refresh and goes to its owner as a queue.fix",
         "decider": {
           "by": "code"
         },
