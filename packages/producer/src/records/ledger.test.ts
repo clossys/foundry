@@ -106,7 +106,7 @@ describe("the single writer appends one ledger event per write", () => {
     const rewritten = rewriteCitationsInPlace(consumer, "director", ID, { candidates: [{ name: "essence-v1.md", before: v1, after: v1.replace("Essence: one", "Essence: one ") }] }, { by: "planner", at });
     expect(rewritten).toHaveLength(1);
     writeNotNeeded(consumer, "director", ID, { reason: "covered elsewhere", since: "2026-11-13", decidedBy: "owner" }, { at });
-    appendRetireCandidate(consumer, "director", ID, { name: "essence-v2.md", sha256: "f".repeat(64), reason: "superseded: v3", by: "planner", at });
+    appendRetireCandidate(consumer, "director", ID, { name: "essence-v2.md", sha256: "f".repeat(64), reason: "superseded: v3", by: "agent:director", at });
 
     const list = events();
     expect(list.map(event => `${String(event.op)}/${String(event.verb)}`)).toEqual([
@@ -133,12 +133,12 @@ describe("the single writer appends one ledger event per write", () => {
 
   it("writes retire --slot events to the slot ledger and the agent ledger with ia.json's state", () => {
     writeCandidate(consumer, "director", ID, "essence", brief("one"), { at });
-    const written = appendRetireSlot(consumer, "director", ID, { reason: "not-needed: merged", by: "owner", at });
+    const written = appendRetireSlot(consumer, "director", ID, { reason: "not-needed: merged", by: "agent:director", at });
     expect(written.map(event => event.op)).toEqual(["retire-slot", "retire-slot"]);
     expect(events().at(-1)).toMatchObject({ op: "retire-slot", code: "not-needed", verb: "retire" });
     const agent = readLedger(join(consumer, "agents", "director"), "agent")!;
     expect(agent.events).toEqual([expect.objectContaining({ op: "retire-slot", slot: ID, code: "not-needed", records: [{ file: "ia.json", sha256: fileSha(join(consumer, "agents", "director", "ia.json")) }] })]);
-    expect(() => appendRetireSlot(consumer, "director", ID, { reason: "because", by: "owner", at })).toThrow(/does not start with a retire code/);
+    expect(() => appendRetireSlot(consumer, "director", ID, { reason: "because", by: "agent:director", at })).toThrow(/does not start with a retire code/);
   });
 
   it("refuses a candidate that fails verify, or a slot whose ledger is unreadable, and leaves nothing behind", () => {
@@ -176,7 +176,7 @@ const brief = essence => text.replace("__ESSENCE__", essence);
 let busy = 0;
 for (let i = 0; i < Number(count); i++) {
   for (;;) {
-    try { writeCandidate(consumer, "director", id, "essence", brief(tag + "-" + i), { at: "2026-11-13T00:00:00Z", provenance: { by: "agent:" + tag } }); break; }
+    try { writeCandidate(consumer, "director", id, "essence", brief(tag + "-" + i), { at: "2026-11-13T00:00:00Z", provenance: { by: "agent:director." + tag } }); break; }
     catch (error) { if (!/another decision write is in progress/.test(String(error))) throw error; busy++; await new Promise(done => setTimeout(done, 1)); }
   }
 }
@@ -209,8 +209,8 @@ console.log(JSON.stringify({ tag, busy }));
     expect(new Set(submits.map(event => event.name)).size).toBe(files.length);
     expect(submits.map(event => event.name).sort()).toEqual(files);
     for (const name of files) expect(expectedCandidateSha(list, name)).toEqual({ submitted: true, sha256: fileSha(join(dir, "candidates", name)) });
-    expect(submits.filter(event => event.by === "agent:a")).toHaveLength(COUNT);
-    expect(submits.filter(event => event.by === "agent:b")).toHaveLength(COUNT);
+    expect(submits.filter(event => event.by === "agent:director.a")).toHaveLength(COUNT);
+    expect(submits.filter(event => event.by === "agent:director.b")).toHaveLength(COUNT);
     expect(ledgerIssues(ledger())).toEqual([]);
     expect(existsSync(join(dir, SLOT_LOCK))).toBe(false);
   }, 60_000);

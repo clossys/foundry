@@ -11,8 +11,10 @@ import { runReleaseCli } from "../cli/release.js";
 import { cliHooks } from "../loop/cli.js";
 import { ledgerDir, resumeRun, startRun } from "../loop/runner.js";
 import { answerQueueEntry } from "../queue/answer.js";
+import { raiseFeedback } from "../queue/feedback.js";
 import { readdirSync } from "node:fs";
 import type { LedgerEntry } from "../records/types.js";
+import { closeWork, raiseWork } from "../records/request.js";
 import { cliActor } from "../records/pin.js";
 import { writeTargetPin } from "../records/pin-map.js";
 import { latestBuild } from "./build.js";
@@ -146,6 +148,69 @@ describe("clossys release --gates", () => {
     const result = await release(world, "--gates");
     expect(result.exitCode).toBe(1);
     expect(out(result).checks).toMatchObject({ "release.made-up": "fail" });
+  });
+});
+
+describe("requests.open-fix", () => {
+  const fixOn = (world: ReleaseWorld, target: string) => raiseWork(join(world.root, "clossys"), {
+    kind: "fix", target, from: "owner", why: "the hero overflows at 320px", source: "check", by: "producer", at: "2026-11-20T07:30:00Z",
+    check: "render.overflow", findings: ["hero heading overflows at 320px"], cause: "the heading has no wrap rule",
+  }).request;
+
+  it("refuses a release while an open fix is about a section a page of the release reads", async () => {
+    const world = make();
+    const fix = fixOn(world, "designer/sections.hero");
+    await release(world, "--build");
+    await release(world, "--manifest");
+    const result = await release(world, "--gates");
+    expect(result.exitCode).toBe(1);
+    expect(out(result).checks).toMatchObject({ "requests.open-fix": "fail" });
+    expect(out(result).findings).toContainEqual(expect.objectContaining({ check: "requests.open-fix", subject: "designer/sections.hero", detail: expect.stringContaining(`queue.fix#${fix.id}`) }));
+  });
+
+  it("passes once that fix closes with its result", async () => {
+    const world = make();
+    // A fix closes fixed only by its assignee (or the owner), and only when its own check passes again on the target.
+    const fix = raiseWork(join(world.root, "clossys"), {
+      kind: "fix", target: "designer/sections.hero", from: "owner", why: "the hero did not resolve", source: "check", by: "producer", at: "2026-11-20T07:30:00Z",
+      check: "pins.resolve", findings: ["designer/sections.hero does not resolve"], cause: "the hero had no pin",
+    }).request;
+    closeWork(join(world.root, "clossys"), fix.id, { by: "designer", at: "2026-11-20T07:40:00Z", outcome: "fixed", result: "designer/sections.hero" });
+    await release(world, "--build");
+    await release(world, "--manifest");
+    const result = await release(world, "--gates");
+    expect(result.exitCode, result.message).toBe(0);
+  });
+
+  it("refuses a release while an open fix is about a Writer record slot (the release reads writer/sections.hero.copy#home.hero)", async () => {
+    const world = make();
+    const fix = fixOn(world, "writer/sections.hero.copy");
+    await release(world, "--build");
+    await release(world, "--manifest");
+    const result = await release(world, "--gates");
+    expect(result.exitCode).toBe(1);
+    expect(out(result).findings).toContainEqual(expect.objectContaining({ check: "requests.open-fix", subject: "writer/sections.hero.copy", detail: expect.stringContaining(`queue.fix#${fix.id}`) }));
+  });
+
+  it("refuses a release over an open queue-entry/1 fix about a Writer record (the older fix path)", async () => {
+    const world = make();
+    const entry = raiseFeedback(world.root, { ref: "writer/sections.hero.copy#home.hero", words: "the hero heading is too long", via: "chat" }, new Date("2026-11-20T07:35:00Z"));
+    expect(entry).toMatchObject({ queue: "queue.fix", decider: "agent:writer", subject: { to: "writer/sections.hero.copy", record: "home.hero" } });
+    await release(world, "--build");
+    await release(world, "--manifest");
+    const result = await release(world, "--gates");
+    expect(result.exitCode).toBe(1);
+    expect(out(result).findings).toContainEqual(expect.objectContaining({ check: "requests.open-fix", subject: "writer/sections.hero.copy", detail: expect.stringContaining(`queue.fix#${entry.id}`) }));
+  });
+
+  it("fails closed on a fix entry that does not read", async () => {
+    const world = make();
+    world.write("clossys/agents/producer/queue.fix/entries/20261120T0700Z-fix-broken.json", `${JSON.stringify({ schema: "clossys.queue-entry/2", id: "20261120T0700Z-fix-broken", kind: "fix" })}\n`);
+    await release(world, "--build");
+    await release(world, "--manifest");
+    const result = await release(world, "--gates");
+    expect(result.exitCode).toBe(1);
+    expect(out(result).findings.map(row => row.check)).toContain("requests.open-fix");
   });
 });
 

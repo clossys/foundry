@@ -18,6 +18,9 @@
  *   the IA that the manifest would ship is judged too), release slots aside (release.ready judges those). Every pin
  *   the release ships must match a judged check on its slot, record, candidate and sha256: a shipped pin the model
  *   reader could not read (an alias, an unreadable file) fails closed by name. Producer slots are not judged (sweep N2).
+ * - `requests.open-fix`: no open fix is about a slot in the release's closure (every slot the release reads, the one
+ *   resolver): a clossys.queue-entry/2 kind fix, or a clossys.queue-entry/1 queue.fix an agent decides. An unreadable
+ *   entry fails the gate (fail closed): an entry the gate cannot read might be an open fix (foundry-build-0048 U7).
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -32,6 +35,8 @@ import { checkPinsResolve, PINS_RESOLVE } from "../check/pins-resolve.js";
 import { strictFindings } from "../loop/cli.js";
 import type { Finding } from "../loop/route.js";
 import { readSlotJson } from "../records/resolve.js";
+import { listWorkEntries } from "../records/request.js";
+import { readLegacyFixes } from "../queue/legacy-fix.js";
 import { releaseLocales, readReleaseSlot } from "./locales.js";
 import { isReleaseSlot, refOf, releaseResolutions } from "./pins.js";
 import { releaseSlotId } from "./paths.js";
@@ -41,8 +46,9 @@ export const CONSTITUTION_STRICT = "constitution.strict";
 export const COPY_LOCALES = "copy.locales";
 export const RELEASE_LOCALES = "release.locales";
 export const SLOTS_STALE = "slots.stale";
+export const REQUESTS_OPEN_FIX = "requests.open-fix";
 /** The gates every release runs, in the order the spec lists them. */
-export const RELEASE_GATES: readonly string[] = [COPY_SAMPLE_REMAINING, PINS_RESOLVE, CONSTITUTION_STRICT, COPY_LOCALES, RELEASE_LOCALES, SLOTS_STALE];
+export const RELEASE_GATES: readonly string[] = [COPY_SAMPLE_REMAINING, PINS_RESOLVE, CONSTITUTION_STRICT, COPY_LOCALES, RELEASE_LOCALES, SLOTS_STALE, REQUESTS_OPEN_FIX];
 
 export type GateStatus = "pass" | "fail";
 export interface GateRun { readonly checks: Record<string, GateStatus>; readonly findings: Finding[] }
@@ -180,20 +186,59 @@ function slotsStale(root: string): Finding[] {
   return findings;
 }
 
-/** Runs every gate of the release now. A gate with any finding is `fail`. */
-export function runGates(root: string, publication: string, build: { readonly locales: readonly string[] } | undefined): GateRun {
-  const { locales } = releaseLocales(root, publication);
-  const byGate: Record<string, () => Finding[]> = {
+/**
+ * Every open fix about a slot the release reads; an entry that does not read is a finding too (fail closed). The
+ * clossys.queue-entry/1 entries under queue.fix come from the one strict reader (queue/legacy-fix.ts, foundry-build-0048
+ * U7 r3): one that is not closed holds its slot open whatever its decider, and one with issues (no subject, a status
+ * the schema refuses, events that disagree, a hidden file) is refused by its root-relative path (Q11 reads that).
+ */
+export function openFixes(root: string): Finding[] {
+  // Slot-level: a record slot resolves as `<agent>/<slot>#<record>`, but a fix names the slot (or one record of it).
+  const closure = new Set(releaseResolutions(root).map(resolution => `${resolution.agent}/${resolution.slotId}`));
+  const findings: Finding[] = [];
+  // Every work folder (foundry-build-0048 U7 r4): a kind fix filed under another folder still holds its slot open, and
+  // an entry that does not read might be one (outside queue.fix, unless it says it is a change or a slot entry).
+  for (const read of listWorkEntries(join(root, "clossys"))) {
+    const kind = (read.doc as { kind?: unknown } | null | undefined)?.kind;
+    if (!read.request) {
+      const folder = read.file.slice(root.length + 1).split("/").at(-3) ?? "queue.fix";
+      if (folder !== "queue.fix" && (kind === "change" || kind === "slot")) continue;
+      findings.push({ check: REQUESTS_OPEN_FIX, subject: `producer/${folder}`, detail: `${read.file.slice(root.length + 1)} does not read (${read.issues.slice(0, 2).join("; ")}); it might be an open fix` });
+      continue;
+    }
+    if (read.request.kind !== "fix") continue;
+    const subject = read.request.target.split("#")[0]!;
+    if (read.request.status === "open" && closure.has(subject)) findings.push({ check: REQUESTS_OPEN_FIX, subject, detail: `open fix queue.fix#${read.request.id} (${read.request.check ?? "fix"}): the release reads this slot` });
+  }
+  for (const fix of readLegacyFixes(root)) {
+    if (fix.closed) continue;
+    if (fix.issues.length || fix.subject === undefined) { findings.push({ check: REQUESTS_OPEN_FIX, subject: "producer/queue.fix", detail: `${fix.path} does not read as a valid queue.fix entry (${fix.issues.slice(0, 2).join("; ")}); it might be an open fix` }); continue; }
+    const subject = fix.subject.split("#")[0]!;
+    if (closure.has(subject)) findings.push({ check: REQUESTS_OPEN_FIX, subject, detail: `open queue.fix#${fix.id}: the release reads this slot` });
+  }
+  return findings;
+}
+
+/** The gate runners a release runs, by gate id (what runGates calls; read lazily, so listing them reads nothing). */
+export function gateRunners(root: string, publication: string, build: { readonly locales: readonly string[] } | undefined): Readonly<Record<string, () => Finding[]>> {
+  const locales = () => releaseLocales(root, publication).locales;
+  return {
     [COPY_SAMPLE_REMAINING]: () => sampleRemaining(root),
     // A release slot is judged by release.ready, not here: before its first ready-pin it resolves to nothing.
     [PINS_RESOLVE]: () => checkPinsResolve(root).findings
       .filter(row => !isReleaseSlot(row.subject.split("/")[0]!, (row.subject.split("/")[1] ?? "").split("#")[0]!))
       .map(row => ({ check: PINS_RESOLVE, subject: row.subject, detail: row.detail })),
     [CONSTITUTION_STRICT]: () => strictFindings(root),
-    [COPY_LOCALES]: () => copyLocales(root, locales),
+    [COPY_LOCALES]: () => copyLocales(root, locales()),
     [RELEASE_LOCALES]: () => localesGate(root, publication, build),
     [SLOTS_STALE]: () => slotsStale(root),
+    [REQUESTS_OPEN_FIX]: () => openFixes(root),
   };
+}
+
+/** Runs every gate of the release now. A gate with any finding is `fail`. */
+export function runGates(root: string, publication: string, build: { readonly locales: readonly string[] } | undefined): GateRun {
+  const byGate = gateRunners(root, publication, build);
   const checks: Record<string, GateStatus> = {};
   const findings: Finding[] = [];
   for (const gate of releaseGates(root, publication)) {

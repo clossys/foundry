@@ -18,6 +18,7 @@ import { AGENT_LOOPS, agentLoopIssues, isAgentLoop, isLoopAgent, readAgentLoopPi
 import { planRun, type StartInput } from "../loop/runner.js";
 import { listRequests, targetOf } from "../records/request.js";
 import { toIsoZ } from "../records/pin.js";
+import { SeatRefusal } from "../records/seat-owner.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { runPinCli } from "./pin.js";
@@ -124,7 +125,12 @@ function planInput(root: string, agent: LoopAgent, loop: AgentLoopName): { input
  */
 export async function adoptAndPinAgentLoops(workspace: string, agent: LoopAgent, by: string, at: string, cwd: string): Promise<{ adopted: boolean; pinned: string[]; issues: string[] }> {
   const pinned: string[] = [];
-  const adopt = adoptAgentLoops(workspace, agent, { by: by.split(":")[0]!, at });
+  // U7 r5 (Q9): adoption judges the actor itself (assertActor) before it writes; a refused actor adopts nothing.
+  let adopt: ReturnType<typeof adoptAgentLoops>;
+  try { adopt = adoptAgentLoops(workspace, agent, { by, at }); } catch (error) {
+    if (error instanceof SeatRefusal) return { adopted: false, pinned, issues: [error.message] };
+    throw error;
+  }
   if (adopt.refused.length) return { adopted: false, pinned, issues: adopt.refused.map(issue => `adopt refused: ${issue}`) };
   for (const each of AGENT_LOOPS) {
     const pin = await pinOwn(workspace, agent, each, by, at, cwd);

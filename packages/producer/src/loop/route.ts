@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { danglingReason } from "../check/refs-dangling.js";
 import { createQueueEntry, entryStamp, listQueueEntryFiles, readQueueEntry, slugOf } from "../queue/entry.js";
 import { ANSWER_RULES, entrySchemaIssues } from "../queue/rules.js";
+import { consumerFacts, routeEntry, type RoutingFacts } from "../queue/routing.js";
 import { parseRefString } from "../records/resolve.js";
 import { PRODUCER_ROOT } from "../package-path.js";
 import type { AgentId, Iso, QueueEntry, QueueName, Ref } from "../records/types.js";
@@ -80,31 +81,39 @@ export function raiseEntry(root: string, raise: Raise, at: Iso, dedupe = true): 
   return { entry: createQueueEntry(root, entry), raised: true };
 }
 
-/** A finding's owner: the agent of an existing consumer slot it names, else the owner. */
-export function findingRaise(root: string, finding: Finding, loopLabel: string): Raise {
+/**
+ * A finding's owner, as Producer's router (queue/routing.ts) sends a kind fix on its subject: a live slot to its
+ * agent's declared fix handler, anything else (no slot, or an agent with no declared handler) to the owner's
+ * queue.clarify. The entry it raises is still a clossys.queue-entry/1 queue.fix (the runner reads and closes those);
+ * conform Q10 reports every such raise until the runner reads kind fix entries.
+ */
+export function findingRaise(root: string, finding: Finding, loopLabel: string, facts?: RoutingFacts): Raise {
   const head = finding.subject.split(/[/#]/).slice(0, 2).join("/");
   const parsed = parseRefString(head);
   const slotRef: Ref | undefined = parsed && !(parsed.agent === "producer" && /^(queue|ledger)\./.test(parsed.slotId))
     ? { to: `${parsed.agent}/${parsed.slotId}` as Ref["to"], rel: "input" } : undefined;
   const what = `${finding.check ? `${finding.check}: ` : ""}${finding.detail}`;
-  if (slotRef && danglingReason(root, slotRef) === undefined) {
+  const route = slotRef && danglingReason(root, slotRef) === undefined
+    ? routeEntry(facts ?? consumerFacts(join(root, "clossys")), { kind: "fix", target: slotRef.to, assignee: parsed!.agent as never }) : undefined;
+  if (slotRef && route && route.assignee !== "owner") {
     return { queue: "queue.fix", subject: slotRef, decider: `agent:${parsed!.agent as AgentId}`, ask: `${loopLabel} found on ${head}: ${what}`, slug: parsed!.slotId };
   }
-  const facts: Ref = existsSync(join(root, "clossys", "facts.json")) ? { to: "facts", rel: "input" } : { to: "producer/queue.clarify", rel: "input" };
-  return { queue: "queue.clarify", subject: facts, decider: "owner", ask: `${loopLabel} found a finding no slot owns (${finding.subject}): ${what}`, slug: `${slugOf(finding.subject)}` };
+  const factsRef: Ref = existsSync(join(root, "clossys", "facts.json")) ? { to: "facts", rel: "input" } : { to: "producer/queue.clarify", rel: "input" };
+  return { queue: "queue.clarify", subject: factsRef, decider: "owner", ask: `${loopLabel} found a finding no slot owns (${finding.subject}): ${what}`, slug: `${slugOf(finding.subject)}` };
 }
 
 /** Routes findings, one entry per subject (deduped against open entries). Returns the entries newly raised. */
 export function routeFindings(root: string, findings: readonly Finding[], at: Iso, loopLabel: string): QueueEntry[] {
   const raised: QueueEntry[] = [];
   const grouped = new Map<string, Finding[]>();
+  const facts = consumerFacts(join(root, "clossys"));
   for (const finding of findings) {
-    const raise = findingRaise(root, finding, loopLabel);
+    const raise = findingRaise(root, finding, loopLabel, facts);
     const key = `${raise.queue} ${raise.subject.to}`;
     grouped.set(key, [...(grouped.get(key) ?? []), finding]);
   }
   for (const group of grouped.values()) {
-    const first = findingRaise(root, group[0]!, loopLabel);
+    const first = findingRaise(root, group[0]!, loopLabel, facts);
     const ask = group.length === 1 ? first.ask : `${first.ask} (+${group.length - 1} more: ${group.slice(1).map(f => `${f.check ? `${f.check}: ` : ""}${f.detail}`).join("; ")})`;
     const result = raiseEntry(root, { ...first, ask }, at);
     if (result.raised) raised.push(result.entry);

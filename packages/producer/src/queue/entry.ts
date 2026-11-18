@@ -37,14 +37,21 @@ export interface EntryFile {
   readonly file: string;
 }
 
-/** Every queue entry file under the four queue folders, by queue then id. */
+/** A clossys.queue-entry/2 fix shares the queue.fix folder (foundry-build-0048 U7); /1 readers leave it to the /2 store. */
+function isQueueEntry2(file: string): boolean {
+  try { return (JSON.parse(readFileSync(file, "utf8")) as { schema?: unknown }).schema === "clossys.queue-entry/2"; } catch { return false; }
+}
+
+/** Every queue entry file under the four queue folders, by queue then id. A /2 fix in queue.fix is not a /1 entry. */
 export function listQueueEntryFiles(root: string): EntryFile[] {
   const out: EntryFile[] = [];
   for (const queue of QUEUE_NAMES) {
     const dir = queueEntriesDir(root, queue);
     if (!isDir(dir)) continue;
     for (const name of readdirSync(dir).filter(file => file.endsWith(".json")).sort()) {
-      out.push({ queue, id: name.slice(0, -".json".length), file: join(dir, name) });
+      const file = join(dir, name);
+      if (queue === "queue.fix" && isQueueEntry2(file)) continue;
+      out.push({ queue, id: name.slice(0, -".json".length), file });
     }
   }
   return out;
@@ -52,7 +59,11 @@ export function listQueueEntryFiles(root: string): EntryFile[] {
 
 export type EntryRead = { readonly ok: true; readonly entry: QueueEntry; readonly bytes: string } | { readonly ok: false; readonly reason: string };
 
-/** Reads one entry file; the entry's own `id` and `queue` must match its path. */
+/**
+ * Reads one entry file; the entry's own `id` and `queue` must match its path. It is lax: it does not validate the
+ * schema, the answer rules or that the status agrees with the events, so it must never judge closure. Every queue.fix
+ * consumer that judges whether an entry is closed goes through queue/legacy-fix.ts (foundry-build-0048 U7 r3).
+ */
 export function readQueueEntry(at: EntryFile): EntryRead {
   let bytes: string;
   try { bytes = readFileSync(at.file, "utf8"); } catch { return { ok: false, reason: "cannot read the entry file" }; }
@@ -129,9 +140,13 @@ export function replaceQueueEntry(file: string, entry: QueueEntry): void {
 export const queueLockPath = (root: string, queue: QueueName, id: string): string => join(root, ".clossys", "locks", "queue", queue, `${id}.lock`);
 
 export class EntryLockedError extends Error {
-  constructor(readonly lock: string) {
+  // A plain field, not a parameter property: records/slot-write.ts reaches this module through the actor guard
+  // (records/seat-owner.ts), and Node's type stripping runs slot-write.ts in child writers (records/ledger.test.ts).
+  readonly lock: string;
+  constructor(lock: string) {
     super(`the entry is locked by another writer (${lock}); nothing was written. If no writer is running, remove the lock file by hand`);
     this.name = "EntryLockedError";
+    this.lock = lock;
   }
 }
 

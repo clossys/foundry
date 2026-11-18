@@ -1,0 +1,13 @@
+{
+  "schema": "clossys.routing/1",
+  "about": "Producer's routing table (foundry-build-0048 U7): every clossys.queue-entry/2 is routed by these rows, in order; the first row whose kinds and match hold wins. Matches are closed names the router computes from data (queue/routing.ts): live (the target slot is placed), owner-class (the target is in a class an owner step of a loop version reserves, read from its `when`), home (the target agent holds a placed slot with the need's first id segment), agent (the target names a content agent), decider (a decision kind keeps its own decider), any. Owner classes are never listed here. The last row is the only catch-all.",
+  "rows": [
+    { "id": "decision", "kinds": ["pick", "approve", "clarify"], "match": "any", "to": "decider" },
+    { "id": "fix.live", "kinds": ["fix"], "match": "live", "to": "handler", "handling": "fix" },
+    { "id": "owner.class", "kinds": ["change", "slot"], "match": "owner-class", "to": "owner-packet" },
+    { "id": "change.live", "kinds": ["change"], "match": "live", "to": "handler", "handling": "change" },
+    { "id": "slot.home", "kinds": ["slot"], "match": "home", "to": "handler", "handling": "slot" },
+    { "id": "slot.scope", "kinds": ["slot"], "match": "agent", "to": "scope" },
+    { "id": "catch-all", "kinds": "*", "match": "any", "to": "owner-clarify" }
+  ]
+}

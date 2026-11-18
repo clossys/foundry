@@ -1,7 +1,7 @@
 {
   "$comment": "clossys.conform-adapter/1: what an agent package declares to the conformance runner (foundry-build-0048 U1).",
   "type": "object",
-  "required": ["schema", "agent", "trees", "kinds", "defaults", "recipes", "derive", "edgeFiles", "skill", "skills"],
+  "required": ["schema", "agent", "trees", "kinds", "defaults", "recipes", "derive", "edgeFiles", "skill", "skills", "requests"],
   "additionalProperties": false,
   "properties": {
     "schema": { "const": "clossys.conform-adapter/1" },
@@ -62,6 +62,36 @@
         "choose": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
         "cascade": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
       }
+    },
+    "requests": {
+      "$comment": "foundry-build-0048 U7: the agent's side of the one queue. issuing: the agents its slots may raise work entries to (each backed by a real inputs/uses edge into that agent); handling: the skill and loop the router hands each work kind to.",
+      "type": "object", "required": ["issuing", "handling"], "additionalProperties": false,
+      "properties": {
+        "issuing": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["to", "kinds"], "additionalProperties": false,
+            "properties": {
+              "to": { "enum": ["director", "designer", "writer", "publisher"] },
+              "kinds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["slot", "change", "fix"] } }
+            }
+          }
+        },
+        "handling": {
+          "type": "object", "required": ["slot", "change", "fix"], "additionalProperties": false,
+          "properties": {
+            "slot": { "$ref": "#/$defs/handler" },
+            "change": { "$ref": "#/$defs/handler" },
+            "fix": { "$ref": "#/$defs/handler" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "handler": {
+      "type": "object", "required": ["skill", "loop"], "additionalProperties": false,
+      "properties": { "skill": { "type": "string", "minLength": 1 }, "loop": { "type": "string", "pattern": "^loop\\.[a-z][a-z0-9-]*$" } }
     }
   }
 }

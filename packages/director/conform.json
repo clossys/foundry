@@ -37,5 +37,13 @@
     "create": "packages/director/actions/director.candidates/skill.md",
     "choose": "packages/director/actions/pick.director/skill.md",
     "cascade": null
+  },
+  "requests": {
+    "issuing": [],
+    "handling": {
+      "slot": {"skill": "packages/director/actions/director.slot/skill.md", "loop": "loop.slot"},
+      "change": {"skill": "packages/director/actions/director.candidates/skill.md", "loop": "loop.create"},
+      "fix": {"skill": "packages/director/actions/director.candidates/skill.md", "loop": "loop.create"}
+    }
   }
 }

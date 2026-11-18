@@ -39,7 +39,7 @@ import { PRODUCER_IA_SOURCE } from "../records/slot-model/pipeline-seats.js";
 import { adoptedSlotDoc, driftCounts, knownSlots, SYNC_AGENTS, syncDrift, syncPlan, syncState, workspaceSourceRepairs, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
-import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writePin } from "../records/slot-write.js";
+import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, retireAnswerUses, retireBinding, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writePin } from "../records/slot-write.js";
 import { LEDGER_FILE, skillPath } from "../records/ledger.js";
 import { readStandard, slotKinds, standardFits } from "../records/standards.js";
 import type { ModelAgent } from "../records/slot-model/index.js";
@@ -57,6 +57,7 @@ import { resolveCandidate } from "./pin.js";
 import { consumerSlotFolders, positionIa, serializeSlot, SLOT_SCHEMA as SLOT_V2_SCHEMA, validateSlot } from "../records/slot.js";
 import { currentView, slotReadIssues } from "../records/slot-current.js";
 import { cliActor, toIsoZ } from "../records/pin.js";
+import { actorRefusal } from "../records/seat-owner.js";
 import { slotFromV1, targetKind, type SlotV1 } from "../migrate/slot-1-to-2.js";
 import type { AgentId, Iso, Ref, Slot, TargetSlotKind } from "../records/types.js";
 import { CliUsageError } from "./args.js";
@@ -1114,11 +1115,32 @@ interface RetireFields { by: string; reason: string; at: string }
 /** Remove a folder this verb created when an undo left it empty (records/slot-write.ts). */
 const dropEmptyDir = dropEmptyModelDir;
 
+/**
+ * The retire actor guard (foundry-build-0048 U7 r3): `--by` is the slot's own seat (`agent:<agent>[.<role>]`) or a
+ * resolved owner answer (`owner:queue.<kind>#<id>`, records/seat-owner.ts) about this slot, answered with its option
+ * `retire` (U7 r4). Bare `owner`, `planner`, a foreign seat, another subject's or another option's answer and free text
+ * are refused before anything is read, moved, renumbered or written.
+ */
+function retireRefusal(root: string, agent: SlotAgent, slot: string, by: string, candidate?: string | null): CliResult | undefined {
+  const why = actorRefusal(root, by, agent, retireBinding(agent, slot, candidate));
+  if (why !== undefined) return refuse("retire", why);
+  // Bound to what it asked about, the answer is also single-use (U7 r5, blind2 B1): a retire record or a retire
+  // ledger event that already cites it refuses it.
+  if (candidate === undefined) return undefined;
+  const uses = retireAnswerUses(join(root, "clossys"), agent, by, { records: true });
+  return uses.length ? refuse("retire", `--by ${by} already retired (${uses.slice(0, 3).join("; ")}); an owner's retire answer is used once`) : undefined;
+}
+
 function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot: string, candidateId: string, fields: RetireFields): CliResult {
+  const guard = retireRefusal(root, agent, slot, fields.by);
+  if (guard) return guard;
   const target = `${agent}/${slot}`;
   const entry = readSlotEntry(consumer, agent, slot);
   if (!entry) return refuse("retire", `unknown slot ${target} (not in ${agent} ia.json)`);
   const candidate = resolveCandidate(entry.candidates, candidateId);
+  // The owner's answer names this very candidate, and retired nothing before (U7 r5): judged before anything moves.
+  const bound = candidate ? retireRefusal(root, agent, slot, fields.by, candidate) : undefined;
+  if (bound) return bound;
   if (!candidate) return refuse("retire", `${target} has no candidate ${candidateId}`);
   // A present pin.json names the pinned candidate even when it no longer validates: never retire what it names.
   const pinText = readSlotRecordText(entry.dir, "pin.json");
@@ -1144,6 +1166,8 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
 }
 
 function retireSlot(consumer: string, root: string, agent: SlotAgent, slot: string, fields: RetireFields): CliResult {
+  const guard = retireRefusal(root, agent, slot, fields.by, null);
+  if (guard) return guard;
   const target = `${agent}/${slot}`;
   const iaFile = iaPath(consumer, agent);
   if (!modelExists(iaFile)) return refuse("retire", `${agent} has no ia.json`);
@@ -1206,11 +1230,15 @@ export async function runRetireCli(argv: readonly string[], cwd: string): Promis
   const slash = target.indexOf("/");
   const agent = target.slice(0, slash) as SlotAgent, slot = target.slice(slash + 1);
   if (slash < 0 || !(SLOT_AGENTS as readonly string[]).includes(agent) || !SLOT_ID.test(slot)) throw new CliUsageError(`retire target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")} and a slot id, got ${target}\n${RETIRE_USAGE}`);
-  const by = need(flags, "--by", RETIRE_USAGE), reason = need(flags, "--reason", RETIRE_USAGE);
+  const by = need(flags, "--by", RETIRE_USAGE);
+  const root = rootOf(cwd, flags), consumer = join(root, "clossys");
+  // The actor guard runs first, right after the flags parse: a refused actor learns nothing else and nothing is read.
+  const refused = retireRefusal(root, agent, slot, by);
+  if (refused) return refused;
+  const reason = need(flags, "--reason", RETIRE_USAGE);
   if (/[\r\n]/.test(by) || /[\r\n]/.test(reason)) return refuse("retire", "--by and --reason are one line each");
   if (!RETIRE_REASON.test(reason)) throw new CliUsageError(`--reason must be a retire code (${RETIRE_CODES.join(", ")}), optionally followed by ": <note>", got ${reason}\n${RETIRE_USAGE}`);
   const at = one(flags, "--at") ?? new Date().toISOString();
   if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${RETIRE_USAGE}`);
-  const root = rootOf(cwd, flags), consumer = join(root, "clossys");
   return whole ? retireSlot(consumer, root, agent, slot, { by, reason, at }) : retireCandidate(consumer, root, agent, slot, candidate!, { by, reason, at });
 }

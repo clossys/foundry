@@ -23,7 +23,7 @@
  */
 import { existsSync, lstatSync, mkdirSync, openSync, closeSync, writeSync, readFileSync, realpathSync, renameSync, writeFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { appendRecord, buildRecord, invocationOf, observe } from "../pipeline/trace.js";
-import { dirname, join, relative, sep } from "node:path";
+import { basename, dirname, join, relative, sep } from "node:path";
 import { checkPinsResolve, resolveAll } from "../check/pins-resolve.js";
 import { answerQueueEntry } from "../queue/answer.js";
 import { entryStamp, findQueueEntry, listQueueEntryFiles, readQueueEntry, slugOf } from "../queue/entry.js";
@@ -45,7 +45,7 @@ import { agentWriteClass, currentStandardOf, isAgentLoop, isLoopAgent, pathPatte
 import { judgeSnapshot, keepSnapshot, keptSnapshot, snapshotKey, treeSnapshot, type AgentSnapshot, type TreeFiles } from "./agent-snapshot.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { certifiedOptions } from "../constitution/pin-gate.js";
-import { agentRaiseIssues, isContentAgent, readRequest, REQUEST_ID, RequestError, requestIssues, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
+import { freshRaiseIssues, isContentAgent, readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
 import { cascadeClean, runCascade } from "./cascade.js";
 import { CASCADE_REVERDICT } from "../constitution/cascade.js";
 
@@ -782,22 +782,22 @@ export function agentWriteRef(root: string, file: string): { segments: string[] 
 }
 
 /**
- * U9a fix round 3, U9 (sweep N1), U9 fix r1 (review-u9-blind1 #1): a slot request an agent step raised itself, exactly
- * the entry `clossys request --from <agent>/<slot> --by <agent>` (or its `--scan`) writes for that agent: a schema-valid
- * `clossys.queue-entry/2` kind slot entry (requestIssues), named by its file, that the request verb's own validator
- * accepts for this agent (agentRaiseIssues: from one of the agent's own placed slots citing the target, never `owner`;
- * the target not placed; the verb's own draft rebuilt from the entry's fields and equal to it, so its id, refs,
- * timestamps, its one raised event by the agent via cli, its code actor and nothing a later step writes; no other open
- * entry raising the same target from the same slot). Any other entry (an owner answer queue's, another agent's request,
- * an owner-origin ask, or one already checked, decided, answered or closed) is Producer's.
+ * U9a fix round 3, U9 (sweep N1), U9 fix r1 (review-u9-blind1 #1), U7 r5: a slot request an agent step raised itself,
+ * exactly the entry `clossys request --from <agent>/<slot> --by <agent>` (or its `--scan`) writes for that agent now: a
+ * schema-valid `clossys.queue-entry/2` kind slot entry named by its file that the request verb's own validator accepts
+ * (records/request.ts freshRaiseIssues, agentRaiseIssues: from one of the agent's own placed slots citing the target,
+ * never `owner`; the target not placed; the verb's draft rebuilt from the entry's fields and equal to it, so its id,
+ * refs, timestamps, its raised and routed events, route and options, its code actor and nothing a later step writes; no
+ * other open entry raising the same target from the same slot). Any other entry (an owner answer queue's, another
+ * agent's request, an owner-origin ask, one already checked, decided, answered or closed, or a forged or rewritten
+ * chain) is Producer's.
  */
 function ownNewRequest(root: string, file: string, agent: LoopAgent): boolean {
   try {
-    const doc = JSON.parse(readFileSync(wroteFile(root, file), "utf8")) as unknown;
-    if (requestIssues(doc).length || !isContentAgent(agent)) return false;
-    const entry = doc as SlotRequest;
-    const name = file.split(/[\\/]/).at(-1) ?? "";
-    return `${entry.id}.json` === name && agentRaiseIssues(join(root, "clossys"), entry, agent).length === 0;
+    const path = wroteFile(root, file);
+    const doc = JSON.parse(readFileSync(path, "utf8")) as { id?: unknown };
+    if (!isContentAgent(agent) || basename(path) !== `${String(doc.id)}.json`) return false;
+    return !freshRaiseIssues(join(root, "clossys"), doc, agent).length;
   } catch {
     return false;
   }

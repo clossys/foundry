@@ -371,6 +371,7 @@
     "CONTENT.md",
     "TOKENS.md",
     "LICENSE",
+    "conform.json",
     "skill",
     "views",
     "scripts/check-section-tokens.mjs",

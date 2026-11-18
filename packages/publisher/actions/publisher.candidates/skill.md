@@ -19,3 +19,12 @@ Adopt a seed before you create one (owner, 2026-11-11). Climb the rungs in order
 Record the rung on submission: `clossys next publisher/<slot> --submit <file> ... --rung <adopt|adapt|create>
 --seed <the seed's id> [--reason <why no seed fit>]`. An adopt or adapt names its seed; a create
 without `--reason` is refused, and `clossys gaps` lists any recorded one as a ladder gap.
+
+## Requests
+
+DRAFT, for owner approval (foundry-build-0048 U7): this wording is not approved yet.
+
+- A kind change or fix entry about a Publisher slot reaches this skill through Producer's routing table (loop.create is its handler). List yours with `clossys request --list --open --agent publisher` and read one with `clossys request <id> --json`.
+- A change says what it wants (`want`: repin, candidate or contract); a fix carries its failing `check`, `findings` and `cause`. Do the work on the Publisher's own slot only, by the steps above.
+- When you need something of another agent's slot, raise a request (`clossys request --kind change --subject <agent>/<slot> --from publisher/<slot> ...`, or a slot need); it is refused unless your conform.json declares that issuing edge. Never edit the other agent's slot.
+- Close with `clossys request <id> --close --outcome changed|declined --result <ref> --by publisher` for a change, `--outcome fixed --by publisher` for a fix: only the assignee closes, and `--by` is never defaulted. A fix you claim `declined` (or `fixed` on a check Producer cannot re-run) is no close: Producer asks the owner `decline` or `keep-open`, and only the owner's typed answer (`clossys request <id> --answer <option>`) closes it; bare `owner` is refused. Code re-runs the requester's check first, and for a fix closed `fixed` its own check too: a pass closes the entry and notifies `from`; a fail records `rejected` and the entry stays open with you.

@@ -12,6 +12,8 @@ import { afterEach, describe, expect, it } from "vitest";
 // Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
 import "./main.js";
 import { runLoopCli } from "./loop.js";
+import { adoptAgentLoops } from "../loop/agent-loop-adopt.js";
+import { SeatRefusal } from "../records/seat-owner.js";
 import { runIaCli } from "./owner.js";
 import { runLoopAgentStandard, runLoopConnected } from "../check/loop-connected.js";
 import { AGENT_LOOPS, LOOP_AGENTS, agentLoopIssues, readAgentPackageLoop, standardOf } from "../loop/agent-loops.js";
@@ -160,6 +162,24 @@ describe("clossys loop", () => {
     const root = copy();
     await expect(loop(root, "producer/loop.create")).rejects.toThrow(/no agent loop/);
     await expect(loop(root, "designer/loop.release")).rejects.toThrow(/no agent loop/);
+  }, LONG);
+
+  it("judges the actor before adoption writes a byte (Q9, U7 r5): bare owner, a seat, free text and an unresolved owner ref are refused", async () => {
+    const root = copy();
+    const before = tree(join(root, "clossys"));
+    for (const by of ["owner", "agent:writer", "agent:judge", "migration", "owner:queue.approve#20261117T1200Z-nothing"]) {
+      expect(() => adoptAgentLoops(root, "director", { by, at: AT }), by).toThrow(SeatRefusal);
+      expect(() => adoptAgentLoops(root, "director", { by, at: AT }), by).toThrow(/^loop adopt refused: /);
+      expect(tree(join(root, "clossys")), by).toEqual(before);
+    }
+    const cli = await loop(root, "director/loop.create", "--by", "owner:queue.approve#20261117T1200Z-nothing");
+    expect(cli.exitCode).toBe(1);
+    expect(cli.message).toMatch(/loop adopt refused: --by owner:queue\.approve#20261117T1200Z-nothing is not agent:<agent>\[\.<role>\] and not a resolved owner answer/);
+    expect(tree(join(root, "clossys"))).toEqual(before);
+    // The planner acts, with or without a ref, and its events name the planner.
+    expect(adoptAgentLoops(root, "director", { by: "planner:package-default", at: AT }).adopted).toBe(true);
+    const ia = (readJson(join(root, "clossys", "agents", "director", "ledger.json")) as { events: { by?: string }[] }).events;
+    expect(ia.filter(event => JSON.stringify(event).includes("adopt-loops")).map(event => event.by)).toEqual(["planner"]);
   }, LONG);
 });
 
@@ -421,6 +441,29 @@ describe("the runner runs the owning agent's pin for all five loops (planRun / s
     const own = (raised.output as { id: string }).id;
     const requests = step("extra", ["producer/queue.slot/entries/*"]);
     expect(undeclaredWrites(root, state, requests, [`producer/queue.slot/entries/${others}.json`, "producer/queue.slot/entries/20261117T1200Z-two.json", `producer/queue.slot/entries/${own}.json`], {})).toEqual([`producer/queue.slot/entries/${others}.json`, "producer/queue.slot/entries/20261117T1200Z-two.json"]);
+
+    // U7 r5: the guard takes the two-event raise the verb writes (raised, routed), and refuses a forged or rewritten one.
+    const ownRel = `producer/queue.slot/entries/${own}.json`;
+    const ownFile = join(agents, ownRel);
+    const real = readFileSync(ownFile, "utf8");
+    const entry = JSON.parse(real) as { events: Record<string, unknown>[]; route: Record<string, unknown>; [key: string]: unknown };
+    expect(entry.events.map(event => event.op)).toEqual(["raised", "routed"]);
+    const forgeries: Record<string, unknown> = {
+      "an added event": { ...entry, events: [...entry.events, { id: `${own}#3`, at: AT, op: "checked", by: "producer" }] },
+      "the raised event alone": { ...entry, events: [entry.events[0]] },
+      "a rewritten routed detail": { ...entry, events: [entry.events[0], { ...entry.events[1], detail: "row 1 -> designer" }] },
+      "a rewritten route": { ...entry, route: { ...entry.route, row: `${String(entry.route.row)}.forged` } },
+      "another raiser": { ...entry, events: [{ ...entry.events[0], by: "writer" }, entry.events[1]] },
+      "forged provenance": { ...entry, createdBy: { actor: "owner", ref: "chat" } },
+      "a forged owner channel": { ...entry, events: [{ ...entry.events[0], via: "chat", quote: "yes" }, entry.events[1]] },
+      "a rewritten why": { ...entry, why: "something else" },
+    };
+    for (const [what, forged] of Object.entries(forgeries)) {
+      writeFileSync(ownFile, `${JSON.stringify(forged, null, 2)}\n`);
+      expect(undeclaredWrites(root, state, requests, [ownRel], {}), what).toEqual([ownRel]);
+    }
+    writeFileSync(ownFile, real);
+    expect(undeclaredWrites(root, state, requests, [ownRel], {})).toEqual([]);
   }, LONG);
 
   it("refuses at load a forged designer loop.choose pin whose added step answers the owner's approve queue (B1, U9a fix round 3)", async () => {
@@ -673,7 +716,10 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
       "placed target": [{ ...valid, target: placed }, /is placed: cite it/],
     };
     for (const [name, [body, reason]] of Object.entries(forged)) {
-      expect(requestIssues(body), name).toEqual([]);
+      // U7 r5 (merged with U9 in r6): two cases no longer read as a valid entry at all; the shape refuses them first.
+      const shape: Record<string, RegExp> = { notified: /closing fields close the entry, but its status is open/, checked: /is a checked event, not the raised event/ };
+      if (shape[name]) expect(requestIssues(body).join("; "), name).toMatch(shape[name]!);
+      else expect(requestIssues(body), name).toEqual([]);
       expect(agentRaiseIssues(consumer, body as never, "designer").join("; "), name).toMatch(reason);
       put(id, body);
       expect(undeclaredWrites(root, scopePlan.state, scope, [at(id)], before), name).toEqual([at(id)]);

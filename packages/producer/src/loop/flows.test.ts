@@ -931,7 +931,7 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     expect(done.message).toMatch(/done: loop\.slot done/);
     expect(done.exitCode).toBe(0);
     const request = w.read(`producer/queue.slot/entries/${id}.json`);
-    expect(request).toMatchObject({ status: "closed", link: "writer/narratives.faq", notified: { to: REQUESTER }, closed: `${id}#4` });
+    expect(request).toMatchObject({ status: "closed", link: "writer/narratives.faq", notified: { to: REQUESTER }, closed: `${id}#5` });
     expect(request.events.at(-1).detail).toBe(`linked ${REQUESTER} to writer/narratives.faq, signed ${entry}`);
     expect(w.read(`${REQUESTER}/slot.json`).refs).toContainEqual({ to: "writer/narratives.faq", rel: "input" });
     expect(w.read("writer/narratives.faq/slot.json").refs).toContainEqual({ to: "director/focus.segment.core", rel: "input" });

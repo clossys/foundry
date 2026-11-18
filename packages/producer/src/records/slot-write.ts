@@ -23,6 +23,7 @@ import {
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
 import { isCurrentSlot, slotReadIssues } from "./slot-current.js";
 import { serializeSlot } from "./slot.js";
+import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
 import type { Slot } from "./types.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, skillFile, skillPath,
@@ -94,6 +95,26 @@ function replaceFile(path: string, bytes: string): void {
 // written (R11.1). The verb appends the write's ledger event through this module as well
 // (appendIaEvent, appendSlotDocEvent, appendRetireCandidate, appendRetireSlot, appendSeatEvents).
 // ---------------------------------------------------------------------------
+
+/**
+ * The Producer-internal writers (foundry-build-0048 U7 r3): they take no actor guard because no CLI verb hands them a
+ * caller's `--by` unjudged. Each one is called only from the files listed here (paths under packages/producer/src),
+ * and Q9 (conform/requests-model.ts seatGuardIssues) is red when any other file calls it: a new verb that wants one
+ * must judge its actor first (records/seat-owner.ts assertActor) and be added here.
+ *
+ * - writeSlotSeed, rewriteCitationsInPlace: migrations, `by` fixed by the migration;
+ * - writeSlotOptions: `clossys options`, takes no `by` at all;
+ * - appendIaEvent, appendSlotDocEvent: the event of a verb that judged its actor already (`clossys ia`, retire after
+ *   its actor guard, a request link written by the request writer under its seat check, `clossys loop` adoption
+ *   after loop/agent-loop-adopt.ts assertActor).
+ */
+export const PRODUCER_INTERNAL_WRITERS: readonly { readonly writer: string; readonly callers: readonly string[] }[] = [
+  { writer: "writeSlotSeed", callers: ["migrate/contracts.ts"] },
+  { writer: "rewriteCitationsInPlace", callers: ["migrate/citations-to-slots.ts"] },
+  { writer: "writeSlotOptions", callers: ["cli/options.ts"] },
+  { writer: "appendIaEvent", callers: ["cli/owner.ts", "loop/agent-loop-adopt.ts"] },
+  { writer: "appendSlotDocEvent", callers: ["cli/owner.ts", "loop/agent-loop-adopt.ts", "records/request.ts"] },
+];
 
 /** Replace a slot-model file atomically, creating its parent folder. */
 export function replaceModelFile(path: string, bytes: string | Buffer): void {
@@ -328,11 +349,69 @@ function retireCode(reason: string): string {
 }
 
 /**
+ * The owner answer a retire takes (U7 r4): an entry about this slot, answered with its option `retire`; and (U7 r5,
+ * blind2 B1) that option names the retired candidate, or no candidate for a whole-slot retire. Without `candidate` the
+ * option's candidate is not judged (the verb's first guard, before the candidate resolves).
+ */
+export const retireBinding = (agent: string, id: string, candidate?: string | null): { readonly bind: { readonly subject: string; readonly answer: string; readonly candidate?: string | null } } =>
+  ({ bind: { subject: `${agent}/${id}`, answer: "retire", ...(candidate !== undefined ? { candidate } : {}) } });
+
+/** The `by` of a ledger event or record: one actor or a list. */
+const byOf = (value: unknown): readonly string[] => typeof value === "string" ? [value] : Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+const readJson = (file: string): unknown => { try { return JSON.parse(readFileSync(file, "utf8")) as unknown; } catch { return undefined; } };
+
+/**
+ * Where an owner answer already retired something on `agent` (U7 r5, blind2 B1: a retire answer is single-use): the
+ * retire-candidate and retire-slot ledger events (the agent ledger and every slot ledger, live or under _retired/) that
+ * cite `by`, and, with `records`, the retire records (each slot's retired/*.json, ia.json `retired`). Empty for a seat:
+ * a seat acts on its own slots as often as it likes.
+ */
+export function retireAnswerUses(consumer: string, agent: SlotAgent, by: string, options: { readonly records?: boolean } = {}): string[] {
+  if (!by.startsWith("owner:")) return [];
+  const base = join(consumer, "agents", agent);
+  if (!existsSync(base)) return [];
+  const out: string[] = [];
+  const ledger = (dir: string, label: string) => {
+    const doc = readJson(join(dir, LEDGER_FILE)) as { events?: unknown } | undefined;
+    const events = Array.isArray(doc?.events) ? doc!.events as { op?: unknown; by?: unknown }[] : [];
+    for (const event of events) if ((event?.op === "retire-candidate" || event?.op === "retire-slot") && byOf(event.by).includes(by)) out.push(`${label} ledger ${String(event.op)}`);
+  };
+  ledger(base, `${agent}`);
+  if (options.records) {
+    const ia = readJson(join(base, "ia.json")) as { retired?: unknown } | undefined;
+    for (const row of Array.isArray(ia?.retired) ? ia!.retired as { slot?: unknown; by?: unknown }[] : []) if (byOf(row?.by).includes(by)) out.push(`${agent} ia.json retired ${String(row.slot)}`);
+  }
+  const slotDirs = (dir: string, prefix: string) => existsSync(dir)
+    ? readdirSync(dir, { withFileTypes: true }).filter(entry => entry.isDirectory() && !entry.name.startsWith("_") && !entry.name.startsWith(".")).map(entry => ({ dir: join(dir, entry.name), label: `${prefix}${entry.name}` }))
+    : [];
+  for (const slot of [...slotDirs(base, `${agent}/`), ...slotDirs(join(base, "_retired"), `${agent}/_retired/`)]) {
+    ledger(slot.dir, slot.label);
+    if (!options.records) continue;
+    const retired = join(slot.dir, "retired");
+    if (!existsSync(retired)) continue;
+    for (const name of readdirSync(retired).filter(file => file.endsWith(".json")).sort()) {
+      const record = readJson(join(retired, name)) as { schema?: unknown; by?: unknown } | undefined;
+      if (record?.schema === RETIRE_SCHEMA && byOf(record.by).includes(by)) out.push(`${slot.label}/retired/${name}`);
+    }
+  }
+  return out;
+}
+
+/** Throws a SeatRefusal when an owner answer already retired something on `agent` (the writers' half: ledger events). */
+function assertRetireAnswerUnused(consumer: string, agent: SlotAgent, by: string): void {
+  const uses = retireAnswerUses(consumer, agent, by);
+  if (uses.length) throw new SeatRefusal(`retire refused: --by ${by} already retired (${uses.slice(0, 3).join("; ")}); an owner's retire answer is used once`);
+}
+
+/**
  * The retire verb's ledger event for one candidate (`clossys retire <agent>/<slot> <candidate>`):
  * `retire-candidate {name, sha256, code}` in the slot ledger, written after the candidate left
  * `candidates/`. The note after the code stays in the retire record.
  */
 export function appendRetireCandidate(consumer: string, agent: SlotAgent, id: string, input: { name: string; sha256: string; reason: string; by: string; at: string }, given?: WriteProvenance): LedgerEvent {
+  // The total actor guard (records/seat-owner.ts): the slot's own seat or a resolved owner answer, nothing else.
+  assertActor(dirname(consumer), input.by, agent, "retire", retireBinding(agent, id, input.name));
+  assertRetireAnswerUnused(consumer, agent, input.by);
   const { entry } = located(consumer, agent, id);
   const event = ledgerEvent("retire-candidate", input.at, provenance({ verb: "retire", by: input.by, skill: skillPath("producer", "retire") }, given), { name: input.name, sha256: input.sha256, code: retireCode(input.reason) });
   slotLocked(entry.dir, () => appendEvent(entry.dir, "slot", event));
@@ -346,6 +425,8 @@ export function appendRetireCandidate(consumer: string, agent: SlotAgent, id: st
  * the agent ledger.
  */
 export function appendRetireSlot(consumer: string, agent: SlotAgent, id: string, input: { reason: string; by: string; at: string }, given?: WriteProvenance): LedgerEvent[] {
+  assertActor(dirname(consumer), input.by, agent, "retire", retireBinding(agent, id, null));
+  assertRetireAnswerUnused(consumer, agent, input.by);
   const who = provenance({ verb: "retire", by: input.by, skill: skillPath("producer", "retire") }, given);
   const code = retireCode(input.reason);
   const events: LedgerEvent[] = [];
@@ -470,11 +551,24 @@ export function appendCraftEvent(consumer: string, agent: ModelAgent, id: string
     const issue = craftOrderIssue(openCraftStages(events), stage, fields, { axes: openBriefAxes(events) });
     if (issue) throw new Error(issue);
     const { op: _op, at: _at, by: _by, verb: _verb, skill: _skill, model: _model, tier: _tier, records: _records, ...own } = fields as Record<string, unknown>;
-    const event = ledgerEvent(`craft:${stage}`, given.at ?? nowIso(), provenance({ verb: "submit", by: "planner", skill: agent === SEAT_AGENT ? skillPath("producer", "seats") : skillPath(agent, `${agent}.candidates`) }, given), own);
+    const who = provenance({ verb: "submit", by: "planner", skill: agent === SEAT_AGENT ? skillPath("producer", "seats") : skillPath(agent, `${agent}.candidates`) }, given);
+    assertActor(dirname(consumer), who.by, agent, "craft", authorsOf(agent));
+    const event = ledgerEvent(`craft:${stage}`, given.at ?? nowIso(), who, own);
     appendEvent(entry.dir, "slot", event);
     return event;
   });
 }
+/**
+ * Who authors candidates, critiques and craft stages besides the slot's own seat (and a resolved owner answer): the
+ * owner and the planner (`clossys next --basis owner|planner`). Any other seat, `agent:judge` or free text is refused
+ * (foundry-build-0048 U7 r3, defence in depth: today's callers pass the slot's own seat).
+ */
+const AUTHORS = { also: ["owner", "planner"] } as const;
+/**
+ * The authors of a slot of `agent`: AUTHORS, plus, on a Producer seat slot, the seats step's own seat (`agent:seats`,
+ * the `clossys next` seat of the step that crafts seat slots), which is the Producer's seat for its seat slots.
+ */
+const authorsOf = (agent: string): { readonly also: readonly string[] } => (agent === SEAT_AGENT ? { also: [...AUTHORS.also, "agent:seats"] } : AUTHORS);
 /** A slot's critique records (`critiques/<leaf>-v<n>.json`, section 5b stage 4). */
 export const CRITIQUES_DIR = "critiques";
 /**
@@ -483,6 +577,7 @@ export const CRITIQUES_DIR = "critiques";
  * when the critique stage may not come next or the record exists. `validate` is the record's schema check.
  */
 export function writeCritique(consumer: string, agent: ModelAgent, id: string, record: unknown, input: { readonly candidate?: string; readonly at?: string; readonly validate: (value: unknown) => readonly string[] }, given: WriteProvenance): { file: string; event: LedgerEvent } {
+  assertActor(dirname(consumer), given.by ?? "planner", agent, "critique", authorsOf(agent));
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
     const { entry: current } = located(consumer, agent, id);
@@ -524,6 +619,7 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
   /** Run the write verb's constitution guard on the new file after its event lands; a finding undoes both. */
   readonly guard?: WriteGuard;
 } = {}): { name: string; sha256: string } {
+  assertActor(dirname(consumer), options.provenance?.by ?? "planner", agent, "candidate", authorsOf(agent));
   const { entry } = located(consumer, agent, id);
   if (options.canonical) canonicalDirectory(entry.dir);
   return slotLocked(entry.dir, () => {
@@ -616,6 +712,8 @@ export function writePin(consumer: string, agent: SlotAgent, id: string, candida
 }
 /** writePin's body; the caller holds the slot lock (writePin, or writeVerdict for a pick). */
 function pinUnderLock(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; basis: PinBasis; at: string }, given: WriteProvenance | undefined, options: { readonly guard?: WriteGuard; readonly fields?: Readonly<Record<string, unknown>> }): PinDoc {
+  // The shared seat guard (records/seat-owner.ts): an agent seat pins (picks) only its own agent's slots.
+  assertSeat(input.decidedBy, agent, input.basis === "agent" ? "pick" : "pin");
   const { doc, entry } = located(consumer, agent, id);
   refuseTargetPin(entry.dir, agent, id, "pin"); // the choke point: every pin/1 writer (pin, pick, approve, verdict pick) passes here
   if (!entry.candidates.includes(candidate)) throw new Error(`${agent} slot ${id} has no candidate ${candidate}`);
@@ -663,6 +761,7 @@ export type VerdictInput =
 export function writeVerdict(consumer: string, agent: ModelAgent, id: string, verdict: VerdictInput, input: { readonly by: string; readonly at: string; readonly inputsHash?: string }, given: WriteProvenance, options: { readonly guard?: WriteGuard } = {}): { event: LedgerEvent; pin?: PinDoc } {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
+    assertSeat(input.by, agent, "verdict"); // a verdict (pick or create) is a decision on the slot: its own agent's seat only
     const { entry: current } = located(consumer, agent, id);
     const events = (readLedger(current.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
     const latest = [...events].reverse().find(event => event.op === "options")?.inputsHash;
@@ -744,6 +843,7 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
   const { entry } = located(consumer, agent, id);
   canonicalDirectory(entry.dir);
   return slotLocked(entry.dir, () => {
+    assertSeat(input.by, agent, "reissue"); // a reissue writes a candidate and repins: its own agent's seat only
     const { doc, entry: current } = located(consumer, agent, id);
     if (!current.candidates.includes(input.old)) throw new Error(`reissue refused: ${agent} slot ${id} has no candidate ${input.old}`);
     const old = readCandidate(consumer, agent, id, input.old);
@@ -816,6 +916,8 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
 export function writeConfirm(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { by: string; ref: string; at: string }, given?: WriteProvenance): PinDoc {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
+    // A confirmation is the owner's: no seat (an agent's own included) confirms a pick.
+    if (!/^owner(?::|$)/.test(input.by)) throw new Error(`confirm refused: --by ${input.by}: a confirmation is the owner's (owner[:<ref>]), never an agent seat's`);
     refuseTargetPin(entry.dir, agent, id, "confirm");
     const path = pinFile(entry.dir);
     if (!existsSync(path)) throw new Error(`confirm refused: ${agent}/${id} has no pin to confirm (an agent picks first with clossys pick)`);
@@ -1028,6 +1130,7 @@ export function writeSlotSeed(consumer: string, agent: ModelAgent, id: string, c
 export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, notNeeded: NotNeeded, given?: WriteProvenance & { readonly at?: string }): SlotDoc {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
+  assertSeat(notNeeded.decidedBy, agent, "not-needed"); // dropping the pin is a decision on the slot
   const { doc } = located(consumer, agent, id);
   const marker = { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy };
   const at = given?.at ?? nowIso();

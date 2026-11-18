@@ -44,5 +44,17 @@
     "create": "packages/publisher/actions/publisher.candidates/skill.md",
     "choose": "packages/publisher/actions/pick.publisher/skill.md",
     "cascade": null
+  },
+  "requests": {
+    "issuing": [
+      {"to": "director", "kinds": ["slot", "change"]},
+      {"to": "designer", "kinds": ["slot", "change"]},
+      {"to": "writer", "kinds": ["slot", "change"]}
+    ],
+    "handling": {
+      "slot": {"skill": "packages/publisher/actions/publisher.slot/skill.md", "loop": "loop.slot"},
+      "change": {"skill": "packages/publisher/actions/publisher.candidates/skill.md", "loop": "loop.create"},
+      "fix": {"skill": "packages/publisher/actions/publisher.candidates/skill.md", "loop": "loop.create"}
+    }
   }
 }

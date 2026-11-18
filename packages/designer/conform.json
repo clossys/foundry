@@ -96,5 +96,15 @@
     "create": "packages/designer/actions/designer.candidates/skill.md",
     "choose": "packages/designer/actions/pick.designer/skill.md",
     "cascade": null
+  },
+  "requests": {
+    "issuing": [
+      {"to": "director", "kinds": ["slot", "change"]}
+    ],
+    "handling": {
+      "slot": {"skill": "packages/designer/actions/designer.slot/skill.md", "loop": "loop.slot"},
+      "change": {"skill": "packages/designer/actions/designer.candidates/skill.md", "loop": "loop.create"},
+      "fix": {"skill": "packages/designer/actions/designer.candidates/skill.md", "loop": "loop.create"}
+    }
   }
 }

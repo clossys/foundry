@@ -39,7 +39,8 @@ export const OPTIONS_USAGE = "Usage: clossys options [<agent>/<slot> [--more | -
   + "  the slot's family owes (loop.create's certify step); it writes .clossys/checks/<agent>/<slot>/certify.json.\n"
   + "  --classes writes slot.json options/varyOn from the committed option-class mapping; --check only reports drift.";
 export const PICK_USAGE = "Usage: clossys pick <agent>/<slot> <candidate-id> --by agent:<seat> [--at <iso timestamp>] [--root <dir>] [--json]\n"
-  + "  a judge seat picks one candidate (pin basis agent); Studio shows it as confirm until the owner pins.";
+  + "  a judge seat picks one candidate (pin basis agent); Studio shows it as confirm until the owner pins. An agent's seat\n"
+  + "  (agent:<agent>[.<role>]) picks only on that agent's own slots.";
 
 interface Flags { positional: string[]; more: boolean; redraft: boolean; classes: boolean; check: boolean; by?: string; at?: string; root?: string; help: boolean }
 
@@ -194,6 +195,7 @@ export async function runPickCli(argv: readonly string[], cwd: string): Promise<
   if (!flags.by || !/^agent:\S+$/.test(flags.by)) throw new CliUsageError(`pick requires --by agent:<seat>; owners pin with clossys pin\n${PICK_USAGE}`);
   const at = flags.at ?? new Date().toISOString();
   if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${PICK_USAGE}`);
+  // No cross-edit: the pin writer itself runs the shared seat guard (records/seat-owner.ts assertSeat) for a pick.
   const consumer = consumerOf(cwd, flags.root);
   const entry = readSlotEntry(consumer, agent, id);
   if (!entry) return { exitCode: 1, message: `pick refused: unknown slot ${agent}/${id} (not in ${agent} ia.json)` };
@@ -206,6 +208,6 @@ export async function runPickCli(argv: readonly string[], cwd: string): Promise<
     return { exitCode: 0, message: `${agent}/${id}: picked ${pin.candidate} (${pin.sha256.slice(0, 12)}) by ${pin.decidedBy}; confirm until the owner pins`, decision: { slot: `${agent}/${id}`, state: "pinned", ...pin } };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return { exitCode: 1, message: message.startsWith("pin refused") ? message.replace("pin refused", "pick refused") : `pick refused: ${message}` };
+    return { exitCode: 1, message: message.startsWith("pick refused") ? message : message.startsWith("pin refused") ? message.replace("pin refused", "pick refused") : `pick refused: ${message}` };
   }
 }

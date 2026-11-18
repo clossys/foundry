@@ -13,6 +13,7 @@ import { isPageRecord, pageFixtureOf } from "../actions/page-option.js";
 import { requirementsVerdictSync } from "../constitution/certify/requirements.js";
 import type { JsonSchema } from "../pipeline/schema.js";
 import { recipePageKey } from "./recipe-page.js";
+import { REQUEST_ASSERTIONS } from "./requests-assertions.js";
 import { agentLoopIssues, isLoopAgent } from "../loop/agent-loops.js";
 
 /**
@@ -384,6 +385,7 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     }
     return { rows, evidence: 5 + agent.skills.length };
   },
+  ...REQUEST_ASSERTIONS,
   // foundry-build-0048 U9a: the agent owns its five loops, each extending Producer's standard loop of the same name.
   W2: agent => {
     const rows: string[] = [];

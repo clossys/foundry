@@ -9,6 +9,7 @@ import { candidatePath, parseCandidateName, readCandidateFile, slotDir } from ".
 import { buildPin, pinIssues, pinMapIssues, pinPath, pinRecordIssues, pinRecordStatus, writePinDoc, type Pin1Doc } from "./pin.js";
 import { candidateIssues, readSlotValue } from "./slot-current.js";
 import { validateCandidate } from "./slot-model/validate.js";
+import { assertSeat } from "./seat-owner.js";
 import type { Actor, AgentId, Pin, PinMap, PinRecord, Ref, SlotId, TargetSlotKind } from "./types.js";
 
 /** Writer slot kinds whose pin is a map keyed by record (Voice keeps a single pin). */
@@ -107,6 +108,7 @@ export interface TargetPinInput {
  */
 export function writeTargetPin(root: string, input: TargetPinInput): Pin | PinMap {
   const { agent, slotId } = input;
+  assertSeat(input.decidedBy, agent, "pin"); // the shared seat guard: an agent seat pins only its own agent's slots
   const slot = readSlotKind(root, agent, slotId);
   if (slot === undefined) throw new Error(`unknown slot ${agent}/${slotId} (no slot.json)`);
   const file = pinPath(root, agent, slotId);
