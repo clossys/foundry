@@ -13,8 +13,12 @@ import type { Placement, PlacementNode, Retired, SlotAlias, Status } from "./typ
 /** A section is a content region placed inside the host's main landmark. */
 export interface SectionContract {
   kind: "section";
-  /** One mechanically paired Writer passage; words remain consumer-owned. */
-  passageSchema: `passages.${string}`;
+  /**
+   * One mechanically paired Writer passage; words remain consumer-owned. Optional only on a data-bound record section
+   * (a required `records` slot and no copy field: its words are the records it reads), which then pairs no passage
+   * (foundry-build-0048, A3). sectionCopySchemaFindings holds the rule.
+   */
+  passageSchema?: `passages.${string}`;
   copy: SectionCopySchema;
   /** Each declaration requires a render test; absent means unmeasured support. */
   substrates?: readonly BodySubstrate[];

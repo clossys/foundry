@@ -71,12 +71,7 @@
             "passages.explorer",
             "passages.filter-builder",
             "passages.cards",
-            "passages.record-detail",
-            "passages.slot-gallery",
-            "passages.slot-detail",
-            "passages.candidate-preview",
-            "passages.question-packet",
-            "passages.queue-list"
+            "passages.record-detail"
           ]
         },
         {

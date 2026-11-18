@@ -307,7 +307,9 @@ describe("section build IA registry", () => {
       expect(contract.anatomy, leaf).toEqual({ band: id("band"), header: null });
       expect(contract.slots.filter(slot => slot.type === "records" && slot.required), leaf).toHaveLength(1);
       expect(contract.slots.some(slot => slot.type === "copy" || slot.type === "region"), leaf).toBe(false);
-      expect(contract.passageSchema, leaf).toBe(`passages.${leaf}`);
+      // Copy-less and data-bound, each pairs no Writer passage (foundry-build-0048, A3, planner decision on item b).
+      expect(Object.hasOwn(contract, "passageSchema"), leaf).toBe(false);
+      expect(contract.copy, leaf).toEqual({ sourceLocale: "en", fields: [] });
     }
   });
 

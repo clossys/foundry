@@ -2624,7 +2624,6 @@
       },
       "data": "host-injected",
       "surface": "app",
-      "passageSchema": "passages.candidate-preview",
       "copy": {
         "sourceLocale": "en",
         "fields": []
@@ -7908,7 +7907,6 @@
       },
       "data": "host-injected",
       "surface": "app",
-      "passageSchema": "passages.question-packet",
       "copy": {
         "sourceLocale": "en",
         "fields": []
@@ -7963,7 +7961,6 @@
       },
       "data": "host-injected",
       "surface": "app",
-      "passageSchema": "passages.queue-list",
       "copy": {
         "sourceLocale": "en",
         "fields": []
@@ -9288,7 +9285,6 @@
       },
       "data": "host-injected",
       "surface": "app",
-      "passageSchema": "passages.slot-detail",
       "copy": {
         "sourceLocale": "en",
         "fields": []
@@ -9343,7 +9339,6 @@
       },
       "data": "host-injected",
       "surface": "app",
-      "passageSchema": "passages.slot-gallery",
       "copy": {
         "sourceLocale": "en",
         "fields": []

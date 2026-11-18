@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { isCopyField, type CopyField } from "./section-copy.js";
+import { dataBoundRecordSection, isCopyField, type CopyField } from "./section-copy.js";
 import { loadSectionRegistry, sectionCopyCatalog, sectionRegistryFindings } from "./sections-contract.js";
 
 const registryWith = (patch: (contract: any) => void, id = "sections.hero") => {
@@ -22,8 +22,14 @@ describe("registered section copy", () => {
     expect(rows.some(row => row.id === "sections.error-message")).toBe(false);
     expect(rows.find(row => row.id === "sections.error-state")?.passageSchema).toBe("passages.error-state");
     expect(rows.map(row => row.id)).toEqual(registry.slots.map(slot => slot.id));
-    expect(new Set(rows.map(row => row.passageSchema)).size).toBe(rows.length);
-    for (const row of rows) {
+    // Only the copy-less data-bound record sections pair no passage (foundry-build-0048, A3); every other row pairs one.
+    const paired = rows.filter(row => row.passageSchema !== undefined);
+    expect(new Set(paired.map(row => row.passageSchema)).size).toBe(paired.length);
+    for (const row of rows.filter(row => row.passageSchema === undefined)) {
+      expect(dataBoundRecordSection(registry.slots.find(slot => slot.id === row.id)!.contract), row.id).toBe(true);
+      expect(row.fields, row.id).toEqual([]);
+    }
+    for (const row of paired) {
       expect(row.passageSchema).toBe(`passages.${row.id.slice(9)}`);
       expect(row.sourceLocale).toBe("en");
       expect(row.status).toBe("draft");
@@ -57,6 +63,24 @@ describe("registered section copy", () => {
     const toc = registry.slots.find(slot => slot.id === "sections.table-of-contents")!;
     expect(toc.contract.slots.find(row => row.name === "active-id")!.type).toBe("records");
     expect(toc.contract.copy.fields.map(field => field.key)).not.toContain("active-id");
+  });
+
+  it("lets a copy-less data-bound record section pair no passage, and keeps every other section paired (foundry-build-0048, A3)", () => {
+    const registry = loadSectionRegistry();
+    const adminRecords = ["candidate-preview", "question-packet", "queue-list", "slot-detail", "slot-gallery"].map(leaf => `sections.${leaf}`);
+    expect(registry.slots.filter(slot => slot.contract.passageSchema === undefined).map(slot => slot.id).sort()).toEqual(adminRecords);
+    expect(sectionRegistryFindings(registry)).toEqual([]);
+    // A record section without passageSchema is valid: the registered sectioned document reads its records and has no copy field.
+    expect(findings(contract => { delete contract.passageSchema; }, "sections.sectioned-document")).toEqual([]);
+    // A non-record section without one is still red, copy-less or not.
+    expect(findings(contract => { delete contract.passageSchema; }, "sections.band").join()).toContain("passageSchema must pair");
+    expect(findings(contract => { delete contract.passageSchema; }, "sections.logo-mark").join()).toContain("passageSchema must pair");
+    // The records slot must be required, and a record section with copy fields still needs a passage to carry them.
+    expect(findings(contract => { contract.slots[0].required = false; }, "sections.slot-gallery").join()).toContain("passageSchema must pair");
+    expect(findings(contract => { delete contract.passageSchema; }, "sections.data-table").join()).toContain("declares copy fields but pairs no passageSchema");
+    // A record section may still declare its pair, as every existing one does, but never a foreign one.
+    expect(findings(contract => { contract.passageSchema = "passages.slot-gallery"; }, "sections.slot-gallery")).toEqual([]);
+    expect(findings(contract => { contract.passageSchema = "passages.other"; }, "sections.slot-gallery").join()).toContain("passageSchema must pair");
   });
 
   it("refuses missing schemas, foreign passages and unregistered field roots", () => {

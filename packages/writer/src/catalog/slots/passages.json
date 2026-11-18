@@ -975,22 +975,6 @@
     "status": "draft"
   },
   {
-    "id": "passages.candidate-preview",
-    "layer": "passages",
-    "contract": {
-      "kind": "passage",
-      "source": "writer",
-      "sectionId": "sections.candidate-preview",
-      "passageSchema": "passages.candidate-preview",
-      "copy": {
-        "sourceLocale": "en",
-        "fields": []
-      }
-    },
-    "requires": [],
-    "status": "draft"
-  },
-  {
     "id": "passages.cards",
     "layer": "passages",
     "contract": {
@@ -4023,38 +4007,6 @@
     "status": "draft"
   },
   {
-    "id": "passages.question-packet",
-    "layer": "passages",
-    "contract": {
-      "kind": "passage",
-      "source": "writer",
-      "sectionId": "sections.question-packet",
-      "passageSchema": "passages.question-packet",
-      "copy": {
-        "sourceLocale": "en",
-        "fields": []
-      }
-    },
-    "requires": [],
-    "status": "draft"
-  },
-  {
-    "id": "passages.queue-list",
-    "layer": "passages",
-    "contract": {
-      "kind": "passage",
-      "source": "writer",
-      "sectionId": "sections.queue-list",
-      "passageSchema": "passages.queue-list",
-      "copy": {
-        "sourceLocale": "en",
-        "fields": []
-      }
-    },
-    "requires": [],
-    "status": "draft"
-  },
-  {
     "id": "passages.record-detail",
     "layer": "passages",
     "contract": {
@@ -4850,38 +4802,6 @@
             "dir": "auto"
           }
         ]
-      }
-    },
-    "requires": [],
-    "status": "draft"
-  },
-  {
-    "id": "passages.slot-detail",
-    "layer": "passages",
-    "contract": {
-      "kind": "passage",
-      "source": "writer",
-      "sectionId": "sections.slot-detail",
-      "passageSchema": "passages.slot-detail",
-      "copy": {
-        "sourceLocale": "en",
-        "fields": []
-      }
-    },
-    "requires": [],
-    "status": "draft"
-  },
-  {
-    "id": "passages.slot-gallery",
-    "layer": "passages",
-    "contract": {
-      "kind": "passage",
-      "source": "writer",
-      "sectionId": "sections.slot-gallery",
-      "passageSchema": "passages.slot-gallery",
-      "copy": {
-        "sourceLocale": "en",
-        "fields": []
       }
     },
     "requires": [],

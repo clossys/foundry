@@ -40,10 +40,9 @@ const tagline = (text: string, page = "home", meta?: Record<string, unknown>) =>
 
 describe("Writer slot contracts", () => {
   it("declares one contract per Writer L3 slot, with the catalog's limits", () => {
-    // foundry-build-0048 (A3): five copy-less passages pair the admin record sections; 137 -> 142, passages 52 -> 57.
-    expect(contracts.slots).toHaveLength(142);
+    expect(contracts.slots).toHaveLength(137);
     const counts = Object.fromEntries(WRITER_SLOT_LAYERS.map(l => [l, contracts.slots.filter(s => s.layer === l).length]));
-    expect(counts).toEqual({ lexicon: 27, strings: 22, patterns: 24, passages: 57, narratives: 12 });
+    expect(counts).toEqual({ lexicon: 27, strings: 22, patterns: 24, passages: 52, narratives: 12 });
     // Open owner decisions only: each hold is listed here so a new one cannot land silently.
     expect(OWNER_HOLDS.map(hold => `${hold.slot}:${hold.field}`)).toEqual(["passages.sign-in-form:actions.back"]);
     for (const layer of WRITER_SLOT_LAYERS) {
@@ -92,7 +91,7 @@ describe("Writer slot contracts", () => {
         if (limit!.maxWords !== undefined) expect(t.split(/\s+/).length, `${slot.id}:${key}`).toBeLessThanOrEqual(limit!.maxWords);
       }
     }
-    expect(exemplars).toBe(289); // 279 + two exemplars each for the five admin record passages (foundry-build-0048)
+    expect(exemplars).toBe(279);
   });
 
   it("cites only Director cells whose contracts list the slot as a feed", () => {
@@ -222,7 +221,7 @@ describe("writer slots CLI", () => {
       const write = (t: string) => { out += t; };
       expect(mainWriterSlotCheck([join(dir, "bad")], write)).toBe(0);
       const report = JSON.parse(out) as { command: string; suite: string; findings: WriterFinding[]; counts: { slots: number; byCheck: Record<string, number> } };
-      expect([report.command, report.suite, report.counts.slots]).toEqual(["slots", "writer.copy.v1", 142]); // + five admin record passages (foundry-build-0048)
+      expect([report.command, report.suite, report.counts.slots]).toEqual(["slots", "writer.copy.v1", 137]);
       expect(report.counts.byCheck["W-LEN"]).toBeGreaterThan(0);
       out = ""; expect(mainWriterSlotCheck([join(dir, "bad"), "--strict"], write)).toBe(1);
       out = ""; expect(mainWriterSlotCheck([join(dir, "good"), "--strict"], write)).toBe(0);

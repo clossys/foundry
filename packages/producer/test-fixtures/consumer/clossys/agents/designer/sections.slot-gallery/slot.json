@@ -226,7 +226,6 @@
     },
     "data": "host-injected",
     "surface": "app",
-    "passageSchema": "passages.slot-gallery",
     "copy": {
       "sourceLocale": "en",
       "fields": []
