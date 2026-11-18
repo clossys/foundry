@@ -357,7 +357,7 @@ describe("the ia verb's ledger events (R14.1) and the delta gate (D1)", () => {
     const base = ws.constitution();
     const green = buildGreen(base.rows, base.index!, { workspace: WS, commit: "unknown" });
     const contract = join(ws.root, "contract.json");
-    writeFileSync(contract, `${JSON.stringify({ ...(slotDoc("designer", "ui.button").contract as object), summary: "element ui.button, rewritten" }, null, 2)}\n`);
+    writeFileSync(contract, `${JSON.stringify({ requirements: [{ check: "text.nonempty" }], ...(slotDoc("designer", "ui.button").contract as object), summary: "element ui.button, rewritten" }, null, 2)}\n`);
     const ledger = ws.read("designer/ui.button/ledger.json"), slot = ws.read("designer/ui.button/slot.json");
     const dry = await ws.ia("designer/ui.button", "--contract", contract, "--dry");
     expect(dry.exitCode, dry.message).toBe(0);

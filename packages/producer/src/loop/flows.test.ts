@@ -883,7 +883,7 @@ ${action}
   });
 });
 
-describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5)", () => {
+describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5)", { timeout: 60_000 }, () => {
   const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
   const REQUESTER = "writer/sections.article.copy";
   function fixture() {

@@ -444,12 +444,13 @@ describe("clossys next", { timeout: 60_000 }, () => {
     expect((await place("director/focus.segment.core", "focus/focus.segment")).message).toContain("director has no ia.json");
     expect((await runPipeline(["ia", "director", "--start", ...at], root)).exitCode).toBe(0);
     expect(openPackets(root).some(packet => packet.step === "ia" && packet.item === "director")).toBe(false);
-    for (const slot of ["director/focus.segment.core", "director/focus.segment.edge"]) {
-      const placed = await place(slot, "focus/focus.segment");
+    // Two leaves reading no inputs in one L2 overlap (foundry-build-0048 U5 fix round 1): the second grows its own group.
+    for (const [slot, under] of [["director/focus.segment.core", "focus/focus.segment"], ["director/focus.edge.case", "focus/focus.edge"]] as const) {
+      const placed = await place(slot, under);
       expect(placed.exitCode, placed.message).toBe(0);
     }
     const ia = JSON.parse(readFileSync(join(consumer, "agents", "director", "ia.json"), "utf8")) as { nodes: { id: string; children: { id: string; slots: string[] }[] }[] };
-    expect(ia.nodes).toEqual([{ id: "focus", label: "focus", children: [{ id: "focus.segment", label: "focus.segment", slots: ["focus.segment.core", "focus.segment.edge"] }] }]);
+    expect(ia.nodes).toEqual([{ id: "focus", label: "focus", children: [{ id: "focus.segment", label: "focus.segment", slots: ["focus.segment.core"] }, { id: "focus.edge", label: "focus.edge", slots: ["focus.edge.case"] }] }]);
     expect(checkSlotModel(consumer)).toEqual([]);
     expect((await runPipeline(["ia", "director", "--start", ...at], root)).message).toContain("director ia.json exists");
   }, 120_000);

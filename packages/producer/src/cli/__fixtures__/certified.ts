@@ -82,7 +82,8 @@ export async function certifySlots(root: string, agent: CertifiedAgent, slots: R
       const dir = join(root, "clossys", "agents", agent, id);
       const doc = JSON.parse(readFileSync(join(dir, "slot.json"), "utf8")) as { contract?: Record<string, unknown>; inputs?: string[] };
       const texts = names.map(name => readFileSync(join(dir, "candidates", name), "utf8"));
-      const contract = { ...(doc.contract ?? {}), ...fittingFixture(agent, texts) };
+      // A rewritten contract passes the kind's contract gate (foundry-build-0048 U5): it names a registered requirement.
+      const contract = { requirements: [{ check: "text.nonempty" }], ...(doc.contract ?? {}), ...fittingFixture(agent, texts) };
       const file = join(scratch, `${id}.json`);
       writeFileSync(file, `${JSON.stringify(contract, null, 2)}\n`);
       // A slot a candidate cites is declared an input (R05.1 citation, R07.1).

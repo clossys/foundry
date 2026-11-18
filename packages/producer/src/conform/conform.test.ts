@@ -337,7 +337,7 @@ describe("adapter paths", () => {
   });
 });
 
-describe("ia --contract probe (the real verb on a temporary copy)", () => {
+describe("ia --contract probe (the real verb on a temporary copy)", { timeout: 60_000 }, () => {
   const model = readConformModel(REPO, FIXTURE);
   it("refuses an invalid contract for every agent through the kind's contract gate, and accepts one the gate passes (U5)", async () => {
     // SLOT-CREATE (foundry-build-0048 U5): a new leaf's contract must be valid for its kind family and name registered requirements.

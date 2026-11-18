@@ -159,7 +159,7 @@ describe("clossys ia --standard", () => {
     const root = await placed();
     cpSync(FIXTURE, dirOf(root), { recursive: true });
     const contract = join(root, "contract2.json");
-    put(contract, JSON.stringify({ summary: "strings home.hero v2", fixture: { keys: ["title"], locales: ["en"] } }));
+    put(contract, JSON.stringify({ summary: "strings home.hero v2", fixture: { keys: ["title"], locales: ["en"] }, requirements: [{ check: "text.nonempty" }] }));
     const result = await runIaCli(["writer/home.hero", "--contract", contract, "--standard", "fixture-headline"], root);
     expect(result.exitCode, result.message).toBe(0);
     expect(slotJson(root)).toMatchObject({ standard: "fixture-headline", contract: { summary: "strings home.hero v2" } });
