@@ -56,7 +56,7 @@ async function readNativePublisher(consumer: string, publication?: string): Prom
 }
 
 /** The pinned Writer rows of every slot, read through the Writer's own slot-body parser. */
-async function pinnedWriterRows(consumer: string): Promise<{ rows: WriterSlotBodyRecord[]; locales: string[] }> {
+export async function pinnedWriterRows(consumer: string): Promise<{ rows: WriterSlotBodyRecord[]; locales: string[] }> {
   const entries = listSlots(consumer, "writer");
   const parser = await agentModule("writer", "slot-body.js");
   const rows: WriterSlotBodyRecord[] = [];

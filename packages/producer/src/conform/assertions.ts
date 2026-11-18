@@ -149,13 +149,16 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
         .filter(({ count }) => count <= 1).map(({ l1, l2, count }) => `suspicious split: ${l1}/${l2.id} has ${count === 0 ? "no" : "one"} live L3`));
     return { rows: [], evidence: l1s.length, findings };
   },
+  // U9 fix r1 (blind2 B3, owner 2026-11-17 "single-child or empty groups reported, not failed"): an L2 that lists no
+  // slot is a finding; red is an L2 whose listed slots are none of them placed, and an orphan or unplaced leaf.
   S3: agent => {
     const folders = new Set(agent.folders), placed = new Set(placedIds(agent));
     const l2s = agent.placedTree.flatMap(l1 => l1.l2.map(l2 => ({ l1: l1.id, l2 })));
-    const rows = l2s.filter(({ l2 }) => !l2.slots.some(id => folders.has(id))).map(({ l1, l2 }) => `${l1}/${l2.id}: no live L3`)
+    const findings = l2s.filter(({ l2 }) => !l2.slots.length).map(({ l1, l2 }) => `empty group: ${l1}/${l2.id} lists no L3`);
+    const rows = l2s.filter(({ l2 }) => l2.slots.length && !l2.slots.some(id => folders.has(id))).map(({ l1, l2 }) => `${l1}/${l2.id}: no live L3`)
       .concat([...placed].filter(id => !folders.has(id)).map(id => `${id}: placed with no slot folder`))
       .concat([...folders].filter(id => !placed.has(id)).map(id => `${id}: slot folder not placed in ia.json (orphan)`));
-    return { rows, evidence: l2s.length };
+    return { rows, evidence: l2s.length, findings };
   },
   S4: (agent, model) => {
     // Both trees count: the placed leaves and the package leaves the consumer has not placed (a dual tree overlaps across them).
@@ -191,6 +194,25 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     }),
     evidence: agent.trees.length,
   }),
+  // U9 (content-agent coverage map): placed once, owned by the tree's agent, inputs declared. C2 judges the contract.
+  // U9 fix r1 (blind2 B1): an agent with an upstream agent reads something, so each of its slots names at least one
+  // input (a slot/2 `rel: "input"` ref, a slot/1 or package `inputs` entry); only the root agent's slots may list none.
+  S6: agent => {
+    const reads = upstreamOf(agent.agent).length > 0;
+    const counts = new Map<string, number>();
+    for (const id of placedIds(agent)) counts.set(id, (counts.get(id) ?? 0) + 1);
+    const packaged = new Map<string, number>();
+    for (const tree of agent.trees) for (const id of slotLeaves(tree)) packaged.set(id, (packaged.get(id) ?? 0) + 1);
+    const rows = [...counts].filter(([, count]) => count > 1).map(([id, count]) => `${id}: placed ${count} times in ia.json`)
+      .concat([...packaged].filter(([, count]) => count > 1).map(([id, count]) => `${id}: ${count} times in the package tree`));
+    for (const slot of agent.live) {
+      if (slot.owner !== agent.agent) rows.push(`${slot.id}: the record names ${slot.owner === undefined ? "no agent" : `agent ${slot.owner}`}, not ${agent.agent}`);
+      if (slot.recordId !== slot.id) rows.push(`${slot.id}: the record names ${slot.recordId === undefined ? "no id" : `id ${slot.recordId}`}, not its folder`);
+      if (!slot.inputsDeclared) rows.push(`${slot.id}: declares no inputs list`);
+      else if (reads && !slot.inputs.length) rows.push(`${slot.id}: names no input (${agent.agent} has an upstream agent, so only a root agent's slot may read nothing)`);
+    }
+    return { rows, evidence: agent.live.length };
+  },
   L1: (agent, model) => {
     const rows: string[] = [];
     if (!model.machinery.slotRequestSchema) rows.push("no clossys.queue-entry/2 schema under packages/producer/schemas/");

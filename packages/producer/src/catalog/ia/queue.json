@@ -38,6 +38,13 @@
           "leaves": [
             "queue.fix"
           ]
+        },
+        {
+          "id": "problems-requests",
+          "label": "Requests",
+          "leaves": [
+            "queue.slot"
+          ]
         }
       ]
     }

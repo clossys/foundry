@@ -58,6 +58,9 @@ packages/writer/src/generated/
 packages/producer/studio/.next/
 packages/producer/.studio-stage/
 packages/producer/dist/
+# The admin e2e's real `next build` consumer (install-admin.e2e.test.ts, FOUNDRY_ADMIN_NEXT_BUILD=1): it lives inside
+# the package so Next resolves the workspace's node_modules, and the test removes it; an interrupted run's copy stays out.
+packages/producer/.admin-e2e-next-*/
 
 # Writer mechanical-audit report, rewritten by every run of
 # packages/writer/src/catalog/records/mechanical-audit.test.ts; nothing reads it.

@@ -5,6 +5,7 @@
 import { checkContentMap } from "./check.js";
 import type { ContentMap } from "./contract.js";
 import { PAGE_ID, pageId } from "./page-identity.js";
+import { checkPublicationOutputs, type PublicationOutputs } from "./outputs.js";
 
 /** Raw slot records for one consumer's `agents/publisher`, as the slot-model reader reads them.
  * Each returns `undefined` when the record is absent; aliases and irregular files throw. */
@@ -22,6 +23,8 @@ interface Position { l1: string; l2: string; order: number }
 export interface PinnedPublication {
   readonly map: ContentMap;
   readonly routePack?: Record<string, unknown>;
+  /** The publication's checked install outputs (`./outputs.ts`), when it records any. */
+  readonly outputs?: PublicationOutputs;
 }
 const object = (value: unknown): value is JsonObject => value !== null && typeof value === "object" && !Array.isArray(value);
 const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === "string");
@@ -283,12 +286,19 @@ export function projectPinnedPublication(records: PinnedPublicationSource, publi
     ...(publication.actions === undefined ? {} : { actions: publication.actions }), ...(publication.redirects === undefined ? {} : { redirects: publication.redirects }) };
   const findings = checkContentMap(map);
   if (findings.length) fail(publicationId, `Content map refused: ${findings.map(f => `${f.code} ${f.path}`).join("; ")}`);
-  if (publication.routePack === undefined) return { map: map as ContentMap };
+  let outputs: PublicationOutputs | undefined;
+  if (publication.outputs !== undefined) {
+    const issues = checkPublicationOutputs(publication.outputs);
+    if (issues.length) fail(publicationId, `Invalid publication outputs: ${issues.join("; ")}`);
+    outputs = publication.outputs as PublicationOutputs;
+  }
+  const extra = outputs === undefined ? {} : { outputs };
+  if (publication.routePack === undefined) return { map: map as ContentMap, ...extra };
   const header = publication.routePack;
   if (header.packId !== publicationId || Object.hasOwn(header, "routes") || header.homeRouteId !== undefined && (typeof header.homeRouteId !== "string" || !routes.has(header.homeRouteId))) fail(publicationId, "Conflicting route pack header");
   const compiled = entries.filter(entry => entry.kind !== "group").map(entry => {
     const metadata = routes.get(entry.id); if (!metadata) fail(entry.id, "Missing Route metadata");
     return { ...metadata, instanceId: entry.id, path: entry.path ?? `/${entry.slug}`, label: entry.title, ...(entry.keywords === undefined ? {} : { keywords: entry.keywords }) };
   });
-  return { map: map as ContentMap, routePack: { ...header, routes: compiled } };
+  return { map: map as ContentMap, routePack: { ...header, routes: compiled }, ...extra };
 }

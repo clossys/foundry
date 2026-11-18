@@ -91,6 +91,35 @@ describe("planNextRoutes", () => {
     expect(slot).toContain("row.agent === route.agent && row.slot === route.slot");
   });
 
+  it("with two locales installs a [param] route per locale, each under that locale's layout and carrying its locale (U18 x U20b)", () => {
+    const admin = {
+      version: 1, publicationId: "admin", format: "web.page.responsive",
+      entries: [
+        { id: "admin-home", kind: "page", title: "Admin", order: 0, path: "/admin", source },
+        { id: "admin-gallery", kind: "page", title: "Gallery", order: 1, path: "/admin/<agent>", source },
+      ],
+    } as unknown as ContentMap;
+    const routeParams = { "admin-gallery": [{ agent: "designer" }, { agent: "writer" }] };
+    const plan = planNextRoutes({ map: admin, assembly: "../a.tsx", states: "../s.tsx", locales: { default: "en", all: ["en", "fr"] }, routeParams });
+    expect(plan.findings).toEqual([]);
+    const gallery = plan.files.filter(row => row.pageId === "admin-gallery");
+    expect(gallery.map(row => [row.file, row.route, row.params])).toEqual([
+      ["(en)/admin/[agent]/page.tsx", "/admin/[agent]", ["agent"]],
+      ["fr/admin/[agent]/page.tsx", "/fr/admin/[agent]", ["agent"]],
+    ]);
+    for (const [row, locale] of [[gallery[0]!, "en"], [gallery[1]!, "fr"]] as const) {
+      expect(row.content).toContain('const known: { agent: string }[] = [\n  { agent: "designer" },\n  { agent: "writer" },\n];');
+      expect(row.content).toContain("if (!known.some(row => row.agent === route.agent)) notFound();");
+      expect(row.content).toContain(`createElement(PublishedPage, { page: "admin-gallery", params: { agent: route.agent }, locale: "${locale}" })`);
+    }
+    // Each locale's route sits under that locale's own layout (the split shell: no app-root layout).
+    expect(plan.files.map(row => row.file)).toEqual(expect.arrayContaining(["(en)/layout.tsx", "fr/layout.tsx"]));
+    expect(plan.files.some(row => row.file === "layout.tsx")).toBe(false);
+    // Without the shell the default locale serves the root routes; every other locale still gets its own [param] route.
+    const bare = planNextRoutes({ map: admin, assembly: "../a.tsx", locales: { default: "en", all: ["en", "fr"] }, routeParams });
+    expect(bare.files.filter(row => row.pageId === "admin-gallery").map(row => row.file)).toEqual(["admin/[agent]/page.tsx", "fr/admin/[agent]/page.tsx"]);
+  });
+
   it("refuses a dynamic page the install supplies no values for", () => {
     const admin = { ...map, entries: [...map.entries, { id: "gallery", kind: "page", title: "Gallery", order: 2, path: "/a/<agent>", source }] } as unknown as ContentMap;
     const plan = planNextRoutes({ map: admin, assembly: "../a.tsx" });

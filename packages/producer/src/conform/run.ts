@@ -7,9 +7,11 @@ import { readFileSync } from "node:fs";
 import { ASSERTIONS, type Judgement } from "./assertions.js";
 import { judgeDogfood, type DogfoodRow, type ProbeFacts } from "./dogfood.js";
 import type { ConformModel } from "./model.js";
+import { PRODUCER_ASSERTIONS, type ProducerModel } from "./producer.js";
 
 export interface AssertionEntry { readonly id: string; readonly lens: string; readonly statement: string; readonly check: string; readonly status: string; readonly enforcedFor: readonly string[] }
-export interface Registry { readonly schema: string; readonly agents: readonly string[]; readonly assertions: readonly AssertionEntry[]; readonly dogfood: readonly DogfoodRow[] }
+/** `producer` (U9): Producer's own wiring rows, judged once over Producer's read model (producer.ts), not per content agent. */
+export interface Registry { readonly schema: string; readonly agents: readonly string[]; readonly assertions: readonly AssertionEntry[]; readonly producer: readonly AssertionEntry[]; readonly dogfood: readonly DogfoodRow[] }
 
 export function readRegistry(): Registry {
   return JSON.parse(readFileSync(new URL("../../src/conform/assertions.json", import.meta.url), "utf8")) as Registry;
@@ -17,7 +19,7 @@ export function readRegistry(): Registry {
 
 export interface Cell { readonly id: string; readonly label: string; readonly red: boolean; readonly vacuous: boolean; readonly rows: readonly string[]; readonly evidence: number; readonly findings: readonly string[] }
 export interface AgentReport { readonly agent: string; readonly adapterIssues: readonly string[]; readonly cells: readonly Cell[]; readonly dogfood: readonly Cell[]; readonly red: number; readonly green: number; readonly dogfoodRed: number; readonly dogfoodGreen: number }
-export interface ConformReport { readonly schema: "clossys.conform-report/1"; readonly ok: boolean; readonly agents: readonly AgentReport[] }
+export interface ConformReport { readonly schema: "clossys.conform-report/1"; readonly ok: boolean; readonly agents: readonly AgentReport[]; readonly producer?: AgentReport }
 
 /** Empty is red: a judgement with no evidence is vacuous and red, whatever its rows. */
 export function cellOf(id: string, label: string, judgement: Judgement): Cell {
@@ -25,8 +27,21 @@ export function cellOf(id: string, label: string, judgement: Judgement): Cell {
   return { id, label, red: vacuous || judgement.rows.length > 0, vacuous, rows: vacuous ? [...judgement.rows, "vacuous: nothing to judge (empty is red)"] : judgement.rows, evidence: judgement.evidence, findings: judgement.findings ?? [] };
 }
 
-/** `facts` comes from readProbeFacts (dogfood.ts), which runs the real verbs on temporary copies; a test passes its own. */
-export function conform(model: ConformModel, registry: Registry, facts: ProbeFacts): ConformReport {
+/** Producer's report (U9): one cell per `producer` row of the registry; Producer has no dogfood rows of its own yet. */
+export function conformProducer(model: ProducerModel, registry: Registry): AgentReport {
+  const cells = registry.producer.map(entry => {
+    const fn = PRODUCER_ASSERTIONS[entry.id];
+    return cellOf(entry.id, `${entry.lens}  ${entry.statement}`, fn ? fn(model) : { rows: [`no assertion function for ${entry.id}`], evidence: 0 });
+  });
+  const red = cells.filter(cell => cell.red).length;
+  return { agent: "producer", adapterIssues: [], cells, dogfood: [], red, green: cells.length - red, dogfoodRed: 0, dogfoodGreen: 0 };
+}
+
+/**
+ * `facts` comes from readProbeFacts (dogfood.ts), which runs the real verbs on temporary copies; a test passes its own.
+ * With `producer` (U9), Producer is judged too, and the report is ok only when it is green as well.
+ */
+export function conform(model: ConformModel, registry: Registry, facts: ProbeFacts, producer?: ProducerModel): ConformReport {
   const agents = model.agents.map(agent => {
     // An agent with no valid adapter is uncovered: every assertion is red with the adapter issues as its rows.
     const uncovered = agent.adapter === undefined;
@@ -41,12 +56,18 @@ export function conform(model: ConformModel, registry: Registry, facts: ProbeFac
     const red = cells.filter(cell => cell.red).length, dogfoodRed = dogfood.filter(cell => cell.red).length;
     return { agent: agent.agent, adapterIssues: agent.adapterIssues, cells, dogfood, red, green: cells.length - red, dogfoodRed, dogfoodGreen: dogfood.length - dogfoodRed };
   });
-  return { schema: "clossys.conform-report/1", ok: agents.every(agent => agent.red === 0 && agent.dogfoodRed === 0), agents };
+  const own = producer ? conformProducer(producer, registry) : undefined;
+  return { schema: "clossys.conform-report/1", ok: agents.every(agent => agent.red === 0 && agent.dogfoodRed === 0) && (own?.red ?? 0) === 0, agents, ...(own ? { producer: own } : {}) };
 }
 
 export function formatReport(report: ConformReport): string {
   const lines: string[] = [];
   const cellLines = (cell: Cell) => [`  ${cell.red ? "RED  " : "GREEN"} ${cell.id.padEnd(22)} ${cell.label}`, ...cell.rows.map(row => `        - ${row}`), ...cell.findings.map(row => `        ~ ${row} (report-only)`)];
+  if (report.producer) {
+    lines.push(`conform producer`);
+    for (const cell of report.producer.cells) lines.push(...cellLines(cell));
+    lines.push(`  producer: wiring ${report.producer.red} red, ${report.producer.green} green of ${report.producer.cells.length}`, "");
+  }
   for (const agent of report.agents) {
     lines.push(`conform ${agent.agent}`);
     for (const cell of agent.cells) lines.push(...cellLines(cell));
@@ -54,6 +75,6 @@ export function formatReport(report: ConformReport): string {
     for (const cell of agent.dogfood) lines.push(...cellLines(cell));
     lines.push(`  ${agent.agent}: standard ${agent.red} red, ${agent.green} green of ${agent.cells.length}; dogfood ${agent.dogfoodRed} red, ${agent.dogfoodGreen} green of ${agent.dogfood.length}`, "");
   }
-  lines.push(`conform: ${report.agents.map(agent => `${agent.agent} ${agent.red}/${agent.cells.length} red (+${agent.dogfoodRed}/${agent.dogfood.length} dogfood)`).join(", ")}${report.ok ? "; all green" : "; report-only, not a gate"}`);
+  lines.push(`conform: ${[...(report.producer ? [`producer ${report.producer.red}/${report.producer.cells.length} red`] : []), ...report.agents.map(agent => `${agent.agent} ${agent.red}/${agent.cells.length} red (+${agent.dogfoodRed}/${agent.dogfood.length} dogfood)`)].join(", ")}${report.ok ? "; all green" : "; report-only, not a gate"}`);
   return lines.join("\n");
 }

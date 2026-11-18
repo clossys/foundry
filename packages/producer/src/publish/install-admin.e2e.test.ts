@@ -87,8 +87,11 @@ function pin(dir: string, name: string, bytes: string): void {
   writeFileSync(join(dir, "pin.json"), json({ candidate: name, sha256: sha(bytes), decidedBy: "planner:U20B-FIXTURE", basis: "planner", at: AT }));
 }
 
-/** The scratch consumer: the install-consumer fixture, every admin unit pinned, the admin copy pinned, and records to show. */
-async function consumer(): Promise<{ root: string; site: string; app: string }> {
+/**
+ * The scratch consumer: the install-consumer fixture, every admin unit pinned, the admin copy pinned, and records to show.
+ * `french` also drafts every admin Writer key in French (`FR <text>`), the copy a second locale binds to.
+ */
+async function consumer(french = false): Promise<{ root: string; site: string; app: string }> {
   // A real `next build` resolves Next, React and @clossys/* from the workspace's node_modules, so that run's consumer
   // lives inside this package (as page-host.test.ts does); the render-only run stays in the OS temp dir.
   const parent = process.env.FOUNDRY_ADMIN_NEXT_BUILD === "1" ? join(import.meta.dirname, "..", "..") : tmpdir();
@@ -119,8 +122,10 @@ async function consumer(): Promise<{ root: string; site: string; app: string }> 
     const dir = join(writer, slot), { l0, l1, l2, order } = copyAt.get(slot)!;
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "slot.json"), json({ schema: "clossys.slot/1", id: slot, agent: "writer", kind: "strings", ia: { l0, l1, l2, order }, contract: {}, inputs: [], uses: [] }));
-    const body = Object.entries(keys).map(([key, text]) => `### ${key}\n<!-- ${JSON.stringify({ id: key, bindings: [] })} -->\n${text}\n`).join("\n");
-    pin(dir, "admin-v1.md", `---\nslot: ${JSON.stringify(slot)}\nsource: {"kind":"original","ref":[]}\nlocales: ["en"]\n---\n\n## en\n\n${body}`);
+    const body = (prefix: string) => Object.entries(keys).map(([key, text]) => `### ${key}\n<!-- ${JSON.stringify({ id: key, bindings: [] })} -->\n${prefix}${text}\n`).join("\n");
+    pin(dir, "admin-v1.md", french
+      ? `---\nslot: ${JSON.stringify(slot)}\nsource: {"kind":"original","ref":[]}\nlocales: ["en","fr"]\n---\n\n## en\n\n${body("")}\n## fr\n\n${body("FR ")}`
+      : `---\nslot: ${JSON.stringify(slot)}\nsource: {"kind":"original","ref":[]}\nlocales: ["en"]\n---\n\n## en\n\n${body("")}`);
   }
   // Records the data-bound sections read: one open owner question and one request.
   const pick = join(clossys, "agents", "producer", "queue.pick", "entries");
@@ -159,10 +164,10 @@ const install = (root: string, app: string, check = false): Promise<PublishNextR
 });
 const blocking = (result: PublishNextResult) => result.findings.filter(finding => finding.severity !== "info");
 
-/** Bundle the installed root layout and one installed route module; `params` are the dynamic route's values. */
-async function render(site: string, route: string, params?: Record<string, string>): Promise<string> {
+/** Bundle an installed root layout (`layout`, the app root's by default) and one installed route module; `params` are the dynamic route's values. */
+async function render(site: string, route: string, params?: Record<string, string>, layout = "layout"): Promise<string> {
   const here = createRequire(import.meta.url);
-  const entry = `import Layout from "./app/layout"; import Page from "./app/${route}"; export { Layout, Page };`;
+  const entry = `import Layout from "./app/${layout}"; import Page from "./app/${route}"; export { Layout, Page };`;
   const result = await build({
     stdin: { contents: entry, resolveDir: site, loader: "tsx" }, bundle: true, write: false, format: "esm", platform: "node", jsx: "automatic", logLevel: "silent",
     banner: { js: `import { createRequire as __createRequire } from "node:module"; const require = __createRequire(${JSON.stringify(import.meta.filename)});` },
@@ -230,6 +235,69 @@ describe("the admin workspace renders the consumer's records (init, publish admi
       expect(html("admin/questions")).toContain("DRAFT Which hero candidate ships?");
       expect(html("admin/requests")).toContain("designer/sections.pricing-matrix is open");
       expect(readdirSync(join(site, ".next", "server", "app", "admin"))).not.toContain("nobody.html");
+    }
+  });
+
+  it("a two-locale admin publication serves each locale its own [agent] route, carrying its locale, whose sections read the records (U18 x U20b)", { timeout: 300_000 }, async () => {
+    const { root, site, app } = await consumer(true);
+    const init = await runInitCli(["--at", AT], root);
+    expect(init.exitCode, init.message).toBe(0);
+    // The admin publication records two locales: a new candidate of the pinned record, pinned.
+    const publication = join(root, "clossys", "agents", "publisher", "publication.admin");
+    const pinned = readJson<{ candidate: string }>(join(publication, "pin.json")).candidate;
+    const record = readJson<Record<string, unknown>>(join(publication, "candidates", pinned));
+    pin(publication, "admin-locales-v2.json", json({ ...record, outputs: { ...(record.outputs as object | undefined), locales: { default: "en", all: ["en", "fr"] } } }));
+
+    const result = await install(root, app);
+    expect(blocking(result)).toEqual([]);
+    // One [agent] route per locale: the default's in its route group, French under its own first segment, each with its locale.
+    const routes = { en: join(app, "(en)", "admin", "[agent]", "page.tsx"), fr: join(app, "fr", "admin", "[agent]", "page.tsx") };
+    for (const [locale, file] of Object.entries(routes)) {
+      const route = readFileSync(file, "utf8");
+      expect(route).toContain('{ agent: "designer" }');
+      expect(route).toMatch(new RegExp(`params: \\{ agent: route\\.agent \\}, locale: "${locale}" \\}\\);`));
+    }
+    expect(existsSync(join(app, "admin", "[agent]", "page.tsx"))).toBe(false);
+    // Every locale's page module reads the same records snapshot.
+    const french = readdirSync(join(site, "clossys", "pages")).filter(name => name.endsWith("@fr.tsx"));
+    expect(french.length).toBeGreaterThan(0);
+    const galleryFr = french.find(name => readFileSync(join(site, "clossys", "pages", name), "utf8").includes('"port": "slots"'));
+    expect(galleryFr, french.join(", ")).toBeDefined();
+    expect(readFileSync(join(site, "clossys", "pages", galleryFr!), "utf8")).toContain('import { records } from "../records";');
+
+    // Rendered in its own locale's document: French copy, and the records-derived gallery.
+    const fr = await render(site, "fr/admin/[agent]/page", { agent: "designer" }, "fr/layout");
+    expect(fr).toMatch(/^<html lang="fr"/);
+    expect(fr).toContain("FR DRAFT Agent slots");
+    expect(fr).toContain('data-slot="sections.slot-gallery"');
+    expect(fr).toContain("frames.app-shell (element");
+    const en = await render(site, "(en)/admin/[agent]/page", { agent: "designer" }, "(en)/layout");
+    expect(en).toMatch(/^<html lang="en"/);
+    expect(en).toContain("DRAFT Agent slots");
+    expect(en).not.toContain("FR DRAFT");
+    expect(en).toContain('data-slot="sections.slot-gallery"');
+    const detail = await render(site, "fr/admin/[agent]/[slot]/page", { agent: "designer", slot: "sections.page-header" }, "fr/layout");
+    expect(detail).toContain("designer/sections.page-header is a element");
+    // An agent the records do not hold is not a page in any locale.
+    await expect(render(site, "fr/admin/[agent]/page", { agent: "nobody" }, "fr/layout")).rejects.toThrow();
+
+    if (process.env.FOUNDRY_ADMIN_NEXT_BUILD === "1") {
+      const next = createRequire(join(import.meta.dirname, "..", "..", "..", "..", "package.json")).resolve("next/dist/bin/next");
+      const built = await new Promise<{ code: number; out: string }>(done => execFile(process.execPath, [next, "build"], { cwd: site, timeout: 280_000, maxBuffer: 64 * 1024 * 1024, env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" } }, (error, stdout, stderr) => done({ code: error ? 1 : 0, out: `${stdout}\n${stderr}` })));
+      expect(built.code, built.out.slice(-4000)).toBe(0);
+      // The default locale's routes sit in its route group: its prerendered page is read wherever Next files it.
+      const html = (path: string) => {
+        const file = [path, `(en)/${path}`].map(at => join(site, ".next", "server", "app", `${at}.html`)).find(at => existsSync(at));
+        expect(file, `${path}.html`).toBeDefined();
+        return readFileSync(file!, "utf8").replaceAll("<!-- -->", "");
+      };
+      // Each locale's [agent] route is built per records value, in that locale's document.
+      expect(html("fr/admin/designer")).toMatch(/<html lang="fr"/);
+      expect(html("fr/admin/designer")).toContain("FR DRAFT Agent slots");
+      expect(html("fr/admin/designer")).toContain('data-slot="sections.slot-gallery"');
+      expect(html("admin/designer")).toMatch(/<html lang="en"/);
+      expect(html("admin/designer")).toContain('data-slot="sections.slot-gallery"');
+      expect(readdirSync(join(site, ".next", "server", "app", "fr", "admin"))).not.toContain("nobody.html");
     }
   });
 });

@@ -22,12 +22,23 @@
  * (`NEXT_SHELL_FILES`): the root `layout.tsx` mounts the assembly's document export and re-exports
  * its metadata, and `loading.tsx`, `not-found.tsx`, `error.tsx` and `global-error.tsx` each mount
  * the states module's state export for that state. No App Router file is then left to a hand.
+ *
+ * With more than one locale the shell installs once per locale, so no locale is served another
+ * locale's document, title or states: the app has no root layout, the default locale's routes sit in
+ * the route group `(<default>)` with its own `layout.tsx` and states, and every other locale's first
+ * segment holds its own. Each layout passes its locale to the document export and serves the
+ * assembly's metadata for that locale (`publishedLocaleMetadata`); each state passes its locale to
+ * the states export. Only `global-error.tsx` stays at the app root (Next allows one). With no app-root
+ * layout Next serves an unmatched URL its own default 404, so each locale also installs a catch-all
+ * (`NEXT_MISSING_ROUTE`) that calls `notFound()`: any path under a locale no route serves renders that
+ * locale's own not-found state in that locale's document.
  */
 import { projectStaticParams } from "../content-map/projections.js";
 import { contentMapPath } from "../content-map/check.js";
 import type { ContentMap, ContentMapEntry } from "../content-map/contract.js";
 import { parseRoute } from "../catalog/ia/route-format.js";
 import { relativeSpecifier } from "./host.js";
+import { checkJsonLd } from "./page-meta.js";
 import type { InstallFinding } from "./index.js";
 
 /** The first line of every route file Publisher installs into a Next app. */
@@ -41,11 +52,16 @@ export const NEXT_LEAF_EXPORT = "publishedLeaf";
 export const NEXT_DOCUMENT_EXPORT = "PublishedDocument";
 /** The assembly export the root layout serves as its Next `metadata`. */
 export const NEXT_METADATA_EXPORT = "publishedMetadata";
+/** With more than one locale: the assembly export `(locale) => metadata` each locale's layout serves. */
+export const NEXT_LOCALE_METADATA_EXPORT = "publishedLocaleMetadata";
 /** The states module export every state file mounts: `({ state })` renders that state of the publication. */
 export const NEXT_STATE_EXPORT = "PublishedState";
 /** A publication state Next serves from an app-root file instead of a route. */
 export type NextShellState = "document" | "loading" | "not-found" | "error" | "global-error";
-/** The app-root files one publication's shell installs, and the state each serves. Error states are client modules (Next's rule). */
+/**
+ * The app-root files one publication's shell installs, and the state each serves. Error states are client modules (Next's rule).
+ * With more than one locale every file but `global-error.tsx` installs once per locale instead (see the module comment).
+ */
 export const NEXT_SHELL_FILES: readonly { readonly file: string; readonly state: NextShellState; readonly client: boolean }[] = Object.freeze([
   Object.freeze({ file: "layout.tsx", state: "document", client: false }),
   Object.freeze({ file: "loading.tsx", state: "loading", client: false }),
@@ -53,6 +69,13 @@ export const NEXT_SHELL_FILES: readonly { readonly file: string; readonly state:
   Object.freeze({ file: "error.tsx", state: "error", client: true }),
   Object.freeze({ file: "global-error.tsx", state: "global-error", client: true }),
 ] as const);
+
+/**
+ * With more than one locale: the catch-all folder each locale's document holds (`(<default>)/[...missing]`,
+ * `<locale>/[...missing]`), so an unmatched URL reaches that locale's `not-found.tsx`, never the framework's page.
+ * Its brackets keep it clear of every page folder (`SEGMENT`); a static route of the locale still wins.
+ */
+export const NEXT_MISSING_ROUTE = "[...missing]";
 
 /** One leaf the record store holds under a gallery page. */
 export interface NextRouteLeaf { readonly slug: string; readonly title: string }
@@ -79,13 +102,26 @@ export interface NextRoutesOptions {
    * (`{ agent: "designer" }` for `/admin/<agent>`). Read by the caller from the consumer's records at install time.
    */
   readonly routeParams?: Readonly<Record<string, readonly Readonly<Record<string, string>>[]>>;
+  /**
+   * The publication's locales (`outputs.locales`). The default locale serves the root routes; every
+   * other locale serves each page again under its own first segment. Every page route then passes
+   * its `locale` to the assembly's page export.
+   */
+  readonly locales?: { readonly default: string; readonly all: readonly string[] };
+  /** Checked JSON-LD (`buildJsonLd`) the installed layout mounts; needs `states`, so the shell installs. */
+  readonly jsonLd?: string;
+  /**
+   * With more than one locale, the checked JSON-LD each locale's layout mounts, keyed by every locale
+   * (`planSiteOutputs` `jsonLdByLocale`). A locale it does not hold is refused, never served another's.
+   */
+  readonly localeJsonLd?: Readonly<Record<string, string>>;
 }
 /** One installed route file, relative to the app directory. */
 export interface NextRouteFile {
   readonly file: string;
   readonly pageId: string;
-  /** `shell` is an app-root file of the publication (its document or a state), not a page route. */
-  readonly kind: "page" | "leaf" | "shell";
+  /** `output` is a publication output (`./site-outputs.ts`): a form endpoint, a share image or page meta. `shell` is an app-root file of the publication (its document or a state), not a page route. */
+  readonly kind: "page" | "leaf" | "shell" | "output";
   /** The state a shell file serves. */
   readonly state?: NextShellState;
   /** The served route, `[slug]` standing for the leaf parameter and `[name]` for a route parameter. */
@@ -108,18 +144,20 @@ const segmentsOf = (path: string) => path.split("/").filter(Boolean);
 const folder = (segments: readonly string[]) => segments.map(segment => (segment.startsWith("_") ? `%5F${segment.slice(1)}` : segment));
 const literal = (value: unknown) => JSON.stringify(value);
 
-function pageModule(file: string, assembly: string, pageId: string): string {
+const localeProp = (locale: string | undefined) => (locale === undefined ? "" : `, locale: ${literal(locale)}`);
+
+function pageModule(file: string, assembly: string, pageId: string, locale?: string): string {
   return `${NEXT_ROUTE_MARKER}
 import { createElement } from "react";
 import { ${NEXT_PAGE_EXPORT} } from ${literal(relativeSpecifier(file, assembly))};
 
 export default function Page() {
-  return createElement(${NEXT_PAGE_EXPORT}, { page: ${literal(pageId)} });
+  return createElement(${NEXT_PAGE_EXPORT}, { page: ${literal(pageId)}${localeProp(locale)} });
 }
 `;
 }
 
-function leafModule(file: string, assembly: string, pageId: string, slugs: readonly string[], live: boolean): string {
+function leafModule(file: string, assembly: string, pageId: string, slugs: readonly string[], live: boolean, locale?: string): string {
   const imports = live ? `${NEXT_PAGE_EXPORT}, ${NEXT_LEAF_EXPORT}` : NEXT_PAGE_EXPORT;
   const known = live ? `await ${NEXT_LEAF_EXPORT}(${literal(pageId)}, slug)` : "leaves.some(leaf => leaf.slug === slug)";
   return `${NEXT_ROUTE_MARKER}
@@ -137,12 +175,12 @@ export function generateStaticParams() {
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   if (!(${known})) notFound();
-  return createElement(${NEXT_PAGE_EXPORT}, { page: ${literal(pageId)}, slug });
+  return createElement(${NEXT_PAGE_EXPORT}, { page: ${literal(pageId)}, slug${localeProp(locale)} });
 }
 `;
 }
 
-function paramModule(file: string, assembly: string, pageId: string, names: readonly string[], values: readonly Readonly<Record<string, string>>[]): string {
+function paramModule(file: string, assembly: string, pageId: string, names: readonly string[], values: readonly Readonly<Record<string, string>>[], locale?: string): string {
   const type = `{ ${names.map(name => `${name}: string`).join("; ")} }`;
   const rows = values.map(row => `  { ${names.map(name => `${name}: ${literal(row[name])}`).join(", ")} },`);
   const known = names.map(name => `row.${name} === route.${name}`).join(" && ");
@@ -161,35 +199,52 @@ export function generateStaticParams() {
 export default async function Page({ params }: { params: Promise<${type}> }) {
   const route = await params;
   if (!known.some(row => ${known})) notFound();
-  return createElement(${NEXT_PAGE_EXPORT}, { page: ${literal(pageId)}, params: { ${names.map(name => `${name}: route.${name}`).join(", ")} } });
+  return createElement(${NEXT_PAGE_EXPORT}, { page: ${literal(pageId)}, params: { ${names.map(name => `${name}: route.${name}`).join(", ")} }${localeProp(locale)} });
 }
 `;
 }
 
 const SHELL_NAMES: Record<NextShellState, string> = { document: "Layout", loading: "Loading", "not-found": "NotFound", error: "StateError", "global-error": "GlobalError" };
 
-function layoutModule(file: string, assembly: string, live: boolean): string {
+function layoutModule(file: string, assembly: string, live: boolean, jsonLd?: string, locale?: string): string {
+  const body = jsonLd === undefined
+    ? "createElement(" + NEXT_DOCUMENT_EXPORT + ", { " + (locale === undefined ? "" : `locale: ${literal(locale)}, `) + "children })"
+    : "createElement(" + NEXT_DOCUMENT_EXPORT + ", { " + (locale === undefined ? "" : `locale: ${literal(locale)}, `) + "children: createElement(Fragment, null, createElement(\"script\", { type: \"application/ld+json\", dangerouslySetInnerHTML: { __html: jsonLd } }), children) })";
+  const metadata = locale === undefined ? NEXT_METADATA_EXPORT : NEXT_LOCALE_METADATA_EXPORT;
   return `${NEXT_ROUTE_MARKER}
-import { createElement, type ReactNode } from "react";
-import { ${NEXT_DOCUMENT_EXPORT}, ${NEXT_METADATA_EXPORT} } from ${literal(relativeSpecifier(file, assembly))};
+import { createElement${jsonLd === undefined ? "" : ", Fragment"}, type ReactNode } from "react";
+import { ${NEXT_DOCUMENT_EXPORT}, ${metadata} } from ${literal(relativeSpecifier(file, assembly))};
 
-export const metadata = ${NEXT_METADATA_EXPORT};
+export const metadata = ${locale === undefined ? metadata : `${metadata}(${literal(locale)})`};
 ${live ? `export const dynamic = "force-dynamic";
-` : ""}
+` : ""}${jsonLd === undefined ? "" : `/** Checked at install (checkJsonLd): script-safe JSON, no raw markup. */
+const jsonLd = ${literal(jsonLd)};
+`}
 export default function ${SHELL_NAMES.document}({ children }: { children: ReactNode }) {
-  return createElement(${NEXT_DOCUMENT_EXPORT}, { children });
+  return ${body};
 }
 `;
 }
 
-function stateModule(file: string, states: string, state: NextShellState, client: boolean): string {
+function stateModule(file: string, states: string, state: NextShellState, client: boolean, locale?: string): string {
   return `${NEXT_ROUTE_MARKER}
 ${client ? `"use client";
 ` : ""}import { createElement } from "react";
 import { ${NEXT_STATE_EXPORT} } from ${literal(relativeSpecifier(file, states))};
 
 export default function ${SHELL_NAMES[state]}() {
-  return createElement(${NEXT_STATE_EXPORT}, { state: ${literal(state)} });
+  return createElement(${NEXT_STATE_EXPORT}, { state: ${literal(state)}${localeProp(locale)} });
+}
+`;
+}
+
+function missingModule(): string {
+  return `${NEXT_ROUTE_MARKER}
+import { notFound } from "next/navigation";
+
+/** A path no route of this locale serves: this locale's not-found state, in this locale's document. */
+export default function Missing(): never {
+  notFound();
 }
 `;
 }
@@ -202,10 +257,28 @@ export function planNextRoutes(options: NextRoutesOptions): NextRoutesPlan {
   const byId = new Map(pages.map(page => [page.id, page]));
   const seen = new Set<string>();
   const add = (row: NextRouteFile) => {
-    if (seen.has(row.file)) { findings.push({ code: "site-route-duplicate", slot: row.pageId, detail: `${row.pageId}: ${row.file} is installed by another page` }); return; }
-    seen.add(row.file);
+    // Case-folded: on a case-insensitive file system (the macOS default) two spellings are one file.
+    if (seen.has(row.file.toLowerCase())) { findings.push({ code: "site-route-duplicate", slot: row.pageId, detail: `${row.pageId}: ${row.file} is installed by another page` }); return; }
+    seen.add(row.file.toLowerCase());
     files.push(row);
   };
+  const locales = options.locales;
+  /** `undefined` serves the root routes with no locale prop (a single-locale install). */
+  const variants: readonly (string | undefined)[] = locales ? [locales.default, ...locales.all.filter(locale => locale !== locales.default)] : [undefined];
+  const under = (locale: string | undefined) => (locale === undefined || locale === locales?.default ? [] : [locale]);
+  /** More than one locale with the shell: one document per locale, the default's routes in its route group. */
+  const split = options.states !== undefined && locales !== undefined && locales.all.length > 1;
+  const group = (locale: string | undefined) => (split && locale === locales!.default ? [`(${locale})`] : []);
+  if (locales) {
+    // Case-folded: `en-US` and `en-us`, or a locale `fr` and a page at `/FR`, are one folder on a case-insensitive file system.
+    const firsts = new Set(pages.map(page => segmentsOf(contentMapPath(page))[0]?.toLowerCase()).filter((segment): segment is string => segment !== undefined));
+    if (!locales.all.includes(locales.default) || new Set(locales.all.map(locale => locale.toLowerCase())).size !== locales.all.length) findings.push({ code: "site-contract", detail: `${options.map.publicationId}: locales must list each locale once (case-insensitively) and include the default ${locales.default}` });
+    for (const locale of locales.all) {
+      if (locale === locales.default) continue;
+      if (!SEGMENT.test(locale) || locale.startsWith("_")) findings.push({ code: "site-contract", detail: `${options.map.publicationId}: locale ${locale} is not a static route segment` });
+      else if (firsts.has(locale.toLowerCase())) findings.push({ code: "site-contract", detail: `${options.map.publicationId}: locale ${locale} collides with a page path segment of the same name` });
+    }
+  }
   for (const page of pages) {
     const path = contentMapPath(page);
     const segments = segmentsOf(path);
@@ -214,8 +287,11 @@ export function planNextRoutes(options: NextRoutesOptions): NextRoutesPlan {
     if (bad !== undefined) { findings.push({ code: "site-contract", slot: page.id, detail: `${page.id}: path segment "${bad}" is not a static route segment` }); continue; }
     const params = names.filter((name): name is string => name !== undefined);
     if (!params.length) {
-      const file = [...folder(segments), "page.tsx"].join("/");
-      add({ file, pageId: page.id, kind: "page", route: `/${segments.join("/")}`, content: pageModule(file, options.assembly, page.id) });
+      for (const locale of variants) {
+        const served = [...under(locale), ...segments];
+        const file = [...group(locale), ...folder(served), "page.tsx"].join("/");
+        add({ file, pageId: page.id, kind: "page", route: `/${served.join("/")}`, content: pageModule(file, options.assembly, page.id, locale) });
+      }
       continue;
     }
     const parsed = parseRoute(path);
@@ -236,8 +312,11 @@ export function planNextRoutes(options: NextRoutesOptions): NextRoutesPlan {
       values.push(row);
     }
     const routeSegments = segments.map((segment, at) => (names[at] === undefined ? segment : `[${names[at]}]`));
-    const file = [...folder(routeSegments), "page.tsx"].join("/");
-    add({ file, pageId: page.id, kind: "page", route: `/${routeSegments.join("/")}`, params, content: paramModule(file, options.assembly, page.id, params, values) });
+    for (const locale of variants) {
+      const served = [...under(locale), ...routeSegments];
+      const file = [...group(locale), ...folder(served), "page.tsx"].join("/");
+      add({ file, pageId: page.id, kind: "page", route: `/${served.join("/")}`, params, content: paramModule(file, options.assembly, page.id, params, values, locale) });
+    }
   }
   const extra: ContentMapEntry[] = [];
   const templates: { page: ContentMapEntry; segments: string[] }[] = [];
@@ -261,15 +340,46 @@ export function planNextRoutes(options: NextRoutesOptions): NextRoutesPlan {
   for (const { page, segments } of templates) {
     const prefix = segments.join("/");
     const slugs = params.filter(row => row.slug.length === segments.length + 1 && row.slug.slice(0, -1).join("/") === prefix).map(row => row.slug.at(-1)!);
-    const file = [...folder(segments), "[slug]", "page.tsx"].join("/");
-    add({ file, pageId: page.id, kind: "leaf", route: `/${[...segments, "[slug]"].join("/")}`, content: leafModule(file, options.assembly, page.id, slugs, options.live === true) });
+    for (const locale of variants) {
+      const served = [...under(locale), ...segments];
+      const file = [...group(locale), ...folder(served), "[slug]", "page.tsx"].join("/");
+      add({ file, pageId: page.id, kind: "leaf", route: `/${[...served, "[slug]"].join("/")}`, content: leafModule(file, options.assembly, page.id, slugs, options.live === true, locale) });
+    }
+  }
+  // The JSON-LD each document mounts: the one checked string, or with one document per locale that locale's own.
+  const documents: readonly (string | undefined)[] = split ? variants : [undefined];
+  const jsonLd = new Map<string | undefined, string>();
+  if (options.jsonLd !== undefined || options.localeJsonLd !== undefined) {
+    if (options.states === undefined) findings.push({ code: "site-contract", detail: `${options.map.publicationId}: JSON-LD mounts in the installed layout; name a states module so the shell installs` });
+    else for (const locale of documents) {
+      const ld = locale === undefined ? options.jsonLd : options.localeJsonLd !== undefined && Object.hasOwn(options.localeJsonLd, locale) ? options.localeJsonLd[locale] : undefined;
+      const issues = ld === undefined ? [locale === undefined ? "no JSON-LD" : `no ${locale} JSON-LD (each locale's layout mounts its own)`] : checkJsonLd(ld);
+      if (issues.length) findings.push({ code: "site-contract", detail: `${options.map.publicationId}: JSON-LD refused: ${issues.join("; ")}` });
+      else jsonLd.set(locale, ld!);
+    }
   }
   if (options.states !== undefined) {
-    for (const shell of NEXT_SHELL_FILES) {
-      const content = shell.state === "document"
-        ? layoutModule(shell.file, options.assembly, options.live === true)
-        : stateModule(shell.file, options.states, shell.state, shell.client);
-      add({ file: shell.file, pageId: options.map.publicationId, kind: "shell", state: shell.state, route: "/", content });
+    for (const locale of documents) {
+      const base = locale === undefined ? [] : [...group(locale), ...under(locale)];
+      const route = `/${under(locale).join("/")}`;
+      for (const shell of NEXT_SHELL_FILES) {
+        if (shell.state === "global-error" && locale !== undefined) continue;
+        const file = [...base, shell.file].join("/");
+        const content = shell.state === "document"
+          ? layoutModule(file, options.assembly, options.live === true, jsonLd.get(locale), locale)
+          : stateModule(file, options.states, shell.state, shell.client, locale);
+        add({ file, pageId: options.map.publicationId, kind: "shell", state: shell.state, route, content });
+      }
+      // No app-root layout catches an unmatched URL in split mode: the locale's own catch-all sends it to its not-found state.
+      if (split) {
+        const file = [...base, NEXT_MISSING_ROUTE, "page.tsx"].join("/");
+        add({ file, pageId: options.map.publicationId, kind: "shell", state: "not-found", route: `/${[...under(locale), NEXT_MISSING_ROUTE].join("/")}`, content: missingModule() });
+      }
+    }
+    // The one app-root global error (Next allows one), outside every locale's document.
+    if (split) {
+      const shell = NEXT_SHELL_FILES.find(row => row.state === "global-error")!;
+      add({ file: shell.file, pageId: options.map.publicationId, kind: "shell", state: shell.state, route: "/", content: stateModule(shell.file, options.states, shell.state, shell.client) });
     }
   }
   return { files, findings };
