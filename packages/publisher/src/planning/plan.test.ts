@@ -5,7 +5,7 @@ import { projectPlanInstances } from "./change-set.js";
 import type { PublisherPlanDraft } from "./plan.js";
 import { STANDARD_PACK_REGISTRIES } from "../web/publisher/__fixtures__/standard-website.js";
 
-const draft = (): PublisherPlanDraft => ({ schemaVersion: 1, menuVersion: 2, id: "example", version: 1, status: "draft", currentMilestone: "M1", answerIds: ["answer.website"], milestones: [{ id: "M1", packs: [{ id: "pack.standard-website", items: [{ id: "home", menuRef: "website.home", lane: "Landing", answerIds: ["answer.website"], openNeeds: [{ slot: "content", question: "Which content references should be bound?" }], instanceId: "standard.home", format: "web.page.responsive", layout: { leaf: "layouts.stack", config: "stack.landing" }, frame: { leaf: "frames.site-shell", config: "site" } }] }] }] });
+const draft = (): PublisherPlanDraft => ({ schemaVersion: 1, menuVersion: 2, id: "example", version: 1, status: "draft", currentMilestone: "M1", answerIds: ["answer.website"], milestones: [{ id: "M1", packs: [{ id: "pack.standard-website", items: [{ id: "home", menuRef: "website.home", lane: "Landing", answerIds: ["answer.website"], openNeeds: [{ slot: "content", question: "Which content references should be bound?" }], instanceId: "standard.home", format: "web.page.responsive", layout: { leaf: "stack", config: "stack.landing" }, frame: { leaf: "frames.site-shell", config: "site" } }] }] }] });
 
 describe("planning display references", () => {
   it("projects every closed menu name, milestone, pack, status and lane as registered refs", () => {
@@ -67,7 +67,7 @@ describe("Publisher menu and draft boundaries", () => {
   it.each([
     ["menuRef", "unknown", "Unknown menu"], ["lane", "Invented", "lane"],
     ["format", "image.unknown", "Unknown format"], ["format", "", "Unknown format"],
-    ["layout", { leaf: "layouts.stack", config: "stack.unknown" }, "layout/config"],
+    ["layout", { leaf: "stack", config: "stack.unknown" }, "layout/config"],
     ["layout", { leaf: "layouts.unknown", config: "stack.landing" }, "layout/config"],
     ["frame", { leaf: "frames.unknown" }, "frame/config"],
     ["answerIds", ["missing-answer"], "causative"], ["renderer", "invented", "fields"],

@@ -18,11 +18,14 @@
  */
 import { AGENT_KIND, CANDIDATE_NAME, KIND_EXT } from "../../records/slot-model/index.js";
 import { expectedCandidateSha, ledgerEventsOf } from "../../records/ledger.js";
+import { LOOP_KIND } from "../../loop/agent-loops.js";
 import type { CandidateRecord, ConstitutionContext, PathChange, Row, RuleModule, SlotRecord } from "../types.js";
 import { allSlots, isObject, pending, row, slotDoc } from "./shared.js";
 
 /** The extensions a slot's candidates may use: its kind's, else its agent's kinds'. */
 function allowedExtensions(agent: string, kind: unknown): Set<string> {
+  // A loop slot (Producer's, or an agent's own, foundry-build-0048 U9a) holds JSON loop versions.
+  if (kind === LOOP_KIND) return new Set(["json"]);
   if (typeof kind === "string" && kind in KIND_EXT) return new Set([KIND_EXT[kind as keyof typeof KIND_EXT]]);
   const kinds = (AGENT_KIND as Record<string, readonly string[] | string | undefined>)[agent];
   const list = Array.isArray(kinds) ? kinds : typeof kinds === "string" ? [kinds] : [];

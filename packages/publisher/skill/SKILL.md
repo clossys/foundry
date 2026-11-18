@@ -39,16 +39,22 @@ The tree has three L0s, one file each under `src/catalog/ia/`:
 
 | L0 | Slots | Owns |
 |---|---|---|
-| Composition | `layout.*` (15), `chrome.*` (5) | a layout's frame and roles with the Designer section kinds each role allows; chrome link targets and its Writer record |
-| Directory | `page.*` (20), grouped by publication (`site`, `docs`, `app`) | each page's path, its allowed layout and the section per role |
-| Release | `release.*` (3) | one publication's exports, locales, gates and the owner's ready sign-off |
+| Composition | `layout.*` (22), `chrome.*` (6) | a layout's frame and roles with the Designer section kinds each role allows; chrome link targets and its Writer record |
+| Directory | `page.*` (27), grouped by publication (`site`, `docs`, `app`, `admin`, `slides`) | each page's path, its allowed layout and the section per role |
+| Release | `release.*` (5) | one publication's exports, locales, gates and the owner's ready sign-off |
 
 Parked (`parked: true`): the one-pager layout, page and release (the Documents
 L1s). The slides medium is labelled Slides in all three files. Retired ids (`src/catalog/retired.json`: the five draft `layouts.*` slots and
 the 18 frozen `sl_*` leaves) are never placed or reused.
 
-Three starter publications ship as package data: `starters/{site,docs,app}/publication.json`
-lists each one's pages, layouts, chrome and release. Every layout, chrome and page
+Five starter publications ship as package data: `starters/{site,docs,app,admin,slides}/publication.json`
+lists each one's pages, layouts, chrome and release. The admin workspace (`admin`) is a
+fixed Publisher responsibility: `clossys init` seats its pages and `publication.admin` in
+every consumer, and `publisher.admin-seated` fails an initialised consumer that lacks them.
+Websites, docs and slides stay opt-in. `page.site-page` is the generic site page: its
+route and name are the consumer's, its contract a frame plus sections, its meta required.
+The admin pages compose data-bound sections that read clossys records read-only; their
+runtime binding and the dynamic route format are a declared requirement, not built yet. Every layout, chrome and page
 slot has one package default under `defaults/<slot-id>/` (`standard-v1.json`,
 `header-v1.json`, `starter-v1.json`, ...); a consumer's first file of the same name
 is `v2`. A release has no default: its manifest is written by code.

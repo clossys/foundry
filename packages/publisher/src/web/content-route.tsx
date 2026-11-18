@@ -117,10 +117,10 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
   let metadata: ContentRouteMetadata = {
     ...(pageCopy.title === undefined ? {} : { title: pageCopy.title }),
     ...(pageCopy.description === undefined ? {} : { description: pageCopy.description }),
-    robots: robotsFor(slot),
+    robots: robotsFor(slot, input.registry.workspace.tree),
     ...(canonical === undefined ? {} : { canonical }),
   };
-  for (const finding of checkPageMetadata({ ...slot, locales: [locale] }, { ...candidate, pageMeta: candidate.pageMeta?.filter(field => field.locale === locale) }, undefined, copyOptions)) {
+  for (const finding of checkPageMetadata({ ...slot, locales: [locale] }, { ...candidate, pageMeta: candidate.pageMeta?.filter(field => field.locale === locale) }, input.registry.workspace.tree, copyOptions)) {
     add("copy", "writer", finding.path, `Writer page metadata is required: ${finding.path} (${finding.rule})`);
   }
 
@@ -236,7 +236,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     const registration = library?.sections.find(entry => entry.id === section.sectionId);
     if (!registration) add("section", "designer", section.sectionId, `Section is not registered in the selected consumer library: ${section.sectionId}`);
     else if (!registration.configIds.includes(section.configId)) add("config", "designer", section.configId, `Section config is not registered: ${section.sectionId}/${section.configId}`);
-    // foundry-build-0036 (audit P9): the retired sections.logo-hero (merged into sections.hero) has no adapter; it needs a binding like any section.
+    // Only the two closed adapters render unbound; every other section needs a binding.
     const supported = ["sections.empty-state", "sections.section-header"].includes(section.sectionId);
     const binding = input.sectionBindings?.[occurrence.key];
     if (!supported && !binding) add("section", "designer", section.sectionId, `Designer section export adapter is unavailable: ${section.sectionId}`);

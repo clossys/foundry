@@ -3,11 +3,10 @@ import type { ContentCandidate, ContentRegistry, ContentSlot } from "../../../..
 import type { CopyField } from "../../../../content/composition.js";
 import type { CandidateStageEvidence, StageResult } from "../../../../content/stage-engine.js";
 import { createContentRevision } from "../../../../content/revisions.js";
-import { CONTENT_TREE } from "../../../../content/taxonomy.js";
 import { STAGE_STATUSES } from "../../../../content/stages.js";
 
 export const boardSlotIds = {
-  site: "sl_boyi4ashca", admin: "sl_rkjigy5k5p", auth: "sl_wl546svpom", docs: "sl_2xv4y3uo7k",
+  site: "sl_fixturesaf", admin: "sl_fixturesal", auth: "sl_fixturesao", docs: "sl_fixturesaa",
 } as const;
 
 /** Four inventory slots with real snapshots; auth deliberately has no candidate. */
@@ -66,7 +65,7 @@ export function boardWriterCopy(registry: ContentRegistry): CopyField[] {
     "tree.websites.admin": "Administration", "tree.websites.auth": "Authentication",
     "tree.documents": "Written materials", "tree.documents.docs": "Documentation",
   };
-  for (const node of CONTENT_TREE.nodes) {
+  for (const node of registry.workspace.tree.nodes) {
     values[`tree.${node.id}`] ??= node.label;
     for (const child of node.children) values[`tree.${node.id}.${child.id}`] ??= child.label;
   }

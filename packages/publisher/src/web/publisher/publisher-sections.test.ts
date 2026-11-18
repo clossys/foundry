@@ -24,13 +24,13 @@ async function registeredInput(): Promise<PublisherSectionsInput> {
 it('projects registered identity, ownership, canonical navigation and pending evidence without legacy inventory', async () => {
   const input = await registeredInput(), row = input.channels[0]!.items[0]!, before = JSON.stringify(input);
   const sections = projectPublisherSections(input), detail = sections.find(section => section.id === 'P3')!;
-  expect(detail.section).toBe('sections.record-detail');
+  expect(detail.section).toBe('sections.data-table');
   expect(detail.label).toBe('Tools · item details');
   expect(JSON.stringify(detail)).toContain(row.route!.registration.path);
   expect(JSON.stringify(detail)).toContain('pack.app');
   expect(JSON.stringify(detail)).toContain('Exact selected consumer runtime assembly pending');
-  if (detail.section !== 'sections.record-detail') throw new Error('Missing detail');
-  expect(detail.actions).toContainEqual({ kind: 'link', label: 'Open item', href: row.route!.registration.path });
+  if (detail.section !== 'sections.data-table') throw new Error('Missing detail');
+  expect(detail.toolbar).toContainEqual({ kind: 'link', label: 'Open item', href: row.route!.registration.path });
   const form = sections.find(section => section.id === 'P4')!;
   if (form.section !== 'sections.form' || form.fields.kind !== 'production') throw new Error('Missing registered production binding');
   expect(form.itemId).toBe(row.item.id);
@@ -47,8 +47,8 @@ it('retains host navigation and refuses to borrow another registered route bindi
   const foreign = derivePackPipeline([fixture.binding], fixture.library, fixture.registries, undefined, { [fixture.binding.instanceId]: productionSettingsFromBinding(fixture.binding) }).items;
   const sections = projectPublisherSections({ ...input, webItems: foreign, itemHrefs: { [row.item.id]: '/host/exact-route' } });
   const detail = sections.find(section => section.id === 'P3')!;
-  if (detail.section !== 'sections.record-detail') throw new Error('Missing detail');
-  expect(detail.actions).toContainEqual({ kind: 'link', label: 'Open item', href: '/host/exact-route' });
+  if (detail.section !== 'sections.data-table') throw new Error('Missing detail');
+  expect(detail.toolbar).toContainEqual({ kind: 'link', label: 'Open item', href: '/host/exact-route' });
   expect(JSON.stringify(table(sections, 'P7'))).toContain('tools.data');
   expect(JSON.stringify(table(sections, 'P7'))).not.toContain('copy.title');
   expect(JSON.stringify(table(sections, 'P6'))).not.toContain('LK11');
@@ -96,11 +96,11 @@ it('keeps nested App selection separate from its original plan owner and product
   const detail = sections.find(section => section.id === 'P3')!;
   expect(detail.label).toBe('Details · item details');
   expect(JSON.stringify(detail)).toContain('panel=details');
-  if (detail.section !== 'sections.record-detail') throw new Error('Missing selected child');
-  expect(detail.fields.find(field => field.id === 'route')?.value).toBe('sample.child');
-  expect(detail.actions).toContainEqual({ kind: 'link', label: 'Open item', href: '/host/details' });
+  if (detail.section !== 'sections.data-table') throw new Error('Missing selected child');
+  expect(detail.rows.find(row => row.id === 'route')?.cells.value).toEqual({ kind: 'text', text: 'sample.child' });
+  expect(detail.toolbar).toContainEqual({ kind: 'link', label: 'Open item', href: '/host/details' });
   const canonical = projectPublisherSections(input).find(section => section.id === 'P3');
-  expect(canonical?.section === 'sections.record-detail' && canonical.actions).toContainEqual({ kind: 'link', label: 'Open item', href: fixture.inventory.routes.find(route => route.id === 'sample.child')!.path });
+  expect(canonical?.section === 'sections.data-table' && canonical.toolbar).toContainEqual({ kind: 'link', label: 'Open item', href: fixture.inventory.routes.find(route => route.id === 'sample.child')!.path });
   expect(JSON.stringify(detail)).toContain(owner.item.id);
   const form = sections.find(section => section.id === 'P4');
   expect(form?.section === 'sections.form' && form.itemId).toBe(owner.item.id);
@@ -117,7 +117,7 @@ it('projects registered canvas bindings without manufacturing a flow Layout or p
   const assembly = table(sections, 'P7');
   expect(JSON.stringify(assembly)).toContain('canvas');
   expect(JSON.stringify(assembly)).toContain('grid');
-  expect(JSON.stringify(assembly)).not.toContain('layouts.stack');
+  expect(JSON.stringify(assembly)).not.toContain('stack');
   const form = sections.find(section => section.id === 'P4');
   expect(form?.section === 'sections.form' && form.fields.kind).toBe('planning');
   expect(JSON.stringify(table(sections, 'P6'))).toContain('pending');

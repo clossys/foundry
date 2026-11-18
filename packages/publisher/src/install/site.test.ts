@@ -8,14 +8,14 @@ const page = (id: string, order: number, path: string, sectionIds: string[], nav
 });
 const MAP: ContentMap = {
   version: 1, publicationId: "example-site", format: "web.page.responsive",
-  entries: [page("home", 0, "/", ["sections.hero", "sections.pricing"], true), page("contact", 1, "/contact", ["sections.form"], true), page("terms", 2, "/terms", ["sections.legal-prose"])],
+  entries: [page("home", 0, "/", ["sections.hero", "sections.pricing"], true), page("contact", 1, "/contact", ["sections.form"], true), page("terms", 2, "/terms", ["sections.article"])],
 } as ContentMap;
 const PACK: SiteRoutePack = {
   packId: "example-site", app: "apps/site",
   routes: [
     { instanceId: "home", path: "/", slots: [{ section: "sections.hero", state: "active" }, { section: "sections.pricing", state: "active" }] },
     { instanceId: "contact", path: "/contact", slots: [{ section: "sections.form", state: "active" }] },
-    { instanceId: "terms", path: "/terms", slots: [{ section: "sections.legal-prose", state: "active" }] },
+    { instanceId: "terms", path: "/terms", slots: [{ section: "sections.article", state: "active" }] },
   ],
 };
 
@@ -61,7 +61,7 @@ describe("planSite", () => {
   });
 
   it("refuses two frames", () => {
-    const map = { ...MAP, entries: MAP.entries.map(entry => entry.id === "terms" ? { ...entry, source: { frameId: "frames.legal", sectionIds: ["sections.legal-prose"] } } : entry) } as ContentMap;
+    const map = { ...MAP, entries: MAP.entries.map(entry => entry.id === "terms" ? { ...entry, source: { frameId: "frames.legal", sectionIds: ["sections.article"] } } : entry) } as ContentMap;
     expect(planSite(map, PACK, { origin: "https://example.test" }).findings.map(row => row.code)).toEqual(["site-frame-mismatch"]);
   });
 });

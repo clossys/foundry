@@ -1,4 +1,4 @@
-import { LAYOUT_LEAVES } from "../../../layouts/index.js";
+import { LAYOUT_ENGINES } from "../../../engines/index.js";
 import { FORMAT_LEAVES } from "../../../formats/index.js";
 import type { ContentRef, ConsumerInstanceFill, ConsumerInstanceLibrary, FlowInstanceBinding as InstanceBinding, InstanceRegistries } from "../../instance-binding.js";
 
@@ -10,7 +10,7 @@ export function instanceFixture() {
     instanceId: "example.home", label: "Home", path: "/", surface: "site", packIds: ["pack.example"],
     format: "web.page.responsive",
     context: { medium: "web" }, frame: { leaf: "frames.site-shell", config: "site" },
-    layout: { leaf: "layouts.stack", config: "stack.landing" },
+    layout: { leaf: "stack", config: "stack.landing" },
     fills: {
       lead: [{ section: "sections.hero", config: "default", content: { title: { kind: "copy", ref: "copy.title" } } }],
       body: [{ section: "sections.content", config: "default", content: { title: { kind: "copy", ref: "copy.title" } } }],
@@ -26,7 +26,7 @@ export function instanceFixture() {
       { id: "frames.site-shell", status: "stable", contract: { surface: "site", configs: ["site", "minimal"] } },
       { id: "frames.app-shell", status: "stable", contract: { surface: "app", configs: ["page"] } },
     ],
-    layouts: structuredClone(LAYOUT_LEAVES) as Mutable<InstanceRegistries>["layouts"],
+    layouts: structuredClone(LAYOUT_ENGINES) as Mutable<InstanceRegistries>["layouts"],
     sections: [section("sections.hero"), section("sections.content"), section("sections.stats")],
     themes: [{ id: "themes.spacing.default", property: "--spacing" }],
   };
@@ -38,7 +38,7 @@ export function instanceFixture() {
   put("frames.site-shell", "site", { groundRead: "leadGround", headerGround: "glass" });
   put("frames.site-shell", "minimal", { groundRead: "leadGround", headerGround: "opaque" });
   put("frames.app-shell", "page", { groundRead: "leadGround", headerGround: "opaque", headings: [1] });
-  put("layouts.stack", "stack.landing", { leadGround: "base", renderer: { entry: "Layout.tsx", files: { "Layout.tsx": CLEAN_SOURCE } } });
+  put("stack", "stack.landing", { leadGround: "base", renderer: { entry: "Layout.tsx", files: { "Layout.tsx": CLEAN_SOURCE } } });
   put("sections.hero", "default", { headings: [1], bandGround: "base" });
   put("sections.content", "default", { headings: [2], bandGround: "base" });
   put("sections.stats", "default", { headings: [2], bandGround: "base" });
@@ -53,17 +53,17 @@ export function instanceFixture() {
 /** Exercises the actual registered bento preset with consumer-owned section fills. */
 export function tileFixture() {
   const fixture = instanceFixture();
-  fixture.binding.layout = { leaf: "layouts.bento", config: "bento.default" };
+  fixture.binding.layout = { leaf: "bento", config: "bento.default" };
   fixture.binding.fills = { lead: fixture.binding.fills.lead!, tiles: Array.from({ length: 3 }, () => ({ section: "sections.stats" as const, config: "default", span: "1x1" as const, content: { title: { kind: "copy" as const, ref: "copy.title" } } })) };
-  fixture.put("layouts.bento", "bento.default", { leadGround: "base", renderer: { entry: "Layout.tsx", files: { "Layout.tsx": CLEAN_SOURCE } } });
+  fixture.put("bento", "bento.default", { leadGround: "base", renderer: { entry: "Layout.tsx", files: { "Layout.tsx": CLEAN_SOURCE } } });
   return fixture;
 }
 
 /** Split keeps the first hero in its start slot when the optional lead is absent. */
 export function splitFixture() {
   const fixture = instanceFixture();
-  fixture.binding.layout = { leaf: "layouts.split", config: "split.default" };
+  fixture.binding.layout = { leaf: "split", config: "split.default" };
   fixture.binding.fills = { start: fixture.binding.fills.lead!, end: fixture.binding.fills.body! };
-  fixture.put("layouts.split", "split.default", { leadGround: "base", renderer: { entry: "Layout.tsx", files: { "Layout.tsx": CLEAN_SOURCE } } });
+  fixture.put("split", "split.default", { leadGround: "base", renderer: { entry: "Layout.tsx", files: { "Layout.tsx": CLEAN_SOURCE } } });
   return fixture;
 }

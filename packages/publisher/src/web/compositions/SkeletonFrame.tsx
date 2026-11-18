@@ -1,6 +1,6 @@
-import { LayoutPreview } from "../layouts/preview/LayoutPreview.js";
-import type { LayoutPreviewProps } from "../layouts/preview/LayoutPreview.js";
-import { PreviewViewport } from "../layouts/preview/PreviewViewport.js";
+import { LayoutPreview } from "../engines/preview/LayoutPreview.js";
+import type { LayoutPreviewProps } from "../engines/preview/LayoutPreview.js";
+import { PreviewViewport } from "../engines/preview/PreviewViewport.js";
 /** Isolated roots retain the host's actual token binding at the existing controlled viewport sizes. */
 export function CompositionSkeletonFrame(props: LayoutPreviewProps) {
   if (props.width !== 320 && props.width !== 768 && props.width !== 1280) throw new TypeError("Unsupported composition preview viewport");

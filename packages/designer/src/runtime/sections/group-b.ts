@@ -7,7 +7,6 @@ import { dataTableSection } from "./data-table.js";
 import { explorerSection } from "./explorer.js";
 import { filterBuilderSection } from "./filter-builder.js";
 import type { GroupBSection, SectionRenderer } from "./group-b-support.js";
-import { recordDetailSection } from "./record-detail.js";
 import { resourceListSection } from "./resource-list.js";
 import { statsSection } from "./stats.js";
 import { statusListSection } from "./status-list.js";
@@ -22,7 +21,7 @@ import { usageSection } from "./usage.js";
  */
 export const GROUP_B_SECTIONS: readonly GroupBSection[] = Object.freeze([
   accessMatrixSection, activityFeedSection, auditLogSection, columnMapperSection, dataGridSection,
-  dataTableSection, explorerSection, filterBuilderSection, recordDetailSection, resourceListSection,
+  dataTableSection, explorerSection, filterBuilderSection, resourceListSection,
   statsSection, statusListSection, taskListSection, timelineSection, usageSection,
 ]);
 

@@ -1,0 +1,150 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "director/loop.choose/package:choose-v1.json",
+    "agent": "director",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "director/loop.choose",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/director",
+      "version": "0.6.0"
+    },
+    "createdAt": "2026-11-17T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "trigger": [
+      "T2",
+      "T3",
+      "T4",
+      "T5",
+      "T6",
+      "T7"
+    ],
+    "steps": [
+      {
+        "id": "rank",
+        "does": "certify every candidate and rank them (certified and submitted first, then fewest reasons), the scorecard the pick reads",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys options <ref> --check",
+        "reads": [
+          "<slot>/candidates/*",
+          "<slot>/ledger.json"
+        ],
+        "writes": [
+          ".clossys/checks/<agent>/<slot-id>/*"
+        ],
+        "checks": [
+          "candidates.certified"
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "loop.create"
+        }
+      },
+      {
+        "id": "owner-pick",
+        "does": "owner picks among the submitted, certified candidates in chat (Director slots and legal prose); the pin gate judges the pick and the agent pick does not run for these slots",
+        "decider": {
+          "by": "human",
+          "who": "owner",
+          "raise": "queue.pick"
+        },
+        "cli": "clossys answer <entry> <candidate> --by owner --via chat --quote <words>",
+        "reads": [],
+        "writes": [
+          "<slot>/pin.json"
+        ],
+        "checks": [
+          "answer.quote-required",
+          "pins.resolve"
+        ],
+        "when": {
+          "ia": [
+            "director"
+          ],
+          "slots": [
+            "writer/narratives.legal-document"
+          ]
+        }
+      },
+      {
+        "id": "pick",
+        "does": "pin one submitted, certified candidate through the pin gate, which ranks every candidate in the slot's scorecard and refuses one with no submit record or no passing verdict; skipped for a slot the owner picks",
+        "decider": {
+          "by": "agent",
+          "agent": "director",
+          "verb": "pick",
+          "tier": "mid",
+          "skill": "packages/director/actions/pick.director/skill.md"
+        },
+        "cli": "clossys pin <ref> <candidate> --by agent:<agent>",
+        "reads": [
+          "<slot>/candidates/*",
+          "<slot>/ledger.json",
+          ".clossys/checks/<agent>/<slot-id>/*"
+        ],
+        "writes": [
+          "<slot>/pin.json",
+          ".clossys/checks/<agent>/<slot-id>/scorecard.json"
+        ],
+        "checks": [
+          "pins.resolve"
+        ]
+      },
+      {
+        "id": "confirm",
+        "does": "owner reads the pick and its rationale in chat (Theme, Art and Voice)",
+        "decider": {
+          "by": "human",
+          "who": "owner",
+          "raise": "queue.approve"
+        },
+        "cli": "clossys answer <entry> approve --by owner --via chat --quote <words>",
+        "reads": [],
+        "writes": [
+          "<slot>/pin.json"
+        ],
+        "checks": [
+          "answer.quote-required"
+        ],
+        "when": {
+          "ia": [
+            "designer/themes",
+            "designer/assets",
+            "writer/voice"
+          ]
+        }
+      },
+      {
+        "id": "cascade",
+        "does": "re-verdict every pin whose pinSet this repin changed (loop.cascade); a failing dependant is marked needs-refresh and goes to its owner as a queue.fix",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys check <dependants>",
+        "reads": [
+          "<slot>/slot.json"
+        ],
+        "writes": [
+          "<dependant>/slot.json"
+        ],
+        "checks": [
+          "refs.dangling"
+        ]
+      }
+    ],
+    "exit": "the slot's pin resolves to a submitted, certified candidate and cites its scorecard",
+    "repeat": "per slot; the dependants the cascade marks needs-refresh start their own runs",
+    "maxRounds": 3
+  }
+}

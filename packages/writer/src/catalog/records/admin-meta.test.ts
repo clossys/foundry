@@ -40,6 +40,9 @@ const draft = (name: string): Envelope => JSON.parse(readFileSync(new URL(name, 
 const files = ["admin-meta.r1.en.json", "admin-studio.r1.en.json"] as const;
 // Removed with no shim in c0430c85d; the review evidence stands at its source commit.
 const retiredSources = new Set(["packages/designer/src/studio/system-canvas/inspector/Inspector.tsx"]);
+// Moved in foundry-build-0042: the render-engine registry left the retired layouts.* slot folder. The review evidence
+// stands at its source commit and stays bounded by the moved file.
+const movedSources = new Map([["packages/publisher/src/layouts/slots/layouts.json", "packages/publisher/src/engines/engines.json"]]);
 const library = (records: WriterRecord[]): WriterLibrary => ({
   manifest: { consumer: "admin-meta-draft-review", messageSyntax: "icu-mf1", defaultLocale: "en",
     locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" },
@@ -96,7 +99,7 @@ for (const file of files) describe(file, () => {
       expect(review.source.commit).toBe(batch?.sourceCommit ?? envelope.sourceCommit);
       expect(review.source.line).toBeGreaterThan(0);
       if (!retiredSources.has(review.source.path))
-        expect(review.source.line).toBeLessThanOrEqual(read(review.source.path).split("\n").length);
+        expect(review.source.line).toBeLessThanOrEqual(read(movedSources.get(review.source.path) ?? review.source.path).split("\n").length);
       // A need for a Designer item that was retired stays in place, flagged retired (foundry-build-0033).
       const need = envelope.needs.find(row => row.recordId === record.id);
       expect(need, record.id).toBeDefined();

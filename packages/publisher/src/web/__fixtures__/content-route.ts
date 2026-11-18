@@ -4,6 +4,7 @@ import { createContentRevision } from "../../content/revisions.js";
 import type { ContentRouteInput } from "../content-route-types.js";
 import { COPY_FINGERPRINT_ALGORITHM, computeCopyFingerprint } from "@clossys/writer";
 import type { CopyRegistry } from "@clossys/writer";
+import { contentTreeFixture } from "../../content/__fixtures__/content-tree.js";
 
 export const CONTENT_ROUTE_AT = "2026-01-01T00:00:00Z";
 export const CONTENT_ROUTE_SLOT = "sl_aaaaaaaaaa";
@@ -25,7 +26,7 @@ export function contentRouteCandidate(content: CandidateContent, id = "sign-in",
 export function contentRouteFixture(overrides: Partial<CandidateContent> = {}): ContentRouteInput {
   return {
     registry: {
-      workspace: { consumerId: "example", defaultLocale: "en", locales: ["en", "fr"], deployTargets: [{ id: "site", repo: "example", app: "site" }], destinations: [] },
+      workspace: { consumerId: "example", tree: contentTreeFixture(), defaultLocale: "en", locales: ["en", "fr"], deployTargets: [{ id: "site", repo: "example", app: "site" }], destinations: [] },
       slots: [{ id: CONTENT_ROUTE_SLOT, aliases: ["websites/auth/sign-in"], locales: ["en"], l1: "websites", l2: "auth", position: { order: 0, name: "sign-in" }, name: "Sign in", kind: "content", route: "/sign-in", deployTarget: "site", meta: { canonical: "https://example.test/sign-in" }, devOnly: false, tags: [], activeCandidateId: "sign-in", releases: [], createdAt: CONTENT_ROUTE_AT }],
       candidates: [contentRouteCandidate(contentRouteContent(overrides))],
     },

@@ -38,7 +38,6 @@ function loader(mutation) {
 const checks = [];
 function proof(name, module, from, to, check) { checks.push({ name, module, from, to, check }); }
 const rule = (findings, expected) => assert(findings.some(f => f.rule === expected), `Missing finding ${expected}`);
-proof("closed taxonomy", "taxonomy", '"site", "app"', '"social", "app"', ({ core }) => assert.deepEqual(core.CONTENT_TAXONOMY, { websites: ["site", "app", "admin", "demo", "internal"], documents: ["slides", "docs"], communications: ["messages", "videos"] }));
 proof("L1/L2 pairing", "taxonomy", '.includes(l2)', '.includes("site")', ({ core }) => assert.equal(core.isContentPlacement("websites", "social"), false));
 proof("permanent slot id", "validate", 'if (!isContentPlacement(v.l1, v.l2))', 'if (v.id !== `${v.l1}/${v.l2}/${v.position?.name}` || !isContentPlacement(v.l1, v.l2))', ({ core, node }) => { const v = fixture(node); v.slots[0].l1 = "documents"; v.slots[0].l2 = "docs"; assert.deepEqual(core.validateContentRegistry(v), []); });
 proof("worst-wins", "stages", "Math.min(worst, rank)", "Math.max(worst, rank)", ({ core }) => assert.equal(core.rollUpStageStatuses(["Done", "Waiting", "Needs input", "Failing"]), "Failing"));

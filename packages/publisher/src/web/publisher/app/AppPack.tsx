@@ -46,7 +46,7 @@ function PlanningDescription({ description = "Planner default only · adoption u
 function suggestedAppSettings(route: AppRoute, registries?: InstanceRegistries): ProductionSettings {
   return {
     format: "web.page.responsive", frame: { leaf: route.frame as ProductionSettings["frame"]["leaf"] },
-    layout: { leaf: registries?.layouts.find(layout => layout.contract.configs.some(config => config.id === route.layoutConfig))?.id ?? "" as ProductionSettings["layout"]["leaf"], config: route.layoutConfig },
+    layout: { leaf: registries?.layouts.find(layout => layout.contract.configs.some(config => config.id === route.layoutConfig))?.engine ?? "" as ProductionSettings["layout"]["leaf"], config: route.layoutConfig },
   };
 }
 export interface AppPackMessages {

@@ -598,6 +598,34 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
 }
 
 /**
+ * Submit one candidate file whose bytes the caller built and judged (an agent's own loop candidate, `clossys loop`,
+ * U9a): the kind has no `KIND_EXT` and is certified by its own certifier at the pin gate, so this writer checks only
+ * the file name and the slot ledger. Writes `<slot>/candidates/<name>` (never over an existing file) and appends its
+ * `submit` event with the sha256 of the bytes written, under the slot's write lock; a failed append removes the file.
+ */
+export function writeCandidateBytes(consumer: string, agent: SlotAgent, id: string, name: string, bytes: string, input: { readonly at: string; readonly fields?: Readonly<Record<string, unknown>> }, given?: WriteProvenance): { name: string; sha256: string } {
+  if (!CANDIDATE_FILE.test(name)) throw new Error(`candidate refused: ${name} is not a candidate file name (<name>-v<n>.json)`);
+  const { entry } = located(consumer, agent, id);
+  canonicalDirectory(entry.dir);
+  return slotLocked(entry.dir, () => {
+    readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
+    const directory = candidatesDir(entry.dir);
+    canonicalDirectory(directory);
+    mkdirSync(directory, { recursive: true });
+    const path = join(directory, name);
+    const who = provenance({ verb: "submit", by: "planner", skill: skillPath(agent, `${agent}.candidates`) }, given);
+    writeFileSync(path, bytes, { flag: "wx" });
+    forgetSlotReads();
+    try {
+      const sha256 = sha256Of(readFileSync(path));
+      appendEvent(entry.dir, "slot", ledgerEvent("submit", input.at, who, { ...input.fields, name, sha256 }));
+      return { name, sha256 };
+    } catch (error) { unlinkSync(path); forgetSlotReads(); throw error; }
+  });
+}
+const CANDIDATE_FILE = /^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.json$/;
+
+/**
  * The one CHOOSE choke point (foundry-build-0048 U3): a `clossys.slot/2` slot is pinned only through the pin
  * gate (`clossys pin`, constitution/pin-gate.ts: a submitted, certified candidate, a ranked scorecard the pin
  * cites, a clossys.pin/2 record). Every slot/1 pin writer here (writePin for pin, approve and pick, a verdict

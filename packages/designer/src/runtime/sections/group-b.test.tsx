@@ -116,12 +116,6 @@ const ROLES: Readonly<Record<Leaf, (root: HTMLElement) => void>> = {
     expect(within(root).getAllByRole("button").length).toBeGreaterThanOrEqual(3);
     expect(within(root).getByText(S.filterBuilder.labels.legend)).toBeTruthy();
   },
-  "sections.record-detail": root => {
-    expect(within(root).getByRole("heading", { name: new RegExp(`^${S.detailView.title}`) })).toBeTruthy();
-    expect(within(root).getAllByRole("term").length).toBe(groupBDataset["sections.record-detail"]!.fields!.length as number);
-    for (const item of specimenDataset.menu.items.slice(0, 2)) expect(within(root).getByRole("button", { name: item.label })).toBeTruthy();
-    for (const field of S.detailView.fields) expect(within(root).getAllByText(field.value as string).length).toBeGreaterThan(0);
-  },
   "sections.resource-list": root => {
     expect(within(root).getByRole("grid", { name: S.resourceList["aria-label"] })).toBeTruthy();
     expect(within(root).getByRole("toolbar", { name: S.resourceListChrome.toolbar.label })).toBeTruthy();

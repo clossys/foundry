@@ -17,7 +17,7 @@ function fixture() {
   record.text = "{start}–{end} of {total, plural, one {# record} other {# records}}; {page}/{pages}";
   record.args = [{ name: "start", type: "number" }, { name: "end", type: "number" }, { name: "total", type: "plural" }, { name: "page", type: "number" }, { name: "pages", type: "number" }];
   const copy = createAdminPageCopy({ locale: "en", envelopes: prepareAdminPageCopyEnvelopes(envelopes) });
-  return { copy, host: adminPageSectionHosts({ copy, title: { id: "strings.admin.page.writer" }, includeRecordDetail: false })["sections.data-table"] };
+  return { copy, host: adminPageSectionHosts({ copy, title: { id: "strings.admin.page.writer" } })["sections.data-table"] };
 }
 function table(copy: ReturnType<typeof fixture>["copy"], host: Record<string, unknown>): RuntimeRenderInput<ReactNode> {
   const values = { header: { heading: copy("strings.admin.page.writer"), level: 4 }, columns: [{ key: "name", label: copy("strings.admin.column.name") }],

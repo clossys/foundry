@@ -85,7 +85,12 @@
             "sections.explorer",
             "sections.filter-builder",
             "sections.cards",
-            "sections.record-detail"
+            "sections.record-detail",
+            "sections.slot-gallery",
+            "sections.slot-detail",
+            "sections.candidate-preview",
+            "sections.question-packet",
+            "sections.queue-list"
           ]
         },
         {

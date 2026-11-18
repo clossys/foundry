@@ -8,8 +8,8 @@ import type { ReactNode } from "react";
 import { checkInstance, checkInstancePack } from "../../core/instance-binding.check.js";
 import type { ConsumerInstanceLibrary, FlowInstanceBinding as InstanceBinding, InstanceFinding, InstanceRegistries, SectionFill } from "../../core/instance-binding.js";
 import type { LayoutCompilerPort } from "../../core/layout-source.js";
-import { getEffectiveLayoutContract } from "../../layouts/resolve.js";
-import type { EffectivePageLayoutContract } from "../../layouts/resolve.js";
+import { getEffectiveLayoutContract } from "../../engines/resolve.js";
+import type { EffectivePageLayoutContract } from "../../engines/resolve.js";
 import type { BreakpointValues } from "../../core/flow-stage.js";
 import { InstanceRuntimeRender } from "./InstanceRuntimeRender.js";
 import type { InstanceRuntimeRoutes } from "./InstanceRuntimeRender.js";
@@ -73,7 +73,7 @@ export function PublisherInstancesView({ instances, library, registries, compile
   const ungrouped = rows.filter(row => !row.binding.packIds.length);
   let contract: EffectivePageLayoutContract | undefined;
   try {
-    const leaf = registries.layouts.find(leaf => leaf.id === selected?.binding.layout.leaf);
+    const leaf = registries.layouts.find(leaf => leaf.engine === selected?.binding.layout.leaf);
     if (leaf && selected) contract = getEffectiveLayoutContract(leaf, selected.binding.layout.config, selected.binding.layout.members);
   } catch { /* The checker retains the actual refusal. */ }
   const binding = selected?.binding;

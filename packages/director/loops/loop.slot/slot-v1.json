@@ -1,0 +1,140 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "director/loop.slot/package:slot-v1.json",
+    "agent": "director",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "director/loop.slot",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/director",
+      "version": "0.6.0"
+    },
+    "createdAt": "2026-11-17T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "trigger": [
+      "T4",
+      "T5"
+    ],
+    "steps": [
+      {
+        "id": "overlap",
+        "does": "list the assignee's placed slots the need may already be (a part of it, or a similar purpose) on the entry, the list the decision reads",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys request <request> --check",
+        "reads": [
+          "producer/queue.slot/entries/<request>.json"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/<request>.json"
+        ],
+        "checks": []
+      },
+      {
+        "id": "decide-director",
+        "does": "the Director answers the entry: reuse a placed slot that serves the need, or propose one new leaf with a full contract under the L2 it belongs to",
+        "decider": {
+          "by": "agent",
+          "agent": "director",
+          "verb": "decide",
+          "tier": "mid",
+          "skill": "packages/director/actions/director.slot/skill.md"
+        },
+        "cli": "clossys request <request> --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> --kind <kind> --inputs <ref,...> --contract <file> [--overlap-reason <text>]",
+        "reads": [
+          "producer/queue.slot/entries/<request>.json",
+          "director/*/slot.json"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/<request>.json"
+        ],
+        "checks": [],
+        "when": {
+          "owner": [
+            "director"
+          ]
+        }
+      },
+      {
+        "id": "sign",
+        "does": "owner signs a new leaf in chat: the proposed slot, its L2 and its contract (a reuse links a placed slot and asks the owner nothing)",
+        "decider": {
+          "by": "human",
+          "who": "owner",
+          "raise": "queue.approve"
+        },
+        "cli": "clossys answer <entry> approve --by owner --via chat --quote <words>",
+        "reads": [],
+        "writes": [],
+        "checks": [
+          "answer.quote-required"
+        ],
+        "when": {
+          "decision": [
+            "create"
+          ]
+        }
+      },
+      {
+        "id": "place",
+        "does": "place the signed new leaf through clossys ia (overlap and contract gates, a create decision event), then link the requester slot-to-slot, notify it and close the entry",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys request <request> --close --approved <entry>",
+        "reads": [
+          "producer/queue.slot/entries/<request>.json"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/<request>.json",
+          "<agent>/ia.json",
+          "<agent>/<slot-id>/slot.json"
+        ],
+        "checks": [
+          "request.closed"
+        ],
+        "when": {
+          "decision": [
+            "create"
+          ]
+        }
+      },
+      {
+        "id": "link",
+        "does": "link the requester slot-to-slot to the reused placed slot of the assignee, notify it and close the entry (the reused slot is never written)",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys request <request> --close",
+        "reads": [
+          "producer/queue.slot/entries/<request>.json"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/<request>.json",
+          "<requester>/slot.json"
+        ],
+        "checks": [
+          "request.closed"
+        ],
+        "when": {
+          "decision": [
+            "reuse"
+          ]
+        }
+      }
+    ],
+    "exit": "the entry is closed with a link to a placed slot and a notify event to its requester; the requester cites the slot",
+    "repeat": "per open queue.slot entry; a refused placement leaves the entry open for the next run",
+    "maxRounds": 1
+  }
+}

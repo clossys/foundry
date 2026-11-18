@@ -14,7 +14,7 @@ import { isRegisteredContentRef } from "../../core/instance-binding.js";
 import type { PublicationBinding, SectionFill } from "../../core/instance-binding.js";
 import { isRegionPageRouteRegistration, normalizeRegionPageRoute, routeSourcePath } from "../../core/route-identities.js";
 import type { RegionPageRouteRegistry } from "../../core/route-registry.js";
-import { getEffectiveLayoutContract, getLayoutLeaf } from "../../layouts/index.js";
+import { getEffectiveLayoutContract, getLayoutEngine } from "../../engines/index.js";
 
 export interface PublicationConfigPin { readonly leaf: string; readonly config: string | null; readonly descriptorHash: string; readonly configHash: string; readonly sourceHash: string }
 export interface PublicationCopyPin { readonly ref: CopyRef; readonly fingerprint: string }
@@ -77,7 +77,7 @@ function assertSnapshot(value: unknown): asserts value is PublicationSnapshot {
 
 /** Pin existing package-owned layout contract/config bytes without promoting lifecycle. */
 export function publicationLayoutPin(publication: PublicationBinding): NonNullable<PublicationSnapshot["layoutPin"]> {
-  const leaf = getLayoutLeaf(publication.layout.leaf), effective = getEffectiveLayoutContract(publication.layout.leaf,publication.layout.config,publication.layout.members);
+  const leaf = getLayoutEngine(publication.layout.leaf), effective = getEffectiveLayoutContract(publication.layout.leaf,publication.layout.config,publication.layout.members);
   return {leaf:publication.layout.leaf,config:publication.layout.config,hash:publicationDigest({leaf,effective})};
 }
 export function publicationDigest(value: unknown): string {
@@ -195,7 +195,7 @@ export function compilePublication(snapshot: PublicationSnapshot, library: Compo
   const registrations = snapshot.bindings.registrations ?? [];
   if (snapshot.publication) {
     if (publicationDigest(publicationLayoutPin(snapshot.publication)) !== publicationDigest(snapshot.layoutPin)) fail("layout contract/config pin drift");
-    if (getLayoutLeaf(snapshot.publication.layout.leaf)?.status !== "stable") fail("production publication requires a stable Publisher layout; draft/held layouts are not promoted");
+    if (getLayoutEngine(snapshot.publication.layout.leaf)?.status !== "stable") fail("production publication requires a stable Publisher layout; draft/held layouts are not promoted");
   }
   for (const route of registrations) {
     if (!isRegionPageRouteRegistration(route)) fail("legacy assembly registration requires runtime qualification; use consumer region pages or complete source metadata");

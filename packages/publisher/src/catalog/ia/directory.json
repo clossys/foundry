@@ -17,6 +17,7 @@
             "page.about",
             "page.pricing",
             "page.contact",
+            "page.site-page",
             "page.terms",
             "page.privacy",
             "page.not-found",
@@ -59,6 +60,24 @@
             "page.list",
             "page.settings",
             "page.app-not-found"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "directory/admin",
+      "label": "Admin",
+      "children": [
+        {
+          "id": "directory/admin/admin",
+          "label": "admin",
+          "publication": "admin",
+          "leaves": [
+            "page.admin-home",
+            "page.admin-gallery",
+            "page.admin-slot",
+            "page.admin-requests",
+            "page.admin-questions"
           ]
         }
       ]
@@ -141,6 +160,19 @@
       "records": {
         "pattern": "contact.<role>",
         "meta": "writer/page.contact.meta#contact.meta"
+      }
+    },
+    "page.site-page": {
+      "kind": "page",
+      "publication": "site",
+      "path": "/<slug>",
+      "collection": "site-pages",
+      "layouts": [
+        "publisher/layout.site-page"
+      ],
+      "records": {
+        "pattern": "site-page.<role>",
+        "meta": "writer/page.site-page.meta#site-page.meta"
       }
     },
     "page.terms": {
@@ -336,6 +368,68 @@
       "records": {
         "pattern": "app-not-found.<role>",
         "meta": "writer/page.app-not-found.meta#app-not-found.meta"
+      }
+    },
+    "page.admin-home": {
+      "kind": "page",
+      "publication": "admin",
+      "path": "/admin",
+      "layouts": [
+        "publisher/layout.admin-home"
+      ],
+      "records": {
+        "pattern": "admin-home.<role>",
+        "meta": "writer/page.admin-home.meta#admin-home.meta"
+      }
+    },
+    "page.admin-gallery": {
+      "kind": "page",
+      "publication": "admin",
+      "path": "/admin/<agent>",
+      "collection": "agents",
+      "layouts": [
+        "publisher/layout.admin-gallery"
+      ],
+      "records": {
+        "pattern": "admin-gallery.<role>",
+        "meta": "writer/page.admin-gallery.meta#admin-gallery.meta"
+      }
+    },
+    "page.admin-slot": {
+      "kind": "page",
+      "publication": "admin",
+      "path": "/admin/<agent>/<slot>",
+      "collection": "slots",
+      "layouts": [
+        "publisher/layout.admin-slot"
+      ],
+      "records": {
+        "pattern": "admin-slot.<role>",
+        "meta": "writer/page.admin-slot.meta#admin-slot.meta"
+      }
+    },
+    "page.admin-requests": {
+      "kind": "page",
+      "publication": "admin",
+      "path": "/admin/requests",
+      "layouts": [
+        "publisher/layout.admin-requests"
+      ],
+      "records": {
+        "pattern": "admin-requests.<role>",
+        "meta": "writer/page.admin-requests.meta#admin-requests.meta"
+      }
+    },
+    "page.admin-questions": {
+      "kind": "page",
+      "publication": "admin",
+      "path": "/admin/questions",
+      "layouts": [
+        "publisher/layout.admin-questions"
+      ],
+      "records": {
+        "pattern": "admin-questions.<role>",
+        "meta": "writer/page.admin-questions.meta#admin-questions.meta"
       }
     },
     "page.deck": {

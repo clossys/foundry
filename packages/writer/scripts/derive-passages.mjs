@@ -20,6 +20,10 @@ const canonical = value => `${JSON.stringify(value, null, 2)}\n`;
 // mirrors only content sections, so specimens and their emptied IA groups are
 // left out of the passage catalog.
 const specimenId = id => id.startsWith("sections.specimen-");
+// A data-bound record section (a required records slot, no copy field) may declare no passageSchema: its words are the
+// records it reads, so Writer mirrors no passage for it (foundry-build-0048, A3). Designer's section contract holds the rule.
+const passagelessRecordSection = contract => Array.isArray(contract.slots) && contract.slots.some(slot => object(slot) && slot.type === "records" && slot.required === true)
+  && object(contract.copy) && Array.isArray(contract.copy.fields) && contract.copy.fields.length === 0;
 
 /** Pure derivation: copy is an opaque snapshot, never inferred from section slots. */
 export function derivePassages(sourceIa, sourceSlots) {
@@ -27,11 +31,17 @@ export function derivePassages(sourceIa, sourceSlots) {
   requireSource(Array.isArray(sourceSlots) && sourceSlots.length > 0, "Source section slots must be a nonempty array");
   const sections = new Map();
   const specimens = new Set();
+  const passageless = new Set();
   for (const row of sourceSlots) {
     requireSource(object(row) && sectionId(row.id) && row.layer === "sections", "Source slot requires a sections id and layer");
-    requireSource(!sections.has(row.id) && !specimens.has(row.id), `Duplicate section slot: ${row.id}`);
+    requireSource(!sections.has(row.id) && !specimens.has(row.id) && !passageless.has(row.id), `Duplicate section slot: ${row.id}`);
     if (specimenId(row.id)) { specimens.add(row.id); continue; }
     requireSource(object(row.contract) && row.contract.kind === "section", `Missing section contract: ${row.id}`);
+    if (!Object.hasOwn(row.contract, "passageSchema")) {
+      requireSource(passagelessRecordSection(row.contract), `Source passageSchema may be absent only on a copy-less data-bound record section: ${row.id}`);
+      passageless.add(row.id);
+      continue;
+    }
     requireSource(row.contract.passageSchema === passageId(row.id), `Source passageSchema must pair with ${row.id}`);
     requireSource(object(row.contract.copy) && typeof row.contract.copy.sourceLocale === "string" && row.contract.copy.sourceLocale.length > 0 && Array.isArray(row.contract.copy.fields), `Missing copy schema: ${row.id}`);
     sections.set(row.id, row);
@@ -54,10 +64,10 @@ export function derivePassages(sourceIa, sourceSlots) {
       requireSource(Array.isArray(l2.leaves) && l2.leaves.length > 0 && !Object.hasOwn(l2, "children"), `Source L2 requires leaves: ${l2.id}`);
       l2.leaves = l2.leaves.flatMap(id => {
         requireSource(sectionId(id), `Invalid section placement: ${String(id)}`);
-        requireSource(sections.has(id) || specimens.has(id), `Unknown section placement: ${id}`);
+        requireSource(sections.has(id) || specimens.has(id) || passageless.has(id), `Unknown section placement: ${id}`);
         requireSource(!placements.has(id), `Duplicate section placement: ${id}`);
         placements.add(id);
-        return specimens.has(id) ? [] : [passageId(id)];
+        return specimens.has(id) || passageless.has(id) ? [] : [passageId(id)];
       });
     }
     l1.children = l1.children.filter(l2 => l2.leaves.length > 0);
@@ -68,14 +78,14 @@ export function derivePassages(sourceIa, sourceSlots) {
   for (const key of ["retired", "starter"]) {
     if (!Object.hasOwn(ia, key)) continue;
     requireSource(Array.isArray(ia[key]) && ia[key].every(sectionId), `Source ${key} must list section ids`);
-    ia[key] = ia[key].filter(id => !specimenId(id)).map(passageId);
+    ia[key] = ia[key].filter(id => !specimenId(id) && !passageless.has(id)).map(passageId);
   }
   // The five-layer store is retired as live IA (foundry-build-0033): the target voice, prose and copy trees
   // are the live Writer IA, and this mirror stays only as record-validation storage.
   ia.status = "retired";
-  for (const id of specimens) requireSource(placements.has(id), `Missing section placement: ${id}`);
+  for (const id of [...specimens, ...passageless]) requireSource(placements.has(id), `Missing section placement: ${id}`);
   for (const id of sections.keys()) requireSource(placements.has(id), `Missing section placement: ${id}`);
-  const slots = sourceSlots.filter(row => !specimenId(row.id)).map(row => ({
+  const slots = sourceSlots.filter(row => !specimenId(row.id) && !passageless.has(row.id)).map(row => ({
     id: row.contract.passageSchema,
     layer: "passages",
     contract: {

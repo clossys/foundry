@@ -10,8 +10,8 @@ import type { ComponentType, ReactNode } from "react";
 import { instanceBodyFindings } from "../core/instance-body.js";
 import { recordRouteRuntimeMaterialization } from "../core/route-runtime.js";
 import type { RouteRuntimeMaterialization } from "../core/route-runtime.js";
-import { getEffectiveLayoutContract } from "../layouts/resolve.js";
-import { isLayoutId } from "../layouts/ids.js";
+import { getEffectiveLayoutContract } from "../engines/resolve.js";
+import { isEngineKey } from "../engines/keys.js";
 
 export interface RegisteredDesignerQuery {
   readonly input: DesignerLayerBoardsInput;
@@ -387,7 +387,7 @@ export function materializeRegisteredDesignerRoute(registered: InstanceBinding, 
     if (result.body.kind === "flow") {
       const selected = result.layout;
       const adopted = selected && library.resolveFill(selected.leaf, selected.config);
-      if (!selected || !isLayoutId(selected.leaf) || !adopted || adopted.library !== profile.consumer || adopted.leaf !== selected.leaf || adopted.config !== selected.config) return { status: "pending", findings: ["Actual selected Designer state Layout unavailable"] };
+      if (!selected || !isEngineKey(selected.leaf) || !adopted || adopted.library !== profile.consumer || adopted.leaf !== selected.leaf || adopted.config !== selected.config) return { status: "pending", findings: ["Actual selected Designer state Layout unavailable"] };
       const contract = getEffectiveLayoutContract(selected.leaf, selected.config, selected.members);
       const slot = contract.slots.find(slot => slot.id === selected.slot);
       if (!slot || contract.slots.some(slot => (result.fills[slot.id]?.length ?? 0) < slot.min)) return { status: "pending", findings: ["Selected state Layout required slots unavailable"] };

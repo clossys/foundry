@@ -1,0 +1,54 @@
+{
+  "layer": "layouts",
+  "retired": {
+    "retiredAt": "2026-11-17",
+    "decidedBy": "owner 2026-11-16 (go with your recommendation); foundry-build-0036 audit P10",
+    "reason": "legacy layouts.* tree: the five layouts.* leaves are retired in src/catalog/retired.json, replaced by the layout.* L3s of Composition (src/catalog/ia/composition.json); flagged retired. Moved under src/layouts/retired/ as retired data (foundry-build-0042): the five render engines it named live on as internal primitives keyed by engine key, selected only through src/catalog/layout-engines.json"
+  },
+  "nodes": [
+    {
+      "id": "page",
+      "label": "Page",
+      "children": [
+        {
+          "id": "flow",
+          "label": "Flow",
+          "leaves": [
+            "layouts.stack"
+          ]
+        },
+        {
+          "id": "columns",
+          "label": "Partition",
+          "leaves": [
+            "layouts.split",
+            "layouts.sidebar-content"
+          ]
+        },
+        {
+          "id": "grid",
+          "label": "Tiling",
+          "leaves": [
+            "layouts.bento",
+            "layouts.staggered-grid"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "canvas",
+      "label": "Canvas",
+      "children": []
+    },
+    {
+      "id": "paged",
+      "label": "Paged",
+      "children": []
+    },
+    {
+      "id": "panes",
+      "label": "Panes",
+      "children": []
+    }
+  ]
+}

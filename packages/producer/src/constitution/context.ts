@@ -14,6 +14,7 @@ import { skillFile } from "../records/ledger.js";
 import { loadActions } from "../pipeline/actions.js";
 import { readCandidateHistory } from "./git.js";
 import type { AgentRecord, CandidateHistory, CandidateRecord, ConstitutionContext, FocusTarget, FoundryAgent, JsonRecord, MigrationsRecord, RetiredRecord, SlotRecord } from "./types.js";
+import { AGENT_LOOPS } from "../loop/agent-loops-ia.js";
 
 const posix = (path: string) => path.split(sep).join("/");
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -138,7 +139,8 @@ export interface ContextOptions {
 
 const FOUNDRY_IA: Record<FoundryAgent, () => FoundryIa> = { director: directorIa, designer: designerIa, writer: writerIa };
 /** The Foundry-placed leaf ids of an agent, from the installed Foundry IA. */
-export const installedFoundryLeaves = (agent: FoundryAgent): ReadonlySet<string> => new Set(FOUNDRY_IA[agent]().slots.keys());
+/** The installed package's leaves, plus the agent's own loop slots (Producer-standard leaves every content agent holds, U9a). */
+export const installedFoundryLeaves = (agent: FoundryAgent): ReadonlySet<string> => new Set([...FOUNDRY_IA[agent]().slots.keys(), ...AGENT_LOOPS]);
 
 /** Reads the records under `<consumer>/agents` for the run. `root` is the workspace root rows are relative to. */
 export function buildContext(root: string, consumer: string, options: ContextOptions = {}): ConstitutionContext {

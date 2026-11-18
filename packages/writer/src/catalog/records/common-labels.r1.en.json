@@ -144,7 +144,7 @@
     {
       "id": "st.0rj8qzqqr1",
       "leaf": "strings.common",
-      "context": "publisher.layoutOption.layouts.bento.density.dense",
+      "context": "publisher.layoutOption.bento.density.dense",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Compact",
@@ -1152,7 +1152,7 @@
     {
       "id": "st.g385gwchf1",
       "leaf": "strings.common",
-      "context": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record",
+      "context": "publisher.layoutConfig.sidebar-content.sidebar-content.record",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Record details",
@@ -2452,7 +2452,7 @@
       "recordId": "st.g385gwchf1",
       "legacyRecordId": "st.g385gwchf1",
       "source": "records/admin-meta.r1.en.json",
-      "context": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record",
+      "context": "publisher.layoutConfig.sidebar-content.sidebar-content.record",
       "leaf": "strings.names",
       "limits": {
         "maxChars": 40
@@ -2500,7 +2500,7 @@
       "recordId": "st.0rj8qzqqr1",
       "legacyRecordId": "st.0rj8qzqqr1",
       "source": "records/admin-meta.r1.en.json",
-      "context": "publisher.layoutOption.layouts.bento.density.dense",
+      "context": "publisher.layoutOption.bento.density.dense",
       "leaf": "strings.names",
       "limits": {
         "maxChars": 40

@@ -79,8 +79,8 @@ function fixture(hostContent = false) {
           return <ShellCopyProvider resolver={resolveShellLabel}><AppFrame {...(hostContent ? { skipLabel: input.content["skip-link"]!.value as string, mainId: "app-main" } : {})} brand={{ markSrc: "/mark.svg", wordmark: "Example", label: "Example workspace", ...header.brand }} navigation={{ tree: [], activeId: "", label: "Workspace" }} account={{ signedOutLabel: "Signed out", sections: [] }} commands={{ heading: "Commands", searchLabel: "Search commands", closeLabel: "Close", emptyMessage: "Empty", triggerLabel: "Commands", groups: [] }} onNavigate={() => {}}>
             {!header.leasedByPage && <PageHeaderModule id={header.id} header={{ ...header.data, actions: { render: header.actions!.render } }} />}{input.slots.main}
           </AppFrame></ShellCopyProvider>;
-        } }, resolveContent: () => undefined }, themes: ["light"], states: ["default"], css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(profile, "layouts.stack", "stack.focus") }], assets: [] },
-    instanceLibrary: { id: consumer, role: "consumer", resolveFill: (leaf, config) => leaf === "layouts.stack" && config === "stack.focus" ? { library: consumer, leaf, config, headings: [], states: ["default"], renderer: source } : undefined, resolveContent: ref => ref },
+        } }, resolveContent: () => undefined }, themes: ["light"], states: ["default"], css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(profile, "stack", "stack.focus") }], assets: [] },
+    instanceLibrary: { id: consumer, role: "consumer", resolveFill: (leaf, config) => leaf === "stack" && config === "stack.focus" ? { library: consumer, leaf, config, headings: [], states: ["default"], renderer: source } : undefined, resolveContent: ref => ref },
     registries,
     layoutRenderer: { id: "Stack", source: layoutSource, sourceHash: runtimeHash(layoutSource) }, cell: { theme: "light", state: "default", width: 320 }, headerActions: { renderer: { id: "SYNTHETIC Actions", source: actionSource, sourceHash: runtimeHash(actionSource) }, state: { revision: 1 } },
   };
@@ -133,7 +133,7 @@ describe("fixed registered route execution, explicitly synthetic selection proof
     expect(prepared.input?.layout?.descriptor.config).toBe("stack.focus");
     render(<Owner.Provider value="original"><RegisteredRoutePage registry={registry} routeId={route.routeId} useRuntime={() => stageRuntime} renderActions={({ compact }) => <Action compact={compact} />} /></Owner.Provider>);
     expect(document.querySelectorAll('[data-frame-stage][data-frame-stage-layout="flow"]')).toHaveLength(1);
-    expect(document.querySelectorAll('[data-layout="layouts.stack"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-layout="stack"]')).toHaveLength(1);
     expect(screen.getByRole("article", { name: "SYNTHETIC body" })).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     await userEvent.click(screen.getByRole("button", { name: "original:false:0" }));
@@ -212,7 +212,7 @@ describe("fixed registered route execution, explicitly synthetic selection proof
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Tools");
     expect(screen.getByRole("article", { name: "SYNTHETIC body" })).toHaveTextContent("SYNTHETIC");
-    expect(document.querySelectorAll('[data-layout="layouts.stack"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-layout="stack"]')).toHaveLength(1);
     await userEvent.click(screen.getByRole("button", { name: "original:false:0" }));
     expect(screen.getByRole("button", { name: "original:false:1" })).toBeInTheDocument();
   });

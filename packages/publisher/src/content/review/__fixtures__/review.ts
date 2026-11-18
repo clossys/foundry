@@ -5,7 +5,7 @@ import type { ReviewInput, ReviewLibrarySnapshot } from "../types.js";
 
 type Mutable<T> = T extends readonly (infer V)[] ? Mutable<V>[] : T extends object ? { -readonly [K in keyof T]: Mutable<T[K]> } : T;
 export const raisedAt = "2026-02-03T04:05:06Z";
-export const peerSlotId = "sl_2xv4y3uo7k" as const;
+export const peerSlotId = "sl_fixturesaa" as const;
 export type Fixture = Mutable<ReviewInput>;
 
 /** Every baseline has real revision content and explicit Designer metadata. */

@@ -21253,7 +21253,7 @@
       "sourceFiles": {
         "packages/designer/src/catalog/ia/frames.json": "a305de6514019a975a0adcd42107b88c047e0134e6feb37f49efffa45be014e8",
         "packages/designer/src/catalog/slots/frames.json": "79d33c0f3bb7e6ac18045ed7fee733f90bfb9900f1c8b80fbbc98d0a81fa679c",
-        "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "3a0c0ade71b7188e2322500e48c551d78442863b533000f9ae96cd3f07cbe48b"
+        "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "f20d800f8db532afe2c9e5be50a278ac785ad99b51b69800e612a37cebc15efd"
       },
       "revisions": [
         {
@@ -21792,7 +21792,7 @@
     {
       "recordId": "st.g385gwchf1",
       "source": "common-labels.r1.en.json",
-      "sourceContext": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record"
+      "sourceContext": "publisher.layoutConfig.sidebar-content.sidebar-content.record"
     },
     {
       "recordId": "st.gj32snjd4m",

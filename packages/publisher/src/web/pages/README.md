@@ -235,12 +235,9 @@ available before any lazy chunk is requested. `partition: "l1"` splits large
 L0s per band. Data-table selection and hash navigation remain registered-session
 ports.
 
-The section hosts use the configuration's Writer refs to supply `recordDetail`
-only to record-detail, and `tableCopy`/`paginationSummary`/`formatCopyMessage`
-only to data-table.
-The detail title and fields
-come from the current Writer-bound item. Empty-table copy and the complete
-pagination summary come from Writer records.
+The section hosts use the configuration's Writer refs to supply
+`tableCopy`/`paginationSummary`/`formatCopyMessage` only to data-table.
+Empty-table copy and the complete pagination summary come from Writer records.
 
 `paginationSummary` is serializable data, not a callback:
 `{ key: "pagination.total-text", writerId, locale, message, values }`.

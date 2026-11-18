@@ -74,7 +74,7 @@ function stateFixture(phase: 'loading' | 'error' | 'empty'): DesignerLayerBoards
   const section = phase === 'loading' ? 'sections.notices' as const : phase === 'error' ? 'sections.error-state' as const : 'sections.empty-state' as const;
   const reference = { kind: phase === 'loading' ? 'records' as const : phase === 'error' ? 'copy' as const : 'action' as const, ref: `SYNTHETIC/${phase}` };
   const value = phase === 'loading' ? [{ id: 'SYNTHETIC-loading', tone: 'info', message: 'Loading original library' }] : phase === 'error' ? 'SYNTHETIC-load-error' : { label: 'SYNTHETIC-return', command: 'SYNTHETIC-navigation' };
-  return { ...input, projection, projectionHash: runtimeHash(projection), records: [], stateSections: { [phase]: { sessionId: projection.session.id, fill: { section, content: { [phase === 'loading' ? 'notices' : phase === 'error' ? 'code' : 'actions']: reference } }, content: [{ reference, value, hash: runtimeHash(value) }], layout: { leaf: 'layouts.stack', config: 'stack.workspace', members: { align: 'start', measure: 'full' }, slot: 'body' } } } };
+  return { ...input, projection, projectionHash: runtimeHash(projection), records: [], stateSections: { [phase]: { sessionId: projection.session.id, fill: { section, content: { [phase === 'loading' ? 'notices' : phase === 'error' ? 'code' : 'actions']: reference } }, content: [{ reference, value, hash: runtimeHash(value) }], layout: { leaf: 'stack', config: 'stack.workspace', members: { align: 'start', measure: 'full' }, slot: 'body' } } } };
 }
 it.each(['loading','error','empty'] as const)('%s uses a real registered flow Section and exact selected Layout under the original session', phase => {
   const input = stateFixture(phase), result = ready(input);

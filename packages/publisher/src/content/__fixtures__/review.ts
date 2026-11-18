@@ -1,6 +1,7 @@
 import { createContentRevision } from "../revisions.js";
 import type { CandidateContent, ContentRegistry, ContentSlot } from "../model.js";
 import type { ConsumerLibrarySnapshot } from "../library.js";
+import { contentTreeFixture } from "./content-tree.js";
 
 export const at = "2026-01-01T00:00:00Z";
 export function reviewFixture(): ContentRegistry {
@@ -16,9 +17,9 @@ export function reviewFixture(): ContentRegistry {
   };
   const snapshot = createContentRevision(content, "r1", at);
   return {
-    workspace: { consumerId: "sample", defaultLocale: "en", locales: ["en"], deployTargets: [], destinations: [] },
-    slots: [{ id: "sl_boyi4ashca", aliases: ["websites/site/home"], locales: ["en"], l1: "websites", l2: "site", position: { order: 0, name: "home" }, name: "Home", kind: "content", devOnly: false, tags: [], releases: [], createdAt: at, activeCandidateId: "sample" }],
-    candidates: [{ ...structuredClone(content), id: "sample", slotId: "sl_boyi4ashca", origin: "agent-draft", state: "active", revision: "r1", approval: { source: "owner", by: "owner", at, revision: "r1", digest: snapshot.digest }, tags: [], history: [snapshot], updatedAt: at }],
+    workspace: { consumerId: "sample", tree: contentTreeFixture(), defaultLocale: "en", locales: ["en"], deployTargets: [], destinations: [] },
+    slots: [{ id: "sl_fixturesaf", aliases: ["websites/site/home"], locales: ["en"], l1: "websites", l2: "site", position: { order: 0, name: "home" }, name: "Home", kind: "content", devOnly: false, tags: [], releases: [], createdAt: at, activeCandidateId: "sample" }],
+    candidates: [{ ...structuredClone(content), id: "sample", slotId: "sl_fixturesaf", origin: "agent-draft", state: "active", revision: "r1", approval: { source: "owner", by: "owner", at, revision: "r1", digest: snapshot.digest }, tags: [], history: [snapshot], updatedAt: at }],
   };
 }
 export function libraryFixture(): ConsumerLibrarySnapshot[] {
@@ -40,28 +41,28 @@ export function leafRegistryFixture(): ContentRegistry {
     name: string, kind: ContentSlot["kind"], route?: string,
   ];
   const leaves: readonly Leaf[] = [
-    ["sl_boyi4ashca", "site", "home", "Home", "content", "/"],
-    ["sl_2xv4y3uo7k", "site", "privacy", "Privacy", "content", "/privacy"],
-    ["sl_ke6mhs5hmu", "site", "terms", "Terms", "content", "/terms"],
-    ["sl_prd6v4nkk3", "site", "not-found", "Not found", "status"],
-    ["sl_wl546svpom", "auth", "sign-in", "Sign in", "content", "/sign-in"],
-    ["sl_x5c5vjqxez", "auth", "sign-in-unavailable", "Sign in unavailable", "status", "/sign-in-unavailable"],
-    ["sl_wlpwozbd7y", "auth", "not-authorized", "Not authorized", "status", "/not-authorized"],
-    ["sl_4hiswon2mp", "auth", "service-unavailable", "Service unavailable", "status", "/service-unavailable"],
-    ["sl_asgvb7lcju", "auth", "sign-out-confirm", "Sign out confirm", "content", "/sign-out-confirm"],
-    ["sl_pwsyw4hn2e", "auth", "not-found", "Not found", "status"],
-    ["sl_w7u7k6agdr", "auth", "error", "Error", "status"],
-    ["sl_wnelzobehr", "auth", "global-error", "Global error", "status"],
-    ["sl_rkjigy5k5p", "admin", "workspace-home", "Workspace home", "content", "/"],
-    ["sl_7pz5qp7kyz", "admin", "account", "Account", "content", "/account"],
-    ["sl_622lk7eoar", "admin", "agents-designer", "Agents designer", "content", "/agents/designer"],
-    ["sl_hfkj3prso2", "admin", "agents-publisher", "Agents publisher", "content", "/agents/publisher"],
-    ["sl_lsqwmhpf6l", "admin", "agents-writer", "Agents writer", "content", "/agents/writer"],
-    ["sl_sjhh4tpouv", "admin", "agents-foundry", "Agents foundry", "content", "/agents/foundry"],
+    ["sl_fixturesaf", "site", "home", "Home", "content", "/"],
+    ["sl_fixturesaa", "site", "privacy", "Privacy", "content", "/privacy"],
+    ["sl_fixturesah", "site", "terms", "Terms", "content", "/terms"],
+    ["sl_fixturesaj", "site", "not-found", "Not found", "status"],
+    ["sl_fixturesao", "auth", "sign-in", "Sign in", "content", "/sign-in"],
+    ["sl_fixturesar", "auth", "sign-in-unavailable", "Sign in unavailable", "status", "/sign-in-unavailable"],
+    ["sl_fixturesap", "auth", "not-authorized", "Not authorized", "status", "/not-authorized"],
+    ["sl_fixturesab", "auth", "service-unavailable", "Service unavailable", "status", "/service-unavailable"],
+    ["sl_fixturesae", "auth", "sign-out-confirm", "Sign out confirm", "content", "/sign-out-confirm"],
+    ["sl_fixturesak", "auth", "not-found", "Not found", "status"],
+    ["sl_fixturesan", "auth", "error", "Error", "status"],
+    ["sl_fixturesaq", "auth", "global-error", "Global error", "status"],
+    ["sl_fixturesal", "admin", "workspace-home", "Workspace home", "content", "/"],
+    ["sl_fixturesad", "admin", "account", "Account", "content", "/account"],
+    ["sl_fixturesac", "admin", "agents-designer", "Agents designer", "content", "/agents/designer"],
+    ["sl_fixturesag", "admin", "agents-publisher", "Agents publisher", "content", "/agents/publisher"],
+    ["sl_fixturesai", "admin", "agents-writer", "Agents writer", "content", "/agents/writer"],
+    ["sl_fixturesam", "admin", "agents-foundry", "Agents foundry", "content", "/agents/foundry"],
   ];
   return {
     workspace: {
-      consumerId: "sample", defaultLocale: "en", locales: ["en"],
+      consumerId: "sample", tree: contentTreeFixture(), defaultLocale: "en", locales: ["en"],
       deployTargets: [
         { id: "product-site", repo: "sample", app: "site" },
         { id: "product-admin", repo: "sample", app: "admin" },

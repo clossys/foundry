@@ -46,7 +46,7 @@ export function standardM1Runtime(options: {
       [article.renderer.id]: input => <div data-runtime-path={input.path}><SectionFrame measure="prose"><ArticleBody><h2>What this offers</h2><p>{String(input.content.body!.value)}</p></ArticleBody></SectionFrame></div>,
     } },
     binding: { id: "standard-m1-home", frame: select(frame, { "skip-link": "skip", header: "header", footer: "footer" }), frameSlots: {}, sections: { body: [select(hero, { header: "hero" }), select(article, { body: "article" })] } },
-    layout: { descriptor: { library: engine.library.source.id, fill: `${engine.library.source.id}/layouts.stack`, leaf: "layouts.stack", config: "landing", members: {}, slots: [{ id: "body", min: 1, max: 10, accepts: ["sections.hero", "sections.article"] }], breakpoints: [], states: ["default"], renderer: renderer("standard-m1:layout") },
+    layout: { descriptor: { library: engine.library.source.id, fill: `${engine.library.source.id}/stack`, leaf: "stack", config: "landing", members: {}, slots: [{ id: "body", min: 1, max: 10, accepts: ["sections.hero", "sections.article"] }], breakpoints: [], states: ["default"], renderer: renderer("standard-m1:layout") },
       render: input => <div data-runtime-layout="standard-m1-stack">{Children.toArray(input.slots.body)}</div>, expectedOrder: (_cell, paths) => paths.body ?? [],
     },
   };

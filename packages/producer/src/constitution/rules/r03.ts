@@ -26,6 +26,7 @@ import { packagePath } from "../../package-path.js";
 import { ladderIssues, rungKind, type GenericRung } from "../../pipeline/candidate-ladder.js";
 import { ledgerEvents, standardFor, type Standard } from "../../records/standards.js";
 import { certifyEnv, slotDocOf } from "../certify/index.js";
+import { isAgentLoopRecord } from "../certify/loop.js";
 import { CERTIFY_INPUT_FIELDS } from "../certify/types.js";
 import { candidateLineage, lineageFindings, verbatimFindings, type ProvenanceRule, type ReferenceManifest } from "../certify/source.js";
 import { candidateMeta, focusedLiveSlots, isObject, liveSlotRecords, registryFiles, row } from "../checks/shared.js";
@@ -135,7 +136,8 @@ export const r03_2: Check = ctx => {
       const { submit } = submitOf(slot, candidate.name);
       const rung = rungOf(slot, submit);
       const label = `${slot.id}/${candidate.name}`;
-      if (slot.agent === "designer") {
+      // A Designer element's registry lineage; an agent loop candidate is a loop version, judged by certifyLoop.
+      if (slot.agent === "designer" && !isAgentLoopRecord(slot)) {
         const lineage = candidate.name.endsWith(".json") ? candidateLineage(slot.id, candidate.json as Parameters<typeof candidateLineage>[1]) : null;
         if (rung === "adopt" && lineage?.mode !== "verbatim") rows.push(row("R03", "R03.2", slot, `submit names rung ${String(submit!.rung)} (adopt) but meta.source.kind is not registry (verbatim)`, candidate.path, candidate.name));
         if (!lineage) continue;

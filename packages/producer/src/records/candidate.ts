@@ -68,12 +68,13 @@ export function packageDefaultsRel(agent: AgentId): string {
 }
 
 /**
- * The installed package folder that holds the package default candidates of one slot: Producer loop
- * versions under `loops/<slot-id>/` (where the package ships them), every other agent under
+ * The installed package folder that holds the package default candidates of one slot: loop versions (Producer's
+ * and each agent's own) under `loops/<slot-id>/` (where the package ships them), every other slot under
  * `<packageDefaultsRel>/<slot-id>/`.
  */
 export function packageDefaultDir(root: string, agent: AgentId, slotId: SlotId): string {
-  const rel = agent === "producer" ? `packages/producer/loops/${slotId}` : `packages/${agent}/${packageDefaultsRel(agent)}/${slotId}`;
+  // Agent-owned loop versions (`<agent>/loop.<name>`, U9a) ship beside Producer's, under the agent's own `loops/`.
+  const rel = agent === "producer" || slotId.startsWith("loop.") ? `packages/${agent}/loops/${slotId}` : `packages/${agent}/${packageDefaultsRel(agent)}/${slotId}`;
   return packagePath(root, rel);
 }
 

@@ -51,50 +51,6 @@
       "rel": "input"
     },
     {
-      "to": "designer/themes.accent",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.accent-foreground",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.animate-marquee",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.animate-marquee-vertical",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.animate-shiny-text",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.background",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.card",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.card-foreground",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.font-heading",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.font-mono",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.font-sans",
-      "rel": "input"
-    },
-    {
       "to": "designer/themes.foreground",
       "rel": "input"
     },
@@ -104,46 +60,6 @@
     },
     {
       "to": "designer/themes.muted-foreground",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.popover",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.popover-foreground",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.primary-foreground",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.secondary",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.secondary-foreground",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.sidebar",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.sidebar-accent",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.sidebar-accent-foreground",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.sidebar-foreground",
-      "rel": "input"
-    },
-    {
-      "to": "designer/themes.sidebar-primary-foreground",
       "rel": "input"
     },
     {
@@ -206,50 +122,6 @@
         "rel": "input"
       },
       {
-        "to": "designer/themes.accent",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.accent-foreground",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.animate-marquee",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.animate-marquee-vertical",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.animate-shiny-text",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.background",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.card",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.card-foreground",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.font-heading",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.font-mono",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.font-sans",
-        "rel": "input"
-      },
-      {
         "to": "designer/themes.foreground",
         "rel": "input"
       },
@@ -259,46 +131,6 @@
       },
       {
         "to": "designer/themes.muted-foreground",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.popover",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.popover-foreground",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.primary-foreground",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.secondary",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.secondary-foreground",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.sidebar",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.sidebar-accent",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.sidebar-accent-foreground",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.sidebar-foreground",
-        "rel": "input"
-      },
-      {
-        "to": "designer/themes.sidebar-primary-foreground",
         "rel": "input"
       },
       {

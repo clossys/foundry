@@ -2,7 +2,7 @@ import { contentRouteCandidate, contentRouteContent, contentRouteFixture, CONTEN
 import { createContentRevision } from "../../../content/revisions.js";
 import type { ContentRouteInput } from "../../content-route-types.js";
 
-export const PREVIEW_SLOT = "sl_hfkj3prso2";
+export const PREVIEW_SLOT = "sl_fixturesag";
 /** A retired example is a lookup alias, never an exception to opaque slot identity. */
 export const PREVIEW_LEGACY_ALIAS = "sl_0000000002";
 

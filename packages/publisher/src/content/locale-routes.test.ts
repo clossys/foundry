@@ -8,6 +8,7 @@ import type { ContentStoreOptions } from "./node.js";
 import { readConsumerLibrarySnapshot } from "./store/library.js";
 import { libraryFixture } from "./__fixtures__/review.js";
 import { localeRoutesFixture, localeRouteOrigin } from "./__fixtures__/locale-routes.js";
+import { contentTreeFixture } from "./__fixtures__/content-tree.js";
 
 // Designer registration is the external seam; all Publisher records and disk I/O are real.
 vi.mock("./store/library.js", () => ({ readConsumerLibrarySnapshot: vi.fn() }));
@@ -25,7 +26,7 @@ describe("consumer locale route contract", () => {
     expect(content.validateContentRegistry(registry)).toEqual([]);
     expect(validateContentRevisionIntegrity(candidate)).toEqual([]);
     expect(checkContentApproval(candidate, "publish")).toEqual([]);
-    expect(content.checkPageMetadata(slot, candidate, undefined, options)).toEqual([]);
+    expect(content.checkPageMetadata(slot, candidate, contentTreeFixture(), options)).toEqual([]);
     expect(content.resolveCopy(candidate, "en-US").copy.$pageMeta).toEqual({ title: "About our team", description: "Meet our team and learn what we do." });
     expect(content.resolveCopy(candidate, "fr-CA").copy.$pageMeta).toEqual({ title: "À propos de notre équipe", description: "Rencontrez notre équipe et découvrez nos activités." });
     expect(content.outputPathFor({ ...slot, locale: "en-US", defaultLocale: "en-US" })).toBe("public/app/about/page.tsx");
@@ -51,7 +52,7 @@ describe("consumer locale route contract", () => {
     const missing = { ...options, existingUrls: [`${localeRouteOrigin}/about`] };
     const plan = content.buildLocaleRoutePlan(slot, missing);
     expect(plan.ready).toBe(false);
-    expect(content.checkPageMetadata(slot, candidate, undefined, missing)).toContainEqual(expect.objectContaining({ rule: "hreflang-target-missing", severity: "error" }));
+    expect(content.checkPageMetadata(slot, candidate, contentTreeFixture(), missing)).toContainEqual(expect.objectContaining({ rule: "hreflang-target-missing", severity: "error" }));
     expect(plan.pages.find(page => page.locale === "fr-CA")?.hreflangEligible).toBe(false);
     expect(plan.pages.flatMap(page => page.alternates).every(alternate => alternate.href !== `${localeRouteOrigin}/fr-ca/about`)).toBe(true);
     expect(plan.ready).toBe(false);
@@ -68,7 +69,7 @@ describe("consumer locale route contract", () => {
     expect(plan.pages.find(page => page.locale === "fr-CA")).toMatchObject({ path: "/fr-ca/about", canonical: `${localeRouteOrigin}/fr-ca/about`, outputPath: "public/app/fr-ca/about/page.tsx", hreflangEligible: false });
     expect(plan.pages.flatMap(page => page.alternates).every(alternate => alternate.hreflang !== "fr-CA")).toBe(true);
     expect(content.buildSitemapAlternates(plan).map(entry => entry.url)).toEqual([`${localeRouteOrigin}/about`]);
-    expect(content.checkPageMetadata(slot, candidate, undefined, fallback)).toContainEqual(expect.objectContaining({ rule: "body-locale-fallback", severity: "warning" }));
+    expect(content.checkPageMetadata(slot, candidate, contentTreeFixture(), fallback)).toContainEqual(expect.objectContaining({ rule: "body-locale-fallback", severity: "warning" }));
   });
 
   it("requires native metadata even when an English fallback body is permitted", () => {
@@ -76,21 +77,21 @@ describe("consumer locale route contract", () => {
     const slot = registry.slots[0]!, candidate = registry.candidates[0]!;
     const missingTitle = { ...candidate, pageMeta: candidate.pageMeta!.filter(field => field.locale !== "fr-CA" || field.key !== "title") };
     const fallback = { ...options, bodyServedLocales: { "en-US": ["en-US"], "fr-CA": ["en-US"] } };
-    expect(content.checkPageMetadata(slot, missingTitle, undefined, fallback)).toContainEqual(expect.objectContaining({ path: "content.pageMeta.fr-CA.title", rule: "required-page-metadata" }));
+    expect(content.checkPageMetadata(slot, missingTitle, contentTreeFixture(), fallback)).toContainEqual(expect.objectContaining({ path: "content.pageMeta.fr-CA.title", rule: "required-page-metadata" }));
     expect(content.resolveCopy(missingTitle, "fr-CA").copy.$pageMeta).not.toHaveProperty("title");
   });
 
   it("preserves scalar canonical metadata and validates locale maps at the stored boundary", () => {
     const { registry } = localeRoutesFixture();
     const slot = registry.slots[0]!;
-    expect(content.validateContentSlot({ ...slot, meta: { canonical: `${localeRouteOrigin}/about` } })).toEqual([]);
-    expect(content.validateContentSlot(slot)).toEqual([]);
+    expect(content.validateContentSlot({ ...slot, meta: { canonical: `${localeRouteOrigin}/about` } }, contentTreeFixture())).toEqual([]);
+    expect(content.validateContentSlot(slot, contentTreeFixture())).toEqual([]);
     for (const canonical of [
       { "en-us": `${localeRouteOrigin}/about` },
       { "fr-CA": "/fr-ca/about" },
       {},
     ]) {
-      expect(content.validateContentSlot({ ...slot, meta: { canonical } }).length).toBeGreaterThan(0);
+      expect(content.validateContentSlot({ ...slot, meta: { canonical } }, contentTreeFixture()).length).toBeGreaterThan(0);
     }
   });
 

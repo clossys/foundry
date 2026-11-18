@@ -1,5 +1,5 @@
 import type { FlowInstanceBinding as InstanceBinding, InstanceRegistries } from "../core/instance-binding.js";
-import { freeze } from "../layouts/resolve.js";
+import { freeze } from "../engines/resolve.js";
 import { canonicalPlanJson, sha256 } from "./digest.js";
 import { createPublisherPlanDraft } from "./plan.js";
 import type { PublisherPlanDraft, PublisherPlanItem } from "./plan.js";

@@ -8,6 +8,7 @@ import {
 } from "@clossys/designer/catalog";
 import { readLibrary } from "@clossys/designer/catalog/node";
 import type { CandidateContent, ContentRegistry } from "../../model.js";
+import { contentTreeFixture } from "../../__fixtures__/content-tree.js";
 
 export const at = "2026-10-28T10:00:00Z";
 
@@ -66,7 +67,7 @@ export async function designerFixture(root: string, frameId = "frames.site-shell
 
 export function emptyRegistry(): ContentRegistry {
   return {
-    workspace: { consumerId: "sample", defaultLocale: "en", locales: ["en"], deployTargets: [{ id: "public", repo: "sample", app: "site" }], destinations: [] },
+    workspace: { consumerId: "sample", tree: contentTreeFixture(), defaultLocale: "en", locales: ["en"], deployTargets: [{ id: "public", repo: "sample", app: "site" }], destinations: [] },
     slots: [], candidates: [],
   };
 }

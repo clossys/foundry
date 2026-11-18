@@ -276,6 +276,7 @@
             "page.about.meta",
             "page.pricing.meta",
             "page.contact.meta",
+            "page.site-page.meta",
             "page.terms.meta",
             "page.privacy.meta",
             "page.not-found.meta",
@@ -306,6 +307,18 @@
             "page.list.meta",
             "page.settings.meta",
             "page.app-not-found.meta"
+          ]
+        },
+        {
+          "id": "admin",
+          "label": "admin",
+          "slots": [
+            "publication.admin.meta",
+            "page.admin-home.meta",
+            "page.admin-gallery.meta",
+            "page.admin-slot.meta",
+            "page.admin-requests.meta",
+            "page.admin-questions.meta"
           ]
         },
         {

@@ -32,6 +32,8 @@ export interface PublisherCheckApi {
   checkLayoutUnits(layoutId: string, layout: unknown, designer: unknown): readonly string[];
   slotContract(id: string): { kind?: string; publication?: string } | undefined;
   loadDesignerCatalog(): { live: ReadonlySet<string>; retired: ReadonlySet<string> };
+  /** The slugs a `<slug>` route may not take (the routes of a fixed publication); absent before foundry-build-0048. */
+  reservedSlugs?(publication?: string): readonly string[];
 }
 
 export interface PublisherFinding { readonly check: string; readonly subject: string; readonly detail: string }

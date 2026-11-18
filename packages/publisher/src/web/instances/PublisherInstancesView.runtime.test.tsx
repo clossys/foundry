@@ -47,8 +47,8 @@ function fixture(options: { failingDescendant?: boolean } = {}) {
             {!header.leasedByPage && <PageHeaderModule id={header.id} header={{ ...header.data, actions: { render: header.actions!.render } }} />}{input.slots.main}
           </AppFrame>;
         } }, resolveContent: () => undefined },
-      themes: ["light"], states: ["default"], css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(profile, "layouts.stack", "stack.focus") }], assets: [] },
-    instanceLibrary: { id: consumer, role: "consumer", resolveFill: (leaf, config) => leaf === "layouts.stack" && config === "stack.focus" ? { library: consumer, leaf, config, headings: [], states: ["default"], renderer: source } : undefined, resolveContent: ref => ref },
+      themes: ["light"], states: ["default"], css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(profile, "stack", "stack.focus") }], assets: [] },
+    instanceLibrary: { id: consumer, role: "consumer", resolveFill: (leaf, config) => leaf === "stack" && config === "stack.focus" ? { library: consumer, leaf, config, headings: [], states: ["default"], renderer: source } : undefined, resolveContent: ref => ref },
     registries,
     layoutRenderer: { id: "Stack", source: layoutSource, sourceHash: runtimeHash(layoutSource) }, cell: { theme: "light", state: "default", width: 320 },
     headerActions: { renderer: { id: "SYNTHETIC Actions", source: actionSource, sourceHash: runtimeHash(actionSource) }, state: { revision: 1 } },

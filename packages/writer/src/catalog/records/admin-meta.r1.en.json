@@ -11,8 +11,8 @@
   "activation": "none",
   "sourceFiles": {
     "packages/writer/src/catalog/records/admin-voice.r1.en.json": "128e9d020ef04664f8a501c969f7315be9680825d9c578d77ae5996165ee569e",
-    "packages/publisher/src/web/publisher/publisher-sections.ts": "0fa778db70effc53426b213058037569fe5583228569b9a038bf8a562f0329be",
-    "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx": "b641cc1368d3618e603b781ec801adc229c7b26a891d0aac61423fb6395ea11b"
+    "packages/publisher/src/web/publisher/publisher-sections.ts": "a6a35d29868ca32058b9ab303b9cc3707e0999ce49fc62ecedd81e53af79153b",
+    "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx": "e72be97b82fdde1ebc2ce17dc4aefb7314e2160d736992b3609156438e41dc9d"
   },
   "records": [
     {
@@ -315,7 +315,7 @@
     {
       "id": "st.ajxm6xb824",
       "leaf": "strings.names",
-      "context": "publisher.layout.layouts.stack",
+      "context": "publisher.layout.stack",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Vertical stack",
@@ -326,7 +326,7 @@
     {
       "id": "st.gc39szvkj1",
       "leaf": "strings.names",
-      "context": "publisher.layout.layouts.split",
+      "context": "publisher.layout.split",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Two columns",
@@ -337,7 +337,7 @@
     {
       "id": "st.jgvacmfx3y",
       "leaf": "strings.names",
-      "context": "publisher.layout.layouts.sidebar-content",
+      "context": "publisher.layout.sidebar-content",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Side panel",
@@ -348,7 +348,7 @@
     {
       "id": "st.wbydgfcmr3",
       "leaf": "strings.names",
-      "context": "publisher.layout.layouts.bento",
+      "context": "publisher.layout.bento",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Card grid",
@@ -359,7 +359,7 @@
     {
       "id": "st.hfnrqcnec8",
       "leaf": "strings.names",
-      "context": "publisher.layout.layouts.staggered-grid",
+      "context": "publisher.layout.staggered-grid",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Staggered grid",
@@ -370,7 +370,7 @@
     {
       "id": "st.h42b0qvyfe",
       "leaf": "strings.names",
-      "context": "publisher.layoutConfig.layouts.stack.stack.landing",
+      "context": "publisher.layoutConfig.stack.stack.landing",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Landing page",
@@ -381,7 +381,7 @@
     {
       "id": "st.4vkyd92vs4",
       "leaf": "strings.names",
-      "context": "publisher.layoutConfig.layouts.stack.stack.document",
+      "context": "publisher.layoutConfig.stack.stack.document",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Reading page",
@@ -392,7 +392,7 @@
     {
       "id": "st.evecaayeqq",
       "leaf": "strings.names",
-      "context": "publisher.layoutConfig.layouts.stack.stack.focus",
+      "context": "publisher.layoutConfig.stack.stack.focus",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Focused task",
@@ -403,7 +403,7 @@
     {
       "id": "st.6fwq660ah7",
       "leaf": "strings.names",
-      "context": "publisher.layoutConfig.layouts.stack.stack.index",
+      "context": "publisher.layoutConfig.stack.stack.index",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Item list",
@@ -414,7 +414,7 @@
     {
       "id": "st.txjd1pf34b",
       "leaf": "strings.names",
-      "context": "publisher.layoutConfig.layouts.stack.stack.workspace",
+      "context": "publisher.layoutConfig.stack.stack.workspace",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Workspace",
@@ -425,7 +425,7 @@
     {
       "id": "st.pbs86jv07a",
       "leaf": "strings.names",
-      "context": "publisher.layoutConfig.layouts.split.split.default",
+      "context": "publisher.layoutConfig.split.split.default",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Balanced columns",
@@ -436,7 +436,7 @@
     {
       "id": "st.9axe6qwytm",
       "leaf": "strings.names",
-      "context": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.docs",
+      "context": "publisher.layoutConfig.sidebar-content.sidebar-content.docs",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Document navigation",
@@ -447,7 +447,7 @@
     {
       "id": "st.7bf87rzb6j",
       "leaf": "strings.names",
-      "context": "publisher.layoutConfig.layouts.bento.bento.default",
+      "context": "publisher.layoutConfig.bento.bento.default",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Dashboard cards",
@@ -535,7 +535,7 @@
     {
       "id": "st.ana61jy0p8",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.stack.measure.full",
+      "context": "publisher.layoutOption.stack.measure.full",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Full width",
@@ -546,7 +546,7 @@
     {
       "id": "st.8dyaww7dzk",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.stack.measure.wide",
+      "context": "publisher.layoutOption.stack.measure.wide",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Wide content",
@@ -557,7 +557,7 @@
     {
       "id": "st.vhkjr72c56",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.stack.measure.content",
+      "context": "publisher.layoutOption.stack.measure.content",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Content width",
@@ -568,7 +568,7 @@
     {
       "id": "st.4e2fw2re1h",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.stack.measure.prose",
+      "context": "publisher.layoutOption.stack.measure.prose",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Reading width",
@@ -579,7 +579,7 @@
     {
       "id": "st.j3cstzxqbm",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.stack.measure.form",
+      "context": "publisher.layoutOption.stack.measure.form",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Form width",
@@ -590,7 +590,7 @@
     {
       "id": "st.19r4rps8z4",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.stack.align.center",
+      "context": "publisher.layoutOption.stack.align.center",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Centered",
@@ -601,7 +601,7 @@
     {
       "id": "st.hkp1srfq0x",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.stack.lead.required",
+      "context": "publisher.layoutOption.stack.lead.required",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Required",
@@ -612,7 +612,7 @@
     {
       "id": "st.8grbg3g8mq",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.stack.lead.optional",
+      "context": "publisher.layoutOption.stack.lead.optional",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Optional",
@@ -623,7 +623,7 @@
     {
       "id": "st.j1x20g5ma9",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.split.ratio.1:1",
+      "context": "publisher.layoutOption.split.ratio.1:1",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Equal columns",
@@ -634,7 +634,7 @@
     {
       "id": "st.mkw5r8sdh7",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.split.ratio.3:2",
+      "context": "publisher.layoutOption.split.ratio.3:2",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Wider first column",
@@ -645,7 +645,7 @@
     {
       "id": "st.yqadfrrjf9",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.split.ratio.2:3",
+      "context": "publisher.layoutOption.split.ratio.2:3",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Wider second column",
@@ -656,7 +656,7 @@
     {
       "id": "st.6mdn92wcyk",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.split.collapse.start-first",
+      "context": "publisher.layoutOption.split.collapse.start-first",
       "status": "draft",
       "origin": "foundry-default",
       "text": "First column on top",
@@ -667,7 +667,7 @@
     {
       "id": "st.av8qx33gjs",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.split.collapse.end-first",
+      "context": "publisher.layoutOption.split.collapse.end-first",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Second column on top",
@@ -678,7 +678,7 @@
     {
       "id": "st.p7xaz60gtc",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.split.align.top",
+      "context": "publisher.layoutOption.split.align.top",
       "status": "draft",
       "origin": "foundry-default",
       "text": "At top",
@@ -689,7 +689,7 @@
     {
       "id": "st.ya04kydxn7",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.sidebar-content.aside-width.region",
+      "context": "publisher.layoutOption.sidebar-content.aside-width.region",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Saved panel width",
@@ -700,7 +700,7 @@
     {
       "id": "st.p35pa5phkx",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.sidebar-content.aside-width.third",
+      "context": "publisher.layoutOption.sidebar-content.aside-width.third",
       "status": "draft",
       "origin": "foundry-default",
       "text": "One third",
@@ -711,7 +711,7 @@
     {
       "id": "st.qw7keqyzgs",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.sidebar-content.sticky.none",
+      "context": "publisher.layoutOption.sidebar-content.sticky.none",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Not sticky",
@@ -722,7 +722,7 @@
     {
       "id": "st.mz5vrchgfx",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.sidebar-content.sticky.aside",
+      "context": "publisher.layoutOption.sidebar-content.sticky.aside",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Sticky side panel",
@@ -733,7 +733,7 @@
     {
       "id": "st.1vjd1q75gn",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.sidebar-content.stacked-aside.before",
+      "context": "publisher.layoutOption.sidebar-content.stacked-aside.before",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Before content",
@@ -744,7 +744,7 @@
     {
       "id": "st.8ac2dy1j6t",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.bento.density.airy",
+      "context": "publisher.layoutOption.bento.density.airy",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Spacious",
@@ -755,7 +755,7 @@
     {
       "id": "st.208gg0xrk7",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.bento.density.standard",
+      "context": "publisher.layoutOption.bento.density.standard",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Standard spacing",
@@ -766,7 +766,7 @@
     {
       "id": "st.s9f5fst22q",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.bento.rhythm.uniform",
+      "context": "publisher.layoutOption.bento.rhythm.uniform",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Even cards",
@@ -777,7 +777,7 @@
     {
       "id": "st.1t0mm884hr",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.bento.rhythm.feature-first",
+      "context": "publisher.layoutOption.bento.rhythm.feature-first",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Featured card first",
@@ -788,7 +788,7 @@
     {
       "id": "st.v54z11633r",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.staggered-grid.columns.3",
+      "context": "publisher.layoutOption.staggered-grid.columns.3",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Three columns",
@@ -799,7 +799,7 @@
     {
       "id": "st.5waybca904",
       "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.staggered-grid.columns.4",
+      "context": "publisher.layoutOption.staggered-grid.columns.4",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Four columns",
@@ -4030,7 +4030,7 @@
     },
     {
       "recordId": "st.ajxm6xb824",
-      "cellId": "publisher.layout.layouts.stack",
+      "cellId": "publisher.layout.stack",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4038,9 +4038,9 @@
         "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
         "path": "packages/publisher/src/layouts/slots/layouts.json",
         "line": 3,
-        "key": "layouts.stack"
+        "key": "stack"
       },
-      "before": "layouts.stack",
+      "before": "stack",
       "after": "Vertical stack",
       "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
       "role": "label",
@@ -4048,7 +4048,7 @@
     },
     {
       "recordId": "st.gc39szvkj1",
-      "cellId": "publisher.layout.layouts.split",
+      "cellId": "publisher.layout.split",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4056,9 +4056,9 @@
         "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
         "path": "packages/publisher/src/layouts/slots/layouts.json",
         "line": 212,
-        "key": "layouts.split"
+        "key": "split"
       },
-      "before": "layouts.split",
+      "before": "split",
       "after": "Two columns",
       "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
       "role": "label",
@@ -4066,7 +4066,7 @@
     },
     {
       "recordId": "st.jgvacmfx3y",
-      "cellId": "publisher.layout.layouts.sidebar-content",
+      "cellId": "publisher.layout.sidebar-content",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4074,9 +4074,9 @@
         "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
         "path": "packages/publisher/src/layouts/slots/layouts.json",
         "line": 300,
-        "key": "layouts.sidebar-content"
+        "key": "sidebar-content"
       },
-      "before": "layouts.sidebar-content",
+      "before": "sidebar-content",
       "after": "Side panel",
       "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
       "role": "label",
@@ -4084,7 +4084,7 @@
     },
     {
       "recordId": "st.wbydgfcmr3",
-      "cellId": "publisher.layout.layouts.bento",
+      "cellId": "publisher.layout.bento",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4092,9 +4092,9 @@
         "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
         "path": "packages/publisher/src/layouts/slots/layouts.json",
         "line": 452,
-        "key": "layouts.bento"
+        "key": "bento"
       },
-      "before": "layouts.bento",
+      "before": "bento",
       "after": "Card grid",
       "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
       "role": "label",
@@ -4102,7 +4102,7 @@
     },
     {
       "recordId": "st.hfnrqcnec8",
-      "cellId": "publisher.layout.layouts.staggered-grid",
+      "cellId": "publisher.layout.staggered-grid",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4110,9 +4110,9 @@
         "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
         "path": "packages/publisher/src/layouts/slots/layouts.json",
         "line": 546,
-        "key": "layouts.staggered-grid"
+        "key": "staggered-grid"
       },
-      "before": "layouts.staggered-grid",
+      "before": "staggered-grid",
       "after": "Staggered grid",
       "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
       "role": "label",
@@ -4120,7 +4120,7 @@
     },
     {
       "recordId": "st.h42b0qvyfe",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.landing",
+      "cellId": "publisher.layoutConfig.stack.stack.landing",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4138,7 +4138,7 @@
     },
     {
       "recordId": "st.4vkyd92vs4",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.document",
+      "cellId": "publisher.layoutConfig.stack.stack.document",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4156,7 +4156,7 @@
     },
     {
       "recordId": "st.evecaayeqq",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.focus",
+      "cellId": "publisher.layoutConfig.stack.stack.focus",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4174,7 +4174,7 @@
     },
     {
       "recordId": "st.6fwq660ah7",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.index",
+      "cellId": "publisher.layoutConfig.stack.stack.index",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4192,7 +4192,7 @@
     },
     {
       "recordId": "st.txjd1pf34b",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.workspace",
+      "cellId": "publisher.layoutConfig.stack.stack.workspace",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4210,7 +4210,7 @@
     },
     {
       "recordId": "st.pbs86jv07a",
-      "cellId": "publisher.layoutConfig.layouts.split.split.default",
+      "cellId": "publisher.layoutConfig.split.split.default",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4228,7 +4228,7 @@
     },
     {
       "recordId": "st.g385gwchf1",
-      "cellId": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record",
+      "cellId": "publisher.layoutConfig.sidebar-content.sidebar-content.record",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4246,7 +4246,7 @@
     },
     {
       "recordId": "st.9axe6qwytm",
-      "cellId": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.docs",
+      "cellId": "publisher.layoutConfig.sidebar-content.sidebar-content.docs",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4264,7 +4264,7 @@
     },
     {
       "recordId": "st.7bf87rzb6j",
-      "cellId": "publisher.layoutConfig.layouts.bento.bento.default",
+      "cellId": "publisher.layoutConfig.bento.bento.default",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4426,7 +4426,7 @@
     },
     {
       "recordId": "st.ana61jy0p8",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.full",
+      "cellId": "publisher.layoutOption.stack.measure.full",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4444,7 +4444,7 @@
     },
     {
       "recordId": "st.8dyaww7dzk",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.wide",
+      "cellId": "publisher.layoutOption.stack.measure.wide",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4462,7 +4462,7 @@
     },
     {
       "recordId": "st.vhkjr72c56",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.content",
+      "cellId": "publisher.layoutOption.stack.measure.content",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4480,7 +4480,7 @@
     },
     {
       "recordId": "st.4e2fw2re1h",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.prose",
+      "cellId": "publisher.layoutOption.stack.measure.prose",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4498,7 +4498,7 @@
     },
     {
       "recordId": "st.j3cstzxqbm",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.form",
+      "cellId": "publisher.layoutOption.stack.measure.form",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4516,7 +4516,7 @@
     },
     {
       "recordId": "st.19r4rps8z4",
-      "cellId": "publisher.layoutOption.layouts.stack.align.center",
+      "cellId": "publisher.layoutOption.stack.align.center",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4534,7 +4534,7 @@
     },
     {
       "recordId": "st.hkp1srfq0x",
-      "cellId": "publisher.layoutOption.layouts.stack.lead.required",
+      "cellId": "publisher.layoutOption.stack.lead.required",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4552,7 +4552,7 @@
     },
     {
       "recordId": "st.8grbg3g8mq",
-      "cellId": "publisher.layoutOption.layouts.stack.lead.optional",
+      "cellId": "publisher.layoutOption.stack.lead.optional",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4570,7 +4570,7 @@
     },
     {
       "recordId": "st.j1x20g5ma9",
-      "cellId": "publisher.layoutOption.layouts.split.ratio.1:1",
+      "cellId": "publisher.layoutOption.split.ratio.1:1",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4588,7 +4588,7 @@
     },
     {
       "recordId": "st.mkw5r8sdh7",
-      "cellId": "publisher.layoutOption.layouts.split.ratio.3:2",
+      "cellId": "publisher.layoutOption.split.ratio.3:2",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4606,7 +4606,7 @@
     },
     {
       "recordId": "st.yqadfrrjf9",
-      "cellId": "publisher.layoutOption.layouts.split.ratio.2:3",
+      "cellId": "publisher.layoutOption.split.ratio.2:3",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4624,7 +4624,7 @@
     },
     {
       "recordId": "st.6mdn92wcyk",
-      "cellId": "publisher.layoutOption.layouts.split.collapse.start-first",
+      "cellId": "publisher.layoutOption.split.collapse.start-first",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4642,7 +4642,7 @@
     },
     {
       "recordId": "st.av8qx33gjs",
-      "cellId": "publisher.layoutOption.layouts.split.collapse.end-first",
+      "cellId": "publisher.layoutOption.split.collapse.end-first",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4660,7 +4660,7 @@
     },
     {
       "recordId": "st.p7xaz60gtc",
-      "cellId": "publisher.layoutOption.layouts.split.align.top",
+      "cellId": "publisher.layoutOption.split.align.top",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4678,7 +4678,7 @@
     },
     {
       "recordId": "st.ya04kydxn7",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.aside-width.region",
+      "cellId": "publisher.layoutOption.sidebar-content.aside-width.region",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4696,7 +4696,7 @@
     },
     {
       "recordId": "st.p35pa5phkx",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.aside-width.third",
+      "cellId": "publisher.layoutOption.sidebar-content.aside-width.third",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4714,7 +4714,7 @@
     },
     {
       "recordId": "st.qw7keqyzgs",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.sticky.none",
+      "cellId": "publisher.layoutOption.sidebar-content.sticky.none",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4732,7 +4732,7 @@
     },
     {
       "recordId": "st.mz5vrchgfx",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.sticky.aside",
+      "cellId": "publisher.layoutOption.sidebar-content.sticky.aside",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4750,7 +4750,7 @@
     },
     {
       "recordId": "st.1vjd1q75gn",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.stacked-aside.before",
+      "cellId": "publisher.layoutOption.sidebar-content.stacked-aside.before",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4768,7 +4768,7 @@
     },
     {
       "recordId": "st.8ac2dy1j6t",
-      "cellId": "publisher.layoutOption.layouts.bento.density.airy",
+      "cellId": "publisher.layoutOption.bento.density.airy",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4786,7 +4786,7 @@
     },
     {
       "recordId": "st.208gg0xrk7",
-      "cellId": "publisher.layoutOption.layouts.bento.density.standard",
+      "cellId": "publisher.layoutOption.bento.density.standard",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4804,7 +4804,7 @@
     },
     {
       "recordId": "st.0rj8qzqqr1",
-      "cellId": "publisher.layoutOption.layouts.bento.density.dense",
+      "cellId": "publisher.layoutOption.bento.density.dense",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4822,7 +4822,7 @@
     },
     {
       "recordId": "st.s9f5fst22q",
-      "cellId": "publisher.layoutOption.layouts.bento.rhythm.uniform",
+      "cellId": "publisher.layoutOption.bento.rhythm.uniform",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4840,7 +4840,7 @@
     },
     {
       "recordId": "st.1t0mm884hr",
-      "cellId": "publisher.layoutOption.layouts.bento.rhythm.feature-first",
+      "cellId": "publisher.layoutOption.bento.rhythm.feature-first",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4858,7 +4858,7 @@
     },
     {
       "recordId": "st.v54z11633r",
-      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.3",
+      "cellId": "publisher.layoutOption.staggered-grid.columns.3",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -4876,7 +4876,7 @@
     },
     {
       "recordId": "st.5waybca904",
-      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.4",
+      "cellId": "publisher.layoutOption.staggered-grid.columns.4",
       "severity": "P1",
       "status": "fixed",
       "scope": "draft only",
@@ -9888,115 +9888,115 @@
       "value": "frames.deck"
     },
     {
-      "cellId": "publisher.layout.layouts.stack",
+      "cellId": "publisher.layout.stack",
       "recordId": "st.ajxm6xb824",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
       "parent": "publisher.layout",
-      "value": "layouts.stack"
+      "value": "stack"
     },
     {
-      "cellId": "publisher.layout.layouts.split",
+      "cellId": "publisher.layout.split",
       "recordId": "st.gc39szvkj1",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
       "parent": "publisher.layout",
-      "value": "layouts.split"
+      "value": "split"
     },
     {
-      "cellId": "publisher.layout.layouts.sidebar-content",
+      "cellId": "publisher.layout.sidebar-content",
       "recordId": "st.jgvacmfx3y",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
       "parent": "publisher.layout",
-      "value": "layouts.sidebar-content"
+      "value": "sidebar-content"
     },
     {
-      "cellId": "publisher.layout.layouts.bento",
+      "cellId": "publisher.layout.bento",
       "recordId": "st.wbydgfcmr3",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
       "parent": "publisher.layout",
-      "value": "layouts.bento"
+      "value": "bento"
     },
     {
-      "cellId": "publisher.layout.layouts.staggered-grid",
+      "cellId": "publisher.layout.staggered-grid",
       "recordId": "st.hfnrqcnec8",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
       "parent": "publisher.layout",
-      "value": "layouts.staggered-grid"
+      "value": "staggered-grid"
     },
     {
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.landing",
+      "cellId": "publisher.layoutConfig.stack.stack.landing",
       "recordId": "st.h42b0qvyfe",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutConfig.layouts.stack",
+      "parent": "publisher.layoutConfig.stack",
       "value": "stack.landing"
     },
     {
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.document",
+      "cellId": "publisher.layoutConfig.stack.stack.document",
       "recordId": "st.4vkyd92vs4",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutConfig.layouts.stack",
+      "parent": "publisher.layoutConfig.stack",
       "value": "stack.document"
     },
     {
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.focus",
+      "cellId": "publisher.layoutConfig.stack.stack.focus",
       "recordId": "st.evecaayeqq",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutConfig.layouts.stack",
+      "parent": "publisher.layoutConfig.stack",
       "value": "stack.focus"
     },
     {
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.index",
+      "cellId": "publisher.layoutConfig.stack.stack.index",
       "recordId": "st.6fwq660ah7",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutConfig.layouts.stack",
+      "parent": "publisher.layoutConfig.stack",
       "value": "stack.index"
     },
     {
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.workspace",
+      "cellId": "publisher.layoutConfig.stack.stack.workspace",
       "recordId": "st.txjd1pf34b",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutConfig.layouts.stack",
+      "parent": "publisher.layoutConfig.stack",
       "value": "stack.workspace"
     },
     {
-      "cellId": "publisher.layoutConfig.layouts.split.split.default",
+      "cellId": "publisher.layoutConfig.split.split.default",
       "recordId": "st.pbs86jv07a",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutConfig.layouts.split",
+      "parent": "publisher.layoutConfig.split",
       "value": "split.default"
     },
     {
-      "cellId": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record",
+      "cellId": "publisher.layoutConfig.sidebar-content.sidebar-content.record",
       "recordId": "st.g385gwchf1",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutConfig.layouts.sidebar-content",
+      "parent": "publisher.layoutConfig.sidebar-content",
       "value": "sidebar-content.record"
     },
     {
-      "cellId": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.docs",
+      "cellId": "publisher.layoutConfig.sidebar-content.sidebar-content.docs",
       "recordId": "st.9axe6qwytm",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutConfig.layouts.sidebar-content",
+      "parent": "publisher.layoutConfig.sidebar-content",
       "value": "sidebar-content.docs"
     },
     {
-      "cellId": "publisher.layoutConfig.layouts.bento.bento.default",
+      "cellId": "publisher.layoutConfig.bento.bento.default",
       "recordId": "st.7bf87rzb6j",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutConfig.layouts.bento",
+      "parent": "publisher.layoutConfig.bento",
       "value": "bento.default"
     },
     {
@@ -10104,275 +10104,275 @@
       "value": "2xl"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.stack.measure.full",
+      "cellId": "publisher.layoutOption.stack.measure.full",
       "recordId": "st.ana61jy0p8",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "parent": "publisher.layoutOption.stack.measure",
       "value": "full"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.stack.measure.wide",
+      "cellId": "publisher.layoutOption.stack.measure.wide",
       "recordId": "st.8dyaww7dzk",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "parent": "publisher.layoutOption.stack.measure",
       "value": "wide"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.stack.measure.content",
+      "cellId": "publisher.layoutOption.stack.measure.content",
       "recordId": "st.vhkjr72c56",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "parent": "publisher.layoutOption.stack.measure",
       "value": "content"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.stack.measure.prose",
+      "cellId": "publisher.layoutOption.stack.measure.prose",
       "recordId": "st.4e2fw2re1h",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "parent": "publisher.layoutOption.stack.measure",
       "value": "prose"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.stack.measure.form",
+      "cellId": "publisher.layoutOption.stack.measure.form",
       "recordId": "st.j3cstzxqbm",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "parent": "publisher.layoutOption.stack.measure",
       "value": "form"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.stack.align.start",
+      "cellId": "publisher.layoutOption.stack.align.start",
       "recordId": "st.rd1wks5c2n",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.stack.align",
+      "parent": "publisher.layoutOption.stack.align",
       "value": "start"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.stack.align.center",
+      "cellId": "publisher.layoutOption.stack.align.center",
       "recordId": "st.19r4rps8z4",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.stack.align",
+      "parent": "publisher.layoutOption.stack.align",
       "value": "center"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.stack.lead.required",
+      "cellId": "publisher.layoutOption.stack.lead.required",
       "recordId": "st.hkp1srfq0x",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.stack.lead",
+      "parent": "publisher.layoutOption.stack.lead",
       "value": "required"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.stack.lead.optional",
+      "cellId": "publisher.layoutOption.stack.lead.optional",
       "recordId": "st.8grbg3g8mq",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.stack.lead",
+      "parent": "publisher.layoutOption.stack.lead",
       "value": "optional"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.split.ratio.1:1",
+      "cellId": "publisher.layoutOption.split.ratio.1:1",
       "recordId": "st.j1x20g5ma9",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.split.ratio",
+      "parent": "publisher.layoutOption.split.ratio",
       "value": "1:1"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.split.ratio.3:2",
+      "cellId": "publisher.layoutOption.split.ratio.3:2",
       "recordId": "st.mkw5r8sdh7",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.split.ratio",
+      "parent": "publisher.layoutOption.split.ratio",
       "value": "3:2"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.split.ratio.2:3",
+      "cellId": "publisher.layoutOption.split.ratio.2:3",
       "recordId": "st.yqadfrrjf9",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.split.ratio",
+      "parent": "publisher.layoutOption.split.ratio",
       "value": "2:3"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.split.collapse.start-first",
+      "cellId": "publisher.layoutOption.split.collapse.start-first",
       "recordId": "st.6mdn92wcyk",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.split.collapse",
+      "parent": "publisher.layoutOption.split.collapse",
       "value": "start-first"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.split.collapse.end-first",
+      "cellId": "publisher.layoutOption.split.collapse.end-first",
       "recordId": "st.av8qx33gjs",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.split.collapse",
+      "parent": "publisher.layoutOption.split.collapse",
       "value": "end-first"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.split.align.top",
+      "cellId": "publisher.layoutOption.split.align.top",
       "recordId": "st.p7xaz60gtc",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.split.align",
+      "parent": "publisher.layoutOption.split.align",
       "value": "top"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.split.align.center",
+      "cellId": "publisher.layoutOption.split.align.center",
       "recordId": "st.19r4rps8z4",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.split.align",
+      "parent": "publisher.layoutOption.split.align",
       "value": "center"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.side.start",
+      "cellId": "publisher.layoutOption.sidebar-content.side.start",
       "recordId": "st.rd1wks5c2n",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.sidebar-content.side",
+      "parent": "publisher.layoutOption.sidebar-content.side",
       "value": "start"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.side.end",
+      "cellId": "publisher.layoutOption.sidebar-content.side.end",
       "recordId": "st.q8zq27jzn6",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.sidebar-content.side",
+      "parent": "publisher.layoutOption.sidebar-content.side",
       "value": "end"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.aside-width.region",
+      "cellId": "publisher.layoutOption.sidebar-content.aside-width.region",
       "recordId": "st.ya04kydxn7",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.sidebar-content.aside-width",
+      "parent": "publisher.layoutOption.sidebar-content.aside-width",
       "value": "region"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.aside-width.third",
+      "cellId": "publisher.layoutOption.sidebar-content.aside-width.third",
       "recordId": "st.p35pa5phkx",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.sidebar-content.aside-width",
+      "parent": "publisher.layoutOption.sidebar-content.aside-width",
       "value": "third"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.sticky.none",
+      "cellId": "publisher.layoutOption.sidebar-content.sticky.none",
       "recordId": "st.qw7keqyzgs",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.sidebar-content.sticky",
+      "parent": "publisher.layoutOption.sidebar-content.sticky",
       "value": "none"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.sticky.aside",
+      "cellId": "publisher.layoutOption.sidebar-content.sticky.aside",
       "recordId": "st.mz5vrchgfx",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.sidebar-content.sticky",
+      "parent": "publisher.layoutOption.sidebar-content.sticky",
       "value": "aside"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.stacked-aside.before",
+      "cellId": "publisher.layoutOption.sidebar-content.stacked-aside.before",
       "recordId": "st.1vjd1q75gn",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.sidebar-content.stacked-aside",
+      "parent": "publisher.layoutOption.sidebar-content.stacked-aside",
       "value": "before"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.stacked-aside.after",
+      "cellId": "publisher.layoutOption.sidebar-content.stacked-aside.after",
       "recordId": "st.v7t7c2pr8y",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.sidebar-content.stacked-aside",
+      "parent": "publisher.layoutOption.sidebar-content.stacked-aside",
       "value": "after"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.md",
+      "cellId": "publisher.layoutOption.sidebar-content.breakpoint.md",
       "recordId": "st.j57xeagqqc",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.sidebar-content.breakpoint",
+      "parent": "publisher.layoutOption.sidebar-content.breakpoint",
       "value": "md"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.lg",
+      "cellId": "publisher.layoutOption.sidebar-content.breakpoint.lg",
       "recordId": "st.psm20y3g29",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.sidebar-content.breakpoint",
+      "parent": "publisher.layoutOption.sidebar-content.breakpoint",
       "value": "lg"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.bento.density.airy",
+      "cellId": "publisher.layoutOption.bento.density.airy",
       "recordId": "st.8ac2dy1j6t",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.bento.density",
+      "parent": "publisher.layoutOption.bento.density",
       "value": "airy"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.bento.density.standard",
+      "cellId": "publisher.layoutOption.bento.density.standard",
       "recordId": "st.208gg0xrk7",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.bento.density",
+      "parent": "publisher.layoutOption.bento.density",
       "value": "standard"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.bento.density.dense",
+      "cellId": "publisher.layoutOption.bento.density.dense",
       "recordId": "st.0rj8qzqqr1",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.bento.density",
+      "parent": "publisher.layoutOption.bento.density",
       "value": "dense"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.bento.rhythm.uniform",
+      "cellId": "publisher.layoutOption.bento.rhythm.uniform",
       "recordId": "st.s9f5fst22q",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.bento.rhythm",
+      "parent": "publisher.layoutOption.bento.rhythm",
       "value": "uniform"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.bento.rhythm.feature-first",
+      "cellId": "publisher.layoutOption.bento.rhythm.feature-first",
       "recordId": "st.1t0mm884hr",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.bento.rhythm",
+      "parent": "publisher.layoutOption.bento.rhythm",
       "value": "feature-first"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.2",
+      "cellId": "publisher.layoutOption.staggered-grid.columns.2",
       "recordId": "st.gc39szvkj1",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.staggered-grid.columns",
+      "parent": "publisher.layoutOption.staggered-grid.columns",
       "value": "2"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.3",
+      "cellId": "publisher.layoutOption.staggered-grid.columns.3",
       "recordId": "st.v54z11633r",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.staggered-grid.columns",
+      "parent": "publisher.layoutOption.staggered-grid.columns",
       "value": "3"
     },
     {
-      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.4",
+      "cellId": "publisher.layoutOption.staggered-grid.columns.4",
       "recordId": "st.5waybca904",
       "target": "packages/publisher/src/layouts/slots/layouts.json",
       "kind": "display-name",
-      "parent": "publisher.layoutOption.layouts.staggered-grid.columns",
+      "parent": "publisher.layoutOption.staggered-grid.columns",
       "value": "4"
     },
     {
@@ -13026,98 +13026,98 @@
     },
     {
       "recordId": "st.ajxm6xb824",
-      "cellId": "publisher.layout.layouts.stack",
+      "cellId": "publisher.layout.stack",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.gc39szvkj1",
-      "cellId": "publisher.layout.layouts.split",
+      "cellId": "publisher.layout.split",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.jgvacmfx3y",
-      "cellId": "publisher.layout.layouts.sidebar-content",
+      "cellId": "publisher.layout.sidebar-content",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.wbydgfcmr3",
-      "cellId": "publisher.layout.layouts.bento",
+      "cellId": "publisher.layout.bento",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.hfnrqcnec8",
-      "cellId": "publisher.layout.layouts.staggered-grid",
+      "cellId": "publisher.layout.staggered-grid",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.h42b0qvyfe",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.landing",
+      "cellId": "publisher.layoutConfig.stack.stack.landing",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.4vkyd92vs4",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.document",
+      "cellId": "publisher.layoutConfig.stack.stack.document",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.evecaayeqq",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.focus",
+      "cellId": "publisher.layoutConfig.stack.stack.focus",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.6fwq660ah7",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.index",
+      "cellId": "publisher.layoutConfig.stack.stack.index",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.txjd1pf34b",
-      "cellId": "publisher.layoutConfig.layouts.stack.stack.workspace",
+      "cellId": "publisher.layoutConfig.stack.stack.workspace",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.pbs86jv07a",
-      "cellId": "publisher.layoutConfig.layouts.split.split.default",
+      "cellId": "publisher.layoutConfig.split.split.default",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.g385gwchf1",
-      "cellId": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record",
+      "cellId": "publisher.layoutConfig.sidebar-content.sidebar-content.record",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.9axe6qwytm",
-      "cellId": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.docs",
+      "cellId": "publisher.layoutConfig.sidebar-content.sidebar-content.docs",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.7bf87rzb6j",
-      "cellId": "publisher.layoutConfig.layouts.bento.bento.default",
+      "cellId": "publisher.layoutConfig.bento.bento.default",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
@@ -13180,182 +13180,182 @@
     },
     {
       "recordId": "st.ana61jy0p8",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.full",
+      "cellId": "publisher.layoutOption.stack.measure.full",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.8dyaww7dzk",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.wide",
+      "cellId": "publisher.layoutOption.stack.measure.wide",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.vhkjr72c56",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.content",
+      "cellId": "publisher.layoutOption.stack.measure.content",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.4e2fw2re1h",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.prose",
+      "cellId": "publisher.layoutOption.stack.measure.prose",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.j3cstzxqbm",
-      "cellId": "publisher.layoutOption.layouts.stack.measure.form",
+      "cellId": "publisher.layoutOption.stack.measure.form",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.19r4rps8z4",
-      "cellId": "publisher.layoutOption.layouts.stack.align.center",
+      "cellId": "publisher.layoutOption.stack.align.center",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.hkp1srfq0x",
-      "cellId": "publisher.layoutOption.layouts.stack.lead.required",
+      "cellId": "publisher.layoutOption.stack.lead.required",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.8grbg3g8mq",
-      "cellId": "publisher.layoutOption.layouts.stack.lead.optional",
+      "cellId": "publisher.layoutOption.stack.lead.optional",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.j1x20g5ma9",
-      "cellId": "publisher.layoutOption.layouts.split.ratio.1:1",
+      "cellId": "publisher.layoutOption.split.ratio.1:1",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.mkw5r8sdh7",
-      "cellId": "publisher.layoutOption.layouts.split.ratio.3:2",
+      "cellId": "publisher.layoutOption.split.ratio.3:2",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.yqadfrrjf9",
-      "cellId": "publisher.layoutOption.layouts.split.ratio.2:3",
+      "cellId": "publisher.layoutOption.split.ratio.2:3",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.6mdn92wcyk",
-      "cellId": "publisher.layoutOption.layouts.split.collapse.start-first",
+      "cellId": "publisher.layoutOption.split.collapse.start-first",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.av8qx33gjs",
-      "cellId": "publisher.layoutOption.layouts.split.collapse.end-first",
+      "cellId": "publisher.layoutOption.split.collapse.end-first",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.p7xaz60gtc",
-      "cellId": "publisher.layoutOption.layouts.split.align.top",
+      "cellId": "publisher.layoutOption.split.align.top",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.ya04kydxn7",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.aside-width.region",
+      "cellId": "publisher.layoutOption.sidebar-content.aside-width.region",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.p35pa5phkx",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.aside-width.third",
+      "cellId": "publisher.layoutOption.sidebar-content.aside-width.third",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.qw7keqyzgs",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.sticky.none",
+      "cellId": "publisher.layoutOption.sidebar-content.sticky.none",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.mz5vrchgfx",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.sticky.aside",
+      "cellId": "publisher.layoutOption.sidebar-content.sticky.aside",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.1vjd1q75gn",
-      "cellId": "publisher.layoutOption.layouts.sidebar-content.stacked-aside.before",
+      "cellId": "publisher.layoutOption.sidebar-content.stacked-aside.before",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.8ac2dy1j6t",
-      "cellId": "publisher.layoutOption.layouts.bento.density.airy",
+      "cellId": "publisher.layoutOption.bento.density.airy",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.208gg0xrk7",
-      "cellId": "publisher.layoutOption.layouts.bento.density.standard",
+      "cellId": "publisher.layoutOption.bento.density.standard",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.0rj8qzqqr1",
-      "cellId": "publisher.layoutOption.layouts.bento.density.dense",
+      "cellId": "publisher.layoutOption.bento.density.dense",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.s9f5fst22q",
-      "cellId": "publisher.layoutOption.layouts.bento.rhythm.uniform",
+      "cellId": "publisher.layoutOption.bento.rhythm.uniform",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.1t0mm884hr",
-      "cellId": "publisher.layoutOption.layouts.bento.rhythm.feature-first",
+      "cellId": "publisher.layoutOption.bento.rhythm.feature-first",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.v54z11633r",
-      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.3",
+      "cellId": "publisher.layoutOption.staggered-grid.columns.3",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     },
     {
       "recordId": "st.5waybca904",
-      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.4",
+      "cellId": "publisher.layoutOption.staggered-grid.columns.4",
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
@@ -15467,24 +15467,24 @@
         "st.9bf70w4rjw"
       ],
       "sourceFiles": {
-        "packages/publisher/src/formats/slots/formats.ts": "2767f227c2c1cdf96e8d972e53c915e1879c654776e3c17188a92ee9ca2c4a8d",
+        "packages/publisher/src/formats/slots/formats.ts": "4b89517acdd879de4bea469420be47ef5beb43bf91a43a0c7b36f432a9742014",
         "packages/designer/src/catalog/slots/frames.json": "79d33c0f3bb7e6ac18045ed7fee733f90bfb9900f1c8b80fbbc98d0a81fa679c",
-        "packages/publisher/src/layouts/slots/layouts.json": "426bea89fb7f046ddffdbab34d2265b928e664638c30682060b44a39320983e6",
-        "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "3a0c0ade71b7188e2322500e48c551d78442863b533000f9ae96cd3f07cbe48b",
-        "packages/publisher/src/formats/contract.ts": "037ffa3d60f4a8de9dc490d9659b8623be3eebcc80fab2b2f8b00f54890880c5",
-        "packages/publisher/src/planning/configuration.ts": "1d4dbc3177dc80418047770b73d443ca4be7ca4436b65d3a773e9a7a6dab8404",
-        "packages/publisher/src/planning/menu.ts": "cd3af7a990a125c903ac1fbb2d2b26d7f20d96f57195d0fb3b646d200ecffb38",
+        "packages/publisher/src/engines/engines.json": "ffda0341879f50917ccbfa8f44cc71fa735f2ecb864c6a5c273b4e3c997d6c13",
+        "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "f20d800f8db532afe2c9e5be50a278ac785ad99b51b69800e612a37cebc15efd",
+        "packages/publisher/src/formats/contract.ts": "cf612822e4e2efc6fd34a0ccbc21850052a98d4a3419796754cca4d69425da64",
+        "packages/publisher/src/planning/configuration.ts": "4137cae5978a4d36f68d36744a0b0fa5247275f1293de49a250982f695f39921",
+        "packages/publisher/src/planning/menu.ts": "3f6ed90c0822c57126bd743a974203702b21b5bfc849b0d4ebeb1220dd4c2762",
         "packages/publisher/src/web/publisher/PublisherPlanView.tsx": "3cfaa66a22a5168bf8e26eb49ca9d0e1c65508cd24411d550b0a8cff3d0be0af",
         "packages/publisher/src/web/publisher/app/pipeline.ts": "2e1745ef009b9a1354443d0807cb505f3dc2fae0e12851ad45cda330d1a2a9ec",
         "packages/publisher/src/content/vocabulary.ts": "8f8fa24835357bb2afcf974f9d61ef8bec66454d137b8c6e0ec69f6c2c87efd9",
-        "packages/publisher/src/layouts/ids.ts": "bde2165cbde45266ce6ff6fbfad2a54bb2a1847c1f4e08f13efb827d4330c44f",
+        "packages/publisher/src/layouts/ids.ts": "19e712a4e2ac13fbba33083ab907aeceb522beb3694a573c9a2d4b3076895ea0",
         "packages/publisher/src/planning/channel-ids.ts": "44d4c43b906300fc3996ed425ee14c522c1772e559740f08d969dd5f8ad4dcac",
         "packages/publisher/src/web/publisher/app/inventory.ts": "dad5bcb7148edbd3ed43259dffb278349ff9a9eb234ae08f31bdcd2db51a456c",
-        "packages/publisher/src/core/instance-binding.ts": "e81bf33f3f906de6bee518f6df1185a6f7fb3f5d70103e291dd9ccfa628c94fb",
+        "packages/publisher/src/core/instance-binding.ts": "a3f5e248d78cc4f335d9c018a47fc6ef836acd6efb23b49a4b838052821ed08b",
         "packages/publisher/src/web/publisher/pipeline.ts": "b7243d27c10b15d210d67433050602d55ffacea4959f28d48421e0a8b617158e",
         "packages/designer/src/frames/app-frame-contract.check.tsx": "4814b0fe9f0eeb242e146857f0b25c7e0fb352463e07c2dd8ad8c609b6d52722",
         "packages/publisher/src/content/composition.ts": "b9be0459790b18b1224c4ddeff6fba7e15473f5e7ae14b0ed326d2bd3045807f",
-        "packages/publisher/src/core/instance-binding.check.ts": "bb88501aa54d81ab7c214d824e0774312cb8fa4ca5847c21b63ed7530fb16138"
+        "packages/publisher/src/core/instance-binding.check.ts": "c469942284b7a3ad343dea275c6f77f8b8c10bc13f3bd9b2a9b8048d0b7aa030"
       },
       "revisions": [],
       "defaults": [
@@ -15499,7 +15499,7 @@
     {
       "recordId": "st.0rj8qzqqr1",
       "source": "common-labels.r1.en.json",
-      "sourceContext": "publisher.layoutOption.layouts.bento.density.dense"
+      "sourceContext": "publisher.layoutOption.bento.density.dense"
     },
     {
       "recordId": "st.0szhqxn9xp",
@@ -15644,7 +15644,7 @@
     {
       "recordId": "st.g385gwchf1",
       "source": "common-labels.r1.en.json",
-      "sourceContext": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record"
+      "sourceContext": "publisher.layoutConfig.sidebar-content.sidebar-content.record"
     },
     {
       "recordId": "st.gj32snjd4m",

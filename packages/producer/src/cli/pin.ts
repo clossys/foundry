@@ -23,6 +23,7 @@ import "../constitution/guard.js"; // registers the write guard's runner
 import { pinGate, writeScorecard } from "../constitution/pin-gate.js";
 import { clearReverdict } from "../constitution/cascade.js";
 import { seatRefusal } from "../records/seat-owner.js";
+import { certifiedStandardRef, currentStandardOf, isAgentLoop, isLoopAgent } from "../loop/agent-loops.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -233,12 +234,16 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
   const lock = join(root, "clossys", "agents", agent, slotId, SLOT_LOCK);
   try {
     return withDirLock(lock, "Slot is unavailable or another decision write is in progress", (): CliResult => {
+      // U9a fix round 4 (blind1 B2): an agent's own loop is certified against the Producer loop the consumer runs now
+      // (its owner pin, else package v1); the pin names that loop, so an owner repin of it refuses this pin until recertified.
+      const loopStandard = isLoopAgent(agent) && isAgentLoop(slotId) && record === undefined ? currentStandardOf(root, slotId) : undefined;
+      if (loopStandard !== undefined && !loopStandard.ok) return { exitCode: 1, message: `pin refused: ${agent}/${slotId}: producer/${slotId} cannot be read: ${loopStandard.reason}` };
       const gate = pinGate(root, join(root, "clossys"), agent, slotId, candidate, toIsoZ(at)!, releasePin ? { verdict: "release.ready" } : {});
       if (gate.refusals.length) return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate}:\n${gate.refusals.map(line => `  ${line}`).join("\n")}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals: gate.refusals, scorecard: gate.scorecard } };
       const scorecard = writeScorecard(root, agent, slotId, gate.scorecard);
       const doc = writeTargetPin(root, {
         agent: agent as AgentId, slotId, ...(record !== undefined ? { record } : {}),
-        candidate, decidedBy: by, basis, at: toIsoZ(at)!, refs: [...(answer ? [answer] : []), scorecard], createdBy: cliActor("clossys pin"),
+        candidate, decidedBy: by, basis, at: toIsoZ(at)!, refs: [...(answer ? [answer] : []), scorecard, ...(loopStandard?.ok ? [certifiedStandardRef(loopStandard.file)] : [])], createdBy: cliActor("clossys pin"),
       });
       // A new pin carries the verdict the gate just gave (its scorecard row); an older re-verdict no longer holds.
       clearReverdict(root, agent, slotId);

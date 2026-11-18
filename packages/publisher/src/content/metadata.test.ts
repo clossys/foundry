@@ -7,9 +7,11 @@ import { checkPageMetadata, outputPathFor, robotsFor } from "./metadata.js";
 import type { CandidateContent, ContentSlot } from "./model.js";
 import { createContentRevision } from "./revisions.js";
 import type { ContentTree } from "./taxonomy.js";
+import { contentTreeFixture } from "./__fixtures__/content-tree.js";
 import { contentFixture, registryFixture } from "./validate.test.js";
 import { validateCandidateContent, validateContentRegistry, validateContentSlot } from "./validate.js";
 
+const fixtureTree = contentTreeFixture();
 const slotFixture = (): ContentSlot => registryFixture().slots[0] as ContentSlot;
 const copy = (key: string, locale = "en", value = "Sample"): CopyField => ({ key, locale, value, source: "writer" });
 const content = (pageMeta?: readonly CopyField[]): CandidateContent => ({ ...contentFixture(), ...(pageMeta === undefined ? {} : { pageMeta }) }) as CandidateContent;
@@ -32,22 +34,22 @@ const localeOptions = (): LocaleRouteOptions => ({
 describe("page metadata", () => {
   it("reports malformed copy before checking required text", () => {
     const malformed = { ...content(), pageMeta: [{ key: "title", locale: "en", value: 42, source: "writer" }] } as unknown as CandidateContent;
-    expect(() => checkPageMetadata(slotFixture(), malformed)).not.toThrow();
-    expect(checkPageMetadata(slotFixture(), malformed)).toContainEqual(expect.objectContaining({ rule: "string" }));
+    expect(() => checkPageMetadata(slotFixture(), malformed, fixtureTree)).not.toThrow();
+    expect(checkPageMetadata(slotFixture(), malformed, fixtureTree)).toContainEqual(expect.objectContaining({ rule: "string" }));
   });
   it("keeps missing metadata structurally readable while reporting required copy", () => {
     const slot = slotFixture();
     expect(validateCandidateContent(content())).toEqual([]);
-    expect(checkPageMetadata(slot, content()).map(f => f.path)).toEqual(["content.pageMeta.en.title", "content.pageMeta.en.description"]);
-    expect(checkPageMetadata(slot, content([copy("title"), copy("description")]))).toEqual([]);
-    expect(checkPageMetadata(slot, content([copy("title", "en", " "), copy("description")]))).toContainEqual(expect.objectContaining({ path: "content.pageMeta.en.title", rule: "required-page-metadata" }));
+    expect(checkPageMetadata(slot, content(), fixtureTree).map(f => f.path)).toEqual(["content.pageMeta.en.title", "content.pageMeta.en.description"]);
+    expect(checkPageMetadata(slot, content([copy("title"), copy("description")]), fixtureTree)).toEqual([]);
+    expect(checkPageMetadata(slot, content([copy("title", "en", " "), copy("description")]), fixtureTree)).toContainEqual(expect.objectContaining({ path: "content.pageMeta.en.title", rule: "required-page-metadata" }));
   });
   it("derives default robots policy from kind and the selected tree child", () => {
     const slot = slotFixture();
-    expect(robotsFor(slot)).toBe("index");
-    expect(robotsFor({ ...slot, l2: "auth" })).toBe("noindex");
-    expect(robotsFor({ ...slot, kind: "status" })).toBe("noindex");
-    expect(robotsFor({ ...slot, kind: "redirect" })).toBe("noindex");
+    expect(robotsFor(slot, fixtureTree)).toBe("index");
+    expect(robotsFor({ ...slot, l2: "auth" }, fixtureTree)).toBe("noindex");
+    expect(robotsFor({ ...slot, kind: "status" }, fixtureTree)).toBe("noindex");
+    expect(robotsFor({ ...slot, kind: "redirect" }, fixtureTree)).toBe("noindex");
     const tree: ContentTree = { schemaVersion: 1, nodes: [{ id: "websites", label: "Websites", children: [{ id: "members", label: "Members", frame: "frames.auth-shell" }] }] };
     const custom = { ...slot, l2: "members" };
     expect(robotsFor(custom, tree)).toBe("noindex");
@@ -57,23 +59,23 @@ describe("page metadata", () => {
   });
   it("allows description on noindex slots without requiring it", () => {
     const slot: ContentSlot = { ...slotFixture(), meta: { robots: "noindex" } };
-    expect(checkPageMetadata(slot, content([copy("title")]))).toEqual([]);
-    expect(checkPageMetadata(slot, content([copy("title"), copy("description", "en", "")]))).toEqual([]);
+    expect(checkPageMetadata(slot, content([copy("title")]), fixtureTree)).toEqual([]);
+    expect(checkPageMetadata(slot, content([copy("title"), copy("description", "en", "")]), fixtureTree)).toEqual([]);
   });
   it("requires exact locale selections without requiring optional share copy", () => {
     const slot = { ...slotFixture(), locales: ["en-US", "fr"] };
     const fields = [copy("title", "en-US"), copy("description", "en-US"), copy("share-title", "en-US"), copy("title", "fr"), copy("description", "fr")];
-    expect(checkPageMetadata(slot, content(fields))).toEqual([]);
-    expect(checkPageMetadata(slot, content([...fields, copy("share-text", "fr", "")]))).toEqual([]);
-    expect(checkPageMetadata(slot, content([...fields, copy("share-title", "fr")]))).toEqual([]);
-    const findings = checkPageMetadata(slot, content([copy("title", "en"), copy("description", "en")]));
+    expect(checkPageMetadata(slot, content(fields), fixtureTree)).toEqual([]);
+    expect(checkPageMetadata(slot, content([...fields, copy("share-text", "fr", "")]), fixtureTree)).toEqual([]);
+    expect(checkPageMetadata(slot, content([...fields, copy("share-title", "fr")]), fixtureTree)).toEqual([]);
+    const findings = checkPageMetadata(slot, content([copy("title", "en"), copy("description", "en")]), fixtureTree);
     expect(findings.some(f => f.rule === "slot-locale")).toBe(true);
     expect(findings.some(f => f.path === "content.pageMeta.en-US.title")).toBe(true);
   });
   it("keeps native metadata required when locale routing context is provided", () => {
     const slot = { ...slotFixture(), route: "/about", locales: ["en-US", "fr-CA"] };
     const options = localeOptions();
-    const findings = checkPageMetadata(slot, content([copy("title", "en-US"), copy("description", "en-US")]), undefined, options);
+    const findings = checkPageMetadata(slot, content([copy("title", "en-US"), copy("description", "en-US")]), fixtureTree, options);
     expect(findings).toContainEqual(expect.objectContaining({ path: "content.pageMeta.fr-CA.title", rule: "required-page-metadata" }));
     expect(findings).toContainEqual(expect.objectContaining({ path: "content.pageMeta.fr-CA.description", rule: "required-page-metadata" }));
   });
@@ -84,7 +86,7 @@ describe("page metadata", () => {
       bodyServedLocales: { "en-US": ["en-US"], "fr-CA": ["fr-CA"], "zh-Hant-TW": ["en-US"] },
       existingUrls: ["https://example.com/about", "https://example.com/zh-hant-tw/about"],
     };
-    const findings = checkPageMetadata(slot, content([copy("title", "en-US"), copy("description", "en-US")]), undefined, options);
+    const findings = checkPageMetadata(slot, content([copy("title", "en-US"), copy("description", "en-US")]), fixtureTree, options);
     expect(findings).toContainEqual(expect.objectContaining({ rule: "hreflang-target-missing", severity: "error" }));
     expect(findings).toContainEqual(expect.objectContaining({ rule: "body-locale-fallback", severity: "warning" }));
     expect(findings).toContainEqual(expect.objectContaining({ path: "content.pageMeta.zh-Hant-TW.title", rule: "required-page-metadata" }));
@@ -93,7 +95,7 @@ describe("page metadata", () => {
   it("still reports locale findings when metadata copy is malformed", () => {
     const slot = { ...slotFixture(), route: "/about", locales: ["en-US", "fr-CA"] };
     const malformed = { ...content(), pageMeta: [{ ...copy("title", "en-US"), value: 42 }] } as unknown as CandidateContent;
-    const findings = checkPageMetadata(slot, malformed, undefined, { ...localeOptions(), existingUrls: ["https://example.com/about"] });
+    const findings = checkPageMetadata(slot, malformed, fixtureTree, { ...localeOptions(), existingUrls: ["https://example.com/about"] });
     expect(findings).toContainEqual(expect.objectContaining({ rule: "string" }));
     expect(findings).toContainEqual(expect.objectContaining({ rule: "hreflang-target-missing", severity: "error" }));
     expect(findings.some(finding => finding.rule === "required-page-metadata")).toBe(false);
@@ -109,10 +111,10 @@ describe("page metadata", () => {
   });
   it("validates robots and absolute HTTP canonical URL shapes", () => {
     const slot = slotFixture();
-    expect(validateContentSlot({ ...slot, meta: { robots: "index", canonical: "https://example.com/sample" } })).toEqual([]);
-    expect(validateContentSlot({ ...slot, meta: { canonical: "http://example.com/" } })).toEqual([]);
+    expect(validateContentSlot({ ...slot, meta: { robots: "index", canonical: "https://example.com/sample" } }, fixtureTree)).toEqual([]);
+    expect(validateContentSlot({ ...slot, meta: { canonical: "http://example.com/" } }, fixtureTree)).toEqual([]);
     for (const meta of [null, [], { robots: "follow" }, { canonical: "/sample" }, { canonical: "https://" }, { canonical: "ftp://example.com/" }, { canonical: 7 }]) {
-      expect(validateContentSlot({ ...slot, meta }).length).toBeGreaterThan(0);
+      expect(validateContentSlot({ ...slot, meta }, fixtureTree).length).toBeGreaterThan(0);
     }
   });
   it("snapshots metadata without rewriting legacy digests or admitting slot workflow", () => {
@@ -134,7 +136,7 @@ describe("page metadata", () => {
 describe("logical output paths", () => {
   it("refuses authored output fields on the stored slot", () => {
     for (const key of ["outputPath", "fileName"]) {
-      expect(validateContentSlot({ ...slotFixture(), [key]: "authored.tsx" })).toContainEqual(expect.objectContaining({ rule: "derived-output-path" }));
+      expect(validateContentSlot({ ...slotFixture(), [key]: "authored.tsx" }, fixtureTree)).toContainEqual(expect.objectContaining({ rule: "derived-output-path" }));
     }
   });
   it("derives deterministic paths with collision-free encoded segments", () => {

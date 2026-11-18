@@ -58,7 +58,7 @@ const RECORD: Readonly<Record<string, unknown>> = {
   "sections.people": S.peopleGrid, "sections.pricing": S.pricing, "sections.testimonials": S.testimonials,
   "sections.access-matrix": S.accessMatrix, "sections.activity-feed": S.activityFeed, "sections.audit-log": S.auditLog,
   "sections.column-mapper": S.columnMapper, "sections.data-grid": S.dataTable, "sections.data-table": S.dataTable,
-  "sections.explorer": S.explorer, "sections.filter-builder": S.filterBuilder, "sections.record-detail": S.detailView,
+  "sections.explorer": S.explorer, "sections.filter-builder": S.filterBuilder,
   "sections.resource-list": S.resourceList, "sections.stats": S.statGroup, "sections.status-list": S.statusList,
   "sections.task-list": S.taskList, "sections.timeline": S.timeline, "sections.usage": S.usageSummary,
   "sections.cards": S.recordCards, "sections.chat": S.chat, "sections.consent": S.consentBanner, "sections.empty-state": S.emptyState,
@@ -88,9 +88,10 @@ function shared(record: unknown, content: RuntimeJson): number {
 }
 
 describe("Section sample content binds to the shared dataset", () => {
-  it("covers all 45 Sections, 44 with a sections record (band holds only nested Sections)", () => {
-    expect(Object.keys(CONTENT)).toHaveLength(45);
-    expect(Object.keys(RECORD)).toHaveLength(44);
+  // Re-pinned 45/44 -> 44/43: sections.record-detail was dropped with no successor (foundry-build-0042).
+  it("covers all 44 Sections, 43 with a sections record (band holds only nested Sections)", () => {
+    expect(Object.keys(CONTENT)).toHaveLength(44);
+    expect(Object.keys(RECORD)).toHaveLength(43);
     expect(CONTENT["sections.band"]).toEqual({});
   });
 

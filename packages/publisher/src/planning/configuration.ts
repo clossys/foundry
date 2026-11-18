@@ -2,8 +2,8 @@ import type { InstanceRegistries } from "../core/instance-binding.js";
 import type { CopyRef } from "@clossys/writer";
 import { publisherValueRef } from "../web/publisher/value-names.js";
 import type { FormatId, FormatSize, PublisherDeliveryChoice } from "../formats/contract.js";
-import { getEffectiveLayoutContract, freeze } from "../layouts/resolve.js";
-import type { LayoutId } from "../layouts/ids.js";
+import { getEffectiveLayoutContract, freeze } from "../engines/resolve.js";
+import type { EngineKey } from "../engines/keys.js";
 import { canonicalPlanJson } from "./digest.js";
 import { PUBLISHER_MENU } from "./menu.js";
 import type { PublisherDisplayNeed, PublisherMenuItem, PublisherPlanLane } from "./menu.js";
@@ -11,7 +11,7 @@ import type { PublisherPlanItem, PublisherPlanNeed } from "./plan.js";
 
 export interface PublisherMediaSettings { readonly size: FormatSize; readonly fps?: number }
 export type PublisherConfiguration =
-  | { readonly kind: "web"; readonly format: "web.page.responsive"; readonly frame: { readonly leaf: `frames.${string}`; readonly config?: string }; readonly layout: { readonly leaf: LayoutId; readonly config: string }; readonly media: PublisherMediaSettings; readonly deliveries: readonly PublisherDeliveryChoice[]; readonly deploymentSurface?: string }
+  | { readonly kind: "web"; readonly format: "web.page.responsive"; readonly frame: { readonly leaf: `frames.${string}`; readonly config?: string }; readonly layout: { readonly leaf: EngineKey; readonly config: string }; readonly media: PublisherMediaSettings; readonly deliveries: readonly PublisherDeliveryChoice[]; readonly deploymentSurface?: string }
   | { readonly kind: "concept-only"; readonly format?: FormatId; readonly deliveries: readonly PublisherDeliveryChoice[] }
   | { readonly kind: "asset-reference"; readonly deliveries: readonly [] };
 export interface PublisherLaneRecommendation { readonly lane: PublisherPlanLane; readonly configuration: PublisherConfiguration }
@@ -94,7 +94,7 @@ export function validatePublisherConfiguration(configuration: PublisherConfigura
       if (!fields(configuration, ["kind", "format", "frame", "layout", "media", "deliveries", "deploymentSurface"]) || format?.status !== "built") findings.push("Web configuration requires a built registered format");
       const frame = registries.frames.find(leaf => leaf.id === configuration.frame.leaf);
       if (!fields(configuration.frame, ["leaf", "config"]) || !frame || ["held", "deprecated"].includes(frame.status) || configuration.frame.config !== undefined && !frame.contract.configs.includes(configuration.frame.config) || !format?.frames.includes(configuration.frame.leaf)) findings.push("Unknown recommended frame/config");
-      const layout = registries.layouts.find(leaf => leaf.id === configuration.layout.leaf);
+      const layout = registries.layouts.find(leaf => leaf.engine === configuration.layout.leaf);
       if (!fields(configuration.layout, ["leaf", "config"]) || !layout || !format?.allowedCompositions.includes(configuration.layout.leaf)) findings.push("Unknown recommended layout/config");
       else try { getEffectiveLayoutContract(layout, configuration.layout.config); } catch { findings.push("Unknown recommended layout/config"); }
       if (!equal(configuration.media, { size: format?.size, ...(format?.fps === undefined ? {} : { fps: format.fps }) })) findings.push("Media settings must equal registered format values");

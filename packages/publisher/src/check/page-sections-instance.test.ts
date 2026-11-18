@@ -18,8 +18,8 @@ const check = (pageId: string, content: PageOptionContent) => {
 const checks = (findings: { check: string }[]) => [...new Set(findings.map(finding => finding.check))];
 
 describe("page option checks on the starter pages", () => {
-  it("every one of the 21 starter page defaults passes (20 + page.deck, build-0027)", () => {
-    expect(pageIds).toHaveLength(21);
+  it("every one of the 27 starter page defaults passes (20 + page.deck, build-0027; + page.site-page and 5 admin pages, build-0048)", () => {
+    expect(pageIds).toHaveLength(27);
     for (const id of pageIds) {
       const option = defaults.get(`${id}/starter-v1.json`);
       expect(option, id).toBeDefined();
@@ -40,14 +40,15 @@ describe("page option checks on the starter pages", () => {
     const layout: LayoutContract = { frame: "designer/frames.site-shell", roles: {
       questions: { kinds: ["designer/sections.faq"], required: true }, more: { kinds: ["designer/sections.faq"], required: false } } };
     const content: PageOptionContent = {
-      path: "/help", layout: "publisher/layout.help",
+      // The roles are synthetic; the pinned layout.* slot is a live one, because a page must reach a render engine.
+      path: "/help", layout: "publisher/layout.docs-guide",
       sections: [
         { role: "questions", use: "designer/sections.faq", copy: "writer/sections.faq.copy#help.questions" },
         { role: "more", use: "designer/sections.faq", copy: "writer/sections.faq.copy#help.more" },
       ],
       meta: { copy: "writer/page.help.meta#help.meta", indexing: "index" },
     };
-    const page = { layouts: ["publisher/layout.help"], records: { pattern: "help.<role>", meta: "writer/page.help.meta#help.meta" } };
+    const page = { layouts: ["publisher/layout.docs-guide"], records: { pattern: "help.<role>", meta: "writer/page.help.meta#help.meta" } };
     expect(checkPageOption("page.help", content, page, layout, designer)).toEqual([]);
   });
 });
@@ -67,11 +68,11 @@ describe("mutations that must die", () => {
   });
 
   it("a page naming a retired Designer section fails page.unit-resolves", () => {
-    expect(designer.retired.has("sections.legal-prose")).toBe(true);
+    const retiredSection = [...designer.retired].filter(id => id.startsWith("sections.")).sort()[0]!;
     const option = clone(defaults.get("page.terms/starter-v1.json")!.content as unknown as PageOption);
-    option.sections.find(section => section.role === "body")!.use = "designer/sections.legal-prose";
+    option.sections.find(section => section.role === "body")!.use = `designer/${retiredSection}`;
     expect(check("page.terms", option as unknown as PageOptionContent))
-      .toContainEqual({ check: "page.unit-resolves", message: "page.terms: body places retired designer/sections.legal-prose" });
+      .toContainEqual({ check: "page.unit-resolves", message: `page.terms: body places retired designer/${retiredSection}` });
   });
 
   it("a page naming a section the Designer catalog does not have fails", () => {

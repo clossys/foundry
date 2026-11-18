@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { computeContentDigest } from "./digest.js";
 import { validateContentRegistry, validateContentCandidate, validateContentSlot, validateContentWorkspace, parseContentRegistry } from "./validate.js";
+import { contentTreeFixture } from "./__fixtures__/content-tree.js";
 
 export const contentFixture = () => ({
   name: "Sample", brief: { audience: "Readers", goal: "Inform", keyMessage: "Sample", callToAction: "Continue", tone: "Clear", constraints: [], sourceAnswers: [{ question: "Audience?", answer: "Readers" }], version: 1 },
@@ -10,7 +11,7 @@ export const contentFixture = () => ({
 export const registryFixture = () => {
   const content = contentFixture();
   return {
-    workspace: { consumerId: "sample", defaultLocale: "en", locales: ["en", "fr"], deployTargets: [{ id: "sample", repo: "sample", app: "site" }], destinations: [] },
+    workspace: { consumerId: "sample", tree: contentTreeFixture(), defaultLocale: "en", locales: ["en", "fr"], deployTargets: [{ id: "sample", repo: "sample", app: "site" }], destinations: [] },
     slots: [{ id: "sl_aaaaaaaaaa", aliases: ["websites/site/home"], locales: ["en"], l1: "websites", l2: "site", position: { order: 0, name: "home" }, name: "Home", kind: "content", route: "/", deployTarget: "sample", devOnly: false, tags: [], releases: [], createdAt: "2026-01-01T00:00:00Z" }],
     candidates: [{ ...content, id: "sample", slotId: "sl_aaaaaaaaaa", origin: "agent-draft", state: "draft", revision: "r1", tags: [], history: [{ revision: "r1", digest: computeContentDigest(content as any), content: structuredClone(content), createdAt: "2026-01-01T00:00:00Z" }], updatedAt: "2026-01-01T00:00:00Z" }],
   };
@@ -20,9 +21,18 @@ describe("content records", () => {
   it("accepts workspace, slot, candidate and joined registry", () => {
     const value = registryFixture();
     expect(validateContentWorkspace(value.workspace)).toEqual([]);
-    expect(validateContentSlot(value.slots[0])).toEqual([]);
+    expect(validateContentSlot(value.slots[0], contentTreeFixture())).toEqual([]);
     expect(validateContentCandidate(value.candidates[0])).toEqual([]);
     expect(parseContentRegistry(value)).toEqual(value);
+  });
+  it("requires the consumer's own content tree on the workspace; Publisher supplies none and a retired tree is refused", () => {
+    const value: any = registryFixture();
+    const rules = (workspace: unknown) => validateContentWorkspace(workspace).filter(f => f.rule === "content-tree").map(f => f.path);
+    expect(rules(value.workspace)).toEqual([]);
+    expect(rules({ ...value.workspace, tree: undefined })).toEqual(["workspace.tree"]);
+    expect(rules({ ...value.workspace, tree: { schemaVersion: 1, retired: { retiredAt: "2026-11-17", decidedBy: "owner", reason: "legacy" }, nodes: [] } })).toEqual(["workspace.tree"]);
+    delete value.workspace.tree;
+    expect(validateContentRegistry(value).map(f => f.rule)).toEqual(expect.arrayContaining(["content-tree"]));
   });
   it("keeps an issued id when placement moves across groups", () => {
     const value: any = registryFixture(); value.slots[0].l1 = "documents"; value.slots[0].l2 = "docs";

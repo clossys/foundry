@@ -17,7 +17,8 @@
             "layout.pricing",
             "layout.contact",
             "layout.legal",
-            "layout.site-state"
+            "layout.site-state",
+            "layout.site-page"
           ]
         },
         {
@@ -39,6 +40,17 @@
             "layout.app-list",
             "layout.app-settings",
             "layout.app-state"
+          ]
+        },
+        {
+          "id": "composition/layouts/admin",
+          "label": "Admin layouts",
+          "leaves": [
+            "layout.admin-home",
+            "layout.admin-gallery",
+            "layout.admin-slot",
+            "layout.admin-requests",
+            "layout.admin-questions"
           ]
         },
         {
@@ -76,7 +88,8 @@
           "leaves": [
             "chrome.docs-sidebar",
             "chrome.app-sidebar",
-            "chrome.app-user-menu"
+            "chrome.app-user-menu",
+            "chrome.admin-sidebar"
           ]
         }
       ]
@@ -614,6 +627,189 @@
       "copy": "writer/frames.app-header.copy#app.user-menu",
       "publications": [
         "app"
+      ]
+    },
+    "layout.site-page": {
+      "kind": "layout",
+      "purpose": "A site page the consumer names and routes (for example /product or /trust): one frame and an ordered set of sections, nothing else.",
+      "frame": "designer/frames.site-shell",
+      "chrome": [
+        "publisher/chrome.site-header",
+        "publisher/chrome.site-footer"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "body": {
+          "kinds": [
+            "designer/sections.content",
+            "designer/sections.features",
+            "designer/sections.steps",
+            "designer/sections.media",
+            "designer/sections.gallery",
+            "designer/sections.people",
+            "designer/sections.timeline",
+            "designer/sections.comparison",
+            "designer/sections.faq"
+          ],
+          "required": true
+        },
+        "proof": {
+          "kinds": [
+            "designer/sections.logo-cloud",
+            "designer/sections.stats",
+            "designer/sections.testimonials"
+          ],
+          "required": false
+        },
+        "closing": {
+          "kinds": [
+            "designer/sections.call-to-action"
+          ],
+          "required": false
+        }
+      }
+    },
+    "layout.admin-home": {
+      "kind": "layout",
+      "purpose": "The admin workspace's first screen: the open requests and what to do first.",
+      "frame": "designer/frames.app-shell",
+      "chrome": [
+        "publisher/chrome.admin-sidebar"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "notices": {
+          "kinds": [
+            "designer/sections.notices"
+          ],
+          "required": false
+        },
+        "requests": {
+          "kinds": [
+            "designer/sections.queue-list"
+          ],
+          "required": false
+        },
+        "first-run": {
+          "kinds": [
+            "designer/sections.empty-state"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.admin-gallery": {
+      "kind": "layout",
+      "purpose": "One agent's slots as a gallery, grouped by its IA.",
+      "frame": "designer/frames.app-shell",
+      "chrome": [
+        "publisher/chrome.admin-sidebar"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "gallery": {
+          "kinds": [
+            "designer/sections.slot-gallery"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.admin-slot": {
+      "kind": "layout",
+      "purpose": "One slot: its contract and pin, beside its candidates.",
+      "frame": "designer/frames.app-shell",
+      "chrome": [
+        "publisher/chrome.admin-sidebar"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "detail": {
+          "kinds": [
+            "designer/sections.slot-detail"
+          ],
+          "required": true
+        },
+        "candidates": {
+          "kinds": [
+            "designer/sections.candidate-preview"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.admin-requests": {
+      "kind": "layout",
+      "purpose": "The open requests the request loop holds.",
+      "frame": "designer/frames.app-shell",
+      "chrome": [
+        "publisher/chrome.admin-sidebar"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "queue": {
+          "kinds": [
+            "designer/sections.queue-list"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.admin-questions": {
+      "kind": "layout",
+      "purpose": "The owner's open questions, one packet each.",
+      "frame": "designer/frames.app-shell",
+      "chrome": [
+        "publisher/chrome.admin-sidebar"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "questions": {
+          "kinds": [
+            "designer/sections.question-packet"
+          ],
+          "required": true
+        }
+      }
+    },
+    "chrome.admin-sidebar": {
+      "kind": "chrome",
+      "purpose": "Admin workspace navigation: page ids, grouped and ordered.",
+      "frame": "designer/frames.app-shell",
+      "unit": "designer/frames.app-sidebar",
+      "copy": "writer/frames.app-sidebar.copy#admin.sidebar",
+      "publications": [
+        "admin"
       ]
     }
   }

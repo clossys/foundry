@@ -14,6 +14,7 @@ import { requirementsVerdictSync } from "../constitution/certify/requirements.js
 import type { JsonSchema } from "../pipeline/schema.js";
 import { recipePageKey } from "./recipe-page.js";
 import { REQUEST_ASSERTIONS } from "./requests-assertions.js";
+import { agentLoopIssues, isLoopAgent } from "../loop/agent-loops.js";
 
 /**
  * `rows` are red; `findings` are report-only (listed, never red): a pattern worth a look that a rule cannot call wrong,
@@ -131,7 +132,9 @@ export function familyIssue(family: unknown): string | undefined {
 
 export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
   S1: agent => {
-    const pkg = new Set(agent.trees.flatMap(tree => slotLeaves(tree))), placed = new Set(placedIds(agent));
+    // The agent's declared loop slots are Producer-standard leaves in its loops L1, not package-tree leaves (W2 judges them).
+    const loops = new Set(agent.loops.filter(loop => loop.declared).map(loop => loop.loop as string));
+    const pkg = new Set(agent.trees.flatMap(tree => slotLeaves(tree))), placed = new Set(placedIds(agent).filter(id => !loops.has(id)));
     const rows = [...pkg].filter(id => !placed.has(id)).map(id => `${id}: in the package tree, not placed`)
       .concat([...placed].filter(id => !pkg.has(id)).map(id => `${id}: placed, not in the package tree`));
     if (pkg.size !== placed.size) rows.unshift(`package tree has ${pkg.size} leaves, the placed tree ${placed.size}`);
@@ -344,9 +347,14 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
   W1: (agent, model) => {
     const rows: string[] = [];
     for (const loop of ["scope", "slot", "create", "choose", "cascade"]) {
-      const version = model.machinery.loops.get(`loop.${loop}`);
-      if (!version) rows.push(`loop.${loop}: no version`);
-      else if (!version.steps.some(step => object(step.decider) && step.decider.agent === agent.agent)) rows.push(`loop.${loop}: no step reaches ${agent.agent}`);
+      // The version that runs for the agent's slots: its own loop where it declares one (the consumer's pin where the
+      // slot is placed, else its package candidate; W2 judges that it extends the standard), else Producer's standard.
+      const own = agent.loops.find(each => each.loop === `loop.${loop}` && each.declared);
+      const read = own === undefined ? undefined : own.placed ? own.pin : own.package;
+      if (own !== undefined && !read?.ok) { rows.push(`loop.${loop}: ${agent.agent}'s own version cannot be read`); continue; }
+      const steps = read?.ok ? (object(read.content) && Array.isArray(read.content.steps) ? read.content.steps.filter(object) : []) : model.machinery.loops.get(`loop.${loop}`)?.steps;
+      if (!steps) rows.push(`loop.${loop}: no version`);
+      else if (!steps.some(step => object(step.decider) && step.decider.agent === agent.agent)) rows.push(`loop.${loop}: no step reaches ${agent.agent}`);
     }
     for (const skill of agent.skills) {
       if (skill.path === null) rows.push(`${skill.loop}: names no skill`);
@@ -356,6 +364,29 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     return { rows, evidence: 5 + agent.skills.length };
   },
   ...REQUEST_ASSERTIONS,
+  // foundry-build-0048 U9a: the agent owns its five loops, each extending Producer's standard loop of the same name.
+  W2: agent => {
+    const rows: string[] = [];
+    const declared = agent.adapter?.loops ?? [];
+    if (!isLoopAgent(agent.agent)) return { rows: [`${agent.agent} owns no loops`], evidence: 0 };
+    const owner = agent.agent;
+    for (const loop of agent.loops) if (!loop.declared) rows.push(`${loop.loop}: conform.json does not declare ${owner}'s ${loop.loop}`);
+    for (const id of new Set(declared)) if (declared.indexOf(id) !== declared.lastIndexOf(id)) rows.push(`${id}: declared twice in conform.json loops`);
+    const own = agent.loops.filter(loop => loop.declared);
+    // Placed: a consumer that places the agent (its IA) or holds any of its loop slots must hold, pin and run all five;
+    // no vacuous pass for a consumer that places the agent but never adopted its loops.
+    const holds = own.some(loop => loop.placed);
+    const placed = holds || agent.placedTree.length > 0;
+    for (const loop of own) {
+      if (!loop.package.ok) rows.push(`${loop.loop}: ${loop.package.reason}`);
+      else for (const issue of agentLoopIssues(owner, loop.loop, loop.package.content, { packageVersion: true })) rows.push(`package ${issue}`);
+      if (!placed) continue;
+      if (!loop.placed) { rows.push(`${owner}/${loop.loop}: missing (${holds ? `the consumer holds ${owner}'s other loop slots, not this one` : `the consumer places ${owner} but holds none of its loop slots; run clossys loop ${owner}/${loop.loop}`})`); continue; }
+      if (!loop.pin?.ok) { rows.push(`${owner}/${loop.loop}: unpinned: ${loop.pin?.reason ?? "no pin"}`); continue; }
+      for (const issue of agentLoopIssues(owner, loop.loop, loop.pin.content)) rows.push(`pinned ${loop.pin.ref}: ${issue}`);
+    }
+    return { rows, evidence: own.length };
+  },
 };
 
 /**

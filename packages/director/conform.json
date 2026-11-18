@@ -29,6 +29,7 @@
       "feedsTo": "writer"
     }
   ],
+  "loops": ["loop.scope", "loop.slot", "loop.create", "loop.choose", "loop.cascade"],
   "skill": "skill/SKILL.md",
   "skills": {
     "scope": "packages/director/actions/director.scope/skill.md",

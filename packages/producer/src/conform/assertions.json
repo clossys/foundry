@@ -278,6 +278,14 @@
       "check": "request-release",
       "status": "building",
       "enforcedFor": []
+    },
+    {
+      "id": "W2",
+      "lens": "wiring",
+      "statement": "the agent declares, holds and pins its own five loops, each extending Producer's standard loop of the same name with every required step, exit check and owner when kept",
+      "check": "agent-loop-standard",
+      "status": "building",
+      "enforcedFor": []
     }
   ],
   "dogfood": [

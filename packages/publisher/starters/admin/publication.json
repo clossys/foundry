@@ -1,0 +1,38 @@
+{
+  "schema": "clossys.starter/1",
+  "id": "admin",
+  "node": "directory/admin/admin",
+  "root": "/",
+  "pages": [
+    "page.admin-home",
+    "page.admin-gallery",
+    "page.admin-slot",
+    "page.admin-requests",
+    "page.admin-questions"
+  ],
+  "layouts": [
+    "layout.admin-home",
+    "layout.admin-gallery",
+    "layout.admin-slot",
+    "layout.admin-requests",
+    "layout.admin-questions"
+  ],
+  "chrome": [
+    "chrome.admin-sidebar"
+  ],
+  "release": "release.admin",
+  "redirects": [],
+  "defaults": [
+    "layout.admin-home/standard-v1.json",
+    "layout.admin-gallery/standard-v1.json",
+    "layout.admin-slot/standard-v1.json",
+    "layout.admin-requests/standard-v1.json",
+    "layout.admin-questions/standard-v1.json",
+    "chrome.admin-sidebar/sidebar-v1.json",
+    "page.admin-home/starter-v1.json",
+    "page.admin-gallery/starter-v1.json",
+    "page.admin-slot/starter-v1.json",
+    "page.admin-requests/starter-v1.json",
+    "page.admin-questions/starter-v1.json"
+  ]
+}

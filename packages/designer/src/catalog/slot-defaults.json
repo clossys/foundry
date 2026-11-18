@@ -727,6 +727,21 @@
     },
     "themes.tracking-tight": {
       "standard": "token.scale"
+    },
+    "sections.slot-gallery": {
+      "standard": "section.app"
+    },
+    "sections.slot-detail": {
+      "standard": "section.app"
+    },
+    "sections.candidate-preview": {
+      "standard": "section.app"
+    },
+    "sections.question-packet": {
+      "standard": "section.app"
+    },
+    "sections.queue-list": {
+      "standard": "section.app"
     }
   }
 }
