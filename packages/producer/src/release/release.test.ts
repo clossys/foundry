@@ -3,8 +3,8 @@
  * (release/__fixtures__/world.ts) with a stub builder. Nothing is deployed or published; the ready-pin is written only
  * in the tmp consumer.
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, renameSync, symlinkSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runCli } from "../cli/main.js";
 import { runReleaseCli } from "../cli/release.js";
@@ -15,11 +15,13 @@ import { raiseFeedback } from "../queue/feedback.js";
 import { readdirSync } from "node:fs";
 import type { LedgerEntry } from "../records/types.js";
 import { closeWork, raiseWork } from "../records/request.js";
+import { cliActor } from "../records/pin.js";
+import { writeTargetPin } from "../records/pin-map.js";
 import { latestBuild } from "./build.js";
 import { RELEASE_GATES } from "./gates.js";
 import { latestManifest } from "./manifest.js";
 import { checkReleaseReady } from "./ready.js";
-import { clock, releaseWorld, stubBuilder, type ReleaseWorld } from "./__fixtures__/world.js";
+import { clock, releaseWorld, geographyBrief, stubBuilder, type ReleaseWorld } from "./__fixtures__/world.js";
 
 const worlds: ReleaseWorld[] = [];
 afterEach(() => { for (const world of worlds.splice(0)) world.dispose(); });
@@ -52,7 +54,7 @@ describe("clossys release --build", () => {
     expect(build.path).toBe(`.clossys/builds/${build.id.slice(0, 8)}/`);
     expect(build.locales).toEqual(["en", "fr"]);
     expect(existsSync(join(world.root, build.path, "site", "index.html"))).toBe(true);
-    expect(build.pins["writer/sections.hero.copy#home.hero"]).toMatch(/^home\.hero-v1\.json@[0-9a-f]{64}$/);
+    expect(build.pins["writer/sections.hero.copy#home.hero"]).toMatch(/^home\.hero-v1\.md@[0-9a-f]{64}$/);
     expect(existsSync(join(world.root, "clossys", "agents", "publisher", "release.site", "pin.json"))).toBe(false);
   });
 
@@ -83,7 +85,7 @@ describe("clossys release --manifest", () => {
     expect(manifest.header).toMatchObject({ createdBy: { actor: "code", cli: "clossys release site --manifest" }, source: { kind: "original" } });
     const content = manifest.content!;
     expect(content.build.id).toBe(latestBuild(world.root, "site")!.id);
-    expect(Object.keys(content.pins)).toEqual(["designer/sections.hero", "director/focus.reach.geography", "publisher/page.home", "writer/sections.hero.copy#home.hero"]);
+    expect(Object.keys(content.pins)).toEqual(["designer/frames.site-shell", "designer/sections.hero", "director/focus.reach.geography", "director/identity.verbal.voice", "publisher/page.home", "writer/sections.hero.copy#home.hero"]);
     for (const value of Object.values(content.pins)) expect(value).toMatch(/@[0-9a-f]{64}$/);
     expect(Object.keys(content.checks)).toEqual([...RELEASE_GATES]);
     expect(Object.values(content.checks).every(status => status === "pass")).toBe(true);
@@ -117,14 +119,14 @@ describe("clossys release --gates", () => {
     expect(doc).toMatchObject({ schema: "clossys.check-result/1", subject: "publisher/release.site/site-v1.json", status: "pass", subjectSha256: latestManifest(world.root, "site")!.sha256 });
   });
 
-  it("fails copy.locales when a release locale is missing from a copy record", async () => {
+  it("fails copy.locales when a release locale is missing from a copy record (the brief adds de, the copy carries en and fr)", async () => {
     const world = make();
-    world.repin("writer/sections.hero.copy", 2, { fields: { "header.heading": { en: "placeholder" } } });
+    world.repin("director/focus.reach.geography", 2, geographyBrief("en, fr, de"));
     await release(world, "--build");
     await release(world, "--manifest");
     const result = await release(world, "--gates");
     expect(result.exitCode).toBe(1);
-    expect(out(result).findings).toContainEqual(expect.objectContaining({ check: "copy.locales", subject: "writer/sections.hero.copy#home.hero", detail: "header.heading has no fr value" }));
+    expect(out(result).findings).toContainEqual(expect.objectContaining({ check: "copy.locales", subject: "writer/sections.hero.copy#home.hero", detail: "header.heading has no de value" }));
   });
 
   it("fails release.locales when the locales key is still unresolved", async () => {
@@ -291,7 +293,7 @@ describe("loop.release through clossys release", () => {
 
   it("stops at a red gate and routes its findings to queue.fix: no sign-off, no ready-pin", async () => {
     const world = make();
-    world.repin("writer/sections.hero.copy", 2, { fields: { "header.heading": { en: "placeholder" } } });
+    world.repin("director/focus.reach.geography", 2, geographyBrief("en, fr, de"));
     const now = clock();
     const run = (argv: readonly string[], cwd: string) => argv[0] === "compile"
       ? Promise.resolve({ exitCode: 0 as const, message: "compiled (stub)" })
@@ -309,5 +311,109 @@ describe("clossys release dispatch", () => {
     const result = await runCli(["release", "--help"]);
     expect(result.exitCode).toBe(0);
     expect(result.message).toContain("clossys release <publication>");
+  });
+});
+
+/**
+ * foundry-build-0048 U8a: slots.stale judges every IA-placed slot and every slot a pinned release input resolves from
+ * (release slots aside), and a pinned candidate with no verdict recorded for its bytes fails it closed. Every world
+ * pin goes through the CHOOSE gate; the legacy pins here are written by hand (world.handPin), as recut writes a pin/1.
+ */
+describe("slots.stale on the release inputs (U8a)", () => {
+  const stale = (result: Awaited<ReturnType<typeof runReleaseCli>>) => out(result).findings.filter(row => row.check === "slots.stale");
+  /** Drops slot ids from an agent's ia.json, so they are no longer placed in the IA (their folders and pins stay). */
+  function unplace(world: ReleaseWorld, agent: string, ids: readonly string[]): void {
+    const rel = `clossys/agents/${agent}/ia.json`;
+    const ia = JSON.parse(world.read(rel)) as { nodes: { children: { slots: string[] }[] }[] };
+    for (const node of ia.nodes) for (const child of node.children) child.slots = child.slots.filter(id => !ids.includes(id));
+    world.write(rel, `${JSON.stringify(ia, null, 2)}\n`);
+  }
+
+  it("passes after the ready-pin in a world whose release slot is placed in the IA: pin, then --ready and --gates are green", async () => {
+    const world = make();
+    const now = clock();
+    expect(JSON.parse(world.read("clossys/agents/publisher/ia.json")).nodes.flatMap((node: { children: { slots: string[] }[] }) => node.children.flatMap(child => child.slots))).toContain("release.site");
+    await ready(world, now);
+    const readyRun = await release(world, "--ready", now);
+    expect(readyRun.exitCode, readyRun.message).toBe(0);
+    const gates = await release(world, "--gates", now);
+    expect(gates.exitCode, gates.message).toBe(0);
+    expect(stale(gates)).toEqual([]);
+    expect(checkReleaseReady(world.root, "site").status).toBe("pass");
+  });
+
+  it("refuses legacy pins outside the IA that the manifest ships, naming each owner's choose loop", async () => {
+    const world = make();
+    const now = clock();
+    const refs = ["director/focus.reach.geography", "designer/sections.hero", "writer/sections.hero.copy"];
+    for (const ref of refs) world.handPin(ref, 2);
+    unplace(world, "director", ["focus.reach.geography"]);
+    unplace(world, "designer", ["sections.hero"]);
+    unplace(world, "writer", ["sections.hero.copy"]);
+    expect((await release(world, "--build", now)).exitCode).toBe(0);
+    expect((await release(world, "--manifest", now)).exitCode).toBe(0);
+    const pins = latestManifest(world.root, "site")!.content!.pins;
+    expect(pins["director/focus.reach.geography"]).toMatch(/^geography-v2\.md@/);
+    expect(pins["designer/sections.hero"]).toMatch(/^hero-v2\.json@/);
+    expect(pins["writer/sections.hero.copy#home.hero"]).toMatch(/^home\.hero-v2\.md@/);
+    const gates = await release(world, "--gates", now);
+    expect(gates.exitCode).toBe(1);
+    for (const ref of refs) {
+      const row = stale(gates).find(finding => finding.subject === ref);
+      expect(row?.detail, ref).toMatch(/is a legacy pin with no recorded pinSet or verdict \(as clossys migrate recut writes a pin\/1\)/);
+      expect(row?.detail, ref).toContain(`agent:${ref.split("/")[0]} must re-verdict it (run its loop.choose: clossys run loop.choose --slot ${ref})`);
+    }
+  });
+
+  it("fails a pinned candidate whose bytes changed after its verdict, and says so (the verdict binds the sha256)", async () => {
+    const world = make();
+    const rel = "clossys/agents/designer/sections.hero/candidates/hero-v1.json";
+    // The bytes change and the pin is written again over them with no CHOOSE gate (as recut rewrites a candidate and
+    // its pin): the pin resolves, and the scorecard holds a verdict for the old bytes only.
+    world.write(rel, `${world.read(rel).trimEnd()}\n\n`);
+    writeTargetPin(world.root, { agent: "designer", slotId: "sections.hero", candidate: "hero-v1.json", decidedBy: "planner", basis: "planner", at: "2026-11-20T07:00:00Z" as never, refs: [], createdBy: cliActor("test") });
+    const gates = await release(world, "--gates");
+    expect(out(gates).findings.filter(row => row.check === "pins.resolve")).toEqual([]);
+    expect(gates.exitCode).toBe(1);
+    expect(stale(gates).find(row => row.subject === "designer/sections.hero")?.detail)
+      .toBe("pinned hero-v1.json has no verdict for its bytes: the candidate file changed after it was judged: agent:designer must re-verdict it (run its loop.choose: clossys run loop.choose --slot designer/sections.hero)");
+  });
+
+  /** Moves a model file out of the model tree and leaves a relative symbolic link to it in its place. */
+  function alias(world: ReleaseWorld, rel: string): void {
+    const file = join(world.root, rel);
+    const moved = join(world.root, "outside", rel.replaceAll("/", "__"));
+    mkdirSync(dirname(moved), { recursive: true });
+    renameSync(file, moved);
+    symlinkSync(relative(dirname(file), moved), file);
+  }
+
+  it("fails closed when a legacy pin's candidate is a symbolic link: the resolver refuses the alias the model reader refuses", async () => {
+    const world = make();
+    world.handPin("publisher/page.home", 2);
+    alias(world, "clossys/agents/publisher/page.home/candidates/home-v2.json");
+    const gates = await release(world, "--gates");
+    expect(gates.exitCode).toBe(1);
+    expect(out(gates).findings.find(row => row.check === "pins.resolve" && row.subject === "publisher/page.home")?.detail)
+      .toContain("pin names home-v2.json, which is a symbolic link, or sits under one: aliases are not followed");
+  });
+
+  it("fails closed when a slot's pin.json is a symbolic link, even over a judged pin", async () => {
+    const world = make();
+    alias(world, "clossys/agents/publisher/page.home/pin.json");
+    const gates = await release(world, "--gates");
+    expect(gates.exitCode).toBe(1);
+    expect(out(gates).findings.find(row => row.check === "pins.resolve" && row.subject === "publisher/page.home")?.detail)
+      .toContain("publisher/page.home pin.json is a symbolic link, or sits under one: aliases are not followed");
+  });
+
+  it("fails a pin on another candidate with the same bytes as a judged one (the verdict binds the candidate name)", async () => {
+    const world = make();
+    const judged = world.read("clossys/agents/designer/sections.hero/candidates/hero-v1.json");
+    const name = world.handPin("designer/sections.hero", 2, JSON.parse(judged));
+    expect(world.read(`clossys/agents/designer/sections.hero/candidates/${name}`)).toBe(judged);
+    const gates = await release(world, "--gates");
+    expect(gates.exitCode).toBe(1);
+    expect(stale(gates).find(row => row.subject === "designer/sections.hero")?.detail).toMatch(/^pinned hero-v2\.json is a legacy pin with no recorded pinSet or verdict/);
   });
 });

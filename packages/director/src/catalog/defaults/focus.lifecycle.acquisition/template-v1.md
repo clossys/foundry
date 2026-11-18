@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Path
+## Direction
+- Path:
+- Hook:
+- Cost:
 
-## Hook
+## Because
 
-## Cost
+## Watch

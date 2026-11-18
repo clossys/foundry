@@ -80,7 +80,7 @@ clossys next director/<slot> --stage diverge --file directions.json --recipe cre
 
 ### 3. render (deterministic)
 
-Write each direction's draft candidate in the contract's shape: a Markdown brief: frontmatter `slot`, `source: {"kind": "derived", "ref": [<Director slot ids and finding:<id>>]}`, `feeds`, `functions`, `note`; then `## Direction` (one `- Key: value` line per contract key, plain language), `## Because` (each line ends `(<ref>)`, every source ref cited) and `## Watch` (each line `If <metric> <comparator> <number> <window>, then <action>.`).
+Write each direction's draft candidate in the contract's shape: a Markdown brief: frontmatter `slot`, `source: {"kind": "derived", "ref": [<Director slot ids and finding:<id>>]}`, `feeds`, `functions`, `note`; then `## Direction` (one `- Key: value` line per contract key, plain language; a key that lists values is one line, comma-separated, such as `focus.reach.geography`'s `- Language: en, fr`, which the release reads as its locales), `## Because` (each line ends `(<ref>)`, every source ref cited) and `## Watch` (each line `If <metric> <comparator> <number> <window>, then <action>.`).
 Nothing is generated; the checks read it mechanically.
 
 For each direction's draft candidate, check the draft first (sections in order, every contract key once, a derived source of pinned Director slots and recorded findings, each cited in Because, Watch lines with a numeric threshold and a time window, plain Direction within the standard's word and sentence limits (45/2 list and measure, 40/2 profile), two quantities for a measure, a boundary for a profile; a requirement it does not

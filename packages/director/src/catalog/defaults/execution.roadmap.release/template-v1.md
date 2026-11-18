@@ -13,10 +13,12 @@ clossys:
   rationale: []
 ---
 
-## Release
+## Direction
+- Release:
+- Target date:
+- Scope:
+- Not in scope:
 
-## Target date
+## Because
 
-## Scope
-
-## Not in scope
+## Watch

@@ -804,6 +804,22 @@ function modelFile(path: string): string {
   return target;
 }
 
+/**
+ * Whether a model path is an alias the reader refuses: the path itself, or a folder between it and its
+ * `agents/` root, is a symbolic link. Only the model part is walked, so a consumer under an aliased system
+ * folder (macOS /var) is not refused for that. records/resolve.ts asks this so the release resolver refuses
+ * the aliases the model reader refuses, and the two never disagree on what a pin ships.
+ */
+export function modelAlias(path: string): boolean {
+  const parts = resolve(path).split(sep);
+  const at = parts.findIndex((part, i) => part === "agents" && i > 0 && (i === parts.length - 1 || (MODEL_AGENTS as readonly string[]).includes(parts[i + 1]!)));
+  if (at < 0) return false;
+  for (let end = parts.length; end > at; end--) {
+    try { if (fsLstat(parts.slice(0, end).join(sep)).isSymbolicLink()) return true; }
+    catch (error) { if (!isAbsent(error)) throw error; }
+  }
+  return false;
+}
 /** True when `<dir>/agents` is a directory (a consumer root, or a workspace's `clossys/`). */
 export function hasModelRoot(dir: string): boolean {
   return fsStatOrUndefined(agentsDir(dir))?.isDirectory() === true;

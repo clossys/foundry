@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Threat
+## Direction
+- Threat:
+- Action:
+- Owner:
 
-## Action
+## Because
 
-## Owner
+## Watch

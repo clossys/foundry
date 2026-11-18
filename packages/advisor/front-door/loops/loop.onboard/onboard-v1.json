@@ -1,0 +1,18 @@
+{
+  "id": "advisor/loop.onboard",
+  "status": "draft",
+  "extends": null,
+  "content": {
+    "trigger": ["T1"],
+    "steps": [
+      { "id": "doctor", "does": "check the machine prerequisites; read no file", "decider": { "by": "code" }, "cli": "advisor doctor", "reads": ["host:node", "host:npm", "host:git"], "writes": [], "checks": ["machine.tools.node", "machine.tools.npm", "machine.tools.git", "machine.repo.root"] },
+      { "id": "install", "does": "install Producer, the agent packages and Advisor from tarballs packed at one foundry commit", "decider": { "by": "code" }, "cli": "advisor install --from <pack-dir>", "reads": ["<pack-dir>/artifacts.json"], "writes": ["vendor/clossys/", "clossys/advisor/install.json"], "checks": ["packages.source.manifest", "packages.source.tarball", "packages.record.install"] },
+      { "id": "init", "does": "let Producer write the workspace config and views pointer", "decider": { "by": "code" }, "cli": "advisor init", "reads": ["clossys/advisor/install.json"], "writes": ["clossys/clossys.config.ts", "AGENTS.md"], "checks": ["workspace.files.config", "workspace.files.pointer"] },
+      { "id": "intake", "does": "record the owner's one-time answers as Director evidence through clossys evidence; a partial intake resumes with the missing answers", "decider": { "by": "human", "who": "owner", "raise": "queue.clarify" }, "cli": "advisor intake --answers <file>", "reads": ["<answers file>"], "writes": ["clossys/advisor/intake.json"], "checks": ["intake.business.offer", "intake.business.audience", "intake.business.name", "intake.limits.constraint", "intake.limits.horizon"], "onFail": { "raise": "queue.clarify", "then": "retry" } },
+      { "id": "fill", "does": "start Producer's fill loop on T1; Producer, not Advisor, fills every slot", "decider": { "by": "code" }, "cli": "clossys run loop.fill --init", "reads": ["clossys/clossys.config.ts"], "writes": [], "checks": [] }
+    ],
+    "exit": "every step exits 0 and Producer's fill loop has started on T1",
+    "repeat": "never: onboarding runs once per repository; a new pack goes through advisor/loop.update",
+    "maxRounds": 1
+  }
+}

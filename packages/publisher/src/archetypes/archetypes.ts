@@ -75,14 +75,14 @@ export const PAGE_ARCHETYPES: Readonly<Record<ArchetypeId, PageArchetype>> = fre
     roles: [
       req("hero", "sections.hero"),
       opt("social-proof", "sections.logo-cloud", "advantage.proposition.proof"),
-      req("value", "sections.features", { max: 3 }),
+      opt("value", "sections.features", undefined, { max: 3 }),
       opt("how-it-works", "sections.steps", "capability.operation.delivery"),
       opt("metrics", "sections.stats", "execution.measure.north-star"),
       opt("alternatives", "sections.comparison", "context.competition.alternative"),
       opt("testimonials", "sections.testimonials", "advantage.proposition.proof", { max: 2 }),
       opt("pricing", "sections.pricing", "advantage.model.pricing"),
       opt("questions", "sections.faq", "context.customer.buying"),
-      req("closing-action", "sections.call-to-action"),
+      opt("closing-action", "sections.call-to-action", undefined),
     ],
   },
   pricing: {

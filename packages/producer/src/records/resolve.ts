@@ -16,6 +16,7 @@ import { CANDIDATE_NAME, SLOT_ID, TARGET_AGENTS, candidatePath, isAgentId, packa
 import { sha256Hex } from "./hash.js";
 import { pinPath } from "./pin.js";
 import { readPinFile, usesPinMap, type PinFile } from "./pin-map.js";
+import { modelAlias } from "./slots.js";
 import type { AgentId, CandidateName, PinRecord, Sha256, SlotId } from "./types.js";
 
 export type Resolution =
@@ -122,12 +123,16 @@ function fromPin(root: string, agent: AgentId, slotId: SlotId, record: string | 
 /** Resolves one slot (or one record of a record slot) by the two-step order. Never throws on bad data. */
 export function resolveSlot(root: string, agent: AgentId, slotId: SlotId, record?: string): Resolution {
   const base = { agent, slotId, ...(record !== undefined ? { record } : {}) };
-  const pinned = fromPin(root, agent, slotId, record, readPinFile(pinPath(root, agent, slotId), { agent, slotId }));
+  // The model reader (records/slots.ts) refuses aliases; so does the resolver, or a pin it cannot judge would ship.
+  const pinned = modelAlias(pinPath(root, agent, slotId))
+    ? { issue: `${agent}/${slotId} pin.json is a symbolic link, or sits under one: aliases are not followed` }
+    : fromPin(root, agent, slotId, record, readPinFile(pinPath(root, agent, slotId), { agent, slotId }));
   let pinIssue: string | undefined;
   if (pinned && "issue" in pinned) pinIssue = pinned.issue;
   else if (pinned) {
     const file = candidatePath(root, agent, slotId, pinned.pin.candidate);
-    if (!existsSync(file)) pinIssue = `pin names ${pinned.pin.candidate}, which is not in ${agent}/${slotId}/candidates/`;
+    if (modelAlias(file)) pinIssue = `pin names ${pinned.pin.candidate}, which is a symbolic link, or sits under one: aliases are not followed`;
+    else if (!existsSync(file)) pinIssue = `pin names ${pinned.pin.candidate}, which is not in ${agent}/${slotId}/candidates/`;
     else {
       const sha256 = sha256Hex(readFileSync(file));
       if (sha256 !== pinned.pin.sha256) pinIssue = `pin sha256 ${pinned.pin.sha256.slice(0, 12)} does not match ${pinned.pin.candidate} (${sha256.slice(0, 12)}): the candidate changed after it was pinned`;

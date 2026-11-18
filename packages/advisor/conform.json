@@ -1,0 +1,12 @@
+{
+  "schema": "clossys.conform-adapter/1",
+  "agent": "advisor",
+  "trees": [{ "file": "front-door/tree.json", "freeze": null }],
+  "kinds": ["answer", "check", "loop", "note", "record"],
+  "defaults": [],
+  "recipes": [],
+  "derive": [],
+  "edgeFiles": [{ "file": "front-door/intake-feeds.json", "format": "slots", "feedsTo": "director" }],
+  "skill": "skill/SKILL.md",
+  "skills": { "scope": null, "slot": null, "create": null, "choose": null, "cascade": null }
+}

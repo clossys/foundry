@@ -19,7 +19,7 @@ import { cliActor } from "../records/pin.js";
 import { latestBuild } from "../release/build.js";
 import { latestManifest } from "../release/manifest.js";
 import { readyFindings } from "../release/ready.js";
-import { clock, releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
+import { clock, releaseWorld, geographyBrief, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
 import { releaseReady, RELEASE_READY } from "./release-ready.js";
 
 const TALLYHOUSE = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "test-fixtures", "tallyhouse");
@@ -58,7 +58,7 @@ describe("release.ready mutations", () => {
   it("1: a ready-pin written while one gate is red is refused, and one put on disk fails the check", async () => {
     const world = make();
     const now = clock();
-    world.repin("writer/sections.hero.copy", 2, { fields: { "header.heading": { en: "placeholder" } } });
+    world.repin("director/focus.reach.geography", 2, geographyBrief("en, fr, de"));
     await release(world, "--build", now);
     const manifest = await release(world, "--manifest", now);
     expect(manifest.exitCode).toBe(0);

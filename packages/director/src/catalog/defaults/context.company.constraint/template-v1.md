@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Limit
+## Direction
+- Limit:
+- Bound:
+- Effect:
 
-## Bound
+## Because
 
-## Effect
+## Watch

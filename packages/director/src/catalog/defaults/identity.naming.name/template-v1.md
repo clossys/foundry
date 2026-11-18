@@ -13,10 +13,12 @@ clossys:
   rationale: []
 ---
 
-## Name
+## Direction
+- Name:
+- Casing:
+- Meaning:
+- Pronunciation:
 
-## Casing
+## Because
 
-## Meaning
-
-## Pronunciation
+## Watch

@@ -13,7 +13,8 @@ const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 
 const help = `Usage: node packages/producer/scripts/pack-five.mjs --out-dir <directory> [--preview-bindings FILE]
 
-Clean-build and npm pack Controller, the four mapped agents and Producer from this checkout.
+Clean-build and npm pack Controller, the four mapped agents, Producer and Advisor (the front door a
+fresh repository first runs from this pack) from this checkout.
 The output directory must be outside the checkout. Existing artifacts are never
 overwritten. Package versions and private flags are preserved; nothing publishes.
 Builds Studio when its App Router source and Next config exist. Otherwise the summary explicitly
@@ -69,10 +70,10 @@ function packResult(stdout) {
   throw new Error("npm pack did not return one valid JSON package result.");
 }
 
-export const PACK_ROLES = Object.freeze(["controller", "director", "designer", "writer", "publisher", "producer"]);
+export const PACK_ROLES = Object.freeze(["controller", "director", "designer", "writer", "publisher", "producer", "advisor"]);
 
 export function packTargets(mapped, root = repoRoot) {
-  const targets = [...mapped, { role: "producer", root: join(root, "packages/producer") }, { role: "controller", root: join(root, "packages/controller") }];
+  const targets = [...mapped, { role: "producer", root: join(root, "packages/producer") }, { role: "controller", root: join(root, "packages/controller") }, { role: "advisor", root: join(root, "packages/advisor") }];
   assertPackSet(targets);
   return targets;
 }
@@ -115,7 +116,7 @@ async function main() {
   const outDir = canonicalTarget(resolve(args[1]));
   if (inside(realpathSync(repoRoot), outDir)) throw new Error("Choose --out-dir outside the checkout.");
   if (existsSync(outDir) && !statSync(outDir).isDirectory()) throw new Error("--out-dir must be a directory.");
-  if (existsSync(outDir) && readdirSync(outDir).length > 0) throw new Error("--out-dir must be empty; choose a fresh directory for these six tarballs.");
+  if (existsSync(outDir) && readdirSync(outDir).length > 0) throw new Error("--out-dir must be empty; choose a fresh directory for these seven tarballs.");
 
   // Transform the single authority in memory, preserving its Node lookup base.
   const { transform } = await import("esbuild");

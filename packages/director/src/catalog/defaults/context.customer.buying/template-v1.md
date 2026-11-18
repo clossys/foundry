@@ -13,8 +13,11 @@ clossys:
   rationale: []
 ---
 
-## Decider
+## Direction
+- Decider:
+- Process:
+- Budget:
 
-## Process
+## Because
 
-## Budget
+## Watch
