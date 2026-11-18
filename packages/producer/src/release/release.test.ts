@@ -11,6 +11,7 @@ import { runReleaseCli } from "../cli/release.js";
 import { cliHooks } from "../loop/cli.js";
 import { ledgerDir, resumeRun, startRun } from "../loop/runner.js";
 import { answerQueueEntry } from "../queue/answer.js";
+import { raiseFeedback } from "../queue/feedback.js";
 import { readdirSync } from "node:fs";
 import type { LedgerEntry } from "../records/types.js";
 import { closeWork, raiseWork } from "../records/request.js";
@@ -173,6 +174,27 @@ describe("requests.open-fix", () => {
     await release(world, "--manifest");
     const result = await release(world, "--gates");
     expect(result.exitCode, result.message).toBe(0);
+  });
+
+  it("refuses a release while an open fix is about a Writer record slot (the release reads writer/sections.hero.copy#home.hero)", async () => {
+    const world = make();
+    const fix = fixOn(world, "writer/sections.hero.copy");
+    await release(world, "--build");
+    await release(world, "--manifest");
+    const result = await release(world, "--gates");
+    expect(result.exitCode).toBe(1);
+    expect(out(result).findings).toContainEqual(expect.objectContaining({ check: "requests.open-fix", subject: "writer/sections.hero.copy", detail: expect.stringContaining(`queue.fix#${fix.id}`) }));
+  });
+
+  it("refuses a release over an open queue-entry/1 fix about a Writer record (the older fix path)", async () => {
+    const world = make();
+    const entry = raiseFeedback(world.root, { ref: "writer/sections.hero.copy#home.hero", words: "the hero heading is too long", via: "chat" }, new Date("2026-11-20T07:35:00Z"));
+    expect(entry).toMatchObject({ queue: "queue.fix", decider: "agent:writer", subject: { to: "writer/sections.hero.copy", record: "home.hero" } });
+    await release(world, "--build");
+    await release(world, "--manifest");
+    const result = await release(world, "--gates");
+    expect(result.exitCode).toBe(1);
+    expect(out(result).findings).toContainEqual(expect.objectContaining({ check: "requests.open-fix", subject: "writer/sections.hero.copy", detail: expect.stringContaining(`queue.fix#${entry.id}`) }));
   });
 
   it("fails closed on a fix entry that does not read", async () => {

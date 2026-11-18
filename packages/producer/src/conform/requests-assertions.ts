@@ -4,6 +4,7 @@
  * keeps a store of its own, drops a need, writes another agent's slot or releases over an open fix. Pure functions of
  * the facts requests-model.ts reads; report-only like every lens.
  */
+import { posix } from "node:path";
 import type { Assertion } from "./assertions.js";
 import type { AgentModel, ConformModel } from "./model.js";
 import { statusOf, type QueueFact } from "./requests-model.js";
@@ -25,7 +26,7 @@ export const REQUEST_ASSERTIONS: Readonly<Record<string, Assertion>> = {
     const facts = agent.requestFacts;
     const rows = [
       ...facts.localStores.map(row => `packages/${agent.agent}/${row}: requests live in Producer's queue only`),
-      ...facts.entries.filter(fact => statusOf(fact) !== "closed" && fact.issues.length).map(fact => `${ref(fact)}: no valid record (${fact.issues[0]})`),
+      ...facts.entries.filter(fact => fact.issues.length).map(fact => `${ref(fact)}: no valid record (${fact.issues.slice(0, 2).join("; ")})`),
     ];
     return { rows, evidence: facts.sourceFiles + facts.entries.length };
   },
@@ -35,7 +36,7 @@ export const REQUEST_ASSERTIONS: Readonly<Record<string, Assertion>> = {
     const rows = [...facts.unrecorded, ...machinery.printedGaps.map(code => `interview gap ${code}: printed, never filed as a queue entry`)];
     return { rows, evidence: facts.needs + machinery.gapCodes };
   },
-  /** Q3: routing is data and total (one catch-all, last); the router alone writes a route; re-derived routes match. */
+  /** Q3: routing is data and total (one catch-all, last); the router alone writes a route; an open entry's re-derived route matches (a closed one keeps its own). */
   Q3: (agent, model) => {
     const facts = agent.requestFacts;
     const rows = [...model.machinery.requests.routingIssues.map(issue => `routing.json: ${issue}`)];
@@ -101,10 +102,23 @@ export const REQUEST_ASSERTIONS: Readonly<Record<string, Assertion>> = {
     }
     return { rows, evidence: issuing.length + crossing.length };
   },
-  /** Q7: a closed entry has an outcome, a result that resolves and a notify to the requester. */
+  /**
+   * Q7: a closed entry has an outcome, a resolving result ref and a notify event to the requester, and its requester
+   * check passed (a producer verified event before the close; L4 is this row for kind slot). An entry that says it is
+   * closed and does not read is red here too.
+   */
   Q7: agent => {
     const closed = agent.requestFacts.entries.filter(fact => statusOf(fact) === "closed");
-    const rows = closed.flatMap(fact => [...fact.issues.map(issue => `${ref(fact)}: ${issue}`), ...(fact.resultIssue ? [`${ref(fact)}: result ${String(fact.doc.result)} ${fact.resultIssue}`] : [])]);
+    const rows = closed.flatMap(fact => {
+      const events = Array.isArray(fact.doc.events) ? fact.doc.events.filter(object) : [];
+      const at = events.findIndex(event => event.id === fact.doc.closed);
+      const verified = fact.kind === "slot" || (at >= 0 && events.slice(0, at).some(event => event.op === "verified" && event.by === "producer"));
+      return [
+        ...fact.issues.map(issue => `${ref(fact)}: ${issue}`),
+        ...(fact.resultIssue ? [`${ref(fact)}: result ${String(fact.doc.result)} ${fact.resultIssue}`] : []),
+        ...(!verified && !fact.issues.length ? [`${ref(fact)}: closed with no requester check passing before it`] : []),
+      ];
+    });
     return { rows, evidence: closed.length };
   },
   /** Q8: nothing stays open past its loop: done but open, stopped without an entry, or passed over. */
@@ -126,16 +140,22 @@ export const REQUEST_ASSERTIONS: Readonly<Record<string, Assertion>> = {
     }
     return { rows, evidence: judged + held.length };
   },
-  /** Q9: no cross-edit: every file a step decided by the agent wrote lies under the agent's own folder. */
+  /**
+   * Q9: no cross-edit: every file a step decided by the agent wrote lies under the agent's own folder (the path
+   * normalised, so `<agent>/../<other>` is the other agent's), and verbs refuse a seat acting on another agent's slot.
+   */
   Q9: (agent, model) => {
-    const rows: string[] = [];
+    const rows = model.machinery.requests.seatGuardIssues.map(issue => `verb seat guard: ${issue}`);
     let steps = 0;
     for (const run of model.machinery.requests.runs) for (const step of run.steps) {
       if (step.by !== "agent" || step.agent !== agent.agent) continue;
       steps++;
-      for (const file of step.wrote) if (!file.startsWith(`${agent.agent}/`)) rows.push(`run ${run.id} step ${step.id}: ${agent.agent} wrote ${file}, another agent's record`);
+      for (const file of step.wrote) {
+        const path = posix.normalize(file.replace(/\\/g, "/"));
+        if (!path.startsWith(`${agent.agent}/`)) rows.push(`run ${run.id} step ${step.id}: ${agent.agent} wrote ${file}, another agent's record`);
+      }
     }
-    return { rows, evidence: steps };
+    return { rows, evidence: 1 + steps };
   },
   /** Q10: breakage is a kind fix entry with its check, findings and cause; nothing raises a queue-entry/1 queue.fix. */
   Q10: (agent, model) => {
@@ -148,9 +168,21 @@ export const REQUEST_ASSERTIONS: Readonly<Record<string, Assertion>> = {
     ];
     return { rows, evidence: 1 + fixes.length + facts.legacyFixes.length };
   },
-  /** Q11: release is refused while an open fix entry's subject is in the publication's closure. */
-  Q11: (_agent, model: ConformModel) => ({
-    rows: model.machinery.requests.releaseGates.includes("requests.open-fix") ? [] : ["the release gates hold no requests.open-fix gate: a release would ship over an open fix"],
-    evidence: 1,
-  }),
+  /**
+   * Q11: release is refused while an open fix entry's subject is in the publication's closure: the gate is a release
+   * gate, runGates runs it, and on this consumer it refuses every open fix about the agent whose slot (or a record of
+   * it) the release reads.
+   */
+  Q11: (agent, model: ConformModel) => {
+    const machinery = model.machinery.requests;
+    const rows: string[] = [];
+    if (!machinery.releaseGates.includes("requests.open-fix")) rows.push("the release gates hold no requests.open-fix gate: a release would ship over an open fix");
+    const gate = machinery.openFix;
+    if (gate.error) rows.push(`the requests.open-fix gate does not run here: ${gate.error}`);
+    else if (!gate.wired) rows.push("runGates runs no requests.open-fix gate: a release would ship over an open fix");
+    const open = agent.requestFacts.entries.filter(fact => fact.kind === "fix" && statusOf(fact) === "open" && !fact.issues.length && targets(agent, fact));
+    const judged = open.filter(fact => gate.closure.has(target(fact).split("#")[0]!));
+    for (const fact of judged) if (!gate.refused.has(target(fact).split("#")[0]!)) rows.push(`${ref(fact)}: open on ${target(fact)}, which the release reads, and requests.open-fix passes`);
+    return { rows, evidence: 1 + judged.length };
+  },
 };

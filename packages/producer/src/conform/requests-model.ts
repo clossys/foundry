@@ -6,11 +6,13 @@
  * owns its target slot.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 import { gapsOf } from "../pipeline/interview.js";
 import { consumerFacts, ownerClassOf, ownerClasses, readDeclarations, rederive, routingIssues, type RoutingFacts } from "../queue/routing.js";
 import { listWorkEntries, requestIssues, resultRefusal, slotlessNeeds } from "../records/request.js";
-import { RELEASE_GATES } from "../release/gates.js";
+import { gateRunners, openFixes, RELEASE_GATES, REQUESTS_OPEN_FIX } from "../release/gates.js";
+import { releaseResolutions } from "../release/pins.js";
+import { seatRefusal } from "../records/seat-owner.js";
 import type { SlotRequest } from "../records/types.js";
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
@@ -26,7 +28,7 @@ export interface QueueFact {
   readonly doc: Readonly<Record<string, unknown>>;
   /** requestIssues on the doc: a closed entry missing its link back is listed here. */
   readonly issues: readonly string[];
-  /** `rederive`: undefined when the recorded route is the one the table gives now. */
+  /** `rederive` on an open entry: undefined when the recorded route is the one the table gives now (a closed entry keeps its route). */
   readonly routeIssue?: string;
   /** The owner step (`<loop>/<version>#<step>`) and queue reserving the target, when it falls in an owner class. */
   readonly ownerClass?: { readonly step: string; readonly queue: string };
@@ -73,6 +75,13 @@ export interface RequestMachinery {
   readonly runs: readonly RunFact[];
   /** `<queue>#<id>` of every /2 entry an open queue-entry/1 entry cites (a stopped run's re-ask). */
   readonly reasked: ReadonlySet<string>;
+  /** Q9's verb half: why a verb would let a seat act on another agent's slot (the seat rule probed, and pick wired to it). */
+  readonly seatGuardIssues: readonly string[];
+  /**
+   * Q11: whether release's runGates wires requests.open-fix, the slots a release reads (the one resolver, slot level)
+   * and the slots the gate refuses on this consumer now; read on first use.
+   */
+  readonly openFix: { readonly wired: boolean; readonly closure: ReadonlySet<string>; readonly refused: ReadonlySet<string>; readonly error?: string };
 }
 
 const SOURCE = /\.(ts|tsx|mts)$/;
@@ -189,7 +198,13 @@ function routingOf(repo: string, consumer: string): { facts?: RoutingFacts; issu
   let doc: unknown;
   try { doc = text === undefined ? undefined : JSON.parse(text); } catch { doc = undefined; }
   const issues = text === undefined ? ["packages/producer/src/queue/routing.json is missing"] : doc === undefined ? ["routing.json is not JSON"] : routingIssues(doc);
-  slot.routing = issues.length ? { issues } : { facts: consumerFacts(consumer, { text, loopsDir: join(repo, "packages/producer/loops"), packagesDir: join(repo, "packages") }), issues: [] };
+  if (issues.length) slot.routing = { issues };
+  else {
+    // A refused read (owner classes that do not read) is a routing issue, never an empty owner list.
+    try { slot.routing = { facts: consumerFacts(consumer, { text, loopsDir: join(repo, "packages/producer/loops"), packagesDir: join(repo, "packages") }), issues: [] }; } catch (error) {
+      slot.routing = { issues: [`the router refuses: ${error instanceof Error ? error.message : String(error)} (no owner class is read)`] };
+    }
+  }
   return slot.routing;
 }
 function gapsFor(repo: string, consumer: string): ReturnType<typeof gapsOf>["gaps"] {
@@ -201,6 +216,36 @@ function gapsFor(repo: string, consumer: string): ReturnType<typeof gapsOf>["gap
   return slot.gaps;
 }
 
+/**
+ * Q9's verb half: the seat rule (records/seat-owner.ts) refuses another agent's seat and lets the slot's own agent and
+ * a judging seat act, and `clossys pick` calls it before it writes. `next --submit` and `options` take no seat: a
+ * submit acts as the owning step's agent, and options writes no decision.
+ */
+export function seatGuardIssues(repo: string): string[] {
+  const out: string[] = [];
+  const probes: [string, string, boolean][] = [["agent:writer", "designer", true], ["agent:director.candidates", "designer", true], ["agent:designer", "designer", false], ["agent:designer.verdict", "designer", false], ["agent:judge", "writer", false]];
+  for (const [by, agent, refused] of probes) if ((seatRefusal(by, agent) !== undefined) !== refused) out.push(`the seat rule ${refused ? "lets" : "refuses"} --by ${by} on a ${agent} slot`);
+  const file = join(repo, "packages/producer/src/cli/options.ts");
+  const text = existsSync(file) ? readFileSync(file, "utf8") : "";
+  const start = text.indexOf("export async function runPickCli");
+  const body = start < 0 ? "" : text.slice(start);
+  const guard = body.indexOf("seatRefusal(flags.by, agent)"), write = body.indexOf("writePin(");
+  if (!body || guard < 0 || write < 0 || guard > write) out.push("clossys pick (src/cli/options.ts runPickCli) does not refuse a seat of another agent before it writes the pin");
+  return out;
+}
+
+/** The release side of Q11 on one consumer (`root` holds clossys/): the gate as runGates calls it, never a copy. */
+export function openFixFacts(root: string): RequestMachinery["openFix"] {
+  try {
+    const wired = Object.keys(gateRunners(root, "-", undefined)).includes(REQUESTS_OPEN_FIX);
+    const closure = new Set(releaseResolutions(root).map(resolution => `${resolution.agent}/${resolution.slotId}`));
+    const refused = new Set(openFixes(root).map(finding => finding.subject));
+    return { wired, closure, refused };
+  } catch (error) {
+    return { wired: false, closure: new Set(), refused: new Set(), error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 export function readRequestMachinery(repo: string, consumer: string): RequestMachinery {
   const producer = join(repo, "packages/producer");
   const { issues, facts } = routingOf(repo, consumer);
@@ -209,10 +254,13 @@ export function readRequestMachinery(repo: string, consumer: string): RequestMac
   const interview = existsSync(join(producer, "src/pipeline/interview.ts")) ? readFileSync(join(producer, "src/pipeline/interview.ts"), "utf8") : "";
   const fixRaisers = sources(join(producer, "src")).filter(file => /queue: *["'`]queue\.fix["'`]/.test(readFileSync(file, "utf8"))).map(file => relative(repo, file));
   const decisions = readDecisionEntries(consumer);
+  let openFix: RequestMachinery["openFix"] | undefined;
   return {
     routingIssues: issues, ownerPacketRow: rows.some(row => row.to === "owner-packet"),
-    ownerClassCount: facts ? facts.classes.length : ownerClasses(join(producer, "loops")).length,
+    ownerClassCount: facts ? facts.classes.length : (() => { try { return ownerClasses(join(producer, "loops")).length; } catch { return 0; } })(),
     fixRaisers, printedGaps: printedGapCodes(interview), gapCodes: gapCodesOf(interview).length, releaseGates: [...RELEASE_GATES], runs: readRuns(consumer), reasked: decisions.reasked,
+    seatGuardIssues: seatGuardIssues(repo),
+    get openFix() { return openFix ??= openFixFacts(dirname(consumer)); },
   };
 }
 
@@ -224,10 +272,23 @@ export function readAgentRequests(repo: string, consumer: string, agent: string,
   const handling = declared?.handling;
   const facts = routingOf(repo, consumer).facts;
   const entries: QueueFact[] = listWorkEntries(consumer).flatMap(read => {
-    const doc = read.request as unknown as Record<string, unknown> | undefined;
-    if (!doc || !about(agent, doc)) return [];
-    const request = read.request!;
-    const routeIssue = facts ? rederive(facts, { kind: request.kind, target: request.target, assignee: request.assignee, ...(request.route ? { route: request.route } : {}) }) : "no routing table to re-derive the route";
+    if (!read.request) {
+      // An entry that does not read is a finding, never dropped: kept with its issues for every agent it names (all
+      // four when it names none), so Q1 (and Q7, when it says it is closed) report it.
+      const doc = object(read.doc) ? read.doc : {};
+      const named = typeof doc.from === "string" || typeof doc.assignee === "string" || typeof doc.target === "string";
+      if (named && !about(agent, doc)) return [];
+      const kind = typeof doc.kind === "string" ? doc.kind : basename(dirname(dirname(read.file))).replace(/^queue\./, "");
+      const id = typeof doc.id === "string" ? doc.id : basename(read.file).replace(/\.json$/, "");
+      return [{ kind, id, doc, issues: read.issues.length ? read.issues : ["does not read as a clossys.queue-entry/2 work entry"] }];
+    }
+    const doc = read.request as unknown as Record<string, unknown>;
+    if (!about(agent, doc)) return [];
+    const request = read.request;
+    // A closed entry keeps the route it was given: re-derived against today's table and placements it could differ
+    // legitimately (a slot placed since, a table edit), so only an open entry is re-derived.
+    const routeIssue = request.status !== "open" ? undefined
+      : facts ? rederive(facts, { kind: request.kind, target: request.target, assignee: request.assignee, ...(request.route ? { route: request.route } : {}) }) : "no routing table to re-derive the route";
     const owned = facts ? ownerClassOf(facts, request.target) : undefined;
     const resultIssue = request.status === "closed" && request.kind !== "slot" && typeof request.result === "string" ? resultRefusal(consumer, request.result) : undefined;
     return [{

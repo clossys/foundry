@@ -23,6 +23,7 @@ import { CERTIFY_REPORT_SCHEMA, certifiedOptions } from "../constitution/pin-gat
 import { OPTION_TABLE, SLOT_AGENTS, pinStatus, type SlotAgent } from "../records/slot-model/index.js";
 import { checkSlotOptions, classCounts, classify, slotOptions, type SlotOptions } from "../records/slot-options.js";
 import { inspectSlot, listSlots, modelExists, readCandidate, readSlotEntry } from "../records/slots.js";
+import { seatRefusal } from "../records/seat-owner.js";
 import { writePin, writeSlotOptions } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { CliUsageError } from "./args.js";
@@ -39,7 +40,8 @@ export const OPTIONS_USAGE = "Usage: clossys options [<agent>/<slot> [--more | -
   + "  the slot's family owes (loop.create's certify step); it writes .clossys/checks/<agent>/<slot>/certify.json.\n"
   + "  --classes writes slot.json options/varyOn from the committed option-class mapping; --check only reports drift.";
 export const PICK_USAGE = "Usage: clossys pick <agent>/<slot> <candidate-id> --by agent:<seat> [--at <iso timestamp>] [--root <dir>] [--json]\n"
-  + "  a judge seat picks one candidate (pin basis agent); Studio shows it as confirm until the owner pins.";
+  + "  a judge seat picks one candidate (pin basis agent); Studio shows it as confirm until the owner pins. An agent's seat\n"
+  + "  (agent:<agent>[.<role>]) picks only on that agent's own slots.";
 
 interface Flags { positional: string[]; more: boolean; redraft: boolean; classes: boolean; check: boolean; by?: string; at?: string; root?: string; help: boolean }
 
@@ -194,6 +196,9 @@ export async function runPickCli(argv: readonly string[], cwd: string): Promise<
   if (!flags.by || !/^agent:\S+$/.test(flags.by)) throw new CliUsageError(`pick requires --by agent:<seat>; owners pin with clossys pin\n${PICK_USAGE}`);
   const at = flags.at ?? new Date().toISOString();
   if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${PICK_USAGE}`);
+  // No cross-edit: a seat of one agent never picks on another agent's slot (records/seat-owner.ts).
+  const crossing = seatRefusal(flags.by, agent);
+  if (crossing) return { exitCode: 1, message: `pick refused: ${crossing}` };
   const consumer = consumerOf(cwd, flags.root);
   const entry = readSlotEntry(consumer, agent, id);
   if (!entry) return { exitCode: 1, message: `pick refused: unknown slot ${agent}/${id} (not in ${agent} ia.json)` };

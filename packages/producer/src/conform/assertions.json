@@ -210,7 +210,7 @@
     {
       "id": "Q3",
       "lens": "request",
-      "statement": "routing is data and total (one catch-all, last); the router alone writes a route and re-derived routes match",
+      "statement": "routing is data and total (one catch-all, last); the router alone writes a route and re-deriving every open entry's route matches",
       "check": "request-routing",
       "status": "building",
       "enforcedFor": []
@@ -242,7 +242,7 @@
     {
       "id": "Q7",
       "lens": "request",
-      "statement": "a closed entry has an outcome, a result that resolves and a notify to its requester",
+      "statement": "a closed entry names an outcome, a resolving result ref and a notify event to the requester, and its requester check passed (L4 is this row for kind slot)",
       "check": "request-closed",
       "status": "building",
       "enforcedFor": []
@@ -258,7 +258,7 @@
     {
       "id": "Q9",
       "lens": "request",
-      "statement": "every file a step decided by the agent wrote lies under the agent's own folder",
+      "statement": "no cross-edit: a step decided by an agent writes only that agent's folders, and verbs refuse a seat acting on another agent's slot",
       "check": "request-cross-edit",
       "status": "building",
       "enforcedFor": []

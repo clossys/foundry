@@ -47,7 +47,7 @@ function world(mutate: Mutation = () => {}): { agent: AgentModel; model: Conform
       skills: [["slot", "s/slot.md", "loop.slot"], ["change", "s/create.md", "loop.create"], ["fix", "s/create.md", "loop.create"]].map(([kind, skill, loop]) => ({ kind, skill, loop, exists: true, registered: true, hasRequests: true })),
       entries: [
         { kind: "change", id: "c1", issues: [], doc: { kind: "change", id: "c1", from: "director/a.x", target: "writer/b.in", assignee: "writer", status: "closed", createdAt: "2026-11-15T00:00:00Z",
-          route: { row: "change.live", assignee: "writer", handler: { skill: "w.md", loop: "loop.create" } }, events: [{ op: "raised" }, { op: "routed", by: "producer" }] } },
+          closed: "c1#4", route: { row: "change.live", assignee: "writer", handler: { skill: "w.md", loop: "loop.create" } }, events: [{ id: "c1#1", op: "raised" }, { id: "c1#2", op: "routed", by: "producer" }, { id: "c1#3", op: "verified", by: "producer" }, { id: "c1#4", op: "closed", by: "producer" }] } },
         { kind: "fix", id: "f1", issues: [], doc: { kind: "fix", id: "f1", from: "producer/checks.scorecard", target: "director/a.x", assignee: "director", status: "open", createdAt: "2026-11-17T00:00:00Z", check: "text.nonempty", cause: "empty", findings: ["a"],
           route: { row: "fix.live", assignee: "director", handler: { skill: "s/create.md", loop: "loop.create" } }, events: [{ op: "raised" }, { op: "routed", by: "producer" }] } },
         { kind: "slot", id: "s1", issues: [], ownerClass: { step: "loop.choose/choose-v1#owner-pick", queue: "queue.pick" }, doc: { kind: "slot", id: "s1", from: "writer/b.in", target: "director/a.y", assignee: "owner", status: "open", createdAt: "2026-11-17T00:00:00Z",
@@ -64,6 +64,7 @@ function world(mutate: Mutation = () => {}): { agent: AgentModel; model: Conform
     contractSchemas: new Map([["brief", { type: "object", required: ["requirements"] }]]), criteria: new Set(["text.nonempty"]),
     requests: {
       routingIssues: [], ownerPacketRow: true, ownerClassCount: 3, fixRaisers: [], printedGaps: [], gapCodes: 1, releaseGates: ["requests.open-fix"], reasked: new Set<string>(),
+      seatGuardIssues: [], openFix: { wired: true, closure: new Set(["director/a.x"]), refused: new Set(["director/a.x"]) },
       runs: [{ id: "r1", loop: "loop.create", status: "done", createdAt: "2026-11-16T00:00:00Z", cites: ["queue.change#c1"], steps: [{ id: "s1", by: "agent", agent: "director", wrote: ["director/a.x/candidates/x.md"] }, { id: "s2", by: "code", wrote: ["producer/ledger.create/entries/r1.json"] }] }],
     },
   };
@@ -160,6 +161,29 @@ describe("conformance runner", () => {
       s1.doc.route = { ...s1.doc.route, assignee: "writer" };
     });
     expect(ASSERTIONS.Q4!(built.agent, built.model, built.facts).rows).toEqual([expect.stringMatching(/s1.*owner-reserved.*routes to writer/)]);
+  });
+  it("Q7: a closed change with no producer verified event before its close is red (the requester check never ran)", () => {
+    const built = world((agent: any) => {
+      const c1 = agent.requestFacts.entries.find((fact: any) => fact.id === "c1");
+      c1.doc.events = c1.doc.events.filter((event: any) => event.op !== "verified");
+    });
+    expect(ASSERTIONS.Q7!(built.agent, built.model, built.facts).rows).toEqual([expect.stringMatching(/c1: closed with no requester check passing/)]);
+    const after = world((agent: any) => {
+      const c1 = agent.requestFacts.entries.find((fact: any) => fact.id === "c1");
+      c1.doc.events = [...c1.doc.events.filter((event: any) => event.op !== "verified"), { id: "c1#5", op: "verified", by: "producer" }];
+    });
+    expect(red("Q7", after)).toBe(true);
+  });
+  it("Q9: a verb that lets a seat act on another agent's slot is red, and so is a wrote path that climbs out", () => {
+    expect(ASSERTIONS.Q9!(world((_agent, machinery) => { machinery.requests.seatGuardIssues = ["seatRefusal lets agent:writer act on a director slot"]; }).agent, world((_agent, machinery) => { machinery.requests.seatGuardIssues = ["seatRefusal lets agent:writer act on a director slot"]; }).model, GOOD_FACTS).rows)
+      .toEqual([expect.stringMatching(/verb seat guard: seatRefusal lets agent:writer/)]);
+    expect(red("Q9", world((_agent, machinery) => { machinery.requests.runs[0].steps[0].wrote.push("director/../designer/sections.hero/candidates/x.md"); }))).toBe(true);
+  });
+  it("Q11: a gate runGates does not run, or one that passes over an open fix the release reads, is red", () => {
+    expect(red("Q11", world((_agent, machinery) => { machinery.requests.openFix = { ...machinery.requests.openFix, wired: false }; }))).toBe(true);
+    expect(ASSERTIONS.Q11!(...((built) => [built.agent, built.model, built.facts] as const)(world((_agent, machinery) => { machinery.requests.openFix = { ...machinery.requests.openFix, refused: new Set() }; }))).rows)
+      .toEqual([expect.stringMatching(/queue.fix#f1: open on director\/a.x, which the release reads, and requests.open-fix passes/)]);
+    expect(red("Q11", world((_agent, machinery) => { machinery.requests.openFix = { wired: true, closure: new Set(), refused: new Set(), error: "no release slot" }; }))).toBe(true);
   });
   it("counts an empty set as red (vacuous), never green", () => {
     const cell = cellOf("C3", "C3", { rows: [], evidence: 0 });

@@ -10,7 +10,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { closeWork, raiseWork } from "../records/request.js";
 import { ASSERTIONS } from "./assertions.js";
 import type { AgentModel, ConformModel } from "./model.js";
-import { localStores, printedGapCodes, readAgentRequests, readRequestMachinery, resetRequestFacts } from "./requests-model.js";
+import { localStores, printedGapCodes, readAgentRequests, readRequestMachinery, resetRequestFacts, seatGuardIssues } from "./requests-model.js";
+import { requestsWorld } from "./__fixtures__/requests-world.js";
 
 const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
 const FIXTURE = join(REPO, "packages/producer/test-fixtures/consumer");
@@ -61,8 +62,8 @@ function judge(id: string, agent: string, at: { consumer: string; repo?: string 
   const subject = { agent, edges: [{ from: "x.y", to: "designer/sections.hero", scope: "placed" }, { from: "x.y", to: "director/focus.segment.core", scope: "placed" }, { from: "x.y", to: "page.home", target: "publisher", scope: "package" }], requestFacts: readAgentRequests(repoDir, at.consumer, agent, HASHED) } as unknown as AgentModel;
   return ASSERTIONS[id]!(subject, model);
 }
-const fix = (dir: string, target = "designer/sections.hero") => raiseWork(dir, {
-  kind: "fix", target, from: "owner", why: "the hero overflows at 320px", source: "check", by: "producer", at: AT,
+const fix = (dir: string, target = "designer/sections.hero", at: string = AT) => raiseWork(dir, {
+  kind: "fix", target, from: "owner", why: "the hero overflows at 320px", source: "check", by: "producer", at,
   check: "render.overflow", findings: ["hero heading overflows at 320px"], cause: "the heading has no wrap rule",
 }).request;
 function run(dir: string, id: string, doc: { status: string; createdAt?: string; refs?: unknown[]; steps?: unknown[]; loop?: string }) {
@@ -73,15 +74,65 @@ function run(dir: string, id: string, doc: { status: string; createdAt?: string;
 const answering = (record: string) => [{ to: "producer/queue.fix", record, rel: "answers" }];
 
 describe("the request lens on disk", () => {
-  it("Q8: a done run that leaves its entry open is red; closing it with its result makes Q7 and Q8 green", () => {
+  it("Q8: a done run that leaves its entry open is red; closing it with its result makes Q7 and Q8 green", { timeout: 60_000 }, async () => {
     const dir = consumer();
     const entry = fix(dir);
     expect(judge("Q8", "designer", { consumer: dir }).rows).toEqual([]);
     run(dir, "20261117T1100Z-create-hero", { status: "done", refs: answering(entry.id) });
     expect(judge("Q8", "designer", { consumer: dir }).rows).toEqual([expect.stringMatching(/is done and the entry is still open/)]);
-    closeWork(dir, entry.id, { by: "designer", at: "2026-11-17T11:05:00Z", outcome: "fixed", result: "designer/sections.hero" });
-    expect(judge("Q8", "designer", { consumer: dir })).toMatchObject({ rows: [] });
-    expect(judge("Q7", "designer", { consumer: dir })).toMatchObject({ rows: [], evidence: 1 });
+    // The fixture hero does not resolve, so the requester check refuses the close; on the request world it resolves.
+    expect(() => closeWork(dir, entry.id, { by: "designer", at: "2026-11-17T11:05:00Z", outcome: "fixed", result: "designer/sections.hero" })).toThrow(/requester check failed/);
+    const world = await requestsWorld();
+    roots.push(world.root);
+    // Raised after the world's own loop.create runs, so only the run below can answer or pass it over.
+    const again = fix(world.consumer, "designer/sections.hero", "2026-11-20T10:30:00Z");
+    run(world.consumer, "20261120T1100Z-create-hero", { status: "done", createdAt: "2026-11-20T11:00:00Z", refs: answering(again.id) });
+    expect(judge("Q8", "designer", { consumer: world.consumer }).rows).toEqual([expect.stringMatching(new RegExp(`${again.id}: run .* is done and the entry is still open`))]);
+    closeWork(world.consumer, again.id, { by: "designer", at: "2026-11-20T11:05:00Z", outcome: "fixed", result: "designer/sections.hero" });
+    expect(judge("Q8", "designer", { consumer: world.consumer })).toMatchObject({ rows: [] });
+    const q7 = judge("Q7", "designer", { consumer: world.consumer });
+    expect(q7.rows).toEqual([]);
+    expect(q7.evidence).toBeGreaterThan(1);
+  });
+
+  it("Q9: the pick verb's seat guard is read from the verb itself; a runPickCli without it before writePin is red", () => {
+    expect(seatGuardIssues(REPO)).toEqual([]);
+    const root = scratch("requests-seat-");
+    const text = readFileSync(join(REPO, "packages/producer/src/cli/options.ts"), "utf8");
+    const guard = "const crossing = seatRefusal(flags.by, agent);";
+    expect(text).toContain(guard);
+    mkdirSync(join(root, "packages/producer/src/cli"), { recursive: true });
+    writeFileSync(join(root, "packages/producer/src/cli/options.ts"), text.replace(guard, "const crossing = undefined;"));
+    expect(seatGuardIssues(root)).toEqual([expect.stringMatching(/runPickCli\) does not refuse a seat of another agent before it writes the pin/)]);
+  });
+
+  it("Q1 and Q7: an invalid entry is red, never dropped from the lens", () => {
+    const dir = consumer();
+    const change = raiseWork(dir, { kind: "change", target: "writer/narratives.article", from: "owner", why: "tighten the intro", want: "candidate", source: "cli", by: "owner", at: AT }).request;
+    const file = join(dir, "agents/producer/queue.change/entries", `${change.id}.json`);
+    const { want: _want, ...noWant } = JSON.parse(readFileSync(file, "utf8"));
+    writeFileSync(file, JSON.stringify(noWant));
+    expect(judge("Q1", "writer", { consumer: dir }).rows).toContainEqual(expect.stringMatching(new RegExp(`queue\\.change#${change.id}: no valid record .*want`)));
+    // Forged closed: status closed, closing fields, `closed` pointing at the raise.
+    writeFileSync(file, JSON.stringify({ ...noWant, want: "candidate", status: "closed", closed: noWant.opened, outcome: "changed", result: "writer/narratives.article", notified: { to: "owner", at: AT }, closedAt: AT }));
+    expect(judge("Q7", "writer", { consumer: dir }).rows.join("\n")).toMatch(new RegExp(`queue\\.change#${change.id}: .*the status is closed and the event log has no closed event`));
+  });
+
+  it("Q3: a closed entry keeps the route it was given; only open entries are re-derived against today's table", { timeout: 60_000 }, async () => {
+    const world = await requestsWorld();
+    roots.push(world.root);
+    expect(judge("Q3", "designer", { consumer: world.consumer }).rows).toEqual([]);
+    // Any edit of the table bytes changes its sha: closed history stays green, the open entries go red.
+    const at = repo({ routing: doc => { (doc as Record<string, unknown>).about = `${String((doc as Record<string, unknown>).about)} (edited)`; } });
+    const closed = [...world.raised.change, ...world.raised.fix.filter(item => item.target !== "writer/sections.hero.copy")].map(item => item.id);
+    const open = world.raised.fix.find(item => item.target === "writer/sections.hero.copy")!;
+    for (const agent of ["director", "designer", "writer", "publisher"]) {
+      const rows = judge("Q3", agent, { consumer: world.consumer, repo: at }).rows;
+      for (const id of closed) expect(rows.join("\n"), `${agent} ${id}`).not.toContain(id);
+      expect(rows.length, agent).toBeGreaterThan(0);
+      for (const row of rows) expect(row, agent).toMatch(/another routing\.json/);
+    }
+    expect(judge("Q3", "writer", { consumer: world.consumer, repo: at }).rows).toContainEqual(expect.stringMatching(new RegExp(`queue\\.fix#${open.id}: .*another routing\\.json`)));
   });
 
   it("Q8: a stopped run with no entry re-asking it, and a run of the handler's loop that passed it over, are red", () => {
@@ -98,7 +149,8 @@ describe("the request lens on disk", () => {
     const dir = consumer();
     const step = (file: string) => ({ id: "create", decider: { by: "agent", agent: "writer" }, cli: "clossys submit", exit: 0, wrote: [{ file, sha256: null }] });
     run(dir, "20261117T1100Z-create-copy", { status: "done", steps: [step("writer/sections.hero.copy/candidates/hero-v2.md")] });
-    expect(judge("Q9", "writer", { consumer: dir })).toMatchObject({ rows: [], evidence: 1 });
+    // Evidence: the verb seat guard (1) and the one Writer step.
+    expect(judge("Q9", "writer", { consumer: dir })).toMatchObject({ rows: [], evidence: 2 });
     run(dir, "20261117T1200Z-create-cross", { status: "done", steps: [step("designer/sections.hero/candidates/hero-v9.json")] });
     expect(judge("Q9", "writer", { consumer: dir }).rows).toEqual([expect.stringMatching(/writer wrote designer\/sections\.hero\/candidates\/hero-v9\.json, another agent's record/)]);
   });

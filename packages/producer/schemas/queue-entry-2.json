@@ -232,6 +232,7 @@
               "placed",
               "started",
               "rejected",
+              "verified",
               "closed",
               "withdrawn"
             ]

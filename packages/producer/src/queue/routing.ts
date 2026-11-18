@@ -30,6 +30,8 @@ export type EntryKind = (typeof ENTRY_KINDS)[number];
 export const WORK_KINDS = ["slot", "change", "fix"] as const;
 export type WorkKind = (typeof WORK_KINDS)[number];
 const MATCHES = ["live", "owner-class", "home", "agent", "any"] as const;
+/** The kinds an owner class reserves: a change or a new slot in the class is the owner's (a fix goes to its handler). */
+const OWNER_KINDS = ["change", "slot"] as const;
 const DESTINATIONS = ["handler", "owner-packet", "scope", "decider", "owner-clarify"] as const;
 const ROUTED_AGENTS = ["director", "designer", "writer", "publisher"] as const;
 export type RoutedAgent = (typeof ROUTED_AGENTS)[number];
@@ -76,6 +78,14 @@ export function routingIssues(table: unknown): string[] {
   if (catchAlls.length !== 1) out.push(`routing.json must hold exactly one catch-all row (kinds "*", match any), found ${catchAlls.length}: an unmatched entry would be dropped`);
   else if (catchAlls[0] !== doc.rows.length - 1) out.push(`the catch-all row must be last (it is rows[${catchAlls[0]}]): rows after it never match`);
   if (catchAlls.length === 1 && (doc.rows[catchAlls[0]!] as RoutingRow).to !== "owner-clarify") out.push("the catch-all routes to owner-clarify: nothing unmatched is guessed");
+  // Owner-reserved rows win whatever the order: for change and slot, the first row that could take the entry (the
+  // catch-all aside) is the owner-class -> owner-packet row, so no agent row sees an owner-reserved target first.
+  for (const kind of OWNER_KINDS) {
+    const covers = (row: unknown) => typeof row === "object" && row !== null && !catchAll(row) && ((row as RoutingRow).kinds === "*" || (Array.isArray((row as RoutingRow).kinds) && ((row as RoutingRow).kinds as readonly unknown[]).includes(kind)));
+    const first = doc.rows.findIndex(covers);
+    const row = first >= 0 ? doc.rows[first] as RoutingRow : undefined;
+    if (!row || row.match !== "owner-class" || row.to !== "owner-packet") out.push(`the first row for kind ${kind} must be the owner class row (match owner-class, to owner-packet)${row ? `, not ${String(row.id)}` : ""}: an owner class would route to an agent`);
+  }
   return out;
 }
 
@@ -101,22 +111,29 @@ export interface OwnerClass { readonly loop: string; readonly version: string; r
  * The owner-reserved classes, read from Producer's loop versions (`loops/<loop>/<version>.json`): every step decided
  * by the human owner with a `when` selector. A selector by `ia` or `slots` scopes slots (Director, legal prose,
  * themes, assets, voice); one by `decision` scopes request decisions (a new leaf: tree shape).
+ *
+ * Fails closed: a missing loops folder, a loop version that does not parse, or no slot-scoped class at all refuses
+ * (RoutingError) instead of returning fewer classes, since a class not read would route an owner-reserved slot to an
+ * agent.
  */
 export function ownerClasses(loopsDir: string = join(PRODUCER_ROOT, "loops")): OwnerClass[] {
   const out: OwnerClass[] = [];
-  if (!existsSync(loopsDir)) return out;
+  if (!existsSync(loopsDir)) throw new RoutingError(`no loop versions at ${loopsDir}: the owner classes cannot be read, so nothing routes`);
   for (const loop of readdirSync(loopsDir).filter(name => name.startsWith("loop.")).sort()) {
     const dir = join(loopsDir, loop);
     if (!existsSync(dir)) continue;
     for (const file of readdirSync(dir).filter(name => name.endsWith(".json")).sort()) {
       let doc: { content?: { steps?: LoopStep[] } };
-      try { doc = JSON.parse(readFileSync(join(dir, file), "utf8")) as typeof doc; } catch { continue; }
+      try { doc = JSON.parse(readFileSync(join(dir, file), "utf8")) as typeof doc; } catch (error) {
+        throw new RoutingError(`${loop}/${file} does not parse (${error instanceof Error ? error.message : String(error)}): its owner steps cannot be read, so nothing routes`);
+      }
       for (const step of doc.content?.steps ?? []) {
         if (step.decider?.by !== "human" || step.when === undefined) continue;
         out.push({ loop, version: file.slice(0, -".json".length), step: step.id, queue: step.decider.raise, when: step.when });
       }
     }
   }
+  if (!slotClasses(out).length) throw new RoutingError(`the loop versions at ${loopsDir} hold no owner step scoped by ia or slots: with no owner class every owner-reserved slot would route to an agent, so nothing routes`);
   return out;
 }
 

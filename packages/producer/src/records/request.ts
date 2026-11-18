@@ -18,7 +18,8 @@ import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, read
 import { dirname, join } from "node:path";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
-import { consumerFacts, placedSlots, readDeclarations, routeEntry, WORK_KINDS, type RoutingFacts, type WorkKind } from "../queue/routing.js";
+import { consumerFacts, placedSlots, readDeclarations, routeEntry, RoutingError, WORK_KINDS, type RoutingFacts, type WorkKind } from "../queue/routing.js";
+import { requesterCheck } from "../queue/requester-check.js";
 import { PRODUCER_ROOT, skillPath } from "./ledger.js";
 import { validateAgainst } from "./schema.js";
 import { recordSchema, serializeSlot, SLOT_SCHEMA, validateSlot } from "./slot.js";
@@ -79,13 +80,29 @@ export function requestIssues(doc: unknown): string[] {
     if (request.notified !== undefined && request.notified.to !== request.from) out.push(`a closed entry notifies its requester ${request.from}, not ${request.notified.to}`);
   }
   const ids = request.events.map(event => event.id);
+  const byId = new Map(request.events.map(event => [event.id, event] as const));
   if (!ids.includes(request.opened)) out.push(`opened ${request.opened} is no event of the request`);
+  else if (byId.get(request.opened)!.op !== "raised") out.push(`opened ${request.opened} is a ${byId.get(request.opened)!.op} event, not the raised event`);
   if (request.closed !== undefined && !ids.includes(request.closed)) out.push(`closed ${request.closed} is no event of the request`);
+  // The stored status agrees with the event log (as openOnlyIssues checks a queue entry): closed iff one closed event,
+  // and `closed` names it.
+  const closes = request.events.filter(event => event.op === "closed");
+  if (closes.length > 1) out.push(`the event log closes the entry ${closes.length} times`);
+  if (request.status === "closed") {
+    if (!closes.length) out.push("the status is closed and the event log has no closed event");
+    else if (request.closed !== undefined && ids.includes(request.closed) && byId.get(request.closed)!.op !== "closed") out.push(`closed ${request.closed} is a ${byId.get(request.closed)!.op} event, not the closed event ${closes[0]!.id}`);
+    // A change or fix closes only after the requester check re-ran and passed (queue/requester-check.ts).
+    const at = request.closed !== undefined ? ids.indexOf(request.closed) : -1;
+    if (request.kind !== "slot" && at >= 0 && !request.events.slice(0, at).some(event => event.op === "verified" && event.by === "producer")) out.push("a closed change or fix entry has no producer verified event (its requester check passing) before its close");
+  } else if (closes.length || request.closed !== undefined || request.closedAt !== undefined || request.notified !== undefined || request.outcome !== undefined) {
+    out.push(`the event log or the closing fields close the entry, but its status is ${request.status}`);
+  }
   if (ids.some(id => !id.startsWith(`${request.id}#`))) out.push("every event id is <request id>#<n>");
   return out;
 }
 
-export interface ReadRequest { readonly file: string; readonly request?: SlotRequest; readonly issues: readonly string[] }
+/** One entry file read: `request` only when it is valid; `doc` is whatever JSON it holds, so a reader can still report an invalid one. */
+export interface ReadRequest { readonly file: string; readonly request?: SlotRequest; readonly doc?: unknown; readonly issues: readonly string[] }
 
 /**
  * Every entry of one work kind under clossys/agents/producer/queue.<kind>/entries, read and judged (an unreadable one
@@ -101,9 +118,9 @@ export function listRequests(consumer: string, kind: WorkKind = "slot"): ReadReq
     try { doc = JSON.parse(readFileSync(file, "utf8")); } catch (error) { return [{ file, issues: [`not JSON: ${error instanceof Error ? error.message : String(error)}`] }]; }
     if (kind === "fix" && (doc as { schema?: unknown })?.schema !== REQUEST_SCHEMA) return [];
     const issues = requestIssues(doc);
-    if (!issues.length && (doc as SlotRequest).kind !== kind) return [{ file, issues: [`a ${(doc as SlotRequest).kind} entry is in ${workQueue(kind)}`] }];
-    if (!issues.length && (doc as SlotRequest).id !== name.slice(0, -".json".length)) return [{ file, issues: [`id ${(doc as SlotRequest).id} is not the file name`] }];
-    return [issues.length ? { file, issues } : { file, request: doc as SlotRequest, issues }];
+    if (!issues.length && (doc as SlotRequest).kind !== kind) return [{ file, doc, issues: [`a ${(doc as SlotRequest).kind} entry is in ${workQueue(kind)}`] }];
+    if (!issues.length && (doc as SlotRequest).id !== name.slice(0, -".json".length)) return [{ file, doc, issues: [`id ${(doc as SlotRequest).id} is not the file name`] }];
+    return [issues.length ? { file, doc, issues } : { file, request: doc as SlotRequest, doc, issues }];
   });
 }
 
@@ -260,7 +277,10 @@ export function openRequestFor(consumer: string, target: string, from: string): 
 
 /** The router's route for an entry (queue/routing.ts): the one function every raise calls. */
 function routeOf(consumer: string, entry: { readonly kind: WorkKind; readonly target: string; readonly assignee: SlotRequest["assignee"] }, facts?: RoutingFacts): EntryRoute {
-  return routeEntry(facts ?? consumerFacts(consumer), entry);
+  try { return routeEntry(facts ?? consumerFacts(consumer), entry); } catch (error) {
+    if (error instanceof RoutingError) throw new RequestError(`the router refuses ${entry.kind} ${entry.target}: ${error.message}; nothing was written`);
+    throw error;
+  }
 }
 const routedEvent = (id: string, n: number, at: string, route: EntryRoute): RequestEvent => ({
   id: `${id}#${n}`, at, op: "routed", by: "producer",
@@ -340,7 +360,10 @@ export function raiseWork(consumer: string, input: RaiseWorkInput, options: { re
 /**
  * Closes a change or fix entry with its link back to the requester: an outcome, a result ref that resolves (a placed
  * slot, or a queue entry `<queue>#<id>` that exists) and a notify event addressed to `from`. Producer code closes it
- * when the handler's loop passes; the assignee, the owner and the planner may close it too. Nobody else.
+ * when the handler's work is done (`clossys request <id> --close --outcome <o> --result <ref>`); the assignee, the
+ * owner and the planner may close it too, nobody else. Before it closes, code re-runs the requester's check
+ * (queue/requester-check.ts): a pass records a producer `verified` event, then the close; a fail records `rejected`
+ * and refuses, so the entry stays open with its handler.
  */
 export function closeWork(consumer: string, id: string, input: { readonly by: string; readonly at: string; readonly outcome: NonNullable<SlotRequest["outcome"]>; readonly result: string }): SlotRequest {
   checkSeat(input.by);
@@ -351,7 +374,14 @@ export function closeWork(consumer: string, id: string, input: { readonly by: st
     if (isContentAgent(input.by) && input.by !== request.assignee) throw new RequestError(`${input.by} cannot close ${id}: it is assigned to ${request.assignee}`);
     const why = resultRefusal(consumer, input.result);
     if (why) throw new RequestError(`--result ${input.result}: ${why}`);
-    const closing = withEvent({ ...request, status: "closed", outcome: input.outcome, result: input.result, notified: { to: request.from, at: input.at }, closedAt: input.at }, "closed", input.at, input.by, `${input.outcome}: ${input.result}; notified ${request.from}`);
+    // Code re-runs the requester's check: a fail records rejected and the entry stays open with its handler.
+    const check = requesterCheck(dirname(consumer), request);
+    if (!check.ok) {
+      writeRequest(consumer, withEvent(request, "rejected", input.at, "producer", `requester check failed on ${check.slots.join(", ")}: ${check.failures.slice(0, 3).join("; ")}`).request);
+      throw new RequestError(`request ${id} stays open: the requester check failed (${check.failures.slice(0, 3).join("; ")}); a rejected event sends it back to ${request.assignee}`);
+    }
+    const verified = withEvent(request, "verified", input.at, "producer", `requester check passed on ${check.slots.join(", ")}`).request;
+    const closing = withEvent({ ...verified, status: "closed", outcome: input.outcome, result: input.result, notified: { to: request.from, at: input.at }, closedAt: input.at }, "closed", input.at, input.by, `${input.outcome}: ${input.result}; notified ${request.from}`);
     const next: SlotRequest = { ...closing.request, closed: closing.id };
     writeRequest(consumer, next);
     return next;

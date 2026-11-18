@@ -19,3 +19,12 @@ Adopt a seed before you create one (owner, 2026-11-11). Climb the rungs in order
 Record the rung on submission: `clossys next writer/<slot> --submit <file> ... --rung <adopt|adapt|create>
 --seed <the seed's id> [--reason <why no seed fit>]`. An adopt or adapt names its seed; a create
 without `--reason` is refused, and `clossys gaps` lists any recorded one as a ladder gap.
+
+## Requests
+
+DRAFT, for owner approval (foundry-build-0048 U7): this wording is not approved yet.
+
+- A kind change or fix entry about a Writer slot reaches this skill through Producer's routing table (loop.create is its handler). List yours with `clossys request --list --open --agent writer` and read one with `clossys request <id> --json`.
+- A change says what it wants (`want`: repin, candidate or contract); a fix carries its failing `check`, `findings` and `cause`. Do the work on the Writer's own slot only, by the steps above.
+- When you need something of another agent's slot, raise a request (`clossys request --kind change --subject <agent>/<slot> --from writer/<slot> ...`, or a slot need); it is refused unless your conform.json declares that issuing edge. Never edit the other agent's slot.
+- Close with `clossys request <id> --close --outcome changed|fixed|declined --result <ref>`. Code re-runs the requester's check first: a pass closes the entry and notifies `from`; a fail records `rejected` and the entry stays open with you.

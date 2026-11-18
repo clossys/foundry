@@ -5,13 +5,14 @@
  * The entries live at clossys/agents/producer/queue.slot/entries/<id>.json (records/request.ts): one queue, the
  * requester, assignee and target are fields. U7 adds kind change and kind fix about a placed slot (`--kind change|fix
  * --subject <ref>`): Producer's routing table (queue/routing.json) writes the route and the assignee, and a cross-agent
- * request is refused unless the requester's conform.json declares that issuing edge. A change or fix entry closes in
- * code only (records/request.ts closeWork), with its outcome, result and a notify back to `from`.
+ * request is refused unless the requester's conform.json declares that issuing edge. A change or fix entry closes with
+ * `<id> --close --outcome <o> --result <ref>` (records/request.ts closeWork): code re-runs the requester's check first,
+ * and a fail records `rejected` and refuses, so the entry stays open; a pass closes it with a notify back to `from`.
  */
 import { join, resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import {
-  checkRequest, closeRequest, decideRequest, isContentAgent, listWorkEntries, raiseRequest, raiseWork, readRequest, REQUEST_SEATS, RequestError, slotlessNeeds, targetOf, type SlotRequest,
+  checkRequest, closeRequest, closeWork, decideRequest, isContentAgent, listWorkEntries, raiseRequest, raiseWork, readRequest, REQUEST_SEATS, RequestError, slotlessNeeds, targetOf, type SlotRequest,
 } from "../records/request.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
@@ -22,6 +23,7 @@ export const REQUEST_USAGE = "Usage: clossys request --target <agent>/<slot> --f
   + "       clossys request --list [--open] [--agent <id>] [--json] [--root <dir>]\n"
   + "       clossys request --scan [--dry] [--at <iso>] [--root <dir>]\n"
   + "       clossys request <id> --check | --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> [--kind <kind>] --inputs <ref,...> --contract <file> [--overlap-reason <text>] | --close [--approved queue.approve#<id>] [--owner-ref <ref>]\n"
+  + "       clossys request <id> --close --outcome changed|fixed|reused|created|declined --result <agent>/<slot>|<queue>#<id> [--by <seat>] [--at <iso>] [--root <dir>]\n"
   + "  --by is the seat acting (director, designer, writer, publisher, owner, planner, producer); a raise defaults to the\n"
   + "  requester slot's agent (owner for --from owner), a decide to the assignee, --scan and --close to producer. A raise\n"
   + "  needs the requester slot to cite the target; a target already placed is cited, not requested. A create over a\n"
@@ -35,9 +37,11 @@ export const REQUEST_USAGE = "Usage: clossys request --target <agent>/<slot> --f
   + "  input or uses ref that names no slot (the SCOPE demand diff).\n"
   + "  --kind change|fix is about a placed slot (--subject): a change says what it wants, a fix carries its check, findings\n"
   + "  and cause. Producer's routing table writes the route and assignee; a cross-agent request needs the requester's\n"
-  + "  declared issuing edge (conform.json requests.issuing). A change or fix closes in code only, linked back to --from.";
+  + "  declared issuing edge (conform.json requests.issuing). A change or fix closes with --outcome and --result once its\n"
+  + "  handler's work is done: code re-runs the requester's check first; a fail records rejected and the entry stays open,\n"
+  + "  a pass closes it and notifies --from.";
 
-const VALUED = new Set(["--target", "--from", "--why", "--rel", "--at", "--root", "--decide", "--slot", "--propose", "--under", "--kind", "--contract", "--owner-ref", "--approved", "--by", "--inputs", "--overlap-reason", "--subject", "--want", "--check", "--findings", "--cause", "--agent"]);
+const VALUED = new Set(["--target", "--from", "--why", "--rel", "--at", "--root", "--decide", "--slot", "--propose", "--under", "--kind", "--contract", "--owner-ref", "--approved", "--by", "--inputs", "--overlap-reason", "--subject", "--want", "--check", "--findings", "--cause", "--agent", "--outcome", "--result"]);
 const BARE = new Set(["--list", "--open", "--scan", "--dry", "--close"]);
 
 interface Flags { positional: string[]; values: Map<string, string>; bare: Set<string> }
@@ -65,6 +69,7 @@ const atOf = (flags: Flags): string => {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(at)) throw new CliUsageError(`--at must be an ISO timestamp with seconds, ending in Z\n${REQUEST_USAGE}`);
   return at;
 };
+const WORK_OUTCOMES = ["changed", "fixed", "reused", "created", "declined"] as const;
 const refuse = (message: string): CliResult => ({ exitCode: 1, message: `request refused: ${message}` });
 const summary = (request: SlotRequest) => `${request.id} ${request.status} ${request.from} -> ${request.target}${request.decision ? ` (${request.decision}${request.link ? ` ${request.link}` : ""})` : ""}`;
 
@@ -148,6 +153,14 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
     if (decide !== undefined) throw new CliUsageError(`--decide takes reuse or create\n${REQUEST_USAGE}`);
     if (flags.bare.has("--close")) {
       const request = readRequest(consumer, id);
+      if (request.kind !== "slot") {
+        const outcome = flags.values.get("--outcome"), result = flags.values.get("--result");
+        if (!outcome || !result) throw new CliUsageError(`a ${request.kind} entry closes with --outcome and --result\n${REQUEST_USAGE}`);
+        if (!(WORK_OUTCOMES as readonly string[]).includes(outcome)) throw new CliUsageError(`--outcome must be one of ${WORK_OUTCOMES.join(", ")}\n${REQUEST_USAGE}`);
+        const closed = closeWork(consumer, id, { by, at: atOf(flags), outcome: outcome as (typeof WORK_OUTCOMES)[number], result });
+        return { exitCode: 0, root, output: closed, message: `request ${id}: closed ${closed.outcome} (${closed.result}), the requester check passed; notified ${closed.from}` };
+      }
+      if (flags.values.has("--outcome") || flags.values.has("--result")) throw new CliUsageError(`a slot entry closes by its decision; --outcome and --result are for change and fix\n${REQUEST_USAGE}`);
       if (request.decision === "create") {
         // The new leaf is placed by the one placing verb, which closes the request after its write.
         const { runIaCli } = await import("./owner.js");
@@ -170,16 +183,26 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
 function scan(consumer: string, root: string, at: string, by: string, dry: boolean): CliResult {
   const lines: string[] = [];
   const unowned: string[] = [];
+  const refused: string[] = [];
   let raised = 0, open = 0;
   for (const need of slotlessNeeds(consumer)) {
     if (!need.target) { unowned.push(`${need.from} -> ${need.to}`); continue; }
-    const result = raiseRequest(consumer, { target: need.target, from: need.from, rel: need.rel, why: `${need.from} names ${need.to} as ${need.rel === "input" ? "an input" : "a used slot"}; no slot holds it`, source: "scope", by, at }, { dry });
+    let result: { request: SlotRequest; created: boolean };
+    try {
+      result = raiseRequest(consumer, { target: need.target, from: need.from, rel: need.rel, why: `${need.from} names ${need.to} as ${need.rel === "input" ? "an input" : "a used slot"}; no slot holds it`, source: "scope", by, at }, { dry });
+    } catch (error) {
+      // One refused need never hides the rest: it is listed and the scan exits 1.
+      if (!(error instanceof RequestError)) throw error;
+      refused.push(`${need.from} -> ${need.to}: ${error.message}`);
+      continue;
+    }
     if (result.created) raised++; else open++;
     lines.push(`  ${result.created ? (dry ? "would raise" : "raised") : "open"} ${summary(result.request)}`);
   }
   for (const edge of unowned) lines.push(`  no owner: ${edge} (no agent holds its first id segment; raise it with --target)`);
+  for (const edge of refused) lines.push(`  refused: ${edge}`);
   return {
-    exitCode: unowned.length ? 1 : 0, root, output: { raised, open, unowned },
-    message: [`request --scan: ${raised} ${dry ? "to raise" : "raised"}, ${open} already open${unowned.length ? `, ${unowned.length} with no owner` : ""}`, ...lines].join("\n"),
+    exitCode: unowned.length || refused.length ? 1 : 0, root, output: { raised, open, unowned, refused },
+    message: [`request --scan: ${raised} ${dry ? "to raise" : "raised"}, ${open} already open${unowned.length ? `, ${unowned.length} with no owner` : ""}${refused.length ? `, ${refused.length} refused` : ""}`, ...lines].join("\n"),
   };
 }

@@ -9,3 +9,12 @@ Answer one slot entry assigned to the Publisher (loop.slot, the decide step): a 
 - A create is refused when a placed slot of the same L2 and kind family reads the same material (inputs equal, a subset or superset, or Jaccard 0.8 or more; when neither side has inputs, only if their contract requirements are equal; one side with no inputs is no overlap): cite that slot instead. Only when the material truly differs, add `--overlap-reason <why>`; the reason and the overlap ids go to the owner's sign.
 - Never place the leaf here: the owner signs the new leaf, then `clossys request <id> --close` places it through `clossys ia` (overlap and contract gates) and links the requester.
 - Never edit the requester's slot or another agent's tree; the close writes the link and the notify event.
+
+## Requests
+
+DRAFT, for owner approval (foundry-build-0048 U7): this wording is not approved yet.
+
+- A kind slot entry reaches the Publisher only through Producer's routing table (queue/routing.json): its `route` names the row and this skill as the handler. Never answer an entry routed elsewhere.
+- List yours with `clossys request --list --open --agent publisher`; an owner-class need is the owner's packet, not yours.
+- Answer by the steps above, then `clossys request <id> --close`: it links the requester slot-to-slot and notifies `from`.
+- Never keep a request list, file or folder of your own; the queue entry is the one record.

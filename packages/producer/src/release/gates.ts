@@ -117,7 +117,8 @@ function slotsStale(root: string): Finding[] {
 
 /** Every open fix about a slot the release reads; an entry that does not read is a finding too (fail closed). */
 export function openFixes(root: string): Finding[] {
-  const closure = new Set(releaseResolutions(root).map(refOf));
+  // Slot-level: a record slot resolves as `<agent>/<slot>#<record>`, but a fix names the slot (or one record of it).
+  const closure = new Set(releaseResolutions(root).map(resolution => `${resolution.agent}/${resolution.slotId}`));
   const findings: Finding[] = [];
   for (const read of listRequests(join(root, "clossys"), "fix")) {
     if (!read.request) { findings.push({ check: REQUESTS_OPEN_FIX, subject: `producer/queue.fix`, detail: `${read.file.slice(root.length + 1)} does not read (${read.issues.slice(0, 2).join("; ")}); it might be an open fix` }); continue; }
@@ -134,21 +135,26 @@ export function openFixes(root: string): Finding[] {
   return findings;
 }
 
-/** Runs every gate of the release now. A gate with any finding is `fail`. */
-export function runGates(root: string, publication: string, build: { readonly locales: readonly string[] } | undefined): GateRun {
-  const { locales } = releaseLocales(root, publication);
-  const byGate: Record<string, () => Finding[]> = {
+/** The gate runners a release runs, by gate id (what runGates calls; read lazily, so listing them reads nothing). */
+export function gateRunners(root: string, publication: string, build: { readonly locales: readonly string[] } | undefined): Readonly<Record<string, () => Finding[]>> {
+  const locales = () => releaseLocales(root, publication).locales;
+  return {
     [COPY_SAMPLE_REMAINING]: () => sampleRemaining(root),
     // A release slot is judged by release.ready, not here: before its first ready-pin it resolves to nothing.
     [PINS_RESOLVE]: () => checkPinsResolve(root).findings
       .filter(row => !isReleaseSlot(row.subject.split("/")[0]!, (row.subject.split("/")[1] ?? "").split("#")[0]!))
       .map(row => ({ check: PINS_RESOLVE, subject: row.subject, detail: row.detail })),
     [CONSTITUTION_STRICT]: () => strictFindings(root),
-    [COPY_LOCALES]: () => copyLocales(root, locales),
+    [COPY_LOCALES]: () => copyLocales(root, locales()),
     [RELEASE_LOCALES]: () => localesGate(root, publication, build),
     [SLOTS_STALE]: () => slotsStale(root),
     [REQUESTS_OPEN_FIX]: () => openFixes(root),
   };
+}
+
+/** Runs every gate of the release now. A gate with any finding is `fail`. */
+export function runGates(root: string, publication: string, build: { readonly locales: readonly string[] } | undefined): GateRun {
+  const byGate = gateRunners(root, publication, build);
   const checks: Record<string, GateStatus> = {};
   const findings: Finding[] = [];
   for (const gate of releaseGates(root, publication)) {

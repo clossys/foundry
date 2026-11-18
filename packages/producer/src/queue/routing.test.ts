@@ -3,14 +3,14 @@
  * owner classes read from loop `when` selectors, issuing edges, and change/fix entries that close with a link back.
  * Runs on a tmp copy of the consumer fixture; nothing outside it is written.
  */
-import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { runRequestCli } from "../cli/request.js";
 import { closeWork, legacyFixEntries, listRequests, raiseWork, readRequest, requestIssues } from "../records/request.js";
-import { consumerFacts, ownerClassOf, readRoutingTable, rederive, routeEntry, routingIssues, routingText, type RoutingFacts } from "./routing.js";
+import { consumerFacts, ownerClasses, ownerClassOf, readRoutingTable, rederive, routeEntry, RoutingError, routingIssues, routingText, type RoutingFacts } from "./routing.js";
 
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
 const AT = "2026-11-17T10:00:00Z";
@@ -61,6 +61,38 @@ describe("routing.json", () => {
     const slots = table();
     slots.rows[2] = { ...slots.rows[2]!, slots: ["writer/narratives.legal-document"] };
     expect(routingIssues(slots).join("; ")).toMatch(/unknown key slots/);
+  });
+
+  it("refuses a table where a change or slot row is reached before the owner-class row (row order is the rule)", () => {
+    const doc = table();
+    const at = doc.rows.findIndex(row => row.id === "owner.class");
+    const owner = doc.rows[at]!;
+    const rows = doc.rows.filter(row => row.id !== "owner.class");
+    rows.splice(rows.findIndex(row => row.id === "change.live") + 1, 0, owner);
+    doc.rows = rows;
+    expect(routingIssues(doc).join("; ")).toMatch(/the first row for kind change must be the owner class row/);
+    expect(() => readRoutingTable(JSON.stringify(doc))).toThrow(/routing.json is refused/);
+    const slots = table();
+    slots.rows = slots.rows.map(row => row.id === "owner.class" ? { ...row, kinds: ["change"] } : row);
+    expect(routingIssues(slots).join("; ")).toMatch(/the first row for kind slot must be the owner class row/);
+  });
+
+  it("refuses to route when the owner classes cannot be read (missing loops, a loop that does not parse, no owner step)", () => {
+    const { consumer } = world();
+    const loops = realpathSync(mkdtempSync(join(tmpdir(), "routing-loops-")));
+    roots.push(loops);
+    expect(() => ownerClasses(join(loops, "missing"))).toThrow(/no loop versions at .*nothing routes/);
+    expect(() => consumerFacts(consumer, { loopsDir: join(loops, "missing") })).toThrow(RoutingError);
+    mkdirSync(join(loops, "loop.choose"), { recursive: true });
+    expect(() => ownerClasses(loops)).toThrow(/hold no owner step scoped by ia or slots/);
+    writeFileSync(join(loops, "loop.choose", "choose-v1.json"), "{ not json");
+    expect(() => ownerClasses(loops)).toThrow(/choose-v1.json does not parse/);
+    // A raise over a router that cannot read its owner classes is refused, never routed to an agent.
+    const facts = consumerFacts(consumer);
+    const unreadable = Object.defineProperty({ ...facts }, "classes", { get: () => { throw new RoutingError("the loop versions do not read"); } }) as RoutingFacts;
+    expect(() => raiseWork(consumer, { kind: "change", target: "director/focus.segment.core", from: "owner", why: "narrow it", want: "repin", source: "cli", by: "owner", at: AT }, { facts: unreadable }))
+      .toThrow(/the router refuses change director\/focus\.segment\.core: the loop versions do not read; nothing was written/);
+    expect(listRequests(consumer, "change")).toEqual([]);
   });
 
   it("refuses an unknown match or destination, and a handler row without handling", () => {
@@ -123,7 +155,7 @@ describe("routeEntry", () => {
 });
 
 describe("kind change and fix entries", () => {
-  it("raises a fix routed by the table into queue.fix, and closes it with its result and a notify back to from", () => {
+  it("raises a fix routed by the table into queue.fix; a close re-runs the requester check and refuses on a fail", () => {
     const { consumer, facts } = world();
     const { request, created } = raiseWork(consumer, fixOf("designer/sections.hero"), { facts });
     expect(created).toBe(true);
@@ -136,12 +168,38 @@ describe("kind change and fix entries", () => {
 
     expect(() => closeWork(consumer, request.id, { by: "writer", at: AT, outcome: "fixed", result: "designer/sections.hero" })).toThrow(/assigned to designer/);
     expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "fixed", result: "designer/sections.nope" })).toThrow(/no placed slot/);
-    const closed = closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "fixed", result: "designer/sections.hero" });
-    expect(closed).toMatchObject({ status: "closed", outcome: "fixed", result: "designer/sections.hero", notified: { to: "owner" }, closedAt: AT });
-    expect(requestIssues(readRequest(consumer, request.id))).toEqual([]);
-    const { outcome: _outcome, ...noOutcome } = closed;
+    // The fixture's hero has no pin and no package default: the requester check fails, the entry stays open.
+    expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "fixed", result: "designer/sections.hero" })).toThrow(/stays open: the requester check failed \(designer\/sections\.hero: does not resolve/);
+    const after = readRequest(consumer, request.id);
+    expect(after).toMatchObject({ status: "open" });
+    expect(after.events.map(event => event.op)).toEqual(["raised", "routed", "rejected"]);
+    expect(requestIssues(after)).toEqual([]);
+  });
+
+  it("refuses a closure the event log does not back (a forged close)", () => {
+    const { consumer, facts } = world();
+    const open = raiseWork(consumer, fixOf("designer/sections.hero"), { facts }).request;
+    const at = "2026-11-17T11:00:00Z";
+    const closing = { status: "closed" as const, outcome: "fixed" as const, result: "designer/sections.hero", notified: { to: "owner", at }, closedAt: at };
+    const verified = { id: `${open.id}#3`, at, op: "verified" as const, by: "producer" };
+    const close = { id: `${open.id}#4`, at, op: "closed" as const, by: "producer" };
+    const honest = { ...open, ...closing, closed: close.id, events: [...open.events, verified, close] };
+    expect(requestIssues(honest)).toEqual([]);
+    // `closed` points at the raise, not at a close event.
+    expect(requestIssues({ ...honest, closed: open.opened }).join("; ")).toMatch(/is a raised event, not the closed event/);
+    // Status closed with no closed event in the log.
+    expect(requestIssues({ ...open, ...closing, closed: open.opened }).join("; ")).toMatch(/the status is closed and the event log has no closed event/);
+    // No producer verified event before the close: the requester check never ran.
+    expect(requestIssues({ ...honest, events: [...open.events, close] }).join("; ")).toMatch(/no producer verified event \(its requester check passing\) before its close/);
+    // Open, yet the log or the fields say closed.
+    expect(requestIssues({ ...open, events: [...open.events, verified, close] }).join("; ")).toMatch(/close the entry, but its status is open/);
+    expect(requestIssues({ ...open, outcome: "fixed" }).join("; ")).toMatch(/close the entry, but its status is open/);
+    // The notify goes back to from, never elsewhere.
+    expect(requestIssues({ ...honest, notified: { to: "writer/narratives.article", at } }).join("; ")).toMatch(/notifies its requester/);
+    const { outcome: _outcome, ...noOutcome } = honest;
     expect(requestIssues(noOutcome)).toEqual(expect.arrayContaining([expect.stringMatching(/needs outcome/)]));
-    expect(requestIssues({ ...closed, notified: { to: "writer/narratives.article", at: AT } }).join("; ")).toMatch(/notifies its requester/);
+    // opened names the raised event.
+    expect(requestIssues({ ...open, opened: `${open.id}#2` }).join("; ")).toMatch(/is a routed event, not the raised event/);
   });
 
   it("needs a fix's check, findings and cause, and a change's want", () => {
