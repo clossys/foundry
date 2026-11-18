@@ -1,0 +1,9 @@
+{
+  "slots": [
+    {"id": "intake.business.offer", "inputs": ["owner:words"], "feeds": ["focus.offer.included"]},
+    {"id": "intake.business.audience", "inputs": ["owner:words"], "feeds": ["focus.segment.core", "context.customer.need"]},
+    {"id": "intake.business.name", "inputs": ["owner:words"], "feeds": ["identity.naming.name"]},
+    {"id": "intake.limits.constraint", "inputs": ["owner:words"], "feeds": ["context.company.constraint", "capability.resource.funding"]},
+    {"id": "intake.limits.horizon", "inputs": ["owner:words"], "feeds": ["execution.roadmap.release"]}
+  ]
+}

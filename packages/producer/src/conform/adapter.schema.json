@@ -5,7 +5,7 @@
   "additionalProperties": false,
   "properties": {
     "schema": { "const": "clossys.conform-adapter/1" },
-    "agent": { "enum": ["director", "designer", "writer", "publisher"] },
+    "agent": { "$comment": "advisor: the front door declares its tree, intake edges and skill here; the conform runner reads CONFORM_AGENTS only.", "enum": ["director", "designer", "writer", "publisher", "advisor"] },
     "trees": {
       "type": "array", "minItems": 1,
       "items": {

@@ -17,6 +17,22 @@
       "loops": { "name": "Front-door loop", "values": ["Loop"] }
     }
   },
+  "splitRules": {
+    "prerequisite-kind": "kind of prerequisite: tools on the path, or the repository itself",
+    "one-tool": "one tool per leaf",
+    "one-repository-check": "one repository check per leaf",
+    "pack-stage": "stage: the packed source, or the installed record",
+    "one-artefact": "one packed artefact per leaf",
+    "record-moment": "first install or later update",
+    "workspace-group": "one Producer-written workspace file group",
+    "one-producer-verb": "one Producer verb per leaf",
+    "answer-subject": "what the answer describes: the business itself, or its limits",
+    "one-question": "one owner question per leaf",
+    "note-group": "one note group",
+    "one-note": "one note per leaf",
+    "loop-group": "one loop group",
+    "loop-trigger": "trigger: first setup or a new release"
+  },
   "ownership": {
     "setup": { "owns": "Machine prerequisites, the packed agent packages and the workspace files Producer creates", "doesNotOwn": "Agent slots, candidates, pins, releases" },
     "context": { "owns": "One-time owner answers handed to Director as evidence, and a read-only note about sister repositories", "doesNotOwn": "Director cells, strategy decisions, any cross-repository action" },
@@ -25,42 +41,42 @@
   "forbid": ["secrets or environment files", "writing any agent slot", "hub, kit-hire or role-model steps", "cross-repository edits"],
   "nodes": [
     {
-      "id": "machine", "name": "Machine", "question": "Can this machine run the agents?", "splitBy": "kind of prerequisite: tools on the path, or the repository itself",
+      "id": "machine", "name": "Machine", "question": "Can this machine run the agents?", "splitBy": "prerequisite-kind",
       "children": [
-        { "id": "machine.tools", "name": "Tools", "splitBy": "one tool per leaf", "leaves": ["machine.tools.node", "machine.tools.npm", "machine.tools.git"] },
-        { "id": "machine.repo", "name": "Repository", "splitBy": "one repository check per leaf", "leaves": ["machine.repo.root"] }
+        { "id": "machine.tools", "name": "Tools", "splitBy": "one-tool", "leaves": ["machine.tools.node", "machine.tools.npm", "machine.tools.git"] },
+        { "id": "machine.repo", "name": "Repository", "splitBy": "one-repository-check", "leaves": ["machine.repo.root"] }
       ]
     },
     {
-      "id": "packages", "name": "Packages", "question": "Which exact agent packages are installed, and from which commit?", "splitBy": "stage: the packed source, or the installed record",
+      "id": "packages", "name": "Packages", "question": "Which exact agent packages are installed, and from which commit?", "splitBy": "pack-stage",
       "children": [
-        { "id": "packages.source", "name": "Source", "splitBy": "one packed artefact per leaf", "leaves": ["packages.source.manifest", "packages.source.tarball"] },
-        { "id": "packages.record", "name": "Record", "splitBy": "first install or later update", "leaves": ["packages.record.install", "packages.record.update"] }
+        { "id": "packages.source", "name": "Source", "splitBy": "one-artefact", "leaves": ["packages.source.manifest", "packages.source.tarball"] },
+        { "id": "packages.record", "name": "Record", "splitBy": "record-moment", "leaves": ["packages.record.install", "packages.record.update"] }
       ]
     },
     {
-      "id": "workspace", "name": "Workspace", "question": "Is the workspace ready for chat agents?", "splitBy": "one Producer-written workspace file group",
+      "id": "workspace", "name": "Workspace", "question": "Is the workspace ready for chat agents?", "splitBy": "workspace-group",
       "children": [
-        { "id": "workspace.files", "name": "Files", "splitBy": "one Producer verb per leaf", "leaves": ["workspace.files.config", "workspace.files.pointer"] }
+        { "id": "workspace.files", "name": "Files", "splitBy": "one-producer-verb", "leaves": ["workspace.files.config", "workspace.files.pointer"] }
       ]
     },
     {
-      "id": "intake", "name": "Intake", "question": "What does the owner say about the business, once, before Director starts?", "splitBy": "what the answer describes: the business itself, or its limits",
+      "id": "intake", "name": "Intake", "question": "What does the owner say about the business, once, before Director starts?", "splitBy": "answer-subject",
       "children": [
-        { "id": "intake.business", "name": "Business", "splitBy": "one owner question per leaf", "leaves": ["intake.business.offer", "intake.business.audience", "intake.business.name"] },
-        { "id": "intake.limits", "name": "Limits", "splitBy": "one owner question per leaf", "leaves": ["intake.limits.constraint", "intake.limits.horizon"] }
+        { "id": "intake.business", "name": "Business", "splitBy": "one-question", "leaves": ["intake.business.offer", "intake.business.audience", "intake.business.name"] },
+        { "id": "intake.limits", "name": "Limits", "splitBy": "one-question", "leaves": ["intake.limits.constraint", "intake.limits.horizon"] }
       ]
     },
     {
-      "id": "relations", "name": "Relations", "question": "Which sister repositories should agents know about, as context only?", "splitBy": "one note group",
+      "id": "relations", "name": "Relations", "question": "Which sister repositories should agents know about, as context only?", "splitBy": "note-group",
       "children": [
-        { "id": "relations.sisters", "name": "Sisters", "splitBy": "one note per leaf", "leaves": ["relations.sisters.note"] }
+        { "id": "relations.sisters", "name": "Sisters", "splitBy": "one-note", "leaves": ["relations.sisters.note"] }
       ]
     },
     {
-      "id": "loop", "name": "Loop", "question": "In which order do the front-door verbs run?", "splitBy": "one loop group",
+      "id": "loop", "name": "Loop", "question": "In which order do the front-door verbs run?", "splitBy": "loop-group",
       "children": [
-        { "id": "loop.front-door", "name": "Front door", "splitBy": "trigger: first setup or a new release", "leaves": ["loop.onboard", "loop.update"] }
+        { "id": "loop.front-door", "name": "Front door", "splitBy": "loop-trigger", "leaves": ["loop.onboard", "loop.update"] }
       ]
     }
   ],
@@ -69,10 +85,10 @@
     "machine.tools.npm": { "label": "npm on the path", "verb": "doctor", "owner": "advisor", "kind": "check", "probe": { "command": "npm", "args": ["--version"] }, "contract": { "record": "stdout:doctor", "requirements": ["npm --version exits 0"] }, "inputs": ["host:npm"] },
     "machine.tools.git": { "label": "Git on the path", "verb": "doctor", "owner": "advisor", "kind": "check", "probe": { "command": "git", "args": ["--version"] }, "contract": { "record": "stdout:doctor", "requirements": ["git --version exits 0"] }, "inputs": ["host:git"] },
     "machine.repo.root": { "label": "Inside a Git repository", "verb": "doctor", "owner": "advisor", "kind": "check", "probe": { "command": "git", "args": ["rev-parse", "--show-toplevel"] }, "contract": { "record": "stdout:doctor", "requirements": ["git rev-parse --show-toplevel exits 0 in the workspace root"] }, "inputs": ["host:git"] },
-    "packages.source.manifest": { "label": "Pack manifest", "verb": "install", "owner": "advisor", "kind": "record", "contract": { "record": "<from>/artifacts.json", "requirements": ["artifacts.json from a complete pack of a clean foundry commit", "head and tree are 40-character hex", "producer, director, designer, writer and publisher are each present once"] }, "inputs": ["host:pack-dir"] },
+    "packages.source.manifest": { "label": "Pack manifest", "verb": "install", "owner": "advisor", "kind": "record", "contract": { "record": "<from>/artifacts.json", "requirements": ["artifacts.json from a complete pack of a clean foundry commit", "head and tree are 40-character hex", "controller, producer, director, designer, writer, publisher and advisor are each present once"] }, "inputs": ["host:pack-dir"] },
     "packages.source.tarball": { "label": "Verified tarballs", "verb": "install", "owner": "advisor", "kind": "record", "contract": { "record": "vendor/clossys/<filename>", "requirements": ["every tarball's SHA-256 equals the manifest", "filenames are plain .tgz names"] }, "inputs": ["advisor/packages.source.manifest"] },
     "packages.record.install": { "label": "Install record", "verb": "install", "owner": "advisor", "kind": "record", "contract": { "record": "clossys/advisor/install.json", "requirements": ["names the foundry head and tree", "lists every installed package with its SHA-256", "written once; later changes go through advisor update"] }, "inputs": ["advisor/packages.source.tarball"] },
-    "packages.record.update": { "label": "Update record", "verb": "update", "owner": "advisor", "kind": "record", "amends": "packages.record.install", "contract": { "record": "clossys/advisor/install.json", "requirements": ["same head and tree changes nothing", "a new pack keeps the previous head and tree as previous", "stale vendored tarballs are reported, never deleted"] }, "inputs": ["advisor/packages.record.install", "advisor/packages.source.tarball"] },
+    "packages.record.update": { "label": "Update record", "verb": "update", "owner": "advisor", "kind": "record", "amends": "packages.record.install", "contract": { "record": "clossys/advisor/install.json", "requirements": ["same head and tree changes nothing", "a lower version of any package is refused", "a new pack keeps the previous head and tree as previous", "stale vendored tarballs are reported, never deleted"] }, "inputs": ["advisor/packages.record.install", "advisor/packages.source.tarball"] },
     "workspace.files.config": { "label": "Workspace config", "verb": "init", "owner": "advisor", "kind": "record", "contract": { "record": "clossys/clossys.config.ts", "requirements": ["written only by clossys config --init", "an existing config is left alone"] }, "inputs": ["advisor/packages.record.install"] },
     "workspace.files.pointer": { "label": "Views pointer", "verb": "init", "owner": "advisor", "kind": "record", "contract": { "record": "AGENTS.md", "requirements": ["written only by clossys init"] }, "inputs": ["advisor/workspace.files.config"] },
     "intake.business.offer": { "label": "Offer", "verb": "intake", "owner": "advisor", "kind": "answer", "question": "What do you sell, in one sentence?", "feeds": ["focus.offer.included"], "contract": { "record": "clossys/evidence/director/owner-intake-offer-<date>.md", "requirements": ["the owner's words verbatim, one line", "recorded only through clossys evidence"] }, "inputs": ["owner:words"] },
@@ -81,7 +97,7 @@
     "intake.limits.constraint": { "label": "Constraint", "verb": "intake", "owner": "advisor", "kind": "answer", "question": "What limits you most today: money, time or people?", "feeds": ["context.company.constraint", "capability.resource.funding"], "contract": { "record": "clossys/evidence/director/owner-intake-constraint-<date>.md", "requirements": ["the owner's words verbatim, one line", "recorded only through clossys evidence"] }, "inputs": ["owner:words"] },
     "intake.limits.horizon": { "label": "Next release", "verb": "intake", "owner": "advisor", "kind": "answer", "question": "What must be true by your next release?", "feeds": ["execution.roadmap.release"], "contract": { "record": "clossys/evidence/director/owner-intake-horizon-<date>.md", "requirements": ["the owner's words verbatim, one line", "recorded only through clossys evidence"] }, "inputs": ["owner:words"] },
     "relations.sisters.note": { "label": "Sister repositories", "verb": "relations", "owner": "advisor", "kind": "note", "contract": { "record": "clossys/advisor/relations.json", "requirements": ["each entry is a name, a relation and a one-line note", "no path, URL or command", "context only: nothing reads or writes a sister repository"] }, "inputs": ["owner:words"] },
-    "loop.onboard": { "label": "Onboard loop", "verb": "loop", "owner": "advisor", "kind": "loop", "loop": "front-door/loops/loop.onboard/onboard-v1.json", "contract": { "record": "front-door/loops/loop.onboard/onboard-v1.json", "requirements": ["runs doctor, install, init and intake in order", "hands off to Producer's fill loop and never runs it"] }, "inputs": ["advisor/machine.repo.root", "advisor/packages.record.install", "advisor/workspace.files.pointer", "advisor/intake.business.offer"] },
-    "loop.update": { "label": "Update loop", "verb": "loop", "owner": "advisor", "kind": "loop", "loop": "front-door/loops/loop.update/update-v1.json", "contract": { "record": "front-door/loops/loop.update/update-v1.json", "requirements": ["runs doctor then update", "hands off to Producer's audit loop and never runs it"] }, "inputs": ["advisor/packages.record.update"] }
+    "loop.onboard": { "label": "Onboard loop", "verb": "loop", "owner": "advisor", "kind": "loop", "loop": "front-door/loops/loop.onboard/onboard-v1.json", "runs": ["doctor", "install", "init", "intake"], "contract": { "record": "front-door/loops/loop.onboard/onboard-v1.json", "requirements": ["runs doctor, install, init and intake in order", "ends by starting Producer's fill loop on T1 (clossys run loop.fill --init); Advisor never fills a slot"] }, "inputs": ["advisor/machine.repo.root", "advisor/packages.record.install", "advisor/workspace.files.pointer", "advisor/intake.business.offer"] },
+    "loop.update": { "label": "Update loop", "verb": "loop", "owner": "advisor", "kind": "loop", "loop": "front-door/loops/loop.update/update-v1.json", "runs": ["doctor", "update"], "contract": { "record": "front-door/loops/loop.update/update-v1.json", "requirements": ["runs doctor then update", "then runs clossys check; a failure raises queue.fix for Producer's audit loop (T6 failed-check)"] }, "inputs": ["advisor/packages.record.update"] }
   }
 }

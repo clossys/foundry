@@ -1,13 +1,12 @@
 {
-  "schema": "clossys.conform-adapter.front-door/1",
+  "schema": "clossys.conform-adapter/1",
   "agent": "advisor",
-  "status": "draft",
-  "note": "Advisor is the front door, not a content agent: Producer's clossys.conform-adapter/1 and clossys conform cover director, designer, writer and publisher only. Until that runner takes this adapter, advisor conform runs the rows below over these files.",
   "trees": [{ "file": "front-door/tree.json", "freeze": null }],
-  "loops": ["front-door/loops/loop.onboard/onboard-v1.json", "front-door/loops/loop.update/update-v1.json"],
-  "verbs": ["doctor", "install", "init", "intake", "update", "relations"],
-  "edgeFiles": [{ "file": "front-door/tree.json", "format": "intake-feeds", "feedsTo": "director", "via": "clossys evidence" }],
+  "kinds": ["answer", "check", "loop", "note", "record"],
+  "defaults": [],
+  "recipes": [],
+  "derive": [],
+  "edgeFiles": [{ "file": "front-door/intake-feeds.json", "format": "slots", "feedsTo": "director" }],
   "skill": "skill/SKILL.md",
-  "check": "advisor conform",
-  "rows": ["A.R1", "A.R2", "A.R3", "A.R4", "A.W1", "A.W2", "A.E1", "A.S1"]
+  "skills": { "scope": null, "slot": null, "create": null, "choose": null, "cascade": null }
 }
