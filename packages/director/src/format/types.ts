@@ -57,6 +57,11 @@ export interface QueueRequest {
   /** The Director cell (slot id) the entry is about. */
   cell: CellId;
   status: "open" | "closed"; why: string;
+  /**
+   * The whys of the entry's later raised events (a raise Producer merged into this entry, each without its migration
+   * note, raiseWhyOf), when any differs from `why`: a merged request is read as much as the entry's own.
+   */
+  merged?: string[];
 }
 export interface StrategyRootIssue {
   /** Root-relative file/directory path; '.' identifies the root itself. */

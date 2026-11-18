@@ -6,6 +6,7 @@ import { parseFinding, RUN_CITATION_PATTERN } from "./format/finding.js";
 import { RECORD_ID_PATTERN } from "./format/ref.js";
 import { parseSlotPin, slotCandidateCell, slotCandidateVersion, type SlotPin } from "./format/slot.js";
 import { validateTree } from "./format/tree.js";
+import { raiseWhyOf } from "./format/queue-note.js";
 import type { QueueRequest, StrategyModel, StrategyRootIssue, StrategyTree } from "./format/types.js";
 import { storeFault, type DirectorStoreReader } from "./store-io.js";
 
@@ -188,6 +189,8 @@ const DIRECTOR_TARGET = /^director\/([a-z0-9][a-z0-9.-]*)$/;
  * The clossys.queue-entry/2 entries about Director slots in Producer's queue, by id. Producer owns and validates the
  * queue; this reader takes a well-formed entry about a Director slot and skips anything else (a queue-entry/1 fix in
  * the same folder, another agent's entry, a file that does not parse), so a queue fault never breaks the strategy.
+ * An entry Producer merged a later raise into carries it as one more `raised` event: its why (raiseWhyOf) is read too,
+ * as `merged`, so a merged request is never invisible to the Director.
  */
 export function queueRequests(consumer: string, store: DirectorStoreReader): QueueRequest[] {
   const requests: QueueRequest[] = [];
@@ -202,7 +205,12 @@ export function queueRequests(consumer: string, store: DirectorStoreReader): Que
       if (!doc || doc.schema !== "clossys.queue-entry/2" || doc.kind !== kind) continue;
       const target = typeof doc.target === "string" ? DIRECTOR_TARGET.exec(doc.target) : null;
       if (!target || typeof doc.id !== "string" || typeof doc.from !== "string" || typeof doc.why !== "string" || (doc.status !== "open" && doc.status !== "closed")) continue;
-      requests.push({ id: doc.id, kind, from: doc.from, cell: target[1]!, status: doc.status, why: doc.why });
+      const merged = new Set<string>();
+      for (const event of Array.isArray(doc.events) ? doc.events.slice(1) : []) {
+        const { op, detail } = (event ?? {}) as { op?: unknown; detail?: unknown };
+        if (op === "raised" && typeof detail === "string" && raiseWhyOf(detail) !== doc.why) merged.add(raiseWhyOf(detail));
+      }
+      requests.push({ id: doc.id, kind, from: doc.from, cell: target[1]!, status: doc.status, why: doc.why, ...(merged.size ? { merged: [...merged] } : {}) });
     }
   }
   return requests.sort((a, b) => a.id.localeCompare(b.id));

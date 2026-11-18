@@ -3,6 +3,7 @@ import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { MIGRATED_RAISE_NOTE } from "@clossys/director";
 import { loadCatalog } from "../catalog-core/index.js";
 import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-catalog-library.js";
 import { needWhy } from "../catalog-core/dogfood.js";
@@ -42,7 +43,7 @@ describe("Designer requests live in Producer's queue", () => {
     await file("slot", entry(id, "slot", { why: first, events: [
       { id: `${id}#1`, at: "2026-11-18T09:00:00Z", op: "raised", by: "producer", via: "cli", detail: first },
       { id: `${id}#2`, at: "2026-11-18T09:00:00Z", op: "routed", by: "producer", detail: "designer" },
-      { id: `${id}#3`, at: "2026-11-18T09:00:00Z", op: "raised", by: "producer", via: "cli", detail: `${second}\n(merged by clossys migrate requests from NEED-002, agents/designer/library/needs/NEED-002.json)` },
+      { id: `${id}#3`, at: "2026-11-18T09:00:00Z", op: "raised", by: "producer", via: "cli", detail: `${second}${MIGRATED_RAISE_NOTE}NEED-002, agents/designer/library/needs/NEED-002.json; record {"id":"NEED-002"})` },
       { id: `${id}#4`, at: "2026-11-18T09:00:00Z", op: "raised", by: "producer", via: "cli", detail: first },
     ] }));
     expect(await readQueueRequests(consumer)).toEqual([{ id, why: first }, { id, why: second }]);

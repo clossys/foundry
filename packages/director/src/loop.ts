@@ -177,8 +177,9 @@ export function evaluateModelReview(model: StrategyModel, index: CitationIndex, 
     return cell ? [{cell:cell.id, version:cell.version, rule:`citation:${entry.ref.cell}@${entry.ref.version}`,
       detail:`Stale citation ${entry.ref.cell}@${entry.ref.version} in ${entry.by.path}.`}] : [];
   });
-  const existingKeys = [...(options.existingKeys ?? []), ...model.requests.flatMap(request =>
-    [...request.why.matchAll(/\[review:([a-f0-9]{64})\]/g)].map(match => match[1]!))];
+  // Every raise an entry holds counts: its own why and each raise Producer merged into it (U8 round 2).
+  const existingKeys = [...(options.existingKeys ?? []), ...model.requests.flatMap(request => [request.why, ...(request.merged ?? [])].flatMap(why =>
+    [...why.matchAll(/\[review:([a-f0-9]{64})\]/g)].map(match => match[1]!)))];
   return evaluateReview({...options, existingKeys, cells:model.cells, active:model.tree.active, findings:model.findings, stale});
 }
 

@@ -7,17 +7,16 @@
  *
  * An entry can hold more than one raise: when a raise dedupes onto open work (same kind, target and requester),
  * Producer carries its content into that entry as a later `raised` event (clossys migrate requests does this for the
- * legacy needs it merges). Each such event's why (its detail, without the merge note Producer appends) links a
+ * legacy needs it merges). Each such event's why (its detail without the migration note, raiseWhyOf, the Director's one shared format) links a
  * finding to the entry as well, so a merged need is never orphaned.
  */
 import { promises as fs } from "node:fs";
 import { dirname, join } from "node:path";
+import { raiseWhyOf } from "@clossys/director";
 import type { DogfoodRequest } from "../catalog-core/dogfood.js";
 
 const KINDS = ["slot", "change", "fix"] as const;
 const DESIGNER_TARGET = /^designer\/[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)*$/;
-/** The note `clossys migrate requests` appends to a merged raise's detail, after the raise's own why. */
-const MERGED_NOTE = "\n(merged by clossys migrate requests from ";
 const isDirectory = async (path: string) => { try { return (await fs.lstat(path)).isDirectory(); } catch { return false; } };
 
 /** The consumer folder (the one holding agents/producer) at or above `root`, if any. */
@@ -43,8 +42,7 @@ export async function readQueueRequests(consumer: string): Promise<DogfoodReques
       for (const event of Array.isArray(doc.events) ? doc.events.slice(1) : []) {
         const { op, detail } = (event ?? {}) as { op?: unknown; detail?: unknown };
         if (op !== "raised" || typeof detail !== "string") continue;
-        const note = detail.lastIndexOf(MERGED_NOTE);
-        whys.add(note >= 0 ? detail.slice(0, note) : detail);
+        whys.add(raiseWhyOf(detail));
       }
       for (const why of whys) out.push({ id: doc.id, why });
     }

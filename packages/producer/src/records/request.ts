@@ -448,6 +448,24 @@ export interface RaiseInput {
   readonly createdBy?: Actor;
   readonly via?: RequestEvent["via"];
   readonly quote?: string;
+  /** The first raised event's detail (default: the why): a migration carries the legacy record it raises from (U8 round 2). */
+  readonly detail?: string;
+}
+
+/**
+ * Why the owner's words cannot be taken as an open entry that already holds work on the slot from the owner
+ * (foundry-build-0048 U8 round 2): it holds other words, or someone else raised it (an agent's record a migration
+ * filed, a code raise), so returning it would drop the owner's words silently. Undefined only for the owner's own entry
+ * with these very words. DRAFT copy (not owner-approved).
+ */
+export function ownerWordsRefusal(existing: SlotRequest, words: string): string | undefined {
+  const label = `${workQueue(existing.kind as WorkKind)}#${existing.id}`;
+  if (existing.createdBy?.actor !== "owner") {
+    const raiser = existing.createdBy?.actor === "code" ? `code (${existing.createdBy.cli})` : existing.createdBy?.actor ?? "someone else";
+    return `${label} is already open on ${existing.target} from the owner, raised by ${raiser} ("${existing.why}"), not in the owner's own words; answer or close it first, and the owner's words are not recorded`;
+  }
+  if (existing.why !== words) return `${label} already holds the owner's open ${existing.kind} on ${existing.target} ("${existing.why}"); answer or close it first`;
+  return undefined;
 }
 
 /** An open request for the same target from the same requester, if one exists. */
@@ -535,10 +553,16 @@ export interface RaiseWorkInput {
   readonly createdBy?: Actor;
   readonly via?: RequestEvent["via"];
   readonly quote?: string;
+  /** The first raised event's detail (default: the why): a migration carries the legacy record it raises from (U8 round 2). */
+  readonly detail?: string;
   /** Entries the raise cites (rel cites): a fix raised on a failed owner answer cites the answered entry. */
   readonly cites?: readonly Ref[];
 }
-export function raiseWork(consumer: string, input: RaiseWorkInput, options: { readonly dry?: boolean; readonly facts?: RoutingFacts } = {}): { request: SlotRequest; created: boolean } {
+/**
+ * `ownerWords` (the owner's own feedback): an open entry the raise dedupes onto is returned only when it is the owner's
+ * own with these words (ownerWordsRefusal); otherwise the raise is refused, nothing written, so no word is dropped.
+ */
+export function raiseWork(consumer: string, input: RaiseWorkInput, options: { readonly dry?: boolean; readonly facts?: RoutingFacts; readonly ownerWords?: boolean } = {}): { request: SlotRequest; created: boolean } {
   const target = targetOf(input);
   if (!target) throw new RequestError(`a ${input.kind} entry names <agent>/<slot id>, got ${input.target}`);
   // Not a closure, so bare owner may act here; only close paths need an owner answer ref (U7 r3).
@@ -554,7 +578,11 @@ export function raiseWork(consumer: string, input: RaiseWorkInput, options: { re
   } else if (isContentAgent(input.by)) throw new RequestError(`${input.by} raises as the owner: an agent raises for its own slot (--from <agent>/<slot>)`);
   return withRequestLock(consumer, raiseLock(`${input.kind}-${input.target}`), () => {
     const existing = listRequests(consumer, input.kind).map(read => read.request).find(request => request?.status === "open" && request.target === input.target && request.from === input.from);
-    if (existing) return { request: existing, created: false };
+    if (existing) {
+      const refusal = options.ownerWords ? ownerWordsRefusal(existing, input.why) : undefined;
+      if (refusal) throw new RequestError(refusal);
+      return { request: existing, created: false };
+    }
     const id = `${stampOf(input.at)}-${input.kind}-${target.need.replace(/\./g, "-")}`.slice(0, 80).replace(/-+$/, "");
     const route = routeOf(consumer, { kind: input.kind, target: input.target, assignee: target.agent }, options.facts);
     const choices = route.assignee === "owner" ? ownerOptions(consumer, { kind: input.kind, target: input.target, ...(input.want !== undefined ? { want: input.want } : {}) }, options.facts) : undefined;
@@ -567,7 +595,7 @@ export function raiseWork(consumer: string, input: RaiseWorkInput, options: { re
       ...(input.want !== undefined ? { want: input.want } : {}),
       ...(input.check !== undefined ? { check: input.check } : {}), ...(input.findings !== undefined ? { findings: [...input.findings] } : {}), ...(input.cause !== undefined ? { cause: input.cause } : {}),
       events: [
-        { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.why },
+        { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.detail ?? input.why },
         routedEvent(id, 2, input.at, route),
       ],
     };
@@ -854,13 +882,18 @@ export function resultRefusal(consumer: string, result: string): string | undefi
  * running in parallel). Refused, with nothing written: a target that is placed (cite it), and a requester that is not
  * the owner or a placed slot of a content agent whose edges name the target with this rel, raised by that slot's own
  * agent (or the owner, the planner or Producer code). `cited` is clossys ia's own write: the slot it writes names the
- * need, and the request is raised right after that write.
+ * need, and the request is raised right after that write. `ownerWords` (the owner's own feedback): the open entry is
+ * returned only when it is the owner's own with these words (ownerWordsRefusal), else the raise is refused.
  */
-export function raiseRequest(consumer: string, input: RaiseInput, options: { readonly dry?: boolean; readonly cited?: boolean; readonly facts?: RoutingFacts } = {}): { request: SlotRequest; created: boolean } {
+export function raiseRequest(consumer: string, input: RaiseInput, options: { readonly dry?: boolean; readonly cited?: boolean; readonly facts?: RoutingFacts; readonly ownerWords?: boolean } = {}): { request: SlotRequest; created: boolean } {
   const checked = slotRaiseChecks(consumer, input, options);
   return withRequestLock(consumer, raiseLock(input.target), () => {
     const existing = openRequestFor(consumer, input.target, input.from);
-    if (existing) return { request: existing, created: false };
+    if (existing) {
+      const refusal = options.ownerWords ? ownerWordsRefusal(existing, input.why) : undefined;
+      if (refusal) throw new RequestError(refusal);
+      return { request: existing, created: false };
+    }
     const draft = slotRequestDraft(consumer, input, checked, options.facts);
     if (options.dry) return { request: draft, created: true };
     return { request: createRequest(consumer, draft), created: true };
@@ -957,7 +990,7 @@ function slotRequestDraft(consumer: string, input: RaiseInput, checked: ReturnTy
     createdAt: input.at, refs: SLOT_REF.test(input.from) ? [{ to: input.from as Ref["to"], rel: "raisedBy" }] : [], route,
     ...(choices ? { options: choices } : {}),
     events: [
-      { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.why },
+      { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.detail ?? input.why },
       routedEvent(id, 2, input.at, route),
     ],
   };

@@ -29,6 +29,7 @@ export { parseSession } from "./format/session.js";
 export { parseFinding, validateFinding } from "./format/finding.js";
 export { validateTree } from "./format/tree.js";
 export { EVIDENCE_PREFIX, readStrategyFile, readStrategyRoot } from "./store.js";
+export { MIGRATED_RAISE_NOTE, raiseWhyOf } from "./format/queue-note.js";
 export { isSlotCandidatePath, parseSlotCandidateDocument, parseSlotPin, slotCandidateCell, slotCandidateVersion, SLOT_CANDIDATE_NAME } from "./format/slot.js";
 export type { SlotCandidateInput, SlotPin } from "./format/slot.js";
 export { CITATION_AGENTS, CITATION_SLOT_ID, formatSlotCitation, parseSlotCitation, versionedCitation, versionedCitationMessage, versionedCitationsInText, slotCitationsInText, reciteLineAnchors } from "./format/citation.js";

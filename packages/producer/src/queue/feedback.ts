@@ -5,13 +5,15 @@
  * (records/request.ts raiseWork) to the slot's agent or, for an owner-reserved class, back to the owner as options.
  *
  * The ref must not dangle (`refs.dangling`). The entry's `input` ref carries the ref as given and the sha256 the slot
- * resolves to now (pinned or package default), so a later reader sees what the owner was looking at. An open change
- * from the owner on the same slot is returned (the same words) or refused (other words: answer that one first).
+ * resolves to now (pinned or package default), so a later reader sees what the owner was looking at. An open entry
+ * from the owner on the same slot (a change, or a slot entry on a slot no one holds) is returned only when it is the
+ * owner's own with the same words; other words, or an entry someone else raised from the owner (a migrated record),
+ * are refused out loud (exit 1, ownerWordsRefusal), never returned as already open (U8 round 2).
  * `--via app` (a consumer-built page ran the CLI) also records `--quote`, the owner's words as typed on the page.
  */
 import { join } from "node:path";
 import { danglingReason } from "../check/refs-dangling.js";
-import { isContentAgent, raiseRequest, raiseWork, RequestError, workQueue, type SlotRequest } from "../records/request.js";
+import { isContentAgent, raiseRequest, raiseWork, RequestError, type SlotRequest } from "../records/request.js";
 import { parseRefString, resolveSlot } from "../records/resolve.js";
 import { slotDir, slotFile } from "../records/slot-model/layout.js";
 import { modelExists, readSlotEntry } from "../records/slots.js";
@@ -50,7 +52,7 @@ export function raiseFeedbackOrRequest(root: string, input: FeedbackInput, now: 
       return raiseRequest(join(root, "clossys"), {
         target: `${parsed.agent}/${parsed.slotId}`, from: "owner", why: input.words, source: "feedback", by: "owner", at,
         createdBy: { actor: "owner", ref: input.where ?? `${input.via}:clossys feedback ${at}` }, via: input.via, ...(input.quote !== undefined ? { quote: input.quote } : {}),
-      });
+      }, { ownerWords: true });
     } catch (error) {
       if (error instanceof RequestError) throw new FeedbackRefused(error.message);
       throw error;
@@ -83,16 +85,12 @@ export function raiseFeedback(root: string, input: FeedbackInput, now: Date = ne
   const at = isoSeconds(now);
   const target = `${parsed.agent}/${parsed.slotId}`;
   try {
-    const raised = raiseWork(join(root, "clossys"), {
+    return raiseWork(join(root, "clossys"), {
       kind: "change", target, from: "owner", want: "candidate", why: input.words, source: "feedback", by: "owner", at,
       createdBy: { actor: "owner", ref: input.where ?? `${input.via}:clossys feedback ${at}` }, via: input.via,
       ...(input.quote !== undefined ? { quote: input.quote } : {}),
       cites: [{ ...subject, ...(sha256 ? { sha256 } : {}) }],
-    });
-    if (!raised.created && raised.request.why !== input.words) {
-      throw new FeedbackRefused(`${workQueue(raised.request.kind)}#${raised.request.id} already holds the owner's open change on ${target} ("${raised.request.why}"); answer or close it first`);
-    }
-    return raised;
+    }, { ownerWords: true });
   } catch (error) {
     if (error instanceof RequestError) throw new FeedbackRefused(error.message);
     throw error;
