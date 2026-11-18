@@ -72,3 +72,11 @@ export function checkLayoutEngineMap(liveLayoutSlots: readonly string[], source:
   }
   return findings;
 }
+
+/**
+ * The live `layout.*` Composition slots among placed leaves: every layout leaf that is not parked. The map must cover
+ * each one. Pure: the caller passes the placed leaves, so this module stays free of file-system reads.
+ */
+export function liveLayoutSlots(leaves: readonly { readonly id: string; readonly parked?: boolean }[]): string[] {
+  return leaves.filter(leaf => leaf.id.startsWith("layout.") && !leaf.parked).map(leaf => leaf.id);
+}

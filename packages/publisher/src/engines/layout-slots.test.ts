@@ -3,7 +3,7 @@ import { checkPageOption, type LayoutContract, type PageOptionContent } from "..
 import { loadDefaults, loadDesignerCatalog, placedLeaves, slotContract, type PageSlot } from "../catalog/ia/tree.js";
 import { LAYOUT_ENGINES, checkLayoutRegistry, getEffectiveLayoutContract } from "./index.js";
 import { ENGINE_KEYS } from "./keys.js";
-import { LAYOUT_ENGINE_MAP, checkLayoutEngineMap, layoutEngineFor, pageLayoutEngine, type LayoutEngineMap } from "./layout-slots.js";
+import { LAYOUT_ENGINE_MAP, checkLayoutEngineMap, layoutEngineFor, liveLayoutSlots, pageLayoutEngine, type LayoutEngineMap } from "./layout-slots.js";
 
 const designer = loadDesignerCatalog();
 const liveLayouts = placedLeaves().filter(leaf => leaf.id.startsWith("layout.") && !leaf.parked).map(leaf => leaf.id);
@@ -60,6 +60,18 @@ describe("layout.* slots select the render engine through one data map", () => {
     const allows = { ...contract, layouts: [...contract.layouts, "publisher/layout.help"] };
     expect(checkPageOption("page.home", orphan, allows, layout, designer).filter(finding => finding.check === "page.layout-engine").map(finding => finding.message))
       .toEqual(["page.home: layout.help has no render engine: it has no entry in the layout engine map"]);
+  });
+
+  it("the page check runs the engine map coverage check, so a map missing any live layout.* slot fails every page", () => {
+    const page = homePage();
+    const contract = slotContract("page.home") as PageSlot;
+    const layout = slotContract("layout.marketing-home") as LayoutContract;
+    const mapFindings = (engines?: LayoutEngineMap) => checkPageOption("page.home", page, contract, layout, designer, engines)
+      .filter(finding => finding.check === "page.layout-engine-map").map(finding => finding.message);
+    expect(liveLayoutSlots(placedLeaves())).toEqual(liveLayouts);
+    expect(mapFindings()).toEqual([]);
+    // The home page pins layout.marketing-home, so its own engine still resolves: only the map check sees the gap.
+    expect(mapFindings(without("layout.docs-guide"))).toEqual(["page.home: layout.docs-guide: has no render engine entry"]);
   });
 
   it("engines are internal render primitives: no slot identity, and no engine key is a slot id", () => {

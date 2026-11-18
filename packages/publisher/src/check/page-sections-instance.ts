@@ -4,9 +4,11 @@
  * under two roles, and the Writer record key `<page>.<role>` stays unique. Publisher assembles only: a page option names
  * a Designer unit and a Writer record key per role, never words and never styling.
  *
- * Pure functions: the caller passes the page and layout contracts and the live Designer catalog.
+ * Pure functions: the caller passes the page and layout contracts and the live Designer catalog. The layout engine map
+ * and the placed Publisher leaves it must cover are read from the package's own data.
  */
-import { layoutEngineFor } from "../engines/layout-slots.js";
+import { placedLeaves } from "../catalog/ia/tree.js";
+import { LAYOUT_ENGINE_MAP, checkLayoutEngineMap, layoutEngineFor, liveLayoutSlots, type LayoutEngineMap } from "../engines/layout-slots.js";
 
 export interface PlacedSection { role?: unknown; use?: unknown; variant?: unknown; copy?: unknown; links?: unknown; [key: string]: unknown }
 export interface PageOptionContent { layout?: unknown; sections?: unknown; meta?: unknown; [key: string]: unknown }
@@ -81,9 +83,17 @@ export function inlineCopyFindings(content: PageOptionContent): PageFinding[] {
   return findings;
 }
 
+/** The layout engine map's coverage of the live `layout.*` slots, computed once per map. */
+const engineMapFindings = new WeakMap<LayoutEngineMap, readonly string[]>();
+function layoutEngineMapFindings(engines: LayoutEngineMap): readonly string[] {
+  let findings = engineMapFindings.get(engines);
+  if (!findings) engineMapFindings.set(engines, findings = checkLayoutEngineMap(liveLayoutSlots(placedLeaves()), engines));
+  return findings;
+}
+
 /**
- * Every check of one page option: instance keys, the layout pick, roles against the layout, units against the live
- * Designer catalog, record keys and no inline copy or styling.
+ * Every check of one page option: instance keys, the layout pick and the engine map it renders through, roles against
+ * the layout, units against the live Designer catalog, record keys and no inline copy or styling.
  */
 export function checkPageOption(
   pageId: string,
@@ -91,6 +101,7 @@ export function checkPageOption(
   page: PageContract,
   layout: LayoutContract | undefined,
   designer: DesignerIds,
+  engines: LayoutEngineMap = LAYOUT_ENGINE_MAP,
 ): PageFinding[] {
   const findings: PageFinding[] = [];
   const add = (check: string, message: string) => findings.push({ check, message: `${pageId}: ${message}` });
@@ -100,8 +111,10 @@ export function checkPageOption(
   if (!layout?.roles) add("page.layout-allowed", `layout ${String(content.layout)} has no role contract`);
   // A page renders through the engine its pinned layout.* slot selects in the layout engine map; never a default one.
   else if (typeof content.layout === "string" && page.layouts.includes(content.layout)) {
-    try { layoutEngineFor(content.layout); } catch (error) { add("page.layout-engine", error instanceof Error ? error.message : String(error)); }
+    try { layoutEngineFor(content.layout, engines); } catch (error) { add("page.layout-engine", error instanceof Error ? error.message : String(error)); }
   }
+  // The map itself must cover every live layout.* slot with a live engine, or any page could reach an unmapped layout.
+  for (const message of layoutEngineMapFindings(engines)) add("page.layout-engine-map", message);
   const roles = layout?.roles ?? {};
 
   if (!Array.isArray(content.sections) || content.sections.length === 0) add("page.assembled", "a page places at least one section");

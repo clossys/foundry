@@ -15469,7 +15469,7 @@
       "sourceFiles": {
         "packages/publisher/src/formats/slots/formats.ts": "4b89517acdd879de4bea469420be47ef5beb43bf91a43a0c7b36f432a9742014",
         "packages/designer/src/catalog/slots/frames.json": "79d33c0f3bb7e6ac18045ed7fee733f90bfb9900f1c8b80fbbc98d0a81fa679c",
-        "packages/publisher/src/layouts/slots/layouts.json": "426bea89fb7f046ddffdbab34d2265b928e664638c30682060b44a39320983e6",
+        "packages/publisher/src/engines/engines.json": "ffda0341879f50917ccbfa8f44cc71fa735f2ecb864c6a5c273b4e3c997d6c13",
         "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "f20d800f8db532afe2c9e5be50a278ac785ad99b51b69800e612a37cebc15efd",
         "packages/publisher/src/formats/contract.ts": "cf612822e4e2efc6fd34a0ccbc21850052a98d4a3419796754cca4d69425da64",
         "packages/publisher/src/planning/configuration.ts": "4137cae5978a4d36f68d36744a0b0fa5247275f1293de49a250982f695f39921",
