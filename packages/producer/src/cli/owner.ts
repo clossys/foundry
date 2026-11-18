@@ -57,6 +57,7 @@ import { resolveCandidate } from "./pin.js";
 import { consumerSlotFolders, positionIa, serializeSlot, SLOT_SCHEMA as SLOT_V2_SCHEMA, validateSlot } from "../records/slot.js";
 import { currentView, slotReadIssues } from "../records/slot-current.js";
 import { cliActor, toIsoZ } from "../records/pin.js";
+import { actorRefusal } from "../records/seat-owner.js";
 import { slotFromV1, targetKind, type SlotV1 } from "../migrate/slot-1-to-2.js";
 import type { AgentId, Iso, Ref, Slot, TargetSlotKind } from "../records/types.js";
 import { CliUsageError } from "./args.js";
@@ -1110,7 +1111,19 @@ interface RetireFields { by: string; reason: string; at: string }
 /** Remove a folder this verb created when an undo left it empty (records/slot-write.ts). */
 const dropEmptyDir = dropEmptyModelDir;
 
+/**
+ * The retire actor guard (foundry-build-0048 U7 r3): `--by` is the slot's own seat (`agent:<agent>[.<role>]`) or a
+ * resolved owner answer (`owner:queue.<kind>#<id>`, records/seat-owner.ts). Bare `owner`, `planner`, a foreign seat
+ * and free text are refused before anything is read, moved, renumbered or written.
+ */
+function retireRefusal(root: string, agent: SlotAgent, by: string): CliResult | undefined {
+  const why = actorRefusal(root, by, agent);
+  return why === undefined ? undefined : refuse("retire", why);
+}
+
 function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot: string, candidateId: string, fields: RetireFields): CliResult {
+  const guard = retireRefusal(root, agent, fields.by);
+  if (guard) return guard;
   const target = `${agent}/${slot}`;
   const entry = readSlotEntry(consumer, agent, slot);
   if (!entry) return refuse("retire", `unknown slot ${target} (not in ${agent} ia.json)`);
@@ -1140,6 +1153,8 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
 }
 
 function retireSlot(consumer: string, root: string, agent: SlotAgent, slot: string, fields: RetireFields): CliResult {
+  const guard = retireRefusal(root, agent, fields.by);
+  if (guard) return guard;
   const target = `${agent}/${slot}`;
   const iaFile = iaPath(consumer, agent);
   if (!modelExists(iaFile)) return refuse("retire", `${agent} has no ia.json`);
@@ -1202,11 +1217,15 @@ export async function runRetireCli(argv: readonly string[], cwd: string): Promis
   const slash = target.indexOf("/");
   const agent = target.slice(0, slash) as SlotAgent, slot = target.slice(slash + 1);
   if (slash < 0 || !(SLOT_AGENTS as readonly string[]).includes(agent) || !SLOT_ID.test(slot)) throw new CliUsageError(`retire target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")} and a slot id, got ${target}\n${RETIRE_USAGE}`);
-  const by = need(flags, "--by", RETIRE_USAGE), reason = need(flags, "--reason", RETIRE_USAGE);
+  const by = need(flags, "--by", RETIRE_USAGE);
+  const root = rootOf(cwd, flags), consumer = join(root, "clossys");
+  // The actor guard runs first, right after the flags parse: a refused actor learns nothing else and nothing is read.
+  const refused = retireRefusal(root, agent, by);
+  if (refused) return refused;
+  const reason = need(flags, "--reason", RETIRE_USAGE);
   if (/[\r\n]/.test(by) || /[\r\n]/.test(reason)) return refuse("retire", "--by and --reason are one line each");
   if (!RETIRE_REASON.test(reason)) throw new CliUsageError(`--reason must be a retire code (${RETIRE_CODES.join(", ")}), optionally followed by ": <note>", got ${reason}\n${RETIRE_USAGE}`);
   const at = one(flags, "--at") ?? new Date().toISOString();
   if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${RETIRE_USAGE}`);
-  const root = rootOf(cwd, flags), consumer = join(root, "clossys");
   return whole ? retireSlot(consumer, root, agent, slot, { by, reason, at }) : retireCandidate(consumer, root, agent, slot, candidate!, { by, reason, at });
 }

@@ -604,6 +604,8 @@ export interface RequestEvent {
   readonly id: string; readonly at: string; readonly op: RequestOp; readonly by?: string; readonly detail?: string;
   /** As clossys.queue-entry/1 events: where the words came from (cli, chat, app) and the owner's words when quoted. */
   readonly via?: "cli" | "chat" | "app"; readonly quote?: string;
+  /** A verified event: the digest of the inputs the requester check judged (records/request.ts inputsSha256). */
+  readonly inputsSha256?: string;
 }
 export interface Overlap { readonly slot: string; readonly why: string }
 export interface Proposal {

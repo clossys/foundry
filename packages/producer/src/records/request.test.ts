@@ -3,13 +3,15 @@ import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { REQUESTS_FILED } from "../loop/names.js";
-import { raiseEntry } from "../loop/route.js";
+import { ownerFixQuestion, raiseEntry } from "../loop/route.js";
 import { verifyCheck } from "../loop/runner.js";
+import { OPEN_FIX, requestsWorld, type RequestsWorld } from "../conform/__fixtures__/requests-world.js";
 import { answerQueueEntry } from "../queue/answer.js";
+import { readLegacyFixes } from "../queue/legacy-fix.js";
 import {
-  checkRequest, closeRequest, decideRequest, placementOverlaps, raiseRequest, readRequest, requestIssues, requestsDir, signedApproval, slotlessNeeds,
+  checkRequest, closeRequest, closeWork, decideRequest, placementOverlaps, raiseRequest, readRequest, requestIssues, requestsDir, signedApproval, slotlessNeeds,
   unfiledNeeds, type SlotRequest,
 } from "./request.js";
 
@@ -299,5 +301,97 @@ console.log(JSON.stringify({ id: result.request.id, created: result.created }));
     expect(check()).toEqual({ ok: false, why: `requests.filed: 1 slotless need(s) not filed: ${REQUESTER} -> writer/sections.signup-faq.copy` });
     raise(consumer, "writer/sections.signup-faq.copy");
     expect(check()).toEqual({ ok: true });
+  });
+});
+
+// foundry-build-0048 U7 r3: a fix or change closes by the one closure rule (records/request.ts closerIssues). The
+// assignee closes a change, and a fix only as fixed with its check re-run; any other close is the owner's answer
+// owner:queue.fix#<id>, a /1 queue.fix entry the owner answered that cites the fix. Bare owner never closes.
+describe("the closure rule on change and fix entries (U7 r3)", () => {
+  const worlds: RequestsWorld[] = [];
+  afterEach(() => { for (const item of worlds.splice(0)) item.dispose(); });
+  const open = async () => {
+    const made = await requestsWorld();
+    worlds.push(made);
+    const fix = made.raised.fix.find(item => item.target === OPEN_FIX)!;
+    return { made, fix, file: join(made.consumer, "agents/producer/queue.fix/entries", `${fix.id}.json`) };
+  };
+  /** The owner's answer to the fix: the one /1 queue.fix owner entry citing it, answered (free text: it has no options). */
+  const ownerAnswer = (root: string, fix: SlotRequest, words = "decline it: the overflow is by design") => {
+    const { entry } = ownerFixQuestion(root, { id: fix.id, target: fix.target, check: String(fix.check) }, "2026-11-20T10:00:00Z");
+    const name = `queue.fix#${entry.id}`;
+    // The world runs on 2026-11-20 and an answer is stamped now: answer from a clock past the world's.
+    vi.useFakeTimers({ now: new Date("2026-11-21T00:00:00Z"), toFake: ["Date"] });
+    let result: unknown;
+    try { result = answerQueueEntry(root, { entry: name, answer: words, by: "owner", via: "chat", quote: words }); } finally { vi.useRealTimers(); }
+    expect((result as { entry?: { status?: string } }).entry?.status, JSON.stringify(result)).toBe("answered");
+    return `owner:${name}`;
+  };
+  const close = (consumer: string, id: string, by: string, outcome: "fixed" | "declined" | "changed") =>
+    closeWork(consumer, id, { by, at: "2026-11-20T10:05:00Z", outcome, result: OPEN_FIX });
+
+  it("T5: the assignee closes a fix only as fixed: its declined is refused and nothing is written", { timeout: 60_000 }, async () => {
+    const { made, fix, file } = await open();
+    const before = readFileSync(file, "utf8");
+    expect(() => close(made.consumer, fix.id, "writer", "declined")).toThrow(new RegExp(`writer cannot close ${fix.id}: the assignee closes a fix only as fixed`));
+    expect(readFileSync(file, "utf8")).toBe(before);
+  });
+
+  it("T6: bare owner declining a fix is refused; owner:queue.fix#<id>, answered by the owner and citing it, closes it", { timeout: 60_000 }, async () => {
+    const { made, fix, file } = await open();
+    const before = readFileSync(file, "utf8");
+    expect(() => close(made.consumer, fix.id, "owner", "declined")).toThrow(/owner cannot close .*: bare owner is no closer/);
+    expect(readFileSync(file, "utf8")).toBe(before);
+    const by = ownerAnswer(made.root, fix);
+    const closed = close(made.consumer, fix.id, by, "declined");
+    expect(closed).toMatchObject({ status: "closed", outcome: "declined" });
+    expect(closed.events.at(-1)).toMatchObject({ op: "closed", by });
+    expect(closed.refs).toContainEqual({ to: "producer/queue.fix", record: by.split("#")[1], rel: "answers" });
+    expect(requestIssues(closed, made.root)).toEqual([]);
+    // Stored, the same close without its answers ref, or by bare owner, does not read.
+    expect(requestIssues({ ...closed, refs: closed.refs.filter(ref => ref.rel !== "answers") }, made.root).join("; ")).toMatch(/carries no ref answering queue\.fix#/);
+    expect(requestIssues({ ...closed, events: closed.events.map(event => event.op === "closed" ? { ...event, by: "owner" } : event) }, made.root).join("; ")).toMatch(/bare owner is no closer/);
+  });
+
+  it("T7: a fix closes fixed or declined: changed is refused, by the assignee and by the owner's answer", { timeout: 60_000 }, async () => {
+    const { made, fix, file } = await open();
+    const before = readFileSync(file, "utf8");
+    expect(() => close(made.consumer, fix.id, "writer", "changed")).toThrow(/a fix entry closes fixed or declined, not changed/);
+    const by = ownerAnswer(made.root, fix);
+    expect(() => close(made.consumer, fix.id, by, "changed")).toThrow(/a fix entry closes fixed or declined, not changed/);
+    expect(readFileSync(file, "utf8")).toBe(before);
+  });
+
+  it("T8: a fix whose check Producer cannot re-run never closes fixed; it raises one owner queue.fix entry citing it", { timeout: 60_000 }, async () => {
+    const { made, fix, file } = await open();
+    writeFileSync(file, `${JSON.stringify({ ...JSON.parse(readFileSync(file, "utf8")), check: "render.overflow" })}\n`);
+    const before = readFileSync(file, "utf8");
+    const asked = () => readLegacyFixes(made.root).filter(item => {
+      const doc = item.doc as { decider?: string; refs?: { to: string; record?: string; rel: string }[] };
+      return doc.decider === "owner" && (doc.refs ?? []).some(ref => ref.to === "producer/queue.fix" && ref.record === fix.id && ref.rel === "cites");
+    });
+    expect(asked()).toEqual([]);
+    for (const by of ["writer", "writer"]) expect(() => close(made.consumer, fix.id, by, "fixed")).toThrow(/cannot close fixed: its check render\.overflow is not one Producer can re-run/);
+    expect(readFileSync(file, "utf8")).toBe(before);
+    expect(asked()).toHaveLength(1);
+    expect(asked()[0]).toMatchObject({ issues: [], closed: false, subject: OPEN_FIX });
+    // The owner's answer closes it, declined only: fixed still needs a check Producer re-runs.
+    const by = ownerAnswer(made.root, fix);
+    expect(asked()).toHaveLength(1);
+    expect(() => close(made.consumer, fix.id, by, "fixed")).toThrow(/cannot close fixed: its check render\.overflow/);
+    expect(close(made.consumer, fix.id, by, "declined")).toMatchObject({ status: "closed", outcome: "declined" });
+  });
+});
+
+describe("closeRequest resolves its ownerRef (U7 r3, T14)", () => {
+  it("refuses an ownerRef no registered owner decision backs, and writes nothing", () => {
+    const { consumer } = world();
+    const request = raise(consumer, "writer/narratives.how-to");
+    checkRequest(consumer, request.id, { by: "writer", at: AT });
+    decideRequest(consumer, request.id, { decision: "reuse", slot: "writer/narratives.guide", by: "writer", at: AT });
+    const before = bytes(join(consumer, "agents"));
+    expect(() => closeRequest(consumer, request.id, { by: "producer", at: AT, ownerRef: "6000000001" })).toThrow(new RegExp(`request ${request.id}: --owner-ref 6000000001`));
+    expect(bytes(join(consumer, "agents"))).toEqual(before);
+    expect(readRequest(consumer, request.id).status).toBe("open");
   });
 });

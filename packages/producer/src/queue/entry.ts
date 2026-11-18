@@ -59,7 +59,11 @@ export function listQueueEntryFiles(root: string): EntryFile[] {
 
 export type EntryRead = { readonly ok: true; readonly entry: QueueEntry; readonly bytes: string } | { readonly ok: false; readonly reason: string };
 
-/** Reads one entry file; the entry's own `id` and `queue` must match its path. */
+/**
+ * Reads one entry file; the entry's own `id` and `queue` must match its path. It is lax: it does not validate the
+ * schema, the answer rules or that the status agrees with the events, so it must never judge closure. Every queue.fix
+ * consumer that judges whether an entry is closed goes through queue/legacy-fix.ts (foundry-build-0048 U7 r3).
+ */
 export function readQueueEntry(at: EntryFile): EntryRead {
   let bytes: string;
   try { bytes = readFileSync(at.file, "utf8"); } catch { return { ok: false, reason: "cannot read the entry file" }; }
@@ -136,9 +140,13 @@ export function replaceQueueEntry(file: string, entry: QueueEntry): void {
 export const queueLockPath = (root: string, queue: QueueName, id: string): string => join(root, ".clossys", "locks", "queue", queue, `${id}.lock`);
 
 export class EntryLockedError extends Error {
-  constructor(readonly lock: string) {
+  // A plain field, not a parameter property: records/slot-write.ts reaches this module through the actor guard
+  // (records/seat-owner.ts), and Node's type stripping runs slot-write.ts in child writers (records/ledger.test.ts).
+  readonly lock: string;
+  constructor(lock: string) {
     super(`the entry is locked by another writer (${lock}); nothing was written. If no writer is running, remove the lock file by hand`);
     this.name = "EntryLockedError";
+    this.lock = lock;
   }
 }
 

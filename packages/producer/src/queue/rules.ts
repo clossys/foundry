@@ -11,6 +11,7 @@
  */
 import { danglingReason } from "../check/refs-dangling.js";
 import { targetSchema } from "../records/candidate.js";
+import { OWNER_QUEUE_ANSWER } from "../records/pin.js";
 import { validateAgainst } from "../records/schema.js";
 import type { QueueEntry, Ref } from "../records/types.js";
 import { findQueueEntry, readQueueEntry } from "./entry.js";
@@ -181,3 +182,31 @@ export const ANSWER_RULES: readonly { readonly check: string; readonly issues: A
   { check: ANSWER_OPTION_VALID, issues: optionValidIssues },
   { check: ANSWER_QUOTE_REQUIRED, issues: quoteRequiredIssues },
 ];
+
+/** An owner answer ref (`owner:queue.<kind>#<id>`) as it resolves on disk. */
+export type OwnerAnswer =
+  | { readonly ok: false; readonly issues: readonly string[] }
+  | { readonly ok: true; readonly entry: QueueEntry; readonly name: string; readonly answered: Event | undefined; readonly issues: readonly string[] };
+
+/**
+ * The one owner-answer predicate (foundry-build-0048 U7): `by` is `owner:queue.<kind>#<id>` (records/pin.ts
+ * OWNER_QUEUE_ANSWER), the entry exists, it is answered, and the owner wrote the answer. `issues` is empty only then.
+ * `release/ready.ts` adds its ready-pin rules on top; `records/seat-owner.ts assertActor` and the request closers take
+ * it as it is. `queues` limits the kinds the caller accepts.
+ */
+export function resolveOwnerAnswer(root: string, by: string, queues?: readonly string[]): OwnerAnswer {
+  const match = OWNER_QUEUE_ANSWER.exec(by);
+  if (!match) return { ok: false, issues: [`${by} is not an owner answer (owner:queue.<kind>#<id>)`] };
+  if (queues && !queues.includes(match[1]!)) return { ok: false, issues: [`${by} answers ${match[1]}, not ${queues.join(" or ")}`] };
+  const found = findQueueEntry(root, `${match[1]}#${match[2]}`);
+  if (!found.ok) return { ok: false, issues: [found.reason] };
+  const read = readQueueEntry(found.at);
+  if (!read.ok) return { ok: false, issues: [`${match[1]}#${match[2]}: ${read.reason}`] };
+  const entry: QueueEntry = read.entry;
+  const name = `${entry.queue}#${entry.id}`;
+  const answered = [...events(entry)].reverse().find(event => event?.op === "answered");
+  const issues: string[] = [];
+  if (entry.status !== "answered" || !answered) issues.push(`${name} is ${entry.status}, not answered`);
+  else if (answered.by !== "owner") issues.push(`${name} was answered by ${answered.by}, not the owner`);
+  return { ok: true, entry, name, answered, issues };
+}

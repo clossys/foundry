@@ -3,16 +3,20 @@
  * content agent, raised and closed by the production verbs, read by the real conformance model. Q3, Q4 and Q6-Q9 and
  * Q11 judge real entries here (never green by construction), and Q11 proves the release gate refuses the open fix.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runRequestCli } from "../cli/request.js";
-import { closeWork, listRequests, readRequest, requestIssues } from "../records/request.js";
+import { ownerFixQuestion } from "../loop/route.js";
+import { answerQueueEntry } from "../queue/answer.js";
+import { closeWork, inputsSha256, listRequests, readRequest, requestIssues } from "../records/request.js";
 import { openFixes } from "../release/gates.js";
 import { ASSERTIONS } from "./assertions.js";
 import type { ProbeFacts } from "./dogfood.js";
 import { CONFORM_AGENTS, readConformModel } from "./model.js";
+import { internalWriterIssues, seatGuardIssues } from "./requests-model.js";
 import { CHANGES, FIXES, NEEDS, OPEN_FIX, requestsWorld, type RequestsWorld } from "./__fixtures__/requests-world.js";
 
 const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
@@ -122,7 +126,7 @@ describe("the request lens world", () => {
     const world = await make();
     const open = world.raised.fix.find(item => item.target === OPEN_FIX)!;
     await expect(runRequestCli([open.id, "--close", "--root", world.root], world.root)).rejects.toThrow(/closes with --outcome and --result/);
-    await expect(runRequestCli([open.id, "--close", "--outcome", "done", "--result", OPEN_FIX, "--root", world.root], world.root)).rejects.toThrow(/--outcome must be one of/);
+    await expect(runRequestCli([open.id, "--close", "--outcome", "done", "--result", OPEN_FIX, "--root", world.root], world.root)).rejects.toThrow(/a fix entry closes with --outcome fixed or declined/);
     const slot = world.raised.slot[0]!;
     await expect(runRequestCli([slot.id, "--close", "--outcome", "fixed", "--result", OPEN_FIX, "--root", world.root], world.root)).rejects.toThrow(/a slot entry closes by its decision/);
   });
@@ -152,15 +156,23 @@ describe("the request lens world", () => {
     expect(ASSERTIONS.Q11!(writer, blind, {} as ProbeFacts).rows).toEqual([expect.stringMatching(new RegExp(`queue\\.fix/entries/${open.id}\\.json: does not read and requests\\.open-fix does not refuse it`))]);
   });
 
-  it("a change or fix closes only by --by its assignee or the owner; no default closer, no other seat", { timeout: 60_000 }, async () => {
+  it("a change or fix closes only by --by its assignee or the owner's answer; no default closer, no other seat, never bare owner", { timeout: 60_000 }, async () => {
     const world = await make();
     const open = world.raised.fix.find(item => item.target === OPEN_FIX)!;
-    await expect(runRequestCli([open.id, "--close", "--outcome", "fixed", "--result", OPEN_FIX, "--root", world.root], world.root)).rejects.toThrow(/closes with --by writer \(its assignee\) or --by owner/);
+    await expect(runRequestCli([open.id, "--close", "--outcome", "fixed", "--result", OPEN_FIX, "--root", world.root], world.root)).rejects.toThrow(/closes with --by writer \(its assignee\) or --by owner:queue\.fix#<id> \(the owner's answer\)/);
     for (const by of ["producer", "planner", "designer"]) {
       expect(() => closeWork(world.consumer, open.id, { by, at: "2026-11-20T10:00:00Z", outcome: "fixed", result: OPEN_FIX }), by).toThrow(new RegExp(`${by} cannot close ${open.id}: it is assigned to writer`));
     }
+    expect(() => closeWork(world.consumer, open.id, { by: "owner", at: "2026-11-20T10:00:00Z", outcome: "fixed", result: OPEN_FIX })).toThrow(/bare owner is no closer/);
     expect(readRequest(world.consumer, open.id)).toMatchObject({ status: "open" });
-    expect(closeWork(world.consumer, open.id, { by: "owner", at: "2026-11-20T10:05:00Z", outcome: "fixed", result: OPEN_FIX })).toMatchObject({ status: "closed", events: expect.arrayContaining([expect.objectContaining({ op: "closed", by: "owner" })]) });
+    // The owner closes through an answered queue.fix entry citing the fix (U7 r3).
+    const { entry } = ownerFixQuestion(world.root, { id: open.id, target: open.target, check: String(open.check) }, "2026-11-20T10:01:00Z");
+    const by = `owner:queue.fix#${entry.id}`;
+    expect(() => closeWork(world.consumer, open.id, { by, at: "2026-11-20T10:02:00Z", outcome: "fixed", result: OPEN_FIX })).toThrow(/is open: the owner has not answered it|not answered/);
+    vi.useFakeTimers({ now: new Date("2026-11-21T00:00:00Z"), toFake: ["Date"] });
+    try { answerQueueEntry(world.root, { entry: `queue.fix#${entry.id}`, answer: "fixed: the pin resolves", by: "owner", via: "chat", quote: "it resolves now" }); } finally { vi.useRealTimers(); }
+    expect(closeWork(world.consumer, open.id, { by, at: "2026-11-20T10:05:00Z", outcome: "fixed", result: OPEN_FIX })).toMatchObject({ status: "closed", events: expect.arrayContaining([expect.objectContaining({ op: "closed", by })]) });
+    expect(requestIssues(readRequest(world.consumer, open.id), world.root)).toEqual([]);
   });
 
   it("a fix closing as fixed re-runs its own check: still failing, it records rejected and stays open; an unknown check refuses", { timeout: 60_000 }, async () => {
@@ -204,7 +216,8 @@ describe("the request lens world", () => {
     const at = "2026-11-20T10:00:00Z";
     const n = doc.events.length;
     const forge = (verified: Record<string, unknown>, extra: Record<string, unknown>[] = []) => {
-      const events = [...doc.events, { id: `${open.id}#${n + 1}`, op: "verified", by: "producer", at, detail: `requester check passed on ${OPEN_FIX}; fix check pins.resolve passes on ${OPEN_FIX}`, ...verified }, ...extra.map((event, index) => ({ id: `${open.id}#${n + 2 + index}`, at, ...event }))];
+      // The forger computes the digest over today's bytes, as closeWork would (U7 r3): only then does Q7 re-run it.
+      const events = [...doc.events, { id: `${open.id}#${n + 1}`, op: "verified", by: "producer", at, detail: `requester check passed on ${OPEN_FIX}; fix check pins.resolve passes on ${OPEN_FIX}`, inputsSha256: inputsSha256(world.consumer, doc), ...verified }, ...extra.map((event, index) => ({ id: `${open.id}#${n + 2 + index}`, at, ...event }))];
       const closedId = `${open.id}#${events.length + 1}`;
       return { ...doc, status: "closed", outcome: "fixed", result: OPEN_FIX, notified: { to: "owner", at }, closedAt: at, closed: closedId, events: [...events, { id: closedId, op: "closed", by: "writer", at, detail: `fixed: ${OPEN_FIX}; notified owner` }] };
     };
@@ -222,10 +235,44 @@ describe("the request lens world", () => {
     const slotFile = join(world.consumer, "agents/writer/sections.hero.copy/slot.json");
     const slot = JSON.parse(readFileSync(slotFile, "utf8"));
     writeFileSync(slotFile, `${JSON.stringify({ ...slot, status: "needs-refresh" })}\n`);
+    // The slot changed after the forged close: drift, slots.stale's (no red, U7 r3). Forged over today's bytes: red.
+    expect(judgeAll(world, ["Q7"]).writer!.Q7!.rows).toEqual([]);
+    writeFileSync(file, `${JSON.stringify(forge({}))}\n`);
     expect(judgeAll(world, ["Q7"]).writer!.Q7!.rows).toContainEqual(expect.stringMatching(new RegExp(`queue\\.fix#${open.id}: closed, and the requester check fails now: .*needs-refresh`)));
     // A forged fixed close whose own check fails now is red too.
     writeFileSync(slotFile, `${JSON.stringify({ ...slot, refs: [...(slot.refs ?? []), { to: "writer/sections.nowhere", rel: "input" }] })}\n`);
-    writeFileSync(file, `${JSON.stringify({ ...good, check: "refs.dangling", events: good.events.map((event: { op: string; detail?: string }) => event.op === "verified" ? { ...event, detail: `requester check passed on ${OPEN_FIX}; fix check refs.dangling passes on ${OPEN_FIX}` } : event) })}\n`);
+    const dangling = forge({});
+    writeFileSync(file, `${JSON.stringify({ ...dangling, check: "refs.dangling", events: dangling.events.map((event: { op: string; detail?: string }) => event.op === "verified" ? { ...event, detail: `requester check passed on ${OPEN_FIX}; fix check refs.dangling passes on ${OPEN_FIX}` } : event) })}\n`);
     expect(judgeAll(world, ["Q7"]).writer!.Q7!.rows).toContainEqual(expect.stringMatching(new RegExp(`queue\\.fix#${open.id}: closed, and its check refs\\.dangling fails now: .*sections\\.nowhere`)));
+  });
+});
+
+describe("Q9: the retire verb through the built CLI (foundry-build-0048 U7 r3)", () => {
+  it("T4: Q9 is red when retire lets a foreign seat, bare owner or the planner through, and green on the real dist", { timeout: 120_000 }, () => {
+    // The real built CLI: every retire probe is refused by the actor guard and writes nothing.
+    expect(seatGuardIssues(REPO)).toEqual([]);
+    // A CLI whose retire has no guard (every other verb refuses by the seat rule): Q9 names each retire probe.
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "requests-retire-")));
+    try {
+      writeFileSync(join(root, "main.js"), "export async function runCli(argv) { return argv[0] === 'retire' ? { exitCode: 0, message: 'retire: done' } : { exitCode: 1, message: argv[0] + ' refused: an agent acts only on its own slots' }; }\n");
+      writeFileSync(join(root, "index.js"), "");
+      const rows = seatGuardIssues(REPO, join(root, "index.js"));
+      const retire = rows.filter(row => row.startsWith("clossys retire"));
+      expect(retire.sort()).toEqual([
+        "retire --slot --by agent:writer", "retire --slot --by owner",
+        "retire <candidate> --by agent:judge", "retire <candidate> --by agent:writer", "retire <candidate> --by owner", "retire <candidate> --by planner",
+      ].map(verb => `clossys ${verb} on designer/<slot> exits 0: a seat acted on a slot it may not (retire: done)`).sort());
+      expect(rows.filter(row => !row.startsWith("clossys retire"))).toEqual([]);
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+
+  it("Q9 is red when a file outside the listed callers reaches a Producer-internal writer", () => {
+    const src = join(REPO, "packages/producer/src");
+    expect(internalWriterIssues(src)).toEqual([]);
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "requests-internal-")));
+    try {
+      writeFileSync(join(root, "rogue.ts"), "appendSlotDocEvent(consumer, agent, id, { by: flags.by });\n");
+      expect(internalWriterIssues(root)).toEqual(["rogue.ts calls the Producer-internal writer appendSlotDocEvent (no actor guard); judge the actor first or list it in PRODUCER_INTERNAL_WRITERS"]);
+    } finally { rmSync(root, { recursive: true, force: true }); }
   });
 });

@@ -82,6 +82,27 @@ export function raiseEntry(root: string, raise: Raise, at: Iso, dedupe = true): 
 }
 
 /**
+ * The owner's question on a kind fix whose check Producer cannot re-run (foundry-build-0048 U7 r3): such a fix never
+ * closes fixed, so the owner answers whether it is done. One clossys.queue-entry/1 queue.fix entry, decider owner,
+ * about the fix's target and citing the fix (`producer/queue.fix`, record = its id); an existing one (open or
+ * answered) is returned, never a second. The fix then closes `--by owner:queue.fix#<that id>`.
+ */
+export function ownerFixQuestion(root: string, fix: { readonly id: string; readonly target: string; readonly check: string }, at: Iso): { entry: QueueEntry; raised: boolean } {
+  for (const file of listQueueEntryFiles(root)) {
+    if (file.queue !== "queue.fix") continue;
+    const read = readQueueEntry(file);
+    if (read.ok && read.entry.schema === "clossys.queue-entry/1" && read.entry.decider === "owner" && read.entry.status !== "withdrawn"
+      && read.entry.refs.some(ref => ref.to === "producer/queue.fix" && ref.record === fix.id && ref.rel === "cites")) return { entry: read.entry, raised: false };
+  }
+  return raiseEntry(root, {
+    queue: "queue.fix", decider: "owner", subject: { to: fix.target.split("#")[0] as Ref["to"], rel: "input" },
+    refs: [{ to: "producer/queue.fix" as Ref["to"], record: fix.id, rel: "cites" }],
+    ask: `Producer cannot re-run ${fix.check} on ${fix.target}, so fix ${fix.id} cannot close fixed by itself. Is it fixed? Answer here; it then closes --by owner:queue.fix#<this entry>.`,
+    slug: `owner-${fix.id.replace(/^[0-9]{8}T[0-9]{4}Z-/, "")}`,
+  }, at, false);
+}
+
+/**
  * A finding's owner, as Producer's router (queue/routing.ts) sends a kind fix on its subject: a live slot to its
  * agent's declared fix handler, anything else (no slot, or an agent with no declared handler) to the owner's
  * queue.clarify. The entry it raises is still a clossys.queue-entry/1 queue.fix (the runner reads and closes those);

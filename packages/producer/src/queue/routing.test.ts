@@ -9,6 +9,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { runRequestCli } from "../cli/request.js";
+import { ownerFixQuestion } from "../loop/route.js";
+import { answerQueueEntry } from "./answer.js";
 import { closeWork, legacyFixEntries, listRequests, raiseWork, readRequest, requestIssues } from "../records/request.js";
 import { consumerFacts, ownerClasses, ownerClassOf, readRoutingTable, rederive, routeEntry, RoutingError, routingIssues, routingText, type RoutingFacts } from "./routing.js";
 
@@ -156,7 +158,7 @@ describe("routeEntry", () => {
 
 describe("kind change and fix entries", () => {
   it("raises a fix routed by the table into queue.fix; a close re-runs the requester check and refuses on a fail", () => {
-    const { consumer, facts } = world();
+    const { root, consumer, facts } = world();
     const { request, created } = raiseWork(consumer, fixOf("designer/sections.hero"), { facts });
     expect(created).toBe(true);
     expect(request).toMatchObject({ schema: "clossys.queue-entry/2", kind: "fix", from: "owner", assignee: "designer", status: "open", check: "render.overflow", cause: "the heading has no wrap rule" });
@@ -171,23 +173,37 @@ describe("kind change and fix entries", () => {
     // A fixed close re-runs the fix's own check; render.overflow is not one Producer re-runs, so it refuses and writes nothing.
     expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "fixed", result: "designer/sections.hero" })).toThrow(/cannot close fixed: its check render\.overflow is not one Producer can re-run/);
     expect(readRequest(consumer, request.id).events.map(event => event.op)).toEqual(["raised", "routed"]);
+    // The assignee closes a fix only as fixed (U7 r3): declined takes the owner's answer, which the refusal raised.
+    expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "declined", result: "designer/sections.hero" })).toThrow(/the assignee closes a fix only as fixed/);
+    const asked = ownerFixQuestion(root, { id: request.id, target: request.target, check: String(request.check) }, AT);
+    expect(asked.raised).toBe(false);
+    const by = `owner:queue.fix#${asked.entry.id}`;
+    answerQueueEntry(root, { entry: by.slice("owner:".length), answer: "decline it", by: "owner", via: "chat", quote: "decline it" });
     // The fixture's hero has no pin and no package default: the requester check fails, the entry stays open.
-    expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "declined", result: "designer/sections.hero" })).toThrow(/stays open: the requester check failed \(designer\/sections\.hero: does not resolve/);
+    expect(() => closeWork(consumer, request.id, { by, at: AT, outcome: "declined", result: "designer/sections.hero" })).toThrow(/stays open: the requester check failed \(designer\/sections\.hero: does not resolve/);
     const after = readRequest(consumer, request.id);
     expect(after).toMatchObject({ status: "open" });
     expect(after.events.map(event => event.op)).toEqual(["raised", "routed", "rejected"]);
-    expect(requestIssues(after)).toEqual([]);
+    expect(requestIssues(after, root)).toEqual([]);
   });
 
   it("refuses a closure the event log does not back (a forged close)", () => {
     const { consumer, facts } = world();
-    const open = raiseWork(consumer, fixOf("designer/sections.hero"), { facts }).request;
+    // A check Producer re-runs (pins.resolve), so the assignee's fixed close is one closeWork could write.
+    const open = { ...raiseWork(consumer, fixOf("designer/sections.hero"), { facts }).request, check: "pins.resolve" };
     const at = "2026-11-17T11:00:00Z";
     const closing = { status: "closed" as const, outcome: "fixed" as const, result: "designer/sections.hero", notified: { to: "owner", at }, closedAt: at };
-    const verified = { id: `${open.id}#3`, at, op: "verified" as const, by: "producer", detail: "requester check passed on designer/sections.hero; fix check render.overflow passes on designer/sections.hero" };
-    const close = { id: `${open.id}#4`, at, op: "closed" as const, by: "producer" };
+    const verified = { id: `${open.id}#3`, at, op: "verified" as const, by: "producer", detail: "requester check passed on designer/sections.hero; fix check pins.resolve passes on designer/sections.hero", inputsSha256: "0".repeat(64) };
+    const close = { id: `${open.id}#4`, at, op: "closed" as const, by: "designer" };
     const honest = { ...open, ...closing, closed: close.id, events: [...open.events, verified, close] };
     expect(requestIssues(honest)).toEqual([]);
+    // U7 r3: the verified event carries the inputs' digest, and the closer keeps the closure rule.
+    const { inputsSha256: _hash, ...unhashed } = verified;
+    expect(requestIssues({ ...honest, events: [...open.events, unhashed, close] }).join("; ")).toMatch(/carries no inputsSha256 \(64 hex\)/);
+    expect(requestIssues({ ...honest, events: [...open.events, { ...verified, inputsSha256: "x" }, close] }).join("; ")).toMatch(/inputsSha256 must match/);
+    expect(requestIssues({ ...honest, events: [...open.events, verified, { ...close, by: "producer" }] }).join("; ")).toMatch(/the close by producer: it is assigned to designer/);
+    expect(requestIssues({ ...honest, outcome: "declined" }).join("; ")).toMatch(/the assignee closes a fix only as fixed/);
+    expect(requestIssues({ ...honest, check: "render.overflow" }).join("; ")).toMatch(/not one Producer re-runs: it closes only on the owner's answer/);
     // `closed` points at the raise, not at a close event.
     expect(requestIssues({ ...honest, closed: open.opened }).join("; ")).toMatch(/is a raised event, not the closed event/);
     // Status closed with no closed event in the log.

@@ -7,7 +7,15 @@
  * `assertSeat` is the one guard every writer of a slot decision calls (records/slot-write.ts pin, pick, verdict,
  * reissue and not-needed; records/pin-map.ts the clossys.slot/2 pin), so a new verb that writes through them cannot
  * skip it.
+ *
+ * `assertActor` is the total guard (foundry-build-0048 U7 r3): it has no pass-through. An actor is an agent seat that
+ * may act on the slot, or an owner answer ref (`owner:queue.<kind>#<id>`) that resolves to an entry the owner answered
+ * (queue/rules.ts resolveOwnerAnswer, the predicate release/ready.ts uses). Bare `owner`, `planner`, `migration` and
+ * free text are refused unless the caller names them in `also`. The retire verb and writers, the request closers and
+ * the candidate writers call it.
  */
+import { resolveOwnerAnswer } from "../queue/rules.js";
+
 export const SEAT_AGENTS = ["director", "designer", "writer", "publisher", "producer"] as const;
 
 const SEAT = /^agent:([a-z][a-z0-9-]*)(?:\.[a-z0-9.-]+)?$/;
@@ -34,5 +42,30 @@ export function seatRefusal(by: string, slotAgent: string): string | undefined {
 export function assertSeat(by: string, slotAgent: string, verb: string): void {
   if (!by.startsWith("agent:")) return;
   const why = seatRefusal(by, slotAgent);
+  if (why !== undefined) throw new SeatRefusal(`${verb} refused: ${why}`);
+}
+
+export interface ActorOptions {
+  /** Non-seat actors this writer accepts as they are (the candidate writers: the owner and the planner author too). */
+  readonly also?: readonly string[];
+  /** The owner-answer queues accepted (default: every queue). */
+  readonly queues?: readonly string[];
+}
+
+/** Why `by` may not act on a slot of `slotAgent` (undefined when it may): the total form of `seatRefusal`. */
+export function actorRefusal(root: string, by: string, slotAgent: string, options: ActorOptions = {}): string | undefined {
+  if (options.also?.includes(by)) return undefined;
+  if (by.startsWith("agent:")) return seatRefusal(by, slotAgent);
+  if (by.startsWith("owner:")) {
+    const owner = resolveOwnerAnswer(root, by, options.queues);
+    const issues = owner.issues;
+    return issues.length ? `--by ${by} is not agent:<agent>[.<role>] and not a resolved owner answer: ${issues.join("; ")}` : undefined;
+  }
+  return `--by ${by} is not agent:<agent>[.<role>] or a resolved owner answer (owner:queue.<kind>#<id>)`;
+}
+
+/** The total actor guard: throws a SeatRefusal (`<verb> refused: ...`) unless `by` may act on a slot of `slotAgent`. */
+export function assertActor(root: string, by: string, slotAgent: string, verb: string, options: ActorOptions = {}): void {
+  const why = actorRefusal(root, by, slotAgent, options);
   if (why !== undefined) throw new SeatRefusal(`${verb} refused: ${why}`);
 }

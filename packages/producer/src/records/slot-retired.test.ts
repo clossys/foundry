@@ -35,7 +35,7 @@ afterEach(() => rmSync(workspace, { recursive: true, force: true }));
 const rel = `agents/designer/${ID}`;
 const issues = () => checkSlotModel(consumer);
 async function retireV1() {
-  const result = await runRetireCli([`designer/${ID}`, "example-v1", "--by", "planner:retire test", "--reason", "superseded: by v2", "--at", AT], workspace);
+  const result = await runRetireCli([`designer/${ID}`, "example-v1", "--by", "agent:designer", "--reason", "superseded: by v2", "--at", AT], workspace);
   expect(result).toMatchObject({ exitCode: 0 });
 }
 const record = () => join(dir, "retired", "example-v1.json.json");

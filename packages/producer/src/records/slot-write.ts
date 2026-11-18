@@ -23,7 +23,7 @@ import {
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
 import { isCurrentSlot, slotReadIssues } from "./slot-current.js";
 import { serializeSlot } from "./slot.js";
-import { assertSeat } from "./seat-owner.js";
+import { assertActor, assertSeat } from "./seat-owner.js";
 import type { Slot } from "./types.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, skillFile, skillPath,
@@ -95,6 +95,25 @@ function replaceFile(path: string, bytes: string): void {
 // written (R11.1). The verb appends the write's ledger event through this module as well
 // (appendIaEvent, appendSlotDocEvent, appendRetireCandidate, appendRetireSlot, appendSeatEvents).
 // ---------------------------------------------------------------------------
+
+/**
+ * The Producer-internal writers (foundry-build-0048 U7 r3): they take no actor guard because no CLI verb hands them a
+ * caller's `--by` unjudged. Each one is called only from the files listed here (paths under packages/producer/src),
+ * and Q9 (conform/requests-model.ts seatGuardIssues) is red when any other file calls it: a new verb that wants one
+ * must judge its actor first (records/seat-owner.ts assertActor) and be added here.
+ *
+ * - writeSlotSeed, rewriteCitationsInPlace: migrations, `by` fixed by the migration;
+ * - writeSlotOptions: `clossys options`, takes no `by` at all;
+ * - appendIaEvent, appendSlotDocEvent: the event of a verb that judged its actor already (`clossys ia`, retire after
+ *   its actor guard, a request link written by the request writer under its seat check).
+ */
+export const PRODUCER_INTERNAL_WRITERS: readonly { readonly writer: string; readonly callers: readonly string[] }[] = [
+  { writer: "writeSlotSeed", callers: ["migrate/contracts.ts"] },
+  { writer: "rewriteCitationsInPlace", callers: ["migrate/citations-to-slots.ts"] },
+  { writer: "writeSlotOptions", callers: ["cli/options.ts"] },
+  { writer: "appendIaEvent", callers: ["cli/owner.ts"] },
+  { writer: "appendSlotDocEvent", callers: ["cli/owner.ts", "records/request.ts"] },
+];
 
 /** Replace a slot-model file atomically, creating its parent folder. */
 export function replaceModelFile(path: string, bytes: string | Buffer): void {
@@ -334,6 +353,8 @@ function retireCode(reason: string): string {
  * `candidates/`. The note after the code stays in the retire record.
  */
 export function appendRetireCandidate(consumer: string, agent: SlotAgent, id: string, input: { name: string; sha256: string; reason: string; by: string; at: string }, given?: WriteProvenance): LedgerEvent {
+  // The total actor guard (records/seat-owner.ts): the slot's own seat or a resolved owner answer, nothing else.
+  assertActor(dirname(consumer), input.by, agent, "retire");
   const { entry } = located(consumer, agent, id);
   const event = ledgerEvent("retire-candidate", input.at, provenance({ verb: "retire", by: input.by, skill: skillPath("producer", "retire") }, given), { name: input.name, sha256: input.sha256, code: retireCode(input.reason) });
   slotLocked(entry.dir, () => appendEvent(entry.dir, "slot", event));
@@ -347,6 +368,7 @@ export function appendRetireCandidate(consumer: string, agent: SlotAgent, id: st
  * the agent ledger.
  */
 export function appendRetireSlot(consumer: string, agent: SlotAgent, id: string, input: { reason: string; by: string; at: string }, given?: WriteProvenance): LedgerEvent[] {
+  assertActor(dirname(consumer), input.by, agent, "retire");
   const who = provenance({ verb: "retire", by: input.by, skill: skillPath("producer", "retire") }, given);
   const code = retireCode(input.reason);
   const events: LedgerEvent[] = [];
@@ -471,11 +493,24 @@ export function appendCraftEvent(consumer: string, agent: ModelAgent, id: string
     const issue = craftOrderIssue(openCraftStages(events), stage, fields, { axes: openBriefAxes(events) });
     if (issue) throw new Error(issue);
     const { op: _op, at: _at, by: _by, verb: _verb, skill: _skill, model: _model, tier: _tier, records: _records, ...own } = fields as Record<string, unknown>;
-    const event = ledgerEvent(`craft:${stage}`, given.at ?? nowIso(), provenance({ verb: "submit", by: "planner", skill: agent === SEAT_AGENT ? skillPath("producer", "seats") : skillPath(agent, `${agent}.candidates`) }, given), own);
+    const who = provenance({ verb: "submit", by: "planner", skill: agent === SEAT_AGENT ? skillPath("producer", "seats") : skillPath(agent, `${agent}.candidates`) }, given);
+    assertActor(dirname(consumer), who.by, agent, "craft", authorsOf(agent));
+    const event = ledgerEvent(`craft:${stage}`, given.at ?? nowIso(), who, own);
     appendEvent(entry.dir, "slot", event);
     return event;
   });
 }
+/**
+ * Who authors candidates, critiques and craft stages besides the slot's own seat (and a resolved owner answer): the
+ * owner and the planner (`clossys next --basis owner|planner`). Any other seat, `agent:judge` or free text is refused
+ * (foundry-build-0048 U7 r3, defence in depth: today's callers pass the slot's own seat).
+ */
+const AUTHORS = { also: ["owner", "planner"] } as const;
+/**
+ * The authors of a slot of `agent`: AUTHORS, plus, on a Producer seat slot, the seats step's own seat (`agent:seats`,
+ * the `clossys next` seat of the step that crafts seat slots), which is the Producer's seat for its seat slots.
+ */
+const authorsOf = (agent: string): { readonly also: readonly string[] } => (agent === SEAT_AGENT ? { also: [...AUTHORS.also, "agent:seats"] } : AUTHORS);
 /** A slot's critique records (`critiques/<leaf>-v<n>.json`, section 5b stage 4). */
 export const CRITIQUES_DIR = "critiques";
 /**
@@ -484,6 +519,7 @@ export const CRITIQUES_DIR = "critiques";
  * when the critique stage may not come next or the record exists. `validate` is the record's schema check.
  */
 export function writeCritique(consumer: string, agent: ModelAgent, id: string, record: unknown, input: { readonly candidate?: string; readonly at?: string; readonly validate: (value: unknown) => readonly string[] }, given: WriteProvenance): { file: string; event: LedgerEvent } {
+  assertActor(dirname(consumer), given.by ?? "planner", agent, "critique", authorsOf(agent));
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
     const { entry: current } = located(consumer, agent, id);
@@ -525,6 +561,7 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
   /** Run the write verb's constitution guard on the new file after its event lands; a finding undoes both. */
   readonly guard?: WriteGuard;
 } = {}): { name: string; sha256: string } {
+  assertActor(dirname(consumer), options.provenance?.by ?? "planner", agent, "candidate", authorsOf(agent));
   const { entry } = located(consumer, agent, id);
   if (options.canonical) canonicalDirectory(entry.dir);
   return slotLocked(entry.dir, () => {

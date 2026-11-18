@@ -7,11 +7,12 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { closeWork, raiseWork } from "../records/request.js";
+import { raiseEntry } from "../loop/route.js";
+import { closeWork, inputsSha256, raiseWork, requestIssues } from "../records/request.js";
 import { ASSERTIONS } from "./assertions.js";
 import type { AgentModel, ConformModel } from "./model.js";
 import { localStores, printedGapCodes, readAgentRequests, readRequestMachinery, resetRequestFacts, seatGuardIssues } from "./requests-model.js";
-import { requestsWorld } from "./__fixtures__/requests-world.js";
+import { OPEN_FIX, requestsWorld } from "./__fixtures__/requests-world.js";
 
 const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
 const FIXTURE = join(REPO, "packages/producer/test-fixtures/consumer");
@@ -102,8 +103,8 @@ describe("the request lens on disk", () => {
     writeFileSync(join(root, "main.js"), "export async function runCli() { return { exitCode: 0, message: 'done' }; }\n");
     writeFileSync(join(root, "index.js"), "");
     const open = seatGuardIssues(REPO, join(root, "index.js"));
-    expect(open.length).toBe(12);
-    for (const row of open) expect(row).toMatch(/^clossys (pick|verdict|reissue|pin) .* exits 0: a seat acted on a slot it may not/);
+    expect(open.length).toBe(18);
+    for (const row of open) expect(row).toMatch(/^clossys (pick|verdict|reissue|pin|retire) .* exits 0: a seat acted on a slot it may not/);
     // A CLI that refuses for another reason, and one that refuses by the seat rule but writes first: both red.
     writeFileSync(join(root, "main.js"), "export async function runCli() { return { exitCode: 1, message: 'pick refused: unknown slot' }; }\n");
     expect(seatGuardIssues(REPO, join(root, "index.js"))).toContainEqual(expect.stringMatching(/is refused, but not by the seat rule \(pick refused: unknown slot\)/));
@@ -219,5 +220,98 @@ describe("the request lens on disk", () => {
     expect(requests.fixRaisers).toEqual(["packages/producer/src/loop/route.ts", "packages/producer/src/loop/runner.ts", "packages/producer/src/queue/feedback.ts"]);
     expect(requests.releaseGates).toContain("requests.open-fix");
     expect(judge("Q11", "publisher", { consumer: dir })).toMatchObject({ rows: [], evidence: 1 });
+  });
+});
+
+// foundry-build-0048 U7 r3: Q7 mirrors the closure rule and binds its re-run to the judged inputs' digest; Q1, Q10
+// and Q11 read the queue-entry/1 fixes through the one strict reader (queue/legacy-fix.ts).
+describe("the request lens on the closure rule, the inputs digest and the strict /1 reader (U7 r3)", () => {
+  const AGENTS = ["director", "designer", "writer", "publisher"] as const;
+  const world = async () => {
+    const made = await requestsWorld();
+    roots.push(made.root);
+    const open = made.raised.fix.find(item => item.target === OPEN_FIX)!;
+    return { made, open, file: join(made.consumer, "agents/producer/queue.fix/entries", `${open.id}.json`) };
+  };
+  /** The open fix written closed by hand: a producer verified event right before a close by `by`, the digest of today's bytes. */
+  const forgeClosed = (consumer: string, file: string, by: string, outcome: "fixed" | "declined") => {
+    const doc = JSON.parse(readFileSync(file, "utf8"));
+    const at = "2026-11-20T10:00:00Z", n = doc.events.length;
+    const detail = `requester check passed on ${OPEN_FIX}${outcome === "fixed" ? `; fix check ${doc.check} passes on ${OPEN_FIX}` : ""}`;
+    const events = [...doc.events,
+      { id: `${doc.id}#${n + 1}`, op: "verified", by: "producer", at, detail, inputsSha256: inputsSha256(consumer, doc) },
+      { id: `${doc.id}#${n + 2}`, op: "closed", by, at, detail: `${outcome}: ${OPEN_FIX}; notified owner` }];
+    const closed = { ...doc, status: "closed", outcome, result: OPEN_FIX, notified: { to: "owner", at }, closedAt: at, closed: `${doc.id}#${n + 2}`, events };
+    writeFileSync(file, `${JSON.stringify(closed)}\n`);
+    return closed;
+  };
+  /** A valid clossys.queue-entry/1 queue.fix entry, raised by the production raiser, then edited by `edit`. */
+  const legacyFix = (root: string, slug: string, edit: (doc: Record<string, unknown>) => Record<string, unknown> = doc => doc, name?: string) => {
+    const { entry } = raiseEntry(root, { queue: "queue.fix", decider: "agent:designer", subject: { to: "designer/sections.hero" as never, rel: "input" }, ask: "the hero overflows", slug }, "2026-11-17T09:00:00Z", false);
+    const dir = join(root, "clossys/agents/producer/queue.fix/entries");
+    const from = join(dir, `${entry.id}.json`);
+    const doc = edit(JSON.parse(readFileSync(from, "utf8")));
+    writeFileSync(name ? join(dir, name) : from, `${JSON.stringify(doc)}\n`);
+    if (name) rmSync(from);
+    return { id: entry.id, path: `clossys/agents/producer/queue.fix/entries/${name ?? `${entry.id}.json`}` };
+  };
+
+  it("T9: Q7 is red on a fix closed declined by its assignee, with no owner answer, under valid verified provenance", { timeout: 60_000 }, async () => {
+    const { made, open, file } = await world();
+    const closed = forgeClosed(made.consumer, file, "writer", "declined");
+    expect(requestIssues(closed, made.root).join("; ")).toMatch(/the close by writer: the assignee closes a fix only as fixed/);
+    const rows = judge("Q7", "writer", { consumer: made.consumer }).rows;
+    expect(rows).toContainEqual(expect.stringMatching(new RegExp(`^queue\\.fix#${open.id}: closed, and its close by writer breaks the closure rule: the assignee closes a fix only as fixed`)));
+  });
+
+  it("T9b: the same fixed close by its assignee breaks no closure rule", { timeout: 60_000 }, async () => {
+    const { made, file } = await world();
+    forgeClosed(made.consumer, file, "writer", "fixed");
+    expect(judge("Q7", "writer", { consumer: made.consumer }).rows).toEqual([]);
+  });
+
+  it("T11 (Q1): a hidden .x.json queue.fix file is red in Q1 for all four agents and refused by the gate by name", { timeout: 60_000 }, async () => {
+    const { made } = await world();
+    const hidden = legacyFix(made.root, "hidden-hero", doc => doc, ".x.json");
+    for (const agent of AGENTS) {
+      expect(judge("Q1", agent, { consumer: made.consumer }).rows, agent).toContainEqual(expect.stringMatching(/: no valid record \(\.x\.json is a hidden file/));
+    }
+    expect(judge("Q11", "designer", { consumer: made.consumer }).rows).toEqual([]);
+    expect(readRequestMachinery(REPO, made.consumer).openFix.unread).toContain(hidden.path);
+  });
+
+  it("T12: a /1 fix with no subject is red in Q1 for all four agents and counted by Q11 as unread", { timeout: 60_000 }, async () => {
+    const { made } = await world();
+    const bare = legacyFix(made.root, "no-subject", ({ subject: _subject, ...doc }) => doc);
+    for (const agent of AGENTS) {
+      expect(judge("Q1", agent, { consumer: made.consumer }).rows, agent).toContainEqual(expect.stringMatching(new RegExp(`^queue\\.fix#${bare.id}: no valid record \\(.*no subject`)));
+      const q11 = judge("Q11", agent, { consumer: made.consumer });
+      expect(q11.rows, agent).toEqual([]);
+      expect(q11.evidence, agent).toBeGreaterThanOrEqual(2);
+    }
+    expect(readRequestMachinery(REPO, made.consumer).openFix.unread).toContain(bare.path);
+  });
+
+  it("T13: an honest close then a pin bump (drift) leaves Q7 green; a forged close over unchanged inputs whose requester check fails is red", { timeout: 90_000 }, async () => {
+    const { made, open, file } = await world();
+    const closed = closeWork(made.consumer, open.id, { by: "writer", at: "2026-11-20T10:05:00Z", outcome: "fixed", result: OPEN_FIX });
+    expect(closed.events.find(event => event.op === "verified")?.inputsSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(judge("Q7", "writer", { consumer: made.consumer }).rows).toEqual([]);
+    // The pin moves after the close: its requester check would fail now, but that is slots.stale's, not Q7's.
+    const pinFile = join(made.consumer, "agents/writer/sections.hero.copy/pin.json");
+    const pinBytes = readFileSync(pinFile, "utf8");
+    writeFileSync(pinFile, "{ \"bumped\": true }\n");
+    expect(judge("Q7", "writer", { consumer: made.consumer }).rows).toEqual([]);
+    writeFileSync(pinFile, pinBytes);
+    // A forged close over today's bytes, while the pin no longer certifies (the scorecard, not a judged input): red.
+    writeFileSync(file, `${JSON.stringify({ ...JSON.parse(readFileSync(file, "utf8")), status: "open" })}\n`);
+    const reopened = (({ outcome: _o, result: _r, notified: _n, closedAt: _c, closed: _d, ...doc }) => ({ ...doc, events: doc.events.filter((event: { op: string }) => event.op !== "verified" && event.op !== "closed") }))(JSON.parse(readFileSync(file, "utf8")));
+    writeFileSync(file, `${JSON.stringify(reopened)}\n`);
+    forgeClosed(made.consumer, file, "writer", "fixed");
+    expect(judge("Q7", "writer", { consumer: made.consumer }).rows).toEqual([]);
+    const card = join(made.root, ".clossys/checks/writer/sections.hero.copy/scorecard.json");
+    const score = JSON.parse(readFileSync(card, "utf8")) as { candidates: { pinSet: string }[] };
+    writeFileSync(card, `${JSON.stringify({ ...score, candidates: score.candidates.map(row => ({ ...row, pinSet: "0".repeat(64) })) })}\n`);
+    expect(judge("Q7", "writer", { consumer: made.consumer }).rows).toContainEqual(expect.stringMatching(new RegExp(`queue\\.fix#${open.id}: closed, and the requester check fails now: .*does not certify on the pinSet now`)));
   });
 });

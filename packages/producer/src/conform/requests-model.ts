@@ -11,7 +11,8 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, relative } from "node:path";
 import { gapsOf } from "../pipeline/interview.js";
 import { consumerFacts, ownerClassOf, ownerClasses, readDeclarations, rederive, routingIssues, type RoutingFacts } from "../queue/routing.js";
-import { listWorkEntries, requestIssues, resultRefusal, slotlessNeeds } from "../records/request.js";
+import { closerIssues, inputsSha256, listWorkEntries, requestIssues, resultRefusal, slotlessNeeds } from "../records/request.js";
+import { readLegacyFixes, type LegacyFix } from "../queue/legacy-fix.js";
 import { gateRunners, openFixes, RELEASE_GATES, REQUESTS_OPEN_FIX } from "../release/gates.js";
 import { releaseResolutions } from "../release/pins.js";
 import { sha256Hex } from "../records/hash.js";
@@ -19,7 +20,7 @@ import { writeTargetPin } from "../records/pin-map.js";
 import { cliActor } from "../records/pin.js";
 import { seatRefusal } from "../records/seat-owner.js";
 import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/index.js";
-import { writeConfirm, writeNotNeeded, writePin } from "../records/slot-write.js";
+import { appendRetireCandidate, appendRetireSlot, PRODUCER_INTERNAL_WRITERS, writeCandidate, writeConfirm, writeNotNeeded, writePin } from "../records/slot-write.js";
 import { fixCheck, requesterCheck } from "../queue/requester-check.js";
 import type { SlotRequest } from "../records/types.js";
 
@@ -47,6 +48,8 @@ export interface QueueFact {
    * on the tree today. A verified event is recorded evidence; this re-runs what it claims, so a forged one is red.
    */
   readonly recheck?: readonly string[];
+  /** A closed change or fix whose judged inputs changed since its close: why Q7 skipped the re-run (INPUTS_DRIFTED). */
+  readonly recheckNote?: string;
   /** An entry that does not read: its file, relative to the folder holding clossys/ (as the release gate names it). */
   readonly file?: string;
 }
@@ -64,7 +67,10 @@ export interface AgentRequestFacts {
   readonly sourceFiles: number;
   readonly localStores: readonly string[];
   readonly entries: readonly QueueFact[];
-  /** clossys.queue-entry/1 queue.fix entries about the agent's slots: breakage raised as a decision entry. */
+  /**
+   * clossys.queue-entry/1 queue.fix entries about the agent's slots (breakage raised as a decision entry), and every
+   * one that does not read (for all four agents). `status` is open for any entry that is not closed.
+   */
   readonly legacyFixes: readonly { readonly id: string; readonly subject: string; readonly status: string }[];
   /** Interview request gaps about the agent that no open entry records, and its unfiled slotless needs. */
   readonly unrecorded: readonly string[];
@@ -180,10 +186,14 @@ function readRuns(consumer: string): RunFact[] {
   return runs;
 }
 
-/** queue-entry/1 fixes and the /2 entries open /1 entries cite. */
-function readDecisionEntries(consumer: string): { fixes: { id: string; subject: string; status: string }[]; reasked: Set<string> } {
+/**
+ * queue-entry/1 fixes and the /2 entries open /1 entries cite. The fixes come from the one strict reader
+ * (queue/legacy-fix.ts, foundry-build-0048 U7 r3), the same the release gate reads: hidden files and entries that do
+ * not read are kept, with their issues.
+ */
+function readDecisionEntries(consumer: string): { fixes: LegacyFix[]; reasked: Set<string> } {
   const producer = join(consumer, "agents", "producer");
-  const fixes: { id: string; subject: string; status: string }[] = [];
+  const fixes = readLegacyFixes(dirname(consumer));
   const reasked = new Set<string>();
   for (const queue of ["queue.pick", "queue.approve", "queue.clarify", "queue.fix"]) {
     const dir = join(producer, queue, "entries");
@@ -191,8 +201,6 @@ function readDecisionEntries(consumer: string): { fixes: { id: string; subject: 
     for (const name of readdirSync(dir).filter(file => file.endsWith(".json")).sort()) {
       const doc = json(join(dir, name));
       if (!object(doc) || doc.schema === "clossys.queue-entry/2") continue;
-      const subject = object(doc.subject) && typeof doc.subject.to === "string" ? doc.subject.to : "";
-      if (queue === "queue.fix") fixes.push({ id: String(doc.id ?? name.slice(0, -5)), subject, status: String(doc.status) });
       if (doc.status !== "open") continue;
       for (const ref of [...(Array.isArray(doc.refs) ? doc.refs : []), doc.subject].filter(object)) {
         if (typeof ref.to === "string" && /^producer\/queue\.(slot|change|fix)$/.test(ref.to) && typeof ref.record === "string") reasked.add(`${ref.to.slice("producer/".length)}#${ref.record}`);
@@ -204,28 +212,59 @@ function readDecisionEntries(consumer: string): { fixes: { id: string; subject: 
 
 /** One conform read's shared facts (routing, interview gaps), keyed by repo and consumer; reset per model read. */
 const cache = new Map<string, { routing?: { facts?: RoutingFacts; issues: string[] }; gaps?: ReturnType<typeof gapsOf>["gaps"] | Error }>();
-const rechecks = new Map<string, readonly string[]>();
+const rechecks = new Map<string, Recheck>();
 export const resetRequestFacts = (): void => { cache.clear(); rechecks.clear(); };
-/** Q7's re-run of a closed change or fix: the requester check, then (closed fixed) the fix's own check; read once per conform read. */
-function recheckOf(consumer: string, request: SlotRequest): readonly string[] {
+/** Q7's re-read of a closed change or fix: why it fails now (red), and a note when the recheck was skipped. */
+export interface Recheck { readonly failures: readonly string[]; readonly note?: string }
+/** The note when a close's judged inputs changed since: drift after the close is slots.stale's, never Q7 red by itself. */
+export const INPUTS_DRIFTED = "inputs drifted; slots.stale owns it";
+/**
+ * Q7's re-read of a closed change or fix (foundry-build-0048 U7 r3), read once per conform read:
+ * - the closure rule (records/request.ts closerIssues, the predicate closeWork enforces, never a copy): a fix closed
+ *   declined, or by anyone but its assignee, without a resolvable owner answer, is red;
+ * - the judged inputs' digest (inputsSha256) recomputed from today's bytes: equal, the requester check and (closed
+ *   fixed) the fix's own check re-run, and a failure is red (a forged close over unchanged inputs); different, the
+ *   re-run is skipped with INPUTS_DRIFTED, so an honest close that drifted later is never red here.
+ */
+function recheckOf(consumer: string, request: SlotRequest): Recheck {
   const key = `${consumer}\0${request.kind}\0${request.id}`;
   let out = rechecks.get(key);
   if (out === undefined) {
     const root = dirname(consumer);
+    const rule = closureRows(consumer, request as unknown as Record<string, unknown>);
     try {
-      const check = requesterCheck(root, request);
-      const fix = request.kind === "fix" && request.outcome === "fixed" ? fixCheck(root, request) : undefined;
-      out = [
-        ...check.failures.map(failure => `the requester check fails now: ${failure}`),
-        ...(fix && !fix.ran ? [`its check ${String(request.check)} is not one Producer re-runs, so it never closed fixed`] : []),
-        ...(fix?.failures ?? []).map(failure => `its check ${String(request.check)} fails now: ${failure}`),
-      ];
+      const at = request.closed !== undefined ? request.events.findIndex(event => event.id === request.closed) : -1;
+      const stored = at > 0 ? request.events[at - 1]?.inputsSha256 : undefined;
+      if (stored !== undefined && stored !== inputsSha256(consumer, request)) out = { failures: rule, note: INPUTS_DRIFTED };
+      else {
+        const check = requesterCheck(root, request);
+        const fix = request.kind === "fix" && request.outcome === "fixed" ? fixCheck(root, request) : undefined;
+        out = { failures: [
+          ...rule,
+          ...check.failures.map(failure => `the requester check fails now: ${failure}`),
+          ...(fix && !fix.ran ? [`its check ${String(request.check)} is not one Producer re-runs, so it never closed fixed`] : []),
+          ...(fix?.failures ?? []).map(failure => `its check ${String(request.check)} fails now: ${failure}`),
+        ] };
+      }
     } catch (error) {
-      out = [`the requester check does not run: ${error instanceof Error ? error.message : String(error)}`];
+      out = { failures: [...rule, `the requester check does not run: ${error instanceof Error ? error.message : String(error)}`] };
     }
     rechecks.set(key, out);
   }
   return out;
+}
+/**
+ * Q7's closure-rule rows on a closed change or fix entry, read or not (foundry-build-0048 U7 r3): records/request.ts
+ * closerIssues, the predicate closeWork enforces, never a copy. A fix closed declined, or by anyone but its assignee,
+ * without a resolvable owner answer is red, also when the entry does not read for another reason.
+ */
+function closureRows(consumer: string, doc: Record<string, unknown>): string[] {
+  if (doc.status !== "closed" || (doc.kind !== "change" && doc.kind !== "fix")) return [];
+  const events = Array.isArray(doc.events) ? doc.events.filter(object) : [];
+  const closer = events.find(event => event.id === doc.closed)?.by;
+  const by = typeof closer === "string" ? closer : undefined;
+  const request = { id: String(doc.id), kind: doc.kind, assignee: String(doc.assignee) } as Pick<SlotRequest, "id" | "kind" | "assignee">;
+  return closerIssues(dirname(consumer), request, by, typeof doc.outcome === "string" ? doc.outcome : undefined).map(issue => `its close by ${by ?? "nobody"} breaks the closure rule: ${issue}`);
 }
 const slotOf = (repo: string, consumer: string) => {
   const key = `${repo}\0${consumer}`;
@@ -290,6 +329,8 @@ function probeWorld(repo: string, dir: string): string {
   write(`${slot}/slot.json`, jsonBytes({ schema: "clossys.slot/1", id: PROBE_ID, agent: "designer", ia: slotPositions("designer", ia).get(PROBE_ID), inputs: [], uses: [], kind: "element", standard: "component", contract: { variant: "solid" } }));
   const candidate = jsonBytes({ name: "button", type: "registry:ui", dependencies: [], registryDependencies: [], files: [], meta: { source: { kind: "registry", ref: ["shadcn-aria/button@4.23.0"] } } });
   write(`${slot}/candidates/button-v1.json`, candidate);
+  // An unpinned second candidate: the retire probes have something a guardless retire would move.
+  write(`${slot}/candidates/button-v2.json`, jsonBytes({ name: "button", type: "registry:ui", dependencies: [], registryDependencies: [], files: [], meta: { source: { kind: "registry", ref: ["shadcn-aria/button@4.23.0"] }, note: "seat probe" } }));
   write(`${slot}/pin.json`, jsonBytes({ candidate: "button-v1.json", sha256: sha256Hex(candidate), decidedBy: "planner:seat-probe", basis: "planner", at: PROBE_AT }));
   cpSync(join(repo, "packages/designer/standards/component"), join(dir, "packages/designer/standards/component"), { recursive: true });
   write(`clossys/agents/designer/${PROBE_TARGET}/slot.json`, jsonBytes({ schema: "clossys.slot/2", id: `designer/${PROBE_TARGET}`, agent: "designer", kind: "section", status: "open" }));
@@ -310,6 +351,10 @@ const VERB_PROBES: readonly { readonly verb: string; readonly args: readonly str
   { verb: "pin --confirm --by agent:designer", args: ["pin", `designer/${PROBE_ID}`, "button-v1.json", "--confirm", "--ref", "seat-probe", "--by", "agent:designer", "--at", PROBE_AT] },
   { verb: "pin (clossys.slot/2) --by agent:writer", args: ["pin", `designer/${PROBE_TARGET}`, "hero-v1.json", "--by", "agent:writer", "--at", PROBE_AT] },
   { verb: "pin (clossys.slot/2) --by agent:judge", args: ["pin", `designer/${PROBE_TARGET}`, "hero-v1.json", "--by", "agent:judge", "--at", PROBE_AT] },
+  // retire (foundry-build-0048 U7 r3): the total actor guard refuses a foreign seat, no seat, bare owner and the planner.
+  // Run last: a guardless retire --slot would take the probe slot away from the probes after it.
+  ...["agent:writer", "agent:judge", "owner", "planner"].map(by => ({ verb: `retire <candidate> --by ${by}`, args: ["retire", `designer/${PROBE_ID}`, "button-v2.json", "--by", by, "--reason", "superseded: seat probe", "--at", PROBE_AT] })),
+  ...["agent:writer", "owner"].map(by => ({ verb: `retire --slot --by ${by}`, args: ["retire", `designer/${PROBE_ID}`, "--slot", "--by", by, "--reason", "not-needed: seat probe", "--at", PROBE_AT] })),
 ];
 
 /**
@@ -342,6 +387,33 @@ for (const args of JSON.parse(probes)) {
 console.log(JSON.stringify(results));
 `;
 
+/** Every non-test .ts file under `dir`, as a path relative to it. */
+function sourceFiles(dir: string, rel = "", out: string[] = []): string[] {
+  if (!isDir(dir)) return out;
+  for (const name of readdirSync(dir).sort()) {
+    const path = join(dir, name), at = rel ? `${rel}/${name}` : name;
+    if (isDir(path)) { if (name !== "node_modules" && name !== "__fixtures__") sourceFiles(path, at, out); }
+    else if (name.endsWith(".ts") && !name.endsWith(".d.ts") && !/\.test\.ts$/.test(name)) out.push(at);
+  }
+  return out;
+}
+
+/**
+ * Q9's reachability half (foundry-build-0048 U7 r3): a Producer-internal writer (records/slot-write.ts
+ * PRODUCER_INTERNAL_WRITERS, no actor guard) is called only from its listed files, so no other verb can hand it a
+ * caller's `--by` unjudged. `src` is packages/producer/src.
+ */
+export function internalWriterIssues(src: string): string[] {
+  const out: string[] = [];
+  const files = sourceFiles(src).filter(file => file !== "records/slot-write.ts");
+  if (!PRODUCER_INTERNAL_WRITERS.length) out.push("records/slot-write.ts lists no Producer-internal writers");
+  for (const { writer, callers } of PRODUCER_INTERNAL_WRITERS) {
+    const call = new RegExp(`\\b${writer}\\s*\\(`);
+    for (const file of files) if (!callers.includes(file) && call.test(readFileSync(join(src, file), "utf8"))) out.push(`${file} calls the Producer-internal writer ${writer} (no actor guard); judge the actor first or list it in PRODUCER_INTERNAL_WRITERS`);
+  }
+  return out;
+}
+
 /**
  * Q9's verb half, judged by behaviour: on a probe consumer, every verb that writes or repins pin.json (pick, verdict,
  * reissue, pin, --not-needed, --confirm, the clossys.slot/2 pin) is run with a seat that may not act on the slot (another
@@ -358,6 +430,7 @@ export function seatGuardIssues(repo: string, cli: string = join(repo, "packages
     ["agent:designer", "designer", false], ["agent:designer.verdict", "designer", false], ["agent:producer.verdict", "producer", false],
   ];
   for (const [by, agent, refused] of probes) if ((seatRefusal(by, agent) !== undefined) !== refused) out.push(`the seat rule ${refused ? "lets" : "refuses"} --by ${by} on a ${agent} slot`);
+  out.push(...internalWriterIssues(join(repo, "packages/producer/src")));
   if (!existsSync(cli)) return [...out, `no built clossys CLI at ${relative(repo, cli)} to drive the pin-writing verbs with`];
   if (!isDir(join(repo, "packages/designer/standards/component"))) return [...out, "no packages/designer/standards/component for the probe slot"];
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "clossys-seat-probe-")));
@@ -382,6 +455,10 @@ export function seatGuardIssues(repo: string, cli: string = join(repo, "packages
       ["writeConfirm --by agent:designer", () => writeConfirm(consumer, "designer", PROBE_ID, "button-v1.json", { by: "agent:designer", ref: "seat-probe", at: PROBE_AT })],
       ["writeNotNeeded --by agent:judge", () => writeNotNeeded(consumer, "designer", PROBE_ID, { reason: "seat probe", since: PROBE_AT.slice(0, 10), decidedBy: "agent:judge" })],
       ["writeTargetPin --by agent:writer", () => writeTargetPin(dir, { agent: "designer", slotId: PROBE_TARGET, candidate: "hero-v1.json", decidedBy: "agent:writer", basis: "agent", at: PROBE_AT, createdBy: cliActor("clossys conform") })],
+      ["appendRetireCandidate --by agent:writer", () => appendRetireCandidate(consumer, "designer", PROBE_ID, { name: "button-v2.json", sha256: "0".repeat(64), reason: "superseded: seat probe", by: "agent:writer", at: PROBE_AT })],
+      ["appendRetireCandidate --by owner", () => appendRetireCandidate(consumer, "designer", PROBE_ID, { name: "button-v2.json", sha256: "0".repeat(64), reason: "superseded: seat probe", by: "owner", at: PROBE_AT })],
+      ["appendRetireSlot --by planner", () => appendRetireSlot(consumer, "designer", PROBE_ID, { reason: "not-needed: seat probe", by: "planner", at: PROBE_AT })],
+      ["writeCandidate --by agent:judge", () => writeCandidate(consumer, "designer", PROBE_ID, "button", { name: "button" }, { provenance: { by: "agent:judge" }, at: PROBE_AT })],
     ];
     for (const [what, call] of writers) {
       const before = filesOf(consumer);
@@ -450,7 +527,8 @@ export function readAgentRequests(repo: string, consumer: string, agent: string,
       if (CONTENT_AGENTS.some(named => about(named, doc)) && !about(agent, doc)) return [];
       const kind = typeof doc.kind === "string" ? doc.kind : basename(dirname(dirname(read.file))).replace(/^queue\./, "");
       const id = typeof doc.id === "string" ? doc.id : basename(read.file).replace(/\.json$/, "");
-      return [{ kind, id, doc, issues: read.issues.length ? read.issues : ["does not read as a clossys.queue-entry/2 work entry"], file: relative(dirname(consumer), read.file) }];
+      const rule = closureRows(consumer, doc);
+      return [{ kind, id, doc, issues: read.issues.length ? read.issues : ["does not read as a clossys.queue-entry/2 work entry"], file: relative(dirname(consumer), read.file), ...(rule.length ? { recheck: rule } : {}) }];
     }
     const doc = read.request as unknown as Record<string, unknown>;
     if (!about(agent, doc)) return [];
@@ -462,13 +540,25 @@ export function readAgentRequests(repo: string, consumer: string, agent: string,
     const owned = facts ? ownerClassOf(facts, request.target) : undefined;
     const resultIssue = request.status === "closed" && request.kind !== "slot" && typeof request.result === "string" ? resultRefusal(consumer, request.result) : undefined;
     return [{
-      kind: request.kind, id: request.id, doc, issues: requestIssues(doc),
+      kind: request.kind, id: request.id, doc, issues: requestIssues(doc, dirname(consumer)),
       ...(routeIssue ? { routeIssue } : {}), ...(owned ? { ownerClass: { step: `${owned.loop}/${owned.version}#${owned.step}`, queue: owned.queue } } : {}),
       ...(resultIssue ? { resultIssue } : {}),
-      ...(request.status === "closed" && request.kind !== "slot" ? { recheck: recheckOf(consumer, request) } : {}),
+      ...(request.status === "closed" && request.kind !== "slot" ? (({ failures, note }) => ({ recheck: failures, ...(note ? { recheckNote: note } : {}) }))(recheckOf(consumer, request)) : {}),
     }];
   });
   const decisions = readDecisionEntries(consumer);
+  // The /1 fixes this agent answers for (foundry-build-0048 U7 r3): its own by subject, and every one that does not read
+  // (no subject, issues, a hidden file) or names no content agent's slot, for all four, as an invalid /2 entry naming no
+  // agent is. One filter feeds both Q1's facts and Q10's legacy list.
+  const judged = decisions.fixes.map(fix => fix.issues.length || fix.subject === undefined || CONTENT_AGENTS.some(named => fix.subject!.startsWith(`${named}/`))
+    ? { fix, foreign: false } : { fix: { ...fix, issues: [`subject ${fix.subject} is no content agent's slot: no agent answers for it`] }, foreign: true });
+  const legacy = judged.filter(({ fix }) => fix.issues.length > 0 || fix.subject?.startsWith(`${agent}/`));
+  for (const { fix, foreign } of legacy) {
+    if (!fix.issues.length) continue;
+    // `file` marks a queue.fix file that does not read (Q11: the gate refuses it by name); a valid entry about a foreign
+    // subject reads, so the gate judges it by its subject like any other.
+    entries.push({ kind: "fix", id: fix.id ?? basename(fix.path).replace(/\.json$/, ""), doc: object(fix.doc) ? fix.doc : {}, issues: fix.issues, ...(foreign ? {} : { file: fix.path }) });
+  }
   const store = localStores(join(repo, "packages", agent));
   // The interview's gaps are the costly read: taken only when a Q2 cell asks for the needs.
   let needsFacts: { unrecorded: string[]; needs: number } | undefined;
@@ -492,7 +582,7 @@ export function readAgentRequests(repo: string, consumer: string, agent: string,
   const owned = facts ? facts.classes.filter(item => (item.when.ia ?? []).some(ia => ia === agent || ia.startsWith(`${agent}/`)) || (item.when.slots ?? []).some(slot => slot.startsWith(`${agent}/`))) : [];
   return {
     sourceFiles: store.files, localStores: store.rows, entries,
-    legacyFixes: decisions.fixes.filter(fix => fix.subject.startsWith(`${agent}/`)),
+    legacyFixes: legacy.map(({ fix }) => ({ id: fix.id ?? basename(fix.path).replace(/\.json$/, ""), subject: fix.subject ?? "producer/queue.fix", status: fix.closed ? fix.status ?? "open" : "open" })),
     get unrecorded() { return needsOf().unrecorded; },
     get needs() { return needsOf().needs; },
     skills: Object.entries(handling ?? {}).map(([kind, handler]) => {

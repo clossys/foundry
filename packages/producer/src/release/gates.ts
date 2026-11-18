@@ -28,7 +28,7 @@ import { strictFindings } from "../loop/cli.js";
 import type { Finding } from "../loop/route.js";
 import { readSlotJson } from "../records/resolve.js";
 import { listRequests } from "../records/request.js";
-import { listQueueEntryFiles, readQueueEntry } from "../queue/entry.js";
+import { readLegacyFixes } from "../queue/legacy-fix.js";
 import { releaseLocales, readReleaseSlot } from "./locales.js";
 import { isReleaseSlot, refOf, releaseResolutions } from "./pins.js";
 import { releaseSlotId } from "./paths.js";
@@ -115,7 +115,12 @@ function slotsStale(root: string): Finding[] {
   return findings;
 }
 
-/** Every open fix about a slot the release reads; an entry that does not read is a finding too (fail closed). */
+/**
+ * Every open fix about a slot the release reads; an entry that does not read is a finding too (fail closed). The
+ * clossys.queue-entry/1 entries under queue.fix come from the one strict reader (queue/legacy-fix.ts, foundry-build-0048
+ * U7 r3): one that is not closed holds its slot open whatever its decider, and one with issues (no subject, a status
+ * the schema refuses, events that disagree, a hidden file) is refused by its root-relative path (Q11 reads that).
+ */
 export function openFixes(root: string): Finding[] {
   // Slot-level: a record slot resolves as `<agent>/<slot>#<record>`, but a fix names the slot (or one record of it).
   const closure = new Set(releaseResolutions(root).map(resolution => `${resolution.agent}/${resolution.slotId}`));
@@ -125,12 +130,11 @@ export function openFixes(root: string): Finding[] {
     const subject = read.request.target.split("#")[0]!;
     if (read.request.status === "open" && closure.has(subject)) findings.push({ check: REQUESTS_OPEN_FIX, subject, detail: `open fix queue.fix#${read.request.id} (${read.request.check ?? "fix"}): the release reads this slot` });
   }
-  for (const file of listQueueEntryFiles(root)) {
-    if (file.queue !== "queue.fix") continue;
-    const read = readQueueEntry(file);
-    if (!read.ok) { findings.push({ check: REQUESTS_OPEN_FIX, subject: "producer/queue.fix", detail: `queue.fix#${file.id} does not read (${read.reason}); it might be an open fix` }); continue; }
-    const subject = read.entry.subject.to.split("#")[0]!;
-    if (read.entry.status === "open" && read.entry.decider.startsWith("agent:") && closure.has(subject)) findings.push({ check: REQUESTS_OPEN_FIX, subject, detail: `open queue.fix#${read.entry.id}: the release reads this slot` });
+  for (const fix of readLegacyFixes(root)) {
+    if (fix.closed) continue;
+    if (fix.issues.length || fix.subject === undefined) { findings.push({ check: REQUESTS_OPEN_FIX, subject: "producer/queue.fix", detail: `${fix.path} does not read as a valid queue.fix entry (${fix.issues.slice(0, 2).join("; ")}); it might be an open fix` }); continue; }
+    const subject = fix.subject.split("#")[0]!;
+    if (closure.has(subject)) findings.push({ check: REQUESTS_OPEN_FIX, subject, detail: `open queue.fix#${fix.id}: the release reads this slot` });
   }
   return findings;
 }

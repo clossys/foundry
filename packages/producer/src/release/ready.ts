@@ -19,7 +19,7 @@
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
+import { resolveOwnerAnswer } from "../queue/rules.js";
 import { parseCandidateName, slotDir } from "../records/candidate.js";
 import { resolveSlot } from "../records/resolve.js";
 import { canonical } from "../records/slot-model/layout.js";
@@ -42,18 +42,13 @@ function answerIssues(root: string, slotRef: string, pin: ReadyPin, manifest: Pi
   const manifestAt = manifest.header?.createdAt;
   const match = OWNER_QUEUE_ANSWER.exec(pin.decidedBy);
   if (!match || match[1] !== "queue.approve") return [`decidedBy ${pin.decidedBy} is not an owner answer to queue.approve (owner:queue.approve#<id>)`];
-  const found = findQueueEntry(root, `${match[1]}#${match[2]}`);
-  if (!found.ok) return [found.reason];
-  const read = readQueueEntry(found.at);
-  if (!read.ok) return [`${match[1]}#${match[2]}: ${read.reason}`];
-  const entry: QueueEntry = read.entry;
+  const owner = resolveOwnerAnswer(root, pin.decidedBy, ["queue.approve"]);
+  if (!owner.ok) return [...owner.issues];
+  const { entry, name, answered } = owner;
   const issues: string[] = [];
-  const name = `${entry.queue}#${entry.id}`;
   if (entry.subject?.to !== slotRef) issues.push(`${name} asks about ${String(entry.subject?.to)}, not ${slotRef}`);
-  const answered = [...(entry.events ?? [])].reverse().find(event => event.op === "answered");
-  if (entry.status !== "answered" || !answered) issues.push(`${name} is ${entry.status}, not answered`);
-  else {
-    if (answered.by !== "owner") issues.push(`${name} was answered by ${answered.by}, not the owner`);
+  issues.push(...owner.issues);
+  if (entry.status === "answered" && answered) {
     if (answered.answer !== "ready") issues.push(`${name} was answered ${String(answered.answer)}, not ready`);
     if (manifestAt && !(time(answered.at) >= time(manifestAt))) issues.push(`${name} was answered at ${answered.at}, before the manifest was written (${manifestAt})`);
   }
