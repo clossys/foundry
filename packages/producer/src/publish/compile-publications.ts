@@ -24,6 +24,7 @@ import { lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, unlinkSy
 import { join, relative, sep } from "node:path";
 import { readSlotJson } from "../records/resolve.js";
 import { listSlots, readAgentFile, readCandidate } from "../records/slots.js";
+import { writerCopyPins } from "../records/writer-copy-slots.js";
 import { readPinnedPublication, resolvePublicationTitles } from "./pinned-publication.js";
 
 export const PUBLICATION_SLOT = /^publication\.([a-z][a-z0-9-]*)$/;
@@ -32,6 +33,18 @@ export const COMPILED_PUBLICATIONS_SCHEMA = "clossys.compiled-publications/1";
 /** Where the release loop's compile step writes, relative to the workspace root (loop.release step `compile`). */
 export const GENERATED_DIR = join(".clossys", "generated");
 export const LOCK_FILE = "compile.lock.json";
+
+/**
+ * The pinned Writer copy candidates a titled publication resolves through, as compile-lock inputs: every pinned record
+ * of every Writer copy slot (records/writer-copy-slots.ts: Writer's tree data, never a `strings.` prefix), the ones
+ * `writerCopy` reads.
+ */
+export function writerCopyInputs(consumer: string): { path: string; bytes: string }[] {
+  return writerCopyPins(consumer).map(({ entry, pin }) => {
+    const candidate = readCandidate(consumer, "writer", entry.id, pin.candidate);
+    return { path: `agents/writer/${entry.id}/candidates/${candidate.name}`, bytes: candidate.bytes };
+  });
+}
 export const PUBLICATIONS_FILE = "publications.json";
 /** A projection path this compile writes, relative to `<out>`. */
 const PROJECTION = /^publications\/[a-z][a-z0-9-]*\.json$/;
@@ -157,12 +170,8 @@ export async function compilePublications(root: string, out: string): Promise<Pu
     }
   }
   if (titled) {
-    // Titles resolve through the pinned Writer strings, so those candidates are inputs too.
-    for (const entry of listSlots(consumer, "writer")) {
-      if (!entry.pin || !entry.id.startsWith("strings.")) continue;
-      const candidate = readCandidate(consumer, "writer", entry.id, entry.pin.candidate);
-      read(`agents/writer/${entry.id}/candidates/${candidate.name}`, candidate.bytes);
-    }
+    // Titles resolve through the pinned Writer copy (`writerCopy`), so every candidate it reads is an input too.
+    for (const input of writerCopyInputs(consumer)) read(input.path, input.bytes);
   }
 
   write(join(target, PUBLICATIONS_FILE), json({ schema: COMPILED_PUBLICATIONS_SCHEMA, publications }));

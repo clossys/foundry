@@ -9,7 +9,7 @@ import { createCopyResolver, resolveCopyRef } from '@clossys/writer/resolve';
 import { consumerPath } from './consumer-root.mjs';
 
 const preview = { target: 'preview', absentPin: 'newest-draft' };
-async function fixture(t, placement = 'strings.interface/interface-field-labels/strings.common') {
+async function fixture(t, placement = 'copy.page-metadata/site/page.home.meta') {
   const [nodeId, groupId, slot] = placement.split('/');
   const root = await mkdtemp(join(tmpdir(), 'studio-copy-'));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -111,7 +111,7 @@ test('Absent-pin draft selection requires explicit preview and chooses the newes
   assert.equal(createCopyResolver(registry, { target: 'preview' })({ id: 'studio.greeting' }).text, 'Version ten');
   const sources = JSON.parse(registry.source.reference.slice('clossys/agents/writer#'.length));
   assert.deepEqual(sources, [{
-    placement: 'strings.interface/interface-field-labels/strings.common', candidate: 'studio-v10.md', version: '10',
+    placement: 'copy.page-metadata/site/page.home.meta', candidate: 'studio-v10.md', version: '10',
     sha256: createHash('sha256').update(await readFile(join(f.dir, 'candidates/studio-v10.md'))).digest('hex'), selectedBy: 'absent-pin-preview',
   }]);
   assert.equal(registry.revision, createHash('sha256').update(JSON.stringify(sources)).digest('hex'));
@@ -162,15 +162,15 @@ test('Preview refuses numeric-version ties and compares large versions without r
   await assert.rejects(studioCopyRegistry(f.root, preview), /Ambiguous Studio Writer draft version/);
 });
 
-test('Studio copy reads every Writer strings slot, wherever the IA groups it, and no other Writer slot', async t => {
+// foundry-build-0048 U14: Studio copy reads every copy slot of Writer's current tree (prose and copy kinds) and a
+// consumer extension, by Writer's tree data, never a `strings.` prefix; a voice slot and a retired id read nothing.
+test('Studio copy reads every Writer copy slot, wherever the IA groups it, and no other Writer slot', async t => {
   for (const placement of [
-    'strings.metadata/metadata-descriptions/strings.descriptions',
-    'strings.interface/interface-statuses/strings.statuses',
-    'strings.interface/interface-field-labels/strings.common',
-    'strings.interface/interface-field-labels/strings.field-labels',
-    'strings.metadata/metadata-titles/strings.page-titles',
-    'strings.interface/interface-names/strings.names',
-    'strings.interface/interface-errors/strings.errors',
+    'copy.page-metadata/site/page.home.meta',
+    'copy.component-text/actions/components.command.copy',
+    'copy.section-text/hero/sections.hero.copy',
+    'prose.editorial/narratives/narratives.article',
+    'copy.extensions/site/strings.site',
   ]) {
     const f = await fixture(t, placement);
     await f.candidate('Allowed draft', 'studio-v1.md', false);
@@ -181,14 +181,37 @@ test('Studio copy reads every Writer strings slot, wherever the IA groups it, an
     ia.nodes.push({ id: 'regrouped', children: [{ id: 'other-group', slots: [slot] }] });
     await writeFile(join(f.writer, 'ia.json'), JSON.stringify(ia));
     const registry = await studioCopyRegistry(f.root, preview);
-    assert.equal(registry.entries[0].text, 'Allowed draft');
+    assert.equal(registry.entries[0]?.text, 'Allowed draft', slot);
     assert.equal(JSON.parse(registry.source.reference.slice('clossys/agents/writer#'.length))[0].placement, `regrouped/other-group/${slot}`);
     assert.deepEqual((await studioCopyRegistry(f.root)).entries, []);
   }
+  for (const placement of [
+    'voice.tone/attitude/lexicon.formality',
+    'voice.extensions/house/lexicon.house-rule',
+    'strings.interface/interface-field-labels/strings.common',
+    'strings.interface/interface-names/strings.names',
+    'copy.page-metadata/site/strings.page-titles',
+  ]) {
+    const f = await fixture(t, placement);
+    await f.candidate('Not copy', 'studio-v1.md');
+    assert.deepEqual((await studioCopyRegistry(f.root)).entries, [], placement);
+    assert.deepEqual((await studioCopyRegistry(f.root, preview)).entries, [], placement);
+  }
+});
+
+test('Studio copy reads each keyed record of a pin map and leaves a field record to its own resolver', async t => {
+  const f = await fixture(t, 'copy.section-text/hero/sections.hero.copy');
+  const record = (id, text) => `---\nslot: "sections.hero.copy"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n### ${id}\n<!-- {"id":"${id}","bindings":[]} -->\n${text}\n`;
+  const files = { 'home.hero-v1.md': record('studio.hero.home', 'Home hero'), 'about.hero-v2.md': record('studio.hero.about', 'About hero'), 'pricing.hero-v1.json': '{"content":{"fields":{}}}' };
+  for (const [name, bytes] of Object.entries(files)) await writeFile(join(f.dir, 'candidates', name), bytes);
+  const pinned = name => ({ candidate: name, sha256: createHash('sha256').update(files[name]).digest('hex'), decidedBy: 'planner:synthetic-test-only', basis: 'planner', at: '2026-01-01T00:00:00Z' });
+  await writeFile(join(f.dir, 'pin.json'), JSON.stringify({ schema: 'clossys.pin-map/1', records: { home: pinned('home.hero-v1.md'), about: pinned('about.hero-v2.md'), pricing: pinned('pricing.hero-v1.json') } }));
+  const registry = await studioCopyRegistry(f.root);
+  assert.deepEqual(registry.entries.map(entry => [entry.id, entry.text]), [['studio.hero.about', 'About hero'], ['studio.hero.home', 'Home hero']]);
 });
 
 async function rawCandidate(f, records) {
-  const bytes = `---\nslot: "strings.common"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n${records}`;
+  const bytes = `---\nslot: "page.home.meta"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n${records}`;
   await writeFile(join(f.dir, 'candidates', 'studio-v1.md'), bytes);
   await writeFile(join(f.dir, 'pin.json'), JSON.stringify({ candidate: 'studio-v1.md', sha256: createHash('sha256').update(bytes).digest('hex') }));
 }
@@ -207,8 +230,8 @@ test('Studio copy refuses a registry the Writer resolver would refuse, instead o
   await assert.rejects(studioCopyRegistry(f.root), /not a valid copy registry/);
 });
 
-test('A Writer slot outside strings.* is never Studio copy', async t => {
-  const f = await fixture(t, 'lexicon.voice/voice-terms/lexicon.terms');
+test('A Writer voice slot (lexicon, under the voice L0) is never Studio copy', async t => {
+  const f = await fixture(t, 'voice.wording/voice-terms/lexicon.terms');
   await f.candidate('Not Studio copy', 'studio-v1.md');
   const registry = await studioCopyRegistry(f.root, preview);
   assert.deepEqual(registry.entries, []);
