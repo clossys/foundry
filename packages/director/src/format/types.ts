@@ -48,10 +48,20 @@ export interface Finding {
   run?: string;
   bullets: Bullet[]; path: string;
 }
-export interface StrategyRequest {
-  id: string; raisedBy: string; kind: "missing" | "contradiction" | "tripwire" | "drift" | "reading" | "change";
-  cells: CellId[]; detail: string; status: "open" | "drafted" | "resolved" | "declined";
-  opened: string; resolvedBy: Ref | null;
+/**
+ * A request about a Director slot, read from Producer's one queue (a clossys.queue-entry/2 kind slot, change or fix
+ * whose target is `director/<cell>`). The Director keeps no request store of its own (foundry-build-0048 U8, Q1).
+ */
+export interface QueueRequest {
+  id: string; kind: "slot" | "change" | "fix"; from: string;
+  /** The Director cell (slot id) the entry is about. */
+  cell: CellId;
+  status: "open" | "closed"; why: string;
+  /**
+   * The whys of the entry's later raised events (a raise Producer merged into this entry, each without its migration
+   * note, raiseWhyOf), when any differs from `why`: a merged request is read as much as the entry's own.
+   */
+  merged?: string[];
 }
 export interface StrategyRootIssue {
   /** Root-relative file/directory path; '.' identifies the root itself. */
@@ -61,7 +71,7 @@ export interface StrategyRootIssue {
 }
 export interface StrategyModel {
   root: string; catalog: StrategyCatalog; tree: StrategyTree | undefined;
-  cells: Cell[]; sessions: Session[]; findings: Finding[]; requests: StrategyRequest[];
+  cells: Cell[]; sessions: Session[]; findings: Finding[]; requests: QueueRequest[];
   /** Exact UTF-8 source contents keyed by root-relative paths, for fingerprints. */
   files: Record<string, string>; issues: StrategyRootIssue[];
   /**

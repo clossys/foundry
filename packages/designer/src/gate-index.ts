@@ -79,7 +79,7 @@ export type {
   DesignConformanceRateState,
 } from "./design-conformance-rate.js";
 
-export { runDogfood } from "./catalog-core/dogfood.js";
-export type { DogfoodCode, DogfoodFinding, DogfoodInput, DogfoodException, NeedRecord, NeedCandidate, NeedStatus } from "./catalog-core/dogfood.js";
+export { needWhy, runDogfood } from "./catalog-core/dogfood.js";
+export type { DogfoodCode, DogfoodFinding, DogfoodInput, DogfoodException, DogfoodRequest } from "./catalog-core/dogfood.js";
 export { buildSurfaceConsumption } from "./catalog-core/surface-consumption.js";
 export type { SurfaceConsumptionInput, SurfaceConsumptionScan, SurfaceConsumptionSlot, SurfaceConsumptionFinding } from "./catalog-core/surface-consumption.js";

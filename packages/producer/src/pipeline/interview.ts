@@ -17,7 +17,7 @@
  *                                input citing an upstream slot with no candidates, not needed, or
  *                                unclear (a pinned Director cell with TODO-OWNER lines or blocking
  *                                findings); a pinned Publisher record naming a Writer key the pinned
- *                                copy lacks; an open Director request record. Each is addressed `to`
+ *                                copy lacks; an open queue entry on a Director cell. Each is addressed `to`
  *                                the upstream agent and becomes a question in that agent's round.
  *   interviewOf(root)  `clossys next --owner --agent <id>`: the owner questions taken from the gaps,
  *                      grouped (items that share one option set are one question whose options run
@@ -42,7 +42,7 @@
 import { join } from "node:path";
 import { blocks, checkCell, readStrategyRoot } from "@clossys/director";
 import type { Cell, StrategyModel } from "@clossys/director";
-import { listRequests, slotlessNeeds } from "../records/request.js";
+import { listRequests, listWorkEntries, slotlessNeeds } from "../records/request.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
 import type { SlotAgent } from "../records/slot-model/types.js";
@@ -395,13 +395,13 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
         ? `writer/${row.slot}: ${plural(row.findings.length, "wording finding")} (${checks}) on ${listed(records)}; the Writer's rewrite is ${row.rewrite.candidate}`
         : `writer/${row.slot}: ${plural(row.findings.length, "wording finding")} (${checks}) on ${listed(records)}; the Writer drafts a rewrite first (clossys options writer/${row.slot} --redraft, then clossys next writer/${row.slot} --submit)` });
   }
-  // Open Director request records (requests/*.json) raised downstream.
-  for (const request of director.model?.requests ?? []) {
-    if (request.status !== "open" && request.status !== "drafted") continue;
-    const from = request.raisedBy.replace(/^agent:/, "");
+  // Open queue entries on Director cells (Producer's queue-entry/2 store; the Director keeps no request store of its own).
+  const directorOpen = listWorkEntries(consumer).flatMap(item => item.request && item.request.status === "open" && item.request.target.startsWith("director/") ? [item.request] : []);
+  for (const request of directorOpen) {
+    const from = request.from.split("/")[0]!;
     requested.add(`${from}>director`);
-    gaps.push({ kind: "request", code: `request.director-${request.kind}`, agent: "director", from, to: "director", item: request.cells.length === 1 ? `director/${request.cells[0]}` : request.id, step: "director.candidates", decider: "owner", need: request.cells.map(cell => `director/${cell}`),
-      message: `${request.id} (${request.status}) by ${request.raisedBy}: ${request.detail}` });
+    gaps.push({ kind: "request", code: `request.director-${request.kind}`, agent: "director", from, to: "director", item: request.target, step: "director.candidates", decider: "owner", need: [request.target],
+      message: `queue.${request.kind}#${request.id} (open) from ${request.from}: ${request.why}` });
   }
   for (const [pair, count] of [...citations].sort()) {
     if (requested.has(pair)) continue;
@@ -412,7 +412,7 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
       : `no ${from} request to the ${to}: every one of the ${plural(count, "citation")} of ${to} slots in ${from} slot inputs is pinned${to === "director" ? ", free of TODO-OWNER lines and clear of blocking Director checks" : ""}, and none is not-needed`);
   }
   if (copy && !requested.has("publisher>writer")) notes.push(`no publisher request to the writer: all ${plural(keysChecked, "Writer key")} the pinned Publisher records name are held by the pinned Writer copy`);
-  if (director.model && !(director.model.requests ?? []).some(request => request.status === "open" || request.status === "drafted")) notes.push("no open Director request record (agents/director requests)");
+  if (director.model && !directorOpen.length) notes.push("no open Director request entry (agents/producer queue)");
 
   const order = (gap: Gap) => [INTERVIEW_AGENTS.indexOf(gap.agent), GAP_KINDS.indexOf(gap.kind)];
   gaps.sort((a, b) => { const [x, y] = [order(a), order(b)]; return x[0]! - y[0]! || x[1]! - y[1]!; });

@@ -6,7 +6,8 @@ import { parseFinding, RUN_CITATION_PATTERN } from "./format/finding.js";
 import { RECORD_ID_PATTERN } from "./format/ref.js";
 import { parseSlotPin, slotCandidateCell, slotCandidateVersion, type SlotPin } from "./format/slot.js";
 import { validateTree } from "./format/tree.js";
-import type { StrategyModel, StrategyRootIssue, StrategyTree } from "./format/types.js";
+import { raiseWhyOf } from "./format/queue-note.js";
+import type { QueueRequest, StrategyModel, StrategyRootIssue, StrategyTree } from "./format/types.js";
 import { storeFault, type DirectorStoreReader } from "./store-io.js";
 
 /**
@@ -72,7 +73,9 @@ export function readStrategyFile(root: string, store: DirectorStoreReader, path:
  * leaf exactly once. Findings are the consumer's Director evidence
  * (`<consumer>/evidence/director/*.md`, top-level files) when the root is
  * `<consumer>/agents/director`; any other root has no reachable evidence and no findings.
- * The slot model records no sessions or requests: pins carry who decided and why.
+ * The slot model records no sessions, and the Director keeps no request store: `requests` are the clossys.queue-entry/2
+ * entries about Director slots in Producer's queue (`<consumer>/agents/producer/queue.<kind>/entries`), read-only and
+ * outside the fingerprinted files (foundry-build-0048 U8, Q1).
  *
  * Symlink files and directories are refused by the reader; references never cause reads.
  * Broken records produce path/line issues while valid records remain available.
@@ -175,8 +178,42 @@ export function readStrategyRoot(root: string, store: DirectorStoreReader, optio
     if (archetype?.ok === false) issue(`${EVIDENCE_PREFIX}/${ARCHETYPE_RECORD_ID}.md`, "invalid-format", `Archetype record: ${archetype.message}`);
     else if (archetype && model.tree) model.tree = { ...model.tree, archetype: archetype.archetype };
     model.runs = citedRuns(dirname(base), store, model.findings, base);
+    model.requests = queueRequests(base, store);
   }
   return model;
+}
+
+const QUEUE_KINDS = ["slot", "change", "fix"] as const;
+const DIRECTOR_TARGET = /^director\/([a-z0-9][a-z0-9.-]*)$/;
+/**
+ * The clossys.queue-entry/2 entries about Director slots in Producer's queue, by id. Producer owns and validates the
+ * queue; this reader takes a well-formed entry about a Director slot and skips anything else (a queue-entry/1 fix in
+ * the same folder, another agent's entry, a file that does not parse), so a queue fault never breaks the strategy.
+ * An entry Producer merged a later raise into carries it as one more `raised` event: its why (raiseWhyOf) is read too,
+ * as `merged`, so a merged request is never invisible to the Director.
+ */
+export function queueRequests(consumer: string, store: DirectorStoreReader): QueueRequest[] {
+  const requests: QueueRequest[] = [];
+  for (const kind of QUEUE_KINDS) {
+    const dir = `agents/producer/queue.${kind}/entries`;
+    let names: string[] | undefined;
+    try { names = store.stat(consumer, dir)?.type === "directory" ? store.list(consumer, dir) : undefined; } catch { names = undefined; }
+    for (const name of names ?? []) {
+      if (!name.endsWith(".json")) continue;
+      let doc: Record<string, unknown>;
+      try { doc = JSON.parse(store.read(consumer, `${dir}/${name}`) ?? "null") as Record<string, unknown>; } catch { continue; }
+      if (!doc || doc.schema !== "clossys.queue-entry/2" || doc.kind !== kind) continue;
+      const target = typeof doc.target === "string" ? DIRECTOR_TARGET.exec(doc.target) : null;
+      if (!target || typeof doc.id !== "string" || typeof doc.from !== "string" || typeof doc.why !== "string" || (doc.status !== "open" && doc.status !== "closed")) continue;
+      const merged = new Set<string>();
+      for (const event of Array.isArray(doc.events) ? doc.events.slice(1) : []) {
+        const { op, detail } = (event ?? {}) as { op?: unknown; detail?: unknown };
+        if (op === "raised" && typeof detail === "string" && raiseWhyOf(detail) !== doc.why) merged.add(raiseWhyOf(detail));
+      }
+      requests.push({ id: doc.id, kind, from: doc.from, cell: target[1]!, status: doc.status, why: doc.why, ...(merged.size ? { merged: [...merged] } : {}) });
+    }
+  }
+  return requests.sort((a, b) => a.id.localeCompare(b.id));
 }
 
 /** The run store file of one step, as the clossys CLI names it: `check:pipeline` -> `.clossys/runs/check.pipeline.jsonl`. */

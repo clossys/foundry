@@ -7,7 +7,8 @@ import { runAnswerCli } from "../cli/answer.js";
 import { runFeedbackCli } from "../cli/feedback.js";
 import { runCli } from "../cli/main.js";
 import { resolveSlot } from "../records/resolve.js";
-import type { QueueEntry, QueueName } from "../records/types.js";
+import { closeWork, listRequests, readRequest, RequestError } from "../records/request.js";
+import type { QueueEntry, QueueName, SlotRequest } from "../records/types.js";
 import { queueEntryChangeIssues } from "./append-only.js";
 import { AnswerRefused, answerQueueEntry } from "./answer.js";
 import { createQueueEntry, EntryLockedError, findQueueEntry, queueEntryPath, queueLockPath, readQueueEntry, withQueueEntryLock } from "./entry.js";
@@ -318,42 +319,48 @@ describe("clossys answer", () => {
 });
 
 describe("clossys feedback", () => {
-  it("opens a queue.fix with the owner's words verbatim, decided by the agent that owns the ref", async () => {
+  it("opens a queue.change (queue-entry/2) with the owner's words verbatim, routed to the agent that owns the ref", async () => {
     const w = world();
     const words = "  test words, kept exactly  ";
     const result = await runFeedbackCli(["writer/sections.hero.copy", words, "--via", "chat"], w.root, NOW);
     expect(result.exitCode).toBe(0);
-    const entry = result.output as QueueEntry;
-    expect(entry).toEqual({
-      schema: "clossys.queue-entry/1", id: "20261120T0830Z-sections-hero-copy", agent: "producer", kind: "queue-entry", status: "open",
+    const request = result.output as SlotRequest;
+    expect(request).toMatchObject({
+      schema: "clossys.queue-entry/2", id: "20261120T0830Z-change-sections-hero-copy", kind: "change", from: "owner", assignee: "writer",
+      target: "writer/sections.hero.copy", status: "open", want: "candidate", why: words, source: "feedback",
       createdBy: { actor: "owner", ref: "chat:clossys feedback 2026-11-20T08:30:15Z" }, createdAt: "2026-11-20T08:30:15Z",
-      refs: [{ to: "writer/sections.hero.copy", rel: "input" }], queue: "queue.fix", ask: words,
-      subject: { to: "writer/sections.hero.copy", rel: "input" }, decider: "agent:writer", default: null,
-      events: [{ at: "2026-11-20T08:30:15Z", op: "raised", by: "owner", via: "chat" }],
+      refs: [{ to: "writer/sections.hero.copy", rel: "input" }],
     });
-    expect(w.read("queue.fix", entry.id)).toEqual(entry);
+    expect(request.events[0]).toEqual({ id: `${request.id}#1`, at: "2026-11-20T08:30:15Z", op: "raised", by: "owner", via: "chat", detail: words });
+    expect(request.events[1]).toMatchObject({ op: "routed", by: "producer" });
+    expect(request).not.toHaveProperty("check");
+    expect(readRequest(join(w.root, "clossys"), request.id)).toEqual(request);
+    // No queue-entry/1 queue.fix is written for feedback any more (Q10).
+    expect(existsSync(join(w.root, "clossys/agents/producer/queue.fix"))).toBe(false);
   });
 
-  it("goes through the clossys CLI and takes the next suffix on an id collision", async () => {
+  it("goes through the clossys CLI; the same words again return the open change, other words are refused naming it", async () => {
     const w = world();
-    const viaCli = await runCli(["feedback", "writer/sections.hero.copy", "test words", "--via", "cli", "--slug", "hero", "--root", w.root], w.root);
+    const viaCli = await runCli(["feedback", "writer/sections.hero.copy", "test words", "--via", "cli", "--root", w.root], w.root);
     expect(viaCli).toMatchObject({ exitCode: 0 });
-    expect(findQueueEntry(w.root, (viaCli.output as QueueEntry).id).ok).toBe(true);
-    raiseFeedback(w.root, { ref: "writer/sections.hero.copy", words: "test words", via: "cli", slug: "hero" }, NOW);
-    raiseFeedback(w.root, { ref: "writer/sections.hero.copy", words: "test words", via: "cli", slug: "hero" }, NOW);
-    expect(existsSync(queueEntryPath(w.root, "queue.fix", "20261120T0830Z-hero"))).toBe(true);
-    expect(existsSync(queueEntryPath(w.root, "queue.fix", "20261120T0830Z-hero-2"))).toBe(true);
+    const id = (viaCli.output as SlotRequest).id;
+    expect(readRequest(join(w.root, "clossys"), id).kind).toBe("change");
+    expect(raiseFeedback(w.root, { ref: "writer/sections.hero.copy", words: "test words", via: "cli" }, NOW)).toMatchObject({ created: false, request: { id } });
+    expect(() => raiseFeedback(w.root, { ref: "writer/sections.hero.copy", words: "other words", via: "cli" }, NOW)).toThrow(`queue.change#${id} already holds the owner's open change`);
+    const refused = await runFeedbackCli(["writer/sections.hero.copy", "other words", "--via", "cli"], w.root, NOW);
+    expect(refused).toMatchObject({ exitCode: 1, message: expect.stringContaining(`queue.change#${id}`) as unknown as string });
+    expect(listRequests(join(w.root, "clossys"), "change")).toHaveLength(1);
   });
 
   it("records the sha256 the ref resolves to now (Tallyhouse, as is)", () => {
     const root = realpathSync(mkdtempSync(join(tmpdir(), "queue-tallyhouse-")));
     roots.push(root);
     cpSync(TALLYHOUSE, root, { recursive: true });
-    const entry = raiseFeedback(root, { ref: "writer/sections.hero.copy#home.hero", words: "test words", via: "chat" }, NOW);
+    const { request } = raiseFeedback(root, { ref: "writer/sections.hero.copy#home.hero", words: "test words", via: "chat" }, NOW);
     const resolved = resolveSlot(root, "writer", "sections.hero.copy", "home.hero");
     expect(resolved.state === "pinned" || resolved.state === "sample").toBe(true);
-    expect(entry.refs).toEqual([{ to: "writer/sections.hero.copy", record: "home.hero", sha256: (resolved as { sha256: string }).sha256, rel: "input" }]);
-    expect(entry.subject).toEqual({ to: "writer/sections.hero.copy", record: "home.hero", rel: "input" });
+    expect(request.refs).toEqual([{ to: "writer/sections.hero.copy", record: "home.hero", sha256: (resolved as { sha256: string }).sha256, rel: "input" }]);
+    expect(request.target).toBe("writer/sections.hero.copy");
   });
 
   // SLOT-CREATE (foundry-build-0048 U5): feedback on a slot the consumer does not hold is a slot request, never a refusal.
@@ -378,26 +385,25 @@ describe("clossys feedback", () => {
     await expect(runFeedbackCli(["writer/sections.hero.copy", "test words"], w.root, NOW)).rejects.toThrow("--via");
   });
 
-  // Mutation: id exhaustion thrown as a plain Error (the CLI would crash instead of exiting 1).
-  it("refuses, with exit 1, when the id and every suffix are taken; nothing is written", async () => {
+  it("refuses feedback on a slot outside the content agents; nothing is written", async () => {
     const w = world();
-    const id = "20261120T0830Z-hero";
-    for (const taken of [id, ...[2, 3, 4, 5, 6, 7, 8, 9].map(n => `${id}-${n}`)]) w.entry("queue.fix", taken);
-    expect(() => raiseFeedback(w.root, { ref: "writer/sections.hero.copy", words: "test words", via: "cli", slug: "hero" }, NOW)).toThrow(FeedbackRefused);
-    const result = await runFeedbackCli(["writer/sections.hero.copy", "test words", "--via", "cli", "--slug", "hero"], w.root, NOW);
-    expect(result).toMatchObject({ exitCode: 1, message: expect.stringContaining("are all taken") as unknown as string });
-    expect(existsSync(queueEntryPath(w.root, "queue.fix", `${id}-10`))).toBe(false);
+    expect(() => raiseFeedback(w.root, { ref: "producer/loops.fill", words: "test words", via: "chat" }, NOW)).toThrow(FeedbackRefused);
+    expect(await runFeedbackCli(["producer/loops.fill", "test words", "--via", "chat"], w.root, NOW)).toMatchObject({ exitCode: 1 });
+    expect(existsSync(join(w.root, "clossys/agents/producer/queue.change"))).toBe(false);
   });
 
   it("records an app quote on the raised event", () => {
     const w = world();
-    const entry = raiseFeedback(w.root, { ref: "writer/sections.hero.copy", words: "test words", via: "app", quote: "test words" }, NOW);
-    expect(entry.events).toEqual([{ at: "2026-11-20T08:30:15Z", op: "raised", by: "owner", via: "app", quote: "test words" }]);
+    const { request } = raiseFeedback(w.root, { ref: "writer/sections.hero.copy", words: "test words", via: "app", quote: "test words" }, NOW);
+    expect(request.events[0]).toEqual({ id: `${request.id}#1`, at: "2026-11-20T08:30:15Z", op: "raised", by: "owner", via: "app", quote: "test words", detail: "test words" });
   });
 
-  it("opens an entry that its decider can then close", () => {
+  it("opens a change only the queue-entry/2 closure can close: never the queue-entry/1 answer, never another agent", () => {
     const w = world();
-    const entry = raiseFeedback(w.root, { ref: "writer/sections.hero.copy", words: "test words", via: "chat" }, NOW);
-    expect(answerQueueEntry(w.root, { entry: entry.id, answer: "done", by: "agent:writer" }, new Date("2026-11-20T09:00:00Z")).entry.status).toBe("answered");
+    const { request } = raiseFeedback(w.root, { ref: "writer/sections.hero.copy", words: "test words", via: "chat" }, NOW);
+    expect(() => answerQueueEntry(w.root, { entry: request.id, answer: "done", by: "agent:writer" }, new Date("2026-11-20T09:00:00Z"))).toThrow();
+    expect(() => closeWork(join(w.root, "clossys"), request.id, { by: "designer", at: "2026-11-20T09:00:00Z", outcome: "changed", result: "writer/sections.hero.copy" })).toThrow(RequestError);
+    // The assignee's close (verified, then closed changed) is replayed end to end in loop/flows.test.ts F5.
+    expect(readRequest(join(w.root, "clossys"), request.id).status).toBe("open");
   });
 });

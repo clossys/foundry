@@ -337,14 +337,17 @@ describe('exact completion levels', () => {
     expect(r.complete).toBe(false);
     expect(r.mvs).toBe(true);
   });
-  it('a stale active cell and open contradiction block L0', () => {
+  it('a stale active cell and an open fix in Producer\'s queue block L0', () => {
     const m = fixture();
     get(m).cites.push(ref('context.customer.need', 99));
     expect(completion(m, judgePass).l0Clean).toBe(false);
     const n = fixture();
-    n.requests.push({ id: 'REQ-0001', raisedBy: 'critic', kind: 'contradiction', cells: [get(n).id], detail: 'Sample contradiction', status: 'open', opened: '2026-10-29', resolvedBy: null });
+    n.requests.push({ id: '20261029T0900Z-fix-sample', kind: 'fix', from: `director/${get(n).id}`, cell: get(n).id, why: 'Sample contradiction', status: 'open' });
     expect(completion(n, judgePass).l0Clean).toBe(false);
-    n.requests[0]!.status = 'resolved';
+    // A change (the owner wants another candidate) does not say the pinned cell is broken.
+    n.requests[0] = { ...n.requests[0]!, kind: 'change' };
+    expect(completion(n, judgePass).l0Clean).toBe(true);
+    n.requests[0] = { ...n.requests[0]!, kind: 'fix', status: 'closed' };
     expect(completion(n, judgePass).l0Clean).toBe(true);
   });
   for (const archetype of ['default', 'product-saas', 'services', 'marketplace'])
@@ -392,9 +395,9 @@ describe('completion boundaries and pure reports', () => {
     expect(failed.l2.find(group => group.id === 'focus.segment')!.coherent).toBe(false);
     expect(failed.complete).toBe(false);
   });
-  it('a noncore contradiction request blocks full L0, while MVS uses core scope', () => {
+  it('a noncore open fix blocks full L0, while MVS uses core scope', () => {
     const model = fixture();
-    model.requests.push({ id: 'REQ-0002', raisedBy: 'critic', kind: 'contradiction', cells: ['context.market.size'], detail: 'Sample unresolved choice', status: 'open', opened: '2026-10-29', resolvedBy: null });
+    model.requests.push({ id: '20261029T0900Z-fix-context-market-size', kind: 'fix', from: 'director/context.market.size', cell: 'context.market.size', why: 'Sample unresolved choice', status: 'open' });
     const result = completion(model, judgePass);
     expect(result.l0Clean).toBe(false);
     expect(result.mvs).toBe(true);

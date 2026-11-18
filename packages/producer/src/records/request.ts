@@ -18,6 +18,7 @@ import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, read
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
+import { queueEntryChangeIssues } from "../queue/append-only.js";
 import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
 import { consumerFacts, placedSlots, readDeclarations, routeEntry, RoutingError, WORK_KINDS, type RoutingFacts, type WorkKind } from "../queue/routing.js";
 import { FIX_CHECKS, fixCheck, requesterCheck, requesterPinSets, requesterSlots } from "../queue/requester-check.js";
@@ -268,9 +269,9 @@ export interface ReadRequest { readonly file: string; readonly request?: SlotReq
 
 /**
  * Every entry of one work kind under clossys/agents/producer/queue.<kind>/entries, read and judged (an unreadable one
- * is listed with its issue). queue.fix still holds clossys.queue-entry/1 fix entries the runner raises; those (schema
- * exactly clossys.queue-entry/1) are the /1 queue's (queue/entry.ts) and are skipped here (`legacyFixEntries` lists
- * them). Any other file there (no schema, a wrong one) is listed as an entry that does not read, never dropped.
+ * is listed with its issue). queue.fix may still hold clossys.queue-entry/1 fix entries raised before U8 (nothing raises
+ * one now); those (schema exactly clossys.queue-entry/1) are the /1 queue's (queue/entry.ts) and are skipped here
+ * (`legacyFixEntries` lists them). Any other file there (no schema, a wrong one) is listed as an entry that does not read, never dropped.
  */
 export function listRequests(consumer: string, kind: WorkKind = "slot"): ReadRequest[] {
   const dir = requestsDir(consumer, kind);
@@ -447,6 +448,24 @@ export interface RaiseInput {
   readonly createdBy?: Actor;
   readonly via?: RequestEvent["via"];
   readonly quote?: string;
+  /** The first raised event's detail (default: the why): a migration carries the legacy record it raises from (U8 round 2). */
+  readonly detail?: string;
+}
+
+/**
+ * Why the owner's words cannot be taken as an open entry that already holds work on the slot from the owner
+ * (foundry-build-0048 U8 round 2): it holds other words, or someone else raised it (an agent's record a migration
+ * filed, a code raise), so returning it would drop the owner's words silently. Undefined only for the owner's own entry
+ * with these very words. DRAFT copy (not owner-approved).
+ */
+export function ownerWordsRefusal(existing: SlotRequest, words: string): string | undefined {
+  const label = `${workQueue(existing.kind as WorkKind)}#${existing.id}`;
+  if (existing.createdBy?.actor !== "owner") {
+    const raiser = existing.createdBy?.actor === "code" ? `code (${existing.createdBy.cli})` : existing.createdBy?.actor ?? "someone else";
+    return `${label} is already open on ${existing.target} from the owner, raised by ${raiser} ("${existing.why}"), not in the owner's own words; answer or close it first, and the owner's words are not recorded`;
+  }
+  if (existing.why !== words) return `${label} already holds the owner's open ${existing.kind} on ${existing.target} ("${existing.why}"); answer or close it first`;
+  return undefined;
 }
 
 /** An open request for the same target from the same requester, if one exists. */
@@ -534,10 +553,16 @@ export interface RaiseWorkInput {
   readonly createdBy?: Actor;
   readonly via?: RequestEvent["via"];
   readonly quote?: string;
+  /** The first raised event's detail (default: the why): a migration carries the legacy record it raises from (U8 round 2). */
+  readonly detail?: string;
   /** Entries the raise cites (rel cites): a fix raised on a failed owner answer cites the answered entry. */
   readonly cites?: readonly Ref[];
 }
-export function raiseWork(consumer: string, input: RaiseWorkInput, options: { readonly dry?: boolean; readonly facts?: RoutingFacts } = {}): { request: SlotRequest; created: boolean } {
+/**
+ * `ownerWords` (the owner's own feedback): an open entry the raise dedupes onto is returned only when it is the owner's
+ * own with these words (ownerWordsRefusal); otherwise the raise is refused, nothing written, so no word is dropped.
+ */
+export function raiseWork(consumer: string, input: RaiseWorkInput, options: { readonly dry?: boolean; readonly facts?: RoutingFacts; readonly ownerWords?: boolean } = {}): { request: SlotRequest; created: boolean } {
   const target = targetOf(input);
   if (!target) throw new RequestError(`a ${input.kind} entry names <agent>/<slot id>, got ${input.target}`);
   // Not a closure, so bare owner may act here; only close paths need an owner answer ref (U7 r3).
@@ -553,7 +578,11 @@ export function raiseWork(consumer: string, input: RaiseWorkInput, options: { re
   } else if (isContentAgent(input.by)) throw new RequestError(`${input.by} raises as the owner: an agent raises for its own slot (--from <agent>/<slot>)`);
   return withRequestLock(consumer, raiseLock(`${input.kind}-${input.target}`), () => {
     const existing = listRequests(consumer, input.kind).map(read => read.request).find(request => request?.status === "open" && request.target === input.target && request.from === input.from);
-    if (existing) return { request: existing, created: false };
+    if (existing) {
+      const refusal = options.ownerWords ? ownerWordsRefusal(existing, input.why) : undefined;
+      if (refusal) throw new RequestError(refusal);
+      return { request: existing, created: false };
+    }
     const id = `${stampOf(input.at)}-${input.kind}-${target.need.replace(/\./g, "-")}`.slice(0, 80).replace(/-+$/, "");
     const route = routeOf(consumer, { kind: input.kind, target: input.target, assignee: target.agent }, options.facts);
     const choices = route.assignee === "owner" ? ownerOptions(consumer, { kind: input.kind, target: input.target, ...(input.want !== undefined ? { want: input.want } : {}) }, options.facts) : undefined;
@@ -566,7 +595,7 @@ export function raiseWork(consumer: string, input: RaiseWorkInput, options: { re
       ...(input.want !== undefined ? { want: input.want } : {}),
       ...(input.check !== undefined ? { check: input.check } : {}), ...(input.findings !== undefined ? { findings: [...input.findings] } : {}), ...(input.cause !== undefined ? { cause: input.cause } : {}),
       events: [
-        { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.why },
+        { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.detail ?? input.why },
         routedEvent(id, 2, input.at, route),
       ],
     };
@@ -853,17 +882,72 @@ export function resultRefusal(consumer: string, result: string): string | undefi
  * running in parallel). Refused, with nothing written: a target that is placed (cite it), and a requester that is not
  * the owner or a placed slot of a content agent whose edges name the target with this rel, raised by that slot's own
  * agent (or the owner, the planner or Producer code). `cited` is clossys ia's own write: the slot it writes names the
- * need, and the request is raised right after that write.
+ * need, and the request is raised right after that write. `ownerWords` (the owner's own feedback): the open entry is
+ * returned only when it is the owner's own with these words (ownerWordsRefusal), else the raise is refused.
  */
-export function raiseRequest(consumer: string, input: RaiseInput, options: { readonly dry?: boolean; readonly cited?: boolean; readonly facts?: RoutingFacts } = {}): { request: SlotRequest; created: boolean } {
+export function raiseRequest(consumer: string, input: RaiseInput, options: { readonly dry?: boolean; readonly cited?: boolean; readonly facts?: RoutingFacts; readonly ownerWords?: boolean } = {}): { request: SlotRequest; created: boolean } {
   const checked = slotRaiseChecks(consumer, input, options);
   return withRequestLock(consumer, raiseLock(input.target), () => {
     const existing = openRequestFor(consumer, input.target, input.from);
-    if (existing) return { request: existing, created: false };
+    if (existing) {
+      const refusal = options.ownerWords ? ownerWordsRefusal(existing, input.why) : undefined;
+      if (refusal) throw new RequestError(refusal);
+      return { request: existing, created: false };
+    }
     const draft = slotRequestDraft(consumer, input, checked, options.facts);
     if (options.dry) return { request: draft, created: true };
     return { request: createRequest(consumer, draft), created: true };
   });
+}
+
+/**
+ * Where createRequest would write a fresh draft, and why it could not: the first of the draft's id and its `-2`..`-9`
+ * suffixes that no entry file and no id in `taken` holds, the entry at that id checked as createRequest checks it. A dry
+ * raise returns its draft before this, so a plan that must not stop part-way (clossys migrate requests) runs it too.
+ */
+export function createIssues(consumer: string, draft: SlotRequest, taken: ReadonlySet<string> = new Set()): { id?: string; issues: string[] } {
+  for (let attempt = 1; attempt <= 9; attempt++) {
+    const id = attempt === 1 ? draft.id : `${draft.id}-${attempt}`;
+    if (taken.has(id) || existsSync(requestPath(consumer, id, draft.kind))) continue;
+    const issues = requestIssues(addressed(draft, id));
+    return issues.length ? { issues: [`request ${id} would be invalid: ${issues.slice(0, 5).join("; ")}`] } : { id, issues: [] };
+  }
+  return { issues: [`${workQueue(draft.kind as WorkKind)} entry ${draft.id}: the id and its suffixes -2..-9 are all taken`] };
+}
+
+/** A later raise of open work merged into its entry: who raised it, when, and its whole content (the event's detail). */
+export interface MergedRaise {
+  readonly at: string;
+  readonly by: string;
+  readonly detail: string;
+  readonly via?: RequestEvent["via"];
+}
+/** The entry with one more `raised` event carrying `raise` (pure; appendRaise writes it). */
+export const withMergedRaise = (request: SlotRequest, raise: MergedRaise): SlotRequest =>
+  withEvent(request, "raised", raise.at, raise.by, raise.detail, { via: raise.via ?? "cli" }).request;
+/**
+ * Carries a raise that dedupes onto an open entry (same kind, target and requester) into that entry, so its content is
+ * never lost: one `raised` event appended under the entry's lock, through the append-only rule (queueEntryChangeIssues:
+ * only events grow), the result validated whole and re-read from disk. An event already carrying this detail is the
+ * raise already merged, and nothing is written. Dry returns the entry it would write.
+ */
+export function appendRaise(consumer: string, id: string, raise: MergedRaise, options: { readonly dry?: boolean } = {}): { request: SlotRequest; appended: boolean } {
+  checkSeat(raise.by);
+  if (!raise.detail.trim()) throw new RequestError(`a raise merged into ${id} carries its content (a detail)`);
+  const body = (): { request: SlotRequest; appended: boolean } => {
+    const before = readRequest(consumer, id);
+    if (before.status !== "open") throw new RequestError(`${workQueue(before.kind as WorkKind)}#${id} is ${before.status}: a raise merges only into an open entry`);
+    if (before.events.some(event => event.op === "raised" && event.detail === raise.detail)) return { request: before, appended: false };
+    const after = withMergedRaise(before, raise);
+    const drift = queueEntryChangeIssues(before, after);
+    if (drift.length) throw new RequestError(`merging a raise into ${id} would rewrite it: ${drift.join("; ")}`);
+    const issues = requestIssues(after, dirname(consumer));
+    if (issues.length) throw new RequestError(`request ${id} would be invalid: ${issues.slice(0, 5).join("; ")}`);
+    if (options.dry) return { request: after, appended: true };
+    writeRequest(consumer, after);
+    return { request: readRequest(consumer, id), appended: true };
+  };
+  return options.dry ? body() : withRequestLock(consumer, id, body);
 }
 
 /** What a slot raise checks before it writes (raiseRequest): the target, the requester, its issuing edge and its cite. */
@@ -906,7 +990,7 @@ function slotRequestDraft(consumer: string, input: RaiseInput, checked: ReturnTy
     createdAt: input.at, refs: SLOT_REF.test(input.from) ? [{ to: input.from as Ref["to"], rel: "raisedBy" }] : [], route,
     ...(choices ? { options: choices } : {}),
     events: [
-      { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.why },
+      { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.detail ?? input.why },
       routedEvent(id, 2, input.at, route),
     ],
   };

@@ -23,7 +23,8 @@ import { releaseWorld, geographyBrief, stubBuilder, type ReleaseWorld } from "..
 import { sha256Hex } from "../records/hash.js";
 import { writeSlot } from "../records/slot.js";
 import { writeCandidate } from "../records/slot-write.js";
-import type { AgentId, LedgerEntry, QueueEntry, Slot } from "../records/types.js";
+import type { AgentId, LedgerEntry, QueueEntry, Slot, SlotRequest } from "../records/types.js";
+import { readRequest } from "../records/request.js";
 import { readPackageLoop } from "./files.js";
 import { raiseEntry } from "./route.js";
 import { cliHooks } from "./cli.js";
@@ -83,6 +84,10 @@ function world(refs: readonly string[]) {
       const read = readQueueEntry(found.at);
       if (!read.ok) throw new Error(`unreadable ${name}`);
       return read.entry;
+    },
+    /** A queue-entry/2 change or fix by its `queue.<kind>#<id>` name. */
+    work(name: string): SlotRequest {
+      return readRequest(join(root, "clossys"), name.split("#")[1]!);
     },
     ledger(loop: LoopName): LedgerEntry[] {
       const dir = ledgerDir(root, loop);
@@ -253,10 +258,10 @@ describe("F2 starter fill: loop.fill (T2)", () => {
     const once = await startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, stub(w.root, { checkExits: [1] }), { now });
     expect(once.state!.status).toBe("done");
     expect(stepLine(w.ledger("loop.fill")[0]!)).toEqual(["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:1", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "cascade:code:0"]);
-    // The round's queue.fix was answered by the run's pin (code close).
+    // The round's kind fix (queue-entry/2, with its cause) is closed fixed by its assignee once pins.resolve passes.
     const fix = once.state!.raised.find(name => name.startsWith("queue.fix#"))!;
-    expect(w.entry(fix)).toMatchObject({ status: "answered" });
-    expect(w.entry(fix).events.at(-1)).toMatchObject({ by: "code:clossys run", op: "answered" });
+    expect(w.work(fix)).toMatchObject({ kind: "fix", target: "designer/components.button", assignee: "designer", check: "pins.resolve", cause: expect.stringMatching(/^loop\.fill run .+ step check round 1$/), status: "closed", outcome: "fixed", result: "designer/components.button" });
+    expect(w.work(fix).events.at(-1)).toMatchObject({ by: "designer", op: "closed" });
 
     const w2 = world(["designer/components.button"]);
     const stuck = await startRun(w2.root, { loop: "loop.fill", slot: "designer/components.button" }, stub(w2.root, { checkExits: [1, 1, 1] }), { now });
@@ -321,30 +326,32 @@ describe("F4 add L3 (T4)", () => {
 });
 
 describe("F5 owner feedback (T5)", () => {
-  it("runs loop.refine from the owner's queue.fix, the owner confirms Voice, and the fix is answered by the new pin", async () => {
+  it("runs loop.refine from the owner's queue.change, the owner confirms Voice, and the change is closed by the new pin", async () => {
     const w = world(["writer/lexicon.formality"]);
     const now = clock();
-    const fix = raiseFeedback(w.root, { ref: "writer/lexicon.formality", words: "warmer, less formal", via: "chat", quote: "warmer, less formal" }, now());
-    expect(fix).toMatchObject({ queue: "queue.fix", decider: "agent:writer", createdBy: { actor: "owner" } });
+    const { request: change, created } = raiseFeedback(w.root, { ref: "writer/lexicon.formality", words: "warmer, less formal", via: "chat", quote: "warmer, less formal" }, now());
+    expect(created).toBe(true);
+    expect(change).toMatchObject({ schema: "clossys.queue-entry/2", kind: "change", from: "owner", target: "writer/lexicon.formality", assignee: "writer", want: "candidate", why: "warmer, less formal", source: "feedback", createdBy: { actor: "owner" } });
     const hooks = stub(w.root);
-    const run = await startRun(w.root, { loop: "loop.refine", from: `queue.fix#${fix.id}` }, hooks, { now });
+    const run = await startRun(w.root, { loop: "loop.refine", from: `queue.change#${change.id}` }, hooks, { now });
     expect(run.state!.trigger.kind).toBe("owner-feedback");
     expect(run.entry).toMatch(/^queue\.approve#/);
     ownerAnswer(w.root, run.entry!, "approve", now);
     await resumeRun(w.root, run.state!.runId, hooks, { now });
     const ledger = w.ledger("loop.refine")[0]!;
-    expect(ledger).toMatchObject({ status: "done", trigger: { kind: "owner-feedback", ref: { to: "producer/queue.fix", record: fix.id, rel: "raisedBy" } } });
+    expect(ledger).toMatchObject({ status: "done", trigger: { kind: "owner-feedback", ref: { to: "producer/queue.change", record: change.id, rel: "raisedBy" } } });
     expect(stepLine(ledger)).toEqual(["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
     // refine-brief got the entry so the agent reads the owner's words.
     expect(hooks.calls[0]).toEqual({ step: "refine-brief", kind: "agent" });
-    const answered = w.entry(`queue.fix#${fix.id}`);
-    expect(answered.status).toBe("answered");
-    expect(answered.events.at(-1)).toMatchObject({ by: "code:clossys run" });
+    const closed = w.work(`queue.change#${change.id}`);
+    expect(closed).toMatchObject({ status: "closed", outcome: "changed", result: "writer/lexicon.formality" });
+    expect(closed.events.at(-1)).toMatchObject({ by: "writer", op: "closed" });
+    expect(ledger.refs).toContainEqual({ to: "producer/queue.change", record: change.id, rel: "answers" });
   });
 });
 
 describe("F6 failed check (T6)", () => {
-  it("routes audit findings: queue.fix to the slot's agent, queue.clarify to the owner, deduped; then refine runs from the fix", async () => {
+  it("routes audit findings: a kind fix to the slot's agent, queue.clarify to the owner, deduped; then refine runs from the fix", async () => {
     const w = world(["writer/narratives.legal-document"]);
     const now = clock();
     const findings = [
@@ -356,7 +363,8 @@ describe("F6 failed check (T6)", () => {
     expect(first.exitCode).toBe(0);
     const raised = first.state!.raised;
     expect(raised).toHaveLength(2);
-    expect(w.entry(raised[0]!)).toMatchObject({ queue: "queue.fix", decider: "agent:writer", subject: { to: "writer/narratives.legal-document" } });
+    expect(raised[0]).toMatch(/^queue\.fix#/);
+    expect(w.work(raised[0]!)).toMatchObject({ schema: "clossys.queue-entry/2", kind: "fix", assignee: "writer", target: "writer/narratives.legal-document", from: "writer/narratives.legal-document", check: "constitution.strict", findings: ["writer/narratives.legal-document/slot.json: placeholder finding"], cause: expect.stringMatching(/^found by loop\.audit run /), source: "check" });
     expect(w.entry(raised[1]!)).toMatchObject({ queue: "queue.clarify", decider: "owner", subject: { to: "producer/queue.clarify" } });
     const second = await startRun(w.root, { loop: "loop.audit" }, audit(), { now });
     expect(second.state!.raised).toEqual([]);
@@ -370,7 +378,11 @@ describe("F6 failed check (T6)", () => {
     expect(refine.state!.trigger.kind).toBe("failed-check");
     ownerAnswer(w.root, refine.entry!, refine.entry!.startsWith("queue.pick") ? "placeholder-v1.json" : "approve", now);
     expect((await resumeRun(w.root, refine.state!.runId, hooks, { now })).state!.status).toBe("done");
-    expect(w.entry(raised[0]!).status).toBe("answered");
+    // constitution.strict is not a check Producer re-runs, so the writer's fixed claim goes to the owner (U7 r4).
+    const claimed = w.work(raised[0]!);
+    expect(claimed.status).toBe("open");
+    expect(claimed.events.at(-1)).toMatchObject({ by: "producer", op: "asked" });
+    expect(w.ledger("loop.refine")[0]!.outcome).toMatch(/awaits the owner/);
   });
 
   it("G7: a built-in code step (route) appends its run record, and the ledger carries the sha256 of every file it wrote", async () => {
@@ -443,7 +455,7 @@ describe("F8 new release: loop.release (T8)", () => {
     expect(verbs.at(-1)).toEqual(["pin", "publisher/release.site", "site-v1.json", "--by", `owner:${run.entry}`, "--root", w.root]);
   });
 
-  it("stops the release at failing gates, raising a queue.fix per finding for loop.refine", async () => {
+  it("stops the release at failing gates, raising a kind fix per finding for loop.refine", async () => {
     const w = world(["writer/narratives.legal-document"]);
     const now = clock();
     const run = await startRun(w.root, { loop: "loop.release", publication: "site" }, release(w.root, { exit: 1, findings: [{ check: "copy.sample-remaining", subject: "writer/narratives.legal-document", detail: "still on sample" }] }), { now });
@@ -452,7 +464,7 @@ describe("F8 new release: loop.release (T8)", () => {
     expect(ledger).toMatchObject({ status: "stopped" });
     expect(stepLine(ledger)).toEqual(["compile:code:0", "build:code:0", "manifest:code:0", "gates:code:1"]);
     expect(ledger.checks["release.ready"]).toBeUndefined();
-    expect(w.entry(run.state!.raised[0]!)).toMatchObject({ queue: "queue.fix", decider: "agent:writer" });
+    expect(w.work(run.state!.raised[0]!)).toMatchObject({ kind: "fix", assignee: "writer", target: "writer/narratives.legal-document", check: "copy.sample-remaining", findings: ["writer/narratives.legal-document: still on sample"], cause: expect.stringMatching(/^loop\.release run .+ step gates failed$/) });
   });
 
   it("an owner not-ready answer stops the run without the ready-pin", async () => {
@@ -668,11 +680,11 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
 
   it("B6: --from must be about the --slot subject", async () => {
     const w = world(["designer/components.button", "writer/lexicon.formality"]);
-    const fix = raiseFeedback(w.root, { ref: "writer/lexicon.formality", words: "warmer", via: "chat", quote: "warmer" }, new Date("2026-11-20T07:30:00Z"));
-    const refused = await startRun(w.root, { loop: "loop.refine", slot: "designer/components.button", from: `queue.fix#${fix.id}` }, stub(w.root), { now: clock() });
+    const { request: change } = raiseFeedback(w.root, { ref: "writer/lexicon.formality", words: "warmer", via: "chat", quote: "warmer" }, new Date("2026-11-20T07:30:00Z"));
+    const refused = await startRun(w.root, { loop: "loop.refine", slot: "designer/components.button", from: `queue.change#${change.id}` }, stub(w.root), { now: clock() });
     expect(refused.exitCode).toBe(2);
-    expect(refused.message).toBe(`run: --from queue.fix#${fix.id} is about writer/lexicon.formality, not --slot designer/components.button`);
-    expect(w.entry(`queue.fix#${fix.id}`).status).toBe("open");
+    expect(refused.message).toBe(`run: --from queue.change#${change.id} is about writer/lexicon.formality, not --slot designer/components.button`);
+    expect(w.work(`queue.change#${change.id}`).status).toBe("open");
   });
 
   it("B6: finish never code-closes an owner's clarify", async () => {
@@ -700,7 +712,7 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     const hooks = stub(w.root);
     const now = clock();
     expect((await startRun(w.root, { loop: "loop.fill", slot: "designer/../../etc" }, hooks, { now })).message).toBe('run: --slot "designer/../../etc" is not a slot ref (<agent>/<slot-id>)');
-    expect((await startRun(w.root, { loop: "loop.fill", from: "queue.fix#../../x" }, hooks, { now })).message).toBe('run: --from "queue.fix#../../x" is not a queue entry (queue.<pick|approve|clarify|fix>#<id>)');
+    expect((await startRun(w.root, { loop: "loop.fill", from: "queue.fix#../../x" }, hooks, { now })).message).toBe('run: --from "queue.fix#../../x" is not a queue entry (queue.<pick|approve|clarify|change|fix>#<id>)');
     expect((await startRun(w.root, { loop: "loop.release", publication: "../site" }, hooks, { now })).message).toBe('run: --publication "../site" is not a publication id');
     expect((await resumeRun(w.root, "../../x", hooks, { now })).message).toBe('run: "../../x" is not a run id (<yyyymmdd>T<hhmm>Z-<slug>)');
     const cli = await runRunCli(["loop.fill", "--resume", "--run", "../../x", "--step-exit", "0", "--model", MODEL, "--root", w.root], w.root);

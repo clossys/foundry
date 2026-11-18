@@ -89,7 +89,7 @@ export function schemaQueueKinds(file = join(PRODUCER_ROOT, "schemas", "queue-en
   return { kinds: (kinds as string[]).map(kind => `queue.${kind}`) };
 }
 
-/** True when a loop takes an entry of this queue kind back: `clossys run --from` (queue-entry/1) or a request run (loop.slot). */
+/** True when a loop takes an entry of this queue kind back: `clossys run --from` (queue-entry/1, or a queue-entry/2 change or fix) or a request run (loop.slot). */
 export function kindResumes(kind: string, loops: ReadonlyMap<LoopName, ProducerLoop>): boolean {
   if (kind === SLOT_QUEUE) return LOOP_NAMES.some(loop => LOOP_SUBJECT[loop] === "request" && loops.get(loop)?.ok === true);
   return ENTRY_NAME.test(`${kind}#20261117T1200Z-probe`);

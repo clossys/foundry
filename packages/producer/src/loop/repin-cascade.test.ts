@@ -1,6 +1,6 @@
 /**
  * loop.cascade end to end (foundry-build-0048 U6, R07.5): a repin upstream re-verdicts every pinned dependant whose
- * pinSet it changed, through the one certifier, and a failing dependant goes to its owner as a queue.fix while
+ * pinSet it changed, through the one certifier, and a failing dependant goes to its owner as a kind fix while
  * release refuses it. Unstubbed: real `clossys ia`, `clossys pin` (the CHOOSE gate) and `clossys run loop.cascade`
  * on a temp copy of test-fixtures/consumer (the fixture itself is never written).
  *
@@ -13,7 +13,7 @@
  *  2. The section is repinned to a candidate that serves only `slide` (`meta.element.media`): the page's layout breaks.
  *  3. R07.5 reports the page's pin as stale (its pinSet changed, nobody re-verdicted).
  *  4. `clossys run loop.cascade --slot designer/sections.hero` re-verdicts the page: it fails, the page is
- *     needs-refresh, a queue.fix goes to agent:publisher, and the release gate slots.stale fails.
+ *     needs-refresh, a kind fix (cause: the repin) goes to publisher, and the release gate slots.stale fails.
  *  5. Repinning the section to a web candidate and running the cascade again passes the page: needs-refresh goes to live.
  */
 import { execFileSync } from "node:child_process";
@@ -110,7 +110,7 @@ const r075 = (root: string) => staleRows(buildContext(root, join(root, "clossys"
 const staleGate = (root: string) => runGates(root, "site", undefined);
 
 describe("loop.cascade: a repin re-verdicts its dependants (R07.5)", () => {
-  it("a section repinned to another medium breaks the page: queue.fix to its owner, needs-refresh, release refused; a web repin restores it", async () => {
+  it("a section repinned to another medium breaks the page: a kind fix to its owner, needs-refresh, release refused; a web repin restores it", async () => {
     const { w, ok } = await seated();
     // Every pin is fresh: nothing for R07.5, nothing stale for release.
     expect(r075(w.root)).toEqual([]);
@@ -135,10 +135,12 @@ describe("loop.cascade: a repin re-verdicts its dependants (R07.5)", () => {
       candidate: "home-v1.json", certified: false,
       reasons: [expect.objectContaining({ code: "section", message: expect.stringMatching(/serves medium slide, not the page's web .*layout breaks/) })],
     })]);
+    // The kind fix (queue-entry/2) names the repin that broke the page as its cause.
     const fixes = w.queue("queue.fix");
     expect(fixes).toEqual([expect.objectContaining({
-      queue: "queue.fix", status: "open", decider: "agent:publisher", subject: { to: "publisher/page.home", rel: "input" },
-      ask: expect.stringMatching(/cascade\.reverdict: .*home-v1\.json: \[section\].*run loop\.create/),
+      schema: "clossys.queue-entry/2", kind: "fix", status: "open", assignee: "publisher", target: "publisher/page.home", from: "publisher/page.home",
+      check: "cascade.reverdict", cause: expect.stringMatching(/^designer\/sections\.hero repinned \(loop\.cascade run \S+ step reverdict\)$/),
+      findings: [expect.stringMatching(/^publisher\/page\.home: .*home-v1\.json: \[section\].*run loop\.create/)],
     })]);
     expect(w.queue("queue.clarify")).toEqual([]);
     // The ledger entry is a ledger.cascade run naming both written files.

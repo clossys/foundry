@@ -225,7 +225,7 @@ DF codes belong to DogfoodFinding, independently of the library engine's Finding
 
 Raw interactive or visually styled non-library element.
 
-- Next action: Bind an existing component; triage a NEED when no capability exists.
+- Next action: Bind an existing component; triage a request when no capability exists.
 
 ## DF2
 
@@ -249,7 +249,7 @@ A token or asset read is unknown, or an observed read or composition edge is abs
 
 A visual import or local component resolves to no registered slot.
 
-- Next action: Bind a registered component or triage a NEED; preserve actual import provenance.
+- Next action: Bind a registered component or triage a request; preserve actual import provenance.
 
 ## DF7
 

@@ -1,6 +1,6 @@
 import { reader, store } from "../test/store.js";
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { evaluateReview, parseWatch, evaluateModelReview, reviewCitationScan, reviewRequestDetail, planReview, type ReviewInput } from './loop.js';
@@ -11,6 +11,8 @@ import { stageFinding, stageSlot, strategyRoot } from './__fixtures__/slot-model
 import { loadCatalog } from './catalog.js';
 import type { StrategyModel } from './format/types.js';
 import type { CitationIndex } from './citations/index.js';
+import { queueRequests } from './store.js';
+import { MIGRATED_RAISE_NOTE, raiseWhyOf } from './format/queue-note.js';
 
 const cell = 'focus.segment.core';
 const input = (watch: string, observed = '2026-10-20', value: string | number = 11): ReviewInput => ({
@@ -105,12 +107,38 @@ describe('validated model contracts', () => {
     expect(evaluateModelReview(source,index(),{today:'2026-10-29'}).requests.find(r => r.kind === 'drift')?.cells).toEqual([cell]);
     expect(JSON.stringify(source)).toBe(before);
   });
-  it.each(['open','drafted','resolved','declined'] as const)('retains durable deduplication from %s request details', status => {
+  it.each(['open','closed'] as const)('retains durable deduplication from %s queue entries (Producer\'s queue, U8)', status => {
     const source = model();
     const first = evaluateModelReview(source,index(),{today:'2026-10-29'}).requests;
-    source.requests = first.map((request,n) => ({id:`REQ-000${n}`,raisedBy:'review',kind:request.kind,cells:request.cells,
-      detail:reviewRequestDetail(request),status,opened:'2026-10-29',resolvedBy:null}));
+    source.requests = first.map((request,n) => ({id:`20261029T090${n}Z-change-review`,kind:'change' as const,from:'owner',cell:request.cells[0]!,
+      why:reviewRequestDetail(request),status}));
     expect(evaluateModelReview(source,index(),{today:'2026-10-29'}).requests).toEqual([]);
+  });
+  it.each(['open','closed'] as const)('retains deduplication from a review Producer merged into a %s entry as a raised event (U8 round 2)', status => {
+    const source = model();
+    const first = evaluateModelReview(source,index(),{today:'2026-10-29'}).requests;
+    expect(first.length).toBeGreaterThan(0);
+    // One entry from an earlier raise; each review request is a later raise merged into it, read by queueRequests as `merged`.
+    source.requests = [{id:'20261029T0900Z-change-earlier',kind:'change' as const,from:`director/${cell}`,cell,why:'an earlier raise on the cell',status,
+      merged:first.map(request => reviewRequestDetail(request))}];
+    expect(evaluateModelReview(source,index(),{today:'2026-10-29'}).requests).toEqual([]);
+    source.requests = [{...source.requests[0]!, merged: undefined}];
+    expect(evaluateModelReview(source,index(),{today:'2026-10-29'}).requests).toEqual(first);
+  });
+  it('reads every raised event Producer merged into a queue entry, by the merge note Producer shares (U8 round 2)', () => {
+    const consumer = realpathSync(mkdtempSync(join(tmpdir(), 'director-queue-')));
+    try {
+      const dir = join(consumer, 'agents/producer/queue.change/entries');
+      mkdirSync(dir, {recursive:true});
+      const merged = 'drift: pricing drifted [review:' + 'a'.repeat(64) + ']';
+      const raised = (n: number, detail: string) => ({id:`E#${n}`,at:'2026-11-18T09:00:00Z',op:'raised',by:'producer',via:'cli',detail});
+      writeFileSync(join(dir, 'E.json'), JSON.stringify({schema:'clossys.queue-entry/2',id:'E',kind:'change',from:`director/${cell}`,target:`director/${cell}`,status:'closed',why:'the first why',
+        events:[raised(1, `the first why${MIGRATED_RAISE_NOTE}REQ-0001, agents/director/requests/REQ-0001.json; record {})`), {id:'E#2',op:'routed'},
+          raised(3, `${merged}${MIGRATED_RAISE_NOTE}REQ-0002, agents/director/requests/REQ-0002.json; record {"id":"REQ-0002"})`), raised(4, 'the first why')]}));
+      expect(queueRequests(consumer, reader)).toEqual([{id:'E',kind:'change',from:`director/${cell}`,cell,status:'closed',why:'the first why',merged:[merged]}]);
+      expect(raiseWhyOf(`${merged}${MIGRATED_RAISE_NOTE}x)`)).toBe(merged);
+      expect(raiseWhyOf(merged)).toBe(merged);
+    } finally { rmSync(consumer, {recursive:true, force:true}); }
   });
   it('fails closed on an invalid store before evaluating findings', () => {
     expect(() => evaluateModelReview({...model(),tree:undefined},index(),{today:'2026-10-29'})).toThrow(/invalid/);

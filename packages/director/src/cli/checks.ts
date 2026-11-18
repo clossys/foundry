@@ -47,7 +47,7 @@ function quality(model: StrategyModel, targets: string[], reader: DirectorStore[
 function progress(model: StrategyModel, full: StatusReport, core: StatusReport): string {
   const name = (id: string) => model.catalog.ia.nodes.find(node => node.id === id)?.name ?? id;
   const unlocked = full.l1.filter(group => group.unlocked).map(group => name(group.id));
-  const requests = model.requests.filter(request => request.status === "open" || request.status === "drafted").length;
+  const requests = model.requests.filter(request => request.status === "open").length;
   return `MVS ${core.counts.fresh}/${core.counts.total} · L1 unlocked ${full.counts.unlockedL1}/${full.l1.length}${unlocked.length ? ` (${unlocked.join(", ")})` : ""} · L2 coherent ${full.counts.coherentL2}/${full.l2.length} · active ${full.counts.active}/${full.counts.total} · requests ${requests} open · next: ${full.nextUnlock ? name(full.nextUnlock) : "none"}`;
 }
 function related(finding: CheckFinding, ids: Set<string>): boolean {

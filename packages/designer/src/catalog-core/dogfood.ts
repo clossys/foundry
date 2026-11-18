@@ -15,20 +15,25 @@ import { STUDIO_SPECIMEN_HOST_PARTS } from './studio-host-parts.js';
 export type DogfoodCode = "DF1" | "DF2" | "DF3" | "DF4" | "DF5" | "DF6" | "DF7" | "DF8";
 /** Runtime-owned code vocabulary also supplies the generated skill reference. */
 export const DOGFOOD_GUIDANCE = {
-  DF1: { meaning: "Raw interactive or visually styled non-library element.", fix: "Bind an existing component; triage a NEED when no capability exists." },
+  DF1: { meaning: "Raw interactive or visually styled non-library element.", fix: "Bind an existing component; triage a request when no capability exists." },
   DF2: { meaning: "Hard-coded style value or unresolved dynamic styling/source.", fix: "Use token-bound library surfaces. Same-line token-gate:ignore comments retain explicit ignored evidence." },
   DF3: { meaning: "Inline SVG bypasses the assets component boundary.", fix: "Bind an assets component or icon id." },
   DF4: { meaning: "A token or asset read is unknown, or an observed read or composition edge is absent from the authored slot contract.", fix: "Reconcile the observed read or composition with the authored contract; preserve the source evidence." },
-  DF5: { meaning: "A visual import or local component resolves to no registered slot.", fix: "Bind a registered component or triage a NEED; preserve actual import provenance." },
+  DF5: { meaning: "A visual import or local component resolves to no registered slot.", fix: "Bind a registered component or triage a request; preserve actual import provenance." },
   DF7: { meaning: "A page hand-builds frame-owned heading or navigation chrome.", fix: "Use PageHeaderModule and library heading/Panel parts." },
   DF8: { meaning: "A page has no imported Frame page-header lease.", fix: "Render exactly one PageHeaderModule from the public shell contract with id and header data." },
   DF6: { meaning: "A named exception is missing, changed or expired.", fix: "Resolve the gap or explicitly renew its file, element, hash, reason, owner and expiry evidence." },
 } as const satisfies Record<DogfoodCode, { meaning: string; fix: string }>;
+/** `needId`: the open Producer queue entry (clossys.queue-entry/2) filed for this finding's missing capability, when one is. */
 export interface DogfoodFinding { code: DogfoodCode; file: string; line: number; tag: string; elementId: string; raisedBy: string; slotId: string | null; evidence: string; missing?: string; needId?: string }
-export interface NeedEvidence { file: string; line: number; code: DogfoodCode; benchmark?: string }
-export type NeedStatus = "open" | "proposed" | "approved" | "built" | "closed";
-export interface NeedCandidate { library: "shadcn@aria" | "starter" | "foundry"; slotId: string; reason: string }
-export interface NeedRecord { id: string; raisedBy: string; missing: string; kind: "slot" | "member" | "leaf"; status: NeedStatus; candidate: NeedCandidate | null; evidence: NeedEvidence[]; createdBy: "dogfood-check" | "skill" | "owner"; createdAt: string; updatedAt: string; closedBy: string | null }
+/**
+ * An open clossys.queue-entry/2 entry about a Designer slot, as Producer's queue holds it (foundry-build-0048 U8, Q1):
+ * the Designer keeps no request store of its own, so a missing capability is filed with `clossys request` and the
+ * report links a finding to the open entry whose `why` is the finding's needWhy.
+ */
+export interface DogfoodRequest { id: string; why: string }
+/** The words a missing capability is filed under (`clossys request ... --why`), and the key a finding links back by. */
+export const needWhy = (raisedBy: string, missing: string): string => `${raisedBy} needs ${missing}`;
 export interface DogfoodException { name: string; file: string; elementId: string; hash: string; reason: string; owner: string; expiry: string }
 export interface DogfoodInput {
   files: readonly { file: string; content: string }[]; themes?: readonly ConsumptionToken[]; themeCss?: string;
@@ -36,7 +41,7 @@ export interface DogfoodInput {
   data?: readonly string[];
   /** Fresh selected source values for CSS definitions; never expected CSS or a submitted manifest. */
   tokenLibrary?: EngineInput;
-  contracts?: Readonly<Record<string, SurfaceReadContract>>; exceptions?: readonly DogfoodException[]; needs?: readonly NeedRecord[];
+  contracts?: Readonly<Record<string, SurfaceReadContract>>; exceptions?: readonly DogfoodException[]; requests?: readonly DogfoodRequest[];
   /** Resolved library-owned local import modules, supplied by the filesystem runner. */
   localModules?: Readonly<Record<string, string>>; now?: string;
   /** Exact source/export identities resolved by the source runner, never inferred from a local symbol's spelling. */
@@ -601,8 +606,8 @@ export function runDogfood(input: DogfoodInput) {
     } else findings.push({ code: "DF6", file: exception.file, line: 1, tag: "exception", elementId: exception.elementId, raisedBy: exception.name, slotId: null, evidence: `Dead exception ${exception.name}: file, element, hash or expiry does not match.` });
   }
   for (const finding of findings) {
-    const need = input.needs?.find(row => row.raisedBy === finding.raisedBy && row.missing === finding.missing && ["open", "proposed", "approved", "built"].includes(row.status));
-    if (need) finding.needId = need.id;
+    const filed = finding.missing === undefined ? undefined : input.requests?.find(row => row.why === needWhy(finding.raisedBy, finding.missing!));
+    if (filed) finding.needId = filed.id;
   }
   return { schemaVersion: 1, scope: "Static JSX nodes and literal attributes; dynamic styling remains unresolved, not a runtime conformance claim.", ok: findings.length === 0, scanned, findings, structural, exceptions, ignored,
     needs: [...new Set(findings.flatMap(row => row.needId ? [row.needId] : []))].sort(),

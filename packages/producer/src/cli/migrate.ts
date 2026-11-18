@@ -1,4 +1,4 @@
-/** `clossys migrate copy-keys|inputs|ledger|contracts|citations-to-slots|recut [--check|--apply] [--root <dir>] [--json]`: deterministic slot-record codemods. */
+/** `clossys migrate copy-keys|inputs|ledger|contracts|citations-to-slots|recut|requests [--check|--apply] [--root <dir>] [--json]`: deterministic slot-record codemods. */
 import { resolve } from "node:path";
 import { applyCopyKeyMigration, planCopyKeyMigration } from "../migrate/copy-keys.js";
 import { applyCitationsToSlots, planCitationsToSlots } from "../migrate/citations-to-slots.js";
@@ -6,27 +6,31 @@ import { applyInputsMigration, planInputsMigration } from "../migrate/inputs.js"
 import { applyLedgerBackfill, planLedgerBackfill } from "../migrate/ledger.js";
 import { RECUT_AGENTS, applyRecut, planFollowUp, planRecut, recutPending, recutProblems } from "../migrate/recut.js";
 import { applyContracts, planContracts } from "../migrate/contracts.js";
+import { applyRequestMigration, planRequestMigration } from "../migrate/requests.js";
 import { nowIso } from "./ia-sync.js";
 import { SLOT_AGENTS } from "../records/slot-model/index.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
+// The requests line is DRAFT copy (not owner-approved).
 export const MIGRATE_USAGE = "Usage: clossys migrate copy-keys|inputs|ledger [--check] [--root <dir>] [--json]\n"
   + "       clossys migrate contracts [--check] [--at <iso>] [--root <dir>] [--json]\n"
   + "       clossys migrate citations-to-slots [--apply] [--root <dir>] [--json]\n"
   + "       clossys migrate recut [--apply|--check] [--at <iso>] [--root <dir>] [--json]\n"
+  + "       clossys migrate requests [--apply|--check] [--at <iso>] [--root <dir>] [--json]\n"
   + "copy-keys renames camelCase copy ids in Designer and Writer slot.json and Writer candidates to the catalog's kebab-case ids; record text is unchanged.\n"
   + "inputs declares Designer and Writer slot.json inputs from the read graph (the Designer brief, slot-contract theme and asset reads, pinned Writer source refs); inputs are only added.\n"
   + "citations-to-slots rewrites citations to slot ids, which resolve through the cited slot's pin: every versioned citation of a known slot (<slot>@<n>, <agent>:<slot>@<n>) in a candidate becomes <slot> or <agent>:<slot> (a line anchor <ref>@<n>#L<line> keeps a version: in the pinned candidate it moves to the version the pin's recited gave it), and every pin drops recited, its sha256 carried to the rewritten pinned bytes (the decision is kept). It is a dry run that reports counts per agent unless --apply is given; --apply records one migrated event per rewritten file in clossys/evidence/migrations.json (the provenance constitution R08.2 accepts); a second run plans nothing.\n"
   + "ledger backfills every slot and agent ledger.json from git history for records written before the ledger: a submit per candidate add, a migrate per change the migration manifest explains, a pin, pick or confirm per pin.json change, a slot event per slot.json change and an ia event per ia.json change, each naming its commit (backfill); an unexplained edit gets no event (a gap); a ledger holding any non-backfill event is kept; a second run changes nothing.\n"
   + "recut moves an int2 consumer onto the recut slot trees of the installed packages: a slot folder is found by its slot.json at any depth below agents/<agent>/ and first moves to agents/<agent>/<id>/ (the id from slot.json; a group folder left empty is removed, a duplicate id or an occupied flat place refuses the run); every Director, Designer, Writer and Publisher slot folder maps through its package tree and src/catalog/retired.json (a live id stays, a retired id with a live target moves its candidates there, any other retired id moves to agents/<agent>/_retired/<id> and leaves the agent ia.json, recorded in its retired list); every candidate gets the clossys.candidate/1 header (created by code: clossys migrate recut) with its body kept (a Publisher clossys.page/1 page record is kept as is), each rewrite a migrated event in clossys/evidence/migrations.json; each clossys/library/<slot>/<name>/v<n>/ cell becomes the candidate <name>-v<n>.md in its target slot (preview.json dropped); then slot-1-to-2, pin-1-to-2 and ia sync run. A dry run with counts per agent unless --apply is given; an id in no package tree and no retired.json (a slot folder, an ia.json placement or a library slot) is named and exits 1; any finding exits 1 in every mode, and --apply checks the whole plan first and writes nothing unless every write fits; a second --apply changes nothing.\n"
   + "contracts seeds every Director, Designer and Writer slot/2 slot.json with what CREATE and CHOOSE read, from package data only: family (options, varyOn, values and class from the option table; an agent the table maps nothing for offers one candidate), contract.requirements (every requirement check of the slot's standard) and contract.fixture where the contract determines it (a Writer copy contract's required keys in its source locale); each rewrite is one ledgered slot event (verb migrate), slot data the package does not determine is named as a gap, and a second run changes nothing.\n"
+  + "requests moves the request records Director and Designer kept of their own (requests/REQ-NNNN.json, needs/NEED-NNN.json) into Producer's queue as clossys.queue-entry/2 entries, raised by producer and routed like any other: a Director request becomes one entry per cell (a contradiction on a placed cell a kind fix, another request on a placed cell a change wanting a candidate, a cell no slot holds a kind slot); a Designer need becomes one entry about its candidate slot, its why \"<raisedBy> needs <missing>\" as Designer dogfood links it; the requester is the record's raiser when that is a placed slot, the owner when the owner raised it, and otherwise the agent that kept it (a change or fix from its target slot, a slot entry from the agent's placed slot that cites the need), never the owner for an agent's record. Nothing is lost: each entry's raised event carries the whole record (its why, id, file and JSON), and a record whose work an earlier record of the run or an open entry already holds is a planned merge that --apply appends as one more raised event. Status maps faithfully: open, drafted or proposed is open work; resolved, built or closed closes changed (a fix fixed) and declined closes declined, as the assignee agent through the queue's close gates; a close those gates refuse, a slot entry to close, and an owner-approved need are findings. A dry run unless --apply is given; any finding (a record that does not read, a need with no candidate slot, an agent's slot entry no slot of its own cites, a raise, merge or close the queue refuses, a store or record reached through a symbolic link, a legacy store under --root outside clossys/) exits 1 and --apply then writes nothing; --apply removes each migrated file only after every entry it became is re-read from disk carrying it and synced, then a legacy folder left empty; a rerun after a stopped run finishes only what is missing, and a second run plans nothing.\n"
   + "--check reports pending changes and exits 1 when any remain.";
 
 export async function runMigrateCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   const [command, ...rest] = argv;
   if (command === "--help" || command === undefined) return { exitCode: command ? 0 : 2, message: MIGRATE_USAGE };
-  if (command !== "copy-keys" && command !== "inputs" && command !== "ledger" && command !== "contracts" && command !== "citations-to-slots" && command !== "recut") return { exitCode: 2, message: `Unknown migrate command: ${command}\n${MIGRATE_USAGE}` };
+  if (command !== "copy-keys" && command !== "inputs" && command !== "ledger" && command !== "contracts" && command !== "citations-to-slots" && command !== "recut" && command !== "requests") return { exitCode: 2, message: `Unknown migrate command: ${command}\n${MIGRATE_USAGE}` };
   let check = false, apply = false, root: string | undefined, at: string | undefined;
   // `clossys migrate <command> --help` prints the usage, like `clossys migrate --help`, and touches nothing.
   if (rest.includes("--help") || rest.includes("-h")) return { exitCode: 0, message: MIGRATE_USAGE };
@@ -35,8 +39,8 @@ export async function runMigrateCli(argv: readonly string[], cwd: string): Promi
     if (arg === "--check") check = true;
     else if (arg === "--json") continue;
     else if (arg === "--root" && rest[index + 1] && !rest[index + 1]!.startsWith("--")) root = rest[++index];
-    else if (arg === "--apply" && (command === "citations-to-slots" || command === "recut")) apply = true;
-    else if (arg === "--at" && (command === "recut" || command === "contracts") && rest[index + 1] && !rest[index + 1]!.startsWith("--")) at = rest[++index];
+    else if (arg === "--apply" && (command === "citations-to-slots" || command === "recut" || command === "requests")) apply = true;
+    else if (arg === "--at" && (command === "recut" || command === "contracts" || command === "requests") && rest[index + 1] && !rest[index + 1]!.startsWith("--")) at = rest[++index];
     else return { exitCode: 2, message: `Unknown argument: ${arg}\n${MIGRATE_USAGE}` };
   }
   const dir = discoverRoot(resolve(cwd, root ?? "."));
@@ -51,6 +55,11 @@ export async function runMigrateCli(argv: readonly string[], cwd: string): Promi
     if (apply && check) return { exitCode: 2, message: `--apply and --check do not combine\n${MIGRATE_USAGE}` };
     if (at !== undefined && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(at)) return { exitCode: 2, message: `--at takes an ISO time like 2026-11-18T09:12:00Z, got ${at}` };
     return migrateRecut(dir, apply, check, at ?? nowIso());
+  }
+  if (command === "requests") {
+    if (apply && check) return { exitCode: 2, message: `--apply and --check do not combine\n${MIGRATE_USAGE}` };
+    if (at !== undefined && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(at)) return { exitCode: 2, message: `--at takes an ISO time like 2026-11-18T09:12:00Z, got ${at}` };
+    return migrateRequests(consumer, dir, apply, check, at ?? nowIso());
   }
   if (command === "citations-to-slots") {
     if (apply && check) return { exitCode: 2, message: `--apply and --check do not combine\n${MIGRATE_USAGE}` };
@@ -163,4 +172,24 @@ function migrateRecut(dir: string, apply: boolean, check: boolean, at: string): 
   if (follow) lines.push(`then: slot-1-to-2 ${follow.slot1To2} slot(s), pin-1-to-2 ${follow.pins} pin(s), ia sync ${follow.iaSync} slot(s) pending`);
   const remaining = pending + (follow ? follow.slot1To2 + follow.pins + follow.iaSync : 0);
   return { exitCode: check && remaining ? 1 : 0, message: lines.join("\n"), root: dir, check, output: { counts: plan.counts, pending, follow, findings: plan.findings, applied: false } };
+}
+
+const raisesOf = (plan: ReturnType<typeof planRequestMigration>) => plan.records.flatMap(record => record.raises);
+
+function migrateRequests(consumer: string, dir: string, apply: boolean, check: boolean, at: string): CliResult {
+  const plan = planRequestMigration(consumer, at, dir);
+  const raises = plan.records.reduce((sum, record) => sum + record.raises.length, 0);
+  const applied = apply && !plan.findings.length ? applyRequestMigration(consumer, plan, at) : undefined;
+  const verb = applied ? "migrated" : "pending";
+  // DRAFT copy (not owner-approved).
+  const lines = [
+    `migrate requests${apply ? "" : " (dry run; --apply migrates)"}: ${plan.records.length} legacy record(s) ${verb} (${raises} queue entr${raises === 1 ? "y" : "ies"}, ${plan.merges.length} merge(s), ${raisesOf(plan).filter(raise => raise.close).length} closed as migrated); ${plan.findings.length} finding(s)${plan.kept.length ? `, ${plan.kept.length} other file(s) left in place` : ""}`,
+    ...(applied
+      ? applied.raised.map(row => `${row.file} -> ${row.entry}${row.close ? ` (closed ${row.close})` : ""}${row.created ? "" : ` (${row.event ? `its record is raised event ${row.event}` : "already carried"})`}`)
+      : plan.records.flatMap(record => record.raises.map(raise => `${record.file} -> ${raise.kind} ${raise.target} from ${raise.from}${raise.close ? `, closes ${raise.close} (${raise.legacy})` : ""}${raise.into ? ` (into ${raise.into})` : ""}`))),
+    ...plan.kept.map(file => `left in place: ${file} (no legacy record)`),
+    ...plan.findings.map(finding => `finding: ${finding.file}: ${finding.message}`),
+  ];
+  const exitCode = plan.findings.length || (check && plan.records.length) ? 1 : 0;
+  return { exitCode, message: lines.join("\n"), root: dir, check, output: { records: plan.records, merges: plan.merges, kept: plan.kept, findings: plan.findings, ...(applied ? { raised: applied.raised, removed: applied.removed } : {}) } };
 }

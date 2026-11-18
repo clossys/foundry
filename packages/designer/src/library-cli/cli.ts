@@ -4,7 +4,8 @@ import * as fs from "node:fs/promises";
 import { constants, realpathSync } from "node:fs";
 import { resolve as pathResolve, dirname, relative, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runDogfood, dogfoodSourceModules, DOGFOOD_PACKAGE_NAME, type DogfoodException, type NeedStatus } from "../catalog-core/dogfood.js";
+import { runDogfood, dogfoodSourceModules, needWhy, DOGFOOD_PACKAGE_NAME, type DogfoodException } from "../catalog-core/dogfood.js";
+import { queueConsumerOf, readQueueRequests } from "./queue-requests.js";
 import { consumerDogfoodSources, parseConsumerDogfoodContract, runConsumerDogfood } from "./consumer-dogfood.js";
 import themeSlots from "../catalog/slots/themes.json" with { type: "json" };
 import { libraryHash, loadCatalog, type CompositeFinding, type CompositeEmitTarget } from "../catalog-core/index.js";
@@ -19,7 +20,7 @@ import { choose, type EngineInput } from "../catalog-core/resolve.js";
 import { consumptionReport } from "../catalog-core/relationships.js";
 import { buildSurfaceConsumption } from "../catalog-core/surface-consumption.js";
 import { buildUsageGraph, serializeUsageGraph, type UsageGraphInputs } from "../catalog-core/usage-graph.js";
-import { checkLibrary, checkLibraryReceipt, emitLibrary, isLibraryChangeSet, isCompositeChangeSet, writeCompositeLibrary, writeUsageGraph, LIBRARY_EMIT_TARGETS, LibraryCheckError, LibraryConflictError, LibraryInputError, readLibrary, writeLibrary, readNeeds, writeNeeds, setNeed, NEED_STATUSES, isNeedCandidate } from "./fs-library.js";
+import { checkLibrary, checkLibraryReceipt, emitLibrary, isLibraryChangeSet, isCompositeChangeSet, writeCompositeLibrary, writeUsageGraph, LIBRARY_EMIT_TARGETS, LibraryCheckError, LibraryConflictError, LibraryInputError, libraryRoot, readLibrary, writeLibrary } from "./fs-library.js";
 
 import { reselect } from "./reselect.js";
 import { generateStarter } from "./generate-starter.js";
@@ -33,10 +34,8 @@ Commands:
   check [--layer themes|assets|components|sections|frames] [--observations <file>] [--json]
   emit [--check] [--target <target>] [--observations <file>]  Regenerate files, or fail on drift.
   apply --changeset <file> [--observations <file>] [--json]  Apply only explicitly instructed values.
-  dogfood <path...> [--write-needs] [--json]  Derive surface findings; writes require the flag.
-  dogfood-consumer <path...> --contract <file> [--json]  Check reachable consumer sources with zero exceptions.
-  needs [--status open,proposed] [--json]    List needs and blocked parents.
-  needs set NEED-NNN --status <status> [--candidate <json>] [--closed-by <ref>]
+  dogfood <path...> [--consumer <dir>] [--json]  Derive surface findings; writes nothing.
+  dogfood-consumer <path...> --contract <file> [--consumer <dir>] [--json]  Check reachable consumer sources with zero exceptions.
   graph --check|--write                  Derive usage-graph.json from consumption producers, or fail on drift.
   receipt [--base <receipt.json>] [--json]  Fail when library files differ from the last designer write receipt.
   reselect --leaf <id> --source <source-id> [--write] [--json]  Preview or apply one source.
@@ -49,27 +48,30 @@ Emit targets: css-brand, css-scales, css-fonts, tailwind-theme, notices, compone
 Composite folders also emit component targets by default; value folders retain all five value targets. No values are invented or auto-filled.
 --observations supplies package-export evidence ({ "packageExports": { "<module>": ["<Export>"] } });
 it defaults to <root>/component-observations.json when present. Without evidence, package-pointer leaves are refused.
+A missing capability is a request in Producer's queue, never a Designer record: dogfood links each one to the open
+entry filed for it (--consumer names the clossys folder; by default the nearest one above --root) and prints the
+clossys request command for one with none. List open requests with clossys request --list --open --agent designer.
 Every write stamps designer-receipt.json with its command, inputs and content hash; never hand-edit library files.
 reselect and generate-starter are dry runs unless --write is supplied; apply requires an explicit changeset.
 Exit codes: 0 = success, 1 = failed verdict or conflict, 2 = usage, invalid input or unavailable.
 `;
-type Command = "surfaces" | "reselect" | "generate-starter" | "select" | "capture" | "status" | "check" | "emit" | "apply" | "recommend" | "dogfood" | "dogfood-consumer" | "needs" | "graph" | "receipt";
-type Args = { refresh?: string; leaf?: string; source?: string; starter?: string; driver?: string; out?: string; base?: string; command: Command; root: string; layer?: string; changeset?: string; json: boolean; drift: boolean; write: boolean; targets?: CompositeEmitTarget[]; paths: string[]; writeNeeds: boolean; status?: string; candidate?: string; closedBy?: string; contract?: string; observations?: string };
+type Command = "surfaces" | "reselect" | "generate-starter" | "select" | "capture" | "status" | "check" | "emit" | "apply" | "recommend" | "dogfood" | "dogfood-consumer" | "graph" | "receipt";
+type Args = { refresh?: string; leaf?: string; source?: string; starter?: string; driver?: string; out?: string; base?: string; command: Command; root: string; layer?: string; changeset?: string; json: boolean; drift: boolean; write: boolean; targets?: CompositeEmitTarget[]; paths: string[]; consumer?: string; contract?: string; observations?: string };
 export interface LibraryCliIO { out(text: string): void; error(text: string): void }
 const defaultIO: LibraryCliIO = { out: text => console.log(text), error: text => console.error(text) };
 
 function parseArgs(argv: string[]): Args {
   const [command, ...flags] = argv;
-  if (!["surfaces", "reselect", "generate-starter", "select", "capture", "status", "check", "emit", "apply", "recommend", "dogfood", "dogfood-consumer", "needs", "graph", "receipt"].includes(command ?? "")) throw new LibraryInputError("A known command is required");
+  if (!["surfaces", "reselect", "generate-starter", "select", "capture", "status", "check", "emit", "apply", "recommend", "dogfood", "dogfood-consumer", "graph", "receipt"].includes(command ?? "")) throw new LibraryInputError("A known command is required");
   const values = new Map<string, string>(), toggles = new Set<string>(), targets: CompositeEmitTarget[] = [], paths: string[] = [];
   for (let i = 0; i < flags.length; i++) {
     const flag = flags[i]!;
-    if (!flag.startsWith("-") && ["dogfood", "dogfood-consumer", "needs"].includes(command!)) { paths.push(flag); continue; }
-    if (["--json", "--check", "--write", "--write-needs"].includes(flag)) {
+    if (!flag.startsWith("-") && ["dogfood", "dogfood-consumer"].includes(command!)) { paths.push(flag); continue; }
+    if (["--json", "--check", "--write"].includes(flag)) {
       if (toggles.has(flag)) throw new LibraryInputError(`Duplicate ${flag}`);
       toggles.add(flag); continue;
     }
-    if (!["--refresh", "--root", "--layer", "--changeset", "--target", "--status", "--candidate", "--closed-by", "--contract", "--observations", "--base", "--leaf", "--source", "--starter", "--driver", "--out"].includes(flag)) throw new LibraryInputError(`Unknown option ${flag}`);
+    if (!["--refresh", "--root", "--layer", "--changeset", "--target", "--consumer", "--contract", "--observations", "--base", "--leaf", "--source", "--starter", "--driver", "--out"].includes(flag)) throw new LibraryInputError(`Unknown option ${flag}`);
     const value = flags[++i];
     if (!value || value.startsWith("-")) throw new LibraryInputError(`${flag} requires a value`);
     if (flag === "--target") {
@@ -90,14 +92,11 @@ function parseArgs(argv: string[]): Args {
   if (toggles.has("--write") && !["graph", "reselect", "generate-starter", "select"].includes(command!)) throw new LibraryInputError("--write requires graph, reselect, generate-starter or select");
   if (command === "graph" && toggles.has("--check") === toggles.has("--write")) throw new LibraryInputError("graph requires exactly one of --check or --write");
   if (toggles.has("--json") && (["emit", "recommend", "graph", "select", "capture"].includes(command!))) throw new LibraryInputError("--json requires status, check or apply");
-  if (toggles.has("--write-needs") && command !== "dogfood") throw new LibraryInputError("--write-needs requires dogfood");
   if (values.has("--observations") && !["check", "emit", "apply", "surfaces"].includes(command!)) throw new LibraryInputError("--observations requires check, emit or apply");
   if (values.has("--base") && command !== "receipt") throw new LibraryInputError("--base requires receipt");
   if ((command === "dogfood-consumer") !== values.has("--contract")) throw new LibraryInputError("dogfood-consumer requires --contract; other commands do not accept it");
   if (["dogfood", "dogfood-consumer"].includes(command!) && !paths.length) throw new LibraryInputError("dogfood requires source paths");
-  if (command === "needs" && paths.length && (paths.length !== 2 || paths[0] !== "set")) throw new LibraryInputError("needs accepts only set NEED-NNN");
-  if (["--status", "--candidate", "--closed-by"].some(flag => values.has(flag)) && command !== "needs") throw new LibraryInputError("NEED options require needs");
-  if (command === "needs" && !paths.length && (values.has("--candidate") || values.has("--closed-by"))) throw new LibraryInputError("candidate and closed-by require needs set");
+  if (values.has("--consumer") && !["dogfood", "dogfood-consumer"].includes(command!)) throw new LibraryInputError("--consumer requires dogfood or dogfood-consumer");
   for (const [flag, commands] of [["--leaf", ["reselect", "generate-starter", "capture"]], ["--source", ["reselect"]], ["--starter", ["select"]], ["--driver", ["capture"]], ["--out", ["capture"]]] as const) {
     if (values.has(flag) && !(commands as readonly string[]).includes(command!)) throw new LibraryInputError(`${flag} is not accepted by ${command}`);
   }
@@ -105,7 +104,7 @@ function parseArgs(argv: string[]): Args {
   if (command === "reselect" && !values.has("--source")) throw new LibraryInputError("--source is required");
   if (command === "select" && !["shadcn-base", "custom"].includes(values.get("--starter") ?? "")) throw new LibraryInputError("--starter must be shadcn-base or custom");
   if (command === "capture" && (!values.has("--driver") || !values.has("--out"))) throw new LibraryInputError("capture requires --driver and --out");
-  return { refresh: values.get("--refresh"), leaf: values.get("--leaf"), source: values.get("--source"), starter: values.get("--starter"), driver: values.get("--driver"), out: values.get("--out"), base: values.get("--base"), paths, contract: values.get("--contract"), observations: values.get("--observations"), writeNeeds: toggles.has("--write-needs"), status: values.get("--status"), candidate: values.get("--candidate"), closedBy: values.get("--closed-by"), command: command as Command, root, layer, changeset, json: toggles.has("--json"), drift: toggles.has("--check"), write: toggles.has("--write"), ...(targets.length ? { targets } : {}) };
+  return { refresh: values.get("--refresh"), leaf: values.get("--leaf"), source: values.get("--source"), starter: values.get("--starter"), driver: values.get("--driver"), out: values.get("--out"), base: values.get("--base"), paths, contract: values.get("--contract"), observations: values.get("--observations"), consumer: values.get("--consumer"), command: command as Command, root, layer, changeset, json: toggles.has("--json"), drift: toggles.has("--check"), write: toggles.has("--write"), ...(targets.length ? { targets } : {}) };
 }
 
 /** Filter only findings attributable to the other layer; cross-layer findings stay visible. */
@@ -251,20 +250,6 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       return verdict.ok ? 0 : 1;
     }
 
-    if (args.command === "needs") {
-      if (args.paths.length) {
-        if (!args.status || !NEED_STATUSES.includes(args.status as NeedStatus)) throw new LibraryInputError("needs set requires one valid --status");
-        const candidate: unknown = args.candidate ? JSON.parse(args.candidate) : undefined;
-        if (candidate !== undefined && !isNeedCandidate(candidate)) throw new LibraryInputError("Invalid NEED candidate");
-        const need = await setNeed(args.root, args.paths[1]!, { status: args.status as NeedStatus, ...(candidate ? { candidate } : {}), ...(args.closedBy ? { closedBy: args.closedBy } : {}) }, undefined, { command: "designer-library needs set" });
-        io.out(args.json ? JSON.stringify(need) : `${need.id} ${need.status}`); return 0;
-      }
-      const statuses = args.status?.split(",");
-      if (statuses?.some(status => !NEED_STATUSES.includes(status as NeedStatus))) throw new LibraryInputError("Unknown NEED status");
-      const needs = (await readNeeds(args.root)).filter(row => !statuses || statuses.includes(row.status));
-      const open = needs.filter(row => row.status !== "closed"), parents = [...new Set(open.map(row => row.raisedBy))];
-      io.out(args.json ? JSON.stringify({ needs, open: open.length, parents }) : `${open.length} needs are open; ${parents.length} block these parents.\nID\tStatus\tParent\tMissing\n${needs.map(row => `${row.id}\t${row.status}\t${row.raisedBy}\t${row.missing}`).join("\n")}`); return 0;
-    }
     const catalog = loadCatalog();
     const compositeCatalog = loadNativeCompositeCatalog(catalog);
     // Package-pointer leaves are checked against the export inventory of the packages actually installed beside this CLI.
@@ -290,7 +275,10 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       io.out(JSON.stringify(result, null, args.json ? undefined : 2)); return result.verdict.ok ? 0 : 1;
     }
     if (args.command === "dogfood" || args.command === "dogfood-consumer") {
-      const needs = await readNeeds(args.root);
+      // Producer's queue holds every request (foundry-build-0048 U8, Q1); this read never writes.
+      const opened = await libraryRoot(args.root);
+      const consumer = args.consumer ? pathResolve(args.consumer) : await queueConsumerOf(opened);
+      const requests = consumer ? await readQueueRequests(consumer) : [];
       const consumerSources = args.contract ? await consumerDogfoodSources(args.paths, parseConsumerDogfoodContract(JSON.parse(await readRegularText(pathResolve(args.contract)))), dirname(pathResolve(args.contract))) : undefined;
       const sources = consumerSources ?? await dogfoodSources(args.paths);
       const themePath = pathResolve(args.root, "theme.css");
@@ -310,13 +298,8 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
           tokenLibrary = { catalog, library: { ...library.values, source: library.source, adoptedAt: library.adoptedAt } };
         } else if (metadata !== undefined) tokenLibrary = { catalog, library: await readLibrary(args.root, catalog) };
       }
-      const report = consumerSources ? runConsumerDogfood({ ...consumerSources, needs, themes: tokens, themeCss, tokenLibrary }) : runDogfood({ ...sources, needs, themes: tokens, themeCss, exceptions });
-      if (args.writeNeeds) {
-        const written = await writeNeeds(args.root, report.findings, undefined, { command: "designer-library dogfood --write-needs", inputs: { paths: args.paths } });
-        for (const finding of report.findings) { const need = written.find(row => row.raisedBy === finding.raisedBy && row.missing === finding.missing); if (need) finding.needId = need.id; }
-        report.needs = written.filter(need => report.findings.some(finding => finding.raisedBy === need.raisedBy && finding.missing === need.missing)).map(row => row.id);
-      }
-      io.out(args.json ? JSON.stringify(report) : `${report.findings.map(row => `${row.file}:${row.line} ${row.code} ${row.evidence}${row.needId ? ` (${row.needId})` : row.missing ? " (would open NEED; --write-needs to persist)" : ""}`).join("\n")}\nsummary: ${report.summary.elements} elements, ${report.summary.library} library, ${report.summary.structural} structural, ${report.summary.findings} findings; ${report.needs.length} needs`);
+      const report = consumerSources ? runConsumerDogfood({ ...consumerSources, requests, themes: tokens, themeCss, tokenLibrary }) : runDogfood({ ...sources, requests, themes: tokens, themeCss, exceptions });
+      io.out(args.json ? JSON.stringify(report) : `${report.findings.map(row => `${row.file}:${row.line} ${row.code} ${row.evidence}${row.needId ? ` (request ${row.needId})` : row.missing ? ` (no open request; file one: clossys request --target designer/<slot> --from <requester slot> --why "${needWhy(row.raisedBy, row.missing)}")` : ""}`).join("\n")}\nsummary: ${report.summary.elements} elements, ${report.summary.library} library, ${report.summary.structural} structural, ${report.summary.findings} findings; ${report.needs.length} open requests`);
       return report.ok ? 0 : 1;
     }
     if (args.command === "graph") {

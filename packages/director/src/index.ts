@@ -27,9 +27,9 @@ export { parseCell, serializeCell } from "./format/cell.js";
 export { parseRef, formatRef } from "./format/ref.js";
 export { parseSession } from "./format/session.js";
 export { parseFinding, validateFinding } from "./format/finding.js";
-export { validateRequest } from "./format/request.js";
 export { validateTree } from "./format/tree.js";
 export { EVIDENCE_PREFIX, readStrategyFile, readStrategyRoot } from "./store.js";
+export { MIGRATED_RAISE_NOTE, raiseWhyOf } from "./format/queue-note.js";
 export { isSlotCandidatePath, parseSlotCandidateDocument, parseSlotPin, slotCandidateCell, slotCandidateVersion, SLOT_CANDIDATE_NAME } from "./format/slot.js";
 export type { SlotCandidateInput, SlotPin } from "./format/slot.js";
 export { CITATION_AGENTS, CITATION_SLOT_ID, formatSlotCitation, parseSlotCitation, versionedCitation, versionedCitationMessage, versionedCitationsInText, slotCitationsInText, reciteLineAnchors } from "./format/citation.js";
@@ -42,7 +42,7 @@ export { runDirectorRateCli } from "./strategy-traceability-rate-cli.js";
 export type {
   CellId, CellRef, Ref, Bullet, Cell, FormatIssue, FormatResult,
   StrategyTreeNode, StrategyTree, SessionLine, Session, Finding,
-  StrategyRequest, StrategyRootIssue, StrategyModel,
+  QueueRequest, StrategyRootIssue, StrategyModel,
 } from "./format/types.js";
 export { checkCell, checkCoherence, completion, strategyStatus, validWatch, blocks, cellJudgeId } from "./checks/index.js";
 export type { Scope, JudgeVerdict, CheckOptions, CheckContext, CheckFinding, CellFinding, CoherenceFinding, CellCompletion, StorylineReport, StatusReport, CompletionReport } from "./checks/index.js";

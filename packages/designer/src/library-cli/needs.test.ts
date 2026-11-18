@@ -3,48 +3,91 @@ import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadCatalog, libraryHash } from "../catalog-core/index.js";
+import { MIGRATED_RAISE_NOTE } from "@clossys/director";
+import { loadCatalog } from "../catalog-core/index.js";
 import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-catalog-library.js";
-import { readNeeds, writeNeeds, setNeed, libraryFiles, writeLibrary, LibraryInputError } from "./fs-library.js";
+import { needWhy } from "../catalog-core/dogfood.js";
+import { libraryFiles } from "./fs-library.js";
 import { main, dogfoodSources } from "./cli.js";
-import type { DogfoodFinding } from "../catalog-core/dogfood.js";
-let temporary: string, root: string;
+import { queueConsumerOf, readQueueRequests } from "./queue-requests.js";
+// foundry-build-0048 U8 (Q1): a missing capability is a request in Producer's queue (clossys.queue-entry/2), never a
+// NEED file of the Designer's own; dogfood only reads the open entries about Designer slots and writes nothing.
+let temporary: string, consumer: string, root: string;
 const catalog = loadCatalog(), fixture = completedCatalogLibrary(catalog, { id: "example", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-24");
-const gap = (line: number): DogfoodFinding => ({ code: "DF5", file: "src/Page.tsx", line, tag: "Widget", elementId: `src/Page.tsx#Widget@${line}`, raisedBy: "src/Page.tsx#Page", slotId: null, evidence: "Unknown visual Widget", missing: "Widget capability" });
+const entry = (id: string, kind: "slot" | "change" | "fix", fields: Record<string, unknown> = {}) => ({ schema: "clossys.queue-entry/2", id, kind, from: "designer/sections.hero", assignee: "designer", target: "designer/components.widget", status: "open", why: needWhy("src/Page.tsx#Page", "Widget capability"), source: "cli", ...fields });
+async function file(kind: string, doc: { id: string }) { const dir = join(consumer, "agents/producer", `queue.${kind}`, "entries"); await fs.mkdir(dir, { recursive: true }); await fs.writeFile(join(dir, `${doc.id}.json`), JSON.stringify(doc)); }
+async function tree(dir: string): Promise<string[]> { const out: string[] = []; for (const each of await fs.readdir(dir, { withFileTypes: true })) { const path = join(dir, each.name); if (each.isDirectory()) out.push(...(await tree(path)).map(row => `${each.name}/${row}`)); else out.push(`${each.name}:${(await fs.readFile(path)).toString("base64")}`); } return out.sort(); }
 beforeEach(async () => {
-  temporary = await fs.realpath(await fs.mkdtemp(join(tmpdir(), "designer-needs-"))); root = join(temporary, "library");
-  await fs.mkdir(join(root, "fills"), { recursive: true });
+  temporary = await fs.realpath(await fs.mkdtemp(join(tmpdir(), "designer-requests-"))); consumer = join(temporary, "clossys"); root = join(consumer, "agents/designer/library");
+  await fs.mkdir(join(consumer, "agents/producer"), { recursive: true }); await fs.mkdir(join(root, "fills"), { recursive: true });
   for (const [name, content] of libraryFiles(catalog, fixture)) { await fs.mkdir(dirname(join(root, name)), { recursive: true }); await fs.writeFile(join(root, name), content); }
 });
 afterEach(async () => { await fs.rm(temporary, { recursive: true, force: true }); });
 async function cli(...args: string[]) { const output: string[] = [], errors: string[] = []; const code = await main([...args, "--root", root], { out: text => output.push(text), error: text => errors.push(text) }); return { code, output: output.join("\n"), errors: errors.join("\n") }; }
-describe("consumer NEED records", () => {
-  it("does not create needs on reads and deduplicates evidence by parent plus missing capability", async () => {
-    expect(await readNeeds(root)).toEqual([]); expect((await fs.readdir(root)).includes("needs")).toBe(false);
-    const first = await writeNeeds(root, [gap(1), gap(2)], "2026-10-24T00:00:00Z");
-    expect(first.map(row => row.id)).toEqual(["NEED-001"]); expect(first[0]?.evidence).toHaveLength(2);
-    expect(await writeNeeds(root, [gap(1), gap(2)], "2026-10-25T00:00:00Z")).toEqual(first);
-    expect((await readNeeds(root))[0]?.updatedAt).toBe("2026-10-24T00:00:00Z");
-    await writeLibrary(root, catalog, { baseHash: libraryHash(fixture), changes: [] }); expect(await readNeeds(root)).toEqual(first);
+describe("Designer requests live in Producer's queue", () => {
+  it("finds the consumer above the library and reads only open queue-entry/2 entries about Designer slots", async () => {
+    expect(await queueConsumerOf(root)).toBe(consumer);
+    expect(await readQueueRequests(consumer)).toEqual([]);
+    await file("slot", entry("2026-11-17-slot-widget", "slot"));
+    await file("change", entry("2026-11-17-change-widget", "change", { why: "repin" }));
+    await file("fix", entry("2026-11-17-fix-closed", "fix", { status: "closed" }));
+    await file("fix", entry("2026-11-17-fix-writer", "fix", { target: "writer/copy.hero" }));
+    await file("fix", { ...entry("2026-11-17-fix-legacy", "fix"), schema: "clossys.queue-entry/1" });
+    await file("slot", entry("2026-11-17-slot-wrong-kind", "change"));
+    const dir = join(consumer, "agents/producer/queue.slot/entries"); await fs.writeFile(join(dir, "broken.json"), "{");
+    expect(await readQueueRequests(consumer)).toEqual([{ id: "2026-11-17-change-widget", why: "repin" }, { id: "2026-11-17-slot-widget", why: needWhy("src/Page.tsx#Page", "Widget capability") }]);
   });
-  it("never overwrites an existing record, uses next free id and supports validated forward status changes", async () => {
-    const [original] = await writeNeeds(root, [gap(1)]);
-    const next = await writeNeeds(root, [{ ...gap(2), missing: "Another capability" }]); expect(next.map(row => row.id)).toEqual(["NEED-001", "NEED-002"]);
-    expect(next[0]).toEqual(original);
-    const candidate = { library: "shadcn@aria", slotId: "components.widget", reason: "React Aria candidate" };
-    expect((await setNeed(root, "NEED-001", { status: "proposed", candidate })).status).toBe("proposed");
-    await expect(setNeed(root, "NEED-001", { status: "open" })).rejects.toThrow();
-    await expect(setNeed(root, "NEED-001", { status: "proposed", id: "NEED-999" } as never)).rejects.toThrow();
-    await expect(setNeed(root, "../escape", { status: "proposed" })).rejects.toThrow();
-    await expect(setNeed(root, "NEED-002", { status: "closed" })).rejects.toThrow();
+  it("reads a merged raise's why too, so a need merged into an open entry still links its finding", async () => {
+    const first = needWhy("src/A.tsx#A", "Widget capability"), second = needWhy("src/B.tsx#B", "Widget capability");
+    const id = "20261118T0900Z-components-widget";
+    await file("slot", entry(id, "slot", { why: first, events: [
+      { id: `${id}#1`, at: "2026-11-18T09:00:00Z", op: "raised", by: "producer", via: "cli", detail: first },
+      { id: `${id}#2`, at: "2026-11-18T09:00:00Z", op: "routed", by: "producer", detail: "designer" },
+      { id: `${id}#3`, at: "2026-11-18T09:00:00Z", op: "raised", by: "producer", via: "cli", detail: `${second}${MIGRATED_RAISE_NOTE}NEED-002, agents/designer/library/needs/NEED-002.json; record {"id":"NEED-002"})` },
+      { id: `${id}#4`, at: "2026-11-18T09:00:00Z", op: "raised", by: "producer", via: "cli", detail: first },
+    ] }));
+    expect(await readQueueRequests(consumer)).toEqual([{ id, why: first }, { id, why: second }]);
   });
-  it("refuses malformed IDs, malformed JSON and symlinked paths before any write", async () => {
-    await fs.mkdir(join(root, "needs")); await fs.writeFile(join(root, "needs/NEED-001.json"), "{}");
-    await expect(writeNeeds(root, [gap(1)])).rejects.toBeInstanceOf(LibraryInputError);
-    await fs.unlink(join(root, "needs/NEED-001.json")); await fs.writeFile(join(root, "needs/wrong.json"), "{}");
-    await expect(readNeeds(root)).rejects.toThrow(); await fs.unlink(join(root, "needs/wrong.json"));
-    await fs.rmdir(join(root, "needs")); await fs.mkdir(join(temporary, "outside")); await fs.symlink(join(temporary, "outside"), join(root, "needs"));
-    await expect(writeNeeds(root, [gap(1)])).rejects.toThrow(); expect(await fs.readdir(join(temporary, "outside"))).toEqual([]);
+  it("dogfood links a finding to its open queue entry, prints the request command for one with none, and writes nothing", async () => {
+    const source = join(temporary, "Page.tsx"); await fs.writeFile(source, 'import Widget from "unknown-ui"; export const Page=()=> <Widget/>');
+    const before = await tree(temporary);
+    const probe = await cli("dogfood", source, "--json");
+    expect(probe.code).toBe(1);
+    const gap = (JSON.parse(probe.output) as { findings: { raisedBy: string; missing?: string; needId?: string }[] }).findings.find(row => row.missing)!;
+    expect(gap.needId).toBeUndefined();
+    const why = needWhy(gap.raisedBy, gap.missing!);
+    const unfiled = await cli("dogfood", source);
+    expect(unfiled.code).toBe(1);
+    expect(unfiled.output).toContain(`no open request; file one: clossys request --target designer/<slot> --from <requester slot> --why "${why}"`);
+    expect(unfiled.output).toContain("0 open requests");
+    expect(await tree(temporary)).toEqual(before);
+    await file("slot", entry("2026-11-17-slot-widget", "slot", { why }));
+    await file("change", entry("2026-11-17-change-other", "change", { why: "something else" }));
+    const filed = await tree(temporary);
+    const json = await cli("dogfood", source, "--json");
+    expect(json.code).toBe(1);
+    const report = JSON.parse(json.output) as { needs: string[]; findings: { needId?: string; missing?: string }[] };
+    expect(report.needs).toEqual(["2026-11-17-slot-widget"]);
+    expect(report.findings.filter(row => row.missing).every(row => row.needId === "2026-11-17-slot-widget")).toBe(true);
+    expect((await cli("dogfood", source)).output).toContain("(request 2026-11-17-slot-widget)");
+    expect((await cli("dogfood", source, "--consumer", join(temporary, "elsewhere"))).output).toContain("0 open requests");
+    expect(await tree(temporary)).toEqual(filed);
+    await expect(fs.stat(join(root, "needs"))).rejects.toMatchObject({ code: "ENOENT" });
+  });
+  it("retires the needs command and the NEED write flags", async () => {
+    const source = join(temporary, "Page.tsx"); await fs.writeFile(source, "export const Page=()=> null");
+    expect((await cli("needs")).code).toBe(2);
+    expect((await cli("dogfood", source, "--write-needs")).code).toBe(2);
+    expect((await cli("status", "--consumer", consumer)).code).toBe(2);
+  });
+  it("dogfood still refuses a missing root and shares the library transaction lock", async () => {
+    const source = join(temporary, "Page.tsx"); await fs.writeFile(source, "export const Page=()=> null");
+    expect((await main(["dogfood", source, "--root", join(temporary, "missing")], { out: () => undefined, error: () => undefined }))).toBe(2);
+    const lock = join(dirname(root), ".library-lock"); await fs.mkdir(lock);
+    expect((await cli("dogfood", source)).code).toBe(2);
+    await fs.rmdir(lock); await fs.mkdir(join(dirname(root), ".library-staging"));
+    const staged = await cli("dogfood", source);
+    expect(staged.code).toBe(2); expect(await fs.readdir(join(dirname(root), ".library-staging"))).toEqual([]);
   });
   it("walks real import/re-export edges, excluding lookalikes in strings and comments", async () => {
     const page = join(temporary, "Page.tsx"), fake = join(temporary, "Fake.tsx"), real = join(temporary, "Real.tsx"), barrel = join(temporary, "index.ts");
@@ -53,22 +96,5 @@ describe("consumer NEED records", () => {
     await fs.writeFile(page, 'const decoy=\'import Fake from "./Fake.js"\'; /* import Fake from "./Fake.js"; */ import { Real } from "./index.js"; const Page=()=> <Real/>');
     const files = (await dogfoodSources([page], temporary)).files.map(row => row.file).sort();
     expect(files).toEqual(["Page.tsx", "Real.tsx", "index.ts"]);
-  });
-  it("shares the transaction lock and refuses retained transaction evidence", async () => {
-    const lock = join(temporary, ".library-lock"); await fs.mkdir(lock);
-    await expect(readNeeds(root)).rejects.toMatchObject({ code: "EEXIST" });
-    await fs.rmdir(lock); await fs.mkdir(join(temporary, ".library-staging"));
-    await expect(readNeeds(root)).rejects.toThrow("Unfinished library transaction");
-    expect(await fs.readdir(join(temporary, ".library-staging"))).toEqual([]);
-  });
-  it("CLI defaults to zero writes, supports JSON needs listing and explicit dogfood write flag", async () => {
-    const source = join(temporary, "Page.tsx"); await fs.writeFile(source, 'import Widget from "unknown-ui"; export const Page=()=> <Widget/>');
-    expect((await cli("dogfood", source, "--json")).code).toBe(1); expect(await readNeeds(root)).toEqual([]);
-    expect((await cli("dogfood", source, "--write-needs")).code).toBe(1); const records = await readNeeds(root); expect(records).toHaveLength(1);
-    expect((await cli("dogfood", source, "--write-needs")).code).toBe(1); expect(await readNeeds(root)).toEqual(records);
-    expect(JSON.parse((await cli("needs", "--status", "open,proposed", "--json")).output).needs).toHaveLength(1);
-    const candidate = JSON.stringify({ library: "starter", slotId: "components.widget", reason: "candidate" });
-    expect((await cli("needs", "set", "NEED-001", "--status", "proposed", "--candidate", candidate)).code).toBe(0);
-    expect((await cli("status", "--write-needs")).code).toBe(2);
   });
 });

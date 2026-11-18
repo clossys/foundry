@@ -395,7 +395,7 @@ const stepsOf = (content: unknown): LoopStep[] => (isObject(content) && Array.is
 const isAgentStep = (step: LoopStep): boolean => step.decider?.by === "agent";
 /**
  * Producer's slot request queue: the one Producer queue a loop's code step may write without the standard declaring
- * it there. The owner's answer queues (queue.approve, queue.pick, queue.clarify) and routed findings (queue.fix) are not.
+ * it there. The owner's answer queues (queue.approve, queue.pick, queue.clarify) and routed findings (kind fix entries under queue.fix) are not.
  */
 const QUEUE_WRITE = /^producer\/queue\.slot\/entries(?:\/|$)/;
 

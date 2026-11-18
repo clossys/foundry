@@ -483,13 +483,11 @@ describe("conformance over the repo and its fixture", () => {
     expect(s3("designer").findings).toEqual([expect.stringMatching(/components-specimens lists no L3$/)]);
     const director = report.agents.find(agent => agent.agent === "director")!;
     expect(director.cells.find(cell => cell.id === "K3")!.red).toBe(false);
-    // The request lens (U7): routing is valid and release refuses an open fix for every agent; the Director and
-    // Designer keep request stores of their own; the runner, feedback and finding paths still raise queue-entry/1 fixes.
+    // The request lens (U7): routing is valid and release refuses an open fix for every agent. U8: no agent keeps a
+    // request store of its own (Q1), and nothing in Producer raises a queue-entry/1 fix any more (Q10).
     const q = (agent: string, id: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === id)!;
     for (const agent of CONFORM_AGENTS) {
-      for (const id of ["Q3", "Q11"]) expect(q(agent, id).rows, `${agent} ${id}`).toEqual([]);
-      expect(q(agent, "Q10").red, `${agent} Q10`).toBe(true);
-      expect(q(agent, "Q1").red, `${agent} Q1`).toBe(agent === "director" || agent === "designer");
+      for (const id of ["Q1", "Q3", "Q10", "Q11"]) expect(q(agent, id).rows, `${agent} ${id}`).toEqual([]);
     }
     expect(report.ok).toBe(false);
   });

@@ -41,7 +41,7 @@ The six Producer loops run one step at a time from the loop version the consumer
   run waits. `--slot <agent>/<slot-id>` fills one slot; `--from queue.fix#<id>` fills a slot added for
   that request (T4).
 - `clossys run loop.refine --slot <ref>` (T3, or T7 for a `needs-refresh` dependant) or
-  `--from queue.fix#<id>` (T5 owner feedback, T6 a routed finding).
+  `--from queue.<change|fix>#<id>` (T5 owner feedback, a kind change; T6 a routed finding, a kind fix). <!-- DRAFT copy (foundry-build-0048 U8) -->
 - `clossys run loop.create --slot <ref>` writes the slot's `family` of candidates through the candidates
   verb and ends only when `family.options` of them are submitted and certified (`candidates.certified`);
   `clossys run loop.choose --slot <ref>` then pins one through the pin gate (`clossys pin`, which refuses a
