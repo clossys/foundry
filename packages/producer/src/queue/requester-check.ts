@@ -23,7 +23,10 @@ import { buildContext } from "../constitution/context.js";
 import { liveSlotRecords } from "../constitution/checks/shared.js";
 import { readSubject } from "../loop/slots.js";
 import { isRecordSlot, resolveSlot, slotRecords } from "../records/resolve.js";
-import type { AgentId } from "../records/types.js";
+import { pinGate } from "../constitution/pin-gate.js";
+import { readRequest, targetOf } from "../records/request.js";
+import type { AgentId, OwnerOption, SlotRequest } from "../records/types.js";
+import { consumerFacts, routeEntry, RoutingError } from "./routing.js";
 
 const SLOT_REF = /^(director|designer|writer|publisher)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
 
@@ -92,26 +95,91 @@ export function requesterCheck(root: string, entry: { readonly kind: string; rea
   return { ok: failures.length === 0, slots, failures };
 }
 
+/** A fix entry as its check re-runs it: the fixed slot, the check, and the refs naming the entry it was raised on. */
+export interface FixEntry {
+  readonly target: string;
+  readonly check?: string;
+  readonly refs?: readonly { readonly to: string; readonly record?: string; readonly rel: string }[];
+}
+type Finding = { readonly subject: string; readonly detail: string };
+
+/**
+ * The change entry a fix raised on a failed owner answer cites (records/request.ts failedStep), read as an entry, and
+ * the option its latest owner answer chose. A finding on the fix's target when it cites none, or the entry is gone.
+ */
+function citedAnswer(root: string, entry: FixEntry): { change: SlotRequest; option?: OwnerOption } | Finding {
+  const cite = entry.refs?.find(ref => ref.to === "producer/queue.change" && ref.rel === "cites" && ref.record !== undefined);
+  if (!cite) return { subject: entry.target, detail: "the fix cites no producer/queue.change entry whose answer failed" };
+  let change: SlotRequest;
+  try { change = readRequest(join(root, "clossys"), cite.record!); } catch (error) {
+    return { subject: entry.target, detail: `queue.change#${cite.record} does not read: ${error instanceof Error ? error.message : String(error)}` };
+  }
+  if (change.kind !== "change" || change.target !== entry.target) return { subject: entry.target, detail: `queue.change#${cite.record} is no change on ${entry.target}` };
+  const answered = change.events.filter(event => event.op === "answered" && event.by === "owner").at(-1);
+  const option = change.options?.find(item => item.id === answered?.option);
+  return option ? { change, option } : { change };
+}
+const isFinding = (value: object): value is Finding => "detail" in value;
+
+/**
+ * The answer-step checks (foundry-build-0048 U7 r5, blind1 B3): a fix raised on a failed owner answer re-runs the
+ * check that refused the answer's step, on the change entry it cites, so it can close fixed.
+ * - `pin.gate`: the pin gate (constitution/pin-gate.ts, no write) on the candidate the latest answer pins.
+ * - `requester.check`: the requester check of the cited change.
+ * - `route`: the router, the owner reservation set aside, routes the cited change to the agent the latest answer hands it to.
+ */
+const ANSWER_RUNNERS: Readonly<Record<string, (root: string, entry: FixEntry) => readonly Finding[]>> = {
+  "pin.gate": (root, entry) => {
+    const cited = citedAnswer(root, entry);
+    if (isFinding(cited)) return [cited];
+    const step = cited.option?.then;
+    if (step?.verb !== "pin") return [{ subject: entry.target, detail: `the latest answer on queue.change#${cited.change.id} pins nothing` }];
+    const [agent, slotId] = step.args[0]!.split("/") as [string, string];
+    const gate = pinGate(root, join(root, "clossys"), agent, slotId.split("#")[0]!, step.args[1]!, new Date().toISOString().replace(/\.\d+Z$/, "Z"));
+    return gate.refusals.map(detail => ({ subject: entry.target, detail: `pin gate on ${step.args[1]}: ${detail}` }));
+  },
+  "requester.check": (root, entry) => {
+    const cited = citedAnswer(root, entry);
+    if (isFinding(cited)) return [cited];
+    return requesterCheck(root, cited.change).failures.map(detail => ({ subject: entry.target, detail: `requester check of queue.change#${cited.change.id}: ${detail}` }));
+  },
+  route: (root, entry) => {
+    const cited = citedAnswer(root, entry);
+    if (isFinding(cited)) return [cited];
+    const step = cited.option?.then;
+    if (step?.verb !== "handoff") return [{ subject: entry.target, detail: `the latest answer on queue.change#${cited.change.id} hands it to no agent` }];
+    try {
+      const route = routeEntry(consumerFacts(join(root, "clossys")), { kind: "change", target: cited.change.target, assignee: targetOf(cited.change)!.agent }, { delegated: true });
+      return route.assignee === step.args[0] ? [] : [{ subject: entry.target, detail: `the table, the owner reservation set aside, routes ${cited.change.target} to ${route.assignee}, not ${step.args[0]}` }];
+    } catch (error) {
+      if (!(error instanceof RoutingError)) throw error;
+      return [{ subject: entry.target, detail: `the router refuses ${cited.change.target}: ${error.message}` }];
+    }
+  },
+};
+
 /**
  * The checks a fix entry can name that Producer re-runs when the fix closes as fixed (foundry-build-0048 U7): the
- * slot/2 tree checks, loop.reachable, refs.dangling (the strict set) and pins.resolve. Each runs over the tree; its
- * findings on the fixed slot (`<agent>/<slot>`, a record of it, a candidate of it or a file under it) are why it fails.
+ * slot/2 tree checks, loop.reachable, refs.dangling (the strict set) and pins.resolve, each run over the tree, its
+ * findings on the fixed slot (`<agent>/<slot>`, a record of it, a candidate of it or a file under it) why it fails;
+ * and the answer-step checks (ANSWER_RUNNERS), whose findings are on the fixed slot.
  */
-const FIX_RUNNERS: Readonly<Record<string, (root: string) => readonly { readonly subject: string; readonly detail: string }[]>> = {
+const FIX_RUNNERS: Readonly<Record<string, (root: string, entry: FixEntry) => readonly Finding[]>> = {
   [briefTightenOnly.id]: root => briefTightenOnly.run(root).findings,
   [recordsComputedMatch.id]: root => recordsComputedMatch.run(root).findings,
   [iaOrphans.id]: root => iaOrphans.run(root).findings,
   [loopReachable.id]: root => loopReachable.run(root).findings,
   [REFS_DANGLING]: root => checkRefsDangling(root).findings,
   [PINS_RESOLVE]: root => checkPinsResolve(root).findings,
+  ...ANSWER_RUNNERS,
 };
 export const FIX_CHECKS: readonly string[] = Object.keys(FIX_RUNNERS).sort();
 
 /** Re-runs a fix entry's own check on its target: `ran` false when the check is none Producer can re-run (a fix cannot close fixed then). */
-export function fixCheck(root: string, entry: { readonly target: string; readonly check?: string }): { readonly ran: boolean; readonly failures: readonly string[] } {
+export function fixCheck(root: string, entry: FixEntry): { readonly ran: boolean; readonly failures: readonly string[] } {
   const run = entry.check !== undefined ? FIX_RUNNERS[entry.check] : undefined;
   if (!run) return { ran: false, failures: [] };
   const head = entry.target.split("#")[0]!;
   const on = (subject: string) => subject === head || subject.startsWith(`${head}#`) || subject.startsWith(`${head}/`) || subject.includes(`agents/${head}/`);
-  return { ran: true, failures: run(root).filter(finding => on(finding.subject)).map(finding => `${finding.subject}: ${finding.detail}`) };
+  return { ran: true, failures: run(root, entry).filter(finding => on(finding.subject)).map(finding => `${finding.subject}: ${finding.detail}`) };
 }

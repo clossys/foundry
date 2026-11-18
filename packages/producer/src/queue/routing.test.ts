@@ -176,13 +176,13 @@ describe("kind change and fix entries", () => {
     // While the owner is asked, no seat closes it; the owner's typed answer decline runs closeWork by the entry's ref.
     expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "fixed", result: "designer/sections.hero" })).toThrow(/awaits the owner's answer \(decline, keep-open\)/);
     const answered = await answerRequest(consumer, request.id, { option: "decline", at: AT, via: "chat", quote: "decline it" });
-    // The fixture's hero has no pin and no package default: the requester check fails, the entry stays open.
-    expect(answered).toMatchObject({ ok: false });
-    expect(answered.message).toMatch(/stays open: the requester check failed \(designer\/sections\.hero: does not resolve/);
+    // U7 r5 (blind2 s4): decline runs no requester check. The fixture's hero has no pin and no package default, so
+    // a requester check would fail here; the decline still closes declined, with no verified event.
+    expect(answered).toMatchObject({ ok: true });
     expect(answered.fix).toBeUndefined();
     const after = readRequest(consumer, request.id);
-    expect(after).toMatchObject({ status: "open" });
-    expect(after.events.map(event => event.op)).toEqual(["raised", "routed", "asked", "answered", "rejected"]);
+    expect(after).toMatchObject({ status: "closed", outcome: "declined" });
+    expect(after.events.map(event => event.op)).toEqual(["raised", "routed", "asked", "answered", "closed"]);
     expect(requestIssues(after, root)).toEqual([]);
   });
 

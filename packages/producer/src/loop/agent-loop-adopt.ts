@@ -6,6 +6,10 @@
  *
  * Adoption writes no pin. A loop slot is pinned only through the pin gate (`clossys pin`, the one CHOOSE choke point),
  * which `clossys loop` calls with the planner basis (cli/loop.ts).
+ *
+ * The actor is judged before anything is written (Q9, foundry-build-0048 U7 r5): the planner (`planner` or
+ * `planner:<ref>`, recorded as `planner`) or an owner answer ref that resolves (records/seat-owner.ts assertActor).
+ * Bare `owner`, agent seats and free text are refused, so the ia events this writes always name a judged actor.
  */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -13,6 +17,7 @@ import { dirname, join, relative, sep } from "node:path";
 import { resolveAgent } from "../agents.js";
 import { LEDGER_FILE, skillPath } from "../records/ledger.js";
 import { cliActor } from "../records/pin.js";
+import { assertActor } from "../records/seat-owner.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import { positionIa, serializeSlot, validateSlot } from "../records/slot.js";
 import { candidatesDir, iaPath, jsonBytes, slotDir, slotFile } from "../records/slot-model/layout.js";
@@ -68,6 +73,8 @@ function consumerCandidateBytes(agent: LoopAgent, loop: AgentLoopName, packageBy
  * a consumer that already holds them is left as it is.
  */
 export function adoptAgentLoops(root: string, agent: LoopAgent, input: { readonly by: string; readonly at: string }): AdoptResult {
+  const by = /^planner(:.+)?$/.test(input.by) ? "planner" : input.by;
+  assertActor(root, by, agent, "loop adopt", { also: ["planner"] });
   if (holdsAdoptedLoops(root, agent)) return { adopted: false, wrote: [], refused: [] };
   const consumer = join(root, "clossys");
   const iaFile = iaPath(consumer, agent);
@@ -107,10 +114,10 @@ export function adoptAgentLoops(root: string, agent: LoopAgent, input: { readonl
   const known = new Set(issueKeys(consumer));
   try {
     replaceModelFile(iaFile, jsonBytes(ia));
-    appendIaEvent(consumer, agent, { by: input.by, at: input.at, fields: { kind: "ia", decision: "adopt-loops" } });
+    appendIaEvent(consumer, agent, { by, at: input.at, fields: { kind: "ia", decision: "adopt-loops" } });
     for (const each of slots) {
       replaceModelFile(slotFile(each.dir), each.bytes);
-      appendSlotDocEvent(consumer, agent, each.loop, { by: input.by, at: input.at, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: "ia", decision: "create", overlaps: [] } });
+      appendSlotDocEvent(consumer, agent, each.loop, { by, at: input.at, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: "ia", decision: "create", overlaps: [] } });
       // The selection ladder (candidate-ladder.ts): the agent's package candidate adapted to this slot (its header names the consumer slot).
       writeCandidateBytes(consumer, agent, each.loop, adoptedLoopCandidate(each.loop), each.candidate, { at: input.at, fields: { rung: agent === "designer" ? "L3" : "adapt", seed: packageSeed(agent, each.loop), reason: `${agent}'s package ${each.loop} candidate, its header re-addressed to this consumer slot; content unchanged` } });
     }

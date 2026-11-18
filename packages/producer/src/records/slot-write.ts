@@ -23,7 +23,7 @@ import {
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
 import { isCurrentSlot, slotReadIssues } from "./slot-current.js";
 import { serializeSlot } from "./slot.js";
-import { assertActor, assertSeat } from "./seat-owner.js";
+import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
 import type { Slot } from "./types.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, skillFile, skillPath,
@@ -105,14 +105,15 @@ function replaceFile(path: string, bytes: string): void {
  * - writeSlotSeed, rewriteCitationsInPlace: migrations, `by` fixed by the migration;
  * - writeSlotOptions: `clossys options`, takes no `by` at all;
  * - appendIaEvent, appendSlotDocEvent: the event of a verb that judged its actor already (`clossys ia`, retire after
- *   its actor guard, a request link written by the request writer under its seat check).
+ *   its actor guard, a request link written by the request writer under its seat check, `clossys loop` adoption
+ *   after loop/agent-loop-adopt.ts assertActor).
  */
 export const PRODUCER_INTERNAL_WRITERS: readonly { readonly writer: string; readonly callers: readonly string[] }[] = [
   { writer: "writeSlotSeed", callers: ["migrate/contracts.ts"] },
   { writer: "rewriteCitationsInPlace", callers: ["migrate/citations-to-slots.ts"] },
   { writer: "writeSlotOptions", callers: ["cli/options.ts"] },
-  { writer: "appendIaEvent", callers: ["cli/owner.ts"] },
-  { writer: "appendSlotDocEvent", callers: ["cli/owner.ts", "records/request.ts"] },
+  { writer: "appendIaEvent", callers: ["cli/owner.ts", "loop/agent-loop-adopt.ts"] },
+  { writer: "appendSlotDocEvent", callers: ["cli/owner.ts", "loop/agent-loop-adopt.ts", "records/request.ts"] },
 ];
 
 /** Replace a slot-model file atomically, creating its parent folder. */
@@ -347,8 +348,60 @@ function retireCode(reason: string): string {
   return code;
 }
 
-/** The owner answer a retire takes (U7 r4): an entry about this slot, answered with its option `retire`. */
-export const retireBinding = (agent: string, id: string): { readonly bind: { readonly subject: string; readonly answer: string } } => ({ bind: { subject: `${agent}/${id}`, answer: "retire" } });
+/**
+ * The owner answer a retire takes (U7 r4): an entry about this slot, answered with its option `retire`; and (U7 r5,
+ * blind2 B1) that option names the retired candidate, or no candidate for a whole-slot retire. Without `candidate` the
+ * option's candidate is not judged (the verb's first guard, before the candidate resolves).
+ */
+export const retireBinding = (agent: string, id: string, candidate?: string | null): { readonly bind: { readonly subject: string; readonly answer: string; readonly candidate?: string | null } } =>
+  ({ bind: { subject: `${agent}/${id}`, answer: "retire", ...(candidate !== undefined ? { candidate } : {}) } });
+
+/** The `by` of a ledger event or record: one actor or a list. */
+const byOf = (value: unknown): readonly string[] => typeof value === "string" ? [value] : Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+const readJson = (file: string): unknown => { try { return JSON.parse(readFileSync(file, "utf8")) as unknown; } catch { return undefined; } };
+
+/**
+ * Where an owner answer already retired something on `agent` (U7 r5, blind2 B1: a retire answer is single-use): the
+ * retire-candidate and retire-slot ledger events (the agent ledger and every slot ledger, live or under _retired/) that
+ * cite `by`, and, with `records`, the retire records (each slot's retired/*.json, ia.json `retired`). Empty for a seat:
+ * a seat acts on its own slots as often as it likes.
+ */
+export function retireAnswerUses(consumer: string, agent: SlotAgent, by: string, options: { readonly records?: boolean } = {}): string[] {
+  if (!by.startsWith("owner:")) return [];
+  const base = join(consumer, "agents", agent);
+  if (!existsSync(base)) return [];
+  const out: string[] = [];
+  const ledger = (dir: string, label: string) => {
+    const doc = readJson(join(dir, LEDGER_FILE)) as { events?: unknown } | undefined;
+    const events = Array.isArray(doc?.events) ? doc!.events as { op?: unknown; by?: unknown }[] : [];
+    for (const event of events) if ((event?.op === "retire-candidate" || event?.op === "retire-slot") && byOf(event.by).includes(by)) out.push(`${label} ledger ${String(event.op)}`);
+  };
+  ledger(base, `${agent}`);
+  if (options.records) {
+    const ia = readJson(join(base, "ia.json")) as { retired?: unknown } | undefined;
+    for (const row of Array.isArray(ia?.retired) ? ia!.retired as { slot?: unknown; by?: unknown }[] : []) if (byOf(row?.by).includes(by)) out.push(`${agent} ia.json retired ${String(row.slot)}`);
+  }
+  const slotDirs = (dir: string, prefix: string) => existsSync(dir)
+    ? readdirSync(dir, { withFileTypes: true }).filter(entry => entry.isDirectory() && !entry.name.startsWith("_") && !entry.name.startsWith(".")).map(entry => ({ dir: join(dir, entry.name), label: `${prefix}${entry.name}` }))
+    : [];
+  for (const slot of [...slotDirs(base, `${agent}/`), ...slotDirs(join(base, "_retired"), `${agent}/_retired/`)]) {
+    ledger(slot.dir, slot.label);
+    if (!options.records) continue;
+    const retired = join(slot.dir, "retired");
+    if (!existsSync(retired)) continue;
+    for (const name of readdirSync(retired).filter(file => file.endsWith(".json")).sort()) {
+      const record = readJson(join(retired, name)) as { schema?: unknown; by?: unknown } | undefined;
+      if (record?.schema === RETIRE_SCHEMA && byOf(record.by).includes(by)) out.push(`${slot.label}/retired/${name}`);
+    }
+  }
+  return out;
+}
+
+/** Throws a SeatRefusal when an owner answer already retired something on `agent` (the writers' half: ledger events). */
+function assertRetireAnswerUnused(consumer: string, agent: SlotAgent, by: string): void {
+  const uses = retireAnswerUses(consumer, agent, by);
+  if (uses.length) throw new SeatRefusal(`retire refused: --by ${by} already retired (${uses.slice(0, 3).join("; ")}); an owner's retire answer is used once`);
+}
 
 /**
  * The retire verb's ledger event for one candidate (`clossys retire <agent>/<slot> <candidate>`):
@@ -357,7 +410,8 @@ export const retireBinding = (agent: string, id: string): { readonly bind: { rea
  */
 export function appendRetireCandidate(consumer: string, agent: SlotAgent, id: string, input: { name: string; sha256: string; reason: string; by: string; at: string }, given?: WriteProvenance): LedgerEvent {
   // The total actor guard (records/seat-owner.ts): the slot's own seat or a resolved owner answer, nothing else.
-  assertActor(dirname(consumer), input.by, agent, "retire", retireBinding(agent, id));
+  assertActor(dirname(consumer), input.by, agent, "retire", retireBinding(agent, id, input.name));
+  assertRetireAnswerUnused(consumer, agent, input.by);
   const { entry } = located(consumer, agent, id);
   const event = ledgerEvent("retire-candidate", input.at, provenance({ verb: "retire", by: input.by, skill: skillPath("producer", "retire") }, given), { name: input.name, sha256: input.sha256, code: retireCode(input.reason) });
   slotLocked(entry.dir, () => appendEvent(entry.dir, "slot", event));
@@ -371,7 +425,8 @@ export function appendRetireCandidate(consumer: string, agent: SlotAgent, id: st
  * the agent ledger.
  */
 export function appendRetireSlot(consumer: string, agent: SlotAgent, id: string, input: { reason: string; by: string; at: string }, given?: WriteProvenance): LedgerEvent[] {
-  assertActor(dirname(consumer), input.by, agent, "retire", retireBinding(agent, id));
+  assertActor(dirname(consumer), input.by, agent, "retire", retireBinding(agent, id, null));
+  assertRetireAnswerUnused(consumer, agent, input.by);
   const who = provenance({ verb: "retire", by: input.by, skill: skillPath("producer", "retire") }, given);
   const code = retireCode(input.reason);
   const events: LedgerEvent[] = [];

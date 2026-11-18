@@ -120,7 +120,8 @@ export const REQUEST_ASSERTIONS: Readonly<Record<string, Assertion>> = {
     const rows = closed.flatMap(fact => {
       const events = Array.isArray(fact.doc.events) ? fact.doc.events.filter(object) : [];
       const at = events.findIndex(event => event.id === fact.doc.closed);
-      const verified = fact.kind === "slot" || (at >= 0 && events.slice(0, at).some(event => event.op === "verified" && event.by === "producer"));
+      // A decline re-runs no requester check (U7 r5): it needs no verified event.
+      const verified = fact.kind === "slot" || fact.doc.outcome === "declined" || (at >= 0 && events.slice(0, at).some(event => event.op === "verified" && event.by === "producer"));
       return [
         ...fact.issues.map(issue => `${ref(fact)}: ${issue}`),
         ...(fact.resultIssue ? [`${ref(fact)}: result ${String(fact.doc.result)} ${fact.resultIssue}`] : []),

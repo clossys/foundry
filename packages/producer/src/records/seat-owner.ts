@@ -55,7 +55,15 @@ export interface ActorOptions {
    * owner answer is the option `answer`, one of the entry's options. Without it any resolved owner answer acts; the
    * retire writers and verb always bind it.
    */
-  readonly bind?: { readonly subject: string; readonly answer: string };
+  readonly bind?: {
+    readonly subject: string;
+    readonly answer: string;
+    /**
+     * The candidate the answered option names (U7 r5, blind2 B1): the option's `candidate` must be this one, or, when
+     * null, the option names none (an answer about the whole slot). Absent, the option's candidate is not judged.
+     */
+    readonly candidate?: string | null;
+  };
 }
 
 /** Why `by` may not act on a slot of `slotAgent` (undefined when it may): the total form of `seatRefusal`. */
@@ -69,7 +77,13 @@ export function actorRefusal(root: string, by: string, slotAgent: string, option
       const { subject, answer } = options.bind;
       if (owner.entry.subject?.to !== subject) issues.push(`${owner.name} is about ${owner.entry.subject?.to ?? "nothing"}, not ${subject}`);
       if (owner.answered?.answer !== answer) issues.push(`${owner.name} was answered ${owner.answered?.answer ?? "with no option"}, not ${answer}`);
-      else if (!(owner.entry.options ?? []).some(option => option.id === answer)) issues.push(`${owner.name} offers no option ${answer}: an answer is one of the entry's options`);
+      else {
+        const option = (owner.entry.options ?? []).find(item => item.id === answer);
+        if (!option) issues.push(`${owner.name} offers no option ${answer}: an answer is one of the entry's options`);
+        else if (options.bind.candidate !== undefined && (option.candidate ?? null) !== options.bind.candidate) {
+          issues.push(`${owner.name} answered ${answer} about ${option.candidate === undefined ? "the whole slot" : `candidate ${option.candidate}`}, not ${options.bind.candidate === null ? "the whole slot" : `candidate ${options.bind.candidate}`}`);
+        }
+      }
     }
     return issues.length ? `--by ${by} is not agent:<agent>[.<role>] and not a resolved owner answer: ${issues.join("; ")}` : undefined;
   }

@@ -39,7 +39,7 @@ import { PRODUCER_IA_SOURCE } from "../records/slot-model/pipeline-seats.js";
 import { adoptedSlotDoc, driftCounts, knownSlots, SYNC_AGENTS, syncDrift, syncPlan, syncState, workspaceSourceRepairs, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
-import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, retireBinding, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writePin } from "../records/slot-write.js";
+import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, retireAnswerUses, retireBinding, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writePin } from "../records/slot-write.js";
 import { LEDGER_FILE, skillPath } from "../records/ledger.js";
 import { readStandard, slotKinds, standardFits } from "../records/standards.js";
 import type { ModelAgent } from "../records/slot-model/index.js";
@@ -1121,9 +1121,14 @@ const dropEmptyDir = dropEmptyModelDir;
  * `retire` (U7 r4). Bare `owner`, `planner`, a foreign seat, another subject's or another option's answer and free text
  * are refused before anything is read, moved, renumbered or written.
  */
-function retireRefusal(root: string, agent: SlotAgent, slot: string, by: string): CliResult | undefined {
-  const why = actorRefusal(root, by, agent, retireBinding(agent, slot));
-  return why === undefined ? undefined : refuse("retire", why);
+function retireRefusal(root: string, agent: SlotAgent, slot: string, by: string, candidate?: string | null): CliResult | undefined {
+  const why = actorRefusal(root, by, agent, retireBinding(agent, slot, candidate));
+  if (why !== undefined) return refuse("retire", why);
+  // Bound to what it asked about, the answer is also single-use (U7 r5, blind2 B1): a retire record or a retire
+  // ledger event that already cites it refuses it.
+  if (candidate === undefined) return undefined;
+  const uses = retireAnswerUses(join(root, "clossys"), agent, by, { records: true });
+  return uses.length ? refuse("retire", `--by ${by} already retired (${uses.slice(0, 3).join("; ")}); an owner's retire answer is used once`) : undefined;
 }
 
 function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot: string, candidateId: string, fields: RetireFields): CliResult {
@@ -1133,6 +1138,9 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
   const entry = readSlotEntry(consumer, agent, slot);
   if (!entry) return refuse("retire", `unknown slot ${target} (not in ${agent} ia.json)`);
   const candidate = resolveCandidate(entry.candidates, candidateId);
+  // The owner's answer names this very candidate, and retired nothing before (U7 r5): judged before anything moves.
+  const bound = candidate ? retireRefusal(root, agent, slot, fields.by, candidate) : undefined;
+  if (bound) return bound;
   if (!candidate) return refuse("retire", `${target} has no candidate ${candidateId}`);
   // A present pin.json names the pinned candidate even when it no longer validates: never retire what it names.
   const pinText = readSlotRecordText(entry.dir, "pin.json");
@@ -1158,7 +1166,7 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
 }
 
 function retireSlot(consumer: string, root: string, agent: SlotAgent, slot: string, fields: RetireFields): CliResult {
-  const guard = retireRefusal(root, agent, slot, fields.by);
+  const guard = retireRefusal(root, agent, slot, fields.by, null);
   if (guard) return guard;
   const target = `${agent}/${slot}`;
   const iaFile = iaPath(consumer, agent);

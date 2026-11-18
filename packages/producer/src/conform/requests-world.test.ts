@@ -166,7 +166,7 @@ describe("the request lens world", () => {
     expect(() => closeWork(world.consumer, open.id, { by: `owner:queue.fix#${open.id}`, at: "2026-11-20T10:00:00Z", outcome: "declined", result: `queue.fix#${open.id}` })).toThrow(/closes it only right after the owner's answer chose one of its options/);
     // With no question open, an answer is refused and writes nothing.
     const before = readFileSync(file, "utf8");
-    expect(await runRequestCli([open.id, "--answer", "decline", "--by", "owner", "--root", world.root], world.root)).toMatchObject({ exitCode: 1, message: expect.stringMatching(/awaits no owner answer \(assigned to writer, no options\); nothing was written/) });
+    expect(await runRequestCli([open.id, "--answer", "decline", "--via", "chat", "--quote", "test quote", "--by", "owner", "--root", world.root], world.root)).toMatchObject({ exitCode: 1, message: expect.stringMatching(/awaits no owner answer \(assigned to writer, no options\); nothing was written/) });
     expect(readFileSync(file, "utf8")).toBe(before);
     expect(readRequest(world.consumer, open.id)).toMatchObject({ status: "open" });
   });
@@ -184,13 +184,13 @@ describe("the request lens world", () => {
     // An option id the entry does not offer is refused and nothing is written; so is free text.
     const before = readFileSync(file, "utf8");
     for (const answer of ["fixed", "fixed: the pin resolves", "approve"]) {
-      expect(await runRequestCli([open.id, "--answer", answer, "--by", "owner", "--root", world.root], world.root), answer).toMatchObject({ exitCode: 1, message: expect.stringMatching(/is none of request .*'s options \(decline, keep-open\); nothing was written/) });
+      expect(await runRequestCli([open.id, "--answer", answer, "--via", "chat", "--quote", "test quote", "--by", "owner", "--root", world.root], world.root), answer).toMatchObject({ exitCode: 1, message: expect.stringMatching(/is none of request .*'s options \(decline, keep-open\); nothing was written/) });
       expect(readFileSync(file, "utf8"), answer).toBe(before);
     }
-    await expect(runRequestCli([open.id, "--answer", "decline", "--by", "writer", "--root", world.root], world.root)).rejects.toThrow(/--answer is the owner's; it takes no --by writer/);
+    await expect(runRequestCli([open.id, "--answer", "decline", "--via", "chat", "--quote", "test quote", "--by", "writer", "--root", world.root], world.root)).rejects.toThrow(/--answer is the owner's; it takes no --by writer/);
     expect(readFileSync(file, "utf8")).toBe(before);
     // keep-open: recorded, a rejected event, still open with writer; the question is closed so the assignee may work on.
-    const kept = await runRequestCli([open.id, "--answer", "keep-open", "--note", "not yet", "--at", "2026-11-20T10:02:00Z", "--root", world.root], world.root);
+    const kept = await runRequestCli([open.id, "--answer", "keep-open", "--via", "chat", "--quote", "test quote", "--note", "not yet", "--at", "2026-11-20T10:02:00Z", "--root", world.root], world.root);
     expect(kept.exitCode).toBe(0);
     const keptEntry = readRequest(world.consumer, open.id);
     expect(keptEntry).toMatchObject({ status: "open", assignee: "writer" });
@@ -198,7 +198,7 @@ describe("the request lens world", () => {
     expect(requestIssues(keptEntry, world.root)).toEqual([]);
     // Asked again, decline closes it declined by the entry's own answer ref, linking back to the requester.
     await runRequestCli([open.id, "--close", "--outcome", "declined", "--result", `queue.fix#${open.id}`, "--by", "writer", "--at", "2026-11-20T10:03:00Z", "--root", world.root], world.root);
-    const declined = await runRequestCli([open.id, "--answer", "decline", "--at", "2026-11-20T10:04:00Z", "--root", world.root], world.root);
+    const declined = await runRequestCli([open.id, "--answer", "decline", "--via", "chat", "--quote", "test quote", "--at", "2026-11-20T10:04:00Z", "--root", world.root], world.root);
     expect(declined.exitCode).toBe(0);
     const closed = readRequest(world.consumer, open.id);
     expect(closed).toMatchObject({ status: "closed", outcome: "declined", result: `queue.fix#${open.id}`, notified: { to: open.from } });
@@ -233,7 +233,7 @@ describe("the request lens world", () => {
     const claimed = closeWork(world.consumer, open.id, { by: "writer", at: "2026-11-20T10:02:00Z", outcome: "fixed", result: OPEN_FIX });
     expect(claimed).toMatchObject({ asked: true, status: "open", options: [{ id: "decline" }, { id: "keep-open" }] });
     expect(claimed.events.at(-1)).toMatchObject({ op: "asked", by: "producer", detail: expect.stringMatching(/check render\.overflow, which Producer cannot re-run/) });
-    expect((await answerRequest(world.consumer, open.id, { option: "keep-open", at: "2026-11-20T10:03:00Z" })).request).toMatchObject({ status: "open" });
+    expect((await answerRequest(world.consumer, open.id, { option: "keep-open", at: "2026-11-20T10:03:00Z", via: "cli", quote: "test quote" })).request).toMatchObject({ status: "open" });
     recheck("pins.resolve");
     const closed = closeWork(world.consumer, open.id, { by: "writer", at: "2026-11-20T10:05:00Z", outcome: "fixed", result: OPEN_FIX });
     expect(closed.events.at(-2)).toMatchObject({ op: "verified", by: "producer", detail: `requester check passed on ${OPEN_FIX}; fix check pins.resolve passes on ${OPEN_FIX}` });

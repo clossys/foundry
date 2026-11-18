@@ -26,7 +26,7 @@ export const REQUEST_USAGE = "Usage: clossys request --target <agent>/<slot> --f
   + "       clossys request --scan [--dry] [--at <iso>] [--root <dir>]\n"
   + "       clossys request <id> --check | --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> [--kind <kind>] --inputs <ref,...> --contract <file> [--overlap-reason <text>] | --close [--approved queue.approve#<id>] [--owner-ref <ref>]\n"
   + "       clossys request <id> --close --outcome changed|declined (change) | fixed|declined (fix) --result <agent>/<slot>|<queue>#<id> --by <assignee> [--at <iso>] [--root <dir>]\n"
-  + "       clossys request <id> --answer <option> [--note <text>] [--via cli|chat|app --quote <owner's words>] [--at <iso>] [--root <dir>]\n"
+  + "       clossys request <id> --answer <option> --via cli|chat|app --quote <owner's words, verbatim> [--note <text>] [--at <iso>] [--root <dir>]\n"
   + "  --by is the seat acting (director, designer, writer, publisher, owner, planner, producer); a raise defaults to the\n"
   + "  requester slot's agent (owner for --from owner), a decide to the assignee, --scan and a slot --close to producer; a change\n"
   + "  or fix --close needs --by its agent assignee (a fix only as fixed; a declined fix, or one whose check Producer cannot\n"

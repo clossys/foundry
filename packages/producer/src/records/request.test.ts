@@ -10,6 +10,7 @@ import { runPinCli } from "../cli/pin.js";
 import { consumerFacts, rederive } from "../queue/routing.js";
 import { writeCandidate } from "./slot-write.js";
 import { verifyCheck } from "../loop/runner.js";
+import { FIX_CHECKS } from "../queue/requester-check.js";
 import { OPEN_FIX, requestsWorld, type RequestsWorld } from "../conform/__fixtures__/requests-world.js";
 import { answerQueueEntry } from "../queue/answer.js";
 import { readLegacyFixes } from "../queue/legacy-fix.js";
@@ -377,15 +378,15 @@ describe("the closure rule on change and fix entries (U7 r4, typed answers)", ()
     expect(legacy()).toBe(count);
     // The owner can only decline or keep it open: fixed is no option, and nothing is written.
     const bytesNow = readFileSync(file, "utf8");
-    await expect(answerRequest(made.consumer, fix.id, { option: "fixed", at: "2026-11-20T10:06:00Z" })).rejects.toThrow(/--answer fixed is none of request .*'s options \(decline, keep-open\); nothing was written/);
+    await expect(answerRequest(made.consumer, fix.id, { option: "fixed", at: "2026-11-20T10:06:00Z", via: "cli", quote: "test quote" })).rejects.toThrow(/--answer fixed is none of request .*'s options \(decline, keep-open\); nothing was written/);
     expect(readFileSync(file, "utf8")).toBe(bytesNow);
-    expect((await answerRequest(made.consumer, fix.id, { option: "decline", at: "2026-11-20T10:07:00Z" })).request).toMatchObject({ status: "closed", outcome: "declined" });
+    expect((await answerRequest(made.consumer, fix.id, { option: "decline", at: "2026-11-20T10:07:00Z", via: "cli", quote: "test quote" })).request).toMatchObject({ status: "closed", outcome: "declined" });
   });
 
   it("T9: the stored answer is typed: an answered option the entry does not offer, an answer by a seat, or an option on another event does not read", { timeout: 60_000 }, async () => {
     const { made, fix } = await open();
     close(made.consumer, fix.id, "writer", "declined");
-    await answerRequest(made.consumer, fix.id, { option: "keep-open", at: "2026-11-20T10:06:00Z" });
+    await answerRequest(made.consumer, fix.id, { option: "keep-open", at: "2026-11-20T10:06:00Z", via: "cli", quote: "test quote" });
     const kept = readRequest(made.consumer, fix.id);
     expect(requestIssues(kept, made.root)).toEqual([]);
     const edit = (map: (event: SlotRequest["events"][number]) => SlotRequest["events"][number]) => requestIssues({ ...kept, events: kept.events.map(map) }, made.root).join("; ");
@@ -435,7 +436,7 @@ describe("owner-assigned change entries (U7 r4, typed answers)", () => {
 
   it("T11: handoff re-routes to the slot's agent with route.delegated, which rederive keeps; the agent then closes it", { timeout: 60_000 }, async () => {
     const { made, entry } = await raised();
-    const result = await answerRequest(made.consumer, entry.id, { option: "handoff", at: "2026-11-20T11:01:00Z" });
+    const result = await answerRequest(made.consumer, entry.id, { option: "handoff", at: "2026-11-20T11:01:00Z", via: "cli", quote: "test quote" });
     expect(result).toMatchObject({ ok: true });
     const handed = readRequest(made.consumer, entry.id);
     expect(handed).toMatchObject({ status: "open", assignee: "director", route: { assignee: "director", delegated: true } });
@@ -447,7 +448,7 @@ describe("owner-assigned change entries (U7 r4, typed answers)", () => {
     // A delegated route with no answered handoff does not read.
     expect(requestIssues({ ...handed, events: handed.events.filter(event => event.op !== "answered") }, made.root).join("; ")).toMatch(/delegated only by the owner's answered handoff option/);
     // No second answer: the question closed with the handoff.
-    await expect(answerRequest(made.consumer, entry.id, { option: "decline", at: "2026-11-20T11:02:00Z" })).rejects.toThrow(/awaits no owner answer/);
+    await expect(answerRequest(made.consumer, entry.id, { option: "decline", at: "2026-11-20T11:02:00Z", via: "cli", quote: "test quote" })).rejects.toThrow(/awaits no owner answer/);
   });
 
   it("T12: the answer binds the pin: the pin verb refuses the entry's ref pinning any candidate but the answered one", { timeout: 60_000 }, async () => {
@@ -461,15 +462,44 @@ describe("owner-assigned change entries (U7 r4, typed answers)", () => {
     // Unanswered, the entry's ref pins nothing.
     expect(await runPinCli(["director/focus.reach.geography", pin.then.args[1]!, ...by], made.root)).toMatchObject({ exitCode: 1, message: expect.stringContaining("has no owner answer as its last event") });
     const forged = JSON.parse(readFileSync(file, "utf8"));
-    writeFileSync(file, `${JSON.stringify({ ...forged, events: [...forged.events, { id: `${entry.id}#9`, op: "answered", by: "owner", at: "2026-11-20T11:01:00Z", option: pin.id }] })}\n`);
+    writeFileSync(file, `${JSON.stringify({ ...forged, events: [...forged.events, { id: `${entry.id}#9`, op: "answered", by: "owner", at: "2026-11-20T11:01:00Z", option: pin.id, via: "chat", quote: "pin it" }] })}\n`);
     expect(await runPinCli(["director/focus.reach.geography", pinned, ...by], made.root)).toMatchObject({ exitCode: 1, message: expect.stringContaining(`was answered ${pin.id} (pin director/focus.reach.geography ${pin.then.args[1]}), not pin director/focus.reach.geography ${pinned}`) });
+    expect(readFileSync(pinFile, "utf8")).toBe(pinBefore);
+  });
+
+  it("T12b (U7 r5, blind1 s2): the pin verb reads the entry through readRequest: the ref's queue folder, every entry rule, the owner's assignment", { timeout: 60_000 }, async () => {
+    const { made, entry, file } = await raised(bytes => bytes);
+    const pin = entry.options!.find(option => option.then.verb === "pin")!;
+    const pinFile = join(made.consumer, DIRECTOR, "pin.json");
+    const pinBefore = readFileSync(pinFile, "utf8");
+    const original = JSON.parse(readFileSync(file, "utf8")) as SlotRequest;
+    const answered = { id: `${entry.id}#${original.events.length + 1}`, op: "answered" as const, by: "owner", at: "2026-11-20T11:01:00Z", option: pin.id, via: "chat" as const, quote: "pin it" };
+    const store = (doc: object) => writeFileSync(file, `${JSON.stringify(doc)}\n`);
+    const pinBy = (by: string) => runPinCli(["director/focus.reach.geography", pin.then.args[1]!, "--by", by, "--at", "2026-11-20T11:01:30Z", "--root", made.root], made.root);
+    const own = `owner:queue.change#${entry.id}`;
+    // A copy under another queue's folder is no answer of that queue.
+    store({ ...original, events: [...original.events, answered] });
+    const fixDir = join(made.consumer, "agents/producer/queue.fix/entries");
+    writeFileSync(join(fixDir, `${entry.id}.json`), readFileSync(file));
+    expect(await pinBy(`owner:queue.fix#${entry.id}`)).toMatchObject({ exitCode: 1, message: expect.stringContaining(`is a kind change entry filed under producer/queue.change, not producer/queue.fix`) });
+    rmSync(join(fixDir, `${entry.id}.json`));
+    // An entry the entry rules refuse (here: an answer with no quote) answers no pin.
+    const { quote: _quote, ...unquoted } = answered;
+    store({ ...original, events: [...original.events, unquoted] });
+    expect(await pinBy(own)).toMatchObject({ exitCode: 1, message: expect.stringMatching(/does not read as a work entry: .*quotes the owner's words verbatim/) });
+    // An entry handed to an agent is no owner's entry, whatever its last event says.
+    store(original);
+    expect(await answerRequest(made.consumer, entry.id, { option: "handoff", at: "2026-11-20T11:01:10Z", via: "cli", quote: "hand it over" })).toMatchObject({ ok: true });
+    const handed = readRequest(made.consumer, entry.id);
+    store({ ...handed, events: [...handed.events, { ...answered, id: `${entry.id}#${handed.events.length + 1}`, at: "2026-11-20T11:01:20Z" }] });
+    expect(await pinBy(own)).toMatchObject({ exitCode: 1, message: expect.stringContaining("is assigned to director, not the owner") });
     expect(readFileSync(pinFile, "utf8")).toBe(pinBefore);
   });
 
   it("T13: a pin answer runs the pin gate: passing, the slot is pinned by the answer and the entry closes changed", { timeout: 60_000 }, async () => {
     const { made, entry } = await raised(bytes => bytes);
     const pin = entry.options!.find(option => option.then.verb === "pin")!;
-    const result = await answerRequest(made.consumer, entry.id, { option: pin.id, at: "2026-11-20T11:02:00Z" });
+    const result = await answerRequest(made.consumer, entry.id, { option: pin.id, at: "2026-11-20T11:02:00Z", via: "cli", quote: "test quote" });
     expect(result, result.message).toMatchObject({ ok: true });
     const closed = readRequest(made.consumer, entry.id);
     expect(closed).toMatchObject({ status: "closed", outcome: "changed", result: entry.target, notified: { to: entry.from } });
@@ -483,7 +513,7 @@ describe("owner-assigned change entries (U7 r4, typed answers)", () => {
     const pin = entry.options!.find(option => option.then.verb === "pin")!;
     const pinFile = join(made.consumer, DIRECTOR, "pin.json");
     const pinBefore = readFileSync(pinFile, "utf8");
-    const result = await answerRequest(made.consumer, entry.id, { option: pin.id, at: "2026-11-20T11:02:00Z" });
+    const result = await answerRequest(made.consumer, entry.id, { option: pin.id, at: "2026-11-20T11:02:00Z", via: "cli", quote: "test quote" });
     expect(result).toMatchObject({ ok: false });
     const stays = readRequest(made.consumer, entry.id);
     expect(stays).toMatchObject({ status: "open", assignee: "owner" });
@@ -493,6 +523,97 @@ describe("owner-assigned change entries (U7 r4, typed answers)", () => {
     expect(readFileSync(pinFile, "utf8")).toBe(pinBefore);
     expect(requestIssues(stays, made.root)).toEqual([]);
     expect(requestIssues(result.fix!, made.root)).toEqual([]);
+  });
+
+  it("T15 (U7 r5, blind1 B2): an owner answer carries via and a verbatim quote; a stored answer lacking either is an issue", { timeout: 60_000 }, async () => {
+    const { made, entry, file } = await raised();
+    const before = readFileSync(file, "utf8");
+    await expect(answerRequest(made.consumer, entry.id, { option: "decline", at: "2026-11-20T11:01:00Z", quote: "decline it" })).rejects.toThrow(/names how it came \(--via cli\|chat\|app\).*nothing was written/);
+    await expect(answerRequest(made.consumer, entry.id, { option: "decline", at: "2026-11-20T11:01:00Z", via: "chat", quote: "  " })).rejects.toThrow(/quotes the owner's words verbatim/);
+    await expect(answerRequest(made.consumer, entry.id, { option: "decline", at: "2026-11-20T11:01:00Z", via: "chat" })).rejects.toThrow(/quotes the owner's words verbatim/);
+    expect(readFileSync(file, "utf8")).toBe(before);
+    const result = await answerRequest(made.consumer, entry.id, { option: "decline", at: "2026-11-20T11:01:00Z", via: "chat", quote: "No, leave the geography as it is." });
+    expect(result, result.message).toMatchObject({ ok: true });
+    const closed = readRequest(made.consumer, entry.id);
+    expect(closed.events.find(event => event.op === "answered")).toMatchObject({ via: "chat", quote: "No, leave the geography as it is." });
+    expect(requestIssues(closed, made.root)).toEqual([]);
+    const edit = (map: (event: SlotRequest["events"][number]) => SlotRequest["events"][number]) => requestIssues({ ...closed, events: closed.events.map(map) }, made.root).join("; ");
+    expect(edit(event => { if (event.op !== "answered") return event; const { via: _via, ...rest } = event; return rest; })).toMatch(/an owner answer names how it came \(via cli, chat or app\)/);
+    expect(edit(event => { if (event.op !== "answered") return event; const { quote: _quote, ...rest } = event; return rest; })).toMatch(/an owner answer quotes the owner's words verbatim \(a non-empty quote\)/);
+    expect(edit(event => event.op === "answered" ? { ...event, quote: " " } : event)).toMatch(/a non-empty quote/);
+  });
+
+  it("T16 (U7 r5, blind1 B3): a fix raised on a refused pin re-runs the pin gate, stays open while it refuses and closes fixed once repaired", { timeout: 60_000 }, async () => {
+    const { made, entry } = await raised(bytes => bytes);
+    expect(FIX_CHECKS).toEqual(expect.arrayContaining(["pin.gate", "requester.check", "route"]));
+    const pin = entry.options!.find(option => option.then.verb === "pin")!;
+    const candidate = join(made.consumer, DIRECTOR, "candidates", pin.then.args[1]!);
+    const good = readFileSync(candidate, "utf8");
+    // The candidate's bytes change after its submit: the pin gate refuses it.
+    writeFileSync(candidate, `${good}\n`);
+    const result = await answerRequest(made.consumer, entry.id, { option: pin.id, at: "2026-11-20T11:02:00Z", via: "cli", quote: "pin that one" });
+    expect(result).toMatchObject({ ok: false });
+    expect(result.message).toMatch(/failed pin\.gate \(.*changed since its submit/);
+    const fix = result.fix!;
+    expect(fix).toMatchObject({ kind: "fix", check: "pin.gate", assignee: "director", status: "open" });
+    // Unrepaired, the assignee's fixed close re-runs the pin gate and is refused; it is no claim for the owner.
+    expect(() => closeWork(made.consumer, fix.id, { by: "director", at: "2026-11-20T11:03:00Z", outcome: "fixed", result: entry.target })).toThrow(/its check pin\.gate still fails .*changed since its submit/);
+    expect(readRequest(made.consumer, fix.id)).toMatchObject({ status: "open" });
+    writeFileSync(candidate, good);
+    const closed = closeWork(made.consumer, fix.id, { by: "director", at: "2026-11-20T11:04:00Z", outcome: "fixed", result: entry.target });
+    expect(closed).toMatchObject({ status: "closed", outcome: "fixed" });
+    expect(closed.events.find(event => event.op === "verified")?.detail).toMatch(/fix check pin\.gate passes on director\/focus\.reach\.geography/);
+    expect(requestIssues(readRequest(made.consumer, fix.id), made.root)).toEqual([]);
+  });
+
+  it("T17 (U7 r5, blind2 s3): a pin applied whose requester check fails is no silent half: the rejected event names the applied pin, a requester.check fix is routed, and it closes fixed once repaired", { timeout: 60_000 }, async () => {
+    const { made, entry } = await raised(bytes => bytes);
+    const pin = entry.options!.find(option => option.then.verb === "pin")!;
+    const requester = join(made.consumer, "agents/writer/sections.hero.copy/slot.json");
+    const slotBytes = readFileSync(requester, "utf8");
+    writeFileSync(requester, slotBytes.replace(/"status": "[a-z-]+"/, '"status": "needs-refresh"'));
+    const result = await answerRequest(made.consumer, entry.id, { option: pin.id, at: "2026-11-20T11:02:00Z", via: "cli", quote: "pin that one" });
+    expect(result).toMatchObject({ ok: false });
+    expect(JSON.parse(readFileSync(join(made.consumer, DIRECTOR, "pin.json"), "utf8"))).toMatchObject({ candidate: pin.then.args[1] });
+    const stays = readRequest(made.consumer, entry.id);
+    expect(stays).toMatchObject({ status: "open", assignee: "owner" });
+    expect(stays.events.at(-1)).toMatchObject({ op: "rejected", detail: expect.stringMatching(new RegExp(`^pin director/focus\\.reach\\.geography ${pin.then.args[1]!.replace(/\./g, "\\.")} is applied \\(the pin gate passed\\); requester check failed .*needs-refresh`)) });
+    expect(result.message).toMatch(/failed requester\.check/);
+    const fix = result.fix!;
+    expect(fix).toMatchObject({ kind: "fix", check: "requester.check", assignee: "director", status: "open" });
+    expect(() => closeWork(made.consumer, fix.id, { by: "director", at: "2026-11-20T11:03:00Z", outcome: "fixed", result: entry.target })).toThrow(/its check requester\.check still fails .*needs-refresh/);
+    writeFileSync(requester, slotBytes);
+    expect(closeWork(made.consumer, fix.id, { by: "director", at: "2026-11-20T11:04:00Z", outcome: "fixed", result: entry.target })).toMatchObject({ status: "closed", outcome: "fixed" });
+    expect(requestIssues(stays, made.root)).toEqual([]);
+  });
+
+  it("T18 (U7 r5, blind2 s2): one answer runs at a time, and its close is refused once the entry changed since the answer", { timeout: 60_000 }, async () => {
+    const { made, entry } = await raised();
+    const both = await Promise.allSettled([
+      answerRequest(made.consumer, entry.id, { option: "decline", at: "2026-11-20T11:01:00Z", via: "cli", quote: "decline" }),
+      answerRequest(made.consumer, entry.id, { option: "decline", at: "2026-11-20T11:01:00Z", via: "cli", quote: "decline" }),
+    ]);
+    expect(both.filter(item => item.status === "fulfilled")).toHaveLength(1);
+    expect(String((both.find(item => item.status === "rejected") as PromiseRejectedResult).reason)).toMatch(/another answer to request .* is running .*nothing was written/);
+    const second = await raised();
+    // handoff writes its answered event, then a routed one: that answer is no longer the entry's last event, so a
+    // close bound to it (the step closeWork runs under the entry's lock) is refused and writes nothing.
+    expect((await answerRequest(second.made.consumer, second.entry.id, { option: "handoff", at: "2026-11-20T11:01:00Z", via: "cli", quote: "hand it over" })).request).toMatchObject({ status: "open", assignee: "director" });
+    const file = second.file;
+    const bytesNow = readFileSync(file, "utf8");
+    const stale = readRequest(second.made.consumer, second.entry.id).events.find(event => event.op === "answered")!.id;
+    expect(() => closeWork(second.made.consumer, second.entry.id, { by: `owner:queue.change#${second.entry.id}`, at: "2026-11-20T11:02:00Z", outcome: "declined", result: `queue.change#${second.entry.id}`, answered: stale })).toThrow(/changed since the answer/);
+    expect(readFileSync(file, "utf8")).toBe(bytesNow);
+  });
+
+  it("T19 (U7 r5, blind1 s1): an unexpected error in the step is a failed step: a rejected event, never a bare throw", { timeout: 60_000 }, async () => {
+    const { made, entry } = await raised();
+    const ia = join(made.consumer, "agents/director/ia.json");
+    writeFileSync(ia, "{ not json");
+    const result = await answerRequest(made.consumer, entry.id, { option: "handoff", at: "2026-11-20T11:01:00Z", via: "cli", quote: "hand it over" });
+    expect(result).toMatchObject({ ok: false });
+    expect(result.message).toMatch(/failed closure \(/);
+    expect(readRequest(made.consumer, entry.id).events.at(-1)).toMatchObject({ op: "rejected", by: "producer", detail: expect.stringMatching(/failed \(closure\)/) });
   });
 });
 

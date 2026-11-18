@@ -224,7 +224,8 @@ export const INPUTS_DRIFTED = "inputs drifted; slots.stale owns it";
  *   declined, or by anyone but its agent assignee, without the owner's answered option right before it, is red;
  * - the judged inputs' digest (inputsSha256) recomputed from today's bytes: equal, the requester check and (closed
  *   fixed) the fix's own check re-run, and a failure is red (a forged close over unchanged inputs); different, the
- *   re-run is skipped with INPUTS_DRIFTED, so an honest close that drifted later is never red here.
+ *   re-run is skipped with INPUTS_DRIFTED, so an honest close that drifted later is never red here;
+ * - a decline (U7 r5) served nothing and re-ran no requester check: only its closure rule is re-read.
  */
 function recheckOf(consumer: string, request: SlotRequest): Recheck {
   const key = `${consumer}\0${request.kind}\0${request.id}`;
@@ -235,7 +236,9 @@ function recheckOf(consumer: string, request: SlotRequest): Recheck {
     try {
       const at = request.closed !== undefined ? request.events.findIndex(event => event.id === request.closed) : -1;
       const stored = at > 0 ? request.events[at - 1]?.inputsSha256 : undefined;
-      if (stored !== undefined && stored !== inputsSha256(consumer, request)) out = { failures: rule, note: INPUTS_DRIFTED };
+      // A decline served nothing and re-ran no requester check (U7 r5): only its closure rule is re-read.
+      if (request.outcome === "declined") out = { failures: rule };
+      else if (stored !== undefined && stored !== inputsSha256(consumer, request)) out = { failures: rule, note: INPUTS_DRIFTED };
       else {
         const check = requesterCheck(root, request);
         const fix = request.kind === "fix" && request.outcome === "fixed" ? fixCheck(root, request) : undefined;

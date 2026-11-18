@@ -12,6 +12,8 @@ import { dirname, join, resolve } from "node:path";
 import { parseCandidateName } from "../records/candidate.js";
 import { cliActor, ownerAnswerRef, toIsoZ } from "../records/pin.js";
 import { writeTargetPin } from "../records/pin-map.js";
+import { answeredStep, readRequest, requestsDir, workQueue, type SlotRequest } from "../records/request.js";
+import type { WorkKind } from "../queue/routing.js";
 import { publicationOf } from "../release/paths.js";
 import { isReleaseSlot } from "../release/pins.js";
 import { readyFindings } from "../release/ready.js";
@@ -175,16 +177,23 @@ export async function runPinCli(argv: readonly string[], cwd: string, guard: Wri
 
 /**
  * Why a clossys.queue-entry/2 entry's answer does not decide this pin (undefined when it does, or when the entry is a
- * clossys.queue-entry/1 decision entry, whose answer the pin rules judge): the entry is open, and its last event is
- * the owner's answered option whose step is exactly `pin <slot> <candidate>`.
+ * clossys.queue-entry/1 decision entry, whose answer the pin rules judge). The entry reads as a work entry through
+ * readRequest (its schema and every entry rule, U7 r5 blind1 s2); it is an open kind change filed under the queue the
+ * ref names, assigned to the owner; and its last event is the owner's answered option whose step is exactly
+ * `pin <slot> <candidate>`.
  */
-function typedAnswerRefusal(file: string, slot: string, candidate: string): string | undefined {
-  let doc: { schema?: unknown; status?: unknown; options?: { id: string; then: { verb: string; args: string[] } }[]; events?: { op?: string; by?: string; option?: string }[] };
-  try { doc = JSON.parse(readFileSync(file, "utf8")) as typeof doc; } catch { return "does not read"; }
-  if (doc.schema !== "clossys.queue-entry/2") return undefined;
-  if (doc.status !== "open") return "is closed: its answer already ran";
-  const last = doc.events?.at(-1);
-  const option = last?.op === "answered" && last.by === "owner" ? doc.options?.find(item => item.id === last.option) : undefined;
+function typedAnswerRefusal(root: string, answer: { readonly to: string; readonly record?: string }, file: string, slot: string, candidate: string): string | undefined {
+  let schema: unknown;
+  try { schema = (JSON.parse(readFileSync(file, "utf8")) as { schema?: unknown } | null)?.schema; } catch { return "does not read"; }
+  if (schema !== "clossys.queue-entry/2") return undefined;
+  let request: SlotRequest;
+  try { request = readRequest(join(root, "clossys"), answer.record!); } catch (error) { return `does not read as a work entry: ${error instanceof Error ? error.message : String(error)}`; }
+  const filed = `producer/${workQueue(request.kind as WorkKind)}`;
+  if (filed !== answer.to || resolve(requestsDir(join(root, "clossys"), request.kind as WorkKind), `${request.id}.json`) !== resolve(file)) return `is a kind ${request.kind} entry filed under ${filed}, not ${answer.to}`;
+  if (request.kind !== "change") return `is kind ${request.kind}: only an owner-assigned change entry answers a pin`;
+  if (request.status !== "open") return "is closed: its answer already ran";
+  if (request.assignee !== "owner") return `is assigned to ${request.assignee}, not the owner: only the owner's entry answers a pin`;
+  const option = answeredStep(request);
   if (!option) return "has no owner answer as its last event (clossys request <id> --answer <option>)";
   const [to, name, ...rest] = option.then.args;
   if (option.then.verb !== "pin" || to !== slot || name !== candidate || rest.length) return `was answered ${option.id} (${option.then.verb} ${option.then.args.join(" ")}), not pin ${slot} ${candidate}`;
@@ -242,7 +251,7 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
   // A clossys.queue-entry/2 entry answers a pin only by the owner's answered option `pin <this slot> <this candidate>`,
   // as its last event (foundry-build-0048 U7 r4): any other answer, or a later write, decides no pin.
   if (answer) {
-    const bound = typedAnswerRefusal(answerFile!, `${agent}/${target}`, candidate);
+    const bound = typedAnswerRefusal(root, answer, answerFile!, `${agent}/${target}`, candidate);
     if (bound !== undefined) return { exitCode: 1, message: `pin refused: ${answer.to}#${answer.record} ${bound}` };
   }
   const releasePin = agent === "publisher" && isReleaseSlot(agent, slotId) && record === undefined;

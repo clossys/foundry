@@ -144,6 +144,13 @@ cites it and runs it for its own agent id; `<id>` below is that id, `producer` h
   `clossys/seat-policy.json`, written by `clossys seat --policy --model <tier>=<id>` (or
   `--human-only`); while it is missing its question is asked first. Never guess a model id; never
   edit a record by hand.
+- **Work-entry answers (DRAFT)**: a `clossys.queue-entry/2` change or fix entry that awaits the owner
+  is answered with `clossys request <id> --answer <option> --via cli|chat|app --quote "<the owner's
+  words, verbatim>"`. The answer is one of the entry's options, never free text; `--via` and a
+  non-empty `--quote` of the owner's own words are required, and an answer without them writes
+  nothing. The answer runs that option's step (pin, close, handoff or keep open) through the normal
+  verbs and gates. A step that fails leaves the entry open with a rejected event that names the
+  refusing check, and for a change routes a fix on its target; never re-run the step by hand.
 - **Cascade**: run `clossys run` after each round, so the steps that read a changed record re-run
   and the next decide step opens.
 - **Stop at 0 gaps**: repeat gaps, rounds, verbs and `clossys run` until

@@ -23,7 +23,7 @@
  */
 import { existsSync, lstatSync, mkdirSync, openSync, closeSync, writeSync, readFileSync, realpathSync, renameSync, writeFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { appendRecord, buildRecord, invocationOf, observe } from "../pipeline/trace.js";
-import { dirname, join, relative, sep } from "node:path";
+import { basename, dirname, join, relative, sep } from "node:path";
 import { checkPinsResolve, resolveAll } from "../check/pins-resolve.js";
 import { answerQueueEntry } from "../queue/answer.js";
 import { entryStamp, findQueueEntry, listQueueEntryFiles, readQueueEntry, slugOf } from "../queue/entry.js";
@@ -45,7 +45,7 @@ import { agentWriteClass, currentStandardOf, isAgentLoop, isLoopAgent, pathPatte
 import { judgeSnapshot, keepSnapshot, keptSnapshot, snapshotKey, treeSnapshot, type AgentSnapshot, type TreeFiles } from "./agent-snapshot.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { certifiedOptions } from "../constitution/pin-gate.js";
-import { readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
+import { freshRaiseIssues, readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
 import { cascadeClean, runCascade } from "./cascade.js";
 import { CASCADE_REVERDICT } from "../constitution/cascade.js";
 
@@ -779,15 +779,17 @@ export function agentWriteRef(root: string, file: string): { segments: string[] 
 }
 
 /**
- * U9a fix round 3: a slot request an agent step raised itself: an open `clossys.queue-entry/2` kind slot entry with its
- * one raised event, from one of the agent's own slots. Any other entry (an owner answer queue's, another agent's
- * request, or one already checked, decided or closed) is Producer's.
+ * U9a fix round 3: a slot request an agent step raised itself. U7 r5: the entry must be exactly what `clossys request`
+ * writes when the agent raises it now (records/request.ts freshRaiseIssues): its raised and routed events, the route
+ * and options the verb derives, and every check the verb runs passing. Any other entry (an owner answer queue's,
+ * another agent's request, one already checked, decided or closed, or a forged or rewritten chain) is Producer's.
  */
 function ownNewRequest(root: string, file: string, agent: LoopAgent): boolean {
   try {
-    const entry = JSON.parse(readFileSync(wroteFile(root, file), "utf8")) as { schema?: unknown; kind?: unknown; status?: unknown; events?: unknown; from?: unknown };
-    return entry.schema === "clossys.queue-entry/2" && entry.kind === "slot" && entry.status === "open"
-      && Array.isArray(entry.events) && entry.events.length === 1 && typeof entry.from === "string" && entry.from.startsWith(`${agent}/`);
+    const path = wroteFile(root, file);
+    const entry = JSON.parse(readFileSync(path, "utf8")) as { id?: unknown };
+    if (basename(path) !== `${String(entry.id)}.json`) return false;
+    return !freshRaiseIssues(join(root, "clossys"), entry, agent).length;
   } catch {
     return false;
   }

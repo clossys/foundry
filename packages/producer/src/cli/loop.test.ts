@@ -12,6 +12,8 @@ import { afterEach, describe, expect, it } from "vitest";
 // Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
 import "./main.js";
 import { runLoopCli } from "./loop.js";
+import { adoptAgentLoops } from "../loop/agent-loop-adopt.js";
+import { SeatRefusal } from "../records/seat-owner.js";
 import { runIaCli } from "./owner.js";
 import { runLoopAgentStandard, runLoopConnected } from "../check/loop-connected.js";
 import { AGENT_LOOPS, LOOP_AGENTS, agentLoopIssues, standardOf } from "../loop/agent-loops.js";
@@ -138,6 +140,24 @@ describe("clossys loop", () => {
     const root = copy();
     await expect(loop(root, "producer/loop.create")).rejects.toThrow(/no agent loop/);
     await expect(loop(root, "designer/loop.release")).rejects.toThrow(/no agent loop/);
+  }, LONG);
+
+  it("judges the actor before adoption writes a byte (Q9, U7 r5): bare owner, a seat, free text and an unresolved owner ref are refused", async () => {
+    const root = copy();
+    const before = tree(join(root, "clossys"));
+    for (const by of ["owner", "agent:writer", "agent:judge", "migration", "owner:queue.approve#20261117T1200Z-nothing"]) {
+      expect(() => adoptAgentLoops(root, "director", { by, at: AT }), by).toThrow(SeatRefusal);
+      expect(() => adoptAgentLoops(root, "director", { by, at: AT }), by).toThrow(/^loop adopt refused: /);
+      expect(tree(join(root, "clossys")), by).toEqual(before);
+    }
+    const cli = await loop(root, "director/loop.create", "--by", "owner:queue.approve#20261117T1200Z-nothing");
+    expect(cli.exitCode).toBe(1);
+    expect(cli.message).toMatch(/loop adopt refused: --by owner:queue\.approve#20261117T1200Z-nothing is not agent:<agent>\[\.<role>\] and not a resolved owner answer/);
+    expect(tree(join(root, "clossys"))).toEqual(before);
+    // The planner acts, with or without a ref, and its events name the planner.
+    expect(adoptAgentLoops(root, "director", { by: "planner:package-default", at: AT }).adopted).toBe(true);
+    const ia = (readJson(join(root, "clossys", "agents", "director", "ledger.json")) as { events: { by?: string }[] }).events;
+    expect(ia.filter(event => JSON.stringify(event).includes("adopt-loops")).map(event => event.by)).toEqual(["planner"]);
   }, LONG);
 });
 
@@ -397,6 +417,29 @@ describe("the runner runs the owning agent's pin for all five loops (planRun / s
     const own = (raised.output as { id: string }).id;
     const requests = step("extra", ["producer/queue.slot/entries/*"]);
     expect(undeclaredWrites(root, state, requests, [`producer/queue.slot/entries/${others}.json`, "producer/queue.slot/entries/20261117T1200Z-two.json", `producer/queue.slot/entries/${own}.json`], {})).toEqual([`producer/queue.slot/entries/${others}.json`, "producer/queue.slot/entries/20261117T1200Z-two.json"]);
+
+    // U7 r5: the guard takes the two-event raise the verb writes (raised, routed), and refuses a forged or rewritten one.
+    const ownRel = `producer/queue.slot/entries/${own}.json`;
+    const ownFile = join(agents, ownRel);
+    const real = readFileSync(ownFile, "utf8");
+    const entry = JSON.parse(real) as { events: Record<string, unknown>[]; route: Record<string, unknown>; [key: string]: unknown };
+    expect(entry.events.map(event => event.op)).toEqual(["raised", "routed"]);
+    const forgeries: Record<string, unknown> = {
+      "an added event": { ...entry, events: [...entry.events, { id: `${own}#3`, at: AT, op: "checked", by: "producer" }] },
+      "the raised event alone": { ...entry, events: [entry.events[0]] },
+      "a rewritten routed detail": { ...entry, events: [entry.events[0], { ...entry.events[1], detail: "row 1 -> designer" }] },
+      "a rewritten route": { ...entry, route: { ...entry.route, row: `${String(entry.route.row)}.forged` } },
+      "another raiser": { ...entry, events: [{ ...entry.events[0], by: "writer" }, entry.events[1]] },
+      "forged provenance": { ...entry, createdBy: { actor: "owner", ref: "chat" } },
+      "a forged owner channel": { ...entry, events: [{ ...entry.events[0], via: "chat", quote: "yes" }, entry.events[1]] },
+      "a rewritten why": { ...entry, why: "something else" },
+    };
+    for (const [what, forged] of Object.entries(forgeries)) {
+      writeFileSync(ownFile, `${JSON.stringify(forged, null, 2)}\n`);
+      expect(undeclaredWrites(root, state, requests, [ownRel], {}), what).toEqual([ownRel]);
+    }
+    writeFileSync(ownFile, real);
+    expect(undeclaredWrites(root, state, requests, [ownRel], {})).toEqual([]);
   }, LONG);
 
   it("refuses at load a forged designer loop.choose pin whose added step answers the owner's approve queue (B1, U9a fix round 3)", async () => {
@@ -553,16 +596,29 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     put(root, entry("20261117T1100Z-closed"), { ...fresh(slot), status: "closed", events: [{ id: "c#1", at: AT, op: "raised", by: "designer" }, { id: "c#2", at: AT, op: "closed", by: "producer" }] });
     const others = await withRequest(root, "director/narratives.origin");
     put(root, `clossys/agents/${slot}/candidates/old-v1.json`, { note: "a candidate already there" });
+    // U7 r5: the guard takes only what clossys request writes, so the designer's own entries are real raises: one
+    // there before the step (create-only refuses it), one the step raises.
+    const designerSlot = join(root, "clossys", "agents", slot, "slot.json");
+    const doc = readJson(designerSlot);
+    doc.refs.push({ to: "director/narratives.origin", rel: "input" }, { to: "director/narratives.second", rel: "input" });
+    writeFileSync(designerSlot, `${JSON.stringify(doc, null, 2)}\n`);
+    const raise = async (target: string) => {
+      const raised = await runCli(["request", "--target", target, "--from", slot, "--why", "the slot cites it", "--at", AT, "--by", "designer", "--root", root], root);
+      expect(raised.exitCode, raised.message).toBe(0);
+      return `producer/queue.slot/entries/${(raised.output as { id: string }).id}.json`;
+    };
+    const earlier = await raise("director/narratives.origin");
     const before = treeSnapshot(root, state.runId);
     put(root, entry("20261117T1100Z-closed"), fresh(slot));
     put(root, entry(others), fresh(slot));
-    put(root, entry("20261117T1200Z-new"), fresh(slot));
-    const requests = ["producer/queue.slot/entries/20261117T1100Z-closed.json", `producer/queue.slot/entries/${others}.json`, "producer/queue.slot/entries/20261117T1200Z-new.json"];
-    expect(undeclaredWrites(root, state, extra, requests, before)).toEqual(requests.slice(0, 2));
-    // The same writes judged as if nothing was there before pass: create-only is what refuses them.
-    expect(undeclaredWrites(root, state, extra, requests, {})).toEqual([]);
+    const raisedNow = await raise("director/narratives.second");
+    const requests = ["producer/queue.slot/entries/20261117T1100Z-closed.json", `producer/queue.slot/entries/${others}.json`, earlier, raisedNow];
+    expect(undeclaredWrites(root, state, extra, requests, before)).toEqual(requests.slice(0, 3));
+    // Judged as if nothing was there before, the designer's own real raise passes: create-only is what refuses it.
+    // The rewritten entries are not what clossys request writes, so they stay refused (forged).
+    expect(undeclaredWrites(root, state, extra, requests, {})).toEqual(requests.slice(0, 2));
     // No snapshot at all refuses every write (fail closed).
-    expect(undeclaredWrites(root, state, extra, requests.slice(2), undefined)).toEqual(requests.slice(2));
+    expect(undeclaredWrites(root, state, extra, requests.slice(3), undefined)).toEqual(requests.slice(3));
 
     // The standard's own create step (wildcard candidates) may not rewrite a candidate that was there; a new one goes on.
     put(root, `clossys/agents/${slot}/candidates/old-v1.json`, { note: "rewritten" });
@@ -574,7 +630,7 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     const scopePlan = planRun(root, { loop: "loop.scope", agent: "designer" }, AT);
     if (!scopePlan.ok) throw new Error(scopePlan.reason);
     const scope = standardStep("loop.scope", "scope-designer");
-    expect(undeclaredWrites(root, scopePlan.state, scope, requests, before)).toEqual(requests.slice(0, 2));
+    expect(undeclaredWrites(root, scopePlan.state, scope, requests, before)).toEqual(requests.slice(0, 3));
 
     // loop.slot's decide step answers its own request, named exactly: that one existing entry is its to change.
     const need = "designer/dogfood.own-loops-need";

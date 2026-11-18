@@ -18,6 +18,7 @@ import { AGENT_LOOPS, agentLoopIssues, isAgentLoop, isLoopAgent, readAgentLoopPi
 import { planRun, type StartInput } from "../loop/runner.js";
 import { listRequests, targetOf } from "../records/request.js";
 import { toIsoZ } from "../records/pin.js";
+import { SeatRefusal } from "../records/seat-owner.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { runPinCli } from "./pin.js";
@@ -72,7 +73,11 @@ export async function runLoopCli(argv: readonly string[], cwd: string): Promise<
   let adopted = false;
   const pinned: string[] = [];
   if (!check) {
-    const adopt = adoptAgentLoops(workspace, agent, { by: by.split(":")[0]!, at: when });
+    let adopt: ReturnType<typeof adoptAgentLoops>;
+    try { adopt = adoptAgentLoops(workspace, agent, { by, at: when }); } catch (error) {
+      if (error instanceof SeatRefusal) return done(workspace, { loop: target, adopted: false, pinned, issues: [error.message] });
+      throw error;
+    }
     if (adopt.refused.length) return done(workspace, { loop: target, adopted: false, pinned, issues: adopt.refused.map(issue => `adopt refused: ${issue}`) });
     adopted = adopt.adopted;
     for (const each of AGENT_LOOPS) {
