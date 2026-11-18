@@ -3,8 +3,8 @@
  * (release/__fixtures__/world.ts) with a stub builder. Nothing is deployed or published; the ready-pin is written only
  * in the tmp consumer.
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, renameSync, symlinkSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runCli } from "../cli/main.js";
 import { runReleaseCli } from "../cli/release.js";
@@ -312,6 +312,34 @@ describe("slots.stale on the release inputs (U8a)", () => {
     expect(gates.exitCode).toBe(1);
     expect(stale(gates).find(row => row.subject === "designer/sections.hero")?.detail)
       .toBe("pinned hero-v1.json has no verdict for its bytes: the candidate file changed after it was judged: agent:designer must re-verdict it (run its loop.choose: clossys run loop.choose --slot designer/sections.hero)");
+  });
+
+  /** Moves a model file out of the model tree and leaves a relative symbolic link to it in its place. */
+  function alias(world: ReleaseWorld, rel: string): void {
+    const file = join(world.root, rel);
+    const moved = join(world.root, "outside", rel.replaceAll("/", "__"));
+    mkdirSync(dirname(moved), { recursive: true });
+    renameSync(file, moved);
+    symlinkSync(relative(dirname(file), moved), file);
+  }
+
+  it("fails closed when a legacy pin's candidate is a symbolic link: the resolver refuses the alias the model reader refuses", async () => {
+    const world = make();
+    world.handPin("publisher/page.home", 2);
+    alias(world, "clossys/agents/publisher/page.home/candidates/home-v2.json");
+    const gates = await release(world, "--gates");
+    expect(gates.exitCode).toBe(1);
+    expect(out(gates).findings.find(row => row.check === "pins.resolve" && row.subject === "publisher/page.home")?.detail)
+      .toContain("pin names home-v2.json, which is a symbolic link, or sits under one: aliases are not followed");
+  });
+
+  it("fails closed when a slot's pin.json is a symbolic link, even over a judged pin", async () => {
+    const world = make();
+    alias(world, "clossys/agents/publisher/page.home/pin.json");
+    const gates = await release(world, "--gates");
+    expect(gates.exitCode).toBe(1);
+    expect(out(gates).findings.find(row => row.check === "pins.resolve" && row.subject === "publisher/page.home")?.detail)
+      .toContain("publisher/page.home pin.json is a symbolic link, or sits under one: aliases are not followed");
   });
 
   it("fails a pin on another candidate with the same bytes as a judged one (the verdict binds the candidate name)", async () => {

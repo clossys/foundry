@@ -15,7 +15,9 @@
  *   pin (no recorded pinSet or verdict, what `clossys migrate recut` writes for a pin/1) fails closed too: nothing says
  *   it holds on the pinSet now, so it fails until the owning agent's loop.choose re-verdicts it (foundry-build-0048 U8).
  *   The slots judged are every IA-placed slot and every slot a pinned release input resolves from (so a pin outside
- *   the IA that the manifest would ship is judged too), release slots aside (release.ready judges those).
+ *   the IA that the manifest would ship is judged too), release slots aside (release.ready judges those). Every pin
+ *   the release ships must match a judged check on its slot, record, candidate and sha256: a shipped pin the model
+ *   reader could not read (an alias, an unreadable file) fails closed by name. Producer slots are not judged (sweep N2).
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -155,11 +157,25 @@ function slotsStale(root: string): Finding[] {
   }
   const flagged = new Set(findings.map(finding => finding.subject));
   const ctx = buildContext(root, join(root, "clossys"));
-  for (const check of pinChecks(ctx, undefined, gateSlots(root, ctx))) {
+  const checks = pinChecks(ctx, undefined, gateSlots(root, ctx));
+  for (const check of checks) {
     const subject = `${check.slot.agent}/${check.slot.id}`;
     if (flagged.has(subject) || check.state === "fresh") continue;
     flagged.add(subject);
     findings.push({ check: SLOTS_STALE, subject, detail: staleDetail(check) });
+  }
+  // Every pin the release ships was judged: a check on the same slot, record, candidate and sha256. A shipped pin
+  // the model reader could not read (an alias, an unreadable file) has no check, and fails closed here. Producer
+  // slots are not judged by pinChecks and are left out the same way (sweep N2).
+  for (const row of releaseResolutions(root)) {
+    if (row.state !== "pinned" || row.agent === "producer") continue;
+    const subject = `${row.agent}/${row.slotId}`;
+    if (flagged.has(subject)) continue;
+    const judged = checks.some(check => check.slot.agent === row.agent && check.slot.id === row.slotId && check.record === row.record
+      && check.candidate.name === row.candidate && check.candidate.sha256 === row.sha256);
+    if (judged) continue;
+    flagged.add(subject);
+    findings.push({ check: SLOTS_STALE, subject, detail: `ships ${row.candidate}${row.record !== undefined ? ` for record ${row.record}` : ""} unjudged: the model reader could not read it or its slot (an alias or an unreadable file), so no verdict covers the bytes the release ships` });
   }
   return findings;
 }
