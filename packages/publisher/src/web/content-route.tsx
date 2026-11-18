@@ -117,10 +117,10 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
   let metadata: ContentRouteMetadata = {
     ...(pageCopy.title === undefined ? {} : { title: pageCopy.title }),
     ...(pageCopy.description === undefined ? {} : { description: pageCopy.description }),
-    robots: robotsFor(slot),
+    robots: robotsFor(slot, input.registry.workspace.tree),
     ...(canonical === undefined ? {} : { canonical }),
   };
-  for (const finding of checkPageMetadata({ ...slot, locales: [locale] }, { ...candidate, pageMeta: candidate.pageMeta?.filter(field => field.locale === locale) }, undefined, copyOptions)) {
+  for (const finding of checkPageMetadata({ ...slot, locales: [locale] }, { ...candidate, pageMeta: candidate.pageMeta?.filter(field => field.locale === locale) }, input.registry.workspace.tree, copyOptions)) {
     add("copy", "writer", finding.path, `Writer page metadata is required: ${finding.path} (${finding.rule})`);
   }
 

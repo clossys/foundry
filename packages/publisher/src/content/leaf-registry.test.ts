@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { leafRegistryFixture, libraryFixture, pinnedReviewFixture, reviewFixture } from "./__fixtures__/review.js";
 import { validateContentRegistry } from "./validate.js";
+import { contentTreeFixture } from "./__fixtures__/content-tree.js";
 
 const expectedLeaves = [
   ["sl_fixturesaf", "websites/site/home", "content", "/"],
@@ -51,7 +52,7 @@ describe("leaf registry inventory", () => {
   it("uses English and generic deployment targets across the active website boards", () => {
     const { workspace, slots } = leafRegistryFixture();
     expect(workspace).toEqual({
-      consumerId: "sample", defaultLocale: "en", locales: ["en"],
+      consumerId: "sample", tree: contentTreeFixture(), defaultLocale: "en", locales: ["en"],
       deployTargets: [
         { id: "product-site", repo: "sample", app: "site" },
         { id: "product-admin", repo: "sample", app: "admin" },

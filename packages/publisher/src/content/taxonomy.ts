@@ -1,4 +1,3 @@
-import treeData from "./tree.json" with { type: "json" };
 import type { InstanceBinding, SectionPlacement, RegionPageBinding, SectionFill } from "../core/instance-binding.js";
 
 export interface ContentTreeChild {
@@ -23,20 +22,15 @@ function assertFields(value: Record<string, unknown>, allowed: readonly string[]
   if (Object.keys(value).some(key => !allowed.includes(key))) throw new Error(`Invalid content tree at ${path}: unknown field`);
 }
 
-/** Validate editable placement data and return an immutable copy in presentation order. */
-export function loadContentTree(input: unknown = treeData): ContentTree {
+/** Validate editable placement data and return an immutable copy in presentation order. The consumer owns the content
+ * map and supplies its tree; Publisher ships none (its seed tree, src/content/tree.json, is retired and has no readers). */
+export function loadContentTree(input: unknown): ContentTree {
   if (!record(input) || input.schemaVersion !== 1 || !Array.isArray(input.nodes)) {
     throw new Error("Invalid content tree: expected schemaVersion 1 and nodes");
   }
-  // `retired` marks the shipped seed tree retired in place (foundry-build-0036, audit P10); it is a record, never placement data.
-  assertFields(input, ["schemaVersion", "retired", "nodes"], "tree");
-  if (input.retired !== undefined) {
-    const marker = input.retired;
-    if (!record(marker) || !text(marker.retiredAt) || !text(marker.decidedBy) || !text(marker.reason)) {
-      throw new Error("Invalid content tree at retired: expected retiredAt, decidedBy and reason strings");
-    }
-    assertFields(marker, ["retiredAt", "decidedBy", "reason"], "retired");
-  }
+  // A tree marked retired (as Publisher's former seed tree, src/content/tree.json, is) is a record, never placement data.
+  if (input.retired !== undefined) throw new Error("Invalid content tree: a retired tree is a record and cannot be loaded as placement data");
+  assertFields(input, ["schemaVersion", "nodes"], "tree");
   const groupIds = new Set<string>();
   const nodes = input.nodes.map((node: unknown, index: number): ContentTreeNode => {
     const path = `nodes[${index}]`;
@@ -62,11 +56,6 @@ export function loadContentTree(input: unknown = treeData): ContentTree {
   return Object.freeze({ schemaVersion: 1, nodes: Object.freeze(nodes) });
 }
 
-export const CONTENT_TREE = loadContentTree();
-/** Compatibility view derived from the editable tree. */
-export const CONTENT_TAXONOMY: Readonly<Record<string, readonly string[]>> = Object.freeze(
-  Object.fromEntries(CONTENT_TREE.nodes.map(node => [node.id, Object.freeze(node.children.map(child => child.id))])),
-);
 export type ContentL1 = string;
 export type ContentL2 = string;
 export type ContentPlacement = { readonly l1: string; readonly l2: string };
@@ -140,14 +129,14 @@ export function projectPageOutline(page: Pick<InstanceBinding, "fills"> | Region
   return { headings, anchors, targets, groups };
 }
 
-export function isContentL1(value: unknown, tree: ContentTree = CONTENT_TREE): value is ContentL1 {
+export function isContentL1(value: unknown, tree: ContentTree): value is ContentL1 {
   return typeof value === "string" && tree.nodes.some(node => node.id === value);
 }
-export function isContentL2(l1: unknown, value: unknown, tree: ContentTree = CONTENT_TREE): value is ContentL2 {
+export function isContentL2(l1: unknown, value: unknown, tree: ContentTree): value is ContentL2 {
   return typeof l1 === "string" && typeof value === "string"
     && tree.nodes.some(node => node.id === l1 && node.children.some(child => child.id === value));
 }
-export function isContentPlacement(l1: unknown, l2: unknown, tree: ContentTree = CONTENT_TREE): boolean {
+export function isContentPlacement(l1: unknown, l2: unknown, tree: ContentTree): boolean {
   return isContentL2(l1, l2, tree);
 }
 

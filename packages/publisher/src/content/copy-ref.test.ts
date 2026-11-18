@@ -11,6 +11,7 @@ import {
   approvedCopyEntry, copyRefCandidate, copyRefFixtureAt, copyRefRuntimeFixture,
   refField, withCopyRefBody,
 } from "./__fixtures__/copy-ref.js";
+import { contentTreeFixture } from "./__fixtures__/content-tree.js";
 
 describe("Publisher Writer CopyRef resolution", () => {
   it.each(["en", "ar"])("formats approved %s ICU copy through the actual Writer resolver", locale => {
@@ -52,8 +53,8 @@ describe("Publisher Writer CopyRef resolution", () => {
       existingUrls: [`${localeRouteOrigin}/about`, `${localeRouteOrigin}/ar/about`],
     };
     expect(resolveCopy(candidate, "ar", combined).copy.$pageMeta?.title).toBe("الملفات");
-    expect(checkPageMetadata(slot, candidate, undefined, combined)).toEqual([]);
-    expect(checkPageMetadata(slot, candidate, undefined, {
+    expect(checkPageMetadata(slot, candidate, contentTreeFixture(), combined)).toEqual([]);
+    expect(checkPageMetadata(slot, candidate, contentTreeFixture(), {
       ...combined, existingUrls: [`${localeRouteOrigin}/about`],
     })).toContainEqual(expect.objectContaining({ rule: "hreflang-target-missing", severity: "error" }));
   });

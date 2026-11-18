@@ -10,6 +10,7 @@ import { mainPublisherContent } from "../../content/cli/index.js";
 import { checkPublisherIACoverage } from "./check.js";
 import { loadPublisherIAInput, publisherPackageRoot } from "./load.js";
 import type { CoverageInput } from "./types.js";
+import { contentTreeFixture } from "../../content/__fixtures__/content-tree.js";
 
 const at = "2026-01-01T00:00:00Z", slotId = "sl_fixturesac" as const;
 function fixture(): CoverageInput {
@@ -20,7 +21,7 @@ function fixture(): CoverageInput {
       ] },
     ] }, links: [], typeSettings: {}, openQuestions: [] };
   const revision = createContentRevision(content, "r1", at);
-  const registry: ContentRegistry = { workspace: { consumerId: "sample", defaultLocale: "en", locales: ["en"], deployTargets: [], destinations: [] },
+  const registry: ContentRegistry = { workspace: { consumerId: "sample", tree: contentTreeFixture(), defaultLocale: "en", locales: ["en"], deployTargets: [], destinations: [] },
     slots: [{ id: slotId, aliases: [], locales: ["en"], l1: "websites", l2: "admin", position: { name: "designer", order: 0 }, name: "Designer", kind: "content", route: "/agents/designer", devOnly: false, tags: [], releases: [], createdAt: at }],
     candidates: [{ ...content, id: "designer", slotId, origin: "agent-draft", state: "draft", revision: "r1", tags: [], history: [revision], updatedAt: at }] };
   return { contentTree: { schemaVersion: 1, nodes: [{ id: "websites", label: "Websites", children: [{ id: "admin", label: "Admin", frame: "app-shell" }] }] },
@@ -134,12 +135,30 @@ describe("Publisher IA coverage", () => {
   it("reads the real catalog without fixtures, remains cwd-independent and preserves all input bytes", () => {
     const input = loadPublisherIAInput(), before = JSON.stringify(input);
     const report = checkPublisherIACoverage(input);
-    expect(input.registry).toBeUndefined(); expect(input.declaredSlots).toHaveLength(18);
+    expect(input.registry).toBeUndefined();
+    // Re-pinned 18 -> 0 (foundry-build-0042 r1): Publisher no longer reads the signed slots freeze, whose 18 ids are all
+    // retired; slot membership and the content tree are the consumer's, supplied with --membership and --registry.
+    expect(input.declaredSlots).toEqual([]); expect(input.contentTree.nodes).toEqual([]);
+    expect(input.needs.some(row => row.includes("No consumer slot membership supplied"))).toBe(true);
     expect(input.formats).toHaveLength(6); expect(report.summary.states.draft).toBe(6);
     expect(report.summary.states.checked).toBe(0); expect(report.summary.states.approved).toBe(0);
     expect(report.basis.registryObserved).toBe(false); expect(report.basis.needs.some(row => row.includes("ContentRegistry"))).toBe(true);
     expect(JSON.stringify(input)).toBe(before);
     expect(JSON.stringify(checkPublisherIACoverage(input))).toBe(JSON.stringify(report));
+  });
+  it("takes slot membership and the content tree from consumer inputs only", () => {
+    const dir = mkdtempSync(join(tmpdir(), "publisher-ia-")); temps.push(dir);
+    const registry = fixture().registry!;
+    writeFileSync(join(dir, "registry.json"), JSON.stringify(registry));
+    writeFileSync(join(dir, "membership.json"), JSON.stringify({ leafIds: [slotId] }));
+    const input = loadPublisherIAInput({ registry: join(dir, "registry.json"), membership: join(dir, "membership.json") });
+    expect(input.declaredSlots).toEqual([slotId]);
+    expect(input.contentTree.nodes.map(node => node.id)).toEqual(registry.workspace.tree.nodes.map(node => node.id));
+    const { tree: _tree, ...treeless } = registry.workspace;
+    writeFileSync(join(dir, "treeless.json"), JSON.stringify({ ...registry, workspace: treeless }));
+    const missing = loadPublisherIAInput({ registry: join(dir, "treeless.json") });
+    expect(missing.contentTree.nodes).toEqual([]);
+    expect(missing.needs.some(row => row.includes("no valid content tree"))).toBe(true);
   });
   it("registers a read-only package command and emits the same real JSON report and summary", async () => {
     const dir = mkdtempSync(join(tmpdir(), "publisher-ia-")); temps.push(dir);
@@ -249,7 +268,9 @@ describe("guard regressions", () => {
     const run = spawnSync(process.execPath, [join(publisherPackageRoot, "dist/content/node.js"), "ia-coverage", "--out", path], { cwd: dir, encoding: "utf8" });
     expect(run.status, run.stderr).toBe(1);
     const report = JSON.parse(readFileSync(path, "utf8"));
-    expect(report.summary.levels).toEqual({ L0: 2, L1: 12, L2: 16, L3: 24 });
-    expect(report.summary.states).toEqual({ absent: 18, draft: 6, checked: 0, approved: 0 });
+    // Re-pinned (foundry-build-0042 r1) from L1 12 / L2 16 / L3 24 and absent 18: with no consumer inputs Publisher reads
+    // neither the retired seed tree nor the signed freeze (18 retired ids), so only the 6 format rows remain.
+    expect(report.summary.levels).toEqual({ L0: 2, L1: 6, L2: 6, L3: 6 });
+    expect(report.summary.states).toEqual({ absent: 0, draft: 6, checked: 0, approved: 0 });
   });
 });

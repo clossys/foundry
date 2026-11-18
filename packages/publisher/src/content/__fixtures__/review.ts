@@ -1,6 +1,7 @@
 import { createContentRevision } from "../revisions.js";
 import type { CandidateContent, ContentRegistry, ContentSlot } from "../model.js";
 import type { ConsumerLibrarySnapshot } from "../library.js";
+import { contentTreeFixture } from "./content-tree.js";
 
 export const at = "2026-01-01T00:00:00Z";
 export function reviewFixture(): ContentRegistry {
@@ -16,7 +17,7 @@ export function reviewFixture(): ContentRegistry {
   };
   const snapshot = createContentRevision(content, "r1", at);
   return {
-    workspace: { consumerId: "sample", defaultLocale: "en", locales: ["en"], deployTargets: [], destinations: [] },
+    workspace: { consumerId: "sample", tree: contentTreeFixture(), defaultLocale: "en", locales: ["en"], deployTargets: [], destinations: [] },
     slots: [{ id: "sl_fixturesaf", aliases: ["websites/site/home"], locales: ["en"], l1: "websites", l2: "site", position: { order: 0, name: "home" }, name: "Home", kind: "content", devOnly: false, tags: [], releases: [], createdAt: at, activeCandidateId: "sample" }],
     candidates: [{ ...structuredClone(content), id: "sample", slotId: "sl_fixturesaf", origin: "agent-draft", state: "active", revision: "r1", approval: { source: "owner", by: "owner", at, revision: "r1", digest: snapshot.digest }, tags: [], history: [snapshot], updatedAt: at }],
   };
@@ -61,7 +62,7 @@ export function leafRegistryFixture(): ContentRegistry {
   ];
   return {
     workspace: {
-      consumerId: "sample", defaultLocale: "en", locales: ["en"],
+      consumerId: "sample", tree: contentTreeFixture(), defaultLocale: "en", locales: ["en"],
       deployTargets: [
         { id: "product-site", repo: "sample", app: "site" },
         { id: "product-admin", repo: "sample", app: "admin" },

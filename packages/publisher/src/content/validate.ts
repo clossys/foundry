@@ -3,15 +3,16 @@ import { PAGE_META_FIELDS, validateComposition, validateCopyFields } from "./com
 import type { ContentFinding } from "./composition.js";
 import { isContentJson, isSourceAnswer } from "./json.js";
 import type { ContentCandidate, ContentRegistry, ContentSlot } from "./model.js";
-import { CONTENT_TREE, isContentPlacement, isSlotId } from "./taxonomy.js";
+import { isContentPlacement, isSlotId, loadContentTree } from "./taxonomy.js";
 import type { ContentTree } from "./taxonomy.js";
 import { isCanonicalUrl } from "./metadata.js";
 import { CANDIDATE_ORIGINS, CANDIDATE_STATES, LINK_RELATIONS, SLOT_KINDS, isContentLocale, isRevisionId } from "./vocabulary.js";
 
 class Checks {
   findings: ContentFinding[] = [];
-  readonly tree: ContentTree;
-  constructor(tree: ContentTree = CONTENT_TREE) { this.tree = tree; }
+  /** Only slot placement reads the tree; candidate, content and workspace checks need none. */
+  readonly tree: ContentTree | undefined;
+  constructor(tree?: ContentTree) { this.tree = tree; }
   add(path: string, rule: string): void { this.findings.push({ path, rule, message: `Invalid ${rule}` }); }
   object(v: unknown, path: string): v is Record<string, unknown> {
     if (!v || typeof v !== "object" || Array.isArray(v) || ![null, Object.prototype].includes(Object.getPrototypeOf(v))) {
@@ -132,7 +133,7 @@ class Checks {
     this.strings(v.aliases, `${path}.aliases`);
     if (Array.isArray(v.aliases) && new Set(v.aliases).size !== v.aliases.length) this.add(`${path}.aliases`, "duplicate-alias");
     this.locales(v.locales, `${path}.locales`);
-    if (!isContentPlacement(v.l1, v.l2, this.tree)) this.add(path, "placement");
+    if (!this.tree || !isContentPlacement(v.l1, v.l2, this.tree)) this.add(path, "placement");
     for (const key of ["name"]) this.text(v[key], `${path}.${key}`);
     if (this.object(v.position, `${path}.position`)) {
       this.text(v.position.name, `${path}.position.name`);
@@ -174,6 +175,7 @@ class Checks {
   workspace(v: unknown, path: string): void {
     if (!this.object(v, path)) return;
     this.text(v.consumerId, `${path}.consumerId`);
+    if (workspaceTree(v) === undefined) this.add(`${path}.tree`, "content-tree");
     this.locales(v.locales, `${path}.locales`);
     this.locale(v.defaultLocale, `${path}.defaultLocale`);
     if (Array.isArray(v.locales) && !v.locales.includes(v.defaultLocale)) this.add(`${path}.defaultLocale`, "default-locale-membership");
@@ -200,16 +202,23 @@ export function validateCandidateContent(value: unknown): readonly ContentFindin
 export function validateContentCandidate(value: unknown): readonly ContentFinding[] {
   const checks = new Checks(); checks.candidate(value, "candidate"); return checks.findings;
 }
-export function validateContentSlot(value: unknown, tree: ContentTree = CONTENT_TREE): readonly ContentFinding[] {
+/** The consumer-supplied content tree of a workspace, or undefined when it is missing or invalid. */
+export function workspaceTree(workspace: unknown): ContentTree | undefined {
+  if (!workspace || typeof workspace !== "object" || Array.isArray(workspace)) return undefined;
+  try { return loadContentTree((workspace as Record<string, unknown>).tree); } catch { return undefined; }
+}
+
+export function validateContentSlot(value: unknown, tree: ContentTree): readonly ContentFinding[] {
   const checks = new Checks(tree); checks.slot(value, "slot"); return checks.findings;
 }
 export function validateContentWorkspace(value: unknown): readonly ContentFinding[] {
   const checks = new Checks(); checks.workspace(value, "workspace"); return checks.findings;
 }
 
-/** Structural and registry joins only; this does not grant approval or publishing readiness. */
-export function validateContentRegistry(value: unknown, tree: ContentTree = CONTENT_TREE): readonly ContentFinding[] {
-  const checks = new Checks(tree);
+/** Structural and registry joins only; this does not grant approval or publishing readiness. Slots are placed in the
+ * registry workspace's own tree unless a tree is supplied explicitly. */
+export function validateContentRegistry(value: unknown, tree?: ContentTree): readonly ContentFinding[] {
+  const checks = new Checks(tree ?? (value && typeof value === "object" && !Array.isArray(value) ? workspaceTree((value as Record<string, unknown>).workspace) : undefined));
   if (!checks.object(value, "registry")) return checks.findings;
   checks.workspace(value.workspace, "registry.workspace");
   const slotsValid = checks.array(value.slots, "registry.slots");
@@ -257,7 +266,7 @@ export function validateContentRegistry(value: unknown, tree: ContentTree = CONT
   return checks.findings;
 }
 
-export function parseContentRegistry(value: unknown, tree: ContentTree = CONTENT_TREE): ContentRegistry {
+export function parseContentRegistry(value: unknown, tree?: ContentTree): ContentRegistry {
   const findings = validateContentRegistry(value, tree);
   if (findings.length) throw new TypeError(findings.map(f => `${f.path}: ${f.rule}`).join("; "));
   return value as ContentRegistry;

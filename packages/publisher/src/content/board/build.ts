@@ -3,7 +3,7 @@ import { validateCopyFields } from "../composition.js";
 import type { ContentCandidate, ContentSlot } from "../model.js";
 import { computeStageReport } from "../stage-engine.js";
 import type { CandidateStageEvidence, StageKey, StageReport } from "../stage-engine.js";
-import { CONTENT_TREE, loadContentTree } from "../taxonomy.js";
+import { loadContentTree } from "../taxonomy.js";
 import type { ContentTree } from "../taxonomy.js";
 import { validateContentRegistry } from "../validate.js";
 import type { PublisherBoardGroup, PublisherBoardInput, PublisherBoardLane, PublisherBoardModel, PublisherBoardNeed, PublisherBoardRow } from "./types.js";
@@ -20,13 +20,13 @@ export function buildPublisherBoard(input: PublisherBoardInput): PublisherBoardM
     if (!needKeys.has(identity)) { needKeys.add(identity); needs.push({ target, ref, detail }); }
   };
 
-  let tree: ContentTree = CONTENT_TREE;
-  if (input.tree !== undefined) {
-    try { tree = loadContentTree(input.tree); }
-    catch (error) {
-      need("publisher", "tree", error instanceof Error ? error.message : "Supply a valid content tree");
-      tree = { schemaVersion: 1, nodes: [] };
-    }
+  // The consumer supplies the tree: explicitly, or on the registry workspace. Publisher ships none to fall back to.
+  const workspaceTree = (input.registry as { readonly workspace?: { readonly tree?: unknown } | null } | null | undefined)?.workspace?.tree;
+  let tree: ContentTree;
+  try { tree = loadContentTree(input.tree !== undefined ? input.tree : workspaceTree); }
+  catch (error) {
+    need("publisher", "tree", error instanceof Error ? error.message : "Supply a valid content tree");
+    tree = { schemaVersion: 1, nodes: [] };
   }
   const registryFindings = validateContentRegistry(input.registry, tree);
   for (const finding of registryFindings) {

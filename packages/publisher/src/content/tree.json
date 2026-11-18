@@ -44,7 +44,7 @@
         {
           "id": "docs",
           "label": "Docs",
-          "frame": "site-shell"
+          "frame": "document"
         }
       ]
     },
@@ -54,7 +54,7 @@
       "children": [
         {
           "id": "decks",
-          "label": "Slides",
+          "label": "Decks",
           "frame": "deck"
         }
       ]
