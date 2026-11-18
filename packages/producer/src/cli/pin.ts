@@ -173,6 +173,24 @@ export async function runPinCli(argv: readonly string[], cwd: string, guard: Wri
   }
 }
 
+/**
+ * Why a clossys.queue-entry/2 entry's answer does not decide this pin (undefined when it does, or when the entry is a
+ * clossys.queue-entry/1 decision entry, whose answer the pin rules judge): the entry is open, and its last event is
+ * the owner's answered option whose step is exactly `pin <slot> <candidate>`.
+ */
+function typedAnswerRefusal(file: string, slot: string, candidate: string): string | undefined {
+  let doc: { schema?: unknown; status?: unknown; options?: { id: string; then: { verb: string; args: string[] } }[]; events?: { op?: string; by?: string; option?: string }[] };
+  try { doc = JSON.parse(readFileSync(file, "utf8")) as typeof doc; } catch { return "does not read"; }
+  if (doc.schema !== "clossys.queue-entry/2") return undefined;
+  if (doc.status !== "open") return "is closed: its answer already ran";
+  const last = doc.events?.at(-1);
+  const option = last?.op === "answered" && last.by === "owner" ? doc.options?.find(item => item.id === last.option) : undefined;
+  if (!option) return "has no owner answer as its last event (clossys request <id> --answer <option>)";
+  const [to, name, ...rest] = option.then.args;
+  if (option.then.verb !== "pin" || to !== slot || name !== candidate || rest.length) return `was answered ${option.id} (${option.then.verb} ${option.then.args.join(" ")}), not pin ${slot} ${candidate}`;
+  return undefined;
+}
+
 /** True when `<root>/clossys/agents/<agent>/<slot-id>/slot.json` is a target `clossys.slot/2` slot. */
 function isTargetSlot(root: string, agent: string, slotId: string): boolean {
   const file = join(root, "clossys", "agents", agent, slotId, "slot.json");
@@ -217,8 +235,15 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
   const at = flags.at ?? new Date().toISOString();
   if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${PIN_USAGE}`);
   const answer = ownerAnswerRef(by);
-  if (answer && !existsSync(join(root, "clossys", "agents", answer.to, "entries", `${answer.record}.json`))) {
+  const answerFile = answer ? join(root, "clossys", "agents", answer.to, "entries", `${answer.record}.json`) : undefined;
+  if (answer && !existsSync(answerFile!)) {
     return { exitCode: 1, message: `pin refused: ${answer.to}#${answer.record} is not a queue entry` };
+  }
+  // A clossys.queue-entry/2 entry answers a pin only by the owner's answered option `pin <this slot> <this candidate>`,
+  // as its last event (foundry-build-0048 U7 r4): any other answer, or a later write, decides no pin.
+  if (answer) {
+    const bound = typedAnswerRefusal(answerFile!, `${agent}/${target}`, candidate);
+    if (bound !== undefined) return { exitCode: 1, message: `pin refused: ${answer.to}#${answer.record} ${bound}` };
   }
   const releasePin = agent === "publisher" && isReleaseSlot(agent, slotId) && record === undefined;
   if (releasePin) {

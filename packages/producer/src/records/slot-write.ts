@@ -347,6 +347,9 @@ function retireCode(reason: string): string {
   return code;
 }
 
+/** The owner answer a retire takes (U7 r4): an entry about this slot, answered with its option `retire`. */
+export const retireBinding = (agent: string, id: string): { readonly bind: { readonly subject: string; readonly answer: string } } => ({ bind: { subject: `${agent}/${id}`, answer: "retire" } });
+
 /**
  * The retire verb's ledger event for one candidate (`clossys retire <agent>/<slot> <candidate>`):
  * `retire-candidate {name, sha256, code}` in the slot ledger, written after the candidate left
@@ -354,7 +357,7 @@ function retireCode(reason: string): string {
  */
 export function appendRetireCandidate(consumer: string, agent: SlotAgent, id: string, input: { name: string; sha256: string; reason: string; by: string; at: string }, given?: WriteProvenance): LedgerEvent {
   // The total actor guard (records/seat-owner.ts): the slot's own seat or a resolved owner answer, nothing else.
-  assertActor(dirname(consumer), input.by, agent, "retire");
+  assertActor(dirname(consumer), input.by, agent, "retire", retireBinding(agent, id));
   const { entry } = located(consumer, agent, id);
   const event = ledgerEvent("retire-candidate", input.at, provenance({ verb: "retire", by: input.by, skill: skillPath("producer", "retire") }, given), { name: input.name, sha256: input.sha256, code: retireCode(input.reason) });
   slotLocked(entry.dir, () => appendEvent(entry.dir, "slot", event));
@@ -368,7 +371,7 @@ export function appendRetireCandidate(consumer: string, agent: SlotAgent, id: st
  * the agent ledger.
  */
 export function appendRetireSlot(consumer: string, agent: SlotAgent, id: string, input: { reason: string; by: string; at: string }, given?: WriteProvenance): LedgerEvent[] {
-  assertActor(dirname(consumer), input.by, agent, "retire");
+  assertActor(dirname(consumer), input.by, agent, "retire", retireBinding(agent, id));
   const who = provenance({ verb: "retire", by: input.by, skill: skillPath("producer", "retire") }, given);
   const code = retireCode(input.reason);
   const events: LedgerEvent[] = [];

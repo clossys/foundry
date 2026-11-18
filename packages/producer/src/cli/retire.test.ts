@@ -53,18 +53,26 @@ afterEach(() => rmSync(workspace, { recursive: true, force: true }));
 /** An owner answer the retire verb resolves (foundry-build-0048 U7 r3): a queue.approve entry the owner answered. */
 const APPROVAL = "20261113T1200Z-retire";
 const OWNER = `owner:queue.approve#${APPROVAL}`;
-function approval(id: string, status: "answered" | "open" = "answered", by = "owner"): void {
+function approval(id: string, status: "answered" | "open" = "answered", by = "owner", about = ID, answer = "retire"): void {
   const dir = join(workspace, "clossys", "agents", "producer", "queue.approve", "entries");
   mkdirSync(dir, { recursive: true });
   const raised = { at: AT, op: "raised", by: "code:clossys test" };
-  const answered = { at: AT, op: "answered", by, via: "chat", answer: "retire", ...(by === "owner" ? { quote: "retire it" } : {}) };
+  const answered = { at: AT, op: "answered", by, via: "chat", answer, ...(by === "owner" ? { quote: "retire it" } : {}) };
   writeFileSync(join(dir, `${id}.json`), jsonBytes({
     schema: "clossys.queue-entry/1", id, agent: "producer", kind: "queue-entry", status, createdBy: { actor: "code", cli: "clossys test", version: "0.0.0" },
-    createdAt: AT, refs: [], queue: "queue.approve", ask: "Retire it?", subject: { to: `designer/${ID}`, rel: "input" }, decider: "owner",
-    options: [{ id: "retire", summary: "retire" }], default: null, events: status === "answered" ? [raised, answered] : [raised],
+    createdAt: AT, refs: [], queue: "queue.approve", ask: "Retire it?", subject: { to: `designer/${about}`, rel: "input" }, decider: "owner",
+    options: [{ id: "retire", summary: "retire" }, { id: "keep", summary: "keep it" }], default: null, events: status === "answered" ? [raised, answered] : [raised],
   }));
 }
-const retire = (...args: string[]) => runRetireCli([...args, "--by", OWNER, "--reason", "superseded: by v2", "--at", AT], workspace);
+/** The owner's answer about the slot a retire names (U7 r4: the answer binds to its subject): OWNER for ID, else one answered for it. */
+function ownerFor(ref: string): string {
+  const slot = ref.split("/")[1]!;
+  if (slot === ID) return OWNER;
+  const id = `20261113T1200Z-retire-${slot.replace(/[^a-z0-9-]/g, "-")}`;
+  approval(id, "answered", "owner", slot);
+  return `owner:queue.approve#${id}`;
+}
+const retire = (...args: string[]) => runRetireCli([...args, "--by", ownerFor(args[0]!), "--reason", "superseded: by v2", "--at", AT], workspace);
 const retireBy = (by: string, ...args: string[]) => runRetireCli([...args, "--by", by, "--reason", "superseded: by v2", "--at", AT], workspace);
 /** Every file under the designer agent folder with its bytes: a refused retire changes none of them. */
 function snapshot(dir = agents): Record<string, string> {
@@ -136,7 +144,7 @@ describe("clossys retire <agent>/<slot> <candidate>", () => {
     for (const reason of ["superseded by v2", "obsolete", "Superseded", "superseded:", "superseded: ", " superseded", "superseded-ish", "uncertified;note", "x"]) {
       expect(RETIRE_REASON.test(reason), reason).toBe(false);
       await expect(runRetireCli([`designer/${ID}`, "example-v1", "--by", OWNER, "--reason", reason, "--at", AT], workspace)).rejects.toThrow(/--reason must be a retire code/);
-      await expect(runRetireCli([`designer/${OTHER}`, "--slot", "--by", OWNER, "--reason", reason, "--at", AT], workspace)).rejects.toThrow(/--reason must be a retire code/);
+      await expect(runRetireCli([`designer/${OTHER}`, "--slot", "--by", ownerFor(`designer/${OTHER}`), "--reason", reason, "--at", AT], workspace)).rejects.toThrow(/--reason must be a retire code/);
     }
     // Nothing moved: the refused calls wrote no record and kept the candidate and the slot.
     expect(existsSync(join(agents, ID, "retired"))).toBe(false);
@@ -240,6 +248,22 @@ describe("clossys retire: the total actor guard (foundry-build-0048 U7 r3)", () 
     const ok = await retireBy(OWNER, `designer/${ID}`, "--slot");
     expect(ok).toMatchObject({ exitCode: 0 });
     expect(load(join(agents, "ia.json")).retired.at(-1).by).toBe(OWNER);
+  });
+
+  it("T3: the owner's answer binds to its subject and option: an answer about another slot, or not retire, is refused (U7 r4)", async () => {
+    approval("20261113T1203Z-other", "answered", "owner", OTHER);
+    approval("20261113T1204Z-keep", "answered", "owner", ID, "keep");
+    approval("20261113T1205Z-free", "answered", "owner", ID, "yes, retire it");
+    const before = snapshot();
+    for (const [by, why] of [
+      ["owner:queue.approve#20261113T1203Z-other", new RegExp(`is about designer/${OTHER.replace(/\./g, "\\.")}, not designer/${ID.replace(/\./g, "\\.")}`)],
+      ["owner:queue.approve#20261113T1204Z-keep", /was answered keep, not retire/],
+      ["owner:queue.approve#20261113T1205Z-free", /was answered yes, retire it, not retire/],
+    ] as const) {
+      expect(await retireBy(by, `designer/${ID}`, "--slot"), by).toMatchObject({ exitCode: 1, message: expect.stringMatching(why) });
+      expect(await retireBy(by, `designer/${ID}`, "example-v2"), by).toMatchObject({ exitCode: 1, message: expect.stringMatching(why) });
+    }
+    expect(snapshot()).toEqual(before);
   });
 });
 

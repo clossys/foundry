@@ -24,8 +24,8 @@ export type PinBasis2 = PinRecord["basis"];
 export const PIN2_BASES: readonly PinBasis2[] = ["picked", "bulk", "planner", "agent"];
 export const OWNER_BASES: readonly PinBasis2[] = ["picked", "bulk"];
 
-/** `owner:queue.<kind>#<entry-id>`: the owner's answer to one queue entry (flows.md N10). */
-export const OWNER_QUEUE_ANSWER = /^owner:(queue\.(?:pick|approve|clarify|fix))#([0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*)$/;
+/** `owner:queue.<kind>#<entry-id>`: the owner's answer to one queue entry (flows.md N10); a clossys.queue-entry/2 entry's is its answered option (U7 r4). */
+export const OWNER_QUEUE_ANSWER = /^owner:(queue\.(?:pick|approve|clarify|fix|change|slot))#([0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*)$/;
 
 /** The int2 pin (`clossys.pin/1` in migrate/pin-1-to-2.ts): the same five fields and `confirmed`, no COMMON block. */
 export interface Pin1Doc {

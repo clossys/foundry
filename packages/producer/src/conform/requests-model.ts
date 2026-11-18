@@ -11,7 +11,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, relative } from "node:path";
 import { gapsOf } from "../pipeline/interview.js";
 import { consumerFacts, ownerClassOf, ownerClasses, readDeclarations, rederive, routingIssues, type RoutingFacts } from "../queue/routing.js";
-import { closerIssues, inputsSha256, listWorkEntries, requestIssues, resultRefusal, slotlessNeeds } from "../records/request.js";
+import { closeEventsOf, closerIssues, inputsSha256, listWorkEntries, requestIssues, resultRefusal, slotlessNeeds } from "../records/request.js";
 import { readLegacyFixes, type LegacyFix } from "../queue/legacy-fix.js";
 import { gateRunners, openFixes, RELEASE_GATES, REQUESTS_OPEN_FIX } from "../release/gates.js";
 import { releaseResolutions } from "../release/pins.js";
@@ -221,7 +221,7 @@ export const INPUTS_DRIFTED = "inputs drifted; slots.stale owns it";
 /**
  * Q7's re-read of a closed change or fix (foundry-build-0048 U7 r3), read once per conform read:
  * - the closure rule (records/request.ts closerIssues, the predicate closeWork enforces, never a copy): a fix closed
- *   declined, or by anyone but its assignee, without a resolvable owner answer, is red;
+ *   declined, or by anyone but its agent assignee, without the owner's answered option right before it, is red;
  * - the judged inputs' digest (inputsSha256) recomputed from today's bytes: equal, the requester check and (closed
  *   fixed) the fix's own check re-run, and a failure is red (a forged close over unchanged inputs); different, the
  *   re-run is skipped with INPUTS_DRIFTED, so an honest close that drifted later is never red here.
@@ -255,16 +255,19 @@ function recheckOf(consumer: string, request: SlotRequest): Recheck {
 }
 /**
  * Q7's closure-rule rows on a closed change or fix entry, read or not (foundry-build-0048 U7 r3): records/request.ts
- * closerIssues, the predicate closeWork enforces, never a copy. A fix closed declined, or by anyone but its assignee,
- * without a resolvable owner answer is red, also when the entry does not read for another reason.
+ * closerIssues, the predicate closeWork enforces, never a copy. A fix closed declined, or by anyone but its agent
+ * assignee, without the owner's answered option right before it is red, also when the entry does not read otherwise.
  */
 function closureRows(consumer: string, doc: Record<string, unknown>): string[] {
   if (doc.status !== "closed" || (doc.kind !== "change" && doc.kind !== "fix")) return [];
   const events = Array.isArray(doc.events) ? doc.events.filter(object) : [];
   const closer = events.find(event => event.id === doc.closed)?.by;
   const by = typeof closer === "string" ? closer : undefined;
-  const request = { id: String(doc.id), kind: doc.kind, assignee: String(doc.assignee) } as Pick<SlotRequest, "id" | "kind" | "assignee">;
-  return closerIssues(dirname(consumer), request, by, typeof doc.outcome === "string" ? doc.outcome : undefined).map(issue => `its close by ${by ?? "nobody"} breaks the closure rule: ${issue}`);
+  const request = {
+    id: String(doc.id), kind: doc.kind, assignee: String(doc.assignee), closed: typeof doc.closed === "string" ? doc.closed : undefined,
+    options: Array.isArray(doc.options) ? doc.options.filter(object) : undefined, events,
+  } as unknown as Pick<SlotRequest, "id" | "kind" | "assignee" | "events" | "options" | "closed">;
+  return closerIssues(request, by, typeof doc.outcome === "string" ? doc.outcome : undefined, closeEventsOf(request)).map(issue => `its close by ${by ?? "nobody"} breaks the closure rule: ${issue}`);
 }
 const slotOf = (repo: string, consumer: string) => {
   const key = `${repo}\0${consumer}`;

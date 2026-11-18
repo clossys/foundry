@@ -39,7 +39,7 @@ import { PRODUCER_IA_SOURCE } from "../records/slot-model/pipeline-seats.js";
 import { adoptedSlotDoc, driftCounts, knownSlots, SYNC_AGENTS, syncDrift, syncPlan, syncState, workspaceSourceRepairs, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
-import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writePin } from "../records/slot-write.js";
+import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, retireBinding, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writePin } from "../records/slot-write.js";
 import { LEDGER_FILE, skillPath } from "../records/ledger.js";
 import { readStandard, slotKinds, standardFits } from "../records/standards.js";
 import type { ModelAgent } from "../records/slot-model/index.js";
@@ -1117,16 +1117,17 @@ const dropEmptyDir = dropEmptyModelDir;
 
 /**
  * The retire actor guard (foundry-build-0048 U7 r3): `--by` is the slot's own seat (`agent:<agent>[.<role>]`) or a
- * resolved owner answer (`owner:queue.<kind>#<id>`, records/seat-owner.ts). Bare `owner`, `planner`, a foreign seat
- * and free text are refused before anything is read, moved, renumbered or written.
+ * resolved owner answer (`owner:queue.<kind>#<id>`, records/seat-owner.ts) about this slot, answered with its option
+ * `retire` (U7 r4). Bare `owner`, `planner`, a foreign seat, another subject's or another option's answer and free text
+ * are refused before anything is read, moved, renumbered or written.
  */
-function retireRefusal(root: string, agent: SlotAgent, by: string): CliResult | undefined {
-  const why = actorRefusal(root, by, agent);
+function retireRefusal(root: string, agent: SlotAgent, slot: string, by: string): CliResult | undefined {
+  const why = actorRefusal(root, by, agent, retireBinding(agent, slot));
   return why === undefined ? undefined : refuse("retire", why);
 }
 
 function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot: string, candidateId: string, fields: RetireFields): CliResult {
-  const guard = retireRefusal(root, agent, fields.by);
+  const guard = retireRefusal(root, agent, slot, fields.by);
   if (guard) return guard;
   const target = `${agent}/${slot}`;
   const entry = readSlotEntry(consumer, agent, slot);
@@ -1157,7 +1158,7 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
 }
 
 function retireSlot(consumer: string, root: string, agent: SlotAgent, slot: string, fields: RetireFields): CliResult {
-  const guard = retireRefusal(root, agent, fields.by);
+  const guard = retireRefusal(root, agent, slot, fields.by);
   if (guard) return guard;
   const target = `${agent}/${slot}`;
   const iaFile = iaPath(consumer, agent);
@@ -1224,7 +1225,7 @@ export async function runRetireCli(argv: readonly string[], cwd: string): Promis
   const by = need(flags, "--by", RETIRE_USAGE);
   const root = rootOf(cwd, flags), consumer = join(root, "clossys");
   // The actor guard runs first, right after the flags parse: a refused actor learns nothing else and nothing is read.
-  const refused = retireRefusal(root, agent, by);
+  const refused = retireRefusal(root, agent, slot, by);
   if (refused) return refused;
   const reason = need(flags, "--reason", RETIRE_USAGE);
   if (/[\r\n]/.test(by) || /[\r\n]/.test(reason)) return refuse("retire", "--by and --reason are one line each");

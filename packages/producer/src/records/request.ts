@@ -17,22 +17,21 @@
 import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
-import { ownerFixQuestion } from "../loop/route.js";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
-import { resolveOwnerAnswer } from "../queue/rules.js";
 import { consumerFacts, placedSlots, readDeclarations, routeEntry, RoutingError, WORK_KINDS, type RoutingFacts, type WorkKind } from "../queue/routing.js";
 import { FIX_CHECKS, fixCheck, requesterCheck, requesterPinSets, requesterSlots } from "../queue/requester-check.js";
 import { PRODUCER_ROOT, skillPath } from "./ledger.js";
 import { resolveOwnerRef } from "./owner-decisions.js";
-import { OWNER_QUEUE_ANSWER, ownerAnswerRef } from "./pin.js";
+import { OWNER_QUEUE_ANSWER } from "./pin.js";
+import { isRecordSlot } from "./resolve.js";
 import { validateAgainst } from "./schema.js";
 import { recordSchema, serializeSlot, SLOT_SCHEMA, validateSlot } from "./slot.js";
 import { slotDir, slotFile } from "./slot-model/layout.js";
 import { AGENT_KIND } from "./slot-model/types.js";
-import { listSlots, modelExists, readModelText, readSlot } from "./slots.js";
+import { listSlots, modelExists, readModelText, readSlot, readSlotEntry } from "./slots.js";
 import { appendSlotDocEvent, replaceModelFile } from "./slot-write.js";
-import type { Actor, EntryRoute, Overlap, Proposal, Ref, RequestEvent, RequestOp, Slot, SlotRequest } from "./types.js";
+import type { Actor, EntryRoute, OptionStep, Overlap, OwnerOption, Proposal, Ref, RequestEvent, RequestOp, Slot, SlotRequest } from "./types.js";
 
 export const REQUEST_SCHEMA = "clossys.queue-entry/2";
 /** The decision-entry schema queue.fix still holds runner-raised fixes in (queue/entry.ts). */
@@ -48,7 +47,7 @@ export const REQUEST_ID = /^[0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*$/;
 const NEED_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;
 const SLOT_TARGET = /^(director|designer|writer|publisher)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
 
-export type { Overlap, Proposal, RequestEvent, RequestOp, SlotRequest } from "./types.js";
+export type { OptionStep, Overlap, OwnerOption, Proposal, RequestEvent, RequestOp, SlotRequest } from "./types.js";
 
 /** The agent a request asks and the slot id it names (kind slot, slot-ref target). */
 export function targetOf(request: Pick<SlotRequest, "target">): { agent: ContentAgent; need: string } | undefined {
@@ -69,33 +68,65 @@ export const WORK_OUTCOMES: Readonly<Record<WorkKind, readonly NonNullable<SlotR
 export const outcomesFor = (kind: string): readonly NonNullable<SlotRequest["outcome"]>[] => WORK_OUTCOMES[kind as WorkKind] ?? [];
 
 /**
- * Why `by` may not close the change or fix entry `request` with `outcome` (empty when it may): the one closure rule
- * (foundry-build-0048 U7 r3) that closeWork enforces, requestIssues states on a stored close and conform Q7 re-reads.
- * - The outcome is one of outcomesFor(kind).
- * - The assignee closes a change (changed or declined), and a fix only as fixed (its own check re-run and passing).
- * - Any other close is the owner's answer `owner:queue.<kind>#<id>` (for a fix, a queue.fix entry): a
- *   clossys.queue-entry/1 entry that cites this request (a ref whose record is its id), answered by the owner. The
- *   fix itself is the /2 entry of that folder, so the answer is the /1 decision entry about it, never `#<this id>`.
- * - Bare `owner`, the planner, Producer and every other seat never close a change or fix.
- * With `root` the owner's answer must resolve (queue/rules.ts resolveOwnerAnswer); without it only its form is judged.
+ * The owner's answer to one entry (foundry-build-0048 U7 r4): `owner:queue.<kind>#<id>`, the entry itself. It closes
+ * the entry, and decides a pin its `pin` option runs, only right after the owner's `answered` event chose that option.
  */
-export function closerIssues(root: string | undefined, request: Pick<SlotRequest, "id" | "kind" | "assignee">, by: string | undefined, outcome: string | undefined): string[] {
+export const ownerAnswerOf = (request: Pick<SlotRequest, "id" | "kind">): string => `owner:${workQueue(request.kind as WorkKind)}#${request.id}`;
+
+/**
+ * The option the owner's answer chose, when the last of `events` (default: the entry's) is that `answered` event by
+ * the owner; undefined otherwise. Every step an answer runs reads it, so a later write voids the answer.
+ */
+export function answeredStep(request: Pick<SlotRequest, "events" | "options">, events: readonly RequestEvent[] = request.events): OwnerOption | undefined {
+  const last = events.at(-1);
+  if (last?.op !== "answered" || last.by !== "owner" || last.option === undefined) return undefined;
+  return request.options?.find(option => option.id === last.option);
+}
+
+const lastIndexOf = (events: readonly RequestEvent[], op: RequestOp) => events.map(event => event.op).lastIndexOf(op);
+/**
+ * Whether the owner answers the entry now: it is open, carries options, and is the owner's (assigned to the owner, or an
+ * agent's claim Producer asked the owner about with no answer since).
+ */
+export function awaitsOwner(request: Pick<SlotRequest, "status" | "assignee" | "options" | "events">): boolean {
+  if (request.status !== "open" || !request.options?.length) return false;
+  return request.assignee === "owner" || lastIndexOf(request.events, "asked") > lastIndexOf(request.events, "answered");
+}
+
+/** The outcome an option's step closes with: `close <outcome>`, and `pin` closes a change changed. */
+const stepOutcome = (step: OptionStep): string | undefined => step.verb === "close" ? step.args[0] : step.verb === "pin" ? "changed" : undefined;
+
+/**
+ * Why `by` may not close the change or fix entry `request` with `outcome` (empty when it may): the one closure rule
+ * (foundry-build-0048 U7 r4) that closeWork enforces, requestIssues states on a stored close and conform Q7 re-reads.
+ * - The outcome is one of outcomesFor(kind).
+ * - An agent assignee closes a change (changed or declined), and a fix only as fixed (its own check re-run and passing).
+ * - Any other close is the owner's typed answer: closer `owner:queue.<kind>#<this id>`, and the last of `events` (the
+ *   events before the close's verified event) is the owner's `answered` event whose option's step closes with this
+ *   outcome. Free text never closes: the answer is an option id the entry offered.
+ * - Bare `owner`, the planner, Producer and every other seat never close a change or fix.
+ */
+export function closerIssues(request: Pick<SlotRequest, "id" | "kind" | "assignee" | "events" | "options">, by: string | undefined, outcome: string | undefined, events: readonly RequestEvent[] = request.events): string[] {
   if (request.kind === "slot") return [];
   const outcomes = outcomesFor(request.kind);
   if (outcome === undefined || !(outcomes as readonly string[]).includes(outcome)) return [`a ${request.kind} entry closes ${outcomes.join(" or ")}, not ${outcome ?? "with no outcome"}`];
   if (by === undefined) return ["the close names no closer"];
-  const answer = request.kind === "fix" ? "owner:queue.fix#<id>" : "owner:queue.<kind>#<id>";
-  if (by === request.assignee) return request.kind === "fix" && outcome !== "fixed" ? [`the assignee closes a fix only as fixed (its check re-run and passing); ${outcome} takes the owner's answer (--by ${answer})`] : [];
-  if (!OWNER_QUEUE_ANSWER.test(by)) return [by === "owner" ? `bare owner is no closer: the owner closes through an answered entry (--by ${answer})` : `it is assigned to ${request.assignee} (the assignee closes it, or the owner's answer --by ${answer})`];
-  return root === undefined ? [] : ownerCloseIssues(root, request, by);
+  const answer = `clossys request ${request.id} --answer <option>`;
+  if (by === ownerAnswerOf(request)) {
+    const step = answeredStep(request, events);
+    if (!step) return [`${by} closes it only right after the owner's answer chose one of its options (${answer})`];
+    const closes = stepOutcome(step.then);
+    return closes === outcome ? [] : [`the owner's answer ${step.id} (${step.then.verb}${step.then.args.length ? ` ${step.then.args.join(" ")}` : ""}) closes ${closes ?? "nothing"}, not ${outcome}`];
+  }
+  if (by === request.assignee && by !== "owner") return request.kind === "fix" && outcome !== "fixed" ? [`the assignee closes a fix only as fixed (its check re-run and passing); ${outcome} is the owner's answer to the question Producer asks on the claim (${answer})`] : [];
+  if (by === "owner") return [`bare owner is no closer: the owner answers one of the entry's options (${answer})`];
+  return [`it is assigned to ${request.assignee} (the assignee closes it, or the owner's answer to one of its options: ${answer})`];
 }
-function ownerCloseIssues(root: string, request: Pick<SlotRequest, "id" | "kind">, by: string): string[] {
-  const owner = resolveOwnerAnswer(root, by, request.kind === "fix" ? ["queue.fix"] : undefined);
-  if (!owner.ok) return [...owner.issues];
-  const issues = [...owner.issues];
-  if ((owner.entry.schema as string) !== "clossys.queue-entry/1") issues.push(`${owner.name} is no owner decision entry (clossys.queue-entry/1)`);
-  else if (!(owner.entry.refs ?? []).some(ref => ref.record === request.id)) issues.push(`${owner.name} does not cite ${request.id}`);
-  return issues;
+
+/** The events a stored close was judged on: those before its verified event (the close's own two events excluded). */
+export function closeEventsOf(request: Pick<SlotRequest, "events" | "closed">): readonly RequestEvent[] {
+  const at = request.closed !== undefined ? request.events.findIndex(event => event.id === request.closed) : -1;
+  return at > 0 ? request.events.slice(0, at - 1) : request.events;
 }
 
 /**
@@ -174,21 +205,50 @@ export function requestIssues(doc: unknown, root?: string): string[] {
       else if (verified.detail !== note) out.push(`verified ${verified.id} says ${JSON.stringify(verified.detail ?? "")}, not ${JSON.stringify(note)}: it names the slots the requester check judges`);
       if (verified?.op === "verified" && !SHA256.test(String(verified.inputsSha256 ?? ""))) out.push(`verified ${verified.id} carries no inputsSha256 (64 hex): the digest of the inputs the requester check judged`);
       // Who closed it, and with what (foundry-build-0048 U7 r3): the closure rule closeWork enforces (closerIssues).
-      out.push(...storedCloseIssues(root, request, close.by));
+      out.push(...storedCloseIssues(request, close.by));
     }
   } else if (closes.length || request.closed !== undefined || request.closedAt !== undefined || request.notified !== undefined || request.outcome !== undefined) {
     out.push(`the event log or the closing fields close the entry, but its status is ${request.status}`);
   }
   if (ids.some(id => !id.startsWith(`${request.id}#`))) out.push("every event id is <request id>#<n>");
+  out.push(...optionIssues(request));
   return out;
 }
 
-/** A stored change or fix close judged by the closure rule: its closer and outcome, and an owner closer's answers ref. */
-function storedCloseIssues(root: string | undefined, request: SlotRequest, by: string | undefined): string[] {
-  const out = closerIssues(root, request, by, request.outcome).map(issue => `the close by ${by ?? "nobody"}: ${issue}`);
-  const answer = by !== undefined ? ownerAnswerRef(by) : undefined;
-  if (answer && !request.refs.some(ref => ref.to === answer.to && ref.record === answer.record && ref.rel === "answers")) out.push(`the close by ${by} carries no ref answering ${answer.to.slice("producer/".length)}#${answer.record} (rel answers)`);
-  if (request.kind === "fix" && !FIX_CHECKS.includes(String(request.check)) && !answer) out.push(`its check ${String(request.check)} is not one Producer re-runs: it closes only on the owner's answer (--by owner:queue.fix#<id>)`);
+/** A stored change or fix close judged by the closure rule on the events before it; a fix closes fixed only on a check Producer re-runs. */
+function storedCloseIssues(request: SlotRequest, by: string | undefined): string[] {
+  const out = closerIssues(request, by, request.outcome, closeEventsOf(request)).map(issue => `the close by ${by ?? "nobody"}: ${issue}`);
+  if (request.kind === "fix" && request.outcome === "fixed" && !FIX_CHECKS.includes(String(request.check))) out.push(`its check ${String(request.check)} is not one Producer re-runs: it never closes fixed (the owner answers the claim, and declines or keeps it open)`);
+  return out;
+}
+
+/** Why one option's step does not fit its entry (foundry-build-0048 U7 r4): the verbs and the args each takes. */
+function stepIssues(request: SlotRequest, option: OwnerOption): string[] {
+  const { verb, args } = option.then;
+  const at = `$.options ${option.id}`;
+  const target = targetOf(request);
+  if (verb === "pin") return request.kind === "change" && args.length === 2 && args[0] === request.target && /^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.(md|json|svg)$/.test(args[1] ?? "") ? [] : [`${at}: pin takes [<this target>, <candidate file>] on a change entry`];
+  if (verb === "close") return request.kind !== "slot" && args.length === 1 && (outcomesFor(request.kind) as readonly string[]).includes(args[0]!) ? [] : [`${at}: close takes one outcome of a ${request.kind} entry (${outcomesFor(request.kind).join(", ") || "none: a slot closes by its decision"})`];
+  if (verb === "handoff") return args.length === 1 && target !== undefined && args[0] === target.agent ? [] : [`${at}: handoff takes [<the target's agent>]`];
+  return args.length === 0 ? [] : [`${at}: reject takes no args`];
+}
+
+/** The typed-answer rules of an entry (foundry-build-0048 U7 r4): its options, the asked and answered events, a handoff. */
+function optionIssues(request: SlotRequest): string[] {
+  const out: string[] = [];
+  const options = request.options ?? [];
+  const ids = options.map(option => option.id);
+  if (request.assignee === "owner" && !options.length) out.push("$.options: an entry assigned to the owner carries the options the owner answers (each a Producer step), never a free-text question");
+  if (new Set(ids).size !== ids.length) out.push("$.options: option ids are unique");
+  for (const option of options) out.push(...stepIssues(request, option));
+  const asked = request.events.some(event => event.op === "asked");
+  if (options.length && request.assignee !== "owner" && !asked && request.route?.delegated !== true) out.push(`$.options: an entry assigned to ${request.assignee} carries options only from Producer's asked event or the owner's handoff`);
+  for (const event of request.events) {
+    if (event.option !== undefined && event.op !== "answered") out.push(`${event.id}: only an answered event names an option`);
+    if (event.op === "asked" && event.by !== "producer") out.push(`${event.id}: Producer asks the owner, not ${event.by ?? "nobody"}`);
+    if (event.op === "answered" && (event.by !== "owner" || event.option === undefined || !ids.includes(event.option))) out.push(`${event.id}: an answer is the owner's choice of one of the entry's options (${ids.join(", ") || "none"}), not ${event.by ?? "nobody"}'s ${event.option ?? "free text"}`);
+  }
+  if (request.route?.delegated === true && !request.events.some(event => event.op === "answered" && options.find(option => option.id === event.option)?.then.verb === "handoff")) out.push("$.route.delegated: an entry is delegated only by the owner's answered handoff option");
   return out;
 }
 
@@ -312,9 +372,9 @@ export function withRequestLock<T>(consumer: string, key: string, body: () => T)
 }
 const raiseLock = (target: string) => `raise-${target.replace(/\//g, "-")}`;
 
-const withEvent = (request: SlotRequest, op: RequestOp, at: string, by?: string, detail?: string): { request: SlotRequest; id: string } => {
+const withEvent = (request: SlotRequest, op: RequestOp, at: string, by?: string, detail?: string, extra: Pick<RequestEvent, "option" | "via" | "quote"> = {}): { request: SlotRequest; id: string } => {
   const id = `${request.id}#${request.events.length + 1}`;
-  return { id, request: { ...request, events: [...request.events, { id, at, op, ...(by ? { by } : {}), ...(detail !== undefined ? { detail } : {}) }] } };
+  return { id, request: { ...request, events: [...request.events, { id, at, op, ...(by ? { by } : {}), ...(detail !== undefined ? { detail } : {}), ...extra }] } };
 };
 
 /** The verified event's note: `requester check passed on <slots>` (requesterSlots, in order). */
@@ -384,10 +444,44 @@ function routeOf(consumer: string, entry: { readonly kind: WorkKind; readonly ta
     throw error;
   }
 }
-const routedEvent = (id: string, n: number, at: string, route: EntryRoute): RequestEvent => ({
-  id: `${id}#${n}`, at, op: "routed", by: "producer",
-  detail: `row ${route.row} -> ${route.assignee}${route.handler ? ` (${route.handler.loop}, ${route.handler.skill})` : ""}${route.packet ? ` (${route.packet.queue}${route.packet.step ? ` from ${route.packet.step}` : ""})` : ""}${route.escalate ? ", escalate package" : ""}`,
-});
+const routeDetail = (route: EntryRoute): string =>
+  `row ${route.row} -> ${route.assignee}${route.handler ? ` (${route.handler.loop}, ${route.handler.skill})` : ""}${route.packet ? ` (${route.packet.queue}${route.packet.step ? ` from ${route.packet.step}` : ""})` : ""}${route.escalate ? ", escalate package" : ""}${route.delegated ? ", delegated by the owner's handoff" : ""}`;
+const routedEvent = (id: string, n: number, at: string, route: EntryRoute): RequestEvent => ({ id: `${id}#${n}`, at, op: "routed", by: "producer", detail: routeDetail(route) });
+
+/** An option id from a verb and a name: `pin-` and the candidate file name, lower-case, every other character a dash. */
+const optionId = (verb: string, name: string) => `${verb}-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`;
+/**
+ * The owner's options on an entry the router assigns to the owner (foundry-build-0048 U7 r4), each a Producer step as
+ * data. Labels are DRAFT copy (not owner-approved).
+ * - A change that wants a repin of a non-record slot: `pin-<candidate>` per candidate of the target but its pinned one
+ *   (`pin <target> <candidate>`, through the pin gate, then closes changed).
+ * - `handoff` when the table, the owner reservation set aside, routes the entry to an agent (`handoff <agent>`).
+ * - A change or fix: `decline` (`close declined`).
+ * None is a raise refused: an owner entry is never a free-text question.
+ */
+function ownerOptions(consumer: string, entry: { readonly kind: WorkKind; readonly target: string; readonly want?: SlotRequest["want"] }, facts?: RoutingFacts): OwnerOption[] {
+  const target = targetOf(entry)!;
+  const out: OwnerOption[] = [];
+  if (entry.kind === "change" && entry.want === "repin" && !isRecordSlot(dirname(consumer), target.agent, target.need)) {
+    const slot = readSlotEntry(consumer, target.agent, target.need);
+    for (const name of slot?.candidates ?? []) {
+      if (name !== slot?.pin?.candidate) out.push({ id: optionId("pin", name), label: `Pin ${name} on ${entry.target}`, then: { verb: "pin", args: [entry.target, name] } });
+    }
+  }
+  let handoff: EntryRoute | undefined;
+  try { handoff = routeEntry(facts ?? consumerFacts(consumer), { kind: entry.kind, target: entry.target, assignee: target.agent }, { delegated: true }); } catch (error) {
+    if (!(error instanceof RoutingError)) throw error;
+  }
+  if (handoff && handoff.assignee !== "owner") out.push({ id: "handoff", label: `Hand it to ${handoff.assignee} to answer by its skill`, then: { verb: "handoff", args: [target.agent] } });
+  if (entry.kind !== "slot") out.push({ id: "decline", label: `Decline: close it declined`, then: { verb: "close", args: ["declined"] } });
+  if (!out.length) throw new RequestError(`the owner would have no option on ${entry.kind} ${entry.target} (no candidate to pin, no agent to hand it to): nothing was written`);
+  return out;
+}
+/** The options Producer asks the owner on an agent's fix claim it cannot accept itself (DRAFT labels). */
+const claimOptions = (request: SlotRequest): OwnerOption[] => [
+  { id: "decline", label: `Decline: close it declined`, then: { verb: "close", args: ["declined"] } },
+  { id: "keep-open", label: `Keep it open with ${request.assignee}`, then: { verb: "reject", args: [] } },
+];
 
 /**
  * A requester agent raises to another agent only along an issuing edge its conform.json declares (`requests.issuing`):
@@ -423,6 +517,8 @@ export interface RaiseWorkInput {
   readonly createdBy?: Actor;
   readonly via?: RequestEvent["via"];
   readonly quote?: string;
+  /** Entries the raise cites (rel cites): a fix raised on a failed owner answer cites the answered entry. */
+  readonly cites?: readonly Ref[];
 }
 export function raiseWork(consumer: string, input: RaiseWorkInput, options: { readonly dry?: boolean; readonly facts?: RoutingFacts } = {}): { request: SlotRequest; created: boolean } {
   const target = targetOf(input);
@@ -443,11 +539,13 @@ export function raiseWork(consumer: string, input: RaiseWorkInput, options: { re
     if (existing) return { request: existing, created: false };
     const id = `${stampOf(input.at)}-${input.kind}-${target.need.replace(/\./g, "-")}`.slice(0, 80).replace(/-+$/, "");
     const route = routeOf(consumer, { kind: input.kind, target: input.target, assignee: target.agent }, options.facts);
+    const choices = route.assignee === "owner" ? ownerOptions(consumer, { kind: input.kind, target: input.target, ...(input.want !== undefined ? { want: input.want } : {}) }, options.facts) : undefined;
     const draft: SlotRequest = {
       schema: REQUEST_SCHEMA, id, kind: input.kind, from: input.from, assignee: route.assignee as SlotRequest["assignee"], target: input.target, status: "open", opened: `${id}#1`,
       why: input.why, source: input.source,
       createdBy: input.createdBy ?? { actor: "code", cli: SOURCE_CLI[input.source], version: producerVersion() },
-      createdAt: input.at, refs: SLOT_REF.test(input.from) && input.from !== input.target ? [{ to: input.from as Ref["to"], rel: "raisedBy" }] : [], route,
+      createdAt: input.at, refs: [...(SLOT_REF.test(input.from) && input.from !== input.target ? [{ to: input.from as Ref["to"], rel: "raisedBy" as const }] : []), ...(input.cites ?? [])], route,
+      ...(choices ? { options: choices } : {}),
       ...(input.want !== undefined ? { want: input.want } : {}),
       ...(input.check !== undefined ? { check: input.check } : {}), ...(input.findings !== undefined ? { findings: [...input.findings] } : {}), ...(input.cause !== undefined ? { cause: input.cause } : {}),
       events: [
@@ -463,41 +561,49 @@ export function raiseWork(consumer: string, input: RaiseWorkInput, options: { re
 /**
  * Closes a change or fix entry with its link back to the requester: an outcome, a result ref that resolves (a placed
  * slot, or a queue entry `<queue>#<id>` that exists) and a notify event addressed to `from`. Who closes it, with which
- * outcome, is the closure rule (closerIssues, foundry-build-0048 U7 r3): the assignee closes a change, and a fix only
- * as fixed; any other close is the owner's answer `owner:queue.<kind>#<id>`, recorded as the closer and as an
- * `answers` ref. Before it closes, code re-runs the requester's check (queue/requester-check.ts) and, for a fix closing
- * fixed, the fix's own check: a pass records a producer `verified` event (with the digest of the inputs it judged),
- * then the close; a fail records `rejected` and refuses, so the entry stays open with its handler. A fix whose check
- * Producer cannot re-run never closes fixed: it goes to the owner as one queue.fix decision entry.
+ * outcome, is the closure rule (closerIssues, foundry-build-0048 U7 r4): an agent assignee closes a change, and a fix
+ * only as fixed; any other close is the owner's typed answer (answerRequest runs it, closer `owner:queue.<kind>#<id>`).
+ * An agent's fix claim Producer cannot accept itself (declined, or fixed on a check it cannot re-run) asks the owner:
+ * the entry gains the claim options and an `asked` event, stays open, and is returned with `asked` set. Before it
+ * closes, code re-runs the requester's check (queue/requester-check.ts) and, for a fix closing fixed, the fix's own
+ * check: a pass records a producer `verified` event (with the digest of the inputs it judged), then the close; a fail
+ * records `rejected` and refuses, so the entry stays open.
  */
-export function closeWork(consumer: string, id: string, input: { readonly by: string; readonly at: string; readonly outcome: NonNullable<SlotRequest["outcome"]>; readonly result: string }): SlotRequest {
+export function closeWork(consumer: string, id: string, input: { readonly by: string; readonly at: string; readonly outcome: NonNullable<SlotRequest["outcome"]>; readonly result: string }): SlotRequest & { readonly asked?: true } {
   if (!OWNER_QUEUE_ANSWER.test(input.by)) checkSeat(input.by);
   return withRequestLock(consumer, id, () => {
     const request = readRequest(consumer, id);
     if (request.kind === "slot") throw new RequestError(`request ${id} is kind slot: it closes by its decision (clossys request ${id} --close)`);
     if (request.status !== "open") throw new RequestError(`request ${id} is already closed`);
     const root = dirname(consumer);
-    const refusal = closerIssues(root, request, input.by, input.outcome);
-    if (refusal.length) throw new RequestError(`${input.by} cannot close ${id}: ${refusal.join("; ")}`);
+    const owner = input.by === ownerAnswerOf(request);
+    if (!owner && awaitsOwner(request)) throw new RequestError(`request ${id} awaits the owner's answer (${request.options!.map(option => option.id).join(", ")}): nothing closes it but clossys request ${id} --answer <option>`);
     const why = resultRefusal(consumer, input.result);
     if (why) throw new RequestError(`--result ${input.result}: ${why}`);
+    // An agent's fix claim Producer cannot accept itself goes to the owner as a closed question (U7 r4).
+    const claim = !owner && request.kind === "fix" && input.by === request.assignee && input.by !== "owner"
+      && (input.outcome === "declined" || (input.outcome === "fixed" && !FIX_CHECKS.includes(String(request.check))));
+    if (claim) {
+      const asked = withEvent({ ...request, options: claimOptions(request) }, "asked", input.at, "producer",
+        `${input.by} claims ${input.outcome}${input.outcome === "fixed" ? ` on check ${String(request.check)}, which Producer cannot re-run (${FIX_CHECKS.join(", ")})` : ""}; the owner answers decline or keep-open`).request;
+      writeRequest(consumer, asked);
+      return { ...asked, asked: true as const };
+    }
+    const refusal = closerIssues(request, input.by, input.outcome);
+    if (refusal.length) throw new RequestError(`${input.by} cannot close ${id}: ${refusal.join("; ")}`);
     // A fix closing as fixed re-runs its own raising check first (queue/requester-check.ts fixCheck): still failing
-    // records rejected; a check Producer cannot re-run goes to the owner (one queue.fix decision entry citing the fix).
+    // records rejected.
     let fixNote = "";
     if (request.kind === "fix" && input.outcome === "fixed") {
       const fix = fixCheck(root, request);
-      if (!fix.ran) {
-        const asked = ownerFixQuestion(root, { id: request.id, target: request.target, check: String(request.check) }, input.at);
-        const name = `queue.fix#${asked.entry.id}`;
-        throw new RequestError(`request ${id} cannot close fixed: its check ${String(request.check)} is not one Producer can re-run (${FIX_CHECKS.join(", ")}); the owner answers ${name}${asked.raised ? " (raised now)" : ""}, then it closes --by owner:${name}`);
-      }
+      if (!fix.ran) throw new RequestError(`request ${id} cannot close fixed: its check ${String(request.check)} is not one Producer can re-run (${FIX_CHECKS.join(", ")})`);
       if (fix.failures.length) {
         writeRequest(consumer, withEvent(request, "rejected", input.at, "producer", `fix check ${request.check} still fails on ${request.target}: ${fix.failures.slice(0, 3).join("; ")}`).request);
         throw new RequestError(`request ${id} stays open: its check ${request.check} still fails on ${request.target} (${fix.failures.slice(0, 3).join("; ")}); a rejected event sends it back to ${request.assignee}`);
       }
       fixNote = `; fix check ${request.check} passes on ${request.target}`;
     }
-    // Code re-runs the requester's check: a fail records rejected and the entry stays open with its handler.
+    // Code re-runs the requester's check: a fail records rejected and the entry stays open.
     const check = requesterCheck(root, request);
     if (!check.ok) {
       writeRequest(consumer, withEvent(request, "rejected", input.at, "producer", `requester check failed on ${check.slots.join(", ")}: ${check.failures.slice(0, 3).join("; ")}`).request);
@@ -506,15 +612,120 @@ export function closeWork(consumer: string, id: string, input: { readonly by: st
     const judged = withEvent(request, "verified", input.at, "producer", `${VERIFIED_NOTE}${check.slots.join(", ")}${fixNote}`);
     const last = judged.request.events.length - 1;
     const verified: SlotRequest = { ...judged.request, events: judged.request.events.map((event, index) => index === last ? { ...event, inputsSha256: inputsSha256(consumer, request) } : event) };
-    const answer = ownerAnswerRef(input.by);
     const closing = withEvent({
       ...verified, status: "closed", outcome: input.outcome, result: input.result, notified: { to: request.from, at: input.at }, closedAt: input.at,
-      ...(answer ? { refs: [...verified.refs, answer] } : {}),
     }, "closed", input.at, input.by, `${input.outcome}: ${input.result}; notified ${request.from}`);
     const next: SlotRequest = { ...closing.request, closed: closing.id };
     writeRequest(consumer, next);
     return next;
   });
+}
+
+/** The owner's answer to one entry: the chosen option id only, with an optional note that changes nothing. */
+export interface AnswerInput {
+  readonly option: string;
+  readonly at: string;
+  readonly note?: string;
+  readonly via?: RequestEvent["via"];
+  readonly quote?: string;
+}
+/** What an answer did: the entry after it, the step it ran, whether the step passed, and the fix a failed step raised. */
+export interface AnswerResult { readonly request: SlotRequest; readonly option: OwnerOption; readonly ok: boolean; readonly message: string; readonly fix?: SlotRequest }
+
+/**
+ * Records the owner's answer to an entry awaiting it (foundry-build-0048 U7 r4) and runs the chosen option's step
+ * mechanically through the normal verbs and gates. Refused with nothing written: an entry that awaits no answer, an
+ * option id it does not offer, or a chat answer with no quote. The `answered` event names the option (a note is
+ * stored as its detail and changes nothing). Then:
+ * - `close <outcome>`: closeWork, closer `owner:queue.<kind>#<id>`, result the target (fixed) or the entry itself.
+ * - `pin <target> <candidate>`: `clossys pin` with `--by owner:queue.change#<id>` (the pin gate; the pin binds to this
+ *   answer), then closeWork changed with the target as result.
+ * - `handoff <agent>`: the entry is re-routed with the owner reservation set aside (route.delegated) to that agent.
+ * - `reject`: a `rejected` event; the entry stays open with its assignee.
+ * A step that fails leaves the entry open with a `rejected` event naming why and, for a change, raises a kind fix on its
+ * target (routed by the table) citing the entry; a fix entry is its own fix.
+ */
+export async function answerRequest(consumer: string, id: string, input: AnswerInput): Promise<AnswerResult> {
+  const answered = withRequestLock(consumer, id, () => {
+    const request = readRequest(consumer, id);
+    if (request.status !== "open") throw new RequestError(`request ${id} is closed; nothing was written`);
+    if (!awaitsOwner(request)) throw new RequestError(`request ${id} awaits no owner answer (assigned to ${request.assignee}${request.options?.length ? ", no open question" : ", no options"}); nothing was written`);
+    const option = request.options!.find(item => item.id === input.option);
+    if (!option) throw new RequestError(`--answer ${input.option} is none of request ${id}'s options (${request.options!.map(item => item.id).join(", ")}); nothing was written`);
+    if (input.via === "chat" && !input.quote?.trim()) throw new RequestError("an answer given in chat quotes the owner's words (--quote); nothing was written");
+    const next = withEvent(request, "answered", input.at, "owner", input.note?.trim() || undefined, {
+      option: option.id, ...(input.via !== undefined ? { via: input.via } : {}), ...(input.quote?.trim() ? { quote: input.quote.trim() } : {}),
+    }).request;
+    writeRequest(consumer, next);
+    return { request: next, option };
+  });
+  const { option } = answered;
+  const self = ownerAnswerOf(answered.request);
+  const step = option.then;
+  try {
+    if (step.verb === "reject") {
+      const kept = withRequestLock(consumer, id, () => {
+        const request = readRequest(consumer, id);
+        const next = withEvent(request, "rejected", input.at, "producer", `the owner keeps it open (${option.id}) with ${request.assignee}`).request;
+        writeRequest(consumer, next);
+        return next;
+      });
+      return { request: kept, option, ok: true, message: `request ${id} stays open with ${kept.assignee} (the owner's ${option.id})` };
+    }
+    if (step.verb === "handoff") {
+      const handed = withRequestLock(consumer, id, () => {
+        const request = readRequest(consumer, id);
+        if (answeredStep(request)?.id !== option.id) throw new RequestError(`request ${id} changed since the answer; nothing was handed off`);
+        const target = targetOf(request)!;
+        const route = routeEntry(consumerFacts(consumer), { kind: request.kind as WorkKind, target: request.target, assignee: target.agent }, { delegated: true });
+        if (route.assignee === "owner" || route.assignee !== step.args[0]) throw new RequestError(`the table, the owner reservation set aside, routes ${request.target} to ${route.assignee}, not ${step.args[0]}`);
+        const next = withEvent({ ...request, assignee: route.assignee as SlotRequest["assignee"], route }, "routed", input.at, "producer", routeDetail(route)).request;
+        writeRequest(consumer, next);
+        return next;
+      });
+      return { request: handed, option, ok: true, message: `request ${id} handed to ${handed.assignee} (${handed.route!.row}, delegated)` };
+    }
+    if (step.verb === "pin") {
+      const { runPinCli } = await import("../cli/pin.js");
+      const pinned = await runPinCli([step.args[0]!, step.args[1]!, "--by", self, "--at", input.at, "--root", dirname(consumer)], dirname(consumer));
+      if (pinned.exitCode !== 0) throw new StepFailure("pin.gate", (pinned.message ?? "pin refused").split("\n").map(line => line.trim()).filter(Boolean));
+      const closed = closeWork(consumer, id, { by: self, at: input.at, outcome: "changed", result: step.args[0]! });
+      return { request: closed, option, ok: true, message: `${step.args[0]}: pinned ${step.args[1]}; request ${id} closed changed, notified ${closed.from}` };
+    }
+    const outcome = step.args[0] as NonNullable<SlotRequest["outcome"]>;
+    const closed = closeWork(consumer, id, { by: self, at: input.at, outcome, result: outcome === "fixed" ? answered.request.target : `${workQueue(answered.request.kind as WorkKind)}#${id}` });
+    return { request: closed, option, ok: true, message: `request ${id} closed ${outcome}, notified ${closed.from}` };
+  } catch (error) {
+    if (!(error instanceof RequestError || error instanceof StepFailure || error instanceof RoutingError)) throw error;
+    return failedStep(consumer, id, option, error instanceof StepFailure ? error : new StepFailure(step.verb === "close" ? "requester.check" : "route", [error.message]), input.at);
+  }
+}
+
+/** A step of an owner answer that did not pass: the check that refused it and its findings. */
+class StepFailure extends Error {
+  constructor(readonly check: string, readonly findings: readonly string[]) { super(findings.join("; ")); this.name = "StepFailure"; }
+}
+
+/** A failed answer step: a rejected event (unless the step wrote one), and for a change a kind fix on its target. */
+function failedStep(consumer: string, id: string, option: OwnerOption, failure: StepFailure, at: string): AnswerResult {
+  const request = withRequestLock(consumer, id, () => {
+    const now = readRequest(consumer, id);
+    if (now.events.at(-1)?.op === "rejected" || now.status !== "open") return now;
+    const next = withEvent(now, "rejected", at, "producer", `the owner's answer ${option.id} failed (${failure.check}): ${failure.findings.slice(0, 3).join("; ")}`).request;
+    writeRequest(consumer, next);
+    return next;
+  });
+  const findings = failure.findings.length ? [...failure.findings] : [failure.check];
+  let fix: SlotRequest | undefined;
+  if (request.kind === "change") {
+    fix = raiseWork(consumer, {
+      kind: "fix", target: request.target, from: request.target, source: "check", by: "producer", at,
+      why: `the owner's answer ${option.id} on ${workQueue("change")}#${id} did not pass ${failure.check}`,
+      check: failure.check, findings, cause: `the owner's answer ${option.id} (${option.then.verb} ${option.then.args.join(" ")}) on ${workQueue("change")}#${id}`,
+      cites: [{ to: `producer/${workQueue("change")}` as Ref["to"], record: id, rel: "cites" }],
+    }).request;
+  }
+  return { request, option, ok: false, fix, message: `request ${id} stays open: the owner's answer ${option.id} failed ${failure.check} (${findings.slice(0, 3).join("; ")})${fix ? `; fix ${fix.id} routed to ${fix.assignee}` : ""}` };
 }
 
 /** Why a result ref does not resolve: a placed slot ref, or a `<queue>#<id>` entry that exists. Undefined when it does. */
@@ -561,11 +772,13 @@ export function raiseRequest(consumer: string, input: RaiseInput, options: { rea
     if (existing) return { request: existing, created: false };
     const id = `${stampOf(input.at)}-${target.need.replace(/\./g, "-")}`.slice(0, 80).replace(/-+$/, "");
     const route = routeOf(consumer, { kind: "slot", target: input.target, assignee: target.agent }, options.facts);
+    const choices = route.assignee === "owner" ? ownerOptions(consumer, { kind: "slot", target: input.target }, options.facts) : undefined;
     const draft: SlotRequest = {
       schema: REQUEST_SCHEMA, id, kind: "slot", from: input.from, assignee: route.assignee as SlotRequest["assignee"], target: input.target, status: "open", opened: `${id}#1`,
       rel, why: input.why, source: input.source,
       createdBy: input.createdBy ?? { actor: "code", cli: SOURCE_CLI[input.source], version: producerVersion() },
       createdAt: input.at, refs: SLOT_REF.test(input.from) ? [{ to: input.from as Ref["to"], rel: "raisedBy" }] : [], route,
+      ...(choices ? { options: choices } : {}),
       events: [
         { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.why },
         routedEvent(id, 2, input.at, route),
@@ -837,6 +1050,7 @@ export function decideRequest(consumer: string, id: string, input: ({ readonly d
     const request = readRequest(consumer, id);
     if (request.status !== "open") throw new RequestError(`request ${id} is closed`);
     const target = targetOf(request)!;
+    if (request.assignee === "owner") throw new RequestError(`request ${id} is assigned to the owner: the owner answers one of its options (clossys request ${id} --answer <option>; handoff sends it to ${target.agent}), nothing is decided by --by ${input.by}`);
     if (input.by !== target.agent && input.by !== "owner") throw new RequestError(`request ${id} is decided by its assignee ${target.agent} (or the owner), not ${input.by}`);
     const needs = request.overlaps ?? needOverlaps(consumer, target.agent, target.need);
     let next: SlotRequest;

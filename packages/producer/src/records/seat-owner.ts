@@ -11,8 +11,8 @@
  * `assertActor` is the total guard (foundry-build-0048 U7 r3): it has no pass-through. An actor is an agent seat that
  * may act on the slot, or an owner answer ref (`owner:queue.<kind>#<id>`) that resolves to an entry the owner answered
  * (queue/rules.ts resolveOwnerAnswer, the predicate release/ready.ts uses). Bare `owner`, `planner`, `migration` and
- * free text are refused unless the caller names them in `also`. The retire verb and writers, the request closers and
- * the candidate writers call it.
+ * free text are refused unless the caller names them in `also`. The retire verb and writers and the candidate writers
+ * call it; retire binds the owner answer to its slot and the option `retire` (`bind`, U7 r4).
  */
 import { resolveOwnerAnswer } from "../queue/rules.js";
 
@@ -50,6 +50,12 @@ export interface ActorOptions {
   readonly also?: readonly string[];
   /** The owner-answer queues accepted (default: every queue). */
   readonly queues?: readonly string[];
+  /**
+   * What an owner answer must be to act (foundry-build-0048 U7 r4): an entry about `subject` (`<agent>/<slot>`) whose
+   * owner answer is the option `answer`, one of the entry's options. Without it any resolved owner answer acts; the
+   * retire writers and verb always bind it.
+   */
+  readonly bind?: { readonly subject: string; readonly answer: string };
 }
 
 /** Why `by` may not act on a slot of `slotAgent` (undefined when it may): the total form of `seatRefusal`. */
@@ -58,7 +64,13 @@ export function actorRefusal(root: string, by: string, slotAgent: string, option
   if (by.startsWith("agent:")) return seatRefusal(by, slotAgent);
   if (by.startsWith("owner:")) {
     const owner = resolveOwnerAnswer(root, by, options.queues);
-    const issues = owner.issues;
+    const issues = [...owner.issues];
+    if (owner.ok && !issues.length && options.bind) {
+      const { subject, answer } = options.bind;
+      if (owner.entry.subject?.to !== subject) issues.push(`${owner.name} is about ${owner.entry.subject?.to ?? "nothing"}, not ${subject}`);
+      if (owner.answered?.answer !== answer) issues.push(`${owner.name} was answered ${owner.answered?.answer ?? "with no option"}, not ${answer}`);
+      else if (!(owner.entry.options ?? []).some(option => option.id === answer)) issues.push(`${owner.name} offers no option ${answer}: an answer is one of the entry's options`);
+    }
     return issues.length ? `--by ${by} is not agent:<agent>[.<role>] and not a resolved owner answer: ${issues.join("; ")}` : undefined;
   }
   return `--by ${by} is not agent:<agent>[.<role>] or a resolved owner answer (owner:queue.<kind>#<id>)`;

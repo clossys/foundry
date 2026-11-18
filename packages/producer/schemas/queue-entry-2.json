@@ -234,6 +234,8 @@
               "rejected",
               "verified",
               "closed",
+              "asked",
+              "answered",
               "withdrawn"
             ]
           },
@@ -243,6 +245,11 @@
           },
           "detail": {
             "type": "string"
+          },
+          "option": {
+            "description": "An answered event: the id of the option the owner chose (one of the entry's options). Its detail is the owner's optional note, which changes nothing.",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
           },
           "via": {
             "enum": [
@@ -333,9 +340,62 @@
         },
         "escalate": {
           "const": "package"
+        },
+        "delegated": {
+          "description": "Routed after the owner's handoff answer: the router skipped the owner-class row (queue/routing.ts routeEntry delegated), so the entry now goes to the target agent's handler.",
+          "const": true
         }
       },
       "additionalProperties": false
+    },
+    "options": {
+      "description": "The owner's closed choices (foundry-build-0048 U7 r4): every entry assigned to the owner carries them from its raise, and an agent's fix claim the owner must judge carries them from its asked event. Each option is an id, a label and `then`, the predetermined next step as data: a Producer verb and its args. `pin <agent>/<slot> <candidate>` pins through the pin gate and closes changed; `close <outcome>` closes through the closure rule; `handoff <agent>` re-routes the entry to that agent's declared handler; `reject` sends an agent's claim back to it, open. An owner answer records only the chosen option id (records/request.ts answerRequest); Producer then runs `then`, and the entry closes only when that step's own check passes.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "then"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "verb",
+              "args"
+            ],
+            "properties": {
+              "verb": {
+                "enum": [
+                  "pin",
+                  "close",
+                  "handoff",
+                  "reject"
+                ]
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
     },
     "want": {
       "description": "kind change: what the requester wants of the placed slot.",

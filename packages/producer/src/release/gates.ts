@@ -35,7 +35,7 @@ import { checkPinsResolve, PINS_RESOLVE } from "../check/pins-resolve.js";
 import { strictFindings } from "../loop/cli.js";
 import type { Finding } from "../loop/route.js";
 import { readSlotJson } from "../records/resolve.js";
-import { listRequests } from "../records/request.js";
+import { listWorkEntries } from "../records/request.js";
 import { readLegacyFixes } from "../queue/legacy-fix.js";
 import { releaseLocales, readReleaseSlot } from "./locales.js";
 import { isReleaseSlot, refOf, releaseResolutions } from "./pins.js";
@@ -196,8 +196,17 @@ export function openFixes(root: string): Finding[] {
   // Slot-level: a record slot resolves as `<agent>/<slot>#<record>`, but a fix names the slot (or one record of it).
   const closure = new Set(releaseResolutions(root).map(resolution => `${resolution.agent}/${resolution.slotId}`));
   const findings: Finding[] = [];
-  for (const read of listRequests(join(root, "clossys"), "fix")) {
-    if (!read.request) { findings.push({ check: REQUESTS_OPEN_FIX, subject: `producer/queue.fix`, detail: `${read.file.slice(root.length + 1)} does not read (${read.issues.slice(0, 2).join("; ")}); it might be an open fix` }); continue; }
+  // Every work folder (foundry-build-0048 U7 r4): a kind fix filed under another folder still holds its slot open, and
+  // an entry that does not read might be one (outside queue.fix, unless it says it is a change or a slot entry).
+  for (const read of listWorkEntries(join(root, "clossys"))) {
+    const kind = (read.doc as { kind?: unknown } | null | undefined)?.kind;
+    if (!read.request) {
+      const folder = read.file.slice(root.length + 1).split("/").at(-3) ?? "queue.fix";
+      if (folder !== "queue.fix" && (kind === "change" || kind === "slot")) continue;
+      findings.push({ check: REQUESTS_OPEN_FIX, subject: `producer/${folder}`, detail: `${read.file.slice(root.length + 1)} does not read (${read.issues.slice(0, 2).join("; ")}); it might be an open fix` });
+      continue;
+    }
+    if (read.request.kind !== "fix") continue;
     const subject = read.request.target.split("#")[0]!;
     if (read.request.status === "open" && closure.has(subject)) findings.push({ check: REQUESTS_OPEN_FIX, subject, detail: `open fix queue.fix#${read.request.id} (${read.request.check ?? "fix"}): the release reads this slot` });
   }

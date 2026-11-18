@@ -583,7 +583,7 @@ export interface ThemeProjection {
 }
 
 /** A kind slot entry (clossys.queue-entry/2, foundry-build-0048 U5): records/request.ts reads and writes it. */
-export type RequestOp = "raised" | "routed" | "checked" | "decided" | "placed" | "started" | "rejected" | "verified" | "closed" | "withdrawn";
+export type RequestOp = "raised" | "routed" | "checked" | "decided" | "placed" | "started" | "rejected" | "verified" | "closed" | "asked" | "answered" | "withdrawn";
 /** The work kinds of clossys.queue-entry/2 (foundry-build-0048 U7): a slot no agent holds, a change to a placed slot, a fix to a broken one. */
 export type RequestKind = "slot" | "change" | "fix";
 /** Where the router (queue/routing.ts routeEntry) sent an entry: written by the router only, re-derivable from the table. */
@@ -599,9 +599,21 @@ export interface EntryRoute {
   readonly packet?: { readonly queue: "queue.pick" | "queue.approve" | "queue.clarify"; readonly step?: string; readonly skill?: string };
   /** The catch-all for a need that is package code, not consumer data. */
   readonly escalate?: "package";
+  /** Routed after the owner's handoff answer (U7 r4): the router skipped the owner-class row, so the target agent's handler holds it. */
+  readonly delegated?: true;
 }
+/**
+ * The predetermined next step of an owner option, as data (foundry-build-0048 U7 r4): a Producer verb and its args.
+ * `pin <agent>/<slot> <candidate>` pins through the pin gate, then closes changed; `close <outcome>` closes through the
+ * closure rule; `handoff <agent>` re-routes to that agent's declared handler; `reject` sends an agent's claim back, open.
+ */
+export interface OptionStep { readonly verb: "pin" | "close" | "handoff" | "reject"; readonly args: readonly string[] }
+/** One closed choice of the owner on a queue entry: the owner answers its id only. */
+export interface OwnerOption { readonly id: string; readonly label: string; readonly then: OptionStep }
 export interface RequestEvent {
   readonly id: string; readonly at: string; readonly op: RequestOp; readonly by?: string; readonly detail?: string;
+  /** An answered event: the id of the option the owner chose; its detail is the owner's note, which changes nothing. */
+  readonly option?: string;
   /** As clossys.queue-entry/1 events: where the words came from (cli, chat, app) and the owner's words when quoted. */
   readonly via?: "cli" | "chat" | "app"; readonly quote?: string;
   /** A verified event: the digest of the inputs the requester check judged (records/request.ts inputsSha256). */
@@ -632,6 +644,8 @@ export interface SlotRequest {
   readonly source: "cli" | "ia" | "interview" | "feedback" | "scope" | "check";
   /** Written by the router only (queue/routing.ts). */
   readonly route?: EntryRoute;
+  /** The owner's closed choices (U7 r4): on every owner-assigned entry from its raise, and on a fix claim the owner judges. */
+  readonly options?: readonly OwnerOption[];
   /** kind change: what the requester wants of the placed slot. */
   readonly want?: "repin" | "candidate" | "contract";
   /** kind fix: the check that failed, its findings and the cause (the repin or run that broke the slot). */
@@ -689,7 +703,7 @@ export const RECORD_KEYS: Readonly<Record<string, readonly string[]>> = {
     schema: true, id: true, kind: true, from: true, assignee: true, target: true, status: true, opened: true, closed: true, link: true,
     rel: true, why: true, source: true, createdBy: true, createdAt: true, refs: true, overlaps: true, overlapReason: true, decision: true,
     reuse: true, proposal: true, notified: true, closedAt: true, events: true, route: true, want: true, check: true, findings: true,
-    cause: true, outcome: true, result: true,
+    cause: true, outcome: true, result: true, options: true,
   }),
   "clossys.ledger-entry/1": keysOf<LedgerEntry>()({
     schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,

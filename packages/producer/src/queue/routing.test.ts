@@ -9,9 +9,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { runRequestCli } from "../cli/request.js";
-import { ownerFixQuestion } from "../loop/route.js";
-import { answerQueueEntry } from "./answer.js";
-import { closeWork, legacyFixEntries, listRequests, raiseWork, readRequest, requestIssues } from "../records/request.js";
+import { answerRequest, closeWork, legacyFixEntries, listRequests, raiseWork, readRequest, requestIssues } from "../records/request.js";
 import { consumerFacts, ownerClasses, ownerClassOf, readRoutingTable, rederive, routeEntry, RoutingError, routingIssues, routingText, type RoutingFacts } from "./routing.js";
 
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
@@ -157,7 +155,7 @@ describe("routeEntry", () => {
 });
 
 describe("kind change and fix entries", () => {
-  it("raises a fix routed by the table into queue.fix; a close re-runs the requester check and refuses on a fail", () => {
+  it("raises a fix routed by the table into queue.fix; a close re-runs the requester check and refuses on a fail", async () => {
     const { root, consumer, facts } = world();
     const { request, created } = raiseWork(consumer, fixOf("designer/sections.hero"), { facts });
     expect(created).toBe(true);
@@ -170,20 +168,21 @@ describe("kind change and fix entries", () => {
 
     expect(() => closeWork(consumer, request.id, { by: "writer", at: AT, outcome: "fixed", result: "designer/sections.hero" })).toThrow(/assigned to designer/);
     expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "fixed", result: "designer/sections.nope" })).toThrow(/no placed slot/);
-    // A fixed close re-runs the fix's own check; render.overflow is not one Producer re-runs, so it refuses and writes nothing.
-    expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "fixed", result: "designer/sections.hero" })).toThrow(/cannot close fixed: its check render\.overflow is not one Producer can re-run/);
-    expect(readRequest(consumer, request.id).events.map(event => event.op)).toEqual(["raised", "routed"]);
-    // The assignee closes a fix only as fixed (U7 r3): declined takes the owner's answer, which the refusal raised.
-    expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "declined", result: "designer/sections.hero" })).toThrow(/the assignee closes a fix only as fixed/);
-    const asked = ownerFixQuestion(root, { id: request.id, target: request.target, check: String(request.check) }, AT);
-    expect(asked.raised).toBe(false);
-    const by = `owner:queue.fix#${asked.entry.id}`;
-    answerQueueEntry(root, { entry: by.slice("owner:".length), answer: "decline it", by: "owner", via: "chat", quote: "decline it" });
+    // A fixed close re-runs the fix's own check; render.overflow is not one Producer re-runs, so the claim asks the
+    // owner (U7 r4): decline or keep-open, never fixed, and the entry stays open with designer.
+    const claimed = closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "fixed", result: "designer/sections.hero" });
+    expect(claimed).toMatchObject({ asked: true, status: "open", assignee: "designer", options: [{ id: "decline" }, { id: "keep-open" }] });
+    expect(readRequest(consumer, request.id).events.map(event => event.op)).toEqual(["raised", "routed", "asked"]);
+    // While the owner is asked, no seat closes it; the owner's typed answer decline runs closeWork by the entry's ref.
+    expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "fixed", result: "designer/sections.hero" })).toThrow(/awaits the owner's answer \(decline, keep-open\)/);
+    const answered = await answerRequest(consumer, request.id, { option: "decline", at: AT, via: "chat", quote: "decline it" });
     // The fixture's hero has no pin and no package default: the requester check fails, the entry stays open.
-    expect(() => closeWork(consumer, request.id, { by, at: AT, outcome: "declined", result: "designer/sections.hero" })).toThrow(/stays open: the requester check failed \(designer\/sections\.hero: does not resolve/);
+    expect(answered).toMatchObject({ ok: false });
+    expect(answered.message).toMatch(/stays open: the requester check failed \(designer\/sections\.hero: does not resolve/);
+    expect(answered.fix).toBeUndefined();
     const after = readRequest(consumer, request.id);
     expect(after).toMatchObject({ status: "open" });
-    expect(after.events.map(event => event.op)).toEqual(["raised", "routed", "rejected"]);
+    expect(after.events.map(event => event.op)).toEqual(["raised", "routed", "asked", "answered", "rejected"]);
     expect(requestIssues(after, root)).toEqual([]);
   });
 
@@ -203,7 +202,7 @@ describe("kind change and fix entries", () => {
     expect(requestIssues({ ...honest, events: [...open.events, { ...verified, inputsSha256: "x" }, close] }).join("; ")).toMatch(/inputsSha256 must match/);
     expect(requestIssues({ ...honest, events: [...open.events, verified, { ...close, by: "producer" }] }).join("; ")).toMatch(/the close by producer: it is assigned to designer/);
     expect(requestIssues({ ...honest, outcome: "declined" }).join("; ")).toMatch(/the assignee closes a fix only as fixed/);
-    expect(requestIssues({ ...honest, check: "render.overflow" }).join("; ")).toMatch(/not one Producer re-runs: it closes only on the owner's answer/);
+    expect(requestIssues({ ...honest, check: "render.overflow" }).join("; ")).toMatch(/not one Producer re-runs: it never closes fixed/);
     // `closed` points at the raise, not at a close event.
     expect(requestIssues({ ...honest, closed: open.opened }).join("; ")).toMatch(/is a raised event, not the closed event/);
     // Status closed with no closed event in the log.

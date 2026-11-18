@@ -70,3 +70,24 @@ describe("requests.open-fix over queue-entry/1 fixes (T10, T11)", () => {
     expect(details).toContainEqual(expect.stringMatching(new RegExp(`^${DIR.replace(/[.]/g, "\\.")}/\\.y\\.json does not read .*hidden file`)));
   });
 });
+
+describe("requests.open-fix over every work folder (U7 r4)", () => {
+  it("T15: a kind fix filed under another folder, or a file there that does not read, fails the gate; an unreadable change or slot entry does not", { timeout: 60_000 }, async () => {
+    const world = await make();
+    const open = world.raised.fix.find(item => item.target === OPEN_FIX)!;
+    const changes = "clossys/agents/producer/queue.change/entries", slots = "clossys/agents/producer/queue.slot/entries";
+    const baseline = openFixes(world.root).length;
+    // The open fix copied into queue.change: a fix entry the reader of one folder would miss.
+    writeFileSync(join(world.root, changes, `${open.id}.json`), readFileSync(join(world.root, DIR, `${open.id}.json`)));
+    writeFileSync(join(world.root, slots, "20261120T0000Z-slot-broken.json"), "{ not json");
+    // A change entry that does not read (an unknown field) says it is a change: no fix hides there.
+    const change = world.raised.change[0]!;
+    const changeFile = join(world.root, changes, `${change.id}.json`);
+    writeFileSync(changeFile, `${JSON.stringify({ ...JSON.parse(readFileSync(changeFile, "utf8")), stray: true })}\n`);
+    const findings = openFixes(world.root);
+    expect(findings).toContainEqual(expect.objectContaining({ check: "requests.open-fix", subject: "producer/queue.change", detail: expect.stringMatching(new RegExp(`^${changes.replace(/[.]/g, "\\.")}/${open.id}\\.json does not read \\(a fix entry is in queue\\.change\\)`)) }));
+    expect(findings).toContainEqual(expect.objectContaining({ check: "requests.open-fix", subject: "producer/queue.slot", detail: expect.stringMatching(/queue\.slot\/entries\/20261120T0000Z-slot-broken\.json does not read \(not JSON/) }));
+    expect(findings.filter(finding => finding.detail.includes(change.id))).toEqual([]);
+    expect(findings).toHaveLength(baseline + 2);
+  });
+});

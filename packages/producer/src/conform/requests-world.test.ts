@@ -7,11 +7,9 @@ import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { runRequestCli } from "../cli/request.js";
-import { ownerFixQuestion } from "../loop/route.js";
-import { answerQueueEntry } from "../queue/answer.js";
-import { closeWork, inputsSha256, listRequests, readRequest, requestIssues } from "../records/request.js";
+import { answerRequest, closeWork, inputsSha256, listRequests, readRequest, requestIssues } from "../records/request.js";
 import { openFixes } from "../release/gates.js";
 import { ASSERTIONS } from "./assertions.js";
 import type { ProbeFacts } from "./dogfood.js";
@@ -155,26 +153,60 @@ describe("the request lens world", () => {
     expect(ASSERTIONS.Q11!(writer, blind, {} as ProbeFacts).rows).toEqual([expect.stringMatching(new RegExp(`queue\\.fix/entries/${open.id}\\.json: does not read and requests\\.open-fix does not refuse it`))]);
   });
 
-  it("a change or fix closes only by --by its assignee or the owner's answer; no default closer, no other seat, never bare owner", { timeout: 60_000 }, async () => {
+  it("a change or fix closes only by --by its assignee or the owner's typed answer; no default closer, no other seat, never bare owner", { timeout: 60_000 }, async () => {
     const world = await make();
     const open = world.raised.fix.find(item => item.target === OPEN_FIX)!;
-    await expect(runRequestCli([open.id, "--close", "--outcome", "fixed", "--result", OPEN_FIX, "--root", world.root], world.root)).rejects.toThrow(/closes with --by writer \(its assignee\) or --by owner:queue\.fix#<id> \(the owner's answer\)/);
+    const file = entryFile(world, "fix", open.id);
+    await expect(runRequestCli([open.id, "--close", "--outcome", "fixed", "--result", OPEN_FIX, "--root", world.root], world.root)).rejects.toThrow(/closes with --by writer \(its assignee\); an entry the owner answers takes --answer <option>/);
     for (const by of ["producer", "planner", "designer"]) {
       expect(() => closeWork(world.consumer, open.id, { by, at: "2026-11-20T10:00:00Z", outcome: "fixed", result: OPEN_FIX }), by).toThrow(new RegExp(`${by} cannot close ${open.id}: it is assigned to writer`));
     }
-    expect(() => closeWork(world.consumer, open.id, { by: "owner", at: "2026-11-20T10:00:00Z", outcome: "fixed", result: OPEN_FIX })).toThrow(/bare owner is no closer/);
+    expect(() => closeWork(world.consumer, open.id, { by: "owner", at: "2026-11-20T10:00:00Z", outcome: "fixed", result: OPEN_FIX })).toThrow(/bare owner is no closer: the owner answers one of the entry's options/);
+    // The entry's own answer ref closes nothing until the owner chose an option.
+    expect(() => closeWork(world.consumer, open.id, { by: `owner:queue.fix#${open.id}`, at: "2026-11-20T10:00:00Z", outcome: "declined", result: `queue.fix#${open.id}` })).toThrow(/closes it only right after the owner's answer chose one of its options/);
+    // With no question open, an answer is refused and writes nothing.
+    const before = readFileSync(file, "utf8");
+    expect(await runRequestCli([open.id, "--answer", "decline", "--by", "owner", "--root", world.root], world.root)).toMatchObject({ exitCode: 1, message: expect.stringMatching(/awaits no owner answer \(assigned to writer, no options\); nothing was written/) });
+    expect(readFileSync(file, "utf8")).toBe(before);
     expect(readRequest(world.consumer, open.id)).toMatchObject({ status: "open" });
-    // The owner closes through an answered queue.fix entry citing the fix (U7 r3).
-    const { entry } = ownerFixQuestion(world.root, { id: open.id, target: open.target, check: String(open.check) }, "2026-11-20T10:01:00Z");
-    const by = `owner:queue.fix#${entry.id}`;
-    expect(() => closeWork(world.consumer, open.id, { by, at: "2026-11-20T10:02:00Z", outcome: "fixed", result: OPEN_FIX })).toThrow(/is open: the owner has not answered it|not answered/);
-    vi.useFakeTimers({ now: new Date("2026-11-21T00:00:00Z"), toFake: ["Date"] });
-    try { answerQueueEntry(world.root, { entry: `queue.fix#${entry.id}`, answer: "fixed: the pin resolves", by: "owner", via: "chat", quote: "it resolves now" }); } finally { vi.useRealTimers(); }
-    expect(closeWork(world.consumer, open.id, { by, at: "2026-11-20T10:05:00Z", outcome: "fixed", result: OPEN_FIX })).toMatchObject({ status: "closed", events: expect.arrayContaining([expect.objectContaining({ op: "closed", by })]) });
-    expect(requestIssues(readRequest(world.consumer, open.id), world.root)).toEqual([]);
   });
 
-  it("a fix closing as fixed re-runs its own check: still failing, it records rejected and stays open; an unknown check refuses", { timeout: 60_000 }, async () => {
+  it("an agent's declined fix claim asks the owner a closed question; only an offered option id is recorded, and it runs its step", { timeout: 60_000 }, async () => {
+    const world = await make();
+    const open = world.raised.fix.find(item => item.target === OPEN_FIX)!;
+    const file = entryFile(world, "fix", open.id);
+    // The claim stays open with Producer's options; the assignee cannot close it again while the owner is asked.
+    const asked = await runRequestCli([open.id, "--close", "--outcome", "declined", "--result", `queue.fix#${open.id}`, "--by", "writer", "--at", "2026-11-20T10:00:00Z", "--root", world.root], world.root);
+    expect(asked.message).toMatch(/stays open; Producer asked the owner about writer's declined claim/);
+    expect(readRequest(world.consumer, open.id)).toMatchObject({ status: "open", options: [{ id: "decline", then: { verb: "close", args: ["declined"] } }, { id: "keep-open", then: { verb: "reject", args: [] } }] });
+    expect(readRequest(world.consumer, open.id).events.at(-1)).toMatchObject({ op: "asked", by: "producer" });
+    expect(() => closeWork(world.consumer, open.id, { by: "writer", at: "2026-11-20T10:01:00Z", outcome: "fixed", result: OPEN_FIX })).toThrow(/awaits the owner's answer \(decline, keep-open\)/);
+    // An option id the entry does not offer is refused and nothing is written; so is free text.
+    const before = readFileSync(file, "utf8");
+    for (const answer of ["fixed", "fixed: the pin resolves", "approve"]) {
+      expect(await runRequestCli([open.id, "--answer", answer, "--by", "owner", "--root", world.root], world.root), answer).toMatchObject({ exitCode: 1, message: expect.stringMatching(/is none of request .*'s options \(decline, keep-open\); nothing was written/) });
+      expect(readFileSync(file, "utf8"), answer).toBe(before);
+    }
+    await expect(runRequestCli([open.id, "--answer", "decline", "--by", "writer", "--root", world.root], world.root)).rejects.toThrow(/--answer is the owner's; it takes no --by writer/);
+    expect(readFileSync(file, "utf8")).toBe(before);
+    // keep-open: recorded, a rejected event, still open with writer; the question is closed so the assignee may work on.
+    const kept = await runRequestCli([open.id, "--answer", "keep-open", "--note", "not yet", "--at", "2026-11-20T10:02:00Z", "--root", world.root], world.root);
+    expect(kept.exitCode).toBe(0);
+    const keptEntry = readRequest(world.consumer, open.id);
+    expect(keptEntry).toMatchObject({ status: "open", assignee: "writer" });
+    expect(keptEntry.events.slice(-2)).toMatchObject([{ op: "answered", by: "owner", option: "keep-open", detail: "not yet" }, { op: "rejected", by: "producer" }]);
+    expect(requestIssues(keptEntry, world.root)).toEqual([]);
+    // Asked again, decline closes it declined by the entry's own answer ref, linking back to the requester.
+    await runRequestCli([open.id, "--close", "--outcome", "declined", "--result", `queue.fix#${open.id}`, "--by", "writer", "--at", "2026-11-20T10:03:00Z", "--root", world.root], world.root);
+    const declined = await runRequestCli([open.id, "--answer", "decline", "--at", "2026-11-20T10:04:00Z", "--root", world.root], world.root);
+    expect(declined.exitCode).toBe(0);
+    const closed = readRequest(world.consumer, open.id);
+    expect(closed).toMatchObject({ status: "closed", outcome: "declined", result: `queue.fix#${open.id}`, notified: { to: open.from } });
+    expect(closed.events.find(event => event.op === "closed")).toMatchObject({ by: `owner:queue.fix#${open.id}` });
+    expect(requestIssues(closed, world.root)).toEqual([]);
+  });
+
+  it("a fix closing as fixed re-runs its own check: still failing, it records rejected and stays open; a check it cannot re-run asks the owner", { timeout: 60_000 }, async () => {
     const world = await make();
     const open = world.raised.fix.find(item => item.target === OPEN_FIX)!;
     const file = entryFile(world, "fix", open.id);
@@ -196,11 +228,12 @@ describe("the request lens world", () => {
     expect(() => closeWork(world.consumer, open.id, { by: "writer", at: "2026-11-20T10:01:00Z", outcome: "fixed", result: OPEN_FIX })).toThrow(/stays open: its check pins\.resolve still fails on writer\/sections\.hero\.copy/);
     expect(readRequest(world.consumer, open.id).events.at(-1)).toMatchObject({ op: "rejected", by: "producer" });
     writeFileSync(pinFile, pinBytes);
-    // A check Producer cannot re-run never closes fixed, and nothing is written.
+    // A check Producer cannot re-run never closes fixed: the claim asks the owner (decline or keep-open, never fixed).
     recheck("render.overflow");
-    const unknown = readFileSync(file, "utf8");
-    expect(() => closeWork(world.consumer, open.id, { by: "writer", at: "2026-11-20T10:02:00Z", outcome: "fixed", result: OPEN_FIX })).toThrow(/cannot close fixed: its check render\.overflow is not one Producer can re-run/);
-    expect(readFileSync(file, "utf8")).toBe(unknown);
+    const claimed = closeWork(world.consumer, open.id, { by: "writer", at: "2026-11-20T10:02:00Z", outcome: "fixed", result: OPEN_FIX });
+    expect(claimed).toMatchObject({ asked: true, status: "open", options: [{ id: "decline" }, { id: "keep-open" }] });
+    expect(claimed.events.at(-1)).toMatchObject({ op: "asked", by: "producer", detail: expect.stringMatching(/check render\.overflow, which Producer cannot re-run/) });
+    expect((await answerRequest(world.consumer, open.id, { option: "keep-open", at: "2026-11-20T10:03:00Z" })).request).toMatchObject({ status: "open" });
     recheck("pins.resolve");
     const closed = closeWork(world.consumer, open.id, { by: "writer", at: "2026-11-20T10:05:00Z", outcome: "fixed", result: OPEN_FIX });
     expect(closed.events.at(-2)).toMatchObject({ op: "verified", by: "producer", detail: `requester check passed on ${OPEN_FIX}; fix check pins.resolve passes on ${OPEN_FIX}` });

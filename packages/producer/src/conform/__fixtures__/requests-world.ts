@@ -163,7 +163,12 @@ export async function requestsWorld(): Promise<RequestsWorld> {
   const change: SlotRequest[] = [];
   for (const [index, item] of CHANGES.entries()) {
     const at = `2026-11-20T09:1${index}:00Z`;
-    const raised = raiseWork(consumer, { kind: "change", target: item.target, from: item.from, want: item.want, why: `${item.from} needs ${item.target} to change`, source: "cli", by: item.from.split("/")[0]!, at }).request;
+    let raised = raiseWork(consumer, { kind: "change", target: item.target, from: item.from, want: item.want, why: `${item.from} needs ${item.target} to change`, source: "cli", by: item.from.split("/")[0]!, at }).request;
+    // An owner-class target asks the owner a closed question; the owner's typed answer hands it to the slot's agent.
+    if (raised.assignee === "owner") {
+      await cli(root, [raised.id, "--answer", "handoff", "--by", "owner", "--at", `2026-11-20T09:1${index}:10Z`]);
+      raised = listRequests(consumer, "change").flatMap(read => read.request?.id === raised.id ? [read.request] : [])[0]!;
+    }
     change.push(raised);
     if (raised.assignee === "writer") answeringRun(consumer, `20261120T091${index}Z-create-writer`, `2026-11-20T09:1${index}:30Z`, { queue: "queue.change", id: raised.id }, "writer", item.target);
     await cli(root, [raised.id, "--close", "--outcome", "changed", "--result", item.target, "--by", raised.assignee, "--at", `2026-11-20T09:2${index}:00Z`]);

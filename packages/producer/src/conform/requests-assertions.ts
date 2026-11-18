@@ -47,7 +47,7 @@ export const REQUEST_ASSERTIONS: Readonly<Record<string, Assertion>> = {
     }
     return { rows, evidence: 1 + facts.entries.length };
   },
-  /** Q4: a change or slot entry on an owner class routes to an owner MC packet from the class's loop step, carrying the owning agent's skill. */
+  /** Q4: a change or slot entry on an owner class routes to an owner MC packet from the class's loop step, carrying the owning agent's skill and the owner's options (unless the owner handed it off). */
   Q4: (agent, model) => {
     const facts = agent.requestFacts, machinery = model.machinery.requests;
     const rows: string[] = [];
@@ -57,7 +57,14 @@ export const REQUEST_ASSERTIONS: Readonly<Record<string, Assertion>> = {
     if (facts.ownerClasses.length && !facts.declared) rows.push(`${agent.agent} owns owner classes (${facts.ownerClasses.join(", ")}) and declares no request handling skill for their packets`);
     // A change or slot entry on an owner-reserved class goes to the owner; a fix goes to the handler (the loop it runs
     // keeps the class's owner step).
-    const owned = facts.entries.filter(fact => fact.ownerClass && targets(agent, fact) && fact.kind !== "fix");
+    // The owner's packet is a closed question (U7 r4): every entry assigned to the owner carries options, each a
+    // Producer step; one the owner handed off (route.delegated) routes to its agent as the table would without the class.
+    for (const fact of facts.entries.filter(item => targets(agent, item) && route(item)?.assignee === "owner")) {
+      const options = Array.isArray(fact.doc.options) ? fact.doc.options.filter(object) : [];
+      if (!options.length) rows.push(`${ref(fact)}: assigned to the owner with no options: the owner answers an option id, never free text`);
+      for (const option of options) if (!object(option.then) || typeof option.then.verb !== "string") rows.push(`${ref(fact)}: option ${String(option.id)} has no step (then: a Producer verb and its args)`);
+    }
+    const owned = facts.entries.filter(fact => fact.ownerClass && targets(agent, fact) && fact.kind !== "fix" && route(fact)?.delegated !== true);
     for (const fact of owned) {
       const packet = object(route(fact)?.packet) ? route(fact)!.packet as Record<string, unknown> : undefined;
       const skill = facts.skills.find(item => item.kind === fact.kind)?.skill;

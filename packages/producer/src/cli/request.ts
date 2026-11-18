@@ -8,13 +8,14 @@
  * request is refused unless the requester's conform.json declares that issuing edge. A change or fix entry closes with
  * `<id> --close --outcome <o> --result <ref>` (records/request.ts closeWork): code re-runs the requester's check first,
  * and a fail records `rejected` and refuses, so the entry stays open; a pass closes it with a notify back to `from`.
+ * An entry the owner answers carries options (U7 r4): `<id> --answer <option>` records the chosen id only and Producer
+ * runs that option's step (records/request.ts answerRequest); free text never closes or decides anything.
  */
 import { join, resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import {
-  checkRequest, closeRequest, closeWork, decideRequest, isContentAgent, listWorkEntries, outcomesFor, raiseRequest, raiseWork, readRequest, REQUEST_SEATS, RequestError, slotlessNeeds, targetOf, type SlotRequest,
+  answerRequest, checkRequest, closeRequest, closeWork, decideRequest, isContentAgent, listWorkEntries, outcomesFor, raiseRequest, raiseWork, readRequest, REQUEST_SEATS, RequestError, slotlessNeeds, targetOf, type SlotRequest,
 } from "../records/request.js";
-import { OWNER_QUEUE_ANSWER } from "../records/pin.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -24,11 +25,13 @@ export const REQUEST_USAGE = "Usage: clossys request --target <agent>/<slot> --f
   + "       clossys request --list [--open] [--agent <id>] [--json] [--root <dir>]\n"
   + "       clossys request --scan [--dry] [--at <iso>] [--root <dir>]\n"
   + "       clossys request <id> --check | --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> [--kind <kind>] --inputs <ref,...> --contract <file> [--overlap-reason <text>] | --close [--approved queue.approve#<id>] [--owner-ref <ref>]\n"
-  + "       clossys request <id> --close --outcome changed|declined (change) | fixed|declined (fix) --result <agent>/<slot>|<queue>#<id> --by <assignee>|owner:queue.<kind>#<id> [--at <iso>] [--root <dir>]\n"
+  + "       clossys request <id> --close --outcome changed|declined (change) | fixed|declined (fix) --result <agent>/<slot>|<queue>#<id> --by <assignee> [--at <iso>] [--root <dir>]\n"
+  + "       clossys request <id> --answer <option> [--note <text>] [--via cli|chat|app --quote <owner's words>] [--at <iso>] [--root <dir>]\n"
   + "  --by is the seat acting (director, designer, writer, publisher, owner, planner, producer); a raise defaults to the\n"
   + "  requester slot's agent (owner for --from owner), a decide to the assignee, --scan and a slot --close to producer; a change\n"
-  + "  or fix --close needs --by: its assignee (a fix only as fixed), or the owner's answered entry owner:queue.<kind>#<id>\n"
-  + "  that cites it (a fix: owner:queue.fix#<id>); bare owner never closes one. A raise\n"
+  + "  or fix --close needs --by its agent assignee (a fix only as fixed; a declined fix, or one whose check Producer cannot\n"
+  + "  re-run, asks the owner). An entry the owner answers lists its options: --answer <option> records the chosen id (the\n"
+  + "  note changes nothing) and Producer runs its step (pin, close, handoff or keep open); bare owner never closes one. A raise\n"
   + "  needs the requester slot to cite the target; a target already placed is cited, not requested. A create over a\n"
   + "  placed slot of one L2 and kind family with overlapping inputs is refused (cite it) unless --overlap-reason says why\n"
   + "  the material differs; the reason and overlap ids go to the owner's sign.\n"
@@ -44,7 +47,7 @@ export const REQUEST_USAGE = "Usage: clossys request --target <agent>/<slot> --f
   + "  handler's work is done: code re-runs the requester's check first; a fail records rejected and the entry stays open,\n"
   + "  a pass closes it and notifies --from.";
 
-const VALUED = new Set(["--target", "--from", "--why", "--rel", "--at", "--root", "--decide", "--slot", "--propose", "--under", "--kind", "--contract", "--owner-ref", "--approved", "--by", "--inputs", "--overlap-reason", "--subject", "--want", "--check", "--findings", "--cause", "--agent", "--outcome", "--result"]);
+const VALUED = new Set(["--target", "--from", "--why", "--rel", "--at", "--root", "--decide", "--slot", "--propose", "--under", "--kind", "--contract", "--owner-ref", "--approved", "--by", "--inputs", "--overlap-reason", "--subject", "--want", "--check", "--findings", "--cause", "--agent", "--outcome", "--result", "--answer", "--note", "--via", "--quote"]);
 const BARE = new Set(["--list", "--open", "--scan", "--dry", "--close"]);
 
 interface Flags { positional: string[]; values: Map<string, string>; bare: Set<string> }
@@ -74,6 +77,8 @@ const atOf = (flags: Flags): string => {
 };
 const refuse = (message: string): CliResult => ({ exitCode: 1, message: `request refused: ${message}` });
 const summary = (request: SlotRequest) => `${request.id} ${request.status} ${request.from} -> ${request.target}${request.decision ? ` (${request.decision}${request.link ? ` ${request.link}` : ""})` : ""}`;
+/** The owner's options of an entry, one line each (`--answer <id>`: label, then the step it runs). */
+const optionLines = (request: SlotRequest): string[] => (request.options ?? []).map(option => `  --answer ${option.id}: ${option.label} (${option.then.verb}${option.then.args.length ? ` ${option.then.args.join(" ")}` : ""})`);
 
 export async function runRequestCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   const flags = parse(argv);
@@ -81,8 +86,8 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
   const root = discoverRoot(resolve(cwd, flags.values.get("--root") ?? "."));
   const consumer = join(root, "clossys");
   const given = flags.values.get("--by");
-  // A change or fix close also takes the owner's answer (owner:queue.<kind>#<id>); every other verb refuses it (records/request.ts).
-  if (given !== undefined && !(REQUEST_SEATS as readonly string[]).includes(given) && !OWNER_QUEUE_ANSWER.test(given)) throw new CliUsageError(`--by must be one of ${REQUEST_SEATS.join(", ")} or owner:queue.<kind>#<id>\n${REQUEST_USAGE}`);
+  // A seat only: the owner closes nothing by --by; an owner entry is answered with --answer <option> (U7 r4).
+  if (given !== undefined && !(REQUEST_SEATS as readonly string[]).includes(given)) throw new CliUsageError(`--by must be one of ${REQUEST_SEATS.join(", ")} (the owner answers an entry's options with --answer <option>)\n${REQUEST_USAGE}`);
   let by = given ?? "producer";
   try {
     if (flags.bare.has("--list")) {
@@ -116,7 +121,7 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
         ...(want !== undefined ? { want } : {}), ...(kind === "fix" ? { check: check!, findings, cause: cause! } : {}),
       }, { dry: flags.bare.has("--dry") });
       const route = raised.request.route;
-      return { exitCode: 0, root, output: raised.request, message: `request: ${raised.created ? "raised" : "already open"} ${summary(raised.request)}${route ? ` (route ${route.row} -> ${route.assignee})` : ""}` };
+      return { exitCode: 0, root, output: raised.request, message: [`request: ${raised.created ? "raised" : "already open"} ${summary(raised.request)}${route ? ` (route ${route.row} -> ${route.assignee})` : ""}`, ...optionLines(raised.request)].join("\n") };
     }
     if (id === undefined) {
       const target = flags.values.get("--target"), from = flags.values.get("--from"), why = flags.values.get("--why");
@@ -126,9 +131,19 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
       const head = from.split("/")[0]!;
       if (given === undefined) by = from === "owner" ? "owner" : isContentAgent(head) ? head : by;
       const raised = raiseRequest(consumer, { target, from, rel, why, source: "cli", by, at: atOf(flags) }, { dry: flags.bare.has("--dry") });
-      return { exitCode: 0, root, output: raised.request, message: `request: ${raised.created ? "raised" : "already open"} ${summary(raised.request)}` };
+      return { exitCode: 0, root, output: raised.request, message: [`request: ${raised.created ? "raised" : "already open"} ${summary(raised.request)}`, ...optionLines(raised.request)].join("\n") };
     }
     if (extra.length) throw new CliUsageError(`request takes one <id>\n${REQUEST_USAGE}`);
+    const answer = flags.values.get("--answer");
+    if (answer !== undefined) {
+      if (given !== undefined && given !== "owner") throw new CliUsageError(`--answer is the owner's; it takes no --by ${given}\n${REQUEST_USAGE}`);
+      const via = flags.values.get("--via");
+      if (via !== undefined && via !== "cli" && via !== "chat" && via !== "app") throw new CliUsageError(`--via must be cli, chat or app\n${REQUEST_USAGE}`);
+      const note = flags.values.get("--note"), quote = flags.values.get("--quote");
+      const result = await answerRequest(consumer, id, { option: answer, at: atOf(flags), ...(note !== undefined ? { note } : {}), ...(via !== undefined ? { via } : {}), ...(quote !== undefined ? { quote } : {}) });
+      return { exitCode: result.ok ? 0 : 1, root, output: { request: result.request, option: result.option, ok: result.ok, ...(result.fix ? { fix: result.fix } : {}) }, message: `request ${id} --answer ${result.option.id}: ${result.message}` };
+    }
+    if (flags.values.has("--note") || flags.values.has("--via") || flags.values.has("--quote")) throw new CliUsageError(`--note, --via and --quote go with --answer\n${REQUEST_USAGE}`);
     if (flags.bare.has("--check")) {
       const checked = checkRequest(consumer, id, { by, at: atOf(flags) });
       return { exitCode: 0, root, output: checked, message: [`request ${id} --check: ${checked.overlaps!.length ? `${checked.overlaps!.length} possible overlap(s)` : "no overlap"}`, ...checked.overlaps!.map(item => `  ${item.slot}: ${item.why}`)].join("\n") };
@@ -161,9 +176,13 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
         if (!outcome || !result) throw new CliUsageError(`a ${request.kind} entry closes with --outcome and --result\n${REQUEST_USAGE}`);
         const outcomes = outcomesFor(request.kind);
         if (!(outcomes as readonly string[]).includes(outcome)) throw new CliUsageError(`a ${request.kind} entry closes with --outcome ${outcomes.join(" or ")}\n${REQUEST_USAGE}`);
-        // Who closes is said, never defaulted: the assignee, or the owner's answered entry, names itself with --by.
-        if (given === undefined) throw new CliUsageError(`a ${request.kind} entry closes with --by ${request.assignee} (its assignee) or --by owner:queue.${request.kind === "fix" ? "fix" : "<kind>"}#<id> (the owner's answer)\n${REQUEST_USAGE}`);
+        // Who closes is said, never defaulted: the assignee names itself with --by; the owner answers with --answer.
+        if (given === undefined) throw new CliUsageError(`a ${request.kind} entry closes with --by ${request.assignee} (its assignee); an entry the owner answers takes --answer <option>\n${REQUEST_USAGE}`);
         const closed = closeWork(consumer, id, { by: given, at: atOf(flags), outcome: outcome as (typeof outcomes)[number], result });
+        if (closed.asked) {
+          const { asked: _asked, ...entry } = closed;
+          return { exitCode: 0, root, output: entry, message: [`request ${id}: stays open; Producer asked the owner about ${given}'s ${outcome} claim`, ...optionLines(entry)].join("\n") };
+        }
         return { exitCode: 0, root, output: closed, message: `request ${id}: closed ${closed.outcome} (${closed.result}), the requester check passed; notified ${closed.from}` };
       }
       if (flags.values.has("--outcome") || flags.values.has("--result")) throw new CliUsageError(`a slot entry closes by its decision; --outcome and --result are for change and fix\n${REQUEST_USAGE}`);
@@ -178,7 +197,7 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
       return { exitCode: 0, root, output: closed.request, message: [`request ${id}: closed, ${closed.request.from} linked to ${closed.request.link}`, ...closed.wrote.map(file => `  write ${file}`)].join("\n") };
     }
     const request = readRequest(consumer, id);
-    return { exitCode: 0, root, output: request, message: `request ${summary(request)}` };
+    return { exitCode: 0, root, output: request, message: [`request ${summary(request)}`, ...optionLines(request)].join("\n") };
   } catch (error) {
     if (error instanceof RequestError) return refuse(error.message);
     throw error;

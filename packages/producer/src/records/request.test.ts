@@ -5,13 +5,16 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { REQUESTS_FILED } from "../loop/names.js";
-import { ownerFixQuestion, raiseEntry } from "../loop/route.js";
+import { raiseEntry } from "../loop/route.js";
+import { runPinCli } from "../cli/pin.js";
+import { consumerFacts, rederive } from "../queue/routing.js";
+import { writeCandidate } from "./slot-write.js";
 import { verifyCheck } from "../loop/runner.js";
 import { OPEN_FIX, requestsWorld, type RequestsWorld } from "../conform/__fixtures__/requests-world.js";
 import { answerQueueEntry } from "../queue/answer.js";
 import { readLegacyFixes } from "../queue/legacy-fix.js";
 import {
-  checkRequest, closeRequest, closeWork, decideRequest, placementOverlaps, raiseRequest, readRequest, requestIssues, requestsDir, signedApproval, slotlessNeeds,
+  answerRequest, checkRequest, closeRequest, closeWork, raiseWork, decideRequest, placementOverlaps, raiseRequest, readRequest, requestIssues, requestsDir, signedApproval, slotlessNeeds,
   unfiledNeeds, type SlotRequest,
 } from "./request.js";
 
@@ -304,10 +307,10 @@ console.log(JSON.stringify({ id: result.request.id, created: result.created }));
   });
 });
 
-// foundry-build-0048 U7 r3: a fix or change closes by the one closure rule (records/request.ts closerIssues). The
-// assignee closes a change, and a fix only as fixed with its check re-run; any other close is the owner's answer
-// owner:queue.fix#<id>, a /1 queue.fix entry the owner answered that cites the fix. Bare owner never closes.
-describe("the closure rule on change and fix entries (U7 r3)", () => {
+// foundry-build-0048 U7 r4: a fix or change closes by the one closure rule (records/request.ts closerIssues). The
+// agent assignee closes a change, and a fix only as fixed with its check re-run; any other close is the owner's typed
+// answer: one option id of the entry, whose step Producer runs, closer owner:queue.<kind>#<id>. Bare owner never closes.
+describe("the closure rule on change and fix entries (U7 r4, typed answers)", () => {
   const worlds: RequestsWorld[] = [];
   afterEach(() => { for (const item of worlds.splice(0)) item.dispose(); });
   const open = async () => {
@@ -316,70 +319,180 @@ describe("the closure rule on change and fix entries (U7 r3)", () => {
     const fix = made.raised.fix.find(item => item.target === OPEN_FIX)!;
     return { made, fix, file: join(made.consumer, "agents/producer/queue.fix/entries", `${fix.id}.json`) };
   };
-  /** The owner's answer to the fix: the one /1 queue.fix owner entry citing it, answered (free text: it has no options). */
-  const ownerAnswer = (root: string, fix: SlotRequest, words = "decline it: the overflow is by design") => {
-    const { entry } = ownerFixQuestion(root, { id: fix.id, target: fix.target, check: String(fix.check) }, "2026-11-20T10:00:00Z");
-    const name = `queue.fix#${entry.id}`;
-    // The world runs on 2026-11-20 and an answer is stamped now: answer from a clock past the world's.
-    vi.useFakeTimers({ now: new Date("2026-11-21T00:00:00Z"), toFake: ["Date"] });
-    let result: unknown;
-    try { result = answerQueueEntry(root, { entry: name, answer: words, by: "owner", via: "chat", quote: words }); } finally { vi.useRealTimers(); }
-    expect((result as { entry?: { status?: string } }).entry?.status, JSON.stringify(result)).toBe("answered");
-    return `owner:${name}`;
-  };
   const close = (consumer: string, id: string, by: string, outcome: "fixed" | "declined" | "changed") =>
     closeWork(consumer, id, { by, at: "2026-11-20T10:05:00Z", outcome, result: OPEN_FIX });
 
-  it("T5: the assignee closes a fix only as fixed: its declined is refused and nothing is written", { timeout: 60_000 }, async () => {
-    const { made, fix, file } = await open();
-    const before = readFileSync(file, "utf8");
-    expect(() => close(made.consumer, fix.id, "writer", "declined")).toThrow(new RegExp(`writer cannot close ${fix.id}: the assignee closes a fix only as fixed`));
-    expect(readFileSync(file, "utf8")).toBe(before);
+  it("T5: the assignee's declined claim is no close: it asks the owner decline or keep-open, and closes nothing", { timeout: 60_000 }, async () => {
+    const { made, fix } = await open();
+    const asked = close(made.consumer, fix.id, "writer", "declined");
+    expect(asked).toMatchObject({ asked: true, status: "open", options: [{ id: "decline", then: { verb: "close", args: ["declined"] } }, { id: "keep-open", then: { verb: "reject", args: [] } }] });
+    const stored = readRequest(made.consumer, fix.id);
+    expect(stored).toMatchObject({ status: "open", assignee: "writer" });
+    expect(stored.events.at(-1)).toMatchObject({ op: "asked", by: "producer", detail: expect.stringMatching(/^writer claims declined; the owner answers decline or keep-open/) });
+    expect(requestIssues(stored, made.root)).toEqual([]);
   });
 
-  it("T6: bare owner declining a fix is refused; owner:queue.fix#<id>, answered by the owner and citing it, closes it", { timeout: 60_000 }, async () => {
+  it("T6: bare owner is refused; the entry's own ref closes only right after the owner's answered option, and as that option's step", { timeout: 60_000 }, async () => {
     const { made, fix, file } = await open();
+    const self = `owner:queue.fix#${fix.id}`;
     const before = readFileSync(file, "utf8");
-    expect(() => close(made.consumer, fix.id, "owner", "declined")).toThrow(/owner cannot close .*: bare owner is no closer/);
+    expect(() => close(made.consumer, fix.id, "owner", "declined")).toThrow(/owner cannot close .*: bare owner is no closer: the owner answers one of the entry's options/);
+    expect(() => close(made.consumer, fix.id, self, "declined")).toThrow(/closes it only right after the owner's answer chose one of its options/);
     expect(readFileSync(file, "utf8")).toBe(before);
-    const by = ownerAnswer(made.root, fix);
-    const closed = close(made.consumer, fix.id, by, "declined");
-    expect(closed).toMatchObject({ status: "closed", outcome: "declined" });
-    expect(closed.events.at(-1)).toMatchObject({ op: "closed", by });
-    expect(closed.refs).toContainEqual({ to: "producer/queue.fix", record: by.split("#")[1], rel: "answers" });
+    close(made.consumer, fix.id, "writer", "declined");
+    const answered = await answerRequest(made.consumer, fix.id, { option: "decline", at: "2026-11-20T10:06:00Z", via: "chat", quote: "decline it" });
+    expect(answered).toMatchObject({ ok: true, option: { id: "decline" } });
+    const closed = readRequest(made.consumer, fix.id);
+    expect(closed).toMatchObject({ status: "closed", outcome: "declined", result: `queue.fix#${fix.id}`, notified: { to: fix.from } });
+    expect(closed.events.find(event => event.op === "answered")).toMatchObject({ by: "owner", option: "decline", via: "chat", quote: "decline it" });
+    expect(closed.events.at(-1)).toMatchObject({ op: "closed", by: self });
     expect(requestIssues(closed, made.root)).toEqual([]);
-    // Stored, the same close without its answers ref, or by bare owner, does not read.
-    expect(requestIssues({ ...closed, refs: closed.refs.filter(ref => ref.rel !== "answers") }, made.root).join("; ")).toMatch(/carries no ref answering queue\.fix#/);
-    expect(requestIssues({ ...closed, events: closed.events.map(event => event.op === "closed" ? { ...event, by: "owner" } : event) }, made.root).join("; ")).toMatch(/bare owner is no closer/);
+    // Stored: by bare owner, with no answer before it, or closing other than the option's step, it does not read.
+    const swap = (by: string) => ({ ...closed, events: closed.events.map(event => event.op === "closed" ? { ...event, by } : event) });
+    expect(requestIssues(swap("owner"), made.root).join("; ")).toMatch(/bare owner is no closer/);
+    expect(requestIssues({ ...closed, events: closed.events.filter(event => event.op !== "answered") }, made.root).join("; ")).toMatch(/closes it only right after the owner's answer chose one of its options/);
+    expect(requestIssues({ ...closed, options: closed.options!.map(option => option.id === "decline" ? { ...option, then: { verb: "reject" as const, args: [] } } : option) }, made.root).join("; ")).toMatch(/the owner's answer decline \(reject\) closes nothing, not declined/);
   });
 
-  it("T7: a fix closes fixed or declined: changed is refused, by the assignee and by the owner's answer", { timeout: 60_000 }, async () => {
+  it("T7: a fix closes fixed or declined: changed is refused by the assignee, and the owner is never offered it", { timeout: 60_000 }, async () => {
     const { made, fix, file } = await open();
     const before = readFileSync(file, "utf8");
     expect(() => close(made.consumer, fix.id, "writer", "changed")).toThrow(/a fix entry closes fixed or declined, not changed/);
-    const by = ownerAnswer(made.root, fix);
-    expect(() => close(made.consumer, fix.id, by, "changed")).toThrow(/a fix entry closes fixed or declined, not changed/);
     expect(readFileSync(file, "utf8")).toBe(before);
+    const { asked: _asked, ...asked } = close(made.consumer, fix.id, "writer", "declined");
+    expect(asked.options!.map(option => option.then)).toEqual([{ verb: "close", args: ["declined"] }, { verb: "reject", args: [] }]);
+    // A stored close option no fix outcome names does not read.
+    expect(requestIssues({ ...asked, options: [{ id: "change-it", label: "x", then: { verb: "close", args: ["changed"] } }, asked.options![1]!] }, made.root).join("; ")).toMatch(/options change-it: close takes one outcome of a fix entry \(fixed, declined\)/);
   });
 
-  it("T8: a fix whose check Producer cannot re-run never closes fixed; it raises one owner queue.fix entry citing it", { timeout: 60_000 }, async () => {
+  it("T8: a fix whose check Producer cannot re-run never closes fixed; the claim asks the owner and raises no other entry", { timeout: 60_000 }, async () => {
     const { made, fix, file } = await open();
-    writeFileSync(file, `${JSON.stringify({ ...JSON.parse(readFileSync(file, "utf8")), check: "render.overflow" })}\n`);
-    const before = readFileSync(file, "utf8");
-    const asked = () => readLegacyFixes(made.root).filter(item => {
-      const doc = item.doc as { decider?: string; refs?: { to: string; record?: string; rel: string }[] };
-      return doc.decider === "owner" && (doc.refs ?? []).some(ref => ref.to === "producer/queue.fix" && ref.record === fix.id && ref.rel === "cites");
-    });
-    expect(asked()).toEqual([]);
-    for (const by of ["writer", "writer"]) expect(() => close(made.consumer, fix.id, by, "fixed")).toThrow(/cannot close fixed: its check render\.overflow is not one Producer can re-run/);
-    expect(readFileSync(file, "utf8")).toBe(before);
-    expect(asked()).toHaveLength(1);
-    expect(asked()[0]).toMatchObject({ issues: [], closed: false, subject: OPEN_FIX });
-    // The owner's answer closes it, declined only: fixed still needs a check Producer re-runs.
-    const by = ownerAnswer(made.root, fix);
-    expect(asked()).toHaveLength(1);
-    expect(() => close(made.consumer, fix.id, by, "fixed")).toThrow(/cannot close fixed: its check render\.overflow/);
-    expect(close(made.consumer, fix.id, by, "declined")).toMatchObject({ status: "closed", outcome: "declined" });
+    writeFileSync(file, `${JSON.stringify({ ...JSON.parse(readFileSync(file, "utf8")), check: "render.overflow" })}
+`);
+    const legacy = () => readLegacyFixes(made.root).length;
+    const count = legacy();
+    const asked = close(made.consumer, fix.id, "writer", "fixed");
+    expect(asked).toMatchObject({ asked: true, status: "open", options: [{ id: "decline" }, { id: "keep-open" }] });
+    expect(asked.events.at(-1)!.detail).toMatch(/writer claims fixed on check render\.overflow, which Producer cannot re-run/);
+    expect(legacy()).toBe(count);
+    // The owner can only decline or keep it open: fixed is no option, and nothing is written.
+    const bytesNow = readFileSync(file, "utf8");
+    await expect(answerRequest(made.consumer, fix.id, { option: "fixed", at: "2026-11-20T10:06:00Z" })).rejects.toThrow(/--answer fixed is none of request .*'s options \(decline, keep-open\); nothing was written/);
+    expect(readFileSync(file, "utf8")).toBe(bytesNow);
+    expect((await answerRequest(made.consumer, fix.id, { option: "decline", at: "2026-11-20T10:07:00Z" })).request).toMatchObject({ status: "closed", outcome: "declined" });
+  });
+
+  it("T9: the stored answer is typed: an answered option the entry does not offer, an answer by a seat, or an option on another event does not read", { timeout: 60_000 }, async () => {
+    const { made, fix } = await open();
+    close(made.consumer, fix.id, "writer", "declined");
+    await answerRequest(made.consumer, fix.id, { option: "keep-open", at: "2026-11-20T10:06:00Z" });
+    const kept = readRequest(made.consumer, fix.id);
+    expect(requestIssues(kept, made.root)).toEqual([]);
+    const edit = (map: (event: SlotRequest["events"][number]) => SlotRequest["events"][number]) => requestIssues({ ...kept, events: kept.events.map(map) }, made.root).join("; ");
+    const { options: _options, ...bare } = kept;
+    expect(edit(event => event.op === "answered" ? { ...event, option: "approve" } : event)).toMatch(/an answer is the owner's choice of one of the entry's options \(decline, keep-open\), not owner's approve/);
+    expect(edit(event => event.op === "answered" ? { ...event, by: "writer" } : event)).toMatch(/not writer's keep-open/);
+    expect(edit(event => { if (event.op !== "answered") return event; const { option: _option, ...rest } = event; return rest; })).toMatch(/not owner's free text/);
+    expect(edit(event => event.op === "rejected" ? { ...event, option: "decline" } : event)).toMatch(/only an answered event names an option/);
+    expect(edit(event => event.op === "asked" ? { ...event, by: "writer" } : event)).toMatch(/Producer asks the owner, not writer/);
+    expect(requestIssues(bare, made.root).join("; ")).toMatch(/options \(none\), not owner's keep-open/);
+  });
+});
+
+// U7 r4: an owner-assigned change carries its options from the raise; the owner's answer runs the step through the
+// normal verbs and gates, and a step that fails leaves the entry open with a fix routed by the table.
+describe("owner-assigned change entries (U7 r4, typed answers)", () => {
+  const worlds: RequestsWorld[] = [];
+  afterEach(() => { for (const item of worlds.splice(0)) item.dispose(); });
+  const DIRECTOR = "agents/director/focus.reach.geography";
+  /** The world, one more submitted (unpinned) geography candidate (the pinned bytes, edited), and the owner's change. */
+  const raised = async (edit?: (bytes: string) => string) => {
+    const made = await requestsWorld();
+    worlds.push(made);
+    if (edit) {
+      const pinned = String(JSON.parse(readFileSync(join(made.consumer, DIRECTOR, "pin.json"), "utf8")).candidate);
+      const bytes = readFileSync(join(made.consumer, DIRECTOR, "candidates", pinned), "utf8");
+      writeCandidate(made.consumer, "director", "focus.reach.geography", "geography", edit(bytes), { at: "2026-11-20T10:59:00Z", provenance: { by: "agent:director", model: "none", tier: "none" } });
+    }
+    const entry = raiseWork(made.consumer, { kind: "change", target: "director/focus.reach.geography", from: "writer/sections.hero.copy", want: "repin", why: "the hero copy needs another geography", source: "cli", by: "writer", at: "2026-11-20T11:00:00Z" }).request;
+    return { made, entry, file: join(made.consumer, "agents/producer/queue.change/entries", `${entry.id}.json`) };
+  };
+
+  it("T10: a change on an owner class is raised to the owner with its options, each a Producer step; none is free text", { timeout: 60_000 }, async () => {
+    const { made, entry } = await raised();
+    expect(entry).toMatchObject({ assignee: "owner", status: "open" });
+    const steps = entry.options!.map(option => `${option.id}: ${option.then.verb} ${option.then.args.join(" ")}`.trim());
+    expect(steps).toContain("handoff: handoff director");
+    expect(steps).toContain("decline: close declined");
+    for (const option of entry.options!.filter(item => item.then.verb === "pin")) expect(option.then.args[0]).toBe("director/focus.reach.geography");
+    expect(requestIssues(entry, made.root)).toEqual([]);
+    const { options: _options, ...bare } = entry;
+    expect(requestIssues(bare, made.root).join("; ")).toMatch(/an entry assigned to the owner carries the options the owner answers/);
+    // The owner's entry is no seat's to close or decide.
+    expect(() => closeWork(made.consumer, entry.id, { by: "director", at: "2026-11-20T11:01:00Z", outcome: "changed", result: entry.target })).toThrow(/awaits the owner's answer/);
+    expect(() => closeWork(made.consumer, entry.id, { by: "owner", at: "2026-11-20T11:01:00Z", outcome: "declined", result: `queue.change#${entry.id}` })).toThrow(/awaits the owner's answer/);
+  });
+
+  it("T11: handoff re-routes to the slot's agent with route.delegated, which rederive keeps; the agent then closes it", { timeout: 60_000 }, async () => {
+    const { made, entry } = await raised();
+    const result = await answerRequest(made.consumer, entry.id, { option: "handoff", at: "2026-11-20T11:01:00Z" });
+    expect(result).toMatchObject({ ok: true });
+    const handed = readRequest(made.consumer, entry.id);
+    expect(handed).toMatchObject({ status: "open", assignee: "director", route: { assignee: "director", delegated: true } });
+    expect(handed.events.at(-1)).toMatchObject({ op: "routed", by: "producer", detail: expect.stringMatching(/delegated by the owner's handoff/) });
+    expect(requestIssues(handed, made.root)).toEqual([]);
+    expect(rederive(consumerFacts(made.consumer), handed)).toBeUndefined();
+    const { delegated: _delegated, ...undelegated } = handed.route!;
+    expect(rederive(consumerFacts(made.consumer), { ...handed, route: undelegated })).toMatch(/differs from the table now \(owner\.class -> owner\)/);
+    // A delegated route with no answered handoff does not read.
+    expect(requestIssues({ ...handed, events: handed.events.filter(event => event.op !== "answered") }, made.root).join("; ")).toMatch(/delegated only by the owner's answered handoff option/);
+    // No second answer: the question closed with the handoff.
+    await expect(answerRequest(made.consumer, entry.id, { option: "decline", at: "2026-11-20T11:02:00Z" })).rejects.toThrow(/awaits no owner answer/);
+  });
+
+  it("T12: the answer binds the pin: the pin verb refuses the entry's ref pinning any candidate but the answered one", { timeout: 60_000 }, async () => {
+    const { made, entry, file } = await raised(bytes => bytes);
+    const pin = entry.options!.find(option => option.then.verb === "pin")!;
+    expect(pin, JSON.stringify(entry.options)).toBeDefined();
+    const pinFile = join(made.consumer, DIRECTOR, "pin.json");
+    const pinBefore = readFileSync(pinFile, "utf8");
+    const pinned = String(JSON.parse(pinBefore).candidate);
+    const by = ["--by", `owner:queue.change#${entry.id}`, "--at", "2026-11-20T11:01:30Z", "--root", made.root];
+    // Unanswered, the entry's ref pins nothing.
+    expect(await runPinCli(["director/focus.reach.geography", pin.then.args[1]!, ...by], made.root)).toMatchObject({ exitCode: 1, message: expect.stringContaining("has no owner answer as its last event") });
+    const forged = JSON.parse(readFileSync(file, "utf8"));
+    writeFileSync(file, `${JSON.stringify({ ...forged, events: [...forged.events, { id: `${entry.id}#9`, op: "answered", by: "owner", at: "2026-11-20T11:01:00Z", option: pin.id }] })}\n`);
+    expect(await runPinCli(["director/focus.reach.geography", pinned, ...by], made.root)).toMatchObject({ exitCode: 1, message: expect.stringContaining(`was answered ${pin.id} (pin director/focus.reach.geography ${pin.then.args[1]}), not pin director/focus.reach.geography ${pinned}`) });
+    expect(readFileSync(pinFile, "utf8")).toBe(pinBefore);
+  });
+
+  it("T13: a pin answer runs the pin gate: passing, the slot is pinned by the answer and the entry closes changed", { timeout: 60_000 }, async () => {
+    const { made, entry } = await raised(bytes => bytes);
+    const pin = entry.options!.find(option => option.then.verb === "pin")!;
+    const result = await answerRequest(made.consumer, entry.id, { option: pin.id, at: "2026-11-20T11:02:00Z" });
+    expect(result, result.message).toMatchObject({ ok: true });
+    const closed = readRequest(made.consumer, entry.id);
+    expect(closed).toMatchObject({ status: "closed", outcome: "changed", result: entry.target, notified: { to: entry.from } });
+    expect(closed.events.at(-1)).toMatchObject({ op: "closed", by: `owner:queue.change#${entry.id}` });
+    expect(JSON.parse(readFileSync(join(made.consumer, DIRECTOR, "pin.json"), "utf8"))).toMatchObject({ candidate: pin.then.args[1], decidedBy: `owner:queue.change#${entry.id}` });
+    expect(requestIssues(closed, made.root)).toEqual([]);
+  });
+
+  it("T14: a pin answer the gate refuses leaves the entry open with a rejected event and a fix on the target, routed by the table", { timeout: 60_000 }, async () => {
+    const { made, entry } = await raised(bytes => bytes.replace(/Language/g, "Tongue"));
+    const pin = entry.options!.find(option => option.then.verb === "pin")!;
+    const pinFile = join(made.consumer, DIRECTOR, "pin.json");
+    const pinBefore = readFileSync(pinFile, "utf8");
+    const result = await answerRequest(made.consumer, entry.id, { option: pin.id, at: "2026-11-20T11:02:00Z" });
+    expect(result).toMatchObject({ ok: false });
+    const stays = readRequest(made.consumer, entry.id);
+    expect(stays).toMatchObject({ status: "open", assignee: "owner" });
+    expect(stays.events.at(-1)).toMatchObject({ op: "rejected", by: "producer", detail: expect.stringMatching(/the owner's answer .* failed \(pin\.gate\)/) });
+    expect(result.fix).toMatchObject({ kind: "fix", target: entry.target, check: "pin.gate", status: "open", assignee: "director" });
+    expect(result.fix!.refs).toContainEqual(expect.objectContaining({ to: "producer/queue.change", record: entry.id }));
+    expect(readFileSync(pinFile, "utf8")).toBe(pinBefore);
+    expect(requestIssues(stays, made.root)).toEqual([]);
+    expect(requestIssues(result.fix!, made.root)).toEqual([]);
   });
 });
 

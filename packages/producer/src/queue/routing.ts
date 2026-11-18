@@ -239,12 +239,15 @@ function matches(facts: RoutingFacts, row: RoutingRow, entry: Routable): boolean
 /**
  * Routes one entry: the first row that matches and whose destination resolves from the declarations. A handler row
  * whose agent declares no handler for the kind does not match (the next row is tried), so the catch-all receives it.
+ * `delegated` (foundry-build-0048 U7 r4) is the route after the owner's handoff answer: the owner-packet row is
+ * skipped, so an owner-reserved entry goes to the row that would hold it without the reservation (marked delegated).
  */
-export function routeEntry(facts: RoutingFacts, entry: Routable): EntryRoute {
+export function routeEntry(facts: RoutingFacts, entry: Routable, options: { readonly delegated?: boolean } = {}): EntryRoute {
   const { agent } = split(entry.target);
   for (const row of facts.table.rows) {
+    if (options.delegated && row.to === "owner-packet") continue;
     if (!matches(facts, row, entry)) continue;
-    const base = { row: row.id, table: facts.sha };
+    const base = { row: row.id, table: facts.sha, ...(options.delegated ? { delegated: true as const } : {}) };
     const declared = isRoutedAgent(agent) ? facts.declarations(agent) : undefined;
     if (row.to === "handler") {
       const handler = declared?.requests?.handling?.[row.handling!];
@@ -271,10 +274,10 @@ export function routeEntry(facts: RoutingFacts, entry: Routable): EntryRoute {
 
 /** The route an entry's recorded route should equal, re-derived now; undefined when they agree. */
 export function rederive(facts: RoutingFacts, entry: Routable & { readonly route?: EntryRoute }): string | undefined {
-  const now = routeEntry(facts, entry);
+  const now = routeEntry(facts, entry, { delegated: entry.route?.delegated === true });
   const was = entry.route;
   if (!was) return "has no route (the router writes one when the entry is raised)";
-  const key = (route: EntryRoute) => JSON.stringify([route.row, route.assignee, route.handler?.skill, route.handler?.loop, route.packet?.queue, route.packet?.step, route.escalate]);
+  const key = (route: EntryRoute) => JSON.stringify([route.row, route.assignee, route.handler?.skill, route.handler?.loop, route.packet?.queue, route.packet?.step, route.escalate, route.delegated === true]);
   if (key(was) !== key(now)) return `route ${was.row} -> ${was.assignee} differs from the table now (${now.row} -> ${now.assignee})`;
   if (was.table !== now.table) return `was routed by another routing.json (${was.table.slice(0, 12)}), not ${now.table.slice(0, 12)}`;
   return undefined;

@@ -68,6 +68,7 @@ function world(mutate: Mutation = () => {}): { agent: AgentModel; model: Conform
         { kind: "fix", id: "f1", issues: [], doc: { kind: "fix", id: "f1", from: "producer/checks.scorecard", target: "director/a.x", assignee: "director", status: "open", createdAt: "2026-11-17T00:00:00Z", check: "text.nonempty", cause: "empty", findings: ["a"],
           route: { row: "fix.live", assignee: "director", handler: { skill: "s/create.md", loop: "loop.create" } }, events: [{ op: "raised" }, { op: "routed", by: "producer" }] } },
         { kind: "slot", id: "s1", issues: [], ownerClass: { step: "loop.choose/choose-v1#owner-pick", queue: "queue.pick" }, doc: { kind: "slot", id: "s1", from: "writer/b.in", target: "director/a.y", assignee: "owner", status: "open", createdAt: "2026-11-17T00:00:00Z",
+          options: [{ id: "handoff", label: "Hand it to director", then: { verb: "handoff", args: ["director"] } }],
           route: { row: "owner.class", assignee: "owner", packet: { queue: "queue.pick", step: "loop.choose/choose-v1#owner-pick", skill: "s/slot.md" } }, events: [{ op: "raised" }, { op: "routed", by: "producer" }] } },
       ],
     },
@@ -215,6 +216,23 @@ describe("conformance runner", () => {
       s1.doc.route = { ...s1.doc.route, assignee: "writer" };
     });
     expect(ASSERTIONS.Q4!(built.agent, built.model, built.facts).rows).toEqual([expect.stringMatching(/s1.*owner-reserved.*routes to writer/)]);
+  });
+  it("Q4: an entry assigned to the owner with no options, or an option with no step, is red (the owner answers an option id)", () => {
+    const bare = world((agent: any) => { delete agent.requestFacts.entries.find((fact: any) => fact.id === "s1").doc.options; });
+    expect(ASSERTIONS.Q4!(bare.agent, bare.model, bare.facts).rows).toEqual([expect.stringMatching(/s1: assigned to the owner with no options: the owner answers an option id, never free text/)]);
+    const loose = world((agent: any) => { agent.requestFacts.entries.find((fact: any) => fact.id === "s1").doc.options = [{ id: "approve", label: "Approve it" }]; });
+    expect(ASSERTIONS.Q4!(loose.agent, loose.model, loose.facts).rows).toEqual([expect.stringMatching(/s1: option approve has no step/)]);
+  });
+  it("Q4: an owner-class entry the owner handed off (route.delegated) routes to its agent and is green; without the mark it is red", () => {
+    const handed = (delegated: boolean) => world((agent: any) => {
+      const s1 = agent.requestFacts.entries.find((fact: any) => fact.id === "s1");
+      s1.doc.assignee = "director";
+      s1.doc.route = { row: "slot.home", assignee: "director", handler: { skill: "s/slot.md", loop: "loop.slot" }, ...(delegated ? { delegated: true } : {}) };
+    });
+    const ok = handed(true);
+    expect(ASSERTIONS.Q4!(ok.agent, ok.model, ok.facts).rows).toEqual([]);
+    const bad = handed(false);
+    expect(ASSERTIONS.Q4!(bad.agent, bad.model, bad.facts).rows).toEqual([expect.stringMatching(/s1.*owner-reserved.*routes to director/)]);
   });
   it("Q7: a closed change with no producer verified event before its close is red (the requester check never ran)", () => {
     const built = world((agent: any) => {
