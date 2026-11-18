@@ -15,7 +15,7 @@ import type { RuntimeCell } from "@clossys/designer/catalog";
 import type { InstanceBinding } from "../../core/instance-binding.js";
 import type { LegacyRouteRegistration as RouteRegistration, LegacyRouteRegistry as RouteRegistry } from "../../core/route-registry.js";
 import type { PreparedRegisteredRoute } from "../registered-route-binding.js";
-import { PreviewViewport } from "../layouts/preview/PreviewViewport.js";
+import { PreviewViewport } from "../engines/preview/PreviewViewport.js";
 
 /** The host's authenticated route registry and a hook returning the closed binder's result for one
  * registered route: `prepareRegisteredRoute(registry, route.routeId, useRuntime(route), renderActions)`. */

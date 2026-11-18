@@ -5,7 +5,7 @@ import { posix } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { checkLayoutRendererSource } from "./instance-binding.check.js";
-import { LAYOUT_LEAVES, getEffectiveLayoutContract } from "../layouts/index.js";
+import { LAYOUT_ENGINES, getEffectiveLayoutContract } from "../engines/index.js";
 import { instanceFixture } from "./__fixtures__/instance-binding/fixtures.js";
 import type { BindingToken, LayoutRendererSource } from "./instance-binding.js";
 import type { LayoutCompilerPort } from "./layout-source.js";
@@ -184,8 +184,8 @@ describe("bounded layout source closure", () => {
     for (const row of baseline.cases) expect(digest(getEffectiveLayoutContract(row.leaf, row.config, row.members))).toBe(row.expectedSha256);
   });
   it("detects a changed default member against the immutable parity baseline", () => {
-    const leaf = structuredClone(LAYOUT_LEAVES.find(leaf=>leaf.id==="stack")!);
-    const original = baseline.cases.find(row=>row.leaf===leaf.id && row.config==="stack.document" && !Object.keys(row.members).length)!;
+    const leaf = structuredClone(LAYOUT_ENGINES.find(leaf=>leaf.engine==="stack")!);
+    const original = baseline.cases.find(row=>row.leaf===leaf.engine && row.config==="stack.document" && !Object.keys(row.members).length)!;
     const config = leaf.contract.configs.find(config=>config.id === original.config)!;
     (config.members as Record<string,string>).measure = "form";
     const resolved = getEffectiveLayoutContract(leaf, original.config, original.members);
@@ -193,7 +193,7 @@ describe("bounded layout source closure", () => {
     expect(digest(resolved)).not.toBe(original.expectedSha256);
   });
   it("refuses an unknown supplied-leaf breakpoint without a token fallback", () => {
-    const leaf = structuredClone(LAYOUT_LEAVES.find(leaf=>leaf.id==="sidebar-content")!);
+    const leaf = structuredClone(LAYOUT_ENGINES.find(leaf=>leaf.engine==="sidebar-content")!);
     (leaf.contract.members as Record<string,string[]>).breakpoint = ["unknown"];
     expect(()=>getEffectiveLayoutContract(leaf, undefined, {breakpoint:"unknown"})).toThrow("Unknown layout breakpoint");
   });
@@ -205,24 +205,24 @@ describe("bounded layout source closure", () => {
     }
   });
 
-  const matrix = LAYOUT_LEAVES.filter(leaf => leaf.status !== "held").flatMap(leaf => leaf.contract.configs.map(config => ({ leaf, config: config.id,
-    entry: `web/layouts/${({ "stack": "Stack", "split": "Split", "sidebar-content": "SidebarContent", "bento": "Bento" } as Record<string, string>)[leaf.id]}.tsx` })));
+  const matrix = LAYOUT_ENGINES.filter(leaf => leaf.status !== "held").flatMap(leaf => leaf.contract.configs.map(config => ({ leaf, config: config.id,
+    entry: `web/engines/${({ "stack": "Stack", "split": "Split", "sidebar-content": "SidebarContent", "bento": "Bento" } as Record<string, string>)[leaf.engine]}.tsx` })));
   it("measures four leaves and nine registered configurations", () => {
     expect(new Set(matrix.map(row => row.entry)).size).toBe(4);
     expect(matrix.map(row => row.config)).toEqual(["stack.landing", "stack.document", "stack.focus", "stack.index", "stack.workspace", "split.default", "sidebar-content.record", "sidebar-content.docs", "bento.default"]);
   });
   it.each(matrix)("clears source closure for $config", ({ leaf, config, entry }) => {
     const reachable = closure(entry);
-    const descriptor = JSON.parse(readFileSync(new URL(`../layouts/fills/foundry/${leaf.id}.json`, import.meta.url), "utf8")) as {configs:string[];pin:{files:{path:string;sha256:string}[]}};
+    const descriptor = JSON.parse(readFileSync(new URL(`../engines/sources/${leaf.engine}.json`, import.meta.url), "utf8")) as {configs:string[];files:{path:string;sha256:string}[]};
     expect(descriptor.configs).toContain(config);
-    const files = Object.fromEntries(descriptor.pin.files.map(pin => {
+    const files = Object.fromEntries(descriptor.files.map(pin => {
       const bytes = readFileSync(new URL(`../../${pin.path}`, import.meta.url));
       expect(createHash("sha256").update(bytes).digest("hex")).toBe(pin.sha256);
       return [pin.path.replace(/^src\//,""), bytes.toString("utf8")];
     }));
     expect(Object.keys(files).sort()).toEqual(Object.keys(reachable.files).sort());
     const renderer = { entry, files };
-    expect(Object.keys(renderer.files)).toEqual(expect.arrayContaining(["web/layouts/preview/structure.tsx", "layouts/resolve.ts", "layouts/ids.ts", "layouts/slots/layouts.json"]));
+    expect(Object.keys(renderer.files)).toEqual(expect.arrayContaining(["web/engines/preview/structure.tsx", "engines/resolve.ts", "engines/keys.ts", "engines/engines.json"]));
     expect(checkLayoutRendererSource(renderer, getEffectiveLayoutContract(leaf, config), tokens, compiler)).toEqual([]);
   });
 });

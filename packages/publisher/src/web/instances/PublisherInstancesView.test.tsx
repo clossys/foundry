@@ -166,7 +166,7 @@ describe("Publisher Instances", () => {
 
   it("focuses the named slot heading from a layout-position finding and keeps render evidence pending", () => {
     const fixture = instanceFixture();
-    const layout = fixture.registries.layouts.find(leaf => leaf.id === fixture.binding.layout.leaf)!;
+    const layout = fixture.registries.layouts.find(leaf => leaf.engine === fixture.binding.layout.leaf)!;
     const slot = layout.contract.slots[0]!;
     const registries = { ...fixture.registries, layouts: fixture.registries.layouts.map(leaf => leaf === layout ? {
       ...leaf, contract: { ...leaf.contract, slots: leaf.contract.slots.map(entry => entry.id === slot.id ? { ...entry, position: "last" as const } : entry) },

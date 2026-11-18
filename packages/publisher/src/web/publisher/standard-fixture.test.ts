@@ -6,7 +6,7 @@ import { STANDARD_PACK_FIXTURE, STANDARD_PACK_INSTANCES, STANDARD_PACK_REGISTRIE
 import { fixtureCompiler } from "./__fixtures__/compiler.js";
 import { layoutSourceClosure } from "./__fixtures__/source-closure.mjs";
 
-const renderers = { "stack": layoutSourceClosure("web/layouts/Stack.tsx"), "split": layoutSourceClosure("web/layouts/Split.tsx") };
+const renderers = { "stack": layoutSourceClosure("web/engines/Stack.tsx"), "split": layoutSourceClosure("web/engines/Split.tsx") };
 const library = createStandardPackLibrary(renderers);
 const configured = Object.fromEntries(STANDARD_PACK_INSTANCES.map(binding => [binding.instanceId, productionSettingsFromBinding(binding)]));
 
@@ -15,7 +15,7 @@ describe("Standard pack fixture qualification", () => {
     expect(STANDARD_PACK_FIXTURE.fixture).toBe(true);
     expect(STANDARD_PACK_REGISTRIES.formats).toHaveLength(6);
     expect(STANDARD_PACK_INSTANCES.every(instance => instance.format === "web.page.responsive")).toBe(true);
-    expect(STANDARD_PACK_REGISTRIES.layouts.find(leaf => leaf.id === "stack")!.contract.configs.some(config => config.id === "stack.default")).toBe(false);
+    expect(STANDARD_PACK_REGISTRIES.layouts.find(leaf => leaf.engine === "stack")!.contract.configs.some(config => config.id === "stack.default")).toBe(false);
     expect(STANDARD_PACK_FIXTURE.staticQualification).toBe("unverified");
     for (const instance of STANDARD_PACK_INSTANCES) for (const fill of Object.values(instance.fills).flat()) {
       const section = STANDARD_PACK_REGISTRIES.sections.find(section => section.id === fill.section)!;

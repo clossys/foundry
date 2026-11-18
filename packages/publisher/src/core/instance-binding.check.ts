@@ -3,8 +3,8 @@ import type { InstanceBinding as AnyInstanceBinding } from "./instance-binding.j
 import { registeredBindingTemplate } from "./instance-binding.js";
 import { analyzeLayoutSource } from "./layout-source.js";
 import type { LayoutCompilerPort } from "./layout-source.js";
-import { getEffectiveLayoutContract } from "../layouts/index.js";
-import type { PageLayoutContract } from "../layouts/contract.js";
+import { getEffectiveLayoutContract } from "../engines/index.js";
+import type { PageLayoutContract } from "../engines/contract.js";
 import { checkFormatBinding } from "../formats/index.js";
 import type {
   BindingToken, ConsumerInstanceFill, ConsumerInstanceLibrary, ContentRef, FlowInstanceBinding as InstanceBinding,
@@ -108,7 +108,7 @@ export function inspectInstanceChecks(input: unknown, library: ConsumerInstanceL
       formats && own(formats, "value") ? formats.value : undefined, registries.layouts)) add("LK16", finding.path, finding.message);
     const binding = input as unknown as InstanceBinding;
     const frame = registries.frames.find(leaf => leaf.id === binding.frame.leaf);
-    const layout = registries.layouts.find(leaf => leaf.id === binding.layout.leaf);
+    const layout = registries.layouts.find(leaf => leaf.engine === binding.layout.leaf);
     if (!active(frame) || !surface(frame!.contract.surface, binding.surface) || (binding.surface === "site" ? binding.frame.leaf !== "frames.site-shell" : binding.frame.leaf !== "frames.app-shell") ||
       (binding.frame.config !== undefined && !frame!.contract.configs.includes(binding.frame.config))) add("LK1", "frame", "Frame must be an active matching page shell and config");
     if (binding.frame.members !== undefined) {

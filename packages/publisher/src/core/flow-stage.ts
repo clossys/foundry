@@ -1,10 +1,10 @@
 import { TAILWIND_BREAKPOINTS } from "@clossys/designer/catalog";
 import type { CompositeResolved, TailwindBreakpoint } from "@clossys/designer/catalog";
-import { getEffectiveLayoutContract } from "../layouts/resolve.js";
-import type { LayoutId, PageLayoutContract } from "../layouts/index.js";
+import { getEffectiveLayoutContract } from "../engines/resolve.js";
+import type { EngineKey, PageLayoutContract } from "../engines/index.js";
 export type BreakpointValues = Readonly<Partial<Record<TailwindBreakpoint, number>>>;
 export interface FlowStagePlan {
-  readonly leaf: LayoutId;
+  readonly leaf: EngineKey;
   readonly config?: string;
   readonly members: Readonly<Record<string, string>>;
   readonly width: number;
@@ -21,7 +21,7 @@ export function columnsAt(contract: PageLayoutContract, width: number, values: B
 }
 /** Pure Stage plan. The caller supplies one measured Stage width; Layouts never
  * measure or branch on viewport width and never use CSS order for reading order. */
-export function planFlowStage(leaf: LayoutId, config: string | undefined, explicit: Readonly<Record<string, string>> | undefined, width: number, values: BreakpointValues): FlowStagePlan {
+export function planFlowStage(leaf: EngineKey, config: string | undefined, explicit: Readonly<Record<string, string>> | undefined, width: number, values: BreakpointValues): FlowStagePlan {
   if (!Number.isFinite(width) || width < 0) throw new Error("Stage width must be finite and nonnegative");
   const contract = getEffectiveLayoutContract(leaf, config, explicit);
   const members = { ...Object.fromEntries(Object.entries(contract.members).map(([key, options]) => [key, options[0]!])), ...contract.memberValues };
@@ -87,7 +87,7 @@ const BASE = `[data-layout="stack"],
 `;
 /** Query thresholds are Tailwind's fixed screens (never CSS var() queries,
  * which cannot resolve custom properties). The profile stays the call contract. */
-export function flowStageStyleSheet(_profile: CompositeResolved, leaf: LayoutId, config?: string, explicit?: Readonly<Record<string, string>>): string {
+export function flowStageStyleSheet(_profile: CompositeResolved, leaf: EngineKey, config?: string, explicit?: Readonly<Record<string, string>>): string {
   const contract = getEffectiveLayoutContract(leaf, config, explicit);
   const members = { ...Object.fromEntries(Object.entries(contract.members).map(([key, options]) => [key, options[0]!])), ...contract.memberValues };
   const threshold = (at: TailwindBreakpoint) => `${TAILWIND_BREAKPOINTS[at] / 16}rem`;

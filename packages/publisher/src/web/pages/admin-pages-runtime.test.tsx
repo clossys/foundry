@@ -16,10 +16,10 @@ import { adminCopyFixture } from "./__fixtures__/copy.mjs";
 import { createRegisteredPublicationSession } from "../registered-route-query.js";
 import { prepareRegisteredRoute } from "../registered-route-binding.js";
 import type { RegisteredRouteRuntime } from "../registered-route-binding.js";
-import { registeredLayoutSourcePin } from "../../core/layout-fill-source.js";
+import { engineSource } from "../../engines/source.js";
 import { flowStageStyleSheet } from "../../core/flow-stage.js";
 import { FORMAT_LEAVES } from "../../formats/index.js";
-import { LAYOUT_LEAVES } from "../../layouts/resolve.js";
+import { LAYOUT_ENGINES } from "../../engines/resolve.js";
 import type { InstanceRegistries } from "../../core/instance-binding.js";
 
 let fixture: Awaited<ReturnType<typeof packageSurfaceLibrary>>;
@@ -72,8 +72,8 @@ function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: {id:
   expect(plan.gaps).toEqual([]);
   const manifest = { ...plan.manifest, fills: plan.manifest.fills.flatMap(fill => fill.leaf === "sections.section-header" ? [fill, ...["level-2", "level-3"].map(config => ({ ...fill, config }))] : [fill]) };
   const contracts = { ...loadBuildCatalog(), slots: fixture.catalog.surfaces!.slots.map(slot => slot.contract.kind === "section" ? { ...slot, contract: { ...slot.contract, substrates: ["flow" as const], substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC-admin-pages-runtime.test.tsx", name: "fixture declaration only" }] } } : slot) };
-  const registries: InstanceRegistries = { formats: FORMAT_LEAVES, layouts: LAYOUT_LEAVES, tokens: [], frames: [{ id: "frames.app-shell", status: "draft", contract: { surface: "app", configs: [], stage: { accepts: ["flow"], scroll: "region" } } }], sections: contracts.slots.filter(slot => slot.contract.kind === "section").map(slot => ({ id: slot.id as `sections.${string}`, status: "draft", contract: { surface: "both", configs: slot.id === "sections.section-header" ? ["level-2", "level-3"] : [], slots: (slot.contract as { slots: readonly { name: string; type: "records"; required: boolean }[] }).slots, substrates: ["flow"], substrateTests: [{ substrate: "flow", file: "SYNTHETIC-admin-pages-runtime.test.tsx", name: "fixture declaration only" }] } })) };
-  const layoutPin = registeredLayoutSourcePin("stack")!;
+  const registries: InstanceRegistries = { formats: FORMAT_LEAVES, layouts: LAYOUT_ENGINES, tokens: [], frames: [{ id: "frames.app-shell", status: "draft", contract: { surface: "app", configs: [], stage: { accepts: ["flow"], scroll: "region" } } }], sections: contracts.slots.filter(slot => slot.contract.kind === "section").map(slot => ({ id: slot.id as `sections.${string}`, status: "draft", contract: { surface: "both", configs: slot.id === "sections.section-header" ? ["level-2", "level-3"] : [], slots: (slot.contract as { slots: readonly { name: string; type: "records"; required: boolean }[] }).slots, substrates: ["flow"], substrateTests: [{ substrate: "flow", file: "SYNTHETIC-admin-pages-runtime.test.tsx", name: "fixture declaration only" }] } })) };
+  const layoutPin = engineSource("stack")!;
   const layoutSource = { entry: layoutPin.entry, files: Object.fromEntries(Object.keys(layoutPin.files).map(file => [file, readFileSync(resolvePath("src", file), "utf8")])), dependencies: {} };
   const layoutRenderer = { id: "Stack", source: layoutSource, sourceHash: runtimeHash(layoutSource) };
   const host = { bind: vi.fn(), setRegions: vi.fn(), setState: vi.fn(), setCommands: vi.fn(), setChunks: vi.fn() }, session = createRegisteredPublicationSession(registry.publication!, host);

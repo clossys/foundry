@@ -1,7 +1,6 @@
 [
   {
-    "id": "stack",
-    "layer": "layouts",
+    "engine": "stack",
     "contract": {
       "kind": "layout",
       "arrangement": "page",
@@ -204,8 +203,7 @@
     "status": "draft"
   },
   {
-    "id": "split",
-    "layer": "layouts",
+    "engine": "split",
     "contract": {
       "kind": "layout",
       "arrangement": "page",
@@ -286,8 +284,7 @@
     "status": "draft"
   },
   {
-    "id": "sidebar-content",
-    "layer": "layouts",
+    "engine": "sidebar-content",
     "contract": {
       "kind": "layout",
       "arrangement": "page",
@@ -431,8 +428,7 @@
     "status": "draft"
   },
   {
-    "id": "bento",
-    "layer": "layouts",
+    "engine": "bento",
     "contract": {
       "kind": "layout",
       "arrangement": "page",
@@ -521,8 +517,7 @@
     "status": "draft"
   },
   {
-    "id": "staggered-grid",
-    "layer": "layouts",
+    "engine": "staggered-grid",
     "contract": {
       "kind": "layout",
       "arrangement": "page",

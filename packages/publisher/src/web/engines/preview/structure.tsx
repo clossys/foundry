@@ -1,7 +1,7 @@
 import { Children } from "react";
 import type { ReactNode } from "react";
-import { getLayoutLeaf, getEffectiveLayoutContract } from "../../../layouts/resolve.js";
-import type { LayoutId, LayoutSpan } from "../../../layouts/index.js";
+import { getLayoutEngine, getEffectiveLayoutContract } from "../../../engines/resolve.js";
+import type { EngineKey, LayoutSpan } from "../../../engines/index.js";
 
 import type { FlowStagePlan } from "../../../core/flow-stage.js";
 
@@ -13,9 +13,9 @@ export interface LayoutProps {
   readonly members?: Readonly<Record<string, string>>;
 }
 export type TileSpan = LayoutSpan;
-export function layoutState(id: LayoutId, props: LayoutProps) {
+export function layoutState(id: EngineKey, props: LayoutProps) {
   if (!props.stage || props.stage.leaf !== id || props.stage.config !== props.config) throw new Error("Exact measured Stage plan required");
-  const leaf = getLayoutLeaf(id);
+  const leaf = getLayoutEngine(id);
   if (!leaf || leaf.status === "held" || leaf.status === "deprecated") throw new Error("Layout is not active");
   const contract = getEffectiveLayoutContract(id, props.config, props.members);
   const members = Object.fromEntries(Object.entries(contract.members).map(([key, values]) => [key, values[0]!]));

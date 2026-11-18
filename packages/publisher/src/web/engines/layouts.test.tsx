@@ -7,7 +7,7 @@ const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const packageRoot = resolve(sourceRoot, "..");
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { LAYOUT_LEAVES, getLayoutLeaf, getEffectiveLayoutContract } from "../../layouts/index.js";
+import { LAYOUT_ENGINES, getLayoutEngine, getEffectiveLayoutContract } from "../../engines/index.js";
 import { Stack } from "./Stack.js";
 import { Split } from "./Split.js";
 import { SidebarContent } from "./SidebarContent.js";
@@ -47,7 +47,7 @@ describe("page layout reading order and token reflow", () => {
     expect(readOrder(dom(<SidebarContent  stage={planFlowStage("sidebar-content", undefined, { ...members, "stacked-aside": "before" }, 320, breakpointValues)} slots={slots} members={{ ...members, "stacked-aside": "before" }} />))).toEqual(["lead", "aside", "main"]);
   });
   it("resolves every reflow step from Tailwind breakpoints", () => {
-    for (const leaf of LAYOUT_LEAVES.filter(leaf => leaf.status !== "held")) {
+    for (const leaf of LAYOUT_ENGINES.filter(leaf => leaf.status !== "held")) {
       let previous = 1;
       for (const step of leaf.contract.reflow) {
         const threshold = breakpoint(step.at, breakpointValues);
@@ -97,11 +97,11 @@ describe("page layout reading order and token reflow", () => {
 
 describe("contract-only skeleton previews and reproducible pins", () => {
   it("renders all slot shapes, minimum counts and only slot captions in each theme and width", () => {
-    for (const leaf of LAYOUT_LEAVES.filter(leaf => leaf.status !== "held")) {
+    for (const leaf of LAYOUT_ENGINES.filter(leaf => leaf.status !== "held")) {
       for (const config of [undefined, ...leaf.contract.configs.map(config => config.id)]) {
         const contract = getEffectiveLayoutContract(leaf, config);
         for (const width of [320, 1280]) for (const theme of ["light", "dark"] as const) {
-          const host = dom(<LayoutPreview breakpointValues={breakpointValues} leaf={leaf.id} config={config} width={width} theme={theme} />);
+          const host = dom(<LayoutPreview breakpointValues={breakpointValues} leaf={leaf.engine} config={config} width={width} theme={theme} />);
           expect(host.querySelector("[data-theme]")?.getAttribute("data-theme")).toBe(theme);
           for (const slot of contract.slots) {
             const shapes = host.querySelectorAll(`[data-layout-slot="${slot.id}"] [data-preview-shape]`);
@@ -110,20 +110,19 @@ describe("contract-only skeleton previews and reproducible pins", () => {
           }
         }
       }
-      expect(dom(<LayoutPreviewMatrix breakpointValues={breakpointValues} leaf={leaf.id} />).querySelectorAll("[data-theme]")).toHaveLength(4);
+      expect(dom(<LayoutPreviewMatrix breakpointValues={breakpointValues} leaf={leaf.engine} />).querySelectorAll("[data-theme]")).toHaveLength(4);
     }
     expect(() => dom(<LayoutPreview breakpointValues={breakpointValues} leaf="staggered-grid" width={320} theme="light" />)).toThrow();
   });
-  it("pins the exact renderer and structural helper bytes for all four active fills", () => {
+  it("digests the exact renderer and structural helper bytes of all four active engines, with no slot identity", () => {
     for (const name of ["stack", "split", "sidebar-content", "bento"]) {
-      const record = JSON.parse(readFileSync(resolve(sourceRoot, `layouts/fills/foundry/${name}.json`), "utf8"));
-      expect(record.leaf).toBe(name);
-      expect(record.library).toBe("foundry");
-      expect(record.origin).toBe("authored");
-      expect(record.configs).toEqual(getLayoutLeaf(record.leaf)!.contract.configs.map(config => config.id));
-      const renderer = ({ "stack": "Stack", "split": "Split", "sidebar-content": "SidebarContent", "bento": "Bento" } as Record<string,string>)[record.leaf];
-      expect(record.pin.files.map((file: { path: string }) => file.path).sort()).toEqual([`src/web/layouts/${renderer}.tsx`, "src/web/layouts/preview/structure.tsx", "src/layouts/resolve.ts", "src/layouts/ids.ts", "src/layouts/slots/layouts.json"].sort());
-      for (const file of record.pin.files) {
+      const record = JSON.parse(readFileSync(resolve(sourceRoot, `engines/sources/${name}.json`), "utf8"));
+      expect(Object.keys(record).sort()).toEqual(["configs", "engine", "files"]);
+      expect(record.engine).toBe(name);
+      expect(record.configs).toEqual(getLayoutEngine(record.engine)!.contract.configs.map(config => config.id));
+      const renderer = ({ "stack": "Stack", "split": "Split", "sidebar-content": "SidebarContent", "bento": "Bento" } as Record<string,string>)[record.engine];
+      expect(record.files.map((file: { path: string }) => file.path).sort()).toEqual([`src/web/engines/${renderer}.tsx`, "src/web/engines/preview/structure.tsx", "src/engines/resolve.ts", "src/engines/keys.ts", "src/engines/engines.json"].sort());
+      for (const file of record.files) {
         const bytes = readFileSync(resolve(packageRoot, file.path));
         expect(createHash("sha256").update(bytes).digest("hex")).toBe(file.sha256);
       }

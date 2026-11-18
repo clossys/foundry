@@ -21253,7 +21253,7 @@
       "sourceFiles": {
         "packages/designer/src/catalog/ia/frames.json": "a305de6514019a975a0adcd42107b88c047e0134e6feb37f49efffa45be014e8",
         "packages/designer/src/catalog/slots/frames.json": "79d33c0f3bb7e6ac18045ed7fee733f90bfb9900f1c8b80fbbc98d0a81fa679c",
-        "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "64bb94188dc8e51dcf980da836a4f78b088cbcef185a3c0e437feb88045fcfa4"
+        "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "f20d800f8db532afe2c9e5be50a278ac785ad99b51b69800e612a37cebc15efd"
       },
       "revisions": [
         {

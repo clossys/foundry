@@ -6,7 +6,7 @@ import { fixtureCompiler } from "../__fixtures__/compiler.js";
 import { layoutSourceClosure } from "../__fixtures__/source-closure.mjs";
 import { ASSEMBLY_OWNERS, deriveItemAssembly } from "./assembly.js";
 
-const renderers = { "stack": layoutSourceClosure("web/layouts/Stack.tsx"), "split": layoutSourceClosure("web/layouts/Split.tsx") };
+const renderers = { "stack": layoutSourceClosure("web/engines/Stack.tsx"), "split": layoutSourceClosure("web/engines/Split.tsx") };
 const library = createStandardPackLibrary(renderers);
 const configured = Object.fromEntries(STANDARD_PACK_INSTANCES.map(binding => [binding.instanceId, productionSettingsFromBinding(binding)]));
 const instances = STANDARD_PACK_INSTANCES;

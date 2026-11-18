@@ -1,5 +1,5 @@
 import type { InstanceFinding, InstanceRegistries } from "../../../core/instance-binding.js";
-import { getEffectiveLayoutContract } from "../../../layouts/resolve.js";
+import { getEffectiveLayoutContract } from "../../../engines/resolve.js";
 import type { PublisherPipelineItem, PublishStageStatus } from "../pipeline.js";
 
 export const ASSEMBLY_OWNERS = ["Themes", "Components", "Sections", "Frames", "Layouts", "Content", "Format"] as const;
@@ -28,7 +28,7 @@ export function deriveItemAssembly(item: PublisherPipelineItem, registries: Inst
   let tokenRefs: string[] = [];
   let layoutResolved = false;
   try {
-    const leaf = registries.layouts.find(leaf => leaf.id === binding.layout.leaf);
+    const leaf = registries.layouts.find(leaf => leaf.engine === binding.layout.leaf);
     if (leaf) {
       const contract = getEffectiveLayoutContract(leaf, binding.layout.config, binding.layout.members);
       // Breakpoints are Tailwind's fixed screens, not theme leaves; the theme reads are the permitted leaves.

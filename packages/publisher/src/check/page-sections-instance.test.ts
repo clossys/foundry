@@ -40,14 +40,15 @@ describe("page option checks on the starter pages", () => {
     const layout: LayoutContract = { frame: "designer/frames.site-shell", roles: {
       questions: { kinds: ["designer/sections.faq"], required: true }, more: { kinds: ["designer/sections.faq"], required: false } } };
     const content: PageOptionContent = {
-      path: "/help", layout: "publisher/layout.help",
+      // The roles are synthetic; the pinned layout.* slot is a live one, because a page must reach a render engine.
+      path: "/help", layout: "publisher/layout.docs-guide",
       sections: [
         { role: "questions", use: "designer/sections.faq", copy: "writer/sections.faq.copy#help.questions" },
         { role: "more", use: "designer/sections.faq", copy: "writer/sections.faq.copy#help.more" },
       ],
       meta: { copy: "writer/page.help.meta#help.meta", indexing: "index" },
     };
-    const page = { layouts: ["publisher/layout.help"], records: { pattern: "help.<role>", meta: "writer/page.help.meta#help.meta" } };
+    const page = { layouts: ["publisher/layout.docs-guide"], records: { pattern: "help.<role>", meta: "writer/page.help.meta#help.meta" } };
     expect(checkPageOption("page.help", content, page, layout, designer)).toEqual([]);
   });
 });

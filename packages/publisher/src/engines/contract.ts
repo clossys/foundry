@@ -1,5 +1,5 @@
 import type { TailwindBreakpoint } from "@clossys/designer/catalog";
-import type { LayoutId } from "./ids.js";
+import type { EngineKey } from "./keys.js";
 
 export type SectionLeafId = `sections.${string}`;
 export type LayoutSpan = "1x1" | "2x1" | "1x2" | "2x2";
@@ -34,9 +34,9 @@ export interface PageLayoutContract {
   readonly allowedReads: readonly LayoutRead[];
   readonly requiresSection?: { readonly container: "adaptive" };
 }
-export interface LayoutLeaf {
-  readonly id: LayoutId;
-  readonly layer: "layouts";
+/** A render engine: an internal primitive keyed by its engine key, with no slot identity, layer or pin. */
+export interface LayoutEngine {
+  readonly engine: EngineKey;
   readonly contract: PageLayoutContract;
   readonly requires: readonly string[];
   readonly status: "draft" | "stable" | "held" | "deprecated";

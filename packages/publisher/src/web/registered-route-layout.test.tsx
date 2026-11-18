@@ -8,16 +8,16 @@ import { FrameStage, frameSectionRefKey } from "@clossys/designer/frames";
 import { renderToStaticMarkup } from "react-dom/server";
 import { runtimeHash } from "@clossys/designer/catalog";
 import type { RuntimeRendererDescriptor } from "@clossys/designer/catalog";
-import { bindRegisteredFlowLayout, registeredLayoutSourceMatches } from "./registered-route-layout.js";
-import { REGISTERED_LAYOUT_FILLS, registeredLayoutSourcePin } from "../core/layout-fill-source.js";
-import { getEffectiveLayoutContract, getLayoutLeaf } from "../layouts/resolve.js";
+import { bindRegisteredFlowLayout, engineSourceMatches } from "./registered-route-layout.js";
+import { ENGINE_SOURCES, engineSource } from "../engines/source.js";
+import { getEffectiveLayoutContract, getLayoutEngine } from "../engines/resolve.js";
 import type { ConsumerInstanceLibrary, FlowInstanceBinding, LayoutRendererSource } from "../core/instance-binding.js";
 import { syntheticRoute } from "../core/__fixtures__/registered-route.js";
 const pixels = { "tokens.breakpoint.mobile": 480, "tokens.breakpoint.mobile-lg": 640, "tokens.breakpoint.tablet": 768, "tokens.breakpoint.tablet-lg": 960, "tokens.breakpoint.desktop": 1280, "tokens.breakpoint.wide": 1600 };
 function fixture(leaf: FlowInstanceBinding["layout"]["leaf"]) {
-  const pin = registeredLayoutSourcePin(leaf)!; const source: LayoutRendererSource = { entry: pin.entry, files: Object.fromEntries(Object.keys(pin.files).map(file => [file, readFileSync(resolvePath(dirname(fileURLToPath(import.meta.url)), "..", file), "utf8")])) };
+  const pin = engineSource(leaf)!; const source: LayoutRendererSource = { entry: pin.entry, files: Object.fromEntries(Object.keys(pin.files).map(file => [file, readFileSync(resolvePath(dirname(fileURLToPath(import.meta.url)), "..", file), "utf8")])) };
   const binding = structuredClone(syntheticRoute().composition.binding) as FlowInstanceBinding;
-  Object.assign(binding, { layout: { leaf, config: getLayoutLeaf(leaf)!.contract.configs[0]!.id } });
+  Object.assign(binding, { layout: { leaf, config: getLayoutEngine(leaf)!.contract.configs[0]!.id } });
   const contract = getEffectiveLayoutContract(leaf, binding.layout.config);
   Object.assign(binding, { fills: Object.fromEntries(contract.slots.map(slot => [slot.id, Array.from({ length: slot.min }, () => ({ section: slot.accepts[0]!, content: {} }))])) });
   const fullSource = { ...source, dependencies: {} };
@@ -26,8 +26,8 @@ function fixture(leaf: FlowInstanceBinding["layout"]["leaf"]) {
   return { binding, source, renderer, library };
 }
 describe("fixed selected flow Layout binder (synthetic, no whole-instance qualification)", () => {
-  it.each(REGISTERED_LAYOUT_FILLS.map(fill => fill.leaf) as FlowInstanceBinding["layout"]["leaf"][])("executes %s with its exact selected source/configuration", leaf => {
-    const f = fixture(leaf); expect(registeredLayoutSourceMatches(leaf, f.source)).toBe(true);
+  it.each(ENGINE_SOURCES.map(record => record.engine) as FlowInstanceBinding["layout"]["leaf"][])("executes %s with its exact selected source/configuration", leaf => {
+    const f = fixture(leaf); expect(engineSourceMatches(leaf, f.source)).toBe(true);
     const port = bindRegisteredFlowLayout(f.binding, f.library, f.renderer, pixels)!;
     expect(port.descriptor.leaf).toBe(leaf); expect(port.descriptor.config).toBe(f.binding.layout.config);
     const slots = Object.fromEntries(Object.entries(f.binding.fills).map(([slot, fills]) => [slot, fills.map((_, index) => <article key={index}>{`${slot}.${index}`}</article>)]));
@@ -37,7 +37,7 @@ describe("fixed selected flow Layout binder (synthetic, no whole-instance qualif
   it("rejects stale source, foreign library and wrong selected config rather than substituting a built-in", () => {
     const f = fixture("stack");
     const changed = { ...f.source, files: { ...f.source.files, [f.source.entry]: f.source.files[f.source.entry] + "\n// changed" } };
-    expect(registeredLayoutSourceMatches("stack", changed)).toBe(false);
+    expect(engineSourceMatches("stack", changed)).toBe(false);
     expect(bindRegisteredFlowLayout(f.binding, { ...f.library, id: "foreign" }, f.renderer, pixels)).toBeUndefined();
     expect(bindRegisteredFlowLayout(f.binding, f.library, { ...f.renderer, sourceHash: `sha256:${"0".repeat(64)}` }, pixels)).toBeUndefined();
     expect(bindRegisteredFlowLayout(f.binding, { ...f.library, resolveFill: () => ({ library: "example", leaf: "stack", config: "foreign", states: [], headings: [], renderer: f.source }) }, f.renderer, pixels)).toBeUndefined();
@@ -45,7 +45,7 @@ describe("fixed selected flow Layout binder (synthetic, no whole-instance qualif
 });
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
-it.each(REGISTERED_LAYOUT_FILLS.map(fill => fill.leaf) as FlowInstanceBinding["layout"]["leaf"][])("shared live Stage executes exact %s at selected threshold minus/at/plus one with fixed viewport", leaf => {
+it.each(ENGINE_SOURCES.map(record => record.engine) as FlowInstanceBinding["layout"]["leaf"][])("shared live Stage executes exact %s at selected threshold minus/at/plus one with fixed viewport", leaf => {
   const f = fixture(leaf), contract = getEffectiveLayoutContract(leaf, f.binding.layout.config);
   const fills = Object.fromEntries(contract.slots.map(slot => [slot.id, Array.from({ length: Math.max(1, slot.min) }, () => ({ section: slot.accepts[0]!, content: {} }))]));
   Object.assign(f.binding, { fills });

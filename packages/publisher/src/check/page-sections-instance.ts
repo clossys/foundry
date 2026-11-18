@@ -6,6 +6,7 @@
  *
  * Pure functions: the caller passes the page and layout contracts and the live Designer catalog.
  */
+import { layoutEngineFor } from "../engines/layout-slots.js";
 
 export interface PlacedSection { role?: unknown; use?: unknown; variant?: unknown; copy?: unknown; links?: unknown; [key: string]: unknown }
 export interface PageOptionContent { layout?: unknown; sections?: unknown; meta?: unknown; [key: string]: unknown }
@@ -97,6 +98,10 @@ export function checkPageOption(
 
   if (typeof content.layout !== "string" || !page.layouts.includes(content.layout)) add("page.layout-allowed", `layout ${String(content.layout)} is not one the page slot allows (${page.layouts.join(", ")})`);
   if (!layout?.roles) add("page.layout-allowed", `layout ${String(content.layout)} has no role contract`);
+  // A page renders through the engine its pinned layout.* slot selects in the layout engine map; never a default one.
+  else if (typeof content.layout === "string" && page.layouts.includes(content.layout)) {
+    try { layoutEngineFor(content.layout); } catch (error) { add("page.layout-engine", error instanceof Error ? error.message : String(error)); }
+  }
   const roles = layout?.roles ?? {};
 
   if (!Array.isArray(content.sections) || content.sections.length === 0) add("page.assembled", "a page places at least one section");

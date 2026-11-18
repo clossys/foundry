@@ -11,7 +11,7 @@
     },
     {
       "path": "admin-meta.r1.en.json",
-      "sha256": "626e9364fc92c464e57dfa371ae28e422f91e62f1a241228e62465ea61794f89"
+      "sha256": "69e57585059a6dca6dc638899d772374e23125c5967aa7b4332a2b7ddad32f40"
     },
     {
       "path": "admin-pages.r1.en.json",
@@ -19,7 +19,7 @@
     },
     {
       "path": "admin-studio.r1.en.json",
-      "sha256": "b4990d1a8df560dddcced0d927fda7ca68822dace79b76283d5513d8bde17dba"
+      "sha256": "b9d1f1c9110ae5e4ebf1d0a98a8f3e41e456dbe6240d9a225cfcf257154afc20"
     },
     {
       "path": "admin-voice.r1.en.json",

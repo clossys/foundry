@@ -8,7 +8,7 @@ import { checkLayoutRender } from "./layout-render.js";
 import type { LayoutRenderOptions, LayoutRenderResult } from "./layout-render.js";
 import type { LayoutRendererSource } from "../core/instance-binding.js";
 import { instanceFixture } from "../core/__fixtures__/instance-binding/fixtures.js";
-import { getEffectiveLayoutContract, LAYOUT_LEAVES } from "../layouts/resolve.js";
+import { getEffectiveLayoutContract, LAYOUT_ENGINES } from "../engines/resolve.js";
 
 const browserExecutable = process.env.CHROME_PATH ?? ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/usr/bin/chromium", "/usr/bin/google-chrome"].find(existsSync)!;
 const names = { "stack": "Stack", "split": "Split", "sidebar-content": "SidebarContent", "bento": "Bento" } as const;
@@ -40,7 +40,7 @@ beforeAll(async () => {
   expect(browserExecutable, "Rendered fixtures require an installed Chromium executable").toBeTruthy();
   // Actual Tailwind compiler over the exact renderer closure's classes, not mock CSS geometry.
   const candidates = new Set<string>();
-  for (const name of Object.values(names)) for (const source of Object.values(closure(`web/layouts/${name}.tsx`).files)) {
+  for (const name of Object.values(names)) for (const source of Object.values(closure(`web/engines/${name}.tsx`).files)) {
     for (const literal of source.matchAll(/["']([^"'\n]+)["']/g)) for (const candidate of literal[1]!.split(/\s+/)) candidates.add(candidate);
   }
   css = `${(await compile("@tailwind utilities;")).build([...candidates])}
@@ -66,7 +66,7 @@ function fixture(leafId: keyof typeof names = "split", configId = "split.default
     { id: "tokens.region-width.aside", property: "--ui-layout-aside-w" },
     ...Object.keys(breakpoints).map(id => ({ id: id as keyof typeof breakpoints, property: `--breakpoint-${id.split(".").at(-1)}` })),
   ];
-  const renderer = closure(`web/layouts/${names[leafId]}.tsx`);
+  const renderer = closure(`web/engines/${names[leafId]}.tsx`);
   f.put(leafId, configId, { leadGround: "base", renderer });
   const options: LayoutRenderOptions = { browserExecutable, exportName: names[leafId], breakpointValues: structuredClone(breakpoints), css,
     renderSection: (_, path) => <article><p>{path} audience content that wraps across narrow columns</p></article> };
@@ -74,7 +74,7 @@ function fixture(leafId: keyof typeof names = "split", configId = "split.default
 }
 const run = (f: ReturnType<typeof fixture>, overrides: Partial<LayoutRenderOptions> = {}) => checkLayoutRender(f.binding, f.library, f.registries, { ...f.options, ...overrides });
 const paths = (result: LayoutRenderResult, width: number) => result.measurements.find(measurement => measurement.width === width)!.fills.map(fill => fill.path);
-const configs = LAYOUT_LEAVES.filter(leaf => leaf.status === "draft" || leaf.status === "stable").flatMap(leaf => leaf.contract.configs.map(config => [leaf.id as keyof typeof names, config.id] as const));
+const configs = LAYOUT_ENGINES.filter(leaf => leaf.status === "draft" || leaf.status === "stable").flatMap(leaf => leaf.contract.configs.map(config => [leaf.engine as keyof typeof names, config.id] as const));
 
 describe("LK12 actual Chromium layout assembly", () => {
   it.each(configs)("measures exact %s %s source at every consumer breakpoint edge", async (leaf, config) => {
@@ -137,12 +137,12 @@ describe("LK12 actual Chromium layout assembly", () => {
   it("stacked aside changes DOM order across its resolved breakpoint", async () => {
     // Use an unconstrained config projection to exercise the closed member variant.
     const f = fixture("sidebar-content", "sidebar-content.record");
-    const leaf = f.registries.layouts.find(leaf => leaf.id === "sidebar-content")!;
+    const leaf = f.registries.layouts.find(leaf => leaf.engine === "sidebar-content")!;
     leaf.contract.configs.find(config => config.id === "sidebar-content.record")!.members["stacked-aside"] = "before";
     f.binding.layout.members = { "stacked-aside": "before" };
-    const sourceRegistry = JSON.parse(f.renderer.files["layouts/slots/layouts.json"]!);
+    const sourceRegistry = JSON.parse(f.renderer.files["engines/engines.json"]!);
     sourceRegistry.find((item: any) => item.id === "sidebar-content").contract.configs.find((config: any) => config.id === "sidebar-content.record").members["stacked-aside"] = "before";
-    f.renderer.files["layouts/slots/layouts.json"] = JSON.stringify(sourceRegistry);
+    f.renderer.files["engines/engines.json"] = JSON.stringify(sourceRegistry);
     const result = await run(f);
     expect(result.findings).toEqual([]);
     expect(paths(result, 730)).toEqual(["fills.lead.0", "fills.aside.0", "fills.main.0"]);
@@ -208,7 +208,7 @@ describe("LK12 actual Chromium layout assembly", () => {
     expect(absent.layoutStatus).toBe("pending");
     expect(absent.measurements).toEqual([]);
     const dependency = fixture();
-    delete dependency.renderer.files["web/layouts/preview/structure.tsx"];
+    delete dependency.renderer.files["web/engines/preview/structure.tsx"];
     expect((await run(dependency)).layoutStatus).toBe("refused");
     const escape = fixture();
     escape.renderer.files["../outside.ts"] = "export const secret = 1";

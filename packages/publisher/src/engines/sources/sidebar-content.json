@@ -1,0 +1,29 @@
+{
+  "engine": "sidebar-content",
+  "files": [
+    {
+      "path": "src/engines/keys.ts",
+      "sha256": "6fdb12e13e2d8fe4e97834ec0bb35b6e55d41ee946fcd4e1efa96a7625395936"
+    },
+    {
+      "path": "src/engines/resolve.ts",
+      "sha256": "6b6924aab9dd7ef46229218967ebe64b5703db1ffa0f6f9e40520fc86b764923"
+    },
+    {
+      "path": "src/engines/engines.json",
+      "sha256": "ffda0341879f50917ccbfa8f44cc71fa735f2ecb864c6a5c273b4e3c997d6c13"
+    },
+    {
+      "path": "src/web/engines/SidebarContent.tsx",
+      "sha256": "d76e5bd589c280d1c44a003b270ee65f2d3ae7665cd64819959f1fc5e7423b41"
+    },
+    {
+      "path": "src/web/engines/preview/structure.tsx",
+      "sha256": "b2e9fc83819240df606b48fbad04293440fb2c2f26e7af4949587891c52c99f8"
+    }
+  ],
+  "configs": [
+    "sidebar-content.record",
+    "sidebar-content.docs"
+  ]
+}

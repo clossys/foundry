@@ -78,12 +78,12 @@ describe("admin display-name drafts", () => {
     for (const id of literalArray("FORMAT_IDS", formatsPath)) expect(binding("publisher.format", id), id).toBeDefined();
     for (const format of formatLeaves) for (const delivery of format.deliveries)
       expect(binding("publisher.delivery", delivery.id), `${format.id}/${delivery.id}`).toBeDefined();
-    const layouts = JSON.parse(read("packages/publisher/src/layouts/slots/layouts.json"));
+    const layouts = JSON.parse(read("packages/publisher/src/engines/engines.json"));
     for (const layout of layouts) {
-      expect(binding("publisher.layout", layout.id), layout.id).toBeDefined();
-      for (const config of layout.contract.configs) expect(binding(`publisher.layoutConfig.${layout.id}`, config.id), config.id).toBeDefined();
+      expect(binding("publisher.layout", layout.engine), layout.engine).toBeDefined();
+      for (const config of layout.contract.configs) expect(binding(`publisher.layoutConfig.${layout.engine}`, config.id), config.id).toBeDefined();
       for (const [axis, values] of Object.entries(layout.contract.members))
-        for (const value of values as string[]) expect(binding(`publisher.layoutOption.${layout.id}.${axis}`, value), value).toBeDefined();
+        for (const value of values as string[]) expect(binding(`publisher.layoutOption.${layout.engine}.${axis}`, value), value).toBeDefined();
     }
     // Retired Designer frames stay in frames.json flagged retired; Publisher names only live frames.
     const retiredFrames = new Set((JSON.parse(read("packages/designer/src/catalog/retired.json")) as { id: string }[]).map(row => row.id));

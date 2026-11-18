@@ -1,7 +1,7 @@
 import { SKELETON_SHAPE, Skeleton } from "@clossys/designer/components/server";
 import type { ReactNode } from "react";
-import type { LayoutId, LayoutSlot } from "../../../layouts/index.js";
-import { getEffectiveLayoutContract } from "../../../layouts/index.js";
+import type { EngineKey, LayoutSlot } from "../../../engines/index.js";
+import { getEffectiveLayoutContract } from "../../../engines/index.js";
 import { Stack } from "../Stack.js";
 import { Split } from "../Split.js";
 import { SidebarContent } from "../SidebarContent.js";
@@ -15,7 +15,7 @@ const SHAPES: Record<LayoutSlot["previewShape"], string> = {
   rail: "h-[var(--ui-layout-aside-w)]", tile: "h-[var(--ui-layout-aside-w)]",
 };
 export interface LayoutPreviewProps {
-  readonly leaf: LayoutId;
+  readonly leaf: EngineKey;
   readonly width: number;
   readonly breakpointValues: BreakpointValues;
   readonly theme: "light" | "dark";

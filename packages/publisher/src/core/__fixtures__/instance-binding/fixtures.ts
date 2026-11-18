@@ -1,4 +1,4 @@
-import { LAYOUT_LEAVES } from "../../../layouts/index.js";
+import { LAYOUT_ENGINES } from "../../../engines/index.js";
 import { FORMAT_LEAVES } from "../../../formats/index.js";
 import type { ContentRef, ConsumerInstanceFill, ConsumerInstanceLibrary, FlowInstanceBinding as InstanceBinding, InstanceRegistries } from "../../instance-binding.js";
 
@@ -26,7 +26,7 @@ export function instanceFixture() {
       { id: "frames.site-shell", status: "stable", contract: { surface: "site", configs: ["site", "minimal"] } },
       { id: "frames.app-shell", status: "stable", contract: { surface: "app", configs: ["page"] } },
     ],
-    layouts: structuredClone(LAYOUT_LEAVES) as Mutable<InstanceRegistries>["layouts"],
+    layouts: structuredClone(LAYOUT_ENGINES) as Mutable<InstanceRegistries>["layouts"],
     sections: [section("sections.hero"), section("sections.content"), section("sections.stats")],
     themes: [{ id: "themes.spacing.default", property: "--spacing" }],
   };

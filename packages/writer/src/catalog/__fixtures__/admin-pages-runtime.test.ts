@@ -35,10 +35,10 @@ const everyPageCell = () => {
 import { createRegisteredPublicationSession } from "../../../../publisher/src/web/registered-route-query.js";
 import { prepareRegisteredRoute } from "../../../../publisher/src/web/registered-route-binding.js";
 import type { RegisteredRouteRuntime } from "../../../../publisher/src/web/registered-route-binding.js";
-import { registeredLayoutSourcePin } from "../../../../publisher/src/core/layout-fill-source.js";
+import { engineSource } from "../../../../publisher/src/engines/source.js";
 import { flowStageStyleSheet } from "../../../../publisher/src/core/flow-stage.js";
 import { FORMAT_LEAVES } from "../../../../publisher/src/formats/index.js";
-import { LAYOUT_LEAVES } from "../../../../publisher/src/layouts/resolve.js";
+import { LAYOUT_ENGINES } from "../../../../publisher/src/engines/resolve.js";
 import type { InstanceRegistries } from "../../../../publisher/src/core/instance-binding.js";
 
 let fixture: Awaited<ReturnType<typeof packageSurfaceLibrary>>;
@@ -60,8 +60,8 @@ function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: {id:
   expect(plan.gaps).toEqual([]);
   const manifest = { ...plan.manifest, fills: plan.manifest.fills.flatMap(fill => fill.leaf === "sections.section-header" ? [fill, ...["level-2", "level-3"].map(config => ({ ...fill, config }))] : [fill]) };
   const contracts = { ...loadBuildCatalog(), slots: fixture.catalog.surfaces!.slots.map(slot => slot.contract.kind === "section" ? { ...slot, contract: { ...slot.contract, substrates: ["flow" as const], substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC-admin-pages-runtime.test.tsx", name: "fixture declaration only" }] } } : slot) };
-  const registries: InstanceRegistries = { formats: FORMAT_LEAVES, layouts: LAYOUT_LEAVES, themes: [], frames: [{ id: "frames.app-shell", status: "draft", contract: { surface: "app", configs: [], stage: { accepts: ["flow"], scroll: "region" } } }], sections: contracts.slots.filter(slot => slot.contract.kind === "section").map(slot => ({ id: slot.id as `sections.${string}`, status: "draft", contract: { surface: "both", configs: slot.id === "sections.section-header" ? ["level-2", "level-3"] : [], slots: (slot.contract as { slots: readonly { name: string; type: "records"; required: boolean }[] }).slots, substrates: ["flow"], substrateTests: [{ substrate: "flow", file: "SYNTHETIC-admin-pages-runtime.test.tsx", name: "fixture declaration only" }] } })) };
-  const layoutPin = registeredLayoutSourcePin("stack")!;
+  const registries: InstanceRegistries = { formats: FORMAT_LEAVES, layouts: LAYOUT_ENGINES, themes: [], frames: [{ id: "frames.app-shell", status: "draft", contract: { surface: "app", configs: [], stage: { accepts: ["flow"], scroll: "region" } } }], sections: contracts.slots.filter(slot => slot.contract.kind === "section").map(slot => ({ id: slot.id as `sections.${string}`, status: "draft", contract: { surface: "both", configs: slot.id === "sections.section-header" ? ["level-2", "level-3"] : [], slots: (slot.contract as { slots: readonly { name: string; type: "records"; required: boolean }[] }).slots, substrates: ["flow"], substrateTests: [{ substrate: "flow", file: "SYNTHETIC-admin-pages-runtime.test.tsx", name: "fixture declaration only" }] } })) };
+  const layoutPin = engineSource("stack")!;
   // Vite treats static `new URL(..., import.meta.url)` as a browser asset URL
   // under jsdom. This is a filesystem directory, so retain Node's URL unchanged.
   const publisherSource = new NodeURL("../../../../publisher/src/", import.meta.url);

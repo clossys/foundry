@@ -1,4 +1,4 @@
-import { freeze } from "../layouts/resolve.js";
+import { freeze } from "../engines/resolve.js";
 import type { CopyRef } from "@clossys/writer";
 import { publisherValueRef } from "../web/publisher/value-names.js";
 import { getFormatLeaf } from "../formats/index.js";

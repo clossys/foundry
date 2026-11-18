@@ -30,7 +30,7 @@ export async function prepare(registry, routeId, runtime) {
 it("generated consumer runs the registered route binder with only public flow producer imports and deliberate selected fill association", async () => {
   await fs.symlink(pathResolve(import.meta.dirname, "../../../..", "node_modules"), join(temporary, "node_modules"), "dir");
   const file = join(temporary, "consumer.mjs"); await fs.writeFile(file, generated);
-  expect(generated).not.toMatch(/dist\/|src\/|core\/flow-stage|layout-fill-source|registered-route-layout/);
+  expect(generated).not.toMatch(/dist\/|src\/|core\/flow-stage|engines\/source|registered-route-layout/);
   const consumer = await import(pathToFileURL(file).href);
   const f = syntheticRegisteredRoute(compiled), { route, registry, engine, manifest, registries, frame, content } = f;
   delete (route.composition.header as { actions?: unknown }).actions;
@@ -62,7 +62,7 @@ it("generated consumer runs the registered route binder with only public flow pr
   expect(runtime.instanceLibrary.resolveFill("stack", "stack.focus")).toBeUndefined();
 }, 30000);
 it("reads shipped Layout sources through the public Node export under react-server conditions", () => {
-  const result = spawnSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", 'import { registeredFlowLayoutSource } from "@clossys/publisher/web/registered-route-check"; const value = await registeredFlowLayoutSource("stack"); if (value.source.entry !== "web/layouts/Stack.tsx") throw new Error("wrong source");'], { cwd: pathResolve(import.meta.dirname, "../.."), encoding: "utf8" });
+  const result = spawnSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", 'import { registeredFlowLayoutSource } from "@clossys/publisher/web/registered-route-check"; const value = await registeredFlowLayoutSource("stack"); if (value.source.entry !== "web/engines/Stack.tsx") throw new Error("wrong source");'], { cwd: pathResolve(import.meta.dirname, "../.."), encoding: "utf8" });
   expect(result.status, result.stdout + result.stderr).toBe(0);
 });
 it("refuses tampered authored source, foreign consumer, wrong selected source/config, and missing states", async () => {
@@ -74,7 +74,7 @@ it("refuses tampered authored source, foreign consumer, wrong selected source/co
   expect(() => registeredFlowRuntimeInputs({ binding: { ...binding, context: { ...binding.context, consumer: "SYNTHETIC-foreign" } }, engine: f.engine, layoutRenderer: renderer, states: ["default"] })).toThrow(/consumer/);
   const split = await registeredFlowLayoutSource("split");
   const reflow = { ...binding, layout: { leaf: "split" as const, config: "split.default" } };
-  expect(renderer.source.entry).toBe("web/layouts/Stack.tsx");
+  expect(renderer.source.entry).toBe("web/engines/Stack.tsx");
   expect(() => registeredFlowRuntimeInputs({ binding: reflow, engine: f.engine, layoutRenderer: split, states: [] })).toThrow(/states/);
   expect(() => registeredFlowRuntimeInputs({ binding, engine: f.engine, layoutRenderer: split, states: ["default"] })).toThrow(/pins/);
   expect(() => registeredFlowRuntimeInputs({ binding: { ...binding, layout: { ...binding.layout, config: "SYNTHETIC-missing-config" } }, engine: f.engine, layoutRenderer: renderer, states: ["default"] })).toThrow(/Unknown layout config/);

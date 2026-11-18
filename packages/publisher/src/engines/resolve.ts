@@ -1,7 +1,7 @@
 import { isTailwindBreakpoint } from "@clossys/designer/catalog";
-import leaves from "./slots/layouts.json" with { type: "json" };
-import { isLayoutId } from "./ids.js";
-import type { LayoutConfig, LayoutLeaf, LayoutSlot, PageLayoutContract } from "./contract.js";
+import engines from "./engines.json" with { type: "json" };
+import { isEngineKey } from "./keys.js";
+import type { LayoutConfig, LayoutEngine, LayoutSlot, PageLayoutContract } from "./contract.js";
 
 export function freeze<T>(value: T): T {
   if (value !== null && typeof value === "object") {
@@ -10,12 +10,12 @@ export function freeze<T>(value: T): T {
   }
   return value;
 }
-export const LAYOUT_LEAVES = freeze(leaves as unknown as readonly LayoutLeaf[]);
+export const LAYOUT_ENGINES = freeze(engines as unknown as readonly LayoutEngine[]);
 const unique = (values: readonly unknown[]) => new Set(values).size === values.length;
 const count = (value: number) => Number.isSafeInteger(value) && value >= 0;
 
-export function getLayoutLeaf(id: string): LayoutLeaf | undefined {
-  return isLayoutId(id) ? LAYOUT_LEAVES.find((leaf) => leaf.id === id) : undefined;
+export function getLayoutEngine(id: string): LayoutEngine | undefined {
+  return isEngineKey(id) ? LAYOUT_ENGINES.find((leaf) => leaf.engine === id) : undefined;
 }
 
 export function configProblems(contract: PageLayoutContract, config: LayoutConfig): string[] {
@@ -49,12 +49,12 @@ export interface EffectivePageLayoutContract extends PageLayoutContract {
 
 /** Resolve a registered config and explicit closed members without selecting content. */
 export function getEffectiveLayoutContract(
-  value: LayoutLeaf | string,
+  value: LayoutEngine | string,
   configId?: string,
   members: Readonly<Record<string, string>> = {},
 ): EffectivePageLayoutContract {
-  const leaf = typeof value === "string" ? getLayoutLeaf(value) : value;
-  if (!leaf || !isLayoutId(leaf.id) || leaf.status === "held" || leaf.status === "deprecated") throw new Error("Layout is unknown, held or retired");
+  const leaf = typeof value === "string" ? getLayoutEngine(value) : value;
+  if (!leaf || !isEngineKey(leaf.engine) || leaf.status === "held" || leaf.status === "deprecated") throw new Error("Layout is unknown, held or retired");
   const contract = leaf.contract;
   const configs = contract.configs;
   const sourceSlots = contract.slots;
@@ -78,11 +78,11 @@ export function getEffectiveLayoutContract(
     : slots;
   // Preserve the existing Layout's inherited aside-width behavior in the one
   // effective contract, so Stage DOM order and CSS reflow share that choice.
-  const breakpoint = memberValues.breakpoint ?? (leaf.id === "sidebar-content" ? (memberValues["aside-width"] ?? contract.members["aside-width"]?.[0]) === "region" ? "lg" : "md" : undefined);
+  const breakpoint = memberValues.breakpoint ?? (leaf.engine === "sidebar-content" ? (memberValues["aside-width"] ?? contract.members["aside-width"]?.[0]) === "region" ? "lg" : "md" : undefined);
   let at: PageLayoutContract["reflow"][number]["at"] | undefined;
   if (isTailwindBreakpoint(breakpoint)) at = breakpoint;
-  else if (leaf.id === "sidebar-content" && breakpoint) throw new Error("Unknown layout breakpoint");
-  const reflow = leaf.id === "sidebar-content" && at
+  else if (leaf.engine === "sidebar-content" && breakpoint) throw new Error("Unknown layout breakpoint");
+  const reflow = leaf.engine === "sidebar-content" && at
     ? sourceReflow.map((step) => ({ ...step, at }))
     : sourceReflow;
   return freeze({ ...contract, slots: effectiveSlots, reflow, memberValues });

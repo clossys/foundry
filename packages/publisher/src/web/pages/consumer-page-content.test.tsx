@@ -89,10 +89,10 @@ import { readSurfacePackageEvidence } from "@clossys/designer/catalog/server";
 import { surfaceRuntimeRenderers, ShellCopyProvider } from "@clossys/designer/frames";
 import { resolveAdminCopyRef } from "@clossys/writer/admin-copy";
 import { packageSurfaceLibrary } from "../../../../designer/dist/library-cli/__fixtures__/package-surface-library.js";
-import { registeredLayoutSourcePin } from "../../core/layout-fill-source.js";
+import { engineSource } from "../../engines/source.js";
 import { flowStageStyleSheet } from "../../core/flow-stage.js";
 import { FORMAT_LEAVES } from "../../formats/index.js";
-import { LAYOUT_LEAVES } from "../../layouts/resolve.js";
+import { LAYOUT_ENGINES } from "../../engines/resolve.js";
 import { adminPageContent, writerCopy } from "./admin-copy.js";
 import type { RegisteredRouteRuntime } from "../registered-route-binding.js";
 let adopted: Awaited<ReturnType<typeof packageSurfaceLibrary>>;
@@ -128,8 +128,8 @@ function nativeFixture(options: {member?:string} = {}) {
   // Authentic package source/descriptors and callbacks; flow substrate declarations
   // are local fixture evidence, not exhaustive Designer conformance or adoption.
   const contracts = {...loadBuildCatalog(),slots:adopted.catalog.surfaces!.slots.map(slot=>slot.contract.kind==="section"?{...slot,contract:{...slot.contract,substrates:["flow"],substrateTests:[{substrate:"flow",file:"SYNTHETIC-consumer-page-content.test.tsx",name:"local native input proof"}]}}:slot)};
-  const registries = {formats:FORMAT_LEAVES,layouts:LAYOUT_LEAVES,tokens:[],frames:[{id:"frames.app-shell",status:"draft",contract:{surface:"app",configs:[],stage:{accepts:["flow"],scroll:"region"}}}],sections:contracts.slots.filter(slot=>slot.contract.kind==="section").map(slot=>({id:slot.id,status:"draft",contract:{surface:"both",configs:slot.id==="sections.section-header"?["level-2","level-3"]:[],members:slot.contract.members.names,slots:(slot.contract as any).slots,substrates:["flow"],substrateTests:[{substrate:"flow",file:"SYNTHETIC-consumer-page-content.test.tsx",name:"local native input proof"}]}}))};
-  const pin = registeredLayoutSourcePin("stack")!, source = {entry:pin.entry,files:Object.fromEntries(Object.keys(pin.files).map(file=>[file,readFileSync(resolvePath("src",file),"utf8")])),dependencies:{}};
+  const registries = {formats:FORMAT_LEAVES,layouts:LAYOUT_ENGINES,tokens:[],frames:[{id:"frames.app-shell",status:"draft",contract:{surface:"app",configs:[],stage:{accepts:["flow"],scroll:"region"}}}],sections:contracts.slots.filter(slot=>slot.contract.kind==="section").map(slot=>({id:slot.id,status:"draft",contract:{surface:"both",configs:slot.id==="sections.section-header"?["level-2","level-3"]:[],members:slot.contract.members.names,slots:(slot.contract as any).slots,substrates:["flow"],substrateTests:[{substrate:"flow",file:"SYNTHETIC-consumer-page-content.test.tsx",name:"local native input proof"}]}}))};
+  const pin = engineSource("stack")!, source = {entry:pin.entry,files:Object.fromEntries(Object.keys(pin.files).map(file=>[file,readFileSync(resolvePath("src",file),"utf8")])),dependencies:{}};
   const layoutRenderer = {id:"Stack",source,sourceHash:runtimeHash(source)}, values = new Map<string,RuntimeContent>();
   const put = (reference:RuntimeContent["reference"],value:RuntimeJson) => { const current={reference,value,hash:runtimeHash(value)}; values.set(reference.ref,current);return current; };
   const title = f.copy(f.config.title);

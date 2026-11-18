@@ -11,7 +11,7 @@ import type { compileSurfaceLibrary } from "../../../../designer/dist/library-cl
 import type { RouteRegistry } from "../../core/route-registry.js";
 import type { InstanceRegistries } from "../../core/instance-binding.js";
 import { syntheticRoute, SYNTHETIC_ROUTE_REGISTRIES } from "../../core/__fixtures__/registered-route.js";
-import { registeredLayoutSourcePin } from "../../core/layout-fill-source.js";
+import { engineSource } from "../../engines/source.js";
 export type CompiledRegisteredRoute = Awaited<ReturnType<typeof compileSurfaceLibrary>>;
 /** SYNTHETIC compiled selections only. Each suite owns its runtime callbacks. */
 export async function compileRegisteredRouteFixture(temporary: string, hostContent = false): Promise<CompiledRegisteredRoute> {
@@ -35,7 +35,7 @@ export async function compileRegisteredRouteFixture(temporary: string, hostConte
   await saveSurfaceLibrary(temporary, engine); return compileSurfaceLibrary(temporary, engine);
 }
 export function syntheticRegisteredRoute(compiled: CompiledRegisteredRoute) {
-  const stackPin = registeredLayoutSourcePin("stack")!;
+  const stackPin = engineSource("stack")!;
   const route = structuredClone(syntheticRoute("example.throwaway")), engine = compiled.input, profile = resolve(engine), consumer = engine.library.source.id;
   const headerSource = { entry: "SYNTHETIC-header.tsx", files: { "SYNTHETIC-header.tsx": "// SYNTHETIC bounded lease descriptor" }, dependencies: {} };
   const module = { package: "@clossys/designer/shell" as const, export: "PageHeaderModule" as const, renderer: { id: "SYNTHETIC header", source: headerSource, sourceHash: runtimeHash(headerSource) } };
