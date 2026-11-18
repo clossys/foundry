@@ -109,13 +109,13 @@
           "kinds": [
             "designer/sections.features"
           ],
-          "required": true
+          "required": false
         },
         "how": {
           "kinds": [
             "designer/sections.steps"
           ],
-          "required": true
+          "required": false
         },
         "voices": {
           "kinds": [
@@ -133,7 +133,7 @@
           "kinds": [
             "designer/sections.call-to-action"
           ],
-          "required": true
+          "required": false
         }
       }
     },

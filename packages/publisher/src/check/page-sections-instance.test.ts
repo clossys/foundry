@@ -110,9 +110,10 @@ describe("mutations that must die", () => {
     expect(checks(check("page.home", kind as unknown as PageOptionContent))).toEqual(["page.role-allowed"]);
 
     const missing = home();
-    missing.sections = missing.sections.filter(section => section.role !== "closing");
+    // The hero is the one required home role (features, steps and the closing CTA are optional, foundry-build-0048 U17).
+    missing.sections = missing.sections.filter(section => section.role !== "hero");
     expect(check("page.home", missing as unknown as PageOptionContent))
-      .toEqual([{ check: "page.required-roles", message: "page.home: required role closing is not placed" }]);
+      .toEqual([{ check: "page.required-roles", message: "page.home: required role hero is not placed" }]);
 
     const key = home();
     key.sections[0]!.copy = "writer/sections.hero.copy#about.hero";

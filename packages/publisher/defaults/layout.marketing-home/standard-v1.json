@@ -34,10 +34,7 @@
       "closing"
     ],
     "required": [
-      "hero",
-      "value",
-      "how",
-      "closing"
+      "hero"
     ]
   }
 }
