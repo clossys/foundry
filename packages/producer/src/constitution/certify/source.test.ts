@@ -67,6 +67,22 @@ describe("certify/source.ts helpers", () => {
     expect(lineage?.slot).toBe("ui.button");
     expect(lineage?.source?.item).toBe("button");
   });
+
+  it("interactive backdrop lineage: a descriptor names a Foundry component in an interactiveBackdrops slot only (foundry-build-0048 A4)", () => {
+    const rule: ProvenanceRule = { ...RULE, interactiveBackdrops: { slots: ["sections.hero"], components: ["particle-field", "gradient-mesh", "grid-glow"] } };
+    const descriptor = (kind: string, component: unknown = "grid-glow") => ({ files: [], meta: { source: { kind, ref: [] }, backdrop: { component, params: {} } } });
+    const lineage = candidateLineage("sections.hero", descriptor("interactive-backdrop"));
+    expect(lineage).toEqual({ slot: "sections.hero", mode: "interactive-backdrop", backdrop: { kind: "interactive-backdrop", component: "grid-glow" } });
+    expect(lineageFindings("d", lineage!, { rule, manifest: MANIFEST })).toEqual([]);
+    expect(lineageFindings("d", candidateLineage("sections.media", descriptor("interactive-backdrop"))!, { rule, manifest: MANIFEST })[0]).toMatch(/not an interactiveBackdrops slot/);
+    expect(lineageFindings("d", candidateLineage("sections.hero", descriptor("interactive-backdrop", "three-scene"))!, { rule, manifest: MANIFEST })[0]).toMatch(/not one of the Foundry interactive backdrop components/);
+    // Another kind carrying meta.backdrop is no descriptor: it stays under the verbatim rule and fails.
+    for (const kind of ["derived", "registry", "original"]) expect(lineageFindings("d", candidateLineage("sections.hero", descriptor(kind))!, { rule, manifest: MANIFEST })[0], kind).toMatch(/only an interactive-backdrop candidate is a descriptor/);
+    // The kind without meta.backdrop still lands on the interactive lineage, and fails on the missing component.
+    expect(lineageFindings("d", candidateLineage("sections.hero", { meta: { source: { kind: "interactive-backdrop", ref: [] } } })!, { rule, manifest: MANIFEST })[0]).toMatch(/meta\.backdrop\.component null/);
+    // A rule without interactiveBackdrops admits none.
+    expect(lineageFindings("d", lineage!, { rule: RULE, manifest: MANIFEST })[0]).toMatch(/not an interactiveBackdrops slot/);
+  });
 });
 
 // The Designer's scripts now call this module through the built Producer (dist/); with it built,
@@ -84,6 +100,8 @@ describe.skipIf(!existsSync(builtSource))("the Designer scripts call certify/sou
     for (const lineage of lineages) expect(script.lineageFindings("x", lineage, { rule: RULE, manifest: MANIFEST })).toEqual(lineageFindings("x", lineage, { rule: RULE, manifest: MANIFEST }));
     const item = { ...adopted(), meta: { source: { kind: "registry", ref: ["shadcn/button@1.0.0"], hash: "sha256:seed" } } };
     expect(script.candidateLineage("ui.button", item)).toEqual(candidateLineage("ui.button", item));
+    const backdrop = { files: [], meta: { source: { kind: "interactive-backdrop", ref: [] }, backdrop: { component: "grid-glow", params: {} } } };
+    expect(script.candidateLineage("sections.hero", backdrop)).toEqual(candidateLineage("sections.hero", backdrop));
   }, 60_000);
 
   it("check-ref-verbatim.mjs imports with Producer resolved and keeps the shipped exports", async () => {

@@ -185,6 +185,68 @@
           "MIT"
         ]
       }
+    },
+    {
+      "note": "interactive-backdrop on a slot contract that allows and judges it, citing nothing",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"hero-backdrop\", \"type\": \"registry:block\", \"files\": [], \"meta\": {\"slot\": \"sections.hero\", \"source\": {\"kind\": \"interactive-backdrop\", \"ref\": [], \"license\": \"MIT\"}, \"element\": {\"slot\": \"sections.hero\", \"reason\": \"x\"}, \"backdrop\": {\"component\": \"grid-glow\", \"params\": {}}}}",
+        "json": {
+          "name": "hero-backdrop",
+          "type": "registry:block",
+          "files": [],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "interactive-backdrop",
+              "ref": [],
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "sections.hero",
+              "reason": "x"
+            },
+            "backdrop": {
+              "component": "grid-glow",
+              "params": {}
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "composition",
+          "npm",
+          "derived",
+          "original"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria"
+        ],
+        "licenses": [
+          "MIT",
+          "Apache-2.0"
+        ],
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "fail": [
@@ -627,6 +689,286 @@
         "licenses": [
           "MIT"
         ]
+      }
+    },
+    {
+      "note": "interactive-backdrop with no slot contract bound",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"hero-backdrop\", \"type\": \"registry:block\", \"files\": [], \"meta\": {\"slot\": \"sections.hero\", \"source\": {\"kind\": \"interactive-backdrop\", \"ref\": [], \"license\": \"MIT\"}, \"element\": {\"slot\": \"sections.hero\", \"reason\": \"x\"}, \"backdrop\": {\"component\": \"grid-glow\", \"params\": {}}}}",
+        "json": {
+          "name": "hero-backdrop",
+          "type": "registry:block",
+          "files": [],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "interactive-backdrop",
+              "ref": [],
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "sections.hero",
+              "reason": "x"
+            },
+            "backdrop": {
+              "component": "grid-glow",
+              "params": {}
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "composition",
+          "npm",
+          "derived",
+          "original"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria"
+        ],
+        "licenses": [
+          "MIT",
+          "Apache-2.0"
+        ]
+      }
+    },
+    {
+      "note": "interactive-backdrop on a contract that allows it but has no interactive.backdrop requirement",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"hero-backdrop\", \"type\": \"registry:block\", \"files\": [], \"meta\": {\"slot\": \"sections.hero\", \"source\": {\"kind\": \"interactive-backdrop\", \"ref\": [], \"license\": \"MIT\"}, \"element\": {\"slot\": \"sections.hero\", \"reason\": \"x\"}, \"backdrop\": {\"component\": \"grid-glow\", \"params\": {}}}}",
+        "json": {
+          "name": "hero-backdrop",
+          "type": "registry:block",
+          "files": [],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "interactive-backdrop",
+              "ref": [],
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "sections.hero",
+              "reason": "x"
+            },
+            "backdrop": {
+              "component": "grid-glow",
+              "params": {}
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "composition",
+          "npm",
+          "derived",
+          "original"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria"
+        ],
+        "licenses": [
+          "MIT",
+          "Apache-2.0"
+        ],
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "note": "interactive-backdrop on a contract that judges it but allows no component",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"hero-backdrop\", \"type\": \"registry:block\", \"files\": [], \"meta\": {\"slot\": \"sections.hero\", \"source\": {\"kind\": \"interactive-backdrop\", \"ref\": [], \"license\": \"MIT\"}, \"element\": {\"slot\": \"sections.hero\", \"reason\": \"x\"}, \"backdrop\": {\"component\": \"grid-glow\", \"params\": {}}}}",
+        "json": {
+          "name": "hero-backdrop",
+          "type": "registry:block",
+          "files": [],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "interactive-backdrop",
+              "ref": [],
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "sections.hero",
+              "reason": "x"
+            },
+            "backdrop": {
+              "component": "grid-glow",
+              "params": {}
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "composition",
+          "npm",
+          "derived",
+          "original"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria"
+        ],
+        "licenses": [
+          "MIT",
+          "Apache-2.0"
+        ],
+        "contract": {
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "interactive-backdrop citing a registry ref",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"hero-backdrop\", \"type\": \"registry:block\", \"files\": [], \"meta\": {\"slot\": \"sections.hero\", \"source\": {\"kind\": \"interactive-backdrop\", \"ref\": [\"shadcn/hero@1.0.0\"], \"license\": \"MIT\"}, \"element\": {\"slot\": \"sections.hero\", \"reason\": \"x\"}, \"backdrop\": {\"component\": \"grid-glow\", \"params\": {}}}}",
+        "json": {
+          "name": "hero-backdrop",
+          "type": "registry:block",
+          "files": [],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "interactive-backdrop",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "sections.hero",
+              "reason": "x"
+            },
+            "backdrop": {
+              "component": "grid-glow",
+              "params": {}
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "composition",
+          "npm",
+          "derived",
+          "original"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria"
+        ],
+        "licenses": [
+          "MIT",
+          "Apache-2.0"
+        ],
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "interactive-backdrop with a licence the standard does not list",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"hero-backdrop\", \"type\": \"registry:block\", \"files\": [], \"meta\": {\"slot\": \"sections.hero\", \"source\": {\"kind\": \"interactive-backdrop\", \"ref\": [], \"license\": \"GPL-3.0\"}, \"element\": {\"slot\": \"sections.hero\", \"reason\": \"x\"}, \"backdrop\": {\"component\": \"grid-glow\", \"params\": {}}}}",
+        "json": {
+          "name": "hero-backdrop",
+          "type": "registry:block",
+          "files": [],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "interactive-backdrop",
+              "ref": [],
+              "license": "GPL-3.0"
+            },
+            "element": {
+              "slot": "sections.hero",
+              "reason": "x"
+            },
+            "backdrop": {
+              "component": "grid-glow",
+              "params": {}
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "composition",
+          "npm",
+          "derived",
+          "original"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria"
+        ],
+        "licenses": [
+          "MIT",
+          "Apache-2.0"
+        ],
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
       }
     }
   ]

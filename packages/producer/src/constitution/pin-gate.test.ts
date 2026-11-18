@@ -160,3 +160,55 @@ describe("loop.create's exit, candidates.certified (computed by clossys run, nev
     expect(verifyCheck(ctx(w.root), "candidates.certified")).toEqual({ ok: true });
   });
 });
+
+describe("the CHOOSE gate on an interactive backdrop descriptor (foundry-build-0048 A4)", () => {
+  const HERO = "sections.hero";
+  const descriptor = (backdrop: unknown, over: Record<string, unknown> = {}, source: Record<string, unknown> = { kind: "interactive-backdrop", ref: [], license: "MIT" }) => ({
+    $schema: "https://ui.shadcn.com/schema/registry-item.json",
+    name: "hero-backdrop",
+    type: "registry:block",
+    files: [],
+    meta: { slot: HERO, source, element: { slot: HERO, reason: "director:identity.visual.style" }, backdrop },
+    ...over,
+  });
+  /** A temp consumer whose hero slot contract carries the catalog's interactive list and its two requirements (the fixture is untouched). */
+  function heroWorld({ interactive = true } = {}) {
+    const w = world();
+    const file = join(w.consumer, "agents", "designer", HERO, "slot.json");
+    const doc = JSON.parse(readFileSync(file, "utf8"));
+    if (interactive) {
+      doc.contract.interactive = { components: ["particle-field", "gradient-mesh", "grid-glow"] };
+      doc.contract.requirements = [...doc.contract.requirements.filter((row: { check: string }) => row.check !== "source.ref"),
+        { check: "source.ref", params: { contract: "$contract" } }, { check: "interactive.backdrop", params: { contract: "$contract" } }];
+    }
+    writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    const submit = (item: unknown) => writeCandidate(w.consumer, "designer", HERO, "hero-backdrop", item, { at: AT, provenance: { by: "agent:designer", model: "claude-opus-5-5", tier: "high" } });
+    return { ...w, submit, gate: (name: string) => pinGate(w.root, w.consumer, "designer", HERO, name, AT) };
+  }
+
+  it("certifies a submitted descriptor over a Foundry component with no refusals", () => {
+    const w = heroWorld();
+    const good = w.submit(descriptor({ component: "grid-glow", params: { cell: 32, pulse: true } }));
+    const gate = w.gate(good.name);
+    expect(gate.refusals).toEqual([]);
+    expect(gate.scorecard.candidates[0]).toMatchObject({ candidate: good.name, certified: true, submitted: true });
+  });
+
+  it("refuses a descriptor where the slot contract allows no interactive backdrop", () => {
+    const w = heroWorld({ interactive: false });
+    const name = w.submit(descriptor({ component: "grid-glow", params: {} })).name;
+    const gate = w.gate(name);
+    expect(gate.refusals.join("; ")).toMatch(/has no passing verdict: .*interactive-backdrop needs a slot contract that allows it/);
+  });
+
+  it("refuses to take in code, bad params, a URL colour or another kind carrying a descriptor", () => {
+    const w = heroWorld();
+    for (const [label, item, message] of [
+      ["bad params", descriptor({ component: "particle-field", params: { density: 999 } }), /outside 8\.\.160/],
+      ["a URL colour", descriptor({ component: "grid-glow", params: { glow: "https://example.com/x.js" } }), /not one of the token colours/],
+      ["code in files", descriptor({ component: "grid-glow", params: {} }, { files: [{ path: "backdrop.tsx", type: "registry:block", content: "export default () => null" }] }), /carries files/],
+      ["an unknown component", descriptor({ component: "three-scene", params: {} }), /not one of the Foundry components/],
+      ["a derived kind with meta.backdrop", descriptor({ component: "grid-glow", params: {} }, {}, { kind: "derived", ref: ["tailark-oss/hero-section-1@1.0.0"], license: "MIT" }), /meta\.backdrop is only for source\.kind interactive-backdrop, not derived/],
+    ] as const) expect(() => w.submit(item), label).toThrow(message);
+  });
+});

@@ -5994,6 +5994,27 @@
       },
       "data": "host-injected",
       "surface": "site",
+      "interactive": {
+        "components": [
+          "particle-field",
+          "gradient-mesh",
+          "grid-glow"
+        ]
+      },
+      "requirements": [
+        {
+          "check": "source.ref",
+          "params": {
+            "contract": "$contract"
+          }
+        },
+        {
+          "check": "interactive.backdrop",
+          "params": {
+            "contract": "$contract"
+          }
+        }
+      ],
       "passageSchema": "passages.hero",
       "copy": {
         "sourceLocale": "en",

@@ -69,6 +69,7 @@ export const CODES = [
   "REF-NPM-ASSET",
   "REF-NPM-DEP",
   "REF-NPM-CLASS",
+  "REF-INTERACTIVE",
 ];
 
 /**
@@ -894,10 +895,79 @@ export function checkElement(root, target, options = {}) {
   return asCandidate(checkRegistryItem(root, slot, entry.item, { ...options, slotDoc: options.slotDoc ?? entry.slotDoc }), element, version);
 }
 
+// ---- interactive backdrop descriptor (foundry-build-0048 A4) ----------------
+
+/**
+ * An interactive backdrop candidate is data, not code: a registry item with no files whose
+ * meta.backdrop `{component, params}` names one Foundry interactive backdrop component (the rule's
+ * interactiveBackdrops.components). The components themselves are Foundry code under this package's
+ * own gates. This gate checks the envelope (the same checks and messages as
+ * `interactiveBackdropEnvelopeIssues` in src/tokens/interactive-backdrops.ts, pinned by its test) and
+ * the component name; the param schema is judged by criterion interactive.backdrop.
+ */
+export const INTERACTIVE_BACKDROP_KIND = "interactive-backdrop";
+export const INTERACTIVE_ITEM_KEYS = Object.freeze(["$schema", "name", "type", "files", "meta"]);
+export const INTERACTIVE_META_KEYS = Object.freeze(["slot", "source", "element", "backdrop"]);
+export const INTERACTIVE_SOURCE_KEYS = Object.freeze(["kind", "ref", "license"]);
+export const INTERACTIVE_ITEM_TYPE = "registry:block";
+const plainObject = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** Why a candidate is not a descriptor-only interactive backdrop registry item; [] when it is. */
+export function interactiveEnvelopeIssues(candidate) {
+  if (!plainObject(candidate)) return ["the interactive backdrop is not a registry item object"];
+  const issues = [];
+  for (const key of Object.keys(candidate)) {
+    if (!INTERACTIVE_ITEM_KEYS.includes(key)) issues.push(`the interactive backdrop carries ${key}; its registry item is only ${INTERACTIVE_ITEM_KEYS.join(", ")}`);
+  }
+  if (candidate.type !== INTERACTIVE_ITEM_TYPE) issues.push(`the interactive backdrop's type is ${JSON.stringify(candidate.type ?? null)}, not ${INTERACTIVE_ITEM_TYPE}`);
+  if (!Array.isArray(candidate.files) || candidate.files.length !== 0) issues.push("the interactive backdrop carries files: it is a descriptor over a Foundry component, never code or a file, so files is []");
+  const meta = candidate.meta;
+  if (!plainObject(meta)) return [...issues, "the interactive backdrop carries no meta object"];
+  for (const key of Object.keys(meta)) {
+    if (!INTERACTIVE_META_KEYS.includes(key)) issues.push(`the interactive backdrop's meta carries ${key}; its meta is only ${INTERACTIVE_META_KEYS.join(", ")}`);
+  }
+  const source = meta.source;
+  if (!plainObject(source)) issues.push("the interactive backdrop's meta.source is not an object");
+  else {
+    for (const key of Object.keys(source)) {
+      if (!INTERACTIVE_SOURCE_KEYS.includes(key)) issues.push(`the interactive backdrop's meta.source carries ${key}; its source is only ${INTERACTIVE_SOURCE_KEYS.join(", ")}`);
+    }
+    if (source.kind !== INTERACTIVE_BACKDROP_KIND) issues.push(`the interactive backdrop's meta.source.kind is ${JSON.stringify(source.kind ?? null)}, not ${INTERACTIVE_BACKDROP_KIND}`);
+    if (!Array.isArray(source.ref) || source.ref.length !== 0) issues.push(`the interactive backdrop's meta.source.ref is ${JSON.stringify(source.ref ?? null)}, not []: it adopts and cites nothing`);
+  }
+  return issues;
+}
+
+/**
+ * The interactive backdrop verdict for a candidate, or undefined when it is neither of that kind nor
+ * carries meta.backdrop (the verbatim rule then applies as for any other kind). A valid descriptor is
+ * "n/a" (it carries no code); every other case fails REF-INTERACTIVE.
+ */
+function interactiveBackdrop(slot, candidate, options = {}) {
+  const kind = candidate?.meta?.source?.kind;
+  const claims = plainObject(candidate?.meta) && Object.hasOwn(candidate.meta, "backdrop");
+  if (kind !== INTERACTIVE_BACKDROP_KIND && !claims) return undefined;
+  const rule = defaults(options).rule.interactiveBackdrops ?? {};
+  const key = `${slot}/${candidate?.name ?? "unknown"}@v1`;
+  const details = [];
+  if (kind !== INTERACTIVE_BACKDROP_KIND) details.push(`carries meta.backdrop but meta.source.kind is ${JSON.stringify(kind ?? null)}: only an ${INTERACTIVE_BACKDROP_KIND} candidate is a descriptor; every other kind stays under the verbatim rule`);
+  else {
+    if (!(rule.slots ?? []).some((pattern) => globMatch(pattern, slot))) details.push(`${INTERACTIVE_BACKDROP_KIND} in ${slot}, which is not an interactiveBackdrops slot of the provenance rule`);
+    details.push(...interactiveEnvelopeIssues(candidate));
+    const component = candidate?.meta?.backdrop?.component;
+    if (!(rule.components ?? []).includes(component)) details.push(`meta.backdrop.component ${JSON.stringify(component ?? null)} is not one of the Foundry interactive backdrop components (${(rule.components ?? []).join(", ")})`);
+  }
+  const base = { key, slot, element: candidate?.name ?? "unknown", version: 1, files: [] };
+  if (details.length) return { ...base, status: "fail", findings: details.map((detail) => ({ element: key, code: "REF-INTERACTIVE", detail })) };
+  return { ...base, status: "n/a", note: `descriptor over Foundry interactive backdrop component ${candidate.meta.backdrop.component}`, findings: [] };
+}
+
 /** Slot-model registry item: provenance stays in meta.source; exact file mappings
  * and adaptation reasons live in meta.refVerbatim. Missing evidence fails closed.
  */
 export function checkRegistryItem(root, slot, candidate, options = {}) {
+  const interactive = interactiveBackdrop(slot, candidate, options);
+  if (interactive) return interactive;
   if (candidate.meta?.source?.kind === "composition") return checkComposition(root, slot, candidate, options);
   if (candidate.meta?.source?.kind === "npm") {
     // An npm ref the reference manifest records as a package row is a class-contract wrapper; every other npm ref keeps the re-export rule.

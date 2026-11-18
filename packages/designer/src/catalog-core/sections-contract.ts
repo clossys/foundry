@@ -40,6 +40,14 @@ export interface SectionContract {
   data: "host-injected";
   states?: readonly ("loading" | "empty" | "error")[];
   surface: "site" | "app" | "both";
+  /**
+   * The Foundry interactive backdrop components (tokens/interactive-backdrops.ts) a descriptor candidate
+   * (meta.source.kind interactive-backdrop) may name in this slot (foundry-build-0048 A4). Absent means the kind is refused.
+   * Criterion interactive.backdrop judges a candidate against it; the provenance rule's interactiveBackdrops lists the same slots.
+   */
+  interactive?: { components: readonly ("particle-field" | "gradient-mesh" | "grid-glow")[] };
+  /** Producer requirement checks beyond the slot standard's, with params ("$contract" binds this contract). */
+  requirements?: readonly { check: string; params?: Readonly<Record<string, unknown>> }[];
 }
 
 /** Separate from value-engine slots until section fills and resolution ship. */

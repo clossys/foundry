@@ -223,7 +223,8 @@ export { CONFIRMED_BY } from "@clossys/director";
  */
 export { OWNER_WORDS_REF, OWNER_WORDS_REF_FORM } from "@clossys/director";
 
-export const SOURCE_KINDS = ["registry", "derived", "original", "composition", "npm"] as const;
+/** `interactive-backdrop`: a Designer element that is a descriptor over a Foundry interactive backdrop component (foundry-build-0048 A4), no code. */
+export const SOURCE_KINDS = ["registry", "derived", "original", "composition", "npm", "interactive-backdrop"] as const;
 /** The one ref of an `npm` source: `npm/<package>@<exact version>` (ref-verbatim proves it against package-lock.json). */
 export const NPM_SOURCE_REF = /^npm\/((?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*)@(\d+\.\d+\.\d+)$/;
 /** One stock part of a `composition` source: a pinned slot and the exact vendored reference paths its pin maps. */

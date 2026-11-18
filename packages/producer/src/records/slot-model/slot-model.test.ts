@@ -123,3 +123,32 @@ describe("derived inputs and uses (F10)", () => {
     expect(page.dropped).toEqual(["frames.gone"]);
   });
 });
+
+describe("interactive backdrop candidates (foundry-build-0048 A4)", () => {
+  const item = (meta: Record<string, unknown> = {}, over: Record<string, unknown> = {}) => JSON.stringify({
+    $schema: "https://ui.shadcn.com/schema/registry-item.json", name: "hero-backdrop", type: "registry:block", files: [],
+    meta: { slot: "sections.hero", source: { kind: "interactive-backdrop", ref: [], license: "MIT" }, element: { slot: "sections.hero", reason: "director:identity.visual.style" }, backdrop: { component: "gradient-mesh", params: { intensity: 0.5 } }, ...meta },
+    ...over,
+  });
+  const check = (bytes: string) => validateCandidate("element", "sections.hero", "hero-backdrop-v1.json", bytes);
+  const messages = (bytes: string) => check(bytes).map(issue => issue.message).join("; ");
+
+  it("accepts a descriptor-only element candidate", () => {
+    expect(check(item())).toEqual([]);
+  });
+
+  it("refuses an invalid descriptor, code, a cited ref, another kind carrying meta.backdrop and the kind outside an element", () => {
+    expect(messages(item({ backdrop: { component: "gradient-mesh", params: { intensity: 7 } } }))).toMatch(/outside 0\.1\.\.1/);
+    expect(messages(item({ backdrop: { component: "gradient-mesh", params: { from: "url(https://example.com/x.png)" } } }))).toMatch(/not one of the token colours/);
+    expect(messages(item({ backdrop: { component: "particle-field", params: {}, module: "./backdrop.js" } }))).toMatch(/carries "module"/);
+    expect(messages(item({}, { files: [{ path: "backdrop.tsx", type: "registry:block", content: "export default () => null" }] }))).toMatch(/carries files/);
+    expect(messages(item({ source: { kind: "interactive-backdrop", ref: ["shadcn/hero@1.0.0"], license: "MIT" } }))).toMatch(/interactive-backdrop cites nothing: source\.ref must be \[\]/);
+    expect(messages(item({ source: { kind: "derived", ref: ["tailark-oss/hero-section-1@1.0.0"] } }))).toMatch(/meta\.backdrop is only for source\.kind interactive-backdrop, not derived/);
+    expect(messages(item({ backdrop: undefined }))).toMatch(/no meta\.backdrop descriptor/);
+    expect(codes(check(item()))).toEqual([]);
+    const page = { schema: "clossys.page/1", path: "/", title: "Home", frame: null, sections: [], copy: {}, meta: { source: { kind: "interactive-backdrop", ref: [] } } };
+    expect(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify(page)).map(issue => issue.message).join("; ")).toMatch(/interactive-backdrop is a Designer element kind, not a page candidate/);
+    const fields = { slot: "strings.common", locales: ["en"], source: { kind: "interactive-backdrop", ref: [] } };
+    expect(validateCandidate("strings", "strings.common", "copy-v1.md", serializeFrontmatter(fields, '## en\n### greeting\n<!-- {"id":"greeting","bindings":[]} -->\nHi\n')).map(issue => issue.message).join("; ")).toMatch(/interactive-backdrop is a Designer element kind, not a strings candidate/);
+  });
+});

@@ -64,7 +64,7 @@ describe("ref-verbatim allowed-hunk grammar", () => {
   it("declares five allowed kinds and four hunk failure codes", () => {
     expect(ALLOWED).toEqual(["H-IMPORT", "H-TOKEN", "H-DATA", "H-PROPS", "H-LINK"]);
     expect(HUNK_CODES).toEqual(["REF-HUNK-CLASS", "REF-HUNK-STRUCTURE", "REF-HUNK-LOGIC", "REF-HUNK-TEXT"]);
-    expect(CODES).toHaveLength(24);
+    expect(CODES).toHaveLength(25);
     expect(CODES).toEqual(expect.arrayContaining(["REF-SELF-CITE", "REF-COMP-PART", "REF-COMP-IMPORT", "REF-COMP-UNUSED", "REF-COMP-MARKUP", "REF-COMP-USES", "REF-NPM-VERSION", "REF-NPM-CODE", "REF-NPM-ASSET"]));
     expect(CODES).toEqual(expect.arrayContaining(HUNK_CODES));
   });
@@ -1171,5 +1171,51 @@ describe("npm class-contract reference (R2F-TYPO)", () => {
     expect(CODES).toEqual(expect.arrayContaining(["REF-NPM-DEP", "REF-NPM-CLASS"]));
     // A re-export candidate citing the class-contract package is not a wrapper: it fails the contract rule, never passes it.
     expect(check(proseItem('export { default } from "@tailwindcss/typography"\n'))).toEqual(["REF-NPM-CODE"]);
+  });
+});
+
+describe("interactive backdrop descriptor (foundry-build-0048 A4)", () => {
+  const descriptor = (patch: Record<string, unknown> = {}, meta: Record<string, unknown> = {}) => ({
+    $schema: "https://ui.shadcn.com/schema/registry-item.json",
+    name: "hero-grid-glow",
+    type: "registry:block",
+    files: [],
+    meta: {
+      slot: "sections.hero",
+      source: { kind: "interactive-backdrop", ref: [], license: "MIT" },
+      element: { slot: "sections.hero", reason: "director:identity.visual.style" },
+      backdrop: { component: "grid-glow", params: { cell: 32 } },
+      ...meta,
+    },
+    ...patch,
+  });
+  const check = (item: unknown, slot = "sections.hero") => checkRegistryItem(consumer([]), slot, item, { strict: true });
+
+  it("a descriptor over a Foundry component carries no code: n/a, no findings", () => {
+    const row = check(descriptor());
+    expect(row).toMatchObject({ status: "n/a", findings: [], files: [] });
+    expect(row.note).toMatch(/grid-glow/);
+  });
+
+  it("fails REF-INTERACTIVE for code, an unknown component, a foreign slot or a cited ref", () => {
+    for (const [label, item, slot] of [
+      ["code in files", descriptor({ files: [{ path: "backdrop.tsx", type: "registry:block", content: "export default () => null" }] }), "sections.hero"],
+      ["installer key", descriptor({ dependencies: ["three"] }), "sections.hero"],
+      ["unknown component", descriptor({}, { backdrop: { component: "three-scene", params: {} } }), "sections.hero"],
+      ["foreign slot", descriptor(), "sections.media"],
+      ["cited ref", descriptor({}, { source: { kind: "interactive-backdrop", ref: ["shadcn/hero@1.0.0"], license: "MIT" } }), "sections.hero"],
+      ["extra meta", descriptor({}, { refVerbatim: { files: {} } }), "sections.hero"],
+    ] as const) {
+      const row = check(item, slot);
+      expect(row.status, label).toBe("fail");
+      expect(codes(row.findings), label).toEqual(["REF-INTERACTIVE"]);
+    }
+  });
+
+  it("another kind carrying meta.backdrop stays under the verbatim rule and fails", () => {
+    const row = check(descriptor({}, { source: { kind: "derived", ref: [], license: "MIT" } }));
+    expect(row.status).toBe("fail");
+    expect(codes(row.findings)).toEqual(["REF-INTERACTIVE"]);
+    expect(row.findings.map(finding => finding.detail)).toEqual([expect.stringMatching(/meta\.source\.kind is "derived": only an interactive-backdrop candidate is a descriptor/)]);
   });
 });

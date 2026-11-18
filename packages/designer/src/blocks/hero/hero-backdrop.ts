@@ -2,8 +2,9 @@ import type { Mode, Resolved } from "../../catalog-core/types.js";
 import { patternBackdropFromResolved, type BackdropGraphicArtifact } from "../../catalog-assets/pattern-backdrop.js";
 import { checkConsumerArtContract, type StillBackdropArt } from "../../backdrop/consumer-art.js";
 import { isVideoResource, type VideoResource } from "../../catalog-assets/media.js";
+import { interactiveBackdropDescriptorIssues, type InteractiveBackdropDescriptor } from "../../tokens/interactive-backdrops.js";
 
-export type HeroBackdropKind = "none" | "image" | "video" | "graphic";
+export type HeroBackdropKind = "none" | "image" | "video" | "graphic" | "interactive";
 export interface HeroImageBackdrop { readonly kind: "image"; readonly image: StillBackdropArt }
 export interface HeroVideoBackdrop {
   readonly kind: "video";
@@ -18,9 +19,11 @@ export interface HeroVideoBackdrop {
 }
 /** The Assets producer owns the reference and geometry; Hero never synthesizes artwork. */
 export interface HeroGraphicBackdrop { readonly kind: "graphic"; readonly asset: string }
+/** A descriptor over one Foundry interactive backdrop component (foundry-build-0048 A4): data, never code. */
+export interface HeroInteractiveBackdrop { readonly kind: "interactive"; readonly backdrop: InteractiveBackdropDescriptor }
 /** Existing checked still declarations remain valid callers. */
-export type HeroBackdrop = StillBackdropArt | { readonly kind: "none" } | HeroImageBackdrop | HeroVideoBackdrop | HeroGraphicBackdrop;
-export interface ResolvedHeroBackdrop { readonly kind: HeroBackdropKind; readonly art?: StillBackdropArt; readonly need?: string; readonly video?: HeroVideoBackdrop & { readonly video: VideoResource }; readonly graphic?: BackdropGraphicArtifact }
+export type HeroBackdrop = StillBackdropArt | { readonly kind: "none" } | HeroImageBackdrop | HeroVideoBackdrop | HeroGraphicBackdrop | HeroInteractiveBackdrop;
+export interface ResolvedHeroBackdrop { readonly kind: HeroBackdropKind; readonly art?: StillBackdropArt; readonly need?: string; readonly video?: HeroVideoBackdrop & { readonly video: VideoResource }; readonly graphic?: BackdropGraphicArtifact; readonly interactive?: InteractiveBackdropDescriptor }
 function still(value: unknown): value is StillBackdropArt {
   return checkConsumerArtContract(value).ok && (value as StillBackdropArt).slot === "backdrop" && (value as StillBackdropArt).loading === "lazy";
 }
@@ -52,5 +55,10 @@ export function resolveHeroBackdrop(value: unknown, resolved?: Resolved, mode: M
     if (graphic) return { kind: "graphic", graphic };
     return { kind: "graphic", need: `NEED Assets leaf: ${row.asset}` };
   }
-  throw new TypeError("Hero backdrop kind must be none, image, video or graphic");
+  if (row.kind === "interactive") {
+    const issues = interactiveBackdropDescriptorIssues(row.backdrop);
+    if (issues.length) throw new TypeError(`Hero interactive backdrop: ${issues.join("; ")}`);
+    return { kind: "interactive", interactive: row.backdrop as InteractiveBackdropDescriptor };
+  }
+  throw new TypeError("Hero backdrop kind must be none, image, video, graphic or interactive");
 }

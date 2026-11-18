@@ -11,7 +11,7 @@ import type { ConstitutionContext, SlotRecord } from "../types.js";
 import { openCache } from "./cache.js";
 import { dryRun, familyOf, proposedContract } from "./dry-run.js";
 import {
-  CERTIFY_INPUT_FIELDS, certify, certifyEnv, certifyFit, certifyWorld, MISSING_RECORD_CODES, onlyMissingRecords, pinSetOf, resultKey, standardReasons,
+  CERTIFY_INPUT_FIELDS, certify, certifyEnv, certifyFit, certifyWorld, MISSING_RECORD_CODES, onlyMissingRecords, pinSetOf, resultKey, slotDocOf, standardReasons,
 } from "./index.js";
 import { requirementsVerdictSync } from "./requirements.js";
 import { BRIEF_HEADINGS, briefText, elementItem, LABEL, pageItem, writerText } from "./certify.world.js";
@@ -54,6 +54,33 @@ describe("certify: one certifier for every rung (R03.3)", () => {
     const original = run("original");
     expect(codes(original.reasons)).toEqual(["no-standard"]);
     for (const kind of ["registry", "derived", "composition", "npm"]) expect(run(kind)).toEqual(original);
+  });
+});
+
+describe("certify: interactive backdrop descriptor (foundry-build-0048 A4)", () => {
+  const COMPONENTS = ["particle-field", "gradient-mesh", "grid-glow"];
+  const descriptor = (backdrop: unknown, files: unknown[] = []) => ({
+    $schema: "https://ui.shadcn.com/schema/registry-item.json", name: "hero-backdrop", type: "registry:block", files,
+    meta: { slot: "sections.hero", source: { kind: "interactive-backdrop", ref: [], license: "MIT" }, element: { slot: "sections.hero", reason: "director:identity.visual.style" }, backdrop },
+  });
+  const fit = (item: Record<string, unknown>, interactive?: unknown) => {
+    const ctx = ctxOf({ designer: { "sections.hero": { candidates: { "hero-backdrop-v1.json": item } } } });
+    const slot = slotOf(ctx, "designer", "sections.hero");
+    const own = slotDocOf(slot).contract;
+    const contract = interactive === undefined ? own : { ...own, interactive };
+    return certifyFit({ slot, candidate: slot.candidates[0]!, contract }, certifyEnv(ctx)).map(item => `${item.code}: ${item.message}`);
+  };
+
+  it("fits a descriptor-only candidate on a contract that lists its component, with nothing to mount", () => {
+    expect(fit(descriptor({ component: "grid-glow", params: { cell: 32 } }), { components: COMPONENTS })).toEqual([]);
+  });
+
+  it("refuses a component the contract does not list; code in files and a param outside the schema are refused before fit, by validation", () => {
+    expect(fit(descriptor({ component: "grid-glow", params: {} }))).toEqual([expect.stringMatching(/^invalid: slot sections\.hero contract\.interactive lists no interactive backdrop, not "grid-glow"/)]);
+    expect(fit(descriptor({ component: "particle-field", params: {} }), { components: ["grid-glow"] })).toEqual([expect.stringMatching(/contract\.interactive lists grid-glow, not "particle-field"/)]);
+    expect(fit(descriptor({ component: "grid-glow", params: {} }, [{ path: "backdrop.tsx", type: "registry:block", content: "export default () => null" }]), { components: COMPONENTS }))
+      .toEqual([expect.stringMatching(/^invalid: the interactive backdrop carries files/)]);
+    expect(fit(descriptor({ component: "grid-glow", params: { cell: 4 } }), { components: COMPONENTS })).toEqual([expect.stringMatching(/^invalid: grid-glow param cell is 4, outside 16\.\.96/)]);
   });
 });
 

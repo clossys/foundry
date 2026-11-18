@@ -7,7 +7,7 @@
  * can import the built file.
  *
  * Manifest: `{ registries: {<id>: ...}, items: [{registry, name, version, hash, type, files: [{path, sha256}]}] }`.
- * Rule (provenance.json): `{ consumerAssets: {slots: [<glob>]}, classes: [{slots, sourceTypes?, sourceItems?}] }`.
+ * Rule (provenance.json): `{ consumerAssets: {slots: [<glob>]}, interactiveBackdrops: {slots: [<glob>], components: [<id>]}, classes: [{slots, sourceTypes?, sourceItems?}] }`.
  */
 import { createHash } from "node:crypto";
 
@@ -16,6 +16,8 @@ export interface ManifestItem { readonly registry: string; readonly name: string
 export interface ReferenceManifest { readonly registries?: Readonly<Record<string, unknown>>; readonly items?: readonly ManifestItem[] }
 export interface ProvenanceRule {
   readonly consumerAssets?: { readonly slots?: readonly string[] };
+  /** Slots where an interactive backdrop descriptor may stand, and the Foundry components it may name (foundry-build-0048 A4). */
+  readonly interactiveBackdrops?: { readonly slots?: readonly string[]; readonly components?: readonly string[] };
   readonly classes?: readonly { readonly slots: string; readonly sourceTypes?: readonly string[]; readonly sourceItems?: readonly string[] }[];
 }
 export interface Reference { readonly registry?: string; readonly item?: string; readonly version?: string; readonly hash?: string }
@@ -26,7 +28,15 @@ export interface Lineage {
   readonly parts?: readonly Reference[];
   readonly partsHashed?: boolean;
   readonly unresolved?: readonly unknown[];
+  /** An interactive-backdrop lineage: the candidate's source kind and the Foundry component its descriptor names. */
+  readonly backdrop?: { readonly kind?: unknown; readonly component?: unknown };
 }
+
+/**
+ * The lineage mode of an interactive backdrop descriptor (meta.source.kind interactive-backdrop, or any
+ * candidate carrying meta.backdrop): no library item version, but data naming a Foundry component.
+ */
+export const INTERACTIVE_BACKDROP_MODE = "interactive-backdrop";
 
 export const globMatch = (pattern: string, slot: string): boolean => (pattern.endsWith("*") ? slot.startsWith(pattern.slice(0, -1)) : pattern === slot);
 
@@ -54,6 +64,14 @@ export function lineageFindings(label: string, lineage: Lineage, { rule, manifes
   const findings: string[] = [];
   const { slot, mode, source } = lineage;
   const asset = (rule.consumerAssets?.slots ?? []).some(pattern => globMatch(pattern, slot ?? ""));
+  if (mode === INTERACTIVE_BACKDROP_MODE) {
+    const kind = lineage.backdrop?.kind;
+    const component = lineage.backdrop?.component;
+    if (kind !== INTERACTIVE_BACKDROP_MODE) return [`${label}: carries meta.backdrop but meta.source.kind is ${JSON.stringify(kind ?? null)}: only an ${INTERACTIVE_BACKDROP_MODE} candidate is a descriptor; every other kind stays under the verbatim rule`];
+    if (!(rule.interactiveBackdrops?.slots ?? []).some(pattern => globMatch(pattern, slot ?? ""))) return [`${label}: interactive backdrop in ${slot}, which is not an interactiveBackdrops slot of the provenance rule`];
+    if (typeof component !== "string" || !(rule.interactiveBackdrops?.components ?? []).includes(component)) return [`${label}: meta.backdrop.component ${JSON.stringify(component ?? null)} is not one of the Foundry interactive backdrop components (${(rule.interactiveBackdrops?.components ?? []).join(", ")})`];
+    return findings;
+  }
   if (mode === "original") {
     if (!asset) findings.push(`${label}: original item in ${slot}, which is not a consumer-asset slot; adopt or customize a trusted reference, or raise a NEED`);
     return findings;
@@ -84,16 +102,24 @@ export function parseRef(ref: unknown): { registry: string; item: string; versio
 export const CONSUMER_ASSET_REF = /^clossys\/agents\/designer\/assets\.[a-z0-9-]+(?:\/candidates\/[a-z0-9-]+-v[1-9][0-9]*\.json)?$/;
 export const consumerOwnDerivation = (refs: unknown): boolean => Array.isArray(refs) && refs.length > 0 && refs.every(ref => typeof ref === "string" && CONSUMER_ASSET_REF.test(ref));
 
-type Item = { meta?: { source?: { kind?: unknown; ref?: unknown; hash?: unknown } } } | null | undefined;
+type Item = { meta?: { source?: { kind?: unknown; ref?: unknown; hash?: unknown }; backdrop?: unknown } } | null | undefined;
 
 /**
  * Lineage of one Designer candidate (registry item): `original` stays original, `registry` is a
  * verbatim adoption, `derived` is customized; the first reference is the source, the rest are parts.
  * `composition` and `npm` candidates cite pinned slots or an npm package, not a registry item, and
- * are verified by check-ref-verbatim: null here.
+ * are verified by check-ref-verbatim: null here. An interactive backdrop (the kind, or any candidate
+ * carrying meta.backdrop) is a descriptor over a Foundry component: its lineage names the kind and
+ * the component, which lineageFindings checks against the rule's interactiveBackdrops.
  */
 export function candidateLineage(slot: string, item: Item): Lineage | null {
   const source = item?.meta?.source ?? {};
+  const meta = item?.meta;
+  if (source.kind === INTERACTIVE_BACKDROP_MODE || (!!meta && typeof meta === "object" && Object.hasOwn(meta, "backdrop"))) {
+    const backdrop = meta?.backdrop;
+    const component = backdrop && typeof backdrop === "object" && !Array.isArray(backdrop) ? (backdrop as { component?: unknown }).component : undefined;
+    return { slot, mode: INTERACTIVE_BACKDROP_MODE, backdrop: { kind: source.kind, component } };
+  }
   if (source.kind === "original") return { slot, mode: "original" };
   if (source.kind === "composition" || source.kind === "npm") return null;
   // Derived only from the consumer's own Designer asset slots: the consumer's own artwork, an original.

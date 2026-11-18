@@ -16,7 +16,8 @@
         "derived",
         "original",
         "composition",
-        "npm"
+        "npm",
+        "interactive-backdrop"
       ]
     },
     "ref": {
@@ -113,6 +114,22 @@
             "type": "string",
             "pattern": "^npm/((?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*)@(\\d+\\.\\d+\\.\\d+)$"
           }
+        }
+      },
+      "not": {
+        "required": [
+          "parts"
+        ]
+      }
+    },
+    {
+      "properties": {
+        "kind": {
+          "const": "interactive-backdrop"
+        },
+        "ref": {
+          "type": "array",
+          "maxItems": 0
         }
       },
       "not": {
