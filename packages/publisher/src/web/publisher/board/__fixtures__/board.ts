@@ -7,7 +7,7 @@ import { CONTENT_TREE } from "../../../../content/taxonomy.js";
 import { STAGE_STATUSES } from "../../../../content/stages.js";
 
 export const boardSlotIds = {
-  site: "sl_boyi4ashca", admin: "sl_rkjigy5k5p", auth: "sl_wl546svpom", docs: "sl_2xv4y3uo7k",
+  site: "sl_fixturesaf", admin: "sl_fixturesal", auth: "sl_fixturesao", docs: "sl_fixturesaa",
 } as const;
 
 /** Four inventory slots with real snapshots; auth deliberately has no candidate. */

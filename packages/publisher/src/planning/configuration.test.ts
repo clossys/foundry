@@ -34,9 +34,9 @@ describe("configuration display references", () => {
     }
   });
   it("names an unmapped value without converting its machine ID into a label", () => {
-    const display = publisherConfigurationDisplay({ ...web(), layout: { leaf: "layouts.stack", config: "stack.unregistered" } });
+    const display = publisherConfigurationDisplay({ ...web(), layout: { leaf: "stack", config: "stack.unregistered" } });
     expect(display.layoutConfigRef).toBeUndefined();
-    expect(display.needsInput).toContainEqual({ path: "layout.config", parent: "publisher.layoutConfig.layouts.stack", id: "stack.unregistered" });
+    expect(display.needsInput).toContainEqual({ path: "layout.config", parent: "publisher.layoutConfig.stack", id: "stack.unregistered" });
     expect(Object.isFrozen(display.needsInput[0])).toBe(true);
   });
 });
@@ -64,7 +64,7 @@ describe("closed recommendations and requirements", () => {
   });
   it.each([
     { format: "invented.format" }, { frame: { leaf: "frames.unknown" } },
-    { layout: { leaf: "layouts.stack", config: "stack.default" } },
+    { layout: { leaf: "stack", config: "stack.default" } },
     { media: { size: { kind: "responsive", breakpoints: ["768px"] } } },
     { deliveries: [{ id: "pptx", fidelity: "flat" }] }, { deploymentSurface: { id: "fixture.web" } },
     { deliveries: [{ id: "static-site-bundle", exporter: "invented" }] },
@@ -95,13 +95,13 @@ describe("closed recommendations and requirements", () => {
 
 describe("configuration provenance at Align", () => {
   it("rejects an unrecorded override and a rewritten original; explicit helper records both sides", async () => {
-    const original = home(), chosen = { ...web(), layout: { leaf: "layouts.stack" as const, config: "stack.index" }, deploymentSurface: "fixture.web-preview" };
+    const original = home(), chosen = { ...web(), layout: { leaf: "stack" as const, config: "stack.index" }, deploymentSurface: "fixture.web-preview" };
     const unrecorded = { ...original, configuration: chosen };
     expect(validatePublisherPlan(withItem(unrecorded), registries).some(f => f.message.includes("Overrides"))).toBe(true);
     const missing = { ...unrecorded, overrides: undefined };
     expect(() => createPublisherPlanDraft(withItem(missing), registries)).toThrow("refused");
     const item = withPublisherConfiguration(original, chosen);
-    expect(item.overrides).toContainEqual({ field: "layout", original: { leaf: "layouts.stack", config: "stack.landing" }, value: chosen.layout });
+    expect(item.overrides).toContainEqual({ field: "layout", original: { leaf: "stack", config: "stack.landing" }, value: chosen.layout });
     expect(item.overrides).toContainEqual({ field: "deploymentSurface", original: null, value: "fixture.web-preview" });
     const store = new PublisherPlanStore(registries), proposal = store.propose(withItem(item));
     expect(store.versions).toEqual([]);
@@ -113,7 +113,7 @@ describe("configuration provenance at Align", () => {
     const before = JSON.stringify(aligned);
     const binding = STANDARD_PACK_INSTANCES[0]!;
     const settings = productionSettingsFromPlanItem(alignedItem, { format: binding.format, frame: binding.frame, layout: binding.layout });
-    applyProductionSettings(binding, { ...settings, layout: { leaf: "layouts.stack", config: "stack.focus" } });
+    applyProductionSettings(binding, { ...settings, layout: { leaf: "stack", config: "stack.focus" } });
     expect(JSON.stringify(aligned)).toBe(before);
     const nextDraft = { ...withItem(withPublisherConfiguration(alignedItem, web())), version: 2 };
     await store.apply(store.propose(nextDraft), () => true);

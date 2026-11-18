@@ -26,7 +26,7 @@ describe("generation format registry", () => {
     expect(getFormatLeaf("web.page.responsive")).toMatchObject({
       status: "built", outputType: "html", arrangement: "page",
       size: { kind: "responsive", breakpoints: ["tokens.breakpoint.mobile", "tokens.breakpoint.mobile-lg", "tokens.breakpoint.tablet", "tokens.breakpoint.tablet-lg", "tokens.breakpoint.desktop", "tokens.breakpoint.wide"] },
-      allowedCompositions: ["layouts.stack", "layouts.split", "layouts.sidebar-content", "layouts.bento"], heldCompositions: ["layouts.staggered-grid"],
+      allowedCompositions: ["stack", "split", "sidebar-content", "bento"], heldCompositions: ["staggered-grid"],
       frames: ["frames.site-shell", "frames.app-shell"], usedByPacks: [],
     });
   });
@@ -60,9 +60,9 @@ describe("generation format registry", () => {
     const mutations = [
       (rows: Mutable<FormatLeaf>[]) => { rows.push(rows[0]!); },
       (rows: Mutable<FormatLeaf>[]) => { rows[0]!.id = "other" as never; },
-      (rows: Mutable<FormatLeaf>[]) => { rows[0]!.allowedCompositions.push("layouts.staggered-grid"); },
-      (rows: Mutable<FormatLeaf>[]) => { rows[2]!.allowedCompositions = ["layouts.stack"]; },
-      (rows: Mutable<FormatLeaf>[]) => { rows[0]!.heldCompositions = ["layouts.stack"]; },
+      (rows: Mutable<FormatLeaf>[]) => { rows[0]!.allowedCompositions.push("staggered-grid"); },
+      (rows: Mutable<FormatLeaf>[]) => { rows[2]!.allowedCompositions = ["stack"]; },
+      (rows: Mutable<FormatLeaf>[]) => { rows[0]!.heldCompositions = ["stack"]; },
       (rows: Mutable<FormatLeaf>[]) => { rows[0]!.frames = ["frames.overlay"]; },
     ];
     for (const mutate of mutations) { const rows = leaves(); mutate(rows); expect(checkFormatRegistry(rows).length).toBeGreaterThan(0); }

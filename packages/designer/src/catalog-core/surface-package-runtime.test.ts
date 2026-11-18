@@ -39,7 +39,7 @@ function assembly(frameLeaf: string, sectionLeaf: string, edit: (fill: RuntimeFi
     identity: { kind: "artifact", name: "package-pointer assembly", sha256: runtimeHash(fixture.packages) }, engine, contracts,
     ports: { manifest: { version: 1, consumer: engine.library.source.id, libraryHash: libraryHash(engine.library) as `sha256:${string}`, selectionHash: profile.selectionHash as `sha256:${string}`, fills, assetClosure: { complete: true, ids: [] } }, renderers: Object.fromEntries(fills.map(fill => [fill.renderer.id, () => fill.leaf])), resolveContent: (reference: RuntimeContentRef) => ({ reference, value: reference.ref, hash: runtimeHash(reference.ref) }) },
     binding: { id: "package-pointer", frame: select(frame), frameSlots: {}, sections: { body: [select(section)] } },
-    layout: { descriptor: { library: engine.library.source.id, fill: "package-pointer/layout", leaf: "layouts.stack", config: "single", members: {}, slots: [{ id: "body", min: 1, max: 1, accepts: [section.leaf as `sections.${string}`] }], breakpoints: [], states: ["default"], renderer: frame.renderer }, render: ({ slots }) => slots.body!.join(""), expectedOrder: (_cell, paths) => paths.body! },
+    layout: { descriptor: { library: engine.library.source.id, fill: "package-pointer/layout", leaf: "stack", config: "single", members: {}, slots: [{ id: "body", min: 1, max: 1, accepts: [section.leaf as `sections.${string}`] }], breakpoints: [], states: ["default"], renderer: frame.renderer }, render: ({ slots }) => slots.body!.join(""), expectedOrder: (_cell, paths) => paths.body! },
     themes: ["light"], states: ["default"], css: [{ id: "explicit", contents: "/* explicit */" }], assets: [],
   } as unknown as RuntimeAssemblyInput<string>;
 }

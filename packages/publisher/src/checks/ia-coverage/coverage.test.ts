@@ -11,7 +11,7 @@ import { checkPublisherIACoverage } from "./check.js";
 import { loadPublisherIAInput, publisherPackageRoot } from "./load.js";
 import type { CoverageInput } from "./types.js";
 
-const at = "2026-01-01T00:00:00Z", slotId = "sl_622lk7eoar" as const;
+const at = "2026-01-01T00:00:00Z", slotId = "sl_fixturesac" as const;
 function fixture(): CoverageInput {
   const content: CandidateContent = { name: "Designer", brief: { audience: "Operators", goal: "Inspect", keyMessage: "Review items", callToAction: "Inspect", tone: "Clear", constraints: [], sourceAnswers: [], version: 1 },
     composition: { frame: { frameId: "frames.app-shell", configId: "default" }, libraryVersion: "v1", sections: [
@@ -157,7 +157,7 @@ describe("Publisher IA coverage", () => {
 describe("guard regressions", () => {
   it("requires an active selected candidate for complete admin reachability", () => {
     const input = fixture(), source = input.registry!;
-    const ids = [slotId, "sl_lsqwmhpf6l", "sl_hfkj3prso2"] as const;
+    const ids = [slotId, "sl_fixturesai", "sl_fixturesag"] as const;
     const routes = ["/agents/designer", "/agents/writer", "/agents/publisher"];
     input.declaredSlots = [...ids];
     input.registry = { ...source, slots: ids.map((id, index) => ({ ...source.slots[0]!, id, route: routes[index] })),
@@ -174,12 +174,12 @@ describe("guard regressions", () => {
   it("does not inspect bodies of excluded or route-less pages", () => {
     const input = fixture(); input.evidence = [proof(input)];
     let inspected = 0;
-    const outside = { ...input.registry!.candidates[0]!, id: "outside", slotId: "sl_lsqwmhpf6l" as const,
+    const outside = { ...input.registry!.candidates[0]!, id: "outside", slotId: "sl_fixturesai" as const,
       get composition() { inspected++; throw new Error("Outside scope body must not be read"); } };
-    input.registry = { ...input.registry!, slots: [...input.registry!.slots, { ...input.registry!.slots[0]!, id: "sl_lsqwmhpf6l", route: undefined }], candidates: [...input.registry!.candidates, outside] };
+    input.registry = { ...input.registry!, slots: [...input.registry!.slots, { ...input.registry!.slots[0]!, id: "sl_fixturesai", route: undefined }], candidates: [...input.registry!.candidates, outside] };
     const report = checkPublisherIACoverage(input);
     expect(inspected).toBe(0); expect(slot(report).state).toBe("checked");
-    expect(report.summary.excludedSlots).toEqual(["sl_lsqwmhpf6l"]);
+    expect(report.summary.excludedSlots).toEqual(["sl_fixturesai"]);
   });
   it("rejects ambiguous Writer records but permits distinct-locale translations", () => {
     const root = mkdtempSync(join(tmpdir(), "writer-ia-identity-")); temps.push(root);
@@ -236,8 +236,8 @@ describe("guard regressions", () => {
     input.registry = { ...input.registry!, candidates: [root, { ...source, history: [{ ...source.history[0]!, digest: "0".repeat(64) }] }] };
     expect(checkPublisherIACoverage(input).findings).toContainEqual(expect.objectContaining({ code: "IA-COMPOSITION-REFERENCE", subject: "publisher:candidate/designer", message: expect.stringContaining("pinned-revision-digest") }));
     let inspected = 0;
-    input.registry = { ...input.registry!, slots: [...input.registry!.slots, { ...input.registry!.slots[0]!, id: "sl_lsqwmhpf6l", route: undefined }],
-      candidates: [root, { ...source, slotId: "sl_lsqwmhpf6l", get history() { inspected++; throw new Error("Excluded history must not be inspected"); } }] };
+    input.registry = { ...input.registry!, slots: [...input.registry!.slots, { ...input.registry!.slots[0]!, id: "sl_fixturesai", route: undefined }],
+      candidates: [root, { ...source, slotId: "sl_fixturesai", get history() { inspected++; throw new Error("Excluded history must not be inspected"); } }] };
     const report = checkPublisherIACoverage(input);
     expect(inspected).toBe(0);
     expect(report.findings).toContainEqual(expect.objectContaining({ code: "IA-OUT-OF-SCOPE", priority: "P1", subject: "publisher:candidate/designer" }));

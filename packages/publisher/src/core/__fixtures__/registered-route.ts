@@ -7,7 +7,7 @@ export const syntheticRoute = (id = "example.tools"): LegacyRouteRegistration =>
   entry: { file: `app/tools/${id.split(".").at(-1)}/page.tsx`, export: "default" },
   composition: {
     source: { file: `generated/${id}.tsx`, export: "default" }, runtime: { file: "runtime.ts", export: "useRuntime" },
-    binding: { instanceId: id, label: "Tools", path: `/tools/${id.split(".").at(-1)}`, surface: "app", packIds: ["pack.app"], format: "web.page.responsive", context: { consumer: "example", medium: "web" }, frame: { leaf: "frames.app-shell" }, layout: { leaf: "layouts.stack", config: "stack.focus" }, body: { kind: "flow", source: { kind: "static" }, sections: [{slot:"body",index:0}] }, fills: { body: [{ section: "sections.content", content: { body: { kind: "region", ref: "tools.data" } } }] } },
+    binding: { instanceId: id, label: "Tools", path: `/tools/${id.split(".").at(-1)}`, surface: "app", packIds: ["pack.app"], format: "web.page.responsive", context: { consumer: "example", medium: "web" }, frame: { leaf: "frames.app-shell" }, layout: { leaf: "stack", config: "stack.focus" }, body: { kind: "flow", source: { kind: "static" }, sections: [{slot:"body",index:0}] }, fills: { body: [{ section: "sections.content", content: { body: { kind: "region", ref: "tools.data" } } }] } },
     header: { id: `header.${id}`, data: { title: "Tools" } },
   },
 });

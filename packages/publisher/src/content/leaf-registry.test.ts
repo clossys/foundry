@@ -3,24 +3,24 @@ import { leafRegistryFixture, libraryFixture, pinnedReviewFixture, reviewFixture
 import { validateContentRegistry } from "./validate.js";
 
 const expectedLeaves = [
-  ["sl_boyi4ashca", "websites/site/home", "content", "/"],
-  ["sl_2xv4y3uo7k", "websites/site/privacy", "content", "/privacy"],
-  ["sl_ke6mhs5hmu", "websites/site/terms", "content", "/terms"],
-  ["sl_prd6v4nkk3", "websites/site/not-found", "status", undefined],
-  ["sl_wl546svpom", "websites/auth/sign-in", "content", "/sign-in"],
-  ["sl_x5c5vjqxez", "websites/auth/sign-in-unavailable", "status", "/sign-in-unavailable"],
-  ["sl_wlpwozbd7y", "websites/auth/not-authorized", "status", "/not-authorized"],
-  ["sl_4hiswon2mp", "websites/auth/service-unavailable", "status", "/service-unavailable"],
-  ["sl_asgvb7lcju", "websites/auth/sign-out-confirm", "content", "/sign-out-confirm"],
-  ["sl_pwsyw4hn2e", "websites/auth/not-found", "status", undefined],
-  ["sl_w7u7k6agdr", "websites/auth/error", "status", undefined],
-  ["sl_wnelzobehr", "websites/auth/global-error", "status", undefined],
-  ["sl_rkjigy5k5p", "websites/admin/workspace-home", "content", "/"],
-  ["sl_7pz5qp7kyz", "websites/admin/account", "content", "/account"],
-  ["sl_622lk7eoar", "websites/admin/agents-designer", "content", "/agents/designer"],
-  ["sl_hfkj3prso2", "websites/admin/agents-publisher", "content", "/agents/publisher"],
-  ["sl_lsqwmhpf6l", "websites/admin/agents-writer", "content", "/agents/writer"],
-  ["sl_sjhh4tpouv", "websites/admin/agents-foundry", "content", "/agents/foundry"],
+  ["sl_fixturesaf", "websites/site/home", "content", "/"],
+  ["sl_fixturesaa", "websites/site/privacy", "content", "/privacy"],
+  ["sl_fixturesah", "websites/site/terms", "content", "/terms"],
+  ["sl_fixturesaj", "websites/site/not-found", "status", undefined],
+  ["sl_fixturesao", "websites/auth/sign-in", "content", "/sign-in"],
+  ["sl_fixturesar", "websites/auth/sign-in-unavailable", "status", "/sign-in-unavailable"],
+  ["sl_fixturesap", "websites/auth/not-authorized", "status", "/not-authorized"],
+  ["sl_fixturesab", "websites/auth/service-unavailable", "status", "/service-unavailable"],
+  ["sl_fixturesae", "websites/auth/sign-out-confirm", "content", "/sign-out-confirm"],
+  ["sl_fixturesak", "websites/auth/not-found", "status", undefined],
+  ["sl_fixturesan", "websites/auth/error", "status", undefined],
+  ["sl_fixturesaq", "websites/auth/global-error", "status", undefined],
+  ["sl_fixturesal", "websites/admin/workspace-home", "content", "/"],
+  ["sl_fixturesad", "websites/admin/account", "content", "/account"],
+  ["sl_fixturesac", "websites/admin/agents-designer", "content", "/agents/designer"],
+  ["sl_fixturesag", "websites/admin/agents-publisher", "content", "/agents/publisher"],
+  ["sl_fixturesai", "websites/admin/agents-writer", "content", "/agents/writer"],
+  ["sl_fixturesam", "websites/admin/agents-foundry", "content", "/agents/foundry"],
 ] as const;
 
 describe("leaf registry inventory", () => {
@@ -79,7 +79,7 @@ describe("leaf registry inventory", () => {
         position: { order: 12, name: "overview" }, name: "Overview", route: "/overview" }, ...registry.slots.slice(1)],
     };
     expect(validateContentRegistry(moved)).toEqual([]);
-    expect(moved.slots[0]?.id).toBe("sl_boyi4ashca");
+    expect(moved.slots[0]?.id).toBe("sl_fixturesaf");
     expect(moved.slots[0]?.aliases).toEqual(["websites/site/home"]);
     expect(leafRegistryFixture().slots[0]).toEqual(home);
   });
@@ -88,7 +88,7 @@ describe("leaf registry inventory", () => {
     const registry = reviewFixture();
     expect(validateContentRegistry(registry)).toEqual([]);
     expect(registry.slots).toHaveLength(1);
-    expect(registry.slots[0]?.id).toBe("sl_boyi4ashca");
+    expect(registry.slots[0]?.id).toBe("sl_fixturesaf");
     expect(registry.slots[0]?.aliases).toEqual(["websites/site/home"]);
     expect(registry.slots[0]?.locales).toEqual(["en"]);
     expect(registry.candidates).toHaveLength(1);

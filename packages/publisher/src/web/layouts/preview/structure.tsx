@@ -19,10 +19,10 @@ export function layoutState(id: LayoutId, props: LayoutProps) {
   if (!leaf || leaf.status === "held" || leaf.status === "deprecated") throw new Error("Layout is not active");
   const contract = getEffectiveLayoutContract(id, props.config, props.members);
   const members = Object.fromEntries(Object.entries(contract.members).map(([key, values]) => [key, values[0]!]));
-  if (id === "layouts.stack") members.lead = "optional";
+  if (id === "stack") members.lead = "optional";
   Object.assign(members, contract.memberValues);
-  if (id === "layouts.stack" && members.lead === "required" && !props.slots.lead?.length) throw new Error("Layout requires a lead");
-  if (id === "layouts.stack" && members.align === "center" && props.slots.body?.length !== 1) throw new Error("Centered stack requires one body");
+  if (id === "stack" && members.lead === "required" && !props.slots.lead?.length) throw new Error("Layout requires a lead");
+  if (id === "stack" && members.align === "center" && props.slots.body?.length !== 1) throw new Error("Centered stack requires one body");
   for (const [key, value] of Object.entries(members)) {
     const options = contract.members[key] ?? [];
     if (!Array.isArray(options)) throw new Error("Invalid layout members");

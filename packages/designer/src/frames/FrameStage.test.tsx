@@ -167,7 +167,7 @@ function flowFixture() {
     {(stageWidth < threshold ? ['main', 'aside'] : ['aside', 'main']).map(slot => <div key={slot} data-synthetic-slot={slot}>{slots[slot]}</div>)}
   </div>);
   const layout: RuntimeLayoutPort<ReactNode> = {
-    descriptor: { library: profile.consumer, fill: 'SYNTHETIC selected layout', leaf: 'layouts.sidebar-content', config: 'SYNTHETIC-order', members: {}, slots: [{ id: 'main', min: 1, max: 1, accepts: ['sections.comparison'] }, { id: 'aside', min: 1, max: 1, accepts: ['sections.comparison'] }], breakpoints: ['md'], states: ['default'], renderer: { id: 'SYNTHETIC-layout', source, sourceHash: runtimeHash(source) } },
+    descriptor: { library: profile.consumer, fill: 'SYNTHETIC selected layout', leaf: 'sidebar-content', config: 'SYNTHETIC-order', members: {}, slots: [{ id: 'main', min: 1, max: 1, accepts: ['sections.comparison'] }, { id: 'aside', min: 1, max: 1, accepts: ['sections.comparison'] }], breakpoints: ['md'], states: ['default'], renderer: { id: 'SYNTHETIC-layout', source, sourceHash: runtimeHash(source) } },
     render: renderLayout,
     expectedOrder: (_cell, paths, stageWidth) => (stageWidth < threshold ? ['main', 'aside'] : ['aside', 'main']).flatMap(slot => paths[slot] ?? []),
   };

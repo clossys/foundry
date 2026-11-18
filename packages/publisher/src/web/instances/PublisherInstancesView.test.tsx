@@ -114,10 +114,10 @@ describe("Publisher Instances", () => {
   });
 
   it("shows actual unknown configs and missing required fills without a preview crash", () => {
-    const bad = { ...STANDARD_INSTANCE_FIXTURES[0]!, layout: { leaf: "layouts.stack" as const, config: "missing" }, fills: {} };
+    const bad = { ...STANDARD_INSTANCE_FIXTURES[0]!, layout: { leaf: "stack" as const, config: "missing" }, fills: {} };
     const { rerender } = render(<PublisherInstancesView {...base} instances={[bad]} />);
     expect(screen.getByRole("region", { name: "Structure checks" })).toHaveTextContent("LK2 · layout: Unknown config");
-    rerender(<PublisherInstancesView {...base} instances={[{ ...bad, layout: { leaf: "layouts.stack", config: "stack.landing" } }]} />);
+    rerender(<PublisherInstancesView {...base} instances={[{ ...bad, layout: { leaf: "stack", config: "stack.landing" } }]} />);
     expect(screen.getByRole("region", { name: "Structure checks" })).toHaveTextContent("LK5 · fills.body:");
   });
 

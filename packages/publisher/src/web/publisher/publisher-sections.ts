@@ -26,7 +26,6 @@ interface Base { readonly id: string; readonly label: string }
 export type PublisherSectionData =
   | Base & { readonly section: 'sections.notices'; readonly notices: readonly { readonly id: string; readonly message: string; readonly tone: 'danger' | 'warning' }[] }
   | Base & { readonly section: 'sections.data-table'; readonly columns: readonly { readonly id: string; readonly label: string }[]; readonly rows: readonly PublisherTableRow[]; readonly grouping?: string; readonly selectedId?: string; readonly toolbar?: readonly PublisherCell[] }
-  | Base & { readonly section: 'sections.record-detail'; readonly fields: readonly { readonly id: string; readonly label: string; readonly value: string }[]; readonly actions: readonly PublisherCell[] }
   | Base & { readonly section: 'sections.form'; readonly itemId: string; readonly fields: { readonly kind: 'production'; readonly initial: ProductionSettings; readonly configured: boolean; readonly answerIds: readonly string[] } | { readonly kind: 'planning'; readonly configuration?: PublisherConfiguration; readonly formats: readonly FormatLeaf[] }; readonly requests: readonly PublisherInputRequest[] }
   | Base & { readonly section: 'sections.empty-state' | 'sections.error-state'; readonly message: string };
 export interface PublisherSectionsInput {
@@ -105,7 +104,7 @@ export function projectPublisherSections(input: PublisherSectionsInput): readonl
     const itemHref = selectedProcess?.parentId
       ? input.itemHrefs?.[selectedProcess.id] ?? sourceRoute?.path
       : input.itemHrefs?.[selected.item.id] ?? (registeredBinding ? registration?.registration.path : undefined);
-    out.push({ id: 'P3', label: `${selectedProcess?.label ?? label(selected)} · item details`, section: 'sections.record-detail', fields: Object.entries(fields).map(([id,value]) => ({ id, label: id, value: text(value).text })), actions: [action('Close item details', { kind: 'close-item' }), ...(itemHref ? [{ kind: 'link' as const, label: 'Open item', href: itemHref }] : [])] });
+    out.push(table('P3', `${selectedProcess?.label ?? label(selected)} · item details`, ['field', 'value'], Object.entries(fields).map(([id,value]) => ({ id, cells: { field: text(id), value: text(value) } })), { toolbar: [action('Close item details', { kind: 'close-item' }), ...(itemHref ? [{ kind: 'link' as const, label: 'Open item', href: itemHref }] : [])] }));
     const sourceLayout = sourceRoute && input.registries.layouts.find(layout => layout.contract.configs.some(config => config.id === sourceRoute.layoutConfig));
     const fallback: ProductionSettings | undefined = registeredBinding ? registeredBinding.layout ? productionSettingsFromBinding(registeredBinding) : undefined : registration ? undefined : pipeline ? productionSettingsFromBinding(pipeline.sourceBinding) : sourceRoute && sourceLayout ? { format: 'web.page.responsive', frame: { leaf: sourceRoute.frame as ProductionSettings['frame']['leaf'] }, layout: { leaf: sourceLayout.id, config: sourceRoute.layoutConfig } } : undefined;
     const requests = [...selected.item.openNeeds, ...configurationInputNeeds(selected.item), ...(app?.inputRequests ?? web?.inputRequests ?? []), ...(registration ? registration.pending.map(question => ({ slot: 'registered-route', question })) : [])];
@@ -130,9 +129,9 @@ export function projectPublisherSections(input: PublisherSectionsInput): readonl
       ];
       out.push(table('P7', 'Item assembly', ['node','kind','owner','depends-on','stage','findings','detail'], [...nodes, ...bindingBreakdown(assemblyBinding, input.registries, pipeline)], { toolbar: [action('Inspect output format', { kind: 'inspect-format' })] }));
     }
-    if (input.formatOpen && format) out.push({ id: 'P8', label: format.label, section: 'sections.record-detail', fields: [
-      { id: 'id', label: 'Format', value: format.id }, { id: 'status', label: 'Status', value: format.status }, { id: 'size', label: 'Size', value: JSON.stringify(format.size) }, { id: 'deliveries', label: 'Delivery choices', value: format.deliveries.map(delivery => `${delivery.id} · ${delivery.status}${delivery.fidelityChoices ? ` · ${delivery.fidelityChoices.join(', ')}` : ''}`).join('; ') }, { id: 'compositions', label: 'Compositions', value: format.allowedCompositions.join(', ') },
-    ], actions: [action('Close output format', { kind: 'close-format' }), ...(input.formatOwnerHref ? [{ kind: 'link' as const, label: 'Open format owner', href: input.formatOwnerHref }] : [])] });
+    if (input.formatOpen && format) out.push(table('P8', format.label, ['field', 'value'], [
+      ['id', 'Format', format.id], ['status', 'Status', format.status], ['size', 'Size', JSON.stringify(format.size)], ['deliveries', 'Delivery choices', format.deliveries.map(delivery => `${delivery.id} · ${delivery.status}${delivery.fidelityChoices ? ` · ${delivery.fidelityChoices.join(', ')}` : ''}`).join('; ')], ['compositions', 'Compositions', format.allowedCompositions.join(', ')],
+    ].map(([id, field, value]) => ({ id: id!, cells: { field: text(field), value: text(value) } })), { toolbar: [action('Close output format', { kind: 'close-format' }), ...(input.formatOwnerHref ? [{ kind: 'link' as const, label: 'Open format owner', href: input.formatOwnerHref }] : [])] }));
   }
   if (input.historyOpen) out.push(history());
   return out;

@@ -24,16 +24,16 @@ it("selects an offered configuration without implying consumer adoption", async 
   expect(screen.getByRole("region", { name: "Closed members" })).toHaveTextContent("start | center · center");
   expect(screen.getByText("not adopted")).toBeVisible();
   expect(screen.getByRole("link", { name: "Adopt in Designer" })).toHaveAttribute("href", "/designer");
-  expect(resolveFill).toHaveBeenLastCalledWith("layouts.stack", "stack.focus");
+  expect(resolveFill).toHaveBeenLastCalledWith("stack", "stack.focus");
 });
 
 it("restricts config choices to the current format and retains unique observed usage", async () => {
   const user = userEvent.setup();
   const library: CompositionsConsumerLibrary = { ...empty,
-    instances: ["one", "one", "two"].map(instanceId => ({ instanceId, layout: { leaf: "layouts.split", config: "split.default" } })),
+    instances: ["one", "one", "two"].map(instanceId => ({ instanceId, layout: { leaf: "split", config: "split.default" } })),
     resolveFill: (leaf, config) => ({ library: "example", leaf, config, headings: [], states: [] }),
   };
-  const { rerender } = render(<PublisherCompositionsView {...props} library={library} allowedLayoutIds={["layouts.split"]} />);
+  const { rerender } = render(<PublisherCompositionsView {...props} library={library} allowedLayoutIds={["split"]} />);
   expect(screen.getByText("adopted into example")).toBeVisible();
   expect(screen.getByText(/used by 2 instances/)).toBeVisible();
   await user.click(screen.getByRole("button", { name: /Config/ }));
@@ -47,9 +47,9 @@ it("restricts config choices to the current format and retains unique observed u
 
 it.each(["wrong-library", "wrong-leaf", "wrong-config", "missing"])("rejects %s evidence as consumer adoption", mode => {
   render(<PublisherCompositionsView {...props} library={{ ...empty,
-    instances: [{ instanceId: "home", layout: { leaf: "layouts.stack", config: "stack.landing" } }],
+    instances: [{ instanceId: "home", layout: { leaf: "stack", config: "stack.landing" } }],
     resolveFill: (leaf, config) => mode === "missing" ? undefined : ({
-      leaf: mode === "wrong-leaf" ? "layouts.split" : leaf,
+      leaf: mode === "wrong-leaf" ? "split" : leaf,
       config: mode === "wrong-config" ? "stack.document" : config,
       library: mode === "wrong-library" ? "foundry" : "example", headings: [], states: [],
     }),

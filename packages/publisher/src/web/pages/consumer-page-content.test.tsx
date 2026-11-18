@@ -12,13 +12,14 @@ import { checkConsumerPageConfig } from "./consumer-page-contract.js";
 function fixture(options: {consumer?:string;libraryVersion?:string;frameContent?:Record<string,any>;pageModule?:any;member?:string} = {}) {
   const copy = adminCopyFixture(), config = structuredClone(examples[1]!);
   Object.assign(config, { id: "archive", entryId: "catalog.archive", namespace: "consumer.archive" }); config.item.entryId = "catalog.archive.item";
-  config.item.sections = config.item.sections.filter(section => section.fill.section === "sections.record-detail");
+  // The item keeps its native data-table section (the record-detail section was dropped with no successor).
+  config.item.sections = config.item.sections.filter(section => section.fill.section === "sections.data-table");
   Object.assign(config,{pageModule:options.pageModule ?? null});
   config.columns = [{key:"edition",kind:"text",label:{id:"strings.admin.column.text"}}];
   for (const section of config.item.sections) for (const reference of Object.values(section.fill.content)) reference.ref = reference.ref.replace("admin.writer/","consumer.archive/");
   config.levels.l0.header.members = { align: options.member ?? "center", density: "compact" };
   config.levels.l0.header.config = "level-3"; config.levels.l1.header.config = "level-3";
-  const snapshot = { version: 1 as const, publication: { id: "archive-publication", mainSlot: "body", frame: { leaf: "frames.app-shell" as const, ...(options.frameContent ? {content:options.frameContent} : {}) }, layout: { leaf: "layouts.stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: options.consumer ?? "example", medium: "web" as const }, packIds: [] }, channel: "site" as const,
+  const snapshot = { version: 1 as const, publication: { id: "archive-publication", mainSlot: "body", frame: { leaf: "frames.app-shell" as const, ...(options.frameContent ? {content:options.frameContent} : {}) }, layout: { leaf: "stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: options.consumer ?? "example", medium: "web" as const }, packIds: [] }, channel: "site" as const,
     configs: [config], manifests: { archive: { l0: [{ id: "collection", label: config.title, count: 2, estimate: 100, l1: [{ id: "editions", label: config.title, count: 2, estimate: 50, l2: [{ id: "recent", label: config.title, count: 2, estimate: 40 }] }] }] } }, sources: { archive: fixtureSources("archive") },
     map: { version: 1 as const, publicationId: "archive-publication", format: "web.page.responsive" as const, entries: [{ id: config.entryId, order: 0, title: copy(config.title), path: "/archive", kind: "page" as const, source: { planItemId: "site.archive" }, pageConfig: config.id }, { id: config.item.entryId, parentId: config.entryId, order: 0, title: copy(config.title), path: "/archive/[l0]/[id]", kind: "page" as const, source: { planItemId: "site.archive.item" }, pageConfig: config.id }] }, itemTitles: { archive: config.title } };
   const base = contentRouteFixture(), selections = snapshot.map.entries.map((entry,index) => ({ routeId: entry.id, slotId: index ? "sl_bbbbbbbbbb" : "sl_aaaaaaaaaa", candidateId: `archive-${index}`, revision: "r1" as const, digest: "" }));
@@ -120,7 +121,7 @@ function nativeFixture(options: {member?:string} = {}) {
   const profile = resolve(engine);
   const frameContent = {"skip-link":{kind:"copy",ref:"archive.frame/skip"},sidebar:{kind:"region",ref:"archive.frame/sidebar"},command:{kind:"region",ref:"archive.frame/command"}};
   const f = fixture({...options,consumer:profile.consumer,libraryVersion:libraryHash(engine.library),frameContent}), bound = prepareConsumerPageRegistry(f);
-  const leaves = ["frames.app-shell","sections.section-header","sections.band","sections.data-table","sections.record-detail","sections.table-of-contents"];
+  const leaves = ["frames.app-shell","sections.section-header","sections.band","sections.data-table","sections.table-of-contents"];
   const planned = planSurfaceRuntime({engine,packages:engine.surfaceOptions.packages,leaves,renderers:Object.fromEntries(leaves.map(leaf=>[leaf,{module:"@clossys/designer/frames",export:"surfaceRuntimeRenderers"}]))});
   expect(planned.gaps).toEqual([]);
   const manifest = {...planned.manifest,fills:planned.manifest.fills.map(fill=>fill.leaf==="sections.section-header"?{...fill,config:"level-3"}:fill)};
@@ -128,7 +129,7 @@ function nativeFixture(options: {member?:string} = {}) {
   // are local fixture evidence, not exhaustive Designer conformance or adoption.
   const contracts = {...loadBuildCatalog(),slots:adopted.catalog.surfaces!.slots.map(slot=>slot.contract.kind==="section"?{...slot,contract:{...slot.contract,substrates:["flow"],substrateTests:[{substrate:"flow",file:"SYNTHETIC-consumer-page-content.test.tsx",name:"local native input proof"}]}}:slot)};
   const registries = {formats:FORMAT_LEAVES,layouts:LAYOUT_LEAVES,tokens:[],frames:[{id:"frames.app-shell",status:"draft",contract:{surface:"app",configs:[],stage:{accepts:["flow"],scroll:"region"}}}],sections:contracts.slots.filter(slot=>slot.contract.kind==="section").map(slot=>({id:slot.id,status:"draft",contract:{surface:"both",configs:slot.id==="sections.section-header"?["level-2","level-3"]:[],members:slot.contract.members.names,slots:(slot.contract as any).slots,substrates:["flow"],substrateTests:[{substrate:"flow",file:"SYNTHETIC-consumer-page-content.test.tsx",name:"local native input proof"}]}}))};
-  const pin = registeredLayoutSourcePin("layouts.stack")!, source = {entry:pin.entry,files:Object.fromEntries(Object.keys(pin.files).map(file=>[file,readFileSync(resolvePath("src",file),"utf8")])),dependencies:{}};
+  const pin = registeredLayoutSourcePin("stack")!, source = {entry:pin.entry,files:Object.fromEntries(Object.keys(pin.files).map(file=>[file,readFileSync(resolvePath("src",file),"utf8")])),dependencies:{}};
   const layoutRenderer = {id:"Stack",source,sourceHash:runtimeHash(source)}, values = new Map<string,RuntimeContent>();
   const put = (reference:RuntimeContent["reference"],value:RuntimeJson) => { const current={reference,value,hash:runtimeHash(value)}; values.set(reference.ref,current);return current; };
   const title = f.copy(f.config.title);
@@ -136,14 +137,16 @@ function nativeFixture(options: {member?:string} = {}) {
   put(frameContent.sidebar as never,{brand:{markSrc:"/mark.svg",name:title},tree:[],account:{signedOutLabel:title,sections:[]}});
   put(frameContent.command as never,{triggerLabel:title,heading:title,searchLabel:title,closeLabel:title,emptyMessage:title,groups:[]});
   const sectionRenderers = Object.fromEntries(manifest.fills.map(fill=>[fill.renderer.id,surfaceRuntimeRenderers[fill.leaf]!.render]));
-  const runtime:RegisteredRouteRuntime={assembly:{identity:{kind:"git",head:"a".repeat(40),tree:"b".repeat(40)},engine,contracts:contracts as never,ports:{manifest,renderers:sectionRenderers,resolveContent:reference=>values.get(reference.ref),frameOrder:({layout,slots})=>[...Object.values(slots).flat(),...layout],frameHost:{navigate:vi.fn()}},themes:["light"],states:["default"],css:[{id:"publisher-flow-stage.css",contents:flowStageStyleSheet(profile,"layouts.stack","stack.workspace")}],assets:[],stageMeasurements:{renderer:layoutRenderer,environment:{kind:"SYNTHETIC width basis"},cells:runtimeAssemblyCells(["light"],["default"]).map(cell=>({cell,width:cell.width-80}))}},instanceLibrary:{id:profile.consumer,role:"consumer",resolveFill:(leaf,config)=>leaf==="layouts.stack"&&config==="stack.workspace"?{library:profile.consumer,leaf,config,headings:[],states:["default"],renderer:source}:undefined,resolveContent:reference=>reference},registries:registries as never,layoutRenderer,cell:{theme:"light",state:"default",width:320}};
+  const runtime:RegisteredRouteRuntime={assembly:{identity:{kind:"git",head:"a".repeat(40),tree:"b".repeat(40)},engine,contracts:contracts as never,ports:{manifest,renderers:sectionRenderers,resolveContent:reference=>values.get(reference.ref),frameOrder:({layout,slots})=>[...Object.values(slots).flat(),...layout],frameHost:{navigate:vi.fn()}},themes:["light"],states:["default"],css:[{id:"publisher-flow-stage.css",contents:flowStageStyleSheet(profile,"stack","stack.workspace")}],assets:[],stageMeasurements:{renderer:layoutRenderer,environment:{kind:"SYNTHETIC width basis"},cells:runtimeAssemblyCells(["light"],["default"]).map(cell=>({cell,width:cell.width-80}))}},instanceLibrary:{id:profile.consumer,role:"consumer",resolveFill:(leaf,config)=>leaf==="stack"&&config==="stack.workspace"?{library:profile.consumer,leaf,config,headings:[],states:["default"],renderer:source}:undefined,resolveContent:reference=>reference},registries:registries as never,layoutRenderer,cell:{theme:"light",state:"default",width:320}};
   const publication = createRegisteredPublicationSession(bound.registry.publication!,{bind:vi.fn(),setRegions:vi.fn(),setState:vi.fn(),setCommands:vi.fn(),setChunks:vi.fn()});
   const reference=(name:string,kind:RuntimeContent["reference"]["kind"]="records")=>({kind,ref:`consumer.archive/${name}`});
   const itemData = [
     adminPageContent(f.copy,reference("item/heading","copy"),{text:writerCopy(f.config.title),id:"collection"}),
     adminPageContent(f.copy,reference("item/stats"),[{id:"total",label:writerCopy({id:"strings.admin.stats.total",values:{count:1}})}]),
-    adminPageContent(f.copy,reference("item/fields"),[{label:writerCopy({id:"strings.admin.column.key"}),value:writerCopy(f.config.title)}]),
-    adminPageContent(f.copy,reference("item/status","copy"),writerCopy({id:"strings.admin.status.draft"})),
+    adminPageContent(f.copy,reference("item/locales/header","copy"),{heading:writerCopy(f.config.title),id:"collection--locales",level:4,count:1}),
+    adminPageContent(f.copy,reference("item/locales/columns"),[{key:"edition",label:writerCopy({id:"strings.admin.column.key"})}]),
+    adminPageContent(f.copy,reference("item/locales/rows"),[{id:"edition",edition:writerCopy(f.config.title)}]),
+    adminPageContent(f.copy,reference("item/locales/pagination","region"),{label:writerCopy({id:"strings.admin.pagination.label"}),showAll:writerCopy({id:"strings.admin.action.showAll",values:{count:1}}),previous:writerCopy({id:"strings.admin.pagination.previous"}),next:writerCopy({id:"strings.admin.pagination.next"})}),
   ];
   const listData = [
     {reference:reference("collection/editions/band"),value:[{id:"editions",references:{"consumer.archive/band.heading":reference("loaded/band.heading","copy"),"consumer.archive/band.stats":reference("loaded/band.stats"),"consumer.archive/cards":reference("loaded/cards")}}]},
@@ -181,7 +184,7 @@ it("binds exact list/item Publisher identities to authentic native frame and con
     }
     const html=renderToStaticMarkup(<>{result.renderRegions!(runtime.cell).chunks?.flatMap(chunk=>chunk.content??[])}</>);
     expect(html).toContain(f.copy(f.config.title));expect(html).toContain('data-ds-leaf="sections.section-header"');
-    if(item)expect(html).toContain('data-ds-leaf="sections.record-detail"');else expect(html).toContain("text-center");
+    if(item)expect(html).toContain('data-ds-leaf="sections.data-table"');else expect(html).toContain("text-center");
     const frame=f.planned.manifest.fills.find(fill=>fill.leaf==="frames.app-shell")!;
     expect(frame.renderer.source.files[frame.renderer.source.entry]).toContain('surfaceRuntimeRenderers["frames.app-shell"].render');
     expect(runtime.assembly.ports.renderers[frame.renderer.id]).toBe(surfaceRuntimeRenderers["frames.app-shell"]!.render);

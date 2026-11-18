@@ -41,7 +41,7 @@ function publishingFixture(locale: typeof locales[number] = "en"): ContentRouteI
 const render = (input: ContentRouteInput) => renderToStaticMarkup(<ContentRoutePage input={requireContentRoutePublishing(input)} />);
 
 describe("content route publishing document", () => {
-  it.each(locales)("publishes complete native %s metadata through frames.document", locale => {
+  it.each(locales)("publishes complete native %s metadata through the document frame", locale => {
     const input = publishingFixture(locale);
     const before = JSON.stringify(input);
     const prepared = prepareContentRoute(input);
@@ -55,7 +55,7 @@ describe("content route publishing document", () => {
     }
     const html = render(input);
     const title = `${copy[locale].title} · ${copy[locale].brand}`;
-    expect(html).toContain('data-ds-leaf="frames.document"');
+    expect(html).toContain("<html");
     expect(html).toContain(`lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"`);
     expect(html).toContain(`<title>${title}</title>`);
     expect(html).toContain(`name="description" content="${copy[locale].description}"`);

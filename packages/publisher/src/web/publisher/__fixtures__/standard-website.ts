@@ -21,7 +21,7 @@ const fill = (source: SectionFill, id: string): SectionFill => {
 /** Preserve the P-C fixture and derive a separately labeled pack fixture with actual typed slots. */
 export const STANDARD_PACK_INSTANCES: readonly InstanceBinding[] = STANDARD_INSTANCE_FIXTURES.map(source => {
   // M1 example replaces the old Auth fixture with an index; Auth is a later menu offer.
-  const binding: InstanceBinding = source.instanceId === "standard.sign-in" ? { ...source, instanceId: "standard.showcase", label: "Showcase", path: "/showcase", frame: { leaf: "frames.site-shell", config: "site" }, layout: { leaf: "layouts.stack", config: "stack.index" }, fills: { lead: [{ section: "sections.page-header", content: {} }], body: [{ section: "sections.resource-list", content: {} }] } } : source;
+  const binding: InstanceBinding = source.instanceId === "standard.sign-in" ? { ...source, instanceId: "standard.showcase", label: "Showcase", path: "/showcase", frame: { leaf: "frames.site-shell", config: "site" }, layout: { leaf: "stack", config: "stack.index" }, fills: { lead: [{ section: "sections.page-header", content: {} }], body: [{ section: "sections.resource-list", content: {} }] } } : source;
   const fills = Object.fromEntries(Object.entries(binding.fills).map(([slot, values]) => [slot, values.map((value, index) => fill(value, `${binding.instanceId}.${slot}.${index}`))]));
   if (["standard.sign-in", "standard.not-found", "standard.error"].includes(binding.instanceId)) fills.lead = [fill({ section: "sections.page-header", content: {} }, `${binding.instanceId}.lead.0`)];
   // States remain unknown until actual section state contracts and implementations are available.

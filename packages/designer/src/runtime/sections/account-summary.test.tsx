@@ -54,7 +54,7 @@ describe("private own-account summary composition", () => {
       { ...values, extra: "Unmapped" },
     ]) expect(() => accountSummaryRenderer.render(input(content))).toThrow(/sections.account-summary/);
     const foreign = input();
-    expect(() => accountSummaryRenderer.render({ ...foreign, selection: { ...foreign.selection, leaf: "sections.record-detail" } })).toThrow(/renderer received/);
+    expect(() => accountSummaryRenderer.render({ ...foreign, selection: { ...foreign.selection, leaf: "sections.data-table" } })).toThrow(/renderer received/);
     expect(() => accountSummaryRenderer.render({ ...foreign, selection: { ...foreign.selection, members: ["mode.edit"] } })).toThrow(/member/);
   });
 });

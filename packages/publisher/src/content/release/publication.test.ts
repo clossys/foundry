@@ -204,7 +204,7 @@ function consumerFixture(region = false) {
   f.snapshot.pageConfigs=[a,b];
   const first=f.snapshot.map.entries[0]; first.pageConfig=a.id; first.constructs.main[0]={...a.levels.l0.header,content:{heading:{kind:"copy",ref:"heading"}}};
   f.snapshot.map.entries.push({...structuredClone(first),id:"archive",pageConfig:b.id,order:1,path:"/archive",source:{planItemId:"archive"}});
-  if(region) { f.snapshot.publication={id:"publication",mainSlot:"body",frame:{leaf:"frames.app-shell"},layout:{leaf:"layouts.stack",config:"stack.workspace"},format:"web.page.responsive",surface:"app",context:{consumer:f.engine.library.source.id,medium:"web"},packIds:[]};
+  if(region) { f.snapshot.publication={id:"publication",mainSlot:"body",frame:{leaf:"frames.app-shell"},layout:{leaf:"stack",config:"stack.workspace"},format:"web.page.responsive",surface:"app",context:{consumer:f.engine.library.source.id,medium:"web"},packIds:[]};
   delete f.snapshot.bindings.completeRoutes;
   f.snapshot.bindings.registrations=f.snapshot.map.entries.map((entry: any)=>({routeId:entry.id,path:entry.path,title:entry.title,channel:"site",brand:{...f.snapshot.bindings.brand},planItemId:entry.id,entry:{file:`src/${entry.id}/page.tsx`,export:"default"},composition:{source:{file:`src/${entry.id}/data.ts`,export:"data"},runtime:{file:"src/runtime.ts",export:"runtime"},header:{id:"header."+entry.id,data:{title:entry.title}},binding:{instanceId:entry.id,label:entry.title,path:entry.path,publicationId:"publication",regions:{main:entry.constructs.main}}}}));
   f.snapshot.layoutPin=publicationLayoutPin(f.snapshot.publication);

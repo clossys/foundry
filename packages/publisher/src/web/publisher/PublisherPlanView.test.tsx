@@ -161,7 +161,7 @@ it("edits and resets recommendations before Align, records explicit overrides, a
   const item = store.current!.milestones[0]!.packs[0]!.items[0]!;
   expect(item.recommendation?.configuration).toMatchObject({ layout: { config: "stack.landing" } });
   expect(item.configuration).toMatchObject({ layout: { config: "stack.index" }, deploymentSurface: "fixture.web-preview" });
-  expect(item.overrides).toContainEqual({ field: "layout", original: { leaf: "layouts.stack", config: "stack.landing" }, value: { leaf: "layouts.stack", config: "stack.index" } });
+  expect(item.overrides).toContainEqual({ field: "layout", original: { leaf: "stack", config: "stack.landing" }, value: { leaf: "stack", config: "stack.index" } });
   expect(apply).toHaveBeenCalledOnce();
   const before = JSON.stringify(store.current);
   fireEvent.click(screen.getByRole("tab", { name: "Standard website" }));

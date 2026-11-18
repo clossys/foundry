@@ -1,5 +1,5 @@
 {
-  "leaf": "layouts.split",
+  "leaf": "split",
   "library": "foundry",
   "origin": "authored",
   "pin": {
@@ -7,23 +7,23 @@
     "files": [
       {
         "path": "src/layouts/ids.ts",
-        "sha256": "bde2165cbde45266ce6ff6fbfad2a54bb2a1847c1f4e08f13efb827d4330c44f"
+        "sha256": "84392fd5134f7848cc428e0ebc26506926c6947ebe065816c0831b4e048aaaf4"
       },
       {
         "path": "src/layouts/resolve.ts",
-        "sha256": "e6632965345c116aad03b89cd254977657d89caf762b3a972524c43c05ec607b"
+        "sha256": "2994786322ecd92e463708378ee875a2119e8aa37027a0ec1ce81e20ec4466c3"
       },
       {
         "path": "src/layouts/slots/layouts.json",
-        "sha256": "7bdf3fb39f3bd4106d7ffec88ea2f61206fe5f9209fed1b72bfa68222e16cd52"
+        "sha256": "14695afed693805ffd572f9af2f17f7b69ae54f3d216ed3cd3d1c3709d4797ac"
       },
       {
         "path": "src/web/layouts/Split.tsx",
-        "sha256": "e5a3cac4e009323e0c466c1db6c9abce76f1f939617b0919b902130883718152"
+        "sha256": "1b66db951e7396f1ecf0eda9d022b645ad658a923de99095b6fff92cfaac851d"
       },
       {
         "path": "src/web/layouts/preview/structure.tsx",
-        "sha256": "1a8372f23572539640783b4e052f0cbfe04b2ebe6e3e1305e295f9ba22a9d9e4"
+        "sha256": "822b440431676a4e65ecea746a8a57a27c1f63861c3e26d3cd8587f3813167ed"
       }
     ]
   },

@@ -32,10 +32,10 @@ export function LayoutPreview(props: LayoutPreviewProps) {
     </div>),
   ]));
   const layoutProps: LayoutProps = { slots, stage: planFlowStage(props.leaf, props.config, props.members, props.width, props.breakpointValues), config: props.config, members: props.members };
-  const content = props.leaf === "layouts.stack" ? <Stack {...layoutProps} />
-    : props.leaf === "layouts.split" ? <Split {...layoutProps} />
-    : props.leaf === "layouts.sidebar-content" ? <SidebarContent {...layoutProps} asideSections={slots.aside?.map(() => contract.slots.find(slot => slot.id === "aside")!.accepts[0]!)} />
-    : props.leaf === "layouts.bento" ? <Bento {...layoutProps} /> : null;
+  const content = props.leaf === "stack" ? <Stack {...layoutProps} />
+    : props.leaf === "split" ? <Split {...layoutProps} />
+    : props.leaf === "sidebar-content" ? <SidebarContent {...layoutProps} asideSections={slots.aside?.map(() => contract.slots.find(slot => slot.id === "aside")!.accepts[0]!)} />
+    : props.leaf === "bento" ? <Bento {...layoutProps} /> : null;
   return <div data-theme={props.theme} className="min-w-0" style={{ width: props.width }}>{content}</div>;
 }
 export function LayoutPreviewMatrix({ leaf, config, breakpointValues }: Pick<LayoutPreviewProps, "leaf" | "config" | "breakpointValues">) {

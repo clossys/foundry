@@ -30,6 +30,13 @@ export function loadContentTree(input: unknown = treeData): ContentTree {
   }
   // `retired` marks the shipped seed tree retired in place (foundry-build-0036, audit P10); it is a record, never placement data.
   assertFields(input, ["schemaVersion", "retired", "nodes"], "tree");
+  if (input.retired !== undefined) {
+    const marker = input.retired;
+    if (!record(marker) || !text(marker.retiredAt) || !text(marker.decidedBy) || !text(marker.reason)) {
+      throw new Error("Invalid content tree at retired: expected retiredAt, decidedBy and reason strings");
+    }
+    assertFields(marker, ["retiredAt", "decidedBy", "reason"], "retired");
+  }
   const groupIds = new Set<string>();
   const nodes = input.nodes.map((node: unknown, index: number): ContentTreeNode => {
     const path = `nodes[${index}]`;

@@ -7,7 +7,7 @@ import { normalizeRegionPageRoute } from "../../core/route-registry.js";
 
 const copy = adminCopyFixture();
 const skeleton = { l0: [{ id: "strings", label: {id: "strings.admin.group.writer.strings"}, count: 2, estimate: 300, partition: "l1" as const, l1: [{ id: "names", label: {id: "strings.admin.ia.writer.strings.identity-names"}, count: 2, estimate: 250, l2: [{ id: "primary", label: {id: "strings.admin.item.details"}, count: 2, estimate: 200 }] }] }] };
-const publication = { id: "admin", mainSlot: "body", frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "layouts.stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: "example", medium: "web" as const }, packIds: ["pack.admin"] };
+const publication = { id: "admin", mainSlot: "body", frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: "example", medium: "web" as const }, packIds: ["pack.admin"] };
 
 describe("native scroll admin page records", () => {
   it("passes count to Writer's ICU formatter and uses its complete stat label", () => {
@@ -48,7 +48,7 @@ describe("native scroll admin page records", () => {
     expect(main[0]?.content.heading).not.toHaveProperty("lazy");
     expect(main[1]).toMatchObject({ section: "sections.band", members: { ground: "sunken" }, children: [{ section: "sections.section-header", config: "level-3" }, { section: "sections.data-table", repeat: { key: "id" } }] });
     expect(main[1]?.repeat?.over.lazy?.args).toEqual({ l0: "strings", l1: "names" });
-    expect(records.item.composition.binding.regions.main[1]?.section).toBe("sections.record-detail");
+    expect(records.item.composition.binding.regions.main[1]?.section).toBe("sections.data-table");
   });
   it("keeps labels as Writer references and unknown item data outside page records", () => {
     expect(ADMIN_PAGE_COPY_REFS.showAll).toEqual({ kind: "copy", ref: "strings.admin.action.showAll" });

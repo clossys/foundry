@@ -7,7 +7,7 @@ import type { RuntimeRenderInput } from "@clossys/designer/catalog";
 import type { ReactNode } from "react";
 import { adminCopyFixture, copyEnvelopes, pages } from "./__fixtures__/copy.mjs";
 import { prepareAdminPageCopyEnvelopes } from "./admin-copy-source.js";
-import { adminPageContent, createAdminPageCopy, writerCopy } from "./admin-copy.js";
+import { createAdminPageCopy } from "./admin-copy.js";
 import { adminPageSectionHosts, ADMIN_CHAT_LABEL_KEYS } from "./admin-copy-ports.js";
 import { createAdminPageRegistry } from "./__fixtures__/consumer-pages.mjs";
 import { createRegisteredPublicationSession } from "../registered-route-query.js";
@@ -15,23 +15,17 @@ import { createRegisteredPublicationSession } from "../registered-route-query.js
 function input(leaf: string, values: Record<string, unknown>, sectionHost?: Record<string, unknown>): RuntimeRenderInput<ReactNode> {
   return { fill:{leaf,slots:Object.keys(values),members:["part.message"]},selection:{leaf,members:leaf === "sections.chat"?["part.message"]:[]},cell:{state:"default"},content:Object.fromEntries(Object.entries(values).map(([key,value])=>[key,{value}])),sectionHost,slots:{} } as unknown as RuntimeRenderInput<ReactNode>;
 }
-it("renders Writer-bound item and empty-table copy through the selected native renderers", () => {
+it("renders Writer-bound empty-table copy through the selected native renderer", () => {
   const copy=adminCopyFixture(), title={id:"strings.admin.page.writer"};
-  const fields=adminPageContent(copy,{kind:"records",ref:"item.fields"},[{label:writerCopy({id:"strings.admin.column.key"}),value:writerCopy(title)}]);
-  const hosts=adminPageSectionHosts({copy,title,item:true,fields});
-  const detail=renderToStaticMarkup(<>{surfaceRuntimeRenderers["sections.record-detail"]!.render(input("sections.record-detail",{fields:[],actions:[{id:"open",label:copy("strings.admin.action.openItem")}]},hosts["sections.record-detail"]))}</>);
+  const hosts=adminPageSectionHosts({copy,title,item:true});
   const empty=renderToStaticMarkup(<>{surfaceRuntimeRenderers["sections.data-table"]!.render(input("sections.data-table",{rows:[],columns:[{id:"key",label:copy("strings.admin.column.key")}]},hosts["sections.data-table"]))}</>);
-  expect(detail).toContain(hosts["sections.record-detail"]!.recordDetail.title);
-  expect(detail).toContain(copy("strings.admin.column.key"));
-  expect(detail).not.toMatch(/Order #?1042/);
+  expect(Object.keys(hosts)).toEqual(["sections.data-table","sections.chat"]);
   expect(empty).toContain(copy("strings.admin.empty.title")); expect(empty).toContain(copy("strings.admin.empty.description"));
   expect(empty).not.toMatch(/No orders yet|customer checks out/);
   const tableHost = hosts["sections.data-table"];
   expect(JSON.parse(JSON.stringify(tableHost.paginationSummary))).toEqual(tableHost.paginationSummary);
   expect(tableHost.paginationSummary).toMatchObject({ key: "pagination.total-text", writerId: pages.aliases["strings.admin.pagination.range"], locale: "en" });
   expect(tableHost.formatCopyMessage({ ...tableHost.paginationSummary, values: {start:101,end:200,total:250,page:2,pageCount:3,pages:3} })).toBe(copy("strings.admin.pagination.range",{start:101,end:200,total:250}));
-  expect(copy.provenance().some(value=>value.provenance.cellId === "strings.admin.item.heading")).toBe(true);
-  expect(()=>adminPageSectionHosts({copy,title,item:true})).toThrow(/fields/);
 });
 it("mounts one native shared Chat with real Writer copy on all six route contexts", async () => {
   const sources=JSON.parse(JSON.stringify(copyEnvelopes()));
@@ -44,7 +38,7 @@ it("mounts one native shared Chat with real Writer copy on all six route context
   }
   const copy=createAdminPageCopy({locale:"en",envelopes:prepareAdminPageCopyEnvelopes(sources)});
   const skeleton={l0:[{id:"strings",label:{id:"strings.admin.group.writer.strings"},count:0,estimate:100,l1:[]}]};
-  const result=createAdminPageRegistry({copy,publication:{id:"admin",mainSlot:"body",frame:{leaf:"frames.app-shell"},layout:{leaf:"layouts.stack",config:"stack.workspace"},format:"web.page.responsive",surface:"app",context:{consumer:"example",medium:"web"},packIds:[]},manifests:{designer:skeleton,writer:skeleton,publisher:skeleton}});
+  const result=createAdminPageRegistry({copy,publication:{id:"admin",mainSlot:"body",frame:{leaf:"frames.app-shell"},layout:{leaf:"stack",config:"stack.workspace"},format:"web.page.responsive",surface:"app",context:{consumer:"example",medium:"web"},packIds:[]},manifests:{designer:skeleton,writer:skeleton,publisher:skeleton}});
   let view: ReturnType<typeof render> | undefined;
   const host={bind:vi.fn(publication=>{
     expect(publication.inspector.section).toBe("sections.chat");

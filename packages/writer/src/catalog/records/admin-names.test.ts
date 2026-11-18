@@ -85,7 +85,9 @@ describe("admin display-name drafts", () => {
       for (const [axis, values] of Object.entries(layout.contract.members))
         for (const value of values as string[]) expect(binding(`publisher.layoutOption.${layout.id}.${axis}`, value), value).toBeDefined();
     }
-    const frames = JSON.parse(read("packages/designer/src/catalog/slots/frames.json"));
+    // Retired Designer frames stay in frames.json flagged retired; Publisher names only live frames.
+    const retiredFrames = new Set((JSON.parse(read("packages/designer/src/catalog/retired.json")) as { id: string }[]).map(row => row.id));
+    const frames = (JSON.parse(read("packages/designer/src/catalog/slots/frames.json")) as { id: string; contract: { members: { names: string[] } } }[]).filter(frame => !retiredFrames.has(frame.id));
     for (const frame of frames) {
       expect(binding("publisher.frame", frame.id), frame.id).toBeDefined();
       for (const value of frame.contract.members.names) expect(binding(`designer.frameOption.${frame.id}`, value), value).toBeDefined();

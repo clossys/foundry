@@ -63,8 +63,8 @@ function freeze<T>(value: T): T {
 const ext = (role: ArchetypeRole): ArchetypeRole => ({ ...role, writer: null });
 
 const APP_BODY: readonly SectionSlotId[] = [
-  "sections.resource-list", "sections.record-detail", "sections.data-grid", "sections.settings", "sections.form",
-  "sections.cards", "sections.activity-feed", "sections.audit-log", "sections.access-matrix", "sections.account-summary",
+  "sections.resource-list", "sections.data-grid", "sections.settings", "sections.form",
+  "sections.link-index", "sections.activity-feed", "sections.audit-log", "sections.access-matrix", "sections.account-summary",
   "sections.explorer", "sections.usage", "sections.status-list", "sections.task-list", "sections.wizard", "sections.chat",
   "sections.empty-state",
 ];
@@ -106,10 +106,10 @@ export const PAGE_ARCHETYPES: Readonly<Record<ArchetypeId, PageArchetype>> = fre
     ],
   },
   legal: {
-    id: "legal", formats: ["vertical-page"], frames: ["frames.site-shell", "frames.document"],
+    id: "legal", formats: ["vertical-page"], frames: ["frames.site-shell"],
     roles: [
       opt("contents", "sections.table-of-contents", undefined),
-      req("terms", "sections.legal-prose"),
+      req("terms", "sections.article"),
     ],
   },
   docs: {
@@ -136,7 +136,7 @@ export const PAGE_ARCHETYPES: Readonly<Record<ArchetypeId, PageArchetype>> = fre
     roles: [
       req("cover", "sections.hero"),
       opt("problem", "sections.section-header", "context.customer.need"),
-      req("solution", "sections.features", { max: 3, alternates: ["sections.cards", "sections.media"] }),
+      req("solution", "sections.features", { max: 3, alternates: ["sections.media"] }),
       opt("proof", "sections.stats", "advantage.proposition.proof", { max: 2, alternates: ["sections.testimonials", "sections.logo-cloud"] }),
       opt("alternatives", "sections.comparison", "context.competition.alternative"),
       opt("model", "sections.pricing", "advantage.model.pricing"),

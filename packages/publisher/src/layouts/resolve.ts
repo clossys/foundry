@@ -78,11 +78,11 @@ export function getEffectiveLayoutContract(
     : slots;
   // Preserve the existing Layout's inherited aside-width behavior in the one
   // effective contract, so Stage DOM order and CSS reflow share that choice.
-  const breakpoint = memberValues.breakpoint ?? (leaf.id === "layouts.sidebar-content" ? (memberValues["aside-width"] ?? contract.members["aside-width"]?.[0]) === "region" ? "lg" : "md" : undefined);
+  const breakpoint = memberValues.breakpoint ?? (leaf.id === "sidebar-content" ? (memberValues["aside-width"] ?? contract.members["aside-width"]?.[0]) === "region" ? "lg" : "md" : undefined);
   let at: PageLayoutContract["reflow"][number]["at"] | undefined;
   if (isTailwindBreakpoint(breakpoint)) at = breakpoint;
-  else if (leaf.id === "layouts.sidebar-content" && breakpoint) throw new Error("Unknown layout breakpoint");
-  const reflow = leaf.id === "layouts.sidebar-content" && at
+  else if (leaf.id === "sidebar-content" && breakpoint) throw new Error("Unknown layout breakpoint");
+  const reflow = leaf.id === "sidebar-content" && at
     ? sourceReflow.map((step) => ({ ...step, at }))
     : sourceReflow;
   return freeze({ ...contract, slots: effectiveSlots, reflow, memberValues });

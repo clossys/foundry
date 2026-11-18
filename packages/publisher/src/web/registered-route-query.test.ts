@@ -76,7 +76,7 @@ describe("one stateless fixed Designer materializer", () => {
       expect(isCurrentRegisteredRouteSourceEvidence(source, registry, route, changed.materialization.digest)).toBe(false);
     }
     const projection = { ...f.query.input.projection, phase: "error" as const }, ref = { kind: "copy" as const, ref: "SYNTHETIC.actual-error" };
-    const state = { sessionId: projection.session.id, fill: { section: "sections.error-state" as const, content: { code: ref } }, content: [{ reference: ref, value: "Actual failure", hash: runtimeHash("Actual failure") }], layout: { leaf: "layouts.stack" as const, config: "stack.workspace", slot: "body" } };
+    const state = { sessionId: projection.session.id, fill: { section: "sections.error-state" as const, content: { code: ref } }, content: [{ reference: ref, value: "Actual failure", hash: runtimeHash("Actual failure") }], layout: { leaf: "stack" as const, config: "stack.workspace", slot: "body" } };
     const query = { ...f.query, input: { ...f.query.input, projection, projectionHash: runtimeHash(projection), records: [], stateSections: { error: state } } };
     const flow = ready(f.run(query));
     expect(flow.materialization.binding.body!.kind).toBe("flow");
@@ -102,11 +102,11 @@ describe("one stateless fixed Designer materializer", () => {
     const f = fixture(), projection = { ...f.query.input.projection, phase: phase === "empty" ? "ready" as const : phase, ...(phase === "empty" ? { placements: [], slots: [], boards: [] } : {}) };
     const ref = { kind: phase === "loading" ? "records" as const : phase === "error" ? "copy" as const : "action" as const, ref: `SYNTHETIC.${phase}` }, value = phase === "loading" ? [{ id: "loading", tone: "info", message: "Actual loading state" }] : phase === "error" ? "Actual registered error" : { command: "return" };
     const section = phase === "loading" ? "sections.notices" as const : phase === "error" ? "sections.error-state" as const : "sections.empty-state" as const;
-    const state = { sessionId: projection.session.id, fill: { section, content: { [phase === "loading" ? "notices" : phase === "error" ? "code" : "actions"]: ref } }, content: [{ reference: ref, value, hash: runtimeHash(value) }], layout: { leaf: "layouts.stack" as const, config: "stack.workspace", slot: "body" } };
+    const state = { sessionId: projection.session.id, fill: { section, content: { [phase === "loading" ? "notices" : phase === "error" ? "code" : "actions"]: ref } }, content: [{ reference: ref, value, hash: runtimeHash(value) }], layout: { leaf: "stack" as const, config: "stack.workspace", slot: "body" } };
     const query = { ...f.query, input: { ...f.query.input, projection, projectionHash: runtimeHash(projection), records: [], stateSections: { [phase]: state } } };
     const result = ready(f.run(query));
     expect(result.materialization.binding.body!.kind).toBe("flow");
-    expect(result.materialization.binding.layout).toEqual({ leaf: "layouts.stack", config: "stack.workspace" });
+    expect(result.materialization.binding.layout).toEqual({ leaf: "stack", config: "stack.workspace" });
     expect(result.materialization.binding.fills.body?.[0]?.section).toBe(section);
     expect(f.run({ ...query, input: { ...query.input, stateSections: { [phase]: { ...state, layout: undefined } } } }).status).toBe("pending");
     expect(materializeRegisteredDesignerRoute(f.binding, f.engine, f.registries, { ...f.library, resolveFill: () => undefined }, query).status).toBe("pending");

@@ -35,12 +35,12 @@ describe("fixed selected flow Layout binder (synthetic, no whole-instance qualif
     expect(renderToStaticMarkup(<>{port.render({ slots, cell: { theme: "light", state: "default", width: 1280 }, profile, stageWidth: 1280 })}</>)).toContain(`data-layout="${leaf}"`);
   });
   it("rejects stale source, foreign library and wrong selected config rather than substituting a built-in", () => {
-    const f = fixture("layouts.stack");
+    const f = fixture("stack");
     const changed = { ...f.source, files: { ...f.source.files, [f.source.entry]: f.source.files[f.source.entry] + "\n// changed" } };
-    expect(registeredLayoutSourceMatches("layouts.stack", changed)).toBe(false);
+    expect(registeredLayoutSourceMatches("stack", changed)).toBe(false);
     expect(bindRegisteredFlowLayout(f.binding, { ...f.library, id: "foreign" }, f.renderer, pixels)).toBeUndefined();
     expect(bindRegisteredFlowLayout(f.binding, f.library, { ...f.renderer, sourceHash: `sha256:${"0".repeat(64)}` }, pixels)).toBeUndefined();
-    expect(bindRegisteredFlowLayout(f.binding, { ...f.library, resolveFill: () => ({ library: "example", leaf: "layouts.stack", config: "foreign", states: [], headings: [], renderer: f.source }) }, f.renderer, pixels)).toBeUndefined();
+    expect(bindRegisteredFlowLayout(f.binding, { ...f.library, resolveFill: () => ({ library: "example", leaf: "stack", config: "foreign", states: [], headings: [], renderer: f.source }) }, f.renderer, pixels)).toBeUndefined();
   });
 });
 
@@ -52,7 +52,7 @@ it.each(REGISTERED_LAYOUT_FILLS.map(fill => fill.leaf) as FlowInstanceBinding["l
   const port = bindRegisteredFlowLayout(f.binding, f.library, f.renderer, pixels)!;
   const refs = Object.entries(fills).flatMap(([slot, fills]) => fills.map((_, index) => ({ slot, index })));
   const sectionNodes = Object.fromEntries(refs.map(ref => [frameSectionRefKey(ref), { label: `${ref.slot}.${ref.index}`, node: <article data-test-ref={`${ref.slot}.${ref.index}`}>{`${ref.slot}.${ref.index}`}</article> }]));
-  const expectedSlots = leaf === "layouts.split" ? ["lead", "start", "end"] : leaf === "layouts.sidebar-content" ? ["lead", "main", "aside"] : leaf === "layouts.bento" ? ["lead", "tiles"] : ["lead", "body", "close"];
+  const expectedSlots = leaf === "split" ? ["lead", "start", "end"] : leaf === "sidebar-content" ? ["lead", "main", "aside"] : leaf === "bento" ? ["lead", "tiles"] : ["lead", "body", "close"];
   const expected = expectedSlots.flatMap(slot => refs.filter(ref => ref.slot === slot).map(ref => `${ref.slot}.${ref.index}`));
   const thresholds = contract.reflow.length ? contract.reflow.map(step => pixels[step.at]) : [pixels["tokens.breakpoint.mobile"]];
   let width = thresholds[0]! - 1, resized!: () => void;

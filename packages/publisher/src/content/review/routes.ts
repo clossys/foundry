@@ -5,7 +5,7 @@ import type { ReviewContext } from "./types.js";
 const BOARD_FRAMES: Readonly<Record<string, string>> = {
   "websites/site": "frames.site-shell", "websites/demo": "frames.site-shell",
   "websites/admin": "frames.app-shell", "websites/app": "frames.app-shell", "websites/auth": "frames.auth-shell",
-  "documents/docs": "frames.document", "presentations/decks": "frames.deck", "videos/clips": "frames.video",
+  "documents/docs": "frames.site-shell", "presentations/decks": "frames.deck", "videos/clips": "frames.video",
   "messages/email": "frames.message", "social/posts": "frames.social",
 };
 

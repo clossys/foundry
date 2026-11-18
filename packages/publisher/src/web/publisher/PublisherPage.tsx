@@ -197,7 +197,7 @@ export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPla
   };
   const fallback: ProductionSettings | undefined = selectedPipeline ? productionSettingsFromBinding(selectedPipeline.sourceBinding) : sourceRoute ? {
     format: "web.page.responsive" as const, frame: { leaf: sourceRoute.frame as ProductionSettings["frame"]["leaf"] },
-    layout: { leaf: inputs.registries.layouts.find(layout => layout.contract.configs.some(config => config.id === sourceRoute.layoutConfig))?.id ?? "layouts.stack", config: sourceRoute.layoutConfig },
+    layout: { leaf: inputs.registries.layouts.find(layout => layout.contract.configs.some(config => config.id === sourceRoute.layoutConfig))?.id ?? "stack", config: sourceRoute.layoutConfig },
   } : undefined;
   const configure = (value?: ProductionSettings) => {
     if (selectedRow?.item.instanceId) changeSettings({ ...settings, instances: { ...settings.instances, [selectedRow.item.instanceId]: value } });

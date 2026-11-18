@@ -80,6 +80,11 @@ describe("content taxonomy", () => {
   it.each([
     null, {}, { schemaVersion: 2, nodes: [] }, { schemaVersion: 1, nodes: {} },
     { schemaVersion: 1, nodes: [], extra: true },
+    { schemaVersion: 1, retired: "yes", nodes: [] },
+    { schemaVersion: 1, retired: { retiredAt: "2026-11-17", decidedBy: "owner" }, nodes: [] },
+    { schemaVersion: 1, retired: { retiredAt: 20261117, decidedBy: "owner", reason: "legacy" }, nodes: [] },
+    { schemaVersion: 1, retired: { retiredAt: "2026-11-17", decidedBy: " ", reason: "legacy" }, nodes: [] },
+    { schemaVersion: 1, retired: { retiredAt: "2026-11-17", decidedBy: "owner", reason: "legacy", extra: true }, nodes: [] },
     { schemaVersion: 1, nodes: [{ id: "", label: "Group", children: [] }] },
     { schemaVersion: 1, nodes: [{ id: "group", label: " ", children: [] }] },
     { schemaVersion: 1, nodes: [{ id: "group", label: "Group" }] },
@@ -88,6 +93,11 @@ describe("content taxonomy", () => {
     { schemaVersion: 1, nodes: [{ id: "group", label: "Group", children: [{ id: "kind", label: "Kind", extra: true }] }] },
   ])("rejects malformed tree data %#", input => {
     expect(() => loadContentTree(input)).toThrow(/Invalid content tree/);
+  });
+
+  it("accepts a retired marker of retiredAt, decidedBy and reason strings and keeps it out of placement data", () => {
+    const marker = { retiredAt: "2026-11-17", decidedBy: "owner", reason: "legacy" };
+    expect(loadContentTree({ schemaVersion: 1, retired: marker, nodes: [] })).toEqual({ schemaVersion: 1, nodes: [] });
   });
 
   it("rejects duplicate group and sibling child IDs", () => {

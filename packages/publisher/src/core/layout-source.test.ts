@@ -184,7 +184,7 @@ describe("bounded layout source closure", () => {
     for (const row of baseline.cases) expect(digest(getEffectiveLayoutContract(row.leaf, row.config, row.members))).toBe(row.expectedSha256);
   });
   it("detects a changed default member against the immutable parity baseline", () => {
-    const leaf = structuredClone(LAYOUT_LEAVES.find(leaf=>leaf.id==="layouts.stack")!);
+    const leaf = structuredClone(LAYOUT_LEAVES.find(leaf=>leaf.id==="stack")!);
     const original = baseline.cases.find(row=>row.leaf===leaf.id && row.config==="stack.document" && !Object.keys(row.members).length)!;
     const config = leaf.contract.configs.find(config=>config.id === original.config)!;
     (config.members as Record<string,string>).measure = "form";
@@ -193,7 +193,7 @@ describe("bounded layout source closure", () => {
     expect(digest(resolved)).not.toBe(original.expectedSha256);
   });
   it("refuses an unknown supplied-leaf breakpoint without a token fallback", () => {
-    const leaf = structuredClone(LAYOUT_LEAVES.find(leaf=>leaf.id==="layouts.sidebar-content")!);
+    const leaf = structuredClone(LAYOUT_LEAVES.find(leaf=>leaf.id==="sidebar-content")!);
     (leaf.contract.members as Record<string,string[]>).breakpoint = ["unknown"];
     expect(()=>getEffectiveLayoutContract(leaf, undefined, {breakpoint:"unknown"})).toThrow("Unknown layout breakpoint");
   });
@@ -206,7 +206,7 @@ describe("bounded layout source closure", () => {
   });
 
   const matrix = LAYOUT_LEAVES.filter(leaf => leaf.status !== "held").flatMap(leaf => leaf.contract.configs.map(config => ({ leaf, config: config.id,
-    entry: `web/layouts/${({ "layouts.stack": "Stack", "layouts.split": "Split", "layouts.sidebar-content": "SidebarContent", "layouts.bento": "Bento" } as Record<string, string>)[leaf.id]}.tsx` })));
+    entry: `web/layouts/${({ "stack": "Stack", "split": "Split", "sidebar-content": "SidebarContent", "bento": "Bento" } as Record<string, string>)[leaf.id]}.tsx` })));
   it("measures four leaves and nine registered configurations", () => {
     expect(new Set(matrix.map(row => row.entry)).size).toBe(4);
     expect(matrix.map(row => row.config)).toEqual(["stack.landing", "stack.document", "stack.focus", "stack.index", "stack.workspace", "split.default", "sidebar-content.record", "sidebar-content.docs", "bento.default"]);

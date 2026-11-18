@@ -1,6 +1,6 @@
 [
   {
-    "id": "layouts.stack",
+    "id": "stack",
     "layer": "layouts",
     "contract": {
       "kind": "layout",
@@ -204,7 +204,7 @@
     "status": "draft"
   },
   {
-    "id": "layouts.split",
+    "id": "split",
     "layer": "layouts",
     "contract": {
       "kind": "layout",
@@ -286,7 +286,7 @@
     "status": "draft"
   },
   {
-    "id": "layouts.sidebar-content",
+    "id": "sidebar-content",
     "layer": "layouts",
     "contract": {
       "kind": "layout",
@@ -431,7 +431,7 @@
     "status": "draft"
   },
   {
-    "id": "layouts.bento",
+    "id": "bento",
     "layer": "layouts",
     "contract": {
       "kind": "layout",
@@ -521,7 +521,7 @@
     "status": "draft"
   },
   {
-    "id": "layouts.staggered-grid",
+    "id": "staggered-grid",
     "layer": "layouts",
     "contract": {
       "kind": "layout",

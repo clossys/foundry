@@ -75,11 +75,6 @@ export const groupBDataset: Readonly<Record<`sections.${string}`, Readonly<Recor
     operators: plainJson(S.filterBuilder.operators),
     groups: plainJson(S.filterBuilder.groups),
   },
-  "sections.record-detail": {
-    fields: plainJson(S.detailView.fields),
-    actions: menu.items.slice(0, 2).map(item => ({ id: item.id, label: item.label })),
-    status: plainJson(S.detailView.fields.find(field => field.label === S.dataTable.headers.status)?.value),
-  },
   "sections.resource-list": {
     records: S.resourceList.items.map(item => plainJson({ id: item.id, title: item.title, description: item.description, meta: item.meta })),
     selection: [{ id: S.resourceList.items[0]!.id }],

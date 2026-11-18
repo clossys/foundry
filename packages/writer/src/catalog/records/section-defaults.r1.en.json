@@ -1945,7 +1945,7 @@
     {
       "recordId": "st.0rj8qzqqr1",
       "source": "common-labels.r1.en.json",
-      "sourceContext": "publisher.layoutOption.layouts.bento.density.dense"
+      "sourceContext": "publisher.layoutOption.bento.density.dense"
     },
     {
       "recordId": "st.43k2vndngq",

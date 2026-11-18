@@ -44,7 +44,7 @@ describe("links, URLs, fixed frames and redirect Review", () => {
   const frames: readonly [ContentPlacement, string][] = [
     [{ l1: "websites", l2: "site" }, "frames.site-shell"], [{ l1: "websites", l2: "demo" }, "frames.site-shell"],
     [{ l1: "websites", l2: "admin" }, "frames.app-shell"], [{ l1: "websites", l2: "app" }, "frames.app-shell"],
-    [{ l1: "websites", l2: "auth" }, "frames.auth-shell"], [{ l1: "documents", l2: "docs" }, "frames.document"],
+    [{ l1: "websites", l2: "auth" }, "frames.auth-shell"], [{ l1: "documents", l2: "docs" }, "frames.site-shell"],
     [{ l1: "presentations", l2: "decks" }, "frames.deck"], [{ l1: "videos", l2: "clips" }, "frames.video"],
     [{ l1: "messages", l2: "email" }, "frames.message"], [{ l1: "social", l2: "posts" }, "frames.social"],
   ];

@@ -67,11 +67,11 @@ describe("mutations that must die", () => {
   });
 
   it("a page naming a retired Designer section fails page.unit-resolves", () => {
-    expect(designer.retired.has("sections.legal-prose")).toBe(true);
+    const retiredSection = [...designer.retired].filter(id => id.startsWith("sections.")).sort()[0]!;
     const option = clone(defaults.get("page.terms/starter-v1.json")!.content as unknown as PageOption);
-    option.sections.find(section => section.role === "body")!.use = "designer/sections.legal-prose";
+    option.sections.find(section => section.role === "body")!.use = `designer/${retiredSection}`;
     expect(check("page.terms", option as unknown as PageOptionContent))
-      .toContainEqual({ check: "page.unit-resolves", message: "page.terms: body places retired designer/sections.legal-prose" });
+      .toContainEqual({ check: "page.unit-resolves", message: `page.terms: body places retired designer/${retiredSection}` });
   });
 
   it("a page naming a section the Designer catalog does not have fails", () => {

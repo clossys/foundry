@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Button, Card, LinkButton as Link } from '@clossys/designer/components';
-import { DataTable, DetailView, EmptyState, Form, NoticeList, SectionHeader, StockSelect, Toolbar } from '@clossys/designer/blocks';
+import { DataTable, EmptyState, Form, NoticeList, SectionHeader, StockSelect, Toolbar } from '@clossys/designer/blocks';
 import type { InstanceRegistries } from '../../core/instance-binding.js';
 import type { PublisherConfiguration } from '../../planning/configuration.js';
 import type { PublisherCell, PublisherSectionCommand, PublisherSectionData } from './publisher-sections.js';
@@ -20,10 +20,6 @@ export function PublisherSection(props: PublisherSectionProps) {
   if (data.section === 'sections.form') return <PublisherFormSection {...props} data={data} />;
   if (data.section === 'sections.empty-state' || data.section === 'sections.error-state') return <section aria-label={data.label} data-publisher-section={data.id}><div role={data.section === 'sections.error-state' ? 'alert' : undefined}><EmptyState title={data.label} description={data.message} /></div></section>;
   if (data.section === 'sections.notices') return <NoticeList label={data.label} data-publisher-section={data.id} notices={data.notices} />;
-  if (data.section === 'sections.record-detail') {
-    if (data.actions.length > 2) throw new TypeError('Record detail actions exceed the existing Section bound');
-    return <section aria-label={data.label} data-publisher-section={data.id}><DetailView title={data.label} fields={data.fields.map(field => ({ label: field.label, value: field.value }))} actions={<>{data.actions.map((value,index) => <span key={index}>{cell(value)}</span>)}</>} /></section>;
-  }
   if (data.section !== 'sections.data-table') throw new TypeError('Unsupported Publisher Section');
   const table = (rows: typeof data.rows, label: string) => <DataTable aria-label={label} columns={data.columns.map((column,index) => ({ id: column.id, header: column.label, isRowHeader: index === 0, cell: (row: typeof data.rows[number]) => cell(row.cells[column.id] ?? { kind: 'text', text: '—' }) }))} rows={rows} rowKey={row => row.id} toolbar={<><SectionHeader title={label} />{data.toolbar?.length ? <Toolbar aria-label={label} leading={<>{data.toolbar.map((value,index) => <span key={index}>{cell(value)}</span>)}</>} /> : null}</>}
     selectionMode={data.selectedId === undefined ? 'none' : 'single'} selectedKeys={data.selectedId ? [data.selectedId] : []} onSelectionChange={keys => {

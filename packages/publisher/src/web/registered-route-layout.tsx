@@ -30,14 +30,14 @@ export function bindRegisteredFlowLayout(binding: FlowInstanceBinding, library: 
     return stage.slotOrder.flatMap(slot => paths[slot] ?? []);
   };
   return {
-    descriptor: { library: library.id, fill: `${selected.leaf}:${selected.config}`, leaf: binding.layout.leaf, config: binding.layout.config, members: contract.memberValues, slots: contract.slots, breakpoints: [...new Set([...contract.reflow.map(step => step.at), ...(binding.layout.leaf === "layouts.stack" ? ["sm" as const] : [])])], states: selected.states, renderer, inputs: { spans: Object.fromEntries(Object.entries(binding.fills).map(([slot, fills]) => [slot, fills.map(fill => fill.span ?? null)])) } },
+    descriptor: { library: library.id, fill: `${selected.leaf}:${selected.config}`, leaf: binding.layout.leaf, config: binding.layout.config, members: contract.memberValues, slots: contract.slots, breakpoints: [...new Set([...contract.reflow.map(step => step.at), ...(binding.layout.leaf === "stack" ? ["sm" as const] : [])])], states: selected.states, renderer, inputs: { spans: Object.fromEntries(Object.entries(binding.fills).map(([slot, fills]) => [slot, fills.map(fill => fill.span ?? null)])) } },
     expectedOrder: order,
     render: ({ slots, stageWidth, profile }) => {
       const props: LayoutProps = { slots, stage: planFlowStage(binding.layout.leaf, binding.layout.config, binding.layout.members, stageWidth, measured), config: binding.layout.config, members: binding.layout.members };
-      const content = binding.layout.leaf === "layouts.stack" ? <Stack slots={props.slots} stage={props.stage} config={props.config} members={props.members} />
-        : binding.layout.leaf === "layouts.split" ? <Split slots={props.slots} stage={props.stage} config={props.config} members={props.members} />
-        : binding.layout.leaf === "layouts.sidebar-content" ? <SidebarContent slots={props.slots} stage={props.stage} config={props.config} members={props.members} asideSections={binding.fills.aside?.map(fill => fill.section)} />
-        : binding.layout.leaf === "layouts.bento" ? <Bento slots={props.slots} stage={props.stage} config={props.config} members={props.members} spans={binding.fills.tiles?.map(fill => fill.span)} /> : null;
+      const content = binding.layout.leaf === "stack" ? <Stack slots={props.slots} stage={props.stage} config={props.config} members={props.members} />
+        : binding.layout.leaf === "split" ? <Split slots={props.slots} stage={props.stage} config={props.config} members={props.members} />
+        : binding.layout.leaf === "sidebar-content" ? <SidebarContent slots={props.slots} stage={props.stage} config={props.config} members={props.members} asideSections={binding.fills.aside?.map(fill => fill.section)} />
+        : binding.layout.leaf === "bento" ? <Bento slots={props.slots} stage={props.stage} config={props.config} members={props.members} spans={binding.fills.tiles?.map(fill => fill.span)} /> : null;
       if (!content) throw new Error("Selected Layout has no registered executable implementation");
       return <div data-layout-stage="flow">{content}</div>;
     },

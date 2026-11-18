@@ -1,7 +1,7 @@
-import stack from "../layouts/fills/foundry/layouts.stack.json" with { type: "json" };
-import split from "../layouts/fills/foundry/layouts.split.json" with { type: "json" };
-import sidebar from "../layouts/fills/foundry/layouts.sidebar-content.json" with { type: "json" };
-import bento from "../layouts/fills/foundry/layouts.bento.json" with { type: "json" };
+import stack from "../layouts/fills/foundry/stack.json" with { type: "json" };
+import split from "../layouts/fills/foundry/split.json" with { type: "json" };
+import sidebar from "../layouts/fills/foundry/sidebar-content.json" with { type: "json" };
+import bento from "../layouts/fills/foundry/bento.json" with { type: "json" };
 import { sha256 } from "../planning/digest.js";
 import type { LayoutRendererSource } from "./instance-binding.js";
 /** The existing authored fill records remain the sole public source-pin authority. */

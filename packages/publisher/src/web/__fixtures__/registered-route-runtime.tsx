@@ -35,7 +35,7 @@ export async function compileRegisteredRouteFixture(temporary: string, hostConte
   await saveSurfaceLibrary(temporary, engine); return compileSurfaceLibrary(temporary, engine);
 }
 export function syntheticRegisteredRoute(compiled: CompiledRegisteredRoute) {
-  const stackPin = registeredLayoutSourcePin("layouts.stack")!;
+  const stackPin = registeredLayoutSourcePin("stack")!;
   const route = structuredClone(syntheticRoute("example.throwaway")), engine = compiled.input, profile = resolve(engine), consumer = engine.library.source.id;
   const headerSource = { entry: "SYNTHETIC-header.tsx", files: { "SYNTHETIC-header.tsx": "// SYNTHETIC bounded lease descriptor" }, dependencies: {} };
   const module = { package: "@clossys/designer/shell" as const, export: "PageHeaderModule" as const, renderer: { id: "SYNTHETIC header", source: headerSource, sourceHash: runtimeHash(headerSource) } };

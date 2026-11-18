@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import data from "./tree.json" with { type: "json" };
 import { loadContentTree, isContentL2 } from "./taxonomy.js";
 import { checkSlotLeafFreeze } from "./leaf-freeze.js";
+import freeze from "./slots.leaf-freeze.json" with { type: "json" };
 import { leafRegistryFixture, reviewFixture } from "./__fixtures__/review.js";
 import { validateContentRegistry } from "./validate.js";
 import { computeContentDigest } from "./digest.js";
@@ -29,7 +30,8 @@ describe("regrouping independently of leaf membership and approval", () => {
     expect(isContentL2("websites", "app", tree)).toBe(false);
     expect(validateContentRegistry(moved, tree)).toEqual([]);
     expect(moved.slots.map(slot => slot.id)).toEqual(ids);
-    expect(checkSlotLeafFreeze(moved.slots)).toEqual([]);
+    // Membership against a freeze of the fixture's own identities: the signed freeze's identities are retired.
+    expect(checkSlotLeafFreeze(moved.slots, { ...freeze, leafIds: [...ids].sort() })).toEqual([]);
     expect(computeContentDigest(moved.candidates[0]!)).toBe(digest);
     expect(moved.candidates[0]!.approval).toEqual(approval);
     expect(checkContentActivation(moved)).toEqual([]);
