@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-18T09:00:00Z",
+  "updatedAt": "2026-11-18T00:00:00Z",
   "refs": [
     {
       "to": "writer/lexicon.formality",
@@ -250,5 +251,11 @@
       ]
     }
   },
-  "tighten": []
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": [],
+    "class": "writer.system"
+  }
 }
