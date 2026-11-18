@@ -8,8 +8,8 @@
  * candidates under `packages/<agent>/loops/loop.<name>/<name>-v1.json`; the consumer pins one through the pin gate.
  *
  * Producer owns the standard loops, the runner and the extension rules below; the agent owns its loop candidates.
- * An agent may change its own steps (their wording, skills, tiers, extra reads and writes in its own tree, and steps
- * of its own added beside the standard's). It may not drop or reorder the standard's required steps, their deciders,
+ * An agent may change its own steps (their wording, skills, tiers, extra reads, extra writes within the agent write
+ * allowlist `agentWriteClass`, and steps of its own added beside the standard's). It may not drop or reorder the standard's required steps, their deciders,
  * exit checks, failure routes or owner-class `when` data, and it may not name another agent: cross-agent work runs
  * only through Producer's connection loops (`loop.connected`, check/loop-connected.ts).
  *
@@ -122,13 +122,53 @@ export const escapesTree = (path: string): boolean => path.startsWith("/") || pa
 
 /** The cli of a Producer built-in code step: routing findings, the cascade, the strict tree checks, the IA sync. */
 const BUILT_IN_CLI = /^clossys check --route\b|<dependants>|^clossys check --strict\b|^clossys ia sync\b/;
-/** A cli that pins or answers an owner entry: only the standard's own step may carry it, as the standard has it. */
-const PIN_CLI = /\bclossys (?:pin|pick|verdict|approve|answer)\b/;
-/** A write that can land on a slot's pin.json (`<agent>/<slot>/pin.json`, a slot directory, or a glob over it). */
-const writesPin = (path: string, agent: LoopAgent): boolean => {
-  const pattern = pathPattern(path, agent);
-  return pattern !== undefined && patternsMeet(pattern, ["*", "*", "pin.json"]);
-};
+/** A cli that pins, retires or answers an owner entry: only the standard's own step may carry it, as the standard has it. */
+const PIN_CLI = /\bclossys (?:pin|pick|verdict|approve|answer|retire|owner-decision)\b/;
+/** A cli as the cli rules judge it: trimmed, every run of whitespace (a tab, a double space) one space. */
+const cliWords = (cli: string): string => cli.trim().split(/\s+/).join(" ");
+
+/** The three kinds of file an agent step may author itself (diagnosis-u9a §2 rows 5, 16 and 25). */
+export type AgentWriteClass = "candidate" | "check-scratch" | "queue-slot";
+/** A path segment that names one thing: no glob, not `.` or `..`. */
+const literal = (segment: string | undefined): boolean => segment !== undefined && segment !== "" && segment !== "." && segment !== ".." && !segment.includes("*");
+/**
+ * U9a fix round 3: the single allowlist of what an agent step writes, on `pathPattern` segments (agents-relative). Every
+ * other file in the tree is Producer's (its pins, slot records, ledgers, IA, verdicts, owner queues, runs and locks):
+ *
+ * - `candidate`: a new candidate of one of its own slots, `<agent>/<slot>/candidates/<file>`;
+ * - `check-scratch`: its own check scratch, `.clossys/checks/<agent>/<slot>/scratch/...`, which no Producer verb reads;
+ * - `queue-slot`: a slot request entry, `producer/queue.slot/entries/<id>.json` (the runner also requires a new one it raised).
+ *
+ * Undefined for everything else.
+ */
+export function agentWriteClass(pattern: readonly string[], agent: LoopAgent): AgentWriteClass | undefined {
+  const p = pattern;
+  const slotSegment = (segment: string | undefined) => segment === "*" || (literal(segment) && !segment!.startsWith("_") && !segment!.startsWith("."));
+  const file = (segment: string | undefined) => segment !== undefined && segment !== "" && segment !== "**" && !segment.startsWith(".");
+  if (p.length === 4 && p[0] === agent && slotSegment(p[1]) && p[2] === "candidates" && file(p[3])) return "candidate";
+  if (p.length >= 6 && p[0] === ".clossys" && p[1] === "checks" && p[2] === agent && (p[3] === "*" || literal(p[3])) && p[4] === "scratch") return "check-scratch";
+  if (p.length === 4 && p[0] === "producer" && p[1] === "queue.slot" && p[2] === "entries" && file(p[3])) return "queue-slot";
+  return undefined;
+}
+
+/** What the standard's own step of this id writes, exactly as the standard has it, when it is this agent's; else nothing. */
+export function standardOwnWrites(standard: LoopVersion | undefined, stepId: string, agent: LoopAgent): readonly string[] {
+  const step = standard?.steps.find(each => each.id === stepId);
+  return step !== undefined && namesAgent(step, agent) ? step.writes ?? [] : [];
+}
+
+/**
+ * The one judgement of a declared write of an agent step (the extension rule, the pin gate, `loop.connected` (d)):
+ * never outside the tree; the standard's own step of that id may write exactly the paths its standard declares;
+ * anything else only within `agentWriteClass`. Undefined when the write is allowed.
+ */
+export function agentStepWriteIssue(agent: LoopAgent, ref: string, step: Pick<LoopStep, "id">, path: string, standard: LoopVersion | undefined): string | undefined {
+  if (escapesTree(path)) return `${ref}: step ${step.id} writes ${path}, outside the tree (absolute or through ..)`;
+  if (standardOwnWrites(standard, step.id, agent).includes(path)) return undefined;
+  const pattern = pathPattern(posix.normalize(path), agent);
+  if (pattern !== undefined && agentWriteClass(pattern, agent) !== undefined) return undefined;
+  return `${ref}: step ${step.id} writes ${path}, which only Producer writes; an agent step writes only new candidates, its .clossys/checks/${agent}/<slot>/scratch/ and new producer/queue.slot entries`;
+}
 
 /**
  * Why an agent's loop version is not a conforming extension of Producer's standard loop of the same name; empty when
@@ -203,15 +243,12 @@ export function loopExtensionIssues(agent: LoopAgent, loop: AgentLoopName, conte
     if (step.decider?.by !== "agent") continue;
     // The standard's own step of this id, when it is this agent's: what it may carry as the standard has it.
     const own = standard.steps.find(each => each.id === step.id && namesAgent(each, agent));
-    const cli = typeof step.cli === "string" ? step.cli : "";
+    const cli = typeof step.cli === "string" ? cliWords(step.cli) : "";
     if (BUILT_IN_CLI.test(cli)) issues.push(`${ref}: step ${step.id} runs ${cli}, a Producer code step; an agent step never routes, cascades, syncs or judges the tree`);
-    if (PIN_CLI.test(cli) && own?.cli !== cli) issues.push(`${ref}: step ${step.id} runs ${cli}; only the standard's own step pins or answers, as the standard has it (the owner's choose gate)`);
+    if (PIN_CLI.test(cli) && (own === undefined || cliWords(own.cli) !== cli)) issues.push(`${ref}: step ${step.id} runs ${cli}; only the standard's own step pins or answers, as the standard has it (the owner's choose gate)`);
     for (const path of Array.isArray(step.writes) ? step.writes : []) {
-      if (escapesTree(path)) { issues.push(`${ref}: step ${step.id} writes ${path}, outside the tree (absolute or through ..)`); continue; }
-      const normal = posix.normalize(path);
-      const pattern = pathPattern(normal, agent);
-      if (pattern === undefined || !ownWriteRoot(pattern, agent)) issues.push(`${ref}: step ${step.id} writes ${path}, which can land outside ${agent}'s own tree, its .clossys/checks/${agent}/ folder and Producer's queue entries; raise a request instead`);
-      if (writesPin(normal, agent) && !(own?.writes ?? []).includes(path)) issues.push(`${ref}: step ${step.id} writes ${path}, a slot pin; an agent loop pins only at the standard's own pick step (the owner's choose gate)`);
+      const issue = agentStepWriteIssue(agent, ref, step, path, standard);
+      if (issue !== undefined) issues.push(issue);
     }
   }
   return issues;
@@ -285,20 +322,11 @@ export function patternsMeet(a: readonly string[], b: readonly string[]): boolea
 
 const stepsOf = (content: unknown): LoopStep[] => (isObject(content) && Array.isArray(content.steps) ? content.steps.filter(isObject) as unknown as LoopStep[] : []);
 const isAgentStep = (step: LoopStep): boolean => step.decider?.by === "agent";
-/** Producer's request and cascade queues: the one place an agent step may write outside its own tree. */
-const QUEUE_WRITE = /^producer\/queue\.[a-z]+\/entries(?:\/|$)/;
 /**
- * Whether every path a write pattern can resolve to lies in one of the agent's own write roots: its own tree
- * (`<agent>/...`), its own check folder (`.clossys/checks/<agent>/...`) or Producer's queue entries
- * (`producer/queue.<name>/entries/...`). Each root's segments must be literal: a `*` or `**` there (from a glob or from
- * `<dependant>`, `<requester>`, `clossys/agents/*` and the like) could name another agent's tree, so it is refused.
+ * Producer's slot request queue: the one Producer queue a loop's code step may write without the standard declaring
+ * it there. The owner's answer queues (queue.approve, queue.pick, queue.clarify) and routed findings (queue.fix) are not.
  */
-export function ownWriteRoot(pattern: readonly string[], agent: LoopAgent): boolean {
-  const [first, second, third] = pattern;
-  if (first === agent) return pattern.length >= 2;
-  if (first === ".clossys" && second === "checks" && third === agent) return pattern.length >= 4;
-  return first === "producer" && /^queue\.[a-z]+$/.test(second ?? "") && third === "entries";
-}
+const QUEUE_WRITE = /^producer\/queue\.slot\/entries(?:\/|$)/;
 
 /** The agent tree a pattern's first segment names: an agent id, `*` (any agent's), or undefined (no agent tree, e.g. `.clossys/`). */
 const treeOf = (pattern: readonly string[]): string | undefined => {
@@ -315,8 +343,9 @@ const treeOf = (pattern: readonly string[]): string | undefined => {
  *     upstream agent's loop steps write;
  * (c) a write into another agent's tree (or any agent's, by placeholder) sits only on a Producer step the agent loop
  *     keeps exactly as the standard has it (request routing, cascade, release);
- * (d) an agent step writes only its own tree, `.clossys/` checks and Producer's request queues: it reaches another
- *     agent by raising a request or a cascade event, never by writing that agent's slot;
+ * (d) an agent step writes only what `agentStepWriteIssue` allows (new candidates, its own check scratch, new slot
+ *     requests, or what the standard's own step declares): it reaches another agent by raising a request or a cascade
+ *     event, never by writing that agent's slot or a Producer record;
  * (e) Producer's connection loops are all there, and every agent holds all five loops.
  */
 export function loopConnectedIssues(set: LoopSet): string[] {
@@ -343,11 +372,12 @@ export function loopConnectedIssues(set: LoopSet): string[] {
         if (isAgentStep(step)) {
           for (const path of step.reads ?? []) { const pattern = pathPattern(path, agent); if (pattern) reads.push(pattern); }
           for (const path of step.writes ?? []) {
+            // (d): judged by the same allowlist the extension rule and the runner use.
+            const issue = agentStepWriteIssue(agent, ref, step, path, standard);
+            if (issue !== undefined) issues.push(issue);
             const pattern = pathPattern(path, agent);
             if (!pattern) continue;
             writes.push({ loop, step: step.id, path, pattern });
-            // (d): judged by the same write roots the extension rule and the runner use.
-            if (!ownWriteRoot(pattern, agent)) issues.push(`${ref}: step ${step.id} writes ${path}, outside ${agent}'s tree; an agent loop reaches another agent only by raising a request or a cascade event`);
           }
           continue;
         }

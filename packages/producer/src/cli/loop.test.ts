@@ -5,7 +5,7 @@
  * step or break the chain.
  */
 import { createHash } from "node:crypto";
-import { cpSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, linkSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -15,7 +15,7 @@ import { runLoopCli } from "./loop.js";
 import { runIaCli } from "./owner.js";
 import { runLoopAgentStandard, runLoopConnected } from "../check/loop-connected.js";
 import { AGENT_LOOPS, LOOP_AGENTS, standardOf } from "../loop/agent-loops.js";
-import { inOwnWriteRoot, planRun, resumeRun, routeHandsOn, startRun, undeclaredWrites, type AgentOutcome, type RunHooks } from "../loop/runner.js";
+import { agentWriteRef, planRun, resumeRun, routeHandsOn, startRun, undeclaredWrites, type AgentOutcome, type RunHooks } from "../loop/runner.js";
 import { runCli } from "./main.js";
 import { FIXTURE_CONSUMER_ROOT } from "../records/slot-model/fixture-consumer.test.js";
 import { readiness } from "../records/slots.js";
@@ -319,15 +319,85 @@ describe("the runner runs the owning agent's pin for all five loops (planRun / s
     expect(undeclaredWrites(root, state, step, [`${slot}/../../writer/sections.article.copy/slot.json`, "/etc/passwd", `${slot}/slot.json`])).toEqual([`${slot}/../../writer/sections.article.copy/slot.json`, "/etc/passwd"]);
     // A path through .. is refused even where it normalizes onto a declared write.
     expect(undeclaredWrites(root, state, step, [`${slot}/sub/../slot.json`])).toEqual([`${slot}/sub/../slot.json`]);
-    // A glob or placeholder declared write (had it passed the load) still writes only the agent's own roots, judged on
-    // the real path: another agent's slot, another agent's check folder and a symlink into another tree are refused.
+    // A glob or placeholder declared write (had it passed the load) still writes only what the agent write allowlist
+    // holds: another agent's slot, another agent's check folder, a request it did not raise (r-1 is no entry of its own)
+    // and a symlink into another tree are refused; refine-brief's own slot record, as the standard declares it, goes on.
     const glob = { ...(step as object), writes: ["*/*/slot.json", "<dependant>/slot.json", ".clossys/checks/*/x/scorecard.json", "<slot>/", "producer/queue.slot/entries/*"] } as never;
-    expect(undeclaredWrites(root, state, glob, ["writer/sections.article.copy/slot.json", ".clossys/checks/writer/x/scorecard.json", `${slot}/slot.json`, "producer/queue.slot/entries/r-1.json"])).toEqual(["writer/sections.article.copy/slot.json", ".clossys/checks/writer/x/scorecard.json"]);
+    expect(undeclaredWrites(root, state, glob, ["writer/sections.article.copy/slot.json", ".clossys/checks/writer/x/scorecard.json", `${slot}/slot.json`, "producer/queue.slot/entries/r-1.json"])).toEqual(["writer/sections.article.copy/slot.json", ".clossys/checks/writer/x/scorecard.json", "producer/queue.slot/entries/r-1.json"]);
     symlinkSync(join(root, "clossys", "agents", "writer", "sections.article.copy"), join(root, "clossys", "agents", slot, "linked"));
-    expect(undeclaredWrites(root, state, glob, [`${slot}/linked/slot.json`, `${slot}/fresh/notes.md`])).toEqual([`${slot}/linked/slot.json`]);
-    expect(inOwnWriteRoot(root, "designer", `${slot}/linked/slot.json`)).toBe(false);
-    expect(inOwnWriteRoot(root, "designer", ".clossys/checks/designer/x/scorecard.json")).toBe(true);
-    expect(inOwnWriteRoot(root, "designer", "producer/queue.slot/entries")).toBe(false);
+    expect(undeclaredWrites(root, state, glob, [`${slot}/linked/slot.json`, `${slot}/fresh/notes.md`, `${slot}/candidates/fresh-v9.json`])).toEqual([`${slot}/linked/slot.json`, `${slot}/fresh/notes.md`]);
+    expect(agentWriteRef(root, `${slot}/linked/slot.json`)).toEqual({ refused: expect.stringMatching(/is a symlink$/) });
+    expect(agentWriteRef(root, ".clossys/checks/designer/x/scratch/a.json")).toEqual({ segments: [".clossys", "checks", "designer", "x", "scratch", "a.json"] });
+    expect(agentWriteRef(root, `clossys/agents/${slot}/candidates/n.json`)).toEqual({ segments: [...slot.split("/"), "candidates", "n.json"] });
+  }, LONG);
+
+  it("refuses at run time what only Producer writes: owner queues, verdicts, slot records, links and others' requests (U9a fix round 3)", async () => {
+    const root = copy();
+    expect((await loop(root, "designer/loop.create")).exitCode).toBe(0);
+    const slotId = firstSlot(root, "designer");
+    const slot = `designer/${slotId}`;
+    const plan = planRun(root, { loop: "loop.create", slot }, AT);
+    expect(plan.ok ? plan.state.version.ref : plan.reason).toBe("designer/loop.create/create-v1.json");
+    if (!plan.ok) return;
+    const state = plan.state;
+    const agents = join(root, "clossys", "agents");
+    const step = (id: string, writes: string[]) => ({ id, does: "", decider: { by: "agent", agent: "designer", verb: "review", tier: "low" }, cli: "clossys next", reads: [], writes, checks: [] }) as never;
+    const put = (rel: string, body: unknown) => { mkdirSync(join(root, rel, ".."), { recursive: true }); writeFileSync(join(root, rel), `${JSON.stringify(body, null, 2)}\n`); };
+    const shapedRequest = { schema: "clossys.queue-entry/2", kind: "slot", status: "open", from: slot, events: [{ id: "x#1", at: AT, op: "raised", by: "designer" }] };
+
+    // R1: the owner's approve queue is no agent's, even an entry shaped as a new request of its own; a check-folder glob
+    // writes only the agent's scratch, never Producer's verdicts or other files beside them.
+    put("clossys/agents/producer/queue.approve/entries/20261117T1200Z-forged.json", shapedRequest);
+    expect(undeclaredWrites(root, state, step("extra", ["producer/queue.approve/entries/*"]), ["producer/queue.approve/entries/20261117T1200Z-forged.json"])).toEqual(["producer/queue.approve/entries/20261117T1200Z-forged.json"]);
+    const checks = [`.clossys/checks/designer/${slotId}/cascade.json`, `.clossys/checks/designer/${slotId}/other/x.json`, `.clossys/checks/designer/${slotId}/scratch/n.json`];
+    expect(undeclaredWrites(root, state, step("extra", [".clossys/checks/<agent>/<slot-id>/"]), checks)).toEqual(checks.slice(0, 2));
+
+    // R2: a hard link from a new candidate to another agent's slot record or to the agent's own pin is refused.
+    mkdirSync(join(agents, slot, "candidates"), { recursive: true });
+    put(`clossys/agents/${slot}/pin.json`, { note: "the slot's pin" });
+    linkSync(join(agents, "writer", "sections.article.copy", "slot.json"), join(agents, slot, "candidates", "h-v9.json"));
+    linkSync(join(agents, slot, "pin.json"), join(agents, slot, "candidates", "p-v9.json"));
+    writeFileSync(join(agents, slot, "candidates", "n-v9.json"), "{}\n");
+    const candidates = step("extra", ["<slot>/candidates/*"]);
+    expect(undeclaredWrites(root, state, candidates, [`${slot}/candidates/h-v9.json`, `${slot}/candidates/p-v9.json`, `${slot}/candidates/n-v9.json`])).toEqual([`${slot}/candidates/h-v9.json`, `${slot}/candidates/p-v9.json`]);
+
+    // R3: a symlink between the agent's own slots is refused, not followed (round 2 resolved it and let it pass).
+    symlinkSync(join(agents, "designer", "loop.create", "candidates", "create-v1.json"), join(agents, slot, "candidates", "s-v9.json"));
+    expect(undeclaredWrites(root, state, candidates, [`${slot}/candidates/s-v9.json`])).toEqual([`${slot}/candidates/s-v9.json`]);
+
+    // R4: the slot record is Producer's, but for the standard's own refine-brief, which declares it; refine-brief's pin is not.
+    expect(undeclaredWrites(root, state, step("extra", ["<slot>/slot.json"]), [`${slot}/slot.json`])).toEqual([`${slot}/slot.json`]);
+    expect(undeclaredWrites(root, state, step("refine-brief", ["<slot>/slot.json"]), [`${slot}/slot.json`])).toEqual([]);
+    expect(undeclaredWrites(root, state, step("refine-brief", ["<slot>/pin.json"]), [`${slot}/pin.json`])).toEqual([`${slot}/pin.json`]);
+
+    // R5: an added step writes only a new request of its own: never another agent's open request, nor one with events.
+    const others = await withRequest(root, "director/narratives.origin");
+    const two = { ...shapedRequest, events: [...shapedRequest.events, { id: "x#2", at: AT, op: "checked", by: "producer" }] };
+    put("clossys/agents/producer/queue.slot/entries/20261117T1200Z-two.json", two);
+    const designerSlot = join(agents, slot, "slot.json");
+    const doc = readJson(designerSlot);
+    doc.refs.push({ to: "director/narratives.origin", rel: "input" });
+    writeFileSync(designerSlot, `${JSON.stringify(doc, null, 2)}\n`);
+    const raised = await runCli(["request", "--target", "director/narratives.origin", "--from", slot, "--why", "the icon cites it", "--at", AT, "--by", "designer", "--root", root], root);
+    expect(raised.exitCode, raised.message).toBe(0);
+    const own = (raised.output as { id: string }).id;
+    const requests = step("extra", ["producer/queue.slot/entries/*"]);
+    expect(undeclaredWrites(root, state, requests, [`producer/queue.slot/entries/${others}.json`, "producer/queue.slot/entries/20261117T1200Z-two.json", `producer/queue.slot/entries/${own}.json`])).toEqual([`producer/queue.slot/entries/${others}.json`, "producer/queue.slot/entries/20261117T1200Z-two.json"]);
+  }, LONG);
+
+  it("refuses at load a forged designer loop.choose pin whose added step answers the owner's approve queue (B1, U9a fix round 3)", async () => {
+    const root = copy();
+    expect((await loop(root, "designer/loop.choose")).exitCode).toBe(0);
+    const dir = slotDir(root, "designer", "loop.choose");
+    const file = join(dir, "candidates", "choose-v1.json");
+    const doc = readJson(file);
+    doc.content.steps.push({ id: "self-approve", does: "answers the confirm entry", decider: { by: "agent", agent: "designer", verb: "review", tier: "low" }, cli: "clossys next", reads: [], writes: ["producer/queue.approve/entries/*"], checks: [] });
+    const bytes = `${JSON.stringify(doc, null, 2)}\n`;
+    writeFileSync(file, bytes);
+    const pin = readJson(join(dir, "pin.json"));
+    writeFileSync(join(dir, "pin.json"), `${JSON.stringify({ ...pin, sha256: createHash("sha256").update(bytes).digest("hex") }, null, 2)}\n`);
+    const plan = planRun(root, { loop: "loop.choose", slot: `designer/${firstSlot(root, "designer")}` }, AT);
+    expect(plan.ok ? plan.state.version.ref : plan.reason).toMatch(/^designer\/loop\.choose\/choose-v1\.json does not extend producer\/loop\.choose: .*step self-approve writes producer\/queue\.approve\/entries\/\*, which only Producer writes/);
   }, LONG);
 
   it("hands a failed step's findings to a route step only where Producer's standard does", () => {

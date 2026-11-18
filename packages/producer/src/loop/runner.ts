@@ -23,7 +23,7 @@
  */
 import { existsSync, lstatSync, mkdirSync, openSync, closeSync, writeSync, readFileSync, realpathSync, renameSync, writeFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { appendRecord, buildRecord, invocationOf, observe } from "../pipeline/trace.js";
-import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 import { checkPinsResolve, resolveAll } from "../check/pins-resolve.js";
 import { answerQueueEntry } from "../queue/answer.js";
 import { entryStamp, findQueueEntry, listQueueEntryFiles, readQueueEntry, slugOf } from "../queue/entry.js";
@@ -41,7 +41,7 @@ import {
   SLOT_REF, TRIGGER_CODE, TRIGGER_KINDS, VERIFIED_CHECKS, ledgerOf, loopStem, type LoopName,
 } from "./names.js";
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
-import { isAgentLoop, isLoopAgent, pathPattern, patternsMeet, standardOf, type LoopAgent } from "./agent-loops.js";
+import { agentWriteClass, isAgentLoop, isLoopAgent, pathPattern, patternsMeet, standardOf, standardOwnWrites, type LoopAgent } from "./agent-loops.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { certifiedOptions } from "../constitution/pin-gate.js";
 import { readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
@@ -715,64 +715,81 @@ export function routeHandsOn(state: Pick<RunState, "loop" | "version">, step: Lo
 }
 
 /**
- * A path with its symlinks resolved: the real path of its nearest existing ancestor, then the parts that do not exist
- * yet. Undefined when a part that exists cannot be resolved (a dangling or looping symlink).
+ * U9a fix round 3: a file an agent step reported writing, as `agentWriteClass` judges it: its segments in the ledger's
+ * agents-relative form (`clossys/agents/` dropped, `.clossys/...` kept), or why it is refused. Only the root's own real
+ * path is resolved (a temp root under a linked `/var`); every component below it is read with lstat and a symlink is
+ * refused, never followed. A file that exists must be a regular file with one link: a hard link to a Producer record
+ * (a pin, a slot record) would let a candidate write change it, so it is refused, as are directories and fifos.
  */
-function realPathOf(path: string): string | undefined {
-  let at = path;
-  const rest: string[] = [];
-  while (lstatSync(at, { throwIfNoEntry: false }) === undefined) {
-    const up = dirname(at);
-    if (up === at) return undefined;
-    rest.unshift(basename(at));
-    at = up;
+export function agentWriteRef(root: string, file: string): { segments: string[] } | { refused: string } {
+  let base: string;
+  try { base = realpathSync(root); } catch { return { refused: `${file}: the root ${root} cannot be resolved` }; }
+  const rel = relative(root, wroteFile(root, file));
+  const parts = rel.split(sep).filter(part => part !== "");
+  let at = base;
+  for (let index = 0; index < parts.length; index++) {
+    at = join(at, parts[index]!);
+    let stat;
+    try { stat = lstatSync(at, { throwIfNoEntry: false }); } catch { return { refused: `${file}: ${at} cannot be read` }; }
+    if (stat === undefined) break;
+    if (stat.isSymbolicLink()) return { refused: `${file}: ${at} is a symlink` };
+    if (index === parts.length - 1 && !(stat.isFile() && stat.nlink === 1)) return { refused: `${file}: ${at} is not a regular file with one link` };
   }
-  try { return join(realpathSync(at), ...rest); } catch { return undefined; }
+  const segments = parts[0] === "clossys" && parts[1] === "agents" ? parts.slice(2) : parts;
+  return { segments };
 }
-const inside = (dir: string, path: string): boolean => {
-  const rel = relative(dir, path);
-  return rel !== "" && !isAbsolute(rel) && rel.split(sep)[0] !== "..";
-};
 
 /**
- * U9a: whether a file an agent step wrote lands, on its real path (symlinks resolved), in one of the agent's own write
- * roots: its tree (`clossys/agents/<agent>/`), its check folder (`.clossys/checks/<agent>/`) or Producer's queue entries
- * (`clossys/agents/producer/queue.<name>/entries/`). The roots `ownWriteRoot` holds a declared write to.
+ * U9a fix round 3: a slot request an agent step raised itself: an open `clossys.queue-entry/2` kind slot entry with its
+ * one raised event, from one of the agent's own slots. Any other entry (an owner answer queue's, another agent's
+ * request, or one already checked, decided or closed) is Producer's.
  */
-export function inOwnWriteRoot(root: string, agent: LoopAgent, file: string): boolean {
-  const base = realPathOf(root);
-  const real = realPathOf(wroteFile(root, file));
-  if (base === undefined || real === undefined) return false;
-  if (inside(join(base, "clossys", "agents", agent), real) || inside(join(base, ".clossys", "checks", agent), real)) return true;
-  const producer = join(base, "clossys", "agents", "producer");
-  if (!inside(producer, real)) return false;
-  const [queue, entries, ...more] = relative(producer, real).split(sep);
-  return /^queue\.[a-z]+$/.test(queue ?? "") && entries === "entries" && more.length > 0;
+function ownNewRequest(root: string, file: string, agent: LoopAgent): boolean {
+  try {
+    const entry = JSON.parse(readFileSync(wroteFile(root, file), "utf8")) as { schema?: unknown; kind?: unknown; status?: unknown; events?: unknown; from?: unknown };
+    return entry.schema === "clossys.queue-entry/2" && entry.kind === "slot" && entry.status === "open"
+      && Array.isArray(entry.events) && entry.events.length === 1 && typeof entry.from === "string" && entry.from.startsWith(`${agent}/`);
+  } catch {
+    return false;
+  }
 }
 
 /**
- * U9a: the files an agent step of an agent's own loop version reported writing that the step does not declare: outside
- * the root, through `..`, outside the agent's own write roots on the real path, or matching none of its `writes` (with
+ * U9a: the files an agent step of an agent's own loop version reported writing that it may not write: outside the root,
+ * through `..`, through a symlink or a hard link (`agentWriteRef`), a Producer-owned file (anything but what the
+ * standard's own step of that id declares, filled for the run, or the agent write allowlist `agentWriteClass`; a slot
+ * request under the allowlist must be a new one the agent raised), or matching none of the step's `writes` (with
  * `<slot>` the run's own slot). Empty for a Producer version. The runner judges the files the step reports (the
- * resumer's `--wrote` list or the code hook's outcome); a write the step does not report is outside what it can see.
+ * resumer's `--wrote` list or the code hook's outcome) and refuses symlinked and hard-linked ones; a write the step does
+ * not report stays outside what it can see.
  */
 export function undeclaredWrites(root: string, state: RunState, step: LoopStep, wrote: readonly string[] | undefined): string[] {
   if (state.version.ref.startsWith("producer/") || step.decider.by !== "agent" || !wrote?.length) return [];
   const agent = state.agent ?? state.subject?.agent;
   if (agent === undefined || !isLoopAgent(agent)) return [...wrote];
   const slot = state.subject ? `${state.subject.agent}/${state.subject.slotId}` : undefined;
-  const declared = (step.writes ?? []).map(write => {
+  const fill = (write: string): string[] | undefined => {
     let path = write;
     if (slot) path = path.replace(/^(clossys\/agents\/)?<slot>(?=\/|$)/, `$1${slot}`).replaceAll("<slot-id>", state.subject!.slotId);
     if (state.request) path = path.replaceAll("<request>", state.request);
     return pathPattern(path, agent);
-  }).filter((pattern): pattern is string[] => pattern !== undefined);
+  };
+  const defined = (pattern: string[] | undefined): pattern is string[] => pattern !== undefined;
+  const declared = (step.writes ?? []).map(fill).filter(defined);
+  const standard = isAgentLoop(state.loop) ? standardOf(state.loop) : undefined;
+  const own = (standard?.ok ? standardOwnWrites(standard.standard, step.id, agent) : []).map(fill).filter(defined);
   return wrote.filter(file => {
     if (file.split(/[\\/]/).includes("..")) return true;
     const absolute = wroteFile(root, file);
     if (relative(root, absolute).split(sep)[0] === "..") return true;
-    if (!inOwnWriteRoot(root, agent, file)) return true;
-    const segments = ledgerPath(root, file).split("/");
+    const ref = agentWriteRef(root, file);
+    if ("refused" in ref) return true;
+    const { segments } = ref;
+    if (!own.some(pattern => patternsMeet(pattern, segments))) {
+      const kind = agentWriteClass(segments, agent);
+      if (kind === undefined) return true;
+      if (kind === "queue-slot" && !ownNewRequest(root, file, agent)) return true;
+    }
     return !declared.some(pattern => patternsMeet(pattern, segments));
   });
 }
