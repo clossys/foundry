@@ -86,7 +86,7 @@ export async function runLoopCli(argv: readonly string[], cwd: string): Promise<
   }
   const own = readAgentLoopPin(workspace, agent, loop);
   if (own === undefined || !own.ok) return done(workspace, { loop: target, adopted, pinned, issues: [own?.ok === false ? own.reason : `${target} is not pinned`] });
-  const issues = agentLoopIssues(agent, loop, own.content);
+  const issues = agentLoopIssues(agent, loop, own.content, { root: workspace });
   // The runner's own plan for a real subject of the agent: what `clossys run <loop>` would run, nothing injected.
   const input = planInput(workspace, agent, loop);
   let plan: LoopCliOutput["plan"];

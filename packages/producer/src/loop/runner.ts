@@ -41,7 +41,8 @@ import {
   SLOT_REF, TRIGGER_CODE, TRIGGER_KINDS, VERIFIED_CHECKS, ledgerOf, loopStem, type LoopName,
 } from "./names.js";
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
-import { agentWriteClass, isAgentLoop, isLoopAgent, pathPattern, patternsMeet, standardOf, standardOwnWrites, type LoopAgent } from "./agent-loops.js";
+import { agentWriteClass, currentStandardOf, isAgentLoop, isLoopAgent, pathPattern, patternsMeet, standardOwnWrites, type LoopAgent } from "./agent-loops.js";
+import { judgeSnapshot, keepSnapshot, keptSnapshot, snapshotKey, treeSnapshot, type AgentSnapshot, type TreeFiles } from "./agent-snapshot.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { certifiedOptions } from "../constitution/pin-gate.js";
 import { readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
@@ -123,6 +124,11 @@ export interface RunState {
   waiting?: Waiting;
   /** An owner entry about to be raised: saved before the raise, so a resume adopts the entry instead of raising it twice (B9). */
   pendingRaise?: { step: string; queue: string; at: Iso; then?: "retry" };
+  /**
+   * U9a fix round 4: what `clossys/` and `.clossys/` held right before an agent step of an agent's own loop was handed
+   * to the agent, kept while the run waits on it; the step's answer is judged against it (agent-snapshot.ts).
+   */
+  agentSnapshot?: AgentSnapshot;
   /** Step checks the verb did not run (B7); named in the outcome. */
   notRun?: string[];
   outcome?: string;
@@ -585,16 +591,46 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
         ...(skill ? { skill } : {}), ...(subject ? { ref: refOf(subject) } : {}), ...(state.from ? { from: state.from } : {}),
         ...(state.request ? { request: state.request } : {}),
       };
+      // U9a fix round 4 (blind2 B1): an agent step of an agent's own loop is judged by what it changed, not only by
+      // what it reports: the tree before it is kept in the run state while the run waits; a resume without it stops.
+      const ownLoop = !state.version.ref.startsWith("producer/") && isAgentLoop(state.loop);
+      let before: TreeFiles | undefined;
+      if (ownLoop) {
+        if (held && state.waiting?.on === "agent") {
+          before = keptSnapshot(state.agentSnapshot, step.id);
+          if (before === undefined) {
+            delete state.agentSnapshot;
+            return stop(ctx, `step ${step.id}: the snapshot the run kept before agent:${agent} ran is missing or corrupt, so what the step wrote cannot be judged`, 2);
+          }
+        } else before = treeSnapshot(root, state.runId);
+      }
       const outcome = await hooks.agent(packet);
       if (outcome === "wait") {
         state.status = "waiting"; state.waiting = { step: step.id, on: "agent" };
+        if (before !== undefined) state.agentSnapshot = keepSnapshot(step.id, before);
         saveState(root, state);
         return { exitCode: 0, state, packet, message: `run ${state.runId}: step ${step.id} waits for agent:${agent} (${decider.verb}, ${decider.tier})` };
       }
       exit = outcome.exit; wrote = outcome.wrote; cli = outcome.cli ?? filled.text;
       ledgerDecider = { by: "agent", agent, verb: decider.verb, tier: decider.tier, model: outcome.model, ...(skill ? { skill } : {}) };
+      delete state.agentSnapshot;
+      let judgedWrote = wrote;
+      if (before !== undefined) {
+        // Every change the step made: a removal, an unreported write, or a ledger change that is not its own append.
+        const reported = new Set((wrote ?? []).map(file => snapshotKey(root, wroteFile(root, file))));
+        const current = isAgentLoop(state.loop) ? currentStandardOf(root, state.loop) : undefined;
+        const judged = judgeSnapshot(root, before, treeSnapshot(root, state.runId), reported, step, agent, state.subject, current?.ok ? current.standard : undefined);
+        if (judged.issues.length) {
+          delete state.waiting;
+          recordStep(ctx, step, ledgerDecider, cli, 1, wrote, vars);
+          return stop(ctx, `step ${step.id} ${judged.issues.join("; ")}; ${state.version.ref} refuses it`, 1);
+        }
+        // The slot ledger is judged by its append rule above, never by the write allowlist.
+        const appended = new Set(judged.appended);
+        judgedWrote = wrote?.filter(file => !appended.has(snapshotKey(root, wroteFile(root, file))));
+      }
       // U9a: an agent's own loop writes only what its step declares; anything else stops the run, whatever its exit.
-      const stray = undeclaredWrites(root, state, step, wrote);
+      const stray = undeclaredWrites(root, state, step, judgedWrote, before);
       if (stray.length) {
         delete state.waiting;
         recordStep(ctx, step, ledgerDecider, cli, 1, wrote, vars);
@@ -705,13 +741,14 @@ function recordedBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | un
  * version is the standard; an agent's own version hands on only where the standard runs the same route step right after
  * the same failing step, so an agent cannot add or move a route step to let a failed required step pass.
  */
-export function routeHandsOn(state: Pick<RunState, "loop" | "version">, step: LoopStep, next: LoopStep): boolean {
+export function routeHandsOn(state: Pick<RunState, "loop" | "version">, step: LoopStep, next: LoopStep, root?: string): boolean {
   if (state.version.ref.startsWith("producer/") || !isAgentLoop(state.loop)) return true;
-  const standard = standardOf(state.loop);
+  const standard = currentStandardOf(root, state.loop);
   if (!standard.ok) return false;
-  const at = standard.standard.steps.findIndex(each => each.id === step.id);
-  const after = at < 0 ? undefined : standard.standard.steps[at + 1];
-  return after !== undefined && after.id === next.id && after.cli === next.cli && after.decider.by === "code" && !standard.standard.steps[at]!.onFail;
+  const steps = standard.standard.steps;
+  const at = steps.findIndex(each => each.id === step.id);
+  const after = at < 0 ? undefined : steps[at + 1];
+  return after !== undefined && after.id === next.id && after.cli === next.cli && after.decider.by === "code" && !steps[at]!.onFail;
 }
 
 /**
@@ -736,6 +773,8 @@ export function agentWriteRef(root: string, file: string): { segments: string[] 
     if (index === parts.length - 1 && !(stat.isFile() && stat.nlink === 1)) return { refused: `${file}: ${at} is not a regular file with one link` };
   }
   const segments = parts[0] === "clossys" && parts[1] === "agents" ? parts.slice(2) : parts;
+  // U9a fix round 4 (blind1 #4): nothing an agent writes under clossys/agents/ is a dot path (a hidden slot or file).
+  if (segments !== parts && segments.some(segment => segment.startsWith("."))) return { refused: `${file}: a dot path under clossys/agents/` };
   return { segments };
 }
 
@@ -761,12 +800,16 @@ function ownNewRequest(root: string, file: string, agent: LoopAgent): boolean {
  * request under the allowlist must be a new one the agent raised), or matching none of the step's `writes` (with
  * `<slot>` the run's own slot). Empty for a Producer version. The runner judges the files the step reports (the
  * resumer's `--wrote` list or the code hook's outcome) and refuses symlinked and hard-linked ones; a write the step does
- * not report stays outside what it can see.
+ * not report is caught by the snapshot diff (agent-snapshot.ts) before this runs.
+ *
+ * U9a fix round 4 (blind1 B1): a slot request and a candidate are create-only: one that was in `before` (the snapshot
+ * taken before the step) is refused, unless the standard's own step names that exact file (loop.slot's decide step
+ * answers its own `<request>` entry). Without a snapshot every write is refused (fail closed).
  */
-export function undeclaredWrites(root: string, state: RunState, step: LoopStep, wrote: readonly string[] | undefined): string[] {
+export function undeclaredWrites(root: string, state: RunState, step: LoopStep, wrote: readonly string[] | undefined, before: TreeFiles | undefined): string[] {
   if (state.version.ref.startsWith("producer/") || step.decider.by !== "agent" || !wrote?.length) return [];
   const agent = state.agent ?? state.subject?.agent;
-  if (agent === undefined || !isLoopAgent(agent)) return [...wrote];
+  if (agent === undefined || !isLoopAgent(agent) || before === undefined) return [...wrote];
   const slot = state.subject ? `${state.subject.agent}/${state.subject.slotId}` : undefined;
   const fill = (write: string): string[] | undefined => {
     let path = write;
@@ -776,8 +819,9 @@ export function undeclaredWrites(root: string, state: RunState, step: LoopStep, 
   };
   const defined = (pattern: string[] | undefined): pattern is string[] => pattern !== undefined;
   const declared = (step.writes ?? []).map(fill).filter(defined);
-  const standard = isAgentLoop(state.loop) ? standardOf(state.loop) : undefined;
-  const own = (standard?.ok ? standardOwnWrites(standard.standard, step.id, agent) : []).map(fill).filter(defined);
+  const standard = isAgentLoop(state.loop) ? currentStandardOf(root, state.loop) : undefined;
+  const own = (standard?.ok ? standardOwnWrites(standard.standard, step, agent) : []).map(fill).filter(defined);
+  const literal = (pattern: readonly string[]) => pattern.every(segment => !segment.includes("*"));
   return wrote.filter(file => {
     if (file.split(/[\\/]/).includes("..")) return true;
     const absolute = wroteFile(root, file);
@@ -785,8 +829,10 @@ export function undeclaredWrites(root: string, state: RunState, step: LoopStep, 
     const ref = agentWriteRef(root, file);
     if ("refused" in ref) return true;
     const { segments } = ref;
+    const existed = snapshotKey(root, absolute) in before;
+    const kind = agentWriteClass(segments, agent);
+    if ((kind === "queue-slot" || kind === "candidate") && existed && !own.some(pattern => literal(pattern) && patternsMeet(pattern, segments))) return true;
     if (!own.some(pattern => patternsMeet(pattern, segments))) {
-      const kind = agentWriteClass(segments, agent);
       if (kind === undefined) return true;
       if (kind === "queue-slot" && !ownNewRequest(root, file, agent)) return true;
     }
@@ -802,7 +848,7 @@ async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: rea
   const next = version.steps[state.cursor + 1];
   if (!step.onFail) {
     // A failing check whose next step routes findings hands them on (flows.md F6: route after check).
-    if (next?.cli === "clossys check --route" && next.decider.by === "code" && routeHandsOn(state, step, next)) { state.cursor++; saveState(root, state); return null; }
+    if (next?.cli === "clossys check --route" && next.decider.by === "code" && routeHandsOn(state, step, next, root)) { state.cursor++; saveState(root, state); return null; }
     return stop(ctx, `step ${step.id} failed`, 1);
   }
   const at = iso(ctx.now());

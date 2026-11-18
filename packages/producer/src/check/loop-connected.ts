@@ -43,7 +43,7 @@ export function runLoopAgentStandard(root: string): TreeCheckResult {
       }
       const pinned = readAgentLoopPin(root, agent, loop);
       if (pinned === undefined || !pinned.ok) { findings.push({ subject: ref, detail: pinned?.ok === false ? pinned.reason : `${ref} is not pinned` }); continue; }
-      for (const issue of agentLoopIssues(agent, loop, pinned.content)) findings.push({ subject: pinned.ref, detail: issue });
+      for (const issue of agentLoopIssues(agent, loop, pinned.content, { root })) findings.push({ subject: pinned.ref, detail: issue });
     }
   }
   return treeResult(LOOP_AGENT_STANDARD, findings);

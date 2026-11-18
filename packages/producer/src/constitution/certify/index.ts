@@ -55,7 +55,7 @@ export function certifyFit(input: CertifyInput, env: CertifyEnv): Reason[] {
   const { kind, contract: own } = slotDocOf(slot);
   const contract = input.contract ?? own;
   // An agent's own loop slot (U9a): its own certifier, against Producer's standard loop.
-  if (!kind && isAgentLoopSlot(slot, slotDocOf(slot).doc)) return candidate.readError ? [reason("invalid", candidate.readError)] : certifyLoop(slot, candidate, contract);
+  if (!kind && isAgentLoopSlot(slot, slotDocOf(slot).doc)) return candidate.readError ? [reason("invalid", candidate.readError)] : certifyLoop(slot, candidate, contract, env.root);
   if (!kind) return [reason("invalid", `slot ${slot.id} has no known kind`)];
   if (candidate.readError) return [reason("invalid", candidate.readError)];
   const invalid = validateCandidate(kind, slot.id, candidate.name, candidate.text, candidate.path).map(issue => reason("invalid", issue.message));
@@ -79,7 +79,7 @@ export function standardReasons(input: CertifyInput, env: CertifyEnv, pinSet: st
   const { slot, candidate } = input;
   const { doc, kind, contract: own } = slotDocOf(slot);
   const contract = input.contract ?? own;
-  if (!kind && isAgentLoopSlot(slot, doc)) return loopStandardReasons(slot, doc);
+  if (!kind && isAgentLoopSlot(slot, doc)) return loopStandardReasons(slot, doc, env.root);
   const id = typeof doc.standard === "string" ? doc.standard : undefined;
   if (!id) return [reason("no-standard", `slot ${slot.id} names no standard (slot.json standard)`)];
   const standard = standardFor(env.standards, slot.agent, id);
@@ -183,7 +183,7 @@ export function pinSetOf(input: CertifyInput, env: CertifyEnv): string {
     slot: `${slot.agent}/${slot.id}`, kind: kind ?? null, inputs: stringList(doc.inputs), uses: stringList(doc.uses),
     standard: typeof doc.standard === "string" ? doc.standard : null,
     // An agent loop's verdict reads Producer's standard loop it extends (a changed standard re-verdicts it).
-    ...(!kind && isAgentLoopSlot(slot, doc) ? { loopStandard: loopStandardSha(slot.id) } : {}),
+    ...(!kind && isAgentLoopSlot(slot, doc) ? { loopStandard: loopStandardSha(slot.id, env.root) } : {}),
     reads: [...[...reads].sort().map(pinOf), ...[...copy].sort().map(copyOf)],
   }));
 }

@@ -20,10 +20,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
 import { resolveAgent } from "../agents.js";
 import { readCandidateFile } from "../records/candidate.js";
+import { sha256Hex } from "../records/hash.js";
+import { pinPath } from "../records/pin.js";
 import { resolveSlot } from "../records/resolve.js";
-import type { AgentId, CandidateName, LoopStep, LoopVersion, Sha256 } from "../records/types.js";
+import type { AgentId, CandidateName, LoopStep, LoopVersion, Ref, Sha256 } from "../records/types.js";
 import { loopReachableIssues } from "../check/loop-reachable.js";
-import { readPackageLoop, type LoopFile } from "./files.js";
+import { readConsumerLoop, readPackageLoop, type LoopFile } from "./files.js";
 import { LOOP_TRIGGERS, OWNER_OF_SLOT, loopStem, type LoopName } from "./names.js";
 
 import { AGENT_LOOPS, LOOP_AGENTS, isAgentLoop, isLoopAgent, type AgentLoopName, type LoopAgent } from "./agent-loops-ia.js";
@@ -151,10 +153,35 @@ export function agentWriteClass(pattern: readonly string[], agent: LoopAgent): A
   return undefined;
 }
 
-/** What the standard's own step of this id writes, exactly as the standard has it, when it is this agent's; else nothing. */
-export function standardOwnWrites(standard: LoopVersion | undefined, stepId: string, agent: LoopAgent): readonly string[] {
-  const step = standard?.steps.find(each => each.id === stepId);
-  return step !== undefined && namesAgent(step, agent) ? step.writes ?? [] : [];
+/**
+ * U9a fix round 4 (blind1 B3): what binds a standard agent step's own writes to the step: a hash of its id, its decider
+ * (agent, this agent or the per-slot owner alike; verb) and its cli as the cli rules judge it. The standard's writes
+ * are safe only because its cli is the gate verb that writes them (`clossys pin`, `clossys brief --tighten`, ...); a
+ * step that keeps the id but runs another cli is no longer that step. Undefined for anything but an agent step.
+ */
+export function agentStepBinding(step: unknown, agent: LoopAgent): string | undefined {
+  if (!isObject(step) || !isObject(step.decider) || step.decider.by !== "agent" || typeof step.cli !== "string" || typeof step.id !== "string") return undefined;
+  const who = step.decider.agent === agent || step.decider.agent === OWNER_OF_SLOT ? "self" : String(step.decider.agent);
+  return sha256Hex(JSON.stringify({ id: step.id, by: "agent", agent: who, verb: String(step.decider.verb), cli: cliWords(step.cli) }));
+}
+
+/** Whether a step is the standard's own agent step of its id for this agent: same id, decider and cli (`agentStepBinding`). */
+export function isStandardAgentStep(standard: LoopVersion | undefined, step: Pick<LoopStep, "id" | "decider" | "cli">, agent: LoopAgent): boolean {
+  const own = standard?.steps.find(each => each.id === step.id);
+  if (own === undefined || !namesAgent(own, agent)) return false;
+  const want = agentStepBinding(own, agent);
+  return want !== undefined && agentStepBinding(step, agent) === want;
+}
+
+/**
+ * What the standard's own step of this id writes, exactly as the standard has it, when it is this agent's and the step
+ * is that standard step (`agentStepBinding`: same id, decider and cli); else nothing.
+ */
+export function standardOwnWrites(standard: LoopVersion | undefined, step: Pick<LoopStep, "id" | "decider" | "cli">, agent: LoopAgent): readonly string[] {
+  const own = standard?.steps.find(each => each.id === step.id);
+  if (own === undefined || !namesAgent(own, agent)) return [];
+  const want = agentStepBinding(own, agent);
+  return want !== undefined && agentStepBinding(step, agent) === want ? own.writes ?? [] : [];
 }
 
 /**
@@ -162,9 +189,9 @@ export function standardOwnWrites(standard: LoopVersion | undefined, stepId: str
  * never outside the tree; the standard's own step of that id may write exactly the paths its standard declares;
  * anything else only within `agentWriteClass`. Undefined when the write is allowed.
  */
-export function agentStepWriteIssue(agent: LoopAgent, ref: string, step: Pick<LoopStep, "id">, path: string, standard: LoopVersion | undefined): string | undefined {
+export function agentStepWriteIssue(agent: LoopAgent, ref: string, step: Pick<LoopStep, "id" | "decider" | "cli">, path: string, standard: LoopVersion | undefined): string | undefined {
   if (escapesTree(path)) return `${ref}: step ${step.id} writes ${path}, outside the tree (absolute or through ..)`;
-  if (standardOwnWrites(standard, step.id, agent).includes(path)) return undefined;
+  if (standardOwnWrites(standard, step, agent).includes(path)) return undefined;
   const pattern = pathPattern(posix.normalize(path), agent);
   if (pattern !== undefined && agentWriteClass(pattern, agent) !== undefined) return undefined;
   return `${ref}: step ${step.id} writes ${path}, which only Producer writes; an agent step writes only new candidates, its .clossys/checks/${agent}/<slot>/scratch/ and new producer/queue.slot entries`;
@@ -203,6 +230,8 @@ export function loopExtensionIssues(agent: LoopAgent, loop: AgentLoopName, conte
     if (need.by === "agent" && got.by === "agent") {
       if (got.agent !== agent && got.agent !== OWNER_OF_SLOT) issues.push(`${ref}: step ${want.id} is decided by ${got.agent}; an agent loop's own steps are the agent's`);
       if (got.verb !== need.verb) issues.push(`${ref}: step ${want.id} changes verb ${need.verb} to ${got.verb}`);
+      // U9a fix round 4 (blind1 B3): a required agent step runs the standard's cli (whitespace aside); its writes are the gate verb's.
+      if (typeof step.cli !== "string" || cliWords(step.cli) !== cliWords(want.cli)) issues.push(`${ref}: step ${want.id} changes the standard agent step's cli (${want.cli})`);
     }
     for (const check of want.checks) if (!(step.checks ?? []).includes(check)) issues.push(`${ref}: step ${want.id} drops exit check ${check}`);
     if (want.onFail && (step.onFail?.raise !== want.onFail.raise || step.onFail?.then !== want.onFail.then)) issues.push(`${ref}: step ${want.id} changes its failure route (${want.onFail.raise} then ${want.onFail.then})`);
@@ -254,11 +283,53 @@ export function loopExtensionIssues(agent: LoopAgent, loop: AgentLoopName, conte
   return issues;
 }
 
+export type StandardRead = { ok: true; standard: LoopVersion; file: LoopFile } | { ok: false; reason: string };
+
 /** The Producer standard of one loop, read from this installed Producer package. */
-export function standardOf(loop: AgentLoopName): { ok: true; standard: LoopVersion; file: LoopFile } | { ok: false; reason: string } {
+export function standardOf(loop: AgentLoopName): StandardRead {
   const read = readPackageLoop(loop);
   if (!read.ok) return read;
   return { ok: true, standard: read.content as LoopVersion, file: read };
+}
+
+/**
+ * U9a fix round 4 (blind1 B2): the Producer loop of this name that runs for the consumer now: the owner's pin
+ * (`clossys/agents/producer/loop.<name>/pin.json`, files.ts readConsumerLoop), else package v1. A pin that is there but
+ * does not resolve, or is not the owner's, is an error: never a fallback to package v1. Without a root, package v1.
+ */
+export function currentStandardOf(root: string | undefined, loop: AgentLoopName): StandardRead {
+  if (root === undefined) return standardOf(loop);
+  const pinned = readConsumerLoop(root, loop);
+  if (pinned === undefined) return standardOf(loop);
+  if (!pinned.ok) return pinned;
+  return { ok: true, standard: pinned.content as LoopVersion, file: pinned };
+}
+
+/** The ref an agent loop pin cites for the Producer loop it was certified against (rel `uses`, to `producer/<loop>/...`). */
+export const certifiedStandardRef = (file: Pick<LoopFile, "ref" | "sha256">): Ref => ({ to: file.ref as Ref["to"], rel: "uses", sha256: file.sha256 as Sha256 });
+
+/** The Producer loop an agent loop pin names as the one it was certified against: its `uses` ref to `producer/<loop>/...`; undefined when none. */
+export function pinnedStandardOf(root: string, agent: LoopAgent, loop: AgentLoopName): { to: string; sha256?: string } | undefined {
+  let doc: unknown;
+  try { doc = JSON.parse(readFileSync(pinPath(root, agent, loop), "utf8")); } catch { return undefined; }
+  const refs = isObject(doc) && Array.isArray(doc.refs) ? doc.refs.filter(isObject) : [];
+  const cites = refs.filter(ref => ref.rel === "uses" && typeof ref.to === "string" && ref.to.startsWith(`producer/${loop}/`));
+  if (cites.length !== 1) return undefined;
+  const cite = cites[0]!;
+  return { to: cite.to as string, ...(typeof cite.sha256 === "string" ? { sha256: cite.sha256 } : {}) };
+}
+
+/**
+ * Why an agent loop pin may not run now: it names no Producer loop it was certified against, or that loop is not the
+ * one the consumer runs now (the owner repinned producer/<loop>). Undefined when the certification is current.
+ */
+export function certificationIssue(root: string, agent: LoopAgent, loop: AgentLoopName, pinRef: string): string | undefined {
+  const current = currentStandardOf(root, loop);
+  if (!current.ok) return `producer/${loop} cannot be read: ${current.reason}`;
+  const cert = pinnedStandardOf(root, agent, loop);
+  if (cert !== undefined && cert.to === current.file.ref && cert.sha256 === current.file.sha256) return undefined;
+  const was = cert === undefined ? "no Producer loop" : `${cert.to} (${(cert.sha256 ?? "no sha256").slice(0, 12)})`;
+  return `${pinRef} was certified against ${was}, but producer/${loop} now runs ${current.file.ref} (${current.file.sha256.slice(0, 12)}): recertify ${agent}/${loop} (clossys pin ${agent}/${loop} <candidate>); neither version runs until then`;
 }
 
 // ---------------------------------------------------------------------------
@@ -430,11 +501,18 @@ export function packageLoopSet(): LoopSet {
 /**
  * The versions each agent's loops run for one consumer, as the runner loads them (version.ts loadLoopVersion): its pin
  * where it holds the slot, else Producer's standard as it runs for that agent (the standard's steps but the ones other
- * agents decide). Never the agent's package candidate: the runner does not run an unpinned candidate.
+ * agents decide). Never the agent's package candidate: the runner does not run an unpinned candidate. Producer's
+ * standards are the ones the consumer runs (its owner pins, else package v1).
  */
 export function consumerLoopSet(root: string): LoopSet {
   const versions = new Map<LoopAgent, Map<AgentLoopName, unknown>>(), unread = new Map<string, string>();
   const standards = producerStandards();
+  // The Producer loops this consumer runs (an owner pin replaces package v1; a broken one is reported, never replaced).
+  for (const loop of AGENT_LOOPS) {
+    const current = currentStandardOf(root, loop);
+    if (current.ok) standards.set(loop, current.standard);
+    else { standards.delete(loop); unread.set(`producer/${loop}`, current.reason); }
+  }
   const runs = new Set<LoopAgent>();
   for (const agent of LOOP_AGENTS) {
     const loops = new Map<AgentLoopName, unknown>();
@@ -480,10 +558,12 @@ export function producerStandards(): Map<LoopName, LoopVersion> {
 
 /**
  * One agent loop version judged as the agent standard check and the certifier judge it: it extends Producer's
- * standard (loopExtensionIssues) and can reach its exit (loop.reachable).
+ * standard (loopExtensionIssues) and can reach its exit (loop.reachable). With a root, the standard is the Producer
+ * loop that consumer runs now (`currentStandardOf`), so every required step of it, owner gates included, is kept.
  */
-export function agentLoopIssues(agent: LoopAgent, loop: AgentLoopName, content: unknown, options: { readonly packageVersion?: boolean } = {}): string[] {
-  const standard = standardOf(loop);
+export function agentLoopIssues(agent: LoopAgent, loop: AgentLoopName, content: unknown, options: { readonly packageVersion?: boolean; readonly root?: string } = {}): string[] {
+  // Judged against the Producer loop the consumer runs now (its owner pin, else package v1); a package version, package v1.
+  const standard = currentStandardOf(options.packageVersion ? undefined : options.root, loop);
   if (!standard.ok) return [`${agent}/${loop}: Producer's standard ${loop} cannot be read: ${standard.reason}`];
   return [
     ...loopExtensionIssues(agent, loop, content, standard.standard),
