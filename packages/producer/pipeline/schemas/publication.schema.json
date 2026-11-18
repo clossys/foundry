@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://clossys.com/schemas/producer/publication.schema.json",
   "title": "Publication record",
-  "description": "Derived from src/records/slot-model/validate.ts validateJsonCandidate kind publication (PUBLICATION_SCHEMA).",
+  "description": "Derived from src/records/slot-model/validate.ts validateJsonCandidate kind publication (PUBLICATION_SCHEMA); outputs is checked there by @clossys/publisher checkPublicationOutputs, which also checks the cross-field rules this shape cannot state.",
   "type": "object",
   "required": [
     "schema",
@@ -26,6 +26,161 @@
     },
     "routePack": {
       "type": "object"
+    },
+    "outputs": {
+      "$ref": "#/$defs/outputs"
+    }
+  },
+  "$defs": {
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "origin": {
+          "type": "string",
+          "pattern": "^https://[^\\s/?#@\\\\]+/?$"
+        },
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "summary"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z0-9]+(?:[.-][a-z0-9]+)*)+$"
+            },
+            "summary": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z0-9]+(?:[.-][a-z0-9]+)*)+$"
+            }
+          }
+        },
+        "forms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/form"
+          }
+        },
+        "share": {
+          "type": "boolean"
+        },
+        "jsonLd": {
+          "type": "boolean"
+        },
+        "llms": {
+          "type": "boolean"
+        },
+        "feed": {
+          "enum": [
+            "rss",
+            "atom"
+          ]
+        },
+        "locales": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "default",
+            "all"
+          ],
+          "properties": {
+            "default": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+            },
+            "all": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "form": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "fields",
+        "maxBytes",
+        "targetEnv",
+        "honeypot"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,31}$"
+        },
+        "kind": {
+          "enum": [
+            "contact",
+            "newsletter"
+          ]
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "type",
+              "required",
+              "maxLength"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9]{0,31}$"
+              },
+              "type": {
+                "enum": [
+                  "text",
+                  "email",
+                  "message",
+                  "topic"
+                ]
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "maxLength": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "options": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+                }
+              }
+            }
+          }
+        },
+        "maxBytes": {
+          "type": "integer",
+          "minimum": 256
+        },
+        "targetEnv": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+        },
+        "honeypot": {
+          "type": "string",
+          "pattern": "^[a-z][a-zA-Z0-9]{0,31}$"
+        }
+      }
     }
   }
 }

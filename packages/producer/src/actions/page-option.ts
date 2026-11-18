@@ -6,6 +6,8 @@
  *
  * - the layout is the page slot's layout whose frame the record names (the one whose roles admit every section first);
  * - a section's copy is its binding (`bindings.<section>.copy`) whose Writer slot is `<section>.copy`, else its first;
+ *   a data-bound record section (its Designer contract binds the clossys records it reads `host-injected`,
+ *   foundry-build-0048 U20) binds no copy: its words are the records, so a binding on it is a finding;
  * - a section's role is the `<role>` of that copy's record key `<page>.<role>`, else the first free role that admits
  *   the section, else the section's own leaf name (which no layout role then admits);
  * - the page metadata record is the record's `title`, which must be a Writer ref (never text, no fallback);
@@ -68,6 +70,8 @@ export function pageOptionOf(
   layoutOf: (id: string) => LayoutRoles | undefined,
   /** The slugs a `<slug>` route may not take (Publisher `reservedSlugs`: the routes of a fixed publication, `/admin`). */
   reserved: readonly string[] = [],
+  /** The Designer section ids that are data-bound record sections (admin-plan.ts `dataBoundSections`). */
+  dataBound: ReadonlySet<string> = new Set(),
 ): { content: Record<string, unknown>; layoutId?: string; layout?: LayoutRoles; findings: PageOptionFinding[] } {
   const findings: PageOptionFinding[] = [];
   const add = (check: string, message: string) => findings.push({ check, message: `${slotId}: ${message}` });
@@ -102,8 +106,10 @@ export function pageOptionOf(
     const key0 = entries[index]!;
     const binding = bindingOf(key0);
     const bound = refsOf(isRecord(binding) ? binding.copy : undefined);
-    const copy = bound.find(ref => ref.startsWith(`${id}.copy#`)) ?? bound[0];
-    if (copy === undefined) add("page.record-key", `${key0} binds no Writer record (bindings.${key0}.copy)`);
+    const recordSection = dataBound.has(id);
+    const copy = recordSection ? undefined : bound.find(ref => ref.startsWith(`${id}.copy#`)) ?? bound[0];
+    if (recordSection && binding !== undefined) add("page.record-key", `${key0} is a data-bound record section: it renders the clossys records it reads and binds no Writer copy (remove bindings.${key0})`);
+    else if (copy === undefined && !recordSection) add("page.record-key", `${key0} binds no Writer record (bindings.${key0}.copy)`);
     const key = copy?.slice(copy.indexOf("#") + 1);
     const fromKey = key?.startsWith(`${prefix}.`) ? key.slice(prefix.length + 1) : undefined;
     const role = fromKey && ROLE.test(fromKey) ? fromKey
@@ -186,8 +192,8 @@ export interface PageCheckApi {
 }
 
 /** Every finding of one clossys.page/1 record: the adapter's own, then Publisher's `checkPageOption` over the read option. */
-export function pageRecordFindings(api: PageCheckApi, slotId: string, record: Record<string, unknown>, page: PageSlotContract, designer: unknown): { findings: PageOptionFinding[]; layoutId?: string; layout?: LayoutRoles } {
-  const option = pageOptionOf(slotId, record, page, id => api.slotContract(id) as LayoutRoles | undefined, api.reservedSlugs?.(page.publication) ?? []);
+export function pageRecordFindings(api: PageCheckApi, slotId: string, record: Record<string, unknown>, page: PageSlotContract, designer: unknown, dataBound: ReadonlySet<string> = new Set()): { findings: PageOptionFinding[]; layoutId?: string; layout?: LayoutRoles } {
+  const option = pageOptionOf(slotId, record, page, id => api.slotContract(id) as LayoutRoles | undefined, api.reservedSlugs?.(page.publication) ?? [], dataBound);
   const findings = [...option.findings, ...api.checkPageOption(slotId, option.content, page, option.layout, designer)];
   return { findings, ...(option.layoutId ? { layoutId: option.layoutId, layout: option.layout } : {}) };
 }

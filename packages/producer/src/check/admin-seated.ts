@@ -10,14 +10,16 @@
  *   in plan order; every other contract key equals the contract `clossys init` writes (admin-plan.ts adminContract),
  *   with no key extra or missing; the slot is clossys.slot/2, its standard is its kind, and it carries no tighten entry;
  * - each admin slot cites, as inputs and uses, every composition unit the workspace holds (a held unit not cited is a
- *   finding, `clossys init` rewires it) and nothing outside its composition (an undeclared input).
+ *   finding, `clossys init` rewires it) and nothing outside its composition (an undeclared input);
+ * - the plan itself holds (admin-plan.ts adminPlanFindings): each data-bound section reads under route parameters its
+ *   page supplies, and no agent id is a value a static admin route reserves for `<agent>`.
  *
  * A workspace with no slot model and no views pointer has no admin workspace to lack yet: `skip`, printed.
  * `clossys init` seats and rewires what is missing (cli/init-admin.ts).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ADMIN_L1, adminContract, adminPlan, adminRefs, readAdminSlot } from "../cli/admin-plan.js";
+import { ADMIN_L1, adminContract, adminPlan, adminPlanFindings, adminRefs, readAdminSlot } from "../cli/admin-plan.js";
 import { sameJson } from "../records/slot.js";
 import { iaPath } from "../records/slot-model/layout.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
@@ -70,7 +72,8 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
       return [];
     }
   }));
-  const findings: AdminSeatedFinding[] = [...unreadable];
+  // The plan's own rules (foundry-build-0048 U20): data-bound scope within the page route, no agent id reserved.
+  const findings: AdminSeatedFinding[] = [...unreadable, ...adminPlanFindings(plan)];
   // The named checks (`named` keys) give a precise message; every other contract key is held to the package contract
   // (admin-plan.ts adminContract, the one `clossys init` writes): no extra key, none missing, each equal.
   const closed = (id: string, actual: unknown, named: readonly string[]): string[] => {

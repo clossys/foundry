@@ -3422,11 +3422,12 @@
       }
     ],
     "limits": {
-      "binding": "declared requirement: the data-bound section contract and its runtime binding are not built yet (foundry-build-0048)",
+      "binding": "host-injected",
       "compose.band": "sections.band",
       "reads.access": "read-only",
       "reads.port": "slots",
       "reads.records": "clossys.ia/1, clossys.slot/2",
+      "reads.scope": "agent",
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
       "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
       "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
@@ -3501,11 +3502,12 @@
       }
     ],
     "limits": {
-      "binding": "declared requirement: the data-bound section contract and its runtime binding are not built yet (foundry-build-0048)",
+      "binding": "host-injected",
       "compose.band": "sections.band",
       "reads.access": "read-only",
       "reads.port": "slot",
       "reads.records": "clossys.slot/2, clossys.pin/2",
+      "reads.scope": "agent, slot",
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
       "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
       "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
@@ -3580,11 +3582,12 @@
       }
     ],
     "limits": {
-      "binding": "declared requirement: the data-bound section contract and its runtime binding are not built yet (foundry-build-0048)",
+      "binding": "host-injected",
       "compose.band": "sections.band",
       "reads.access": "read-only",
       "reads.port": "candidates",
       "reads.records": "clossys.candidate/1",
+      "reads.scope": "agent, slot",
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
       "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
       "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
@@ -3659,11 +3662,12 @@
       }
     ],
     "limits": {
-      "binding": "declared requirement: the data-bound section contract and its runtime binding are not built yet (foundry-build-0048)",
+      "binding": "host-injected",
       "compose.band": "sections.band",
       "reads.access": "read-only",
       "reads.port": "questions",
       "reads.records": "clossys.queue-entry/1 (queue.pick, queue.approve, queue.clarify)",
+      "reads.scope": "workspace",
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
       "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
       "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
@@ -3738,11 +3742,12 @@
       }
     ],
     "limits": {
-      "binding": "declared requirement: the data-bound section contract and its runtime binding are not built yet (foundry-build-0048)",
+      "binding": "host-injected",
       "compose.band": "sections.band",
       "reads.access": "read-only",
       "reads.port": "entries",
       "reads.records": "clossys.queue-entry/2",
+      "reads.scope": "workspace",
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
       "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
       "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",

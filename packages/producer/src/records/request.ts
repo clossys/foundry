@@ -900,37 +900,51 @@ function slotRequestDraft(consumer: string, input: RaiseInput, checked: ReturnTy
 }
 
 /**
- * Why an entry an agent step wrote is not a fresh slot request of its own (foundry-build-0048 U7 r5, the runner's
- * create-only guard, loop/runner.ts): empty only when the entry is exactly what `clossys request` (source cli or scope)
- * writes when `raiser` raises it now: a valid open kind slot entry from one of the raiser's slots, its raised and
- * routed events and nothing else, the router's route and the owner's options as the verb derives them, no other open
- * entry for the same target and requester, and every check the verb runs before it writes passing. A forged chain (an
- * added or edited event, a route, options or provenance the verb would not write) is refused.
+/**
+ * Why an entry an agent step wrote is not a fresh slot request of its own (foundry-build-0048 U7 r5 and U9 fix r1,
+ * the runner's create-only guard, loop/runner.ts): a schema-valid entry (requestIssues), then agentRaiseIssues.
  */
 export function freshRaiseIssues(consumer: string, doc: unknown, raiser: ContentAgent, options: { readonly facts?: RoutingFacts } = {}): string[] {
   const shape = requestIssues(doc, dirname(consumer));
   if (shape.length) return shape;
   const entry = doc as SlotRequest;
-  if (entry.kind !== "slot" || entry.status !== "open") return [`${entry.id} is not an open slot request`];
-  if (!entry.from.startsWith(`${raiser}/`)) return [`${entry.id} is from ${entry.from}, not one of ${raiser}'s slots`];
-  const [raised, routed] = entry.events;
-  if (entry.events.length !== 2 || raised?.op !== "raised" || routed?.op !== "routed") return [`${entry.id} holds ${entry.events.map(event => event.op).join(", ")}: a fresh raise holds raised then routed`];
-  if (raised.by !== raiser) return [`${entry.id} was raised by ${raised.by ?? "nobody"}, not ${raiser}`];
-  if (entry.source !== "cli" && entry.source !== "scope") return [`${entry.id} has source ${entry.source}: an agent raises through clossys request or scope`];
-  const other = listRequests(consumer).map(read => read.request).find(request => request && request.id !== entry.id && request.status === "open" && request.target === entry.target && request.from === entry.from);
-  if (other) return [`${other.id} is already open for ${entry.target} from ${entry.from}: the verb returns it and writes nothing`];
-  const input: RaiseInput = { target: entry.target, from: entry.from, why: entry.why, source: entry.source, by: raiser, at: raised.at, ...(entry.rel !== undefined ? { rel: entry.rel } : {}) };
+  if (entry.kind !== "slot") return [`${entry.id} is kind ${entry.kind}, not a slot request`];
+  return agentRaiseIssues(consumer, entry, raiser, options);
+}
+
+/**
+ * U9 fix r1 (review-u9-blind1 #1), U7 r5: why a slot request an agent's own loop step wrote is not the entry the
+ * request verb itself raises for that agent (`clossys request --target ... --from <agent>/<slot> --by <agent>`, or its
+ * `--scan`). The verb's own refusals run on the entry's fields (slotRaiseChecks: the target is not placed; `from` is a
+ * placed slot of this agent that cites the target with the entry's rel; the issuing edge), the verb's own draft is
+ * rebuilt from them (slotRequestDraft) and must equal the entry exactly: its id from its timestamp, or createRequest's
+ * -2..-9 suffix; its raised event by the agent via cli with no quote and the routed event, route and owner options the
+ * router derives (the append-only chain the verb writes, and nothing a later step writes); its raisedBy ref; its code
+ * actor and version. No other open entry may raise the same target from the same slot (the verb's idempotency).
+ * A forged or rewritten chain is refused. Empty when the entry is exactly the verb's.
+ */
+export function agentRaiseIssues(consumer: string, entry: SlotRequest, agent: ContentAgent, options: { readonly facts?: RoutingFacts } = {}): string[] {
+  if (entry.source !== "cli" && entry.source !== "scope") return [`source ${entry.source}: an agent raises through clossys request (cli) or its --scan (scope)`];
+  if (entry.from === "owner" || !entry.from.startsWith(`${agent}/`)) return [`from ${entry.from}: ${agent} raises only from its own slot`];
+  const input: RaiseInput = { target: entry.target, from: entry.from, ...(entry.rel !== undefined ? { rel: entry.rel } : {}), why: entry.why, source: entry.source, by: agent, at: entry.createdAt };
   let draft: SlotRequest;
   try { draft = slotRequestDraft(consumer, input, slotRaiseChecks(consumer, input, options), options.facts); } catch (error) {
-    if (error instanceof RequestError) return [`${entry.id}: the verb would refuse it: ${error.message}`];
+    if (error instanceof RequestError) return [error.message];
     throw error;
   }
-  // createRequest writes the draft's id, or a -2..-9 suffix of it when that one is taken.
-  if (entry.id !== draft.id && !new RegExp(`^${draft.id}-[2-9]$`).test(entry.id)) return [`${entry.id} is not the id clossys request gives it (${draft.id})`];
-  const expected = addressed(draft, entry.id);
-  const keys = [...new Set([...Object.keys(expected), ...Object.keys(entry)])].sort()
-    .filter(key => canonical((expected as unknown as Record<string, unknown>)[key]) !== canonical((entry as unknown as Record<string, unknown>)[key]));
-  return keys.length ? [`${entry.id} is not what clossys request writes for it: ${keys.join(", ")} differ${keys.length === 1 ? "s" : ""}`] : [];
+  const issues: string[] = [];
+  // createRequest's own relabel on an id already taken: the draft's id or its -2..-9 suffix, with opened and events renamed.
+  const suffix = entry.id.startsWith(draft.id) ? entry.id.slice(draft.id.length) : undefined;
+  if (suffix === undefined || !/^(?:-[2-9])?$/.test(suffix)) issues.push(`id ${entry.id}: clossys request names it ${draft.id} (or its -2..-9 suffix) from its createdAt and target`);
+  else {
+    const expected = addressed(draft, entry.id);
+    const keys = [...new Set([...Object.keys(expected), ...Object.keys(entry)])].sort()
+      .filter(key => canonical((expected as unknown as Record<string, unknown>)[key]) !== canonical((entry as unknown as Record<string, unknown>)[key]));
+    if (keys.length) issues.push(`not the entry clossys request raises for ${agent} (${entry.id}): ${keys.join(", ")} differ${keys.length === 1 ? "s" : ""}`);
+  }
+  const duplicate = listRequests(consumer).map(read => read.request).find(other => other !== undefined && other.id !== entry.id && other.status === "open" && other.target === entry.target && other.from === entry.from);
+  if (duplicate) issues.push(`${duplicate.id} already raises ${entry.target} from ${entry.from}`);
+  return issues;
 }
 
 /** One slotless need of a consumer slot: an input or uses edge naming no slot folder. */

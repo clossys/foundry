@@ -45,7 +45,7 @@ import { agentWriteClass, currentStandardOf, isAgentLoop, isLoopAgent, pathPatte
 import { judgeSnapshot, keepSnapshot, keptSnapshot, snapshotKey, treeSnapshot, type AgentSnapshot, type TreeFiles } from "./agent-snapshot.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { certifiedOptions } from "../constitution/pin-gate.js";
-import { freshRaiseIssues, readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
+import { freshRaiseIssues, isContentAgent, readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
 import { cascadeClean, runCascade } from "./cascade.js";
 import { CASCADE_REVERDICT } from "../constitution/cascade.js";
 
@@ -736,6 +736,9 @@ function recordedBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | un
   return result;
 }
 
+/** Whether a step is the code route step a failing step with no `onFail` hands its findings to (flows.md F6). */
+export const routesFindings = (next: Pick<LoopStep, "cli" | "decider"> | undefined): boolean => next?.cli === "clossys check --route" && next.decider.by === "code";
+
 /**
  * U9a: a failing step hands its findings to the route step after it only as Producer's standard has it. A Producer
  * version is the standard; an agent's own version hands on only where the standard runs the same route step right after
@@ -779,17 +782,22 @@ export function agentWriteRef(root: string, file: string): { segments: string[] 
 }
 
 /**
- * U9a fix round 3: a slot request an agent step raised itself. U7 r5: the entry must be exactly what `clossys request`
- * writes when the agent raises it now (records/request.ts freshRaiseIssues): its raised and routed events, the route
- * and options the verb derives, and every check the verb runs passing. Any other entry (an owner answer queue's,
- * another agent's request, one already checked, decided or closed, or a forged or rewritten chain) is Producer's.
+ * U9a fix round 3, U9 (sweep N1), U9 fix r1 (review-u9-blind1 #1), U7 r5: a slot request an agent step raised itself,
+ * exactly the entry `clossys request --from <agent>/<slot> --by <agent>` (or its `--scan`) writes for that agent now: a
+ * schema-valid `clossys.queue-entry/2` kind slot entry named by its file that the request verb's own validator accepts
+ * (records/request.ts freshRaiseIssues, agentRaiseIssues: from one of the agent's own placed slots citing the target,
+ * never `owner`; the target not placed; the verb's draft rebuilt from the entry's fields and equal to it, so its id,
+ * refs, timestamps, its raised and routed events, route and options, its code actor and nothing a later step writes; no
+ * other open entry raising the same target from the same slot). Any other entry (an owner answer queue's, another
+ * agent's request, an owner-origin ask, one already checked, decided, answered or closed, or a forged or rewritten
+ * chain) is Producer's.
  */
 function ownNewRequest(root: string, file: string, agent: LoopAgent): boolean {
   try {
     const path = wroteFile(root, file);
-    const entry = JSON.parse(readFileSync(path, "utf8")) as { id?: unknown };
-    if (basename(path) !== `${String(entry.id)}.json`) return false;
-    return !freshRaiseIssues(join(root, "clossys"), entry, agent).length;
+    const doc = JSON.parse(readFileSync(path, "utf8")) as { id?: unknown };
+    if (!isContentAgent(agent) || basename(path) !== `${String(doc.id)}.json`) return false;
+    return !freshRaiseIssues(join(root, "clossys"), doc, agent).length;
   } catch {
     return false;
   }
@@ -834,10 +842,10 @@ export function undeclaredWrites(root: string, state: RunState, step: LoopStep, 
     const existed = snapshotKey(root, absolute) in before;
     const kind = agentWriteClass(segments, agent);
     if ((kind === "queue-slot" || kind === "candidate") && existed && !own.some(pattern => literal(pattern) && patternsMeet(pattern, segments))) return true;
-    if (!own.some(pattern => patternsMeet(pattern, segments))) {
-      if (kind === undefined) return true;
-      if (kind === "queue-slot" && !ownNewRequest(root, file, agent)) return true;
-    }
+    // U9 (sweep N1): a new slot request is judged by its shape also where the standard step's wildcard write
+    // (`producer/queue.slot/entries/*`, the scope steps) names it; only a step naming that exact entry is exempt.
+    if (kind === "queue-slot" && !own.some(pattern => literal(pattern) && patternsMeet(pattern, segments)) && !ownNewRequest(root, file, agent)) return true;
+    if (!own.some(pattern => patternsMeet(pattern, segments)) && kind === undefined) return true;
     return !declared.some(pattern => patternsMeet(pattern, segments));
   });
 }
@@ -850,7 +858,7 @@ async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: rea
   const next = version.steps[state.cursor + 1];
   if (!step.onFail) {
     // A failing check whose next step routes findings hands them on (flows.md F6: route after check).
-    if (next?.cli === "clossys check --route" && next.decider.by === "code" && routeHandsOn(state, step, next, root)) { state.cursor++; saveState(root, state); return null; }
+    if (routesFindings(next) && routeHandsOn(state, step, next!, root)) { state.cursor++; saveState(root, state); return null; }
     return stop(ctx, `step ${step.id} failed`, 1);
   }
   const at = iso(ctx.now());

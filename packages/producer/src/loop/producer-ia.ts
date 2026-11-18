@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PRODUCER_ROOT } from "../package-path.js";
 import { QUEUE_NAMES } from "../queue/entry.js";
+import { SLOT_QUEUE } from "../records/request.js";
 import { LOOP_NAMES, ledgerOf } from "./names.js";
 
 export const PRODUCER_LAYERS = ["loops", "queue", "ledger"] as const;
@@ -42,10 +43,14 @@ export function producerSlotPositions(layers: readonly ProducerIaLayer[] = readP
   return out;
 }
 
-/** The leaves each layer must hold, exactly: the six loops, the four queues, one ledger per loop. */
+/**
+ * The leaves each layer must hold, exactly: the loops, the queues (the four queue-entry/1 queues and the slot request
+ * queue, placed under problems by the planner's AUTO-DECIDED round of 2026-11-18 on the owner's "requests + queue = one
+ * queue"), one ledger per loop.
+ */
 export const PRODUCER_LEAVES: Readonly<Record<ProducerLayer, readonly string[]>> = {
   loops: LOOP_NAMES,
-  queue: QUEUE_NAMES,
+  queue: [...QUEUE_NAMES, SLOT_QUEUE],
   ledger: LOOP_NAMES.map(ledgerOf),
 };
 
