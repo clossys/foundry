@@ -109,6 +109,21 @@
     "page.about.meta": {
       "standard": "string"
     },
+    "page.admin-gallery.meta": {
+      "standard": "string"
+    },
+    "page.admin-home.meta": {
+      "standard": "string"
+    },
+    "page.admin-questions.meta": {
+      "standard": "string"
+    },
+    "page.admin-requests.meta": {
+      "standard": "string"
+    },
+    "page.admin-slot.meta": {
+      "standard": "string"
+    },
     "page.app-home.meta": {
       "standard": "string"
     },
@@ -166,7 +181,13 @@
     "page.sign-out-confirm.meta": {
       "standard": "string"
     },
+    "page.site-page.meta": {
+      "standard": "string"
+    },
     "page.terms.meta": {
+      "standard": "string"
+    },
+    "publication.admin.meta": {
       "standard": "string"
     },
     "publication.app.meta": {

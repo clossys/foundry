@@ -5047,6 +5047,161 @@
       ],
       "checkSuiteId": "writer.copy.v1",
       "specimenKind": "text"
+    },
+    {
+      "id": "passages.slot-gallery",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "DRAFT: An admin record view showing a gallery of one agent's slots, read from clossys records, with no copy of its own.",
+      "inputs": [],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {},
+        "designerSection": "sections.slot-gallery"
+      },
+      "references": [
+        {
+          "id": "passages.slot-gallery.guide",
+          "kind": "guide",
+          "guide": "DRAFT: The words in the slot gallery are the clossys records it reads; this section adds no copy around them.",
+          "exemplars": [
+            {
+              "note": "DRAFT: Change the record, not the section, when the shown text is wrong."
+            },
+            {
+              "note": "DRAFT: If the view needs a heading, the admin page header carries it."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.slot-detail",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "DRAFT: An admin record view showing one slot's candidates, pin and ledger, read from clossys records, with no copy of its own.",
+      "inputs": [],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {},
+        "designerSection": "sections.slot-detail"
+      },
+      "references": [
+        {
+          "id": "passages.slot-detail.guide",
+          "kind": "guide",
+          "guide": "DRAFT: The words in the slot detail are the clossys records it reads; this section adds no copy around them.",
+          "exemplars": [
+            {
+              "note": "DRAFT: Change the record, not the section, when the shown text is wrong."
+            },
+            {
+              "note": "DRAFT: If the view needs a heading, the admin page header carries it."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.candidate-preview",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "DRAFT: An admin record view showing one candidate's rendered preview, read from clossys records, with no copy of its own.",
+      "inputs": [],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {},
+        "designerSection": "sections.candidate-preview"
+      },
+      "references": [
+        {
+          "id": "passages.candidate-preview.guide",
+          "kind": "guide",
+          "guide": "DRAFT: The words in the candidate preview are the clossys records it reads; this section adds no copy around them.",
+          "exemplars": [
+            {
+              "note": "DRAFT: Change the record, not the section, when the shown text is wrong."
+            },
+            {
+              "note": "DRAFT: If the view needs a heading, the admin page header carries it."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.question-packet",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "DRAFT: An admin record view showing one open owner question and its options, read from clossys records, with no copy of its own.",
+      "inputs": [],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {},
+        "designerSection": "sections.question-packet"
+      },
+      "references": [
+        {
+          "id": "passages.question-packet.guide",
+          "kind": "guide",
+          "guide": "DRAFT: The words in the question packet are the clossys records it reads; this section adds no copy around them.",
+          "exemplars": [
+            {
+              "note": "DRAFT: Change the record, not the section, when the shown text is wrong."
+            },
+            {
+              "note": "DRAFT: If the view needs a heading, the admin page header carries it."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.queue-list",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "DRAFT: An admin record view showing the open requests in the queue, read from clossys records, with no copy of its own.",
+      "inputs": [],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {},
+        "designerSection": "sections.queue-list"
+      },
+      "references": [
+        {
+          "id": "passages.queue-list.guide",
+          "kind": "guide",
+          "guide": "DRAFT: The words in the queue list are the clossys records it reads; this section adds no copy around them.",
+          "exemplars": [
+            {
+              "note": "DRAFT: Change the record, not the section, when the shown text is wrong."
+            },
+            {
+              "note": "DRAFT: If the view needs a heading, the admin page header carries it."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
     }
   ]
 }

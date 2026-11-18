@@ -33,9 +33,11 @@ describe("registered section copy", () => {
         expect(field.dir).toBe("auto");
       }
     }
-    // Copy-less sections: a bare band, a media-only mark, and a document whose words are its own records.
-    expect(rows.filter(row => !row.fields.length).map(row => row.id).sort()).toEqual(["sections.band", "sections.logo-mark", "sections.sectioned-document"]);
-    for (const id of ["sections.band", "sections.logo-mark", "sections.sectioned-document"]) {
+    // Copy-less sections: a bare band, a media-only mark, a document whose words are its own records, and the five admin
+    // record sections (foundry-build-0048, A3), whose words are the clossys records they read.
+    const adminRecords = ["candidate-preview", "question-packet", "queue-list", "slot-detail", "slot-gallery"].map(leaf => `sections.${leaf}`);
+    expect(rows.filter(row => !row.fields.length).map(row => row.id).sort()).toEqual(["sections.band", "sections.logo-mark", "sections.sectioned-document", ...adminRecords].sort());
+    for (const id of ["sections.band", "sections.logo-mark", "sections.sectioned-document", ...adminRecords]) {
       expect(registry.slots.find(slot => slot.id === id)!.contract.slots.some(slot => slot.type === "copy" || slot.type === "region"), id).toBe(false);
     }
     expect(rows.find(row => row.id === "sections.logo-hero")!.fields.map(field => field.key)).toEqual(["name"]);

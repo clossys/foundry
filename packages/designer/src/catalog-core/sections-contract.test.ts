@@ -21,6 +21,8 @@ const families: Record<string, readonly string[]> = {
   collect: ["form", "newsletter", "sign-in-form", "wizard", "settings", "column-mapper", "access-matrix", "chat"],
   navigate: ["link-index", "table-of-contents", "explorer", "filter-builder"],
   respond: ["empty-state", "error-state", "boundary-message", "notices", "consent"],
+  // foundry-build-0048 (Amendment 2026-11-18b, A3): the admin core data-bound sections, each reading clossys records read-only.
+  records: ["slot-gallery", "slot-detail", "candidate-preview", "question-packet", "queue-list"],
 };
 const id = (leaf: string) => `sections.${leaf}`;
 const waveOneIds = ["account-summary", "boundary-message", "error-message", "legal-prose", "logo-mark", "sign-in-form"].map(id);
@@ -28,6 +30,10 @@ const isWaveOne = (slot: { id: string }) => waveOneIds.includes(slot.id);
 // Rows added after the S2-1 pins: Studio-hosted specimens and the section-composing sectioned document carry no band or header.
 const laterIds = [...specimenLeaves, "sectioned-document"].map(id);
 const isLater = (slot: { id: string }) => laterIds.includes(slot.id);
+// Rows added after the S2-1 pins (foundry-build-0048): the admin record sections sit on a band and carry no section header
+// (the admin page header is the page's); their contracts are pinned in their own describe below.
+const adminRecordIds = families.records!.map(id);
+const isAdminRecord = (slot: { id: string }) => adminRecordIds.includes(slot.id);
 // Typed non-section parts (SectionContract.parts): Studio host parts and section-owned specimen render ports.
 const hostParts: readonly string[] = [...Object.keys(STUDIO_SPECIMEN_HOST_PARTS), ...Object.values(SPECIMEN_RENDER_PARTS).flat()];
 // The expressive amendment's surviving read is the marquee animation (its shift distance was deleted); retain every earlier field pin.
@@ -79,7 +85,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
       for (const component of slot.contract.allowedComposes) expect(component).toMatch(/^components\./);
     }
     // SCROLL-1 A158/A159/A161: stats, TOC label, typed table cells and native band header are the exact new contract delta; keep existing normalization and unrelated pins unchanged.
-    const invariant = slots.filter(slot => !isWaveOne(slot) && !isLater(slot) && slot.id !== "sections.logo-hero").map(slot => {
+    const invariant = slots.filter(slot => !isWaveOne(slot) && !isLater(slot) && !isAdminRecord(slot) && slot.id !== "sections.logo-hero").map(slot => {
       // foundry-build-0032 (audit P3/P7): undo exactly its two edits (twin media, stats sparkline) so this pin stays the prior digest.
       const { substrates: _substrates, substrateTests: _tests, copy: _copy, passageSchema: _passage, media: _media, ...unmedia } = slot.contract as typeof slot.contract & { media?: readonly string[] };
       const rest = slot.id === "sections.stats" ? { ...unmedia, allowedComposes: ["components.chart-sparkline", ...unmedia.allowedComposes] } : unmedia;
@@ -95,7 +101,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
 
   it("preserves all 46 base rows exactly and pins the six new draft contracts separately", () => {
     const slots = withoutExpressiveMotionReads(loadSectionRegistry().slots);
-    const original = slots.filter(slot => !isWaveOne(slot) && !isLater(slot));
+    const original = slots.filter(slot => !isWaveOne(slot) && !isLater(slot) && !isAdminRecord(slot));
     expect(original).toHaveLength(46);
     // SCROLL-1 A158/A159/A161 updates only section-header, table-of-contents and data-table; all 46 rows remain pinned, with no field projected out.
     // foundry-build-0018 (audit 0014): every copy field gains its role and role budget; re-pinned from the data.
@@ -128,13 +134,13 @@ describe("S2-1 bounded section composition reconciliation", () => {
 });
 
 describe("section build IA registry", () => {
-  it("loads exactly the 66 permanent draft ids without claiming a freeze or runtime fill", () => {
+  it("loads exactly the 71 permanent draft ids (66 before build-0048's admin record sections) without claiming a freeze or runtime fill", () => {
     const registry = loadSectionRegistry();
     expect(registry.status).toBe("build-unfrozen");
     // The owner-signed specimen rows lead the data in IA order; every other row stays sorted.
     expect(registry.slots.map(slot => slot.id)).toEqual([...specimenLeaves.map(id), ...inventory.filter(slotId => !specimenLeaves.map(id).includes(slotId))]);
-    expect(registry.slots).toHaveLength(66);
-    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(66);
+    expect(registry.slots).toHaveLength(71);
+    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(71);
     for (const slot of registry.slots) {
       expect(isValidId("slot", slot.id)).toBe(true);
       expect(slot.layer).toBe("sections");
@@ -161,7 +167,7 @@ describe("section build IA registry", () => {
     // Site content and visitor communication.
     const site = ["hero", "logo-hero", "logo-mark", "legal-prose", "features", "testimonials", "logo-cloud", "people", "pricing", "gallery", "timeline", "newsletter", "steps", "article", "table-of-contents", "status-list", "call-to-action", "consent", "sectioned-document"];
     // Authenticated records, workflows and operational tools.
-    const app = ["access-matrix", "audit-log", "activity-feed", "data-grid", "data-table", "resource-list", "record-detail", "task-list", "column-mapper", "filter-builder", "settings", "chat", "explorer", "usage", "sign-in-form", "boundary-message", "account-summary", ...specimenLeaves];
+    const app = ["access-matrix", "audit-log", "activity-feed", "data-grid", "data-table", "resource-list", "record-detail", "task-list", "column-mapper", "filter-builder", "settings", "chat", "explorer", "usage", "sign-in-form", "boundary-message", "account-summary", ...specimenLeaves, ...families.records!];
     // Shared structure, content, input and feedback work on either surface.
     const both = ["band", "section-header", "pagination", "page-header", "content", "media", "faq", "cards", "stats", "form", "wizard", "link-index", "empty-state", "error-state", "notices", "comparison"];
     const expected = Object.fromEntries([
@@ -171,7 +177,7 @@ describe("section build IA registry", () => {
     ]);
     expect(Object.keys(expected).sort()).toEqual(inventory);
     expect(Object.fromEntries(registry.slots.map(slot => [slot.id, slot.contract.surface]))).toEqual(expected);
-    expect(Object.fromEntries(["site", "app", "both"].map(surface => [surface, registry.slots.filter(slot => slot.contract.surface === surface).length]))).toEqual({ site: 19, app: 31, both: 16 });
+    expect(Object.fromEntries(["site", "app", "both"].map(surface => [surface, registry.slots.filter(slot => slot.contract.surface === surface).length]))).toEqual({ site: 19, app: 36, both: 16 }); // app 31 -> 36: the five admin record sections (foundry-build-0048)
   });
 
   it("declares consent as a site contract with host copy and lower-layer composition", () => {
@@ -229,7 +235,7 @@ describe("section build IA registry", () => {
     for (const slot of registry.slots) {
       const part = families.parts?.map(id).includes(slot.id);
       expect(slot.contract.anatomy.band).toBe(slot.id !== id("section-header") && (part || isLater(slot) || ["sign-in-form", "boundary-message", "error-message"].map(id).includes(slot.id)) ? null : id("band"));
-      expect(slot.contract.anatomy.header).toBe(part || isWaveOne(slot) || isLater(slot) || [id("table-of-contents"), id("logo-hero")].includes(slot.id) ? null : id("section-header"));
+      expect(slot.contract.anatomy.header).toBe(part || isWaveOne(slot) || isLater(slot) || isAdminRecord(slot) || [id("table-of-contents"), id("logo-hero")].includes(slot.id) ? null : id("section-header"));
       for (const target of Object.values(slot.contract.anatomy)) if (target) expect(slot.contract.parts).toContain(target);
       visit(slot.id, []);
     }
@@ -291,11 +297,25 @@ describe("section build IA registry", () => {
     expect(loadCatalog().retired).toEqual(globalRetired);
   });
 
+  it("pins the admin record sections: one required records slot, read-only host data, band without a section header (foundry-build-0048)", () => {
+    const rows = new Map(loadSectionRegistry().slots.map(slot => [slot.id, slot.contract]));
+    for (const leaf of families.records!) {
+      const contract = rows.get(id(leaf))!;
+      expect(contract, leaf).toBeDefined();
+      expect(contract.surface, leaf).toBe("app");
+      expect(contract.data, leaf).toBe("host-injected");
+      expect(contract.anatomy, leaf).toEqual({ band: id("band"), header: null });
+      expect(contract.slots.filter(slot => slot.type === "records" && slot.required), leaf).toHaveLength(1);
+      expect(contract.slots.some(slot => slot.type === "copy" || slot.type === "region"), leaf).toBe(false);
+      expect(contract.passageSchema, leaf).toBe(`passages.${leaf}`);
+    }
+  });
+
   it("returns owned data on each load", () => {
     const registry = loadSectionRegistry();
     (registry.slots as unknown as unknown[]).pop();
     (registry.aliases as unknown as unknown[]).pop();
-    expect(loadSectionRegistry().slots).toHaveLength(66);
+    expect(loadSectionRegistry().slots).toHaveLength(71);
     expect(loadSectionRegistry().aliases).toHaveLength(58);
   });
 });

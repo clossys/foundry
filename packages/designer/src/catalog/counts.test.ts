@@ -73,22 +73,23 @@ const STUDIO_IDS = [
 describe("Designer tree counts (3 L0)", () => {
   const counts = countTree(DESIGNER_TREES, DESIGNER_RETIRED);
 
-  it("has 3 L0, 10 L1, 37 L2 and 204 live L3 (38 L2 before build-0035's regroup; 39 L2 and 212 L3 before build-0032)", () => {
-    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 37, l3: 204 });
+  it("has 3 L0, 10 L1, 37 L2 and 209 live L3 (204 before build-0048's five admin record sections; 38 L2 before build-0035's regroup; 39 L2 and 212 L3 before build-0032)", () => {
+    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 37, l3: 209 });
   });
 
   it("counts per L0 in owner order: Theme, Art, Interface", () => {
     expect(counts.byL0).toEqual({
       theme: { l1: 4, l2: 8, l3: 42 },
       art: { l1: 3, l2: 10, l3: 47 },
-      interface: { l1: 3, l2: 19, l3: 115 },
+      interface: { l1: 3, l2: 19, l3: 120 },
     });
-    expect(counts.byLayer).toEqual({ themes: 42, assets: 47, components: 59, sections: 45, frames: 11 });
+    // foundry-build-0048 (Amendment 2026-11-18b, A3): five data-bound admin record sections join Sections Records.
+    expect(counts.byLayer).toEqual({ themes: 42, assets: 47, components: 59, sections: 50, frames: 11 });
   });
 
-  it("keeps every one of the 253 placed ids; 49 retire in place", () => {
-    expect(counts.placed).toBe(253);
-    expect(new Set(placedLeaves(DESIGNER_TREES)).size).toBe(253);
+  it("keeps every one of the 258 placed ids (253 before build-0048); 49 retire in place", () => {
+    expect(counts.placed).toBe(258);
+    expect(new Set(placedLeaves(DESIGNER_TREES)).size).toBe(258);
     expect(counts.retired).toBe(49);
     expect(counts.placed - counts.retired).toBe(counts.l3);
   });
@@ -354,7 +355,7 @@ describe("slot-defaults.json carries live leaves only (build-0032, audit P9)", (
   const rows = (slotDefaults as { slots: Record<string, unknown> }).slots;
 
   it("has one row per live placed leaf, frames.deck included, and none for a retired leaf", () => {
-    expect(Object.keys(rows)).toHaveLength(204);
+    expect(Object.keys(rows)).toHaveLength(209);
     expect(rows["frames.deck"]).toEqual({ standard: "frame" });
     expect(slotDefaultFindings(rows, DESIGNER_TREES, DESIGNER_RETIRED)).toEqual([]);
   });

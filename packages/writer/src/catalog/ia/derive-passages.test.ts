@@ -146,16 +146,18 @@ describe("SU-9W section copy cascade", () => {
   // Specimen sections are excluded from the Writer mirror (owner default).
   const source = read("../../../../designer/src/catalog/slots/sections.json").filter((s: any) => !s.id.startsWith("sections.specimen-"));
   // Live pairs registered after the cascade was approved sit outside its projection.
-  const postCascade = ["sections.sectioned-document"];
+  // foundry-build-0048 (A3) registers the five admin record sections after the cascade.
+  const postCascade = ["sections.sectioned-document", "sections.slot-gallery", "sections.slot-detail", "sections.candidate-preview", "sections.question-packet", "sections.queue-list"];
   const allRecords = withDeclaredCommonRecords(copy, cascade);
   const aliases = { ...copy.aliases, ...cascade.aliases };
   const strings = allRecords.filter((r: WriterRecord) => r.id.startsWith("st."));
 
-  it("pins 52 current live pairs separately from 52 approved projected pairs", () => {
+  // foundry-build-0048 (A3): the five admin record sections pair five copy-less passages; 52 -> 57 current pairs.
+  it("pins 57 current live pairs separately from 52 approved projected pairs", () => {
     const current = loadWriterStore().slots.filter(slot => slot.layer === "passages");
-    expect(source).toHaveLength(52);
-    expect(current).toHaveLength(52);
-    expect(new Set(current.map(slot => slot.id)).size).toBe(52);
+    expect(source).toHaveLength(57);
+    expect(current).toHaveLength(57);
+    expect(new Set(current.map(slot => slot.id)).size).toBe(57);
     expect(current.map(slot => slot.id).sort()).toEqual(source.map((s: any) => s.contract.passageSchema).sort());
     expect(cascade.merges.map((m: any) => [m.fromSection, m.toSection])).toEqual([
       ["sections.logo-mark", "sections.logo-hero"],

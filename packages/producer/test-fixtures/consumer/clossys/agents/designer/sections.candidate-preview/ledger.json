@@ -1,0 +1,24 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "slot",
+      "at": "2026-11-18T09:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "919dc17346292be77e76b50f6984539a1a3c242937f9fd86523fcd6379335551"
+        }
+      ]
+    }
+  ]
+}

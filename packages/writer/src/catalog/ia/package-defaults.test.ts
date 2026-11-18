@@ -15,7 +15,7 @@ const swap = (slot: string, name: string, edit: (text: string) => string): Packa
 describe("Writer package defaults outside Voice", () => {
   it("every Page metadata slot and both legal types have a draft default that passes", () => {
     const meta = defaults.filter(entry => /\.meta$/.test(entry.slot));
-    expect(meta).toHaveLength(25);
+    expect(meta).toHaveLength(32);
     expect(defaults.filter(entry => entry.slot === "narratives.legal-document").map(entry => entry.name)).toEqual(["privacy-v1.md", "terms-v1.md"]);
     expect(checkPackageDefaults(trees, defaults)).toEqual([]);
   });

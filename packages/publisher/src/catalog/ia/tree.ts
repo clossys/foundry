@@ -146,7 +146,7 @@ export function checkTree(trees: readonly L0Tree[] = PUBLISHER_TREES, retired: r
 
 /** The package root: three directories above this file, from src/catalog/ia/ and dist/catalog/ia/ alike. */
 export const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
-export const STARTER_IDS = ["site", "docs", "app", "slides"] as const;
+export const STARTER_IDS = ["site", "docs", "app", "admin", "slides"] as const;
 export type StarterId = (typeof STARTER_IDS)[number];
 
 export interface CandidateFile<C = Record<string, unknown>> { clossys: Record<string, unknown> & { id: string; slot: string; source: { kind: string } }; content: C }

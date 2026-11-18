@@ -2579,6 +2579,61 @@
     "status": "draft"
   },
   {
+    "id": "sections.candidate-preview",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "candidates",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.link",
+        "components.badge",
+        "components.semantic-content"
+      ],
+      "parts": [
+        "sections.band"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing",
+          "themes.background",
+          "themes.card",
+          "themes.muted",
+          "themes.border",
+          "themes.radius",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.muted-foreground",
+          "themes.font-sans"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.candidate-preview",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "sections.cards",
     "layer": "sections",
     "contract": {
@@ -7808,6 +7863,116 @@
     "status": "draft"
   },
   {
+    "id": "sections.question-packet",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "questions",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.link",
+        "components.badge",
+        "components.semantic-content"
+      ],
+      "parts": [
+        "sections.band"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing",
+          "themes.background",
+          "themes.card",
+          "themes.muted",
+          "themes.border",
+          "themes.radius",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.muted-foreground",
+          "themes.font-sans"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.question-packet",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.queue-list",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "entries",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.link",
+        "components.badge",
+        "components.semantic-content"
+      ],
+      "parts": [
+        "sections.band"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing",
+          "themes.background",
+          "themes.card",
+          "themes.muted",
+          "themes.border",
+          "themes.radius",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.muted-foreground",
+          "themes.font-sans"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.queue-list",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "sections.record-detail",
     "layer": "sections",
     "contract": {
@@ -9073,6 +9238,116 @@
       },
       "data": "host-injected",
       "surface": "app"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.slot-detail",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "slot",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.link",
+        "components.badge",
+        "components.semantic-content"
+      ],
+      "parts": [
+        "sections.band"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing",
+          "themes.background",
+          "themes.card",
+          "themes.muted",
+          "themes.border",
+          "themes.radius",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.muted-foreground",
+          "themes.font-sans"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.slot-detail",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.slot-gallery",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "slots",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.link",
+        "components.badge",
+        "components.semantic-content"
+      ],
+      "parts": [
+        "sections.band"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing",
+          "themes.background",
+          "themes.card",
+          "themes.muted",
+          "themes.border",
+          "themes.radius",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.muted-foreground",
+          "themes.font-sans"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.slot-gallery",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": []
+      }
     },
     "requires": [],
     "status": "draft"
