@@ -87,6 +87,11 @@ export interface LiveSlot {
   readonly folder?: string;
   readonly ledger: readonly Record<string, unknown>[];
   readonly pin?: Record<string, unknown>;
+  /** U9 (S6): the agent and id the slot record names (a package leaf: its tree's agent and its own id). */
+  readonly owner?: string;
+  readonly recordId?: string;
+  /** U9 (S6): the record lists its inputs (slot/2 `refs`, slot/1 `inputs`, a package leaf `inputs` or `refs`), empty or not. */
+  readonly inputsDeclared?: boolean;
 }
 
 export interface AgentModel {
@@ -156,10 +161,10 @@ export const upstreamOf = (agent: string): string[] => {
 };
 
 /** A package leaf's own slot data as a slot: `inputs` as ids or `{to}` rows, the contract nested or flat. */
-function packageSlot(id: string, data: Record<string, unknown>): LiveSlot {
+function packageSlot(id: string, data: Record<string, unknown>, agent: string): LiveSlot {
   const contract = object(data.contract) ? data.contract : data;
   return {
-    id, source: "package", ...(typeof data.kind === "string" ? { kind: data.kind } : {}), contract,
+    id, source: "package", owner: agent, recordId: id, inputsDeclared: Array.isArray(data.inputs) || Array.isArray(data.refs), ...(typeof data.kind === "string" ? { kind: data.kind } : {}), contract,
     inputs: strings(data.inputs).concat((Array.isArray(data.inputs) ? data.inputs : []).filter(object).map(item => String(item.to))),
     uses: strings(data.uses), ...(typeof data.standard === "string" ? { standard: data.standard } : {}),
     ...(data.family !== undefined ? { family: data.family } : {}), ledger: [],
@@ -287,11 +292,13 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
       ...(object(slot) ? { folder: `agents/${agent}/${id}` } : {}),
       ledger: object(ledger) && Array.isArray(ledger.events) ? ledger.events.filter(object) : [],
       ...(object(pin) ? { pin } : {}),
+      ...(typeof doc.agent === "string" ? { owner: doc.agent } : {}), ...(typeof doc.id === "string" ? { recordId: doc.id } : {}),
+      inputsDeclared: doc.schema === "clossys.slot/2" ? Array.isArray(doc.refs) : Array.isArray(doc.inputs),
     };
   });
   if (!live.length) {
     // Nothing placed: the package tree's own slot data stands in, so the per-slot assertions still judge the package.
-    live = trees.flatMap(tree => slotLeaves(tree).map(id => packageSlot(id, tree.slots[id] ?? {})));
+    live = trees.flatMap(tree => slotLeaves(tree).map(id => packageSlot(id, tree.slots[id] ?? {}, agent)));
   }
   const defaults = new Set((adapter?.defaults ?? []).flatMap(dir => dirs(join(packageDir, dir))));
   const edges: Edge[] = [];
@@ -303,7 +310,7 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
   // The package trees' own slot data declares edges too, whatever the consumer placed.
   if (live.some(slot => slot.source === "placed")) {
     for (const tree of trees) for (const id of treeLeaves(tree)) {
-      const slot = packageSlot(id, tree.slots[id] ?? {});
+      const slot = packageSlot(id, tree.slots[id] ?? {}, agent);
       for (const to of [...slot.inputs, ...slot.uses, ...refsIn(slot.contract)]) edges.push({ from: id, to, scope: "package" });
     }
   }
@@ -334,7 +341,7 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
     .filter(request => typeof request.from === "string" && request.from.startsWith(`${agent}/`)) : [];
   return {
     agent, packageDir, ...(adapter ? { adapter } : {}), adapterIssues: issues, trees, placedTree, folders, live, defaults,
-    packageOnly: trees.flatMap(tree => treeLeaves(tree).filter(id => !live.some(slot => slot.id === id)).map(id => packageSlot(id, tree.slots[id] ?? {}))),
+    packageOnly: trees.flatMap(tree => treeLeaves(tree).filter(id => !live.some(slot => slot.id === id)).map(id => packageSlot(id, tree.slots[id] ?? {}, agent))),
     l2Of: new Map([
       ...trees.flatMap(tree => tree.l1.flatMap(l1 => l1.l2.flatMap(l2 => l2.leaves.map(id => [id, `${l1.id}/${l2.id}`] as [string, string])))),
       ...placedTree.flatMap(l1 => l1.l2.flatMap(l2 => l2.slots.map(id => [id, `${l1.id}/${l2.id}`] as [string, string]))),

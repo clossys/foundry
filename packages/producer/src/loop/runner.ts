@@ -45,7 +45,7 @@ import { agentWriteClass, currentStandardOf, isAgentLoop, isLoopAgent, pathPatte
 import { judgeSnapshot, keepSnapshot, keptSnapshot, snapshotKey, treeSnapshot, type AgentSnapshot, type TreeFiles } from "./agent-snapshot.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { certifiedOptions } from "../constitution/pin-gate.js";
-import { readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
+import { readRequest, REQUEST_ID, RequestError, requestIssues, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
 import { cascadeClean, runCascade } from "./cascade.js";
 import { CASCADE_REVERDICT } from "../constitution/cascade.js";
 
@@ -779,15 +779,30 @@ export function agentWriteRef(root: string, file: string): { segments: string[] 
 }
 
 /**
- * U9a fix round 3: a slot request an agent step raised itself: an open `clossys.queue-entry/2` kind slot entry with its
- * one raised event, from one of the agent's own slots. Any other entry (an owner answer queue's, another agent's
- * request, or one already checked, decided or closed) is Producer's.
+ * U9a fix round 3, U9 (sweep N1): a slot request an agent step raised itself, in exactly the shape `clossys request
+ * --by <agent>` writes for that agent's seat: a schema-valid `clossys.queue-entry/2` kind slot entry (requestIssues),
+ * named by its file, open, from one of the agent's own slots (never `owner`), with its one `raised` event by the agent
+ * (no owner quote), opened by that event, filed by a code verb (`cli` or `scope`) or by the agent itself, and nothing
+ * a later step writes (no decision, link, notice or close). Any other entry (an owner answer queue's, another agent's
+ * request, an owner-origin ask, or one already checked, decided, answered or closed) is Producer's.
  */
+const AGENT_RAISE_SOURCES: Readonly<Record<string, string>> = { cli: "clossys request", scope: "clossys request --scan" };
+const LATER_FIELDS = ["closed", "link", "notified", "closedAt", "decision", "reuse", "proposal", "overlaps", "overlapReason"] as const;
 function ownNewRequest(root: string, file: string, agent: LoopAgent): boolean {
   try {
-    const entry = JSON.parse(readFileSync(wroteFile(root, file), "utf8")) as { schema?: unknown; kind?: unknown; status?: unknown; events?: unknown; from?: unknown };
-    return entry.schema === "clossys.queue-entry/2" && entry.kind === "slot" && entry.status === "open"
-      && Array.isArray(entry.events) && entry.events.length === 1 && typeof entry.from === "string" && entry.from.startsWith(`${agent}/`);
+    const doc = JSON.parse(readFileSync(wroteFile(root, file), "utf8")) as unknown;
+    if (requestIssues(doc).length) return false;
+    const entry = doc as SlotRequest;
+    const name = file.split(/[\\/]/).at(-1) ?? "";
+    if (`${entry.id}.json` !== name || entry.status !== "open" || !entry.from.startsWith(`${agent}/`)) return false;
+    if (entry.events.length !== 1) return false;
+    const [event] = entry.events;
+    if (event!.op !== "raised" || event!.by !== agent || event!.quote !== undefined || entry.opened !== event!.id) return false;
+    const cli = AGENT_RAISE_SOURCES[entry.source];
+    if (cli === undefined) return false;
+    const by = entry.createdBy;
+    if (!((by.actor === "code" && by.cli === cli) || (by.actor === "agent" && by.agent === agent))) return false;
+    return LATER_FIELDS.every(field => (entry as unknown as Record<string, unknown>)[field] === undefined);
   } catch {
     return false;
   }
@@ -832,10 +847,10 @@ export function undeclaredWrites(root: string, state: RunState, step: LoopStep, 
     const existed = snapshotKey(root, absolute) in before;
     const kind = agentWriteClass(segments, agent);
     if ((kind === "queue-slot" || kind === "candidate") && existed && !own.some(pattern => literal(pattern) && patternsMeet(pattern, segments))) return true;
-    if (!own.some(pattern => patternsMeet(pattern, segments))) {
-      if (kind === undefined) return true;
-      if (kind === "queue-slot" && !ownNewRequest(root, file, agent)) return true;
-    }
+    // U9 (sweep N1): a new slot request is judged by its shape also where the standard step's wildcard write
+    // (`producer/queue.slot/entries/*`, the scope steps) names it; only a step naming that exact entry is exempt.
+    if (kind === "queue-slot" && !own.some(pattern => literal(pattern) && patternsMeet(pattern, segments)) && !ownNewRequest(root, file, agent)) return true;
+    if (!own.some(pattern => patternsMeet(pattern, segments)) && kind === undefined) return true;
     return !declared.some(pattern => patternsMeet(pattern, segments));
   });
 }

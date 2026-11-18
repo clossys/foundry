@@ -191,6 +191,21 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     }),
     evidence: agent.trees.length,
   }),
+  // U9 (content-agent coverage map): placed once, owned by the tree's agent, inputs declared. C2 judges the contract.
+  S6: agent => {
+    const counts = new Map<string, number>();
+    for (const id of placedIds(agent)) counts.set(id, (counts.get(id) ?? 0) + 1);
+    const packaged = new Map<string, number>();
+    for (const tree of agent.trees) for (const id of slotLeaves(tree)) packaged.set(id, (packaged.get(id) ?? 0) + 1);
+    const rows = [...counts].filter(([, count]) => count > 1).map(([id, count]) => `${id}: placed ${count} times in ia.json`)
+      .concat([...packaged].filter(([, count]) => count > 1).map(([id, count]) => `${id}: ${count} times in the package tree`));
+    for (const slot of agent.live) {
+      if (slot.owner !== agent.agent) rows.push(`${slot.id}: the record names ${slot.owner === undefined ? "no agent" : `agent ${slot.owner}`}, not ${agent.agent}`);
+      if (slot.recordId !== slot.id) rows.push(`${slot.id}: the record names ${slot.recordId === undefined ? "no id" : `id ${slot.recordId}`}, not its folder`);
+      if (!slot.inputsDeclared) rows.push(`${slot.id}: declares no inputs list`);
+    }
+    return { rows, evidence: agent.live.length };
+  },
   L1: (agent, model) => {
     const rows: string[] = [];
     if (!model.machinery.slotRequestSchema) rows.push("no clossys.queue-entry/2 schema under packages/producer/schemas/");

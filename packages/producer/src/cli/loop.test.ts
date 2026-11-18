@@ -22,6 +22,7 @@ import { buildPin, cliActor, pinPath, writePinDoc } from "../records/pin.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { writeCandidate, writeCandidateBytes } from "../records/slot-write.js";
 import { readPackageLoop } from "../loop/files.js";
+import { requestIssues } from "../records/request.js";
 import { runCli } from "./main.js";
 import { FIXTURE_CONSUMER_ROOT } from "../records/slot-model/fixture-consumer.test.js";
 import { readiness } from "../records/slots.js";
@@ -54,6 +55,15 @@ const loop = (root: string, target: string, ...extra: string[]) => runLoopCli([t
  * slowest), past vitest's 5 s default. 30 s leaves the full suite's parallel load room without hiding a hang.
  */
 const LONG = 30_000;
+/**
+ * U9 (sweep N1): a slot request exactly as `clossys request --by <agent>` writes it for the agent's own slot (schema
+ * valid, named by its file), so the runner's shape guard judges only the one field a case changes.
+ */
+const raisedEntry = (id: string, from: string, target = "director/narratives.origin") => ({
+  schema: "clossys.queue-entry/2", id, kind: "slot", from, assignee: target.split("/")[0], target, status: "open", opened: `${id}#1`,
+  rel: "input", why: "the slot cites it", source: "cli", createdBy: { actor: "code", cli: "clossys request", version: "0.1.0" },
+  createdAt: AT, refs: [{ to: from, rel: "raisedBy" }], events: [{ id: `${id}#1`, at: AT, op: "raised", by: from.split("/")[0], via: "cli", detail: "the slot cites it" }],
+});
 
 describe("clossys loop", () => {
   it("adopts the agent's five loop slots, pins each through the gate, and the runner runs the agent's pin", async () => {
@@ -352,7 +362,7 @@ describe("the runner runs the owning agent's pin for all five loops (planRun / s
     const agents = join(root, "clossys", "agents");
     const step = (id: string, writes: string[]) => ({ id, does: "", decider: { by: "agent", agent: "designer", verb: "review", tier: "low" }, cli: "clossys next", reads: [], writes, checks: [] }) as never;
     const put = (rel: string, body: unknown) => { mkdirSync(join(root, rel, ".."), { recursive: true }); writeFileSync(join(root, rel), `${JSON.stringify(body, null, 2)}\n`); };
-    const shapedRequest = { schema: "clossys.queue-entry/2", kind: "slot", status: "open", from: slot, events: [{ id: "x#1", at: AT, op: "raised", by: "designer" }] };
+    const shapedRequest = raisedEntry("20261117T1200Z-forged", slot);
 
     // R1: the owner's approve queue is no agent's, even an entry shaped as a new request of its own; a check-folder glob
     // writes only the agent's scratch, never Producer's verdicts or other files beside them.
@@ -386,7 +396,9 @@ describe("the runner runs the owning agent's pin for all five loops (planRun / s
 
     // R5: an added step writes only a new request of its own: never another agent's open request, nor one with events.
     const others = await withRequest(root, "director/narratives.origin");
-    const two = { ...shapedRequest, events: [...shapedRequest.events, { id: "x#2", at: AT, op: "checked", by: "producer" }] };
+    // Its own target, so `clossys request` below does not reuse it as the open duplicate.
+    const shaped = raisedEntry("20261117T1200Z-two", slot, "director/advantage.model.pricing");
+    const two = { ...shaped, events: [...shaped.events, { id: "20261117T1200Z-two#2", at: AT, op: "checked", by: "producer" }] };
     put("clossys/agents/producer/queue.slot/entries/20261117T1200Z-two.json", two);
     const designerSlot = join(agents, slot, "slot.json");
     const doc = readJson(designerSlot);
@@ -540,7 +552,7 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     const plan = planRun(root, { loop: "loop.create", slot }, AT);
     if (!plan.ok) throw new Error(plan.reason);
     const state = plan.state;
-    const fresh = (from: string) => ({ schema: "clossys.queue-entry/2", kind: "slot", status: "open", from, events: [{ id: "x#1", at: AT, op: "raised", by: from.split("/")[0] }] });
+    const fresh = (id: string, from: string) => raisedEntry(id, from);
     const entry = (name: string) => `clossys/agents/producer/queue.slot/entries/${name}.json`;
     // p2: an added step of the agent's own may declare new slot requests: the loop certifies.
     const own = readJson(join(slotDir(root, "designer", "loop.create"), "candidates", "create-v1.json")).content;
@@ -550,13 +562,13 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
 
     // p1: before the step a closed request and another agent's open request are there; the step rewrites both as
     // fresh requests of its own and raises one new one. Only the new one is allowed.
-    put(root, entry("20261117T1100Z-closed"), { ...fresh(slot), status: "closed", events: [{ id: "c#1", at: AT, op: "raised", by: "designer" }, { id: "c#2", at: AT, op: "closed", by: "producer" }] });
+    put(root, entry("20261117T1100Z-closed"), { ...fresh("20261117T1100Z-closed", slot), status: "closed", events: [{ id: "c#1", at: AT, op: "raised", by: "designer" }, { id: "c#2", at: AT, op: "closed", by: "producer" }] });
     const others = await withRequest(root, "director/narratives.origin");
     put(root, `clossys/agents/${slot}/candidates/old-v1.json`, { note: "a candidate already there" });
     const before = treeSnapshot(root, state.runId);
-    put(root, entry("20261117T1100Z-closed"), fresh(slot));
-    put(root, entry(others), fresh(slot));
-    put(root, entry("20261117T1200Z-new"), fresh(slot));
+    put(root, entry("20261117T1100Z-closed"), fresh("20261117T1100Z-closed", slot));
+    put(root, entry(others), fresh(others, slot));
+    put(root, entry("20261117T1200Z-new"), fresh("20261117T1200Z-new", slot));
     const requests = ["producer/queue.slot/entries/20261117T1100Z-closed.json", `producer/queue.slot/entries/${others}.json`, "producer/queue.slot/entries/20261117T1200Z-new.json"];
     expect(undeclaredWrites(root, state, extra, requests, before)).toEqual(requests.slice(0, 2));
     // The same writes judged as if nothing was there before pass: create-only is what refuses them.
@@ -589,6 +601,55 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
 
     // blind1 #4: a dot path under clossys/agents/ is never an agent's write.
     expect(agentWriteRef(root, "designer/.hidden/slot.json")).toEqual({ refused: expect.stringMatching(/a dot path under clossys\/agents\/$/) });
+  }, LONG);
+
+  it("judges a new request's shape also under the scope step's wildcard: no answered, forged or owner-origin entry (U9 sweep N1)", async () => {
+    const root = copy();
+    expect((await loop(root, "designer/loop.create")).exitCode).toBe(0);
+    const slot = `designer/${firstSlot(root, "designer")}`;
+    const writerSlot = `writer/${firstSlot(root, "writer")}`;
+    const scopePlan = planRun(root, { loop: "loop.scope", agent: "designer" }, AT);
+    if (!scopePlan.ok) throw new Error(scopePlan.reason);
+    const scope = standardStep("loop.scope", "scope-designer");
+    expect(scope.writes).toEqual(["producer/queue.slot/entries/*"]);
+    const before = treeSnapshot(root, scopePlan.state.runId);
+    const at = (id: string) => `producer/queue.slot/entries/${id}.json`;
+    const valid = raisedEntry("20261117T1200Z-valid", slot);
+    const forged: Record<string, Record<string, unknown>> = {
+      "20261117T1201Z-closed": (() => {
+        const id = "20261117T1201Z-closed", base = raisedEntry(id, slot);
+        return { ...base, status: "closed", decision: "reuse", reuse: "director/narratives.origin", overlaps: [{ slot: "director/narratives.origin", why: "the same need" }],
+          link: "director/narratives.origin", notified: { to: slot, at: AT }, closed: `${id}#2`, closedAt: AT,
+          events: [...base.events, { id: `${id}#2`, at: AT, op: "closed", by: "producer" }] };
+      })(),
+      "20261117T1202Z-notified": { ...raisedEntry("20261117T1202Z-notified", slot), notified: { to: slot, at: AT } },
+      "20261117T1203Z-two": (() => { const base = raisedEntry("20261117T1203Z-two", slot); return { ...base, events: [...base.events, { id: "20261117T1203Z-two#2", at: AT, op: "checked", by: "producer" }] }; })(),
+      "20261117T1204Z-checked": (() => { const base = raisedEntry("20261117T1204Z-checked", slot); return { ...base, events: [{ ...base.events[0]!, op: "checked" }] }; })(),
+      "20261117T1205Z-owner": { ...raisedEntry("20261117T1205Z-owner", slot), from: "owner", refs: [] },
+      "20261117T1206Z-writer": raisedEntry("20261117T1206Z-writer", writerSlot),
+      "20261117T1207Z-by-owner": (() => { const base = raisedEntry("20261117T1207Z-by-owner", slot); return { ...base, events: [{ ...base.events[0]!, by: "owner" }] }; })(),
+      "20261117T1208Z-owner-actor": { ...raisedEntry("20261117T1208Z-owner-actor", slot), createdBy: { actor: "owner", ref: "chat" } },
+      "20261117T1209Z-feedback": { ...raisedEntry("20261117T1209Z-feedback", slot), source: "feedback", createdBy: { actor: "code", cli: "clossys feedback", version: "0.1.0" } },
+      "20261117T1210Z-quote": (() => { const base = raisedEntry("20261117T1210Z-quote", slot); return { ...base, events: [{ ...base.events[0]!, via: "chat", quote: "the owner said so" }] }; })(),
+      "20261117T1211Z-renamed": raisedEntry("20261117T1299Z-other", slot),
+    };
+    // Each forged entry is schema valid: the shape guard, not the record validator, refuses it.
+    for (const [name, body] of Object.entries(forged)) expect(requestIssues(body), name).toEqual([]);
+    const put = (id: string, body: unknown) => { const file = join(root, "clossys", "agents", at(id)); mkdirSync(join(file, ".."), { recursive: true }); writeFileSync(file, `${JSON.stringify(body, null, 2)}\n`); };
+    put("20261117T1200Z-valid", valid);
+    for (const [name, body] of Object.entries(forged)) put(name, body);
+    const names = Object.keys(forged);
+    expect(undeclaredWrites(root, scopePlan.state, scope, [at("20261117T1200Z-valid"), ...names.map(at)], before)).toEqual(names.map(at));
+
+    // The real verb's entry for the agent's own slot passes under the same wildcard.
+    const designerSlot = join(root, "clossys", "agents", slot, "slot.json");
+    const doc = readJson(designerSlot);
+    doc.refs.push({ to: "director/narratives.origin", rel: "input" });
+    writeFileSync(designerSlot, `${JSON.stringify(doc, null, 2)}\n`);
+    const raised = await runCli(["request", "--target", "director/narratives.origin", "--from", slot, "--why", "the icon cites it", "--at", AT, "--by", "designer", "--root", root], root);
+    expect(raised.exitCode, raised.message).toBe(0);
+    const id = (raised.output as { id: string }).id;
+    expect(undeclaredWrites(root, scopePlan.state, scope, [at(id)], before)).toEqual([]);
   }, LONG);
 
   it("binds a standard agent step's writes to its cli: a swapped cli fails certification and its writes are refused (blind1 B3, p3)", async () => {
