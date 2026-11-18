@@ -57,6 +57,9 @@ export function pageFixtureOf(record: Record<string, unknown>): { route: { path:
   return typeof record.path === "string" ? { route: { path: record.path } } : undefined;
 }
 
+/** One lower-case kebab path segment: the only shape a page record's slug may take. */
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 /** A page record read as the layout-role option `checkPageOption` judges, plus what only the record form can get wrong. */
 export function pageOptionOf(
   slotId: string,
@@ -73,7 +76,11 @@ export function pageOptionOf(
   if (!hasPath && !hasSlug) add("page.route", "names no route: a page record carries a path or a slug");
   else if (hasPath && hasSlug) add("page.route", "names both a path and a slug; a page record carries one");
   if (typeof page.path === "string" && hasPath && record.path !== page.path) add("page.route", `routes ${String(record.path)}, not the page slot's ${page.path}`);
-  if (hasSlug && typeof page.path === "string" && page.path.includes("<slug>") && reserved.includes(record.slug as string)) {
+  // A slug is one route segment, lower-case kebab: anything else (a slash, a case or whitespace variant) could claim or
+  // shadow another route, so it is refused before the reserved compare, which is then exact on a canonical segment.
+  const slugShaped = hasSlug && SLUG.test(record.slug as string);
+  if (hasSlug && !slugShaped) add("page.route", `slug ${JSON.stringify(record.slug)} is not one lower-case path segment (a-z, 0-9, single hyphens); a page record's slug is one route segment`);
+  if (slugShaped && typeof page.path === "string" && page.path.includes("<slug>") && reserved.includes(record.slug as string)) {
     add("page.route", `slug ${String(record.slug)} is reserved: ${page.path.replace("<slug>", String(record.slug))} is a route of a publication every consumer holds (the admin workspace); pick another slug`);
   }
 
