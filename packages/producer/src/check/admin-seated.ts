@@ -35,10 +35,18 @@ export function initialised(root: string): boolean {
 const same = (a: readonly unknown[], b: readonly unknown[]): boolean => a.length === b.length && a.every((value, index) => value === b[index]);
 const list = (value: unknown): readonly unknown[] | undefined => Array.isArray(value) ? value : undefined;
 
-/** Judges the workspace at `root` (its consumer folder `<root>/clossys`). */
+/**
+ * Judges the workspace at `root` (its consumer folder `<root>/clossys`). Never throws: a state the check cannot read is a
+ * `fail` finding (indeterminate), never `pass`.
+ */
 export function runAdminSeated(root: string): AdminSeatedResult {
   const consumer = join(root, "clossys");
   if (!hasModelRoot(consumer) && !initialised(root)) return { check: ADMIN_SEATED, status: "skip", findings: [] };
+  try { return judgeSeat(root, consumer); }
+  catch (error) { return { check: ADMIN_SEATED, status: "fail", findings: [{ subject: ADMIN_SEATED, detail: `indeterminate (${(error as Error).message})` }] }; }
+}
+
+function judgeSeat(root: string, consumer: string): AdminSeatedResult {
   let plan: ReturnType<typeof adminPlan>;
   try { plan = adminPlan(root); }
   catch (error) { return { check: ADMIN_SEATED, status: "fail", findings: [{ subject: "publisher/starters/admin", detail: `the admin workspace plan could not be read from the installed Publisher package (${(error as Error).message})` }] }; }
@@ -50,9 +58,16 @@ export function runAdminSeated(root: string): AdminSeatedResult {
   let entries: Map<string, ReturnType<typeof listSlots>[number]>;
   try { entries = new Map(listSlots(consumer, "publisher").map(entry => [entry.id, entry])); }
   catch (error) { return { check: ADMIN_SEATED, status: "fail", findings: [{ subject: "publisher/ia.json", detail: `unreadable (${(error as Error).message}), so no admin publication can be judged; ${fix}` }] }; }
-  // An agent IA that cannot be read holds nothing here; slot integrity reports it (indeterminate), this check never throws.
-  const held = new Set(SLOT_AGENTS.flatMap(agent => { try { return listSlots(consumer, agent).map(entry => entry.id); } catch { return []; } }));
-  const findings: AdminSeatedFinding[] = [];
+  // An agent IA that cannot be read leaves the wiring indeterminate: a finding, so no admin seat counts as seated.
+  const unreadable: AdminSeatedFinding[] = [];
+  const held = new Set(SLOT_AGENTS.flatMap(agent => {
+    try { return listSlots(consumer, agent).map(entry => entry.id); }
+    catch (error) {
+      unreadable.push({ subject: `${agent}/ia.json`, detail: `unreadable (${(error as Error).message}): the admin wiring cannot be judged, so no admin seat counts as seated; fix or restore the IA` });
+      return [];
+    }
+  }));
+  const findings: AdminSeatedFinding[] = [...unreadable];
   const judge = (id: string, kind: "page" | "publication", contract: (value: Readonly<Record<string, unknown>>) => string[], composition: readonly string[]) => {
     const subject = `publisher/${id}`;
     const entry = entries.get(id);

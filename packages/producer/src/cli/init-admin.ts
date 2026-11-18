@@ -69,7 +69,11 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
   }
   const held = () => new Set(listSlots(consumer, "publisher").map(entry => entry.id));
   // Refs resolve against every slot the workspace places (the slot-model check refuses a ref no IA slot names).
-  const known = new Set(SLOT_AGENTS.flatMap(agent => listSlots(consumer, agent).map(entry => entry.id)));
+  const known = new Set<string>();
+  for (const agent of SLOT_AGENTS) {
+    try { for (const entry of listSlots(consumer, agent)) known.add(entry.id); }
+    catch (error) { return fail(`${agent}/ia.json is unreadable (${(error as Error).message}): the admin wiring cannot be judged; fix or restore the IA`); }
+  }
   const dir = mkdtempSync(join(tmpdir(), "clossys-init-admin-"));
   try {
     const place = async (slot: string, kind: "page" | "publication", contract: unknown, refs: readonly string[]) => {

@@ -275,6 +275,31 @@ describe("publisher.admin-seated", () => {
     ]);
   }, 60_000);
 
+  it("mutation: a corrupt agent IA is indeterminate, never seated", async () => {
+    const root = workspace();
+    await adopt(root);
+    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    expect(runAdminSeated(root).status).toBe("pass");
+    writeFileSync(join(root, "clossys", "agents", "designer", "ia.json"), "{ not json");
+    const result = runAdminSeated(root);
+    expect(result.status).toBe("fail");
+    expect(result.findings).toContainEqual({ subject: "designer/ia.json", detail: expect.stringContaining("the admin wiring cannot be judged, so no admin seat counts as seated") });
+    const check = await runCli(["check", "--root", root]);
+    expect(check.exitCode).not.toBe(0);
+    expect((check as unknown as { checks?: Record<string, { status: string }> }).checks?.[ADMIN_SEATED]?.status).toBe("fail");
+    expect(check.message).not.toContain(`${ADMIN_SEATED}: pass`);
+  }, 60_000);
+
+  it("mutation: clossys init on a workspace with a corrupt agent IA refuses with exit 1, naming the IA, and does not throw", async () => {
+    const root = workspace();
+    await adopt(root);
+    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    writeFileSync(join(root, "clossys", "agents", "designer", "ia.json"), "{ not json");
+    const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
+    expect(again.exitCode).toBe(1);
+    expect(again.message).toContain("designer/ia.json is unreadable");
+  }, 60_000);
+
   it("passes once clossys init has seated the admin workspace", async () => {
     const root = workspace();
     await runInitCli(["--at", AT], root);
