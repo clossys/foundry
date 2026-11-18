@@ -119,8 +119,8 @@ describe("publisher.release refuses when publisher.check fails", () => {
     expect(result.exit).toBe(0);
     expect(result.released).toBe(true);
     expect(calls).toEqual([["site", "--gates", "--root", root]]);
-    expect(result.checked.every(subject => /^publisher\/page\.(?:home|about|pricing|contact|terms|privacy|not-found|error)\//.test(subject))).toBe(true);
-    expect(result.checked).toHaveLength(8);
+    expect(result.checked.every(subject => /^publisher\/page\.(?:home|about|pricing|contact|terms|privacy|not-found|error|site-page)\//.test(subject))).toBe(true);
+    expect(result.checked).toHaveLength(9);
     const failing: ReleaseRunner = async () => ({ exitCode: 1, message: "release: gate failed" });
     expect((await releasePublisher(root, "site", ["--build", "--manifest"], { release: failing })).exit).toBe(1);
   });
@@ -313,7 +313,7 @@ describe("publisher.check over clossys.page/1 records (DECISION 0048-PAGE-SHAPE,
     expect(await result(record => { record.heading = "Welcome to our product"; })).toEqual(["page.no-inline-copy"]);
     expect(await result(record => { record.title = "Welcome"; delete record.copy.meta; })).toEqual(["page.no-inline-copy"]);
     expect(await result(record => { delete record.bindings["sections.steps"]; })).toEqual(["page.record-key"]);
-    expect(await result(record => { record.sections.splice(record.sections.indexOf("sections.features"), 1); delete record.bindings["sections.features"]; })).toEqual(["page.required-roles"]);
+    expect(await result(record => { record.sections.splice(record.sections.indexOf("sections.hero"), 1); delete record.bindings["sections.hero"]; })).toEqual(["page.required-roles"]);
   });
 
   /**
