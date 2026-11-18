@@ -11,12 +11,14 @@
  *   and every locale its own contract requires.
  * - `release.locales`: the release locales resolve and the build carries every one.
  * - `slots.stale`: no slot is `needs-refresh` and no pinned candidate is stale or fails its re-verdict on the pinSet
- *   now (R07.5, constitution/cascade.ts): a release never ships a dependant a repin upstream left unjudged.
+ *   now (R07.5, constitution/cascade.ts): a release never ships a dependant a repin upstream left unjudged. A legacy
+ *   pin (no recorded pinSet or verdict, what `clossys migrate pin-1-to-2` writes) fails closed too: nothing says it
+ *   holds on the pinSet now, so it fails until the owning agent's loop.choose re-verdicts it (foundry-build-0048 U8).
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { buildContext } from "../constitution/context.js";
-import { NEEDS_REFRESH, pinChecks } from "../constitution/cascade.js";
+import { NEEDS_REFRESH, pinChecks, type PinCheck } from "../constitution/cascade.js";
 import { liveSlotRecords } from "../constitution/checks/shared.js";
 import { readSubject } from "../loop/slots.js";
 import { consumerSlotFolders } from "../records/slot.js";
@@ -91,6 +93,18 @@ function localesGate(root: string, publication: string, build: { readonly locale
   return findings;
 }
 
+/** Why a pinned candidate that is not fresh blocks the release, and the fix. */
+function staleDetail(check: PinCheck): string {
+  const pinned = `pinned ${check.candidate.name}${check.record ? ` (#${check.record})` : ""}`;
+  switch (check.state) {
+    case "stale": return `${pinned} was judged on a pinSet a repin upstream changed (run clossys run loop.cascade)`;
+    case "failed": return `${pinned} fails its re-verdict on the pinSet now`;
+    // Fail closed: a pin with no recorded verdict (a pin/1 migrated by clossys migrate pin-1-to-2) is not known to
+    // hold on the pinSet now. Only its owner's CHOOSE gate records one.
+    default: return `${pinned} is a legacy pin with no recorded pinSet or verdict (as clossys migrate pin-1-to-2 writes it): agent:${check.slot.agent} must re-verdict it (run its loop.choose: clossys run loop.choose --slot ${check.slot.agent}/${check.slot.id})`;
+  }
+}
+
 function slotsStale(root: string): Finding[] {
   const findings: Finding[] = [];
   for (const folder of consumerSlotFolders(root)) {
@@ -102,9 +116,9 @@ function slotsStale(root: string): Finding[] {
   const ctx = buildContext(root, join(root, "clossys"));
   for (const check of pinChecks(ctx, undefined, liveSlotRecords(ctx))) {
     const subject = `${check.slot.agent}/${check.slot.id}`;
-    if (flagged.has(subject) || (check.state !== "stale" && check.state !== "failed")) continue;
+    if (flagged.has(subject) || check.state === "fresh") continue;
     flagged.add(subject);
-    findings.push({ check: SLOTS_STALE, subject, detail: check.state === "stale" ? `pinned ${check.candidate.name} was judged on a pinSet a repin upstream changed (run clossys run loop.cascade)` : `pinned ${check.candidate.name} fails its re-verdict on the pinSet now` });
+    findings.push({ check: SLOTS_STALE, subject, detail: staleDetail(check) });
   }
   return findings;
 }

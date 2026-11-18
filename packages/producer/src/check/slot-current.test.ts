@@ -22,6 +22,9 @@ import { serializeFrontmatter } from "../records/slot-model/frontmatter.js";
 import type { SlotAgent } from "../records/slot-model/types.js";
 import type { AgentId } from "../records/types.js";
 import { runSlotResolve } from "./slot-resolve.js";
+import { pinChecks, REVERDICT_SCHEMA, writeReverdict, type PinCheck } from "../constitution/cascade.js";
+import { liveSlotRecords } from "../constitution/checks/shared.js";
+import { buildContext } from "../constitution/context.js";
 
 const AT = "2026-11-15T10:00:00Z";
 let root: string | undefined;
@@ -145,6 +148,24 @@ describe.each(STORES)("a current-format candidate keeps every rule of its kind: 
 });
 
 /**
+ * Records a passing verdict on the pinSet now (a clossys.reverdict/1, the file loop.cascade writes) for every legacy
+ * pin of the world: its hand pins (writeTargetPin, basis planner) stand in for pins the CHOOSE gate judged.
+ */
+function recordVerdicts(root: string): void {
+  const ctx = buildContext(root, join(root, "clossys"));
+  const bySlot = new Map<string, PinCheck[]>();
+  for (const check of pinChecks(ctx, undefined, liveSlotRecords(ctx))) {
+    if (check.state !== "legacy") continue;
+    const ref = `${check.slot.agent}/${check.slot.id}`;
+    bySlot.set(ref, [...(bySlot.get(ref) ?? []), check]);
+  }
+  for (const [ref, checks] of bySlot) {
+    const verdicts = checks.map(check => ({ candidate: check.candidate.name, sha256: check.candidate.sha256, ...(check.record !== undefined ? { record: check.record } : {}), pinSet: check.current, certified: true, reasons: [] }));
+    writeReverdict(root, checks[0]!.slot.agent, checks[0]!.slot.id, { schema: REVERDICT_SCHEMA, slot: ref, at: AT, verdicts });
+  }
+}
+
+/**
  * Review r1-delta P1: the int2 kind rules judge only a candidate that still carries an int2-shaped document. The
  * target-format shapes (a release manifest, a Designer SVG, a Writer JSON record, a Director brief with only its
  * header) are judged by the target rules: the kind's extensions, the header source, and the candidate's own level.
@@ -193,6 +214,14 @@ describe("a target-format candidate is judged by the target rules", () => {
     const findings = (message: string) => message.split("\n").filter(line => /^\s+agents\//.test(line));
     const before = await runCli(["check", "--root", world.root], world.root);
     expect((await release(world, "--build", now)).exitCode).toBe(0);
+    // The world pins page.home by hand (basis planner), not through the CHOOSE gate: a legacy pin, with no recorded
+    // pinSet or verdict, fails release closed (U8) and names the owner's choose loop as the fix.
+    const legacy = await release(world, "--gates", now);
+    expect(legacy.exitCode, legacy.message).toBe(1);
+    expect(legacy.message).toMatch(/gates fail \(slots\.stale\)\n\s+slots\.stale\s+publisher\/page\.home\s+pinned home-v1\.json is a legacy pin with no recorded pinSet or verdict.*run its loop\.choose: clossys run loop\.choose --slot publisher\/page\.home/);
+    // The world's hand pins stand in for gated pins: record the passing verdict on the pinSet now that the choose
+    // loop would have, and the gates pass again.
+    recordVerdicts(world.root);
     const manifest = await release(world, "--manifest", now);
     expect(manifest.exitCode, manifest.message).toBe(0);
     // The manifest alone: clossys check gains no finding at all.

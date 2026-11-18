@@ -14,7 +14,7 @@
  *  3. R07.5 reports the page's pin as stale (its pinSet changed, nobody re-verdicted).
  *  4. `clossys run loop.cascade --slot designer/sections.hero` re-verdicts the page: it fails, the page is
  *     needs-refresh, a queue.fix goes to agent:publisher, and the release gate slots.stale fails.
- * *  5. Repinning the section to a web candidate and running the cascade again passes the page: needs-refresh goes to live.
+ *  5. Repinning the section to a web candidate and running the cascade again passes the page: needs-refresh goes to live.
  */
 import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -23,7 +23,10 @@ import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { runCli } from "../cli/main.js";
 import { buildContext } from "../constitution/context.js";
-import { staleRows } from "../constitution/cascade.js";
+import { pinChecks, REVERDICT_SCHEMA, reverdictOf, staleRows, writeReverdict } from "../constitution/cascade.js";
+import { certifyEnv } from "../constitution/certify/env.js";
+import { liveSlotRecords } from "../constitution/checks/shared.js";
+import { migratePins } from "../migrate/pin-1-to-2.js";
 import { PRODUCER_ROOT } from "../package-path.js";
 import { SLOT_LOCK, writeCandidate } from "../records/slot-write.js";
 import { runGates, SLOTS_STALE } from "../release/gates.js";
@@ -181,4 +184,49 @@ describe("the pin gate and the pin are one critical section (U6)", () => {
     expect(free.exitCode, free.message).toBe(0);
     expect(w.readJson(pinFile)).toMatchObject({ candidate });
   }, 120_000);
+});
+
+describe("a legacy pin fails closed (U8)", () => {
+  it("a pin/2 that clossys migrate pin-1-to-2 wrote (no recorded pinSet or verdict) fails slots.stale until the owner's CHOOSE gate re-verdicts it", async () => {
+    const { w, ok } = await seated();
+    expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("pass");
+    // Back to what an int2 consumer held before the pin gate: a pin/1 and no scorecard or re-verdict.
+    const pinFile = join(w.consumer, "agents", "publisher", "page.home", "pin.json");
+    const pinned = w.readJson(pinFile) as { candidate: string; sha256: string };
+    writeFileSync(pinFile, `${JSON.stringify({ candidate: pinned.candidate, sha256: pinned.sha256, decidedBy: "agent:publisher", basis: "agent", at: AT }, null, 2)}\n`);
+    rmSync(join(w.root, ".clossys", "checks", "publisher", "page.home"), { recursive: true, force: true });
+    // The migration `clossys migrate recut` runs: pin/1 to pin/2, and it records no verdict.
+    const migrated = migratePins(w.root);
+    expect(migrated.rows).toContainEqual({ slot: "publisher/page.home", outcome: "migrated" });
+    expect(w.readJson(pinFile)).toMatchObject({ schema: "clossys.pin/2", candidate: pinned.candidate, sha256: pinned.sha256 });
+    expect(existsSync(join(w.root, ".clossys", "checks", "publisher", "page.home"))).toBe(false);
+    const ctx = buildContext(w.root, w.consumer);
+    expect(pinChecks(ctx, undefined, liveSlotRecords(ctx)).find(check => check.slot.agent === "publisher" && check.slot.id === "page.home")?.state).toBe("legacy");
+
+    // Fail closed: release refuses it and names the owner's choose loop as the fix.
+    const gates = staleGate(w.root);
+    expect(gates.checks[SLOTS_STALE]).toBe("fail");
+    expect(gates.findings.filter(finding => finding.check === SLOTS_STALE)).toEqual([expect.objectContaining({
+      subject: "publisher/page.home",
+      detail: expect.stringMatching(/legacy pin with no recorded pinSet or verdict.*agent:publisher must re-verdict it \(run its loop\.choose: clossys run loop\.choose --slot publisher\/page\.home\)/),
+    })]);
+
+    // Re-verdicted through the CHOOSE gate (the pin loop.choose ends on): the scorecard records the pinSet now.
+    ok(await w.pin("publisher/page.home", pinned.candidate));
+    expect(w.readJson(join(w.root, ".clossys", "checks", "publisher", "page.home", "scorecard.json")).candidates[0]).toMatchObject({ candidate: pinned.candidate, certified: true, pinSet: expect.stringMatching(/^[0-9a-f]{64}$/) });
+    expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("pass");
+  }, 300_000);
+
+  it("a legacy pin re-verdicted by loop.cascade (a passing clossys.reverdict/1 on the pinSet now) passes slots.stale", async () => {
+    const { w } = await seated();
+    rmSync(join(w.root, ".clossys", "checks", "publisher", "page.home", "scorecard.json"), { force: true });
+    expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("fail");
+    const ctx = buildContext(w.root, w.consumer);
+    const check = pinChecks(ctx, undefined, liveSlotRecords(ctx)).find(item => item.slot.agent === "publisher" && item.slot.id === "page.home")!;
+    expect(check.state).toBe("legacy");
+    const verdict = reverdictOf(check, certifyEnv(ctx));
+    expect(verdict.certified).toBe(true);
+    writeReverdict(w.root, "publisher", "page.home", { schema: REVERDICT_SCHEMA, slot: "publisher/page.home", at: AT, verdicts: [verdict] });
+    expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("pass");
+  }, 300_000);
 });
