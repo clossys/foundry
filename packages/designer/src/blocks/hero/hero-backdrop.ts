@@ -56,8 +56,9 @@ export function resolveHeroBackdrop(value: unknown, resolved?: Resolved, mode: M
     return { kind: "graphic", need: `NEED Assets leaf: ${row.asset}` };
   }
   if (row.kind === "interactive") {
-    const issues = interactiveBackdropDescriptorIssues(row.backdrop);
-    if (issues.length) throw new TypeError(`Hero interactive backdrop: ${issues.join("; ")}`);
+    // Decorative only: an invalid descriptor (refused upstream at submit, pin and compile) drops the
+    // backdrop and the hero renders without one, rather than taking the page down.
+    if (interactiveBackdropDescriptorIssues(row.backdrop).length) return { kind: "none" };
     return { kind: "interactive", interactive: row.backdrop as InteractiveBackdropDescriptor };
   }
   throw new TypeError("Hero backdrop kind must be none, image, video, graphic or interactive");

@@ -6003,12 +6003,6 @@
       },
       "requirements": [
         {
-          "check": "source.ref",
-          "params": {
-            "contract": "$contract"
-          }
-        },
-        {
           "check": "interactive.backdrop",
           "params": {
             "contract": "$contract"

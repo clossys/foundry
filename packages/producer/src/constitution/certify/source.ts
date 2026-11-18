@@ -28,15 +28,7 @@ export interface Lineage {
   readonly parts?: readonly Reference[];
   readonly partsHashed?: boolean;
   readonly unresolved?: readonly unknown[];
-  /** An interactive-backdrop lineage: the candidate's source kind and the Foundry component its descriptor names. */
-  readonly backdrop?: { readonly kind?: unknown; readonly component?: unknown };
 }
-
-/**
- * The lineage mode of an interactive backdrop descriptor (meta.source.kind interactive-backdrop, or any
- * candidate carrying meta.backdrop): no library item version, but data naming a Foundry component.
- */
-export const INTERACTIVE_BACKDROP_MODE = "interactive-backdrop";
 
 export const globMatch = (pattern: string, slot: string): boolean => (pattern.endsWith("*") ? slot.startsWith(pattern.slice(0, -1)) : pattern === slot);
 
@@ -64,14 +56,6 @@ export function lineageFindings(label: string, lineage: Lineage, { rule, manifes
   const findings: string[] = [];
   const { slot, mode, source } = lineage;
   const asset = (rule.consumerAssets?.slots ?? []).some(pattern => globMatch(pattern, slot ?? ""));
-  if (mode === INTERACTIVE_BACKDROP_MODE) {
-    const kind = lineage.backdrop?.kind;
-    const component = lineage.backdrop?.component;
-    if (kind !== INTERACTIVE_BACKDROP_MODE) return [`${label}: carries meta.backdrop but meta.source.kind is ${JSON.stringify(kind ?? null)}: only an ${INTERACTIVE_BACKDROP_MODE} candidate is a descriptor; every other kind stays under the verbatim rule`];
-    if (!(rule.interactiveBackdrops?.slots ?? []).some(pattern => globMatch(pattern, slot ?? ""))) return [`${label}: interactive backdrop in ${slot}, which is not an interactiveBackdrops slot of the provenance rule`];
-    if (typeof component !== "string" || !(rule.interactiveBackdrops?.components ?? []).includes(component)) return [`${label}: meta.backdrop.component ${JSON.stringify(component ?? null)} is not one of the Foundry interactive backdrop components (${(rule.interactiveBackdrops?.components ?? []).join(", ")})`];
-    return findings;
-  }
   if (mode === "original") {
     if (!asset) findings.push(`${label}: original item in ${slot}, which is not a consumer-asset slot; adopt or customize a trusted reference, or raise a NEED`);
     return findings;
@@ -104,22 +88,35 @@ export const consumerOwnDerivation = (refs: unknown): boolean => Array.isArray(r
 
 type Item = { meta?: { source?: { kind?: unknown; ref?: unknown; hash?: unknown }; backdrop?: unknown } } | null | undefined;
 
+/** Whether a Designer candidate carries its own interactive backdrop descriptor (`meta.backdrop`). */
+export const carriesBackdrop = (item: Item): boolean => !!item?.meta && typeof item.meta === "object" && Object.hasOwn(item.meta, "backdrop");
+
+/**
+ * Findings for the interactive backdrop descriptor a Designer candidate carries (foundry-build-0048
+ * A4); [] when it carries none. The descriptor rides as `meta.backdrop` on the slot's own code
+ * candidate, whose code keeps its own lineage (candidateLineage, lineageFindings); here only its slot
+ * and component are judged against the rule's interactiveBackdrops (the param schema is judged at
+ * submit, pin and compile).
+ */
+export function backdropFindings(label: string, slot: string, item: Item, rule: ProvenanceRule): string[] {
+  if (!carriesBackdrop(item)) return [];
+  const findings: string[] = [];
+  if (!(rule.interactiveBackdrops?.slots ?? []).some(pattern => globMatch(pattern, slot))) findings.push(`${label}: meta.backdrop in ${slot}, which is not an interactiveBackdrops slot of the provenance rule`);
+  const backdrop = item!.meta!.backdrop;
+  const component = backdrop && typeof backdrop === "object" && !Array.isArray(backdrop) && Object.hasOwn(backdrop, "component") ? (backdrop as { component?: unknown }).component : undefined;
+  if (typeof component !== "string" || !(rule.interactiveBackdrops?.components ?? []).includes(component)) findings.push(`${label}: meta.backdrop.component ${JSON.stringify(component ?? null)} is not one of the Foundry interactive backdrop components (${(rule.interactiveBackdrops?.components ?? []).join(", ")})`);
+  return findings;
+}
+
 /**
  * Lineage of one Designer candidate (registry item): `original` stays original, `registry` is a
  * verbatim adoption, `derived` is customized; the first reference is the source, the rest are parts.
  * `composition` and `npm` candidates cite pinned slots or an npm package, not a registry item, and
- * are verified by check-ref-verbatim: null here. An interactive backdrop (the kind, or any candidate
- * carrying meta.backdrop) is a descriptor over a Foundry component: its lineage names the kind and
- * the component, which lineageFindings checks against the rule's interactiveBackdrops.
+ * are verified by check-ref-verbatim: null here. A `meta.backdrop` descriptor does not change the
+ * code's lineage: backdropFindings judges it.
  */
 export function candidateLineage(slot: string, item: Item): Lineage | null {
   const source = item?.meta?.source ?? {};
-  const meta = item?.meta;
-  if (source.kind === INTERACTIVE_BACKDROP_MODE || (!!meta && typeof meta === "object" && Object.hasOwn(meta, "backdrop"))) {
-    const backdrop = meta?.backdrop;
-    const component = backdrop && typeof backdrop === "object" && !Array.isArray(backdrop) ? (backdrop as { component?: unknown }).component : undefined;
-    return { slot, mode: INTERACTIVE_BACKDROP_MODE, backdrop: { kind: source.kind, component } };
-  }
   if (source.kind === "original") return { slot, mode: "original" };
   if (source.kind === "composition" || source.kind === "npm") return null;
   // Derived only from the consumer's own Designer asset slots: the consumer's own artwork, an original.

@@ -22,6 +22,7 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, realpath, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve } from "node:path";
+import { carriesInteractiveBackdrop, INTERACTIVE_BACKDROP_SLOT, interactiveBackdropMetaIssues } from "@clossys/designer/catalog";
 import type { SpecimenRecord, SpecimenRecordSource } from "../specimen/types.js";
 import { installedPath } from "../specimen/installed-path.js";
 
@@ -56,6 +57,8 @@ export type InstallFindingCode =
   | "invalid-page" | "unpinned-slot" | "unpinned-dependency" | "missing-record" | "not-a-registry-item" | "no-entry"
   | "install-failed" | "hash-mismatch" | "unbound-copy-slot" | "missing-copy-key" | "invalid-copy-slot"
   | "unbound-asset-slot" | "missing-asset" | "render-failed"
+  // The pinned hero code candidate's `meta.backdrop` is no valid interactive backdrop descriptor (foundry-build-0048 A4).
+  | "invalid-backdrop"
   // A page needs the consumer's component selection to mount inside the Publisher host (`./host.ts`).
   | "need-component-selection"
   // Site mode (`./site.ts`): the content map and route pack disagree, or a link leads nowhere.
@@ -289,6 +292,14 @@ export async function resolvePage(page: InstallPageRecord, pins: InstallPins, so
       // Declared copy slots rewrite props in place: the record's own fixtures stay untouched.
       mount.props = structuredClone(mount.props);
       if (role === "frame") delete mount.props.children;
+      // An interactive backdrop (foundry-build-0048 A4) rides as meta.backdrop on the hero's own code
+      // candidate: it reaches Hero's `backdrop` prop for the hero slot only, never for another slot whose
+      // code also renders Hero (the CTA). The same schema check as submit and pin; an invalid one stops the page.
+      if (slot === INTERACTIVE_BACKDROP_SLOT && carriesInteractiveBackdrop(found.item)) {
+        const issues = interactiveBackdropMetaIssues(found.item, slot);
+        if (issues.length) { for (const issue of issues) findings.push({ code: "invalid-backdrop", slot, detail: `${id}: ${issue}` }); return; }
+        mount.props.backdrop = { kind: "interactive", backdrop: found.item.meta.backdrop };
+      }
       const parts = new Set<string>();
       eachNode(mount.props, node => { if (typeof node.$element === "string") parts.add(node.$element); });
       for (const part of parts) await visit(part, "part", id);

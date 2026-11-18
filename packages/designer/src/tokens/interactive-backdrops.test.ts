@@ -7,14 +7,10 @@ import {
   INTERACTIVE_BACKDROP_COLORS,
   INTERACTIVE_BACKDROP_COMPONENT_IDS,
   INTERACTIVE_BACKDROP_COMPONENTS,
-  INTERACTIVE_BACKDROP_ITEM_KEYS,
-  INTERACTIVE_BACKDROP_ITEM_TYPE,
-  INTERACTIVE_BACKDROP_KIND,
-  INTERACTIVE_BACKDROP_META_KEYS,
-  INTERACTIVE_BACKDROP_SOURCE_KEYS,
-  interactiveBackdropCandidateIssues,
-  interactiveBackdropEnvelopeIssues,
+  INTERACTIVE_BACKDROP_SLOT,
+  carriesInteractiveBackdrop,
   interactiveBackdropDescriptorIssues,
+  interactiveBackdropMetaIssues,
   isInteractiveBackdropDescriptor,
   resolveInteractiveBackdropParams,
 } from "./interactive-backdrops.js";
@@ -22,14 +18,15 @@ import {
 const packageRoot = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 const read = (path: string) => readFileSync(resolve(packageRoot, path), "utf8");
 
+/** The hero's own code candidate, carrying the descriptor as meta.backdrop. */
 const candidate = (backdrop: unknown = { component: "grid-glow", params: { cell: 32 } }) => ({
   $schema: "https://ui.shadcn.com/schema/registry-item.json",
-  name: "hero-grid-glow",
+  name: "hero",
   type: "registry:block",
-  files: [],
+  files: [{ path: "hero.tsx", type: "registry:block", content: "export function Hero() { return null; }\n" }],
   meta: {
     slot: "sections.hero",
-    source: { kind: INTERACTIVE_BACKDROP_KIND, ref: [], license: "MIT" },
+    source: { kind: "original", ref: [], license: "MIT" },
     element: { slot: "sections.hero", reason: "director:identity.visual.style" },
     backdrop,
   },
@@ -102,7 +99,7 @@ describe("interactive backdrop descriptor (foundry-build-0048 A4)", () => {
 
   it("the provenance rule and the hero contract list exactly these components, for the hero slot only", () => {
     const rule = JSON.parse(read("src/catalog/rules/provenance.json")) as { interactiveBackdrops: { slots: string[]; components: string[] } };
-    expect(rule.interactiveBackdrops.slots).toEqual(["sections.hero"]);
+    expect(rule.interactiveBackdrops.slots).toEqual([INTERACTIVE_BACKDROP_SLOT]);
     expect(rule.interactiveBackdrops.components).toEqual([...INTERACTIVE_BACKDROP_COMPONENT_IDS]);
     const slots = JSON.parse(read("src/catalog/slots/sections.json")) as { id: string; contract: { interactive?: { components: string[] } } }[];
     expect(slots.filter(slot => slot.contract.interactive).map(slot => slot.id)).toEqual(["sections.hero"]);
@@ -110,50 +107,37 @@ describe("interactive backdrop descriptor (foundry-build-0048 A4)", () => {
   });
 });
 
-describe("interactive backdrop candidate (the registry item a consumer pins)", () => {
-  it("admits a descriptor-only item", () => {
-    expect(interactiveBackdropCandidateIssues(candidate())).toEqual([]);
+describe("interactive backdrop on the hero's own code candidate (meta.backdrop)", () => {
+  it("admits a hero code candidate carrying a valid descriptor, and one carrying none", () => {
+    expect(INTERACTIVE_BACKDROP_SLOT).toBe("sections.hero");
+    expect(carriesInteractiveBackdrop(candidate())).toBe(true);
+    expect(interactiveBackdropMetaIssues(candidate(), "sections.hero")).toEqual([]);
+    const { backdrop: _backdrop, ...meta } = candidate().meta;
+    const plain = { ...candidate(), meta };
+    expect(carriesInteractiveBackdrop(plain)).toBe(false);
+    expect(interactiveBackdropMetaIssues(plain, "sections.hero")).toEqual([]);
+    expect(interactiveBackdropMetaIssues(plain, "sections.call-to-action")).toEqual([]);
+    for (const value of [null, "x", [], { meta: null }, { meta: Object.create({ backdrop: {} }) }]) expect(carriesInteractiveBackdrop(value), JSON.stringify(value)).toBe(false);
+  });
+
+  it("refuses a descriptor on any other slot's candidate, the CTA (which also renders Hero) included", () => {
+    for (const slot of ["sections.call-to-action", "sections.media", "components.button"]) {
+      expect(interactiveBackdropMetaIssues(candidate(), slot)).toEqual([`meta.backdrop rides only on a sections.hero code candidate, not on a ${slot} candidate`]);
+    }
   });
 
   it.each([
-    ["code in files", (item: ReturnType<typeof candidate>) => ({ ...item, files: [{ path: "backdrop.tsx", type: "registry:block", content: "export default () => null" }] }), /carries files/],
-    ["no files list", (item: ReturnType<typeof candidate>) => { const { files: _files, ...rest } = item; return rest; }, /carries files/],
-    ["an installer key", (item: ReturnType<typeof candidate>) => ({ ...item, dependencies: ["three"] }), /carries dependencies/],
-    ["global css", (item: ReturnType<typeof candidate>) => ({ ...item, css: { body: {} } }), /carries css/],
-    ["another type", (item: ReturnType<typeof candidate>) => ({ ...item, type: "registry:ui" }), /type is "registry:ui"/],
-    ["an extra meta key", (item: ReturnType<typeof candidate>) => ({ ...item, meta: { ...item.meta, refVerbatim: { files: {} } } }), /meta carries refVerbatim/],
-    ["an extra source key", (item: ReturnType<typeof candidate>) => ({ ...item, meta: { ...item.meta, source: { ...item.meta.source, hash: "sha256:0" } } }), /meta\.source carries hash/],
-    ["a cited ref", (item: ReturnType<typeof candidate>) => ({ ...item, meta: { ...item.meta, source: { ...item.meta.source, ref: ["shadcn/hero@1.0.0"] } } }), /not \[\]: it adopts and cites nothing/],
-    ["another kind", (item: ReturnType<typeof candidate>) => ({ ...item, meta: { ...item.meta, source: { ...item.meta.source, kind: "original" } } }), /kind is "original", not interactive-backdrop/],
-    ["no descriptor", (item: ReturnType<typeof candidate>) => { const { backdrop: _backdrop, ...meta } = item.meta; return { ...item, meta }; }, /no meta\.backdrop descriptor/],
-    ["an invalid descriptor", () => candidate({ component: "grid-glow", params: { cell: 4 } }), /outside 16\.\.96/],
-    ["no meta", (item: ReturnType<typeof candidate>) => ({ ...item, meta: undefined }), /no meta object/],
-  ])("refuses %s", (_label, mutate, message) => {
-    const issues = interactiveBackdropCandidateIssues(mutate(candidate()));
+    ["an unknown component", { component: "three-scene", params: {} }, /not one of the Foundry components/],
+    ["a param out of range", { component: "grid-glow", params: { cell: 4 } }, /outside 16\.\.96/],
+    ["a URL colour", { component: "grid-glow", params: { glow: "https://example.com/x.js" } }, /not one of the token colours/],
+    ["an extra descriptor key", { component: "grid-glow", params: {}, module: "./x.js" }, /carries "module"/],
+    ["an empty value", null, /not an object \{component, params\}/],
+  ])("refuses %s", (_label, backdrop, message) => {
+    const issues = interactiveBackdropMetaIssues(candidate(backdrop), "sections.hero");
     expect(issues.some(issue => message.test(issue)), issues.join("; ")).toBe(true);
   });
 
-  it("refuses a value that is not an object", () => {
-    expect(interactiveBackdropCandidateIssues(null)).toEqual(["the interactive backdrop is not a registry item object"]);
-  });
-});
-
-describe("interactive backdrop envelope parity with the ref-verbatim gate", () => {
-  it("the gate's plain-JS envelope keeps the same keys and messages", async () => {
-    const gate = await import("../../scripts/check-ref-verbatim.mjs");
-    expect(gate.INTERACTIVE_BACKDROP_KIND).toBe(INTERACTIVE_BACKDROP_KIND);
-    expect([...gate.INTERACTIVE_ITEM_KEYS]).toEqual([...INTERACTIVE_BACKDROP_ITEM_KEYS]);
-    expect([...gate.INTERACTIVE_META_KEYS]).toEqual([...INTERACTIVE_BACKDROP_META_KEYS]);
-    expect([...gate.INTERACTIVE_SOURCE_KEYS]).toEqual([...INTERACTIVE_BACKDROP_SOURCE_KEYS]);
-    expect(gate.INTERACTIVE_ITEM_TYPE).toBe(INTERACTIVE_BACKDROP_ITEM_TYPE);
-    const item = candidate();
-    const cases: unknown[] = [
-      null, [], item,
-      { ...item, files: [{ path: "x.tsx" }], css: {}, type: "registry:ui" },
-      { ...item, meta: undefined },
-      { ...item, meta: { ...item.meta, source: "x", refVerbatim: {} } },
-      { ...item, meta: { ...item.meta, source: { kind: "original", ref: ["a"], hash: "h" } } },
-    ];
-    for (const value of cases) expect(gate.interactiveEnvelopeIssues(value), JSON.stringify(value)).toEqual(interactiveBackdropEnvelopeIssues(value));
+  it("reads only the descriptor's own keys", () => {
+    expect(interactiveBackdropDescriptorIssues(Object.create({ component: "grid-glow", params: {} }))).toEqual([expect.stringMatching(/component is undefined, not one of the Foundry components/)]);
   });
 });

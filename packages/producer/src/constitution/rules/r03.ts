@@ -28,7 +28,7 @@ import { ledgerEvents, standardFor, type Standard } from "../../records/standard
 import { certifyEnv, slotDocOf } from "../certify/index.js";
 import { isAgentLoopRecord } from "../certify/loop.js";
 import { CERTIFY_INPUT_FIELDS } from "../certify/types.js";
-import { candidateLineage, lineageFindings, verbatimFindings, type ProvenanceRule, type ReferenceManifest } from "../certify/source.js";
+import { backdropFindings, candidateLineage, carriesBackdrop, lineageFindings, verbatimFindings, type ProvenanceRule, type ReferenceManifest } from "../certify/source.js";
 import { candidateMeta, focusedLiveSlots, isObject, liveSlotRecords, registryFiles, row } from "../checks/shared.js";
 import type { CandidateRecord, Check, ConstitutionContext, Row, RuleModule, SlotRecord } from "../types.js";
 
@@ -138,12 +138,15 @@ export const r03_2: Check = ctx => {
       const label = `${slot.id}/${candidate.name}`;
       // A Designer element's registry lineage; an agent loop candidate is a loop version, judged by certifyLoop.
       if (slot.agent === "designer" && !isAgentLoopRecord(slot)) {
-        const lineage = candidate.name.endsWith(".json") ? candidateLineage(slot.id, candidate.json as Parameters<typeof candidateLineage>[1]) : null;
+        const item = candidate.name.endsWith(".json") ? candidate.json as Parameters<typeof candidateLineage>[1] : undefined;
+        const lineage = item !== undefined ? candidateLineage(slot.id, item) : null;
         if (rung === "adopt" && lineage?.mode !== "verbatim") rows.push(row("R03", "R03.2", slot, `submit names rung ${String(submit!.rung)} (adopt) but meta.source.kind is not registry (verbatim)`, candidate.path, candidate.name));
-        if (!lineage) continue;
+        // An interactive backdrop descriptor (meta.backdrop) rides on the code candidate: judged on its own, beside the code's lineage.
+        if (!lineage && !carriesBackdrop(item)) continue;
         const provenance = provenanceOf(ctx);
         if (provenance.error) { rows.push(row("R03", "R03.2", slot, provenance.error, candidate.path, candidate.name)); continue; }
-        for (const finding of lineageFindings(label, lineage, { rule: provenance.rule!, manifest: provenance.manifest! })) rows.push(row("R03", "R03.2", slot, finding, candidate.path, candidate.name));
+        const findings = [...(lineage ? lineageFindings(label, lineage, { rule: provenance.rule!, manifest: provenance.manifest! }) : []), ...backdropFindings(label, slot.id, item, provenance.rule!)];
+        for (const finding of findings) rows.push(row("R03", "R03.2", slot, finding, candidate.path, candidate.name));
         continue;
       }
       if (rung !== "adopt" || !text(submit!.seed)) continue;

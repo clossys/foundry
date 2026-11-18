@@ -1,7 +1,7 @@
 {
   "schema": "clossys.provenance-rule/1",
   "package": "designer",
-  "rule": "Every library item version a consumer pins or proposes is adopted (lineage.mode verbatim) or customized (lineage.mode customized) from a trusted reference, recorded as lineage.source with registry, item, version and hash. The trusted registries are the registries of references/manifest.json; the item, version and hash must match a manifest item. lineage.mode original is allowed only in a consumer-asset slot. An interactive backdrop is no library item version: it is a descriptor (meta.source.kind interactive-backdrop, meta.backdrop {component, params}) over one Foundry interactive backdrop component, allowed only in an interactiveBackdrops slot.",
+  "rule": "Every library item version a consumer pins or proposes is adopted (lineage.mode verbatim) or customized (lineage.mode customized) from a trusted reference, recorded as lineage.source with registry, item, version and hash. The trusted registries are the registries of references/manifest.json; the item, version and hash must match a manifest item. lineage.mode original is allowed only in a consumer-asset slot. An interactive backdrop is no library item version and no candidate of its own: it is a descriptor (meta.backdrop {component, params}) over one Foundry interactive backdrop component, carried on the slot's own code candidate (which stays under this rule) and allowed only in an interactiveBackdrops slot.",
   "trustedRegistries": "references/manifest.json#registries",
   "consumerAssets": {
     "why": "Brand marks and media the consumer owns; no registry ships them.",
@@ -16,7 +16,7 @@
     ]
   },
   "interactiveBackdrops": {
-    "why": "DRAFT: An interactive backdrop is data, not code (owner narrowing 2026-11-18, foundry-build-0048 A4): a descriptor {component, params} naming one of the Foundry interactive backdrop components (@clossys/designer blocks/backdrop) with params inside that component's schema. The components are Foundry code, shipped and tested in this package; the consumer never authors backdrop code, so the descriptor ships no files and cites no reference. It is allowed only in these slots, whose catalog contract lists the components under interactive.components; criterion interactive.backdrop judges it, and it is pinned only through the choose and pin gate.",
+    "why": "DRAFT: An interactive backdrop is data, not code (owner narrowing 2026-11-18, foundry-build-0048 A4): a descriptor {component, params} naming one of the Foundry interactive backdrop components (@clossys/designer blocks/backdrop) with params inside that component's schema. The components are Foundry code, shipped and tested in this package; the consumer never authors backdrop code. The descriptor rides as meta.backdrop on the slot's own code candidate, never as a candidate of its own, so pinning that candidate still installs and mounts its code, and Publisher passes the descriptor to Hero's backdrop prop for these slots only. It is allowed only in these slots, whose catalog contract lists the components under interactive.components; criterion interactive.backdrop judges it, and it is pinned only through the choose and pin gate.",
     "slots": [
       "sections.hero"
     ],

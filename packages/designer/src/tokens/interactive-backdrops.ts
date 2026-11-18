@@ -1,7 +1,7 @@
 /**
  * Interactive backdrops (foundry-build-0048 A4, owner narrowing 2026-11-18): a small fixed set of
- * Foundry-shipped decorative backdrop components, and the one data-only descriptor a consumer pins to
- * pick one: `{ component: <id>, params: {...} }`. A consumer never authors backdrop code; the
+ * Foundry-shipped decorative backdrop components, and the one data-only descriptor a hero candidate
+ * carries to pick one: `{ component: <id>, params: {...} }`. A consumer never authors backdrop code; the
  * components are Foundry code (`@clossys/designer/blocks`), and the descriptor is plain JSON judged
  * here, against the component's own param schema.
  *
@@ -12,9 +12,11 @@
  * URL, a CSS expression or code never reaches a component), a number out of range, NaN or a
  * wrong type. Every param is optional; an absent one takes the schema default.
  *
- * Pure data in, messages out: the Producer slot-model validator, the criterion interactive.backdrop
- * and the React `InteractiveBackdrop` (which throws on an invalid descriptor) all call
- * `interactiveBackdropDescriptorIssues`, so the three cannot diverge.
+ * The descriptor rides as `meta.backdrop` on the hero's own code candidate (never a candidate of its
+ * own). Pure data in, messages out: the Producer slot-model validator (submit), the criterion
+ * interactive.backdrop (pin), Publisher install (compile) and the React `InteractiveBackdrop` (which
+ * renders nothing for an invalid descriptor) all call `interactiveBackdropDescriptorIssues`, so they
+ * cannot diverge.
  */
 
 /**
@@ -73,7 +75,7 @@ export const INTERACTIVE_BACKDROP_DESCRIPTOR_KEYS = Object.freeze(["component", 
 type ParamValue<P> = P extends InteractiveBackdropNumberParam ? number : P extends InteractiveBackdropColorParam ? InteractiveBackdropColor : P extends InteractiveBackdropBooleanParam ? boolean : never;
 /** The params of one component, every key resolved (absent keys take the schema default). */
 export type InteractiveBackdropParams<C extends InteractiveBackdropComponent> = { readonly [K in keyof (typeof INTERACTIVE_BACKDROP_COMPONENTS)[C]]: ParamValue<(typeof INTERACTIVE_BACKDROP_COMPONENTS)[C][K]> };
-/** One descriptor as a consumer pins it (`meta.backdrop`): a component id and some of its params. */
+/** One descriptor as a hero code candidate carries it (`meta.backdrop`): a component id and some of its params. */
 export type InteractiveBackdropDescriptor = { [C in InteractiveBackdropComponent]: { readonly component: C; readonly params: Partial<InteractiveBackdropParams<C>> } }[InteractiveBackdropComponent];
 
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -108,12 +110,12 @@ export function interactiveBackdropDescriptorIssues(descriptor: unknown): string
   for (const key of Object.keys(descriptor)) {
     if (!(INTERACTIVE_BACKDROP_DESCRIPTOR_KEYS as readonly string[]).includes(key)) issues.push(`the interactive backdrop descriptor carries ${JSON.stringify(key)}; it is only ${INTERACTIVE_BACKDROP_DESCRIPTOR_KEYS.join(", ")}`);
   }
-  const component = descriptor.component;
+  const component = Object.hasOwn(descriptor, "component") ? descriptor.component : undefined;
   if (typeof component !== "string" || !Object.hasOwn(INTERACTIVE_BACKDROP_COMPONENTS, component)) {
     issues.push(`the interactive backdrop component is ${show(component)}, not one of the Foundry components ${INTERACTIVE_BACKDROP_COMPONENT_IDS.join(", ")}`);
     return issues;
   }
-  const params = descriptor.params;
+  const params = Object.hasOwn(descriptor, "params") ? descriptor.params : undefined;
   if (!record(params)) { issues.push(`${component} params is ${show(params)}, not an object`); return issues; }
   const schema = INTERACTIVE_BACKDROP_COMPONENTS[component as InteractiveBackdropComponent] as Readonly<Record<string, InteractiveBackdropParam>>;
   for (const [key, value] of Object.entries(params)) {
@@ -138,58 +140,30 @@ export function resolveInteractiveBackdropParams<C extends InteractiveBackdropCo
   return Object.fromEntries(Object.entries(schema).map(([key, spec]) => [key, Object.hasOwn(params, key) ? params[key] : spec.default])) as InteractiveBackdropParams<C>;
 }
 
-/** The Designer candidate source kind that pins one descriptor (`meta.source.kind`). */
-export const INTERACTIVE_BACKDROP_KIND = "interactive-backdrop";
-/** The registry-item keys an interactive backdrop candidate may carry: no installer field (dependencies, css, cssVars, tailwind, envVars, docs, ...). */
-export const INTERACTIVE_BACKDROP_ITEM_KEYS = Object.freeze(["$schema", "name", "type", "files", "meta"] as const);
-/** The `meta` keys of an interactive backdrop candidate; the descriptor is `meta.backdrop`. */
-export const INTERACTIVE_BACKDROP_META_KEYS = Object.freeze(["slot", "source", "element", "backdrop"] as const);
-/** The `meta.source` keys of an interactive backdrop candidate (its `ref` is always []: it adopts and cites nothing). */
-export const INTERACTIVE_BACKDROP_SOURCE_KEYS = Object.freeze(["kind", "ref", "license"] as const);
-/** The registry type of an interactive backdrop candidate. */
-export const INTERACTIVE_BACKDROP_ITEM_TYPE = "registry:block";
-
 /**
- * Why the registry-item envelope of an interactive backdrop candidate is outside its allowlist; []
- * when it is inside. The candidate carries no code and no file (`files: []`), no installer key, and
- * a `meta.source` of kind interactive-backdrop that cites nothing. The Designer's ref-verbatim check
- * (scripts/check-ref-verbatim.mjs `interactiveEnvelopeIssues`) keeps an identical copy, pinned by a
- * parity test.
+ * The one slot whose own code candidate may carry an interactive backdrop descriptor (`meta.backdrop`).
+ * The descriptor never stands as a candidate of its own: it rides on the hero's code candidate, so
+ * pinning that candidate still installs and mounts the hero, and Publisher passes the descriptor to
+ * the hero's `backdrop` prop for this slot only (never for another section that also renders Hero).
+ * The provenance rule's `interactiveBackdrops.slots` lists the same slot (pinned by a test).
  */
-export function interactiveBackdropEnvelopeIssues(candidate: unknown): string[] {
-  if (!record(candidate)) return ["the interactive backdrop is not a registry item object"];
-  const issues: string[] = [];
-  for (const key of Object.keys(candidate)) {
-    if (!(INTERACTIVE_BACKDROP_ITEM_KEYS as readonly string[]).includes(key)) issues.push(`the interactive backdrop carries ${key}; its registry item is only ${INTERACTIVE_BACKDROP_ITEM_KEYS.join(", ")}`);
-  }
-  if (candidate.type !== INTERACTIVE_BACKDROP_ITEM_TYPE) issues.push(`the interactive backdrop's type is ${JSON.stringify(candidate.type ?? null)}, not ${INTERACTIVE_BACKDROP_ITEM_TYPE}`);
-  if (!Array.isArray(candidate.files) || candidate.files.length !== 0) issues.push("the interactive backdrop carries files: it is a descriptor over a Foundry component, never code or a file, so files is []");
-  const meta = candidate.meta;
-  if (!record(meta)) return [...issues, "the interactive backdrop carries no meta object"];
-  for (const key of Object.keys(meta)) {
-    if (!(INTERACTIVE_BACKDROP_META_KEYS as readonly string[]).includes(key)) issues.push(`the interactive backdrop's meta carries ${key}; its meta is only ${INTERACTIVE_BACKDROP_META_KEYS.join(", ")}`);
-  }
-  const source = meta.source;
-  if (!record(source)) issues.push("the interactive backdrop's meta.source is not an object");
-  else {
-    for (const key of Object.keys(source)) {
-      if (!(INTERACTIVE_BACKDROP_SOURCE_KEYS as readonly string[]).includes(key)) issues.push(`the interactive backdrop's meta.source carries ${key}; its source is only ${INTERACTIVE_BACKDROP_SOURCE_KEYS.join(", ")}`);
-    }
-    if (source.kind !== INTERACTIVE_BACKDROP_KIND) issues.push(`the interactive backdrop's meta.source.kind is ${JSON.stringify(source.kind ?? null)}, not ${INTERACTIVE_BACKDROP_KIND}`);
-    if (!Array.isArray(source.ref) || source.ref.length !== 0) issues.push(`the interactive backdrop's meta.source.ref is ${JSON.stringify(source.ref ?? null)}, not []: it adopts and cites nothing`);
-  }
-  return issues;
+export const INTERACTIVE_BACKDROP_SLOT = "sections.hero";
+
+/** Whether a registry item carries its own `meta.backdrop` (judged or not). */
+export function carriesInteractiveBackdrop(item: unknown): item is { meta: { backdrop: unknown } } {
+  return record(item) && record(item.meta) && Object.hasOwn(item.meta, "backdrop");
 }
 
 /**
- * Why `candidate` is not a valid interactive backdrop candidate; [] when it is: its envelope
- * (`interactiveBackdropEnvelopeIssues`) and its one descriptor `meta.backdrop`, judged by
- * `interactiveBackdropDescriptorIssues`.
+ * Why the `meta.backdrop` a candidate of `slot` carries is not a valid interactive backdrop; [] when
+ * it carries none or a valid one. Only an `INTERACTIVE_BACKDROP_SLOT` candidate may carry one, and its
+ * descriptor is judged by `interactiveBackdropDescriptorIssues`. Submit (Producer slot-model
+ * validator, which certify re-runs at pin) and compile (Publisher install) call this; the pin
+ * criterion interactive.backdrop judges the same descriptor function against the slot contract,
+ * which only the hero's lists. So the three cannot diverge.
  */
-export function interactiveBackdropCandidateIssues(candidate: unknown): string[] {
-  const issues = interactiveBackdropEnvelopeIssues(candidate);
-  const meta = record(candidate) ? candidate.meta : undefined;
-  if (!record(meta)) return issues;
-  if (!Object.hasOwn(meta, "backdrop")) return [...issues, "the interactive backdrop carries no meta.backdrop descriptor {component, params}"];
-  return [...issues, ...interactiveBackdropDescriptorIssues(meta.backdrop)];
+export function interactiveBackdropMetaIssues(item: unknown, slot: string): string[] {
+  if (!carriesInteractiveBackdrop(item)) return [];
+  if (slot !== INTERACTIVE_BACKDROP_SLOT) return [`meta.backdrop rides only on a ${INTERACTIVE_BACKDROP_SLOT} code candidate, not on a ${slot} candidate`];
+  return interactiveBackdropDescriptorIssues(item.meta.backdrop);
 }

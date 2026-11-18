@@ -308,12 +308,6 @@
     },
     "requirements": [
       {
-        "check": "source.ref",
-        "params": {
-          "contract": "$contract"
-        }
-      },
-      {
         "check": "interactive.backdrop",
         "params": {
           "contract": "$contract"
@@ -321,6 +315,9 @@
       },
       {
         "check": "compose.layers"
+      },
+      {
+        "check": "source.ref"
       },
       {
         "check": "tokens.only"

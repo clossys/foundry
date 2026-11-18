@@ -64,3 +64,11 @@ test("reports dynamic, unregistered, shadowed, local and indirect leaf factory u
     "DF2:unresolved component leaf components.content; not a module-level const binding", "DF2:unresolved component leaf factory reference; only a direct call resolves a leaf"]) assert.ok(evidence.includes(expected), expected);
   assert.throws(() => leafScanner(false).addLeafFactory(undefined, []), /factory source unavailable/);
 });
+test("lists a literal in-package dynamic import target so its bytes are hashed with the fill, while still reporting it", () => {
+  const graph = createSurfaceSourceScanner({ read: path => ({ ...sources, "packages/ui/src/blocks/dynamic.tsx": 'export const Lazy = () => <canvas className="text-lazy"/>;' })[path], packages: { "@example/ui": "packages/ui/src" } });
+  graph.addOwner(graph.pointer("@example/ui", "./components#Button"), "components.button");
+  const result = graph.scan({ fill: "foundry/sections.panel", packageName: "@example/ui", pointer: "./blocks#Panel" });
+  assert.deepEqual(result.files.map(file => file.path), ["packages/ui/src/blocks/dynamic.tsx", "packages/ui/src/blocks/Panel.tsx"]);
+  assert.equal(result.files[0].content, "");
+  assert.ok(result.unresolved.some(row => row.evidence.includes("dynamic import")));
+});

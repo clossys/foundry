@@ -126,7 +126,14 @@ export function createSurfaceSourceScanner({ read, packages }) {
         }
         if (ts.isIdentifier(node)) references.add(node.text);
         if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression)) { const name = node.expression.text; if (!members.has(name)) members.set(name, new Set()); members.get(name).add(node.name.text); }
-        if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) issue(target.file, node, "unresolved dynamic import; runtime source is not inferred");
+        if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+          issue(target.file, node, "unresolved dynamic import; runtime source is not inferred");
+          // A literal in-package target is still source the fill runs: its file is listed, so its bytes are
+          // hashed with the fill's, but it is never scanned or resolved (the finding above stays).
+          const [specifier] = node.arguments;
+          const file = specifier && ts.isStringLiteralLike(specifier) ? localTarget(target.file, specifier.text) : undefined;
+          if (file && !selected.has(file)) selected.set(file, new Map());
+        }
         if (ts.isElementAccessExpression(node) && ts.isIdentifier(node.expression) && info.imports.get(node.expression.text)?.name === "*") issue(target.file, node, "unresolved computed namespace access");
         ts.forEachChild(node, walk);
       }

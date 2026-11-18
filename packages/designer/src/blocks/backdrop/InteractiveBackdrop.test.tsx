@@ -3,7 +3,7 @@ import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { checkBackdropElement } from "../../backdrop/contract.js";
 import { INTERACTIVE_BACKDROP_COMPONENT_IDS, type InteractiveBackdropDescriptor } from "../../tokens/interactive-backdrops.js";
-import { InteractiveBackdrop } from "./InteractiveBackdrop.js";
+import { GRADIENT_MESH_MAX_DURATION, gradientMeshDuration, InteractiveBackdrop } from "./InteractiveBackdrop.js";
 import { InteractiveBackdrop as InteractiveBackdropBoundary } from "./interactive-backdrop-boundary.js";
 
 const descriptors: Record<(typeof INTERACTIVE_BACKDROP_COMPONENT_IDS)[number], InteractiveBackdropDescriptor> = {
@@ -132,16 +132,26 @@ describe("Foundry interactive backdrops (foundry-build-0048 A4)", () => {
     expect(animate).not.toHaveBeenCalled();
   });
 
-  it("refuses an invalid descriptor instead of painting it", () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+  it("drops an invalid descriptor: it paints nothing and never throws", () => {
     for (const descriptor of [
       { component: "three-scene", params: {} },
       { component: "particle-field", params: { color: "https://example.com/x.js" } },
       { component: "grid-glow", params: { cell: 4 } },
       { component: "gradient-mesh", params: {}, script: "x" },
+      Object.create({ component: "grid-glow", params: {} }),
     ]) {
-      expect(() => renderToString(<InteractiveBackdrop descriptor={descriptor as never} />), JSON.stringify(descriptor)).toThrow(TypeError);
+      expect(renderToString(<InteractiveBackdrop descriptor={descriptor as never} />), JSON.stringify(descriptor)).toBe("");
     }
+  });
+
+  it("gradient-mesh drift duration is always finite, even at a denormal speed", () => {
+    expect(gradientMeshDuration(1)).toBe(24000);
+    expect(gradientMeshDuration(0.5)).toBe(48000);
+    for (const speed of [5e-324, 1e-300, 0.001]) expect(gradientMeshDuration(speed), String(speed)).toBe(GRADIENT_MESH_MAX_DURATION);
+    motion(false);
+    render(<InteractiveBackdrop descriptor={{ component: "gradient-mesh", params: { speed: 5e-324 } }} />);
+    expect(animate).toHaveBeenCalledTimes(3);
+    for (const [, options] of animate.mock.calls as [unknown, { duration: number }][]) expect(Number.isFinite(options.duration)).toBe(true);
   });
 });
 

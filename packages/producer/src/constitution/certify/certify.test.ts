@@ -57,30 +57,27 @@ describe("certify: one certifier for every rung (R03.3)", () => {
   });
 });
 
-describe("certify: interactive backdrop descriptor (foundry-build-0048 A4)", () => {
+describe("certify: interactive backdrop descriptor on the hero code candidate (foundry-build-0048 A4)", () => {
   const COMPONENTS = ["particle-field", "gradient-mesh", "grid-glow"];
-  const descriptor = (backdrop: unknown, files: unknown[] = []) => ({
-    $schema: "https://ui.shadcn.com/schema/registry-item.json", name: "hero-backdrop", type: "registry:block", files,
-    meta: { slot: "sections.hero", source: { kind: "interactive-backdrop", ref: [], license: "MIT" }, element: { slot: "sections.hero", reason: "director:identity.visual.style" }, backdrop },
-  });
+  const hero = (backdrop: unknown, code = LABEL) => elementItem("ui/sections.hero.tsx", code, { meta: { source: { kind: "original", ref: [] }, backdrop } });
   const fit = (item: Record<string, unknown>, interactive?: unknown) => {
-    const ctx = ctxOf({ designer: { "sections.hero": { candidates: { "hero-backdrop-v1.json": item } } } });
+    const ctx = ctxOf({ designer: { "sections.hero": { candidates: { "hero-v1.json": item } } } });
     const slot = slotOf(ctx, "designer", "sections.hero");
     const own = slotDocOf(slot).contract;
     const contract = interactive === undefined ? own : { ...own, interactive };
     return certifyFit({ slot, candidate: slot.candidates[0]!, contract }, certifyEnv(ctx)).map(item => `${item.code}: ${item.message}`);
   };
 
-  it("fits a descriptor-only candidate on a contract that lists its component, with nothing to mount", () => {
-    expect(fit(descriptor({ component: "grid-glow", params: { cell: 32 } }), { components: COMPONENTS })).toEqual([]);
+  it("fits a hero code candidate whose meta.backdrop names a component the contract lists; the code still mounts and renders", () => {
+    expect(fit(hero({ component: "grid-glow", params: { cell: 32 } }), { components: COMPONENTS })).toEqual([]);
+    expect(fit(hero({ component: "grid-glow", params: {} }, "export function Example(): never { throw new Error(\"boom\"); }\n"), { components: COMPONENTS }))
+      .toEqual([expect.stringMatching(/^render: .*boom/)]);
   });
 
-  it("refuses a component the contract does not list; code in files and a param outside the schema are refused before fit, by validation", () => {
-    expect(fit(descriptor({ component: "grid-glow", params: {} }))).toEqual([expect.stringMatching(/^invalid: slot sections\.hero contract\.interactive lists no interactive backdrop, not "grid-glow"/)]);
-    expect(fit(descriptor({ component: "particle-field", params: {} }), { components: ["grid-glow"] })).toEqual([expect.stringMatching(/contract\.interactive lists grid-glow, not "particle-field"/)]);
-    expect(fit(descriptor({ component: "grid-glow", params: {} }, [{ path: "backdrop.tsx", type: "registry:block", content: "export default () => null" }]), { components: COMPONENTS }))
-      .toEqual([expect.stringMatching(/^invalid: the interactive backdrop carries files/)]);
-    expect(fit(descriptor({ component: "grid-glow", params: { cell: 4 } }), { components: COMPONENTS })).toEqual([expect.stringMatching(/^invalid: grid-glow param cell is 4, outside 16\.\.96/)]);
+  it("refuses a component the contract does not list; a param outside the schema is refused before fit, by validation", () => {
+    expect(fit(hero({ component: "grid-glow", params: {} }))).toEqual([expect.stringMatching(/^invalid: slot sections\.hero contract\.interactive lists no interactive backdrop, not "grid-glow"/)]);
+    expect(fit(hero({ component: "particle-field", params: {} }), { components: ["grid-glow"] })).toEqual([expect.stringMatching(/contract\.interactive lists grid-glow, not "particle-field"/)]);
+    expect(fit(hero({ component: "grid-glow", params: { cell: 4 } }), { components: COMPONENTS })).toEqual([expect.stringMatching(/^invalid: grid-glow param cell is 4, outside 16\.\.96/)]);
   });
 });
 

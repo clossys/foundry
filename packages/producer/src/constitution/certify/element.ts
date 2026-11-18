@@ -209,24 +209,29 @@ export function mountsComponent(slot: SlotRecord, candidate: CandidateRecord): b
 }
 
 /**
- * Fit of an interactive backdrop (foundry-build-0048 A4): a descriptor `meta.backdrop` over a Foundry
- * component, no code, so there is nothing of the consumer's to mount. Its envelope and param schema are
- * already judged by validateCandidate (certifyFit runs it first); what is left is the slot: it fits
- * only when the contract lists the component under `interactive.components`.
+ * Fit of an interactive backdrop (foundry-build-0048 A4): the descriptor `meta.backdrop` rides on the
+ * hero's own code candidate, which still mounts and renders like any other. Its param schema is already
+ * judged by validateCandidate (certifyFit runs it first); what is left is the slot: it fits only when
+ * the contract lists the component under `interactive.components`. No `meta.backdrop`, nothing to fit.
  */
-function certifyInteractiveBackdrop(slot: SlotRecord, backdrop: unknown, contract: Readonly<Record<string, unknown>>): Reason[] {
+function backdropFit(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>): Reason[] {
+  const meta = isObject(candidate.json) ? candidate.json.meta : undefined;
+  if (!isObject(meta) || !Object.hasOwn(meta, "backdrop")) return [];
   const allowed = isObject(contract.interactive) ? stringList(contract.interactive.components) : [];
-  const component = isObject(backdrop) ? backdrop.component : undefined;
+  const component = isObject(meta.backdrop) ? meta.backdrop.component : undefined;
   if (typeof component === "string" && allowed.includes(component)) return [];
   return [reason("invalid", `slot ${slot.id} contract.interactive lists ${allowed.join(", ") || "no interactive backdrop"}, not ${JSON.stringify(component ?? null)}`)];
 }
 
-/** Fit failures of an element candidate against `contract` (its fixture); empty when it renders. */
+/** Fit failures of an element candidate against `contract` (its fixture): its backdrop, if any, and its render; empty when it fits. */
 export function certifyElement(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>, env: CertifyEnv): Reason[] {
+  return [...backdropFit(slot, candidate, contract), ...renderFit(slot, candidate, contract, env)];
+}
+
+/** Render fit of an element candidate against `contract` (its fixture); empty when it renders. */
+function renderFit(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>, env: CertifyEnv): Reason[] {
   const mounts = mountsComponent(slot, candidate);
   if (mounts !== true && mounts !== false) return [mounts];
-  const meta = isObject(candidate.json) ? candidate.json.meta : undefined;
-  if (isObject(meta) && Object.hasOwn(meta, "backdrop")) return certifyInteractiveBackdrop(slot, meta.backdrop, contract);
   if (!mounts) return [];
   if (contract.fixture === undefined) return [reason("no-fixture", `slot ${slot.id} declares no contract fixture (slot.json contract.fixture)`)];
   const invalid = contractFixtureIssues(contract);

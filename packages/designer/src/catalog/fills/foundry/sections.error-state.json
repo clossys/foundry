@@ -58,6 +58,10 @@
             "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
+            "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+            "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+          },
+          {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
             "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           }

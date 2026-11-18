@@ -161,11 +161,3 @@ export type RecordedDataFit = {
 };
 
 export { DESIGNER_SHADCN_FLAVOR, shadcnComponentsJson, shadcnComponentsJsonText, type ShadcnComponentsJson } from "./ref-verbatim/flavor.mjs";
-
-/** Interactive backdrop descriptor envelope (foundry-build-0048 A4); messages match src/tokens/interactive-backdrops.ts. */
-export declare const INTERACTIVE_BACKDROP_KIND: "interactive-backdrop";
-export declare const INTERACTIVE_ITEM_KEYS: readonly string[];
-export declare const INTERACTIVE_META_KEYS: readonly string[];
-export declare const INTERACTIVE_SOURCE_KEYS: readonly string[];
-export declare const INTERACTIVE_ITEM_TYPE: "registry:block";
-export declare function interactiveEnvelopeIssues(candidate: unknown): string[];

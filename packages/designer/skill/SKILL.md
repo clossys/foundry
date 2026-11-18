@@ -158,11 +158,12 @@ Fontsource font provider). The rule is `src/catalog/rules/provenance.json`.
 - A theme (`themes.*`) customizes a shadcn theme preset (`shadcn/neutral`, or
   a `registry:theme`/`registry:style` reference) with the brand tokens.
 - `original` only in a consumer-asset slot.
-- DRAFT: An interactive backdrop (`interactive-backdrop`, `sections.hero` only)
-  is data, not code: one `meta.backdrop` descriptor `{component, params}` naming
-  a Foundry component (`particle-field`, `gradient-mesh`, `grid-glow`) with
-  params inside that component's schema, `files: []` and `ref: []`. Never write
-  backdrop code; the shipped components stay under the verbatim rule.
+- DRAFT: An interactive backdrop (`sections.hero` only) is data, not code: one
+  `meta.backdrop` descriptor `{component, params}` on the hero's own code
+  candidate, naming a Foundry component (`particle-field`, `gradient-mesh`,
+  `grid-glow`) with params inside that component's schema. It is never a
+  candidate of its own; the hero's code keeps its own source and the verbatim
+  rule. Never write backdrop code.
 
 ```sh
 npx designer-ref-verbatim --root clossys --pinned   # every pinned candidate; exit 1 on a violation

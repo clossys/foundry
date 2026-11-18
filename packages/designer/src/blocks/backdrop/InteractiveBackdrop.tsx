@@ -141,6 +141,13 @@ const MESH_BLOBS = [
   { place: "-bottom-1/3 start-1/4 size-3/4", drift: ["translate(0%, 0%)", "translate(10%, -14%)"] },
 ] as const;
 
+/** The slowest gradient-mesh drift, in ms (speed 0.01); a smaller positive speed drifts no slower. */
+export const GRADIENT_MESH_MAX_DURATION = 2_400_000;
+/** One gradient-mesh drift's duration for `speed` (> 0): 24 s at speed 1, always a finite number of ms. */
+export function gradientMeshDuration(speed: number): number {
+  return Math.min(GRADIENT_MESH_MAX_DURATION, Math.round(24000 / speed));
+}
+
 /** Three soft colour fields that slowly drift; fixed in place under reduced motion. */
 export function GradientMesh({ params }: { params: InteractiveBackdropParams<"gradient-mesh"> }) {
   const reduced = useReducedMotion();
@@ -152,7 +159,7 @@ export function GradientMesh({ params }: { params: InteractiveBackdropParams<"gr
     const running = blobs.current.flatMap((node, index) => {
       if (!node || typeof node.animate !== "function") return [];
       const [start, end] = MESH_BLOBS[index]!.drift;
-      return [node.animate([{ transform: start }, { transform: end }], { duration: Math.round(24000 / speed), iterations: Infinity, direction: "alternate", easing: "ease-in-out" })];
+      return [node.animate([{ transform: start }, { transform: end }], { duration: gradientMeshDuration(speed), iterations: Infinity, direction: "alternate", easing: "ease-in-out" })];
     });
     return () => { for (const animation of running) animation.cancel(); };
   }, [animated, speed]);
@@ -211,13 +218,13 @@ export function GridGlow({ params }: { params: InteractiveBackdropParams<"grid-g
 }
 
 /**
- * The one entry a pinned descriptor renders through: it judges the descriptor (TypeError on any
- * issue, so an unchecked value never paints) and renders that Foundry component with every param
- * resolved to its schema default when absent.
+ * The one entry a pinned descriptor renders through: it judges the descriptor and renders that
+ * Foundry component with every param resolved to its schema default when absent. An invalid
+ * descriptor (refused upstream at submit, pin and compile) renders nothing, so an unchecked value
+ * never paints and a decorative layer never takes the page down.
  */
 export function InteractiveBackdrop({ descriptor }: { descriptor: InteractiveBackdropDescriptor }) {
-  const issues = interactiveBackdropDescriptorIssues(descriptor);
-  if (issues.length) throw new TypeError(`Invalid interactive backdrop descriptor: ${issues[0]}`);
+  if (interactiveBackdropDescriptorIssues(descriptor).length) return null;
   switch (descriptor.component) {
     case "particle-field": return <ParticleField params={resolveInteractiveBackdropParams(descriptor)} />;
     case "gradient-mesh": return <GradientMesh params={resolveInteractiveBackdropParams(descriptor)} />;

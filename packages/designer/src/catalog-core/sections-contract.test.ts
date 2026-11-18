@@ -115,10 +115,10 @@ describe("S2-1 bounded section composition reconciliation", () => {
     // foundry-build-0032 (owner 2026-11-16, audit P3/P7): the five slide twins declare media slide and web, and stats drops the
     // retired sparkline. Re-pinned from the data; undoing exactly those two edits restores the prior digest, so no other base
     // field moved.
-    // foundry-build-0048 A4: the hero contract gains interactive and requirements; re-pinned from the data. Undoing exactly that
+    // foundry-build-0048 A4: the hero contract gains interactive and its interactive.backdrop requirement; re-pinned from the data. Undoing exactly that
     // edit restores the prior digest, so no other base field moved.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("778c4df082fb770cbb8c8c135cccd6945cd4047d0564d1db4f748e0a3403736a");
+      .toBe("570cba831b9687a21258754d8594749a08a7dad372555713f9e0de73746c111e");
     const undone = original.map(undoInteractiveBackdrop);
     expect(createHash("sha256").update(JSON.stringify(undone)).digest("hex"))
       .toBe("07423991983d04ee30d7665e4e819f52c92e1a1d6f485e631857b5f5a7352504");

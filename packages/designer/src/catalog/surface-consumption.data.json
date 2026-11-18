@@ -66,6 +66,10 @@
           "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -292,6 +296,10 @@
           "sha256": "8667df53d290ac14195b44a8a39a1b88e0bda24fb236637c1f30b6fea19a1a2f"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         },
@@ -495,6 +503,10 @@
           "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -605,6 +617,10 @@
           "sha256": "10ec6162ab26e2347355391ddbb437beaebee1216154d913c360f79523ebbc48"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         },
@@ -677,6 +693,10 @@
         {
           "path": "packages/designer/src/icons/X.ts",
           "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -799,6 +819,10 @@
           "sha256": "61e568622459344a0fd1fc8737d8b3a11af155f929f18c743cc8b3bfc836570b"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -879,6 +903,10 @@
         {
           "path": "packages/designer/src/icons/X.ts",
           "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -969,6 +997,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         },
@@ -1047,6 +1079,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -1214,6 +1250,10 @@
           "sha256": "baaf147a4a1580802e2cecd2598df14c060fc829191a64af549a42ae175b15c2"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -1277,6 +1317,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -1366,6 +1410,10 @@
           "sha256": "3eccf9da3ebd4c7db312a650d60d41d0ce2fa5489086df235573934bbc0710a3"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -1446,6 +1494,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -1502,6 +1554,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -1576,6 +1632,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -1633,6 +1693,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -1697,6 +1761,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -1775,6 +1843,10 @@
         {
           "path": "packages/designer/src/components/surface-tones.ts",
           "sha256": "b31daa5419d8ba6745c6aa16d81f634765db97e1fada9c5f311bd0a8a84aa090"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -1867,6 +1939,10 @@
           "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -1957,6 +2033,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -2119,6 +2199,10 @@
           "sha256": "1803843525669af0f404ee8a5640a2c219753f1dbb9e8f5711cde00581b8c9f9"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -2203,6 +2287,10 @@
           "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -2283,6 +2371,10 @@
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
           "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -2427,6 +2519,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -2591,6 +2687,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -2668,6 +2768,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -2725,6 +2829,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -2805,6 +2913,10 @@
         {
           "path": "packages/designer/src/icons/Folder.ts",
           "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -2906,6 +3018,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -2991,6 +3107,10 @@
           "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -3069,6 +3189,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -3143,6 +3267,10 @@
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
           "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -3269,12 +3397,16 @@
           "sha256": "4e4ddae3101c889b4fdc8bba7fc427eea678657e76181540c2f618358fd6fd57"
         },
         {
+          "path": "packages/designer/src/blocks/backdrop/InteractiveBackdrop.tsx",
+          "sha256": "822aab8c8e7e3040eec3aafcc6e0f8665df6d2ff46310c377d593f9f6a716c27"
+        },
+        {
           "path": "packages/designer/src/blocks/Hero.tsx",
           "sha256": "da68db05eb49897b75d44e500e7d51cb7f38d47957d503db4a9902e16e2ca51f"
         },
         {
           "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
-          "sha256": "ad7e5f6e8a10c7dec780b0009ba9cb01b0873348ecddcdaa449129c657ab8b61"
+          "sha256": "71621544cd05951f7e011183b730cf46b1d8fc651415852bd7566627aad5a08c"
         },
         {
           "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -3309,6 +3441,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         },
@@ -3322,7 +3458,7 @@
         },
         {
           "path": "packages/designer/src/tokens/interactive-backdrops.ts",
-          "sha256": "1219263b3faf78776c8815403491bf79ca00db0f718197e26eeb575e9907fef2"
+          "sha256": "d414cc2ec07cb840f9500398b4f4a2e19a675cf29785e2f1889cc25d02de251f"
         },
         {
           "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",
@@ -3411,6 +3547,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -3525,6 +3665,10 @@
           "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -3603,6 +3747,10 @@
           "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -3657,6 +3805,10 @@
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
           "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -3717,6 +3869,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -3965,6 +4121,10 @@
           "sha256": "b31daa5419d8ba6745c6aa16d81f634765db97e1fada9c5f311bd0a8a84aa090"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -4098,6 +4258,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -4184,6 +4348,10 @@
           "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -4260,6 +4428,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -4317,6 +4489,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -4418,6 +4594,10 @@
           "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -4484,6 +4664,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -4740,6 +4924,10 @@
           "sha256": "b689552fb97ab80ed221ca6ef1495f38ecf5e5f99b60ddd819938b2456b00b51"
         },
         {
+          "path": "packages/designer/src/components/preview-runtime/components/button/button.tsx",
+          "sha256": "2584e267277f5a1c1282bffc539cfcdc524311d580eb5a2e10963aa3807db4ad"
+        },
+        {
           "path": "packages/designer/src/components/surface-tones.ts",
           "sha256": "b31daa5419d8ba6745c6aa16d81f634765db97e1fada9c5f311bd0a8a84aa090"
         },
@@ -4822,6 +5010,10 @@
         {
           "path": "packages/designer/src/runtime/absent-peer.ts",
           "sha256": "1da7688cd478f99a721e0d0668d9df4a1d4ec22e334f1cd01203cdcc0df87f17"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -5110,6 +5302,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -5184,6 +5380,10 @@
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
           "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -5266,6 +5466,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -5327,6 +5531,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -5392,6 +5600,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -5482,6 +5694,10 @@
           "sha256": "8373e807f383bdf12d9f325223df75316b99ea60fa3d2e020991b283eb24c16a"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -5567,6 +5783,10 @@
           "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -5641,6 +5861,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -5701,6 +5925,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -5770,6 +5998,10 @@
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         }
@@ -5830,6 +6062,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+          "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",

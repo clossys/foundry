@@ -1,5 +1,5 @@
 import { pinIssues } from "@clossys/director";
-import { INTERACTIVE_BACKDROP_KIND, interactiveBackdropCandidateIssues } from "@clossys/designer/catalog";
+import { interactiveBackdropMetaIssues } from "@clossys/designer/catalog";
 import { checkPublicationOutputs } from "@clossys/publisher/content-map";
 import { pinMapIssues, pinIssues as targetPinIssues } from "../pin.js";
 import { parseFrontmatter } from "./frontmatter.js";
@@ -247,7 +247,7 @@ export function validateSource(value: unknown, path: string): SlotModelIssue[] {
   const fail = (message: string): SlotModelIssue[] => [{ code: "candidate-source", path, message }];
   if (!object(value)) return fail("source must be {kind, ref, parts?, hash?, license?}");
   for (const key of Object.keys(value)) if (!["kind", "ref", "parts", "hash", "license"].includes(key)) return fail(`source has unknown key ${key}`);
-  if (!CANDIDATE_SOURCE_KINDS.includes(value.kind as string)) return fail("source.kind must be registry, derived, original, composition, npm, interactive-backdrop or package-default");
+  if (!CANDIDATE_SOURCE_KINDS.includes(value.kind as string)) return fail("source.kind must be registry, derived, original, composition, npm or package-default");
   if (!strings(value.ref)) return fail("source.ref must be a list");
   if (value.kind === "composition") {
     // A composition cites no reference of its own: its proof is the parts list, checked by ref-verbatim.
@@ -261,7 +261,6 @@ export function validateSource(value: unknown, path: string): SlotModelIssue[] {
     }
   } else if (value.parts !== undefined) return fail(`source.kind ${value.kind} takes no parts`);
   else if (value.kind === "npm" && (value.ref.length !== 1 || !NPM_SOURCE_REF.test(value.ref[0]!))) return fail("source.kind npm needs exactly one ref npm/<package>@<exact version>");
-  else if (value.kind === INTERACTIVE_BACKDROP_KIND) { if (value.ref.length !== 0) return fail(`source.kind ${INTERACTIVE_BACKDROP_KIND} cites nothing: source.ref must be []`); }
   else if (value.kind !== "original" && value.kind !== "package-default" && value.ref.length === 0) return fail(`source.kind ${value.kind} needs at least one ref`);
   if (value.hash !== undefined && typeof value.hash !== "string") return fail("source.hash must be a string");
   if (value.license !== undefined && typeof value.license !== "string") return fail("source.license must be a string");
@@ -334,12 +333,10 @@ function validateJsonCandidate(kind: SlotKind, value: Record<string, unknown>, s
   if (!Object.hasOwn(meta, "source")) issues.push({ code: "candidate-source", path, message: "meta.source is required" });
   if (meta.vary !== undefined && !validVary(meta.vary)) fail('meta.vary must be {"<axis>": "<value>"} with one axis');
   else issues.push(...validateSource(meta.source, path));
-  // An interactive backdrop (foundry-build-0048 A4) is a Designer element that is only a descriptor over a Foundry component.
-  const sourceKind = object(meta.source) ? meta.source.kind : undefined;
-  if (Object.hasOwn(meta, "backdrop") && sourceKind !== INTERACTIVE_BACKDROP_KIND) issues.push({ code: "candidate-source", path, message: `meta.backdrop is only for source.kind ${INTERACTIVE_BACKDROP_KIND}, not ${String(sourceKind ?? "(none)")}` });
-  if (sourceKind === INTERACTIVE_BACKDROP_KIND) {
-    if (kind !== "element") issues.push({ code: "candidate-source", path, message: `source.kind ${INTERACTIVE_BACKDROP_KIND} is a Designer element kind, not a ${kind} candidate` });
-    else issues.push(...interactiveBackdropCandidateIssues(value).map(message => ({ code: "candidate-source" as const, path, message })));
+  // An interactive backdrop (foundry-build-0048 A4) rides as meta.backdrop on the hero's own code candidate, never as a candidate of its own.
+  if (Object.hasOwn(meta, "backdrop")) {
+    if (kind !== "element") issues.push({ code: "candidate-source", path, message: `meta.backdrop rides only on a Designer element code candidate, not on a ${kind} candidate` });
+    else issues.push(...interactiveBackdropMetaIssues(value, slot).map(message => ({ code: "candidate-source" as const, path, message })));
   }
   if (kind === "element") {
     if (typeof value.name !== "string" || !value.name) fail("registry-item name is required");
@@ -382,7 +379,6 @@ export function validateCandidate(kind: SlotKind, slot: string, name: string, by
     const issues = candidateKeys(fields, path, "frontmatter ");
     if (!Object.hasOwn(fields, "source")) issues.push({ code: "candidate-source", path, message: "frontmatter source is required" });
     else issues.push(...validateSource(fields.source, path));
-    if (object(fields.source) && fields.source.kind === INTERACTIVE_BACKDROP_KIND) issues.push({ code: "candidate-source", path, message: `source.kind ${INTERACTIVE_BACKDROP_KIND} is a Designer element kind, not a ${kind} candidate` });
     if (fields.vary !== undefined && !validVary(fields.vary)) issues.push({ code: "candidate-invalid", path, message: 'vary must be {"<axis>": "<value>"} with one axis' });
     return [...issues, ...(kind === "brief" ? validateBrief(fields, parsed.value.body, slot, path) : validateStrings(fields, parsed.value.body, slot, path))];
   }

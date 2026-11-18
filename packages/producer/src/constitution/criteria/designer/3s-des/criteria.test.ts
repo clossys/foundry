@@ -45,8 +45,8 @@ describe.each(entries.map(entry => [entry.id, entry] as const))("%s", (_id, entr
 });
 
 describe("interactive.backdrop", () => {
-  it("refuses the kind on a slot whose contract allows no interactive backdrop, naming the contract, not the component", () => {
-    const subject = { kind: "element", text: "", json: { files: [], meta: { source: { kind: "interactive-backdrop", ref: [] }, backdrop: { component: "grid-glow", params: {} } } } };
+  it("refuses meta.backdrop on a slot whose contract allows no interactive backdrop, naming the contract, not the component", () => {
+    const subject = { kind: "element", text: "", json: { files: [{ path: "hero.tsx", type: "registry:block", content: "" }], meta: { source: { kind: "registry", ref: ["shadcn/hero@1.0.0"] }, backdrop: { component: "grid-glow", params: {} } } } };
     for (const params of [{}, { contract: { requirements: [] } }, { contract: { interactive: { components: [] } } }]) {
       expect(DESIGNER_STANDARD_CRITERIA["interactive.backdrop"]!(subject, params), JSON.stringify(params)).toEqual([expect.stringMatching(/^the slot contract allows no interactive backdrop \(contract\.interactive\.components\)/)]);
     }

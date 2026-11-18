@@ -1174,48 +1174,40 @@ describe("npm class-contract reference (R2F-TYPO)", () => {
   });
 });
 
-describe("interactive backdrop descriptor (foundry-build-0048 A4)", () => {
-  const descriptor = (patch: Record<string, unknown> = {}, meta: Record<string, unknown> = {}) => ({
+describe("interactive backdrop descriptor on the hero's own code candidate (foundry-build-0048 A4)", () => {
+  // The hero's code candidate; meta.backdrop rides on it and never replaces its code verdict.
+  const hero = (meta: Record<string, unknown> = {}) => ({
     $schema: "https://ui.shadcn.com/schema/registry-item.json",
-    name: "hero-grid-glow",
+    name: "hero",
     type: "registry:block",
-    files: [],
+    files: [{ path: "hero.tsx", type: "registry:block", content: "export function Hero() {\n  return <section className=\"bg-background\" />;\n}\n" }],
     meta: {
       slot: "sections.hero",
-      source: { kind: "interactive-backdrop", ref: [], license: "MIT" },
+      source: { kind: "original", ref: [], license: "MIT" },
       element: { slot: "sections.hero", reason: "director:identity.visual.style" },
-      backdrop: { component: "grid-glow", params: { cell: 32 } },
       ...meta,
     },
-    ...patch,
   });
+  const backdrop = { component: "grid-glow", params: { cell: 32 } };
   const check = (item: unknown, slot = "sections.hero") => checkRegistryItem(consumer([]), slot, item, { strict: true });
 
-  it("a descriptor over a Foundry component carries no code: n/a, no findings", () => {
-    const row = check(descriptor());
-    expect(row).toMatchObject({ status: "n/a", findings: [], files: [] });
-    expect(row.note).toMatch(/grid-glow/);
+  it("a valid descriptor leaves the hero code's own verdict exactly as it is", () => {
+    const plain = check(hero());
+    expect(check(hero({ backdrop }))).toEqual(plain);
+    expect(codes(plain.findings)).not.toContain("REF-INTERACTIVE");
   });
 
-  it("fails REF-INTERACTIVE for code, an unknown component, a foreign slot or a cited ref", () => {
+  it("adds REF-INTERACTIVE for an unknown component or a foreign slot, on top of the code verdict", () => {
     for (const [label, item, slot] of [
-      ["code in files", descriptor({ files: [{ path: "backdrop.tsx", type: "registry:block", content: "export default () => null" }] }), "sections.hero"],
-      ["installer key", descriptor({ dependencies: ["three"] }), "sections.hero"],
-      ["unknown component", descriptor({}, { backdrop: { component: "three-scene", params: {} } }), "sections.hero"],
-      ["foreign slot", descriptor(), "sections.media"],
-      ["cited ref", descriptor({}, { source: { kind: "interactive-backdrop", ref: ["shadcn/hero@1.0.0"], license: "MIT" } }), "sections.hero"],
-      ["extra meta", descriptor({}, { refVerbatim: { files: {} } }), "sections.hero"],
+      ["unknown component", hero({ backdrop: { component: "three-scene", params: {} } }), "sections.hero"],
+      ["foreign slot (the CTA also renders Hero)", hero({ backdrop }), "sections.call-to-action"],
+      ["no descriptor object", hero({ backdrop: "grid-glow" }), "sections.hero"],
     ] as const) {
+      const plain = check(hero(), slot);
       const row = check(item, slot);
       expect(row.status, label).toBe("fail");
-      expect(codes(row.findings), label).toEqual(["REF-INTERACTIVE"]);
+      expect(codes(row.findings), label).toEqual([...new Set([...codes(plain.findings), "REF-INTERACTIVE"])].sort());
+      expect(row.findings.filter(finding => finding.code !== "REF-INTERACTIVE"), label).toEqual(plain.findings);
     }
-  });
-
-  it("another kind carrying meta.backdrop stays under the verbatim rule and fails", () => {
-    const row = check(descriptor({}, { source: { kind: "derived", ref: [], license: "MIT" } }));
-    expect(row.status).toBe("fail");
-    expect(codes(row.findings)).toEqual(["REF-INTERACTIVE"]);
-    expect(row.findings.map(finding => finding.detail)).toEqual([expect.stringMatching(/meta\.source\.kind is "derived": only an interactive-backdrop candidate is a descriptor/)]);
   });
 });
