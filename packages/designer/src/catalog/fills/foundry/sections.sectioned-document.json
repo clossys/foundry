@@ -264,6 +264,10 @@
             "sha256": "b689552fb97ab80ed221ca6ef1495f38ecf5e5f99b60ddd819938b2456b00b51"
           },
           {
+            "path": "packages/designer/src/components/preview-runtime/components/button/button.tsx",
+            "sha256": "2584e267277f5a1c1282bffc539cfcdc524311d580eb5a2e10963aa3807db4ad"
+          },
+          {
             "path": "packages/designer/src/components/surface-tones.ts",
             "sha256": "b31daa5419d8ba6745c6aa16d81f634765db97e1fada9c5f311bd0a8a84aa090"
           },
@@ -346,6 +350,10 @@
           {
             "path": "packages/designer/src/runtime/absent-peer.ts",
             "sha256": "1da7688cd478f99a721e0d0668d9df4a1d4ec22e334f1cd01203cdcc0df87f17"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+            "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",

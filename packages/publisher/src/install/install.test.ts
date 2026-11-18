@@ -259,6 +259,71 @@ describe("slot-id registry dependencies", () => {
   });
 });
 
+describe("an interactive backdrop on the pinned hero code candidate (foundry-build-0048 A4)", () => {
+  const record = (id: string, value: unknown) => ({ id, version: 1, kind: "visual" as const, files: [{ path: "item.json", content: JSON.stringify(value) }], preview: {}, contentHash: "" });
+  const backdrop = { component: "grid-glow", params: { cell: 32, pulse: true } };
+  // The CTA's code renders Hero too; it carries the same meta.backdrop and still never gets the prop.
+  const heroCode = (name: string, meta: Record<string, unknown>) => ({ name, type: "registry:block", files: [{ path: `${name}.tsx`, type: "registry:component", target: `components/${name}/index.tsx`, content: "export { Hero } from \"@clossys/designer/blocks\";\n" }], meta });
+  const items: Record<string, unknown> = {
+    "sections.hero/hero": heroCode("hero", { source: { kind: "original", ref: [] }, backdrop }),
+    "sections.call-to-action/cta": heroCode("cta", { source: { kind: "original", ref: [] }, backdrop }),
+    "sections.hero/plain": heroCode("plain", { source: { kind: "original", ref: [] } }),
+    "sections.hero/bad": heroCode("bad", { source: { kind: "original", ref: [] }, backdrop: { component: "grid-glow", params: { cell: 4 } } }),
+  };
+  const libSource = recordStoreSource({ async load(id, version) { return version === 1 && items[id] ? record(id, items[id]) : undefined; } });
+  const page: InstallPageRecord = { id: "home", frame: "sections.hero", sections: ["sections.hero", "sections.call-to-action"] };
+
+  it("passes the pinned hero candidate's descriptor to Hero's backdrop prop for the hero slot only, and still mounts the hero code", async () => {
+    const pins: InstallPins = { "sections.hero": { element: "hero", version: 1 }, "sections.call-to-action": { element: "cta", version: 1 } };
+    const { slots, findings } = await resolvePage({ ...page, frame: "sections.call-to-action", sections: ["sections.hero"] }, pins, libSource);
+    expect(findings).toEqual([]);
+    const hero = slots.find(slot => slot.slot === "sections.hero")!;
+    expect(hero).toMatchObject({ mounted: true, entry: { file: "components/hero/index.tsx" } });
+    expect(hero.props.backdrop).toEqual({ kind: "interactive", backdrop });
+    expect(slots.find(slot => slot.slot === "sections.call-to-action")!.props).not.toHaveProperty("backdrop");
+  });
+
+  it("gives a hero candidate without meta.backdrop no backdrop prop", async () => {
+    const { slots, findings } = await resolvePage({ id: "home", frame: "sections.hero", sections: [] }, { "sections.hero": { element: "plain", version: 1 } }, libSource);
+    expect(findings).toEqual([]);
+    expect(slots[0]!.props).not.toHaveProperty("backdrop");
+  });
+
+  it("refuses an invalid descriptor with the same schema check as submit and pin, and mounts nothing", async () => {
+    const { slots, findings } = await resolvePage({ id: "home", frame: "sections.hero", sections: [] }, { "sections.hero": { element: "bad", version: 1 } }, libSource);
+    expect(findings).toEqual([{ code: "invalid-backdrop", slot: "sections.hero", detail: "sections.hero/bad: grid-glow param cell is 4, outside 16..96" }]);
+    expect(isBlocking(findings[0]!)).toBe(true);
+    expect(slots).toEqual([]);
+  });
+
+  it("strips an interactive backdrop from any slot's preview props, so only the judged meta.backdrop ever mounts", async () => {
+    const interactive = { kind: "interactive", backdrop: { component: "particle-field", params: { density: 160, links: true } } };
+    const outOfRange = { kind: "interactive", backdrop: { component: "grid-glow", params: { cell: 4 } } };
+    const still = { kind: "none" };
+    const previewed: Record<string, { item: unknown; fixtures: Record<string, unknown> }> = {
+      // A CTA whose code renders Hero, with no meta.backdrop: the descriptor rides in its preview props instead.
+      "sections.call-to-action/cta": { item: heroCode("cta", { source: { kind: "original", ref: [] } }), fixtures: { file: "cta.tsx", export: "Hero", props: { backdrop: interactive, art: { glow: outOfRange }, keep: [interactive, "x"] } } },
+      // A hero with no meta.backdrop shipping an out-of-range descriptor through flat preview fixtures.
+      "sections.hero/plain": { item: heroCode("plain", { source: { kind: "original", ref: [] } }), fixtures: { backdrop: outOfRange, still } },
+      // A hero with a judged meta.backdrop: its own preview descriptor never replaces it.
+      "sections.hero/hero": { item: heroCode("hero", { source: { kind: "original", ref: [] }, backdrop }), fixtures: { file: "hero.tsx", export: "Hero", props: { backdrop: outOfRange } } },
+    };
+    const source = recordStoreSource({ async load(id, version) {
+      const row = previewed[id];
+      return version === 1 && row ? { ...record(id, row.item), preview: { fixtures: row.fixtures } } : undefined;
+    } });
+    const cta = await resolvePage({ id: "home", frame: "sections.call-to-action", sections: [] }, { "sections.call-to-action": { element: "cta", version: 1 } }, source);
+    expect(cta.findings).toEqual([]);
+    expect(cta.slots[0]!.props).toEqual({ art: {}, keep: ["x"] });
+    const plain = await resolvePage({ id: "home", frame: "sections.hero", sections: [] }, { "sections.hero": { element: "plain", version: 1 } }, source);
+    expect(plain.findings).toEqual([]);
+    expect(plain.slots[0]!.props).toEqual({ still });
+    const hero = await resolvePage({ id: "home", frame: "sections.hero", sections: [] }, { "sections.hero": { element: "hero", version: 1 } }, source);
+    expect(hero.findings).toEqual([]);
+    expect(hero.slots[0]!.props).toEqual({ backdrop: { kind: "interactive", backdrop } });
+  });
+});
+
 describe("a slot installed at another version", () => {
   // shadcn add, as far as these items need it: each file written at its installed path.
   const writeRunner: ShadcnRunner = async (args, { cwd }) => {

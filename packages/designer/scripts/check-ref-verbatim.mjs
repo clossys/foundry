@@ -69,6 +69,7 @@ export const CODES = [
   "REF-NPM-ASSET",
   "REF-NPM-DEP",
   "REF-NPM-CLASS",
+  "REF-INTERACTIVE",
 ];
 
 /**
@@ -894,10 +895,43 @@ export function checkElement(root, target, options = {}) {
   return asCandidate(checkRegistryItem(root, slot, entry.item, { ...options, slotDoc: options.slotDoc ?? entry.slotDoc }), element, version);
 }
 
+// ---- interactive backdrop descriptor (foundry-build-0048 A4) ----------------
+
+const plainObject = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+
+/**
+ * An interactive backdrop is data on the slot's own code candidate: meta.backdrop `{component,
+ * params}` names one Foundry interactive backdrop component (the rule's
+ * interactiveBackdrops.components), and the code it rides on stays under the verbatim rule like any
+ * other. A candidate outside an interactiveBackdrops slot, or naming another component, fails
+ * REF-INTERACTIVE; the param schema is judged at submit, pin and compile.
+ */
+function interactiveBackdropFindings(slot, candidate, key, options = {}) {
+  if (!plainObject(candidate?.meta) || !Object.hasOwn(candidate.meta, "backdrop")) return [];
+  const rule = defaults(options).rule.interactiveBackdrops ?? {};
+  const details = [];
+  if (!(rule.slots ?? []).some((pattern) => globMatch(pattern, slot))) details.push(`meta.backdrop in ${slot}, which is not an interactiveBackdrops slot of the provenance rule`);
+  const backdrop = candidate.meta.backdrop;
+  const component = plainObject(backdrop) && Object.hasOwn(backdrop, "component") ? backdrop.component : undefined;
+  if (!(rule.components ?? []).includes(component)) details.push(`meta.backdrop.component ${JSON.stringify(component ?? null)} is not one of the Foundry interactive backdrop components (${(rule.components ?? []).join(", ")})`);
+  return details.map((detail) => ({ element: key, code: "REF-INTERACTIVE", detail }));
+}
+
+/** The code verdict, failed by any REF-INTERACTIVE finding of the descriptor its candidate carries. */
+function withInteractiveBackdrop(checked, slot, candidate, options) {
+  const findings = interactiveBackdropFindings(slot, candidate, checked.key ?? `${slot}/${candidate?.name ?? "unknown"}@v1`, options);
+  if (!findings.length) return checked;
+  return { ...checked, status: "fail", findings: [...(checked.findings ?? []), ...findings] };
+}
+
 /** Slot-model registry item: provenance stays in meta.source; exact file mappings
  * and adaptation reasons live in meta.refVerbatim. Missing evidence fails closed.
  */
 export function checkRegistryItem(root, slot, candidate, options = {}) {
+  return withInteractiveBackdrop(checkRegistryCode(root, slot, candidate, options), slot, candidate, options);
+}
+
+function checkRegistryCode(root, slot, candidate, options = {}) {
   if (candidate.meta?.source?.kind === "composition") return checkComposition(root, slot, candidate, options);
   if (candidate.meta?.source?.kind === "npm") {
     // An npm ref the reference manifest records as a package row is a class-contract wrapper; every other npm ref keeps the re-export rule.

@@ -13,7 +13,7 @@ const entries = catalog.entries.filter(entry => entry.folder === FOLDER);
 describe("Designer standards criteria (3S-DES, R15.3)", () => {
   it("registers every criterion with a module, an export, a summary and pass and fail fixtures", () => {
     expect(catalog.issues).toEqual([]);
-    expect(entries.map(entry => entry.id).sort()).toEqual(["asset.svg-files", "compose.layers", "derive.director", "source.ref", "token.dtcg"]);
+    expect(entries.map(entry => entry.id).sort()).toEqual(["asset.svg-files", "compose.layers", "derive.director", "interactive.backdrop", "source.ref", "token.dtcg"]);
   });
 
   it("joins index.json to the static map both ways", async () => {
@@ -41,6 +41,15 @@ describe.each(entries.map(entry => [entry.id, entry] as const))("%s", (_id, entr
   it("fails every fail fixture", async () => {
     const fn = await loadCriterion(entry);
     for (const item of fixtures.fail) expect(fn(item.subject, item.params ?? {}).length, JSON.stringify(item.note ?? item)).toBeGreaterThan(0);
+  });
+});
+
+describe("interactive.backdrop", () => {
+  it("refuses meta.backdrop on a slot whose contract allows no interactive backdrop, naming the contract, not the component", () => {
+    const subject = { kind: "element", text: "", json: { files: [{ path: "hero.tsx", type: "registry:block", content: "" }], meta: { source: { kind: "registry", ref: ["shadcn/hero@1.0.0"] }, backdrop: { component: "grid-glow", params: {} } } } };
+    for (const params of [{}, { contract: { requirements: [] } }, { contract: { interactive: { components: [] } } }]) {
+      expect(DESIGNER_STANDARD_CRITERIA["interactive.backdrop"]!(subject, params), JSON.stringify(params)).toEqual([expect.stringMatching(/^the slot contract allows no interactive backdrop \(contract\.interactive\.components\)/)]);
+    }
   });
 });
 

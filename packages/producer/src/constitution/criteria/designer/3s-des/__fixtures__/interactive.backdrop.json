@@ -1,0 +1,823 @@
+{
+  "pass": [
+    {
+      "note": "a hero code candidate with particle-field, every param in range",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"particle-field\",\"params\":{\"color\":\"accent\",\"density\":64,\"speed\":1,\"size\":2,\"links\":true}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "particle-field",
+              "params": {
+                "color": "accent",
+                "density": 64,
+                "speed": 1,
+                "size": 2,
+                "links": true
+              }
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "gradient-mesh at its defaults",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"gradient-mesh\",\"params\":{}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "gradient-mesh",
+              "params": {}
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "grid-glow, pointer follow off",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"grid-glow\",\"params\":{\"cell\":48,\"follow\":false,\"pulse\":true}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "grid-glow",
+              "params": {
+                "cell": 48,
+                "follow": false,
+                "pulse": true
+              }
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "a hero code candidate without meta.backdrop is not judged here",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "no meta.backdrop on a slot that allows none",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            }
+          }
+        }
+      },
+      "params": {}
+    }
+  ],
+  "fail": [
+    {
+      "note": "an unknown component",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"three-scene\",\"params\":{}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "three-scene",
+              "params": {}
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "a component the slot contract does not list",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"particle-field\",\"params\":{}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "particle-field",
+              "params": {}
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "grid-glow"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "note": "the slot contract allows no interactive backdrop (the CTA, say)",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"grid-glow\",\"params\":{}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "grid-glow",
+              "params": {}
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "requirements": []
+        }
+      }
+    },
+    {
+      "note": "no contract bound",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"grid-glow\",\"params\":{}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "grid-glow",
+              "params": {}
+            }
+          }
+        }
+      },
+      "params": {}
+    },
+    {
+      "note": "a number out of range",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"particle-field\",\"params\":{\"density\":999}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "particle-field",
+              "params": {
+                "density": 999
+              }
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "a URL string as a colour",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"grid-glow\",\"params\":{\"glow\":\"https://example.com/x.js\"}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "grid-glow",
+              "params": {
+                "glow": "https://example.com/x.js"
+              }
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "code as a param value",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"gradient-mesh\",\"params\":{\"from\":\"javascript:alert(1)\"}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "gradient-mesh",
+              "params": {
+                "from": "javascript:alert(1)"
+              }
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "an unknown param",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"grid-glow\",\"params\":{\"src\":\"/x.js\"}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "grid-glow",
+              "params": {
+                "src": "/x.js"
+              }
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "a non-integer cell",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"grid-glow\",\"params\":{\"cell\":33.3}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "grid-glow",
+              "params": {
+                "cell": 33.3
+              }
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "a string boolean",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"particle-field\",\"params\":{\"links\":\"yes\"}}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "particle-field",
+              "params": {
+                "links": "yes"
+              }
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "a descriptor that is not an object",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":\"grid-glow\"}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": "grid-glow"
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "a descriptor with no params",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\":\"hero\",\"type\":\"registry:block\",\"files\":[{\"path\":\"hero.tsx\",\"type\":\"registry:block\",\"content\":\"export function Hero() { return null; }\"}],\"meta\":{\"slot\":\"sections.hero\",\"source\":{\"kind\":\"registry\",\"ref\":[\"shadcn/hero@1.0.0\"],\"license\":\"MIT\"},\"backdrop\":{\"component\":\"grid-glow\"}}}",
+        "json": {
+          "name": "hero",
+          "type": "registry:block",
+          "files": [
+            {
+              "path": "hero.tsx",
+              "type": "registry:block",
+              "content": "export function Hero() { return null; }"
+            }
+          ],
+          "meta": {
+            "slot": "sections.hero",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/hero@1.0.0"
+              ],
+              "license": "MIT"
+            },
+            "backdrop": {
+              "component": "grid-glow"
+            }
+          }
+        }
+      },
+      "params": {
+        "contract": {
+          "interactive": {
+            "components": [
+              "particle-field",
+              "gradient-mesh",
+              "grid-glow"
+            ]
+          },
+          "requirements": [
+            {
+              "check": "interactive.backdrop",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

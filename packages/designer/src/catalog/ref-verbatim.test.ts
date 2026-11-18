@@ -64,7 +64,7 @@ describe("ref-verbatim allowed-hunk grammar", () => {
   it("declares five allowed kinds and four hunk failure codes", () => {
     expect(ALLOWED).toEqual(["H-IMPORT", "H-TOKEN", "H-DATA", "H-PROPS", "H-LINK"]);
     expect(HUNK_CODES).toEqual(["REF-HUNK-CLASS", "REF-HUNK-STRUCTURE", "REF-HUNK-LOGIC", "REF-HUNK-TEXT"]);
-    expect(CODES).toHaveLength(24);
+    expect(CODES).toHaveLength(25);
     expect(CODES).toEqual(expect.arrayContaining(["REF-SELF-CITE", "REF-COMP-PART", "REF-COMP-IMPORT", "REF-COMP-UNUSED", "REF-COMP-MARKUP", "REF-COMP-USES", "REF-NPM-VERSION", "REF-NPM-CODE", "REF-NPM-ASSET"]));
     expect(CODES).toEqual(expect.arrayContaining(HUNK_CODES));
   });
@@ -1171,5 +1171,43 @@ describe("npm class-contract reference (R2F-TYPO)", () => {
     expect(CODES).toEqual(expect.arrayContaining(["REF-NPM-DEP", "REF-NPM-CLASS"]));
     // A re-export candidate citing the class-contract package is not a wrapper: it fails the contract rule, never passes it.
     expect(check(proseItem('export { default } from "@tailwindcss/typography"\n'))).toEqual(["REF-NPM-CODE"]);
+  });
+});
+
+describe("interactive backdrop descriptor on the hero's own code candidate (foundry-build-0048 A4)", () => {
+  // The hero's code candidate; meta.backdrop rides on it and never replaces its code verdict.
+  const hero = (meta: Record<string, unknown> = {}) => ({
+    $schema: "https://ui.shadcn.com/schema/registry-item.json",
+    name: "hero",
+    type: "registry:block",
+    files: [{ path: "hero.tsx", type: "registry:block", content: "export function Hero() {\n  return <section className=\"bg-background\" />;\n}\n" }],
+    meta: {
+      slot: "sections.hero",
+      source: { kind: "original", ref: [], license: "MIT" },
+      element: { slot: "sections.hero", reason: "director:identity.visual.style" },
+      ...meta,
+    },
+  });
+  const backdrop = { component: "grid-glow", params: { cell: 32 } };
+  const check = (item: unknown, slot = "sections.hero") => checkRegistryItem(consumer([]), slot, item, { strict: true });
+
+  it("a valid descriptor leaves the hero code's own verdict exactly as it is", () => {
+    const plain = check(hero());
+    expect(check(hero({ backdrop }))).toEqual(plain);
+    expect(codes(plain.findings)).not.toContain("REF-INTERACTIVE");
+  });
+
+  it("adds REF-INTERACTIVE for an unknown component or a foreign slot, on top of the code verdict", () => {
+    for (const [label, item, slot] of [
+      ["unknown component", hero({ backdrop: { component: "three-scene", params: {} } }), "sections.hero"],
+      ["foreign slot (the CTA also renders Hero)", hero({ backdrop }), "sections.call-to-action"],
+      ["no descriptor object", hero({ backdrop: "grid-glow" }), "sections.hero"],
+    ] as const) {
+      const plain = check(hero(), slot);
+      const row = check(item, slot);
+      expect(row.status, label).toBe("fail");
+      expect(codes(row.findings), label).toEqual([...new Set([...codes(plain.findings), "REF-INTERACTIVE"])].sort());
+      expect(row.findings.filter(finding => finding.code !== "REF-INTERACTIVE"), label).toEqual(plain.findings);
+    }
   });
 });

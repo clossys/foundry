@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { candidateLineage, consumerOwnDerivation, globMatch, lineageFindings, parseRef, seedItem, sha256, treeHash, verbatimFindings, type ProvenanceRule, type ReferenceManifest } from "./source.js";
+import { backdropFindings, candidateLineage, carriesBackdrop, consumerOwnDerivation, globMatch, lineageFindings, parseRef, seedItem, sha256, treeHash, verbatimFindings, type ProvenanceRule, type ReferenceManifest } from "./source.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const producerRoot = join(here, "../../..");
@@ -67,6 +67,21 @@ describe("certify/source.ts helpers", () => {
     expect(lineage?.slot).toBe("ui.button");
     expect(lineage?.source?.item).toBe("button");
   });
+
+  it("interactive backdrop: meta.backdrop rides on a code candidate in an interactiveBackdrops slot only, without changing the code's lineage (foundry-build-0048 A4)", () => {
+    const rule: ProvenanceRule = { ...RULE, interactiveBackdrops: { slots: ["sections.hero"], components: ["particle-field", "gradient-mesh", "grid-glow"] } };
+    const hero = (backdrop?: unknown) => ({ files: [{ path: "hero.tsx" }], meta: { source: { kind: "original", ref: [] }, ...(backdrop === undefined ? {} : { backdrop }) } });
+    expect(carriesBackdrop(hero())).toBe(false);
+    expect(backdropFindings("d", "sections.hero", hero(), rule)).toEqual([]);
+    expect(carriesBackdrop(hero({ component: "grid-glow", params: {} }))).toBe(true);
+    expect(candidateLineage("sections.hero", hero({ component: "grid-glow", params: {} }))).toEqual(candidateLineage("sections.hero", hero()));
+    expect(backdropFindings("d", "sections.hero", hero({ component: "grid-glow", params: {} }), rule)).toEqual([]);
+    expect(backdropFindings("d", "sections.call-to-action", hero({ component: "grid-glow", params: {} }), rule)).toEqual([expect.stringMatching(/meta\.backdrop in sections\.call-to-action, which is not an interactiveBackdrops slot/)]);
+    expect(backdropFindings("d", "sections.hero", hero({ component: "three-scene", params: {} }), rule)).toEqual([expect.stringMatching(/"three-scene" is not one of the Foundry interactive backdrop components/)]);
+    expect(backdropFindings("d", "sections.hero", hero("grid-glow"), rule)).toEqual([expect.stringMatching(/meta\.backdrop\.component null/)]);
+    // A rule without interactiveBackdrops admits none.
+    expect(backdropFindings("d", "sections.hero", hero({ component: "grid-glow", params: {} }), RULE)).toHaveLength(2);
+  });
 });
 
 // The Designer's scripts now call this module through the built Producer (dist/); with it built,
@@ -84,6 +99,9 @@ describe.skipIf(!existsSync(builtSource))("the Designer scripts call certify/sou
     for (const lineage of lineages) expect(script.lineageFindings("x", lineage, { rule: RULE, manifest: MANIFEST })).toEqual(lineageFindings("x", lineage, { rule: RULE, manifest: MANIFEST }));
     const item = { ...adopted(), meta: { source: { kind: "registry", ref: ["shadcn/button@1.0.0"], hash: "sha256:seed" } } };
     expect(script.candidateLineage("ui.button", item)).toEqual(candidateLineage("ui.button", item));
+    const backdrop = { files: [], meta: { source: { kind: "original", ref: [] }, backdrop: { component: "grid-glow", params: {} } } };
+    const backdropRule: ProvenanceRule = { ...RULE, interactiveBackdrops: { slots: ["sections.hero"], components: ["grid-glow"] } };
+    for (const slot of ["sections.hero", "sections.call-to-action"]) expect(script.backdropFindings("x", slot, backdrop, { rule: backdropRule })).toEqual(backdropFindings("x", slot, backdrop, backdropRule));
   }, 60_000);
 
   it("check-ref-verbatim.mjs imports with Producer resolved and keeps the shipped exports", async () => {

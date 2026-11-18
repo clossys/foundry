@@ -21,6 +21,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, posix } from "node:path";
 import ts from "typescript";
+import { previewInteractiveBackdropIssues } from "@clossys/designer/catalog";
 import { specimenKindOf } from "@clossys/publisher/specimen";
 import { contractFixtureIssues, type ContractFixture } from "../../records/slot-model/contract-fixture.js";
 import { dependencyPart } from "../../specimen/specimen-tree.js";
@@ -208,8 +209,32 @@ export function mountsComponent(slot: SlotRecord, candidate: CandidateRecord): b
   catch (error) { return reason("invalid", (error as Error).message); }
 }
 
-/** Fit failures of an element candidate against `contract` (its fixture); empty when it renders. */
+/**
+ * Fit of an interactive backdrop (foundry-build-0048 A4): the descriptor `meta.backdrop` rides on the
+ * hero's own code candidate, which still mounts and renders like any other. Its param schema is already
+ * judged by validateCandidate (certifyFit runs it first); what is left is the slot: it fits only when
+ * the contract lists the component under `interactive.components`. No `meta.backdrop`, nothing to fit.
+ */
+function backdropFit(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>): Reason[] {
+  // Pin-side, on every slot and independent of the validator: an interactive backdrop in the candidate's
+  // own preview props would reach the mount unjudged, so it is refused (meta.backdrop is the only channel).
+  const preview = previewInteractiveBackdropIssues(candidate.json);
+  if (preview.length) return preview.map(message => reason("invalid", `slot ${slot.id}: ${message}`));
+  const meta = isObject(candidate.json) ? candidate.json.meta : undefined;
+  if (!isObject(meta) || !Object.hasOwn(meta, "backdrop")) return [];
+  const allowed = isObject(contract.interactive) ? stringList(contract.interactive.components) : [];
+  const component = isObject(meta.backdrop) ? meta.backdrop.component : undefined;
+  if (typeof component === "string" && allowed.includes(component)) return [];
+  return [reason("invalid", `slot ${slot.id} contract.interactive lists ${allowed.join(", ") || "no interactive backdrop"}, not ${JSON.stringify(component ?? null)}`)];
+}
+
+/** Fit failures of an element candidate against `contract` (its fixture): its backdrop, if any, and its render; empty when it fits. */
 export function certifyElement(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>, env: CertifyEnv): Reason[] {
+  return [...backdropFit(slot, candidate, contract), ...renderFit(slot, candidate, contract, env)];
+}
+
+/** Render fit of an element candidate against `contract` (its fixture); empty when it renders. */
+function renderFit(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>, env: CertifyEnv): Reason[] {
   const mounts = mountsComponent(slot, candidate);
   if (mounts !== true && mounts !== false) return [mounts];
   if (!mounts) return [];

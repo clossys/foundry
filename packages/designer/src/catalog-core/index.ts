@@ -196,3 +196,7 @@ export { componentSelection } from "../catalog/component-selection.js";
 
 export { parseLocalFontPayload } from "./local-font.js";
 export type { LocalFontPayload, LocalFontSource } from "./types.js";
+
+// Interactive backdrop descriptors (foundry-build-0048 A4): the Foundry component list, per-component
+// param schema and the candidate envelope the Producer's validator and criterion judge.
+export * from "../tokens/interactive-backdrops.js";

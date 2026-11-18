@@ -5,6 +5,7 @@
  */
 import { composeLayers } from "./compose.js";
 import { directorDerived } from "./derive.js";
+import { interactiveBackdrop } from "./interactive.js";
 import { sourceRef } from "./source.js";
 import { assetSvgFiles } from "./svgfiles.js";
 import { tokenDtcg } from "./token.js";
@@ -16,4 +17,5 @@ export const DESIGNER_STANDARD_CRITERIA: Readonly<Record<string, Criterion>> = O
   "token.dtcg": tokenDtcg,
   "asset.svg-files": assetSvgFiles,
   "compose.layers": composeLayers,
+  "interactive.backdrop": interactiveBackdrop,
 });

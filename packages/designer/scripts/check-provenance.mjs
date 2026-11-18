@@ -75,6 +75,11 @@ export function candidateLineage(slot, item) {
   return source().candidateLineage(slot, item);
 }
 
+/** Findings for the interactive backdrop descriptor (meta.backdrop) a candidate carries beside its code (certify/source.ts). */
+export function backdropFindings(label, slot, item, { rule = loadRule() } = {}) {
+  return source().backdropFindings(label, slot, item, rule);
+}
+
 /** slot.json `notNeeded {reason, since, decidedBy}` as the slot loader accepts it (a malformed marker is not one). */
 const notNeededSlot = doc => {
   const marker = doc?.notNeeded;
@@ -92,7 +97,7 @@ export function provenanceFindings(root, { all = false, rule = loadRule(), manif
   const check = entry => {
     if (entry.error) return [`${pinLabel(entry)}: ${entry.error}`];
     const lineage = candidateLineage(entry.slot, entry.item);
-    return lineage ? lineageFindings(pinLabel(entry), lineage, { rule, manifest }) : [];
+    return [...(lineage ? lineageFindings(pinLabel(entry), lineage, { rule, manifest }) : []), ...backdropFindings(pinLabel(entry), entry.slot, entry.item, { rule })];
   };
   if (all) return { violations: entries.flatMap(check), pending: [], checked: entries.map(pinLabel) };
   const bySlot = new Map();
@@ -132,7 +137,7 @@ export function elementFindings(root, spec, { rule = loadRule(), manifest = load
   if (!entry) return [`${spec}: no such Designer candidate`];
   if (entry.error) return [`${spec}: ${entry.error}`];
   const lineage = candidateLineage(entry.slot, entry.item);
-  return lineage ? lineageFindings(spec, lineage, { rule, manifest }) : [];
+  return [...(lineage ? lineageFindings(spec, lineage, { rule, manifest }) : []), ...backdropFindings(spec, entry.slot, entry.item, { rule })];
 }
 
 /** Every clossys.element/1 record under dir. Records inside `__fixtures__` are test fixtures: listed, exempt. */

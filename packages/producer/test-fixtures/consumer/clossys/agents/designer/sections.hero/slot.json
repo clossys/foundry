@@ -299,6 +299,30 @@
     },
     "data": "host-injected",
     "surface": "site",
+    "interactive": {
+      "components": [
+        "particle-field",
+        "gradient-mesh",
+        "grid-glow"
+      ]
+    },
+    "requirements": [
+      {
+        "check": "interactive.backdrop",
+        "params": {
+          "contract": "$contract"
+        }
+      },
+      {
+        "check": "compose.layers"
+      },
+      {
+        "check": "source.ref"
+      },
+      {
+        "check": "tokens.only"
+      }
+    ],
     "passageSchema": "passages.hero",
     "copy": {
       "sourceLocale": "en",
@@ -374,18 +398,7 @@
           "dir": "auto"
         }
       ]
-    },
-    "requirements": [
-      {
-        "check": "compose.layers"
-      },
-      {
-        "check": "source.ref"
-      },
-      {
-        "check": "tokens.only"
-      }
-    ]
+    }
   },
   "tighten": [],
   "family": {

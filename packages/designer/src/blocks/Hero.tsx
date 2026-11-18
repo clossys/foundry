@@ -8,7 +8,8 @@ import type { SectionIntroProps } from "./SectionIntro.js";
 import { HeroIntro } from "./hero/HeroIntro.js";
 import { StillBackdrop, HERO_SCRIM_PASSES, type HeroBackdropScrim } from "./hero/StillBackdrop.js";
 import { resolveHeroBackdrop, type HeroBackdrop } from "./hero/hero-backdrop.js";
-export type { HeroBackdrop, HeroBackdropKind, HeroImageBackdrop, HeroVideoBackdrop, HeroGraphicBackdrop } from "./hero/hero-backdrop.js";
+import { InteractiveBackdrop } from "./backdrop/interactive-backdrop-boundary.js";
+export type { HeroBackdrop, HeroBackdropKind, HeroImageBackdrop, HeroVideoBackdrop, HeroGraphicBackdrop, HeroInteractiveBackdrop } from "./hero/hero-backdrop.js";
 export type { HeroBackdropScrim } from "./hero/StillBackdrop.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
@@ -125,7 +126,7 @@ export function Hero({
   ...rest
 }: HeroProps) {
   const resolvedBackdrop = resolveHeroBackdrop(backdrop, backdropValues, backdropMode);
-  const hasBackdropArt = Boolean(resolvedBackdrop.art || resolvedBackdrop.graphic);
+  const hasBackdropArt = Boolean(resolvedBackdrop.art || resolvedBackdrop.graphic || resolvedBackdrop.interactive);
   const colors = SECTION_GROUND_CLASSES[ground];
   const splitLayout = Boolean(media) && composition === "split";
   const centred = align === "center";
@@ -163,8 +164,9 @@ export function Hero({
       data-hero-backdrop-kind={resolvedBackdrop.kind}
     >
       {resolvedBackdrop.art ? <StillBackdrop art={resolvedBackdrop.art} scrim={backdropScrim} /> : null}
-      {resolvedBackdrop.video || resolvedBackdrop.graphic ? <SemanticContent as="div" data-hero-live-backdrop="" aria-hidden="true" className="absolute inset-0" style={{ pointerEvents: "none", ...resolvedBackdrop.graphic?.style }}>
+      {resolvedBackdrop.video || resolvedBackdrop.graphic || resolvedBackdrop.interactive ? <SemanticContent as="div" data-hero-live-backdrop="" aria-hidden="true" className="absolute inset-0" style={{ pointerEvents: "none", ...resolvedBackdrop.graphic?.style }}>
         {resolvedBackdrop.video ? <MediaPlayer decorative video={resolvedBackdrop.video.video} poster={{ kind: "photo", src: resolvedBackdrop.video.video.poster!, width: resolvedBackdrop.video.poster.width, height: resolvedBackdrop.video.poster.height, decorative: true }} muted autoplay loop /> : null}
+        {resolvedBackdrop.interactive ? <InteractiveBackdrop descriptor={resolvedBackdrop.interactive} /> : null}
         <SemanticContent as="div" className="absolute inset-0" style={{ pointerEvents: "none", backgroundImage: "linear-gradient(transparent, var(--color-overlay-scrim))" }} />
         {Array.from({ length: HERO_SCRIM_PASSES[backdropScrim] }, (_, index) => <SemanticContent as="div" key={index} data-hero-live-scrim={backdropScrim} className="absolute inset-0 bg-overlay-scrim" style={{ pointerEvents: "none" }} />)}
       </SemanticContent> : null}

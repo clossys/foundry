@@ -1,6 +1,7 @@
 import type { BodySubstrate, SectionSubstrateRenderTest } from "./body-substrate.js";
 import type { SpecimenRenderPartName } from "../specimen/specimen-render-part-identities.js";
 import type { StudioSpecimenHostPartId } from './studio-host-parts.js';
+import type { InteractiveBackdropComponent } from "../tokens/interactive-backdrops.js";
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import sectionPlacement from "../catalog/ia/sections.json" with { type: "json" };
 import sectionRetired from "../catalog/retired/sections.json" with { type: "json" };
@@ -40,6 +41,15 @@ export interface SectionContract {
   data: "host-injected";
   states?: readonly ("loading" | "empty" | "error")[];
   surface: "site" | "app" | "both";
+  /**
+   * The Foundry interactive backdrop components (tokens/interactive-backdrops.ts) the descriptor this
+   * slot's own code candidate carries (`meta.backdrop`) may name (foundry-build-0048 A4). Absent means
+   * no descriptor is allowed. Criterion interactive.backdrop judges a candidate against it; the
+   * provenance rule's interactiveBackdrops lists the same slots.
+   */
+  interactive?: { components: readonly InteractiveBackdropComponent[] };
+  /** Producer requirement checks beyond the slot standard's, with params ("$contract" binds this contract). */
+  requirements?: readonly { check: string; params?: Readonly<Record<string, unknown>> }[];
 }
 
 /** Separate from value-engine slots until section fills and resolution ship. */

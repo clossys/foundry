@@ -7,7 +7,7 @@
  * can import the built file.
  *
  * Manifest: `{ registries: {<id>: ...}, items: [{registry, name, version, hash, type, files: [{path, sha256}]}] }`.
- * Rule (provenance.json): `{ consumerAssets: {slots: [<glob>]}, classes: [{slots, sourceTypes?, sourceItems?}] }`.
+ * Rule (provenance.json): `{ consumerAssets: {slots: [<glob>]}, interactiveBackdrops: {slots: [<glob>], components: [<id>]}, classes: [{slots, sourceTypes?, sourceItems?}] }`.
  */
 import { createHash } from "node:crypto";
 
@@ -16,6 +16,8 @@ export interface ManifestItem { readonly registry: string; readonly name: string
 export interface ReferenceManifest { readonly registries?: Readonly<Record<string, unknown>>; readonly items?: readonly ManifestItem[] }
 export interface ProvenanceRule {
   readonly consumerAssets?: { readonly slots?: readonly string[] };
+  /** Slots where an interactive backdrop descriptor may stand, and the Foundry components it may name (foundry-build-0048 A4). */
+  readonly interactiveBackdrops?: { readonly slots?: readonly string[]; readonly components?: readonly string[] };
   readonly classes?: readonly { readonly slots: string; readonly sourceTypes?: readonly string[]; readonly sourceItems?: readonly string[] }[];
 }
 export interface Reference { readonly registry?: string; readonly item?: string; readonly version?: string; readonly hash?: string }
@@ -84,13 +86,34 @@ export function parseRef(ref: unknown): { registry: string; item: string; versio
 export const CONSUMER_ASSET_REF = /^clossys\/agents\/designer\/assets\.[a-z0-9-]+(?:\/candidates\/[a-z0-9-]+-v[1-9][0-9]*\.json)?$/;
 export const consumerOwnDerivation = (refs: unknown): boolean => Array.isArray(refs) && refs.length > 0 && refs.every(ref => typeof ref === "string" && CONSUMER_ASSET_REF.test(ref));
 
-type Item = { meta?: { source?: { kind?: unknown; ref?: unknown; hash?: unknown } } } | null | undefined;
+type Item = { meta?: { source?: { kind?: unknown; ref?: unknown; hash?: unknown }; backdrop?: unknown } } | null | undefined;
+
+/** Whether a Designer candidate carries its own interactive backdrop descriptor (`meta.backdrop`). */
+export const carriesBackdrop = (item: Item): boolean => !!item?.meta && typeof item.meta === "object" && Object.hasOwn(item.meta, "backdrop");
+
+/**
+ * Findings for the interactive backdrop descriptor a Designer candidate carries (foundry-build-0048
+ * A4); [] when it carries none. The descriptor rides as `meta.backdrop` on the slot's own code
+ * candidate, whose code keeps its own lineage (candidateLineage, lineageFindings); here only its slot
+ * and component are judged against the rule's interactiveBackdrops (the param schema is judged at
+ * submit, pin and compile).
+ */
+export function backdropFindings(label: string, slot: string, item: Item, rule: ProvenanceRule): string[] {
+  if (!carriesBackdrop(item)) return [];
+  const findings: string[] = [];
+  if (!(rule.interactiveBackdrops?.slots ?? []).some(pattern => globMatch(pattern, slot))) findings.push(`${label}: meta.backdrop in ${slot}, which is not an interactiveBackdrops slot of the provenance rule`);
+  const backdrop = item!.meta!.backdrop;
+  const component = backdrop && typeof backdrop === "object" && !Array.isArray(backdrop) && Object.hasOwn(backdrop, "component") ? (backdrop as { component?: unknown }).component : undefined;
+  if (typeof component !== "string" || !(rule.interactiveBackdrops?.components ?? []).includes(component)) findings.push(`${label}: meta.backdrop.component ${JSON.stringify(component ?? null)} is not one of the Foundry interactive backdrop components (${(rule.interactiveBackdrops?.components ?? []).join(", ")})`);
+  return findings;
+}
 
 /**
  * Lineage of one Designer candidate (registry item): `original` stays original, `registry` is a
  * verbatim adoption, `derived` is customized; the first reference is the source, the rest are parts.
  * `composition` and `npm` candidates cite pinned slots or an npm package, not a registry item, and
- * are verified by check-ref-verbatim: null here.
+ * are verified by check-ref-verbatim: null here. A `meta.backdrop` descriptor does not change the
+ * code's lineage: backdropFindings judges it.
  */
 export function candidateLineage(slot: string, item: Item): Lineage | null {
   const source = item?.meta?.source ?? {};

@@ -24,7 +24,8 @@ export type RefVerbatimCode =
   | "REF-NPM-CODE"
   | "REF-NPM-ASSET"
   | "REF-NPM-DEP"
-  | "REF-NPM-CLASS";
+  | "REF-NPM-CLASS"
+  | "REF-INTERACTIVE";
 
 export type RefVerbatimPosition = { readonly line: number; readonly column: number };
 export type RefVerbatimRange = { readonly start: RefVerbatimPosition; readonly end: RefVerbatimPosition };
