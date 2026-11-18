@@ -140,4 +140,22 @@ describe("init --publication submits through the guarded candidates verb (slot/2
     expect(readdirSync(elsewhere)).toEqual(["site-v1.json"]);
     expect(s.events().filter(event => event.op === "submit").map(event => event.name)).toEqual(["site-v1.json"]);
   }, 300_000);
+
+  it("refuses a bad outputs record at submit and at pin (B2)", async () => {
+    const s = await store();
+    const bad = { ...PUBLICATION, outputs: { origin: "http://example.test", feed: "rss2", extra: 1 } };
+    const path = join(s.root, "bad.json");
+    writeFileSync(path, `${JSON.stringify(bad, null, 2)}\n`);
+    const before = s.events().length;
+    const submit = await runCli(["next", "publisher/publication.site", "--submit", path, ...SUBMIT, "--rung", "adapt", "--seed", "publication.site/site-v1.json", "--root", s.root]);
+    expect(submit.exitCode, submit.message).toBe(1);
+    expect(submit.message).toMatch(/outputs/);
+    expect(existsSync(s.agent("publisher", "publication.site", "candidates", "site-v2.json"))).toBe(false);
+    expect(s.events().length).toBe(before);
+    // A candidate placed by hand (no verb) is refused by the pin writer itself, whatever gate runs before it.
+    writeFileSync(s.agent("publisher", "publication.site", "candidates", "site-v2.json"), `${JSON.stringify(bad, null, 2)}\n`);
+    expect(() => writeTargetPin(s.root, { agent: "publisher", slotId: "publication.site", candidate: "site-v2.json", decidedBy: BY, basis: "planner", at: AT, createdBy: cliActor("clossys pin") } as never))
+      .toThrow(/outputs: unknown key extra/);
+    expect(readJson(s.agent("publisher", "publication.site", "pin.json"))).toMatchObject({ candidate: "site-v1.json" });
+  }, 300_000);
 });

@@ -1,4 +1,5 @@
 import { pinIssues } from "@clossys/director";
+import { checkPublicationOutputs } from "@clossys/publisher/content-map";
 import { pinMapIssues, pinIssues as targetPinIssues } from "../pin.js";
 import { parseFrontmatter } from "./frontmatter.js";
 import { loadSchema, validateValue } from "../../pipeline/schema.js";
@@ -354,6 +355,8 @@ function validateJsonCandidate(kind: SlotKind, value: Record<string, unknown>, s
     if (typeof value.format !== "string" || !value.format) fail("format is required");
     if (!strings(value.entryOrder)) fail("entryOrder must be a list");
     if (value.routePack !== undefined && !object(value.routePack)) fail("routePack must be an object");
+    // The install outputs: the one shared check (unknown keys, https origin, forms, locales), refused at submit and pin, not at read.
+    if (value.outputs !== undefined) for (const issue of checkPublicationOutputs(value.outputs)) fail(issue);
   }
   return issues;
 }
