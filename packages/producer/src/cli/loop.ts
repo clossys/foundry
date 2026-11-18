@@ -4,14 +4,19 @@
  *
  * Without --check it first makes the agent's loops the consumer's: it adopts the agent's loops L1 and five loop slots
  * (loop/agent-loop-adopt.ts, one guarded write) and pins each unpinned loop slot to the agent's candidate through the
- * pin gate (`clossys pin`, planner basis by default: certified, scored, recorded). Then it loads the loop as the runner
- * does (loop/version.ts loadLoopVersion) and judges it against Producer's standard (agent-loops.ts agentLoopIssues).
- * With --check it writes nothing and only judges. Exit 0 when the named loop is pinned and extends its standard.
+ * pin gate (`clossys pin`, planner basis by default: certified, scored, recorded). Then it judges the pin against
+ * Producer's standard (agent-loops.ts agentLoopIssues) and asks the runner itself what it would run: planRun (writes
+ * nothing) for one real subject of the agent (loop.scope --agent, its first open request for loop.slot, its first slot
+ * for create, choose and cascade). The verdict says "runs <ref>" only for a version the runner planned; with no subject
+ * to plan on it says so. With --check it writes nothing and only judges. Exit 0 when the named loop is pinned, extends
+ * its standard and the runner plans that pin.
  */
-import { resolve } from "node:path";
+import { existsSync, readdirSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { adoptAgentLoops, adoptedLoopCandidate, holdsAdoptedLoops } from "../loop/agent-loop-adopt.js";
 import { AGENT_LOOPS, agentLoopIssues, isAgentLoop, isLoopAgent, readAgentLoopPin, type AgentLoopName, type LoopAgent } from "../loop/agent-loops.js";
-import { loadLoopVersion } from "../loop/version.js";
+import { planRun, type StartInput } from "../loop/runner.js";
+import { listRequests, targetOf } from "../records/request.js";
 import { toIsoZ } from "../records/pin.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
@@ -32,6 +37,8 @@ interface LoopCliOutput {
   readonly pinned: readonly string[];
   readonly ref?: string;
   readonly sha256?: string;
+  /** What `clossys run` plans for one real subject of the agent: the subject and the version ref it runs. */
+  readonly plan?: { readonly subject: string; readonly runs: string };
   readonly steps?: readonly { readonly id: string; readonly by: string; readonly skill?: string }[];
   readonly issues: readonly string[];
 }
@@ -80,28 +87,56 @@ export async function runLoopCli(argv: readonly string[], cwd: string): Promise<
   const own = readAgentLoopPin(workspace, agent, loop);
   if (own === undefined || !own.ok) return done(workspace, { loop: target, adopted, pinned, issues: [own?.ok === false ? own.reason : `${target} is not pinned`] });
   const issues = agentLoopIssues(agent, loop, own.content);
-  // The runner's own load, so what this verb reports is what `clossys run loop.<name>` runs for the agent's slots.
-  const load = loadLoopVersion(workspace, loop, agent);
-  if (!load.ok) issues.push(load.reason);
-  else if (load.loaded.ref !== own.ref) issues.push(`the runner loads ${load.loaded.ref}, not the pin ${own.ref}`);
-  const steps = load.ok ? load.loaded.content.steps.map(step => step.decider.by === "agent"
+  // The runner's own plan for a real subject of the agent: what `clossys run <loop>` would run, nothing injected.
+  const input = planInput(workspace, agent, loop);
+  let plan: LoopCliOutput["plan"];
+  if (input) {
+    const planned = planRun(workspace, input.input, when);
+    if (!planned.ok) issues.push(`the runner does not plan ${loop} for ${input.subject}: ${planned.reason}`);
+    else {
+      plan = { subject: input.subject, runs: planned.state.version.ref };
+      if (planned.state.version.ref !== own.ref) issues.push(`the runner plans ${planned.state.version.ref} for ${input.subject}, not the pin ${own.ref}`);
+    }
+  }
+  const content = own.content as { steps?: readonly { id: string; decider: { by: string; agent?: string; tier?: string; skill?: string } }[] };
+  const steps = (Array.isArray(content.steps) ? content.steps : []).map(step => step.decider.by === "agent"
     ? { id: step.id, by: `agent:${step.decider.agent} ${step.decider.tier}`, ...(step.decider.skill ? { skill: step.decider.skill } : {}) }
-    : { id: step.id, by: step.decider.by }) : undefined;
-  return done(workspace, { loop: target, adopted, pinned, ref: own.ref, sha256: own.sha256, ...(steps ? { steps } : {}), issues });
+    : { id: step.id, by: step.decider.by });
+  return done(workspace, { loop: target, adopted, pinned, ref: own.ref, sha256: own.sha256, ...(plan ? { plan } : {}), steps, issues });
+}
+
+/**
+ * One real subject of the agent the runner can plan this loop on: loop.scope for the agent, the agent's first open
+ * request (loop.slot), or the agent's first content slot (create, choose, cascade). Undefined: none to plan on.
+ */
+function planInput(root: string, agent: LoopAgent, loop: AgentLoopName): { input: StartInput; subject: string } | undefined {
+  if (loop === "loop.scope") return { input: { loop, agent }, subject: `--agent ${agent}` };
+  if (loop === "loop.slot") {
+    const open = listRequests(join(root, "clossys")).map(read => read.request).find(request => request !== undefined && request.status === "open" && targetOf(request)?.agent === agent);
+    return open ? { input: { loop, request: open.id }, subject: `request ${open.id}` } : undefined;
+  }
+  const dir = join(root, "clossys", "agents", agent);
+  const slot = (existsSync(dir) ? readdirSync(dir).sort() : []).find(id => !isAgentLoop(id) && existsSync(join(dir, id, "slot.json")));
+  return slot ? { input: { loop, slot: `${agent}/${slot}` }, subject: `${agent}/${slot}` } : undefined;
 }
 
 /** Pin the agent's loop slot to its adopted candidate through the pin gate, unless it is already pinned. */
 async function pinOwn(root: string, agent: LoopAgent, loop: AgentLoopName, by: string, at: string, cwd: string): Promise<"pinned" | "held" | string> {
   const current = readAgentLoopPin(root, agent, loop);
   if (current?.ok) return "held";
+  // A pin that is there but does not resolve is the consumer's (maybe the owner's): reported, never replaced.
+  if (existsSync(join(root, "clossys", "agents", agent, loop, "pin.json"))) return `${agent}/${loop} holds a pin that does not resolve (${current?.ok === false ? current.reason : "unreadable"}); fix or repin it with clossys pin`;
   const result = await runPinCli([`${agent}/${loop}`, adoptedLoopCandidate(loop), "--by", by, ...(by.startsWith("owner") ? ["--basis", "picked"] : []), "--at", at, "--root", root], cwd);
   return result.exitCode === 0 ? "pinned" : result.message;
 }
 
 function done(root: string, output: LoopCliOutput): CliResult {
   const ok = output.issues.length === 0 && output.ref !== undefined;
+  const standard = `producer/${output.loop.split("/")[1]}`;
+  const head = output.plan ? ` runs ${output.plan.runs} (planned for ${output.plan.subject}${ok ? `; pinned, extends ${standard}` : ""})`
+    : output.ref ? ` pins ${output.ref} (no subject to plan a run on${ok ? `; extends ${standard}` : ""})` : "";
   const lines = [
-    `VERDICT: ${ok ? "PASS" : "FAIL"} ${output.loop}${output.ref ? ` runs ${output.ref}` : ""}${ok ? ` (pinned, extends producer/${output.loop.split("/")[1]})` : ""}`,
+    `VERDICT: ${ok ? "PASS" : "FAIL"} ${output.loop}${head}`,
     ...(output.adopted ? [`  adopted ${output.loop.split("/")[0]}'s five loop slots`] : []),
     ...(output.pinned.length ? [`  pinned ${output.pinned.join(", ")}`] : []),
     ...(output.steps ?? []).map(step => `  step ${step.id}  ${step.by}${step.skill ? `  ${step.skill}` : ""}`),

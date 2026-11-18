@@ -4,16 +4,18 @@
  *
  * - `loop.agent-standard`: every content agent's package loop candidates extend Producer's standard loop of the same
  *   name (agent-loops.ts agentLoopIssues). A consumer that holds any of an agent's loop slots holds all five, each
- *   pinned, and each pinned version extends its standard: a missing slot, an unpinned slot, or a version that drops
+ *   pinned, and each pinned version extends its standard; so does a consumer that places the agent (its ia.json) but
+ *   holds none of its loop slots (no vacuous pass): a missing slot, an unpinned slot, or a version that drops
  *   a required step, exit check, failure route or owner-class `when` is a finding.
- * - `loop.connected`: the versions each agent's loops run for this consumer (its pins, else its package candidates)
+ * - `loop.connected`: the versions each agent's loops run for this consumer (its pins, else Producer's standard as it
+ *   runs for that agent: the standard's steps but other agents' own; never the package candidates the runner does not load)
  *   form one chain overseen by Producer: every agent loop output is read by a Producer connection loop or by another
  *   agent's loop, every Director -> Designer + Writer -> Publisher handoff is a read of what the upstream agent's loops
  *   write, and an agent loop reaches another agent only by a request or a cascade event (agent-loops.ts
  *   loopConnectedIssues).
  */
 import { treeResult, type TreeCheck, type TreeCheckResult, type TreeFinding } from "../records/slot.js";
-import { AGENT_LOOPS, LOOP_AGENTS, agentLoopIssues, consumerLoopSet, hasAgentLoopSlot, loopConnectedIssues, readAgentLoopPin, readAgentPackageLoop } from "../loop/agent-loops.js";
+import { AGENT_LOOPS, LOOP_AGENTS, agentLoopIssues, consumerLoopSet, hasAgentLoopSlot, loopConnectedIssues, placesAgent, readAgentLoopPin, readAgentPackageLoop } from "../loop/agent-loops.js";
 
 export const LOOP_AGENT_STANDARD = "loop.agent-standard";
 export const LOOP_CONNECTED = "loop.connected";
@@ -33,9 +35,12 @@ export function runLoopAgentStandard(root: string): TreeCheckResult {
       const packaged = readAgentPackageLoop(agent, loop);
       if (!packaged.ok) findings.push({ subject: ref, detail: packaged.reason });
       else for (const issue of agentLoopIssues(agent, loop, packaged.content, { packageVersion: true })) findings.push({ subject: packaged.ref, detail: issue });
-      // A consumer that has not adopted the agent's loops runs Producer's standard for it; once it holds one, it holds all.
-      if (!held.length) continue;
-      if (!held.includes(loop)) { findings.push({ subject: ref, detail: `missing: the consumer holds ${agent}'s ${held.join(", ")} but not ${loop}; run clossys loop ${ref}` }); continue; }
+      // A consumer that places the agent (its IA) or holds one of its loop slots holds all five: no vacuous pass.
+      if (!held.length && !placesAgent(root, agent)) continue;
+      if (!held.includes(loop)) {
+        findings.push({ subject: ref, detail: held.length ? `missing: the consumer holds ${agent}'s ${held.join(", ")} but not ${loop}; run clossys loop ${ref}` : `missing: the consumer places ${agent} but holds none of its loop slots; run clossys loop ${ref}` });
+        continue;
+      }
       const pinned = readAgentLoopPin(root, agent, loop);
       if (pinned === undefined || !pinned.ok) { findings.push({ subject: ref, detail: pinned?.ok === false ? pinned.reason : `${ref} is not pinned` }); continue; }
       for (const issue of agentLoopIssues(agent, loop, pinned.content)) findings.push({ subject: pinned.ref, detail: issue });

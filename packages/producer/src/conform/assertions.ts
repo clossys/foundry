@@ -371,13 +371,15 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     for (const loop of agent.loops) if (!loop.declared) rows.push(`${loop.loop}: conform.json does not declare ${owner}'s ${loop.loop}`);
     for (const id of new Set(declared)) if (declared.indexOf(id) !== declared.lastIndexOf(id)) rows.push(`${id}: declared twice in conform.json loops`);
     const own = agent.loops.filter(loop => loop.declared);
-    // Placed: once the consumer holds any of the agent's loop slots it must hold, pin and run all of them.
-    const placed = own.some(loop => loop.placed);
+    // Placed: a consumer that places the agent (its IA) or holds any of its loop slots must hold, pin and run all five;
+    // no vacuous pass for a consumer that places the agent but never adopted its loops.
+    const holds = own.some(loop => loop.placed);
+    const placed = holds || agent.placedTree.length > 0;
     for (const loop of own) {
       if (!loop.package.ok) rows.push(`${loop.loop}: ${loop.package.reason}`);
       else for (const issue of agentLoopIssues(owner, loop.loop, loop.package.content, { packageVersion: true })) rows.push(`package ${issue}`);
       if (!placed) continue;
-      if (!loop.placed) { rows.push(`${owner}/${loop.loop}: missing (the consumer holds ${owner}'s other loop slots, not this one)`); continue; }
+      if (!loop.placed) { rows.push(`${owner}/${loop.loop}: missing (${holds ? `the consumer holds ${owner}'s other loop slots, not this one` : `the consumer places ${owner} but holds none of its loop slots; run clossys loop ${owner}/${loop.loop}`})`); continue; }
       if (!loop.pin?.ok) { rows.push(`${owner}/${loop.loop}: unpinned: ${loop.pin?.reason ?? "no pin"}`); continue; }
       for (const issue of agentLoopIssues(owner, loop.loop, loop.pin.content)) rows.push(`pinned ${loop.pin.ref}: ${issue}`);
     }

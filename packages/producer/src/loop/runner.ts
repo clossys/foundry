@@ -41,6 +41,7 @@ import {
   SLOT_REF, TRIGGER_CODE, TRIGGER_KINDS, VERIFIED_CHECKS, ledgerOf, loopStem, type LoopName,
 } from "./names.js";
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
+import { isAgentLoop, isLoopAgent, pathPattern, patternsMeet, standardOf, type LoopAgent } from "./agent-loops.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { certifiedOptions } from "../constitution/pin-gate.js";
 import { readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, type SlotRequest } from "../records/request.js";
@@ -98,6 +99,8 @@ export interface RunState {
   loop: LoopName;
   version: { candidate: string; ref: string; sha256: string; source: "pin" | "package" };
   subject?: { agent: AgentId; slotId: string };
+  /** The agent whose own pinned loop the run runs (U9a): the slot's agent, the request's owner, or loop.scope's --agent. */
+  agent?: LoopAgent;
   /** A request run (loop.slot): the clossys.queue-entry/2 kind slot entry it answers (clossys/agents/producer/queue.slot/entries/<id>.json). */
   request?: string;
   publication?: string;
@@ -134,6 +137,8 @@ export interface StartInput {
   readonly trigger?: string;
   /** loop.slot: the open request the run answers. */
   readonly request?: string;
+  /** loop.scope: the agent whose own pinned loop.scope runs (else Producer's cross-agent standard). Any other loop's agent is its subject's. */
+  readonly agent?: string;
 }
 
 export interface RunResult {
@@ -277,6 +282,22 @@ function triggerOf(loop: LoopName, input: StartInput, subject: SlotSubject | und
 
 export type StartPlan = { ok: true; state: RunState; loaded: LoadedLoop } | { ok: false; reason: string };
 
+/**
+ * The agent whose own loop a run runs (U9a): an agent loop's slot subject's agent, a request's owner (loop.slot), or
+ * loop.scope's --agent. Undefined: the run runs the consumer's (or the package) Producer version. A named --agent must
+ * be a content agent and, for a slot or request run, the subject's own.
+ */
+function runAgent(input: StartInput, subject: SlotSubject | undefined, request: SlotRequest | undefined): { ok: true; agent?: LoopAgent } | { ok: false; reason: string } {
+  if (input.agent !== undefined && !isLoopAgent(input.agent)) return { ok: false, reason: `--agent ${JSON.stringify(input.agent)} is not a content agent (director, designer, writer, publisher)` };
+  if (input.agent !== undefined && !isAgentLoop(input.loop)) return { ok: false, reason: `${input.loop} is no agent loop; it takes no --agent` };
+  if (!isAgentLoop(input.loop)) return { ok: true };
+  const of = subject ? subject.agent : request ? requestOwner(request) : undefined;
+  if (input.agent !== undefined && of !== undefined && input.agent !== of) return { ok: false, reason: `--agent ${input.agent}: ${input.loop} runs ${of}'s loop (${subject ? refOf(subject) : `request ${request!.id}`})` };
+  if (input.agent !== undefined && of === undefined && input.loop !== "loop.scope") return { ok: false, reason: `--agent names whose loop.scope runs; ${input.loop} runs its subject's agent's loop` };
+  const agent = input.agent ?? of;
+  return { ok: true, ...(agent !== undefined && isLoopAgent(agent) ? { agent } : {}) };
+}
+
 /** Checks the input and builds a new run's state. Writes nothing. */
 export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
   let load = loadLoopVersion(root, input.loop);
@@ -305,10 +326,6 @@ export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
     const [agent, slotId] = ref.split("/") as [AgentId, string];
     subject = slotId ? readSubject(root, agent, slotId) : undefined;
     if (!subject) return { ok: false, reason: `${ref} is not a consumer slot (clossys/agents/${ref}/slot.json, slot/2)` };
-    // The slot's agent runs its own pinned version of this loop when it holds one (U9a).
-    load = loadLoopVersion(root, input.loop, subject.agent);
-    if (!load.ok) return { ok: false, reason: load.reason };
-    version = load.loaded.content;
   }
   let request: SlotRequest | undefined;
   if (input.request !== undefined) {
@@ -318,6 +335,14 @@ export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
     if (request.status !== "open") return { ok: false, reason: `--request ${input.request} is ${request.status}; a run answers an open request` };
   }
   if (needs === "request" && !request) return { ok: false, reason: `${input.loop} runs for one request: --request <id> (clossys request --list --open)` };
+  // U9a: the run's agent runs its own pinned version of this loop when it holds one.
+  const owner = runAgent(input, subject, request);
+  if (!owner.ok) return owner;
+  if (owner.agent !== undefined) {
+    load = loadLoopVersion(root, input.loop, owner.agent);
+    if (!load.ok) return { ok: false, reason: load.reason };
+    version = load.loaded.content;
+  }
   if (needs === "publication" && !input.publication) return { ok: false, reason: `${input.loop} runs for one publication: --publication <id>` };
   if (needs !== "slot" && input.slot) return { ok: false, reason: `${input.loop} takes no --slot` };
   if (needs !== "slot" && from) {
@@ -336,6 +361,7 @@ export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
     loop: input.loop,
     version: { candidate: load.loaded.candidate, ref: load.loaded.ref, sha256: load.loaded.sha256, source: load.loaded.source },
     ...(subject ? { subject: { agent: subject.agent, slotId: subject.slotId } } : {}),
+    ...(owner.agent !== undefined ? { agent: owner.agent } : {}),
     ...(request ? { request: request.id } : {}),
     ...(input.publication ? { publication: input.publication } : {}),
     trigger: { code, kind: TRIGGER_KINDS[code]!, ...(fromRef ? { ref: fromRef } : {}) },
@@ -377,7 +403,8 @@ async function resumeLocked(root: string, runId: string, hooks: RunHooks, now: (
   // B9: a run that wrote its ledger entry but stopped before saving its state has ended: adopt the entry, run nothing.
   const ended = adoptLedger(root, state);
   if (ended) return ended;
-  const load = loadLoopVersion(root, state.loop, state.subject?.agent);
+  // The same agent planRun resolved: the version the run started on is the one it resumes on.
+  const load = loadLoopVersion(root, state.loop, state.agent ?? state.subject?.agent);
   if (!load.ok) return { exitCode: 2, state, message: `run: ${load.reason}` };
   if (load.loaded.sha256 !== state.version.sha256) {
     return { exitCode: 2, state, message: `run: ${runId} started on ${state.version.ref} (${state.version.sha256.slice(0, 12)}); the loop now runs ${load.loaded.ref}. Finish or stop the run before the version changes` };
@@ -566,6 +593,13 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
       }
       exit = outcome.exit; wrote = outcome.wrote; cli = outcome.cli ?? filled.text;
       ledgerDecider = { by: "agent", agent, verb: decider.verb, tier: decider.tier, model: outcome.model, ...(skill ? { skill } : {}) };
+      // U9a: an agent's own loop writes only what its step declares; anything else stops the run, whatever its exit.
+      const stray = undeclaredWrites(root, state, step, wrote);
+      if (stray.length) {
+        delete state.waiting;
+        recordStep(ctx, step, ledgerDecider, cli, 1, wrote, vars);
+        return stop(ctx, `step ${step.id} wrote ${stray.join(", ")}, which ${state.version.ref} does not declare it writes`, 1);
+      }
     } else {
       ledgerDecider = { by: "code" };
       const builtIn = recordedBuiltIn(ctx, step, subject, filled);
@@ -666,6 +700,44 @@ function recordedBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | un
   return result;
 }
 
+/**
+ * U9a: a failing step hands its findings to the route step after it only as Producer's standard has it. A Producer
+ * version is the standard; an agent's own version hands on only where the standard runs the same route step right after
+ * the same failing step, so an agent cannot add or move a route step to let a failed required step pass.
+ */
+export function routeHandsOn(state: Pick<RunState, "loop" | "version">, step: LoopStep, next: LoopStep): boolean {
+  if (state.version.ref.startsWith("producer/") || !isAgentLoop(state.loop)) return true;
+  const standard = standardOf(state.loop);
+  if (!standard.ok) return false;
+  const at = standard.standard.steps.findIndex(each => each.id === step.id);
+  const after = at < 0 ? undefined : standard.standard.steps[at + 1];
+  return after !== undefined && after.id === next.id && after.cli === next.cli && after.decider.by === "code" && !standard.standard.steps[at]!.onFail;
+}
+
+/**
+ * U9a: the files an agent step of an agent's own loop version reported writing that the step does not declare: outside
+ * the root, through `..`, or matching none of its `writes` (with `<slot>` the run's own slot). Empty for a Producer version.
+ */
+export function undeclaredWrites(root: string, state: RunState, step: LoopStep, wrote: readonly string[] | undefined): string[] {
+  if (state.version.ref.startsWith("producer/") || step.decider.by !== "agent" || !wrote?.length) return [];
+  const agent = state.agent ?? state.subject?.agent;
+  if (agent === undefined || !isLoopAgent(agent)) return [...wrote];
+  const slot = state.subject ? `${state.subject.agent}/${state.subject.slotId}` : undefined;
+  const declared = (step.writes ?? []).map(write => {
+    let path = write;
+    if (slot) path = path.replace(/^(clossys\/agents\/)?<slot>(?=\/|$)/, `$1${slot}`).replaceAll("<slot-id>", state.subject!.slotId);
+    if (state.request) path = path.replaceAll("<request>", state.request);
+    return pathPattern(path, agent);
+  }).filter((pattern): pattern is string[] => pattern !== undefined);
+  return wrote.filter(file => {
+    if (file.split(/[\\/]/).includes("..")) return true;
+    const absolute = wroteFile(root, file);
+    if (relative(root, absolute).split(sep)[0] === "..") return true;
+    const segments = ledgerPath(root, file).split("/");
+    return !declared.some(pattern => patternsMeet(pattern, segments));
+  });
+}
+
 /** onFail and exit 2 (null: go on). */
 async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: readonly Finding[], subject: SlotSubject | undefined, raisedByStep = false): Promise<RunResult | null> {
   const { root, state, version } = ctx;
@@ -674,7 +746,7 @@ async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: rea
   const next = version.steps[state.cursor + 1];
   if (!step.onFail) {
     // A failing check whose next step routes findings hands them on (flows.md F6: route after check).
-    if (next?.cli === "clossys check --route") { state.cursor++; saveState(root, state); return null; }
+    if (next?.cli === "clossys check --route" && next.decider.by === "code" && routeHandsOn(state, step, next)) { state.cursor++; saveState(root, state); return null; }
     return stop(ctx, `step ${step.id} failed`, 1);
   }
   const at = iso(ctx.now());

@@ -88,6 +88,91 @@ describe("loopExtensionIssues", () => {
   });
 });
 
+describe("loopExtensionIssues: rounds, order, when, exit (U9a fix round 1)", () => {
+  const issues = (agent: LoopAgent, loop: AgentLoopName, version: LoopVersion) => loopExtensionIssues(agent, loop, version, standard(loop));
+  it("refuses more rounds than the standard allows, and a non-whole round count", () => {
+    const more = pkg("writer", "loop.create");
+    more.maxRounds = standard("loop.create").maxRounds + 1;
+    expect(issues("writer", "loop.create", more)).toEqual([`writer/loop.create: maxRounds ${more.maxRounds} exceeds the standard's ${standard("loop.create").maxRounds}`]);
+    const fewer = pkg("writer", "loop.create");
+    fewer.maxRounds = 1;
+    expect(issues("writer", "loop.create", fewer)).toEqual([]);
+    const none = pkg("writer", "loop.create");
+    none.maxRounds = 0;
+    expect(issues("writer", "loop.create", none)).toEqual(["writer/loop.create: maxRounds must be a whole number of rounds (1 or more)"]);
+  });
+  it("refuses required steps run out of the standard's order", () => {
+    const version = pkg("designer", "loop.choose");
+    const at = (id: string) => version.steps.findIndex(step => step.id === id);
+    const [pick] = version.steps.splice(at("pick"), 1);
+    version.steps.splice(at("rank"), 0, pick!);
+    expect(issues("designer", "loop.choose", version)).toContain("designer/loop.choose: step pick runs before a required step the standard runs first (the standard's order is kept)");
+  });
+  it("refuses a when added to a standard step that runs for every subject", () => {
+    const version = pkg("publisher", "loop.create");
+    version.steps.find(step => step.id === "certify")!.when = { ia: ["publisher/pages"] };
+    expect(issues("publisher", "loop.create", version)).toEqual(["publisher/loop.create: step certify adds a when; the standard runs it for every subject"]);
+  });
+  it("refuses a changed exit or repeat, a failure route added to a step without one, and changed code-step reads", () => {
+    const version = pkg("director", "loop.choose");
+    version.exit = "whenever the agent likes";
+    version.repeat = "never";
+    version.steps.find(step => step.id === "pick")!.onFail = { raise: "queue.fix", then: "retry" };
+    version.steps.find(step => step.id === "cascade")!.reads = [];
+    expect(issues("director", "loop.choose", version)).toEqual([
+      `director/loop.choose: changes the standard's exit (${standard("loop.choose").exit})`,
+      `director/loop.choose: changes the standard's repeat (${standard("loop.choose").repeat})`,
+      "director/loop.choose: step pick adds a failure route; the standard stops the run when it fails",
+      "director/loop.choose: step cascade changes what the code step reads",
+    ]);
+  });
+});
+
+describe("loopExtensionIssues: the owner gate, route steps and write paths (U9a fix round 1)", () => {
+  const issues = (agent: LoopAgent, loop: AgentLoopName, version: LoopVersion) => loopExtensionIssues(agent, loop, version, standard(loop));
+  const added = (agent: LoopAgent, extra: Partial<LoopVersion["steps"][number]>) => ({
+    id: "extra", does: "an added step", decider: { by: "agent" as const, agent, verb: "review" as const, tier: "low" as const }, cli: "clossys next", reads: [], writes: [], checks: [], ...extra,
+  });
+  it("refuses an agent step after the owner's confirm that re-pins the slot (writes <slot>/pin.json or runs clossys pin)", () => {
+    const writes = pkg("director", "loop.choose");
+    writes.steps.splice(writes.steps.findIndex(step => step.id === "confirm") + 1, 0, added("director", { id: "repin", writes: ["<slot>/pin.json"] }));
+    expect(issues("director", "loop.choose", writes)).toEqual(["director/loop.choose: step repin writes <slot>/pin.json, a slot pin; an agent loop pins only at the standard's own pick step (the owner's choose gate)"]);
+    const glob = pkg("director", "loop.choose");
+    glob.steps.push(added("director", { id: "tidy", writes: ["<slot>/"] }));
+    expect(issues("director", "loop.choose", glob)).toEqual(["director/loop.choose: step tidy writes <slot>/, a slot pin; an agent loop pins only at the standard's own pick step (the owner's choose gate)"]);
+    const cli = pkg("director", "loop.choose");
+    cli.steps.push(added("director", { id: "repin", cli: "clossys pin <ref> <candidate> --by agent:director" }));
+    expect(issues("director", "loop.choose", cli)).toEqual(["director/loop.choose: step repin runs clossys pin <ref> <candidate> --by agent:director; only the standard's own step pins or answers, as the standard has it (the owner's choose gate)"]);
+    // The standard's own pick step keeps its pin write and cli.
+    expect(issues("director", "loop.choose", pkg("director", "loop.choose"))).toEqual([]);
+    const answer = pkg("designer", "loop.create");
+    answer.steps.push(added("designer", { id: "self-confirm", cli: "clossys answer queue.approve#x --yes" }));
+    expect(issues("designer", "loop.create", answer).some(issue => issue.includes("step self-confirm runs clossys answer"))).toBe(true);
+  });
+  it("refuses an agent step that runs a Producer code step's cli (route, cascade, strict, ia sync)", () => {
+    for (const cli of ["clossys check --route", "clossys check <dependants>", "clossys check --strict", "clossys ia sync"]) {
+      const version = pkg("writer", "loop.create");
+      version.steps.splice(version.steps.findIndex(step => step.id === "create") + 1, 0, added("writer", { id: "hand-on", cli }));
+      expect(issues("writer", "loop.create", version), cli).toContain(`writer/loop.create: step hand-on runs ${cli}, a Producer code step; an agent step never routes, cascades, syncs or judges the tree`);
+    }
+  });
+  it("refuses a route step after a step the standard does not route (a failed required step would pass on)", () => {
+    const version = pkg("writer", "loop.create");
+    version.steps.splice(version.steps.findIndex(step => step.id === "create") + 1, 0, added("writer", { id: "route", cli: "clossys check --route", decider: { by: "code" } as never }));
+    expect(issues("writer", "loop.create", version)).toContain("writer/loop.create: step route routes the findings of create, which the standard does not; a failed step would pass on");
+  });
+  it("refuses a write outside the tree or into another agent's tree after normalization", () => {
+    for (const path of ["../writer/voice.tone/slot.json", "designer/../writer/voice.tone/slot.json", "/etc/passwd", "<slot>/../../writer/x/slot.json"]) {
+      const version = pkg("designer", "loop.create");
+      version.steps.push(added("designer", { id: "stray", writes: [path] }));
+      expect(issues("designer", "loop.create", version), path).toEqual([`designer/loop.create: step stray writes ${path}, outside the tree (absolute or through ..)`]);
+    }
+    const other = pkg("designer", "loop.create");
+    other.steps.push(added("designer", { id: "stray", writes: ["clossys/agents/./writer/voice.tone/slot.json"] }));
+    expect(issues("designer", "loop.create", other)).toEqual(["designer/loop.create: step stray writes clossys/agents/./writer/voice.tone/slot.json, another agent's tree; raise a request instead"]);
+  });
+});
+
 describe("loop.connected", () => {
   it("holds for the package loops: every output consumed, every handoff wired, cross-agent work only through Producer", () => {
     expect(loopConnectedIssues(packageLoopSet())).toEqual([]);

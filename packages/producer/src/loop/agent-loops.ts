@@ -17,7 +17,7 @@
  * and `loop.connected` read them.
  */
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, posix } from "node:path";
 import { resolveAgent } from "../agents.js";
 import { readCandidateFile } from "../records/candidate.js";
 import { resolveSlot } from "../records/resolve.js";
@@ -115,8 +115,20 @@ export function requiredSteps(standard: LoopVersion, agent: LoopAgent): LoopStep
 
 /** Agent-tree prefixes a path may name (`<agent>/...`, `clossys/agents/<agent>/...`). */
 const AGENT_PATH = /^(?:clossys\/agents\/)?(director|designer|writer|publisher|producer)\//;
-/** The agent tree a read or write path names, if it names one by id. */
-export const pathAgent = (path: string): string | undefined => AGENT_PATH.exec(path)?.[1];
+/** The agent tree a read or write path names, if it names one by id (judged on the posix-normalized path). */
+export const pathAgent = (path: string): string | undefined => AGENT_PATH.exec(posix.normalize(path))?.[1];
+/** A path that leaves the tree it is written against: absolute, or through a `..` segment. */
+export const escapesTree = (path: string): boolean => path.startsWith("/") || path.split(/[\\/]/).includes("..");
+
+/** The cli of a Producer built-in code step: routing findings, the cascade, the strict tree checks, the IA sync. */
+const BUILT_IN_CLI = /^clossys check --route\b|<dependants>|^clossys check --strict\b|^clossys ia sync\b/;
+/** A cli that pins or answers an owner entry: only the standard's own step may carry it, as the standard has it. */
+const PIN_CLI = /\bclossys (?:pin|answer)\b/;
+/** A write that can land on a slot's pin.json (`<agent>/<slot>/pin.json`, a slot directory, or a glob over it). */
+const writesPin = (path: string, agent: LoopAgent): boolean => {
+  const pattern = pathPattern(path, agent);
+  return pattern !== undefined && patternsMeet(pattern, ["*", "*", "pin.json"]);
+};
 
 /**
  * Why an agent's loop version is not a conforming extension of Producer's standard loop of the same name; empty when
@@ -132,6 +144,9 @@ export function loopExtensionIssues(agent: LoopAgent, loop: AgentLoopName, conte
   if (typeof standard.maxRounds === "number" && typeof version.maxRounds === "number" && version.maxRounds > standard.maxRounds) {
     issues.push(`${ref}: maxRounds ${version.maxRounds} exceeds the standard's ${standard.maxRounds}`);
   }
+  if (typeof version.maxRounds !== "number" || !Number.isInteger(version.maxRounds) || version.maxRounds < 1) issues.push(`${ref}: maxRounds must be a whole number of rounds (1 or more)`);
+  if (version.exit !== standard.exit) issues.push(`${ref}: changes the standard's exit (${standard.exit})`);
+  if (version.repeat !== standard.repeat) issues.push(`${ref}: changes the standard's repeat (${standard.repeat})`);
   const byId = new Map(version.steps.filter(isObject).map(step => [step.id, step] as const));
   const required = requiredSteps(standard, agent);
   let last = -1;
@@ -151,6 +166,7 @@ export function loopExtensionIssues(agent: LoopAgent, loop: AgentLoopName, conte
     }
     for (const check of want.checks) if (!(step.checks ?? []).includes(check)) issues.push(`${ref}: step ${want.id} drops exit check ${check}`);
     if (want.onFail && (step.onFail?.raise !== want.onFail.raise || step.onFail?.then !== want.onFail.then)) issues.push(`${ref}: step ${want.id} changes its failure route (${want.onFail.raise} then ${want.onFail.then})`);
+    if (!want.onFail && step.onFail !== undefined) issues.push(`${ref}: step ${want.id} adds a failure route; the standard stops the run when it fails`);
     if (want.when === undefined && step.when !== undefined) issues.push(`${ref}: step ${want.id} adds a when; the standard runs it for every subject`);
     if (want.when !== undefined) {
       if (step.when === undefined) issues.push(`${ref}: step ${want.id} drops its when (${JSON.stringify(want.when)})`);
@@ -161,6 +177,15 @@ export function loopExtensionIssues(agent: LoopAgent, loop: AgentLoopName, conte
       if (step.when) for (const key of Object.keys(step.when)) if (!Object.hasOwn(want.when, key)) issues.push(`${ref}: step ${want.id} adds when.${key}, which narrows a standard step`);
     }
     if (need.by !== "agent" && !sameList(step.writes, want.writes)) issues.push(`${ref}: step ${want.id} changes what the ${need.by} step writes`);
+    if (need.by !== "agent" && !sameList(step.reads, want.reads)) issues.push(`${ref}: step ${want.id} changes what the ${need.by} step reads`);
+  }
+  // A failing step hands on to a route step only where the standard has that route step right after it.
+  for (let index = 0; index + 1 < version.steps.length; index++) {
+    const step = version.steps[index]!, next = version.steps[index + 1]!;
+    if (!isObject(step) || !isObject(next) || typeof next.cli !== "string" || !/^clossys check --route\b/.test(next.cli) || step.onFail !== undefined) continue;
+    const at = standard.steps.findIndex(each => each.id === step.id);
+    const after = at < 0 ? undefined : standard.steps[at + 1];
+    if (after === undefined || after.id !== next.id || after.cli !== next.cli) issues.push(`${ref}: step ${String(next.id)} routes the findings of ${String(step.id)}, which the standard does not; a failed step would pass on`);
   }
   // Steps the agent adds: its own, deciding only in its own tree.
   const standardIds = new Set(standard.steps.map(step => step.id));
@@ -175,9 +200,18 @@ export function loopExtensionIssues(agent: LoopAgent, loop: AgentLoopName, conte
   for (const step of version.steps) {
     if (!isObject(step)) continue;
     if (step.decider?.by === "agent" && step.decider.agent !== agent && step.decider.agent !== OWNER_OF_SLOT) issues.push(`${ref}: step ${step.id} names ${step.decider.agent}; an agent loop reaches another agent only through a request or a cascade`);
-    if (step.decider?.by === "agent") for (const path of step.writes ?? []) {
-      const owner = pathAgent(path);
-      if (owner !== undefined && owner !== agent && !/^(?:clossys\/agents\/)?producer\/queue\.[a-z]+\/entries\//.test(path)) issues.push(`${ref}: step ${step.id} writes ${path}, another agent's tree; raise a request instead`);
+    if (step.decider?.by !== "agent") continue;
+    // The standard's own step of this id, when it is this agent's: what it may carry as the standard has it.
+    const own = standard.steps.find(each => each.id === step.id && namesAgent(each, agent));
+    const cli = typeof step.cli === "string" ? step.cli : "";
+    if (BUILT_IN_CLI.test(cli)) issues.push(`${ref}: step ${step.id} runs ${cli}, a Producer code step; an agent step never routes, cascades, syncs or judges the tree`);
+    if (PIN_CLI.test(cli) && own?.cli !== cli) issues.push(`${ref}: step ${step.id} runs ${cli}; only the standard's own step pins or answers, as the standard has it (the owner's choose gate)`);
+    for (const path of Array.isArray(step.writes) ? step.writes : []) {
+      if (escapesTree(path)) { issues.push(`${ref}: step ${step.id} writes ${path}, outside the tree (absolute or through ..)`); continue; }
+      const normal = posix.normalize(path);
+      const owner = pathAgent(normal);
+      if (owner !== undefined && owner !== agent && !/^(?:clossys\/agents\/)?producer\/queue\.[a-z]+\/entries\//.test(normal)) issues.push(`${ref}: step ${step.id} writes ${path}, another agent's tree; raise a request instead`);
+      if (writesPin(normal, agent) && !(own?.writes ?? []).includes(path)) issues.push(`${ref}: step ${step.id} writes ${path}, a slot pin; an agent loop pins only at the standard's own pick step (the owner's choose gate)`);
     }
   }
   return issues;
@@ -200,6 +234,11 @@ export interface LoopSet {
   readonly standards: ReadonlyMap<LoopName, LoopVersion>;
   /** Versions that could not be read, by `<agent>/<loop>`: reported, never replaced by a fallback. */
   readonly unread?: ReadonlyMap<string, string>;
+  /**
+   * The agents a consumer runs (its IA places them or it holds their loop slots). A chain handoff is judged only between
+   * two of them: a handoff into or out of an agent the consumer does not run is no chain it runs. Absent: every agent.
+   */
+  readonly runs?: ReadonlySet<LoopAgent>;
 }
 
 /**
@@ -324,6 +363,7 @@ export function loopConnectedIssues(set: LoopSet): string[] {
   }
   // (b) the chain handoffs.
   for (const [up, down] of CHAIN_HANDOFFS) {
+    if (set.runs && !(set.runs.has(up) && set.runs.has(down))) continue;
     const upWrites = (agentWrites.get(up) ?? []).filter(write => write.pattern[0] === up);
     const handed = (agentReads.get(down) ?? []).filter(read => read[0] === up).some(read => upWrites.some(write => patternsMeet(read, write.pattern)));
     if (!handed) issues.push(`handoff ${up} -> ${down}: no step of ${down}'s loops reads what ${up}'s loops write (its pins); the chain is broken here`);
@@ -345,18 +385,45 @@ export function packageLoopSet(): LoopSet {
   return { versions, standards: producerStandards(), unread };
 }
 
-/** The versions each agent's loops run for one consumer: its pin where it holds the slot, else the package candidate. */
+/**
+ * The versions each agent's loops run for one consumer, as the runner loads them (version.ts loadLoopVersion): its pin
+ * where it holds the slot, else Producer's standard as it runs for that agent (the standard's steps but the ones other
+ * agents decide). Never the agent's package candidate: the runner does not run an unpinned candidate.
+ */
 export function consumerLoopSet(root: string): LoopSet {
   const versions = new Map<LoopAgent, Map<AgentLoopName, unknown>>(), unread = new Map<string, string>();
+  const standards = producerStandards();
+  const runs = new Set<LoopAgent>();
   for (const agent of LOOP_AGENTS) {
     const loops = new Map<AgentLoopName, unknown>();
+    if (placesAgent(root, agent) || AGENT_LOOPS.some(loop => hasAgentLoopSlot(root, agent, loop))) runs.add(agent);
     for (const loop of AGENT_LOOPS) {
-      const read = readAgentLoopPin(root, agent, loop) ?? readAgentPackageLoop(agent, loop);
-      if (read.ok) loops.set(loop, read.content); else unread.set(`${agent}/${loop}`, read.reason);
+      const read = readAgentLoopPin(root, agent, loop);
+      const standard = standards.get(loop);
+      if (read === undefined) {
+        if (standard) loops.set(loop, { ...standard, steps: requiredSteps(standard, agent) });
+        else unread.set(`${agent}/${loop}`, `Producer's standard ${loop} cannot be read`);
+      } else if (read.ok) loops.set(loop, read.content);
+      else unread.set(`${agent}/${loop}`, read.reason);
     }
     versions.set(agent, loops);
   }
-  return { versions, standards: producerStandards(), unread };
+  return { versions, standards, unread, runs };
+}
+
+/**
+ * True when the consumer places the agent: its IA (`clossys/agents/<agent>/ia.json`) holds at least one node. An empty
+ * or unreadable IA places nothing (conform's W2 reads the same `nodes`).
+ */
+export function placesAgent(root: string, agent: LoopAgent): boolean {
+  const file = join(root, "clossys", "agents", agent, "ia.json");
+  if (!existsSync(file)) return false;
+  try {
+    const ia = JSON.parse(readFileSync(file, "utf8")) as { nodes?: unknown };
+    return Array.isArray(ia.nodes) && ia.nodes.some(node => typeof node === "object" && node !== null);
+  } catch {
+    return false;
+  }
 }
 
 /** Producer's package v1 of every connection loop and agent loop it can read. */

@@ -14,8 +14,9 @@ import "./main.js";
 import { runLoopCli } from "./loop.js";
 import { runIaCli } from "./owner.js";
 import { runLoopAgentStandard, runLoopConnected } from "../check/loop-connected.js";
-import { AGENT_LOOPS, LOOP_AGENTS } from "../loop/agent-loops.js";
-import { loadLoopVersion } from "../loop/version.js";
+import { AGENT_LOOPS, LOOP_AGENTS, standardOf } from "../loop/agent-loops.js";
+import { planRun, resumeRun, routeHandsOn, startRun, undeclaredWrites, type AgentOutcome, type RunHooks } from "../loop/runner.js";
+import { runCli } from "./main.js";
 import { FIXTURE_CONSUMER_ROOT } from "../records/slot-model/fixture-consumer.test.js";
 import { readiness } from "../records/slots.js";
 import { refVerbatimSuite } from "../check/record-suites.js";
@@ -42,15 +43,19 @@ const slotDir = (root: string, agent: string, loop: string) => join(root, "closs
 const readJson = (path: string) => JSON.parse(readFileSync(path, "utf8"));
 const loop = (root: string, target: string, ...extra: string[]) => runLoopCli([target, "--root", root, "--at", AT, ...extra], root);
 
-/** Each test adopts and pins loops through the built CLI paths; the whole suite runs these in parallel with heavier files. */
-const LONG = 120_000;
+/**
+ * Each test adopts and pins loops through the built CLI paths: measured 0.4-11 s alone (the constitution test is the
+ * slowest), past vitest's 5 s default. 30 s leaves the full suite's parallel load room without hiding a hang.
+ */
+const LONG = 30_000;
 
 describe("clossys loop", () => {
   it("adopts the agent's five loop slots, pins each through the gate, and the runner runs the agent's pin", async () => {
     const root = copy();
     const result = await loop(root, "director/loop.create");
     expect(result.exitCode, result.message).toBe(0);
-    expect(result.message).toMatch(/^VERDICT: PASS director\/loop\.create runs director\/loop\.create\/create-v1\.json \(pinned, extends producer\/loop\.create\)/);
+    // The verdict is the runner's own plan for one of director's slots, not a load the verb steers.
+    expect(result.message).toMatch(/^VERDICT: PASS director\/loop\.create runs director\/loop\.create\/create-v1\.json \(planned for director\/[a-z.-]+; pinned, extends producer\/loop\.create\)/);
     expect(result.message).toContain("adopted director's five loop slots");
     for (const each of AGENT_LOOPS) {
       const pin = readJson(join(slotDir(root, "director", each), "pin.json"));
@@ -60,10 +65,11 @@ describe("clossys loop", () => {
     }
     // An agent loop slot is a readiness root: it extends Producer's standard and no upstream pin feeds it.
     for (const each of AGENT_LOOPS) expect(readiness(join(root, "clossys"), "director", each), each).toEqual({ ready: true, blockedBy: [] });
-    const load = loadLoopVersion(root, "loop.create", "director");
-    expect(load.ok && load.loaded.ref).toBe("director/loop.create/create-v1.json");
-    expect(runLoopAgentStandard(root).findings).toEqual([]);
-    expect(runLoopConnected(root).findings).toEqual([]);
+    // Director is clean; designer and writer, which the fixture's IA places, have not adopted theirs yet (no vacuous
+    // pass). The fixture's Publisher IA is empty: it places nothing, so publisher owes no loop slots.
+    const findings = runLoopAgentStandard(root).findings;
+    expect(findings.filter(finding => finding.subject.startsWith("director/"))).toEqual([]);
+    expect(new Set(findings.map(finding => finding.subject.split("/")[0]))).toEqual(new Set(["designer", "writer"]));
   }, LONG);
 
   it("is idempotent: a second run adopts and pins nothing and writes no byte", async () => {
@@ -85,9 +91,28 @@ describe("clossys loop", () => {
     expect(result.message).toMatch(/^VERDICT: FAIL publisher\/loop\.create/);
     expect(result.message).toContain("holds no publisher loop slots");
     expect(tree(join(root, "clossys"))).toEqual(before);
-    // An unadopted consumer runs Producer's standard for the agent: the checks pass on it.
-    expect(runLoopAgentStandard(root).findings).toEqual([]);
-    expect(runLoopConnected(root).findings).toEqual([]);
+    // No vacuous pass: the fixture's IA places director, designer and writer (Publisher's IA is empty) and holds none
+    // of their loop slots, so loop.agent-standard is red with every loop of those three missing. The loops that run
+    // are Producer's standards, which wire no agent handoff of their own, so loop.connected is red too.
+    const missing = runLoopAgentStandard(root).findings;
+    expect(missing).toHaveLength(3 * AGENT_LOOPS.length);
+    expect(missing.some(finding => finding.subject.startsWith("publisher/"))).toBe(false);
+    for (const finding of missing) expect(finding.detail, finding.subject).toMatch(/^missing: the consumer places [a-z]+ but holds none of its loop slots/);
+    // Handoffs are judged only between agents the consumer runs: publisher, unplaced, is in none.
+    expect(runLoopConnected(root).findings.map(finding => finding.subject)).toEqual(["handoff director -> designer", "handoff director -> writer"]);
+  }, LONG);
+
+  it("never replaces a pin that is there but does not resolve (an owner pin stays the owner's)", async () => {
+    const root = copy();
+    expect((await loop(root, "writer/loop.create")).exitCode).toBe(0);
+    const file = join(slotDir(root, "writer", "loop.choose"), "pin.json");
+    const pin = readJson(file);
+    const broken = `${JSON.stringify({ ...pin, decidedBy: "owner:2026-11-17", basis: "picked", sha256: "0".repeat(64) }, null, 2)}\n`;
+    writeFileSync(file, broken);
+    const again = await loop(root, "writer/loop.create", "--at", "2026-11-18T00:00:00Z");
+    expect(again.exitCode).toBe(1);
+    expect(again.message).toContain("writer/loop.choose holds a pin that does not resolve");
+    expect(readFileSync(file, "utf8")).toBe(broken);
   }, LONG);
 
   it("ia sync keeps an adopted agent's loops L1 and its loop slots: they are Producer-standard, not package leaves", async () => {
@@ -195,3 +220,122 @@ describe("loop.connected on a consumer (mutation-proven)", () => {
     expect(runLoopConnected(root).findings).toContainEqual(expect.objectContaining({ subject: "handoff director -> designer" }));
   }, LONG);
 });
+
+/** The fixture with one open loop.slot request owned by `agent` (raised by writer's article copy, which cites it). */
+async function withRequest(root: string, need: string): Promise<string> {
+  const requester = join(root, "clossys", "agents", "writer", "sections.article.copy", "slot.json");
+  const doc = readJson(requester);
+  doc.refs.push({ to: need, rel: "input" });
+  writeFileSync(requester, `${JSON.stringify(doc, null, 2)}\n`);
+  const raised = await runCli(["request", "--target", need, "--from", "writer/sections.article.copy", "--why", "the article cites it", "--at", AT, "--by", "writer", "--root", root], root);
+  expect(raised.exitCode, raised.message).toBe(0);
+  return (raised.output as { id: string }).id;
+}
+/** A slot of the agent's own (not a loop slot), as the verb plans on. */
+const firstSlot = (root: string, agent: string) => readdirSync(join(root, "clossys", "agents", agent)).sort().find(id => !id.startsWith("loop.") && statSync(join(root, "clossys", "agents", agent, id, "slot.json"), { throwIfNoEntry: false }))!;
+const waitAll: RunHooks = { agent: () => "wait", code: () => ({ exit: 0, wrote: [] }) };
+
+describe("the runner runs the owning agent's pin for all five loops (planRun / startRun / resumeRun)", () => {
+  it("plans every loop on the agent's pin once adopted, and Producer's standard before", async () => {
+    const root = copy();
+    const request = await withRequest(root, "director/narratives.origin");
+    const slot = `director/${firstSlot(root, "director")}`;
+    const inputs = {
+      "loop.scope": { loop: "loop.scope", agent: "director" },
+      "loop.slot": { loop: "loop.slot", request },
+      "loop.create": { loop: "loop.create", slot },
+      "loop.choose": { loop: "loop.choose", slot },
+      "loop.cascade": { loop: "loop.cascade", slot },
+    } as const;
+    const runs = () => Object.fromEntries(AGENT_LOOPS.map(each => {
+      const plan = planRun(root, inputs[each], AT);
+      return [each, plan.ok ? plan.state.version.ref : plan.reason];
+    }));
+    expect(runs()).toEqual(Object.fromEntries(AGENT_LOOPS.map(each => [each, expect.stringMatching(new RegExp(`^producer/${each.replace(".", "\\.")}/package:`))])));
+    expect((await loop(root, "director/loop.create")).exitCode).toBe(0);
+    expect(runs()).toEqual(Object.fromEntries(AGENT_LOOPS.map(each => [each, `director/${each}/${each.slice(5)}-v1.json`])));
+    // The plan names whose loop it runs, so a resume reloads the same version.
+    const scope = planRun(root, inputs["loop.scope"], AT);
+    expect(scope.ok && scope.state.agent).toBe("director");
+    // Without --agent, loop.scope is Producer's cross-agent scope; another agent's loop is not the subject's to run.
+    const cross = planRun(root, { loop: "loop.scope" }, AT);
+    expect(cross.ok && cross.state.version.ref).toMatch(/^producer\/loop\.scope\/package:/);
+    const wrong = planRun(root, { loop: "loop.create", slot, agent: "writer" }, AT);
+    expect(wrong.ok ? "planned" : wrong.reason).toMatch(/--agent writer: loop\.create runs director's loop/);
+    const bad = planRun(root, { loop: "loop.scope", agent: "producer" }, AT);
+    expect(bad.ok ? "planned" : bad.reason).toMatch(/is not a content agent/);
+  }, LONG);
+
+  it("starts and resumes a scope and a slot run on the agent's pin", async () => {
+    const root = copy();
+    const request = await withRequest(root, "director/narratives.origin");
+    expect((await loop(root, "director/loop.create")).exitCode).toBe(0);
+    const scope = await startRun(root, { loop: "loop.scope", agent: "director" }, waitAll, { now: () => new Date(AT) });
+    expect(scope.state?.version.ref, scope.message).toBe("director/loop.scope/scope-v1.json");
+    expect(scope.packet).toMatchObject({ step: "scope-director", agent: "director" });
+    // A resume reloads the run's agent's loop (not Producer's, whose sha differs) and goes on.
+    const answer: AgentOutcome = { exit: 0, model: "test-model", wrote: [] };
+    const resumed = await resumeRun(root, scope.state!.runId, { agent: () => answer, code: () => ({ exit: 0, wrote: [] }) }, { now: () => new Date(AT) });
+    expect(resumed.message).not.toMatch(/the loop now runs/);
+    expect(resumed.state?.steps.map(step => step.id)).toContain("scope-director");
+    const slot = await startRun(root, { loop: "loop.slot", request }, waitAll, { now: () => new Date(AT) });
+    expect(slot.state?.version.ref, slot.message).toBe("director/loop.slot/slot-v1.json");
+    expect(slot.state?.agent).toBe("director");
+  }, LONG);
+
+  it("refuses at load an agent pin that does not extend its standard (a forged pin)", async () => {
+    const root = copy();
+    expect((await loop(root, "director/loop.create")).exitCode).toBe(0);
+    const dir = slotDir(root, "director", "loop.create");
+    const file = join(dir, "candidates", "create-v1.json");
+    const doc = readJson(file);
+    doc.content.steps = doc.content.steps.filter((step: { id: string }) => step.id !== "certify");
+    const bytes = `${JSON.stringify(doc, null, 2)}\n`;
+    writeFileSync(file, bytes);
+    const pin = readJson(join(dir, "pin.json"));
+    writeFileSync(join(dir, "pin.json"), `${JSON.stringify({ ...pin, sha256: createHash("sha256").update(bytes).digest("hex") }, null, 2)}\n`);
+    const plan = planRun(root, { loop: "loop.create", slot: `director/${firstSlot(root, "director")}` }, AT);
+    expect(plan.ok ? plan.state.version.ref : plan.reason).toMatch(/^director\/loop\.create\/create-v1\.json does not extend producer\/loop\.create: .*drops required step certify/);
+  }, LONG);
+
+  it("stops an agent step of the agent's own loop that writes what the step does not declare", async () => {
+    const root = copy();
+    expect((await loop(root, "designer/loop.create")).exitCode).toBe(0);
+    const slot = `designer/${firstSlot(root, "designer")}`;
+    // refine-brief declares <slot>/slot.json; writer's slot is another agent's tree.
+    const stray: RunHooks = { agent: () => ({ exit: 0, model: "test-model", wrote: ["writer/sections.article.copy/slot.json"] }), code: () => ({ exit: 0, wrote: [] }) };
+    const run = await startRun(root, { loop: "loop.create", slot }, stray, { now: () => new Date(AT) });
+    expect(run.state?.version.ref).toBe("designer/loop.create/create-v1.json");
+    expect(run.exitCode).toBe(1);
+    expect(run.message).toMatch(/step refine-brief wrote writer\/sections\.article\.copy\/slot\.json, which designer\/loop\.create\/create-v1\.json does not declare it writes/);
+    // Its own declared write goes on.
+    const own: RunHooks = { agent: packet => packet.step === "refine-brief" ? { exit: 0, model: "test-model", wrote: [`${slot}/slot.json`] } : "wait", code: () => ({ exit: 0, wrote: [] }) };
+    const ok = await startRun(root, { loop: "loop.create", slot, trigger: "T3" }, own, { now: () => new Date("2026-11-17T12:05:00Z") });
+    expect(ok.message).not.toMatch(/does not declare/);
+    expect(ok.state?.steps.map(step => step.id)).toContain("refine-brief");
+    // Through .. or outside the root is never a declared write.
+    const state = ok.state!;
+    const step = { id: "refine-brief", does: "", decider: { by: "agent", agent: "designer", verb: "brief", tier: "mid" }, cli: "", reads: [], writes: ["<slot>/slot.json"], checks: [] } as never;
+    expect(undeclaredWrites(root, state, step, [`${slot}/../../writer/sections.article.copy/slot.json`, "/etc/passwd", `${slot}/slot.json`])).toEqual([`${slot}/../../writer/sections.article.copy/slot.json`, "/etc/passwd"]);
+    // A path through .. is refused even where it normalizes onto a declared write.
+    expect(undeclaredWrites(root, state, step, [`${slot}/sub/../slot.json`])).toEqual([`${slot}/sub/../slot.json`]);
+  }, LONG);
+
+  it("hands a failed step's findings to a route step only where Producer's standard does", () => {
+    // loop.audit is no agent loop: its own route step always hands on.
+    const any = { id: "x", does: "", decider: { by: "code" }, cli: "clossys check --strict", reads: [], writes: [], checks: [] } as never;
+    expect(routeHandsOn({ loop: "loop.audit", version: { ref: "producer/loop.audit/package:audit-v1.json" } } as never, any, any)).toBe(true);
+    const create = standardOf("loop.create");
+    expect(create.ok).toBe(true);
+    if (!create.ok) return;
+    const steps = create.standard.steps;
+    const certify = steps.find(step => step.id === "certify")!;
+    const route = { id: "route", does: "routes", decider: { by: "code" }, cli: "clossys check --route", reads: [], writes: [], checks: [] } as never;
+    const agentState = { loop: "loop.create", version: { ref: "designer/loop.create/create-v1.json" } } as never;
+    // The standard has no route step after certify: an agent version may not add one, so a failed certify stops.
+    expect(routeHandsOn(agentState, certify, route)).toBe(false);
+    // A Producer version is the standard itself.
+    expect(routeHandsOn({ loop: "loop.create", version: { ref: "producer/loop.create/package:create-v1.json" } } as never, certify, route)).toBe(true);
+  });
+});
+

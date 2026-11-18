@@ -22,8 +22,9 @@ const slot = (id: string, inputs: string[], extra: Partial<LiveSlot> = {}): Live
 });
 
 /**
- * Director's own five loops (U9a), as its package candidates hold them; the cascade gains a Director step of its own
- * (the standard cascade is all code, so no step would reach the agent and W1 would be red).
+ * Director's own five loops (U9a), as its package candidates hold them, adopted and pinned by the consumer (a consumer
+ * that places Director must hold all five); the cascade gains a Director step of its own (the standard cascade is all
+ * code, so no step would reach the agent and W1 would be red).
  */
 function ownLoops(): Record<string, any>[] {
   return AGENT_LOOPS.map(loop => {
@@ -31,7 +32,7 @@ function ownLoops(): Record<string, any>[] {
     if (!read.ok) throw new Error(read.reason);
     const content = structuredClone(read.content) as Record<string, any>;
     if (loop === "loop.cascade") content.steps.push({ id: "director-notes", does: "note the repinned briefs for the owner", decider: { by: "agent", agent: "director", verb: "check", tier: "low", skill: "packages/director/skills/director/SKILL.md" }, cli: "clossys next", reads: ["<slot>/slot.json"], writes: ["<slot>/ledger.json"], checks: [] });
-    return { loop, declared: true, package: { ok: true, ref: `director/${loop}/package:v1`, content }, placed: false };
+    return { loop, declared: true, package: { ok: true, ref: `director/${loop}/package:v1`, content }, placed: true, pin: { ok: true, ref: `director/${loop}/${loop.slice(5)}-v1.json`, content: structuredClone(content) } };
   });
 }
 
@@ -125,11 +126,21 @@ describe("own loops (W2, foundry-build-0048 U9a)", () => {
     expect(dropped.length).toBeGreaterThan(0);
     expect(dropped.every(row => row.startsWith("pinned director/loop.choose/package:v1: "))).toBe(true);
   });
-  it("W1 judges the agent's own version where it declares one, not Producer's standard", () => {
+  it("no vacuous pass: a consumer that places the agent but holds none of its loop slots is red, every loop missing", () => {
+    const unadopted = (agent: Record<string, any>) => { for (const loop of agent.loops) { loop.placed = false; delete loop.pin; } };
+    expect(w2(unadopted)).toEqual(AGENT_LOOPS.map(loop => `director/${loop}: missing (the consumer places director but holds none of its loop slots; run clossys loop director/${loop})`));
+    // A consumer that does not place the agent at all judges only the package versions.
+    expect(w2(agent => { unadopted(agent); agent.placedTree = []; })).toEqual([]);
+  });
+  it("W1 judges the version that runs: the consumer's pin where the slot is held, else the package candidate", () => {
     const rows = (mutate: Mutation) => ASSERTIONS.W1!(world(mutate).agent, world(mutate).model, GOOD_FACTS).rows;
-    // Producer's standard still reaches Director for every loop; Director's own cascade without its step does not.
-    expect(rows(agent => { const cascade = agent.loops[4].package.content; cascade.steps = cascade.steps.filter((step: any) => step.id !== "director-notes"); })).toEqual(["loop.cascade: no step reaches director"]);
-    expect(rows(agent => { agent.loops[2].package = { ok: false, reason: "gone" }; })).toEqual(["loop.create: director's own version cannot be read"]);
+    const dropNotes = (version: Record<string, any>) => { version.content.steps = version.content.steps.filter((step: any) => step.id !== "director-notes"); };
+    // Director's pinned cascade without its own step reaches no Director step; the package candidate does not matter then.
+    expect(rows(agent => { dropNotes(agent.loops[4].pin); })).toEqual(["loop.cascade: no step reaches director"]);
+    expect(rows(agent => { dropNotes(agent.loops[4].package); })).toEqual([]);
+    expect(rows(agent => { agent.loops[2].pin = { ok: false, reason: "gone" }; })).toEqual(["loop.create: director's own version cannot be read"]);
+    // Not held: the package candidate.
+    expect(rows(agent => { agent.loops[4].placed = false; dropNotes(agent.loops[4].package); })).toEqual(["loop.cascade: no step reaches director"]);
   });
 });
 
@@ -315,8 +326,9 @@ describe("conformance over the repo and its fixture", () => {
       // file, release refuses needs-refresh.
       for (const id of ["X1", "X2", "X3", "X4"]) expect(agent.cells.find(cell => cell.id === id)!.rows, `${agent.agent} ${id}`).toEqual([]);
       // U9a: every agent declares its five own loops, each extending Producer's standard; W1 judges them, so only the
-      // all-code cascade (no agent step, no skill) stays red.
-      expect(agent.cells.find(cell => cell.id === "W2")!.red, agent.agent).toBe(false);
+      // all-code cascade (no agent step, no skill) stays red. The fixture places director, designer and writer, adopts none of their
+      // loop slots, so W2 is red with all five missing (no vacuous pass); its Publisher IA is empty and places nothing.
+      expect(agent.cells.find(cell => cell.id === "W2")!.rows, agent.agent).toEqual(agent.agent === "publisher" ? [] : AGENT_LOOPS.map(loop => `${agent.agent}/${loop}: missing (the consumer places ${agent.agent} but holds none of its loop slots; run clossys loop ${agent.agent}/${loop})`));
       expect(agent.cells.find(cell => cell.id === "W1")!.rows, agent.agent).toEqual([`loop.cascade: no step reaches ${agent.agent}`, "cascade: names no skill"]);
     }
     // L1: the queue-entry/2 schema and loop.slot exist (U5), and no package slot edge names a slot no tree holds (U6
