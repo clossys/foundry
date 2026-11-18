@@ -16,7 +16,10 @@ import { createElement, type ComponentType } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it } from "vitest";
 import { NEXT_ROUTE_MARKER } from "@clossys/publisher/install";
-import { initPublicationOutputs } from "../cli/init-outputs.js";
+import { initPublicationOutputs as initThroughSubmit, type InitOutputsOptions } from "../cli/init-outputs.js";
+import { STEPS } from "../pipeline/steps/index.js";
+import { readLedger } from "../records/slots.js";
+import { writeVerdict } from "../records/slot-write.js";
 import { runCli } from "../cli/main.js";
 import { withDesignerSlots } from "../specimen/__fixtures__/canonical-library.js";
 import { designerShareMark, writerLocaleCopy } from "./install-outputs.js";
@@ -75,6 +78,18 @@ function draftFrench(root: string, omit: readonly string[] = []): void {
   writeFileSync(join(dir, "candidates", name), `${head!.replace('locales: ["en"]', 'locales: ["en","fr"]')}${body!.trimEnd()}\n\n## fr\n\n${fr.trimEnd()}\n`);
   pin(root, "writer", "strings.site", name);
 }
+/**
+ * init through the candidates verb: the slot gets a P1 create verdict first (adapt is P2), and the
+ * guard runs with no rules here (the verb's own mechanics; init-outputs-slot2.e2e.test.ts runs the real guard).
+ */
+function initPublicationOutputs(root: string, options: InitOutputsOptions) {
+  const id = `publication.${options.publication}`;
+  if (!readLedger(slotDir(root, "publisher", id))?.events.some(event => event.op === "verdict")) {
+    writeVerdict(join(root, "clossys"), "publisher", id, { verdict: "create", reason: "fixture: outputs are recorded on a new candidate", gaps: [{ id: "findability" }] }, { by: "agent:publisher.verdict", at: "2026-11-18T00:00:00Z" }, { model: "fixture", tier: "mid" });
+  }
+  const skill = STEPS.find(step => step.id === "publisher.candidates")!.command.skill!;
+  return initThroughSubmit(root, options, { model: "fixture", tier: "mid", basis: "agent", skill }, { rules: [] });
+}
 const OUTPUTS = { publication: "example-site", forms: ["contact"] as const, share: true, meta: ["json-ld", "llms", "rss"] as const, locales: ["en", "fr"], origin: "https://example.com", identity: { name: "site.name", summary: "home.hero.body" } };
 
 async function render(site: string, route: string): Promise<string> {
@@ -99,7 +114,7 @@ describe("publication outputs (U18)", () => {
     const { root } = await consumer();
     const pinBefore = readFileSync(join(slotDir(root, "publisher", "publication.example-site"), "pin.json"), "utf8");
     const result = await initPublicationOutputs(root, OUTPUTS);
-    expect(result.candidate).toBe("publication-v3.json");
+    expect(result.candidate).toBe("example-site-v3.json");
     expect(readFileSync(join(slotDir(root, "publisher", "publication.example-site"), "pin.json"), "utf8")).toBe(pinBefore);
     const written = JSON.parse(readFileSync(join(slotDir(root, "publisher", "publication.example-site"), "candidates", result.candidate), "utf8"));
     expect(written.entryOrder).toEqual(["home", "about"]);
@@ -113,7 +128,7 @@ describe("publication outputs (U18)", () => {
 
     // A value where a variable name belongs, or a non-https origin, is refused and writes nothing.
     await expect(initPublicationOutputs(root, { ...OUTPUTS, origin: "http://example.com" })).rejects.toThrow(/outputs refused: outputs.origin/);
-    expect(existsSync(join(slotDir(root, "publisher", "publication.example-site"), "candidates", "publication-v4.json"))).toBe(false);
+    expect(existsSync(join(slotDir(root, "publisher", "publication.example-site"), "candidates", "example-site-v4.json"))).toBe(false);
     const cli = await runCli(["init", "--publication", "example-site", "--forms", "contact,webhook", "--root", root]);
     expect(cli.exitCode).not.toBe(0);
     expect(cli.message).toMatch(/--forms: unknown form webhook/);
