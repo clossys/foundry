@@ -1,13 +1,16 @@
+import { spawn } from "node:child_process";
 import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
+import { REQUESTS_FILED } from "../loop/names.js";
 import { raiseEntry } from "../loop/route.js";
+import { verifyCheck } from "../loop/runner.js";
 import { answerQueueEntry } from "../queue/answer.js";
 import {
-  checkRequest, closeRequest, decideRequest, raiseRequest, readRequest, requestIssues, requestsDir, signedApproval, slotlessNeeds, unfiledNeeds,
-  type SlotRequest,
+  checkRequest, closeRequest, decideRequest, placementOverlaps, raiseRequest, readRequest, requestIssues, requestsDir, signedApproval, slotlessNeeds,
+  unfiledNeeds, type SlotRequest,
 } from "./request.js";
 
 // SLOT-CREATE (foundry-build-0048 U5): a slotless need is a clossys.queue-entry/2 kind slot entry under
@@ -24,19 +27,36 @@ function world() {
   cpSync(FIXTURE, root, { recursive: true });
   return { root, consumer: join(root, "clossys") };
 }
-function cite(consumer: string, to: string, rel: "input" | "uses" = "input") {
-  const file = join(consumer, "agents", REQUESTER, "slot.json");
+function cite(consumer: string, to: string, rel: "input" | "uses" = "input", from = REQUESTER) {
+  const file = join(consumer, "agents", from, "slot.json");
   const doc = JSON.parse(readFileSync(file, "utf8")) as { refs: { to: string; rel: string }[] };
+  if (doc.refs.some(ref => ref.to === to && ref.rel === rel)) return;
   doc.refs.push({ to, rel });
   writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
 }
-const raise = (consumer: string, target = "writer/narratives.faq") =>
-  raiseRequest(consumer, { target, from: REQUESTER, why: "the article links an FAQ", source: "cli", by: "producer", at: AT }).request;
+/** The requester cites the need first (a request is raised for an edge its slot names), then its agent raises it. */
+const raise = (consumer: string, target = "writer/narratives.faq") => {
+  cite(consumer, target);
+  return raiseRequest(consumer, { target, from: REQUESTER, why: "the article links an FAQ", source: "cli", by: "writer", at: AT }).request;
+};
+const CONTRACT = { requirements: [{ check: "text.nonempty" }] };
 function decidedCreate(consumer: string): SlotRequest {
   const request = raise(consumer);
   checkRequest(consumer, request.id, { by: "writer", at: AT });
-  return decideRequest(consumer, request.id, { decision: "create", proposal: { slot: "narratives.faq", under: "prose.reference/help", contract: { requirements: [{ check: "text.nonempty" }] } }, by: "writer", at: AT });
+  return decideRequest(consumer, request.id, { decision: "create", proposal: { slot: "narratives.faq", under: "prose.reference/help", inputs: ["director/focus.segment.core"], contract: CONTRACT }, by: "writer", at: AT });
 }
+/** Every file under a folder, as bytes (what a refused or foreign write must leave alone). */
+function bytes(dir: string, base = dir, out: Record<string, string> = {}): Record<string, string> {
+  if (!existsSync(dir)) return out;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) bytes(path, base, out); else out[path.slice(base.length + 1)] = readFileSync(path, "latin1");
+  }
+  return out;
+}
+/** The input refs of a placed slot (bare ids). */
+const inputsOf = (consumer: string, ref: string): string[] =>
+  (JSON.parse(readFileSync(join(consumer, "agents", ref, "slot.json"), "utf8")) as { refs: { to: string; rel: string }[] }).refs.filter(item => item.rel === "input").map(item => item.to);
 /** The loop.slot sign step's entry: a queue.approve about `to`, answered as given (or left open). */
 function approval(root: string, to: string, answer?: { answer: string; quote?: string }): string {
   const { entry } = raiseEntry(root, {
@@ -54,6 +74,8 @@ function approval(root: string, to: string, answer?: { answer: string; quote?: s
 describe("kind slot entries (clossys.queue-entry/2)", () => {
   it("raises one entry per target and requester under queue.slot, valid against the schema; a second raise finds it open", () => {
     const { consumer } = world();
+    cite(consumer, "writer/narratives.faq");
+    cite(consumer, "writer/narratives.other");
     const first = raiseRequest(consumer, { target: "writer/narratives.faq", from: REQUESTER, why: "w", source: "cli", by: "producer", at: AT });
     expect(first.created).toBe(true);
     expect(first.request).toMatchObject({ schema: "clossys.queue-entry/2", kind: "slot", from: REQUESTER, assignee: "writer", target: "writer/narratives.faq", status: "open", opened: `${first.request.id}#1` });
@@ -122,5 +144,142 @@ describe("kind slot entries (clossys.queue-entry/2)", () => {
     const refs = (JSON.parse(readFileSync(join(consumer, "agents", REQUESTER, "slot.json"), "utf8")) as { refs: unknown[] }).refs;
     expect(refs).toContainEqual({ to: "writer/narratives.guide", rel: "input" });
     expect(existsSync(join(consumer, "agents", "writer", "narratives.how-to"))).toBe(false);
+  });
+});
+
+// U5 fix round 1: who may raise for a slot, what a reuse or close may write, the overlap gate, and one raise under a lock.
+describe("kind slot entries: requester, assignee and overlap gates", () => {
+  it("raises only for a placed requester slot that cites the need, by that slot's own agent (or the owner, the planner or code)", () => {
+    const { consumer } = world();
+    const at = { why: "w", source: "cli" as const, at: AT };
+    expect(() => raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: "designer/no.such-slot", by: "designer" })).toThrow(/designer\/no\.such-slot is no placed slot/);
+    expect(() => raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: REQUESTER, by: "writer" })).toThrow(/writer\/sections\.article\.copy does not cite writer\/narratives\.unheld-need/);
+    cite(consumer, "writer/narratives.unheld-need");
+    expect(() => raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: REQUESTER, by: "designer" })).toThrow(/designer raises for writer\/sections\.article\.copy: a slot's own agent \(writer\) raises its requests/);
+    expect(() => raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: REQUESTER, by: "someone" })).toThrow(/--by must be one of/);
+    expect(() => raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: "owner", by: "writer" })).toThrow(/writer raises as the owner/);
+    expect(() => raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: REQUESTER, rel: "uses", by: "writer" })).toThrow(/does not cite writer\/narratives\.unheld-need as uses/);
+    expect(existsSync(requestsDir(consumer))).toBe(false);
+    expect(raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: REQUESTER, by: "writer" }).created).toBe(true);
+    expect(raiseRequest(consumer, { ...at, target: "writer/narratives.owner-need", from: "owner", by: "owner" }).created).toBe(true);
+  });
+
+  it("refuses a raise for a slot that is already placed, pointing to it", () => {
+    const { consumer } = world();
+    cite(consumer, "writer/narratives.guide");
+    expect(() => raiseRequest(consumer, { target: "writer/narratives.guide", from: REQUESTER, why: "w", source: "cli", by: "writer", at: AT })).toThrow(/writer\/narratives\.guide is placed: cite it/);
+    expect(existsSync(requestsDir(consumer))).toBe(false);
+  });
+
+  it("records the /1 provenance: createdBy, refs raisedBy the requester and the raising event's via", () => {
+    const { consumer } = world();
+    const request = raise(consumer);
+    expect(request.createdBy).toMatchObject({ actor: "code", cli: "clossys request" });
+    expect(request.refs).toEqual([{ to: REQUESTER, rel: "raisedBy" }]);
+    expect(request.events[0]).toMatchObject({ op: "raised", by: "writer", via: "cli" });
+    const owner = raiseRequest(consumer, { target: "writer/narratives.said", from: "owner", why: "add a said page", source: "feedback", by: "owner", at: AT, createdBy: { actor: "owner", ref: "chat:clossys feedback 2026-11-17T10:00:00Z" }, via: "chat", quote: "add a said page" }).request;
+    expect(owner).toMatchObject({ createdBy: { actor: "owner", ref: "chat:clossys feedback 2026-11-17T10:00:00Z" }, refs: [] });
+    expect(owner.events[0]).toMatchObject({ by: "owner", via: "chat", quote: "add a said page" });
+    expect(requestIssues(readRequest(consumer, owner.id))).toEqual([]);
+  });
+
+  it("a reuse names a placed slot of the assignee; closing writes the requester's slot and ledger only, never the reused slot", () => {
+    const { consumer } = world();
+    const request = raise(consumer, "writer/narratives.how-to");
+    expect(() => decideRequest(consumer, request.id, { decision: "reuse", slot: "director/focus.segment.core", by: "writer", at: AT })).toThrow(/a reuse names a placed slot of writer, the assignee/);
+    expect(() => decideRequest(consumer, request.id, { decision: "reuse", slot: "writer/narratives.guide", by: "designer", at: AT })).toThrow(/is decided by its assignee writer/);
+    decideRequest(consumer, request.id, { decision: "reuse", slot: "writer/narratives.guide", by: "writer", at: AT });
+    expect(() => closeRequest(consumer, request.id, { by: "designer", at: AT })).toThrow(/designer cannot write writer\/sections\.article\.copy/);
+    const reused = bytes(join(consumer, "agents", "writer", "narratives.guide"));
+    const director = bytes(join(consumer, "agents", "director"));
+    const closed = closeRequest(consumer, request.id, { by: "producer", at: AT });
+    expect(closed.wrote).toEqual([`${REQUESTER}/slot.json`]);
+    expect(bytes(join(consumer, "agents", "writer", "narratives.guide"))).toEqual(reused);
+    expect(bytes(join(consumer, "agents", "director"))).toEqual(director);
+    const ledger = JSON.parse(readFileSync(join(consumer, "agents", REQUESTER, "ledger.json"), "utf8")) as { events: { op: string; request?: string }[] };
+    expect(ledger.events.at(-1)).toMatchObject({ request: request.id });
+  });
+
+  it("decide create refuses a kind the assignee does not hold and a proposal with no inputs", () => {
+    const { consumer } = world();
+    const request = raise(consumer);
+    const proposal = { slot: "narratives.faq", under: "prose.reference/help", inputs: ["director/focus.segment.core"], contract: CONTRACT };
+    expect(() => decideRequest(consumer, request.id, { decision: "create", proposal: { ...proposal, kind: "bogus" }, by: "writer", at: AT })).toThrow(/kind bogus is not a writer slot kind \(strings\)/);
+    expect(() => decideRequest(consumer, request.id, { decision: "create", proposal: { ...proposal, kind: "element" }, by: "writer", at: AT })).toThrow(/kind element is not a writer slot kind/);
+    expect(() => decideRequest(consumer, request.id, { decision: "create", proposal: { ...proposal, inputs: [] }, by: "writer", at: AT })).toThrow(/a create proposal names the new leaf's inputs/);
+    expect(readRequest(consumer, request.id).decision).toBeUndefined();
+  });
+
+  it("the placement overlap check: one L1/L2 and kind family with equal, subset, superset, Jaccard >= 0.8 or empty inputs", () => {
+    const { consumer } = world();
+    const guide = inputsOf(consumer, "writer/narratives.guide");
+    expect(guide).toHaveLength(15);
+    const at = (inputs: readonly string[], l2 = "help", l1 = "prose.reference") => placementOverlaps(consumer, "writer", { slot: "narratives.new-leaf", kind: "strings", l1, l2, inputs }).map(item => `${item.slot}: ${item.why}`);
+    expect(at(guide)).toEqual(["writer/narratives.guide: one L2 (prose.reference/help) and kind family, inputs equal"]);
+    expect(at(guide.slice(1))).toEqual(["writer/narratives.guide: one L2 (prose.reference/help) and kind family, inputs a subset"]);
+    expect(at([...guide, "director/focus.segment.core"])).toEqual(["writer/narratives.guide: one L2 (prose.reference/help) and kind family, inputs a superset"]);
+    expect(at([...guide.slice(1), "director/focus.segment.core"])).toEqual(["writer/narratives.guide: one L2 (prose.reference/help) and kind family, inputs Jaccard 0.88"]);
+    expect(at([])).toEqual(["writer/narratives.guide: one L2 (prose.reference/help) and kind family, inputs empty"]);
+    // Below the threshold, another L2, or another L1 with the same L2 id: no overlap.
+    expect(at([...guide.slice(0, 10), "director/focus.segment.core", "director/focus.segment.next"])).toEqual([]);
+    expect(at(guide.slice(1), "policies")).toEqual([]);
+    expect(at(guide.slice(1), "help", "prose.editorial")).toEqual([]);
+  });
+
+  it("decide create over a listed overlap refuses without a reason; with one, the overlap ids and reason are on the entry and its event", () => {
+    const { consumer } = world();
+    const request = raise(consumer, "writer/narratives.how-to");
+    const guide = inputsOf(consumer, "writer/narratives.guide");
+    const proposal = { slot: "narratives.how-to", under: "prose.reference/help", kind: "strings", inputs: guide.slice(1), contract: CONTRACT };
+    expect(() => decideRequest(consumer, request.id, { decision: "create", proposal, by: "writer", at: AT })).toThrow(/create writer\/narratives\.how-to overlaps writer\/narratives\.guide \(one L2 \(prose\.reference\/help\) and kind family, inputs a subset\): cite it instead/);
+    expect(readRequest(consumer, request.id).decision).toBeUndefined();
+    const decided = decideRequest(consumer, request.id, { decision: "create", proposal, overlapReason: "step-by-step tasks, not one reference guide", by: "writer", at: AT });
+    expect(decided).toMatchObject({ decision: "create", overlapReason: "step-by-step tasks, not one reference guide", overlaps: [{ slot: "writer/narratives.guide" }] });
+    expect(decided.events.at(-1)!.detail).toBe("create writer/narratives.how-to under prose.reference/help; overlaps writer/narratives.guide: step-by-step tasks, not one reference guide");
+    expect(requestIssues(decided)).toEqual([]);
+  });
+
+  it("four parallel raises of one need from one requester file exactly one entry, none lost (five rounds)", async () => {
+    const { root, consumer } = world();
+    const script = join(root, "raise-child.mjs");
+    // The built module (the test run builds the package first): each child is a separate `clossys request` process.
+    writeFileSync(script, `
+const [module, consumer, from, target] = process.argv.slice(2);
+const { raiseRequest } = await import(module);
+const result = raiseRequest(consumer, { target, from, why: "race", source: "cli", by: "writer", at: "2026-11-17T10:00:00Z" });
+console.log(JSON.stringify({ id: result.request.id, created: result.created }));
+`);
+    const module = fileURLToPath(new URL("../../dist/records/request.js", import.meta.url));
+    const run = (target: string) => new Promise<{ code: number | null; out: string; err: string }>(done => {
+      const child = spawn(process.execPath, ["--no-warnings", script, module, consumer, REQUESTER, target], { stdio: ["ignore", "pipe", "pipe"] });
+      let out = "", err = "";
+      child.stdout.on("data", chunk => { out += String(chunk); });
+      child.stderr.on("data", chunk => { err += String(chunk); });
+      child.on("close", code => done({ code, out, err }));
+    });
+    for (let round = 1; round <= 5; round++) {
+      const target = `writer/narratives.race-${round}`;
+      cite(consumer, target);
+      const results = await Promise.all([run(target), run(target), run(target), run(target)]);
+      for (const result of results) expect(result, result.err).toMatchObject({ code: 0 });
+      const said = results.map(result => JSON.parse(result.out.trim()) as { id: string; created: boolean });
+      const files = readdirSync(requestsDir(consumer)).filter(name => name.includes(`race-${round}`));
+      expect(files, `round ${round}`).toHaveLength(1);
+      expect(new Set(said.map(item => item.id)), `round ${round}`).toEqual(new Set([files[0]!.slice(0, -".json".length)]));
+      expect(said.filter(item => item.created), `round ${round}`).toHaveLength(1);
+      expect(requestIssues(readRequest(consumer, said[0]!.id))).toEqual([]);
+    }
+    expect(readdirSync(requestsDir(consumer)).filter(name => name.startsWith("."))).toEqual([]);
+    expect(readdirSync(join(root, ".clossys", "locks", "queue", "queue.slot"))).toEqual([]);
+  }, 120_000);
+
+  it("requests.filed (loop.scope's gate) fails while a slotless need is unfiled and passes once it is filed", () => {
+    const { root, consumer } = world();
+    const check = () => verifyCheck({ root, state: {} as never }, REQUESTS_FILED);
+    expect(check()).toEqual({ ok: true });
+    cite(consumer, "writer/sections.signup-faq.copy");
+    expect(check()).toEqual({ ok: false, why: `requests.filed: 1 slotless need(s) not filed: ${REQUESTER} -> writer/sections.signup-faq.copy` });
+    raise(consumer, "writer/sections.signup-faq.copy");
+    expect(check()).toEqual({ ok: true });
   });
 });

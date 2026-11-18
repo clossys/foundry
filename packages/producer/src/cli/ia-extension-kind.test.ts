@@ -11,6 +11,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { repoConsumer } from "./__fixtures__/flat-consumer.js";
 
 const dirs: string[] = [];
+// An owner extension sits in an L2 whose package siblings read no inputs: the overlap gate (foundry-build-0048 U5)
+// lists them, so the owner's placement carries its signed reason (--owner-ref with --overlap-reason).
+const DECISIONS = { schema: "clossys.owner-decisions/1", decisions: [{ id: "6873279813", ref: "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 owner extensions)", date: "2026-11-13", scope: ["ia"], summary: "Owner extensions beside the package slots." }] };
+const SIGNED = ["--owner-ref", "6873279813", "--overlap-reason", "an owner house rule, not the package's own material", "--at", "2026-11-13T12:00:00Z"];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
 function workspace() {
@@ -19,6 +23,7 @@ function workspace() {
   cpSync(repoConsumer, join(root, "clossys"), { recursive: true });
   const contract = join(root, "contract.json");
   writeFileSync(contract, JSON.stringify({ purpose: "An owner rule beside the package's own.", requirements: [{ check: "text.nonempty" }] }));
+  writeFileSync(join(root, "clossys", "owner-decisions.json"), JSON.stringify(DECISIONS));
   return { root, contract };
 }
 
@@ -38,7 +43,7 @@ describe("clossys ia on a recut store: a new slot's slot/2 kind", { timeout: 120
       ["writer/owner.house-story", "prose.reference/policies", "strings", "prose"],
       ["designer/owner.house-color", "themes.colors/colors-surfaces", "element", "element/token"],
     ] as const) {
-      const result = await ia(root, [target, "--under", under, "--kind", family, "--contract", contract]);
+      const result = await ia(root, [target, "--under", under, "--kind", family, "--contract", contract, ...SIGNED]);
       expect(result.exitCode, `${target}: ${result.message}`).toBe(0);
       const [agent, id] = target.split("/") as [string, string];
       expect(slotDoc(root, agent, id)).toMatchObject({ schema: "clossys.slot/2", kind });
@@ -51,7 +56,7 @@ describe("clossys ia on a recut store: a new slot's slot/2 kind", { timeout: 120
     const sibling = ids.nodes.find(node => node.id === "themes.colors")!.children[0]!.slots[0]!;
     const file = join(root, "clossys", "agents", "designer", sibling, "slot.json");
     writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, "utf8")), kind: "element/asset" }, null, 2));
-    const result = await ia(root, ["designer/owner.house-color", "--under", "themes.colors/colors-surfaces", "--kind", "element", "--contract", contract, "--dry"]);
+    const result = await ia(root, ["designer/owner.house-color", "--under", "themes.colors/colors-surfaces", "--kind", "element", "--contract", contract, ...SIGNED, "--dry"]);
     expect(result.exitCode).toBe(1);
     expect(result.message).toContain("designer/owner.house-color kind element has no clossys.slot/2 kind");
   });

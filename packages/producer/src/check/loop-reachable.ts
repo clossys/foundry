@@ -9,7 +9,9 @@
  *   the loop answers to;
  * - every `when` names known slots and IA paths (the package IA, plus the consumer's slots), so no step it guards is
  *   unreachable;
- * - each exit check (`EXIT_CHECKS`) sits on a step with no `when`, so no slot or run can end the loop without it; a
+ * - each exit check (`EXIT_CHECKS`) sits on a step with no `when`, or on steps whose `when` names only request decisions
+ *   and together name every decision (loop.slot: place on create, link on reuse), so no slot or run can end the loop
+ *   without it (the run's finish verifies it in the files either way); a
  *   human `queue.pick` step with a `when` is the pinning step of the slots it matches (OWNER_PICK_RAISE): it checks
  *   `pins.resolve` itself and comes before the agent `pick` step, which does not run for those slots;
  * - `loop.fill` writes candidates (`create-candidates`) before its first pinning step;
@@ -38,6 +40,8 @@ export interface ReachableOptions {
 }
 
 const PINS_RESOLVE = "pins.resolve";
+/** The decisions a request takes (`when.decision`): a step per decision covers every request. */
+const REQUEST_DECISIONS = ["reuse", "create"] as const;
 const isOwnerPick = (step: LoopStep): boolean => step.decider.by === "human" && step.decider.raise === OWNER_PICK_RAISE;
 const isAgentPick = (step: LoopStep): boolean => step.decider.by === "agent" && step.decider.verb === AGENT_PICK_VERB;
 const pins = (step: LoopStep): boolean => isOwnerPick(step) || isAgentPick(step) || step.checks.includes(PINS_RESOLVE);
@@ -82,8 +86,14 @@ export function loopReachableIssues(loop: LoopName, content: unknown, options: R
   }
 
   const always = version.steps.filter(step => step.when === undefined);
+  // Steps that run on a request decision only: together they run for every request when they name every decision.
+  const byDecision = (check: string) => new Set(version.steps.filter(step => step.checks.includes(check) && step.when !== undefined
+    && Object.keys(step.when).every(key => key === "decision")).flatMap(step => step.when!.decision ?? []));
   for (const check of EXIT_CHECKS[loop]) {
-    if (!always.some(step => step.checks.includes(check))) issues.push(`${loop}: the exit can be reached without ${check}: no step that runs for every slot checks it`);
+    if (always.some(step => step.checks.includes(check))) continue;
+    const decided = byDecision(check);
+    if (REQUEST_DECISIONS.every(decision => decided.has(decision))) continue;
+    issues.push(`${loop}: the exit can be reached without ${check}: no step that runs for every slot checks it${decided.size ? ` (the decision steps checking it run on ${[...decided].join(", ")} only)` : ""}`);
   }
   // B1: an owner pick with a when pins its slots instead of the agent pick, so it checks pins.resolve and runs first.
   const firstAgentPick = version.steps.findIndex(isAgentPick);

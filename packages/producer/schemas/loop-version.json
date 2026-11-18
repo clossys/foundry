@@ -100,6 +100,16 @@
                     "publisher"
                   ]
                 }
+              },
+              "decision": {
+                "description": "A request run (loop.slot): the step runs only when the request's decision is one of these.",
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "reuse",
+                    "create"
+                  ]
+                }
               }
             },
             "additionalProperties": false

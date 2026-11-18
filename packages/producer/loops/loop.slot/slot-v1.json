@@ -50,7 +50,7 @@
           "tier": "mid",
           "skill": "packages/director/actions/director.slot/skill.md"
         },
-        "cli": "clossys request <request> --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> --kind <kind> --contract <file>",
+        "cli": "clossys request <request> --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> --kind <kind> --inputs <ref,...> --contract <file> [--overlap-reason <text>]",
         "reads": [
           "producer/queue.slot/entries/<request>.json",
           "director/*/slot.json"
@@ -75,7 +75,7 @@
           "tier": "mid",
           "skill": "packages/designer/actions/designer.slot/skill.md"
         },
-        "cli": "clossys request <request> --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> --kind <kind> --contract <file>",
+        "cli": "clossys request <request> --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> --kind <kind> --inputs <ref,...> --contract <file> [--overlap-reason <text>]",
         "reads": [
           "producer/queue.slot/entries/<request>.json",
           "designer/*/slot.json"
@@ -100,7 +100,7 @@
           "tier": "mid",
           "skill": "packages/writer/actions/writer.slot/skill.md"
         },
-        "cli": "clossys request <request> --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> --kind <kind> --contract <file>",
+        "cli": "clossys request <request> --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> --kind <kind> --inputs <ref,...> --contract <file> [--overlap-reason <text>]",
         "reads": [
           "producer/queue.slot/entries/<request>.json",
           "writer/*/slot.json"
@@ -125,7 +125,7 @@
           "tier": "mid",
           "skill": "packages/publisher/actions/publisher.slot/skill.md"
         },
-        "cli": "clossys request <request> --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> --kind <kind> --contract <file>",
+        "cli": "clossys request <request> --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> --kind <kind> --inputs <ref,...> --contract <file> [--overlap-reason <text>]",
         "reads": [
           "producer/queue.slot/entries/<request>.json",
           "publisher/*/slot.json"
@@ -142,7 +142,7 @@
       },
       {
         "id": "sign",
-        "does": "owner signs the answer in chat: the new leaf and its L2, or the reused slot",
+        "does": "owner signs a new leaf in chat: the proposed slot, its L2 and its contract (a reuse links a placed slot and asks the owner nothing)",
         "decider": {
           "by": "human",
           "who": "owner",
@@ -153,11 +153,16 @@
         "writes": [],
         "checks": [
           "answer.quote-required"
-        ]
+        ],
+        "when": {
+          "decision": [
+            "create"
+          ]
+        }
       },
       {
         "id": "place",
-        "does": "place a created leaf through clossys ia (overlap and contract gates, a reuse-or-create decision event), then link the requester slot-to-slot, notify it and close the entry",
+        "does": "place the signed new leaf through clossys ia (overlap and contract gates, a create decision event), then link the requester slot-to-slot, notify it and close the entry",
         "decider": {
           "by": "code"
         },
@@ -172,7 +177,35 @@
         ],
         "checks": [
           "request.closed"
-        ]
+        ],
+        "when": {
+          "decision": [
+            "create"
+          ]
+        }
+      },
+      {
+        "id": "link",
+        "does": "link the requester slot-to-slot to the reused placed slot of the assignee, notify it and close the entry (the reused slot is never written)",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys request <request> --close",
+        "reads": [
+          "producer/queue.slot/entries/<request>.json"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/<request>.json",
+          "<requester>/slot.json"
+        ],
+        "checks": [
+          "request.closed"
+        ],
+        "when": {
+          "decision": [
+            "reuse"
+          ]
+        }
       }
     ],
     "exit": "the entry is closed with a link to a placed slot and a notify event to its requester; the requester cites the slot",

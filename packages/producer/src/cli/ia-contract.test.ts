@@ -83,6 +83,21 @@ describe("clossys ia: the kind's contract gate on a new leaf", () => {
     expect(tree(join(root, "clossys"))).toEqual(before);
   });
 
+  it.each([
+    ["an empty contract", {}, /contract \$\.requirements must be a non-empty list of \{check\} naming registered criteria \(contract-element\)/],
+    ["wiped requirements", { requirements: [] }, /contract \$\.requirements must be a non-empty list/],
+    ["an unregistered criterion", { requirements: [{ check: "no.such-criterion" }] }, /is not a registered criterion \(contract-element\)/],
+  ])("refuses re-contracting a placed leaf with %s and writes nothing", async (_what, contract, message) => {
+    const root = await started();
+    expect((await place(root, { requirements: [{ check: "text.nonempty" }] })).exitCode).toBe(0);
+    const before = tree(join(root, "clossys"));
+    put(join(root, "again.json"), JSON.stringify(contract));
+    const result = await runIaCli(["designer/sections.gated", "--contract", join(root, "again.json")], root);
+    expect(result.exitCode, result.message).toBe(1);
+    expect(result.message).toMatch(message);
+    expect(tree(join(root, "clossys"))).toEqual(before);
+  });
+
   it("places a leaf whose contract names registered criteria", async () => {
     const root = await started();
     const result = await place(root, { requirements: [{ check: "text.nonempty" }] });

@@ -60,10 +60,13 @@ export function nextRefreshSlot(root: string, skip: ReadonlySet<string> = new Se
  * either `<agent>[/<l0>[/<l1>[/<l2>]]]` or `<l0>[/<l1>[/<l2>]]`. Either list matching is enough. A run with no slot
  * (release, audit) skips every step that has a `when`.
  */
-export function whenMatches(when: LoopStep["when"], subject: SlotSubject | undefined, requestOwner?: string): boolean {
+export function whenMatches(when: LoopStep["when"], subject: SlotSubject | undefined, request?: { readonly owner?: string; readonly decision?: string }): boolean {
   if (when === undefined) return true;
-  // A request run (loop.slot) has no slot yet: `owner` names the target agents the step runs for.
-  if (when.owner !== undefined) return requestOwner !== undefined && when.owner.includes(requestOwner);
+  // A request run (loop.slot) has no slot yet: `owner` names the target agents the step runs for, and `decision` the
+  // request decisions (reuse, create) it runs on. Both, when given, must hold; a request-only `when` needs no slot.
+  if (when.owner !== undefined && !(request?.owner !== undefined && when.owner.includes(request.owner))) return false;
+  if (when.decision !== undefined && !(request?.decision !== undefined && (when.decision as readonly string[]).includes(request.decision))) return false;
+  if ((when.owner !== undefined || when.decision !== undefined) && when.ia === undefined && when.slots === undefined) return true;
   if (!subject) return false;
   const ref = refOf(subject);
   if ((when.slots ?? []).includes(ref)) return true;

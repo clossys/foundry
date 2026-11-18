@@ -116,7 +116,8 @@ describe("--owner-ref: resolved offline against clossys/owner-decisions.json", (
 
   it("is optional on --contract, and recorded when given", async () => {
     const contract = join(workspace, "contract.json");
-    writeFileSync(contract, jsonBytes({}));
+    // A rewritten contract passes the contract gate (U5 fix round 1): a valid element contract with registered requirements.
+    writeFileSync(contract, jsonBytes({ requirements: [{ check: "text.nonempty" }] }));
     expect(await ia("designer/frames.workspace", "--contract", contract, "--owner-ref", "999")).toMatchObject({ exitCode: 1 });
     expect(await owned("designer/frames.workspace", "--contract", contract)).toMatchObject({ exitCode: 0 });
     expect(lastChange("designer")).toMatchObject({ op: "contract", ownerRef: REF, slotFiles: 1 });
@@ -355,7 +356,7 @@ describe("L0 levels: layers, assign and axes, for every agent that declares laye
 describe("--dry", () => {
   it("prints the planned change for every operation and writes nothing", async () => {
     const contract = join(workspace, "contract.json"), layers = join(workspace, "layers.json"), axes = join(workspace, "axes.json");
-    writeFileSync(contract, jsonBytes({}));
+    writeFileSync(contract, jsonBytes({ requirements: [{ check: "text.nonempty" }] }));
     writeFileSync(layers, jsonBytes(director.layers));
     writeFileSync(axes, jsonBytes(AXES));
     const before = tree();
@@ -389,10 +390,18 @@ describe("--contract --under: a slot placed before the end renumbers every later
   const later = ["assets.favicon", "assets.app-icon", "frames.studio-shell", "frames.workspace"];
   const orders = () => Object.fromEntries(["assets.logo-mark", "assets.logo-word", "assets.logo-glyph", ...later].filter(id => tree()[`clossys/agents/designer/${id}/slot.json`]).map(id => [id, slotOf("designer", id).ia.order]));
   let contract: string;
-  beforeEach(() => { contract = join(workspace, "contract.json"); writeFileSync(contract, jsonBytes({ shape: "svg", requirements: [{ check: "svg.viewbox" }] })); });
+  // The new leaf and its two L2 siblings read different material (U5 fix round 1: the placement overlap check refuses a
+  // leaf whose inputs equal, nest in or are as empty as a sibling's of one L2 and kind family).
+  const glyph = ["--inputs", "execution.plan.milestones"];
+  beforeEach(() => {
+    contract = join(workspace, "contract.json"); writeFileSync(contract, jsonBytes({ shape: "svg", requirements: [{ check: "svg.viewbox" }] }));
+    for (const [id, input] of [["assets.logo-mark", "context.market.size"], ["assets.logo-word", "focus.where.segment"]] as const) {
+      writeFileSync(join(agentDir("designer"), id, "slot.json"), jsonBytes({ ...slotOf("designer", id), inputs: [input] }));
+    }
+  });
 
   it("places a slot in the middle, renumbers the later slots (order only) and passes the slot model check", async () => {
-    const result = await owned("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork");
+    const result = await owned("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork", ...glyph);
     expect(result).toMatchObject({ exitCode: 0 });
     expect(result.message).toMatch(/4 other slot\.json renumbered \(order only\)/);
     clean();
@@ -402,14 +411,14 @@ describe("--contract --under: a slot placed before the end renumbers every later
   });
 
   it("renumbers without an owner ref too, and records no change", async () => {
-    expect(await ia("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork")).toMatchObject({ exitCode: 0 });
+    expect(await ia("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork", ...glyph)).toMatchObject({ exitCode: 0 });
     clean();
     expect(slotOf("designer", "frames.workspace").ia.order).toBe(6);
     expect(iaOf("designer").changes).toBeUndefined();
   });
 
   it("--remove of a middle slot renumbers the later slots back", async () => {
-    expect(await ia("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork")).toMatchObject({ exitCode: 0 });
+    expect(await ia("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork", ...glyph)).toMatchObject({ exitCode: 0 });
     rmSync(join(agentDir("designer"), "assets.logo-glyph"), { recursive: true });
     const removed = await owned("designer/assets.logo-glyph", "--remove");
     expect(removed).toMatchObject({ exitCode: 0 });
@@ -420,7 +429,7 @@ describe("--contract --under: a slot placed before the end renumbers every later
 
   it("--dry runs the post-write slot model check in memory: it passes where the write passes and lists every file", async () => {
     const before = tree();
-    const result = await owned("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork", "--dry");
+    const result = await owned("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork", ...glyph, "--dry");
     expect(result).toMatchObject({ exitCode: 0, output: { dry: true } });
     expect((result.output as { writes: string[] }).writes).toEqual([
       "clossys/agents/designer/ia.json", "clossys/agents/designer/assets.logo-glyph/slot.json",

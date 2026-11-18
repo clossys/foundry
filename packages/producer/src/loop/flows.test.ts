@@ -906,7 +906,8 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
 
   it("creates a leaf: overlap check, the assignee decides, the owner signs, ia places it and the requester is linked and notified", async () => {
     const w = fixture();
-    const raised = await w.cli("request", "--target", "writer/narratives.faq", "--from", REQUESTER, "--why", "the article section links an FAQ", "--at", "2026-11-17T10:00:00Z");
+    cite(w, "writer/narratives.faq");
+    const raised = await w.cli("request", "--target", "writer/narratives.faq", "--from", REQUESTER, "--why", "the article section links an FAQ", "--at", "2026-11-17T10:00:00Z", "--by", "writer");
     expect(raised.exitCode).toBe(0);
     const id = (raised.output as { id: string }).id;
     expect(w.read(`producer/queue.slot/entries/${id}.json`)).toMatchObject({ schema: "clossys.queue-entry/2", kind: "slot", from: REQUESTER, assignee: "writer", target: "writer/narratives.faq", status: "open", opened: `${id}#1` });
@@ -916,8 +917,8 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     expect(start.message).toMatch(/skill packages\/writer\/actions\/writer\.slot\/skill\.md/);
     const runId = waitingRun(start.message);
     writeFileSync(join(w.root, "contract.json"), JSON.stringify({ requirements: [{ check: "text.nonempty" }] }));
-    const decided = await w.cli("request", id, "--decide", "create", "--propose", "narratives.faq", "--under", "prose.reference/help", "--contract", join(w.root, "contract.json"), "--by", "writer");
-    expect(decided.exitCode).toBe(0);
+    const decided = await w.cli("request", id, "--decide", "create", "--propose", "narratives.faq", "--under", "prose.reference/help", "--inputs", "director/focus.segment.core", "--contract", join(w.root, "contract.json"), "--by", "writer");
+    expect(decided.exitCode, decided.message).toBe(0);
     const sign = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
     const entry = /sign waits for the owner on (queue\.approve#\S+)/.exec(sign.message ?? "")![1]!;
     // Unsigned, the leaf is not placed: closing a create takes the owner's signature.
@@ -933,6 +934,7 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     expect(request).toMatchObject({ status: "closed", link: "writer/narratives.faq", notified: { to: REQUESTER }, closed: `${id}#4` });
     expect(request.events.at(-1).detail).toBe(`linked ${REQUESTER} to writer/narratives.faq, signed ${entry}`);
     expect(w.read(`${REQUESTER}/slot.json`).refs).toContainEqual({ to: "writer/narratives.faq", rel: "input" });
+    expect(w.read("writer/narratives.faq/slot.json").refs).toContainEqual({ to: "director/focus.segment.core", rel: "input" });
     const placed = w.read("writer/narratives.faq/ledger.json").events.find((event: { op: string }) => event.op === "slot");
     expect(placed).toMatchObject({ by: "owner", decision: "create", overlaps: [], request: id });
     const ledger = JSON.parse(readFileSync(join(w.root, "clossys", "agents", "producer", "ledger.slot", "entries", `${runId}.json`), "utf8")) as LedgerEntry;
@@ -940,31 +942,67 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     expect(ledger.checks).toEqual({ "answer.quote-required": "pass", "request.closed": "pass" });
   });
 
-  it("refuses an overlapping placement: a proposed leaf in the same L2 with the same kind family and inputs as a placed slot", async () => {
+  it("refuses an overlapping proposal (equal, subset or no inputs in one L2 and kind family); a reuse links with no owner sign", async () => {
     const w = fixture();
-    const id = ((await w.cli("request", "--target", "writer/narratives.how-to", "--from", REQUESTER, "--why", "a how-to the article links")).output as { id: string }).id;
+    cite(w, "writer/narratives.how-to");
+    const id = ((await w.cli("request", "--target", "writer/narratives.how-to", "--from", REQUESTER, "--why", "a how-to the article links", "--by", "writer")).output as { id: string }).id;
     const runId = waitingRun((await w.run("loop.slot", "--request", id)).message);
-    // Mutation: the proposal copies narratives.guide (one L2 prose.reference/help, same family, same inputs).
+    // Mutation: the proposal copies narratives.guide (one L2 prose.reference/help, same family), with all, all but one, or none of its inputs.
     const guide = w.read("writer/narratives.guide/slot.json");
-    const inputs = (guide.refs as { to: string; rel: string }[]).filter(ref => ref.rel === "input").map(ref => ref.to.slice(ref.to.indexOf("/") + 1));
-    expect(inputs.length).toBeGreaterThan(0);
+    const inputs = (guide.refs as { to: string; rel: string }[]).filter(ref => ref.rel === "input").map(ref => ref.to);
+    expect(inputs).toHaveLength(15);
     writeFileSync(join(w.root, "contract.json"), JSON.stringify({ requirements: [{ check: "text.nonempty" }] }));
-    expect((await w.cli("request", id, "--decide", "create", "--propose", "narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", "--contract", join(w.root, "contract.json"), "--by", "writer")).exitCode).toBe(0);
-    const overlapping = await w.cli("ia", "writer/narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", "--inputs", inputs.join(","), "--contract", join(w.root, "contract.json"), "--dry");
-    expect(overlapping.exitCode).toBe(1);
-    expect(overlapping.message).toMatch(/writer\/narratives\.how-to overlaps writer\/narratives\.guide \(one L2 \(help\), same kind family and inputs\): cite it instead/);
-    // Restored (no shared inputs), the same leaf places.
-    expect((await w.cli("ia", "writer/narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", "--contract", join(w.root, "contract.json"), "--dry")).exitCode).toBe(0);
-    // Reuse instead: the owner signs the reused slot, and closing links the requester to it.
+    const propose = (...more: string[]) => w.cli("request", id, "--decide", "create", "--propose", "narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", "--contract", join(w.root, "contract.json"), "--by", "writer", ...more);
+    for (const [given, relation] of [[inputs, "equal"], [inputs.slice(1), "a subset"]] as const) {
+      const refused = await propose("--inputs", given.join(","));
+      expect(refused.exitCode).toBe(1);
+      expect(refused.message).toMatch(new RegExp(`overlaps writer/narratives\\.guide \\(one L2 \\(prose\\.reference/help\\) and kind family, inputs ${relation}\\): cite it instead`));
+    }
+    expect((await propose()).exitCode).toBe(2);
+    expect(w.read(`producer/queue.slot/entries/${id}.json`).decision).toBeUndefined();
+    // clossys ia applies the same check (its --inputs are slot ids): no inputs, or a subset, in the guide's L2 is refused; disjoint inputs place.
+    for (const given of [[], inputs.slice(1).map(ref => ref.slice(ref.indexOf("/") + 1))]) {
+      const direct = await w.cli("ia", "writer/narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", ...(given.length ? ["--inputs", given.join(",")] : []), "--contract", join(w.root, "contract.json"), "--dry");
+      expect(direct.exitCode).toBe(1);
+      expect(direct.message).toMatch(/writer\/narratives\.how-to overlaps writer\/narratives\.guide \(one L2 \(prose\.reference\/help\) and kind family, inputs (empty|a subset)\): cite it instead/);
+    }
+    expect((await w.cli("ia", "writer/narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", "--inputs", "focus.segment.core", "--contract", join(w.root, "contract.json"), "--dry")).exitCode).toBe(0);
+    // Reuse instead: no owner entry is raised, the requester is linked, the reused slot is not written.
+    const reused = readFileSync(join(w.root, "clossys", "agents", "writer", "narratives.guide", "ledger.json"), "utf8");
     expect((await w.cli("request", id, "--decide", "reuse", "--slot", "writer/narratives.guide", "--by", "writer")).exitCode).toBe(0);
-    const sign = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
-    const entry = /sign waits for the owner on (queue\.approve#\S+)/.exec(sign.message ?? "")![1]!;
-    expect((await w.cli("answer", entry, "approve", "--by", "owner", "--via", "chat", "--quote", "reuse the guide")).exitCode).toBe(0);
-    const done = await w.run("loop.slot", "--resume", "--run", runId);
+    const done = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
+    expect(done.message).not.toMatch(/sign waits for the owner/);
+    expect(done.message).toMatch(/done: loop\.slot done/);
     expect(done.exitCode).toBe(0);
+    expect(existsSync(join(w.root, "clossys", "agents", "producer", "queue.approve", "entries"))).toBe(false);
     expect(w.read(`producer/queue.slot/entries/${id}.json`)).toMatchObject({ status: "closed", decision: "reuse", link: "writer/narratives.guide" });
     expect(w.read(`${REQUESTER}/slot.json`).refs).toContainEqual({ to: "writer/narratives.guide", rel: "input" });
+    expect(readFileSync(join(w.root, "clossys", "agents", "writer", "narratives.guide", "ledger.json"), "utf8")).toBe(reused);
     expect(existsSync(join(w.root, "clossys", "agents", "writer", "narratives.how-to"))).toBe(false);
+    const ledger = JSON.parse(readFileSync(join(w.root, "clossys", "agents", "producer", "ledger.slot", "entries", `${runId}.json`), "utf8")) as LedgerEntry;
+    expect(ledger.steps.map(step => `${step.id}:${step.exit}`)).toEqual(["overlap:0", "decide-writer:0", "link:0"]);
+    expect(ledger.checks).toEqual({ "request.closed": "pass" });
+  });
+
+  it("creates over a listed overlap only with a reason: ia records the overlap ids and the reason, and the owner signs the new leaf", async () => {
+    const w = fixture();
+    cite(w, "writer/narratives.how-to");
+    const id = ((await w.cli("request", "--target", "writer/narratives.how-to", "--from", REQUESTER, "--why", "a how-to the article links", "--by", "writer")).output as { id: string }).id;
+    const runId = waitingRun((await w.run("loop.slot", "--request", id)).message);
+    const inputs = (w.read("writer/narratives.guide/slot.json").refs as { to: string; rel: string }[]).filter(ref => ref.rel === "input").map(ref => ref.to);
+    writeFileSync(join(w.root, "contract.json"), JSON.stringify({ requirements: [{ check: "text.nonempty" }] }));
+    const reason = "step-by-step tasks, not one reference guide";
+    const decided = await w.cli("request", id, "--decide", "create", "--propose", "narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", "--inputs", inputs.slice(1).join(","), "--overlap-reason", reason, "--contract", join(w.root, "contract.json"), "--by", "writer");
+    expect(decided.exitCode, decided.message).toBe(0);
+    expect(w.read(`producer/queue.slot/entries/${id}.json`)).toMatchObject({ decision: "create", overlapReason: reason, overlaps: [{ slot: "writer/narratives.guide" }], proposal: { inputs: inputs.slice(1) } });
+    const sign = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
+    const entry = /sign waits for the owner on (queue\.approve#\S+)/.exec(sign.message ?? "")![1]!;
+    expect((await w.cli("answer", entry, "approve", "--by", "owner", "--via", "chat", "--quote", "a how-to is its own leaf")).exitCode).toBe(0);
+    const done = await w.run("loop.slot", "--resume", "--run", runId);
+    expect(done.message, done.message).toMatch(/done: loop\.slot done/);
+    const placed = w.read("writer/narratives.how-to/ledger.json").events.find((event: { op: string }) => event.op === "slot");
+    expect(placed).toMatchObject({ by: "owner", decision: "create", request: id, overlapReason: reason, overlaps: [expect.objectContaining({ slot: "writer/narratives.guide" })] });
+    expect(w.read(`producer/queue.slot/entries/${id}.json`).status).toBe("closed");
   });
 
   it("files a slot request for a slot input naming no slot (SCOPE demand): requests.filed is red until it is filed", async () => {

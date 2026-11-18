@@ -416,7 +416,7 @@ export interface LoopStep {
   writes: string[];
   checks: string[];
   /** `owner`: a request run (loop.slot) runs the step only for a request whose target agent is listed. */
-  when?: { ia?: string[]; slots?: string[]; owner?: string[] };
+  when?: { ia?: string[]; slots?: string[]; owner?: string[]; decision?: ("reuse" | "create")[] };
   onFail?: { raise: "queue.fix" | "queue.clarify"; then: "retry" | `loop.${string}` };
 }
 
@@ -584,9 +584,17 @@ export interface ThemeProjection {
 
 /** A kind slot entry (clossys.queue-entry/2, foundry-build-0048 U5): records/request.ts reads and writes it. */
 export type RequestOp = "raised" | "checked" | "decided" | "placed" | "closed";
-export interface RequestEvent { readonly id: string; readonly at: string; readonly op: RequestOp; readonly by?: string; readonly detail?: string }
+export interface RequestEvent {
+  readonly id: string; readonly at: string; readonly op: RequestOp; readonly by?: string; readonly detail?: string;
+  /** As clossys.queue-entry/1 events: where the words came from (cli, chat, app) and the owner's words when quoted. */
+  readonly via?: "cli" | "chat" | "app"; readonly quote?: string;
+}
 export interface Overlap { readonly slot: string; readonly why: string }
-export interface Proposal { readonly slot: string; readonly under: string; readonly kind?: string; readonly contract: Record<string, unknown> }
+export interface Proposal {
+  readonly slot: string; readonly under: string; readonly kind?: string; readonly contract: Record<string, unknown>;
+  /** The new leaf's inputs (slot refs): the placement overlap check compares them with the assignee's placed slots. */
+  readonly inputs?: readonly string[];
+}
 export interface SlotRequest {
   readonly schema: "clossys.queue-entry/2";
   readonly id: string;
@@ -604,8 +612,14 @@ export interface SlotRequest {
   readonly rel: "input" | "uses";
   readonly why: string;
   readonly source: "cli" | "ia" | "interview" | "feedback" | "scope";
+  /** Who raised it, as clossys.queue-entry/1 `createdBy`. */
+  readonly createdBy: Actor;
   readonly createdAt: string;
+  /** As clossys.queue-entry/1 `refs`: the requester slot (`raisedBy`) when one raised it. */
+  readonly refs: readonly Ref[];
   readonly overlaps?: readonly Overlap[];
+  /** A create decided over a listed overlap: why it is a new leaf (the owner signs it). */
+  readonly overlapReason?: string;
   readonly decision?: "reuse" | "create";
   readonly reuse?: string;
   readonly proposal?: Proposal;
@@ -644,8 +658,8 @@ export const RECORD_KEYS: Readonly<Record<string, readonly string[]>> = {
   }),
   "clossys.queue-entry/2": keysOf<SlotRequest>()({
     schema: true, id: true, kind: true, from: true, assignee: true, target: true, status: true, opened: true, closed: true, link: true,
-    rel: true, why: true, source: true, createdAt: true, overlaps: true, decision: true, reuse: true, proposal: true, notified: true,
-    closedAt: true, events: true,
+    rel: true, why: true, source: true, createdBy: true, createdAt: true, refs: true, overlaps: true, overlapReason: true, decision: true,
+    reuse: true, proposal: true, notified: true, closedAt: true, events: true,
   }),
   "clossys.ledger-entry/1": keysOf<LedgerEntry>()({
     schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,

@@ -46,7 +46,12 @@ export function raiseFeedbackOrRequest(root: string, input: FeedbackInput, now: 
     && !readSlotEntry(join(root, "clossys"), parsed.agent, parsed.slotId) && !modelExists(slotFile(slotDir(join(root, "clossys"), parsed.agent, parsed.slotId)))) {
     if (input.via === "app" && blank(input.quote)) throw new FeedbackRefused("--via app records the owner's words as typed: --quote \"<words>\"");
     try {
-      return raiseRequest(join(root, "clossys"), { target: `${parsed.agent}/${parsed.slotId}`, from: "owner", why: input.words, source: "feedback", by: "owner", at: isoSeconds(now) });
+      const at = isoSeconds(now);
+      // As clossys.queue-entry/1: where the owner said it, how the words came and, when quoted, the words as typed.
+      return raiseRequest(join(root, "clossys"), {
+        target: `${parsed.agent}/${parsed.slotId}`, from: "owner", why: input.words, source: "feedback", by: "owner", at,
+        createdBy: { actor: "owner", ref: input.where ?? `${input.via}:clossys feedback ${at}` }, via: input.via, ...(input.quote !== undefined ? { quote: input.quote } : {}),
+      });
     } catch (error) {
       if (error instanceof RequestError) throw new FeedbackRefused(error.message);
       throw error;

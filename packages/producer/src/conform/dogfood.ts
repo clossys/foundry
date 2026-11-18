@@ -54,6 +54,16 @@ export interface IaContractResult { readonly target: string; readonly contract: 
 /** A contract no kind's contract may be: an unknown `kind` field and nothing else. */
 export const INVALID_CONTRACT: Readonly<Record<string, unknown>> = { kind: "nonsense" };
 const PROBE_SLOT = "conform.contract-probe";
+const CONTRACT_PROBE_L2 = "conform-contract-probe";
+
+/** Adds the contract probe's empty L2 group under `l1` in a copied ia.json. */
+function addProbeGroup(file: string, l1: string): void {
+  const ia = JSON.parse(readFileSync(file, "utf8")) as { nodes?: { id?: unknown; children?: unknown[] }[] };
+  const node = (ia.nodes ?? []).find(each => each.id === l1);
+  if (!node) return;
+  (node.children ??= []).push({ id: CONTRACT_PROBE_L2, label: "Probe", slots: [] });
+  writeFileSync(file, `${JSON.stringify(ia, null, 2)}\n`);
+}
 
 /**
  * Whether an `ia` refusal is about the contract's content: a validation issue `contract $<path> ...`.
@@ -85,11 +95,14 @@ export async function probeIaContract(consumer: string, agents: readonly AgentMo
     for (const agent of agents) {
       const families = [...new Set((agent.adapter?.kinds ?? []).map(kind => KIND_FAMILY[kind]).filter((family): family is string => family !== undefined))];
       const results: IaContractResult[] = [];
+      // The probe's leaf goes in an empty L2 group the copy adds under the first placed L1 (its kind decided as before):
+      // with no siblings the placement's overlap gate lists nothing, so the verdict is the contract gate's alone.
+      const l1 = agent.placedTree.find(node => node.l2.length);
+      if (l1) addProbeGroup(join(temp, "clossys", "agents", agent.agent, "ia.json"), l1.id);
       for (const family of families) {
         const target = `${agent.agent}/${PROBE_SLOT}-${family}`;
-        // Under the first placed L2 when there is one (ia places under an existing group), else a new conform/probe group.
-        const l1 = agent.placedTree.find(node => node.l2.length);
-        const under = l1 ? `${l1.id}/${l1.l2[0]!.id}` : "conform/probe";
+        // Under the added group when the agent has a placed L1 (ia places under an existing group), else a new conform/probe group.
+        const under = l1 ? `${l1.id}/${CONTRACT_PROBE_L2}` : "conform/probe";
         const result = await runIaCli([target, "--under", under, "--kind", family, "--contract", file, "--dry"], temp);
         const message = (result.message ?? "").split("\n")[0]!;
         // An "already placed" refusal is the probe hitting a live slot, never a contract verdict: a failure, whatever else it says.

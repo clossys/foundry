@@ -12,6 +12,7 @@
       "e7b9f75f29f1505149cf2a33b8b3855880b7dd88ee81360bdb4128b5cb607542"
     ],
     "packages/designer/actions/designer.slot/skill.md": [
+      "0dfe0b00be41b83d0d9d28222ff4ecfbbce9631760bff6feef7cd79749ec5d6e",
       "7d39e734fe332ce3c033071493a6b136ae9fd52e607377cebf5aa4115da3e02f"
     ],
     "packages/designer/actions/pick.designer/skill.md": [
@@ -29,7 +30,8 @@
       "3e0eaf03a9d3d8e371e7e85720c70eeabb7ee8eb8e0725f3fc084cc48d1e255a"
     ],
     "packages/director/actions/director.slot/skill.md": [
-      "52984f1771c8ca412ae9a2559e6c42a807300f155ba1b6d456a5808a949e374a"
+      "52984f1771c8ca412ae9a2559e6c42a807300f155ba1b6d456a5808a949e374a",
+      "63a670b051caff680d62df8aacc9c4c84d4359f95226e70694fe2b19f6ebe3b7"
     ],
     "packages/director/actions/pick.director/skill.md": [
       "ad1d034caf1dbbc7ecc7cd366ed21cc62b2451c0f100d072df9aea088fd1e881"
@@ -101,7 +103,8 @@
       "6e7cfd161331412740a3a215a9f91089494efb98534df793323ef9c8ecbc5e40"
     ],
     "packages/publisher/actions/publisher.slot/skill.md": [
-      "3b491eb5b372a102f2886e1c8be2c2e1f2ac50f71312f890b910db01e9bf2ee2"
+      "3b491eb5b372a102f2886e1c8be2c2e1f2ac50f71312f890b910db01e9bf2ee2",
+      "5b7fba2d691b4c337382b6b29ee55b5f4d0c5c1abcec7d3949f186329defb9a5"
     ],
     "packages/writer/actions/pick.writer/skill.md": [
       "e97f36eaf11dae908e84898ca7ccbdd35b434450e5010b4b00cf78330a808955"
@@ -118,7 +121,8 @@
       "93a93a08e111e2afeb8cd3ff79b1662f8ff01cb58e423459d5f72d7ca85f51b0"
     ],
     "packages/writer/actions/writer.slot/skill.md": [
-      "9e677b35add50c612a16fde62bb5e74d66a5cd2a08c57b5d8de3b861bb058c9f"
+      "9e677b35add50c612a16fde62bb5e74d66a5cd2a08c57b5d8de3b861bb058c9f",
+      "feed4a67e5526912219d890b55842d73080831269ec765dca837bc5d798f7e2c"
     ]
   },
   "actions": {

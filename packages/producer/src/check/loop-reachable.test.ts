@@ -235,3 +235,16 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     expect(validateAgainst(slotIa, { l0: "strategy", l1: "context", l2: ".market", order: 0 })).not.toEqual([]);
   });
 });
+
+describe("loop.slot request decisions (foundry-build-0048 U5 fix round 1)", () => {
+  it("request.closed holds when the closing steps name every decision; a decision with no closing step is killed", () => {
+    expect(loopReachableIssues("loop.slot", packaged("loop.slot"), { packageVersion: true })).toEqual([]);
+    const noLink = packaged("loop.slot");
+    noLink.steps = noLink.steps.filter(s => s.id !== "link");
+    expect(loopReachableIssues("loop.slot", noLink, { packageVersion: true })).toEqual(["loop.slot: the exit can be reached without request.closed: no step that runs for every slot checks it (the decision steps checking it run on create only)"]);
+    // A when that also names an owner does not run for every request of a decision.
+    const narrowed = packaged("loop.slot");
+    step(narrowed, "link").when = { decision: ["reuse"], owner: ["writer"] };
+    expect(loopReachableIssues("loop.slot", narrowed, { packageVersion: true })).toEqual(["loop.slot: the exit can be reached without request.closed: no step that runs for every slot checks it (the decision steps checking it run on create only)"]);
+  });
+});

@@ -64,9 +64,9 @@ import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlo
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 import { RULES_FILE } from "./rules-file.js";
-import { closeRequest, isContentAgent, ownerOfNeed, placementContractIssues, placementOverlaps, raiseRequest, readRequest, RequestError, signedApproval, targetOf, type SlotRequest } from "../records/request.js";
+import { closeRequest, isContentAgent, overlapRefusal, ownerOfNeed, placementContractIssues, placementOverlaps, raiseRequest, readRequest, RequestError, signedApproval, targetOf, type SlotRequest } from "../records/request.js";
 
-export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--owner-ref <ref>] [--dry] [--root <dir>]\n"
+export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--owner-ref <ref> [--overlap-reason <text>]] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent>/<slot> --standard <id> [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia producer/<seat> --standard <id> [--contract <file>] [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia producer/<seat> --move --under <l1>/<l2> --owner-ref <ref> [--dry] [--root <dir>]  (a placed seat; a new seat is placed by clossys seat <step>)\n"
@@ -75,6 +75,9 @@ export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--s
   + "       clossys ia <agent> --adopt | --start [--dry] [--root <dir>]\n"
   + "       clossys ia sync [--check] [--agent <agent>] [--at <iso>] [--dry] [--root <dir>]\n"
   + "  places a slot in its agent's ia.json (--under, when it is not placed yet) and writes its slot.json with the contract (a JSON object file).\n"
+  + "  A content agent's contract (new or rewritten) must be valid for its kind family and name registered requirements. A new leaf\n"
+  + "  over a placed slot of one L2 and kind family with overlapping inputs is refused (cite it) unless --overlap-reason and\n"
+  + "  --owner-ref sign why the material differs (a --request placement carries the reason its decision recorded).\n"
   + "  --standard names the standard the slot is judged by (packages/<agent>/standards/<id>/, R15.1): it must exist, be valid and serve the slot's kind; alone it keeps the written contract.\n"
   + "  producer/<seat>: names the standard of a seat slot clossys seat wrote (kind seat); --contract may add requirements but keeps the seat's step. Nothing else of a seat is written here.\n"
   + "  --adopt writes the agent's Foundry IA (ia.json and every slot.json, inputs and uses derived) where it has no ia.json (Director, Designer, Writer; the Director's first).\n"
@@ -192,7 +195,7 @@ const readModelJson = (path: string): unknown => JSON.parse(readModelText(path))
 
 // ---------------------------------------------------------------- clossys ia
 const parseIa = parser(IA_USAGE, [
-  "--contract", "--standard", "--under", "--kind", "--inputs", "--uses", "--root", "--owner-ref", "--at", "--extension", "--request", "--approved",
+  "--contract", "--standard", "--under", "--kind", "--inputs", "--uses", "--root", "--owner-ref", "--at", "--extension", "--request", "--approved", "--overlap-reason",
   "--add", "--rename", "--merge", "--into", "--drop", "--reorder", "--order", "--assign", "--layer", "--label", "--id", "--layers", "--axes", "--agent",
 ], ["--remove", "--adopt", "--start", "--move", "--dry", "--check"]);
 const FOUNDRY_IA: Readonly<Record<keyof typeof FOUNDRY_IA_AFTER, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa };
@@ -611,7 +614,8 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   const storedV2 = stored?.schema === SLOT_V2_SCHEMA && !validateSlot(stored).length ? stored as unknown as Slot : undefined;
   if (stored?.schema === SLOT_V2_SCHEMA && !storedV2) return refuse("ia", `${target} slot.json is not a valid ${SLOT_V2_SCHEMA}; clossys check names why`);
   const existing = storedV2 ? currentView(storedV2) as unknown as Record<string, unknown> : stored;
-  const proposedKind = request?.proposal?.kind !== undefined && (SLOT_KINDS as readonly string[]).includes(request.proposal.kind) ? request.proposal.kind : undefined;
+  const proposedKind = request?.proposal?.kind;
+  if (proposedKind !== undefined && !(AGENT_KIND[agent] as readonly string[]).includes(proposedKind)) return refuse("ia", `--request ${request!.id} proposes kind ${proposedKind}, not a ${agent} slot kind (${AGENT_KIND[agent].join(", ")})`);
   const kind = (one(flags, "--kind") ?? proposedKind ?? (existing?.kind as string | undefined) ?? AGENT_KIND[agent][0]) as SlotKind;
   if (!(SLOT_KINDS as readonly string[]).includes(kind)) throw new CliUsageError(`--kind must be one of ${SLOT_KINDS.join(", ")}\n${IA_USAGE}`);
   if (contractFile === undefined && !fromRequest) {
@@ -620,7 +624,8 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   }
   // SLOT-CREATE gate (spec L3): a content agent's new leaf's contract is valid for its kind family and names registered
   // requirements (a Producer seat contract is package data with no requirements key).
-  if (!placed && isContentAgent(agent)) {
+  // A placed slot's rewritten contract passes the same gate: an empty or wiped contract never replaces a valid one.
+  if ((!placed || contractFile !== undefined) && isContentAgent(agent)) {
     const contractGate = placementContractIssues(kind, contract);
     if (contractGate.length) return refuse("ia", contractGate.join("; "));
   }
@@ -633,14 +638,21 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   }
   const doc = {
     ...(existing ?? {}), schema: SLOT_SCHEMA, id: slot, agent, ia: { ...position }, kind, ...(standardId !== undefined ? { standard: standardId } : {}), contract,
-    inputs: flags.values.has("--inputs") ? ids(one(flags, "--inputs")) : (existing?.inputs as string[] | undefined) ?? [],
+    inputs: flags.values.has("--inputs") ? ids(one(flags, "--inputs")) : request?.proposal?.inputs ? request.proposal.inputs.map(ref => ref.slice(ref.indexOf("/") + 1)) : (existing?.inputs as string[] | undefined) ?? [],
     uses: flags.values.has("--uses") ? ids(one(flags, "--uses")) : (existing?.uses as string[] | undefined) ?? [],
   };
   const docIssues = validateSlotDoc(doc, slotFile(dir));
   if (docIssues.length) return refuse("ia", docIssues.map(issue => issue.message).join("; "));
   // SLOT-CREATE: placement runs the overlap check over the agent's placed slots and records the create decision.
-  const overlaps = !placed && isContentAgent(agent) ? placementOverlaps(consumer, agent, { slot, kind, l2: position.l2, inputs: doc.inputs }) : [];
-  if (overlaps.length) return refuse("ia", `${target} overlaps ${overlaps.map(item => `${item.slot} (${item.why})`).join(", ")}: cite it instead (clossys request <id> --decide reuse --slot <ref>), or propose a leaf that does not duplicate it`);
+  // A listed overlap stands only with a reason the owner signs: the request's decision (its overlap ids cover every one
+  // found here) under --approved or --owner-ref, or --overlap-reason with --owner-ref on a direct placement.
+  const overlaps = !placed && isContentAgent(agent) ? placementOverlaps(consumer, agent, { slot, kind, l1: position.l1, l2: position.l2, inputs: doc.inputs }) : [];
+  const directReason = one(flags, "--overlap-reason")?.trim();
+  if (directReason !== undefined && (request || !owner.ref)) throw new CliUsageError(`--overlap-reason is the owner's reason on a direct placement: it takes --owner-ref and no --request (a request carries its decision's reason)\n${IA_USAGE}`);
+  const overlapReason = request ? request.overlapReason : directReason || undefined;
+  const covered = request ? overlaps.every(item => (request!.overlaps ?? []).some(listed => listed.slot === item.slot)) : true;
+  if (overlaps.length && (!overlapReason || !covered)) return refuse("ia", overlapRefusal(target, overlaps, "clossys request <id> --decide reuse --slot <ref>"));
+  const recorded = [...overlaps, ...((request?.overlaps ?? []).filter(listed => !overlaps.some(item => item.slot === listed.slot)))];
   let slotBytes = jsonBytes(doc);
   let missing: readonly { id: string; rel: "input" | "uses"; owner: string }[] = [];
   if (storedV2 || (!stored && recutStore(root))) {
@@ -660,14 +672,15 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   const what = !contractWritten ? `standard ${standardId} named` : `${placed ? "contract written" : `placed under ${underFlag} and its contract written`}${named}`;
   const summary = !contractWritten ? `${target} standard ${standardId}` : `${target} ${placed ? "contract" : `placed under ${underFlag} and contract`}${standardId !== undefined ? `, standard ${standardId}` : ""}`;
   const requestLines = missing.map(item => `${dry ? "would raise" : "raise"} a slot request to ${item.owner} for ${item.id} (${item.rel})`);
-  const decision = placed ? new Map<string, Record<string, unknown>>() : new Map([[target, { decision: "create", overlaps: [], ...(request ? { request: request.id } : {}) }]]);
+  const decision = placed ? new Map<string, Record<string, unknown>>() : new Map([[target, { decision: "create", overlaps: recorded, ...(recorded.length && overlapReason ? { overlapReason } : {}), ...(request ? { request: request.id } : {}) }]]);
   const committed = commitIa(consumer, root, writes, dry, summary, [...followLines(follow), ...requestLines], `ia: ${target} ${what} (clossys/agents/${agent}/${slot}/slot.json)`, iaWho(owner.ref ?? approved, eventAt), decision);
   if (committed.exitCode !== 0 || dry) return committed;
   const closeAt = toIsoZ(eventAt || new Date().toISOString()) ?? new Date().toISOString();
   const after: string[] = [];
   try {
     for (const item of missing) {
-      const raised = raiseRequest(consumer, { target: `${item.owner}/${item.id}`, from: target, rel: item.rel, why: `${target} names ${item.id} as ${item.rel === "input" ? "an input" : "a used slot"}; no slot holds it`, source: "ia", by: owner.ref ? "owner" : "planner", at: closeAt });
+      // The slot just written names the need (cited): this write is the raise's requester edge.
+      const raised = raiseRequest(consumer, { target: `${item.owner}/${item.id}`, from: target, rel: item.rel, why: `${target} names ${item.id} as ${item.rel === "input" ? "an input" : "a used slot"}; no slot holds it`, source: "ia", by: owner.ref ? "owner" : "planner", at: closeAt, ...(owner.ref ? { createdBy: { actor: "owner", ref: owner.ref } } : {}) }, { cited: true });
       after.push(`  request ${raised.request.id} ${raised.created ? "raised" : "already open"}: ${item.owner}/${item.id} for ${target}`);
     }
     if (request) {

@@ -521,7 +521,8 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     if (state.subject && !subject) return stop(ctx, `${state.subject.agent}/${state.subject.slotId} is no longer a consumer slot`, 2);
     // B9: the step the run waits on (or was raising an entry for) runs, whatever its `when` now says.
     const held = state.waiting?.step === step.id || state.pendingRaise?.step === step.id;
-    if (!held && !whenMatches(step.when, subject, requestOwner(requestOf(ctx)))) { state.cursor++; continue; }
+    const request = requestOf(ctx);
+    if (!held && !whenMatches(step.when, subject, { owner: requestOwner(request), decision: request?.decision })) { state.cursor++; continue; }
     if (!held && ownerPicks(version, step, subject)) { state.cursor++; continue; }
     const vars = varsOf(ctx, subject);
     const filled = stepArgv(step.cli, vars);

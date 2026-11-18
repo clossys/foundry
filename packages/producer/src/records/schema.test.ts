@@ -112,11 +112,12 @@ const READ_SAMPLES: Record<string, Record<string, unknown>> = {
   "clossys.queue-entry/2": {
     schema: "clossys.queue-entry/2", id: "20261117T1000Z-narratives-how-to", kind: "slot", from: "writer/sections.article.copy", assignee: "writer",
     target: "writer/narratives.how-to", status: "closed", opened: "20261117T1000Z-narratives-how-to#1", closed: "20261117T1000Z-narratives-how-to#4",
-    link: "writer/narratives.guide", rel: "input", why: "the article links a how-to", source: "cli", createdAt: "2026-11-17T10:00:00Z",
+    link: "writer/narratives.guide", rel: "input", why: "the article links a how-to", source: "cli",
+    createdBy: { actor: "code", cli: "clossys request", version: "0.1.0" }, createdAt: "2026-11-17T10:00:00Z", refs: [{ to: "writer/sections.article.copy", rel: "raisedBy" }],
     overlaps: [{ slot: "writer/narratives.guide", why: "similar purpose (0.75)" }], decision: "reuse", reuse: "writer/narratives.guide",
     notified: { to: "writer/sections.article.copy", at: "2026-11-17T10:05:00Z" }, closedAt: "2026-11-17T10:05:00Z",
     events: [
-      { id: "20261117T1000Z-narratives-how-to#1", at: "2026-11-17T10:00:00Z", op: "raised", by: "producer", detail: "the article links a how-to" },
+      { id: "20261117T1000Z-narratives-how-to#1", at: "2026-11-17T10:00:00Z", op: "raised", by: "writer", via: "cli", detail: "the article links a how-to" },
       { id: "20261117T1000Z-narratives-how-to#2", at: "2026-11-17T10:01:00Z", op: "checked", by: "writer" },
       { id: "20261117T1000Z-narratives-how-to#3", at: "2026-11-17T10:02:00Z", op: "decided", by: "writer", detail: "reuse writer/narratives.guide" },
       { id: "20261117T1000Z-narratives-how-to#4", at: "2026-11-17T10:05:00Z", op: "closed", by: "producer", detail: "linked writer/sections.article.copy to writer/narratives.guide" },
