@@ -1706,129 +1706,24 @@
         "required": false
       },
       {
-        "name": "themes.spacing",
+        "name": "themes.foreground",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.background",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent",
-        "kind": "theme",
-        "required": false
+        "required": true
       },
       {
         "name": "themes.muted",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee-vertical",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-shiny-text",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent-foreground",
-        "kind": "theme",
-        "required": false
+        "required": true
       },
       {
         "name": "themes.muted-foreground",
         "kind": "theme",
-        "required": false
+        "required": true
       },
       {
-        "name": "themes.sidebar-foreground",
+        "name": "themes.spacing",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-sans",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-heading",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-mono",
-        "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
@@ -1851,7 +1746,20 @@
       "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
       "title.maxLength.en": 60
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-features-1",
+        "version": "8139698",
+        "hash": "sha256:db3281ad9f475e7812837d9badf22d2d94ebd70340f18556c6f6a4ea8297418a"
+      },
+      {
+        "registry": "shadcn",
+        "item": "breadcrumb",
+        "version": "4.23.0",
+        "hash": "sha256:ef8b6b798149fd6567c0e1088d0c4fb8f87ff58c7ecd81fa2763852880a0b428"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },

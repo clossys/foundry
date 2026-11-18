@@ -1,0 +1,211 @@
+{
+  "about": "Fixture pages for foundry-build-0048 U17: one interior page per page type, each with the smallest role set its layout requires, plus a hero-only home. Every interior page places designer/sections.page-header.",
+  "interior": {
+    "page.about": {
+      "path": "/about",
+      "layout": "publisher/layout.about",
+      "sections": [
+        {
+          "role": "header",
+          "use": "designer/sections.page-header",
+          "copy": "writer/sections.page-header.copy#about.header"
+        },
+        {
+          "role": "story",
+          "use": "designer/sections.content",
+          "copy": "writer/sections.content.copy#about.story"
+        },
+        {
+          "role": "team",
+          "use": "designer/sections.people",
+          "copy": "writer/sections.people.copy#about.team"
+        },
+        {
+          "role": "closing",
+          "use": "designer/sections.call-to-action",
+          "copy": "writer/sections.call-to-action.copy#about.closing"
+        }
+      ],
+      "meta": {
+        "copy": "writer/page.about.meta#about.meta",
+        "indexing": "index"
+      }
+    },
+    "page.pricing": {
+      "path": "/pricing",
+      "layout": "publisher/layout.pricing",
+      "sections": [
+        {
+          "role": "header",
+          "use": "designer/sections.page-header",
+          "copy": "writer/sections.page-header.copy#pricing.header"
+        },
+        {
+          "role": "plans",
+          "use": "designer/sections.pricing",
+          "copy": "writer/sections.pricing.copy#pricing.plans"
+        },
+        {
+          "role": "questions",
+          "use": "designer/sections.faq",
+          "copy": "writer/sections.faq.copy#pricing.questions"
+        },
+        {
+          "role": "closing",
+          "use": "designer/sections.call-to-action",
+          "copy": "writer/sections.call-to-action.copy#pricing.closing"
+        }
+      ],
+      "meta": {
+        "copy": "writer/page.pricing.meta#pricing.meta",
+        "indexing": "index"
+      }
+    },
+    "page.contact": {
+      "path": "/contact",
+      "layout": "publisher/layout.contact",
+      "sections": [
+        {
+          "role": "header",
+          "use": "designer/sections.page-header",
+          "copy": "writer/sections.page-header.copy#contact.header"
+        },
+        {
+          "role": "form",
+          "use": "designer/sections.form",
+          "copy": "writer/sections.form.copy#contact.form"
+        }
+      ],
+      "meta": {
+        "copy": "writer/page.contact.meta#contact.meta",
+        "indexing": "index"
+      }
+    },
+    "page.terms": {
+      "path": "/terms",
+      "layout": "publisher/layout.legal",
+      "sections": [
+        {
+          "role": "header",
+          "use": "designer/sections.page-header",
+          "copy": "writer/sections.page-header.copy#terms.header"
+        },
+        {
+          "role": "body",
+          "use": "designer/sections.article",
+          "copy": "writer/sections.article.copy#terms.body"
+        }
+      ],
+      "meta": {
+        "copy": "writer/page.terms.meta#terms.meta",
+        "indexing": "index"
+      }
+    },
+    "page.privacy": {
+      "path": "/privacy",
+      "layout": "publisher/layout.legal",
+      "sections": [
+        {
+          "role": "header",
+          "use": "designer/sections.page-header",
+          "copy": "writer/sections.page-header.copy#privacy.header"
+        },
+        {
+          "role": "body",
+          "use": "designer/sections.article",
+          "copy": "writer/sections.article.copy#privacy.body"
+        }
+      ],
+      "meta": {
+        "copy": "writer/page.privacy.meta#privacy.meta",
+        "indexing": "index"
+      }
+    },
+    "page.docs-index": {
+      "path": "/docs",
+      "layout": "publisher/layout.docs-index",
+      "sections": [
+        {
+          "role": "header",
+          "use": "designer/sections.page-header",
+          "copy": "writer/sections.page-header.copy#docs-index.header"
+        },
+        {
+          "role": "entries",
+          "use": "designer/sections.link-index",
+          "copy": "writer/sections.link-index.copy#docs-index.entries"
+        }
+      ],
+      "meta": {
+        "copy": "writer/page.docs-index.meta#docs-index.meta",
+        "indexing": "index"
+      }
+    },
+    "page.guide": {
+      "path": "/docs/<slug>",
+      "collection": "guide",
+      "layout": "publisher/layout.docs-guide",
+      "sections": [
+        {
+          "role": "header",
+          "use": "designer/sections.page-header",
+          "copy": "writer/sections.page-header.copy#guide.header"
+        },
+        {
+          "role": "body",
+          "use": "designer/sections.article",
+          "copy": "writer/sections.article.copy#guide.body"
+        },
+        {
+          "role": "next",
+          "use": "designer/sections.pagination",
+          "copy": "writer/sections.pagination.copy#guide.next"
+        }
+      ],
+      "meta": {
+        "copy": "writer/page.guide.meta#guide.meta",
+        "indexing": "index"
+      }
+    },
+    "page.app-home": {
+      "path": "/app",
+      "layout": "publisher/layout.app-home",
+      "sections": [
+        {
+          "role": "header",
+          "use": "designer/sections.page-header",
+          "copy": "writer/sections.page-header.copy#app-home.header"
+        },
+        {
+          "role": "first-run",
+          "use": "designer/sections.empty-state",
+          "copy": "writer/sections.empty-state.copy#app-home.first-run"
+        }
+      ],
+      "meta": {
+        "copy": "writer/page.app-home.meta#app-home.meta",
+        "indexing": "noindex"
+      }
+    }
+  },
+  "home": {
+    "page.home": {
+      "path": "/",
+      "layout": "publisher/layout.marketing-home",
+      "sections": [
+        {
+          "role": "hero",
+          "use": "designer/sections.hero",
+          "copy": "writer/sections.hero.copy#home.hero",
+          "links": {
+            "actions.primary": "publisher/page.contact"
+          }
+        }
+      ],
+      "meta": {
+        "copy": "writer/page.home.meta#home.meta",
+        "indexing": "index"
+      }
+    }
+  }
+}
