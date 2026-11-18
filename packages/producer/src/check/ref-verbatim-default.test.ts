@@ -28,7 +28,8 @@ it("default check enforces the actual reference gate without --suites or --stric
   const unseated = await runCheck(args, root);
   expect(unseated.suites?.suites[0]).toMatchObject({ suite: "ref-verbatim", exitCode: 0 });
   // foundry-build-0048: publisher.admin-seated judges every slot-model workspace, so this one is red until clossys init
-  // seats the admin workspace; seated, the default check passes.
+  // seats the admin workspace. Seated, it exits 0 here only because this file mocks slot integrity: unmocked, a fresh
+  // init stays red on the admin slots' missing candidates and pins (pinned in cli/init-admin.test.ts).
   expect(Object.keys(unseated.checks ?? {})).toEqual(["publisher.admin-seated"]);
   expect(unseated.exitCode).toBe(1);
   expect((await runInitCli(["--root", root, "--at", "2026-11-18T00:00:00Z"], root)).exitCode).toBe(0);

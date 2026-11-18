@@ -154,6 +154,27 @@ describe("clossys init seats the admin workspace", () => {
     expect((check as unknown as { checks?: Record<string, unknown> }).checks?.[ADMIN_SEATED]).toBeUndefined();
   });
 
+  it("pins the expected-red state of clossys check on a fresh init (unmocked): exit 1 on 6 no-candidate and 6 no-pin rows only, inputs-undeclared 5", async () => {
+    const root = workspace();
+    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    const check = await runCli(["check", "--root", root]);
+    // The seat is wired and its row passes, but no admin slot has a candidate or a pin yet (seeding them is U20's), so the
+    // default check is red on slot integrity alone: one no-candidate and one no-pin row per admin slot, and nothing else.
+    expect(check.exitCode).toBe(1);
+    expect(check.message).toContain(`${ADMIN_SEATED}: pass`);
+    expect(check.message).toContain("Slot integrity found 12 findings across 6 slots.");
+    expect(check.message).toContain("publisher: 6 slots / 0 with candidate / 0 pinned; inputs-undeclared 5");
+    const rows = check.message.split("\n").filter(line => /^  [a-z]+:[a-z0-9.-]+ \[/.test(line));
+    const count = (code: string) => rows.filter(line => line.includes(`[${code}]`)).length;
+    expect(rows).toHaveLength(12);
+    expect(count("no-candidate")).toBe(6);
+    expect(count("no-pin")).toBe(6);
+    for (const slot of [...PAGES, ADMIN_PUBLICATION_SLOT]) {
+      expect(rows, slot).toContain(`  publisher:${slot} [no-candidate] No candidate file exists.`);
+      expect(rows, slot).toContain(`  publisher:${slot} [no-pin] No candidate is pinned.`);
+    }
+  }, 120_000);
+
   it("is idempotent: a second run places nothing and raises nothing new", async () => {
     const root = workspace();
     const first = seatOf((await runInitCli(["--at", AT], root)).output);
