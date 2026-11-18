@@ -176,10 +176,15 @@ describe("the CHOOSE gate on an interactive backdrop descriptor (foundry-build-0
     const w = world();
     const file = join(w.consumer, "agents", "designer", HERO, "slot.json");
     const doc = JSON.parse(readFileSync(file, "utf8"));
+    // The fixture consumer's hero contract is synced from the package (it lists the components);
+    // the world sets the contract explicitly either way, so neither case leans on the fixture.
+    const others = doc.contract.requirements.filter((row: { check: string }) => row.check !== "source.ref" && row.check !== "interactive.backdrop");
     if (interactive) {
       doc.contract.interactive = { components: ["particle-field", "gradient-mesh", "grid-glow"] };
-      doc.contract.requirements = [...doc.contract.requirements.filter((row: { check: string }) => row.check !== "source.ref"),
-        { check: "source.ref", params: { contract: "$contract" } }, { check: "interactive.backdrop", params: { contract: "$contract" } }];
+      doc.contract.requirements = [...others, { check: "source.ref", params: { contract: "$contract" } }, { check: "interactive.backdrop", params: { contract: "$contract" } }];
+    } else {
+      delete doc.contract.interactive;
+      doc.contract.requirements = [...others, { check: "source.ref", params: { contract: "$contract" } }];
     }
     writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
     const submit = (item: unknown) => writeCandidate(w.consumer, "designer", HERO, "hero-backdrop", item, { at: AT, provenance: { by: "agent:designer", model: "claude-opus-5-5", tier: "high" } });

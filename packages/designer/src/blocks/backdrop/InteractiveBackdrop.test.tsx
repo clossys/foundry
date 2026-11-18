@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { checkBackdropElement } from "../../backdrop/contract.js";
 import { INTERACTIVE_BACKDROP_COMPONENT_IDS, type InteractiveBackdropDescriptor } from "../../tokens/interactive-backdrops.js";
 import { InteractiveBackdrop } from "./InteractiveBackdrop.js";
+import { InteractiveBackdrop as InteractiveBackdropBoundary } from "./interactive-backdrop-boundary.js";
 
 const descriptors: Record<(typeof INTERACTIVE_BACKDROP_COMPONENT_IDS)[number], InteractiveBackdropDescriptor> = {
   "particle-field": { component: "particle-field", params: { links: true, density: 24 } },
@@ -141,5 +142,13 @@ describe("Foundry interactive backdrops (foundry-build-0048 A4)", () => {
     ]) {
       expect(() => renderToString(<InteractiveBackdrop descriptor={descriptor as never} />), JSON.stringify(descriptor)).toThrow(TypeError);
     }
+  });
+});
+
+describe("server-safe boundary (foundry-build-0048 A4)", () => {
+  // Hero reaches the components through this boundary; react-server keeps a deferred reference
+  // (render-environment and hero-rsc-boundary probe that), every other renderer gets the component itself.
+  it("resolves the client component synchronously where React has createContext", () => {
+    expect(InteractiveBackdropBoundary).toBe(InteractiveBackdrop);
   });
 });
