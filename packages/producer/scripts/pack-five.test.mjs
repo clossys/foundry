@@ -20,12 +20,14 @@ function temporary(t) {
   return root;
 }
 
-test("native target set includes the Controller workspace and all five existing roles", () => {
+test("native target set includes the Controller and Advisor workspaces and all five existing roles", () => {
   const root = resolve("fixture");
   const targets = packTargets(mapped, root);
-  assert.deepEqual(targets.map(({ role }) => role).sort(), ["controller", "designer", "director", "producer", "publisher", "writer"]);
+  assert.deepEqual(targets.map(({ role }) => role).sort(), ["advisor", "controller", "designer", "director", "producer", "publisher", "writer"]);
   assert.equal(targets.find(({ role }) => role === "controller").root, join(root, "packages/controller"));
+  assert.equal(targets.find(({ role }) => role === "advisor").root, join(root, "packages/advisor"));
   assert.throws(() => assertPackSet(targets.filter(({ role }) => role !== "controller")), /each role once/);
+  assert.throws(() => assertPackSet(targets.filter(({ role }) => role !== "advisor")), /each role once/);
   assert.throws(() => assertPackSet([...targets, targets[0]]), /each role once/);
 });
 
@@ -52,6 +54,7 @@ test("manifest retains summary identity and exposes consumer artifact paths and 
   }
   assert.throws(() => artifactManifest({ ...source, tree: undefined }, packages, studio), /head and tree/);
   assert.throws(() => artifactManifest(source, packages.filter(({ role }) => role !== "controller"), studio), /each role once/);
+  assert.throws(() => artifactManifest(source, packages.filter(({ role }) => role !== "advisor"), studio), /each role once/);
   writeFileSync(file, "tampered bytes");
   assert.throws(() => artifactRecord({ filename: "fixture.tgz", integrity }, file, file), /integrity mismatch/);
 });
