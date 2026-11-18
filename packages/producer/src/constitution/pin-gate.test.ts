@@ -230,4 +230,26 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
     expect(result.message).toMatch(/grid-glow param cell is 4, outside 16\.\.96/);
     expect(existsSync(join(w.consumer, "agents", "designer", HERO, "pin.json"))).toBe(false);
   });
+
+  it("refuses an interactive backdrop in preview props at submit and at pin: a CTA rendering Hero, and a hero's out-of-range descriptor", async () => {
+    const w = heroWorld();
+    const CTA = "sections.call-to-action";
+    const interactive = { kind: "interactive", backdrop: { component: "particle-field", params: { density: 160, links: true } } };
+    // The CTA's code renders Hero; it has no meta.backdrop and carries the descriptor in its preview props.
+    const cta = { ...heroCode(), name: "cta", meta: { slot: CTA, source: { kind: "original", ref: [], license: "MIT" }, preview: { fixtures: { file: "hero.tsx", export: "Hero", props: { backdrop: interactive } } } } };
+    const hero = { ...heroCode(backdrop), meta: { ...heroCode(backdrop).meta, preview: { fixtures: { file: "hero.tsx", export: "Hero", props: { backdrop: { kind: "interactive", backdrop: { component: "grid-glow", params: { cell: 4 } } } } } } } };
+    const PREVIEW = /meta\.preview\.fixtures\.props\.backdrop is an interactive backdrop in preview props; it rides only as meta\.backdrop on the sections\.hero code candidate/;
+    expect(() => writeCandidate(w.consumer, "designer", CTA, "cta", cta, { at: AT, provenance: { by: "agent:designer", model: "claude-opus-5-5", tier: "high" } })).toThrow(PREVIEW);
+    expect(() => w.submit(hero)).toThrow(PREVIEW);
+    // Placed by hand (no submit), both are refused at the pin, naming the preview prop.
+    w.queueEntry();
+    for (const [slot, name, item] of [[CTA, "cta-v1.json", cta], [HERO, "hero-v1.json", hero]] as const) {
+      mkdirSync(join(w.consumer, "agents", "designer", slot, "candidates"), { recursive: true });
+      writeFileSync(join(w.consumer, "agents", "designer", slot, "candidates", name), `${JSON.stringify(item, null, 2)}\n`);
+      const result = await runPinCli([`designer/${slot}`, name, "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root, false);
+      expect(result.exitCode, slot).toBe(1);
+      expect(result.message, slot).toMatch(PREVIEW);
+      expect(existsSync(join(w.consumer, "agents", "designer", slot, "pin.json")), slot).toBe(false);
+    }
+  });
 });

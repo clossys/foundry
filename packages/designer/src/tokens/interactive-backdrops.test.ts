@@ -11,6 +11,8 @@ import {
   carriesInteractiveBackdrop,
   interactiveBackdropDescriptorIssues,
   interactiveBackdropMetaIssues,
+  interactiveBackdropPropPaths,
+  previewInteractiveBackdropIssues,
   isInteractiveBackdropDescriptor,
   resolveInteractiveBackdropParams,
 } from "./interactive-backdrops.js";
@@ -139,5 +141,24 @@ describe("interactive backdrop on the hero's own code candidate (meta.backdrop)"
 
   it("reads only the descriptor's own keys", () => {
     expect(interactiveBackdropDescriptorIssues(Object.create({ component: "grid-glow", params: {} }))).toEqual([expect.stringMatching(/component is undefined, not one of the Foundry components/)]);
+  });
+});
+
+describe("an interactive backdrop in preview props (meta.backdrop is the only channel)", () => {
+  const interactive = { kind: "interactive", backdrop: { component: "particle-field", params: { density: 160, links: true } } };
+  const previewed = (preview: unknown) => ({ name: "cta", type: "registry:block", files: [], meta: { source: { kind: "original", ref: [] }, preview } });
+
+  it("finds one at a backdrop key or in Hero's interactive shape under any key, in fixtures.props or flat fixtures", () => {
+    expect(previewInteractiveBackdropIssues(previewed({ fixtures: { file: "cta.tsx", export: "Hero", props: { backdrop: interactive } } })))
+      .toEqual(["meta.preview.fixtures.props.backdrop is an interactive backdrop in preview props; it rides only as meta.backdrop on the sections.hero code candidate"]);
+    expect(interactiveBackdropPropPaths({ fixtures: { backdrop: { kind: "interactive", backdrop: { component: "grid-glow", params: { cell: 4 } } } } }))
+      .toEqual(["fixtures.backdrop"]);
+    expect(interactiveBackdropPropPaths({ items: [{ art: interactive }], hero: { glow: { kind: "interactive", backdrop: null } } })).toEqual(["items.0.art", "hero.glow"]);
+  });
+
+  it("leaves still backdrops and other kinds alone, and a candidate with no preview", () => {
+    expect(interactiveBackdropPropPaths({ backdrop: { kind: "none" }, media: { kind: "interactive" }, art: { kind: "image", image: {} } })).toEqual([]);
+    expect(previewInteractiveBackdropIssues(candidate())).toEqual([]);
+    for (const value of [null, "x", [], { meta: null }, { meta: Object.create({ preview: { backdrop: interactive } }) }]) expect(previewInteractiveBackdropIssues(value), JSON.stringify(value)).toEqual([]);
   });
 });

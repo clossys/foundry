@@ -295,6 +295,33 @@ describe("an interactive backdrop on the pinned hero code candidate (foundry-bui
     expect(isBlocking(findings[0]!)).toBe(true);
     expect(slots).toEqual([]);
   });
+
+  it("strips an interactive backdrop from any slot's preview props, so only the judged meta.backdrop ever mounts", async () => {
+    const interactive = { kind: "interactive", backdrop: { component: "particle-field", params: { density: 160, links: true } } };
+    const outOfRange = { kind: "interactive", backdrop: { component: "grid-glow", params: { cell: 4 } } };
+    const still = { kind: "none" };
+    const previewed: Record<string, { item: unknown; fixtures: Record<string, unknown> }> = {
+      // A CTA whose code renders Hero, with no meta.backdrop: the descriptor rides in its preview props instead.
+      "sections.call-to-action/cta": { item: heroCode("cta", { source: { kind: "original", ref: [] } }), fixtures: { file: "cta.tsx", export: "Hero", props: { backdrop: interactive, art: { glow: outOfRange }, keep: [interactive, "x"] } } },
+      // A hero with no meta.backdrop shipping an out-of-range descriptor through flat preview fixtures.
+      "sections.hero/plain": { item: heroCode("plain", { source: { kind: "original", ref: [] } }), fixtures: { backdrop: outOfRange, still } },
+      // A hero with a judged meta.backdrop: its own preview descriptor never replaces it.
+      "sections.hero/hero": { item: heroCode("hero", { source: { kind: "original", ref: [] }, backdrop }), fixtures: { file: "hero.tsx", export: "Hero", props: { backdrop: outOfRange } } },
+    };
+    const source = recordStoreSource({ async load(id, version) {
+      const row = previewed[id];
+      return version === 1 && row ? { ...record(id, row.item), preview: { fixtures: row.fixtures } } : undefined;
+    } });
+    const cta = await resolvePage({ id: "home", frame: "sections.call-to-action", sections: [] }, { "sections.call-to-action": { element: "cta", version: 1 } }, source);
+    expect(cta.findings).toEqual([]);
+    expect(cta.slots[0]!.props).toEqual({ art: {}, keep: ["x"] });
+    const plain = await resolvePage({ id: "home", frame: "sections.hero", sections: [] }, { "sections.hero": { element: "plain", version: 1 } }, source);
+    expect(plain.findings).toEqual([]);
+    expect(plain.slots[0]!.props).toEqual({ still });
+    const hero = await resolvePage({ id: "home", frame: "sections.hero", sections: [] }, { "sections.hero": { element: "hero", version: 1 } }, source);
+    expect(hero.findings).toEqual([]);
+    expect(hero.slots[0]!.props).toEqual({ backdrop: { kind: "interactive", backdrop } });
+  });
 });
 
 describe("a slot installed at another version", () => {

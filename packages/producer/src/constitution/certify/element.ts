@@ -21,6 +21,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, posix } from "node:path";
 import ts from "typescript";
+import { previewInteractiveBackdropIssues } from "@clossys/designer/catalog";
 import { specimenKindOf } from "@clossys/publisher/specimen";
 import { contractFixtureIssues, type ContractFixture } from "../../records/slot-model/contract-fixture.js";
 import { dependencyPart } from "../../specimen/specimen-tree.js";
@@ -215,6 +216,10 @@ export function mountsComponent(slot: SlotRecord, candidate: CandidateRecord): b
  * the contract lists the component under `interactive.components`. No `meta.backdrop`, nothing to fit.
  */
 function backdropFit(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>): Reason[] {
+  // Pin-side, on every slot and independent of the validator: an interactive backdrop in the candidate's
+  // own preview props would reach the mount unjudged, so it is refused (meta.backdrop is the only channel).
+  const preview = previewInteractiveBackdropIssues(candidate.json);
+  if (preview.length) return preview.map(message => reason("invalid", `slot ${slot.id}: ${message}`));
   const meta = isObject(candidate.json) ? candidate.json.meta : undefined;
   if (!isObject(meta) || !Object.hasOwn(meta, "backdrop")) return [];
   const allowed = isObject(contract.interactive) ? stringList(contract.interactive.components) : [];

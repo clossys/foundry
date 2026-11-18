@@ -13,6 +13,7 @@ import { dryRun, familyOf, proposedContract } from "./dry-run.js";
 import {
   CERTIFY_INPUT_FIELDS, certify, certifyEnv, certifyFit, certifyWorld, MISSING_RECORD_CODES, onlyMissingRecords, pinSetOf, resultKey, slotDocOf, standardReasons,
 } from "./index.js";
+import { certifyElement } from "./element.js";
 import { requirementsVerdictSync } from "./requirements.js";
 import { BRIEF_HEADINGS, briefText, elementItem, LABEL, pageItem, writerText } from "./certify.world.js";
 
@@ -78,6 +79,23 @@ describe("certify: interactive backdrop descriptor on the hero code candidate (f
     expect(fit(hero({ component: "grid-glow", params: {} }))).toEqual([expect.stringMatching(/^invalid: slot sections\.hero contract\.interactive lists no interactive backdrop, not "grid-glow"/)]);
     expect(fit(hero({ component: "particle-field", params: {} }), { components: ["grid-glow"] })).toEqual([expect.stringMatching(/contract\.interactive lists grid-glow, not "particle-field"/)]);
     expect(fit(hero({ component: "grid-glow", params: { cell: 4 } }), { components: COMPONENTS })).toEqual([expect.stringMatching(/^invalid: grid-glow param cell is 4, outside 16\.\.96/)]);
+  });
+
+  it("refuses, pin-side and independent of the validator, an interactive backdrop in a candidate's preview props on any slot", () => {
+    const interactive = { kind: "interactive", backdrop: { component: "particle-field", params: { density: 160, links: true } } };
+    const ctx = ctxOf({ designer: {
+      "sections.call-to-action": { candidates: { "cta-v1.json": elementItem("ui/sections.call-to-action.tsx", LABEL, { meta: { source: { kind: "original", ref: [] }, preview: { fixtures: { props: { backdrop: interactive } } } } }) } },
+      "sections.hero": { candidates: { "hero-v1.json": hero({ component: "grid-glow", params: { cell: 32 } }) } },
+    } });
+    const slot = slotOf(ctx, "designer", "sections.call-to-action");
+    // Through certifyFit the validator refuses it first; certifyElement (the pin's kind certifier) refuses it on its own.
+    expect(certifyFit({ slot, candidate: slot.candidates[0]! }, certifyEnv(ctx)).map(item => item.message)).toEqual([expect.stringMatching(/^meta\.preview\.fixtures\.props\.backdrop is an interactive backdrop in preview props/)]);
+    expect(certifyElement(slot, slot.candidates[0]!, slotDocOf(slot).contract, certifyEnv(ctx)).map(item => `${item.code}: ${item.message}`))
+      .toEqual(["invalid: slot sections.call-to-action: meta.preview.fixtures.props.backdrop is an interactive backdrop in preview props; it rides only as meta.backdrop on the sections.hero code candidate"]);
+    const heroSlot = slotOf(ctx, "designer", "sections.hero");
+    const outOfRange = { ...JSON.parse(heroSlot.candidates[0]!.text), meta: { source: { kind: "original", ref: [] }, backdrop: { component: "grid-glow", params: { cell: 32 } }, preview: { fixtures: { backdrop: { kind: "interactive", backdrop: { component: "grid-glow", params: { cell: 4 } } } } } } };
+    expect(certifyElement(heroSlot, { ...heroSlot.candidates[0]!, json: outOfRange }, { ...slotDocOf(heroSlot).contract, interactive: { components: COMPONENTS } }, certifyEnv(ctx)).map(item => item.message))
+      .toEqual(["slot sections.hero: meta.preview.fixtures.backdrop is an interactive backdrop in preview props; it rides only as meta.backdrop on the sections.hero code candidate"]);
   });
 });
 

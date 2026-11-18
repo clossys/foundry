@@ -167,3 +167,37 @@ export function interactiveBackdropMetaIssues(item: unknown, slot: string): stri
   if (slot !== INTERACTIVE_BACKDROP_SLOT) return [`meta.backdrop rides only on a ${INTERACTIVE_BACKDROP_SLOT} code candidate, not on a ${slot} candidate`];
   return interactiveBackdropDescriptorIssues(item.meta.backdrop);
 }
+
+/**
+ * Whether `value`, met at `key` of a props tree, is an interactive backdrop prop: a
+ * `{kind: "interactive"}` record at a `backdrop` key, or any `{kind: "interactive", backdrop}`
+ * record (Hero's interactive shape under another prop name a candidate's code could forward).
+ */
+export function isInteractiveBackdropProp(key: string | undefined, value: unknown): boolean {
+  return record(value) && value.kind === "interactive" && (key === "backdrop" || Object.hasOwn(value, "backdrop"));
+}
+
+/** Dot paths (from `at`) of every interactive backdrop prop in a props tree: a preview's fixtures, a mount's props. */
+export function interactiveBackdropPropPaths(value: unknown, at = ""): string[] {
+  const paths: string[] = [];
+  const walk = (node: unknown, key: string | undefined, path: string) => {
+    if (key !== undefined && isInteractiveBackdropProp(key, node)) { paths.push(path); return; }
+    if (Array.isArray(node)) node.forEach((child, index) => walk(child, String(index), path ? `${path}.${index}` : String(index)));
+    else if (record(node)) for (const child of Object.keys(node)) walk(node[child], child, path ? `${path}.${child}` : child);
+  };
+  walk(value, undefined, at);
+  return paths;
+}
+
+/**
+ * Why a candidate's own `meta.preview` carries an interactive backdrop; [] when it carries none.
+ * `meta.backdrop` on the `INTERACTIVE_BACKDROP_SLOT` code candidate is the only channel: preview
+ * props reach the mount unjudged, so any slot's candidate (a CTA whose code renders Hero, or a hero
+ * shipping an out-of-schema descriptor) is refused there at submit and at pin, and Publisher install
+ * strips such props from every mount before it applies the judged `meta.backdrop`.
+ */
+export function previewInteractiveBackdropIssues(item: unknown): string[] {
+  if (!record(item) || !record(item.meta) || !Object.hasOwn(item.meta, "preview")) return [];
+  return interactiveBackdropPropPaths(item.meta.preview, "meta.preview").map(path =>
+    `${path} is an interactive backdrop in preview props; it rides only as meta.backdrop on the ${INTERACTIVE_BACKDROP_SLOT} code candidate`);
+}

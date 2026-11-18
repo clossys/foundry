@@ -150,6 +150,18 @@ describe("interactive backdrop on the hero code candidate (foundry-build-0048 A4
     expect(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify(page)).map(issue => issue.message).join("; ")).toMatch(/meta\.backdrop rides only on a Designer element code candidate, not on a page candidate/);
   });
 
+  it("refuses an interactive backdrop in preview props on any slot: meta.backdrop is the only channel", () => {
+    const interactive = { kind: "interactive", backdrop: { component: "particle-field", params: { density: 160, links: true } } };
+    // A CTA whose code renders Hero, with no meta.backdrop, carrying the descriptor in its preview props.
+    const cta = item({ slot: "sections.call-to-action", backdrop: undefined, preview: { fixtures: { file: "hero.tsx", export: "Hero", props: { backdrop: interactive } } } });
+    expect(check(cta, "sections.call-to-action")).toEqual([{ code: "candidate-source", path: "hero-v1.json", message: "meta.preview.fixtures.props.backdrop is an interactive backdrop in preview props; it rides only as meta.backdrop on the sections.hero code candidate" }]);
+    // A hero shipping an out-of-range descriptor through flat preview fixtures, beside a valid meta.backdrop.
+    expect(messages(item({ preview: { fixtures: { backdrop: { kind: "interactive", backdrop: { component: "grid-glow", params: { cell: 4 } } } } } })))
+      .toBe("meta.preview.fixtures.backdrop is an interactive backdrop in preview props; it rides only as meta.backdrop on the sections.hero code candidate");
+    // A still backdrop in preview props stays a preview prop.
+    expect(check(item({ preview: { fixtures: { backdrop: { kind: "none" } } } }))).toEqual([]);
+  });
+
   it("refuses the retired interactive-backdrop source kind", () => {
     expect(messages(item({ source: { kind: "interactive-backdrop", ref: [] } }))).toMatch(/source\.kind must be registry, derived, original, composition, npm or package-default/);
   });

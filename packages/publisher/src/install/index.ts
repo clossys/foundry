@@ -22,7 +22,7 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, realpath, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve } from "node:path";
-import { carriesInteractiveBackdrop, INTERACTIVE_BACKDROP_SLOT, interactiveBackdropMetaIssues } from "@clossys/designer/catalog";
+import { carriesInteractiveBackdrop, INTERACTIVE_BACKDROP_SLOT, interactiveBackdropMetaIssues, isInteractiveBackdropProp } from "@clossys/designer/catalog";
 import type { SpecimenRecord, SpecimenRecordSource } from "../specimen/types.js";
 import { installedPath } from "../specimen/installed-path.js";
 
@@ -154,6 +154,21 @@ function mountOf(record: SpecimenRecord): { file?: string; export?: string; copy
     return { file: fixtures.file, ...(name ? { export: name } : {}), ...(copyKeys ? { copyKeys } : {}), props: { ...(fixtures.props as Record<string, unknown> | undefined) } };
   }
   return { ...(record.preview.entry ? { file: record.preview.entry } : {}), ...(record.preview.export ? { export: record.preview.export } : {}), ...(record.preview.copyKeys ? { copyKeys: record.preview.copyKeys } : {}), props: { ...fixtures } };
+}
+
+/** Removes, in place, every interactive backdrop prop (designer `isInteractiveBackdropProp`) from a props tree. */
+function dropInteractiveBackdropProps(node: unknown): void {
+  if (Array.isArray(node)) {
+    for (let index = node.length - 1; index >= 0; index--) {
+      if (isInteractiveBackdropProp(String(index), node[index])) node.splice(index, 1);
+      else dropInteractiveBackdropProps(node[index]);
+    }
+  } else if (isRecord(node)) {
+    for (const key of Object.keys(node)) {
+      if (isInteractiveBackdropProp(key, node[key])) delete node[key];
+      else dropInteractiveBackdropProps(node[key]);
+    }
+  }
 }
 
 /** The value at a dot path (`nav.items.0.label`) of a props object, and its parent and key. */
@@ -292,6 +307,9 @@ export async function resolvePage(page: InstallPageRecord, pins: InstallPins, so
       // Declared copy slots rewrite props in place: the record's own fixtures stay untouched.
       mount.props = structuredClone(mount.props);
       if (role === "frame") delete mount.props.children;
+      // Preview props reach the mount unjudged: any interactive backdrop in them is stripped, on every
+      // slot, so the judged meta.backdrop below is the only one that ever mounts.
+      dropInteractiveBackdropProps(mount.props);
       // An interactive backdrop (foundry-build-0048 A4) rides as meta.backdrop on the hero's own code
       // candidate: it reaches Hero's `backdrop` prop for the hero slot only, never for another slot whose
       // code also renders Hero (the CTA). The same schema check as submit and pin; an invalid one stops the page.

@@ -1,5 +1,5 @@
 import { pinIssues } from "@clossys/director";
-import { interactiveBackdropMetaIssues } from "@clossys/designer/catalog";
+import { interactiveBackdropMetaIssues, previewInteractiveBackdropIssues } from "@clossys/designer/catalog";
 import { checkPublicationOutputs } from "@clossys/publisher/content-map";
 import { pinMapIssues, pinIssues as targetPinIssues } from "../pin.js";
 import { parseFrontmatter } from "./frontmatter.js";
@@ -338,6 +338,8 @@ function validateJsonCandidate(kind: SlotKind, value: Record<string, unknown>, s
     if (kind !== "element") issues.push({ code: "candidate-source", path, message: `meta.backdrop rides only on a Designer element code candidate, not on a ${kind} candidate` });
     else issues.push(...interactiveBackdropMetaIssues(value, slot).map(message => ({ code: "candidate-source" as const, path, message })));
   }
+  // Preview props reach the mount unjudged, so they never carry one, on any slot (meta.backdrop is the only channel).
+  issues.push(...previewInteractiveBackdropIssues(value).map(message => ({ code: "candidate-source" as const, path, message })));
   if (kind === "element") {
     if (typeof value.name !== "string" || !value.name) fail("registry-item name is required");
     if (!REGISTRY_TYPES.has(value.type as string)) fail("registry-item type must be a registry:* type");
