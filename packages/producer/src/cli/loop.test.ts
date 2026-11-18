@@ -5,7 +5,7 @@
  * step or break the chain.
  */
 import { createHash } from "node:crypto";
-import { cpSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -15,7 +15,7 @@ import { runLoopCli } from "./loop.js";
 import { runIaCli } from "./owner.js";
 import { runLoopAgentStandard, runLoopConnected } from "../check/loop-connected.js";
 import { AGENT_LOOPS, LOOP_AGENTS, standardOf } from "../loop/agent-loops.js";
-import { planRun, resumeRun, routeHandsOn, startRun, undeclaredWrites, type AgentOutcome, type RunHooks } from "../loop/runner.js";
+import { inOwnWriteRoot, planRun, resumeRun, routeHandsOn, startRun, undeclaredWrites, type AgentOutcome, type RunHooks } from "../loop/runner.js";
 import { runCli } from "./main.js";
 import { FIXTURE_CONSUMER_ROOT } from "../records/slot-model/fixture-consumer.test.js";
 import { readiness } from "../records/slots.js";
@@ -319,6 +319,15 @@ describe("the runner runs the owning agent's pin for all five loops (planRun / s
     expect(undeclaredWrites(root, state, step, [`${slot}/../../writer/sections.article.copy/slot.json`, "/etc/passwd", `${slot}/slot.json`])).toEqual([`${slot}/../../writer/sections.article.copy/slot.json`, "/etc/passwd"]);
     // A path through .. is refused even where it normalizes onto a declared write.
     expect(undeclaredWrites(root, state, step, [`${slot}/sub/../slot.json`])).toEqual([`${slot}/sub/../slot.json`]);
+    // A glob or placeholder declared write (had it passed the load) still writes only the agent's own roots, judged on
+    // the real path: another agent's slot, another agent's check folder and a symlink into another tree are refused.
+    const glob = { ...(step as object), writes: ["*/*/slot.json", "<dependant>/slot.json", ".clossys/checks/*/x/scorecard.json", "<slot>/", "producer/queue.slot/entries/*"] } as never;
+    expect(undeclaredWrites(root, state, glob, ["writer/sections.article.copy/slot.json", ".clossys/checks/writer/x/scorecard.json", `${slot}/slot.json`, "producer/queue.slot/entries/r-1.json"])).toEqual(["writer/sections.article.copy/slot.json", ".clossys/checks/writer/x/scorecard.json"]);
+    symlinkSync(join(root, "clossys", "agents", "writer", "sections.article.copy"), join(root, "clossys", "agents", slot, "linked"));
+    expect(undeclaredWrites(root, state, glob, [`${slot}/linked/slot.json`, `${slot}/fresh/notes.md`])).toEqual([`${slot}/linked/slot.json`]);
+    expect(inOwnWriteRoot(root, "designer", `${slot}/linked/slot.json`)).toBe(false);
+    expect(inOwnWriteRoot(root, "designer", ".clossys/checks/designer/x/scorecard.json")).toBe(true);
+    expect(inOwnWriteRoot(root, "designer", "producer/queue.slot/entries")).toBe(false);
   }, LONG);
 
   it("hands a failed step's findings to a route step only where Producer's standard does", () => {

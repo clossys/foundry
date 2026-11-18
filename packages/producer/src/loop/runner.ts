@@ -21,9 +21,9 @@
  * Run state is kept in `.clossys/runs/loops/<runId>.json`; resuming never runs a finished step again. Every run that
  * ends (done, stopped or pinned-ready) writes one ledger entry, `clossys/agents/producer/ledger.<loop>/entries/<runId>.json`.
  */
-import { existsSync, mkdirSync, openSync, closeSync, writeSync, readFileSync, renameSync, writeFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, openSync, closeSync, writeSync, readFileSync, realpathSync, renameSync, writeFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { appendRecord, buildRecord, invocationOf, observe } from "../pipeline/trace.js";
-import { dirname, join, relative, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
 import { checkPinsResolve, resolveAll } from "../check/pins-resolve.js";
 import { answerQueueEntry } from "../queue/answer.js";
 import { entryStamp, findQueueEntry, listQueueEntryFiles, readQueueEntry, slugOf } from "../queue/entry.js";
@@ -715,8 +715,46 @@ export function routeHandsOn(state: Pick<RunState, "loop" | "version">, step: Lo
 }
 
 /**
+ * A path with its symlinks resolved: the real path of its nearest existing ancestor, then the parts that do not exist
+ * yet. Undefined when a part that exists cannot be resolved (a dangling or looping symlink).
+ */
+function realPathOf(path: string): string | undefined {
+  let at = path;
+  const rest: string[] = [];
+  while (lstatSync(at, { throwIfNoEntry: false }) === undefined) {
+    const up = dirname(at);
+    if (up === at) return undefined;
+    rest.unshift(basename(at));
+    at = up;
+  }
+  try { return join(realpathSync(at), ...rest); } catch { return undefined; }
+}
+const inside = (dir: string, path: string): boolean => {
+  const rel = relative(dir, path);
+  return rel !== "" && !isAbsolute(rel) && rel.split(sep)[0] !== "..";
+};
+
+/**
+ * U9a: whether a file an agent step wrote lands, on its real path (symlinks resolved), in one of the agent's own write
+ * roots: its tree (`clossys/agents/<agent>/`), its check folder (`.clossys/checks/<agent>/`) or Producer's queue entries
+ * (`clossys/agents/producer/queue.<name>/entries/`). The roots `ownWriteRoot` holds a declared write to.
+ */
+export function inOwnWriteRoot(root: string, agent: LoopAgent, file: string): boolean {
+  const base = realPathOf(root);
+  const real = realPathOf(wroteFile(root, file));
+  if (base === undefined || real === undefined) return false;
+  if (inside(join(base, "clossys", "agents", agent), real) || inside(join(base, ".clossys", "checks", agent), real)) return true;
+  const producer = join(base, "clossys", "agents", "producer");
+  if (!inside(producer, real)) return false;
+  const [queue, entries, ...more] = relative(producer, real).split(sep);
+  return /^queue\.[a-z]+$/.test(queue ?? "") && entries === "entries" && more.length > 0;
+}
+
+/**
  * U9a: the files an agent step of an agent's own loop version reported writing that the step does not declare: outside
- * the root, through `..`, or matching none of its `writes` (with `<slot>` the run's own slot). Empty for a Producer version.
+ * the root, through `..`, outside the agent's own write roots on the real path, or matching none of its `writes` (with
+ * `<slot>` the run's own slot). Empty for a Producer version. The runner judges the files the step reports (the
+ * resumer's `--wrote` list or the code hook's outcome); a write the step does not report is outside what it can see.
  */
 export function undeclaredWrites(root: string, state: RunState, step: LoopStep, wrote: readonly string[] | undefined): string[] {
   if (state.version.ref.startsWith("producer/") || step.decider.by !== "agent" || !wrote?.length) return [];
@@ -733,6 +771,7 @@ export function undeclaredWrites(root: string, state: RunState, step: LoopStep, 
     if (file.split(/[\\/]/).includes("..")) return true;
     const absolute = wroteFile(root, file);
     if (relative(root, absolute).split(sep)[0] === "..") return true;
+    if (!inOwnWriteRoot(root, agent, file)) return true;
     const segments = ledgerPath(root, file).split("/");
     return !declared.some(pattern => patternsMeet(pattern, segments));
   });

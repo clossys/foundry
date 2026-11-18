@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
-  AGENT_LOOPS, LOOP_AGENTS, agentLoopIssues, loopConnectedIssues, loopExtensionIssues, packageLoopSet, pathPattern, patternsMeet,
+  AGENT_LOOPS, LOOP_AGENTS, agentLoopIssues, loopConnectedIssues, loopExtensionIssues, ownWriteRoot, packageLoopSet, pathPattern, patternsMeet,
   readAgentPackageLoop, standardOf, type AgentLoopName, type LoopAgent, type LoopSet,
 } from "./agent-loops.js";
 import type { LoopVersion } from "../records/types.js";
@@ -169,7 +169,46 @@ describe("loopExtensionIssues: the owner gate, route steps and write paths (U9a 
     }
     const other = pkg("designer", "loop.create");
     other.steps.push(added("designer", { id: "stray", writes: ["clossys/agents/./writer/voice.tone/slot.json"] }));
-    expect(issues("designer", "loop.create", other)).toEqual(["designer/loop.create: step stray writes clossys/agents/./writer/voice.tone/slot.json, another agent's tree; raise a request instead"]);
+    expect(issues("designer", "loop.create", other)).toEqual(["designer/loop.create: step stray writes clossys/agents/./writer/voice.tone/slot.json, which can land outside designer's own tree, its .clossys/checks/designer/ folder and Producer's queue entries; raise a request instead"]);
+  });
+});
+
+describe("agent write roots: a glob or placeholder that can reach another agent's tree (U9a fix round 2)", () => {
+  const issues = (agent: LoopAgent, loop: AgentLoopName, version: LoopVersion) => loopExtensionIssues(agent, loop, version, standard(loop));
+  const added = (agent: LoopAgent, extra: Partial<LoopVersion["steps"][number]>) => ({
+    id: "extra", does: "an added step", decider: { by: "agent" as const, agent, verb: "review" as const, tier: "low" as const }, cli: "clossys next", reads: [], writes: [], checks: [], ...extra,
+  });
+  const REACHING = ["*/*/slot.json", "<dependant>/slot.json", "<requester>/notes.md", "clossys/agents/*/hero/slot.json", "*/", "<inputs>", ".clossys/checks/writer/x/scorecard.json", ".clossys/checks/*/x/scorecard.json", ".clossys/other/x.json", "producer/queue.*/entries/x.json", "producer/pins/x.json", "notes/x.md"];
+  it("refuses, at load and at the pin gate, a declared write that could land outside the agent's own roots", () => {
+    for (const path of REACHING) {
+      const version = pkg("designer", "loop.create");
+      version.steps.push(added("designer", { id: "reach", writes: [path] }));
+      expect(issues("designer", "loop.create", version), path).toContain(`designer/loop.create: step reach writes ${path}, which can land outside designer's own tree, its .clossys/checks/designer/ folder and Producer's queue entries; raise a request instead`);
+    }
+  });
+  it("keeps the agent's own roots: its slots, its own check folder and Producer's queue entries", () => {
+    for (const path of ["<slot>/notes.md", "designer/hero/notes.md", ".clossys/checks/<agent>/<slot-id>/extra.json", ".clossys/checks/designer/x/extra.json", "producer/queue.slot/entries/<request>.json"]) {
+      const version = pkg("designer", "loop.create");
+      version.steps.push(added("designer", { id: "own", writes: [path] }));
+      expect(issues("designer", "loop.create", version).filter(issue => issue.includes("can land outside")), path).toEqual([]);
+    }
+    for (const path of ["designer", "designer/", ".clossys/checks/designer"]) {
+      expect(ownWriteRoot(pathPattern(path, "designer")!, "designer"), path).toBe(path === "designer/");
+    }
+  });
+  it("loop.connected (d) judges an agent write by the same roots", () => {
+    for (const path of ["*/*/slot.json", "<dependant>/slot.json", ".clossys/checks/writer/x/scorecard.json"]) {
+      const create = pkg("designer", "loop.create");
+      create.steps.find(step => step.id === "create")!.writes.push(path);
+      expect(loopConnectedIssues(withVersion(packageLoopSet(), "designer", "loop.create", create)), path).toContain(`designer/loop.create: step create writes ${path}, outside designer's tree; an agent loop reaches another agent only by raising a request or a cascade event`);
+    }
+  });
+  it("refuses an added step that runs clossys verdict, pick or approve (each pins)", () => {
+    for (const cli of ["clossys verdict <ref> pass --by agent:director", "clossys pick <ref> <candidate>", "clossys approve <ref>"]) {
+      const version = pkg("director", "loop.choose");
+      version.steps.splice(version.steps.findIndex(step => step.id === "confirm") + 1, 0, added("director", { id: "self-pin", cli, writes: ["<slot>/ledger.json"] }));
+      expect(issues("director", "loop.choose", version), cli).toEqual([`director/loop.choose: step self-pin runs ${cli}; only the standard's own step pins or answers, as the standard has it (the owner's choose gate)`]);
+    }
   });
 });
 

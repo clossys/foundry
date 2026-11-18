@@ -123,7 +123,7 @@ export const escapesTree = (path: string): boolean => path.startsWith("/") || pa
 /** The cli of a Producer built-in code step: routing findings, the cascade, the strict tree checks, the IA sync. */
 const BUILT_IN_CLI = /^clossys check --route\b|<dependants>|^clossys check --strict\b|^clossys ia sync\b/;
 /** A cli that pins or answers an owner entry: only the standard's own step may carry it, as the standard has it. */
-const PIN_CLI = /\bclossys (?:pin|answer)\b/;
+const PIN_CLI = /\bclossys (?:pin|pick|verdict|approve|answer)\b/;
 /** A write that can land on a slot's pin.json (`<agent>/<slot>/pin.json`, a slot directory, or a glob over it). */
 const writesPin = (path: string, agent: LoopAgent): boolean => {
   const pattern = pathPattern(path, agent);
@@ -209,8 +209,8 @@ export function loopExtensionIssues(agent: LoopAgent, loop: AgentLoopName, conte
     for (const path of Array.isArray(step.writes) ? step.writes : []) {
       if (escapesTree(path)) { issues.push(`${ref}: step ${step.id} writes ${path}, outside the tree (absolute or through ..)`); continue; }
       const normal = posix.normalize(path);
-      const owner = pathAgent(normal);
-      if (owner !== undefined && owner !== agent && !/^(?:clossys\/agents\/)?producer\/queue\.[a-z]+\/entries\//.test(normal)) issues.push(`${ref}: step ${step.id} writes ${path}, another agent's tree; raise a request instead`);
+      const pattern = pathPattern(normal, agent);
+      if (pattern === undefined || !ownWriteRoot(pattern, agent)) issues.push(`${ref}: step ${step.id} writes ${path}, which can land outside ${agent}'s own tree, its .clossys/checks/${agent}/ folder and Producer's queue entries; raise a request instead`);
       if (writesPin(normal, agent) && !(own?.writes ?? []).includes(path)) issues.push(`${ref}: step ${step.id} writes ${path}, a slot pin; an agent loop pins only at the standard's own pick step (the owner's choose gate)`);
     }
   }
@@ -287,6 +287,19 @@ const stepsOf = (content: unknown): LoopStep[] => (isObject(content) && Array.is
 const isAgentStep = (step: LoopStep): boolean => step.decider?.by === "agent";
 /** Producer's request and cascade queues: the one place an agent step may write outside its own tree. */
 const QUEUE_WRITE = /^producer\/queue\.[a-z]+\/entries(?:\/|$)/;
+/**
+ * Whether every path a write pattern can resolve to lies in one of the agent's own write roots: its own tree
+ * (`<agent>/...`), its own check folder (`.clossys/checks/<agent>/...`) or Producer's queue entries
+ * (`producer/queue.<name>/entries/...`). Each root's segments must be literal: a `*` or `**` there (from a glob or from
+ * `<dependant>`, `<requester>`, `clossys/agents/*` and the like) could name another agent's tree, so it is refused.
+ */
+export function ownWriteRoot(pattern: readonly string[], agent: LoopAgent): boolean {
+  const [first, second, third] = pattern;
+  if (first === agent) return pattern.length >= 2;
+  if (first === ".clossys" && second === "checks" && third === agent) return pattern.length >= 4;
+  return first === "producer" && /^queue\.[a-z]+$/.test(second ?? "") && third === "entries";
+}
+
 /** The agent tree a pattern's first segment names: an agent id, `*` (any agent's), or undefined (no agent tree, e.g. `.clossys/`). */
 const treeOf = (pattern: readonly string[]): string | undefined => {
   const first = pattern[0]!;
@@ -333,9 +346,8 @@ export function loopConnectedIssues(set: LoopSet): string[] {
             const pattern = pathPattern(path, agent);
             if (!pattern) continue;
             writes.push({ loop, step: step.id, path, pattern });
-            const tree = treeOf(pattern);
-            // (d)
-            if (tree !== undefined && tree !== agent && !QUEUE_WRITE.test(pattern.join("/"))) issues.push(`${ref}: step ${step.id} writes ${path}, outside ${agent}'s tree; an agent loop reaches another agent only by raising a request or a cascade event`);
+            // (d): judged by the same write roots the extension rule and the runner use.
+            if (!ownWriteRoot(pattern, agent)) issues.push(`${ref}: step ${step.id} writes ${path}, outside ${agent}'s tree; an agent loop reaches another agent only by raising a request or a cascade event`);
           }
           continue;
         }
