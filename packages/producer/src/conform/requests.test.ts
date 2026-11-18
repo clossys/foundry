@@ -12,7 +12,7 @@ import { closeWork, inputsSha256, raiseWork, requestIssues } from "../records/re
 import { ASSERTIONS } from "./assertions.js";
 import type { AgentModel, ConformModel } from "./model.js";
 import { localStores, printedGapCodes, readAgentRequests, readRequestMachinery, resetRequestFacts, seatGuardIssues } from "./requests-model.js";
-import { OPEN_FIX, requestsWorld } from "./__fixtures__/requests-world.js";
+import { OPEN_FIX, requestsWorld, requireMissingCopyField, staleVerdicts } from "./__fixtures__/requests-world.js";
 
 const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
 const FIXTURE = join(REPO, "packages/producer/test-fixtures/consumer");
@@ -303,15 +303,15 @@ describe("the request lens on the closure rule, the inputs digest and the strict
     writeFileSync(pinFile, "{ \"bumped\": true }\n");
     expect(judge("Q7", "writer", { consumer: made.consumer }).rows).toEqual([]);
     writeFileSync(pinFile, pinBytes);
-    // A forged close over today's bytes, while the pin no longer certifies (the scorecard, not a judged input): red.
+    // The record's contract gains a field the pinned record lacks; its fresh verdict still stands, so nothing re-judges it.
+    requireMissingCopyField(made.root);
+    // A forged close over today's bytes, while the pin no longer certifies (the verdicts, not a judged input): red.
     writeFileSync(file, `${JSON.stringify({ ...JSON.parse(readFileSync(file, "utf8")), status: "open" })}\n`);
     const reopened = (({ outcome: _o, result: _r, notified: _n, closedAt: _c, closed: _d, ...doc }) => ({ ...doc, events: doc.events.filter((event: { op: string }) => event.op !== "verified" && event.op !== "closed") }))(JSON.parse(readFileSync(file, "utf8")));
     writeFileSync(file, `${JSON.stringify(reopened)}\n`);
     forgeClosed(made.consumer, file, "writer", "fixed");
     expect(judge("Q7", "writer", { consumer: made.consumer }).rows).toEqual([]);
-    const card = join(made.root, ".clossys/checks/writer/sections.hero.copy/scorecard.json");
-    const score = JSON.parse(readFileSync(card, "utf8")) as { candidates: { pinSet: string }[] };
-    writeFileSync(card, `${JSON.stringify({ ...score, candidates: score.candidates.map(row => ({ ...row, pinSet: "0".repeat(64) })) })}\n`);
+    staleVerdicts(made.root, "writer", "sections.hero.copy");
     expect(judge("Q7", "writer", { consumer: made.consumer }).rows).toContainEqual(expect.stringMatching(new RegExp(`queue\\.fix#${open.id}: closed, and the requester check fails now: .*does not certify on the pinSet now`)));
   });
 });

@@ -43,6 +43,22 @@ export function requesterSlots(entry: { readonly kind: string; readonly from: st
   return out;
 }
 
+/**
+ * The pinSet now of every pinned candidate the requester check judges, one `<slot>[#<record>] <candidate> <pinSet>` line
+ * each, sorted: the upstream pins a certification reads (certify pinSetOf). records/request.ts inputsSha256 binds them
+ * with the requester's own files, so a repin upstream after an honest close is drift (slots.stale's), not a Q7 red.
+ */
+export function requesterPinSets(root: string, entry: { readonly kind: string; readonly from: string; readonly target: string }): string[] {
+  const slots = requesterSlots(entry);
+  if (!slots.length) return [];
+  const judged = new Set(slots);
+  const ctx = buildContext(root, join(root, "clossys"), { focus: slots.map(ref => ({ agent: ref.split("/")[0]!, slot: ref.split("/")[1]! })) });
+  const records = [...liveSlotRecords(ctx)].filter(slot => judged.has(`${slot.agent}/${slot.id}`));
+  return pinChecks(ctx, certifyEnv(ctx), records)
+    .map(check => `${check.slot.agent}/${check.slot.id}${check.record !== undefined ? `#${check.record}` : ""} ${check.candidate.name} ${check.current}`)
+    .sort();
+}
+
 /** Re-runs the requester slot's checks for a closing change or fix entry (`root` is the folder holding clossys/). */
 export function requesterCheck(root: string, entry: { readonly kind: string; readonly from: string; readonly target: string }): RequesterCheck {
   const slots = requesterSlots(entry);

@@ -22,7 +22,7 @@ import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
 import { resolveOwnerAnswer } from "../queue/rules.js";
 import { consumerFacts, placedSlots, readDeclarations, routeEntry, RoutingError, WORK_KINDS, type RoutingFacts, type WorkKind } from "../queue/routing.js";
-import { FIX_CHECKS, fixCheck, requesterCheck, requesterSlots } from "../queue/requester-check.js";
+import { FIX_CHECKS, fixCheck, requesterCheck, requesterPinSets, requesterSlots } from "../queue/requester-check.js";
 import { PRODUCER_ROOT, skillPath } from "./ledger.js";
 import { resolveOwnerRef } from "./owner-decisions.js";
 import { OWNER_QUEUE_ANSWER, ownerAnswerRef } from "./pin.js";
@@ -101,8 +101,9 @@ function ownerCloseIssues(root: string, request: Pick<SlotRequest, "id" | "kind"
 /**
  * The judged inputs of a change or fix close (foundry-build-0048 U7 r3, Q7): sha256 over the sorted root-relative
  * paths of slot.json and pin.json of every slot the requester check judges (requesterSlots: the requester, and a
- * fix's target), each as `path \0 bytes` (a missing file has no bytes). The verified event stores it; conform Q7
- * re-runs the checks only while it is unchanged, so drift after an honest close is slots.stale's, not Q7's.
+ * fix's target), each as `path \0 bytes` (a missing file has no bytes), then each judged pin's pinSet now
+ * (requesterPinSets: the upstream pins its certification reads). The verified event stores it; conform Q7 re-runs the
+ * checks only while it is unchanged, so drift after an honest close, upstream included, is slots.stale's, not Q7's.
  */
 export function inputsSha256(consumer: string, request: { readonly kind: string; readonly from: string; readonly target: string }): string {
   const root = dirname(consumer);
@@ -117,6 +118,7 @@ export function inputsSha256(consumer: string, request: { readonly kind: string;
     const file = join(root, path);
     if (existsSync(file)) hash.update(readFileSync(file));
   }
+  for (const line of requesterPinSets(root, request)) hash.update(`pinSet\0${line}\n`);
   return hash.digest("hex");
 }
 const SHA256 = /^[0-9a-f]{64}$/;

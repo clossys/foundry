@@ -17,7 +17,7 @@ import { ASSERTIONS } from "./assertions.js";
 import type { ProbeFacts } from "./dogfood.js";
 import { CONFORM_AGENTS, readConformModel } from "./model.js";
 import { internalWriterIssues, seatGuardIssues } from "./requests-model.js";
-import { CHANGES, FIXES, NEEDS, OPEN_FIX, requestsWorld, type RequestsWorld } from "./__fixtures__/requests-world.js";
+import { CHANGES, FIXES, NEEDS, OPEN_FIX, requestsWorld, requireMissingCopyField, staleVerdicts, type RequestsWorld } from "./__fixtures__/requests-world.js";
 
 const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
 const worlds: RequestsWorld[] = [];
@@ -114,9 +114,8 @@ describe("the request lens world", () => {
   it("re-judges a pin whose verdict is stale: a pinned candidate that no longer certifies keeps the entry open", { timeout: 60_000 }, async () => {
     const world = await make();
     const open = world.raised.fix.find(item => item.target === OPEN_FIX)!;
-    const card = join(world.root, ".clossys/checks/writer/sections.hero.copy/scorecard.json");
-    const doc = JSON.parse(readFileSync(card, "utf8")) as { candidates: { pinSet: string }[] };
-    writeFileSync(card, `${JSON.stringify({ ...doc, candidates: doc.candidates.map(row => ({ ...row, pinSet: "0".repeat(64) })) })}\n`);
+    requireMissingCopyField(world.root);
+    staleVerdicts(world.root, "writer", "sections.hero.copy");
     expect(() => closeWork(world.consumer, open.id, { by: "writer", at: "2026-11-20T10:00:00Z", outcome: "fixed", result: OPEN_FIX })).toThrow(/requester check failed .*does not certify on the pinSet now/);
     expect(readRequest(world.consumer, open.id)).toMatchObject({ status: "open" });
     expect(openFixes(world.root).map(finding => finding.subject)).toEqual([OPEN_FIX]);

@@ -10,12 +10,12 @@
  * - kind fix: one from the owner about each agent's slot; Director's, Designer's and Publisher's close as fixed, and
  *   Writer's (a record slot, sections.hero.copy#home.hero) stays open, so the release gate must refuse it;
  * - a done loop.create run answering each closed fix and Writer's change, each step writing only the agent's own folder;
- * - each agent's ia.json placing the world's slots, Publisher's release input edge to Director (its locales), and each
+ * - each agent's ia.json placing the world's slots (the release world's voice and site frame included), Publisher's release input edge to Director (its locales), and each
  *   pin's scorecard verdict as the pin gate records it.
  *
  * Structure and real slot ids only; nothing outside the tmp root is written.
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runRequestCli } from "../../cli/request.js";
@@ -61,9 +61,11 @@ export interface RequestsWorld extends ReleaseWorld {
 function placeSlots(root: string): void {
   const source = (agent: string): string => (JSON.parse(readFileSync(join(FIXTURE_AGENTS, agent, "ia.json"), "utf8")) as { source: string }).source;
   const node = (id: string, label: string, children: readonly [string, string, readonly string[]][]) => ({ id, label, children: children.map(([child, name, slots]) => ({ id: child, label: name, slots })) });
+  // The release world also holds Director's voice and Designer's site frame (the copy and the page cite them), so they
+  // stay placed: a held slot outside its agent's IA would read as a slotless need.
   const ias: Record<string, Record<string, unknown>> = {
-    director: { nodes: [node("focus", "Focus", [["focus.reach", "Reach", ["focus.reach.geography"]]])] },
-    designer: { nodes: [node("sections.sections", "Sections", [["sections-story", "Story", ["sections.hero"]]])] },
+    director: { nodes: [node("focus", "Focus", [["focus.reach", "Reach", ["focus.reach.geography"]]]), node("identity", "Identity", [["identity.verbal", "Verbal", ["identity.verbal.voice"]]])] },
+    designer: { nodes: [node("frames", "Frames", [["frames.site", "Site", ["frames.site-shell"]]]), node("sections.sections", "Sections", [["sections-story", "Story", ["sections.hero"]]])] },
     writer: { nodes: [node("copy.section-copy", "Section copy", [["story", "Story", ["sections.hero.copy"]]])] },
   };
   for (const [agent, ia] of Object.entries(ias)) {
@@ -93,6 +95,36 @@ function recordPinVerdicts(root: string): void {
   for (const [slot, entry] of rows) {
     writeScorecard(root, entry.agent, entry.id, { schema: SCORECARD_SCHEMA, slot, at: REQUESTS_AT, pick: entry.rows[0]!.candidate, candidates: entry.rows });
   }
+}
+
+/**
+ * Makes every recorded verdict of a slot stale: each scorecard row's and each cascade re-verdict's pinSet becomes
+ * zeros, so the pinned candidate no longer has a verdict on the pinSet now (constitution/cascade.ts recordedVerdict
+ * reads the cascade re-verdict first, and the release world's repins run the cascade).
+ */
+export function staleVerdicts(root: string, agent: string, slotId: string): void {
+  for (const [name, key] of [["scorecard.json", "candidates"], ["cascade.json", "verdicts"]] as const) {
+    const file = join(root, ".clossys/checks", agent, slotId, name);
+    if (!existsSync(file)) continue;
+    const doc = JSON.parse(readFileSync(file, "utf8")) as Record<string, { pinSet: string }[]>;
+    writeFileSync(file, `${JSON.stringify({ ...doc, [key]: doc[key]!.map(row => ({ ...row, pinSet: "0".repeat(64) })) })}\n`);
+  }
+}
+
+/**
+ * Adds a required copy field (`header.subheading`) to Writer's sections.hero.copy contract that its pinned record lacks.
+ * A fresh recorded verdict is taken as it stands, so nothing re-judges the record until its verdict goes stale; then
+ * the real certifier refuses it. (The release world's candidates certify on the real standards, so a stale verdict
+ * alone re-judges green.)
+ */
+export function requireMissingCopyField(root: string): void {
+  const file = join(root, "clossys/agents/writer/sections.hero.copy/slot.json");
+  const doc = JSON.parse(readFileSync(file, "utf8")) as { contract: { copy: { fields: unknown[] }; records: Record<string, { uses: string[] }> } };
+  const { contract } = doc;
+  writeSlot(file, { ...doc, contract: {
+    ...contract, copy: { ...contract.copy, fields: [...contract.copy.fields, { key: "header.subheading", required: true }] },
+    records: { ...contract.records, "home.hero": { uses: [...contract.records["home.hero"]!.uses, "header.subheading"] } },
+  } } as never);
 }
 
 function cite(root: string, from: string, refs: readonly Ref[]): void {
