@@ -4,6 +4,11 @@
  * only reads the open entries about Designer slots to link its findings to them. Producer owns and validates the
  * queue; this reader takes a well-formed open entry about a Designer slot and skips anything else (a queue-entry/1
  * fix in the same folder, another agent's entry, a file that does not parse), and it never writes.
+ *
+ * An entry can hold more than one raise: when a raise dedupes onto open work (same kind, target and requester),
+ * Producer carries its content into that entry as a later `raised` event (clossys migrate requests does this for the
+ * legacy needs it merges). Each such event's why (its detail, without the merge note Producer appends) links a
+ * finding to the entry as well, so a merged need is never orphaned.
  */
 import { promises as fs } from "node:fs";
 import { dirname, join } from "node:path";
@@ -11,6 +16,8 @@ import type { DogfoodRequest } from "../catalog-core/dogfood.js";
 
 const KINDS = ["slot", "change", "fix"] as const;
 const DESIGNER_TARGET = /^designer\/[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)*$/;
+/** The note `clossys migrate requests` appends to a merged raise's detail, after the raise's own why. */
+const MERGED_NOTE = "\n(merged by clossys migrate requests from ";
 const isDirectory = async (path: string) => { try { return (await fs.lstat(path)).isDirectory(); } catch { return false; } };
 
 /** The consumer folder (the one holding agents/producer) at or above `root`, if any. */
@@ -32,7 +39,14 @@ export async function readQueueRequests(consumer: string): Promise<DogfoodReques
       try { doc = JSON.parse(await fs.readFile(join(dir, name), "utf8")) as Record<string, unknown> | null; } catch { continue; }
       if (!doc || doc.schema !== "clossys.queue-entry/2" || doc.kind !== kind || doc.status !== "open") continue;
       if (typeof doc.id !== "string" || typeof doc.why !== "string" || typeof doc.target !== "string" || !DESIGNER_TARGET.test(doc.target)) continue;
-      out.push({ id: doc.id, why: doc.why });
+      const whys = new Set([doc.why]);
+      for (const event of Array.isArray(doc.events) ? doc.events.slice(1) : []) {
+        const { op, detail } = (event ?? {}) as { op?: unknown; detail?: unknown };
+        if (op !== "raised" || typeof detail !== "string") continue;
+        const note = detail.lastIndexOf(MERGED_NOTE);
+        whys.add(note >= 0 ? detail.slice(0, note) : detail);
+      }
+      for (const why of whys) out.push({ id: doc.id, why });
     }
   }
   return out.sort((a, b) => a.id.localeCompare(b.id));

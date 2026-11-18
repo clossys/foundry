@@ -18,6 +18,7 @@ import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, read
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
+import { queueEntryChangeIssues } from "../queue/append-only.js";
 import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
 import { consumerFacts, placedSlots, readDeclarations, routeEntry, RoutingError, WORK_KINDS, type RoutingFacts, type WorkKind } from "../queue/routing.js";
 import { FIX_CHECKS, fixCheck, requesterCheck, requesterPinSets, requesterSlots } from "../queue/requester-check.js";
@@ -864,6 +865,56 @@ export function raiseRequest(consumer: string, input: RaiseInput, options: { rea
     if (options.dry) return { request: draft, created: true };
     return { request: createRequest(consumer, draft), created: true };
   });
+}
+
+/**
+ * Where createRequest would write a fresh draft, and why it could not: the first of the draft's id and its `-2`..`-9`
+ * suffixes that no entry file and no id in `taken` holds, the entry at that id checked as createRequest checks it. A dry
+ * raise returns its draft before this, so a plan that must not stop part-way (clossys migrate requests) runs it too.
+ */
+export function createIssues(consumer: string, draft: SlotRequest, taken: ReadonlySet<string> = new Set()): { id?: string; issues: string[] } {
+  for (let attempt = 1; attempt <= 9; attempt++) {
+    const id = attempt === 1 ? draft.id : `${draft.id}-${attempt}`;
+    if (taken.has(id) || existsSync(requestPath(consumer, id, draft.kind))) continue;
+    const issues = requestIssues(addressed(draft, id));
+    return issues.length ? { issues: [`request ${id} would be invalid: ${issues.slice(0, 5).join("; ")}`] } : { id, issues: [] };
+  }
+  return { issues: [`${workQueue(draft.kind as WorkKind)} entry ${draft.id}: the id and its suffixes -2..-9 are all taken`] };
+}
+
+/** A later raise of open work merged into its entry: who raised it, when, and its whole content (the event's detail). */
+export interface MergedRaise {
+  readonly at: string;
+  readonly by: string;
+  readonly detail: string;
+  readonly via?: RequestEvent["via"];
+}
+/** The entry with one more `raised` event carrying `raise` (pure; appendRaise writes it). */
+export const withMergedRaise = (request: SlotRequest, raise: MergedRaise): SlotRequest =>
+  withEvent(request, "raised", raise.at, raise.by, raise.detail, { via: raise.via ?? "cli" }).request;
+/**
+ * Carries a raise that dedupes onto an open entry (same kind, target and requester) into that entry, so its content is
+ * never lost: one `raised` event appended under the entry's lock, through the append-only rule (queueEntryChangeIssues:
+ * only events grow), the result validated whole and re-read from disk. An event already carrying this detail is the
+ * raise already merged, and nothing is written. Dry returns the entry it would write.
+ */
+export function appendRaise(consumer: string, id: string, raise: MergedRaise, options: { readonly dry?: boolean } = {}): { request: SlotRequest; appended: boolean } {
+  checkSeat(raise.by);
+  if (!raise.detail.trim()) throw new RequestError(`a raise merged into ${id} carries its content (a detail)`);
+  const body = (): { request: SlotRequest; appended: boolean } => {
+    const before = readRequest(consumer, id);
+    if (before.status !== "open") throw new RequestError(`${workQueue(before.kind as WorkKind)}#${id} is ${before.status}: a raise merges only into an open entry`);
+    if (before.events.some(event => event.op === "raised" && event.detail === raise.detail)) return { request: before, appended: false };
+    const after = withMergedRaise(before, raise);
+    const drift = queueEntryChangeIssues(before, after);
+    if (drift.length) throw new RequestError(`merging a raise into ${id} would rewrite it: ${drift.join("; ")}`);
+    const issues = requestIssues(after, dirname(consumer));
+    if (issues.length) throw new RequestError(`request ${id} would be invalid: ${issues.slice(0, 5).join("; ")}`);
+    if (options.dry) return { request: after, appended: true };
+    writeRequest(consumer, after);
+    return { request: readRequest(consumer, id), appended: true };
+  };
+  return options.dry ? body() : withRequestLock(consumer, id, body);
 }
 
 /** What a slot raise checks before it writes (raiseRequest): the target, the requester, its issuing edge and its cite. */

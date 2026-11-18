@@ -36,6 +36,17 @@ describe("Designer requests live in Producer's queue", () => {
     const dir = join(consumer, "agents/producer/queue.slot/entries"); await fs.writeFile(join(dir, "broken.json"), "{");
     expect(await readQueueRequests(consumer)).toEqual([{ id: "2026-11-17-change-widget", why: "repin" }, { id: "2026-11-17-slot-widget", why: needWhy("src/Page.tsx#Page", "Widget capability") }]);
   });
+  it("reads a merged raise's why too, so a need merged into an open entry still links its finding", async () => {
+    const first = needWhy("src/A.tsx#A", "Widget capability"), second = needWhy("src/B.tsx#B", "Widget capability");
+    const id = "20261118T0900Z-components-widget";
+    await file("slot", entry(id, "slot", { why: first, events: [
+      { id: `${id}#1`, at: "2026-11-18T09:00:00Z", op: "raised", by: "producer", via: "cli", detail: first },
+      { id: `${id}#2`, at: "2026-11-18T09:00:00Z", op: "routed", by: "producer", detail: "designer" },
+      { id: `${id}#3`, at: "2026-11-18T09:00:00Z", op: "raised", by: "producer", via: "cli", detail: `${second}\n(merged by clossys migrate requests from NEED-002, agents/designer/library/needs/NEED-002.json)` },
+      { id: `${id}#4`, at: "2026-11-18T09:00:00Z", op: "raised", by: "producer", via: "cli", detail: first },
+    ] }));
+    expect(await readQueueRequests(consumer)).toEqual([{ id, why: first }, { id, why: second }]);
+  });
   it("dogfood links a finding to its open queue entry, prints the request command for one with none, and writes nothing", async () => {
     const source = join(temporary, "Page.tsx"); await fs.writeFile(source, 'import Widget from "unknown-ui"; export const Page=()=> <Widget/>');
     const before = await tree(temporary);
