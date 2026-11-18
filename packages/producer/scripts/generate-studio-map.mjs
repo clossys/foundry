@@ -9,6 +9,8 @@ import { resolveCopyRef } from '@clossys/writer/resolve';
 import { listSlots, readCandidate, readIa, readSlot } from '../dist/records/slots.js';
 import { slotPositions, validateSlotDoc } from '../dist/records/slot-model/index.js';
 import { validateSlotContract } from '../dist/records/validate.js';
+import { isWriterCopySlot } from '../dist/records/writer-copy-slots.js';
+import { nodeLayers } from '../dist/records/slot-model/foundry-ia.js';
 import { publishNext } from '../dist/publish/install-next.js';
 import { readPinnedPublication, resolvePublicationTitles } from '../dist/publish/pinned-publication.js';
 import { expandPublication, landingOf, projectTrails } from '../dist/publish/expand-tabs.js';
@@ -230,12 +232,33 @@ function pinnedComponents(clossysRoot, entries) {
   return out;
 }
 
-// Studio copy slots: every Writer `strings.*` slot (folders are flat, agents/writer/<slot-id>, so a
-// regroup in ia.json never drops a slot from Studio copy). A key Studio shows may live in any of
-// them (page titles, errors, names); only `studio.` ids are Studio copy. `placement` in the
-// recorded source is the slot's current IA position (provenance only).
-const isStudioCopySlot = slot => /^strings\.[a-z0-9-]+$/.test(slot);
+// Studio copy slots: every Writer keyed copy slot, by the one rule every copy reader takes
+// (src/records/writer-copy-slots.ts: Writer's tree data, never an id prefix; prose pieces and retired ids never read). Folders are
+// flat, agents/writer/<slot-id>, so a regroup in ia.json never drops a slot from Studio copy. A key Studio shows may
+// live in any of them; only `studio.` ids are Studio copy. `placement` in the recorded source is the slot's current IA
+// position (provenance only). A pin, or each record of a pin map, contributes its keyed record body (`.md`); a `.json`
+// field record carries no record ids and resolves by `<slot>#<record>` instead.
+const isStudioCopySlot = (slot, l0) => isWriterCopySlot({ id: slot, position: { l0 } });
 const candidateVersion = name => /^[a-z0-9][a-z0-9.-]*-v([1-9][0-9]*)\.md$/.exec(name)?.[1];
+const PIN_MAP = 'clossys.pin-map/1';
+
+/** The pinned record bodies a Writer pin names: each `.md` record of a pin map, or the single `.md` pin. */
+function studioPinnedRecords(pin, slot) {
+  if (!object(pin)) throw new Error(`Invalid Studio Writer pin: ${slot}`);
+  if (pin.schema !== PIN_MAP) {
+    if (typeof pin.candidate === 'string' && pin.candidate.endsWith('.json')) return [];
+    if (!candidateVersion(pin.candidate)) throw new Error(`Invalid Studio Writer pin: ${slot}`);
+    return [pin];
+  }
+  if (!object(pin.records)) throw new Error(`Invalid Studio Writer pin: ${slot}`);
+  return Object.keys(pin.records).sort().map(key => pin.records[key]).filter(record => {
+    if (!object(record) || typeof record.candidate !== 'string') throw new Error(`Invalid Studio Writer pin: ${slot}`);
+    return record.candidate.endsWith('.md');
+  }).map(record => {
+    if (!candidateVersion(record.candidate)) throw new Error(`Invalid Studio Writer pin: ${slot}`);
+    return record;
+  });
+}
 
 /** Pins remain authoritative. Only explicit preview may read an absent pin's newest draft. */
 export async function studioCopyRegistry(clossysRoot, { target, absentPin } = {}) {
@@ -247,58 +270,63 @@ export async function studioCopyRegistry(clossysRoot, { target, absentPin } = {}
   catch (error) { if (error.code !== 'ENOENT') throw error; ia = { nodes: [] }; }
   const entries = [], revisions = [], sources = [];
   let locale;
+  const layers = nodeLayers('writer', ia);
   for (const node of ia.nodes) for (const group of node.children) for (const slot of group.slots) {
-    if (!isStudioCopySlot(slot)) continue;
+    if (!isStudioCopySlot(slot, layers.get(node.id))) continue;
     const placement = `${node.id}/${group.id}/${slot}`;
     const dir = join(root, slot);
-    let pin, candidate, selectedBy;
+    let pin;
     try { pin = JSON.parse(await readFile(join(dir, 'pin.json'), 'utf8')); }
     catch (error) { if (error.code !== 'ENOENT') throw error; }
+    const picks = [];
     if (pin !== undefined) {
-      if (!object(pin) || !candidateVersion(pin.candidate)) throw new Error(`Invalid Studio Writer pin: ${slot}`);
-      candidate = pin.candidate;
-      selectedBy = 'pin';
+      for (const record of studioPinnedRecords(pin, slot)) picks.push({ candidate: record.candidate, sha256: record.sha256, selectedBy: 'pin' });
     } else {
       if (!previewDrafts) continue;
-      const candidates = (await readdir(join(dir, 'candidates'))).filter(name => name.endsWith('.md')).map(name => {
+      // A copy slot with no keyed record body drafted yet (no candidates, or only `.json` field records) shows nothing.
+      let names;
+      try { names = await readdir(join(dir, 'candidates')); }
+      catch (error) { if (error.code !== 'ENOENT') throw error; continue; }
+      if (!names.some(name => name.endsWith('.md'))) continue;
+      const candidates = names.filter(name => name.endsWith('.md')).map(name => {
         const version = candidateVersion(name);
         if (!version) throw new Error(`Invalid Studio Writer draft candidate: ${placement}/${name}`);
         return { name, version: BigInt(version) };
       });
-      if (!candidates.length) throw new Error(`No Studio Writer draft candidate: ${placement}`);
       const newest = candidates.reduce((latest, row) => row.version > latest ? row.version : latest, 0n);
       const matches = candidates.filter(row => row.version === newest);
       if (matches.length !== 1) throw new Error(`Ambiguous Studio Writer draft version: ${placement}/v${newest}`);
-      candidate = matches[0].name;
-      selectedBy = 'absent-pin-preview';
+      picks.push({ candidate: matches[0].name, selectedBy: 'absent-pin-preview' });
     }
-    const content = await readFile(join(dir, 'candidates', candidate));
-    const sha256 = createHash('sha256').update(content).digest('hex');
-    const bytes = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(content);
-    if (pin !== undefined && sha256 !== pin.sha256) throw new Error(`Studio Writer pin hash mismatch: ${slot}`);
-    revisions.push(sha256);
-    sources.push({ placement, candidate, version: candidateVersion(candidate), sha256, selectedBy });
-    // The source locale is the candidate's first recorded locale; every Studio copy slot shares it.
-    const locales = bytes.startsWith('---\n') ? /\nlocales: (\[[^\n]*\])\n/.exec(bytes)?.[1] : undefined;
-    const first = locales ? JSON.parse(locales)[0] : undefined;
-    if (typeof first !== 'string' || !/^[a-z]{2,3}(?:-[A-Za-z0-9]+)*$/.test(first)) throw new Error(`Invalid Studio Writer locale: ${slot}`);
-    if (locale !== undefined && first !== locale) throw new Error(`Studio Writer slots disagree on their source locale: ${slot} is ${first}, not ${locale}`);
-    locale = first;
-    // Only the source locale's records: its body runs from `## <locale>` to the next locale heading.
-    const body = bytes.split(/^## /m).find(part => part.startsWith(`${first}\n`));
-    if (body === undefined) throw new Error(`Invalid Studio Writer records: ${slot}`);
-    const records = body.split(/^### /m).slice(1);
-    if (!records.length) throw new Error(`Invalid Studio Writer records: ${slot}`);
-    for (const record of records) {
-      const match = /^([^\n]+)\n<!-- (.+) -->\n([\s\S]*)$/.exec(record);
-      if (!match) throw new Error(`Invalid Studio Writer record: ${slot}`);
-      const meta = JSON.parse(match[2]);
-      if (!object(meta) || typeof meta.id !== 'string') throw new Error(`Invalid Studio Writer metadata: ${slot}`);
-      if (!meta.id.startsWith('studio.')) continue;
-      if (!Array.isArray(meta.bindings) || !meta.bindings.every(binding => typeof binding === 'string')) throw new Error(`Invalid Studio Writer bindings: ${meta.id}`);
-      if (entries.some(row => row.id === meta.id)) throw new Error(`Duplicate Studio Writer copy: ${meta.id}`);
-      // A record's context is where it is bound; an unbound record keeps its own Writer context (its `###` heading).
-      entries.push({ id: meta.id, text: match[3].replace(/\n\n?$/, ''), context: meta.bindings.join(', ') || match[1].trim(), status: 'draft' });
+    for (const { candidate, sha256: pinned, selectedBy } of picks) {
+      const content = await readFile(join(dir, 'candidates', candidate));
+      const sha256 = createHash('sha256').update(content).digest('hex');
+      const bytes = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(content);
+      if (pinned !== undefined && sha256 !== pinned) throw new Error(`Studio Writer pin hash mismatch: ${slot}`);
+      revisions.push(sha256);
+      sources.push({ placement, candidate, version: candidateVersion(candidate), sha256, selectedBy });
+      // The source locale is the candidate's first recorded locale; every Studio copy slot shares it.
+      const locales = bytes.startsWith('---\n') ? /\nlocales: (\[[^\n]*\])\n/.exec(bytes)?.[1] : undefined;
+      const first = locales ? JSON.parse(locales)[0] : undefined;
+      if (typeof first !== 'string' || !/^[a-z]{2,3}(?:-[A-Za-z0-9]+)*$/.test(first)) throw new Error(`Invalid Studio Writer locale: ${slot}`);
+      if (locale !== undefined && first !== locale) throw new Error(`Studio Writer slots disagree on their source locale: ${slot} is ${first}, not ${locale}`);
+      locale = first;
+      // Only the source locale's records: its body runs from `## <locale>` to the next locale heading.
+      const body = bytes.split(/^## /m).find(part => part.startsWith(`${first}\n`));
+      if (body === undefined) throw new Error(`Invalid Studio Writer records: ${slot}`);
+      const records = body.split(/^### /m).slice(1);
+      if (!records.length) throw new Error(`Invalid Studio Writer records: ${slot}`);
+      for (const record of records) {
+        const match = /^([^\n]+)\n<!-- (.+) -->\n([\s\S]*)$/.exec(record);
+        if (!match) throw new Error(`Invalid Studio Writer record: ${slot}`);
+        const meta = JSON.parse(match[2]);
+        if (!object(meta) || typeof meta.id !== 'string') throw new Error(`Invalid Studio Writer metadata: ${slot}`);
+        if (!meta.id.startsWith('studio.')) continue;
+        if (!Array.isArray(meta.bindings) || !meta.bindings.every(binding => typeof binding === 'string')) throw new Error(`Invalid Studio Writer bindings: ${meta.id}`);
+        if (entries.some(row => row.id === meta.id)) throw new Error(`Duplicate Studio Writer copy: ${meta.id}`);
+        // A record's context is where it is bound; an unbound record keeps its own Writer context (its `###` heading).
+        entries.push({ id: meta.id, text: match[3].replace(/\n\n?$/, ''), context: meta.bindings.join(', ') || match[1].trim(), status: 'draft' });
+      }
     }
   }
   const reference = previewDrafts ? `clossys/agents/writer#${JSON.stringify(sources)}` : 'clossys/agents/writer';

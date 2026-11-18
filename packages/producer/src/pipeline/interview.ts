@@ -49,6 +49,7 @@ import type { SlotAgent } from "../records/slot-model/types.js";
 import { directorStoreReader, listSlots, modelExists, readCandidate, readiness, readSlot, slotIndex } from "../records/slots.js";
 import type { SlotEntry } from "../records/slots.js";
 import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
+import { writerCopyPins } from "../records/writer-copy-slots.js";
 import { writerWording, type WordingRow } from "../records/writer-wording.js";
 import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
 import type { DirectorContent } from "./director-interview.js";
@@ -208,6 +209,16 @@ function keysNamed(value: unknown, namespaces: ReadonlySet<string>, out = new Se
   else if (value && typeof value === "object") for (const each of Object.values(value)) keysNamed(each, namespaces, out);
   return out;
 }
+/**
+ * The keys each pinned Writer copy slot records, by slot id in IA order: every pinned record of every Writer copy
+ * slot (records/writer-copy-slots.ts: Writer's tree data, never a `strings.` prefix). A key a pinned Publisher record
+ * names and the pinned copy lacks is asked of the slot whose keys are nearest it.
+ */
+export function writerKeyHolders(consumer: string): Map<string, string[]> {
+  const holders = new Map<string, string[]>();
+  for (const { entry, pin } of writerCopyPins(consumer)) holders.set(entry.id, [...(holders.get(entry.id) ?? []), ...keysIn(readCandidate(consumer, "writer", entry.id, pin.candidate).bytes)]);
+  return holders;
+}
 const sharedPrefix = (a: string, b: string): number => {
   const left = a.split("."), right = b.split(".");
   let at = 0;
@@ -346,7 +357,7 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
   let keysChecked = 0;
   if (copy) {
     const namespaces = new Set(copy.ids.map(id => id.slice(0, id.indexOf("."))));
-    const pinnedWriter = (entries.get("writer") ?? []).filter(entry => entry.pin && entry.id.startsWith("strings.")).map(entry => ({ entry, keys: keysIn(readCandidate(consumer, "writer", entry.id, entry.pin!.candidate).bytes) }));
+    const pinnedWriter = [...writerKeyHolders(consumer)].map(([id, keys]) => ({ entry: { id }, keys }));
     const unapproved = writerKeysUnapproved(root);
     const missing = new Map<string, { keys: Set<string>; need: Set<string> }>();
     for (const entry of entries.get("publisher") ?? []) {

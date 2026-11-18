@@ -112,13 +112,13 @@ async function editSlot(path, edit) {
 async function writerCallerFixture(t) {
   const options = await fixture(t);
   const writer = join(options.clossysRoot, 'agents/writer');
-  const placement = 'strings.interface/interface-field-labels/strings.common';
-  const dir = join(writer, 'strings.common');
-  // The fixture carries the real Writer slots; this caller owns strings.common, starting with no pin and no candidate.
-  await rm(dir, { recursive: true, force: true });
+  // foundry-build-0048 U14: a Writer current-tree copy slot (page.home.meta), not a retired `strings.*` id.
+  const placement = 'copy.page-metadata/site/page.home.meta';
+  const dir = join(writer, 'page.home.meta');
+  // The fixture carries the real Writer slots; this caller owns page.home.meta, which starts with no pin and no candidate.
   await mkdir(join(dir, 'candidates'), { recursive: true });
-  // The real Writer IA and its other pinned strings.* slots stay (every strings.* slot is Studio copy and the
-  // page titles resolve through them); this caller places only strings.common, the slot under test.
+  // The real Writer IA and its other copy slots stay (every Writer copy slot is Studio copy); this caller drafts
+  // only page.home.meta, the slot under test.
   const previewItems = await pinnedBindings(options.clossysRoot, STUDIO_SLOTS);
   assert.equal(previewItems.length, STUDIO_SLOTS.length);
   // Draft binds what the consumer's slot model pins: each slot's version is the one its pin.json names,
@@ -130,7 +130,7 @@ async function writerCallerFixture(t) {
   for (const row of previewItems) assert.equal(row.version, await pinnedVersion(row.slot), `${row.slot} binds its pinned version`);
   async function candidate(text, version, pin = false) {
     const name = `studio-v${version}.md`;
-    const bytes = `---\nslot: "strings.common"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n### studio.greeting\n<!-- {"id":"studio.greeting","bindings":["test"]} -->\n${text}\n`;
+    const bytes = `---\nslot: "page.home.meta"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n### studio.greeting\n<!-- {"id":"studio.greeting","bindings":["test"]} -->\n${text}\n`;
     await writeFile(join(dir, 'candidates', name), bytes);
     const sha256 = createHash('sha256').update(bytes).digest('hex');
     if (pin) await writeFile(join(dir, 'pin.json'), JSON.stringify({ candidate: name, sha256 }));
