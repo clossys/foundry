@@ -162,14 +162,14 @@ test('Preview refuses numeric-version ties and compares large versions without r
   await assert.rejects(studioCopyRegistry(f.root, preview), /Ambiguous Studio Writer draft version/);
 });
 
-// foundry-build-0048 U14: Studio copy reads every copy slot of Writer's current tree (prose and copy kinds) and a
-// consumer extension, by Writer's tree data, never a `strings.` prefix; a voice slot and a retired id read nothing.
+// foundry-build-0048 U14: Studio copy reads every keyed copy slot of Writer's current tree (the copy kind) and a
+// consumer extension, by Writer's tree data, never a `strings.` prefix; a prose piece, a voice slot and a retired id
+// read nothing.
 test('Studio copy reads every Writer copy slot, wherever the IA groups it, and no other Writer slot', async t => {
   for (const placement of [
     'copy.page-metadata/site/page.home.meta',
     'copy.component-text/actions/components.command.copy',
     'copy.section-text/hero/sections.hero.copy',
-    'prose.editorial/narratives/narratives.article',
     'copy.extensions/site/strings.site',
   ]) {
     const f = await fixture(t, placement);
@@ -186,6 +186,8 @@ test('Studio copy reads every Writer copy slot, wherever the IA groups it, and n
     assert.deepEqual((await studioCopyRegistry(f.root)).entries, []);
   }
   for (const placement of [
+    'prose.editorial/narratives/narratives.article',
+    'prose.extensions/pieces/narratives.house-story',
     'voice.tone/attitude/lexicon.formality',
     'voice.extensions/house/lexicon.house-rule',
     'strings.interface/interface-field-labels/strings.common',
@@ -208,6 +210,27 @@ test('Studio copy reads each keyed record of a pin map and leaves a field record
   await writeFile(join(f.dir, 'pin.json'), JSON.stringify({ schema: 'clossys.pin-map/1', records: { home: pinned('home.hero-v1.md'), about: pinned('about.hero-v2.md'), pricing: pinned('pricing.hero-v1.json') } }));
   const registry = await studioCopyRegistry(f.root);
   assert.deepEqual(registry.entries.map(entry => [entry.id, entry.text]), [['studio.hero.about', 'About hero'], ['studio.hero.home', 'Home hero']]);
+});
+
+// r1: Writer's real shipped defaults, pinned as a consumer pins them: page.home.meta's `.json` field record (a single
+// pin) and the privacy prose piece. Neither is keyed copy; Studio copy builds around both without error.
+test('Studio copy builds with Writer\'s shipped page.home.meta field record and privacy prose default pinned', async t => {
+  const f = await fixture(t, 'copy.component-text/actions/components.command.copy');
+  await f.candidate('Keyed copy');
+  const ia = JSON.parse(await readFile(join(f.writer, 'ia.json'), 'utf8'));
+  ia.nodes.push({ id: 'copy.page-metadata', children: [{ id: 'home', slots: ['page.home.meta'] }] });
+  ia.nodes.push({ id: 'prose.reference', children: [{ id: 'policies', slots: ['narratives.legal-document'] }] });
+  await writeFile(join(f.writer, 'ia.json'), JSON.stringify(ia));
+  for (const [slot, name] of [['page.home.meta', 'home.meta-v1.json'], ['narratives.legal-document', 'privacy-v1.md']]) {
+    const bytes = await readFile(new URL(`../../writer/defaults/${slot}/${name}`, import.meta.url));
+    await mkdir(join(f.writer, slot, 'candidates'), { recursive: true });
+    await writeFile(join(f.writer, slot, 'candidates', name), bytes);
+    await writeFile(join(f.writer, slot, 'pin.json'), JSON.stringify({ candidate: name, sha256: createHash('sha256').update(bytes).digest('hex'), decidedBy: 'planner:synthetic-test-only', basis: 'planner', at: '2026-01-01T00:00:00Z' }));
+  }
+  for (const options of [{}, preview]) {
+    const registry = await studioCopyRegistry(f.root, options);
+    assert.deepEqual(registry.entries.map(entry => [entry.id, entry.text]), [['studio.greeting', 'Keyed copy']]);
+  }
 });
 
 async function rawCandidate(f, records) {

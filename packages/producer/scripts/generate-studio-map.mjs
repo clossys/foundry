@@ -10,6 +10,7 @@ import { listSlots, readCandidate, readIa, readSlot } from '../dist/records/slot
 import { slotPositions, validateSlotDoc } from '../dist/records/slot-model/index.js';
 import { validateSlotContract } from '../dist/records/validate.js';
 import { isWriterCopySlot } from '../dist/records/writer-copy-slots.js';
+import { nodeLayers } from '../dist/records/slot-model/foundry-ia.js';
 import { publishNext } from '../dist/publish/install-next.js';
 import { readPinnedPublication, resolvePublicationTitles } from '../dist/publish/pinned-publication.js';
 import { expandPublication, landingOf, projectTrails } from '../dist/publish/expand-tabs.js';
@@ -231,20 +232,21 @@ function pinnedComponents(clossysRoot, entries) {
   return out;
 }
 
-// Studio copy slots: every Writer copy slot, by the one rule every copy reader takes
-// (src/records/writer-copy-slots.ts: Writer's tree data, never an id prefix; a retired id never reads). Folders are
+// Studio copy slots: every Writer keyed copy slot, by the one rule every copy reader takes
+// (src/records/writer-copy-slots.ts: Writer's tree data, never an id prefix; prose pieces and retired ids never read). Folders are
 // flat, agents/writer/<slot-id>, so a regroup in ia.json never drops a slot from Studio copy. A key Studio shows may
 // live in any of them; only `studio.` ids are Studio copy. `placement` in the recorded source is the slot's current IA
-// position (provenance only). A pin map contributes each keyed record body (`.md`); a `.json` field record carries no
-// record ids and resolves by `<slot>#<record>` instead.
+// position (provenance only). A pin, or each record of a pin map, contributes its keyed record body (`.md`); a `.json`
+// field record carries no record ids and resolves by `<slot>#<record>` instead.
 const isStudioCopySlot = (slot, l0) => isWriterCopySlot({ id: slot, position: { l0 } });
 const candidateVersion = name => /^[a-z0-9][a-z0-9.-]*-v([1-9][0-9]*)\.md$/.exec(name)?.[1];
 const PIN_MAP = 'clossys.pin-map/1';
 
-/** The pinned record bodies a Writer pin names: each `.md` record of a pin map, or the single pin. */
+/** The pinned record bodies a Writer pin names: each `.md` record of a pin map, or the single `.md` pin. */
 function studioPinnedRecords(pin, slot) {
   if (!object(pin)) throw new Error(`Invalid Studio Writer pin: ${slot}`);
   if (pin.schema !== PIN_MAP) {
+    if (typeof pin.candidate === 'string' && pin.candidate.endsWith('.json')) return [];
     if (!candidateVersion(pin.candidate)) throw new Error(`Invalid Studio Writer pin: ${slot}`);
     return [pin];
   }
@@ -268,8 +270,9 @@ export async function studioCopyRegistry(clossysRoot, { target, absentPin } = {}
   catch (error) { if (error.code !== 'ENOENT') throw error; ia = { nodes: [] }; }
   const entries = [], revisions = [], sources = [];
   let locale;
+  const layers = nodeLayers('writer', ia);
   for (const node of ia.nodes) for (const group of node.children) for (const slot of group.slots) {
-    if (!isStudioCopySlot(slot, node.id.split('.')[0])) continue;
+    if (!isStudioCopySlot(slot, layers.get(node.id))) continue;
     const placement = `${node.id}/${group.id}/${slot}`;
     const dir = join(root, slot);
     let pin;

@@ -1,34 +1,36 @@
 /**
- * Which Writer slots hold copy, read from Writer's own tree data (foundry-build-0048 U14), never from an id prefix.
+ * Which Writer slots hold keyed copy, read from Writer's own tree data (foundry-build-0048 U14), never from an id prefix.
  *
  * Writer's current tree (src/catalog/ia/{voice,prose,copy}.json, read through `writerIa()`) names each slot's kind:
- * `prose` and `copy` slots hold copy records (headlines, bodies, prose leaves, page metadata); `voice` slots hold the
- * voice rules the copy follows, not copy. A consumer slot holds copy when it is placed in the consumer's Writer IA and:
- *  - it is a Writer tree slot of a copy kind (prose or copy), or
- *  - it is not a Writer tree slot (an owner-signed consumer extension) and it is not placed under an L0 whose tree
- *    slots are all non-copy (the voice group).
+ * `copy` slots hold keyed copy records (headlines, labels, page metadata); `prose` slots hold long-form pieces that
+ * resolve by `<slot>#<record>` (privacy, terms, articles), not keyed records; `voice` slots hold the voice rules the copy
+ * follows. A consumer slot holds keyed copy when it is placed in the consumer's Writer IA and:
+ *  - it is a Writer tree slot of the copy kind, or
+ *  - it is not a Writer tree slot (an owner-signed consumer extension) and it is not placed under an L0 with no copy
+ *    slot (the voice and prose groups).
  * An id Writer's src/catalog/retired.json lists is never copy: a retired id stays unreadable, whatever store still
- * places it.
+ * places it. Of a copy slot's pinned records only the keyed record bodies (`.md`) are keyed copy; a `.json` field
+ * record resolves by `<slot>#<record>` through records/resolve.ts.
  *
- * Every copy reader takes this one rule: the pinned Writer copy (`writer-copy.ts`), the interview's key holders
+ * Every keyed copy reader takes this one rule: the pinned Writer copy (`writer-copy.ts`), the interview's key holders
  * (`pipeline/interview.ts`), the compile lock's Writer inputs (`publish/compile-publications.ts`) and Studio's copy
- * registry (`scripts/generate-studio-map.mjs`).
+ * registry (`scripts/generate-studio-map.mjs`). Each slot's L0 comes from `nodeLayers`, as `listSlots` positions do.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { resolveAgent } from "../agents.js";
-import { writerIa, type FoundryIa } from "./slot-model/foundry-ia.js";
+import { nodeLayers, writerIa, type FoundryIa } from "./slot-model/foundry-ia.js";
 import type { TargetSlotKind } from "./types.js";
 import { listSlots, readPins, type SlotEntry } from "./slots.js";
 import type { PinDoc } from "./slot-model/types.js";
 
-/** The Writer tree kinds whose slots hold copy records. Voice slots hold rules. */
-export const WRITER_COPY_KINDS: ReadonlySet<TargetSlotKind> = new Set<TargetSlotKind>(["prose", "copy"]);
+/** The Writer tree kinds whose slots hold keyed copy records. Prose slots hold pieces, voice slots hold rules. */
+export const WRITER_COPY_KINDS: ReadonlySet<TargetSlotKind> = new Set<TargetSlotKind>(["copy"]);
 
 export interface WriterCopyRule {
   /** Each Writer tree slot id and its tree kind. */
   readonly treeKinds: ReadonlyMap<string, TargetSlotKind>;
-  /** The tree L0 groups none of whose slots holds copy (voice). */
+  /** The tree L0 groups none of whose slots holds keyed copy (voice, prose). */
   readonly nonCopyGroups: ReadonlySet<string>;
   /** The ids Writer's src/catalog/retired.json lists. */
   readonly retired: ReadonlySet<string>;
@@ -50,8 +52,9 @@ export function writerCopyRule(foundry: FoundryIa = writerIa(), retired: Readonl
   const treeKinds = new Map<string, TargetSlotKind>();
   for (const [id, slot] of foundry.slots) if (slot.targetKind !== undefined) treeKinds.set(id, slot.targetKind);
   const groups = new Map<string, boolean>();
+  const layers = nodeLayers("writer", foundry.ia);
   for (const node of foundry.ia.nodes) {
-    const group = node.id.split(".")[0]!;
+    const group = layers.get(node.id) ?? node.id;
     const copy = node.children.some(child => child.slots.some(id => WRITER_COPY_KINDS.has(treeKinds.get(id)!)));
     groups.set(group, (groups.get(group) ?? false) || copy);
   }
