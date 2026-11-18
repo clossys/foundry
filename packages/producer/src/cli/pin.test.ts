@@ -288,7 +288,13 @@ describe("clossys pin --confirm (the owner confirms an agent pick)", () => {
       expect(result.exitCode, by).toBe(1);
       expect(result.message).toMatch(/^pick refused: .*an agent acts only on its own slots/);
     }
+    // Only a registered seat acts: an unknown head is no seat on any slot.
+    for (const by of ["agent:judge", "agent:writer-x", "agent:designerx"]) {
+      const result = await pick(`designer/${ID}`, "example-v1", "--by", by);
+      expect(result.exitCode, by).toBe(1);
+      expect(result.message).toMatch(/^pick refused: .*is not a registered seat/);
+    }
     expect(existsSync(join(slotDir, "pin.json"))).toBe(false);
-    expect((await pick(`designer/${ID}`, "example-v1", "--by", "agent:judge")).exitCode).toBe(0);
+    expect((await pick(`designer/${ID}`, "example-v1", "--by", "agent:designer.review")).exitCode).toBe(0);
   });
 });

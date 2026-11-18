@@ -22,6 +22,7 @@ import { GuardRefusal, SLOT_LOCK, withDirLock, writeConfirm, writeNotNeeded, wri
 import "../constitution/guard.js"; // registers the write guard's runner
 import { pinGate, writeScorecard } from "../constitution/pin-gate.js";
 import { clearReverdict } from "../constitution/cascade.js";
+import { seatRefusal } from "../records/seat-owner.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -200,7 +201,10 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
   if (/^planner(:|$)/.test(by)) {
     if (flags.basis !== undefined && flags.basis !== "planner") throw new CliUsageError(`--by ${by} is a planner pin: its basis is planner\n${PIN_USAGE}`);
     basis = "planner";
-  } else if (/^agent:(director|designer|writer|publisher|producer)$/.test(by)) {
+  } else if (by.startsWith("agent:")) {
+    // The shared seat rule (records/seat-owner.ts), before the gate writes a scorecard: a registered seat, on its own slots.
+    const crossing = seatRefusal(by, agent);
+    if (crossing !== undefined) return { exitCode: 1, message: `pin refused: ${crossing}` };
     if (flags.basis !== undefined && flags.basis !== "agent") throw new CliUsageError(`--by ${by} is an agent pin: its basis is agent\n${PIN_USAGE}`);
     basis = "agent";
   } else if (ownerAnswerRef(by)) {

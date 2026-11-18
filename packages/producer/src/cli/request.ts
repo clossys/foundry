@@ -23,9 +23,10 @@ export const REQUEST_USAGE = "Usage: clossys request --target <agent>/<slot> --f
   + "       clossys request --list [--open] [--agent <id>] [--json] [--root <dir>]\n"
   + "       clossys request --scan [--dry] [--at <iso>] [--root <dir>]\n"
   + "       clossys request <id> --check | --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> [--kind <kind>] --inputs <ref,...> --contract <file> [--overlap-reason <text>] | --close [--approved queue.approve#<id>] [--owner-ref <ref>]\n"
-  + "       clossys request <id> --close --outcome changed|fixed|reused|created|declined --result <agent>/<slot>|<queue>#<id> [--by <seat>] [--at <iso>] [--root <dir>]\n"
+  + "       clossys request <id> --close --outcome changed|fixed|reused|created|declined --result <agent>/<slot>|<queue>#<id> --by <assignee>|owner [--at <iso>] [--root <dir>]\n"
   + "  --by is the seat acting (director, designer, writer, publisher, owner, planner, producer); a raise defaults to the\n"
-  + "  requester slot's agent (owner for --from owner), a decide to the assignee, --scan and --close to producer. A raise\n"
+  + "  requester slot's agent (owner for --from owner), a decide to the assignee, --scan and a slot --close to producer; a change\n"
+  + "  or fix --close needs --by, its assignee or owner. A raise\n"
   + "  needs the requester slot to cite the target; a target already placed is cited, not requested. A create over a\n"
   + "  placed slot of one L2 and kind family with overlapping inputs is refused (cite it) unless --overlap-reason says why\n"
   + "  the material differs; the reason and overlap ids go to the owner's sign.\n"
@@ -157,7 +158,9 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
         const outcome = flags.values.get("--outcome"), result = flags.values.get("--result");
         if (!outcome || !result) throw new CliUsageError(`a ${request.kind} entry closes with --outcome and --result\n${REQUEST_USAGE}`);
         if (!(WORK_OUTCOMES as readonly string[]).includes(outcome)) throw new CliUsageError(`--outcome must be one of ${WORK_OUTCOMES.join(", ")}\n${REQUEST_USAGE}`);
-        const closed = closeWork(consumer, id, { by, at: atOf(flags), outcome: outcome as (typeof WORK_OUTCOMES)[number], result });
+        // Who closes is said, never defaulted: the assignee (or the owner) names itself with --by.
+        if (given === undefined) throw new CliUsageError(`a ${request.kind} entry closes with --by ${request.assignee} (its assignee) or --by owner\n${REQUEST_USAGE}`);
+        const closed = closeWork(consumer, id, { by: given, at: atOf(flags), outcome: outcome as (typeof WORK_OUTCOMES)[number], result });
         return { exitCode: 0, root, output: closed, message: `request ${id}: closed ${closed.outcome} (${closed.result}), the requester check passed; notified ${closed.from}` };
       }
       if (flags.values.has("--outcome") || flags.values.has("--result")) throw new CliUsageError(`a slot entry closes by its decision; --outcome and --result are for change and fix\n${REQUEST_USAGE}`);

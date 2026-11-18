@@ -64,7 +64,7 @@ function world(mutate: Mutation = () => {}): { agent: AgentModel; model: Conform
     contractSchemas: new Map([["brief", { type: "object", required: ["requirements"] }]]), criteria: new Set(["text.nonempty"]),
     requests: {
       routingIssues: [], ownerPacketRow: true, ownerClassCount: 3, fixRaisers: [], printedGaps: [], gapCodes: 1, releaseGates: ["requests.open-fix"], reasked: new Set<string>(),
-      seatGuardIssues: [], openFix: { wired: true, closure: new Set(["director/a.x"]), refused: new Set(["director/a.x"]) },
+      seatGuardIssues: [], openFix: { wired: true, closure: new Set(["director/a.x"]), refused: new Set(["director/a.x"]), unread: new Set<string>() },
       runs: [{ id: "r1", loop: "loop.create", status: "done", createdAt: "2026-11-16T00:00:00Z", cites: ["queue.change#c1"], steps: [{ id: "s1", by: "agent", agent: "director", wrote: ["director/a.x/candidates/x.md"] }, { id: "s2", by: "code", wrote: ["producer/ledger.create/entries/r1.json"] }] }],
     },
   };
@@ -319,7 +319,7 @@ describe("conformance over the repo and its fixture", () => {
     for (const agent of model.agents) expect(agent.adapterIssues, agent.agent).toEqual([]);
     expect(adapterIssues({ schema: "clossys.conform-adapter/1", agent: "writer" }, "director").length).toBeGreaterThan(1);
   });
-  it("judges every assertion and dogfood row per agent, with today's known reds", () => {
+  it("judges every assertion and dogfood row per agent, with today's known reds", { timeout: 60_000 }, () => {
     const accepted = (agent: string) => [{ target: `${agent}/conform.contract-probe`, contract: "{}", accepted: true, message: "ia --dry" }];
     const report = conform(model, readRegistry(), { emptyL2Detected: Object.fromEntries(CONFORM_AGENTS.map(agent => [agent, false])), requestVerb: false, critiqueMonorepoPath: true, iaContract: Object.fromEntries(CONFORM_AGENTS.map(agent => [agent, accepted(agent)])) });
     for (const agent of report.agents) {

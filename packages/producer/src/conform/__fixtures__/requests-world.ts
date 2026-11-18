@@ -141,7 +141,7 @@ export async function requestsWorld(): Promise<RequestsWorld> {
     const raised = raiseWork(consumer, { kind: "change", target: item.target, from: item.from, want: item.want, why: `${item.from} needs ${item.target} to change`, source: "cli", by: item.from.split("/")[0]!, at }).request;
     change.push(raised);
     if (raised.assignee === "writer") answeringRun(consumer, `20261120T091${index}Z-create-writer`, `2026-11-20T09:1${index}:30Z`, { queue: "queue.change", id: raised.id }, "writer", item.target);
-    await cli(root, [raised.id, "--close", "--outcome", "changed", "--result", item.target, "--at", `2026-11-20T09:2${index}:00Z`]);
+    await cli(root, [raised.id, "--close", "--outcome", "changed", "--result", item.target, "--by", raised.assignee, "--at", `2026-11-20T09:2${index}:00Z`]);
   }
 
   // kind fix: one from the owner about each agent's slot; all but the Writer record slot's close as fixed.
@@ -149,7 +149,7 @@ export async function requestsWorld(): Promise<RequestsWorld> {
   for (const [index, target] of FIXES.entries()) {
     const raised = raiseWork(consumer, {
       kind: "fix", target, from: "owner", why: `${target} fails its check`, source: "check", by: "producer", at: `2026-11-20T09:3${index}:00Z`,
-      check: "text.nonempty", findings: [`${target} is empty`], cause: "the pinned candidate has no body",
+      check: "pins.resolve", findings: [`${target} does not resolve`], cause: "the slot had no pin",
     }).request;
     fix.push(raised);
     if (target === OPEN_FIX) continue;

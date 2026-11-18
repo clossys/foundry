@@ -23,6 +23,7 @@ import {
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
 import { isCurrentSlot, slotReadIssues } from "./slot-current.js";
 import { serializeSlot } from "./slot.js";
+import { assertSeat } from "./seat-owner.js";
 import type { Slot } from "./types.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, skillFile, skillPath,
@@ -588,6 +589,8 @@ export function writePin(consumer: string, agent: SlotAgent, id: string, candida
 }
 /** writePin's body; the caller holds the slot lock (writePin, or writeVerdict for a pick). */
 function pinUnderLock(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; basis: PinBasis; at: string }, given: WriteProvenance | undefined, options: { readonly guard?: WriteGuard; readonly fields?: Readonly<Record<string, unknown>> }): PinDoc {
+  // The shared seat guard (records/seat-owner.ts): an agent seat pins (picks) only its own agent's slots.
+  assertSeat(input.decidedBy, agent, input.basis === "agent" ? "pick" : "pin");
   const { doc, entry } = located(consumer, agent, id);
   refuseTargetPin(entry.dir, agent, id, "pin"); // the choke point: every pin/1 writer (pin, pick, approve, verdict pick) passes here
   if (!entry.candidates.includes(candidate)) throw new Error(`${agent} slot ${id} has no candidate ${candidate}`);
@@ -635,6 +638,7 @@ export type VerdictInput =
 export function writeVerdict(consumer: string, agent: ModelAgent, id: string, verdict: VerdictInput, input: { readonly by: string; readonly at: string; readonly inputsHash?: string }, given: WriteProvenance, options: { readonly guard?: WriteGuard } = {}): { event: LedgerEvent; pin?: PinDoc } {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
+    assertSeat(input.by, agent, "verdict"); // a verdict (pick or create) is a decision on the slot: its own agent's seat only
     const { entry: current } = located(consumer, agent, id);
     const events = (readLedger(current.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
     const latest = [...events].reverse().find(event => event.op === "options")?.inputsHash;
@@ -716,6 +720,7 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
   const { entry } = located(consumer, agent, id);
   canonicalDirectory(entry.dir);
   return slotLocked(entry.dir, () => {
+    assertSeat(input.by, agent, "reissue"); // a reissue writes a candidate and repins: its own agent's seat only
     const { doc, entry: current } = located(consumer, agent, id);
     if (!current.candidates.includes(input.old)) throw new Error(`reissue refused: ${agent} slot ${id} has no candidate ${input.old}`);
     const old = readCandidate(consumer, agent, id, input.old);
@@ -788,6 +793,8 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
 export function writeConfirm(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { by: string; ref: string; at: string }, given?: WriteProvenance): PinDoc {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
+    // A confirmation is the owner's: no seat (an agent's own included) confirms a pick.
+    if (!/^owner(?::|$)/.test(input.by)) throw new Error(`confirm refused: --by ${input.by}: a confirmation is the owner's (owner[:<ref>]), never an agent seat's`);
     refuseTargetPin(entry.dir, agent, id, "confirm");
     const path = pinFile(entry.dir);
     if (!existsSync(path)) throw new Error(`confirm refused: ${agent}/${id} has no pin to confirm (an agent picks first with clossys pick)`);
@@ -1000,6 +1007,7 @@ export function writeSlotSeed(consumer: string, agent: ModelAgent, id: string, c
 export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, notNeeded: NotNeeded, given?: WriteProvenance & { readonly at?: string }): SlotDoc {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
+  assertSeat(notNeeded.decidedBy, agent, "not-needed"); // dropping the pin is a decision on the slot
   const { doc } = located(consumer, agent, id);
   const marker = { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy };
   const at = given?.at ?? nowIso();

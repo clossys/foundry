@@ -168,8 +168,12 @@ describe("requests.open-fix", () => {
 
   it("passes once that fix closes with its result", async () => {
     const world = make();
-    const fix = fixOn(world, "designer/sections.hero");
-    closeWork(join(world.root, "clossys"), fix.id, { by: "producer", at: "2026-11-20T07:40:00Z", outcome: "fixed", result: "designer/sections.hero" });
+    // A fix closes fixed only by its assignee (or the owner), and only when its own check passes again on the target.
+    const fix = raiseWork(join(world.root, "clossys"), {
+      kind: "fix", target: "designer/sections.hero", from: "owner", why: "the hero did not resolve", source: "check", by: "producer", at: "2026-11-20T07:30:00Z",
+      check: "pins.resolve", findings: ["designer/sections.hero does not resolve"], cause: "the hero had no pin",
+    }).request;
+    closeWork(join(world.root, "clossys"), fix.id, { by: "designer", at: "2026-11-20T07:40:00Z", outcome: "fixed", result: "designer/sections.hero" });
     await release(world, "--build");
     await release(world, "--manifest");
     const result = await release(world, "--gates");

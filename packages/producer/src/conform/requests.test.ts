@@ -64,7 +64,7 @@ function judge(id: string, agent: string, at: { consumer: string; repo?: string 
 }
 const fix = (dir: string, target = "designer/sections.hero", at: string = AT) => raiseWork(dir, {
   kind: "fix", target, from: "owner", why: "the hero overflows at 320px", source: "check", by: "producer", at,
-  check: "render.overflow", findings: ["hero heading overflows at 320px"], cause: "the heading has no wrap rule",
+  check: "pins.resolve", findings: ["designer/sections.hero does not resolve"], cause: "the hero has no pin",
 }).request;
 function run(dir: string, id: string, doc: { status: string; createdAt?: string; refs?: unknown[]; steps?: unknown[]; loop?: string }) {
   const folder = join(dir, "agents/producer/ledger.create/entries");
@@ -80,8 +80,8 @@ describe("the request lens on disk", () => {
     expect(judge("Q8", "designer", { consumer: dir }).rows).toEqual([]);
     run(dir, "20261117T1100Z-create-hero", { status: "done", refs: answering(entry.id) });
     expect(judge("Q8", "designer", { consumer: dir }).rows).toEqual([expect.stringMatching(/is done and the entry is still open/)]);
-    // The fixture hero does not resolve, so the requester check refuses the close; on the request world it resolves.
-    expect(() => closeWork(dir, entry.id, { by: "designer", at: "2026-11-17T11:05:00Z", outcome: "fixed", result: "designer/sections.hero" })).toThrow(/requester check failed/);
+    // The fixture hero does not resolve, so its own check (pins.resolve) refuses the close; on the request world it resolves.
+    expect(() => closeWork(dir, entry.id, { by: "designer", at: "2026-11-17T11:05:00Z", outcome: "fixed", result: "designer/sections.hero" })).toThrow(/stays open: its check pins\.resolve still fails on designer\/sections\.hero/);
     const world = await requestsWorld();
     roots.push(world.root);
     // Raised after the world's own loop.create runs, so only the run below can answer or pass it over.
@@ -95,15 +95,21 @@ describe("the request lens on disk", () => {
     expect(q7.evidence).toBeGreaterThan(1);
   });
 
-  it("Q9: the pick verb's seat guard is read from the verb itself; a runPickCli without it before writePin is red", () => {
+  it("Q9: every pin-writing verb and writer, driven with a seat that may not act, refuses and writes nothing", { timeout: 60_000 }, () => {
     expect(seatGuardIssues(REPO)).toEqual([]);
+    // A CLI that lets every verb through (exit 0): each verb probe is red. The writers are the real ones: still green.
     const root = scratch("requests-seat-");
-    const text = readFileSync(join(REPO, "packages/producer/src/cli/options.ts"), "utf8");
-    const guard = "const crossing = seatRefusal(flags.by, agent);";
-    expect(text).toContain(guard);
-    mkdirSync(join(root, "packages/producer/src/cli"), { recursive: true });
-    writeFileSync(join(root, "packages/producer/src/cli/options.ts"), text.replace(guard, "const crossing = undefined;"));
-    expect(seatGuardIssues(root)).toEqual([expect.stringMatching(/runPickCli\) does not refuse a seat of another agent before it writes the pin/)]);
+    writeFileSync(join(root, "main.js"), "export async function runCli() { return { exitCode: 0, message: 'done' }; }\n");
+    writeFileSync(join(root, "index.js"), "");
+    const open = seatGuardIssues(REPO, join(root, "index.js"));
+    expect(open.length).toBe(12);
+    for (const row of open) expect(row).toMatch(/^clossys (pick|verdict|reissue|pin) .* exits 0: a seat acted on a slot it may not/);
+    // A CLI that refuses for another reason, and one that refuses by the seat rule but writes first: both red.
+    writeFileSync(join(root, "main.js"), "export async function runCli() { return { exitCode: 1, message: 'pick refused: unknown slot' }; }\n");
+    expect(seatGuardIssues(REPO, join(root, "index.js"))).toContainEqual(expect.stringMatching(/is refused, but not by the seat rule \(pick refused: unknown slot\)/));
+    writeFileSync(join(root, "main.js"), "import { writeFileSync } from 'node:fs'; import { join } from 'node:path';\nexport async function runCli(argv, cwd) { writeFileSync(join(cwd, 'clossys/agents/designer/components.button/pin.json'), '{}'); return { exitCode: 1, message: 'pick refused: an agent acts only on its own slots' }; }\n");
+    expect(seatGuardIssues(REPO, join(root, "index.js"))).toContainEqual(expect.stringMatching(/wrote agents\/designer\/components\.button\/pin\.json/));
+    expect(seatGuardIssues(REPO, join(root, "missing.js"))).toEqual([expect.stringMatching(/no built clossys CLI/)]);
   });
 
   it("Q1 and Q7: an invalid entry is red, never dropped from the lens", () => {
@@ -145,7 +151,7 @@ describe("the request lens on disk", () => {
     expect(rows).toContainEqual(expect.stringMatching(/ran for designer after it was raised and passed it over/));
   });
 
-  it("Q9: a Writer step that writes a Designer candidate is red; its own folder is green", () => {
+  it("Q9: a Writer step that writes a Designer candidate is red; its own folder is green", { timeout: 60_000 }, () => {
     const dir = consumer();
     const step = (file: string) => ({ id: "create", decider: { by: "agent", agent: "writer" }, cli: "clossys submit", exit: 0, wrote: [{ file, sha256: null }] });
     run(dir, "20261117T1100Z-create-copy", { status: "done", steps: [step("writer/sections.hero.copy/candidates/hero-v2.md")] });

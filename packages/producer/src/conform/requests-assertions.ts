@@ -105,7 +105,8 @@ export const REQUEST_ASSERTIONS: Readonly<Record<string, Assertion>> = {
   /**
    * Q7: a closed entry has an outcome, a resolving result ref and a notify event to the requester, and its requester
    * check passed (a producer verified event before the close; L4 is this row for kind slot). An entry that says it is
-   * closed and does not read is red here too.
+   * closed and does not read is red here too. A closed change or fix is re-checked now (its verified event is only
+   * evidence): a requester check or fix check that fails on today's tree is red.
    */
   Q7: agent => {
     const closed = agent.requestFacts.entries.filter(fact => statusOf(fact) === "closed");
@@ -117,6 +118,7 @@ export const REQUEST_ASSERTIONS: Readonly<Record<string, Assertion>> = {
         ...fact.issues.map(issue => `${ref(fact)}: ${issue}`),
         ...(fact.resultIssue ? [`${ref(fact)}: result ${String(fact.doc.result)} ${fact.resultIssue}`] : []),
         ...(!verified && !fact.issues.length ? [`${ref(fact)}: closed with no requester check passing before it`] : []),
+        ...(fact.recheck ?? []).map(failure => `${ref(fact)}: closed, and ${failure}`),
       ];
     });
     return { rows, evidence: closed.length };
@@ -183,6 +185,9 @@ export const REQUEST_ASSERTIONS: Readonly<Record<string, Assertion>> = {
     const open = agent.requestFacts.entries.filter(fact => fact.kind === "fix" && statusOf(fact) === "open" && !fact.issues.length && targets(agent, fact));
     const judged = open.filter(fact => gate.closure.has(target(fact).split("#")[0]!));
     for (const fact of judged) if (!gate.refused.has(target(fact).split("#")[0]!)) rows.push(`${ref(fact)}: open on ${target(fact)}, which the release reads, and requests.open-fix passes`);
-    return { rows, evidence: 1 + judged.length };
+    // A queue.fix file that does not read might be an open fix: the gate refuses it by name, or the release ships over it.
+    const unread = agent.requestFacts.entries.filter(fact => fact.issues.length && fact.file !== undefined && fact.file.split(posix.sep).includes("queue.fix"));
+    for (const fact of unread) if (!gate.unread.has(fact.file!)) rows.push(`${fact.file}: does not read and requests.open-fix does not refuse it (it might be an open fix)`);
+    return { rows, evidence: 1 + judged.length + unread.length };
   },
 };

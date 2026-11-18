@@ -19,7 +19,7 @@ import { dirname, join } from "node:path";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
 import { consumerFacts, placedSlots, readDeclarations, routeEntry, RoutingError, WORK_KINDS, type RoutingFacts, type WorkKind } from "../queue/routing.js";
-import { requesterCheck } from "../queue/requester-check.js";
+import { FIX_CHECKS, fixCheck, requesterCheck, requesterSlots } from "../queue/requester-check.js";
 import { PRODUCER_ROOT, skillPath } from "./ledger.js";
 import { validateAgainst } from "./schema.js";
 import { recordSchema, serializeSlot, SLOT_SCHEMA, validateSlot } from "./slot.js";
@@ -30,6 +30,8 @@ import { appendSlotDocEvent, replaceModelFile } from "./slot-write.js";
 import type { Actor, EntryRoute, Overlap, Proposal, Ref, RequestEvent, RequestOp, Slot, SlotRequest } from "./types.js";
 
 export const REQUEST_SCHEMA = "clossys.queue-entry/2";
+/** The decision-entry schema queue.fix still holds runner-raised fixes in (queue/entry.ts). */
+const LEGACY_FIX_SCHEMA = "clossys.queue-entry/1";
 export const REQUEST_FILE = "queue-entry-2.json";
 /** The queue folder kind slot entries live in (one queue: the folder is the kind, `assignee` says who executes). */
 export const SLOT_QUEUE = "queue.slot";
@@ -91,9 +93,19 @@ export function requestIssues(doc: unknown): string[] {
   if (request.status === "closed") {
     if (!closes.length) out.push("the status is closed and the event log has no closed event");
     else if (request.closed !== undefined && ids.includes(request.closed) && byId.get(request.closed)!.op !== "closed") out.push(`closed ${request.closed} is a ${byId.get(request.closed)!.op} event, not the closed event ${closes[0]!.id}`);
-    // A change or fix closes only after the requester check re-ran and passed (queue/requester-check.ts).
+    // A change or fix closes only after the requester check re-ran and passed (queue/requester-check.ts). The verified
+    // event has the close's provenance: Producer's, right before the close, at the close's time, naming the slots the
+    // check judges (and, for a fix closed fixed, its own check passing). A conform read re-runs both checks (Q7).
     const at = request.closed !== undefined ? ids.indexOf(request.closed) : -1;
-    if (request.kind !== "slot" && at >= 0 && !request.events.slice(0, at).some(event => event.op === "verified" && event.by === "producer")) out.push("a closed change or fix entry has no producer verified event (its requester check passing) before its close");
+    if (request.kind !== "slot" && at >= 0) {
+      const verified = request.events[at - 1];
+      const close = request.events[at]!;
+      const note = `${VERIFIED_NOTE}${requesterSlots(request).join(", ")}${request.kind === "fix" && request.outcome === "fixed" ? `; fix check ${String(request.check)} passes on ${request.target}` : ""}`;
+      if (!request.events.slice(0, at).some(event => event.op === "verified" && event.by === "producer")) out.push("a closed change or fix entry has no producer verified event (its requester check passing) before its close");
+      else if (verified?.op !== "verified" || verified.by !== "producer") out.push(`the event before the close ${close.id} is not Producer's verified event: the requester check passes right before the close`);
+      else if (verified.at !== close.at) out.push(`verified ${verified.id} is at ${verified.at}, not the close's ${close.at}: the requester check runs in the close`);
+      else if (verified.detail !== note) out.push(`verified ${verified.id} says ${JSON.stringify(verified.detail ?? "")}, not ${JSON.stringify(note)}: it names the slots the requester check judges`);
+    }
   } else if (closes.length || request.closed !== undefined || request.closedAt !== undefined || request.notified !== undefined || request.outcome !== undefined) {
     out.push(`the event log or the closing fields close the entry, but its status is ${request.status}`);
   }
@@ -106,8 +118,9 @@ export interface ReadRequest { readonly file: string; readonly request?: SlotReq
 
 /**
  * Every entry of one work kind under clossys/agents/producer/queue.<kind>/entries, read and judged (an unreadable one
- * is listed with its issue). queue.fix still holds clossys.queue-entry/1 fix entries the runner raises; those are the
- * /1 queue's (queue/entry.ts) and are skipped here (`legacyFixEntries` lists them).
+ * is listed with its issue). queue.fix still holds clossys.queue-entry/1 fix entries the runner raises; those (schema
+ * exactly clossys.queue-entry/1) are the /1 queue's (queue/entry.ts) and are skipped here (`legacyFixEntries` lists
+ * them). Any other file there (no schema, a wrong one) is listed as an entry that does not read, never dropped.
  */
 export function listRequests(consumer: string, kind: WorkKind = "slot"): ReadRequest[] {
   const dir = requestsDir(consumer, kind);
@@ -116,7 +129,7 @@ export function listRequests(consumer: string, kind: WorkKind = "slot"): ReadReq
     const file = join(dir, name);
     let doc: unknown;
     try { doc = JSON.parse(readFileSync(file, "utf8")); } catch (error) { return [{ file, issues: [`not JSON: ${error instanceof Error ? error.message : String(error)}`] }]; }
-    if (kind === "fix" && (doc as { schema?: unknown })?.schema !== REQUEST_SCHEMA) return [];
+    if (kind === "fix" && (doc as { schema?: unknown } | null)?.schema === LEGACY_FIX_SCHEMA) return [];
     const issues = requestIssues(doc);
     if (!issues.length && (doc as SlotRequest).kind !== kind) return [{ file, doc, issues: [`a ${(doc as SlotRequest).kind} entry is in ${workQueue(kind)}`] }];
     if (!issues.length && (doc as SlotRequest).id !== name.slice(0, -".json".length)) return [{ file, doc, issues: [`id ${(doc as SlotRequest).id} is not the file name`] }];
@@ -132,7 +145,7 @@ export function legacyFixEntries(consumer: string): string[] {
   const dir = requestsDir(consumer, "fix");
   if (!existsSync(dir)) return [];
   return readdirSync(dir).filter(name => name.endsWith(".json") && !name.startsWith(".")).sort().filter(name => {
-    try { return (JSON.parse(readFileSync(join(dir, name), "utf8")) as { schema?: unknown }).schema !== REQUEST_SCHEMA; } catch { return false; }
+    try { return (JSON.parse(readFileSync(join(dir, name), "utf8")) as { schema?: unknown } | null)?.schema === LEGACY_FIX_SCHEMA; } catch { return false; }
   }).map(name => name.slice(0, -".json".length));
 }
 
@@ -221,6 +234,9 @@ const withEvent = (request: SlotRequest, op: RequestOp, at: string, by?: string,
   const id = `${request.id}#${request.events.length + 1}`;
   return { id, request: { ...request, events: [...request.events, { id, at, op, ...(by ? { by } : {}), ...(detail !== undefined ? { detail } : {}) }] } };
 };
+
+/** The verified event's note: `requester check passed on <slots>` (requesterSlots, in order). */
+const VERIFIED_NOTE = "requester check passed on ";
 
 /** Who may act on a slot entry (`by`): a content agent, the owner, the planner or Producer code. Never free text. */
 export const REQUEST_SEATS = [...CONTENT_AGENTS, "owner", "planner", "producer"] as const;
@@ -371,16 +387,30 @@ export function closeWork(consumer: string, id: string, input: { readonly by: st
     const request = readRequest(consumer, id);
     if (request.kind === "slot") throw new RequestError(`request ${id} is kind slot: it closes by its decision (clossys request ${id} --close)`);
     if (request.status !== "open") throw new RequestError(`request ${id} is already closed`);
-    if (isContentAgent(input.by) && input.by !== request.assignee) throw new RequestError(`${input.by} cannot close ${id}: it is assigned to ${request.assignee}`);
+    // Only the entry's assignee (or the owner) closes it: no default seat, no other agent, no planner or producer close.
+    if (input.by !== request.assignee && input.by !== "owner") throw new RequestError(`${input.by} cannot close ${id}: it is assigned to ${request.assignee} (the assignee or the owner closes it)`);
     const why = resultRefusal(consumer, input.result);
     if (why) throw new RequestError(`--result ${input.result}: ${why}`);
+    const root = dirname(consumer);
+    // A fix closing as fixed re-runs its own raising check first (queue/requester-check.ts fixCheck): still failing,
+    // or a check that cannot be re-run here, refuses. Unknown check: nothing is written; a fail records rejected.
+    let fixNote = "";
+    if (request.kind === "fix" && input.outcome === "fixed") {
+      const fix = fixCheck(root, request);
+      if (!fix.ran) throw new RequestError(`request ${id} cannot close fixed: its check ${String(request.check)} is not one Producer can re-run (${FIX_CHECKS.join(", ")})`);
+      if (fix.failures.length) {
+        writeRequest(consumer, withEvent(request, "rejected", input.at, "producer", `fix check ${request.check} still fails on ${request.target}: ${fix.failures.slice(0, 3).join("; ")}`).request);
+        throw new RequestError(`request ${id} stays open: its check ${request.check} still fails on ${request.target} (${fix.failures.slice(0, 3).join("; ")}); a rejected event sends it back to ${request.assignee}`);
+      }
+      fixNote = `; fix check ${request.check} passes on ${request.target}`;
+    }
     // Code re-runs the requester's check: a fail records rejected and the entry stays open with its handler.
-    const check = requesterCheck(dirname(consumer), request);
+    const check = requesterCheck(root, request);
     if (!check.ok) {
       writeRequest(consumer, withEvent(request, "rejected", input.at, "producer", `requester check failed on ${check.slots.join(", ")}: ${check.failures.slice(0, 3).join("; ")}`).request);
       throw new RequestError(`request ${id} stays open: the requester check failed (${check.failures.slice(0, 3).join("; ")}); a rejected event sends it back to ${request.assignee}`);
     }
-    const verified = withEvent(request, "verified", input.at, "producer", `requester check passed on ${check.slots.join(", ")}`).request;
+    const verified = withEvent(request, "verified", input.at, "producer", `${VERIFIED_NOTE}${check.slots.join(", ")}${fixNote}`).request;
     const closing = withEvent({ ...verified, status: "closed", outcome: input.outcome, result: input.result, notified: { to: request.from, at: input.at }, closedAt: input.at }, "closed", input.at, input.by, `${input.outcome}: ${input.result}; notified ${request.from}`);
     const next: SlotRequest = { ...closing.request, closed: closing.id };
     writeRequest(consumer, next);

@@ -168,8 +168,11 @@ describe("kind change and fix entries", () => {
 
     expect(() => closeWork(consumer, request.id, { by: "writer", at: AT, outcome: "fixed", result: "designer/sections.hero" })).toThrow(/assigned to designer/);
     expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "fixed", result: "designer/sections.nope" })).toThrow(/no placed slot/);
+    // A fixed close re-runs the fix's own check; render.overflow is not one Producer re-runs, so it refuses and writes nothing.
+    expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "fixed", result: "designer/sections.hero" })).toThrow(/cannot close fixed: its check render\.overflow is not one Producer can re-run/);
+    expect(readRequest(consumer, request.id).events.map(event => event.op)).toEqual(["raised", "routed"]);
     // The fixture's hero has no pin and no package default: the requester check fails, the entry stays open.
-    expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "fixed", result: "designer/sections.hero" })).toThrow(/stays open: the requester check failed \(designer\/sections\.hero: does not resolve/);
+    expect(() => closeWork(consumer, request.id, { by: "designer", at: AT, outcome: "declined", result: "designer/sections.hero" })).toThrow(/stays open: the requester check failed \(designer\/sections\.hero: does not resolve/);
     const after = readRequest(consumer, request.id);
     expect(after).toMatchObject({ status: "open" });
     expect(after.events.map(event => event.op)).toEqual(["raised", "routed", "rejected"]);
@@ -181,7 +184,7 @@ describe("kind change and fix entries", () => {
     const open = raiseWork(consumer, fixOf("designer/sections.hero"), { facts }).request;
     const at = "2026-11-17T11:00:00Z";
     const closing = { status: "closed" as const, outcome: "fixed" as const, result: "designer/sections.hero", notified: { to: "owner", at }, closedAt: at };
-    const verified = { id: `${open.id}#3`, at, op: "verified" as const, by: "producer" };
+    const verified = { id: `${open.id}#3`, at, op: "verified" as const, by: "producer", detail: "requester check passed on designer/sections.hero; fix check render.overflow passes on designer/sections.hero" };
     const close = { id: `${open.id}#4`, at, op: "closed" as const, by: "producer" };
     const honest = { ...open, ...closing, closed: close.id, events: [...open.events, verified, close] };
     expect(requestIssues(honest)).toEqual([]);

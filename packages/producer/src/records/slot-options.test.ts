@@ -160,23 +160,23 @@ describe("clossys options and pick", () => {
   it("pick refuses an owner pick (basis picked) and leaves it unchanged", async () => {
     add("essence-human-v1.md", brief({ angle: "human" }));
     const before = readFileSync(join(dir, "pin.json"), "utf8");
-    const refused = await runPickCli([`director/${ID}`, "essence-human-v1", "--by", "agent:judge", "--root", root], root);
+    const refused = await runPickCli([`director/${ID}`, "essence-human-v1", "--by", "agent:director", "--root", root], root);
     expect(refused.exitCode).toBe(1);
     expect(refused.message).toMatch(/already holds an owner pick/);
     expect(readFileSync(join(dir, "pin.json"), "utf8")).toBe(before);
     await expect(runPickCli([`director/${ID}`, "essence-human-v1", "--by", "owner", "--root", root], root)).rejects.toThrow(/agent:<seat>/);
   });
 
-  for (const [decidedBy, basis] of [["owner:2026-11-03 pin-if-agree", "bulk"], ["planner:UNIT", "planner"], ["agent:other", "agent"]] as const) {
+  for (const [decidedBy, basis] of [["owner:2026-11-03 pin-if-agree", "bulk"], ["planner:UNIT", "planner"], ["agent:director.other", "agent"]] as const) {
     it(`pick replaces a ${basis} pin with basis agent, shown as confirm`, async () => {
       // The pick is guarded (R05.1, R05.2, R14.1): the alternative is submitted through the writer and the slot certified.
       const human = writeCandidate(consumer(), "director", ID, "essence-human", brief({ angle: "human" })).name;
       await certifySlots(root, "director", { [ID]: ["essence-v1.md", human] });
       writePin(consumer(), "director", ID, "essence-v1.md", { decidedBy, basis, at: "2026-11-03T00:00:00Z" });
       expect(slotOptions(consumer(), readSlotEntry(consumer(), "director", ID)!, TABLE).pinStatus).toBe("confirm");
-      const picked = await runPickCli([`director/${ID}`, human.replace(/\.md$/, ""), "--by", "agent:judge", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
+      const picked = await runPickCli([`director/${ID}`, human.replace(/\.md$/, ""), "--by", "agent:director", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
       expect(picked.exitCode, picked.message).toBe(0);
-      expect(JSON.parse(readFileSync(join(dir, "pin.json"), "utf8"))).toMatchObject({ candidate: human, decidedBy: "agent:judge", basis: "agent" });
+      expect(JSON.parse(readFileSync(join(dir, "pin.json"), "utf8"))).toMatchObject({ candidate: human, decidedBy: "agent:director", basis: "agent" });
       expect(slotOptions(consumer(), readSlotEntry(consumer(), "director", ID)!, TABLE).pinStatus).toBe("confirm");
     });
   }

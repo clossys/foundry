@@ -11,6 +11,12 @@
  *   re-judged (certify, the slot's own contract checks), and a failed one fails.
  */
 import { join } from "node:path";
+import { briefTightenOnly } from "../check/brief-tighten-only.js";
+import { iaOrphans } from "../check/ia-orphans.js";
+import { loopReachable } from "../check/loop-reachable.js";
+import { checkPinsResolve, PINS_RESOLVE } from "../check/pins-resolve.js";
+import { recordsComputedMatch } from "../check/records-computed-match.js";
+import { checkRefsDangling, REFS_DANGLING } from "../check/refs-dangling.js";
 import { pinChecks, reverdictOf, slotStatus, NEEDS_REFRESH } from "../constitution/cascade.js";
 import { certifyEnv } from "../constitution/certify/index.js";
 import { buildContext } from "../constitution/context.js";
@@ -68,4 +74,28 @@ export function requesterCheck(root: string, entry: { readonly kind: string; rea
     if (!verdict.certified) failures.push(`${label}: pinned ${check.candidate.name} does not certify on the pinSet now (${verdict.reasons.slice(0, 2).map(reason => JSON.stringify(reason)).join("; ")})`);
   }
   return { ok: failures.length === 0, slots, failures };
+}
+
+/**
+ * The checks a fix entry can name that Producer re-runs when the fix closes as fixed (foundry-build-0048 U7): the
+ * slot/2 tree checks, loop.reachable, refs.dangling (the strict set) and pins.resolve. Each runs over the tree; its
+ * findings on the fixed slot (`<agent>/<slot>`, a record of it, a candidate of it or a file under it) are why it fails.
+ */
+const FIX_RUNNERS: Readonly<Record<string, (root: string) => readonly { readonly subject: string; readonly detail: string }[]>> = {
+  [briefTightenOnly.id]: root => briefTightenOnly.run(root).findings,
+  [recordsComputedMatch.id]: root => recordsComputedMatch.run(root).findings,
+  [iaOrphans.id]: root => iaOrphans.run(root).findings,
+  [loopReachable.id]: root => loopReachable.run(root).findings,
+  [REFS_DANGLING]: root => checkRefsDangling(root).findings,
+  [PINS_RESOLVE]: root => checkPinsResolve(root).findings,
+};
+export const FIX_CHECKS: readonly string[] = Object.keys(FIX_RUNNERS).sort();
+
+/** Re-runs a fix entry's own check on its target: `ran` false when the check is none Producer can re-run (a fix cannot close fixed then). */
+export function fixCheck(root: string, entry: { readonly target: string; readonly check?: string }): { readonly ran: boolean; readonly failures: readonly string[] } {
+  const run = entry.check !== undefined ? FIX_RUNNERS[entry.check] : undefined;
+  if (!run) return { ran: false, failures: [] };
+  const head = entry.target.split("#")[0]!;
+  const on = (subject: string) => subject === head || subject.startsWith(`${head}#`) || subject.startsWith(`${head}/`) || subject.includes(`agents/${head}/`);
+  return { ran: true, failures: run(root).filter(finding => on(finding.subject)).map(finding => `${finding.subject}: ${finding.detail}`) };
 }

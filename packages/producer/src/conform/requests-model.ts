@@ -5,14 +5,22 @@
  * from disk; assertions.ts judges. An agent "is about" an entry when it raised it (`from`), holds it (`assignee`) or
  * owns its target slot.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { basename, dirname, join, relative } from "node:path";
 import { gapsOf } from "../pipeline/interview.js";
 import { consumerFacts, ownerClassOf, ownerClasses, readDeclarations, rederive, routingIssues, type RoutingFacts } from "../queue/routing.js";
 import { listWorkEntries, requestIssues, resultRefusal, slotlessNeeds } from "../records/request.js";
 import { gateRunners, openFixes, RELEASE_GATES, REQUESTS_OPEN_FIX } from "../release/gates.js";
 import { releaseResolutions } from "../release/pins.js";
+import { sha256Hex } from "../records/hash.js";
+import { writeTargetPin } from "../records/pin-map.js";
+import { cliActor } from "../records/pin.js";
 import { seatRefusal } from "../records/seat-owner.js";
+import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/index.js";
+import { writeConfirm, writeNotNeeded, writePin } from "../records/slot-write.js";
+import { fixCheck, requesterCheck } from "../queue/requester-check.js";
 import type { SlotRequest } from "../records/types.js";
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
@@ -34,6 +42,13 @@ export interface QueueFact {
   readonly ownerClass?: { readonly step: string; readonly queue: string };
   /** A closed change or fix: why its result ref does not resolve. */
   readonly resultIssue?: string;
+  /**
+   * A closed change or fix, re-checked now (Q7): why its requester check (and, closed fixed, its own fix check) fails
+   * on the tree today. A verified event is recorded evidence; this re-runs what it claims, so a forged one is red.
+   */
+  readonly recheck?: readonly string[];
+  /** An entry that does not read: its file, relative to the folder holding clossys/ (as the release gate names it). */
+  readonly file?: string;
 }
 /** One run ledger: the entries it answers (`<queue>#<id>`, `*#<id>` for a run's request id) and every step's decider and written paths (under agents/). */
 export interface RunFact {
@@ -75,13 +90,18 @@ export interface RequestMachinery {
   readonly runs: readonly RunFact[];
   /** `<queue>#<id>` of every /2 entry an open queue-entry/1 entry cites (a stopped run's re-ask). */
   readonly reasked: ReadonlySet<string>;
-  /** Q9's verb half: why a verb would let a seat act on another agent's slot (the seat rule probed, and pick wired to it). */
+  /** Q9's verb half: why a pin-writing verb or writer would let a seat act on a slot it may not (driven on a probe consumer; read on first use). */
   readonly seatGuardIssues: readonly string[];
   /**
    * Q11: whether release's runGates wires requests.open-fix, the slots a release reads (the one resolver, slot level)
    * and the slots the gate refuses on this consumer now; read on first use.
    */
-  readonly openFix: { readonly wired: boolean; readonly closure: ReadonlySet<string>; readonly refused: ReadonlySet<string>; readonly error?: string };
+  readonly openFix: {
+    readonly wired: boolean; readonly closure: ReadonlySet<string>; readonly refused: ReadonlySet<string>;
+    /** The queue.fix files the gate refuses as not reading (`might be an open fix`), relative to the folder holding clossys/. */
+    readonly unread: ReadonlySet<string>;
+    readonly error?: string;
+  };
 }
 
 const SOURCE = /\.(ts|tsx|mts)$/;
@@ -184,7 +204,29 @@ function readDecisionEntries(consumer: string): { fixes: { id: string; subject: 
 
 /** One conform read's shared facts (routing, interview gaps), keyed by repo and consumer; reset per model read. */
 const cache = new Map<string, { routing?: { facts?: RoutingFacts; issues: string[] }; gaps?: ReturnType<typeof gapsOf>["gaps"] | Error }>();
-export const resetRequestFacts = (): void => cache.clear();
+const rechecks = new Map<string, readonly string[]>();
+export const resetRequestFacts = (): void => { cache.clear(); rechecks.clear(); };
+/** Q7's re-run of a closed change or fix: the requester check, then (closed fixed) the fix's own check; read once per conform read. */
+function recheckOf(consumer: string, request: SlotRequest): readonly string[] {
+  const key = `${consumer}\0${request.kind}\0${request.id}`;
+  let out = rechecks.get(key);
+  if (out === undefined) {
+    const root = dirname(consumer);
+    try {
+      const check = requesterCheck(root, request);
+      const fix = request.kind === "fix" && request.outcome === "fixed" ? fixCheck(root, request) : undefined;
+      out = [
+        ...check.failures.map(failure => `the requester check fails now: ${failure}`),
+        ...(fix && !fix.ran ? [`its check ${String(request.check)} is not one Producer re-runs, so it never closed fixed`] : []),
+        ...(fix?.failures ?? []).map(failure => `its check ${String(request.check)} fails now: ${failure}`),
+      ];
+    } catch (error) {
+      out = [`the requester check does not run: ${error instanceof Error ? error.message : String(error)}`];
+    }
+    rechecks.set(key, out);
+  }
+  return out;
+}
 const slotOf = (repo: string, consumer: string) => {
   const key = `${repo}\0${consumer}`;
   if (!cache.has(key)) cache.set(key, {});
@@ -216,21 +258,145 @@ function gapsFor(repo: string, consumer: string): ReturnType<typeof gapsOf>["gap
   return slot.gaps;
 }
 
+/** A refusal that is the seat rule's (records/seat-owner.ts, the pin CLI's agent and owner rules), not a fixture's. */
+const SEAT_REFUSAL = /acts only on its own slots|is not a registered seat|is not agent:<agent>|a confirmation is the owner's|--confirm is the owner's|an agent seat picks with clossys pick/;
+const PROBE_ID = "components.button";
+const PROBE_TARGET = "sections.hero";
+const PROBE_AT = "2026-11-17T12:00:00.000Z";
+
+/** Every file under `dir` with its bytes: a refused verb leaves it byte-identical. */
+function filesOf(dir: string, rel = "", out = new Map<string, string>()): Map<string, string> {
+  if (!isDir(dir)) return out;
+  for (const name of readdirSync(dir).sort()) {
+    const path = join(dir, name), at = rel ? `${rel}/${name}` : name;
+    if (isDir(path)) filesOf(path, at, out); else out.set(at, readFileSync(path, "utf8"));
+  }
+  return out;
+}
+const changedFiles = (before: ReadonlyMap<string, string>, after: ReadonlyMap<string, string>): string[] =>
+  [...new Set([...before.keys(), ...after.keys()])].filter(file => before.get(file) !== after.get(file)).sort();
+
 /**
- * Q9's verb half: the seat rule (records/seat-owner.ts) refuses another agent's seat and lets the slot's own agent and
- * a judging seat act, and `clossys pick` calls it before it writes. `next --submit` and `options` take no seat: a
- * submit acts as the owning step's agent, and options writes no decision.
+ * The probe consumer: a Designer slot (clossys.slot/1, a planner pin on its one candidate, the component standard)
+ * and a Designer clossys.slot/2 target slot. Every pin-writing verb is driven against it with a seat that may not act.
  */
-export function seatGuardIssues(repo: string): string[] {
+function probeWorld(repo: string, dir: string): string {
+  const write = (rel: string, text: string): void => { mkdirSync(dirname(join(dir, rel)), { recursive: true }); writeFileSync(join(dir, rel), text); };
+  write("clossys/clossys.config.ts", "export default {};\n");
+  write("package-lock.json", jsonBytes({ name: "probe", lockfileVersion: 3, packages: { "": { name: "probe" } } }));
+  const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#seat-probe", extensions: [], nodes: [{ id: "components", label: "Components", children: [{ id: "group", label: "Group", slots: [PROBE_ID] }] }] };
+  write("clossys/agents/designer/ia.json", jsonBytes(ia));
+  const slot = `clossys/agents/designer/${PROBE_ID}`;
+  write(`${slot}/slot.json`, jsonBytes({ schema: "clossys.slot/1", id: PROBE_ID, agent: "designer", ia: slotPositions("designer", ia).get(PROBE_ID), inputs: [], uses: [], kind: "element", standard: "component", contract: { variant: "solid" } }));
+  const candidate = jsonBytes({ name: "button", type: "registry:ui", dependencies: [], registryDependencies: [], files: [], meta: { source: { kind: "registry", ref: ["shadcn-aria/button@4.23.0"] } } });
+  write(`${slot}/candidates/button-v1.json`, candidate);
+  write(`${slot}/pin.json`, jsonBytes({ candidate: "button-v1.json", sha256: sha256Hex(candidate), decidedBy: "planner:seat-probe", basis: "planner", at: PROBE_AT }));
+  cpSync(join(repo, "packages/designer/standards/component"), join(dir, "packages/designer/standards/component"), { recursive: true });
+  write(`clossys/agents/designer/${PROBE_TARGET}/slot.json`, jsonBytes({ schema: "clossys.slot/2", id: `designer/${PROBE_TARGET}`, agent: "designer", kind: "section", status: "open" }));
+  write("pick.json", JSON.stringify({ schema: "clossys.verdict/1", slot: PROBE_ID, pick: "button-v1.json", reason: "seat probe", criteria: ["fidelity", "polish"] }));
+  write("create.json", JSON.stringify({ schema: "clossys.verdict/1", slot: PROBE_ID, create: true, reason: "seat probe", gaps: [{ id: "fidelity", class: "missing-behavior" }, { id: "brief:variant", class: "a11y-failure" }] }));
+  return join(dir, "clossys");
+}
+
+/** The verbs that write or repin pin.json, each driven through the CLI with a seat that may not act on the slot. */
+const VERB_PROBES: readonly { readonly verb: string; readonly args: readonly string[] }[] = [
+  ...["agent:writer", "agent:writer-x", "agent:judge"].map(by => ({ verb: `pick --by ${by}`, args: ["pick", `designer/${PROBE_ID}`, "button-v1.json", "--by", by, "--at", PROBE_AT] })),
+  { verb: "verdict pick --by agent:writer.verdict", args: ["verdict", `designer/${PROBE_ID}`, "--record", "pick.json", "--model", "seat-probe", "--tier", "high", "--by", "agent:writer.verdict", "--at", PROBE_AT] },
+  { verb: "verdict create --by agent:writer.verdict", args: ["verdict", `designer/${PROBE_ID}`, "--record", "create.json", "--model", "seat-probe", "--tier", "high", "--by", "agent:writer.verdict", "--at", PROBE_AT] },
+  { verb: "verdict pick --by agent:judge", args: ["verdict", `designer/${PROBE_ID}`, "--record", "pick.json", "--model", "seat-probe", "--tier", "high", "--by", "agent:judge", "--at", PROBE_AT] },
+  { verb: "reissue --by agent:writer.reissue", args: ["reissue", `designer/${PROBE_ID}`, "button-v1", "--by", "agent:writer.reissue", "--at", PROBE_AT] },
+  { verb: "pin --not-needed --by agent:writer", args: ["pin", `designer/${PROBE_ID}`, "--not-needed", "--reason", "seat probe", "--by", "agent:writer", "--at", PROBE_AT] },
+  { verb: "pin --by agent:writer --basis picked", args: ["pin", `designer/${PROBE_ID}`, "button-v1.json", "--by", "agent:writer", "--basis", "picked", "--at", PROBE_AT] },
+  { verb: "pin --confirm --by agent:designer", args: ["pin", `designer/${PROBE_ID}`, "button-v1.json", "--confirm", "--ref", "seat-probe", "--by", "agent:designer", "--at", PROBE_AT] },
+  { verb: "pin (clossys.slot/2) --by agent:writer", args: ["pin", `designer/${PROBE_TARGET}`, "hero-v1.json", "--by", "agent:writer", "--at", PROBE_AT] },
+  { verb: "pin (clossys.slot/2) --by agent:judge", args: ["pin", `designer/${PROBE_TARGET}`, "hero-v1.json", "--by", "agent:judge", "--at", PROBE_AT] },
+];
+
+/**
+ * The child that drives the verbs: argv is the built CLI entry, the probe folder and the probes' argv (JSON). It loads
+ * the entry's runCli (cli/main.js beside it), runs each probe from the probe folder and prints one JSON line: per
+ * probe its exit code, message (a thrown usage error is exit 2) and the files under clossys/ it changed.
+ */
+const VERB_RUNNER = `
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
+const [cli, dir, probes] = process.argv.slice(1);
+const { runCli } = await import(pathToFileURL(join(dirname(cli), "main.js")).href);
+const files = (base, rel = "", out = new Map()) => {
+  for (const name of readdirSync(base).sort()) {
+    const path = join(base, name), at = rel ? rel + "/" + name : name;
+    if (statSync(path).isDirectory()) files(path, at, out); else out.set(at, readFileSync(path, "utf8"));
+  }
+  return out;
+};
+const results = [];
+for (const args of JSON.parse(probes)) {
+  const before = files(join(dir, "clossys"));
+  let result;
+  try { result = await runCli(args, dir); } catch (error) { result = { exitCode: 2, message: error instanceof Error ? error.message : String(error) }; }
+  const after = files(join(dir, "clossys"));
+  const changed = [...new Set([...before.keys(), ...after.keys()])].filter(file => before.get(file) !== after.get(file)).sort();
+  results.push({ exitCode: result.exitCode, message: String(result.message ?? ""), changed });
+}
+console.log(JSON.stringify(results));
+`;
+
+/**
+ * Q9's verb half, judged by behaviour: on a probe consumer, every verb that writes or repins pin.json (pick, verdict,
+ * reissue, pin, --not-needed, --confirm, the clossys.slot/2 pin) is run with a seat that may not act on the slot (another
+ * agent's, or no registered seat) and must refuse by the seat rule with every file byte-identical. The writers that
+ * hold the guard (records/slot-write.ts, records/pin-map.ts) are called directly too, so a verb that reaches them
+ * cannot skip it. The seat rule itself is probed for the slot's own seats. `cli` is the built clossys entry.
+ */
+export function seatGuardIssues(repo: string, cli: string = join(repo, "packages/producer/dist/cli/index.js")): string[] {
   const out: string[] = [];
-  const probes: [string, string, boolean][] = [["agent:writer", "designer", true], ["agent:director.candidates", "designer", true], ["agent:designer", "designer", false], ["agent:designer.verdict", "designer", false], ["agent:judge", "writer", false]];
+  const probes: [string, string, boolean][] = [
+    ["agent:writer", "designer", true], ["agent:director.candidates", "designer", true], ["agent:judge", "writer", true], ["agent:writer-x", "writer", true],
+    // Only registered seats act: an unknown head is refused even on a slot folder of its own name.
+    ["agent:judge", "judge", true], ["agent:writer-x", "writer-x", true],
+    ["agent:designer", "designer", false], ["agent:designer.verdict", "designer", false], ["agent:producer.verdict", "producer", false],
+  ];
   for (const [by, agent, refused] of probes) if ((seatRefusal(by, agent) !== undefined) !== refused) out.push(`the seat rule ${refused ? "lets" : "refuses"} --by ${by} on a ${agent} slot`);
-  const file = join(repo, "packages/producer/src/cli/options.ts");
-  const text = existsSync(file) ? readFileSync(file, "utf8") : "";
-  const start = text.indexOf("export async function runPickCli");
-  const body = start < 0 ? "" : text.slice(start);
-  const guard = body.indexOf("seatRefusal(flags.by, agent)"), write = body.indexOf("writePin(");
-  if (!body || guard < 0 || write < 0 || guard > write) out.push("clossys pick (src/cli/options.ts runPickCli) does not refuse a seat of another agent before it writes the pin");
+  if (!existsSync(cli)) return [...out, `no built clossys CLI at ${relative(repo, cli)} to drive the pin-writing verbs with`];
+  if (!isDir(join(repo, "packages/designer/standards/component"))) return [...out, "no packages/designer/standards/component for the probe slot"];
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "clossys-seat-probe-")));
+  try {
+    const consumer = probeWorld(repo, dir);
+    // One child process runs every verb through the built CLI's runCli (what bin clossys calls), in order, and
+    // reports each one's exit, message and the files it changed.
+    const run = spawnSync(process.execPath, ["--input-type=module", "-e", VERB_RUNNER, cli, dir, JSON.stringify(VERB_PROBES.map(probe => probe.args))], { cwd: dir, encoding: "utf8", timeout: 120_000 });
+    let results: { exitCode: number; message: string; changed: string[] }[] = [];
+    try { results = JSON.parse(run.stdout.trim().split("\n").at(-1) ?? ""); } catch { out.push(`the verb probe did not report (exit ${String(run.status)}: ${(run.stderr ?? "").trim().split("\n")[0]})`); }
+    VERB_PROBES.forEach((probe, index) => {
+      const result = results[index];
+      if (!result) { if (results.length) out.push(`clossys ${probe.verb}: no result from the verb probe`); return; }
+      const said = result.message.trim();
+      if (result.exitCode === 0) out.push(`clossys ${probe.verb} on designer/<slot> exits 0: a seat acted on a slot it may not (${said.split("\n")[0]})`);
+      else if (!SEAT_REFUSAL.test(said)) out.push(`clossys ${probe.verb} on designer/<slot> is refused, but not by the seat rule (${said.split("\n")[0] || `exit ${result.exitCode}`})`);
+      if (result.changed.length) out.push(`clossys ${probe.verb} on designer/<slot> wrote ${result.changed.join(", ")}`);
+    });
+    // The writers themselves: a verb that calls them cannot skip the guard.
+    const writers: [string, () => unknown][] = [
+      ["writePin basis agent --by agent:writer", () => writePin(consumer, "designer", PROBE_ID, "button-v1.json", { decidedBy: "agent:writer", basis: "agent", at: PROBE_AT })],
+      ["writeConfirm --by agent:designer", () => writeConfirm(consumer, "designer", PROBE_ID, "button-v1.json", { by: "agent:designer", ref: "seat-probe", at: PROBE_AT })],
+      ["writeNotNeeded --by agent:judge", () => writeNotNeeded(consumer, "designer", PROBE_ID, { reason: "seat probe", since: PROBE_AT.slice(0, 10), decidedBy: "agent:judge" })],
+      ["writeTargetPin --by agent:writer", () => writeTargetPin(dir, { agent: "designer", slotId: PROBE_TARGET, candidate: "hero-v1.json", decidedBy: "agent:writer", basis: "agent", at: PROBE_AT, createdBy: cliActor("clossys conform") })],
+    ];
+    for (const [what, call] of writers) {
+      const before = filesOf(consumer);
+      let refusal: string | undefined;
+      try { call(); } catch (error) { refusal = error instanceof Error ? error.message : String(error); }
+      const changed = changedFiles(before, filesOf(consumer));
+      if (refusal === undefined) out.push(`${what} writes: the writer holds no seat guard`);
+      else if (!SEAT_REFUSAL.test(refusal)) out.push(`${what} is refused, but not by the seat guard (${refusal.split("\n")[0]})`);
+      if (changed.length) out.push(`${what} wrote ${changed.join(", ")}`);
+    }
+  } catch (error) {
+    out.push(`the seat probe does not run: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
   return out;
 }
 
@@ -239,10 +405,12 @@ export function openFixFacts(root: string): RequestMachinery["openFix"] {
   try {
     const wired = Object.keys(gateRunners(root, "-", undefined)).includes(REQUESTS_OPEN_FIX);
     const closure = new Set(releaseResolutions(root).map(resolution => `${resolution.agent}/${resolution.slotId}`));
-    const refused = new Set(openFixes(root).map(finding => finding.subject));
-    return { wired, closure, refused };
+    const findings = openFixes(root);
+    const refused = new Set(findings.map(finding => finding.subject));
+    const unread = new Set(findings.filter(finding => finding.subject === "producer/queue.fix").map(finding => finding.detail.split(" ")[0]!));
+    return { wired, closure, refused, unread };
   } catch (error) {
-    return { wired: false, closure: new Set(), refused: new Set(), error: error instanceof Error ? error.message : String(error) };
+    return { wired: false, closure: new Set(), refused: new Set(), unread: new Set(), error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -255,15 +423,17 @@ export function readRequestMachinery(repo: string, consumer: string): RequestMac
   const fixRaisers = sources(join(producer, "src")).filter(file => /queue: *["'`]queue\.fix["'`]/.test(readFileSync(file, "utf8"))).map(file => relative(repo, file));
   const decisions = readDecisionEntries(consumer);
   let openFix: RequestMachinery["openFix"] | undefined;
+  let seatGuard: string[] | undefined;
   return {
     routingIssues: issues, ownerPacketRow: rows.some(row => row.to === "owner-packet"),
     ownerClassCount: facts ? facts.classes.length : (() => { try { return ownerClasses(join(producer, "loops")).length; } catch { return 0; } })(),
     fixRaisers, printedGaps: printedGapCodes(interview), gapCodes: gapCodesOf(interview).length, releaseGates: [...RELEASE_GATES], runs: readRuns(consumer), reasked: decisions.reasked,
-    seatGuardIssues: seatGuardIssues(repo),
+    get seatGuardIssues() { return seatGuard ??= seatGuardIssues(repo); },
     get openFix() { return openFix ??= openFixFacts(dirname(consumer)); },
   };
 }
 
+const CONTENT_AGENTS = ["director", "designer", "writer", "publisher"] as const;
 const about = (agent: string, doc: Record<string, unknown>): boolean =>
   (typeof doc.from === "string" && doc.from.startsWith(`${agent}/`)) || doc.assignee === agent || (typeof doc.target === "string" && doc.target.startsWith(`${agent}/`));
 
@@ -271,16 +441,16 @@ export function readAgentRequests(repo: string, consumer: string, agent: string,
   const declared = readDeclarations(agent, join(repo, "packages"))?.requests;
   const handling = declared?.handling;
   const facts = routingOf(repo, consumer).facts;
-  const entries: QueueFact[] = listWorkEntries(consumer).flatMap(read => {
+  const entries: QueueFact[] = listWorkEntries(consumer).flatMap((read): QueueFact[] => {
     if (!read.request) {
-      // An entry that does not read is a finding, never dropped: kept with its issues for every agent it names (all
-      // four when it names none), so Q1 (and Q7, when it says it is closed) report it.
+      // An entry that does not read is a finding, never dropped: kept with its issues for every content agent it names,
+      // and for all four when it names none (a producer or owner field, a target no agent owns, a field that is not a
+      // string), so Q1 (and Q7, when it says it is closed) report it. Producer has no conform row of its own.
       const doc = object(read.doc) ? read.doc : {};
-      const named = typeof doc.from === "string" || typeof doc.assignee === "string" || typeof doc.target === "string";
-      if (named && !about(agent, doc)) return [];
+      if (CONTENT_AGENTS.some(named => about(named, doc)) && !about(agent, doc)) return [];
       const kind = typeof doc.kind === "string" ? doc.kind : basename(dirname(dirname(read.file))).replace(/^queue\./, "");
       const id = typeof doc.id === "string" ? doc.id : basename(read.file).replace(/\.json$/, "");
-      return [{ kind, id, doc, issues: read.issues.length ? read.issues : ["does not read as a clossys.queue-entry/2 work entry"] }];
+      return [{ kind, id, doc, issues: read.issues.length ? read.issues : ["does not read as a clossys.queue-entry/2 work entry"], file: relative(dirname(consumer), read.file) }];
     }
     const doc = read.request as unknown as Record<string, unknown>;
     if (!about(agent, doc)) return [];
@@ -295,6 +465,7 @@ export function readAgentRequests(repo: string, consumer: string, agent: string,
       kind: request.kind, id: request.id, doc, issues: requestIssues(doc),
       ...(routeIssue ? { routeIssue } : {}), ...(owned ? { ownerClass: { step: `${owned.loop}/${owned.version}#${owned.step}`, queue: owned.queue } } : {}),
       ...(resultIssue ? { resultIssue } : {}),
+      ...(request.status === "closed" && request.kind !== "slot" ? { recheck: recheckOf(consumer, request) } : {}),
     }];
   });
   const decisions = readDecisionEntries(consumer);
