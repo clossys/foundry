@@ -1,6 +1,7 @@
 /**
  * The page and publication certifiers (R05). A page fits its slot when its route is the contract
- * fixture's sample route (when the page names a path), its frame and sections are live pinned
+ * fixture's sample route (when the page names a path; a dynamic route such as `/admin/<agent>/<slot>` is the contract
+ * route and the fixture's sample is an instance of it, route.ts), its frame and sections are live pinned
  * Designer slots, and every copy ref `<writer-slot>#<key>` resolves to a key of that Writer slot's
  * pinned candidate, and every section serves the page's medium (its layout): the frame's medium is its pinned
  * candidate's `meta.element.media[0]`, else `slide` for a deck frame (`contract.surface: "deck"`), else `web`; a
@@ -12,6 +13,7 @@
 import { candidateMeta, isObject, slotDoc, stringList } from "../checks/shared.js";
 import type { CandidateRecord, SlotRecord } from "../types.js";
 import { pinKey, type CertifyEnv } from "./env.js";
+import { isDynamicRoute, routeInstanceOf } from "./route.js";
 import { reason, type Reason } from "./types.js";
 
 const copyRefs = (copy: unknown): string[] => (isObject(copy) ? Object.values(copy).filter((value): value is string => typeof value === "string") : []);
@@ -62,7 +64,13 @@ export function certifyPage(slot: SlotRecord, candidate: CandidateRecord, contra
   const doc = isObject(candidate.json) ? candidate.json : {};
   const out: Reason[] = [];
   const route = routeOf(contract);
-  if (typeof doc.path === "string" && route !== undefined && doc.path !== route) out.push(reason("fixture", `routes ${doc.path}, not the contract fixture's ${route}`));
+  // A dynamic page (`/admin/<agent>/<slot>`) serves every instance of its pattern: it is the contract's route, and the
+  // fixture's sample route is one instance of it. A static page routes exactly the fixture's sample.
+  if (typeof doc.path === "string" && route !== undefined) {
+    if (!isDynamicRoute(doc.path)) { if (doc.path !== route) out.push(reason("fixture", `routes ${doc.path}, not the contract fixture's ${route}`)); }
+    else if (typeof contract.route === "string" && doc.path !== contract.route) out.push(reason("fixture", `routes ${doc.path}, not the contract route ${contract.route}`));
+    else if (!routeInstanceOf(doc.path, route)) out.push(reason("fixture", `routes ${doc.path}, which the contract fixture's ${route} is no instance of`));
+  }
   const designer = (id: string) => env.live.get("designer")?.has(id) && env.pins.has(pinKey("designer", id));
   if (typeof doc.frame === "string" && !designer(doc.frame)) out.push(reason("frame", `frame ${doc.frame} is no live pinned Designer slot`));
   const medium = typeof doc.frame === "string" && designer(doc.frame) ? pageMedium(doc.frame, env) : undefined;

@@ -11,7 +11,11 @@ const SECTION = /^sections\.[a-z0-9][a-z0-9.-]*$/;
 /** A Writer copy key (dotted, no spaces) or a `<slot>#<key>` reference. */
 const COPY_KEY = /^(?:[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}#[a-z0-9][a-z0-9.-]*|[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)+)$/;
 const COPY_REF = /^[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}#[a-z0-9][a-z0-9.-]*$/;
-const ROUTE = /^\/(?:[a-z0-9][a-z0-9-]*|:[a-z][a-zA-Z0-9]*)?(?:\/(?:[a-z0-9][a-z0-9-]*|:[a-z][a-zA-Z0-9]*))*$/;
+/**
+ * A route: static kebab segments, `:param` segments, or `<param>` segments (the Publisher directory's dynamic route page
+ * format, foundry-build-0048 U20: one page record serves `/admin/<agent>/<slot>` for every agent and slot).
+ */
+const ROUTE = /^\/(?:[a-z0-9][a-z0-9-]*|:[a-z][a-zA-Z0-9]*|<[a-z][a-z0-9]*>)?(?:\/(?:[a-z0-9][a-z0-9-]*|:[a-z][a-zA-Z0-9]*|<[a-z][a-z0-9]*>))*$/;
 
 /** page.assembled: a clossys.page/1 record with a route path, a `frames.*` frame, unique `sections.*` sections, a Writer title key and `<slot>#<key>` copy references. */
 export const assembled: Criterion = subject => {

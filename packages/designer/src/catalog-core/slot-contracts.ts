@@ -10,6 +10,8 @@
  * package); this check covers what only Designer can know: the slot catalog and
  * the references folder.
  */
+import { dataBindingFindings } from "./data-binding.js";
+
 export type SlotContractLayer = "themes" | "assets" | "components" | "sections" | "frames";
 export type SpecimenKind = "visual" | "text" | "data" | "media" | "flow";
 export type SlotContractInput = { readonly name: string; readonly kind: "copy" | "prop" | "asset" | "theme" | "data" | "cell"; readonly required: boolean; readonly description?: string };
@@ -34,7 +36,7 @@ type CatalogSlot = {
         readonly props?: readonly string[];
         readonly allowedReads?: { readonly themes?: readonly string[]; readonly assets?: readonly string[] };
         readonly copy?: { readonly fields?: readonly { readonly key: string }[] };
-        readonly slots?: readonly { readonly name?: string; readonly id?: string }[];
+        readonly slots?: readonly { readonly name?: string; readonly id?: string; readonly type?: string; readonly required?: boolean }[];
     };
 };
 type ManifestItem = { readonly registry: string; readonly name: string; readonly version: string; readonly dir: string; readonly hash: string };
@@ -101,6 +103,8 @@ export function slotContractFindings(contracts: readonly SlotContractRecord[], c
             if (input.kind === "prop" && !props.has(input.name)) fail(`prop ${input.name} is not a slot prop or member axis`);
             if (input.kind === "data" && ownMembers && !values.has(input.name)) fail(`data ${input.name} is not a slot member`);
         }
+        // foundry-build-0048 U20: the data-bound section contract (data-binding.ts).
+        if (context.layer === "sections") for (const finding of dataBindingFindings(contract.limits ?? {}, slot.contract)) fail(finding);
         for (const reference of contract.references) {
             const dir = `${reference.registry}/${reference.item}@${reference.version}`;
             if (!context.folderExists(dir)) { fail(`missing reference folder references/${dir}`); continue; }

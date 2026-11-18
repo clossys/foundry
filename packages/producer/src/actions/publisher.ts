@@ -18,6 +18,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { dataBoundSections } from "../cli/admin-plan.js";
 import type { CliResult } from "../cli/main.js";
 import { discoverRoot } from "../cli/root.js";
 import { installedPackageRoot } from "../package-path.js";
@@ -119,6 +120,9 @@ export async function checkPublisherPages(start: string, options: PublisherActio
   try { designer = api.loadDesignerCatalog(); } catch (error) {
     return { exit: 2, root, checked: [], findings: [], message: `publisher.check: could not load the Designer catalog: ${error instanceof Error ? error.message : String(error)}` };
   }
+  // The data-bound record sections bind no Writer copy (foundry-build-0048 U20); unreadable contracts exempt none.
+  let dataBound: ReadonlySet<string> = new Set();
+  try { dataBound = dataBoundSections(root); } catch { /* fail closed: every section then needs its copy binding */ }
   const findings: PublisherFinding[] = [];
   const checked: string[] = [];
   const layoutsSeen = new Set<string>();
@@ -140,7 +144,7 @@ export async function checkPublisherPages(start: string, options: PublisherActio
       let layout: ReturnType<PublisherCheckApi["slotContract"]>;
       if (isPageRecord(doc)) {
         // The one page shape (DECISION 0048-PAGE-SHAPE): a clossys.page/1 record, read as the option checkPageOption judges.
-        const judged = pageRecordFindings(api, slotId, doc, page as PageSlotContract, designer);
+        const judged = pageRecordFindings(api, slotId, doc, page as PageSlotContract, designer, dataBound);
         for (const finding of judged.findings) findings.push({ check: finding.check, subject, detail: finding.message });
         layoutId = judged.layoutId ?? "";
         layout = judged.layout;

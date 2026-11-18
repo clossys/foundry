@@ -53,8 +53,12 @@ fixed Publisher responsibility: `clossys init` seats its pages and `publication.
 every consumer, and `publisher.admin-seated` fails an initialised consumer that lacks them.
 Websites, docs and slides stay opt-in. `page.site-page` is the generic site page: its
 route and name are the consumer's, its contract a frame plus sections, its meta required.
-The admin pages compose data-bound sections that read clossys records read-only; their
-runtime binding and the dynamic route format are a declared requirement, not built yet. Every layout, chrome and page
+The admin pages compose data-bound sections that read clossys records read-only, bound
+host-injected (each Designer slot contract's `reads.*` and `binding` limits). A route segment
+`<param>` is dynamic: one page record serves every value of the collection the page names, and
+a static segment wins over a parameter (`/admin/requests` before `/admin/<agent>`). The admin
+publication roots at `/admin`. `clossys init` seeds each admin slot with its package default as
+a record (`admin-v1.json`) and pins it once its frame, sections and copy are pinned. Every layout, chrome and page
 slot has one package default under `defaults/<slot-id>/` (`standard-v1.json`,
 `header-v1.json`, `starter-v1.json`, ...); a consumer's first file of the same name
 is `v2`. A release has no default: its manifest is written by code.

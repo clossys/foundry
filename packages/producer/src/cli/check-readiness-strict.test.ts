@@ -30,6 +30,13 @@ describe("strict readiness", () => {
     // loop.connected judge this unadopted store. Readiness rows appear only under --readiness --strict.
     expect(Object.keys(plain.value?.checks ?? {})).toEqual(["loop.agent-standard", "loop.connected", "publisher.admin-seated"]);
     expect(plain.value?.checks?.readiness).toBeUndefined();
+    // foundry-build-0048 U20 ruling: the committed fixture is the pre-init consumer (Director, Designer and Writer IAs
+    // adopted, the Publisher IA empty, clossys init never run), so its admin row is red on exactly the six unplaced admin
+    // slots, the verdict publisher.admin-seated gives any slot-model workspace init never seated.
+    const seat = plain.value?.checks?.["publisher.admin-seated"] as { status: string; findings: { subject: string; detail: string }[] };
+    expect(seat.status).toBe("fail");
+    expect(seat.findings.map(row => row.subject).sort()).toEqual(["page.admin-gallery", "page.admin-home", "page.admin-questions", "page.admin-requests", "page.admin-slot", "publication.admin"].map(id => `publisher/${id}`));
+    for (const row of seat.findings) expect(row.detail, row.subject).toMatch(/^not placed in the Publisher IA/);
     // Strict readiness raises the exit to at least 1 when a slot is blocked; a worse plain exit (2) stands.
     expect(strict.status).toBe(Math.max(plain.status ?? 2, blocked ? 1 : 0));
     if (blocked) expect(strict.status).toBeGreaterThan(0);

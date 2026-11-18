@@ -5,6 +5,7 @@ import composition from "./composition.json" with { type: "json" };
 import directory from "./directory.json" with { type: "json" };
 import release from "./release.json" with { type: "json" };
 import retiredList from "../retired.json" with { type: "json" };
+import { routeFormatFindings } from "./route-format.js";
 
 /**
  * The Publisher slot tree (ia-target/publisher.md section 2): three L0s, Composition, Directory and Release, one file
@@ -158,6 +159,12 @@ export function checkTree(trees: readonly L0Tree[] = PUBLISHER_TREES, retired: r
     }
     for (const id of Object.keys(tree.slots)) if (!placedHere.has(id)) findings.push(`${id}: slot contract in ${tree.l0} but not placed in its tree`);
   }
+  // The dynamic route page format (route-format.ts): every live page route parses, parameters range over a collection,
+  // and no two routes are ambiguous (a static segment wins over a parameter at the same position).
+  const live = new Set(starterLeaves(trees, retired));
+  const pages = trees.flatMap(tree => Object.entries(tree.slots).filter(([id, contract]) => contract.kind === "page" && live.has(id) && typeof contract.path === "string")
+    .map(([id, contract]) => ({ id, path: (contract as PageSlot).path!, ...((contract as PageSlot).collection ? { collection: (contract as PageSlot).collection } : {}) })));
+  findings.push(...routeFormatFindings(pages));
   return findings;
 }
 
