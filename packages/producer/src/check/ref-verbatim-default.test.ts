@@ -22,7 +22,13 @@ it("default check enforces the actual reference gate without --suites or --stric
   expect(failed.exitCode).toBe(1);
   expect(failed.message).toContain("REF-NO-SOURCE");
   expect(failed.suites?.suites[0]?.suite).toBe("ref-verbatim");
-  // Unpinned, the same candidate is no pin to check: the default gate passes.
+  // Unpinned, the same candidate is no pin to check: the default reference gate passes.
   rmSync(join(slot, "pin.json"));
-  expect((await runCheck(args, root)).exitCode).toBe(0);
+  const unpinned = await runCheck(args, root);
+  expect(unpinned.message).not.toContain("REF-NO-SOURCE");
+  expect(unpinned.suites?.suites[0]?.exitCode ?? 0).toBe(0);
+  // U9a: this consumer's IA places Designer (writeDesignerSlot writes it) and it never adopted Designer's loops, so it is
+  // red in loop.agent-standard (no vacuous pass); that is the check's only red, and the exit follows it.
+  expect(Object.keys(unpinned.checks ?? {})).toEqual(["loop.agent-standard"]);
+  expect(unpinned.exitCode).toBe(1);
 });

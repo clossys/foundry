@@ -14,6 +14,7 @@ import { packageIaSource } from "./ia-source.js";
 import { PRODUCER_IA_SOURCE, readPipelineSeats } from "./pipeline-seats.js";
 import type { TargetSlotKind } from "../types.js";
 import { IA_SCHEMA, type IaAxes, type IaDoc, type IaLayer, type IaLeafGroup, type IaNode, type ModelAgent, type SlotAgent, type SlotKind, type SlotPosition } from "./types.js";
+import { LOOPS_L0 } from "../../loop/agent-loops-ia.js";
 
 export interface FoundrySlot {
   readonly id: string;
@@ -266,6 +267,8 @@ export function nodeLayers(agent: ModelAgent, ia: IaDoc): Map<string, string> {
     return layers;
   }
   if (agent === "designer" || agent === "writer") for (const node of ia.nodes) layers.set(node.id, node.id.split(".")[0]!);
+  // An agent's own loops L1 (`loops.<key>`, loop/agent-loops-ia.ts) is in the `loops` L0 in every unlayered tree.
+  else for (const node of ia.nodes) if (node.id.startsWith(`${LOOPS_L0}.`)) layers.set(node.id, LOOPS_L0);
   return layers;
 }
 

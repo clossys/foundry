@@ -27,17 +27,19 @@ import { isLoopName, LOOP_NAMES, RUN_ID, type LoopName } from "./names.js";
 import type { Finding } from "./route.js";
 import { fillAll, readRunState, resumeRun, runInit, startRun, waitingRuns, wroteFile, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult } from "./runner.js";
 
-export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|create|choose|scope|slot|release|audit|cascade> [--slot <agent>/<slot-id>] [--request <id>] [--from <entry>] [--publication <id>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
+export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|create|choose|scope|slot|release|audit|cascade> [--slot <agent>/<slot-id>] [--request <id>] [--from <entry>] [--publication <id>] [--agent <agent>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
   + "       clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--step <id>] [--wrote <file>]...] [--root <dir>] [--json]\n"
   + "  Runs the loop version the consumer pins (else the package v1) one step at a time and writes one ledger entry per run.\n"
   + "  An agent step prints its packet and waits for --resume with its exit, files and serving model; a human step waits on its queue entry.\n"
   + "  loop.fill with no --slot fills the next slot still on a package default, in chain order, until none is left or a run waits.\n"
-  + "  loop.slot answers one open slot request (clossys request --list --open); loop.scope files every slotless need and gates the IA fan-out.";
+  + "  loop.slot answers one open slot request (clossys request --list --open); loop.scope files every slotless need and gates the IA fan-out.\n"
+  + "  An agent loop (scope, slot, create, choose, cascade) runs its agent's own pinned version when the consumer holds one: the\n"
+  + "  slot's agent, the request's owner, or loop.scope's --agent (no --agent: Producer's cross-agent loop.scope).";
 
 class LoopUsage extends Error {}
 
 interface LoopFlags {
-  loop: LoopName; slot?: string; request?: string; from?: string; publication?: string; trigger?: string; init: boolean;
+  loop: LoopName; slot?: string; request?: string; from?: string; publication?: string; agent?: string; trigger?: string; init: boolean;
   resume: boolean; run?: string; stepExit?: Exit; model?: string; step?: string; wrote: string[]; root?: string; json: boolean; help: boolean;
 }
 
@@ -60,6 +62,7 @@ function parse(argv: readonly string[]): LoopFlags {
     else if (arg === "--from") flags.from = value(++index, arg);
     else if (arg === "--request") flags.request = value(++index, arg);
     else if (arg === "--publication") flags.publication = value(++index, arg);
+    else if (arg === "--agent") flags.agent = value(++index, arg);
     else if (arg === "--trigger") flags.trigger = value(++index, arg);
     else if (arg === "--run") flags.run = value(++index, arg);
     else if (arg === "--model") flags.model = value(++index, arg);
@@ -89,7 +92,12 @@ const SAFE_WROTE = /^(?:\.clossys\/)?[A-Za-z0-9_][A-Za-z0-9_.@+-]*(?:\/[A-Za-z0-
 /** The checks `clossys check --strict` runs inside a loop (B7): a step check outside this list is recorded as not run. */
 export const STRICT_RAN: readonly string[] = [...Object.keys(TREE_CHECKS), LOOP_REACHABLE, REFS_DANGLING];
 
-/** Tree-wide findings for `clossys check --strict` inside a loop: the slot/2 tree checks, loop.reachable and refs.dangling. */
+/**
+ * Tree-wide findings for `clossys check --strict` inside a loop: the slot/2 tree checks, loop.reachable and refs.dangling.
+ * The agent loop checks (loop.agent-standard, loop.connected) are `clossys check` and conform W2 verdicts on the consumer,
+ * not an in-loop gate: a consumer that has not adopted its agents' loops is red there, while its loops still run
+ * Producer's standard, and an agent pin that does not extend its standard is refused when the runner loads it (version.ts).
+ */
 export function strictFindings(root: string): Finding[] {
   const findings: Finding[] = [];
   for (const check of [...Object.values(TREE_CHECKS), loopReachable]) {
@@ -177,7 +185,7 @@ async function defaultRun(argv: readonly string[], cwd: string): Promise<CliResu
 
 function describe(result: RunResult): string {
   const lines = [result.message];
-  if (result.state) lines.unshift(`${result.state.loop}@${result.state.version.candidate}${result.state.version.source === "package" ? " (package default)" : ""}  run ${result.state.runId}`);
+  if (result.state) lines.unshift(`${result.state.loop}@${result.state.version.candidate}${result.state.version.source === "package" ? " (package default)" : ""}  run ${result.state.runId}`, `  runs ${result.state.version.ref}`);
   if (result.packet) {
     const packet = result.packet;
     lines.push(`  agent ${packet.agent}  verb ${packet.verb}  tier ${packet.tier}${packet.skill ? `  skill ${packet.skill}` : ""}`);
@@ -232,6 +240,7 @@ export async function runLoopCli(argv: readonly string[], cwd: string, options: 
           loop: flags.loop,
           ...(flags.slot ? { slot: flags.slot } : {}), ...(flags.request ? { request: flags.request } : {}), ...(flags.from ? { from: flags.from } : {}),
           ...(flags.publication ? { publication: flags.publication } : {}), ...(flags.trigger ? { trigger: flags.trigger } : {}),
+          ...(flags.agent ? { agent: flags.agent } : {}),
         }, hooks, runOptions));
       }
     }

@@ -25,7 +25,8 @@ describe("strict readiness", () => {
     const strict = runVerb(["check", "--readiness", "--strict", "--root", root], root);
     const blocked = (plain.value?.slots?.coverage ?? []).reduce((sum: number, row: { blocked: unknown[] }) => sum + row.blocked.length, 0);
     expect(strict.value?.checks?.readiness?.blocked).toBe(blocked);
-    expect(plain.value?.checks).toBeUndefined();
+    // Plain readiness raises no finding; other checks (U9a's loop.agent-standard on this unadopted store) stand apart.
+    expect(plain.value?.checks?.readiness).toBeUndefined();
     // Strict readiness raises the exit to at least 1 when a slot is blocked; a worse plain exit (2) stands.
     expect(strict.status).toBe(Math.max(plain.status ?? 2, blocked ? 1 : 0));
     if (blocked) expect(strict.status).toBeGreaterThan(0);

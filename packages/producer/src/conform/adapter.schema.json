@@ -47,6 +47,11 @@
         }
       }
     },
+    "loops": {
+      "$comment": "the agent's own loop slots it pins (foundry-build-0048 U9a): each extends Producer's standard loop of the same name; packages/<agent>/loops/<id>/<stem>-v1.json is its package candidate",
+      "type": "array",
+      "items": { "enum": ["loop.scope", "loop.slot", "loop.create", "loop.choose", "loop.cascade"] }
+    },
     "skill": { "type": "string", "minLength": 1 },
     "skills": {
       "type": "object", "required": ["scope", "slot", "create", "choose", "cascade"], "additionalProperties": false,

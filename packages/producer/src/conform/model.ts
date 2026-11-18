@@ -6,7 +6,9 @@
  * test fixture. Reading is all this file does; assertions.ts judges and run.ts reports.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
+import { AGENT_LOOPS, AGENT_LOOPS_DIR, readAgentLoopPin, type AgentLoopName } from "../loop/agent-loops.js";
+import { loopStem } from "../loop/names.js";
 import { validateValue, type JsonSchema } from "../pipeline/schema.js";
 import { loadStandards, type Standard } from "../records/standards.js";
 
@@ -26,8 +28,27 @@ export interface Adapter {
   readonly recipes: readonly { readonly dir: string; readonly fixture?: { readonly output: string; readonly slot: string } }[];
   readonly derive: readonly { readonly module: string }[];
   readonly edgeFiles: readonly EdgeFile[];
+  /** The agent's own loop slots it pins (foundry-build-0048 U9a), each extending Producer's standard loop of that name. */
+  readonly loops?: readonly string[];
   readonly skill: string;
   readonly skills: Readonly<Record<LoopName, string | null>>;
+}
+
+/** A version read as the conformance assertions judge it: its `content`, or why it could not be read. */
+export type LoopRead = { readonly ok: true; readonly ref: string; readonly content: unknown } | { readonly ok: false; readonly reason: string };
+
+/**
+ * One of the agent's own loops (foundry-build-0048 U9a): whether conform.json declares it, the agent's package
+ * candidate (`packages/<agent>/loops/<loop>/<stem>-v1.json`) and, where the consumer holds the loop slot, its pin.
+ */
+export interface OwnLoop {
+  readonly loop: AgentLoopName;
+  readonly declared: boolean;
+  readonly package: LoopRead;
+  /** The consumer holds the loop slot (`agents/<agent>/<loop>/slot.json`). */
+  readonly placed: boolean;
+  /** The consumer's pinned version, when the slot is placed: an error when it is unpinned or the pin does not resolve. */
+  readonly pin?: LoopRead;
 }
 
 /** A package file of declared edges (adapter.schema.json edgeFiles). */
@@ -92,6 +113,8 @@ export interface AgentModel {
   readonly actions: readonly { readonly id: string; readonly reads: readonly string[] }[];
   readonly skillText?: string;
   readonly skills: readonly { readonly loop: LoopName; readonly path: string | null; readonly exists: boolean; readonly registered: boolean }[];
+  /** The agent's own five loops, declared or not; declared ones are judged by W2, not as catalog slots. */
+  readonly loops: readonly OwnLoop[];
   readonly requests: readonly Record<string, unknown>[];
 }
 
@@ -245,7 +268,9 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
     l2: (Array.isArray(node.children) ? node.children : []).filter(object).map(child => ({ id: String(child.id), slots: strings(child.slots) })),
   }));
   const folders = dirs(agentDir).filter(name => existsSync(join(agentDir, name, "slot.json")));
-  const placedIds = placedTree.flatMap(l1 => l1.l2.flatMap(l2 => l2.slots));
+  // The agent's declared loop slots are Producer-standard leaves, judged by W2 (agent-loop-standard), not catalog slots.
+  const declaredLoops = new Set<string>(adapter?.loops ?? []);
+  const placedIds = placedTree.flatMap(l1 => l1.l2.flatMap(l2 => l2.slots)).filter(id => !declaredLoops.has(id));
   let live: LiveSlot[] = placedIds.map(id => {
     const slot = json(join(agentDir, id, "slot.json"));
     const doc = object(slot) ? slot : {};
@@ -327,8 +352,25 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
       const path = adapter?.skills[loop] ?? null;
       return { loop, path, exists: path !== null && existsSync(join(repo, path)), registered: path !== null && hashed.has(path) };
     }),
+    loops: AGENT_LOOPS.map(loop => ownLoop(packageDir, consumer, agent, loop, declaredLoops.has(loop))),
     requests,
   };
+}
+
+/** The agent's package candidate of one loop and, where the consumer holds the loop slot, the version its pin names. */
+function ownLoop(packageDir: string, consumer: string, agent: ConformAgent, loop: AgentLoopName, declared: boolean): OwnLoop {
+  const rel = `${AGENT_LOOPS_DIR}/${loop}/${loopStem(loop)}-v1.json`;
+  const doc = json(join(packageDir, rel));
+  const pkg: LoopRead = !existsSync(join(packageDir, rel)) ? { ok: false, reason: `packages/${agent}/${rel} does not exist` }
+    : object(doc) && doc.content !== undefined ? { ok: true, ref: `${agent}/${loop}/package:${loopStem(loop)}-v1.json`, content: doc.content }
+    : { ok: false, reason: `packages/${agent}/${rel} is not a loop candidate (JSON with content)` };
+  const placed = existsSync(join(consumer, "agents", agent, loop, "slot.json"));
+  if (!placed) return { loop, declared, package: pkg, placed };
+  // The consumer folder is a workspace's `clossys/` (the pin resolves from the workspace root).
+  if (basename(consumer) !== "clossys") return { loop, declared, package: pkg, placed, pin: { ok: false, reason: `${consumer} is not a workspace clossys/ folder; the pin cannot be resolved` } };
+  const read = readAgentLoopPin(dirname(consumer), agent, loop);
+  const pin: LoopRead = read === undefined ? { ok: false, reason: `${agent}/${loop} is not placed` } : read.ok ? { ok: true, ref: read.ref, content: read.content } : { ok: false, reason: read.reason };
+  return { loop, declared, package: pkg, placed, pin };
 }
 
 function readMachinery(repo: string): Machinery {

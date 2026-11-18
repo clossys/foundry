@@ -40,6 +40,7 @@
     }
   ],
   "edgeFiles": [],
+  "loops": ["loop.scope", "loop.slot", "loop.create", "loop.choose", "loop.cascade"],
   "skill": "skill/SKILL.md",
   "skills": {
     "scope": "packages/writer/actions/writer.scope/skill.md",
