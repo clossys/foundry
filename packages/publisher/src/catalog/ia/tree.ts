@@ -107,6 +107,25 @@ export function slotContract(id: string, trees: readonly L0Tree[] = PUBLISHER_TR
   return undefined;
 }
 
+/** The publications every consumer holds: `clossys init` seats the admin workspace (foundry-build-0048 A1), never opt-in. */
+export const FIXED_PUBLICATIONS: readonly string[] = ["admin"];
+
+/**
+ * The slugs a `<slug>` page route of `publication` may not take: the first static segment of each live page route of
+ * a fixed publication other than `publication` (today `admin`, so no consumer page overlaps `/admin`). Derived from
+ * the directory contracts, never listed.
+ */
+export function reservedSlugs(publication?: string, trees: readonly L0Tree[] = PUBLISHER_TREES, retired: readonly RetiredEntry[] = PUBLISHER_RETIRED): string[] {
+  const live = new Set(starterLeaves(trees, retired));
+  const out = new Set<string>();
+  for (const tree of trees) for (const [id, contract] of Object.entries(tree.slots)) {
+    if (contract.kind !== "page" || !live.has(id) || contract.publication === publication || !FIXED_PUBLICATIONS.includes(contract.publication)) continue;
+    const first = (contract.path ?? "").split("/").find(Boolean);
+    if (first && !first.startsWith("<")) out.add(first);
+  }
+  return [...out].sort();
+}
+
 /** Soundness of the tree: ids, prefixes, node ids, one contract per leaf, parked marks agree, retired ids never placed. */
 export function checkTree(trees: readonly L0Tree[] = PUBLISHER_TREES, retired: readonly RetiredEntry[] = PUBLISHER_RETIRED): string[] {
   const findings: string[] = [];
@@ -146,7 +165,7 @@ export function checkTree(trees: readonly L0Tree[] = PUBLISHER_TREES, retired: r
 
 /** The package root: three directories above this file, from src/catalog/ia/ and dist/catalog/ia/ alike. */
 export const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
-export const STARTER_IDS = ["site", "docs", "app", "slides"] as const;
+export const STARTER_IDS = ["site", "docs", "app", "admin", "slides"] as const;
 export type StarterId = (typeof STARTER_IDS)[number];
 
 export interface CandidateFile<C = Record<string, unknown>> { clossys: Record<string, unknown> & { id: string; slot: string; source: { kind: string } }; content: C }

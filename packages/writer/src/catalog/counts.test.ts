@@ -81,7 +81,8 @@ describe("Writer tree counts (writer.md 2, Counts), derived from the leaf freeze
       ["Section copy", ["Parts", "Navigation", "Story", "Reading", "Records", "Forms", "States"]],
       ["Frame copy", ["Bars"]],
       ["Asset text", ["Marks", "Media"]],
-      ["Page metadata", ["site", "docs", "app", "slides"]],
+      // foundry-build-0048 (Amendment 2026-11-18b, A1): the fixed admin workspace publication adds its own L2.
+      ["Page metadata", ["site", "docs", "app", "admin", "slides"]],
     ]);
   });
 

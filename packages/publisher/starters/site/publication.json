@@ -8,6 +8,7 @@
     "page.about",
     "page.pricing",
     "page.contact",
+    "page.site-page",
     "page.terms",
     "page.privacy",
     "page.not-found",
@@ -19,7 +20,8 @@
     "layout.pricing",
     "layout.contact",
     "layout.legal",
-    "layout.site-state"
+    "layout.site-state",
+    "layout.site-page"
   ],
   "chrome": [
     "chrome.site-header",
@@ -40,9 +42,11 @@
     "page.about/starter-v1.json",
     "page.pricing/starter-v1.json",
     "page.contact/starter-v1.json",
+    "page.site-page/starter-v1.json",
     "page.terms/starter-v1.json",
     "page.privacy/starter-v1.json",
     "page.not-found/starter-v1.json",
-    "page.error/starter-v1.json"
+    "page.error/starter-v1.json",
+    "layout.site-page/standard-v1.json"
   ]
 }

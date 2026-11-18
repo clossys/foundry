@@ -1,0 +1,40 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/page.admin-requests/package:starter-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/page.admin-requests",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-18T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "path": "/admin/requests",
+    "layout": "publisher/layout.admin-requests",
+    "sections": [
+      {
+        "role": "header",
+        "use": "designer/sections.page-header",
+        "copy": "writer/sections.page-header.copy#admin-requests.header"
+      },
+      {
+        "role": "queue",
+        "use": "designer/sections.queue-list"
+      }
+    ],
+    "meta": {
+      "copy": "writer/page.admin-requests.meta#admin-requests.meta",
+      "indexing": "noindex"
+    }
+  }
+}

@@ -58,6 +58,34 @@ describe("passage derivation", () => {
     expect(() => derivePassages(source.ia, source.slots)).toThrow(/Missing section placement: sections.specimen-grid/);
   });
 
+  it("emits no passage for a copy-less data-bound record section that declares no passageSchema (foundry-build-0048, A3)", () => {
+    const records = (id: string, extra: Record<string, unknown> = {}) => ({ id, layer: "sections", contract: { kind: "section", slots: [{ name: "rows", type: "records", required: true }], copy: { sourceLocale: "en", fields: [] as unknown[] }, ...extra } });
+    const source = fixture();
+    source.ia.nodes.push({ id: "records", label: "Records", children: [{ id: "records-admin", label: "Admin", leaves: ["sections.queue"] }] });
+    source.ia.nodes[0]!.children[0]!.leaves.push("sections.gallery");
+    source.slots.push(records("sections.queue") as never, records("sections.gallery") as never);
+    Object.assign(source.ia, { retired: ["sections.band", "sections.queue"], starter: ["sections.gallery", "sections.article"] });
+    const result = derivePassages(source.ia, source.slots);
+    expect(result.slots.map((slot: { id: string }) => slot.id)).toEqual(["passages.article", "passages.band"]);
+    expect(result.ia.nodes.map((node: { id: string }) => node.id)).toEqual(["explain"]);
+    expect(result.ia.nodes[0].children[0].leaves).toEqual(["passages.article", "passages.band"]);
+    expect([result.ia.retired, result.ia.starter]).toEqual([["passages.band"], ["passages.article"]]);
+    // Still placed exactly once, like every section.
+    source.ia.nodes.pop();
+    expect(() => derivePassages(source.ia, source.slots)).toThrow(/Missing section placement: sections.queue/);
+  });
+
+  it.each([
+    ["a non-record section", { slots: [{ name: "mark", type: "media", required: true }] }],
+    ["an optional records slot", { slots: [{ name: "rows", type: "records", required: false }] }],
+    ["a record section with copy fields", { copy: { sourceLocale: "en", fields: [{ key: "rows[].label", kind: "plain", required: true, maxLength: { en: 40 }, dir: "auto" }] } }],
+  ])("still refuses a missing passageSchema on %s", (_name, extra) => {
+    const source = fixture();
+    source.ia.nodes[0]!.children[0]!.leaves.push("sections.queue");
+    source.slots.push({ id: "sections.queue", layer: "sections", contract: { kind: "section", slots: [{ name: "rows", type: "records", required: true }], copy: { sourceLocale: "en", fields: [] }, ...extra } } as never);
+    expect(() => derivePassages(source.ia, source.slots)).toThrow(/passageSchema may be absent only on a copy-less data-bound record section: sections.queue/);
+  });
+
   it("names passages, not sections, in the retired and starter lists and leaves specimens out (foundry-build-0033)", () => {
     const source = fixture();
     Object.assign(source.ia, { retired: ["sections.band", "sections.specimen-swatch"], starter: ["sections.article"] });
@@ -144,7 +172,9 @@ describe("SU-9W section copy cascade", () => {
   const copy = read("../records/section-defaults.r1.en.json");
   const cascade = read("../records/pending/sections-upgrade.r1.en.json");
   // Specimen sections are excluded from the Writer mirror (owner default).
-  const source = read("../../../../designer/src/catalog/slots/sections.json").filter((s: any) => !s.id.startsWith("sections.specimen-"));
+  const designerSections = read("../../../../designer/src/catalog/slots/sections.json").filter((s: any) => !s.id.startsWith("sections.specimen-"));
+  // Copy-less data-bound record sections pair no passage (foundry-build-0048, A3), so they sit outside the mirror too.
+  const source = designerSections.filter((s: any) => s.contract.passageSchema !== undefined);
   // Live pairs registered after the cascade was approved sit outside its projection.
   const postCascade = ["sections.sectioned-document"];
   const allRecords = withDeclaredCommonRecords(copy, cascade);
@@ -179,6 +209,19 @@ describe("SU-9W section copy cascade", () => {
     expect(projected.size).toBe(cascade.expectedLivePairs);
     expect(projected.size).toBe(52);
     expect(new Set([...projected].map((id: any) => id.replace(/^sections\./, "passages."))).size).toBe(52);
+  });
+
+  it("derives no passage, placement or contract for the five admin record sections (foundry-build-0048, A3)", () => {
+    const adminRecords = ["slot-gallery", "slot-detail", "candidate-preview", "question-packet", "queue-list"];
+    expect(designerSections.filter((s: any) => s.contract.passageSchema === undefined).map((s: any) => s.id).sort()).toEqual(adminRecords.map(leaf => `sections.${leaf}`).sort());
+    const shippedIa = JSON.stringify(read("./passages.json")), shippedSlots = read("../slots/passages.json") as { id: string; contract: { sectionId: string } }[];
+    const contracts = read("../../slot-contracts/contracts/passages.json") as { slots: { id: string }[] };
+    for (const leaf of adminRecords) {
+      expect(shippedIa.includes(`passages.${leaf}"`), leaf).toBe(false);
+      expect(shippedSlots.some(slot => slot.id === `passages.${leaf}` || slot.contract.sectionId === `sections.${leaf}`), leaf).toBe(false);
+      expect(contracts.slots.some(slot => slot.id === `passages.${leaf}`), leaf).toBe(false);
+      expect(loadWriterStore().slots.some(slot => slot.id === `passages.${leaf}`), leaf).toBe(false);
+    }
   });
 
   it("keeps every authored string and merged passage draft, valid, unique and referentially complete", () => {

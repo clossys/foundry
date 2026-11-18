@@ -62,15 +62,17 @@ describe("Page metadata is generated from the Publisher directory (foundry-build
     expect(committed.nodes.at(-1).id).toBe("copy/page-metadata");
     expect(pageMeta.label).toBe("Page metadata");
     expect(pageMeta.children.map((l2: { id: string; label: string }) => [l2.id, l2.label])).toEqual([
-      ["copy/page-metadata/site", "site"], ["copy/page-metadata/docs", "docs"], ["copy/page-metadata/app", "app"], ["copy/page-metadata/slides", "slides"],
+      ["copy/page-metadata/site", "site"], ["copy/page-metadata/docs", "docs"], ["copy/page-metadata/app", "app"], ["copy/page-metadata/admin", "admin"], ["copy/page-metadata/slides", "slides"],
     ]);
   });
 
-  it("has one page.<id>.meta per live Publisher page that names it (21) and one publication.<id>.meta per live publication (4)", () => {
-    expect(livePages).toHaveLength(21);
+  // foundry-build-0048 (Amendment 2026-11-18b, A1/A2): the admin workspace publication and its five pages plus the generic
+  // site page add six live pages (21 -> 27) and one publication (4 -> 5).
+  it("has one page.<id>.meta per live Publisher page that names it (27) and one publication.<id>.meta per live publication (5)", () => {
+    expect(livePages).toHaveLength(27);
     const leaves: string[] = pageMeta.children.flatMap((l2: { leaves: string[] }) => l2.leaves);
     expect(leaves.filter(id => id.startsWith("page."))).toEqual(livePages.map(([id]) => `${id}.meta`));
-    expect(leaves.filter(id => id.startsWith("publication."))).toEqual(["publication.site.meta", "publication.docs.meta", "publication.app.meta", "publication.slides.meta"]);
+    expect(leaves.filter(id => id.startsWith("publication."))).toEqual(["publication.site.meta", "publication.docs.meta", "publication.app.meta", "publication.admin.meta", "publication.slides.meta"]);
     expect(leaves).not.toContain("page.company-one-pager.meta");
     for (const [id, page] of livePages) expect(page.records!.meta).toBe(`writer/${id}.meta#${id.slice("page.".length)}.meta`);
   });

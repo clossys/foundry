@@ -27,5 +27,20 @@
     "chrome.app-user-menu",
     "layout.one-pager"
   ],
-  "amendments": []
+  "amendments": [
+    {
+      "id": "foundry-build-0048-amendment-2026-11-18b",
+      "remove": [],
+      "add": [
+        "layout.site-page",
+        "layout.admin-home",
+        "layout.admin-gallery",
+        "layout.admin-slot",
+        "layout.admin-requests",
+        "layout.admin-questions",
+        "chrome.admin-sidebar"
+      ],
+      "why": "owner words 2026-11-18b (spec Amendment 2026-11-18b), recorded 2026-11-18: A1 fixed admin workspace publication, A2 generic page slot, A3 admin record sections"
+    }
+  ]
 }

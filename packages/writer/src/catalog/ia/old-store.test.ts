@@ -49,9 +49,10 @@ describe("slot-defaults.json", () => {
   const doc = JSON.parse(readFileSync(new URL("../slot-defaults.json", import.meta.url), "utf8")) as { schema: string; agent: string; slots: Record<string, { standard?: string }> };
   const keys = Object.keys(doc.slots);
 
-  it("holds the 100 target leaves and no old-store id", () => {
+  // foundry-build-0048 (Amendment 2026-11-18b, A1/A2): seven page metadata leaves join the target tree; 100 -> 107.
+  it("holds the 107 target leaves and no old-store id", () => {
     expect(doc).toMatchObject({ schema: "clossys.slot-defaults/1", agent: "writer" });
-    expect(keys).toHaveLength(100);
+    expect(keys).toHaveLength(107);
     expect(defaultsFindings(keys, target)).toEqual([]);
     for (const id of keys) expect(typeof doc.slots[id]!.standard, id).toBe("string");
   });

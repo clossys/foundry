@@ -7,6 +7,10 @@
  * foundry-build-0036 (audit P20): the medium is labelled "Slides" in all three files (Directory L1 Slides, Composition
  * L2 Slides layouts, Release L2 Slides releases), and the empty parked Release L1 Video is dropped until a leaf exists:
  * 8 / 2 L1, 14 / 3 L2, 46 / 3 L3.
+ * foundry-build-0048 (Amendment 2026-11-18b): the admin workspace is a fixed fifth starter, admin (Directory L1 Admin,
+ * Composition L2 Admin layouts, Release L2 Admin releases, five admin pages, five admin layouts, chrome.admin-sidebar,
+ * release.admin), and the site starter gains the generic page slot page.site-page on layout.site-page:
+ * 9 / 2 L1, 17 / 3 L2, 60 / 3 L3.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -25,28 +29,30 @@ const unit = (ref: string) => ref.replace(/^designer\//, "");
 describe("Publisher tree counts (publisher.md section 2)", () => {
   const counts = countTree();
 
-  it("has 3 L0 and 8/2 L1, 14/3 L2, 46/3 L3 (live / parked): Slides adds 2 L1, 3 L2 and 3 L3; the empty Video L1 is dropped", () => {
+  it("has 3 L0 and 9/2 L1, 17/3 L2, 60/3 L3 (live / parked): Admin adds 1 L1, 3 L2 and 13 L3, the generic page 2 L3", () => {
     expect(counts.l0).toBe(3);
-    expect(counts.total).toEqual({ l1: { live: 8, parked: 2 }, l2: { live: 14, parked: 3 }, l3: { live: 46, parked: 3 } });
+    expect(counts.total).toEqual({ l1: { live: 9, parked: 2 }, l2: { live: 17, parked: 3 }, l3: { live: 60, parked: 3 } });
   });
 
   it("counts per L0 in owner order: Composition, Directory, Release", () => {
     expect(PUBLISHER_TREES.map(t => t.l0)).toEqual(["composition", "directory", "release"]);
     expect(counts.byL0).toEqual({
-      composition: { l1: { live: 2, parked: 0 }, l2: { live: 6, parked: 1 }, l3: { live: 21, parked: 1 } },
-      directory: { l1: { live: 4, parked: 1 }, l2: { live: 4, parked: 1 }, l3: { live: 21, parked: 1 } },
-      release: { l1: { live: 2, parked: 1 }, l2: { live: 4, parked: 1 }, l3: { live: 4, parked: 1 } },
+      composition: { l1: { live: 2, parked: 0 }, l2: { live: 7, parked: 1 }, l3: { live: 28, parked: 1 } },
+      directory: { l1: { live: 5, parked: 1 }, l2: { live: 5, parked: 1 }, l3: { live: 27, parked: 1 } },
+      release: { l1: { live: 2, parked: 1 }, l2: { live: 5, parked: 1 }, l3: { live: 5, parked: 1 } },
     });
   });
 
-  it("has 16 layouts plus 5 chrome, 21 pages and 4 releases live", () => {
+  it("has 22 layouts plus 6 chrome, 27 pages and 5 releases live", () => {
     const live = starterLeaves();
-    expect(live).toHaveLength(46);
-    expect(live.filter(id => id.startsWith("layout.")).length).toBe(16);
-    expect(live.filter(id => id.startsWith("chrome.")).length).toBe(5);
-    expect(live.filter(id => id.startsWith("page.")).length).toBe(21);
-    expect(live.filter(id => id.startsWith("release.")).length).toBe(4);
+    expect(live).toHaveLength(60);
+    expect(live.filter(id => id.startsWith("layout.")).length).toBe(22);
+    expect(live.filter(id => id.startsWith("chrome.")).length).toBe(6);
+    expect(live.filter(id => id.startsWith("page.")).length).toBe(27);
+    expect(live.filter(id => id.startsWith("release.")).length).toBe(5);
     for (const id of ["layout.deck", "page.deck", "release.slides"]) expect(live, id).toContain(id);
+    for (const id of ["layout.site-page", "page.site-page", "layout.admin-home", "layout.admin-gallery", "layout.admin-slot", "layout.admin-requests", "layout.admin-questions",
+      "chrome.admin-sidebar", "page.admin-home", "page.admin-gallery", "page.admin-slot", "page.admin-requests", "page.admin-questions", "release.admin"]) expect(live, id).toContain(id);
   });
 
   it("parks the one-pager across all three L0s", () => {
@@ -55,7 +61,7 @@ describe("Publisher tree counts (publisher.md section 2)", () => {
 
   it("labels the L1s by the target tree", () => {
     expect(PUBLISHER_TREES.map(t => t.nodes.map(node => node.label))).toEqual([
-      ["Layouts", "Chrome"], ["Sites", "Docs", "Apps", "Slides", "Documents"], ["Web", "Slides", "Documents"],
+      ["Layouts", "Chrome"], ["Sites", "Docs", "Apps", "Admin", "Slides", "Documents"], ["Web", "Slides", "Documents"],
     ]);
   });
 
@@ -184,7 +190,7 @@ describe("starter publications and package defaults", () => {
     const slotsWithDefault = new Set([...defaults.keys()].map(key => key.slice(0, key.indexOf("/"))));
     const missing = starterLeaves().filter(id => !id.startsWith("release.") && !slotsWithDefault.has(id));
     expect(missing).toEqual([]);
-    expect(defaults.size).toBe(42);
+    expect(defaults.size).toBe(55);
     for (const [key, file] of defaults) {
       expect(file.clossys.source.kind, key).toBe("package-default");
       expect(file.clossys.id, key).toBe(`publisher/${key.slice(0, key.indexOf("/"))}/package:${key.slice(key.indexOf("/") + 1)}`);

@@ -171,6 +171,24 @@
     },
     {
       "missingMembers": [],
+      "missingRequiredSlots": [
+        "candidates"
+      ],
+      "missingSlots": [
+        "candidates"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.candidate-preview",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -793,6 +811,42 @@
     },
     {
       "missingMembers": [],
+      "missingRequiredSlots": [
+        "questions"
+      ],
+      "missingSlots": [
+        "questions"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.question-packet",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "entries"
+      ],
+      "missingSlots": [
+        "entries"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.queue-list",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
       "missingRequiredSlots": [],
       "missingSlots": [
         "groups"
@@ -922,6 +976,42 @@
         "providers",
         "verification"
       ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "slot"
+      ],
+      "missingSlots": [
+        "slot"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.slot-detail",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "slots"
+      ],
+      "missingSlots": [
+        "slots"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.slot-gallery",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
       "unresolvedMemberAxes": []
     },
     {

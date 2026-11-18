@@ -39,15 +39,25 @@ export function isCopyField(value: unknown): value is CopyField {
     && typeof value.value === "string" && value.source === "handwritten";
 }
 
+/**
+ * A data-bound record section declares a required `records` slot: its words are the records it reads, so it may pair no
+ * Writer passage when it declares no copy field (foundry-build-0048, A3). Every other section keeps its mechanically
+ * paired passageSchema; a record section that declares one keeps it too.
+ */
+export function dataBoundRecordSection(contract: { slots: readonly { type?: string; required?: boolean }[] }): boolean {
+  return contract.slots.some(row => row.type === "records" && row.required === true);
+}
+
 /** Structural copy checks also run when the section registry loads from its JSON descriptors. */
 export function sectionCopySchemaFindings(slot: {
   id: string;
-  contract: { passageSchema?: unknown; copy?: unknown; slots: readonly { name: string }[]; states?: readonly string[]; anatomy: { header: string | null } };
+  contract: { passageSchema?: unknown; copy?: unknown; slots: readonly { name: string; type?: string; required?: boolean }[]; states?: readonly string[]; anatomy: { header: string | null } };
 }): string[] {
   const errors: string[] = [];
   const add = (message: string) => errors.push(`copy: ${slot.id} ${message}`);
   const { contract } = slot;
-  if (contract.passageSchema !== `passages.${slot.id.slice("sections.".length)}`) add("passageSchema must pair with the section id");
+  const passageless = contract.passageSchema === undefined && dataBoundRecordSection(contract);
+  if (!passageless && contract.passageSchema !== `passages.${slot.id.slice("sections.".length)}`) add("passageSchema must pair with the section id");
   const schema = contract.copy;
   if (!object(schema) || !exact(schema, ["sourceLocale", "fields"]) || !locale(schema.sourceLocale) || !Array.isArray(schema.fields)) {
     add("requires sourceLocale and fields"); return errors;
@@ -71,6 +81,8 @@ export function sectionCopySchemaFindings(slot: {
     if (!object(field.maxLength) || !Object.hasOwn(field.maxLength, schema.sourceLocale as string)
       || Object.entries(field.maxLength).some(([tag, limit]) => !locale(tag) || typeof limit !== "number" || !Number.isSafeInteger(limit) || limit <= 0)) add(`${key} requires positive per-locale maxLength including sourceLocale`);
   }
+  // A passage-less record section has no Writer passage to carry copy, so it may declare no copy field.
+  if (passageless && schema.fields.length > 0) add("declares copy fields but pairs no passageSchema");
   for (const state of contract.states ?? []) if (![...keys].some(key => key.startsWith(`states.${state}.`))) add(`missing ${state} state copy`);
   for (const row of contract.slots) if ((row as { type?: string }).type === "copy" && ![...keys].some(key => key === row.name || key.startsWith(`${row.name}.`))) add(`missing copy slot ${row.name}`);
   return errors;

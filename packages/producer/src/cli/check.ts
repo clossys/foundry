@@ -2,6 +2,7 @@ import { runSlotResolve, slotResolveSummary, type SlotResolveReport } from "../c
 import { checkLedgerAppendOnly } from "../check/ledger-append-only.js";
 import { runLoopReachable } from "../check/loop-reachable.js";
 import { runLoopAgentStandard, runLoopConnected } from "../check/loop-connected.js";
+import { adminSeatedSummary, runAdminSeated } from "../check/admin-seated.js";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -138,13 +139,16 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
   const appendOnly = args.strict ? checkLedgerAppendOnly(dirname(consumer)) : undefined;
   const appendOnlySummary = appendOnly && (appendOnly.status === "pass" ? "ledger.append-only: pass" : [`ledger.append-only: fail (${appendOnly.findings.length})`, ...appendOnly.findings.map(finding => `  ${finding.subject}: ${finding.detail}`)].join("\n"));
   const appendOnlyFailed = appendOnly !== undefined && appendOnly.status !== "pass";
-  const exitCode = Math.max(slots.exitCode, page?.exitCode ?? 0, suites?.exitCode ?? 0, reference?.exitCode ?? 0, readiness?.length ? 1 : 0, loops.status === "fail" ? 1 : 0, agentLoopsFailed.length ? 1 : 0, appendOnlyFailed ? 1 : 0) as 0 | 1 | 2;
+  // publisher.admin-seated: an initialised consumer holds the admin workspace publication (a fixed Publisher responsibility).
+  const admin = runAdminSeated(dirname(consumer));
+  const adminFailed = admin.status === "fail";
+  const exitCode = Math.max(slots.exitCode, page?.exitCode ?? 0, suites?.exitCode ?? 0, reference?.exitCode ?? 0, readiness?.length ? 1 : 0, loops.status === "fail" ? 1 : 0, agentLoopsFailed.length ? 1 : 0, appendOnlyFailed ? 1 : 0, adminFailed ? 1 : 0) as 0 | 1 | 2;
   return {
     ...(page ?? { verb: "check" as const, root, check: true }),
     exitCode,
-    message: [slotResolveSummary(slots, args.readiness), readiness && readinessSummary(readiness), loopsSummary, agentLoopsSummary, appendOnlySummary, page?.message, suites && recordSuitesSummary(suites), referenceReport && recordSuitesSummary(referenceReport)].filter(Boolean).join("\n"),
+    message: [slotResolveSummary(slots, args.readiness), readiness && readinessSummary(readiness), loopsSummary, agentLoopsSummary, appendOnlySummary, adminSeatedSummary(admin), page?.message, suites && recordSuitesSummary(suites), referenceReport && recordSuitesSummary(referenceReport)].filter(Boolean).join("\n"),
     slots,
-    ...(readiness || loops.status === "fail" || agentLoopsFailed.length || appendOnlyFailed ? { checks: { ...(loops.status === "fail" ? { "loop.reachable": loops } : {}), ...Object.fromEntries(agentLoopsFailed.map(result => [result.check, result])), ...(appendOnlyFailed ? { "ledger.append-only": appendOnly } : {}), ...(readiness ? { readiness: { strict: true, blocked: readiness.length, findings: readiness } } : {}) } } : {}),
+    ...(readiness || loops.status === "fail" || agentLoopsFailed.length || appendOnlyFailed || adminFailed ? { checks: { ...(loops.status === "fail" ? { "loop.reachable": loops } : {}), ...Object.fromEntries(agentLoopsFailed.map(result => [result.check, result])), ...(appendOnlyFailed ? { "ledger.append-only": appendOnly } : {}), ...(adminFailed ? { [admin.check]: admin } : {}), ...(readiness ? { readiness: { strict: true, blocked: readiness.length, findings: readiness } } : {}) } } : {}),
     ...(suites || referenceReport ? { suites: suites ?? referenceReport } : {}),
   };
 }

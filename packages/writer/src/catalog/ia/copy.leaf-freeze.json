@@ -95,6 +95,20 @@
         "page.deck.meta"
       ],
       "why": "IA audit 2026-11-16 proposal 1 (owner: go with your recomm): the Copy L1 Page metadata of ia-target writer.md 2; one publication.<id>.meta per live Publisher publication and one page.<id>.meta per live page whose records.meta names it, derived from the Publisher directory"
+    },
+    {
+      "id": "foundry-build-0048-amendment-2026-11-18b",
+      "remove": [],
+      "add": [
+        "page.site-page.meta",
+        "publication.admin.meta",
+        "page.admin-home.meta",
+        "page.admin-gallery.meta",
+        "page.admin-slot.meta",
+        "page.admin-requests.meta",
+        "page.admin-questions.meta"
+      ],
+      "why": "owner words 2026-11-18b (spec Amendment 2026-11-18b), recorded 2026-11-18: A1 fixed admin workspace publication, A2 generic page slot, A3 admin record sections"
     }
   ]
 }

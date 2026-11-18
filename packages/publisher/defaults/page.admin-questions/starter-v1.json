@@ -1,0 +1,40 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/page.admin-questions/package:starter-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/page.admin-questions",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-18T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "path": "/admin/questions",
+    "layout": "publisher/layout.admin-questions",
+    "sections": [
+      {
+        "role": "header",
+        "use": "designer/sections.page-header",
+        "copy": "writer/sections.page-header.copy#admin-questions.header"
+      },
+      {
+        "role": "questions",
+        "use": "designer/sections.question-packet"
+      }
+    ],
+    "meta": {
+      "copy": "writer/page.admin-questions.meta#admin-questions.meta",
+      "indexing": "noindex"
+    }
+  }
+}

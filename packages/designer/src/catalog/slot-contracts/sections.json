@@ -3360,6 +3360,401 @@
   },
   {
     "schema": "clossys.slot-contract/1",
+    "slot": "sections.slot-gallery",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Slot gallery: one agent's placed slots, grouped by its IA, each with its state; reads the agent's ia.json and slot.json records, read-only.",
+    "inputs": [
+      {
+        "name": "slots",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "binding": "declared requirement: the data-bound section contract and its runtime binding are not built yet (foundry-build-0048)",
+      "compose.band": "sections.band",
+      "reads.access": "read-only",
+      "reads.port": "slots",
+      "reads.records": "clossys.ia/1, clossys.slot/2",
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.slot-detail",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Slot detail: one slot's contract, inputs, uses and pinned candidate; reads its slot.json and pin records, read-only.",
+    "inputs": [
+      {
+        "name": "slot",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "binding": "declared requirement: the data-bound section contract and its runtime binding are not built yet (foundry-build-0048)",
+      "compose.band": "sections.band",
+      "reads.access": "read-only",
+      "reads.port": "slot",
+      "reads.records": "clossys.slot/2, clossys.pin/2",
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.candidate-preview",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Candidate preview: one slot's candidates with their status and the pinned one marked; reads candidate records, read-only.",
+    "inputs": [
+      {
+        "name": "candidates",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "binding": "declared requirement: the data-bound section contract and its runtime binding are not built yet (foundry-build-0048)",
+      "compose.band": "sections.band",
+      "reads.access": "read-only",
+      "reads.port": "candidates",
+      "reads.records": "clossys.candidate/1",
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.question-packet",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Question packet: the open owner questions, each with its choices and the default; reads queue entries, read-only.",
+    "inputs": [
+      {
+        "name": "questions",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "binding": "declared requirement: the data-bound section contract and its runtime binding are not built yet (foundry-build-0048)",
+      "compose.band": "sections.band",
+      "reads.access": "read-only",
+      "reads.port": "questions",
+      "reads.records": "clossys.queue-entry/1 (queue.pick, queue.approve, queue.clarify)",
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.queue-list",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Queue list: the open requests and their state, oldest first; reads queue entries, read-only.",
+    "inputs": [
+      {
+        "name": "entries",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "binding": "declared requirement: the data-bound section contract and its runtime binding are not built yet (foundry-build-0048)",
+      "compose.band": "sections.band",
+      "reads.access": "read-only",
+      "reads.port": "entries",
+      "reads.records": "clossys.queue-entry/2",
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
     "slot": "sections.stats",
     "package": "designer",
     "layer": "sections",

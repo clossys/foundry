@@ -71,5 +71,18 @@
     "sections.consent",
     "sections.boundary-message"
   ],
-  "amendments": []
+  "amendments": [
+    {
+      "id": "foundry-build-0048-amendment-2026-11-18b",
+      "remove": [],
+      "add": [
+        "sections.slot-gallery",
+        "sections.slot-detail",
+        "sections.candidate-preview",
+        "sections.question-packet",
+        "sections.queue-list"
+      ],
+      "why": "owner words 2026-11-18b (spec Amendment 2026-11-18b), recorded 2026-11-18: A1 fixed admin workspace publication, A2 generic page slot, A3 admin record sections"
+    }
+  ]
 }
