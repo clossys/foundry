@@ -85,6 +85,50 @@
           }
         }
       }
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{\"schema\": \"clossys.page/1\", \"path\": \"/admin/<agent>/<slot>\", \"title\": \"studio.page.designer-assets\", \"frame\": \"frames.studio-shell\", \"sections\": [\"sections.studio.page-header\", \"sections.studio.slot-grid\"], \"copy\": {\"meta-title\": \"page.designer-assets#meta-title\"}, \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}, \"entry\": {\"fields\": {\"kind\": \"page\", \"note\": \"Assembled from the pinned frame.\"}, \"blocks\": {\"Actions\": [{\"id\": \"needs\", \"label\": \"studio.needs\"}], \"Route\": {\"archetype\": \"workspace\", \"body\": \"plain\"}}}}}",
+        "json": {
+          "schema": "clossys.page/1",
+          "path": "/admin/<agent>/<slot>",
+          "title": "studio.page.designer-assets",
+          "frame": "frames.studio-shell",
+          "sections": [
+            "sections.studio.page-header",
+            "sections.studio.slot-grid"
+          ],
+          "copy": {
+            "meta-title": "page.designer-assets#meta-title"
+          },
+          "meta": {
+            "source": {
+              "kind": "original",
+              "ref": []
+            },
+            "entry": {
+              "fields": {
+                "kind": "page",
+                "note": "Assembled from the pinned frame."
+              },
+              "blocks": {
+                "Actions": [
+                  {
+                    "id": "needs",
+                    "label": "studio.needs"
+                  }
+                ],
+                "Route": {
+                  "archetype": "workspace",
+                  "body": "plain"
+                }
+              }
+            }
+          }
+        }
+      },
+      "note": "dynamic route page format: <param> segments (foundry-build-0048 U20)"
     }
   ],
   "fail": [
@@ -399,6 +443,50 @@
         "text": "not json"
       },
       "note": "not json"
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{\"schema\": \"clossys.page/1\", \"path\": \"/admin/<Agent>\", \"title\": \"studio.page.designer-assets\", \"frame\": \"frames.studio-shell\", \"sections\": [\"sections.studio.page-header\", \"sections.studio.slot-grid\"], \"copy\": {\"meta-title\": \"page.designer-assets#meta-title\"}, \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}, \"entry\": {\"fields\": {\"kind\": \"page\", \"note\": \"Assembled from the pinned frame.\"}, \"blocks\": {\"Actions\": [{\"id\": \"needs\", \"label\": \"studio.needs\"}], \"Route\": {\"archetype\": \"workspace\", \"body\": \"plain\"}}}}}",
+        "json": {
+          "schema": "clossys.page/1",
+          "path": "/admin/<Agent>",
+          "title": "studio.page.designer-assets",
+          "frame": "frames.studio-shell",
+          "sections": [
+            "sections.studio.page-header",
+            "sections.studio.slot-grid"
+          ],
+          "copy": {
+            "meta-title": "page.designer-assets#meta-title"
+          },
+          "meta": {
+            "source": {
+              "kind": "original",
+              "ref": []
+            },
+            "entry": {
+              "fields": {
+                "kind": "page",
+                "note": "Assembled from the pinned frame."
+              },
+              "blocks": {
+                "Actions": [
+                  {
+                    "id": "needs",
+                    "label": "studio.needs"
+                  }
+                ],
+                "Route": {
+                  "archetype": "workspace",
+                  "body": "plain"
+                }
+              }
+            }
+          }
+        }
+      },
+      "note": "a <param> segment names a lower-case parameter"
     }
   ]
 }

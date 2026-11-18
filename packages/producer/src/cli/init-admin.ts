@@ -9,13 +9,15 @@
  *   Designer frame and sections its package default composes (the slot-model rule: a Publisher page reads its frame
  *   and sections) that the workspace holds as slots, a publication's are its pages. The page contract names the
  *   whole composition (`composes`), held or not.
- * - The package default of each page (`defaults/<page>/starter-v1.json`) is the seeded candidate: a placed page with
- *   no pin resolves to it as a sample (records/resolve.ts), so nothing is copied into the workspace.
+ * - The package default of each page (`defaults/<page>/starter-v1.json`) is what a placed page with no pin resolves to
+ *   as a sample (records/resolve.ts). Each admin slot with no candidate is then seeded with that default as a real
+ *   record (`admin-v1.json`, foundry-build-0048 U20) and pinned through the pin gate once it certifies.
  * - Each used Designer unit no workspace slot holds (a workspace that has not adopted the Designer IA, or one adopted
  *   before the data-bound admin sections) is raised as one kind slot request to the Designer (from the owner, raised by
  *   Producer: the page cannot cite an unheld unit in a slot/1 store), so the queue shows the gap. The data-bound
  *   sections (slot gallery, slot detail, candidate preview, question packet, queue list) read clossys records
- *   read-only; their section contract binding and the dynamic route format are a declared requirement, not built here.
+ *   read-only, bound host-injected under their page's route scope (the page contract's `reads` and `routeFormat`,
+ *   admin-plan.ts; foundry-build-0048 U20).
  *
  * - Each admin slot is written as `clossys.slot/2` (runIaCli `current`), whatever format the rest of the store holds.
  * - A later run rewires each held admin slot whose inputs and uses are not the composition units the workspace now
@@ -26,17 +28,20 @@
  *
  * A second run on an unchanged workspace places, rewires and raises nothing new (a raise is idempotent).
  */
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { raiseRequest, RequestError } from "../records/request.js";
 import { iaPath } from "../records/slot-model/layout.js";
+import { toIsoZ } from "../records/pin.js";
+import { writeCandidateBytes } from "../records/slot-write.js";
 import { listSlots, modelExists } from "../records/slots.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
 import { sameJson } from "../records/slot.js";
 import { adminContract, adminPlan, adminRefs, adminUnder, readAdminSlot } from "./admin-plan.js";
 import type { CliResult } from "./main.js";
 import { runIaCli } from "./owner.js";
+import { runPinCli } from "./pin.js";
 
 export interface AdminSeat {
   readonly started: boolean;
@@ -44,14 +49,24 @@ export interface AdminSeat {
   /** Held admin slots whose inputs and uses this run rewrote to the composition units the workspace holds. */
   readonly rewired: readonly string[];
   readonly requests: readonly { readonly id: string; readonly target: string; readonly from: string; readonly created: boolean }[];
+  /** Admin slots this run wrote the seeded candidate (`admin-v1.json`) into, and the ones it pinned through the gate. */
+  readonly seeded: readonly string[];
+  readonly pinned: readonly string[];
+  /** Seeded admin slots the pin gate refused: what each waits for (an upstream Designer or Writer pin, mostly). */
+  readonly waiting: readonly { readonly slot: string; readonly reason: string }[];
 }
+
+/** The seeded candidate's name in every admin slot. */
+export const ADMIN_SEED = "admin-v1.json";
+export const ADMIN_SEED_BY = "planner:package-default";
 
 /** Seats the admin publication in the workspace at `root` (`<root>/clossys`); a refusal ends it with exit 1. */
 export async function seatAdmin(root: string, at: string): Promise<{ result?: CliResult; seat: AdminSeat }> {
   const consumer = join(root, "clossys");
   const placed: string[] = [], rewired: string[] = [], requests: { id: string; target: string; from: string; created: boolean }[] = [];
+  const seeded: string[] = [], pinned: string[] = [], waiting: { slot: string; reason: string }[] = [];
   let started = false;
-  const fail = (message: string) => ({ result: { exitCode: 1 as const, root, message: `init refused: ${message}` }, seat: { started, placed, rewired, requests } });
+  const fail = (message: string) => ({ result: { exitCode: 1 as const, root, message: `init refused: ${message}` }, seat: { started, placed, rewired, requests, seeded, pinned, waiting } });
   let plan: ReturnType<typeof adminPlan>;
   try { plan = adminPlan(root); } catch (error) { return fail(`the admin workspace plan could not be read from the installed Publisher and Designer packages (${(error as Error).message})`); }
   if (!modelExists(iaPath(consumer, "publisher"))) {
@@ -120,7 +135,7 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
   }
   for (const [use, entry] of unheld) {
     const why = `the admin workspace (${entry.pages.join(", ")}) composes ${use}, which no workspace slot holds`
-      + (entry.bound ? "; a data-bound admin section that reads clossys records read-only, its section contract binding is not built yet" : "");
+      + (entry.bound ? "; a data-bound admin section that reads clossys records read-only, bound host-injected (its Designer slot contract)" : "");
     try {
       const raised = raiseRequest(consumer, { target: `designer/${use}`, from: "owner", rel: "uses", why, source: "ia", by: "producer", at });
       requests.push({ id: raised.request.id, target: raised.request.target, from: raised.request.from, created: raised.created });
@@ -129,7 +144,28 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
       throw error;
     }
   }
-  return { seat: { started, placed, rewired, requests } };
+  // The seed (foundry-build-0048 U20): each admin slot with no candidate gets its package default as a real record
+  // (admin-plan.ts adminPageRecord / adminPublicationRecord), submitted through the guarded candidate writer, then
+  // pinned through the pin gate when it certifies (its frame, sections and copy are pinned upstream). A refused pin
+  // leaves the candidate submitted and is reported; a later init retries the seeded candidate. A slot holding any other
+  // candidate, or a pin, is the consumer's and is left alone. Pages pin before the publication that orders them.
+  const when = toIsoZ(at) ?? at;
+  const seeds: [string, Readonly<Record<string, unknown>>][] = [...plan.pages.map(page => [page.id, page.record] as [string, Readonly<Record<string, unknown>>]), [plan.publication, plan.record]];
+  for (const [slot, record] of seeds) {
+    const entry = listSlots(consumer, "publisher").find(each => each.id === slot);
+    if (!entry || existsSync(join(entry.dir, "pin.json"))) continue;
+    const held = existsSync(join(entry.dir, "candidates")) ? readdirSync(join(entry.dir, "candidates")) : [];
+    if (held.some(name => name !== ADMIN_SEED)) continue;
+    if (!held.includes(ADMIN_SEED)) {
+      try { writeCandidateBytes(consumer, "publisher", slot, ADMIN_SEED, `${JSON.stringify(record, null, 2)}\n`, { at: when, fields: { reason: "clossys init: the Publisher package default, as a record" } }); }
+      catch (error) { return fail(`seed publisher/${slot}: ${(error as Error).message}`); }
+      seeded.push(slot);
+    }
+    const pin = await runPinCli([`publisher/${slot}`, ADMIN_SEED, "--by", ADMIN_SEED_BY, "--at", when, "--root", root], root);
+    if (pin.exitCode === 0) pinned.push(slot);
+    else waiting.push({ slot, reason: (pin.message ?? "the pin gate refused").split("\n").filter(Boolean).slice(0, 3).join(" ") });
+  }
+  return { seat: { started, placed, rewired, requests, seeded, pinned, waiting } };
 }
 
 const same = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && a.every((value, index) => value === b[index]);

@@ -13,6 +13,10 @@
  * With a `states` module the publication's shell installs too: the root `layout.tsx` (the
  * assembly's document and metadata) and the `loading`, `not-found`, `error` and `global-error`
  * states (the states module's state export). Every App Router file is then Publisher's.
+ *
+ * A publication that records `outputs` installs them beside its routes (`install-outputs.ts`): a
+ * submission endpoint per form, share images, opt-in llms.txt, feed and JSON-LD, and every page
+ * again per non-default locale under its own first segment.
  */
 import { existsSync } from "node:fs";
 import { mkdir, readFile, readdir, rmdir, unlink, writeFile } from "node:fs/promises";
@@ -21,7 +25,8 @@ import { isBlocking, NEXT_ROUTE_MARKER, planNextRoutes, type InstallFinding, typ
 import { readPinnedPublication } from "./pinned-publication.js";
 import { expandPublication } from "./expand-tabs.js";
 import { INSTALL_MARKER, installOutRoot } from "@clossys/publisher/build";
-import { isBindGenerated, NEXT_BIND_PAGES, planNextBind, type NextBindOptions } from "./install-next-bind.js";
+import { isBindGenerated, isLocaleHostFile, NEXT_BIND_DIR, NEXT_BIND_PAGES, planNextBind, type NextBindOptions } from "./install-next-bind.js";
+import { planPublicationOutputs } from "./install-outputs.js";
 
 export const NEXT_INSTALL_REPORT = "install-report.json";
 export const NEXT_INSTALL_KIND = "next";
@@ -49,7 +54,7 @@ export interface PublishNextOptions {
   /** The install record dir; defaults to `next-<publication>` in the install out root. */
   readonly out?: string;
 }
-export interface PublishNextFile { readonly file: string; readonly pageId: string; readonly kind: "page" | "leaf" | "shell" | "bind"; readonly route: string; readonly state: "written" | "unchanged" | "removed" | "drift"; readonly shell?: NextShellState }
+export interface PublishNextFile { readonly file: string; readonly pageId: string; readonly kind: "page" | "leaf" | "shell" | "bind" | "output"; readonly route: string; readonly state: "written" | "unchanged" | "removed" | "drift"; readonly shell?: NextShellState }
 export interface PublishNextResult { readonly app: string; readonly out?: string; readonly files: readonly PublishNextFile[]; readonly findings: readonly InstallFinding[] }
 /** The install record `/api/publication` reads: one row per installed page route. */
 export interface NextInstallReport {
@@ -58,11 +63,13 @@ export interface NextInstallReport {
   readonly leaves: readonly { page: string; route: string; file: string }[];
   /** The publication's shell files: its document and its states. Empty when no states module was named. */
   readonly shell: readonly { state: NextShellState; file: string }[];
+  /** The publication's recorded outputs (form endpoints, share images, page meta); present only when it records some. */
+  readonly outputs?: readonly { route: string; file: string }[];
   readonly findings: readonly InstallFinding[];
 }
 
-/** Every App Router file name that serves a route, a layout or a state. */
-const ROUTE_FILE = /^(?:page|layout|template|route|default|loading|error|global-error|not-found)\.[cm]?[jt]sx?$/;
+/** Every App Router file name that serves a route, a layout, a state or a generated share image. */
+const ROUTE_FILE = /^(?:page|layout|template|route|default|loading|error|global-error|not-found|opengraph-image|twitter-image)\.[cm]?[jt]sx?$/;
 const marked = (content: string) => content.split("\n", 1)[0] === NEXT_ROUTE_MARKER;
 
 /** Every route file under an app directory, relative and `/`-separated. */
@@ -99,11 +106,24 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
   const { map, leafTemplates } = expandPublication(join(root, "clossys"), pinned.map, pinned.routePack.routes as readonly Record<string, unknown>[]);
   if ((options.bind === undefined) === (options.assembly === undefined)) throw new Error("publish --install --next: name the consumer's --assembly, or --bind to have Publisher generate it (not both)");
   const site = dirname(app);
-  const bound = options.bind ? await planNextBind({ root, site, map, check: options.check === true, bind: options.bind, leafTemplates }) : undefined;
+  const locales = pinned.outputs?.locales;
+  const bound = options.bind ? await planNextBind({ root, site, map, check: options.check === true, bind: options.bind, leafTemplates, ...(locales ? { locales } : {}) }) : undefined;
   const assembly = bound ? bound.assembly : options.assembly!;
   const states = bound ? bound.states : options.states;
-  const plan = planNextRoutes({ map, leafTemplates, assembly, live: options.live === true, ...(states !== undefined ? { states } : {}) });
-  const findings: InstallFinding[] = [...(bound?.findings ?? []), ...plan.findings];
+  const outputs = pinned.outputs ? await planPublicationOutputs(root, map, pinned.outputs) : undefined;
+  const routes = planNextRoutes({ map, leafTemplates, assembly, live: options.live === true, ...(states !== undefined ? { states } : {}), ...(locales ? { locales } : {}), ...(outputs?.jsonLd !== undefined ? { jsonLd: outputs.jsonLd } : {}), ...(outputs?.jsonLdByLocale !== undefined ? { localeJsonLd: outputs.jsonLdByLocale } : {}) });
+  const plan = { ...routes, files: [...routes.files, ...(outputs?.files ?? [])] };
+  const findings: InstallFinding[] = [...(bound?.findings ?? []), ...plan.findings, ...(outputs?.findings ?? [])];
+  // An output never shares a file with a page route, and a route handler never shares a segment with a page.
+  // Compared as served: a route group folder (`(en)`) is no path segment, and case folds (a case-insensitive file system).
+  const servedPath = (file: string) => file.split("/").filter(part => !/^\(.+\)$/.test(part)).join("/").toLowerCase();
+  const served = new Set(routes.files.map(row => servedPath(row.file)));
+  const segment = (file: string) => servedPath(file).split("/").slice(0, -1).join("/");
+  const pageSegments = new Set(routes.files.filter(row => /^page\.[cm]?[jt]sx?$/.test(row.file.split("/").pop()!)).map(row => segment(row.file)));
+  for (const row of outputs?.files ?? []) {
+    if (served.has(servedPath(row.file))) findings.push({ code: "site-contract", slot: map.publicationId, detail: `${row.file}: a publication output collides with a page route of the same file` });
+    else if (/^route\.[cm]?[jt]s$/.test(row.file.split("/").pop()!) && pageSegments.has(segment(row.file))) findings.push({ code: "site-contract", slot: map.publicationId, detail: `${row.route}: a publication output collides with a page served at the same path` });
+  }
   const files: PublishNextFile[] = [];
   if (findings.some(isBlocking)) return { app, files, findings };
   if (bound) {
@@ -125,6 +145,14 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
       const file = `${NEXT_BIND_PAGES}/${name}`;
       if (generated.has(file) || !isBindGenerated(file, await readFile(join(pagesDir, name), "utf8").catch(() => ""))) continue;
       if (!options.check) await unlink(join(pagesDir, name));
+      files.push({ file, pageId: "", kind: "bind", route: "", state: options.check ? "drift" : "removed" });
+    }
+    // So is the host of a locale the publication no longer installs.
+    const bindDir = join(site, NEXT_BIND_DIR);
+    for (const name of existsSync(bindDir) ? await readdir(bindDir) : []) {
+      const file = `${NEXT_BIND_DIR}/${name}`;
+      if (!isLocaleHostFile(file) || generated.has(file) || !isBindGenerated(file, await readFile(join(bindDir, name), "utf8").catch(() => ""))) continue;
+      if (!options.check) await unlink(join(bindDir, name));
       files.push({ file, pageId: "", kind: "bind", route: "", state: options.check ? "drift" : "removed" });
     }
   }
@@ -154,7 +182,8 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
   const report: NextInstallReport = {
     kind: NEXT_INSTALL_KIND, publication: map.publicationId, app,
     pages: plan.files.filter(file => file.kind === "page").map(row), leaves: plan.files.filter(file => file.kind === "leaf").map(row),
-    shell: plan.files.flatMap(file => file.kind === "shell" && file.state ? [{ state: file.state, file: file.file }] : []), findings,
+    shell: plan.files.flatMap(file => file.kind === "shell" && file.state ? [{ state: file.state, file: file.file }] : []),
+    ...(outputs?.files.length ? { outputs: outputs.files.map(file => ({ route: file.route, file: file.file })) } : {}), findings,
   };
   await writeFile(join(out, NEXT_INSTALL_REPORT), `${JSON.stringify(report, null, 2)}\n`);
   return { app, out, files, findings };

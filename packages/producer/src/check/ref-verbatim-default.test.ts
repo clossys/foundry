@@ -36,14 +36,14 @@ it("default check enforces the actual reference gate without --suites or --stric
   expect(Object.keys(unseated.checks ?? {})).toEqual(["loop.agent-standard", "publisher.admin-seated"]);
   expect(unseated.exitCode).toBe(1);
   expect((await runInitCli(["--root", root, "--at", "2026-11-18T00:00:00Z"], root)).exitCode).toBe(0);
-  // Seated, publisher.admin-seated passes. init also places Publisher but adopts no agent loops, so the loop checks are
-  // the only reds: loop.agent-standard (Designer's and Publisher's loops) and loop.connected (the Designer -> Publisher handoff).
+  // Seated, publisher.admin-seated passes. foundry-build-0048 U20: init also adopts and pins the five loops of every
+  // agent the workspace places (Designer, from writeDesignerSlot's IA, and Publisher, which the seat places), so the loop
+  // checks pass too. The default check exits 0 here only because this file mocks slot integrity: unmocked, a fresh init
+  // stays red on the admin slots' pins, which wait for upstream pins (pinned in cli/init-admin.test.ts).
   const seated = await runCheck(args, root);
-  expect(Object.keys(seated.checks ?? {})).toEqual(["loop.agent-standard", "loop.connected"]);
-  expect(seated.exitCode).toBe(1);
-  // clossys loop <agent>/loop.scope adopts and pins that agent's five loops. With both placed agents adopted, the default
-  // check exits 0 here only because this file mocks slot integrity: unmocked, a fresh init stays red on the admin slots'
-  // missing candidates and pins (pinned in cli/init-admin.test.ts).
+  expect(Object.keys(seated.checks ?? {})).toEqual([]);
+  expect(seated.exitCode).toBe(0);
+  // clossys loop <agent>/loop.scope on an agent init already adopted changes nothing and stays green.
   for (const agent of ["designer", "publisher"]) expect((await runLoopCli([`${agent}/loop.scope`, "--root", root, "--at", "2026-11-18T00:00:00Z"], root)).exitCode).toBe(0);
   const adopted = await runCheck(args, root);
   expect(Object.keys(adopted.checks ?? {})).toEqual([]);

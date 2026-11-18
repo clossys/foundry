@@ -1,10 +1,11 @@
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { ASSERTIONS, OVERLAP_MIN } from "./assertions.js";
 import { isContractRefusal, judgeDogfood, probeIaContract, probePinGate, PROBES, type PinGateResult, type ProbeFacts, type VerbProbe } from "./dogfood.js";
-import { adapterIssues, CONFORM_AGENTS, missingPaths, readConformModel, type Adapter, type AgentModel, type ConformModel, type LiveSlot } from "./model.js";
+import { adapterIssues, CONFORM_AGENTS, missingPaths, packageSlot, readConformModel, type Adapter, type AgentModel, type ConformModel, type LiveSlot } from "./model.js";
 import { cellOf, conform, formatReport, readRegistry } from "./run.js";
 import { AGENT_LOOPS, agentLoopIssues, readAgentPackageLoop } from "../loop/agent-loops.js";
 
@@ -15,7 +16,7 @@ const gateRefused = (agent: string) => ({ target: `${agent}/a.x`, candidate: "co
 const GOOD_FACTS: ProbeFacts = { emptyL2Detected: { director: true, writer: true }, requestVerb: true, critiqueMonorepoPath: false, iaContract: { director: refused("director"), writer: refused("writer") }, pinGate: { director: gateRefused("director"), writer: gateRefused("writer") } };
 
 const slot = (id: string, inputs: string[], extra: Partial<LiveSlot> = {}): LiveSlot => ({
-  id, source: "placed", schema: "clossys.slot/2", kind: "brief",
+  id, source: "placed", schema: "clossys.slot/2", kind: "brief", owner: "director", recordId: id, inputsDeclared: true,
   contract: { requirements: [{ check: "text.nonempty" }], fixture: {} }, inputs, uses: [], standard: "std",
   family: { options: 1, varyOn: null, values: [] }, ledger: [{ op: "slot", decision: "create", overlaps: [] }],
   pin: { basis: "picked", refs: [{ to: "producer/checks.scorecard", rel: "cites", record: `director/${id}` }] }, ...extra,
@@ -58,7 +59,7 @@ function world(mutate: Mutation = () => {}): { agent: AgentModel; model: Conform
     loops: ownLoops(),
     requests: [{ id: "q1", kind: "slot", from: "director/a.x", target: "director/z", status: "closed", link: "director/a.x", closed: "q1#3", notified: { to: "director/a.x", at: "2026-11-17T00:00:00Z" } }],
   };
-  const other: Record<string, any> = { ...agent, agent: "writer", live: [slot("b.in", []), slot("b.other", [])] };
+  const other: Record<string, any> = { ...agent, agent: "writer", live: [slot("b.in", [], { owner: "writer" }), slot("b.other", [], { owner: "writer" })] };
   const enforced = { status: "enforced", enforcedFor: [] };
   const machinery: Record<string, any> = {
     rules: new Map(["R15.1", "R15.2", "R05.1", "R05.2", "R07.5"].map(id => [id, enforced])),
@@ -87,6 +88,8 @@ const MUTATIONS: Record<string, Mutation> = {
   S3: agent => { agent.folders = ["a.x"]; },
   S4: agent => { agent.live.push(slot("b.x", ["b.in"])); agent.defaults.add("b.x"); },
   S5: agent => { agent.trees[0].freeze.ids = ["a.x"]; },
+  // A slot's record names another agent than the one whose folder holds it.
+  S6: agent => { agent.live[0] = slot("a.x", ["b.in"], { owner: "writer" }); },
   L1: (_agent, machinery) => { machinery.slotRequestSchema = false; },
   L2: agent => { agent.live[0] = slot("a.x", ["b.in"], { ledger: [{ op: "slot" }] }); },
   L3: (_agent, _machinery, _other, facts) => { facts.iaContract.director = [{ ...facts.iaContract.director[0], accepted: true }]; },
@@ -146,7 +149,7 @@ describe("own loops (W2, foundry-build-0048 U9a)", () => {
 
 describe("conformance registry", () => {
   const registry = readRegistry();
-  it("declares the 24 assertions of the standard, each with a function and a mutation proof", () => {
+  it("declares the 25 assertions of the standard, each with a function and a mutation proof", () => {
     expect(registry.assertions.map(entry => entry.id)).toEqual(Object.keys(MUTATIONS));
     expect(Object.keys(ASSERTIONS).sort()).toEqual(registry.assertions.map(entry => entry.id).sort());
     // Report-only: nothing is enforced yet.
@@ -188,9 +191,57 @@ describe("conformance runner", () => {
     const built = world(agent => { delete agent.adapter; agent.adapterIssues = ["packages/director/conform.json is missing or not JSON"]; });
     const report = conform(built.model, readRegistry(), GOOD_FACTS);
     const director = report.agents.find(agent => agent.agent === "director")!;
-    expect(director.red).toBe(24);
+    expect(director.red).toBe(25);
     expect(director.cells[0]!.rows[0]).toMatch(/^uncovered: /);
     expect(report.ok).toBe(false);
+  });
+  it("S6 names each coverage break: a slot placed twice, a record not its folder's, no inputs list (U9)", () => {
+    const rows = (mutate: Mutation) => { const built = world(mutate); return ASSERTIONS.S6!(built.agent, built.model, built.facts).rows; };
+    expect(rows(agent => { agent.placedTree[0].l2[1].slots.push("a.x"); })).toEqual(["a.x: placed 2 times in ia.json"]);
+    expect(rows(agent => { agent.trees[0].l1[0].l2[1].leaves.push("a.x"); })).toEqual(["a.x: 2 times in the package tree"]);
+    expect(rows(agent => { agent.live[1] = slot("a.y", ["b.other"], { recordId: "a.z" }); })).toEqual(["a.y: the record names id a.z, not its folder"]);
+    expect(rows(agent => { agent.live[1] = slot("a.y", [], { inputsDeclared: false }); })).toEqual(["a.y: declares no inputs list"]);
+    expect(rows(agent => { agent.live[1] = slot("a.y", ["b.other"], { owner: undefined }); })).toEqual(["a.y: the record names no agent, not director"]);
+    // U9 fix r1 (blind2 B1): a slot of an agent with an upstream agent names at least one input; a root agent's may not.
+    expect(rows(agent => { agent.live[1] = slot("a.y", []); })).toEqual([]);
+    const downstream = (inputs: string[]) => rows(agent => { agent.agent = "designer"; agent.live = [slot("a.x", ["b.in"], { owner: "designer" }), slot("a.y", inputs, { owner: "designer" })]; });
+    expect(downstream(["b.other"])).toEqual([]);
+    expect(downstream([])).toEqual(["a.y: names no input (designer has an upstream agent, so only a root agent's slot may read nothing)"]);
+  });
+  it("reads a package-fallback slot's owner and id from its data, never from the leaf being read (U9 fix r1, blind2 B1)", () => {
+    expect(packageSlot("a.x", { agent: "writer", id: "a.z", refs: [{ to: "director/b.in", rel: "input" }, { to: "director/b.use", rel: "uses" }] }, "designer"))
+      .toMatchObject({ owner: "writer", recordId: "a.z", inputsDeclared: true, inputs: ["director/b.in"] });
+    // No agent in the data: the agent the package's conform.json declares; the tree's key names a held record's id.
+    expect(packageSlot("a.x", { inputs: ["b.in"] }, "designer")).toMatchObject({ owner: "designer", recordId: "a.x", inputs: ["b.in"] });
+    // No data at all: no id, no inputs list, so S6 is red on both.
+    const bare = packageSlot("a.x", undefined, undefined);
+    expect(bare.owner).toBeUndefined();
+    expect(bare.recordId).toBeUndefined();
+    expect(bare.inputsDeclared).toBe(false);
+  });
+  it("turns S6 red when a fixture slot of a downstream agent loses its input refs (U9 fix r1, blind2 B1)", () => {
+    const consumer = join(mkdtempSync(join(tmpdir(), "u9-s6-")), "clossys");
+    cpSync(FIXTURE, consumer, { recursive: true });
+    const designer = (built: ConformModel) => built.agents.find(agent => agent.agent === "designer")!;
+    const before = readConformModel(REPO, consumer);
+    expect(ASSERTIONS.S6!(designer(before), before, GOOD_FACTS).rows).toEqual([]);
+    const target = designer(before).live.find(item => item.inputs.length)!;
+    const file = join(consumer, "agents", "designer", target.id, "slot.json");
+    const doc = JSON.parse(readFileSync(file, "utf8"));
+    doc.refs = doc.refs.filter((ref: { rel: string }) => ref.rel !== "input");
+    writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    const after = readConformModel(REPO, consumer);
+    expect(ASSERTIONS.S6!(designer(after), after, GOOD_FACTS).rows).toEqual([`${target.id}: names no input (designer has an upstream agent, so only a root agent's slot may read nothing)`]);
+  });
+  it("reports an empty L2 as a finding, never red; an L2 whose listed slots are not placed is red (U9 fix r1, blind2 B3)", () => {
+    const judge = (mutate: Mutation) => { const built = world(mutate); return ASSERTIONS.S3!(built.agent, built.model, built.facts); };
+    const empty = judge(agent => { agent.placedTree[0].l2.push({ id: "a3", slots: [] }); });
+    expect(empty.rows).toEqual([]);
+    expect(empty.findings).toEqual(["empty group: a/a3 lists no L3"]);
+    expect(cellOf("S3", "S3", empty).red).toBe(false);
+    const unplaced = judge(agent => { agent.placedTree[0].l2.push({ id: "a3", slots: ["a.q"] }); });
+    expect(unplaced.rows).toEqual(["a/a3: no live L3", "a.q: placed with no slot folder"]);
+    expect(cellOf("S3", "S3", unplaced).red).toBe(true);
   });
   it("resolves a trailing-* edge by prefix: dangling only when no live slot matches", () => {
     const matched = world(agent => { agent.edges.push({ from: "a.x", to: "b.*", target: "writer", scope: "package" }); });
@@ -315,7 +366,7 @@ describe("conformance over the repo and its fixture", () => {
     const accepted = (agent: string) => [{ target: `${agent}/conform.contract-probe`, contract: "{}", accepted: true, message: "ia --dry" }];
     const report = conform(model, readRegistry(), { emptyL2Detected: Object.fromEntries(CONFORM_AGENTS.map(agent => [agent, false])), requestVerb: false, critiqueMonorepoPath: true, iaContract: Object.fromEntries(CONFORM_AGENTS.map(agent => [agent, accepted(agent)])) });
     for (const agent of report.agents) {
-      expect(agent.cells).toHaveLength(24);
+      expect(agent.cells).toHaveLength(25);
       expect(agent.dogfood).toHaveLength(5);
       // Shared today: placement records no decision; create, choose and cascade name the slot's owner, not a literal
       // agent, and the cascade step names no skill.
@@ -340,6 +391,16 @@ describe("conformance over the repo and its fixture", () => {
     const c1 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "C1")!;
     for (const agent of ["director", "designer", "writer"]) expect(c1(agent).red, agent).toBe(false);
     expect(c1("publisher").red).toBe(true);
+    // S6 (U9): every Director, Designer and Writer L3 is placed once, its record names its agent and folder, and it
+    // declares an inputs list; Publisher's slot/1 slots carry their inputs as frame, chrome and roles, not a list.
+    const s6 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "S6")!;
+    for (const agent of ["director", "designer", "writer"]) expect(s6(agent).rows, agent).toEqual([]);
+    expect(s6("publisher").rows.length).toBeGreaterThan(0);
+    expect(s6("publisher").rows.every(row => row.endsWith(": declares no inputs list"))).toBe(true);
+    // S3 (U9 fix r1, blind2 B3): Designer's empty specimens group is a report-only finding, so S3 is green.
+    const s3 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "S3")!;
+    for (const agent of ["director", "designer", "writer"]) expect(s3(agent).red, agent).toBe(false);
+    expect(s3("designer").findings).toEqual([expect.stringMatching(/components-specimens lists no L3$/)]);
     const director = report.agents.find(agent => agent.agent === "director")!;
     expect(director.cells.find(cell => cell.id === "K3")!.red).toBe(false);
     expect(report.ok).toBe(false);

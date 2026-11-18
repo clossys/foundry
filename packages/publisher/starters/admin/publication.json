@@ -2,7 +2,7 @@
   "schema": "clossys.starter/1",
   "id": "admin",
   "node": "directory/admin/admin",
-  "root": "/",
+  "root": "/admin",
   "pages": [
     "page.admin-home",
     "page.admin-gallery",

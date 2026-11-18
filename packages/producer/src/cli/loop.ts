@@ -72,14 +72,10 @@ export async function runLoopCli(argv: readonly string[], cwd: string): Promise<
   let adopted = false;
   const pinned: string[] = [];
   if (!check) {
-    const adopt = adoptAgentLoops(workspace, agent, { by: by.split(":")[0]!, at: when });
-    if (adopt.refused.length) return done(workspace, { loop: target, adopted: false, pinned, issues: adopt.refused.map(issue => `adopt refused: ${issue}`) });
-    adopted = adopt.adopted;
-    for (const each of AGENT_LOOPS) {
-      const pin = await pinOwn(workspace, agent, each, by, when, cwd);
-      if (pin === "pinned") pinned.push(`${agent}/${each}`);
-      else if (pin !== "held") return done(workspace, { loop: target, adopted, pinned, issues: [`pin ${agent}/${each} refused: ${pin}`] });
-    }
+    const own = await adoptAndPinAgentLoops(workspace, agent, by, when, cwd);
+    adopted = own.adopted;
+    pinned.push(...own.pinned);
+    if (own.issues.length) return done(workspace, { loop: target, adopted, pinned, issues: own.issues });
   }
   if (!holdsAdoptedLoops(workspace, agent)) {
     return done(workspace, { loop: target, adopted, pinned, issues: [`${target}: the consumer holds no ${agent} loop slots; run clossys loop ${target} without --check to adopt and pin them`] });
@@ -118,6 +114,24 @@ function planInput(root: string, agent: LoopAgent, loop: AgentLoopName): { input
   const dir = join(root, "clossys", "agents", agent);
   const slot = (existsSync(dir) ? readdirSync(dir).sort() : []).find(id => !isAgentLoop(id) && existsSync(join(dir, id, "slot.json")));
   return slot ? { input: { loop, slot: `${agent}/${slot}` }, subject: `${agent}/${slot}` } : undefined;
+}
+
+/**
+ * Makes the agent's loops the consumer's: adopts its loops L1 and five loop slots (one guarded write) and pins each
+ * unpinned loop slot to the agent's candidate through the pin gate (`by`, a planner or owner basis). `clossys loop`
+ * runs it before judging; `clossys init` runs it for every agent the workspace places (init-loops.ts). An existing
+ * pin is kept, a pin that does not resolve is reported and never replaced; the first refusal ends it.
+ */
+export async function adoptAndPinAgentLoops(workspace: string, agent: LoopAgent, by: string, at: string, cwd: string): Promise<{ adopted: boolean; pinned: string[]; issues: string[] }> {
+  const pinned: string[] = [];
+  const adopt = adoptAgentLoops(workspace, agent, { by: by.split(":")[0]!, at });
+  if (adopt.refused.length) return { adopted: false, pinned, issues: adopt.refused.map(issue => `adopt refused: ${issue}`) };
+  for (const each of AGENT_LOOPS) {
+    const pin = await pinOwn(workspace, agent, each, by, at, cwd);
+    if (pin === "pinned") pinned.push(`${agent}/${each}`);
+    else if (pin !== "held") return { adopted: adopt.adopted, pinned, issues: [`pin ${agent}/${each} refused: ${pin}`] };
+  }
+  return { adopted: adopt.adopted, pinned, issues: [] };
 }
 
 /** Pin the agent's loop slot to its adopted candidate through the pin gate, unless it is already pinned. */

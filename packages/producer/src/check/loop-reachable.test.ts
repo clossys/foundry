@@ -141,12 +141,13 @@ describe("loop.create and loop.choose (foundry-build-0048 U3)", () => {
 });
 
 describe("Producer IA tree (producer.md 1)", () => {
-  it("places the nine loops, the four queues and one ledger per loop: 8 L1, 22 L2, 22 L3", () => {
+  it("places the nine loops, the five queues (the slot request queue placed by U9 fix r1) and one ledger per loop: 8 L1, 23 L2, 23 L3", () => {
     const layers = readProducerIa();
     expect(layers.map(layer => layer.layer)).toEqual(["loops", "queue", "ledger"]);
     expect(layers.flatMap(layer => layer.nodes)).toHaveLength(8);
-    expect(layers.flatMap(layer => layer.nodes.flatMap(node => node.children))).toHaveLength(22);
-    expect(producerSlotPositions(layers).size).toBe(22);
+    expect(layers.flatMap(layer => layer.nodes.flatMap(node => node.children))).toHaveLength(23);
+    expect(producerSlotPositions(layers).size).toBe(23);
+    expect(PRODUCER_LEAVES.queue).toEqual(["queue.pick", "queue.approve", "queue.clarify", "queue.fix", "queue.slot"]);
     expect(producerIaIssues(layers)).toEqual([]);
     expect(PRODUCER_LEAVES.ledger).toEqual(["ledger.fill", "ledger.refine", "ledger.create", "ledger.choose", "ledger.scope", "ledger.slot", "ledger.release", "ledger.audit", "ledger.cascade"]);
   });

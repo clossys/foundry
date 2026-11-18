@@ -16,6 +16,7 @@
  */
 import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
 import { PRODUCER_ROOT, skillPath } from "./ledger.js";
@@ -235,6 +236,18 @@ export function openRequestFor(consumer: string, target: string, from: string): 
  * need, and the request is raised right after that write.
  */
 export function raiseRequest(consumer: string, input: RaiseInput, options: { readonly dry?: boolean; readonly cited?: boolean } = {}): { request: SlotRequest; created: boolean } {
+  const { target, rel } = raiseChecks(consumer, input, options);
+  return withRequestLock(consumer, raiseLock(input.target), () => {
+    const existing = openRequestFor(consumer, input.target, input.from);
+    if (existing) return { request: existing, created: false };
+    const draft = raiseDraft(input, target, rel);
+    if (options.dry) return { request: draft, created: true };
+    return { request: createRequest(consumer, draft), created: true };
+  });
+}
+
+/** raiseRequest's refusals, before anything is written: the target, the seat, a placed target, the requester and its cite. */
+function raiseChecks(consumer: string, input: RaiseInput, options: { readonly cited?: boolean }): { target: { agent: ContentAgent; need: string }; rel: "input" | "uses" } {
   const target = targetOf(input);
   if (!target) throw new RequestError(`request target must be <agent>/<slot id>, got ${input.target}`);
   if (!NEED_ID.test(target.need)) throw new RequestError(`${target.need} is not a slot id`);
@@ -255,20 +268,54 @@ export function raiseRequest(consumer: string, input: RaiseInput, options: { rea
       if (!edges.some(edge => (edge.to === input.target || edge.to === target.need) && edge.rel === rel)) throw new RequestError(`${input.from} does not cite ${input.target} as ${rel}`);
     }
   }
-  return withRequestLock(consumer, raiseLock(input.target), () => {
-    const existing = openRequestFor(consumer, input.target, input.from);
-    if (existing) return { request: existing, created: false };
-    const id = `${stampOf(input.at)}-${target.need.replace(/\./g, "-")}`.slice(0, 80).replace(/-+$/, "");
-    const draft: SlotRequest = {
-      schema: REQUEST_SCHEMA, id, kind: "slot", from: input.from, assignee: target.agent, target: input.target, status: "open", opened: `${id}#1`,
-      rel, why: input.why, source: input.source,
-      createdBy: input.createdBy ?? { actor: "code", cli: SOURCE_CLI[input.source], version: producerVersion() },
-      createdAt: input.at, refs: SLOT_REF.test(input.from) ? [{ to: input.from as Ref["to"], rel: "raisedBy" }] : [],
-      events: [{ id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.why }],
-    };
-    if (options.dry) return { request: draft, created: true };
-    return { request: createRequest(consumer, draft), created: true };
-  });
+  return { target, rel };
+}
+
+/** The entry raiseRequest writes for an input that passed raiseChecks. */
+function raiseDraft(input: RaiseInput, target: { agent: ContentAgent; need: string }, rel: "input" | "uses"): SlotRequest {
+  const id = `${stampOf(input.at)}-${target.need.replace(/\./g, "-")}`.slice(0, 80).replace(/-+$/, "");
+  return {
+    schema: REQUEST_SCHEMA, id, kind: "slot", from: input.from, assignee: target.agent, target: input.target, status: "open", opened: `${id}#1`,
+    rel, why: input.why, source: input.source,
+    createdBy: input.createdBy ?? { actor: "code", cli: SOURCE_CLI[input.source], version: producerVersion() },
+    createdAt: input.at, refs: SLOT_REF.test(input.from) ? [{ to: input.from as Ref["to"], rel: "raisedBy" }] : [],
+    events: [{ id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.why }],
+  };
+}
+
+/**
+ * U9 fix r1 (review-u9-blind1 #1): why a slot request an agent's own loop step wrote is not the entry the request verb
+ * itself raises for that agent (`clossys request --target ... --from <agent>/<slot> --by <agent>`, or its `--scan`).
+ * The verb's own refusals run on the entry's fields (raiseChecks: the target is not placed; `from` is a placed slot of
+ * this agent that cites the target with the entry's rel), the verb's own draft is rebuilt from them (raiseDraft) and
+ * must equal the entry exactly (its id from its timestamp, or createRequest's -2..-9 suffix, its one raised event by the agent via cli with no quote, its
+ * raisedBy ref, its code actor and version, and nothing a later step writes), and no other open entry raises the same
+ * target from the same slot (the verb's idempotency). Empty when the entry is exactly the verb's.
+ */
+export function agentRaiseIssues(consumer: string, entry: SlotRequest, agent: ContentAgent): string[] {
+  if (entry.source !== "cli" && entry.source !== "scope") return [`source ${entry.source}: an agent raises through clossys request (cli) or its --scan (scope)`];
+  if (entry.from === "owner" || !entry.from.startsWith(`${agent}/`)) return [`from ${entry.from}: ${agent} raises only from its own slot`];
+  const input: RaiseInput = { target: entry.target, from: entry.from, ...(entry.rel !== undefined ? { rel: entry.rel } : {}), why: entry.why, source: entry.source, by: agent, at: entry.createdAt };
+  let draft: SlotRequest;
+  try {
+    const { target, rel } = raiseChecks(consumer, input, {});
+    draft = raiseDraft(input, target, rel);
+  } catch (error) {
+    if (error instanceof RequestError) return [error.message];
+    throw error;
+  }
+  const issues: string[] = [];
+  // createRequest's own relabel on an id already taken: the draft's id or its -2..-9 suffix, with opened and events renamed.
+  const suffix = entry.id.startsWith(draft.id) ? entry.id.slice(draft.id.length) : undefined;
+  if (suffix === undefined || !/^(?:-[2-9])?$/.test(suffix)) issues.push(`id ${entry.id}: clossys request names it ${draft.id} (or its -2..-9 suffix) from its createdAt and target`);
+  else {
+    const id = entry.id;
+    const relabeled: SlotRequest = { ...draft, id, opened: `${id}#1`, events: draft.events.map((event, index) => ({ ...event, id: `${id}#${index + 1}` })) };
+    if (!isDeepStrictEqual(JSON.parse(JSON.stringify(entry)), JSON.parse(JSON.stringify(relabeled)))) issues.push(`not the entry clossys request raises for ${agent} (${id})`);
+  }
+  const duplicate = listRequests(consumer).map(read => read.request).find(other => other !== undefined && other.id !== entry.id && other.status === "open" && other.target === entry.target && other.from === entry.from);
+  if (duplicate) issues.push(`${duplicate.id} already raises ${entry.target} from ${entry.from}`);
+  return issues;
 }
 
 /** One slotless need of a consumer slot: an input or uses edge naming no slot folder. */
