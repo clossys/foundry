@@ -583,7 +583,23 @@ export interface ThemeProjection {
 }
 
 /** A kind slot entry (clossys.queue-entry/2, foundry-build-0048 U5): records/request.ts reads and writes it. */
-export type RequestOp = "raised" | "checked" | "decided" | "placed" | "closed";
+export type RequestOp = "raised" | "routed" | "checked" | "decided" | "placed" | "started" | "rejected" | "closed" | "withdrawn";
+/** The work kinds of clossys.queue-entry/2 (foundry-build-0048 U7): a slot no agent holds, a change to a placed slot, a fix to a broken one. */
+export type RequestKind = "slot" | "change" | "fix";
+/** Where the router (queue/routing.ts routeEntry) sent an entry: written by the router only, re-derivable from the table. */
+export interface EntryRoute {
+  /** The routing.json row that matched (first match wins). */
+  readonly row: string;
+  /** sha256 of the routing.json bytes the route was derived from. */
+  readonly table: string;
+  readonly assignee: "director" | "designer" | "writer" | "publisher" | "producer" | "owner";
+  /** An agent's declared handler (conform.json requests.handling.<kind>). */
+  readonly handler?: { readonly skill: string; readonly loop: string };
+  /** An owner MC packet: the queue its matching owner step raises, the step it comes from and the skill that authors its options. */
+  readonly packet?: { readonly queue: "queue.pick" | "queue.approve" | "queue.clarify"; readonly step?: string; readonly skill?: string };
+  /** The catch-all for a need that is package code, not consumer data. */
+  readonly escalate?: "package";
+}
 export interface RequestEvent {
   readonly id: string; readonly at: string; readonly op: RequestOp; readonly by?: string; readonly detail?: string;
   /** As clossys.queue-entry/1 events: where the words came from (cli, chat, app) and the owner's words when quoted. */
@@ -598,20 +614,31 @@ export interface Proposal {
 export interface SlotRequest {
   readonly schema: "clossys.queue-entry/2";
   readonly id: string;
-  readonly kind: "slot";
+  readonly kind: RequestKind;
   /** The requester slot ref, or `owner`. */
   readonly from: string;
   /** Who executes: for kind slot, the agent whose tree would hold the slot (the target's agent). */
-  readonly assignee: "director" | "designer" | "writer" | "publisher";
-  /** `<agent>/<slot id>`: the slot the requester names. */
+  readonly assignee: "director" | "designer" | "writer" | "publisher" | "owner";
+  /** `<agent>/<slot id>`: the slot the requester names (kind slot), or the placed slot to change or fix. */
   readonly target: string;
   readonly status: "open" | "closed";
   readonly opened: string;
   readonly closed?: string;
   readonly link?: string;
-  readonly rel: "input" | "uses";
+  readonly rel?: "input" | "uses";
   readonly why: string;
-  readonly source: "cli" | "ia" | "interview" | "feedback" | "scope";
+  readonly source: "cli" | "ia" | "interview" | "feedback" | "scope" | "check";
+  /** Written by the router only (queue/routing.ts). */
+  readonly route?: EntryRoute;
+  /** kind change: what the requester wants of the placed slot. */
+  readonly want?: "repin" | "candidate" | "contract";
+  /** kind fix: the check that failed, its findings and the cause (the repin or run that broke the slot). */
+  readonly check?: string;
+  readonly findings?: readonly string[];
+  readonly cause?: string;
+  /** A closed entry: what came of it and the ref that resolves to the result (slot, pin, candidate or answered entry). */
+  readonly outcome?: "reused" | "created" | "changed" | "fixed" | "declined";
+  readonly result?: string;
   /** Who raised it, as clossys.queue-entry/1 `createdBy`. */
   readonly createdBy: Actor;
   readonly createdAt: string;
@@ -659,7 +686,8 @@ export const RECORD_KEYS: Readonly<Record<string, readonly string[]>> = {
   "clossys.queue-entry/2": keysOf<SlotRequest>()({
     schema: true, id: true, kind: true, from: true, assignee: true, target: true, status: true, opened: true, closed: true, link: true,
     rel: true, why: true, source: true, createdBy: true, createdAt: true, refs: true, overlaps: true, overlapReason: true, decision: true,
-    reuse: true, proposal: true, notified: true, closedAt: true, events: true,
+    reuse: true, proposal: true, notified: true, closedAt: true, events: true, route: true, want: true, check: true, findings: true,
+    cause: true, outcome: true, result: true,
   }),
   "clossys.ledger-entry/1": keysOf<LedgerEntry>()({
     schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,

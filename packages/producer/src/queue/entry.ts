@@ -37,14 +37,21 @@ export interface EntryFile {
   readonly file: string;
 }
 
-/** Every queue entry file under the four queue folders, by queue then id. */
+/** A clossys.queue-entry/2 fix shares the queue.fix folder (foundry-build-0048 U7); /1 readers leave it to the /2 store. */
+function isQueueEntry2(file: string): boolean {
+  try { return (JSON.parse(readFileSync(file, "utf8")) as { schema?: unknown }).schema === "clossys.queue-entry/2"; } catch { return false; }
+}
+
+/** Every queue entry file under the four queue folders, by queue then id. A /2 fix in queue.fix is not a /1 entry. */
 export function listQueueEntryFiles(root: string): EntryFile[] {
   const out: EntryFile[] = [];
   for (const queue of QUEUE_NAMES) {
     const dir = queueEntriesDir(root, queue);
     if (!isDir(dir)) continue;
     for (const name of readdirSync(dir).filter(file => file.endsWith(".json")).sort()) {
-      out.push({ queue, id: name.slice(0, -".json".length), file: join(dir, name) });
+      const file = join(dir, name);
+      if (queue === "queue.fix" && isQueueEntry2(file)) continue;
+      out.push({ queue, id: name.slice(0, -".json".length), file });
     }
   }
   return out;

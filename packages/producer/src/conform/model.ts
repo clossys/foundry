@@ -9,6 +9,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { validateValue, type JsonSchema } from "../pipeline/schema.js";
 import { loadStandards, type Standard } from "../records/standards.js";
+import { readAgentRequests, readRequestMachinery, resetRequestFacts, type AgentRequestFacts, type RequestMachinery } from "./requests-model.js";
 
 export const CONFORM_AGENTS = ["director", "designer", "writer", "publisher"] as const;
 export type ConformAgent = (typeof CONFORM_AGENTS)[number];
@@ -93,6 +94,8 @@ export interface AgentModel {
   readonly skillText?: string;
   readonly skills: readonly { readonly loop: LoopName; readonly path: string | null; readonly exists: boolean; readonly registered: boolean }[];
   readonly requests: readonly Record<string, unknown>[];
+  /** The Q rows' facts: queue entries about the agent, its request store, needs and declared handling. */
+  readonly requestFacts: AgentRequestFacts;
 }
 
 export interface RuleState { readonly status: string; readonly enforcedFor: readonly string[] }
@@ -103,6 +106,8 @@ export interface Machinery {
   readonly certifiers: ReadonlySet<string>;
   readonly contractSchemas: ReadonlyMap<string, JsonSchema | undefined>;
   readonly criteria: ReadonlySet<string>;
+  /** The Q rows' Producer facts: routing table, owner classes, fix raisers, release gates and run ledgers. */
+  readonly requests: RequestMachinery;
 }
 
 export interface ConformModel {
@@ -229,6 +234,7 @@ function readSkillHashes(repo: string): Set<string> {
 
 function readAgent(repo: string, consumer: string, agent: ConformAgent, standards: readonly Standard[], hashed: ReadonlySet<string>): AgentModel {
   const packageDir = join(repo, "packages", agent);
+  let requestFacts: AgentRequestFacts | undefined;
   const raw = json(join(packageDir, "conform.json"));
   const shapeIssues = raw === undefined ? [`packages/${agent}/conform.json is missing or not JSON`] : adapterIssues(raw, agent);
   const issues = shapeIssues.length ? shapeIssues : missingPaths(raw as Adapter, repo, packageDir);
@@ -328,10 +334,12 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
       return { loop, path, exists: path !== null && existsSync(join(repo, path)), registered: path !== null && hashed.has(path) };
     }),
     requests,
+    // Read on first use: only the request lens judges them, and an agent read for its ids alone never does.
+    get requestFacts(): AgentRequestFacts { return requestFacts ??= readAgentRequests(repo, consumer, agent, hashed); },
   };
 }
 
-function readMachinery(repo: string): Machinery {
+function readMachinery(repo: string, consumer: string): Machinery {
   const producer = join(repo, "packages/producer");
   const rulesDoc = json(join(producer, "src/constitution/rules.json"));
   const rules = new Map<string, RuleState>();
@@ -357,13 +365,14 @@ function readMachinery(repo: string): Machinery {
     const doc = json(join(dir, "index.json"));
     for (const item of object(doc) && Array.isArray(doc.criteria) ? doc.criteria.filter(object) : []) criteria.add(String(item.id));
   }
-  return { rules, loops, slotRequestSchema: existsSync(join(producer, "schemas/queue-entry-2.json")), certifiers, contractSchemas, criteria };
+  return { rules, loops, slotRequestSchema: existsSync(join(producer, "schemas/queue-entry-2.json")), certifiers, contractSchemas, criteria, requests: readRequestMachinery(repo, consumer) };
 }
 
 /** Reads the whole model: the repo's packages and the consumer's placed records. */
 export function readConformModel(repo: string, consumer: string, agents: readonly ConformAgent[] = CONFORM_AGENTS): ConformModel {
   const standards = loadStandards(repo);
   const hashed = readSkillHashes(repo);
+  resetRequestFacts();
   const models = agents.map(agent => readAgent(repo, consumer, agent, standards, hashed));
   const liveIds = new Map<string, Set<string>>(), packageIds = new Map<string, Set<string>>();
   for (const agent of [...CONFORM_AGENTS, "producer"] as const) {
@@ -377,5 +386,5 @@ export function readConformModel(repo: string, consumer: string, agents: readonl
     liveIds.set(agent, new Set(model.live.map(slot => slot.id)));
     packageIds.set(agent, new Set(model.trees.flatMap(treeLeaves)));
   }
-  return { repo, consumer, agents: models, machinery: readMachinery(repo), liveIds, packageIds };
+  return { repo, consumer, agents: models, machinery: readMachinery(repo, consumer), liveIds, packageIds };
 }

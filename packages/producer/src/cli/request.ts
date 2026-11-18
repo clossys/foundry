@@ -3,19 +3,23 @@
  * `slot` entry, never a refusal or a dropped input. Raise, check overlaps, decide reuse or create, close (link the requester
  * and notify it). `--scan` is the SCOPE demand step: it files a request for every consumer slot edge naming no slot.
  * The entries live at clossys/agents/producer/queue.slot/entries/<id>.json (records/request.ts): one queue, the
- * requester, assignee and target are fields.
+ * requester, assignee and target are fields. U7 adds kind change and kind fix about a placed slot (`--kind change|fix
+ * --subject <ref>`): Producer's routing table (queue/routing.json) writes the route and the assignee, and a cross-agent
+ * request is refused unless the requester's conform.json declares that issuing edge. A change or fix entry closes in
+ * code only (records/request.ts closeWork), with its outcome, result and a notify back to `from`.
  */
 import { join, resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import {
-  checkRequest, closeRequest, decideRequest, isContentAgent, listRequests, raiseRequest, readRequest, REQUEST_SEATS, RequestError, slotlessNeeds, targetOf, type SlotRequest,
+  checkRequest, closeRequest, decideRequest, isContentAgent, listWorkEntries, raiseRequest, raiseWork, readRequest, REQUEST_SEATS, RequestError, slotlessNeeds, targetOf, type SlotRequest,
 } from "../records/request.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
 export const REQUEST_USAGE = "Usage: clossys request --target <agent>/<slot> --from <agent>/<slot>|owner --why <text> [--rel input|uses] [--by <seat>] [--at <iso>] [--root <dir>]\n"
-  + "       clossys request --list [--open] [--json] [--root <dir>]\n"
+  + "       clossys request --kind change|fix --subject <agent>/<slot> --from <agent>/<slot>|owner --why <text> [--want repin|candidate|contract] [--check <id> --findings <a;b> --cause <text>] [--by <seat>] [--at <iso>] [--root <dir>]\n"
+  + "       clossys request --list [--open] [--agent <id>] [--json] [--root <dir>]\n"
   + "       clossys request --scan [--dry] [--at <iso>] [--root <dir>]\n"
   + "       clossys request <id> --check | --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> [--kind <kind>] --inputs <ref,...> --contract <file> [--overlap-reason <text>] | --close [--approved queue.approve#<id>] [--owner-ref <ref>]\n"
   + "  --by is the seat acting (director, designer, writer, publisher, owner, planner, producer); a raise defaults to the\n"
@@ -28,10 +32,13 @@ export const REQUEST_USAGE = "Usage: clossys request --target <agent>/<slot> --f
   + "  agent's <agent>.slot skill answers reuse or create, the owner signs a new leaf (--approved, the answered queue.approve\n"
   + "  entry of loop.slot step sign), clossys ia places it with a full\n"
   + "  contract, and --close links the requester slot-to-slot and notifies it. --scan files one for every consumer slot\n"
-  + "  input or uses ref that names no slot (the SCOPE demand diff).";
+  + "  input or uses ref that names no slot (the SCOPE demand diff).\n"
+  + "  --kind change|fix is about a placed slot (--subject): a change says what it wants, a fix carries its check, findings\n"
+  + "  and cause. Producer's routing table writes the route and assignee; a cross-agent request needs the requester's\n"
+  + "  declared issuing edge (conform.json requests.issuing). A change or fix closes in code only, linked back to --from.";
 
-const VALUED = new Set(["--target", "--from", "--why", "--rel", "--at", "--root", "--decide", "--slot", "--propose", "--under", "--kind", "--contract", "--owner-ref", "--approved", "--by", "--inputs", "--overlap-reason"]);
-const BARE = new Set(["--list", "--open", "--scan", "--dry", "--check", "--close"]);
+const VALUED = new Set(["--target", "--from", "--why", "--rel", "--at", "--root", "--decide", "--slot", "--propose", "--under", "--kind", "--contract", "--owner-ref", "--approved", "--by", "--inputs", "--overlap-reason", "--subject", "--want", "--check", "--findings", "--cause", "--agent"]);
+const BARE = new Set(["--list", "--open", "--scan", "--dry", "--close"]);
 
 interface Flags { positional: string[]; values: Map<string, string>; bare: Set<string> }
 function parse(argv: readonly string[]): Flags | "help" {
@@ -40,6 +47,8 @@ function parse(argv: readonly string[]): Flags | "help" {
     const arg = argv[index]!;
     if (arg === "--help") return "help";
     if (arg === "--json") continue;
+    // `<id> --check` is the bare overlap check; `--check <id>` names a fix's failing check.
+    if (arg === "--check" && (argv[index + 1] === undefined || argv[index + 1]!.startsWith("--"))) { flags.bare.add(arg); continue; }
     if (VALUED.has(arg)) {
       const value = argv[++index];
       if (value === undefined || value.startsWith("--")) throw new CliUsageError(`${arg} requires a value\n${REQUEST_USAGE}`);
@@ -69,8 +78,10 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
   let by = given ?? "producer";
   try {
     if (flags.bare.has("--list")) {
-      const read = listRequests(consumer);
-      const shown = read.filter(item => !flags.bare.has("--open") || item.request?.status === "open");
+      const read = listWorkEntries(consumer);
+      const agent = flags.values.get("--agent");
+      const shown = read.filter(item => (!flags.bare.has("--open") || item.request?.status === "open")
+        && (agent === undefined || !item.request || item.request.assignee === agent || item.request.from.split("/")[0] === agent));
       const bad = read.filter(item => item.issues.length);
       return {
         exitCode: bad.length ? 1 : 0, root, output: { requests: shown.map(item => item.request ?? { file: item.file, issues: item.issues }) },
@@ -79,6 +90,26 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
     }
     if (flags.bare.has("--scan")) return scan(consumer, root, atOf(flags), by, flags.bare.has("--dry"));
     const [id, ...extra] = flags.positional;
+    const kind = flags.values.get("--kind");
+    if (id === undefined && flags.values.has("--subject")) {
+      if (kind !== "change" && kind !== "fix") throw new CliUsageError(`--subject takes --kind change or fix\n${REQUEST_USAGE}`);
+      const subject = flags.values.get("--subject")!, from = flags.values.get("--from"), why = flags.values.get("--why");
+      if (!from || !why) throw new CliUsageError(`a ${kind} request takes --subject, --from and --why\n${REQUEST_USAGE}`);
+      const want = flags.values.get("--want");
+      if (want !== undefined && want !== "repin" && want !== "candidate" && want !== "contract") throw new CliUsageError(`--want must be repin, candidate or contract\n${REQUEST_USAGE}`);
+      if (kind === "change" && want === undefined) throw new CliUsageError(`a change request takes --want\n${REQUEST_USAGE}`);
+      const check = flags.values.get("--check"), cause = flags.values.get("--cause");
+      const findings = (flags.values.get("--findings") ?? "").split(";").map(item => item.trim()).filter(Boolean);
+      if (kind === "fix" && (!check || !cause || !findings.length)) throw new CliUsageError(`a fix request takes --check, --findings and --cause\n${REQUEST_USAGE}`);
+      const head = from.split("/")[0]!;
+      if (given === undefined) by = from === "owner" ? "owner" : isContentAgent(head) ? head : by;
+      const raised = raiseWork(consumer, {
+        kind, target: subject, from, why, source: "cli", by, at: atOf(flags),
+        ...(want !== undefined ? { want } : {}), ...(kind === "fix" ? { check: check!, findings, cause: cause! } : {}),
+      }, { dry: flags.bare.has("--dry") });
+      const route = raised.request.route;
+      return { exitCode: 0, root, output: raised.request, message: `request: ${raised.created ? "raised" : "already open"} ${summary(raised.request)}${route ? ` (route ${route.row} -> ${route.assignee})` : ""}` };
+    }
     if (id === undefined) {
       const target = flags.values.get("--target"), from = flags.values.get("--from"), why = flags.values.get("--why");
       if (!target || !from || !why) throw new CliUsageError(`a new request takes --target, --from and --why\n${REQUEST_USAGE}`);

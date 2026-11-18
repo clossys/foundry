@@ -6,6 +6,7 @@ import { ASSERTIONS, OVERLAP_MIN } from "./assertions.js";
 import { isContractRefusal, judgeDogfood, probeIaContract, probePinGate, PROBES, type PinGateResult, type ProbeFacts, type VerbProbe } from "./dogfood.js";
 import { adapterIssues, CONFORM_AGENTS, missingPaths, readConformModel, type Adapter, type AgentModel, type ConformModel, type LiveSlot } from "./model.js";
 import { cellOf, conform, formatReport, readRegistry } from "./run.js";
+import { routingIssues } from "../queue/routing.js";
 
 const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
 const FIXTURE = join(REPO, "packages/producer/test-fixtures/consumer/clossys");
@@ -40,6 +41,19 @@ function world(mutate: Mutation = () => {}): { agent: AgentModel; model: Conform
     skillText: "submit, then verdict, critique-packet and the craft stages",
     skills: ["scope", "slot", "create", "choose", "cascade"].map(loop => ({ loop, path: `s/${loop}.md`, exists: true, registered: true })),
     requests: [{ id: "q1", kind: "slot", from: "director/a.x", target: "director/z", status: "closed", link: "director/a.x", closed: "q1#3", notified: { to: "director/a.x", at: "2026-11-17T00:00:00Z" } }],
+    requestFacts: {
+      sourceFiles: 3, localStores: [], legacyFixes: [], unrecorded: [], needs: 1, ownerClasses: ["loop.choose/choose-v1#owner-pick"], declared: true,
+      issuing: [{ to: "writer", kinds: ["slot", "change"] }],
+      skills: [["slot", "s/slot.md", "loop.slot"], ["change", "s/create.md", "loop.create"], ["fix", "s/create.md", "loop.create"]].map(([kind, skill, loop]) => ({ kind, skill, loop, exists: true, registered: true, hasRequests: true })),
+      entries: [
+        { kind: "change", id: "c1", issues: [], doc: { kind: "change", id: "c1", from: "director/a.x", target: "writer/b.in", assignee: "writer", status: "closed", createdAt: "2026-11-15T00:00:00Z",
+          route: { row: "change.live", assignee: "writer", handler: { skill: "w.md", loop: "loop.create" } }, events: [{ op: "raised" }, { op: "routed", by: "producer" }] } },
+        { kind: "fix", id: "f1", issues: [], doc: { kind: "fix", id: "f1", from: "producer/checks.scorecard", target: "director/a.x", assignee: "director", status: "open", createdAt: "2026-11-17T00:00:00Z", check: "text.nonempty", cause: "empty", findings: ["a"],
+          route: { row: "fix.live", assignee: "director", handler: { skill: "s/create.md", loop: "loop.create" } }, events: [{ op: "raised" }, { op: "routed", by: "producer" }] } },
+        { kind: "slot", id: "s1", issues: [], ownerClass: { step: "loop.choose/choose-v1#owner-pick", queue: "queue.pick" }, doc: { kind: "slot", id: "s1", from: "writer/b.in", target: "director/a.y", assignee: "owner", status: "open", createdAt: "2026-11-17T00:00:00Z",
+          route: { row: "owner.class", assignee: "owner", packet: { queue: "queue.pick", step: "loop.choose/choose-v1#owner-pick", skill: "s/slot.md" } }, events: [{ op: "raised" }, { op: "routed", by: "producer" }] } },
+      ],
+    },
   };
   const other: Record<string, any> = { ...agent, agent: "writer", live: [slot("b.in", []), slot("b.other", [])] };
   const enforced = { status: "enforced", enforcedFor: [] };
@@ -48,6 +62,10 @@ function world(mutate: Mutation = () => {}): { agent: AgentModel; model: Conform
     loops: new Map([...["scope", "slot", "create", "choose", "cascade"].map(loop => [`loop.${loop}`, { steps: [{ decider: { agent: "director" } }] }] as const), ["loop.release", { steps: [{ checks: ["slots.needs-refresh"] }] }]]),
     slotRequestSchema: true, certifiers: new Set(["brief"]),
     contractSchemas: new Map([["brief", { type: "object", required: ["requirements"] }]]), criteria: new Set(["text.nonempty"]),
+    requests: {
+      routingIssues: [], ownerPacketRow: true, ownerClassCount: 3, fixRaisers: [], printedGaps: [], gapCodes: 1, releaseGates: ["requests.open-fix"], reasked: new Set<string>(),
+      runs: [{ id: "r1", loop: "loop.create", status: "done", createdAt: "2026-11-16T00:00:00Z", cites: ["queue.change#c1"], steps: [{ id: "s1", by: "agent", agent: "director", wrote: ["director/a.x/candidates/x.md"] }, { id: "s2", by: "code", wrote: ["producer/ledger.create/entries/r1.json"] }] }],
+    },
   };
   const facts: Record<string, any> = structuredClone(GOOD_FACTS);
   const ids = () => new Map([["director", new Set<string>(agent.live.map((item: LiveSlot) => item.id))], ["writer", new Set<string>(other.live.map((item: LiveSlot) => item.id))]]);
@@ -64,6 +82,7 @@ const red = (id: string, built: ReturnType<typeof world>): boolean => {
 };
 
 /** One mutation per assertion: the fact that turns it red on the all-green world. */
+const TABLE = JSON.parse(readFileSync(join(REPO, "packages/producer/src/queue/routing.json"), "utf8")) as { rows: Record<string, unknown>[] };
 const MUTATIONS: Record<string, Mutation> = {
   S1: agent => { agent.placedTree[0].l2[0].slots.push("a.z"); agent.folders.push("a.z"); },
   S2: agent => { agent.trees[0].l1 = []; },
@@ -88,11 +107,23 @@ const MUTATIONS: Record<string, Mutation> = {
   X3: agent => { agent.actions[0].reads.push("consumer:agents/writer/*/candidates/*"); },
   X4: (_agent, machinery) => { machinery.loops.set("loop.release", { steps: [{ checks: ["types.compile"] }] }); },
   W1: agent => { agent.skills[0].registered = false; },
+  // U7: the request lens. Q3 and Q4 run the real routingIssues on the shipped table with the spec's mutations.
+  Q1: agent => { agent.requestFacts.localStores.push("src/format/request.ts: a request record id of its own (^REQ-\\d)"); },
+  Q2: (_agent, machinery) => { machinery.requests.printedGaps.push("request.input-unpinned"); },
+  Q3: (_agent, machinery) => { machinery.requests.routingIssues = routingIssues({ ...TABLE, rows: TABLE.rows.slice(0, -1) }); },
+  Q4: (_agent, machinery) => { machinery.requests.routingIssues = routingIssues({ ...TABLE, rows: [{ ...TABLE.rows[0], when: { ia: ["designer/themes"] } }, ...TABLE.rows.slice(1)] }); },
+  Q5: agent => { agent.requestFacts.skills = agent.requestFacts.skills.filter((skill: { kind: string }) => skill.kind !== "fix"); },
+  Q6: agent => { agent.requestFacts.issuing = [{ to: "writer", kinds: ["slot"] }]; },
+  Q7: agent => { agent.requestFacts.entries[0].resultIssue = "names no record on disk"; },
+  Q8: (_agent, machinery) => { machinery.requests.runs.push({ id: "r2", loop: "loop.create", status: "done", createdAt: "2026-11-17T01:00:00Z", cites: ["queue.fix#f1"], steps: [{ id: "s1", by: "agent", agent: "director", wrote: ["director/a.x/candidates/y.md"] }] }); },
+  Q9: (_agent, machinery) => { machinery.requests.runs[0].steps[0].wrote.push("designer/sections.hero/candidates/x.md"); },
+  Q10: (_agent, machinery) => { machinery.requests.fixRaisers.push("packages/producer/src/loop/route.ts"); },
+  Q11: (_agent, machinery) => { machinery.requests.releaseGates = ["slots.needs-refresh"]; },
 };
 
 describe("conformance registry", () => {
   const registry = readRegistry();
-  it("declares the 23 assertions of the standard, each with a function and a mutation proof", () => {
+  it("declares the 34 assertions of the standard, each with a function and a mutation proof", () => {
     expect(registry.assertions.map(entry => entry.id)).toEqual(Object.keys(MUTATIONS));
     expect(Object.keys(ASSERTIONS).sort()).toEqual(registry.assertions.map(entry => entry.id).sort());
     // Report-only: nothing is enforced yet.
@@ -123,6 +154,13 @@ describe("conformance runner", () => {
     const others = readRegistry().assertions.filter(entry => entry.lens !== lens && !(id === "X2" && entry.id === "L1"));
     for (const entry of others) expect(red(entry.id, world(MUTATIONS[id])), `${id} also turned ${entry.id}`).toBe(false);
   });
+  it("Q4: an owner-class entry routed to an agent is red even when it still carries a packet", () => {
+    const built = world((agent: any) => {
+      const s1 = agent.requestFacts.entries.find((fact: any) => fact.id === "s1");
+      s1.doc.route = { ...s1.doc.route, assignee: "writer" };
+    });
+    expect(ASSERTIONS.Q4!(built.agent, built.model, built.facts).rows).toEqual([expect.stringMatching(/s1.*owner-reserved.*routes to writer/)]);
+  });
   it("counts an empty set as red (vacuous), never green", () => {
     const cell = cellOf("C3", "C3", { rows: [], evidence: 0 });
     expect(cell).toMatchObject({ red: true, vacuous: true });
@@ -134,7 +172,7 @@ describe("conformance runner", () => {
     const built = world(agent => { delete agent.adapter; agent.adapterIssues = ["packages/director/conform.json is missing or not JSON"]; });
     const report = conform(built.model, readRegistry(), GOOD_FACTS);
     const director = report.agents.find(agent => agent.agent === "director")!;
-    expect(director.red).toBe(23);
+    expect(director.red).toBe(34);
     expect(director.cells[0]!.rows[0]).toMatch(/^uncovered: /);
     expect(report.ok).toBe(false);
   });
@@ -261,7 +299,7 @@ describe("conformance over the repo and its fixture", () => {
     const accepted = (agent: string) => [{ target: `${agent}/conform.contract-probe`, contract: "{}", accepted: true, message: "ia --dry" }];
     const report = conform(model, readRegistry(), { emptyL2Detected: Object.fromEntries(CONFORM_AGENTS.map(agent => [agent, false])), requestVerb: false, critiqueMonorepoPath: true, iaContract: Object.fromEntries(CONFORM_AGENTS.map(agent => [agent, accepted(agent)])) });
     for (const agent of report.agents) {
-      expect(agent.cells).toHaveLength(23);
+      expect(agent.cells).toHaveLength(34);
       expect(agent.dogfood).toHaveLength(5);
       // Shared today: placement records no decision; create, choose and cascade name the slot's owner, not a literal
       // agent, and the cascade step names no skill.
@@ -283,6 +321,14 @@ describe("conformance over the repo and its fixture", () => {
     expect(c1("publisher").red).toBe(true);
     const director = report.agents.find(agent => agent.agent === "director")!;
     expect(director.cells.find(cell => cell.id === "K3")!.red).toBe(false);
+    // The request lens (U7): routing is valid and release refuses an open fix for every agent; the Director and
+    // Designer keep request stores of their own; the runner, feedback and finding paths still raise queue-entry/1 fixes.
+    const q = (agent: string, id: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === id)!;
+    for (const agent of CONFORM_AGENTS) {
+      for (const id of ["Q3", "Q11"]) expect(q(agent, id).rows, `${agent} ${id}`).toEqual([]);
+      expect(q(agent, "Q10").red, `${agent} Q10`).toBe(true);
+      expect(q(agent, "Q1").red, `${agent} Q1`).toBe(agent === "director" || agent === "designer");
+    }
     expect(report.ok).toBe(false);
   });
 });

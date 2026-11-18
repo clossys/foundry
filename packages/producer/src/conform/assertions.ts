@@ -13,6 +13,7 @@ import { isPageRecord, pageFixtureOf } from "../actions/page-option.js";
 import { requirementsVerdictSync } from "../constitution/certify/requirements.js";
 import type { JsonSchema } from "../pipeline/schema.js";
 import { recipePageKey } from "./recipe-page.js";
+import { REQUEST_ASSERTIONS } from "./requests-assertions.js";
 
 /**
  * `rows` are red; `findings` are report-only (listed, never red): a pattern worth a look that a rule cannot call wrong,
@@ -354,6 +355,7 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     }
     return { rows, evidence: 5 + agent.skills.length };
   },
+  ...REQUEST_ASSERTIONS,
 };
 
 /**

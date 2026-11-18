@@ -12,6 +12,9 @@
  * - `release.locales`: the release locales resolve and the build carries every one.
  * - `slots.stale`: no slot is `needs-refresh` and no pinned candidate is stale or fails its re-verdict on the pinSet
  *   now (R07.5, constitution/cascade.ts): a release never ships a dependant a repin upstream left unjudged.
+ * - `requests.open-fix`: no open fix is about a slot in the release's closure (every slot the release reads, the one
+ *   resolver): a clossys.queue-entry/2 kind fix, or a clossys.queue-entry/1 queue.fix an agent decides. An unreadable
+ *   entry fails the gate (fail closed): an entry the gate cannot read might be an open fix (foundry-build-0048 U7).
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -24,6 +27,8 @@ import { checkPinsResolve, PINS_RESOLVE } from "../check/pins-resolve.js";
 import { strictFindings } from "../loop/cli.js";
 import type { Finding } from "../loop/route.js";
 import { readSlotJson } from "../records/resolve.js";
+import { listRequests } from "../records/request.js";
+import { listQueueEntryFiles, readQueueEntry } from "../queue/entry.js";
 import { releaseLocales, readReleaseSlot } from "./locales.js";
 import { isReleaseSlot, refOf, releaseResolutions } from "./pins.js";
 import { releaseSlotId } from "./paths.js";
@@ -33,8 +38,9 @@ export const CONSTITUTION_STRICT = "constitution.strict";
 export const COPY_LOCALES = "copy.locales";
 export const RELEASE_LOCALES = "release.locales";
 export const SLOTS_STALE = "slots.stale";
+export const REQUESTS_OPEN_FIX = "requests.open-fix";
 /** The gates every release runs, in the order the spec lists them. */
-export const RELEASE_GATES: readonly string[] = [COPY_SAMPLE_REMAINING, PINS_RESOLVE, CONSTITUTION_STRICT, COPY_LOCALES, RELEASE_LOCALES, SLOTS_STALE];
+export const RELEASE_GATES: readonly string[] = [COPY_SAMPLE_REMAINING, PINS_RESOLVE, CONSTITUTION_STRICT, COPY_LOCALES, RELEASE_LOCALES, SLOTS_STALE, REQUESTS_OPEN_FIX];
 
 export type GateStatus = "pass" | "fail";
 export interface GateRun { readonly checks: Record<string, GateStatus>; readonly findings: Finding[] }
@@ -109,6 +115,25 @@ function slotsStale(root: string): Finding[] {
   return findings;
 }
 
+/** Every open fix about a slot the release reads; an entry that does not read is a finding too (fail closed). */
+export function openFixes(root: string): Finding[] {
+  const closure = new Set(releaseResolutions(root).map(refOf));
+  const findings: Finding[] = [];
+  for (const read of listRequests(join(root, "clossys"), "fix")) {
+    if (!read.request) { findings.push({ check: REQUESTS_OPEN_FIX, subject: `producer/queue.fix`, detail: `${read.file.slice(root.length + 1)} does not read (${read.issues.slice(0, 2).join("; ")}); it might be an open fix` }); continue; }
+    const subject = read.request.target.split("#")[0]!;
+    if (read.request.status === "open" && closure.has(subject)) findings.push({ check: REQUESTS_OPEN_FIX, subject, detail: `open fix queue.fix#${read.request.id} (${read.request.check ?? "fix"}): the release reads this slot` });
+  }
+  for (const file of listQueueEntryFiles(root)) {
+    if (file.queue !== "queue.fix") continue;
+    const read = readQueueEntry(file);
+    if (!read.ok) { findings.push({ check: REQUESTS_OPEN_FIX, subject: "producer/queue.fix", detail: `queue.fix#${file.id} does not read (${read.reason}); it might be an open fix` }); continue; }
+    const subject = read.entry.subject.to.split("#")[0]!;
+    if (read.entry.status === "open" && read.entry.decider.startsWith("agent:") && closure.has(subject)) findings.push({ check: REQUESTS_OPEN_FIX, subject, detail: `open queue.fix#${read.entry.id}: the release reads this slot` });
+  }
+  return findings;
+}
+
 /** Runs every gate of the release now. A gate with any finding is `fail`. */
 export function runGates(root: string, publication: string, build: { readonly locales: readonly string[] } | undefined): GateRun {
   const { locales } = releaseLocales(root, publication);
@@ -122,6 +147,7 @@ export function runGates(root: string, publication: string, build: { readonly lo
     [COPY_LOCALES]: () => copyLocales(root, locales),
     [RELEASE_LOCALES]: () => localesGate(root, publication, build),
     [SLOTS_STALE]: () => slotsStale(root),
+    [REQUESTS_OPEN_FIX]: () => openFixes(root),
   };
   const checks: Record<string, GateStatus> = {};
   const findings: Finding[] = [];

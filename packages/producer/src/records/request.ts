@@ -18,6 +18,7 @@ import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, read
 import { dirname, join } from "node:path";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
+import { consumerFacts, placedSlots, readDeclarations, routeEntry, WORK_KINDS, type RoutingFacts, type WorkKind } from "../queue/routing.js";
 import { PRODUCER_ROOT, skillPath } from "./ledger.js";
 import { validateAgainst } from "./schema.js";
 import { recordSchema, serializeSlot, SLOT_SCHEMA, validateSlot } from "./slot.js";
@@ -25,7 +26,7 @@ import { slotDir, slotFile } from "./slot-model/layout.js";
 import { AGENT_KIND } from "./slot-model/types.js";
 import { listSlots, modelExists, readModelText, readSlot } from "./slots.js";
 import { appendSlotDocEvent, replaceModelFile } from "./slot-write.js";
-import type { Actor, Overlap, Proposal, Ref, RequestEvent, RequestOp, Slot, SlotRequest } from "./types.js";
+import type { Actor, EntryRoute, Overlap, Proposal, Ref, RequestEvent, RequestOp, Slot, SlotRequest } from "./types.js";
 
 export const REQUEST_SCHEMA = "clossys.queue-entry/2";
 export const REQUEST_FILE = "queue-entry-2.json";
@@ -47,8 +48,10 @@ export function targetOf(request: Pick<SlotRequest, "target">): { agent: Content
   return match ? { agent: match[1] as ContentAgent, need: match[2]! } : undefined;
 }
 
-export const requestsDir = (consumer: string) => join(consumer, "agents", "producer", SLOT_QUEUE, "entries");
-const requestPath = (consumer: string, id: string) => join(requestsDir(consumer), `${id}.json`);
+/** The queue folder of a work kind: `queue.slot`, `queue.change`, `queue.fix` (one queue; the folder is the kind). */
+export const workQueue = (kind: WorkKind): string => `queue.${kind}`;
+export const requestsDir = (consumer: string, kind: WorkKind = "slot") => join(consumer, "agents", "producer", workQueue(kind), "entries");
+const requestPath = (consumer: string, id: string, kind: WorkKind = "slot") => join(requestsDir(consumer, kind), `${id}.json`);
 
 /** Every issue of a request record: the schema, then the conditions the validator cannot state. */
 export function requestIssues(doc: unknown): string[] {
@@ -56,15 +59,24 @@ export function requestIssues(doc: unknown): string[] {
   if (issues.length || typeof doc !== "object" || doc === null) return issues;
   const request = doc as SlotRequest;
   const out: string[] = [];
-  if (request.kind !== "slot") out.push(`$.kind: this build writes and reads kind slot only, got ${String(request.kind)}`);
+  if (!(WORK_KINDS as readonly string[]).includes(request.kind)) out.push(`$.kind: the work kinds this store holds are ${WORK_KINDS.join(", ")}, got ${String(request.kind)} (decisions are clossys.queue-entry/1)`);
   const target = targetOf(request);
-  if (request.kind === "slot" && !target) out.push("$.target: a slot entry names <agent>/<slot id> of a content agent");
-  if (request.kind === "slot" && target && request.assignee !== target.agent) out.push(`$.assignee: a slot entry is assigned to the target's agent ${target.agent}`);
+  if (!target) out.push(`$.target: a ${request.kind} entry names <agent>/<slot id> of a content agent`);
+  // The router writes the assignee: its route's, else (an entry from before routing) the target's agent.
+  const assignee = request.route?.assignee ?? target?.agent;
+  if (target && request.assignee !== assignee) {
+    out.push(assignee === target.agent ? `$.assignee: a ${request.kind} entry is assigned to the target's agent ${target.agent}` : `$.assignee: the entry is assigned where its route sends it (${assignee})`);
+  }
   if (request.kind === "slot" && request.rel === undefined) out.push("$.rel: a slot entry says how the requester cites the slot (input or uses)");
+  if (request.kind === "change" && request.want === undefined) out.push("$.want: a change entry says what it wants of the slot (repin, candidate or contract)");
+  if (request.kind === "fix") for (const field of ["check", "findings", "cause"] as const) if (request[field] === undefined) out.push(`$.${field}: a kind fix entry names the failing check, its findings and the cause`);
+  if (request.kind !== "slot" && (request.decision !== undefined || request.proposal !== undefined || request.reuse !== undefined)) out.push(`a ${request.kind} entry has no reuse or create decision (that is kind slot)`);
   if (request.decision === "reuse" && (request.reuse === undefined || request.overlaps === undefined)) out.push("a reuse decision needs reuse and overlaps");
   if (request.decision === "create" && (request.proposal === undefined || request.overlaps === undefined)) out.push("a create decision needs proposal and overlaps");
   if (request.status === "closed") {
-    for (const field of ["decision", "link", "notified", "closed", "closedAt"] as const) if (request[field] === undefined) out.push(`a closed request needs ${field}`);
+    const fields = request.kind === "slot" ? ["decision", "link", "notified", "closed", "closedAt"] as const : ["outcome", "result", "notified", "closed", "closedAt"] as const;
+    for (const field of fields) if (request[field] === undefined) out.push(`a closed request needs ${field}`);
+    if (request.notified !== undefined && request.notified.to !== request.from) out.push(`a closed entry notifies its requester ${request.from}, not ${request.notified.to}`);
   }
   const ids = request.events.map(event => event.id);
   if (!ids.includes(request.opened)) out.push(`opened ${request.opened} is no event of the request`);
@@ -75,24 +87,43 @@ export function requestIssues(doc: unknown): string[] {
 
 export interface ReadRequest { readonly file: string; readonly request?: SlotRequest; readonly issues: readonly string[] }
 
-/** Every kind slot entry under clossys/agents/producer/queue.slot/entries, read and judged (an unreadable one is listed with its issue). */
-export function listRequests(consumer: string): ReadRequest[] {
-  const dir = requestsDir(consumer);
+/**
+ * Every entry of one work kind under clossys/agents/producer/queue.<kind>/entries, read and judged (an unreadable one
+ * is listed with its issue). queue.fix still holds clossys.queue-entry/1 fix entries the runner raises; those are the
+ * /1 queue's (queue/entry.ts) and are skipped here (`legacyFixEntries` lists them).
+ */
+export function listRequests(consumer: string, kind: WorkKind = "slot"): ReadRequest[] {
+  const dir = requestsDir(consumer, kind);
   if (!existsSync(dir)) return [];
-  return readdirSync(dir).filter(name => name.endsWith(".json") && !name.startsWith(".")).sort().map(name => {
+  return readdirSync(dir).filter(name => name.endsWith(".json") && !name.startsWith(".")).sort().flatMap((name): ReadRequest[] => {
     const file = join(dir, name);
     let doc: unknown;
-    try { doc = JSON.parse(readFileSync(file, "utf8")); } catch (error) { return { file, issues: [`not JSON: ${error instanceof Error ? error.message : String(error)}`] }; }
+    try { doc = JSON.parse(readFileSync(file, "utf8")); } catch (error) { return [{ file, issues: [`not JSON: ${error instanceof Error ? error.message : String(error)}`] }]; }
+    if (kind === "fix" && (doc as { schema?: unknown })?.schema !== REQUEST_SCHEMA) return [];
     const issues = requestIssues(doc);
-    if (!issues.length && (doc as SlotRequest).id !== name.slice(0, -".json".length)) return { file, issues: [`id ${(doc as SlotRequest).id} is not the file name`] };
-    return issues.length ? { file, issues } : { file, request: doc as SlotRequest, issues };
+    if (!issues.length && (doc as SlotRequest).kind !== kind) return [{ file, issues: [`a ${(doc as SlotRequest).kind} entry is in ${workQueue(kind)}`] }];
+    if (!issues.length && (doc as SlotRequest).id !== name.slice(0, -".json".length)) return [{ file, issues: [`id ${(doc as SlotRequest).id} is not the file name`] }];
+    return [issues.length ? { file, issues } : { file, request: doc as SlotRequest, issues }];
   });
+}
+
+/** Every work entry of every kind (slot, change, fix). */
+export const listWorkEntries = (consumer: string): ReadRequest[] => WORK_KINDS.flatMap(kind => listRequests(consumer, kind));
+
+/** The clossys.queue-entry/1 entries still under queue.fix: breakage raised as a decision entry, not a kind fix. */
+export function legacyFixEntries(consumer: string): string[] {
+  const dir = requestsDir(consumer, "fix");
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).filter(name => name.endsWith(".json") && !name.startsWith(".")).sort().filter(name => {
+    try { return (JSON.parse(readFileSync(join(dir, name), "utf8")) as { schema?: unknown }).schema !== REQUEST_SCHEMA; } catch { return false; }
+  }).map(name => name.slice(0, -".json".length));
 }
 
 export function readRequest(consumer: string, id: string): SlotRequest {
   if (!REQUEST_ID.test(id)) throw new RequestError(`${id} is not a request id`);
-  const file = requestPath(consumer, id);
-  if (!existsSync(file)) throw new RequestError(`no slot entry ${id} under clossys/agents/producer/${SLOT_QUEUE}/entries`);
+  const kind = WORK_KINDS.find(each => existsSync(requestPath(consumer, id, each)) && (each !== "fix" || (JSON.parse(readFileSync(requestPath(consumer, id, each), "utf8")) as { schema?: unknown }).schema === REQUEST_SCHEMA));
+  if (!kind) throw new RequestError(`no work entry ${id} under clossys/agents/producer/${WORK_KINDS.map(workQueue).join(", ")}`);
+  const file = requestPath(consumer, id, kind);
   const doc = JSON.parse(readFileSync(file, "utf8")) as unknown;
   const issues = requestIssues(doc);
   if (issues.length) throw new RequestError(`request ${id} is invalid: ${issues.slice(0, 5).join("; ")}`);
@@ -107,9 +138,9 @@ export class RequestError extends Error {
 export function writeRequest(consumer: string, request: SlotRequest): string {
   const issues = requestIssues(request);
   if (issues.length) throw new RequestError(`request ${request.id} would be invalid: ${issues.slice(0, 5).join("; ")}`);
-  const dir = requestsDir(consumer);
+  const dir = requestsDir(consumer, request.kind);
   mkdirSync(dir, { recursive: true });
-  const file = requestPath(consumer, request.id);
+  const file = requestPath(consumer, request.id, request.kind);
   const temp = join(dir, `.${request.id}.${process.pid}.${Date.now()}.tmp`);
   writeFileSync(temp, `${JSON.stringify(request, null, 2)}\n`);
   renameSync(temp, file);
@@ -122,7 +153,7 @@ export function writeRequest(consumer: string, request: SlotRequest): string {
  * parallel raise never overwrites another's entry.
  */
 function createRequest(consumer: string, draft: SlotRequest): SlotRequest {
-  const dir = requestsDir(consumer);
+  const dir = requestsDir(consumer, draft.kind);
   mkdirSync(dir, { recursive: true });
   for (let attempt = 1; attempt <= 9; attempt++) {
     const id = attempt === 1 ? draft.id : `${draft.id}-${attempt}`;
@@ -131,7 +162,7 @@ function createRequest(consumer: string, draft: SlotRequest): SlotRequest {
     if (issues.length) throw new RequestError(`request ${id} would be invalid: ${issues.slice(0, 5).join("; ")}`);
     const temp = join(dir, `.${id}.${process.pid}.${Date.now()}.tmp`);
     writeFileSync(temp, `${JSON.stringify(doc, null, 2)}\n`);
-    try { linkSync(temp, requestPath(consumer, id)); return doc; } catch (error) {
+    try { linkSync(temp, requestPath(consumer, id, draft.kind)); return doc; } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
     } finally { unlinkSync(temp); }
   }
@@ -180,7 +211,7 @@ function checkSeat(by: string): void {
   if (!(REQUEST_SEATS as readonly string[]).includes(by)) throw new RequestError(`--by must be one of ${REQUEST_SEATS.join(", ")}, got ${by}`);
 }
 const SLOT_REF = /^(director|designer|writer|publisher)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
-const isPlaced = (consumer: string, agent: ContentAgent, id: string) => listSlots(consumer, agent).some(entry => entry.id === id);
+const isPlaced = (consumer: string, agent: ContentAgent, id: string) => placedSlots(consumer, agent).some(entry => entry.id === id);
 
 let version: string | undefined;
 /** This Producer package's version, for an entry's `createdBy` (code actor). */
@@ -192,7 +223,7 @@ function producerVersion(): string {
 }
 /** The code verb that files an entry from each source. */
 const SOURCE_CLI: Readonly<Record<SlotRequest["source"], string>> = {
-  cli: "clossys request", ia: "clossys ia", interview: "clossys interview", feedback: "clossys feedback", scope: "clossys request --scan",
+  cli: "clossys request", ia: "clossys ia", interview: "clossys interview", feedback: "clossys feedback", scope: "clossys request --scan", check: "clossys check",
 };
 
 /** `2026-11-17T12:34:56Z` -> `20261117T1234Z`. */
@@ -227,6 +258,115 @@ export function openRequestFor(consumer: string, target: string, from: string): 
   return listRequests(consumer).map(read => read.request).find(request => request?.status === "open" && request.target === target && request.from === from);
 }
 
+/** The router's route for an entry (queue/routing.ts): the one function every raise calls. */
+function routeOf(consumer: string, entry: { readonly kind: WorkKind; readonly target: string; readonly assignee: SlotRequest["assignee"] }, facts?: RoutingFacts): EntryRoute {
+  return routeEntry(facts ?? consumerFacts(consumer), entry);
+}
+const routedEvent = (id: string, n: number, at: string, route: EntryRoute): RequestEvent => ({
+  id: `${id}#${n}`, at, op: "routed", by: "producer",
+  detail: `row ${route.row} -> ${route.assignee}${route.handler ? ` (${route.handler.loop}, ${route.handler.skill})` : ""}${route.packet ? ` (${route.packet.queue}${route.packet.step ? ` from ${route.packet.step}` : ""})` : ""}${route.escalate ? ", escalate package" : ""}`,
+});
+
+/**
+ * A requester agent raises to another agent only along an issuing edge its conform.json declares (`requests.issuing`):
+ * an undeclared edge is refused, nothing written. An agent raising for its own tree needs no edge.
+ */
+function issuingRefusal(from: ContentAgent, to: ContentAgent, kind: WorkKind, facts?: RoutingFacts): void {
+  if (from === to) return;
+  const declared = (facts ? facts.declarations(from) : readDeclarationsOf(from))?.requests?.issuing ?? [];
+  if (!declared.some(edge => edge.to === to && edge.kinds.includes(kind))) {
+    throw new RequestError(`${from} declares no issuing edge to ${to} for kind ${kind} (packages/${from}/conform.json requests.issuing): a request follows a declared edge a real inputs/uses edge backs`);
+  }
+}
+const readDeclarationsOf = (agent: string) => readDeclarations(agent);
+
+/**
+ * Raises a change or fix entry on a placed slot (foundry-build-0048 U7), routed by the table; idempotent on kind,
+ * target and requester (an open one is returned). A change names what it wants (repin, candidate, contract); a fix
+ * names the failing check, its findings and the cause. A code-raised fix is from the broken slot itself, so its
+ * closure notifies that slot.
+ */
+export interface RaiseWorkInput {
+  readonly kind: "change" | "fix";
+  readonly target: string;
+  readonly from: string;
+  readonly why: string;
+  readonly source: SlotRequest["source"];
+  readonly by: string;
+  readonly at: string;
+  readonly want?: SlotRequest["want"];
+  readonly check?: string;
+  readonly findings?: readonly string[];
+  readonly cause?: string;
+  readonly createdBy?: Actor;
+  readonly via?: RequestEvent["via"];
+  readonly quote?: string;
+}
+export function raiseWork(consumer: string, input: RaiseWorkInput, options: { readonly dry?: boolean; readonly facts?: RoutingFacts } = {}): { request: SlotRequest; created: boolean } {
+  const target = targetOf(input);
+  if (!target) throw new RequestError(`a ${input.kind} entry names <agent>/<slot id>, got ${input.target}`);
+  checkSeat(input.by);
+  if (!isPlaced(consumer, target.agent, target.need)) throw new RequestError(`${input.target} is no placed slot: a ${input.kind} entry is about a placed slot (a slot no agent holds is kind slot)`);
+  if (input.from !== "owner") {
+    const from = SLOT_REF.exec(input.from);
+    if (!from) throw new RequestError(`--from must be owner or <agent>/<slot id> of a content agent, got ${input.from}`);
+    const agent = from[1] as ContentAgent;
+    if (!isPlaced(consumer, agent, from[2]!)) throw new RequestError(`${input.from} is no placed slot`);
+    if (isContentAgent(input.by) && input.by !== agent) throw new RequestError(`${input.by} raises for ${input.from}: a slot's own agent (${agent}) raises its requests`);
+    issuingRefusal(agent, target.agent, input.kind, options.facts);
+  } else if (isContentAgent(input.by)) throw new RequestError(`${input.by} raises as the owner: an agent raises for its own slot (--from <agent>/<slot>)`);
+  return withRequestLock(consumer, raiseLock(`${input.kind}-${input.target}`), () => {
+    const existing = listRequests(consumer, input.kind).map(read => read.request).find(request => request?.status === "open" && request.target === input.target && request.from === input.from);
+    if (existing) return { request: existing, created: false };
+    const id = `${stampOf(input.at)}-${input.kind}-${target.need.replace(/\./g, "-")}`.slice(0, 80).replace(/-+$/, "");
+    const route = routeOf(consumer, { kind: input.kind, target: input.target, assignee: target.agent }, options.facts);
+    const draft: SlotRequest = {
+      schema: REQUEST_SCHEMA, id, kind: input.kind, from: input.from, assignee: route.assignee as SlotRequest["assignee"], target: input.target, status: "open", opened: `${id}#1`,
+      why: input.why, source: input.source,
+      createdBy: input.createdBy ?? { actor: "code", cli: SOURCE_CLI[input.source], version: producerVersion() },
+      createdAt: input.at, refs: SLOT_REF.test(input.from) && input.from !== input.target ? [{ to: input.from as Ref["to"], rel: "raisedBy" }] : [], route,
+      ...(input.want !== undefined ? { want: input.want } : {}),
+      ...(input.check !== undefined ? { check: input.check } : {}), ...(input.findings !== undefined ? { findings: [...input.findings] } : {}), ...(input.cause !== undefined ? { cause: input.cause } : {}),
+      events: [
+        { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.why },
+        routedEvent(id, 2, input.at, route),
+      ],
+    };
+    if (options.dry) return { request: draft, created: true };
+    return { request: createRequest(consumer, draft), created: true };
+  });
+}
+
+/**
+ * Closes a change or fix entry with its link back to the requester: an outcome, a result ref that resolves (a placed
+ * slot, or a queue entry `<queue>#<id>` that exists) and a notify event addressed to `from`. Producer code closes it
+ * when the handler's loop passes; the assignee, the owner and the planner may close it too. Nobody else.
+ */
+export function closeWork(consumer: string, id: string, input: { readonly by: string; readonly at: string; readonly outcome: NonNullable<SlotRequest["outcome"]>; readonly result: string }): SlotRequest {
+  checkSeat(input.by);
+  return withRequestLock(consumer, id, () => {
+    const request = readRequest(consumer, id);
+    if (request.kind === "slot") throw new RequestError(`request ${id} is kind slot: it closes by its decision (clossys request ${id} --close)`);
+    if (request.status !== "open") throw new RequestError(`request ${id} is already closed`);
+    if (isContentAgent(input.by) && input.by !== request.assignee) throw new RequestError(`${input.by} cannot close ${id}: it is assigned to ${request.assignee}`);
+    const why = resultRefusal(consumer, input.result);
+    if (why) throw new RequestError(`--result ${input.result}: ${why}`);
+    const closing = withEvent({ ...request, status: "closed", outcome: input.outcome, result: input.result, notified: { to: request.from, at: input.at }, closedAt: input.at }, "closed", input.at, input.by, `${input.outcome}: ${input.result}; notified ${request.from}`);
+    const next: SlotRequest = { ...closing.request, closed: closing.id };
+    writeRequest(consumer, next);
+    return next;
+  });
+}
+
+/** Why a result ref does not resolve: a placed slot ref, or a `<queue>#<id>` entry that exists. Undefined when it does. */
+export function resultRefusal(consumer: string, result: string): string | undefined {
+  const slot = SLOT_REF.exec(result.split("#")[0]!);
+  if (slot && !result.includes("#")) return isPlaced(consumer, slot[1] as ContentAgent, slot[2]!) ? undefined : "is no placed slot";
+  const entry = /^(queue\.[a-z]+)#([0-9]{8}T[0-9]{4}Z-[a-z0-9-]+)$/.exec(result);
+  if (entry) return existsSync(join(consumer, "agents", "producer", entry[1]!, "entries", `${entry[2]}.json`)) ? undefined : "names no queue entry";
+  return "is neither a placed slot ref nor a <queue>#<id> entry";
+}
+
 /**
  * Raises a slot request (idempotent on target and requester: an open one is returned, not repeated, also for raises
  * running in parallel). Refused, with nothing written: a target that is placed (cite it), and a requester that is not
@@ -234,7 +374,7 @@ export function openRequestFor(consumer: string, target: string, from: string): 
  * agent (or the owner, the planner or Producer code). `cited` is clossys ia's own write: the slot it writes names the
  * need, and the request is raised right after that write.
  */
-export function raiseRequest(consumer: string, input: RaiseInput, options: { readonly dry?: boolean; readonly cited?: boolean } = {}): { request: SlotRequest; created: boolean } {
+export function raiseRequest(consumer: string, input: RaiseInput, options: { readonly dry?: boolean; readonly cited?: boolean; readonly facts?: RoutingFacts } = {}): { request: SlotRequest; created: boolean } {
   const target = targetOf(input);
   if (!target) throw new RequestError(`request target must be <agent>/<slot id>, got ${input.target}`);
   if (!NEED_ID.test(target.need)) throw new RequestError(`${target.need} is not a slot id`);
@@ -249,6 +389,7 @@ export function raiseRequest(consumer: string, input: RaiseInput, options: { rea
     const [agent, id] = [from[1] as ContentAgent, from[2]!];
     if (!isPlaced(consumer, agent, id)) throw new RequestError(`${input.from} is no placed slot: a request is raised from a slot that cites the need`);
     if (isContentAgent(input.by) && input.by !== agent) throw new RequestError(`${input.by} raises for ${input.from}: a slot's own agent (${agent}) raises its requests`);
+    issuingRefusal(agent, target.agent, "slot", options.facts);
     if (!options.cited) {
       const edges = slotEdges(consumer, agent, id) ?? [];
       if (!edges.some(edge => edge.to === input.target || edge.to === target.need)) throw new RequestError(`${input.from} does not cite ${input.target}: its slot names the need (an ${rel} ref) before a request is raised`);
@@ -259,12 +400,16 @@ export function raiseRequest(consumer: string, input: RaiseInput, options: { rea
     const existing = openRequestFor(consumer, input.target, input.from);
     if (existing) return { request: existing, created: false };
     const id = `${stampOf(input.at)}-${target.need.replace(/\./g, "-")}`.slice(0, 80).replace(/-+$/, "");
+    const route = routeOf(consumer, { kind: "slot", target: input.target, assignee: target.agent }, options.facts);
     const draft: SlotRequest = {
-      schema: REQUEST_SCHEMA, id, kind: "slot", from: input.from, assignee: target.agent, target: input.target, status: "open", opened: `${id}#1`,
+      schema: REQUEST_SCHEMA, id, kind: "slot", from: input.from, assignee: route.assignee as SlotRequest["assignee"], target: input.target, status: "open", opened: `${id}#1`,
       rel, why: input.why, source: input.source,
       createdBy: input.createdBy ?? { actor: "code", cli: SOURCE_CLI[input.source], version: producerVersion() },
-      createdAt: input.at, refs: SLOT_REF.test(input.from) ? [{ to: input.from as Ref["to"], rel: "raisedBy" }] : [],
-      events: [{ id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.why }],
+      createdAt: input.at, refs: SLOT_REF.test(input.from) ? [{ to: input.from as Ref["to"], rel: "raisedBy" }] : [], route,
+      events: [
+        { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.why },
+        routedEvent(id, 2, input.at, route),
+      ],
     };
     if (options.dry) return { request: draft, created: true };
     return { request: createRequest(consumer, draft), created: true };
@@ -649,7 +794,7 @@ function closeLocked(consumer: string, id: string, input: { readonly by: string;
     appendSlotDocEvent(consumer, agent, slotId, { by: input.by, at: input.at, verb: "request", skill, fields: { kind: "request", request: request.id, link, rel, to: request.from } });
     wrote.push(`${request.from}/slot.json`);
   }
-  const closing = withEvent({ ...request, status: "closed", link, notified: { to: request.from, at: input.at }, closedAt: input.at }, "closed", input.at, input.by, `linked ${request.from} to ${link}${signed ? `, signed ${signed}` : ""}`);
+  const closing = withEvent({ ...request, status: "closed", link, outcome: request.decision === "reuse" ? "reused" : "created", result: link, notified: { to: request.from, at: input.at }, closedAt: input.at }, "closed", input.at, input.by, `linked ${request.from} to ${link}${signed ? `, signed ${signed}` : ""}`);
   const next: SlotRequest = { ...closing.request, closed: closing.id };
   writeRequest(consumer, next);
   return { request: next, wrote };
