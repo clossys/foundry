@@ -16,6 +16,7 @@ import { checkSlotModel } from "../records/slot-check.js";
 import { readSlot } from "../records/slots.js";
 import { readStandard } from "../records/standards.js";
 import { seededContract } from "../migrate/contracts.js";
+import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
 import { designerIa, directorIa, writerIa } from "../records/slot-model/foundry-ia.js";
 import { appendRecord, buildRecord, readStore, STEP_ENV, storeFile } from "./trace.js";
 import { consumerPath } from "../consumer-root.js";
@@ -38,6 +39,13 @@ function workspace(): string {
   return root;
 }
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
+/** The copy converted to clossys.slot/2 and pin/2 (clossys migrate slots --apply); its plan must have no finding. */
+function converted(root: string): string {
+  const plan = planSlotsMigration(root, { at: "2026-11-17T12:00:00.000Z", version: "0.0.0-test" });
+  expect(plan.findings).toEqual([]);
+  applySlotsMigration(root, plan, { at: "2026-11-17T12:00:00.000Z", version: "0.0.0-test" });
+  return root;
+}
 /**
  * The copy with no Producer seat recorded: each seat slot's pin removed, as before the owner's Producer round 1
  * recorded the 18 seats (these cases need the seats step open and a fixture model the seats do not name).
@@ -339,11 +347,13 @@ describe("clossys next", { timeout: 60_000 }, () => {
   });
 
   it("records owner answers through the owner verbs, refusing placeholders and unchecked rules", async () => {
-    const root = workspace();
+    // One format (U13): the owner verbs write clossys.slot/2 and pin/2 only, so the scratch copy is converted first.
+    const root = converted(workspace());
     const at = ["--root", root];
-    const seat = (...args: string[]) => runPipeline(["seat", "writer.candidates", "--by", "agent:writer", ...args, "--prompt-file", "packages/writer/actions/writer.candidates/skill.md", "--procedure", "Draft candidates", "--command", "clossys next", ...at], root);
+    const seat = (...args: string[]) => runPipeline(["seat", "writer.candidates", "--by", "agent:writer", "--decided-by", "planner:U13-fixture", ...args, "--prompt-file", "packages/writer/actions/writer.candidates/skill.md", "--procedure", "Draft candidates", "--command", "clossys next", ...at], root);
     expect((await seat("--model", "<model:mid>", "--tier", "mid")).exitCode).toBe(1);
-    expect((await seat("--model", "fixture-model", "--tier", "mid")).exitCode).toBe(0);
+    const seated = await seat("--model", "fixture-model", "--tier", "mid");
+    expect(seated.exitCode, seated.message).toBe(0);
     expect(existsSync(join(root, "clossys", "agents", "producer", "seat.writer.candidates", "pin.json"))).toBe(true);
     // A seat candidate is named for the slot's leaf, the last dot segment of seat.writer.candidates.
     expect(JSON.parse(readFileSync(join(root, "clossys", "agents", "producer", "seat.writer.candidates", "pin.json"), "utf8")).candidate).toBe("candidates-v1.json");
@@ -386,12 +396,12 @@ describe("clossys next", { timeout: 60_000 }, () => {
     expect((await runPipeline(["ia", "director", "--adopt", ...at], root)).message).toContain("director ia.json exists");
     // The adopted records are the Foundry's own: the same contract and derived inputs this repository's consumer holds.
     // Each side is read through the one slot reader: the fixture consumer is on clossys.slot/2 (moved by `clossys
-    // migrate recut`, foundry-build-0048 U2), where the inputs are the slot's input refs, and a fresh adopt writes slot/1.
+    // migrate recut`, foundry-build-0048 U2), where the inputs are the slot's input refs; a fresh adopt writes slot/2 too (U13).
     for (const [agent, id] of [["director", "advantage.defensibility.differentiator"], ["designer", "assets.icon-arrow-right"]] as const) {
       const read = (base: string) => readSlot(base, agent, id);
       const [ours, foundry] = [read(consumer), read(FOUNDRY)];
       // The fixture's slot/2 contract also carries the CREATE and CHOOSE seed (`clossys migrate contracts`, U3): the
-      // fresh slot/1 contract is compared with that seed applied from its own standard.
+      // fresh contract is compared with that seed applied from its own standard.
       const standard = typeof ours.standard === "string" ? readStandard(dirname(FOUNDRY), agent, ours.standard).doc : undefined;
       expect({ kind: ours.kind, contract: seededContract(agent, ours.contract as Record<string, unknown>, standard), inputs: ours.inputs }).toEqual({ kind: foundry.kind, contract: foundry.contract, inputs: foundry.inputs });
     }
@@ -400,7 +410,8 @@ describe("clossys next", { timeout: 60_000 }, () => {
     for (const agent of ["director", "designer", "writer"]) for (const id of readdirSync(join(consumer, "agents", agent))) if (existsSync(join(consumer, "agents", agent, id, "slot.json"))) placedIds.set(id, agent);
     const fed = [...directorIa().slots.values()].flatMap(brief => brief.feeds.filter(id => placedIds.has(id) && id !== brief.id).map(id => [brief.id, id] as const));
     expect(fed.length).toBeGreaterThan(0);
-    for (const [brief, id] of fed) expect((JSON.parse(readFileSync(join(consumer, "agents", placedIds.get(id)!, id, "slot.json"), "utf8")) as { inputs: string[] }).inputs, `${id} reads ${brief}`).toContain(brief);
+    // Read through the one slot reader: a fresh adopt writes clossys.slot/2 (U13), whose inputs are its input refs.
+    for (const [brief, id] of fed) expect(readSlot(consumer, placedIds.get(id) as never, id).inputs, `${id} reads ${brief}`).toContain(brief);
     // A Foundry IA takes slots only under the groups it lists.
     writeFileSync(join(root, "contract.json"), "{}\n");
     expect((await runPipeline(["ia", "designer/assets.fixture-mark", "--under", "nowhere/at-all", "--contract", join(root, "contract.json"), ...at], root)).message).toContain("has no nowhere/at-all");

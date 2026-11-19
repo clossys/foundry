@@ -5,9 +5,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { validateAgainst } from "../constitution/schema.js";
 import { lineAnchorsToSlots } from "../records/citations.js";
 import { sha256Hex } from "../records/hash.js";
+import { buildPin, cliActor, writePinDoc } from "../records/pin.js";
 import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/index.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import "./main.js";
+import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
 import { RETIRE_SCHEMA } from "./owner.js";
 import { exactDependencies, runReissueCli } from "./reissue.js";
 
@@ -31,6 +33,8 @@ const OLD = jsonBytes({
 let workspace: string;
 let agents: string;
 let slotDir: string;
+/** The old candidate as the converted store holds it (migrate slots gives it a clossys.candidate/1 header). */
+let oldBytes: string;
 
 beforeEach(() => {
   workspace = realpathSync(mkdtempSync(join(tmpdir(), "clossys-reissue-")));
@@ -40,51 +44,77 @@ beforeEach(() => {
   writeFileSync(join(workspace, "clossys", "clossys.config.ts"), "export default {};\n");
   writeFileSync(join(workspace, "package-lock.json"), jsonBytes({ name: "fixture", lockfileVersion: 3, packages: { "": { name: "fixture" }, "node_modules/react": { version: "18.3.1" }, "node_modules/clsx": { version: "2.1.1" } } }));
   writeFileSync(join(agents, "ia.json"), jsonBytes(ia));
+  // The button already uses the card: a slot/2 slot changes its refs through clossys ia, never through a reissue.
   for (const id of [ID, CARD]) {
     const dir = join(agents, id);
     mkdirSync(join(dir, "candidates"), { recursive: true });
-    writeFileSync(join(dir, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id, agent: "designer", ia: slotPositions("designer", ia).get(id), kind: "element", contract: {}, inputs: [], uses: [] }));
+    writeFileSync(join(dir, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id, agent: "designer", ia: slotPositions("designer", ia).get(id), kind: "element", contract: {}, inputs: [], uses: id === ID ? [CARD] : [] }));
   }
   slotDir = join(agents, ID);
   writeFileSync(join(slotDir, "candidates", "btn-v1.json"), OLD);
-  writeFileSync(join(slotDir, "pin.json"), jsonBytes({ candidate: "btn-v1.json", sha256: sha256Hex(OLD), decidedBy: "owner:2026-11-14 go", basis: "picked", at: AT }));
 });
 afterEach(() => rmSync(workspace, { recursive: true, force: true }));
 
+/** One format (foundry-build-0048 U13): a reissue writes in a converted store only; migrate slots converts the fixture. */
+function convert(): void {
+  const plan = planSlotsMigration(workspace, { at: AT, version: "0.0.0-test" });
+  expect(plan.findings).toEqual([]);
+  applySlotsMigration(workspace, plan, { at: AT, version: "0.0.0-test" });
+}
+
 const reissue = (...args: string[]) => runReissueCli([`designer/${ID}`, ...args], workspace, NO_GUARD);
-const ledger = () => (load(join(slotDir, "ledger.json")) as { events: Record<string, unknown>[] }).events;
+const ledger = () => (load(join(slotDir, "ledger.json")) as { events: Record<string, unknown>[] }).events.filter(event => event.verb === "reissue");
+const content = (file: string) => (load(file) as { content: Record<string, any> }).content;
+const ledgerBytes = () => existsSync(join(slotDir, "ledger.json")) ? readFileSync(join(slotDir, "ledger.json"), "utf8") : undefined;
 
 describe("clossys reissue <agent>/<slot> <candidate>", () => {
-  it("writes the next version under the slot's leaf with exact deps, uses, no preview props and slot-id line anchors", async () => {
+  beforeEach(() => {
+    convert();
+    oldBytes = readFileSync(join(slotDir, "candidates", "btn-v1.json"), "utf8");
+  });
+
+  it("writes the next version under the slot's leaf with exact deps, no preview props and slot-id line anchors", async () => {
+    const slotBefore = readFileSync(join(slotDir, "slot.json"), "utf8");
     const result = await reissue("btn-v1", "--by", BY, "--at", AT);
     expect(result.exitCode, result.message).toBe(0);
-    const next = load(join(slotDir, "candidates", "button-v2.json"));
+    const next = content(join(slotDir, "candidates", "button-v2.json"));
     expect(next.dependencies).toEqual(["react@18.3.1", "clsx@2.1.1"]);
     expect(next.registryDependencies).toEqual([]);
     expect(next.meta.preview).toEqual({ fixtures: { file: "button.fixture.tsx", export: "Default" } });
     // Line anchors move to slot ids (D3b); a versioned ref that is not a line anchor stays for the citations codemod.
     expect(next.meta.notes).toEqual(["copy from designer:components.card#L12", "see components.card@2 for the variant"]);
     expect(next.meta.anchors).toEqual([{ ref: "components.card", line: 4 }]);
-    expect(load(join(slotDir, "slot.json")).uses).toEqual([CARD]);
-    expect(result.decision).toMatchObject({ candidate: "button-v2.json", rung: "L1", retired: "superseded", repinned: true, usesChanged: true, anchors: 2 });
+    expect(readFileSync(join(slotDir, "slot.json"), "utf8")).toBe(slotBefore);
+    expect(result.decision).toMatchObject({ candidate: "button-v2.json", rung: "L1", retired: "superseded", repinned: false, usesChanged: false, anchors: 2 });
   });
 
-  it("records rung adopt with seed <slot>/<old>@<sha>, retires the old file and repins with the same basis plus reissue: true", async () => {
+  it("records rung adopt with seed <slot>/<old>@<sha> and retires the old file; nothing is pinned or repinned", async () => {
     expect((await reissue("btn-v1.json", "--by", BY, "--at", AT)).exitCode).toBe(0);
     const sha = sha256Hex(readFileSync(join(slotDir, "candidates", "button-v2.json"), "utf8"));
     const events = ledger();
-    expect(events.map(event => event.op)).toEqual(["slot", "submit", "pin", "retire-candidate"]);
-    expect(events.every(event => event.verb === "reissue" && event.by === BY && (event.skill as { path: string }).path === "packages/producer/actions/reissue/skill.md")).toBe(true);
-    expect(events[1]).toMatchObject({ op: "submit", name: "button-v2.json", sha256: sha, rung: "L1", seed: `${ID}/btn-v1.json@${sha256Hex(OLD)}` });
-    expect(events[2]).toMatchObject({ op: "pin", candidate: "button-v2.json", sha256: sha, decidedBy: "owner:2026-11-14 go", basis: "picked", reissue: true });
-    expect(load(join(slotDir, "pin.json"))).toEqual({ candidate: "button-v2.json", sha256: sha, decidedBy: "owner:2026-11-14 go", basis: "picked", at: AT });
+    expect(events.map(event => event.op)).toEqual(["submit", "retire-candidate"]);
+    expect(events.every(event => event.by === BY && (event.skill as { path: string }).path === "packages/producer/actions/reissue/skill.md")).toBe(true);
+    expect(events[0]).toMatchObject({ op: "submit", name: "button-v2.json", sha256: sha, rung: "L1", seed: `${ID}/btn-v1.json@${sha256Hex(oldBytes)}` });
+    expect(existsSync(join(slotDir, "pin.json"))).toBe(false);
     expect(existsSync(join(slotDir, "candidates", "btn-v1.json"))).toBe(false);
-    expect(readFileSync(join(slotDir, "retired", "btn-v1.json"), "utf8")).toBe(OLD);
+    expect(readFileSync(join(slotDir, "retired", "btn-v1.json"), "utf8")).toBe(oldBytes);
     const record = load(join(slotDir, "retired", "btn-v1.json.json"));
-    expect(record).toEqual({ schema: RETIRE_SCHEMA, slot: ID, candidate: "btn-v1.json", sha256: sha256Hex(OLD), by: BY, reason: "superseded: reissued as button-v2.json", at: AT });
+    expect(record).toEqual({ schema: RETIRE_SCHEMA, slot: ID, candidate: "btn-v1.json", sha256: sha256Hex(oldBytes), by: BY, reason: "superseded: reissued as button-v2.json", at: AT });
     expect(validateAgainst("retire", record)).toEqual([]);
-    expect(events[3]).toMatchObject({ op: "retire-candidate", name: "btn-v1.json", sha256: sha256Hex(OLD), code: "superseded" });
+    expect(events[1]).toMatchObject({ op: "retire-candidate", name: "btn-v1.json", sha256: sha256Hex(oldBytes), code: "superseded" });
     expect(checkSlotModel(join(workspace, "clossys"))).toEqual([]);
+  });
+
+  it("refuses a pinned candidate: a clossys.pin/2 pin moves only through the CHOOSE gate", async () => {
+    // A readable pin/2 (buildPin), so the refusal is the pinned-candidate rule, not an unreadable pin.
+    writePinDoc(join(slotDir, "pin.json"), buildPin({ agent: "designer", slotId: ID as never, record: { candidate: "btn-v1.json", sha256: sha256Hex(oldBytes), decidedBy: "planner", basis: "planner", at: AT }, createdBy: cliActor("clossys pin") }));
+    const before = ledgerBytes();
+    const result = await reissue("btn-v1", "--by", BY, "--at", AT);
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toMatch(/pinned only through the CHOOSE gate/);
+    expect(existsSync(join(slotDir, "candidates", "button-v2.json"))).toBe(false);
+    expect(readFileSync(join(slotDir, "candidates", "btn-v1.json"), "utf8")).toBe(oldBytes);
+    expect(ledgerBytes()).toBe(before);
   });
 
   it("retires edited-in-place when the old bytes are not the ones its submit recorded", async () => {
@@ -96,24 +126,24 @@ describe("clossys reissue <agent>/<slot> <candidate>", () => {
   });
 
   it("refuses a dependency the lock does not hold and writes nothing", async () => {
-    writeFileSync(join(slotDir, "candidates", "btn-v1.json"), OLD.replace('"react"', '"cn"'));
-    writeFileSync(join(slotDir, "pin.json"), jsonBytes({ candidate: "btn-v1.json", sha256: sha256Hex(OLD.replace('"react"', '"cn"')), decidedBy: "owner:2026-11-14 go", basis: "picked", at: AT }));
+    writeFileSync(join(slotDir, "candidates", "btn-v1.json"), oldBytes.replace('"react"', '"cn"'));
+    const before = ledgerBytes();
     const result = await reissue("btn-v1", "--by", BY, "--at", AT);
     expect(result).toMatchObject({ exitCode: 1, message: expect.stringMatching(/dependency cn is not in the root package-lock.json/) });
     expect(existsSync(join(slotDir, "candidates", "button-v2.json"))).toBe(false);
-    expect(existsSync(join(slotDir, "ledger.json"))).toBe(false);
+    expect(ledgerBytes()).toBe(before);
   });
 
   it("restores every file when the guard refuses", async () => {
-    const before = { pin: readFileSync(join(slotDir, "pin.json"), "utf8"), slot: readFileSync(join(slotDir, "slot.json"), "utf8") };
+    const before = { slot: readFileSync(join(slotDir, "slot.json"), "utf8"), ledger: ledgerBytes() };
     const firing = { rules: [{ id: "R08", statement: "", scope: "all-records", status: "enforced", check: "", test: "", checks: [], run: [{ id: "R08.1", status: "enforced", guard: ["reissue"], fn: () => [{ rule: "R08", check: "R08.1", agent: "designer", slot: ID, candidate: "button-v2.json", reason: "synthetic", path: "x" }] }] }] };
     const result = await runReissueCli([`designer/${ID}`, "btn-v1", "--by", BY, "--at", AT], workspace, firing as never);
     expect(result).toMatchObject({ exitCode: 1, output: { schema: "clossys.reissue-refused/1", checks: ["R08.1"] } });
-    expect(readFileSync(join(slotDir, "candidates", "btn-v1.json"), "utf8")).toBe(OLD);
+    expect(readFileSync(join(slotDir, "candidates", "btn-v1.json"), "utf8")).toBe(oldBytes);
     expect(existsSync(join(slotDir, "candidates", "button-v2.json"))).toBe(false);
     expect(existsSync(join(slotDir, "retired"))).toBe(false);
-    expect(existsSync(join(slotDir, "ledger.json"))).toBe(false);
-    expect(readFileSync(join(slotDir, "pin.json"), "utf8")).toBe(before.pin);
+    expect(ledgerBytes()).toBe(before.ledger);
+    expect(existsSync(join(slotDir, "pin.json"))).toBe(false);
     expect(readFileSync(join(slotDir, "slot.json"), "utf8")).toBe(before.slot);
   });
 
@@ -137,19 +167,20 @@ describe("clossys reissue producer/<seat>", () => {
     writeFileSync(join(producer, "ia.json"), jsonBytes(ia));
     writeFileSync(join(seatDir, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id: SEAT_ID, agent: "producer", ia: slotPositions("producer", ia).get(SEAT_ID), kind: "seat", contract: { step: "owner.decisions", fixture: { step: "owner.decisions" } }, inputs: [], uses: [] }));
     writeFileSync(join(seatDir, "candidates", "owner.decisions-v1.json"), SEAT);
-    writeFileSync(join(seatDir, "pin.json"), jsonBytes({ candidate: "owner.decisions-v1.json", sha256: sha256Hex(SEAT), decidedBy: "planner", basis: "planner", at: AT }));
+    convert();
   });
 
-  it("writes <leaf>-v<n>, retires the old seat file and repins with the same basis", async () => {
+  it("writes <leaf>-v<n> and retires the old seat file; the seat stays unpinned", async () => {
+    const old = readFileSync(join(seatDir, "candidates", "owner.decisions-v1.json"), "utf8");
     const result = await runReissueCli([`producer/${SEAT_ID}`, "owner.decisions-v1.json", "--by", "agent:producer.reissue", "--at", AT], workspace, NO_GUARD);
     expect(result.exitCode, result.message).toBe(0);
-    expect(result.decision).toMatchObject({ candidate: "decisions-v2.json", rung: "adopt", retired: "superseded", repinned: true, usesChanged: false });
-    expect(readFileSync(join(seatDir, "candidates", "decisions-v2.json"), "utf8")).toBe(SEAT);
-    expect(readFileSync(join(seatDir, "retired", "owner.decisions-v1.json"), "utf8")).toBe(SEAT);
-    expect(load(join(seatDir, "pin.json"))).toEqual({ candidate: "decisions-v2.json", sha256: sha256Hex(SEAT), decidedBy: "planner", basis: "planner", at: AT });
-    const events = (load(join(seatDir, "ledger.json")) as { events: Record<string, unknown>[] }).events;
-    expect(events.map(event => event.op)).toEqual(["submit", "pin", "retire-candidate"]);
-    expect(events[0]).toMatchObject({ rung: "adopt", seed: `${SEAT_ID}/owner.decisions-v1.json@${sha256Hex(SEAT)}`, name: "decisions-v2.json" });
+    expect(result.decision).toMatchObject({ candidate: "decisions-v2.json", rung: "adopt", retired: "superseded", repinned: false, usesChanged: false });
+    expect(content(join(seatDir, "candidates", "decisions-v2.json"))).toEqual(JSON.parse(SEAT));
+    expect(readFileSync(join(seatDir, "retired", "owner.decisions-v1.json"), "utf8")).toBe(old);
+    expect(existsSync(join(seatDir, "pin.json"))).toBe(false);
+    const events = ((load(join(seatDir, "ledger.json")) as { events: Record<string, unknown>[] }).events).filter(event => event.verb === "reissue");
+    expect(events.map(event => event.op)).toEqual(["submit", "retire-candidate"]);
+    expect(events[0]).toMatchObject({ rung: "adopt", seed: `${SEAT_ID}/owner.decisions-v1.json@${sha256Hex(old)}`, name: "decisions-v2.json" });
     expect(checkSlotModel(join(workspace, "clossys"))).toEqual([]);
   });
 });

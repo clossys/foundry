@@ -31,6 +31,7 @@ import { CliUsageError } from "./args.js";
 import { errorMessage } from "../errors.js";
 import type { CliResult } from "./main.js";
 import { isTargetSlot, oldSlotRefusal, pinTargetSlot, resolveCandidate } from "./pin.js";
+import { seatRefusal } from "../records/seat-owner.js";
 import { discoverRoot } from "./root.js";
 
 export const OPTIONS_USAGE = "Usage: clossys options [<agent>/<slot> [--more | --redraft | --check]] [--root <dir>] [--json]\n"
@@ -203,6 +204,9 @@ export async function runPickCli(argv: readonly string[], cwd: string): Promise<
   // on a clossys.slot/2 slot only; it never writes a clossys.pin/1.
   const workspace = dirname(consumer);
   const slotId = id.split("#")[0]!;
+  // The seat rule judges who acts before the format refusal judges what is written: a foreign seat is refused by name.
+  const crossing = seatRefusal(flags.by, agent);
+  if (crossing !== undefined) return { exitCode: 1, message: `pick refused: ${crossing}` };
   if (!isTargetSlot(workspace, agent, slotId)) return { exitCode: 1, message: oldSlotRefusal("pick", `${agent}/${slotId}`) };
   return pickTargetSlot(workspace, agent, id, candidateId, flags.by, at);
 }

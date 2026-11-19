@@ -162,6 +162,11 @@ export async function probePinGate(consumer: string, agents: readonly AgentModel
   const AT = "2026-11-17T12:00:00Z";
   try {
     cpSync(consumer, join(temp, "clossys"), { recursive: true });
+    // An owner approval names the queue entry it answers (U13): one probe entry, so approve reaches the CHOOSE gate.
+    const answer = `20261117T1200Z-${PIN_PROBE_NAME}`;
+    const entry = join(temp, "clossys", "agents", "producer", "queue.pick", "entries", `${answer}.json`);
+    mkdirSync(join(entry, ".."), { recursive: true });
+    if (!existsSync(entry)) writeFileSync(entry, `${JSON.stringify({ id: answer, kind: "queue-entry" })}\n`);
     for (const agent of agents) {
       const slots = agent.live.filter(slot => slot.schema === "clossys.slot/2" && slot.kind !== "release")
         .map(slot => ({ slot, dir: join(temp, "clossys", "agents", agent.agent, slot.id, "candidates") }))
@@ -192,7 +197,7 @@ export async function probePinGate(consumer: string, agents: readonly AgentModel
             writeFileSync(file, JSON.stringify({ schema: "clossys.verdict/1", slot: pick.slot.id, pick: candidate, reason: "conform probe", criteria: [criterion ?? "conform-probe"] }));
             return runVerdictCli([slotTarget, "--record", file, "--model", "conform-probe", "--tier", "high", "--by", `agent:${agent.agent}`, "--at", AT, "--root", temp], temp);
           }],
-          ...(agent.agent === "writer" ? [["approve", () => runApproveCli([slotTarget, candidate, "--by", "owner", "--at", AT, "--root", temp], temp)]] as [VerbProbe["verb"], () => Promise<{ exitCode: number; message?: string }>][] : []),
+          ...(agent.agent === "writer" ? [["approve", () => runApproveCli([slotTarget, candidate, "--by", `owner:queue.pick#${answer}`, "--at", AT, "--root", temp], temp)]] as [VerbProbe["verb"], () => Promise<{ exitCode: number; message?: string }>][] : []),
         ];
         for (const [verb, run] of runs) {
           let result: { exitCode: number; message?: string };

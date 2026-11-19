@@ -669,7 +669,7 @@ export function planTreeSync(dir: string, at: Iso, version: string): { writes: [
   for (const agent of treeAgents(dir)) {
     const state = syncState(consumer, agent);
     if (!state.consumer) continue;
-    const plan = syncPlan(consumer, agent, knownSlots(consumer, agent, state), state, { at, version, cli: RECUT_CLI, migrating: true });
+    const plan = syncPlan(consumer, agent, knownSlots(consumer, agent, state), state, { at, version, cli: RECUT_CLI });
     if ("error" in plan) findings.push(`${agent}: the package tree is not placed: ${plan.error}`);
     else writes.push(...plan.writes);
   }

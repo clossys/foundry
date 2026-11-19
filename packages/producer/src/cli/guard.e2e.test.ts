@@ -5,8 +5,13 @@
  * check that does not guard the verb never refuses. The registry is the real rules.json joined to
  * the rule modules, each check's function replaced by one that reports the target, so every guarded
  * id is proven to refuse; the id lists are pinned here so a dropped guard entry fails this test.
+ *
+ * One format (foundry-build-0048 U13): `reissue` writes in a converted (clossys.slot/2) store only, so its cases run
+ * after `clossys migrate slots`; `pin` on a clossys.slot/1 slot is refused before any guard runs, and a slot/2 pin
+ * moves through the CHOOSE gate (pinGate), not the rules.json pin guard, so the pin id list is pinned here only.
  */
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -37,11 +42,13 @@ const SUBMITTED = { name: "button", type: "registry:ui", dependencies: ["react@1
 
 let workspace: string;
 let slotDir: string;
+let agentsDir: string;
+let iaDoc: IaDoc;
 
 beforeEach(() => {
   workspace = realpathSync(mkdtempSync(join(tmpdir(), "clossys-guard-e2e-")));
-  const agents = join(workspace, "clossys", "agents", "designer");
-  const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#fixture", extensions: [], nodes: [{ id: "components", label: "Components", children: [{ id: "group", label: "Group", slots: [ID, CARD] }] }] };
+  const agents = agentsDir = join(workspace, "clossys", "agents", "designer");
+  const ia: IaDoc = iaDoc = { schema: "clossys.ia/1", source: "synthetic#fixture", extensions: [], nodes: [{ id: "components", label: "Components", children: [{ id: "group", label: "Group", slots: [ID, CARD] }] }] };
   mkdirSync(agents, { recursive: true });
   writeFileSync(join(workspace, "clossys", "clossys.config.ts"), "export default {};\n");
   writeFileSync(join(workspace, "package-lock.json"), jsonBytes({ name: "fixture", lockfileVersion: 3, packages: { "": { name: "fixture" }, "node_modules/react": { version: "18.3.1" } } }));
@@ -87,6 +94,22 @@ function registry(firing: (id: string) => boolean): RegisteredRule[] {
 }
 const guard = (firing: (id: string) => boolean) => ({ rules: registry(firing), history: () => ({ available: false, error: "fixture", changes: new Map(), dirty: new Set<string>() }) });
 
+/**
+ * What each verb's cases start from. A reissue needs a converted store, an unpinned old candidate (a slot/2 pin moves
+ * only through the CHOOSE gate) and a slot that already uses the card (a slot/2 slot changes its refs through ia).
+ */
+const prepare: Readonly<Record<"submit" | "reissue", () => void>> = {
+  submit: () => undefined,
+  reissue: () => {
+    rmSync(join(slotDir, "pin.json"));
+    writeFileSync(join(slotDir, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id: ID, agent: "designer", ia: slotPositions("designer", iaDoc).get(ID), kind: "element", contract: {}, inputs: [], uses: [CARD] }));
+    const plan = planSlotsMigration(workspace, { at: AT, version: "0.0.0-test" });
+    expect(plan.findings).toEqual([]);
+    applySlotsMigration(workspace, plan, { at: AT, version: "0.0.0-test" });
+    expect(JSON.parse(readFileSync(join(agentsDir, ID, "slot.json"), "utf8")).schema).toBe("clossys.slot/2");
+  },
+};
+
 const skill = STEPS.find(step => step.id === "designer.candidates")!.command.skill!;
 const run: Readonly<Record<"submit" | "pin" | "reissue", (firing: (id: string) => boolean) => ReturnType<typeof runPinCli>>> = {
   submit: firing => runNextSubmitCli([`designer/${ID}`, "--submit", "submitted.json", "--model", "fixture-llm", "--tier", "high", "--basis", "agent", "--skill", skill, "--rung", "L1", "--seed", "shadcn-aria/button"], workspace, undefined, undefined, guard(firing)),
@@ -99,8 +122,18 @@ describe("write guards on a fixture consumer", () => {
     for (const verb of ["submit", "pin", "reissue"] as const) expect(guardCheckIds(verb as GuardVerb)).toEqual(GUARDED[verb]);
   });
 
-  for (const verb of ["submit", "pin", "reissue"] as const) {
+  it("pin refuses a clossys.slot/1 slot with the migrate message before any guard runs, and writes nothing", async () => {
+    const before = tree();
+    const result = await run.pin(() => true);
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toMatch(/run clossys migrate slots --apply first/);
+    expect(result.output).toBeUndefined();
+    expect(tree()).toEqual(before);
+  });
+
+  for (const verb of ["submit", "reissue"] as const) {
     it(`${verb} refuses on every guarded check id, one at a time, and writes nothing`, async () => {
+      prepare[verb]();
       const before = tree();
       for (const id of GUARDED[verb]) {
         const result = await run[verb](check => check === id);
@@ -111,6 +144,7 @@ describe("write guards on a fixture consumer", () => {
     });
 
     it(`${verb} refuses naming every guarded check id at once`, async () => {
+      prepare[verb]();
       const before = tree();
       const result = await run[verb](() => true);
       expect(result.exitCode).toBe(1);
@@ -119,6 +153,7 @@ describe("write guards on a fixture consumer", () => {
     });
 
     it(`${verb} writes when only checks that do not guard it have findings`, async () => {
+      prepare[verb]();
       const before = tree();
       const result = await run[verb](id => !GUARDED[verb].includes(id));
       expect(result.exitCode, result.message).toBe(0);

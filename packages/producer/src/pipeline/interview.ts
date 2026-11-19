@@ -53,7 +53,7 @@ import { writerCopyPins } from "../records/writer-copy-slots.js";
 import { writerWording, type WordingRow } from "../records/writer-wording.js";
 import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
 import type { DirectorContent } from "./director-interview.js";
-import { agentOfItem, candidatesOf, chainCommand, contextOf, explainChain, INTERVIEW_AGENTS, openItems, packetOf, PLACEHOLDER_MEANING, skillLine, skillOf, verbOf } from "./chain.js";
+import { agentOfItem, candidatesOf, chainCommand, contextOf, explainChain, INTERVIEW_AGENTS, openItems, packetOf, PLACEHOLDER_MEANING, SEAT_DECIDER, skillLine, skillOf, verbOf } from "./chain.js";
 import type { Context, InterviewAgent, Packet } from "./chain.js";
 import { ladderIssues } from "./candidate-ladder.js";
 import { isDecide } from "./define.js";
@@ -468,9 +468,9 @@ function seatQuestions(items: readonly string[], context: Context, policy: SeatP
     return { procedure: part?.procedure ?? skillLine(target(item), packageRoot), command: part?.command ?? verbOf(target(item)) };
   };
   const by = (item: string) => target(item).decider === "owner" ? "owner" : `agent:${target(item).agent}`;
-  const llm = (item: string, tier: SeatTier) => ["clossys", "seat", item, "--by", by(item), "--model", `<model:${tier}>`, "--tier", tier, "--prompt-file", skillOf(target(item), packageRoot).path, "--procedure", human(item).procedure, "--command", human(item).command];
-  const noLlm = (item: string) => ["clossys", "seat", item, "--by", by(item), "--no-llm", "--procedure", human(item).procedure, "--command", human(item).command];
-  const fromSource = (item: string) => ["clossys", "seat", item, "--by", by(item), "--llm-from", `${/^pick\.(.+)$/.exec(item)![1]}.candidates`, "--prompt-file", skillOf(target(item), packageRoot).path, "--procedure", human(item).procedure, "--command", human(item).command];
+  const llm = (item: string, tier: SeatTier) => ["clossys", "seat", item, "--by", by(item), "--model", `<model:${tier}>`, "--tier", tier, "--prompt-file", skillOf(target(item), packageRoot).path, "--procedure", human(item).procedure, "--command", human(item).command, "--decided-by", SEAT_DECIDER];
+  const noLlm = (item: string) => ["clossys", "seat", item, "--by", by(item), "--no-llm", "--procedure", human(item).procedure, "--command", human(item).command, "--decided-by", SEAT_DECIDER];
+  const fromSource = (item: string) => ["clossys", "seat", item, "--by", by(item), "--llm-from", `${/^pick\.(.+)$/.exec(item)![1]}.candidates`, "--prompt-file", skillOf(target(item), packageRoot).path, "--procedure", human(item).procedure, "--command", human(item).command, "--decided-by", SEAT_DECIDER];
   const tiers = (["mid", "high"] as const).filter(tier => !humanOnly && (policy.state !== "ok" || models[tier]));
   const classes = [
     { id: "seats.owner", header: "Owner seats", items: items.filter(item => target(item).decider === "owner") },

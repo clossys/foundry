@@ -253,8 +253,6 @@ function syncedCurrent(consumerDir: string, current: Slot, id: string, slot: Fou
 /** The options a slot/2 adoption stamps: when it is written and the CLI version that writes it. */
 export interface CurrentSyncOptions {
   readonly at: Iso; readonly version: string; readonly cli?: string;
-  /** The recut migration only (a compatibility writer, U13): it lines up a clossys.slot/1 file before converting it. */
-  readonly migrating?: true;
 }
 /** A newly adopted package leaf in a slot/2 store: the slot/1 adoption, as slot-1-to-2 maps it, with the package refs and kind. */
 function adoptedCurrent(consumerDir: string, agent: SyncAgent, id: string, slot: FoundrySlot, position: SlotPosition, behaviour: SlotBehaviour, held: ReadonlyMap<string, readonly AgentId[]>, options: CurrentSyncOptions): Slot | undefined {
@@ -427,8 +425,6 @@ export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlyS
         let doc: Doc = { ...current, ia: { ...position }, ...(slot ? packageFields(slot) : {}) };
         if (slot) doc = withBehaviour(doc, packageBehaviour(agent, id, slot, position, ctx));
         if (sameJson(current, doc) && Object.keys(current).join() === Object.keys(doc).join()) continue;
-        // U13 one format: a sync never rewrites a clossys.slot/1 slot; the store converts first (DRAFT copy).
-        if (!options?.migrating) return { error: `${agent}/${id} is a ${String(current.schema)} slot; ia sync writes clossys.slot/2 only: run clossys migrate slots --apply first` };
         bytes = jsonBytes(doc);
       }
       if (bytes === text) continue;

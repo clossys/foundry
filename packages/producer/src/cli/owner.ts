@@ -325,8 +325,8 @@ function adoptIa(agent: string, root: string, dry: boolean): CliResult {
     if (modelExists(file)) return refuse("ia", `clossys/agents/${agent}/${id}/slot.json exists with no ${agent} ia.json; place it with --under or remove it first`);
     for (const ref of dropped) dangling.push(`${id} -> ${ref}`);
     if (!slot) return refuse("ia", `${agent}/${id}: the package slot has no clossys.slot/2 kind`);
-    const issues = validateSlot(slot);
-    if (issues.length) return refuse("ia", `${agent}/${id}: ${issues.map(issue => `${issue.path} ${issue.message}`).join("; ")}`);
+    const issues = slotReadIssues(slot, file);
+    if (issues.length) return refuse("ia", `${agent}/${id}: ${issues.map(issue => issue.message).join("; ")}`);
     writes.push([file, serializeSlot(slot)]);
   }
   // A declared ref that names no slot is a dangling edge: refuse it rather than leave it out of the read graph.
@@ -441,8 +441,9 @@ function runIaSeatStandard(flags: Flags, cwd: string, target: string, slot: stri
   // U13 one format: a seat slot is clossys.slot/2; a slot/1 seat is converted by clossys migrate slots, never rewritten.
   if (existing.schema !== SLOT_V2_SCHEMA) return refuse("ia", `${target} is a ${String(existing.schema)} slot; this verb writes clossys.slot/2 only: run clossys migrate slots --apply first`);
   const doc = { ...existing, ia: positionIa(slot, position), standard: standardId, contract } as unknown as Slot;
-  const docIssues = validateSlot(doc);
-  if (docIssues.length) return refuse("ia", docIssues.map(issue => `${issue.path} ${issue.message}`).join("; "));
+  // The reader's rules (schema plus the seat contract family), so a write never leaves a slot the reader refuses.
+  const docIssues = slotReadIssues(doc, file);
+  if (docIssues.length) return refuse("ia", docIssues.map(issue => issue.message).join("; "));
   const bytes = serializeSlot(doc);
   if (readModelText(file) === bytes) return { exitCode: 0, root, message: `ia: ${target} already names standard ${standardId}; nothing written` };
   return commitIa(consumer, root, [[file, bytes]], flags.bare.has("--dry"), `${target} standard ${standardId}${contractFile !== undefined ? " and contract" : ""}`, [], `ia: ${target} standard ${standardId} named (clossys/agents/${SEAT_AGENT}/${slot}/slot.json)`, iaWho(owner.ref, eventAt));
@@ -670,9 +671,7 @@ export async function runIaCli(argv: readonly string[], cwd: string, options: { 
   const recorded = [...overlaps, ...((request?.overlaps ?? []).filter(listed => !overlaps.some(item => item.slot === listed.slot)))];
   let slotBytes = jsonBytes(doc);
   let missing: readonly { id: string; rel: "input" | "uses"; owner: string }[] = [];
-  // U13 one format: a placement or contract write never writes clossys.slot/1; a stored slot/1 converts first.
-  if (stored && !storedV2) return refuse("ia", oldSlotRefusal("ia", target).replace(/^ia refused: /, ""));
-  {
+  if (storedV2 || (options.current && (!stored || stored.schema === SLOT_SCHEMA)) || (!stored && recutStore(root))) {
     const written = currentSlotWrite(root, doc as unknown as SlotV1, position, storedV2, {
       kind: flags.values.has("--kind") ? undefined : storedV2?.kind, live: modelExists(pinFile(dir)), at: eventAt || new Date().toISOString(),
     });

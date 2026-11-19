@@ -258,6 +258,11 @@ export const candidatesOf = (root: string, item: string): string[] => {
 };
 const version = (name: string) => Number(/-v(\d+)\.[a-z]+$/.exec(name)?.[1] ?? 0);
 
+/**
+ * The decider an owner packet's seat call records (one format, U13): the planner runs the owner's answer, and a
+ * clossys.pin/2 seat names no owner basis without the queue entry it answers, so a packet seat is a planner pin.
+ */
+export const SEAT_DECIDER = "planner";
 /** What the answerer fills for each placeholder an owner option's argv carries (the one table; `filled` refuses any other). */
 export const PLACEHOLDER_MEANING: Readonly<Record<string, string>> = {
   "<id>": "a record id for the answer (owner-<topic>-<date>)",
@@ -314,12 +319,12 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
     const by = owner ? "owner" : `agent:${target.agent}`;
     const source = /^pick\.(.+)$/.exec(item)?.[1];
     const sourceSeat = source ? context.seats[`${source}.candidates`] : undefined;
-    const seatArgs = (tier: string, model: string) => ["clossys", "seat", item, "--by", by, "--model", model, "--tier", tier, "--prompt-file", skill, "--procedure", procedure, "--command", command];
+    const seatArgs = (tier: string, model: string) => ["clossys", "seat", item, "--by", by, "--model", model, "--tier", tier, "--prompt-file", skill, "--procedure", procedure, "--command", command, "--decided-by", SEAT_DECIDER];
     if (sourceSeat && sourceSeat.llm && sourceSeat.llm !== "open") add(`The llm that made ${source}'s options picks (${sourceSeat.llm.model}, ${sourceSeat.llm.tier}); you confirm in Studio.`, seatArgs(sourceSeat.llm.tier, sourceSeat.llm.model));
     else if (owner) add("You decide; a mid-tier llm drafts a recommendation from the step's skill first.", seatArgs("mid", "<model:mid>"));
     else add(`The ${target.agent} agent does it at mid tier with its skill; you review the result in Studio.`, seatArgs("mid", "<model:mid>"));
     add(owner ? "You decide; a high-tier llm drafts the recommendation." : `The ${target.agent} agent does it at high tier.`, seatArgs("high", "<model:high>"));
-    add("Human only, no llm: the seat stays listed open until an llm part is added.", ["clossys", "seat", item, "--by", by, "--no-llm", "--procedure", procedure, "--command", command]);
+    add("Human only, no llm: the seat stays listed open until an llm part is added.", ["clossys", "seat", item, "--by", by, "--no-llm", "--procedure", procedure, "--command", command, "--decided-by", SEAT_DECIDER]);
   } else if (step.id === "ia" && !item.includes("/")) {
     add(`Adopt the Foundry IA for ${item}: its tree and every slot's contract, inputs and uses.`, ["clossys", "ia", item, "--adopt"]);
     add(`Start an empty IA for ${item} and place each slot yourself (clossys ia ${item}/<slot> --under <l1>/<l2>).`, ["clossys", "ia", item, "--start"]);

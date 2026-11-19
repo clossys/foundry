@@ -134,7 +134,14 @@ export async function runPinCli(argv: readonly string[], cwd: string, guard: Wri
   // One format (foundry-build-0048 U13): this verb writes clossys.slot/2 and clossys.pin/2 only. A clossys.slot/1 slot
   // (or a placed slot with no slot.json) is refused: clossys migrate slots converts the store first.
   const slotId = id.split("#")[0]!;
-  if (isReleaseSlot(agent, slotId) && !isOldTargetSlot(workspace, agent, slotId)) return { exitCode: 1, message: `pin refused: ${agent}/${id} is a release slot whose slot.json is not a readable clossys.slot/2 slot: a ready-pin needs release.ready` };
+  // The actor is judged before the format (Q9): a non-owner --confirm, or a seat on another agent's slot, is refused by name.
+  if (flags.confirm && !CONFIRMED_BY.test(flags.by)) throw new CliUsageError(`--confirm is the owner's: --by must be owner[:<ref>], got ${flags.by}\n${PIN_USAGE}`);
+  if (flags.by.startsWith("agent:")) {
+    const crossing = seatRefusal(flags.by, agent);
+    if (crossing !== undefined) return { exitCode: 1, message: `pin refused: ${crossing}` };
+  }
+  if (!existsSync(join(workspace, "clossys", "agents", agent, slotId))) return { exitCode: 1, message: `pin refused: unknown slot ${agent}/${slotId} (no slot folder)` };
+  if (isReleaseSlot(agent, slotId)) return { exitCode: 1, message: `pin refused: ${agent}/${id} is a release slot whose slot.json is not a readable clossys.slot/2 slot: a ready-pin needs release.ready${isOldTargetSlot(workspace, agent, slotId) ? "; run clossys migrate slots --apply first" : ""}` };
   return { exitCode: 1, message: oldSlotRefusal("pin", `${agent}/${slotId}`) };
 }
 

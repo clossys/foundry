@@ -28,6 +28,7 @@ import { DESIGNER_RUNG_KIND } from "../pipeline/candidate-ladder.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { isOldTargetSlot, oldSlotRefusal, resolveCandidate } from "./pin.js";
+import { seatRefusal } from "../records/seat-owner.js";
 import { discoverRoot } from "./root.js";
 import { recutCandidateBytes } from "../migrate/recut.js";
 import { candidateHeaderOf } from "../records/slot-current.js";
@@ -119,10 +120,11 @@ export function withoutPreviewProps(doc: Json): Json {
 }
 
 /** The reissue's ladder rung: adopt, or for the Designer the old submit's L1/L2, else L1 for stock shadcn and L2 for a partner registry. */
-export function reissueRung(agent: ModelAgent, oldRung: unknown, doc: unknown): string {
+export function reissueRung(agent: ModelAgent, oldRung: unknown, doc: unknown, headerSource?: unknown): string {
   if (agent !== "designer") return "adopt";
   if (typeof oldRung === "string" && (DESIGNER_RUNG_KIND as Record<string, string>)[oldRung] === "adopt") return oldRung;
-  const source = isObject(doc) && isObject(doc.meta) && isObject(doc.meta.source) ? doc.meta.source : undefined;
+  // A headered candidate's source sits in its clossys.candidate/1 header, not in meta.source (U13).
+  const source = isObject(doc) && isObject(doc.meta) && isObject(doc.meta.source) ? doc.meta.source : isObject(headerSource) ? headerSource : undefined;
   const refs = Array.isArray(source?.ref) ? source!.ref : typeof source?.ref === "string" ? [source.ref] : [];
   return refs.some(ref => typeof ref === "string" && /^shadcn(?:-aria|@aria)?\//.test(ref)) ? "L1" : "L2";
 }
@@ -224,6 +226,9 @@ export async function runReissueCli(argv: readonly string[], cwd: string, guard:
   const old = resolveCandidate(entry.candidates, candidateId);
   if (!old || !CANDIDATE_NAME.test(old)) return refuse(`${target} has no candidate ${candidateId}${entry.candidates.length ? ` (candidates: ${entry.candidates.join(", ")})` : ""}`);
   // One format (foundry-build-0048 U13): a reissue writes a headered candidate in a clossys.slot/2 slot only.
+  // The seat rule judges who acts before the format refusal judges what is written (Q9).
+  const crossing = seatRefusal(flags.by, agent);
+  if (crossing !== undefined) return refuse(crossing);
   if (isOldTargetSlot(root, agent, id)) return refuse(oldSlotRefusal("reissue", target));
   try {
     const doc = readSlot(consumer, agent, id);
@@ -237,7 +242,7 @@ export async function runReissueCli(argv: readonly string[], cwd: string, guard:
     if (plan.issues.length) return refuse(`${target} ${old}: ${plan.issues.join("; ")}`);
     const events = (readLedger(entry.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
     const oldRung = events.filter(event => event.op === "submit" && (event.name === old || event.candidate === old)).at(-1)?.rung;
-    const rung = reissueRung(agent, oldRung, plan.content);
+    const rung = reissueRung(agent, oldRung, plan.content, ((candidateHeaderOf(old, oldText) ?? oldHeader) as { source?: unknown } | undefined)?.source);
     const result = writeReissue(consumer, agent, id, { old, oldSha256: read.sha256, content: plan.content, ...(plan.uses ? { uses: plan.uses } : {}), rung, by: flags.by, at, front: split.front, ...(oldHeader ? { oldHeader: oldHeader as never } : {}) }, { guard });
     return {
       exitCode: 0, root,

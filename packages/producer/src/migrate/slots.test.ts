@@ -5,7 +5,7 @@
  * nothing lost, a symbolic link or a journal path outside the consumer refuses, and `--check` exits 1 while
  * anything is pending. Once converted, a newly written slot/1 or pin/1 is refused by the readers.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { sha256Hex } from "../records/hash.js";
@@ -143,6 +143,8 @@ describe("clossys migrate slots on a copy of the legacy tree (a mixed store)", (
     const consumer = join(ws.root, "clossys");
     expect(() => guardedPath(consumer, consumer, "../outside/slot.json")).toThrow();
     expect(() => guardedPath(consumer, consumer, "agents/designer/../../../x/slot.json")).toThrow();
+    // A file inside the consumer but outside agents/<agent>/<slot>/ is refused by name, before any realpath check.
+    expect(() => guardedPath(consumer, realpathSync(consumer), "clossys.config.ts")).toThrow(/is outside agents\/<agent>\/<slot>\//);
     const plan = planSlotsMigration(ws.root, OPTIONS);
     const first = plan.changes[0]!;
     const journal = { schema: "clossys.migrate-slots-journal/1", startedAt: OPTIONS.at, changes: [{ ...first, file: `../${first.file}` }] };

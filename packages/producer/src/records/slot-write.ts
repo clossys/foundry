@@ -21,7 +21,7 @@ import {
   type ModelAgent, type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
-import { isCurrentSlot, slotReadIssues } from "./slot-current.js";
+import { candidateIssues, isCurrentSlot, readSlotValue, slotReadIssues } from "./slot-current.js";
 import { serializeSlot } from "./slot.js";
 import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
 import type { AgentId, CandidateHeader, Iso, Slot } from "./types.js";
@@ -857,15 +857,13 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
     const ext = KIND_EXT[doc.kind];
     const leaf = id.split(".").at(-1)!;
     const file = `${leaf}-v${nextVersion(current.dir, current.candidates)}.${ext}`;
-    const contentBytes = ext === "md" ? String(input.content) : jsonBytes(input.content);
-    const issues = validateCandidate(doc.kind, id, file, contentBytes);
-    if (issues.length) throw new Error(`reissue refused: ${issues.map(issue => issue.message).join("; ")}`);
     // One format (foundry-build-0048 U13): a clossys.slot/2 slot takes a headered clossys.candidate/1 file only; the
     // reissue carries the old header's record, refs, source and rationale to a fresh header naming clossys reissue.
     // A slot/1 slot is refused (clossys migrate slots converts it): no reissue writes a slot/1 or a pin/1.
     let raw: unknown;
     try { raw = JSON.parse(readFileSync(slotFile(entry.dir), "utf8")); } catch { raw = undefined; }
-    if (!isCurrentSlot(raw)) throw new Error(`reissue refused: ${agent}/${id} is not a clossys.slot/2 slot; this verb writes clossys.slot/2 and clossys.pin/2 only: run clossys migrate slots --apply first`);
+    const slotRead = isCurrentSlot(raw) ? readSlotValue(raw, slotFile(entry.dir)) : undefined;
+    if (!slotRead?.current) throw new Error(`reissue refused: ${agent}/${id} is not a clossys.slot/2 slot; this verb writes clossys.slot/2 and clossys.pin/2 only: run clossys migrate slots --apply first`);
     const oldHeader = readCandidateFile(join(candidatesDir(entry.dir), input.old), { agent: agent as AgentId, slotId: id }).header ?? input.oldHeader as CandidateHeader | undefined;
     if (!oldHeader) throw new Error(`reissue refused: ${input.old} has no clossys.candidate/1 header`);
     const header = buildCandidateHeader({
@@ -876,6 +874,10 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
       refs: [...oldHeader.refs], source: oldHeader.source, rationale: [...oldHeader.rationale],
     });
     const bytes = serializeCandidate(file, header, ext === "md" ? String(input.content) : input.content, input.front ?? {});
+    // The reader's rules over the bytes written (the header, then the kind's rules over the candidate view, where
+    // the header's source stands in for meta.source), so a reissue never leaves a candidate the reader refuses.
+    const issues = candidateIssues(slotRead, agent, id, file, bytes);
+    if (issues.length) throw new Error(`reissue refused: ${issues.map(issue => issue.message).join("; ")}`);
     const ledger = readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
     const events = (ledger?.events ?? []) as unknown as Record<string, unknown>[];
     const recorded = recordedSha(events, input.old);
@@ -887,8 +889,8 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
     const record = { schema: RETIRE_SCHEMA, slot: id, candidate: input.old, sha256: old.sha256, by: input.by, reason: `${code}: reissued as ${file}`, at: input.at };
     const recordIssues = validateAgainst("retire", record);
     if (recordIssues.length) throw new Error(`reissue refused: the retire record does not validate against retire.schema.json: ${recordIssues.map(issue => `${issue.at || "/"} ${issue.message}`).join("; ")}`);
-    const pinned = current.pin?.candidate === input.old ? current.pin : null;
-    if (pinned) refuseTargetPin(current.dir, agent, id, "reissue");
+    // A pinned candidate stays pinned: a slot/2 pin moves only through the CHOOSE gate (refuseTargetPin throws).
+    if (current.pin?.candidate === input.old) refuseTargetPin(current.dir, agent, id, "reissue");
     if (current.pin === null && existsSync(pinFile(entry.dir))) throw new Error(`reissue refused: ${id} pin.json does not read as a valid pin; repin first`);
     const uses = input.uses ? [...input.uses] : undefined;
     const usesChanged = uses !== undefined && jsonBytes(uses) !== jsonBytes(doc.uses);
@@ -903,28 +905,15 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
         // A slot/2 slot's uses are refs: moving registryDependencies into them is an IA change, not a reissue.
         throw new Error(`reissue refused: ${input.old} moves registryDependencies into uses (${uses!.join(", ")}); a clossys.slot/2 slot changes its refs through clossys ia`);
       }
-      if (usesChanged) {
-        const next: SlotDoc = { ...doc, uses: uses! };
-        const slotIssues = validateSlotDoc(next, slotFile(entry.dir));
-        if (slotIssues.length) throw new Error(`reissue refused: slot.json uses: ${slotIssues.map(issue => issue.message).join("; ")}`);
-        replaceFile(slotFile(entry.dir), jsonBytes(next));
-        appendEvent(entry.dir, "slot", ledgerEvent("slot", input.at, who, { uses: uses!, reason: `registryDependencies of ${input.old} moved to uses` }, [recordState(entry.dir, "slot.json")]));
-      }
+      // No slot.json or pin.json write: a pinned candidate was refused above (repin through the CHOOSE gate after).
       appendEvent(entry.dir, "slot", ledgerEvent("submit", input.at, who, { rung: input.rung, seed, ladder: { rung: input.rung, seed }, name: file, sha256 }));
-      if (pinned) {
-        const pin: PinDoc = { ...pinned, candidate: file, sha256, at: input.at };
-        const pinIssues = validatePin(pin);
-        if (pinIssues.length) throw new Error(`reissue refused: pin: ${pinIssues.map(issue => issue.message).join("; ")}`);
-        replaceFile(pinFile(entry.dir), jsonBytes(pin));
-        appendEvent(entry.dir, "slot", ledgerEvent(pin.basis === "agent" ? "pick" : "pin", input.at, who, { candidate: file, sha256, decidedBy: pin.decidedBy, basis: pin.basis, reissue: true }, [recordState(entry.dir, "pin.json")]));
-      }
       mkdirSync(retiredDir, { recursive: true });
       writeFileSync(recordFile, jsonBytes(record), { flag: "wx" });
       renameSync(from, to);
       forgetSlotReads();
       appendEvent(entry.dir, "slot", ledgerEvent("retire-candidate", input.at, who, { name: input.old, sha256: old.sha256, code }));
       if (options.guard) enforceGuard(consumer, "reissue", options.guard, [{ agent, slot: id, candidate: file, records: [recordPath(consumer, entry.dir, "pin.json"), recordPath(consumer, entry.dir, "slot.json")] }]);
-      return { name: file, sha256, seed, code, repinned: pinned !== null, usesChanged };
+      return { name: file, sha256, seed, code, repinned: false, usesChanged: false };
     } catch (error) {
       restoreFiles(before);
       dropEmptyModelDir(retiredDir);

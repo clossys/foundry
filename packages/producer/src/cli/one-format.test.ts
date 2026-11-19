@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { sha256Hex } from "../records/hash.js";
 import { readCandidateFile } from "../records/candidate.js";
-import { writeCandidate } from "../records/slot-write.js";
+import { writeCandidate, writePin } from "../records/slot-write.js";
 import { consumerCopy } from "../records/__fixtures__/slot2-workspace.js";
 import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
 import { runCli } from "./main.js";
@@ -126,6 +126,15 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     expect([...changed(before, schemas(w.consumer)).values()]).toEqual(["clossys.pin-map/1"]);
   });
 
+  it("writePin (a named pin/1 compatibility writer) refuses a clossys.slot/2 slot at its choke point", () => {
+    const w = world();
+    const good = w.submit();
+    const before = schemas(w.consumer);
+    expect(() => writePin(w.consumer, "writer", SLOT, good.name, { decidedBy: "planner", basis: "planner", at: AT })).toThrow(/is a clossys\.slot\/2 slot, pinned only through the CHOOSE gate/);
+    expect(existsSync(join(w.dir, "pin.json"))).toBe(false);
+    expect([...changed(before, schemas(w.consumer)).values()]).toEqual([]);
+  });
+
   it("confirm: the owner's confirm keeps the agent pick and stays a pin-map record", async () => {
     const w = world();
     const good = w.submit();
@@ -152,6 +161,16 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     const pin = expectOneFormat(w.dir, "writer", SLOT);
     expect((pin.records as Record<string, unknown>).copy).toMatchObject({ candidate: good.name, decidedBy: `owner:queue.pick#${QUEUE_ID}`, basis: "picked" });
     expect(JSON.stringify(pin.refs ?? (pin.records as Record<string, { refs?: unknown }>).copy)).toContain(QUEUE_ID);
+    // An agent pick never replaces the owner's: pick refuses over it and the record is unchanged.
+    const bytes = readFileSync(join(w.dir, "pin.json"), "utf8");
+    const pick = await runPickCli([`writer/${SLOT}#copy`, good.name, "--by", "agent:writer", "--at", LATER, "--root", w.root], w.root);
+    expect(pick.exitCode).toBe(1);
+    expect(pick.message).toMatch(/already holds an owner pick/);
+    expect(readFileSync(join(w.dir, "pin.json"), "utf8")).toBe(bytes);
+    // A foreign seat is refused by the seat rule before anything else is judged.
+    const foreign = await runPickCli([`writer/${SLOT}#copy`, good.name, "--by", "agent:designer", "--at", LATER, "--root", w.root], w.root);
+    expect(foreign).toMatchObject({ exitCode: 1, message: expect.stringMatching(/^pick refused: .*an agent acts only on its own slots/) });
+    expect(readFileSync(join(w.dir, "pin.json"), "utf8")).toBe(bytes);
   });
 
   it("reissue: the next version is a headered candidate, the old one retired, slot.json unchanged", async () => {
