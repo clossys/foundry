@@ -28,7 +28,7 @@ const dirs: string[] = [];
  * The package data the submit guard reads off the workspace root (R03.2 provenance and reference
  * manifest, R05.1 standards), copied beside the scratch consumer as a checkout has it.
  */
-const GUARD_DATA = ["designer/src/catalog/rules/provenance.json", "designer/references/manifest.json", "designer/standards", "writer/standards", "director/standards", "publisher/standards"];
+const GUARD_DATA = ["designer/src/catalog/rules/provenance.json", "designer/references/manifest.json", "designer/standards", "writer/standards", "director/standards", "publisher/standards", "producer/standards"];
 /** A scratch copy of the foundry consumer (never the real records), keeping run records. */
 function workspace(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "chain-")));

@@ -1,7 +1,8 @@
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
 import { parseArgs } from "../cli/args.js";
 import { runCheck } from "../cli/check.js";
 // Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
@@ -13,6 +14,9 @@ import { runConstitution } from "./run.js";
 import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
 import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/index.js";
 import { AT, cleanSpec, ledgerDoc, ledgerEvent, NO_HISTORY, sha, slotDoc, writeWorkspace, type WorkspaceSpec } from "./__fixtures__/workspace.js";
+
+// U13 r4: pin and migrate run the full guard; at the workstation's shared load the guarded cases exceed 5 s.
+vi.setConfig({ testTimeout: 60_000 });
 
 const WS = "(no package.json)";
 

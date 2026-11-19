@@ -6,9 +6,10 @@
  * the rule modules, each check's function replaced by one that reports the target, so every guarded
  * id is proven to refuse; the id lists are pinned here so a dropped guard entry fails this test.
  *
- * One format (foundry-build-0048 U13): `reissue` writes in a converted (clossys.slot/2) store only, so its cases run
- * after `clossys migrate slots`; `pin` on a clossys.slot/1 slot is refused before any guard runs, and a slot/2 pin
- * moves through the CHOOSE gate (pinGate), not the rules.json pin guard, so the pin id list is pinned here only.
+ * One format (foundry-build-0048 U13): `reissue` and `pin` write in a converted (clossys.slot/2) store only, so their
+ * cases run after `clossys migrate slots`; `pin` on a clossys.slot/1 slot is refused before any guard runs. A slot/2
+ * pin passes the CHOOSE gate (pinGate) and then the rules.json pin guard inside the one decision writer (U13 r4, B1):
+ * a guarded finding refuses it and restores every file it wrote.
  */
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
@@ -98,17 +99,16 @@ const guard = (firing: (id: string) => boolean) => ({ rules: registry(firing), h
  * What each verb's cases start from. A reissue needs a converted store, an unpinned old candidate (a slot/2 pin moves
  * only through the CHOOSE gate) and a slot that already uses the card (a slot/2 slot changes its refs through ia).
  */
-const prepare: Readonly<Record<"submit" | "reissue", () => void>> = {
-  submit: () => undefined,
-  reissue: () => {
+const converted = () => {
     rmSync(join(slotDir, "pin.json"));
     writeFileSync(join(slotDir, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id: ID, agent: "designer", ia: slotPositions("designer", iaDoc).get(ID), kind: "element", contract: {}, inputs: [], uses: [CARD] }));
     const plan = planSlotsMigration(workspace, { at: AT, version: "0.0.0-test" });
     expect(plan.findings).toEqual([]);
     applySlotsMigration(workspace, plan, { at: AT, version: "0.0.0-test" });
     expect(JSON.parse(readFileSync(join(agentsDir, ID, "slot.json"), "utf8")).schema).toBe("clossys.slot/2");
-  },
 };
+/** A pin needs the same converted, unpinned slot: its recut candidate holds the migration's submit record, so the CHOOSE gate admits it. */
+const prepare: Readonly<Record<"submit" | "reissue" | "pin", () => void>> = { submit: () => undefined, reissue: converted, pin: converted };
 
 const skill = STEPS.find(step => step.id === "designer.candidates")!.command.skill!;
 const run: Readonly<Record<"submit" | "pin" | "reissue", (firing: (id: string) => boolean) => ReturnType<typeof runPinCli>>> = {
@@ -131,7 +131,7 @@ describe("write guards on a fixture consumer", () => {
     expect(tree()).toEqual(before);
   });
 
-  for (const verb of ["submit", "reissue"] as const) {
+  for (const verb of ["submit", "reissue", "pin"] as const) {
     it(`${verb} refuses on every guarded check id, one at a time, and writes nothing`, async () => {
       prepare[verb]();
       const before = tree();

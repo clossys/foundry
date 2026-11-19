@@ -5,14 +5,18 @@
  * nothing lost, a symbolic link or a journal path outside the consumer refuses, and `--check` exits 1 while
  * anything is pending. Once converted, a newly written slot/1 or pin/1 is refused by the readers.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { hostname, tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import "../constitution/guard.js"; // the migrate guard runs on every folder (U13 r4)
 import { sha256Hex } from "../records/hash.js";
 import { consumerCopy, CONSUMER } from "../records/__fixtures__/slot2-workspace.js";
 import { checkSlotModel } from "../records/slot-check.js";
-import { inspectSlot, readPin } from "../records/slots.js";
+import { SLOT_LOCK } from "../records/slot-write.js";
+import { inspectSlot, readLedger, readPin } from "../records/slots.js";
+import { pinGate } from "../constitution/pin-gate.js";
+import { runConstitution } from "../constitution/run.js";
 import { isConvertedStore, storeFormatPath } from "../records/store-format.js";
 import { runCli } from "../cli/main.js";
 import { applySlotsMigration, guardedPath, planSlotsMigration, slotsPending, SLOTS_JOURNAL } from "./slots.js";
@@ -85,7 +89,7 @@ describe("clossys migrate slots on a copy of the legacy tree (a mixed store)", (
     applySlotsMigration(ws.root, again, OPTIONS);
     expect(tree(ws.root)).toEqual(snapshot);
     expect(tree(CONSUMER)).toEqual(original);
-  }, 120_000);
+  }, 360_000);
 
   it("finishes a run stopped mid-apply on the rerun, from its journal, losing no file", () => {
     const ws = consumerCopy();
@@ -108,7 +112,7 @@ describe("clossys migrate slots on a copy of the legacy tree (a mixed store)", (
     expect(existsSync(join(consumer, SLOTS_JOURNAL))).toBe(false);
     expect(isConvertedStore(consumer)).toBe(true);
     for (const change of plan.changes) expect(sha256Hex(readFileSync(join(consumer, change.file))), change.file).toBe(change.to.sha256);
-  }, 120_000);
+  }, 360_000);
 
   it("keeps the old file when a written file does not read back as written (verify before replace)", () => {
     const ws = consumerCopy();
@@ -120,7 +124,7 @@ describe("clossys migrate slots on a copy of the legacy tree (a mixed store)", (
     expect(() => applySlotsMigration(ws.root, plan, OPTIONS, corrupt)).toThrow(/did not read back as written/);
     expect(readFileSync(join(consumer, target.file))).toEqual(before);
     expect(readdirSync(join(consumer, target.file, "..")).filter(name => name.endsWith(".migrate-slots.tmp"))).toEqual([]);
-  }, 120_000);
+  }, 360_000);
 
   it("refuses a symbolic link anywhere in the store and writes nothing", () => {
     const ws = consumerCopy();
@@ -137,7 +141,7 @@ describe("clossys migrate slots on a copy of the legacy tree (a mixed store)", (
     expect(() => applySlotsMigration(ws.root, plan, OPTIONS)).toThrow(/finding/);
     expect(tree(consumer)).toEqual(snapshot);
     expect(readFileSync(outside, "utf8")).toBe(readFileSync(join(dir, id, "slot.json"), "utf8"));
-  }, 120_000);
+  }, 360_000);
 
   it("never writes outside the consumer: a journal path that leaves it is refused", () => {
     const ws = consumerCopy();
@@ -154,7 +158,7 @@ describe("clossys migrate slots on a copy of the legacy tree (a mixed store)", (
     expect(refused.findings.map(row => row.detail).join("\n")).toMatch(/outside agents/);
     expect(() => applySlotsMigration(ws.root, refused, OPTIONS)).toThrow(/finding/);
     expect(existsSync(join(ws.root, first.file))).toBe(false);
-  }, 120_000);
+  }, 360_000);
 
   it("--check exits 1 while anything is pending and 0 once converted; --apply with --check is a usage error", async () => {
     const ws = consumerCopy();
@@ -167,6 +171,103 @@ describe("clossys migrate slots on a copy of the legacy tree (a mixed store)", (
     const clean = await runCli(["migrate", "slots", "--check", "--root", ws.root], ws.root);
     expect(clean.exitCode, clean.message).toBe(0);
   }, 180_000);
+});
+
+/** The plan's changes by slot folder (`agents/<agent>/<slot>`, consumer-relative), as apply groups them. */
+function folders(changes: readonly { readonly file: string }[]): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const change of changes) {
+    const key = change.file.split("/").slice(0, 3).join("/");
+    out.set(key, [...(out.get(key) ?? []), change.file]);
+  }
+  return out;
+}
+
+const migrateEvents = (consumer: string, folder: string) =>
+  (readLedger(join(consumer, folder))?.events ?? []).filter(event => event.op === "migrate" && event.migration === "slots");
+
+/** The checks a migration must not introduce (diagnosis U13 r4 section 5: R02.3, R14.1, R05, R08.2), as row keys. */
+const MIGRATION_CHECKS = /^(R02\.3|R14\.1|R05\.|R08\.2)$/;
+const migrationRows = (root: string) => runConstitution({ root, consumer: join(root, "clossys"), rule: ["R02", "R05", "R08", "R14"] }).rows
+  .filter(row => !row.pending && MIGRATION_CHECKS.test(row.check)).map(row => `${row.check} ${row.path} ${row.reason}`).sort();
+
+describe("clossys migrate slots records itself in each folder's ledger (U13 r4, B3)", () => {
+  it("appends one migrate event per converted folder naming its recuts and record states; a rerun appends none", () => {
+    const ws = consumerCopy();
+    const consumer = join(ws.root, "clossys");
+    const plan = planSlotsMigration(ws.root, OPTIONS);
+    const byFolder = folders(plan.changes);
+    const { applied } = apply(ws.root);
+    expect(applied.ledgerEvents).toBe(byFolder.size);
+    for (const [folder] of byFolder) {
+      const events = migrateEvents(consumer, folder);
+      expect(events, folder).toHaveLength(1);
+      const recuts = plan.changes.filter(change => change.kind === "candidate" && change.file.startsWith(`${folder}/`) && change.from.sha256 !== change.to.sha256)
+        .map(change => ({ name: change.file.slice(`${folder}/candidates/`.length), from: change.from.sha256, to: change.to.sha256 }));
+      expect(events[0]!.files, folder).toEqual(recuts);
+      const records = events[0]!.records ?? [];
+      expect(records.length, folder).toBeGreaterThan(0);
+      for (const state of records) {
+        const path = join(consumer, folder, state.file);
+        expect(state.sha256, `${folder}/${state.file}`).toBe(existsSync(path) ? sha256Hex(readFileSync(path)) : null);
+      }
+    }
+    const again = applySlotsMigration(ws.root, planSlotsMigration(ws.root, OPTIONS), OPTIONS);
+    expect(again.ledgerEvents).toBe(0);
+    for (const [folder] of byFolder) expect(migrateEvents(consumer, folder), folder).toHaveLength(1);
+  }, 240_000);
+
+  it("introduces no R02.3, R14.1, R05 or R08.2 row on either fixture consumer", () => {
+    for (const fixture of ["consumer", "consumer-legacy-tree"]) {
+      const root = realpathSync(mkdtempSync(join(tmpdir(), "migrate-slots-rows-")));
+      cpSync(join(CONSUMER, "..", fixture), root, { recursive: true });
+      const before = migrationRows(root);
+      apply(root);
+      const after = migrationRows(root);
+      expect(after.filter(row => /^(R02\.3|R14\.1|R05\.)/.test(row)), fixture).toEqual([]);
+      expect(after.filter(row => !before.includes(row)), fixture).toEqual([]);
+    }
+  }, 600_000);
+
+  it("the CHOOSE gate accepts a pinned candidate the migration recut (no changed-since-submit refusal)", () => {
+    const ws = consumerCopy();
+    const consumer = join(ws.root, "clossys");
+    const dir = join(consumer, "agents", "designer");
+    const id = readdirSync(dir).filter(name => existsSync(join(dir, name, "slot.json"))).sort()[0]!;
+    const cell = join(dir, id);
+    const bytes = `${JSON.stringify({ name: "example", type: "registry:item", files: [], meta: { source: { kind: "registry", ref: ["shadcn-aria/button@4.23.0"] } } }, null, 2)}\n`;
+    mkdirSync(join(cell, "candidates"), { recursive: true });
+    writeFileSync(join(cell, "candidates", "valid-v1.json"), bytes);
+    // The legacy tree's pin/1, naming the headerless bytes the migration then recuts.
+    writeFileSync(join(cell, "pin.json"), `${JSON.stringify({ candidate: "valid-v1.json", sha256: sha256Hex(bytes), decidedBy: "planner:U13", basis: "planner", at: OPTIONS.at }, null, 2)}\n`);
+    apply(ws.root);
+    const recut = readFileSync(join(cell, "candidates", "valid-v1.json"), "utf8");
+    expect(recut).not.toBe(bytes);
+    expect(readPin(consumer, "designer", id)).toMatchObject({ candidate: "valid-v1.json", sha256: sha256Hex(recut) });
+    const gate = pinGate(ws.root, consumer, "designer", id, "valid-v1.json", OPTIONS.at);
+    expect(gate.refusals.filter(reason => /changed since its submit|no submit|invalid frontmatter|header/i.test(reason))).toEqual([]);
+  }, 240_000);
+
+  it("waits on no folder another decision write holds: apply refuses under a held slot lock, keeps the journal, and the rerun finishes (N7)", () => {
+    const ws = consumerCopy();
+    const consumer = join(ws.root, "clossys");
+    const plan = planSlotsMigration(ws.root, OPTIONS);
+    const held = [...folders(plan.changes).keys()].sort()[1]!;
+    const lock = join(consumer, held, SLOT_LOCK);
+    mkdirSync(lock);
+    writeFileSync(join(lock, "owner.json"), JSON.stringify({ pid: process.pid, host: hostname(), at: Date.now() }));
+    const heldBefore = tree(join(consumer, held));
+    expect(() => applySlotsMigration(ws.root, plan, OPTIONS)).toThrow(/Slot is unavailable or another decision write is in progress/);
+    expect(tree(join(consumer, held))).toEqual(heldBefore);
+    expect(migrateEvents(consumer, held)).toHaveLength(0);
+    expect(existsSync(join(consumer, SLOTS_JOURNAL))).toBe(true);
+    expect(isConvertedStore(consumer)).toBe(false);
+    rmSync(lock, { recursive: true });
+    const resumed = planSlotsMigration(ws.root, OPTIONS);
+    expect(resumed.resumed).toBe(true);
+    expect(applySlotsMigration(ws.root, resumed, OPTIONS).marker).toBe(true);
+    expect(migrateEvents(consumer, held)).toHaveLength(1);
+  }, 240_000);
 });
 
 describe("a converted store fails closed on the old formats", () => {
@@ -185,7 +286,7 @@ describe("a converted store fails closed on the old formats", () => {
     writeFileSync(join(p.dir, "pin.json"), p.pin1);
     expect(readPin(p.consumer, "designer", p.id)).toMatchObject({ candidate: "example-v1.json", basis: "planner" });
     expect(() => inspectSlot(p.consumer, "designer", p.id)).not.toThrow();
-  }, 120_000);
+  }, 360_000);
 
   it("refuses a newly written slot/1 slot or pin/1 pin: the check names it and the readers do not read it", () => {
     const ws = consumerCopy();
@@ -203,5 +304,5 @@ describe("a converted store fails closed on the old formats", () => {
     writeFileSync(join(p.dir, "slot.json"), slot1);
     expect(() => inspectSlot(p.consumer, "designer", p.id)).toThrow(/clossys migrate slots|slot\/2/);
     expect(checkSlotModel(p.consumer, {}).filter(row => row.path.includes(`${p.id}/slot.json`)).length).toBeGreaterThan(0);
-  }, 120_000);
+  }, 360_000);
 });
