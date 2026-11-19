@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -7,7 +7,8 @@ import { resolveStrategyRoot } from "./strategy-dir-default.js";
 let sandbox: string;
 
 beforeEach(() => {
-  sandbox = mkdtempSync(join(tmpdir(), "strategy-root-default-"));
+  // The real temp path: process.cwd() reports the resolved directory, and macOS TMPDIR is a symbolic link (/var -> /private/var).
+  sandbox = mkdtempSync(join(realpathSync(tmpdir()), "strategy-root-default-"));
 });
 
 afterEach(() => {
