@@ -22,7 +22,7 @@ import { readyFindings } from "../release/ready.js";
 import type { AgentId, PinRecord } from "../records/types.js";
 import { CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, PIN_BASES, SLOT_AGENTS, type PinBasis, type PinConfirmation, type SlotAgent } from "../records/slot-model/index.js";
 import { listSlots, readSlotEntry } from "../records/slots.js";
-import { GuardRefusal, SLOT_LOCK, withDirLock, writeConfirm, writeNotNeeded, writePin, writeTargetConfirm, type WriteGuard } from "../records/slot-write.js";
+import { GuardRefusal, SLOT_LOCK, withDirLock, writeConfirm, writeNotNeeded, writePin, writeTargetConfirm, writeTargetDecision, type WriteGuard } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { pinGate, writeScorecard } from "../constitution/pin-gate.js";
 import { clearReverdict } from "../constitution/cascade.js";
@@ -156,14 +156,18 @@ export async function runPinCli(argv: readonly string[], cwd: string, guard: Wri
 function typedAnswerRefusal(root: string, answer: { readonly to: string; readonly record?: string }, file: string, slot: string, candidate: string, flags: readonly string[] = []): string | undefined {
   let schema: unknown;
   try { schema = (JSON.parse(readFileSync(file, "utf8")) as { schema?: unknown } | null)?.schema; } catch { return "does not read"; }
-  if (schema !== "clossys.queue-entry/2") return undefined;
+  // A confirmation has no pin rule judging its decider (decidedBy stays the agent seat): only the owner's typed answer
+  // authorizes it, so any other file at the entry path ({} or an untyped decision entry) is refused (U13 r3, N3).
+  // DRAFT copy (not owner-approved).
+  if (schema !== "clossys.queue-entry/2") return flags.includes("--confirm") ? `is not a clossys.queue-entry/2 entry: only the owner's typed answer (clossys request <id> --answer <option>) confirms an agent pick` : undefined;
   let request: SlotRequest;
   try { request = readRequest(join(root, "clossys"), answer.record!); } catch (error) { return `does not read as a work entry: ${error instanceof Error ? error.message : String(error)}`; }
   const filed = `producer/${workQueue(request.kind as WorkKind)}`;
   if (filed !== answer.to || resolve(requestsDir(join(root, "clossys"), request.kind as WorkKind), `${request.id}.json`) !== resolve(file)) return `is a kind ${request.kind} entry filed under ${filed}, not ${answer.to}`;
   if (request.kind !== "change") return `is kind ${request.kind}: only an owner-assigned change entry answers a pin`;
   if (request.status !== "open") return "is closed: its answer already ran";
-  if (request.assignee !== "owner") return `is assigned to ${request.assignee}, not the owner: only the owner's entry answers a pin`;
+  // The owner's entry: assigned to the owner, or one Producer asked the owner about (an asked event before the answer).
+  if (request.assignee !== "owner" && !request.events.some(event => event.op === "asked" && event.by === "producer")) return `is assigned to ${request.assignee}, not the owner, and Producer never asked the owner: only the owner's entry answers a pin`;
   const option = answeredStep(request);
   if (!option) return "has no owner answer as its last event (clossys request <id> --answer <option>)";
   const [to, name, ...rest] = option.then.args;
@@ -266,9 +270,14 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
       const gate = pinGate(root, join(root, "clossys"), agent, slotId, candidate, toIsoZ(at)!, releasePin ? { verdict: "release.ready" } : {});
       if (gate.refusals.length) return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate}:\n${gate.refusals.map(line => `  ${line}`).join("\n")}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals: gate.refusals, scorecard: gate.scorecard } };
       const scorecard = writeScorecard(root, agent, slotId, gate.scorecard);
-      const doc = writeTargetPin(root, {
-        agent: agent as AgentId, slotId, ...(record !== undefined ? { record } : {}),
-        candidate, decidedBy: by, basis, at: toIsoZ(at)!, refs: [...(answer ? [answer] : []), scorecard, ...(loopStandard?.ok ? [certifiedStandardRef(loopStandard.file)] : [])], createdBy: cliActor("clossys pin"),
+      let doc!: ReturnType<typeof writeTargetPin>;
+      // The decision lands on the slot ledger with the pin (U13 r3): a `pick` or `pin` event naming the record, as R02.3 reads it.
+      writeTargetDecision(join(root, "clossys"), agent as SlotAgent, slotId, record !== undefined ? { record } : {}, () => {
+        doc = writeTargetPin(root, {
+          agent: agent as AgentId, slotId, ...(record !== undefined ? { record } : {}),
+          candidate, decidedBy: by, basis, at: toIsoZ(at)!, refs: [...(answer ? [answer] : []), scorecard, ...(loopStandard?.ok ? [certifiedStandardRef(loopStandard.file)] : [])], createdBy: cliActor("clossys pin"),
+        });
+        return doc.kind === "pin-map" ? doc.records[record!]! : doc;
       });
       // A new pin carries the verdict the gate just gave (its scorecard row); an older re-verdict no longer holds.
       clearReverdict(root, agent, slotId);

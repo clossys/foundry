@@ -8,6 +8,9 @@
  * - R02.3 each pin equals the slot ledger's last decision event (`pin`, `pick` or `verdict`) in
  *   candidate, sha256, decidedBy, basis and at; a later `migrate` event that rewrote the pinned
  *   candidate's bytes carries the sha256 forward (records/ledger.ts).
+ * A Writer `clossys.pin-map/1` (one pin record per record key) is judged per record (U13 r3): R02.1 on each record's
+ * basis and decidedBy, R02.3 against the last decision event naming that record (`record`, or, for an event written
+ * before pin maps carried the key, its candidate's record name).
  * R02.4 (verdict before an agent pin, P1) is not in this unit's rules.json entry.
  */
 import { DECIDED_BY, PIN_BASES } from "../../records/slot-model/index.js";
@@ -18,16 +21,30 @@ import { allSlots, dependencySet, isObject, listed, liveSlotRecords, row } from 
 /** A decidedBy only a migration writes; R02.1 removes these forms from the closed list. */
 const MIGRATION_DECIDED = /^(?:migrated|migration(?::.*)?)$/;
 
+/** The pin records of a pin.json value: `[key, record]` per pin-map record, else `[undefined, the pin]` (pin/1 and pin/2). */
+export function pinRecordsOf(value: Record<string, unknown>): [string | undefined, Record<string, unknown>][] {
+  if (value.schema !== "clossys.pin-map/1") return [[undefined, value]];
+  const records = isObject(value.records) ? value.records : {};
+  return Object.keys(records).sort().map(key => [key, isObject(records[key]) ? records[key] as Record<string, unknown> : {}]);
+}
+const recordLabel = (key: string | undefined) => key === undefined ? "" : `record ${key}: `;
+/** The record a decision event decided: its `record`, else (an event from before pin maps named it) its candidate's record name. */
+const eventRecord = (event: Record<string, unknown>): string | undefined =>
+  typeof event.record === "string" ? event.record : typeof event.candidate === "string" ? /^(.+)-v[1-9][0-9]*\.[a-z]+$/.exec(event.candidate)?.[1] : undefined;
+
 export function pinBasis(ctx: ConstitutionContext): Row[] {
   const rows: Row[] = [];
   for (const slot of allSlots(ctx)) {
     const value = slot.pin?.value;
     if (!slot.pin || slot.pin.error !== undefined || !isObject(value)) continue; // R09 reports unreadable pins
     const issues: string[] = [];
-    if (!(PIN_BASES as readonly unknown[]).includes(value.basis)) issues.push(`basis ${JSON.stringify(value.basis)} is not one of ${PIN_BASES.join(", ")}`);
-    const decidedBy = value.decidedBy;
-    if (typeof decidedBy !== "string" || !DECIDED_BY.test(decidedBy)) issues.push(`decidedBy ${JSON.stringify(decidedBy)} does not match DECIDED_BY`);
-    else if (MIGRATION_DECIDED.test(decidedBy)) issues.push(`decidedBy ${decidedBy} is a migration form; a pin names its decider (owner, planner or agent:<seat>)`);
+    for (const [key, pin] of pinRecordsOf(value)) {
+      const at = recordLabel(key);
+      if (!(PIN_BASES as readonly unknown[]).includes(pin.basis)) issues.push(`${at}basis ${JSON.stringify(pin.basis)} is not one of ${PIN_BASES.join(", ")}`);
+      const decidedBy = pin.decidedBy;
+      if (typeof decidedBy !== "string" || !DECIDED_BY.test(decidedBy)) issues.push(`${at}decidedBy ${JSON.stringify(decidedBy)} does not match DECIDED_BY`);
+      else if (MIGRATION_DECIDED.test(decidedBy)) issues.push(`${at}decidedBy ${decidedBy} is a migration form; a pin names its decider (owner, planner or agent:<seat>)`);
+    }
     if (issues.length) rows.push(row("R02", "R02.1", slot, issues.join("; "), slot.pin.path));
   }
   return rows;
@@ -85,13 +102,18 @@ export function pinMatchesLedger(ctx: ConstitutionContext): Row[] {
     const pin = slot.pin?.value;
     if (!slot.pin || slot.pin.error !== undefined || !isObject(pin)) continue;
     const events = slot.ledger?.error === undefined ? ledgerEventsOf(slot.ledger?.value) : undefined;
-    const decision = events ? ledgerDecision(events) : undefined;
-    if (!decision) {
-      rows.push(row("R02", "R02.3", slot, slot.ledger ? (slot.ledger.error !== undefined ? `ledger.json is unreadable (${slot.ledger.error}); the pin has no decision event` : "the slot ledger has no pin, pick or verdict event for this pin") : "the slot has no ledger.json; the pin has no decision event", slot.pin.path));
-      continue;
+    const map = pin.schema === "clossys.pin-map/1";
+    for (const [key, record] of pinRecordsOf(pin)) {
+      // A pin-map record's decision is the last decision event naming that record; other events (migrate) apply to all.
+      const own = events && map ? events.filter(event => !DECISION_OPS.includes(event.op as string) || eventRecord(event) === key) : events;
+      const decision = own ? ledgerDecision(own) : undefined;
+      if (!decision) {
+        rows.push(row("R02", "R02.3", slot, slot.ledger ? (slot.ledger.error !== undefined ? `ledger.json is unreadable (${slot.ledger.error}); the pin has no decision event` : `${recordLabel(key)}the slot ledger has no pin, pick or verdict event for this pin`) : "the slot has no ledger.json; the pin has no decision event", slot.pin.path));
+        continue;
+      }
+      const differ = PIN_FIELDS.filter(field => record[field] !== decision[field]);
+      if (differ.length) rows.push(row("R02", "R02.3", slot, `${recordLabel(key)}pin differs from the last ${String(decision.op)} event (${String(decision.at)}) in ${differ.join(", ")}`, slot.pin.path));
     }
-    const differ = PIN_FIELDS.filter(field => pin[field] !== decision[field]);
-    if (differ.length) rows.push(row("R02", "R02.3", slot, `pin differs from the last ${String(decision.op)} event (${String(decision.at)}) in ${differ.join(", ")}`, slot.pin.path));
   }
   return rows;
 }

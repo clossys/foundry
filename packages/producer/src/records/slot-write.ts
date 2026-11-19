@@ -963,6 +963,29 @@ export function writeConfirm(consumer: string, agent: SlotAgent, id: string, can
 }
 
 /**
+ * A clossys.slot/2 pin's decision event (U13 r3): under the caller's slot lock (the CHOOSE gate's), `write` replaces
+ * pin.json with the gated pin/2 (or one pin-map record) and returns the record it pinned; the decision then lands on the
+ * slot ledger as R02.3 reads it: `pick` for an agent seat's pick (the agent's `pick.<agent>` skill), else `pin` (the
+ * Producer's `pin.<agent>` skill), with candidate, sha256, decidedBy, basis, at and, for a pin-map, the record key.
+ * Any failure restores pin.json and the ledger.
+ */
+export function writeTargetDecision(consumer: string, agent: SlotAgent, id: string, input: { readonly record?: string }, write: () => { readonly candidate: string; readonly sha256: string; readonly decidedBy: string; readonly basis: string; readonly at: string }, given?: WriteProvenance): LedgerEvent {
+  const dir = join(consumer, "agents", agent, id);
+  readLedger(dir, "slot"); // an unreadable ledger refuses before anything is written
+  const before = snapshotFiles([pinFile(dir), join(dir, LEDGER_FILE)]);
+  try {
+    const pinned = write();
+    const pick = pinned.basis === "agent";
+    const who = provenance(pick
+      ? { verb: "pick", by: pinned.decidedBy, skill: skillPath(agent, `pick.${agent}`) }
+      : { verb: "pin", by: pinned.decidedBy, skill: skillPath("producer", `pin.${agent}`) }, given);
+    const event = ledgerEvent(pick ? "pick" : "pin", pinned.at, who, { candidate: pinned.candidate, sha256: pinned.sha256, decidedBy: pinned.decidedBy, basis: pinned.basis, ...(input.record !== undefined ? { record: input.record } : {}) }, [recordState(dir, "pin.json")]);
+    appendEvent(dir, "slot", event);
+    return event;
+  } catch (error) { restoreFiles(before); throw error; }
+}
+
+/**
  * A clossys.slot/2 confirmation's record write (U13 r2; `clossys pin --confirm` builds and checks the pin/2 or pin-map
  * it writes): under the caller's slot lock, `write` replaces pin.json, the `confirm` event lands on the slot ledger
  * (verb pin, the Producer's `pin.<agent>` skill, by the owner's queue answer) and the pin guard runs on pin.json and

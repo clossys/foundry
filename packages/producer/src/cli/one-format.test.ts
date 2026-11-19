@@ -22,6 +22,8 @@ import { runCli } from "./main.js";
 import { runPickCli } from "./options.js";
 import { runApproveCli, runIaCli, runSeatCli } from "./owner.js";
 import { runPinCli } from "./pin.js";
+import { answerRequest, raiseWork } from "../records/request.js";
+import { runGuard } from "../constitution/guard.js";
 import { runReissueCli } from "./reissue.js";
 
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
@@ -59,6 +61,22 @@ function world() {
   return {
     root, consumer, dir,
     submit: () => writeCandidate(consumer, "writer", SLOT, "copy", GOOD, { at: AT, provenance: { by: "agent:writer", model: "claude-opus-5-5", tier: "high" } }),
+    /**
+     * Upstream setup for the guarded tests: the Director slot the hero copy cites (R20.2 wants it pinned), its pin/2
+     * written as data with intact bytes. The guard judges only the Writer target, so this pin is not under test.
+     */
+    pinDirector(): void {
+      const id = "advantage.proposition.promise";
+      const cell = join(consumer, "agents", "director", id);
+      const bytes = "---\nslot: \"advantage.proposition.promise\"\nsource: {\"kind\":\"original\",\"ref\":[]}\n---\n## Direction\n- Promise: a site this week\n";
+      mkdirSync(join(cell, "candidates"), { recursive: true });
+      writeFileSync(join(cell, "candidates", "promise-v1.md"), bytes);
+      writeFileSync(join(cell, "pin.json"), jsonBytes({
+        schema: "clossys.pin/2", id: `director/${id}/pin`, agent: "director", kind: "pin", status: "pinned",
+        createdBy: { actor: "code", cli: "clossys pin", version: "1.0.0" }, createdAt: AT, updatedAt: AT, refs: [],
+        candidate: "promise-v1.md", sha256: sha256Hex(bytes), decidedBy: "planner:fixture", basis: "planner", at: AT,
+      }));
+    },
     queueEntry(): void {
       const file = join(consumer, "agents", "producer", "queue.pick", "entries", `${QUEUE_ID}.json`);
       mkdirSync(join(file, ".."), { recursive: true });
@@ -138,45 +156,68 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     expect([...changed(before, schemas(w.consumer)).values()]).toEqual([]);
   });
 
-  it("confirm: the owner's confirm names its queue answer, keeps the agent pick and appends a confirm event", async () => {
+  it("confirm (B5, guard on): an agent pick is a pick event; the owner's typed answer confirms it and the guard passes", async () => {
     const w = world();
+    w.pinDirector();
     const good = w.submit();
     expect((await runPickCli([`writer/${SLOT}#copy`, good.name, "--by", "agent:writer", "--at", AT, "--root", w.root], w.root)).exitCode).toBe(0);
     const picked = readFileSync(join(w.dir, "pin.json"), "utf8");
-    const events = () => ((json(join(w.dir, "ledger.json")).events ?? []) as { op: string }[]).filter(event => event.op === "confirm");
+    const ledger = () => (json(join(w.dir, "ledger.json")).events ?? []) as Record<string, unknown>[];
+    const confirms = () => ledger().filter(event => event.op === "confirm");
+    // The pick is the slot's decision event, naming its record (R02.3 reads it per pin-map record).
+    expect(ledger().filter(event => event.op === "pick")).toEqual([expect.objectContaining({ op: "pick", verb: "pick", candidate: good.name, sha256: good.sha256, decidedBy: "agent:writer", basis: "agent", record: "copy", at: AT })]);
+    const confirm = (by: string[]) => runPinCli([`writer/${SLOT}#copy`, good.name, "--confirm", ...by, "--at", LATER, "--root", w.root], w.root);
     // B4: a ledger-comment ref alone names no queue answer: refused, nothing written, no confirm event.
-    const bare = await runPinCli([`writer/${SLOT}#copy`, good.name, "--confirm", "--ref", REF, "--at", LATER, "--root", w.root], w.root, false);
+    const bare = await confirm(["--ref", REF]);
     expect(bare.exitCode).toBe(1);
     expect(bare.message).toMatch(/^confirm refused: .*names no queue answer/);
-    expect(readFileSync(join(w.dir, "pin.json"), "utf8")).toBe(picked);
-    expect(events()).toEqual([]);
     // A queue answer whose entry is absent is refused too.
-    expect((await runPinCli([`writer/${SLOT}#copy`, good.name, "--confirm", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", LATER, "--root", w.root], w.root, false)).exitCode).toBe(1);
-    expect(readFileSync(join(w.dir, "pin.json"), "utf8")).toBe(picked);
+    expect((await confirm(["--by", `owner:queue.pick#${QUEUE_ID}`])).exitCode).toBe(1);
+    // N3: only a clossys.queue-entry/2 entry the owner answered confirms: an untyped entry file, or {}, is refused.
     w.queueEntry();
-    const result = await runPinCli([`writer/${SLOT}#copy`, good.name, "--confirm", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", LATER, "--root", w.root], w.root, false);
-    expect(result.exitCode, result.message).toBe(0);
+    const untyped = await confirm(["--by", `owner:queue.pick#${QUEUE_ID}`]);
+    expect(untyped).toMatchObject({ exitCode: 1, message: expect.stringMatching(/is not a clossys\.queue-entry\/2 entry/) });
+    writeFileSync(join(w.consumer, "agents", "producer", "queue.pick", "entries", `${QUEUE_ID}.json`), "{}");
+    expect(await confirm(["--by", `owner:queue.pick#${QUEUE_ID}`])).toMatchObject({ exitCode: 1, message: expect.stringMatching(/is not a clossys\.queue-entry\/2 entry/) });
+    expect(readFileSync(join(w.dir, "pin.json"), "utf8")).toBe(picked);
+    expect(confirms()).toEqual([]);
+    // The owner's typed answer: a repin change on the slot offers the confirmation of the agent pick as an option.
+    const entry = raiseWork(w.consumer, { kind: "change", target: `writer/${SLOT}`, from: "owner", want: "repin", why: "confirm the hero copy", source: "cli", by: "owner", at: AT }).request;
+    const option = entry.options?.find(each => each.then.args[2] === "--confirm");
+    expect(option, JSON.stringify(entry.options)).toMatchObject({ then: { verb: "pin", args: [`writer/${SLOT}#copy`, good.name, "--confirm"] } });
+    // Before the owner answers, the entry authorizes nothing: it has no answered event.
+    expect((await confirm(["--by", `owner:queue.change#${entry.id}`])).message).toMatch(/has no owner answer as its last event/);
+    expect(confirms()).toEqual([]);
+    const answered = await answerRequest(w.consumer, entry.id, { option: option!.id, at: LATER, via: "chat", quote: "Confirm it." });
+    expect(answered.ok, answered.message).toBe(true);
     const pin = expectOneFormat(w.dir, "writer", SLOT);
     const row = (pin.records as Record<string, { refs?: unknown }>).copy!;
-    expect(row).toMatchObject({ candidate: good.name, basis: "agent", decidedBy: "agent:writer", confirmed: { by: "owner", ref: `producer/queue.pick#${QUEUE_ID}`, at: LATER } });
-    expect(JSON.stringify(pin.refs ?? row.refs)).toContain(QUEUE_ID);
-    expect(events()).toHaveLength(1);
-    expect(events()[0]).toMatchObject({ op: "confirm", candidate: good.name, sha256: good.sha256 });
-    // A second confirm is refused and changes nothing.
+    expect(row).toMatchObject({ candidate: good.name, basis: "agent", decidedBy: "agent:writer", confirmed: { by: "owner", ref: `producer/queue.change#${entry.id}`, at: LATER } });
+    expect(JSON.stringify(pin.refs ?? row.refs)).toContain(entry.id);
+    expect(confirms()).toHaveLength(1);
+    expect(confirms()[0]).toMatchObject({ op: "confirm", candidate: good.name, sha256: good.sha256, record: "copy" });
+    expect(answered.request).toMatchObject({ status: "closed", outcome: "changed", result: `writer/${SLOT}` });
+    // The pin guard judged the confirmed record and found nothing (R02.1 and R02.3 per pin-map record).
+    expect(runGuard(w.consumer, "pin", [{ agent: "writer", slot: SLOT, candidate: good.name, records: [`clossys/agents/writer/${SLOT}/pin.json`] }])).toEqual([]);
+    // A second confirm (the closed entry) is refused and changes nothing.
     const bytes = readFileSync(join(w.dir, "pin.json"), "utf8");
-    expect((await runPinCli([`writer/${SLOT}#copy`, good.name, "--confirm", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", LATER, "--root", w.root], w.root, false)).exitCode).toBe(1);
+    expect((await confirm(["--by", `owner:queue.change#${entry.id}`])).exitCode).toBe(1);
     expect(readFileSync(join(w.dir, "pin.json"), "utf8")).toBe(bytes);
-    expect(events()).toHaveLength(1);
+    expect(confirms()).toHaveLength(1);
   });
 
   it("re-pick: a confirmed agent pick is owner-held; a planner repin replaces it and drops the confirmation, under the CHOOSE gate", async () => {
     const w = world();
+    w.pinDirector();
     const good = w.submit();
     const next = writeCandidate(w.consumer, "writer", SLOT, "copy", GOOD.replace("Ship your site this week", "Launch your site this week"), { at: AT, provenance: { by: "agent:writer", model: "claude-opus-5-5", tier: "high" } });
     w.queueEntry();
     expect((await runPickCli([`writer/${SLOT}#copy`, good.name, "--by", "agent:writer", "--at", AT, "--root", w.root], w.root)).exitCode).toBe(0);
-    expect((await runPinCli([`writer/${SLOT}#copy`, good.name, "--confirm", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", LATER, "--root", w.root], w.root, false)).exitCode).toBe(0);
+    const entry = raiseWork(w.consumer, { kind: "change", target: `writer/${SLOT}`, from: "owner", want: "repin", why: "confirm the hero copy", source: "cli", by: "owner", at: AT }).request;
+    const option = entry.options!.find(each => each.then.args[2] === "--confirm")!;
+    expect((await answerRequest(w.consumer, entry.id, { option: option.id, at: LATER, via: "chat", quote: "Confirm it." })).ok).toBe(true);
     const confirmed = readFileSync(join(w.dir, "pin.json"), "utf8");
+    expect(confirmed).toContain("\"confirmed\"");
     // The agent cannot re-pick over the owner's confirmation.
     expect((await runPickCli([`writer/${SLOT}#copy`, next.name, "--by", "agent:writer", "--at", LATER, "--root", w.root], w.root)).exitCode).toBe(1);
     expect(readFileSync(join(w.dir, "pin.json"), "utf8")).toBe(confirmed);
@@ -184,20 +225,23 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     const stray = "copy-v9.md";
     writeFileSync(join(w.dir, "candidates", stray), GOOD);
     for (const by of [["--by", "planner:U13"], ["--by", `owner:queue.pick#${QUEUE_ID}`, "--basis", "bulk"]]) {
-      const refused = await runPinCli([`writer/${SLOT}#copy`, stray, ...by, "--at", LATER, "--root", w.root], w.root, false);
+      const refused = await runPinCli([`writer/${SLOT}#copy`, stray, ...by, "--at", LATER, "--root", w.root], w.root);
       expect(refused.exitCode, by.join(" ")).toBe(1);
       expect(readFileSync(join(w.dir, "pin.json"), "utf8")).toBe(confirmed);
     }
     // The planner's repin of a gated candidate replaces the record: the confirmation was of the earlier pick only.
-    const repin = await runPinCli([`writer/${SLOT}#copy`, next.name, "--by", "planner:U13", "--at", LATER, "--root", w.root], w.root, false);
+    const repin = await runPinCli([`writer/${SLOT}#copy`, next.name, "--by", "planner:U13", "--at", LATER, "--root", w.root], w.root);
     expect(repin.exitCode, repin.message).toBe(0);
     const planner = (expectOneFormat(w.dir, "writer", SLOT).records as Record<string, Record<string, unknown>>).copy!;
     expect(planner).toMatchObject({ candidate: next.name, decidedBy: "planner:U13", basis: "planner" });
     expect(planner.confirmed).toBeUndefined();
     // An owner bulk pin replaces the planner's in turn.
-    const bulk = await runPinCli([`writer/${SLOT}#copy`, good.name, "--by", `owner:queue.pick#${QUEUE_ID}`, "--basis", "bulk", "--at", LATER, "--root", w.root], w.root, false);
+    const bulk = await runPinCli([`writer/${SLOT}#copy`, good.name, "--by", `owner:queue.pick#${QUEUE_ID}`, "--basis", "bulk", "--at", LATER, "--root", w.root], w.root);
     expect(bulk.exitCode, bulk.message).toBe(0);
     expect((expectOneFormat(w.dir, "writer", SLOT).records as Record<string, unknown>).copy).toMatchObject({ candidate: good.name, decidedBy: `owner:queue.pick#${QUEUE_ID}`, basis: "bulk" });
+    // Every decision is its own event naming the record, and R02 finds nothing on the record.
+    expect(((json(join(w.dir, "ledger.json")).events ?? []) as { op: string; record?: string }[]).filter(event => event.op === "pick" || event.op === "pin").map(event => `${event.op} ${event.record}`)).toEqual(["pick copy", "pin copy", "pin copy"]);
+    expect(runGuard(w.consumer, "pin", [{ agent: "writer", slot: SLOT, candidate: good.name, records: [`clossys/agents/writer/${SLOT}/pin.json`] }]).filter(row => row.check.startsWith("R02"))).toEqual([]);
   });
 
   it("not-needed: an owner's queue answer sets a slot/2 slot aside; a bare owner is refused", async () => {
