@@ -120,6 +120,23 @@ describe("certify: interactive backdrop descriptor on a backdrop-declaring surfa
   });
 });
 
+describe("certify: a figure the candidate's preview fills ships with its alt (foundry-build-0048 U23 review N1)", () => {
+  const FIGURE_ONLY = [{ name: "header", type: "region", required: true }, { name: "media", type: "media", required: false, placement: "figure", alt: { copy: "media.title" } }];
+  const fit = (props: Record<string, unknown>) => {
+    const item = elementItem("ui/sections.hero.tsx", LABEL, { meta: { source: { kind: "original", ref: [] }, preview: { fixtures: { file: "ui/sections.hero.tsx", export: "Example", props: { label: "Go", ...props } } } } });
+    const ctx = ctxOf({ designer: { "sections.hero": { candidates: { "hero-v1.json": item } } } });
+    const slot = slotOf(ctx, "designer", "sections.hero");
+    return certifyElement(slot, slot.candidates[0]!, { ...slotDocOf(slot).contract, slots: FIGURE_ONLY }, certifyEnv(ctx)).filter(reason => reason.code === "invalid").map(reason => reason.message);
+  };
+
+  it("fits an absent figure and a present one with its alt; refuses a present one whose alt is absent or blank", () => {
+    expect(fit({})).toEqual([]);
+    expect(fit({ media: { kind: "mark", title: "Clossys mark" } })).toEqual([]);
+    expect(fit({ media: { kind: "mark" } })).toEqual(["slot sections.hero: sections.hero figure media is filled, but its text alternative media.title is absent or blank; a present figure ships with its alt"]);
+    expect(fit({ media: { kind: "mark", title: { $copy: "" } } })).toEqual([expect.stringMatching(/media\.title is absent or blank/)]);
+  });
+});
+
 describe("certify: element (server render with the slot's contract fixture)", () => {
   it("renders a fitting candidate; with no standard it stays uncertified (no-standard), never passed by default", () => {
     const ctx = ctxOf({ designer: { "ui.button": { candidates: { "button-v1.json": elementItem("ui/ui.button.tsx", LABEL) } } } });

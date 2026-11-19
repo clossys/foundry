@@ -1,5 +1,5 @@
 import { pinIssues } from "@clossys/director";
-import { catalogSurfaceContract, interactiveBackdropMetaIssues, previewInteractiveBackdropIssues } from "@clossys/designer/catalog";
+import { catalogSurfaceContract, interactiveBackdropMetaIssues, previewFigureAltIssues, previewInteractiveBackdropIssues } from "@clossys/designer/catalog";
 import { checkPublicationOutputs } from "@clossys/publisher/content-map";
 import { pinMapIssues, pinIssues as targetPinIssues } from "../pin.js";
 import { parseFrontmatter } from "./frontmatter.js";
@@ -341,6 +341,8 @@ function validateJsonCandidate(kind: SlotKind, value: Record<string, unknown>, s
   }
   // Preview props reach the mount unjudged, so they never carry one, on any slot (meta.backdrop is the only channel).
   issues.push(...previewInteractiveBackdropIssues(value).map(message => ({ code: "candidate-source" as const, path, message })));
+  // A figure the preview fills ships with its text alternative (U23 review N1): the same check pin and install run.
+  if (kind === "element") issues.push(...previewFigureAltIssues(value, slot, catalogSurfaceContract(slot)).map(message => ({ code: "candidate-invalid" as const, path, message })));
   if (kind === "element") {
     if (typeof value.name !== "string" || !value.name) fail("registry-item name is required");
     if (!REGISTRY_TYPES.has(value.type as string)) fail("registry-item type must be a registry:* type");

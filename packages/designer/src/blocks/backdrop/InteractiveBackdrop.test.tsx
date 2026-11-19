@@ -3,8 +3,8 @@ import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { checkBackdropElement } from "../../backdrop/contract.js";
 import { BACKDROP_REGISTRY, INTERACTIVE_BACKDROP_COMPONENT_IDS, type InteractiveBackdropDescriptor } from "../../tokens/interactive-backdrops.js";
-import { BACKDROP_RENDERER_KEYS, backdropRendererKey, InteractiveBackdrop } from "./InteractiveBackdrop.js";
-import { GRADIENT_MESH_MAX_DURATION, gradientMeshDuration } from "./GradientMesh.js";
+import { BACKDROP_INK_KEYS, BACKDROP_RENDERER_KEYS, backdropInkClass, backdropRendererKey, InteractiveBackdrop } from "./InteractiveBackdrop.js";
+import { GRADIENT_MESH_GROUND_KEYS, GRADIENT_MESH_MAX_DURATION, gradientMeshDuration, gradientMeshGroundClass } from "./GradientMesh.js";
 import { InteractiveBackdrop as InteractiveBackdropBoundary } from "./interactive-backdrop-boundary.js";
 
 const descriptors: Record<string, InteractiveBackdropDescriptor> = {
@@ -51,6 +51,19 @@ describe("the adapter renders adopted registry records (foundry-build-0048 U23)"
   it("ships exactly one renderer per registry record, keyed by the record's source", () => {
     expect([...BACKDROP_RENDERER_KEYS].sort()).toEqual(BACKDROP_REGISTRY.components.map(backdropRendererKey).sort());
     expect(BACKDROP_REGISTRY.components.map(backdropRendererKey)).toEqual(["magicui/particles", "magicui/flickering-grid", "magicui/grid-pattern", "foundry/GradientMesh"]);
+  });
+
+  it("pins the ink and ground colour maps one-to-one to the registry colours, and refuses any other colour (U23 review N2)", () => {
+    expect([...BACKDROP_INK_KEYS].sort()).toEqual([...BACKDROP_REGISTRY.colors].sort());
+    expect([...GRADIENT_MESH_GROUND_KEYS].sort()).toEqual([...BACKDROP_REGISTRY.colors].sort());
+    for (const color of BACKDROP_REGISTRY.colors) {
+      expect(backdropInkClass(color)).toBe(`text-${color}`);
+      expect(gradientMeshGroundClass(color)).toBe(`bg-${color}`);
+    }
+    for (const color of ["destructive", "", "toString", "constructor"]) {
+      expect(() => backdropInkClass(color)).toThrow(/has no ink utility/);
+      expect(() => gradientMeshGroundClass(color)).toThrow(/has no ground utility/);
+    }
   });
 
   it.each(INTERACTIVE_BACKDROP_COMPONENT_IDS.filter(id => id !== "particles"))("%s renders a still, decorative layer on the server", component => {

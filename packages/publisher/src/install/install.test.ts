@@ -197,6 +197,43 @@ describe("declared copy slots", () => {
   });
 });
 
+describe("a figure the page fills ships with its alt (foundry-build-0048 U23 review N1)", () => {
+  const hero = {
+    name: "media-hero", type: "registry:block",
+    files: [{ path: "media-hero.tsx", type: "registry:component", target: "components/sections/media-hero.tsx", content: "export function MediaHero() { return null; }\n" }],
+  };
+  const source = recordStoreSource({
+    async load(id, version) {
+      if (id !== "sections.hero/media-hero" || version !== 1) return undefined;
+      const preview = { fixtures: { media: { kind: "mark", title: { $copy: "home.hero.media" } } }, copySlots: [{ slot: "hero.media", prop: "media.title", previewKey: "home.hero.media" }] };
+      return { id, version: 1, kind: "visual", files: [{ path: "media-hero.json", content: JSON.stringify(hero) }], preview, contentHash: "" };
+    },
+  });
+  const heroPins: InstallPins = { "sections.hero": { element: "media-hero", version: 1 } };
+  const bind = async (page: InstallPageRecord, writer: Record<string, string>) => {
+    const { slots, findings } = await resolvePage(page, heroPins, source);
+    expect(findings).toEqual([]);
+    return bindPage({ page, slots, copy: writer });
+  };
+
+  it("binds a figure whose alt the page binds to non-blank Writer copy", async () => {
+    const bound = await bind({ id: "home", frame: "sections.hero", sections: [], copy: { "hero.media": "home.mark" } }, { "home.mark": "Clossys mark" });
+    expect(bound.findings).toEqual([]);
+    expect(bound.page!.frame.props.media).toEqual({ kind: "mark", title: "Clossys mark" });
+  });
+
+  it("refuses, blocking, a figure whose alt is bound to no Writer key or to blank copy, and emits no page", async () => {
+    const detail = "home: sections.hero figure media is filled, but its text alternative media.title is absent or blank; a present figure ships with its alt";
+    const unbound = await bind({ id: "home", frame: "sections.hero", sections: [] }, {});
+    expect(unbound.page).toBeUndefined();
+    expect(unbound.findings).toEqual([expect.objectContaining({ code: "unbound-copy-slot", severity: "info" }), { code: "missing-figure-alt", slot: "sections.hero", detail }]);
+    expect(unbound.findings.filter(isBlocking)).toEqual([{ code: "missing-figure-alt", slot: "sections.hero", detail }]);
+    const blank = await bind({ id: "home", frame: "sections.hero", sections: [], copy: { "hero.media": "home.mark" } }, { "home.mark": "   " });
+    expect(blank.page).toBeUndefined();
+    expect(blank.findings).toEqual([{ code: "missing-figure-alt", slot: "sections.hero", detail }]);
+  });
+});
+
 describe("substrate dependencies", () => {
   it("unions every slot's npm dependencies, splitting a version range from the name", () => {
     const slot = (dependencies: string[]) => ({ dependencies }) as unknown as ResolvedSlot;

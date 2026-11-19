@@ -8,7 +8,9 @@ import {
   catalogBackdropSlot,
   catalogBackdropSurfaces,
   catalogSurfaceContract,
+  figureAltIssues,
   framePlacementFindings,
+  previewFigureAltIssues,
   sectionPlacementFindings,
 } from "./media-placement.js";
 import { loadBuildCatalog } from "./index.js";
@@ -30,6 +32,7 @@ const frame = () => ({
   slots: [{ id: "main", required: true, accepts: ["sections"] }, { id: "ground", required: false, accepts: ["assets"], placement: "backdrop" } as Record<string, unknown>],
   members: { names: ["ground.scrim.strong"] },
   allowedReads: { themes: BACKDROP_REGISTRY.colors.map(color => `themes.${color}`) },
+  requirements: [{ check: BACKDROP_REQUIREMENT }],
 });
 const sectionFindings = (contract: ReturnType<typeof section>) => sectionPlacementFindings({ id: "sections.x", contract });
 const frameFindings = (contract: ReturnType<typeof frame>) => framePlacementFindings({ id: "frames.x", contract });
@@ -83,6 +86,7 @@ describe("media placement in contract data (foundry-build-0048 U23)", () => {
     ["a required backdrop", (c: ReturnType<typeof frame>) => { slot(c, "ground").required = true; }, /must be optional/],
     ["a backdrop with no scrim", (c: ReturnType<typeof frame>) => { c.members.names = []; }, /ground\.scrim\.\* members/],
     ["two backdrops", (c: ReturnType<typeof frame>) => { slot(c, "main").placement = "backdrop"; slot(c, "main").required = false; c.members.names.push("main.scrim.light"); }, /places 2 backdrops/],
+    ["a backdrop without the interactive.backdrop requirement", (c: ReturnType<typeof frame>) => { c.requirements = []; }, /without the interactive\.backdrop requirement/],
   ])("a frame refuses %s", (_label, mutate, message) => {
     const contract = frame();
     mutate(contract);
@@ -98,5 +102,51 @@ describe("media placement in contract data (foundry-build-0048 U23)", () => {
     expect(catalogBackdropSlot("sections.hero")).toBe("backdrop");
     expect(catalogBackdropSlot("sections.call-to-action")).toBeUndefined();
     expect(catalogBackdropSurfaces()).toEqual(["sections.hero"]);
+  });
+});
+
+describe("a filled figure ships with its alt (foundry-build-0048 U23 review N1)", () => {
+  const contract = () => ({
+    slots: [
+      { name: "header", type: "region", required: true },
+      { name: "media", type: "media", required: false, placement: "figure", alt: { copy: "media.title" } },
+      { name: "images", type: "media", required: true, placement: "figure", alt: { copy: "images.items[].label" } },
+      { name: "logo", type: "media", required: false, placement: "figure", alt: { asset: "assets.logo" } },
+      { name: "ground", type: "media", required: false, placement: "backdrop" },
+    ],
+  });
+  const images = { items: [{ src: "a.png", label: "First" }, { src: "b.png", label: { $copy: "gallery.second" } }] };
+
+  it("an absent optional figure needs nothing; a present one with its alt passes", () => {
+    expect(figureAltIssues({ header: {}, images }, "sections.x", contract())).toEqual([]);
+    expect(figureAltIssues({ media: { kind: "mark", title: "Clossys mark" }, images }, "sections.x", contract())).toEqual([]);
+    expect(figureAltIssues({ media: { title: { $copy: "home.hero.media" } }, images, logo: { $asset: "assets.logo" }, ground: {} }, "sections.x", contract())).toEqual([]);
+  });
+
+  it.each([
+    ["an absent alt", { media: { kind: "mark" } }, /figure media is filled, but its text alternative media\.title is absent or blank/],
+    ["a blank alt", { media: { title: "   " } }, /media\.title is absent or blank/],
+    ["an empty alt (an unbound copy slot binds empty)", { media: { title: "" } }, /media\.title is absent or blank/],
+    ["a blank $copy reference", { media: { title: { $copy: " " } } }, /media\.title is absent or blank/],
+    ["a non-text alt", { media: { title: 7 } }, /media\.title is absent or blank/],
+    ["one blank item of a list", { images: { items: [{ label: "First" }, { label: "" }] } }, /images\.items\[\]\.label is absent or blank/],
+    ["a list with no alt anywhere", { images: { items: [{}, {}] } }, /at 2 positions/],
+  ])("a present figure refuses %s", (_label, props, message) => {
+    const issues = figureAltIssues(props, "sections.x", contract());
+    expect(issues.some(issue => message.test(issue)), issues.join("; ")).toBe(true);
+  });
+
+  it("the candidate wrapper reads meta.preview.fixtures, and the catalog hero contract applies", () => {
+    const hero = catalogSurfaceContract("sections.hero");
+    const item = (fixtures: unknown) => ({ meta: { preview: { schema: "clossys.element-preview/1", fixtures } } });
+    expect(previewFigureAltIssues(item({ header: {} }), "sections.hero", hero)).toEqual([]);
+    expect(previewFigureAltIssues(item({ media: { kind: "mark", title: { $copy: "home.hero.media" } } }), "sections.hero", hero)).toEqual([]);
+    expect(previewFigureAltIssues(item({ media: { kind: "mark" } }), "sections.hero", hero)).toEqual([
+      "sections.hero figure media is filled, but its text alternative media.title is absent or blank; a present figure ships with its alt",
+    ]);
+    expect(previewFigureAltIssues({ meta: { preview: { fixtures: { file: "hero.tsx", export: "Hero", props: { media: { kind: "mark", title: "" } } } } } }, "sections.hero", hero)).toHaveLength(1);
+    expect(previewFigureAltIssues({ meta: { preview: { fixtures: { file: "hero.tsx", export: "Hero", props: { media: { kind: "mark", title: "Mark" } } } } } }, "sections.hero", hero)).toEqual([]);
+    expect(previewFigureAltIssues({}, "sections.hero", hero)).toEqual([]);
+    expect(previewFigureAltIssues(item({ media: {} }), "components.button", undefined)).toEqual([]);
   });
 });

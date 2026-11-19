@@ -56,6 +56,14 @@ export function backdropRendererKey(entry: BackdropComponentRecord): string {
 const INK: Readonly<Record<string, string>> = {
   primary: "text-primary", secondary: "text-secondary", accent: "text-accent", foreground: "text-foreground", "muted-foreground": "text-muted-foreground", border: "text-border",
 };
+/** The ink colour keys, for the test that pins them one-to-one to the registry colours. */
+export const BACKDROP_INK_KEYS: readonly string[] = Object.freeze(Object.keys(INK));
+
+/** The ink utility of a registry colour; throws for a colour the map lacks, so a colour never paints with no ink. */
+export function backdropInkClass(color: string): string {
+  if (!Object.hasOwn(INK, color)) throw new Error(`InteractiveBackdrop: registry colour ${JSON.stringify(color)} has no ink utility`);
+  return INK[color]!;
+}
 
 /** A painted CSS colour as `#rrggbb`, read back through a 1x1 canvas; undefined where no canvas paints. */
 function paintedHex(color: string): string | undefined {
@@ -98,10 +106,10 @@ function AdoptedBackdrop({ entry, params, Renderer }: { entry: BackdropComponent
   }
   Object.assign(props, entry.props ?? {});
   if (entry.motion === "animated" && reduced && entry.reducedMotion?.mode === "props") Object.assign(props, entry.reducedMotion.props);
-  const inkClass = ink ? INK[String(params[ink[0]])] ?? "" : "";
+  const inkClass = ink ? backdropInkClass(String(params[ink[0]])) : "";
   return (
     <div aria-hidden="true" data-interactive-backdrop={entry.id} data-motion={animated ? "animated" : "static"} className={`pointer-events-none absolute inset-0 overflow-hidden ${inkClass}`} style={{ pointerEvents }}>
-      {hexKeys.map(key => <span key={key} hidden data-backdrop-probe={key} ref={node => { probes.current[key] = node; }} className={INK[String(params[key])] ?? ""} />)}
+      {hexKeys.map(key => <span key={key} hidden data-backdrop-probe={key} ref={node => { probes.current[key] = node; }} className={backdropInkClass(String(params[key]))} />)}
       {hex ? <Renderer {...props} /> : null}
     </div>
   );

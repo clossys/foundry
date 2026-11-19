@@ -21,7 +21,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, posix } from "node:path";
 import ts from "typescript";
-import { interactiveBackdropMetaIssues, previewInteractiveBackdropIssues } from "@clossys/designer/catalog";
+import { interactiveBackdropMetaIssues, previewFigureAltIssues, previewInteractiveBackdropIssues } from "@clossys/designer/catalog";
 import { specimenKindOf } from "@clossys/publisher/specimen";
 import { contractFixtureIssues, type ContractFixture } from "../../records/slot-model/contract-fixture.js";
 import { dependencyPart } from "../../specimen/specimen-tree.js";
@@ -224,9 +224,18 @@ function backdropFit(slot: SlotRecord, candidate: CandidateRecord, contract: Rea
   return interactiveBackdropMetaIssues(candidate.json, slot.id, contract).map(message => reason("invalid", `slot ${slot.id}: ${message}`));
 }
 
-/** Fit failures of an element candidate against `contract` (its fixture): its backdrop, if any, and its render; empty when it fits. */
+/**
+ * Fit of a filled figure (U23 review N1): a figure the candidate's preview fills ships with its text
+ * alternative present and non-blank, against the slot contract (`previewFigureAltIssues`, the same check
+ * submit and install run).
+ */
+function figureAltFit(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>): Reason[] {
+  return previewFigureAltIssues(candidate.json, slot.id, contract).map(message => reason("invalid", `slot ${slot.id}: ${message}`));
+}
+
+/** Fit failures of an element candidate against `contract` (its fixture): its backdrop, if any, its figures' alt and its render; empty when it fits. */
 export function certifyElement(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>, env: CertifyEnv): Reason[] {
-  return [...backdropFit(slot, candidate, contract), ...renderFit(slot, candidate, contract, env)];
+  return [...backdropFit(slot, candidate, contract), ...figureAltFit(slot, candidate, contract), ...renderFit(slot, candidate, contract, env)];
 }
 
 /** Render fit of an element candidate against `contract` (its fixture); empty when it renders. */

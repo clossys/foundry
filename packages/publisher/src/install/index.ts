@@ -22,7 +22,7 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, realpath, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve } from "node:path";
-import { carriesInteractiveBackdrop, catalogSurfaceContract, contractBackdropSlot, interactiveBackdropMetaIssues, isInteractiveBackdropProp } from "@clossys/designer/catalog";
+import { carriesInteractiveBackdrop, catalogSurfaceContract, contractBackdropSlot, figureAltIssues, interactiveBackdropMetaIssues, isInteractiveBackdropProp } from "@clossys/designer/catalog";
 import type { SpecimenRecord, SpecimenRecordSource } from "../specimen/types.js";
 import { installedPath } from "../specimen/installed-path.js";
 
@@ -59,6 +59,8 @@ export type InstallFindingCode =
   | "unbound-asset-slot" | "missing-asset" | "render-failed"
   // The pinned hero code candidate's `meta.backdrop` is no valid interactive backdrop descriptor (foundry-build-0048 A4).
   | "invalid-backdrop"
+  // A bound figure ships without its contract text alternative, or with a blank one (foundry-build-0048 U23 review N1).
+  | "missing-figure-alt"
   // A page needs the consumer's component selection to mount inside the Publisher host (`./host.ts`).
   | "need-component-selection"
   // Site mode (`./site.ts`): the content map and route pack disagree, or a link leads nowhere.
@@ -605,6 +607,9 @@ export function bindPage(options: BindOptions): { page?: BoundPage; findings: In
       assets[name] = asset; values[name] = options.assets[asset];
     }
     const props = resolveProps(slot.props, texts, values) as Record<string, unknown>;
+    // A figure the page fills ships with its text alternative, present and non-blank (U23 review N1): the
+    // same check submit and pin run on the candidate's preview, here on the bound props.
+    for (const detail of figureAltIssues(props, slot.slot, catalogSurfaceContract(slot.slot))) findings.push({ code: "missing-figure-alt", slot: key, detail: `${options.page.id}: ${detail}` });
     if (slot.role === "frame") props.children = instances.map(instance => ({ $element: instance.key }));
     return {
       slot: slot.slot, key, role: slot.role, id: slot.record.id, version: slot.record.version, entry: slot.entry!, props,

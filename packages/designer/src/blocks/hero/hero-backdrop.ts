@@ -19,7 +19,7 @@ export interface HeroVideoBackdrop {
 }
 /** The Assets producer owns the reference and geometry; Hero never synthesizes artwork. */
 export interface HeroGraphicBackdrop { readonly kind: "graphic"; readonly asset: string }
-/** A descriptor over one Foundry interactive backdrop component (foundry-build-0048 A4): data, never code. */
+/** A descriptor over one adopted interactive backdrop component (catalog/rules/backdrop-components.json, foundry-build-0048 U23): data, never code. */
 export interface HeroInteractiveBackdrop { readonly kind: "interactive"; readonly backdrop: InteractiveBackdropDescriptor }
 /** Existing checked still declarations remain valid callers. */
 export type HeroBackdrop = StillBackdropArt | { readonly kind: "none" } | HeroImageBackdrop | HeroVideoBackdrop | HeroGraphicBackdrop | HeroInteractiveBackdrop;

@@ -15,6 +15,14 @@ import { useReducedMotion } from "./reduced-motion.js";
 const GROUND: Readonly<Record<string, string>> = {
   primary: "bg-primary", secondary: "bg-secondary", accent: "bg-accent", foreground: "bg-foreground", "muted-foreground": "bg-muted-foreground", border: "bg-border",
 };
+/** The ground colour keys, for the test that pins them one-to-one to the registry colours. */
+export const GRADIENT_MESH_GROUND_KEYS: readonly string[] = Object.freeze(Object.keys(GROUND));
+
+/** The ground utility of a registry colour; throws for a colour the map lacks, so a field never paints with no ground. */
+export function gradientMeshGroundClass(color: string): string {
+  if (!Object.hasOwn(GROUND, color)) throw new Error(`GradientMesh: registry colour ${JSON.stringify(color)} has no ground utility`);
+  return GROUND[color]!;
+}
 
 const MESH_BLOBS = [
   { place: "-start-1/4 -top-1/4 size-3/4", drift: ["translate(0%, 0%)", "translate(18%, 12%)"] },
@@ -49,7 +57,7 @@ export function GradientMesh({ from, via, to, speed, intensity }: GradientMeshPr
   return (
     <div data-gradient-mesh={animated ? "animated" : "static"} className="absolute inset-0">
       {MESH_BLOBS.map((blob, index) => (
-        <div key={index} ref={node => { blobs.current[index] = node; }} className={`absolute rounded-full blur-3xl ${blob.place} ${GROUND[colors[index]!] ?? ""}`} style={{ opacity: intensity }} />
+        <div key={index} ref={node => { blobs.current[index] = node; }} className={`absolute rounded-full blur-3xl ${blob.place} ${gradientMeshGroundClass(colors[index]!)}`} style={{ opacity: intensity }} />
       ))}
     </div>
   );

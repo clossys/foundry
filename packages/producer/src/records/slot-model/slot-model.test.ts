@@ -166,6 +166,16 @@ describe("interactive backdrop on the code candidate of a backdrop-declaring sur
     expect(check(item({ preview: { fixtures: { backdrop: { kind: "none" } } } }))).toEqual([]);
   });
 
+  it("refuses a code candidate whose preview fills a figure without its alt, against the catalog contract (U23 review N1)", () => {
+    const figure = (media: unknown) => item({ backdrop: undefined, preview: { fixtures: { file: "hero.tsx", export: "Hero", props: { media } } } });
+    expect(check(figure({ kind: "mark", title: { $copy: "home.hero.media" } }))).toEqual([]);
+    expect(check(figure({ kind: "mark", title: "Clossys mark" }))).toEqual([]);
+    expect(check(figure({ kind: "mark" }))).toEqual([{ code: "candidate-invalid", path: "hero-v1.json", message: "sections.hero figure media is filled, but its text alternative media.title is absent or blank; a present figure ships with its alt" }]);
+    expect(messages(figure({ kind: "mark", title: "  " }))).toMatch(/media\.title is absent or blank/);
+    // An absent optional figure needs nothing.
+    expect(check(item({ backdrop: undefined, preview: { fixtures: { file: "hero.tsx", export: "Hero", props: {} } } }))).toEqual([]);
+  });
+
   it("refuses the retired interactive-backdrop source kind", () => {
     expect(messages(item({ source: { kind: "interactive-backdrop", ref: [] } }))).toMatch(/source\.kind must be registry, derived, original, composition, npm or package-default/);
   });

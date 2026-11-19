@@ -18,7 +18,9 @@ import { BACKDROP_REGISTRY, contractBackdropSlot, type BackdropRegistry } from "
  *   declares a backdrop-placed slot (contractBackdropSlot); at most one slot per contract.
  *
  * Frames carry no media slots; a frame slot may still opt in with `placement: "backdrop"` under the
- * same backdrop rules. Non-media section slots carry no placement.
+ * same backdrop rules, the interactive.backdrop requirement included. Non-media section slots carry
+ * no placement. A figure the filled surface carries ships with its alt present and non-blank
+ * (figureAltIssues).
  */
 
 export type MediaPlacement = "figure" | "backdrop";
@@ -102,7 +104,63 @@ export function framePlacementFindings(slot: SurfaceSlot, registry: BackdropRegi
     findings.push(...backdropRowFindings(at, name, row, slot.contract, registry));
   }
   if (backdrops > 1) findings.push(`placement: ${slot.id} places ${backdrops} backdrops; a surface has at most one`);
+  if (backdrops && !(slot.contract.requirements ?? []).some(requirement => requirement.check === BACKDROP_REQUIREMENT)) findings.push(`placement: ${slot.id} places a backdrop without the ${BACKDROP_REQUIREMENT} requirement`);
   return findings;
+}
+
+/** Whether a filled value counts as present: anything but undefined, null or an empty list. */
+const present = (value: unknown): boolean => value !== undefined && value !== null && !(Array.isArray(value) && value.length === 0);
+/** Whether a filled alt is present and non-blank: a non-blank string, or a `{$copy: <key>}` reference not yet resolved. */
+const filledAlt = (value: unknown): boolean =>
+  typeof value === "string" ? value.trim().length > 0 : record(value) && Object.keys(value).length === 1 && typeof value.$copy === "string" && value.$copy.trim().length > 0;
+
+/** The values at a copy-field key path (`media.title`, `images.items[].label`) of a props tree; `[]` fans out over a list. */
+function valuesAt(tree: unknown, key: string): unknown[] {
+  let nodes: unknown[] = [tree];
+  for (const part of key.split(".")) {
+    const fan = part.endsWith("[]");
+    const name = fan ? part.slice(0, -2) : part;
+    nodes = nodes.flatMap(node => {
+      const next = record(node) ? node[name] : undefined;
+      return fan ? (Array.isArray(next) ? next : [undefined]) : [next];
+    });
+  }
+  return nodes;
+}
+
+/**
+ * Why a filled surface ships a figure without its text alternative (U23 review N1); [] when every
+ * present figure has one. `props` is the props tree a gate sees (a candidate's preview fixtures at
+ * submit and pin, a page's bound props at install), keyed by the contract's slot names and copy
+ * field keys. A figure slot whose value is present needs its `alt {copy: <field>}` present and
+ * non-blank at every position (a `[]` key fans out over the list); an absent optional figure needs
+ * nothing. An `alt {asset}` reads the asset's own name metadata, which the contract rules judge.
+ * Submit (Producer slot-model validator), pin (certify) and install (Publisher bind) call this.
+ */
+export function figureAltIssues(props: unknown, slot: string, contract: unknown): string[] {
+  if (!record(contract) || !Array.isArray(contract.slots) || !record(props)) return [];
+  const issues: string[] = [];
+  for (const row of contract.slots as Row[]) {
+    if (!record(row) || row.type !== "media" || row.placement !== "figure") continue;
+    const name = row.name ?? row.id ?? "";
+    if (!present(props[name])) continue;
+    const alt = row.alt;
+    if (!record(alt) || typeof alt.copy !== "string") continue;
+    const blank = valuesAt(props, alt.copy).filter(value => !filledAlt(value)).length;
+    if (blank) issues.push(`${slot} figure ${name} is filled, but its text alternative ${alt.copy} is absent or blank${blank > 1 ? ` at ${blank} positions` : ""}; a present figure ships with its alt`);
+  }
+  return issues;
+}
+
+/**
+ * figureAltIssues over the props a code candidate's own preview mounts (`meta.preview.fixtures`, or its
+ * `props` when the fixtures name a `file` to mount, as Publisher install reads them): what submit and pin judge.
+ */
+export function previewFigureAltIssues(item: unknown, slot: string, contract: unknown): string[] {
+  const preview = record(item) && record(item.meta) ? item.meta.preview : undefined;
+  const fixtures = record(preview) ? preview.fixtures : undefined;
+  const props = record(fixtures) && typeof fixtures.file === "string" ? fixtures.props : fixtures;
+  return figureAltIssues(props, slot, contract);
 }
 
 const SURFACES: ReadonlyMap<string, SurfaceContract> = new Map(
