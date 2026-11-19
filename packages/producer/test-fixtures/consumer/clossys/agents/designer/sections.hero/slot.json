@@ -208,7 +208,11 @@
       {
         "name": "media",
         "type": "media",
-        "required": false
+        "required": false,
+        "placement": "figure",
+        "alt": {
+          "copy": "media.title"
+        }
       },
       {
         "name": "actions",
@@ -219,7 +223,8 @@
       {
         "name": "backdrop",
         "type": "media",
-        "required": false
+        "required": false,
+        "placement": "backdrop"
       },
       {
         "name": "header.eyebrow",
@@ -299,13 +304,6 @@
     },
     "data": "host-injected",
     "surface": "site",
-    "interactive": {
-      "components": [
-        "particle-field",
-        "gradient-mesh",
-        "grid-glow"
-      ]
-    },
     "requirements": [
       {
         "check": "interactive.backdrop",

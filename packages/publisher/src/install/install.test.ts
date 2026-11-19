@@ -259,22 +259,25 @@ describe("slot-id registry dependencies", () => {
   });
 });
 
-describe("an interactive backdrop on the pinned hero code candidate (foundry-build-0048 A4)", () => {
+describe("an interactive backdrop on the pinned code candidate of a backdrop-declaring surface (foundry-build-0048 A4, U23)", () => {
   const record = (id: string, value: unknown) => ({ id, version: 1, kind: "visual" as const, files: [{ path: "item.json", content: JSON.stringify(value) }], preview: {}, contentHash: "" });
-  const backdrop = { component: "grid-glow", params: { cell: 32, pulse: true } };
-  // The CTA's code renders Hero too; it carries the same meta.backdrop and still never gets the prop.
+  const backdrop = { component: "flickering-grid", params: { squareSize: 8, flickerChance: 0.2 } };
+  // The CTA's code renders Hero too, but its contract declares no backdrop-placed slot.
   const heroCode = (name: string, meta: Record<string, unknown>) => ({ name, type: "registry:block", files: [{ path: `${name}.tsx`, type: "registry:component", target: `components/${name}/index.tsx`, content: "export { Hero } from \"@clossys/designer/blocks\";\n" }], meta });
   const items: Record<string, unknown> = {
     "sections.hero/hero": heroCode("hero", { source: { kind: "original", ref: [] }, backdrop }),
     "sections.call-to-action/cta": heroCode("cta", { source: { kind: "original", ref: [] }, backdrop }),
     "sections.hero/plain": heroCode("plain", { source: { kind: "original", ref: [] } }),
-    "sections.hero/bad": heroCode("bad", { source: { kind: "original", ref: [] }, backdrop: { component: "grid-glow", params: { cell: 4 } } }),
+    "sections.hero/bad": heroCode("bad", { source: { kind: "original", ref: [] }, backdrop: { component: "flickering-grid", params: { squareSize: 1 } } }),
+    "sections.hero/retired": heroCode("retired", { source: { kind: "original", ref: [] }, backdrop: { component: "grid-glow", params: { cell: 32 } } }),
+    "sections.call-to-action/plain": heroCode("plain", { source: { kind: "original", ref: [] } }),
+    "frames.site-shell/shell": heroCode("shell", { source: { kind: "original", ref: [] }, backdrop }),
   };
   const libSource = recordStoreSource({ async load(id, version) { return version === 1 && items[id] ? record(id, items[id]) : undefined; } });
   const page: InstallPageRecord = { id: "home", frame: "sections.hero", sections: ["sections.hero", "sections.call-to-action"] };
 
-  it("passes the pinned hero candidate's descriptor to Hero's backdrop prop for the hero slot only, and still mounts the hero code", async () => {
-    const pins: InstallPins = { "sections.hero": { element: "hero", version: 1 }, "sections.call-to-action": { element: "cta", version: 1 } };
+  it("passes the pinned hero candidate's descriptor to the prop its contract's backdrop-placed slot names, and still mounts the hero code", async () => {
+    const pins: InstallPins = { "sections.hero": { element: "hero", version: 1 }, "sections.call-to-action": { element: "plain", version: 1 } };
     const { slots, findings } = await resolvePage({ ...page, frame: "sections.call-to-action", sections: ["sections.hero"] }, pins, libSource);
     expect(findings).toEqual([]);
     const hero = slots.find(slot => slot.slot === "sections.hero")!;
@@ -291,14 +294,26 @@ describe("an interactive backdrop on the pinned hero code candidate (foundry-bui
 
   it("refuses an invalid descriptor with the same schema check as submit and pin, and mounts nothing", async () => {
     const { slots, findings } = await resolvePage({ id: "home", frame: "sections.hero", sections: [] }, { "sections.hero": { element: "bad", version: 1 } }, libSource);
-    expect(findings).toEqual([{ code: "invalid-backdrop", slot: "sections.hero", detail: "sections.hero/bad: grid-glow param cell is 4, outside 16..96" }]);
+    expect(findings).toEqual([{ code: "invalid-backdrop", slot: "sections.hero", detail: "sections.hero/bad: flickering-grid param squareSize is 1, outside 2..16" }]);
+    expect(isBlocking(findings[0]!)).toBe(true);
+    expect(slots).toEqual([]);
+    const retired = await resolvePage({ id: "home", frame: "sections.hero", sections: [] }, { "sections.hero": { element: "retired", version: 1 } }, libSource);
+    expect(retired.findings).toEqual([expect.objectContaining({ code: "invalid-backdrop", detail: expect.stringMatching(/^sections\.hero\/retired: the interactive backdrop component is "grid-glow", not one of the adopted backdrop components/) })]);
+  });
+
+  it.each([
+    ["sections.call-to-action", "cta"],
+    ["frames.site-shell", "shell"],
+  ])("refuses meta.backdrop on %s, whose catalog contract declares no backdrop-placed slot, and mounts nothing", async (slot, element) => {
+    const { slots, findings } = await resolvePage({ id: "home", frame: slot, sections: [] }, { [slot]: { element, version: 1 } }, libSource);
+    expect(findings).toEqual([{ code: "invalid-backdrop", slot, detail: `${slot}/${element}: meta.backdrop rides only on the code candidate of a surface whose contract declares a backdrop-placed slot; the ${slot} contract declares none` }]);
     expect(isBlocking(findings[0]!)).toBe(true);
     expect(slots).toEqual([]);
   });
 
   it("strips an interactive backdrop from any slot's preview props, so only the judged meta.backdrop ever mounts", async () => {
-    const interactive = { kind: "interactive", backdrop: { component: "particle-field", params: { density: 160, links: true } } };
-    const outOfRange = { kind: "interactive", backdrop: { component: "grid-glow", params: { cell: 4 } } };
+    const interactive = { kind: "interactive", backdrop: { component: "particles", params: { quantity: 160, staticity: 40 } } };
+    const outOfRange = { kind: "interactive", backdrop: { component: "flickering-grid", params: { squareSize: 1 } } };
     const still = { kind: "none" };
     const previewed: Record<string, { item: unknown; fixtures: Record<string, unknown> }> = {
       // A CTA whose code renders Hero, with no meta.backdrop: the descriptor rides in its preview props instead.

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
-import { aliasesFrom, checkConsumerLeafFreeze, checkConsumerPins, checkSourceLadder, componentModulesFrom, consumerFrom, leafFreezeFrom, licenceAllowed, loadInputs } from "./check-source-ladder.mjs";
+import { aliasesFrom, backdropsFrom, checkBackdropComponents, COPY_IMPORT_REWRITES, partnerCopyBody, checkConsumerLeafFreeze, checkConsumerPins, checkSourceLadder, componentModulesFrom, consumerFrom, leafFreezeFrom, licenceAllowed, loadInputs } from "./check-source-ladder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const designer = path.resolve(here, "..");
@@ -233,4 +233,62 @@ test("the real package inputs load offline and the check runs to a verdict", () 
 test("an unreadable root exits 2", () => {
   const run = spawnSync(process.execPath, [script, "--root", path.join(designer, "does-not-exist")], { encoding: "utf8" });
   assert.equal(run.status, 2);
+});
+
+// Adopted interactive backdrops (foundry-build-0048 U23): records carry the ladder, sources are checked.
+const UPSTREAM = '"use client"\n\nimport { cn } from "@/lib/utils"\n\nexport const Thing = () => null\n';
+const COPY = `// Magic UI Thing (MIT), copied byte-for-byte.\n// @ts-nocheck\n${UPSTREAM.replace('"@/lib/utils"', `"${COPY_IMPORT_REWRITES[0][1]}"`)}`;
+const registryRecord = (extra = {}) => ({
+  id: "thing",
+  source: { registry: "magicui", item: "thing", version: "abc1234", file: "registry/magicui/thing.tsx", copy: "src/components/partners/magicui/thing.tsx", export: "Thing" },
+  ladder: { rung: "L2", chosen: { ...part("@magicui/thing", 900), licence: "MIT" }, reason: "most popular motion registry", checkedAt: "2026-11-18" },
+  ...extra,
+});
+const foundryRecord = (extra = {}) => ({ id: "mesh", source: { foundry: "src/blocks/backdrop/Mesh.tsx", export: "Mesh" }, ladder: { rung: "L4", slotNeeded: "a colour field", reason: "no registry part paints one" }, ...extra });
+const manifestRow = (extra = {}) => ({ registry: "magicui", name: "thing", version: "abc1234", dir: "magicui/thing@abc1234", license: "MIT", files: [{ path: "registry/magicui/thing.tsx" }], ...extra });
+const backdrops = ({ records = [registryRecord(), foundryRecord()], sources = { thing: { manifest: manifestRow(), vendored: UPSTREAM, copy: COPY }, mesh: { foundry: true } } } = {}) => ({ registry: { components: records }, sources });
+
+test("backdrops: a vendored L2 record and a Foundry L4 record with their sources pass", () => {
+  assert.equal(partnerCopyBody(COPY), UPSTREAM);
+  assert.deepEqual(checkBackdropComponents(backdrops()), []);
+  assert.deepEqual(rules(checkBackdropComponents({ registry: { components: [] }, sources: {} })), ["backdrop-source"]);
+});
+
+test("backdrop-copy-drift: one changed byte in the partner copy fails", () => {
+  const drifted = backdrops({ sources: { thing: { manifest: manifestRow(), vendored: UPSTREAM, copy: COPY.replace("=> null", "=> undefined") }, mesh: { foundry: true } } });
+  assert.deepEqual(rules(checkBackdropComponents(drifted)), ["backdrop-copy-drift"]);
+  const otherImport = backdrops({ sources: { thing: { manifest: manifestRow(), vendored: UPSTREAM, copy: COPY.replace(COPY_IMPORT_REWRITES[0][1], "../utils.js") }, mesh: { foundry: true } } });
+  assert.deepEqual(rules(checkBackdropComponents(otherImport)), ["backdrop-copy-drift"]);
+});
+
+test("backdrop-source: missing manifest row, disallowed or mismatched licence, unlisted file, missing files", () => {
+  const withSource = thing => backdrops({ sources: { thing, mesh: { foundry: true } } });
+  assert.deepEqual(rules(checkBackdropComponents(withSource({ vendored: UPSTREAM, copy: COPY }))), ["backdrop-source"]);
+  assert.deepEqual(rules(checkBackdropComponents(withSource({ manifest: manifestRow({ license: "GPL-3.0" }), vendored: UPSTREAM, copy: COPY }))), ["backdrop-source"]);
+  assert.deepEqual(rules(checkBackdropComponents(withSource({ manifest: manifestRow({ license: "ISC" }), vendored: UPSTREAM, copy: COPY }))), ["backdrop-source"]);
+  assert.deepEqual(rules(checkBackdropComponents(withSource({ manifest: manifestRow({ files: [] }), vendored: UPSTREAM, copy: COPY }))), ["backdrop-source"]);
+  assert.deepEqual(rules(checkBackdropComponents(withSource({ manifest: manifestRow(), copy: COPY }))), ["backdrop-source"]);
+  assert.deepEqual(rules(checkBackdropComponents(withSource({ manifest: manifestRow(), vendored: UPSTREAM }))), ["backdrop-source"]);
+  assert.deepEqual(rules(checkBackdropComponents(backdrops({ sources: { thing: { manifest: manifestRow(), vendored: UPSTREAM, copy: COPY }, mesh: { foundry: false } } }))), ["backdrop-source"]);
+});
+
+test("backdrop-rung and the ladder rules: L2 must choose the vendored item, a Foundry part must record L4", () => {
+  const l4Registry = registryRecord({ ladder: { rung: "L4", slotNeeded: "x", reason: "y" } });
+  assert.deepEqual(rules(checkBackdropComponents(backdrops({ records: [l4Registry, foundryRecord()] }))), ["backdrop-rung"]);
+  const otherChosen = registryRecord({ ladder: { ...registryRecord().ladder, chosen: part("@magicui/other", 900) } });
+  assert.deepEqual(rules(checkBackdropComponents(backdrops({ records: [otherChosen, foundryRecord()] }))), ["backdrop-rung"]);
+  const l2Foundry = foundryRecord({ ladder: registryRecord().ladder });
+  assert.deepEqual(rules(checkBackdropComponents(backdrops({ records: [registryRecord(), l2Foundry] }))), ["backdrop-rung"]);
+  const noBasis = foundryRecord({ ladder: { rung: "L4", reason: "no registry part paints one" } });
+  assert.deepEqual(rules(checkBackdropComponents(backdrops({ records: [registryRecord(), noBasis] }))), ["l4-justification"]);
+  const noLadder = registryRecord({ ladder: undefined });
+  assert.deepEqual(rules(checkBackdropComponents(backdrops({ records: [noLadder, foundryRecord()] }))), ["backdrop-rung", "missing-ladder"]);
+});
+
+test("the real adopted backdrops: every record loads, Magic UI copies match their vendored bytes", () => {
+  const real = backdropsFrom(designer);
+  assert.ok(real.registry.components.length >= 4);
+  assert.deepEqual(checkBackdropComponents(real), []);
+  assert.ok(real.registry.components.some(record => typeof record.source.foundry === "string" && record.ladder.rung === "L4"));
+  for (const record of real.registry.components.filter(entry => entry.source.registry)) assert.equal(partnerCopyBody(real.sources[record.id].copy), real.sources[record.id].vendored, record.id);
 });

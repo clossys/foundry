@@ -900,16 +900,9 @@ export function checkElement(root, target, options = {}) {
 const plainObject = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
- * An interactive backdrop is data on the slot's own code candidate: meta.backdrop `{component,
- * params}` names one Foundry interactive backdrop component (the rule's
- * interactiveBackdrops.components), and the code it rides on stays under the verbatim rule like any
- * other. A candidate outside an interactiveBackdrops slot, or naming another component, fails
- * REF-INTERACTIVE; the param schema is judged at submit, pin and compile.
- */
-/**
  * The rule's interactiveBackdrops lists: a list passes through; a `{from}` data reference (U23) is read
  * from this package, the surfaces whose catalog contract places a slot as the reference's placement,
- * or the adopted backdrop registry's record ids. An unreadable reference admits nothing.
+ * or the adopted backdrop registry's record ids. An unreadable reference throws.
  */
 function backdropList(value, kind) {
   if (Array.isArray(value)) return value;
@@ -923,6 +916,13 @@ function backdropList(value, kind) {
     .map((surface) => surface.id).sort();
 }
 
+/**
+ * An interactive backdrop is data on the slot's own code candidate: meta.backdrop `{component,
+ * params}` names one adopted interactive backdrop component (the rule's
+ * interactiveBackdrops.components), and the code it rides on stays under the verbatim rule like any
+ * other. A candidate outside an interactiveBackdrops slot, or naming another component, fails
+ * REF-INTERACTIVE; the param schema is judged at submit, pin and compile.
+ */
 function interactiveBackdropFindings(slot, candidate, key, options = {}) {
   if (!plainObject(candidate?.meta) || !Object.hasOwn(candidate.meta, "backdrop")) return [];
   const rule = defaults(options).rule.interactiveBackdrops ?? {};

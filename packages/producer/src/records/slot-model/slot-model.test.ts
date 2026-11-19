@@ -124,7 +124,7 @@ describe("derived inputs and uses (F10)", () => {
   });
 });
 
-describe("interactive backdrop on the hero code candidate (foundry-build-0048 A4)", () => {
+describe("interactive backdrop on the code candidate of a backdrop-declaring surface (foundry-build-0048 A4, U23)", () => {
   const code = [{ path: "hero.tsx", type: "registry:block", content: "export function Hero() { return null; }" }];
   const item = (meta: Record<string, unknown> = {}, over: Record<string, unknown> = {}) => JSON.stringify({
     $schema: "https://ui.shadcn.com/schema/registry-item.json", name: "hero", type: "registry:block", files: code,
@@ -142,22 +142,26 @@ describe("interactive backdrop on the hero code candidate (foundry-build-0048 A4
   it("refuses an invalid descriptor, one on another slot and one on a non-element candidate", () => {
     expect(messages(item({ backdrop: { component: "gradient-mesh", params: { intensity: 7 } } }))).toMatch(/outside 0\.1\.\.1/);
     expect(messages(item({ backdrop: { component: "gradient-mesh", params: { from: "url(https://example.com/x.png)" } } }))).toMatch(/not one of the token colours/);
-    expect(messages(item({ backdrop: { component: "particle-field", params: {}, module: "./backdrop.js" } }))).toMatch(/carries "module"/);
-    expect(messages(item({ backdrop: "grid-glow" }))).toMatch(/not an object \{component, params\}/);
+    expect(messages(item({ backdrop: { component: "particles", params: {}, module: "./backdrop.js" } }))).toMatch(/carries "module"/);
+    expect(messages(item({ backdrop: "flickering-grid" }))).toMatch(/not an object \{component, params\}/);
     expect(codes(check(item({ backdrop: { component: "three-scene", params: {} } })))).toEqual(["candidate-source"]);
-    expect(messages(item({ slot: "sections.call-to-action" }), "sections.call-to-action")).toMatch(/meta\.backdrop rides only on a sections\.hero code candidate, not on a sections\.call-to-action candidate/);
-    const page = { schema: "clossys.page/1", path: "/", title: "Home", frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] }, backdrop: { component: "grid-glow", params: {} } } };
+    expect(messages(item({ backdrop: { component: "grid-glow", params: { cell: 32 } } }))).toMatch(/"grid-glow", not one of the adopted backdrop components particles, flickering-grid, grid-pattern, gradient-mesh/);
+    // Surface opt-in comes from the catalog contract: only a surface declaring a backdrop-placed slot accepts one.
+    for (const slot of ["sections.call-to-action", "sections.media", "frames.site-shell", "components.button"]) {
+      expect(messages(item({ slot }), slot), slot).toMatch(new RegExp(`meta\\.backdrop rides only on the code candidate of a surface whose contract declares a backdrop-placed slot; the ${slot.replace(".", "\\.")} contract declares none`));
+    }
+    const page = { schema: "clossys.page/1", path: "/", title: "Home", frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] }, backdrop: { component: "flickering-grid", params: {} } } };
     expect(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify(page)).map(issue => issue.message).join("; ")).toMatch(/meta\.backdrop rides only on a Designer element code candidate, not on a page candidate/);
   });
 
   it("refuses an interactive backdrop in preview props on any slot: meta.backdrop is the only channel", () => {
-    const interactive = { kind: "interactive", backdrop: { component: "particle-field", params: { density: 160, links: true } } };
+    const interactive = { kind: "interactive", backdrop: { component: "particles", params: { quantity: 160, staticity: 40 } } };
     // A CTA whose code renders Hero, with no meta.backdrop, carrying the descriptor in its preview props.
     const cta = item({ slot: "sections.call-to-action", backdrop: undefined, preview: { fixtures: { file: "hero.tsx", export: "Hero", props: { backdrop: interactive } } } });
-    expect(check(cta, "sections.call-to-action")).toEqual([{ code: "candidate-source", path: "hero-v1.json", message: "meta.preview.fixtures.props.backdrop is an interactive backdrop in preview props; it rides only as meta.backdrop on the sections.hero code candidate" }]);
+    expect(check(cta, "sections.call-to-action")).toEqual([{ code: "candidate-source", path: "hero-v1.json", message: "meta.preview.fixtures.props.backdrop is an interactive backdrop in preview props; it rides only as meta.backdrop on the code candidate of a surface whose contract declares a backdrop-placed slot" }]);
     // A hero shipping an out-of-range descriptor through flat preview fixtures, beside a valid meta.backdrop.
-    expect(messages(item({ preview: { fixtures: { backdrop: { kind: "interactive", backdrop: { component: "grid-glow", params: { cell: 4 } } } } } })))
-      .toBe("meta.preview.fixtures.backdrop is an interactive backdrop in preview props; it rides only as meta.backdrop on the sections.hero code candidate");
+    expect(messages(item({ preview: { fixtures: { backdrop: { kind: "interactive", backdrop: { component: "flickering-grid", params: { squareSize: 1 } } } } } })))
+      .toBe("meta.preview.fixtures.backdrop is an interactive backdrop in preview props; it rides only as meta.backdrop on the code candidate of a surface whose contract declares a backdrop-placed slot");
     // A still backdrop in preview props stays a preview prop.
     expect(check(item({ preview: { fixtures: { backdrop: { kind: "none" } } } }))).toEqual([]);
   });
