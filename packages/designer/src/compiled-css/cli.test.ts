@@ -23,6 +23,8 @@ beforeEach(() => {
   // The generated shadcn colour-key region is emitted from the themes layer.
   mkdirSync(join(dir, "src", "catalog", "slots"), { recursive: true });
   cpSync(join(packageRoot, "src", "catalog", "slots", "themes.json"), join(dir, "src", "catalog", "slots", "themes.json"));
+  // The adopted backdrop registry's fixed classes are a required scan input (foundry-build-0048 U23 B1).
+  cpSync(join(packageRoot, "src", "catalog", "rules"), join(dir, "src", "catalog", "rules"), { recursive: true });
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });

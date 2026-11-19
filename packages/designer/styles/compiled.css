@@ -3257,6 +3257,12 @@
   .fill-current {
     fill: currentcolor;
   }
+  .fill-current\/20 {
+    fill: currentcolor;
+    @supports (color: color-mix(in lab, red, red)) {
+      fill: color-mix(in oklab, currentcolor 20%, transparent);
+    }
+  }
   .fill-gray-400\/30 {
     fill: color-mix(in srgb, oklch(70.7% 0.022 261.325) 30%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
@@ -3322,6 +3328,12 @@
   }
   .stroke-current {
     stroke: currentcolor;
+  }
+  .stroke-current\/30 {
+    stroke: currentcolor;
+    @supports (color: color-mix(in lab, red, red)) {
+      stroke: color-mix(in oklab, currentcolor 30%, transparent);
+    }
   }
   .stroke-gray-400\/30 {
     stroke: color-mix(in srgb, oklch(70.7% 0.022 261.325) 30%, transparent);

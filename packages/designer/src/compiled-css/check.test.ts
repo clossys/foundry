@@ -33,6 +33,8 @@ describe("checkCompiledCssFreshness — drift detection (isolated fixture)", () 
     cpSync(join(packageRoot, "src", "runtime"), join(dir, "src", "runtime"), { recursive: true });
     cpSync(join(packageRoot, "src", "studio"), join(dir, "src", "studio"), { recursive: true });
     cpSync(join(packageRoot, "src", "specimen"), join(dir, "src", "specimen"), { recursive: true });
+    // The adopted backdrop registry's fixed classes are a required scan input (foundry-build-0048 U23 B1).
+    cpSync(join(packageRoot, "src", "catalog", "rules"), join(dir, "src", "catalog", "rules"), { recursive: true });
   });
 
   afterEach(() => {
