@@ -14,8 +14,6 @@ import { sha256Hex } from "../records/hash.js";
 import { oldSlotRefusal } from "../records/store-format.js";
 import { buildPin, cliActor, ownerAnswerRef, pinIssues, pinPath, toIsoZ, writePinDoc } from "../records/pin.js";
 import { pinMapIssues, readPinFile, setPinMapRecord, writeTargetPin } from "../records/pin-map.js";
-import { answeredStep, readRequest, requestsDir, workQueue, type SlotRequest } from "../records/request.js";
-import type { WorkKind } from "../queue/routing.js";
 import { publicationOf } from "../release/paths.js";
 import { isReleaseSlot } from "../release/pins.js";
 import { readyFindings } from "../release/ready.js";
@@ -27,6 +25,7 @@ import "../constitution/guard.js"; // registers the write guard's runner
 import { pinGate, writeScorecard } from "../constitution/pin-gate.js";
 import { clearReverdict } from "../constitution/cascade.js";
 import { seatRefusal } from "../records/seat-owner.js";
+import { ownerDecisionRefusal } from "../records/owner-answer.js";
 import { certifiedStandardRef, currentStandardOf, isAgentLoop, isLoopAgent } from "../loop/agent-loops.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
@@ -146,36 +145,6 @@ export async function runPinCli(argv: readonly string[], cwd: string, guard: Wri
   return { exitCode: 1, message: oldSlotRefusal("pin", `${agent}/${slotId}`) };
 }
 
-/**
- * Why a clossys.queue-entry/2 entry's answer does not decide this pin (undefined when it does, or when the entry is a
- * clossys.queue-entry/1 decision entry, whose answer the pin rules judge). The entry reads as a work entry through
- * readRequest (its schema and every entry rule, U7 r5 blind1 s2); it is an open kind change filed under the queue the
- * ref names, assigned to the owner; and its last event is the owner's answered option whose step is exactly
- * `pin <slot> <candidate>`.
- */
-function typedAnswerRefusal(root: string, answer: { readonly to: string; readonly record?: string }, file: string, slot: string, candidate: string, flags: readonly string[] = []): string | undefined {
-  let schema: unknown;
-  try { schema = (JSON.parse(readFileSync(file, "utf8")) as { schema?: unknown } | null)?.schema; } catch { return "does not read"; }
-  // A confirmation has no pin rule judging its decider (decidedBy stays the agent seat): only the owner's typed answer
-  // authorizes it, so any other file at the entry path ({} or an untyped decision entry) is refused (U13 r3, N3).
-  // DRAFT copy (not owner-approved).
-  if (schema !== "clossys.queue-entry/2") return flags.includes("--confirm") ? `is not a clossys.queue-entry/2 entry: only the owner's typed answer (clossys request <id> --answer <option>) confirms an agent pick` : undefined;
-  let request: SlotRequest;
-  try { request = readRequest(join(root, "clossys"), answer.record!); } catch (error) { return `does not read as a work entry: ${error instanceof Error ? error.message : String(error)}`; }
-  const filed = `producer/${workQueue(request.kind as WorkKind)}`;
-  if (filed !== answer.to || resolve(requestsDir(join(root, "clossys"), request.kind as WorkKind), `${request.id}.json`) !== resolve(file)) return `is a kind ${request.kind} entry filed under ${filed}, not ${answer.to}`;
-  if (request.kind !== "change") return `is kind ${request.kind}: only an owner-assigned change entry answers a pin`;
-  if (request.status !== "open") return "is closed: its answer already ran";
-  // The owner's entry: assigned to the owner, or one Producer asked the owner about (an asked event before the answer).
-  if (request.assignee !== "owner" && !request.events.some(event => event.op === "asked" && event.by === "producer")) return `is assigned to ${request.assignee}, not the owner, and Producer never asked the owner: only the owner's entry answers a pin`;
-  const option = answeredStep(request);
-  if (!option) return "has no owner answer as its last event (clossys request <id> --answer <option>)";
-  const [to, name, ...rest] = option.then.args;
-  const step = ["pin", slot, candidate, ...flags].join(" ");
-  if (option.then.verb !== "pin" || to !== slot || name !== candidate || rest.join(" ") !== flags.join(" ")) return `was answered ${option.id} (${option.then.verb} ${option.then.args.join(" ")}), not ${step}`;
-  return undefined;
-}
-
 export { oldSlotRefusal };
 
 /** True when `<root>/clossys/agents/<agent>/<slot-id>/slot.json` is an old `clossys.slot/1` slot. */
@@ -239,15 +208,11 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
   const at = flags.at ?? new Date().toISOString();
   if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${PIN_USAGE}`);
   const answer = ownerAnswerRef(by);
-  const answerFile = answer ? join(root, "clossys", "agents", answer.to, "entries", `${answer.record}.json`) : undefined;
-  if (answer && !existsSync(answerFile!)) {
-    return { exitCode: 1, message: `pin refused: ${answer.to}#${answer.record} is not a queue entry` };
-  }
-  // A clossys.queue-entry/2 entry answers a pin only by the owner's answered option `pin <this slot> <this candidate>`,
-  // as its last event (foundry-build-0048 U7 r4): any other answer, or a later write, decides no pin.
+  // An owner pin (pick, approve, bulk) records only a typed, owner-answered entry bound to this slot and candidate
+  // (records/owner-answer.ts, U13 r4 B2): `{}`, an untyped object or an unanswered entry decides no pin.
   if (answer) {
-    const bound = typedAnswerRefusal(root, answer, answerFile!, `${agent}/${target}`, candidate);
-    if (bound !== undefined) return { exitCode: 1, message: `pin refused: ${answer.to}#${answer.record} ${bound}` };
+    const bound = ownerDecisionRefusal(root, by, { kind: "pin", slot: `${agent}/${slotId}`, target: `${agent}/${target}`, candidate });
+    if (bound !== undefined) return { exitCode: 1, message: `pin refused: ${bound}` };
   }
   const releasePin = agent === "publisher" && isReleaseSlot(agent, slotId) && record === undefined;
   if (releasePin) {
@@ -303,7 +268,10 @@ function runTargetNotNeeded(root: string, agent: string, slotId: string, record:
   const answer = ownerAnswerRef(flags.by);
   // DRAFT copy (not owner-approved).
   if (!answer && !/^planner(:|$)/.test(flags.by)) return { exitCode: 1, message: `pin refused: --by ${flags.by} names no queue answer; an owner sets a clossys.slot/2 slot aside with --by owner:queue.<kind>#<id>, else planner[:<ref>]` };
-  if (answer && !existsSync(join(root, "clossys", "agents", answer.to, "entries", `${answer.record}.json`))) return { exitCode: 1, message: `pin refused: ${answer.to}#${answer.record} is not a queue entry` };
+  if (answer) {
+    const bound = ownerDecisionRefusal(root, flags.by, { kind: "not-needed", slot: `${agent}/${slotId}` });
+    if (bound !== undefined) return { exitCode: 1, message: `pin refused: ${bound}` };
+  }
   try {
     const doc = writeNotNeeded(join(root, "clossys"), agent as SlotAgent, slotId, { reason: flags.reason.trim(), since: at.slice(0, 10), decidedBy: flags.by }, { at: toIsoZ(at)! });
     return { exitCode: 0, message: `${agent}/${slotId}: not needed (${doc.notNeeded!.reason}), decided by ${doc.notNeeded!.decidedBy}`, decision: { slot: `${agent}/${slotId}`, state: "not-needed", ...doc.notNeeded } };
@@ -335,8 +303,6 @@ function runTargetConfirm(root: string, agent: string, slotId: string, record: s
   const atZ = /^\d{4}-\d{2}-\d{2}T/.test(at) ? toIsoZ(at) : undefined;
   if (!atZ) throw new CliUsageError(`--at must be an ISO timestamp\n${PIN_USAGE}`);
   const target = `${agent}/${slotId}${record !== undefined ? `#${record}` : ""}`;
-  const answerFile = join(root, "clossys", "agents", answer.to, "entries", `${answer.record}.json`);
-  if (!existsSync(answerFile)) return { exitCode: 1, message: `confirm refused: ${answer.to}#${answer.record} is not a queue entry` };
   const lock = join(root, "clossys", "agents", agent, slotId, SLOT_LOCK);
   try {
     return withDirLock(lock, "Slot is unavailable or another decision write is in progress", (): CliResult => {
@@ -348,9 +314,9 @@ function runTargetConfirm(root: string, agent: string, slotId: string, record: s
       if (held.basis !== "agent") return { exitCode: 1, message: `confirm refused: ${target} is pinned with basis ${held.basis}; only an agent pick is confirmed` };
       if (held.candidate !== candidateId && held.candidate.replace(/\.(?:md|json|svg)$/, "") !== candidateId) return { exitCode: 1, message: `confirm refused: ${target} holds the agent pick ${held.candidate}, not ${candidateId}` };
       if (held.confirmed) return { exitCode: 1, message: `confirm refused: ${target} ${held.candidate} is already confirmed (${held.confirmed.ref})` };
-      // A clossys.queue-entry/2 entry answers this confirmation only by the owner's option `pin <target> <candidate> --confirm`.
-      const bound = typedAnswerRefusal(root, answer, answerFile, target, held.candidate, ["--confirm"]);
-      if (bound !== undefined) return { exitCode: 1, message: `confirm refused: ${answer.to}#${answer.record} ${bound}` };
+      // Only the owner's typed clossys.queue-entry/2 answer `pin <target> <candidate> --confirm` confirms (records/owner-answer.ts).
+      const bound = ownerDecisionRefusal(root, flags.by, { kind: "confirm", slot: `${agent}/${slotId}`, target, candidate: held.candidate });
+      if (bound !== undefined) return { exitCode: 1, message: `confirm refused: ${bound}` };
       const bytes = readFileSync(candidatePath(root, agent as AgentId, slotId, held.candidate));
       if (sha256Hex(bytes) !== held.sha256) return { exitCode: 1, message: `confirm refused: ${target} ${held.candidate} bytes no longer match the pick's sha256` };
       if (Date.parse(atZ) < Date.parse(held.at)) return { exitCode: 1, message: `confirm refused: --at ${atZ} is before the pick (${held.at})` };

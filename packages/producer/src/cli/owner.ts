@@ -62,6 +62,7 @@ import { buildPin, cliActor, ownerAnswerRef, pinIssues, toIsoZ } from "../record
 import { seatSlot } from "../records/seat-slot.js";
 import { recutCandidateBytes } from "../migrate/recut.js";
 import { actorRefusal } from "../records/seat-owner.js";
+import { ownerDecisionRefusal } from "../records/owner-answer.js";
 import { slotFromV1, targetKind, type SlotV1 } from "../migrate/slot-1-to-2.js";
 import { markCurrentStore } from "../migrate/slots.js";
 import type { AgentId, Iso, Ref, Slot, TargetSlotKind } from "../records/types.js";
@@ -952,7 +953,11 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
   const answer = ownerAnswerRef(decidedBy);
   const planner = /^planner(:\S.*)?$/.test(decidedBy);
   if (!planner && !answer) throw new CliUsageError(`--decided-by must be owner:queue.<kind>#<id> (the queue entry the owner answered) or planner[:<ref>]\n${SEAT_USAGE}`);
-  if (answer && !existsSync(join(consumer, "agents", answer.to, "entries", `${answer.record}.json`))) return refuse("seat", `--decided-by ${decidedBy}: ${answer.to}#${answer.record} is not a queue entry`);
+  if (answer) {
+    // An owner seat records only the owner's typed answer `seat` about producer/<seat slot> (records/owner-answer.ts, U13 r4 B2).
+    const bound = ownerDecisionRefusal(root, decidedBy, { kind: "seat", slot: `${SEAT_AGENT}/${seatSlotId(id)}` });
+    if (bound !== undefined) return refuse("seat", `--decided-by ${decidedBy}: ${bound}`);
+  }
   const atZ = toIsoZ(one(flags, "--at") ?? new Date().toISOString());
   if (!atZ) throw new CliUsageError(`--at must be an ISO timestamp\n${SEAT_USAGE}`);
   const dir = seatDir(consumer, id);
