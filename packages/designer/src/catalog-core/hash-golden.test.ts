@@ -146,10 +146,13 @@ describe("real package-surface library golden", () => {
     // Re-captured by planner:R2C-designer D3 (`vitest run -u`): the fixture takes strict stock-first components (shadcn@aria
     // wherever a stock item exists, Foundry only otherwise). Values and surfaces unchanged:
     // composite 43f7fb11 -> c07617e9, component 3dda4793 -> d0dfe6b0, whole 1ce98182 -> 04daad96.
-    // Re-captured by foundry-build-0048 U23 (media placement, adopted backdrops): section contracts gain placement and alt,
-    // the hero fill hashes the adopted backdrop sources and provenance records them. Values unchanged; with those five
-    // data files at their prior bytes the prior hashes hold. composite c07617e9 -> ba2ad4d2, component d0dfe6b0 -> ef9a4655,
-    // surface f5388d9a -> 45dd4f1f, whole 04daad96 -> f0e9ee37.
+    // Re-captured by foundry-build-0048 U23 (media placement, adopted backdrops) in two steps:
+    // 1. Pre-existing, NOT U23: at base 5f3e359ff this golden already fails after a clean root build; composite
+    //    c07617e9 -> 6e7cfb28 there. That drift is unexplained and is tracked as a follow-up, not attributed to U23.
+    // 2. U23: section contracts gain placement and alt, the hero fill hashes the adopted backdrop sources and provenance
+    //    records them; composite 6e7cfb28 -> ba2ad4d2. Values unchanged.
+    // Captured at head (both steps together): component d0dfe6b0 -> ef9a4655, surface f5388d9a -> 45dd4f1f, whole
+    // 04daad96 -> f0e9ee37; the split of these portions between the two steps was not measured.
     expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:ba2ad4d262c5d29ba1604eab8a937d59d719bebce545a429e0c63a0efbf3e568"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:717688cc7f83e4bf"`);
