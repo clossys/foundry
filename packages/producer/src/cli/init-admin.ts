@@ -7,8 +7,9 @@
  * - The Publisher IA is started when the workspace has none (`clossys ia publisher --start`).
  * - Each admin page and the admin publication are placed in the `admin` tab, one group each (admin-plan.ts adminUnder); a page's inputs and uses are the
  *   Designer frame and sections its package default composes (the slot-model rule: a Publisher page reads its frame
- *   and sections) that the workspace holds as slots, a publication's are its pages. The page contract names the
- *   whole composition (`composes`), held or not.
+ *   and sections) and the Writer copy slots its seeded record cites (admin-plan.ts AdminPage.cites: constitution R07.1
+ *   holds a page record's copy to its dependency set), each that the workspace holds as a slot; a publication's are its
+ *   pages. The page contract names the whole Designer composition (`composes`), held or not.
  * - The package default of each page (`defaults/<page>/starter-v1.json`) is what a placed page with no pin resolves to
  *   as a sample (records/resolve.ts). Each admin slot with no candidate is then seeded with that default as a real
  *   record (`admin-v1.json`, foundry-build-0048 U20) and pinned through the pin gate once it certifies.
@@ -116,7 +117,7 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
       return undefined;
     };
     for (const page of plan.pages) {
-      const refs = adminRefs(page.uses, known);
+      const refs = adminRefs(page.cites, known);
       const refused = await place(page.id, "page", adminContract(plan, page.id), refs) ?? await rewire(page.id, "page", refs);
       if (refused) return fail(refused);
     }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AT, cleanSpec, contextOf, expectCatches, ledgerDoc, ledgerEvent, sha, slotDoc, validPin, type WorkspaceSpec } from "../__fixtures__/workspace.js";
-import { R02, ledgerDecision, pinBasis, pinMatchesLedger, upstreamPinned } from "./R02-pins-order.js";
+import { setPinMapRecord } from "../../records/pin-map.js";
+import { R02, ledgerDecision, pinBasis, pinBlocker, pinMatchesLedger, upstreamPinned } from "./R02-pins-order.js";
 
 const clean = () => contextOf(cleanSpec());
 const broken = (edit: (spec: WorkspaceSpec) => void) => { const spec = cleanSpec(); edit(spec); return contextOf(spec); };
@@ -50,6 +51,54 @@ describe("R02.2 upstream pinned before downstream", () => {
       "site.home: dependency set not pinned upstream: ui.card pinned candidate card-v1.json bytes do not match the pin, ui.ghost is not live",
       "ui.card: dependency set not pinned upstream: ui.button unpinned",
     ]);
+  });
+
+  // N6: a Writer pin map (one pin record per record key) is a valid pin when it is a valid map of the slot and every
+  // record is intact, the slot reader's readiness rule. The form is added; every invalid pin is still refused.
+  const HERO = "---\nsource:\n  kind: authored\n---\nWelcome.\n";
+  const pinMap = (agent: "writer" | "designer", slotId: string, records: Record<string, { candidate: string; sha256: string }>) => {
+    let map: Record<string, unknown> | undefined;
+    for (const [record, pin] of Object.entries(records)) {
+      map = setPinMapRecord(map as never, { agent, slotId, record, pin: { ...pin, decidedBy: "planner", basis: "planner", at: AT }, createdBy: { actor: "code", cli: "clossys pin", version: "0.0.0" }, at: AT }) as unknown as Record<string, unknown>;
+    }
+    return map!;
+  };
+  const heroMap = (edit: (spec: WorkspaceSpec) => void = () => {}) => broken(spec => {
+    spec.writer!["home.hero"]!.pin = pinMap("writer", "home.hero", { hero: { candidate: "hero-v1.md", sha256: sha(HERO) } });
+    edit(spec);
+  });
+
+  it("passes a Writer pin map upstream whose every record is intact", () => {
+    const ctx = heroMap(spec => {
+      spec.writer!["home.hero"]!.candidates = { "hero-v1.md": HERO, "title-v1.md": "---\nsource:\n  kind: authored\n---\nTitle.\n" };
+      spec.writer!["home.hero"]!.pin = pinMap("writer", "home.hero", { hero: { candidate: "hero-v1.md", sha256: sha(HERO) }, title: { candidate: "title-v1.md", sha256: sha("---\nsource:\n  kind: authored\n---\nTitle.\n") } });
+    });
+    expect(upstreamPinned(ctx)).toEqual([]);
+    expect(pinBlocker(ctx.agents.find(agent => agent.agent === "writer")!.slots.get("home.hero")!)).toBeUndefined();
+  });
+
+  it("still refuses every invalid pin: a drifted or missing record, an invalid or empty map, a map off the Writer, a pin with no sha256", () => {
+    const blocked = (ctx: ReturnType<typeof clean>) => reasons(upstreamPinned(ctx));
+    expect(blocked(heroMap(spec => { spec.writer!["home.hero"]!.candidates = { "hero-v1.md": "---\nsource:\n  kind: authored\n---\nDrifted.\n" }; })))
+      .toEqual(["site.home: dependency set not pinned upstream: home.hero record hero: pinned candidate hero-v1.md bytes do not match the pin"]);
+    expect(blocked(heroMap(spec => { spec.writer!["home.hero"]!.pin = pinMap("writer", "home.hero", { hero: { candidate: "hero-v2.md", sha256: sha(HERO) } }); })))
+      .toEqual(["site.home: dependency set not pinned upstream: home.hero record hero: pinned candidate hero-v2.md is missing"]);
+    // Invalid against the pin-map schema and record rules (records/pin.ts pinMapIssues): a record of another record's file, no createdBy, an empty records map.
+    expect(blocked(heroMap(spec => { spec.writer!["home.hero"]!.pin = pinMap("writer", "home.hero", { title: { candidate: "hero-v1.md", sha256: sha(HERO) } }); })))
+      .toEqual(["site.home: dependency set not pinned upstream: home.hero invalid pin"]);
+    expect(blocked(heroMap(spec => { const { createdBy: _drop, ...rest } = pinMap("writer", "home.hero", { hero: { candidate: "hero-v1.md", sha256: sha(HERO) } }); spec.writer!["home.hero"]!.pin = rest; })))
+      .toEqual(["site.home: dependency set not pinned upstream: home.hero invalid pin"]);
+    expect(blocked(heroMap(spec => { spec.writer!["home.hero"]!.pin = { ...pinMap("writer", "home.hero", { hero: { candidate: "hero-v1.md", sha256: sha(HERO) } }), records: {} }; })))
+      .toEqual(["site.home: dependency set not pinned upstream: home.hero invalid pin"]);
+    // A map of another slot's id, and a map on a Designer slot (only the Writer pins per record).
+    expect(blocked(heroMap(spec => { spec.writer!["home.hero"]!.pin = pinMap("writer", "home.other", { hero: { candidate: "hero-v1.md", sha256: sha(HERO) } }); })))
+      .toEqual(["site.home: dependency set not pinned upstream: home.hero invalid pin"]);
+    const button = { name: "button", type: "registry:ui", files: [{ path: "ui/button.tsx", type: "registry:ui", content: "export const Button = 1;\n" }] };
+    expect(blocked(broken(spec => { spec.designer!["ui.button"]!.candidates = { "button-v1.json": button }; spec.designer!["ui.button"]!.pin = pinMap("designer", "ui.button", { button: { candidate: "button-v1.json", sha256: sha(`${JSON.stringify(button, null, 2)}\n`) } }); })))
+      .toEqual(["ui.card: dependency set not pinned upstream: ui.button invalid pin"]);
+    // The pin/2 form keeps its rule: a pin with no sha256 is an invalid pin.
+    expect(blocked(broken(spec => { const { sha256: _drop, ...rest } = validPin("hero-v1.md", HERO); spec.writer!["home.hero"]!.pin = rest; })))
+      .toEqual(["site.home: dependency set not pinned upstream: home.hero invalid pin"]);
   });
 
   it("does not hold a not-live slot to its dependencies", () => {
