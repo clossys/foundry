@@ -68,7 +68,9 @@ describe("certify: interactive backdrop descriptor on a backdrop-declaring surfa
     const slot = slotOf(ctx, "designer", slotId);
     const own = slotDocOf(slot).contract;
     const contract = slots === undefined ? own : { ...own, slots };
-    return certifyFit({ slot, candidate: slot.candidates[0]!, contract }, certifyEnv(ctx)).map(item => `${item.code}: ${item.message}`);
+    // The pin's kind certifier, judged against the given contract on its own (certifyFit runs the submit validator
+    // first, against the catalog contract; that layer is pinned separately below).
+    return certifyElement(slot, slot.candidates[0]!, contract, certifyEnv(ctx)).map(item => `${item.code}: ${item.message}`);
   };
 
   it("fits a descriptor on any surface whose contract declares a backdrop slot; the code still mounts and renders", () => {
@@ -85,6 +87,13 @@ describe("certify: interactive backdrop descriptor on a backdrop-declaring surfa
     expect(fit(surface("sections.feature", { component: "flickering-grid", params: {} }), [], "sections.feature")).toEqual(refused("sections.feature"));
     expect(fit(surface("frames.site-shell", { component: "flickering-grid", params: {} }), [{ id: "main", required: true, accepts: ["sections"] }], "frames.site-shell")).toEqual(refused("frames.site-shell"));
     expect(fit(surface("ui.button", { component: "flickering-grid", params: {} }), undefined, "ui.button")).toEqual(refused("ui.button"));
+  });
+
+  it("through certifyFit the submit validator refuses first, against the catalog contract of a surface that declares none", () => {
+    const ctx = ctxOf({ designer: { "sections.feature": { candidates: { "surface-v1.json": surface("sections.feature", { component: "particles", params: {} }) } } } });
+    const slot = slotOf(ctx, "designer", "sections.feature");
+    expect(certifyFit({ slot, candidate: slot.candidates[0]!, contract: { ...slotDocOf(slot).contract, slots: DECLARES } }, certifyEnv(ctx)).map(item => `${item.code}: ${item.message}`))
+      .toEqual(["invalid: meta.backdrop rides only on the code candidate of a surface whose contract declares a backdrop-placed slot; the sections.feature contract declares none"]);
   });
 
   it("refuses a component the registry does not adopt and a param outside the record's schema", () => {

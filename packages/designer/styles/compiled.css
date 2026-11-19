@@ -1659,10 +1659,6 @@
     width: 0px;
     height: 0px;
   }
-  .size-1\/2 {
-    width: calc(1 / 2 * 100%);
-    height: calc(1 / 2 * 100%);
-  }
   .size-2 {
     width: calc(var(--spacing, 0.25rem) * 2);
     height: calc(var(--spacing, 0.25rem) * 2);
@@ -3258,20 +3254,17 @@
   .fill-accent {
     fill: var(--accent);
   }
-  .fill-border {
-    fill: var(--border);
-  }
   .fill-current {
     fill: currentcolor;
   }
-  .fill-foreground {
-    fill: var(--foreground);
+  .fill-gray-400\/30 {
+    fill: color-mix(in srgb, oklch(70.7% 0.022 261.325) 30%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      fill: color-mix(in oklab, var(--color-gray-400, oklch(70.7% 0.022 261.325)) 30%, transparent);
+    }
   }
   .fill-ink-muted {
     fill: var(--color-ink-muted, oklch(0.5658 0 0));
-  }
-  .fill-muted-foreground {
-    fill: var(--muted-foreground);
   }
   .fill-neutral-50 {
     fill: var(--color-neutral-50, oklch(0.9702 0 0));
@@ -3293,9 +3286,6 @@
   }
   .fill-primary {
     fill: var(--primary);
-  }
-  .fill-secondary {
-    fill: var(--secondary);
   }
   .fill-status-danger {
     fill: var(--color-status-danger, oklch(0.285 0 0));
@@ -3330,17 +3320,14 @@
     stroke: var(--color-ink-primary, oklch(0.2178 0 0));
     stroke-width: var(--ui-border-rule, 2px);
   }
-  .stroke-accent {
-    stroke: var(--accent);
-  }
-  .stroke-border {
-    stroke: var(--border);
-  }
   .stroke-current {
     stroke: currentcolor;
   }
-  .stroke-foreground {
-    stroke: var(--foreground);
+  .stroke-gray-400\/30 {
+    stroke: color-mix(in srgb, oklch(70.7% 0.022 261.325) 30%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      stroke: color-mix(in oklab, var(--color-gray-400, oklch(70.7% 0.022 261.325)) 30%, transparent);
+    }
   }
   .stroke-ink-muted {
     stroke: var(--color-ink-muted, oklch(0.5658 0 0));
@@ -3348,14 +3335,8 @@
   .stroke-line-base {
     stroke: var(--color-line-base, oklch(0.8761 0 0));
   }
-  .stroke-muted-foreground {
-    stroke: var(--muted-foreground);
-  }
   .stroke-primary {
     stroke: var(--primary);
-  }
-  .stroke-secondary {
-    stroke: var(--secondary);
   }
   .object-cover {
     object-fit: cover;
