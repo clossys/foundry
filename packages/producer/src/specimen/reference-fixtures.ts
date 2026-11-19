@@ -3,8 +3,10 @@
  * `contract.fixture` for every component slot, derived from that slot's adopted reference row and
  * never invented. The reference row is the slot contract's `references` (src/catalog/slot-contracts/
  * components.json, itself derived from references/manifest.json). The fixture names the file that
- * reference ships in the Designer's selected shadcn style (ui/components.json `style`), and a component
- * that file exports. Every slot this cannot determine is named in src/catalog/contract-fixture-gaps.json
+ * reference ships in the Designer's selected shadcn style, and a component
+ * that file exports. The style is the Designer's shadcn flavor (`@clossys/designer/shadcn-flavor`, which
+ * also writes packages/designer/ui/components.json and the consumer's clossys/components.json); `ui/` is
+ * its own workspace and is not in the packed Designer, so it is never read. Every slot this cannot determine is named in src/catalog/contract-fixture-gaps.json
  * with the reason, never given a fixture that passes vacuously.
  *
  * The same reference index backs the DF.CREATE probe: a live component fixture must name a file and an
@@ -12,6 +14,7 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
+import { DESIGNER_SHADCN_FLAVOR } from "@clossys/designer/shadcn-flavor";
 import { CONTRACT_FIXTURE_SCHEMA, type ContractFixture } from "../records/slot-model/contract-fixture.js";
 
 /**
@@ -66,32 +69,42 @@ export function exportedNames(source: string): string[] {
   return [...names].sort();
 }
 
+/** The Designer's shadcn style, from the flavor every components.json is written from. */
+function flavorStyle(): string {
+  const style = DESIGNER_SHADCN_FLAVOR.style;
+  if (typeof style !== "string" || !style) throw new Error("@clossys/designer/shadcn-flavor names no style");
+  return style;
+}
+
 /** The Designer package's adopted references: what each vendored file exports, and the selected style. */
 export interface ReferenceIndex {
   readonly style: string;
   readonly manifest: Manifest;
   /** Every vendored code file an adopted reference ships, by its registry path, with its value exports. */
   readonly ships: ReadonlyMap<string, readonly string[]>;
+  /** Per manifest item: each code file it ships, by registry path, with that file's value exports. */
+  readonly itemShips: ReadonlyMap<ManifestItem, ReadonlyMap<string, readonly string[]>>;
   /** Each component slot's reference rows (src/catalog/slot-contracts/components.json). */
   readonly references: ReadonlyMap<string, readonly ReferenceRow[]>;
 }
 
-export function referenceIndex(designerRoot: string): ReferenceIndex {
+export function referenceIndex(designerRoot: string, style: string = flavorStyle()): ReferenceIndex {
   const manifest = json(join(designerRoot, "references/manifest.json")) as Manifest;
-  const components = json(join(designerRoot, "ui/components.json")) as { style?: unknown };
-  if (typeof components.style !== "string") throw new Error("ui/components.json names no style");
   const ships = new Map<string, string[]>();
+  const itemShips = new Map<ManifestItem, Map<string, string[]>>();
   for (const item of manifest.items) for (const file of item.files ?? []) {
     if (!CODE.test(file.path)) continue;
     const path = join(designerRoot, "references", item.dir, file.path);
     if (!existsSync(path)) continue;
     const names = exportedNames(readFileSync(path, "utf8"));
     ships.set(file.path, [...new Set([...(ships.get(file.path) ?? []), ...names])].sort());
+    if (!itemShips.has(item)) itemShips.set(item, new Map());
+    itemShips.get(item)!.set(file.path, names);
   }
   const references = new Map<string, ReferenceRow[]>();
   const contracts = join(designerRoot, "src/catalog/slot-contracts/components.json");
   for (const row of json(contracts) as { slot: string; references?: ReferenceRow[] }[]) references.set(row.slot, row.references ?? []);
-  return { style: components.style, manifest, ships, references };
+  return { style, manifest, ships, itemShips, references };
 }
 
 /** Whether an adopted reference ships `file` and it exports `name`. */
@@ -107,7 +120,7 @@ export function slotReferenceShips(index: ReferenceIndex, slot: string, file: st
   const path = posix.normalize(file);
   return (index.references.get(slot) ?? []).some(row => {
     const item = styled(index, row);
-    return !("gap" in item) && (item.files ?? []).some(entry => entry.path === path) && referenceShips(index, path, name);
+    return !("gap" in item) && (index.itemShips.get(item)?.get(path)?.includes(name) ?? false);
   });
 }
 
@@ -131,10 +144,11 @@ export function referenceFixture(index: ReferenceIndex, slot: string, references
   for (const row of references) {
     const item = styled(index, row);
     if ("gap" in item) { misses.push(item.gap); continue; }
-    const code = (item.files ?? []).filter(file => CODE.test(file.path) && index.ships.has(file.path));
+    const own = index.itemShips.get(item);
+    const code = (item.files ?? []).filter(file => CODE.test(file.path) && own?.has(file.path));
     const main = code.find(file => posix.basename(file.path).replace(CODE, "") === item.name) ?? (code.length === 1 ? code[0] : undefined);
     if (!main) { misses.push(`${item.registry}/${item.name} ships no ${item.name} code file`); continue; }
-    const exports = (index.ships.get(main.path) ?? []).filter(name => /^[A-Z]/.test(name));
+    const exports = (own!.get(main.path) ?? []).filter(name => /^[A-Z]/.test(name));
     const root = exports.includes(pascal(item.name)) ? pascal(item.name) : exports.length === 1 ? exports[0]! : undefined;
     if (!root) { misses.push(`${main.path} exports no ${pascal(item.name)} and ${exports.length} other components`); continue; }
     const reference = `${item.registry}/${item.name}@${item.version}`;

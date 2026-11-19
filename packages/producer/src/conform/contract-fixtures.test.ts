@@ -4,13 +4,14 @@
  * selected style (src/specimen/reference-fixtures.ts). The committed catalog and gaps file are current,
  * every fixture mounts a file and export an adopted reference ships, every other slot is a named gap, the
  * built-in consumer carries the package fixtures, a richer fixture is kept, and the DF.CREATE probe is red
- * on a fixture no reference ships.
+ * on a fixture no reference ships. The lookup and the probe also hold on the Designer as `npm pack` ships it.
  */
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { contractFixtureIssues } from "../records/slot-model/contract-fixture.js";
 import { fixtureShapeIssues } from "../records/slot-model/validate.js";
 import { exportedNames, GAPS_FILE, NO_REFERENCE, planReferenceFixtures, REFERENCE_FIXTURE_RULES, referenceFixture, referenceIndex, referenceShips, richer, slotReferenceShips } from "../specimen/reference-fixtures.js";
@@ -122,7 +123,6 @@ describe("a richer existing fixture is kept", () => {
   it("planReferenceFixtures keeps it, and replaces an invented one", () => {
     root = mkdtempSync(join(tmpdir(), "u27-designer-"));
     const write = (path: string, value: unknown) => { mkdirSync(dirname(join(root!, path)), { recursive: true }); writeFileSync(join(root!, path), typeof value === "string" ? value : JSON.stringify(value)); };
-    write("ui/components.json", { style: "aria-nova" });
     write("references/shadcn-aria/button@1/registry/aria-nova/ui/button.tsx", "function Button() { return null }\nexport { Button }\n");
     write("references/manifest.json", {
       registries: { shadcn: { style: "radix-nova", upstream: "github.com/x/ui@1" }, "shadcn-aria": { style: "aria-nova", upstream: "github.com/x/ui@1" } },
@@ -178,5 +178,35 @@ describe("DF.CREATE probe (strengthened)", () => {
       { ...slot.contract, fixture: { ...fixture, notDetermined: true } },
     ];
     for (const contract of broken) expect(fixtureShapeIssues("element", contract).length, JSON.stringify(contract.fixture)).toBeGreaterThan(0);
+  });
+});
+
+describe("packed Designer layout (what a tarball consumer installs)", () => {
+  let packed: string | undefined, packedRoot = "";
+  beforeAll(() => {
+    packed = mkdtempSync(join(tmpdir(), "u27-packed-"));
+    execFileSync("npm", ["pack", "--ignore-scripts", "--silent", "--pack-destination", packed], { cwd: DESIGNER, stdio: ["ignore", "ignore", "inherit"] });
+    const tarball = readdirSync(packed).find(name => name.endsWith(".tgz"))!;
+    execFileSync("tar", ["-xzf", join(packed, tarball), "-C", packed]);
+    packedRoot = join(packed, "package");
+  }, 300_000);
+  afterAll(() => { if (packed) rmSync(packed, { recursive: true, force: true }); });
+
+  it("the packed Designer ships no ui/ workspace, and the lookup and the probe still hold on it", () => {
+    expect(existsSync(join(packedRoot, "references/manifest.json"))).toBe(true);
+    expect(existsSync(join(packedRoot, "ui"))).toBe(false);
+    const packedIndex = referenceIndex(packedRoot);
+    expect(packedIndex.style).toBe("aria-nova");
+    const stale = planReferenceFixtures(packedRoot, STUDIO).files.filter(file => file.before !== file.after).map(file => file.path);
+    expect(stale).toEqual([]);
+    const live = catalog("components").filter(row => row.contract.fixture !== undefined);
+    expect(live.length).toBeGreaterThan(0);
+    for (const row of live) {
+      const fixture = row.contract.fixture as Fixture;
+      expect(slotReferenceShips(packedIndex, row.id, fixture.fixtures.file, fixture.fixtures.export), row.id).toBe(true);
+    }
+    const model = { agent: "designer", live: live.map(row => ({ id: row.id, source: "placed", contract: row.contract, inputs: [], uses: [] })) } as unknown as AgentModel;
+    const facts: ProbeFacts = { emptyL2Detected: {}, requestVerb: true, critiqueMonorepoPath: false, referenceShips: (slot, file, name) => slotReferenceShips(packedIndex, slot, file, name) };
+    expect(PROBES["contract-fixture"]!(model, {} as ConformModel, facts).rows).toEqual([]);
   });
 });
