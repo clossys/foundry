@@ -171,9 +171,9 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     // N3: only a clossys.queue-entry/2 entry the owner answered confirms: an untyped entry file, or {}, is refused.
     w.bareEntry();
     const untyped = await confirm(["--by", `owner:queue.pick#${QUEUE_ID}`]);
-    expect(untyped).toMatchObject({ exitCode: 1, message: expect.stringMatching(/is not a clossys\.queue-entry\/2 entry/) });
+    expect(untyped).toMatchObject({ exitCode: 1, message: expect.stringMatching(/is not a typed queue entry \(clossys\.queue-entry\/1 or \/2\)/) });
     w.bareEntry("{}");
-    expect(await confirm(["--by", `owner:queue.pick#${QUEUE_ID}`])).toMatchObject({ exitCode: 1, message: expect.stringMatching(/is not a clossys\.queue-entry\/2 entry/) });
+    expect(await confirm(["--by", `owner:queue.pick#${QUEUE_ID}`])).toMatchObject({ exitCode: 1, message: expect.stringMatching(/is not a typed queue entry \(clossys\.queue-entry\/1 or \/2\)/) });
     // A typed, answered clossys.queue-entry/1 pick is a pick, not a confirmation of the agent's pick (B2).
     w.queueEntry({ candidate: good.name });
     expect(await confirm(["--by", `owner:queue.pick#${QUEUE_ID}`])).toMatchObject({ exitCode: 1, message: expect.stringMatching(/only the owner's typed answer .* confirms an agent pick/) });
@@ -243,17 +243,22 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     expect(runGuard(w.consumer, "pin", [{ agent: "writer", slot: SLOT, candidate: good.name, records: [`clossys/agents/writer/${SLOT}/pin.json`] }]).filter(row => row.check.startsWith("R02"))).toEqual([]);
   });
 
-  it("not-needed: an owner's queue answer sets a slot/2 slot aside; a bare owner is refused", async () => {
+  it("not-needed: a bare owner is refused; the owner's answered entry reaches the guard, which refuses a parked slot (R04, D4) and writes nothing", async () => {
     const w = world();
+    w.pinUpstream();
     const before = tree(w.consumer);
     const bare = await runPinCli([`writer/${SLOT}`, "--not-needed", "--reason", "not on this site", "--by", "owner", "--at", AT, "--root", w.root], w.root);
     expect(bare.exitCode).toBe(1);
     expect(tree(w.consumer)).toEqual(before);
     w.queueEntry("not-needed");
+    const entered = tree(w.consumer);
+    // The not-needed write runs the pin guard (U13 r4, 4c). R04 (guard: retire, pin, pick) holds that the not-needed
+    // state no longer exists (D4: retire or pin), so the guard refuses the parked record and restores every file.
     const result = await runPinCli([`writer/${SLOT}`, "--not-needed", "--reason", "not on this site", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root);
-    expect(result.exitCode, result.message).toBe(0);
-    const slot = json(join(w.dir, "slot.json"));
-    expect(slot).toMatchObject({ schema: "clossys.slot/2", status: "parked", contract: { notNeeded: { reason: "not on this site", decidedBy: `owner:queue.pick#${QUEUE_ID}` } } });
+    expect(result.exitCode, result.message).toBe(1);
+    expect(result.message).toMatch(/refused by the constitution guard: .*R04 .*slot\.json carries notNeeded \(retire or pin, D4\)/);
+    expect(tree(w.consumer)).toEqual(entered);
+    expect(json(join(w.dir, "slot.json"))).not.toHaveProperty("status", "parked");
   });
 
   it("approve: the owner's approval is a gated pin-map record with basis picked naming its queue entry", async () => {
@@ -382,7 +387,8 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
   it("seat: refuses a slot/1 seat; after migrate slots it writes a slot/2 seat, a headered candidate and a pin/2", async () => {
     const w = world();
     const seat = join(w.consumer, "agents", "producer", "seat.critic");
-    const args = ["critic", "--by", "agent:producer", "--no-llm", "--decided-by", "planner:U13", "--at", AT, "--root", w.root];
+    // A human seat (seat.assigned: a procedure sentence and a clossys command), decided by the planner.
+    const args = ["critic", "--by", "agent:producer", "--no-llm", "--procedure", "Read the draft and record one verdict on it.", "--command", "clossys verdict", "--decided-by", "planner:U13", "--at", AT, "--root", w.root];
     const untouched = tree(w.consumer);
     const refused = await runSeatCli(args, w.root);
     expect(refused.exitCode).toBe(1);

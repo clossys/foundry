@@ -13,8 +13,10 @@ import { resolvePage } from "@clossys/publisher/install";
 import { afterAll, describe, expect, it } from "vitest";
 import { danglingReason } from "../check/refs-dangling.js";
 import { ownerEntry } from "../cli/__fixtures__/owner-entry.js";
+import { pinUpstream } from "../cli/__fixtures__/upstream.js";
 import { runPinCli } from "../cli/pin.js";
-import { writeCandidate } from "../records/slot-write.js";
+import { skillPath } from "../records/ledger.js";
+import { appendSlotDocEvent, writeCandidate } from "../records/slot-write.js";
 import { verifyCheck } from "../loop/runner.js";
 import { pinGate, SCORECARD_REF_TO, SCORECARD_SCHEMA } from "./pin-gate.js";
 import { designerPins } from "../publish/install.js";
@@ -54,6 +56,8 @@ function world() {
   cpSync(FIXTURE, root, { recursive: true });
   const consumer = join(root, "clossys");
   const dir = join(consumer, "agents", "writer", SLOT);
+  // The pin guard runs (U13 r4, B1): R02.2 needs the copy's upstream pinned, R20.2 the Director slot it cites.
+  pinUpstream(consumer, "writer", SLOT, AT);
   return {
     root, consumer, dir,
     submit: (text: string) => writeCandidate(consumer, "writer", SLOT, "copy", text, { at: AT, provenance: { by: "agent:writer", model: "claude-opus-5-5", tier: "high" } }),
@@ -163,13 +167,18 @@ describe("loop.create's exit, candidates.certified (computed by clossys run, nev
 describe("the CHOOSE gate on a hero code candidate carrying an interactive backdrop (foundry-build-0048 A4)", () => {
   const HERO = "sections.hero";
   const backdrop = { component: "grid-glow", params: { cell: 32, pulse: true } };
-  /** The hero's own code candidate (original, MIT), with `meta.backdrop` riding on it when given. */
+  const HERO_SOURCE = { kind: "derived", ref: ["tailark-oss/mist-hero-section-1@8139698"], hash: "sha256:315ecac252ac891e44ae37f2c2d946312c78f3998fd7ed5d7279ab0f1582ce52", license: "MIT" };
+  /**
+   * The hero's own code candidate, customized from the trusted tailark-oss hero block (the provenance rule: a section's
+   * code adopts or customizes a reference-manifest item; original is for consumer-asset slots only), with
+   * `meta.backdrop` riding on it when given.
+   */
   const heroCode = (descriptor?: unknown) => ({
     $schema: "https://ui.shadcn.com/schema/registry-item.json",
     name: "hero",
     type: "registry:block",
     files: [{ path: "hero.tsx", type: "registry:block", content: "export function Hero() { return <section><h1>Hero</h1></section>; }\n" }],
-    meta: { slot: HERO, source: { kind: "original", ref: [], license: "MIT" }, ...(descriptor === undefined ? {} : { backdrop: descriptor }) },
+    meta: { slot: HERO, source: HERO_SOURCE, ...(descriptor === undefined ? {} : { backdrop: descriptor }) },
   });
   /** A temp consumer whose hero contract (synced from the package: interactive.components and the interactive.backdrop row) gains a render fixture. */
   function heroWorld() {
@@ -182,6 +191,9 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
     doc.contract.props = [];
     doc.contract.fixture = { schema: "clossys.element-preview/1", fixtures: { file: "hero.tsx", export: "Hero", props: {} } };
     writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    // The world's contract edit is a recorded slot.json state (R14.1), and the hero's upstream is pinned (R02.2).
+    appendSlotDocEvent(w.consumer, "designer", HERO, { by: "planner", at: AT, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: "ia", note: "fixture render sample" } });
+    pinUpstream(w.consumer, "designer", HERO, AT);
     const submit = (item: unknown) => writeCandidate(w.consumer, "designer", HERO, "hero", item, { at: AT, provenance: { by: "agent:designer", model: "claude-opus-5-5", tier: "high" } });
     return {
       ...w, submit,
