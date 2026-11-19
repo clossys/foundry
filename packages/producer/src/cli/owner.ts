@@ -39,7 +39,8 @@ import { PRODUCER_IA_SOURCE } from "../records/slot-model/pipeline-seats.js";
 import { adoptedCurrentSlots, driftCounts, knownSlots, SYNC_AGENTS, syncDrift, syncPlan, syncState, workspaceSourceRepairs, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
 import { validateIa, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
-import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, retireAnswerUses, retireBinding, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile } from "../records/slot-write.js";
+import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, retireAnswerUses, retireBinding, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writeSeatDecision } from "../records/slot-write.js";
+import "../constitution/guard.js"; // registers the write guard's runner (seat, approve)
 import { LEDGER_FILE, skillPath } from "../records/ledger.js";
 import { readStandard, slotKinds, standardFits } from "../records/standards.js";
 import type { ModelAgent } from "../records/slot-model/index.js";
@@ -997,13 +998,17 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
   // A seat placed before the end shifts every later seat's order: their slot.json positions follow in the same guarded write.
   const follow = seatPositionWrites(consumer, placed as IaDoc, slotId);
   if ("error" in follow) return refuse("seat", follow.error);
-  const added = guarded(consumer, [iaFile, candidate, pinFile(dir), ...(doc ? [docFile] : []), ...follow.writes.map(([file]) => file)], () => {
-    if (placed !== ia) replaceFile(iaFile, jsonBytes(placed));
-    for (const [file, bytes] of follow.writes) replaceFile(file, bytes);
-    if (doc) createModelFile(docFile, serializeSlot(doc));
-    createModelFile(candidate, bytes);
-    replaceFile(pinFile(dir), `${JSON.stringify(pin, null, 2)}\n`);
-  });
+  // The seat's candidate, pin and their submit and pin ledger events land as one guarded decision (U13 r4 step 5, N1):
+  // a guard refusal or a slot-model finding puts every file back.
+  let added: string[];
+  try {
+    added = guarded(consumer, [iaFile, candidate, pinFile(dir), join(dir, LEDGER_FILE), ...(doc ? [docFile] : []), ...follow.writes.map(([file]) => file)], () => {
+      if (placed !== ia) replaceFile(iaFile, jsonBytes(placed));
+      for (const [file, bytes] of follow.writes) replaceFile(file, bytes);
+      if (doc) createModelFile(docFile, serializeSlot(doc));
+      writeSeatDecision(consumer, slotId, { name, bytes, pin: `${JSON.stringify(pin, null, 2)}\n`, at: atZ });
+    });
+  } catch (error) { return refuse("seat", error instanceof Error ? error.message : String(error)); }
   if (added.length) return refuse("seat", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);
   const state = readSeat(root, step);
   return { exitCode: 0, root, message: `seat: ${id} is ${state?.state ?? "unread"} (by ${seat.by}${seat.llm ? `, llm ${seat.llm.model} ${seat.llm.tier}` : ", no llm"}${seat.human ? `, human ${seat.human.command}` : ""}); pinned ${name}` };

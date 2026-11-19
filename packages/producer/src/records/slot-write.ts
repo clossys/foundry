@@ -983,46 +983,85 @@ export function writeConfirm(consumer: string, agent: SlotAgent, id: string, can
 }
 
 /**
- * A clossys.slot/2 pin's decision event (U13 r3): under the caller's slot lock (the CHOOSE gate's), `write` replaces
- * pin.json with the gated pin/2 (or one pin-map record) and returns the record it pinned; the decision then lands on the
- * slot ledger as R02.3 reads it: `pick` for an agent seat's pick (the agent's `pick.<agent>` skill), else `pin` (the
- * Producer's `pin.<agent>` skill), with candidate, sha256, decidedBy, basis, at and, for a pin-map, the record key.
- * Any failure restores pin.json and the ledger.
+ * The one guarded decision write on a clossys.slot/2 slot (U13 r4, B1): under the caller's slot lock, `write` writes
+ * the decision's records (pin.json, slot.json, and the caller's `also` files such as the CHOOSE scorecard), `event`
+ * builds the slot-ledger event from what it wrote, the event is appended, and the guard runs the rules.json checks
+ * listed for `verb` on the slot's records and the decided candidate. Any failure, a guard refusal included, restores
+ * every snapshotted file byte for byte, so a refused decision leaves no pin, scorecard or ledger tail behind.
  */
-export function writeTargetDecision(consumer: string, agent: SlotAgent, id: string, input: { readonly record?: string }, write: () => { readonly candidate: string; readonly sha256: string; readonly decidedBy: string; readonly basis: string; readonly at: string }, given?: WriteProvenance): LedgerEvent {
+function guardedDecision<T>(consumer: string, agent: SlotAgent, id: string, also: readonly string[], write: () => T, event: (written: T) => { readonly verb: GuardVerb; readonly event: LedgerEvent; readonly candidate?: string }, guard: WriteGuard | false): LedgerEvent {
   const dir = join(consumer, "agents", agent, id);
   readLedger(dir, "slot"); // an unreadable ledger refuses before anything is written
-  const before = snapshotFiles([pinFile(dir), join(dir, LEDGER_FILE)]);
+  const before = snapshotFiles([pinFile(dir), slotFile(dir), join(dir, LEDGER_FILE), ...also]);
   try {
-    const pinned = write();
+    const written = write();
+    const decided = event(written);
+    appendEvent(dir, "slot", decided.event);
+    if (guard) enforceGuard(consumer, decided.verb, guard, [{ agent, slot: id, ...(decided.candidate !== undefined ? { candidate: decided.candidate } : {}), records: ["pin.json", "slot.json"].map(file => recordPath(consumer, dir, file)) }]);
+    return decided.event;
+  } catch (error) { restoreFiles(before); throw error; }
+}
+
+/**
+ * A clossys.slot/2 pin's decision (U13 r3, r4): `write` replaces pin.json with the gated pin/2 (or one pin-map record)
+ * and returns the record it pinned; the decision lands on the slot ledger as R02.3 reads it: `pick` for an agent
+ * seat's pick (the agent's `pick.<agent>` skill), else `pin` (the Producer's `pin.<agent>` skill), with candidate,
+ * sha256, decidedBy, basis, at and, for a pin-map, the record key. The guard for `pick` or `pin` then runs; a
+ * refusal restores pin.json, slot.json, the ledger and `also`.
+ */
+export function writeTargetDecision(consumer: string, agent: SlotAgent, id: string, input: { readonly record?: string; readonly also?: readonly string[] }, write: () => { readonly candidate: string; readonly sha256: string; readonly decidedBy: string; readonly basis: string; readonly at: string }, guard: WriteGuard = true, given?: WriteProvenance): LedgerEvent {
+  const dir = join(consumer, "agents", agent, id);
+  return guardedDecision(consumer, agent, id, input.also ?? [], write, pinned => {
     const pick = pinned.basis === "agent";
     const who = provenance(pick
       ? { verb: "pick", by: pinned.decidedBy, skill: skillPath(agent, `pick.${agent}`) }
       : { verb: "pin", by: pinned.decidedBy, skill: skillPath("producer", `pin.${agent}`) }, given);
     const event = ledgerEvent(pick ? "pick" : "pin", pinned.at, who, { candidate: pinned.candidate, sha256: pinned.sha256, decidedBy: pinned.decidedBy, basis: pinned.basis, ...(input.record !== undefined ? { record: input.record } : {}) }, [recordState(dir, "pin.json")]);
-    appendEvent(dir, "slot", event);
-    return event;
-  } catch (error) { restoreFiles(before); throw error; }
+    return { verb: pick ? "pick" : "pin", event, candidate: pinned.candidate };
+  }, guard);
 }
 
 /**
  * A clossys.slot/2 confirmation's record write (U13 r2; `clossys pin --confirm` builds and checks the pin/2 or pin-map
- * it writes): under the caller's slot lock, `write` replaces pin.json, the `confirm` event lands on the slot ledger
- * (verb pin, the Producer's `pin.<agent>` skill, by the owner's queue answer) and the pin guard runs on pin.json and
- * the confirmed candidate. Any failure restores pin.json and the ledger.
+ * it writes): the same guarded decision write, with a `confirm` event (verb pin, the Producer's `pin.<agent>` skill,
+ * by the owner's queue answer) and the pin guard on the slot's records and the confirmed candidate.
  */
-export function writeTargetConfirm(consumer: string, agent: SlotAgent, id: string, input: { readonly candidate: string; readonly sha256: string; readonly confirmed: { readonly by: string; readonly ref: string; readonly at: string }; readonly by: string; readonly at: string; readonly record?: string }, write: () => void, guard?: WriteGuard, given?: WriteProvenance): LedgerEvent {
+export function writeTargetConfirm(consumer: string, agent: SlotAgent, id: string, input: { readonly candidate: string; readonly sha256: string; readonly confirmed: { readonly by: string; readonly ref: string; readonly at: string }; readonly by: string; readonly at: string; readonly record?: string }, write: () => void, guard: WriteGuard = true, given?: WriteProvenance): LedgerEvent {
   const dir = join(consumer, "agents", agent, id);
   const who = provenance({ verb: "pin", by: input.by, skill: skillPath("producer", `pin.${agent}`) }, given);
-  readLedger(dir, "slot"); // an unreadable ledger refuses before anything is written
-  const before = snapshotFiles([pinFile(dir), join(dir, LEDGER_FILE)]);
-  try {
-    write();
-    const event = ledgerEvent("confirm", input.at, who, { candidate: input.candidate, sha256: input.sha256, confirmed: { ...input.confirmed }, ...(input.record !== undefined ? { record: input.record } : {}) }, [recordState(dir, "pin.json")]);
-    appendEvent(dir, "slot", event);
-    if (guard) enforceGuard(consumer, "pin", guard, [{ agent, slot: id, candidate: input.candidate, records: [recordPath(consumer, dir, "pin.json")] }]);
-    return event;
-  } catch (error) { restoreFiles(before); throw error; }
+  return guardedDecision(consumer, agent, id, [], write, () => ({
+    verb: "pin",
+    event: ledgerEvent("confirm", input.at, who, { candidate: input.candidate, sha256: input.sha256, confirmed: { ...input.confirmed }, ...(input.record !== undefined ? { record: input.record } : {}) }, [recordState(dir, "pin.json")]),
+    candidate: input.candidate,
+  }), guard);
+}
+
+/**
+ * A seat's candidate and pin as one guarded decision (`clossys seat`, U13 r4 step 5, N1): under the seat slot's lock,
+ * the headered candidate is created (never over an existing file) with its `submit` event, pin.json is written, and
+ * the `pin` decision event lands as R02.3 reads it; the pin guard then runs. Any failure removes the candidate and
+ * restores pin.json, slot.json and the ledger. The seat's slot.json and ia.json are the caller's (written first).
+ */
+export function writeSeatDecision(consumer: string, slotId: string, input: { readonly name: string; readonly bytes: string; readonly pin: string; readonly at: string }, guard: WriteGuard = true, given?: WriteProvenance): LedgerEvent {
+  const agent = SEAT_AGENT as unknown as SlotAgent;
+  const dir = join(consumer, "agents", SEAT_AGENT, slotId);
+  const candidate = join(candidatesDir(dir), input.name);
+  return slotLocked(dir, () => guardedDecision(consumer, agent, slotId, [candidate], () => {
+    mkdirSync(candidatesDir(dir), { recursive: true });
+    writeFileSync(candidate, input.bytes, { flag: "wx" });
+    forgetSlotReads();
+    const sha256 = sha256Of(readFileSync(candidate));
+    const pin = JSON.parse(input.pin) as { candidate: string; sha256: string; decidedBy: string; basis: string; at: string };
+    if (pin.candidate !== input.name || pin.sha256 !== sha256) throw new Error(`seat refused: the pin names ${pin.candidate} (${pin.sha256.slice(0, 12)}), not the written ${input.name} (${sha256.slice(0, 12)})`);
+    const submitter = provenance({ verb: "submit", by: pin.decidedBy, skill: skillPath("producer", "seats") }, given);
+    appendEvent(dir, "slot", ledgerEvent("submit", input.at, submitter, { name: input.name, sha256 }));
+    replaceFile(pinFile(dir), input.pin);
+    forgetSlotReads();
+    return pin;
+  }, pin => {
+    const who = provenance({ verb: "pin", by: pin.decidedBy, skill: skillPath("producer", "seats") }, given);
+    return { verb: "pin", candidate: pin.candidate, event: ledgerEvent("pin", pin.at, who, { candidate: pin.candidate, sha256: pin.sha256, decidedBy: pin.decidedBy, basis: pin.basis }, [recordState(dir, "pin.json")]) };
+  }, guard));
 }
 
 /**
@@ -1288,8 +1327,31 @@ export function writeSlotSeed(consumer: string, agent: ModelAgent, id: string, c
 export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, notNeeded: NotNeeded, given?: WriteProvenance & { readonly at?: string }): SlotDoc {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
+    const change = notNeededChange(consumer, agent, id, notNeeded, given);
+    readLedger(entry.dir, "slot");
+    change.write();
+    appendEvent(entry.dir, "slot", change.event());
+    return change.next;
+  });
+}
+
+/**
+ * The clossys.slot/2 not-needed decision (`clossys pin --not-needed`, U13 r4 step 4c): the same records as
+ * writeNotNeeded through the one guarded decision write, so the pin guard runs on slot.json and pin.json and a
+ * refusal restores both and the ledger.
+ */
+export function writeTargetNotNeeded(consumer: string, agent: SlotAgent, id: string, notNeeded: NotNeeded, given: WriteProvenance & { readonly at?: string } = {}, guard: WriteGuard = true): SlotDoc {
+  const { entry } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => {
+    const change = notNeededChange(consumer, agent, id, notNeeded, given);
+    guardedDecision(consumer, agent, id, [], change.write, () => ({ verb: "pin", event: change.event() }), guard);
+    return change.next;
+  });
+}
+
+function notNeededChange(consumer: string, agent: SlotAgent, id: string, notNeeded: NotNeeded, given?: WriteProvenance & { readonly at?: string }): { readonly next: SlotDoc; readonly write: () => void; readonly event: () => LedgerEvent } {
   assertSeat(notNeeded.decidedBy, agent, "not-needed"); // dropping the pin is a decision on the slot
-  const { doc } = located(consumer, agent, id);
+  const { entry, doc } = located(consumer, agent, id);
   const marker = { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy };
   const at = given?.at ?? nowIso();
   const current = currentSlotWrite(slotFile(entry.dir), "not-needed", at, slot => ({ ...slot, status: "parked", contract: { ...slot.contract, notNeeded: marker } }));
@@ -1297,13 +1359,15 @@ export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, n
   const issues = current ? [] : validateSlotDoc(next);
   if (issues.length) throw new Error(`not-needed refused: ${issues.map(issue => issue.message).join("; ")}`);
   const who = provenance({ verb: "pin", by: notNeeded.decidedBy, skill: skillPath("producer", `pin.${agent}`) }, given);
-  readLedger(entry.dir, "slot");
-  replaceFile(slotFile(entry.dir), current ? current.after : jsonBytes(next));
-  if (existsSync(pinFile(entry.dir))) { unlinkSync(pinFile(entry.dir)); forgetSlotReads(); }
-  appendEvent(entry.dir, "slot", ledgerEvent("not-needed", at, who, { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy },
-    [recordState(entry.dir, "slot.json"), recordState(entry.dir, "pin.json")]));
-  return next;
-  });
+  return {
+    next,
+    write: () => {
+      replaceFile(slotFile(entry.dir), current ? current.after : jsonBytes(next));
+      if (existsSync(pinFile(entry.dir))) { unlinkSync(pinFile(entry.dir)); forgetSlotReads(); }
+    },
+    event: () => ledgerEvent("not-needed", at, who, { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy },
+      [recordState(entry.dir, "slot.json"), recordState(entry.dir, "pin.json")]),
+  };
 }
 
 /**

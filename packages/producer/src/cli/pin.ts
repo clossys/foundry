@@ -20,10 +20,10 @@ import { readyFindings } from "../release/ready.js";
 import type { AgentId, PinRecord } from "../records/types.js";
 import { CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, PIN_BASES, SLOT_AGENTS, type PinBasis, type PinConfirmation, type SlotAgent } from "../records/slot-model/index.js";
 import { listSlots, readSlotEntry } from "../records/slots.js";
-import { GuardRefusal, SLOT_LOCK, withDirLock, writeConfirm, writeNotNeeded, writePin, writeTargetConfirm, writeTargetDecision, type WriteGuard } from "../records/slot-write.js";
+import { GuardRefusal, SLOT_LOCK, withDirLock, writeConfirm, writeNotNeeded, writePin, writeTargetConfirm, writeTargetDecision, writeTargetNotNeeded, type WriteGuard } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { pinGate, writeScorecard } from "../constitution/pin-gate.js";
-import { clearReverdict } from "../constitution/cascade.js";
+import { clearReverdict, reverdictPath, scorecardPath } from "../constitution/cascade.js";
 import { seatRefusal } from "../records/seat-owner.js";
 import { ownerDecisionRefusal } from "../records/owner-answer.js";
 import { certifiedStandardRef, currentStandardOf, isAgentLoop, isLoopAgent } from "../loop/agent-loops.js";
@@ -159,7 +159,7 @@ export function isOldTargetSlot(root: string, agent: string, slotId: string): bo
  * gate, scorecard and slot lock as `clossys pin`, writing clossys.pin/2 (or one pin-map record) only.
  */
 export function pinTargetSlot(root: string, agent: string, target: string, candidate: string, input: { readonly by: string; readonly basis?: string; readonly at?: string }): CliResult {
-  return runTargetPin(root, agent, target, candidate, { positional: [], by: input.by, ...(input.basis !== undefined ? { basis: input.basis } : {}), ...(input.at !== undefined ? { at: input.at } : {}), notNeeded: false, confirm: false, help: false });
+  return runTargetPin(root, agent, target, candidate, { positional: [], by: input.by, ...(input.basis !== undefined ? { basis: input.basis } : {}), ...(input.at !== undefined ? { at: input.at } : {}), notNeeded: false, confirm: false, help: false }, true);
 }
 
 /** True when `<root>/clossys/agents/<agent>/<slot-id>/slot.json` is a target `clossys.slot/2` slot. */
@@ -181,7 +181,7 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
   const record = hash < 0 ? undefined : target.slice(hash + 1);
   if (hash >= 0 && !record) throw new CliUsageError(`pin target #<record> is empty\n${PIN_USAGE}`);
   if (flags.confirm) return runTargetConfirm(root, agent, slotId, record, candidateId, flags, guard);
-  if (flags.notNeeded) return runTargetNotNeeded(root, agent, slotId, record, candidateId, flags);
+  if (flags.notNeeded) return runTargetNotNeeded(root, agent, slotId, record, candidateId, flags, guard);
   if (flags.reason !== undefined || flags.ref !== undefined) {
     throw new CliUsageError(`a clossys.slot/2 pin takes <candidate> [--by] [--basis] [--at] only\n${PIN_USAGE}`);
   }
@@ -234,18 +234,20 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
       if (loopStandard !== undefined && !loopStandard.ok) return { exitCode: 1, message: `pin refused: ${agent}/${slotId}: producer/${slotId} cannot be read: ${loopStandard.reason}` };
       const gate = pinGate(root, join(root, "clossys"), agent, slotId, candidate, toIsoZ(at)!, releasePin ? { verdict: "release.ready" } : {});
       if (gate.refusals.length) return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate}:\n${gate.refusals.map(line => `  ${line}`).join("\n")}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals: gate.refusals, scorecard: gate.scorecard } };
-      const scorecard = writeScorecard(root, agent, slotId, gate.scorecard);
       let doc!: ReturnType<typeof writeTargetPin>;
-      // The decision lands on the slot ledger with the pin (U13 r3): a `pick` or `pin` event naming the record, as R02.3 reads it.
-      writeTargetDecision(join(root, "clossys"), agent as SlotAgent, slotId, record !== undefined ? { record } : {}, () => {
+      // One guarded decision write (U13 r4, B1): the scorecard, the pin, the cleared re-verdict and the `pick` or `pin`
+      // ledger event (as R02.3 reads it) land together, then the rules.json guard for pick (an agent seat) or pin runs;
+      // a refusal restores every one of them.
+      writeTargetDecision(join(root, "clossys"), agent as SlotAgent, slotId, { ...(record !== undefined ? { record } : {}), also: [scorecardPath(root, agent, slotId), reverdictPath(root, agent, slotId)] }, () => {
+        const scorecard = writeScorecard(root, agent, slotId, gate.scorecard);
         doc = writeTargetPin(root, {
           agent: agent as AgentId, slotId, ...(record !== undefined ? { record } : {}),
           candidate, decidedBy: by, basis, at: toIsoZ(at)!, refs: [...(answer ? [answer] : []), scorecard, ...(loopStandard?.ok ? [certifiedStandardRef(loopStandard.file)] : [])], createdBy: cliActor("clossys pin"),
         });
+        // A new pin carries the verdict the gate just gave (its scorecard row); an older re-verdict no longer holds.
+        clearReverdict(root, agent, slotId);
         return doc.kind === "pin-map" ? doc.records[record!]! : doc;
-      });
-      // A new pin carries the verdict the gate just gave (its scorecard row); an older re-verdict no longer holds.
-      clearReverdict(root, agent, slotId);
+      }, guard);
       const pinned = doc.kind === "pin-map" ? doc.records[record!]! : doc;
       return { exitCode: 0, message: `${agent}/${target}: pinned ${pinned.candidate} (${pinned.sha256.slice(0, 12)}), decided by ${pinned.decidedBy} (${pinned.basis})`, output: doc };
     });
@@ -256,10 +258,10 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
 
 /**
  * A clossys.slot/2 slot set aside (U13 r2): `contract.notNeeded {reason, since, decidedBy}` and status parked, the pin
- * removed (writeNotNeeded). An owner decision names the queue entry the owner answered (`--by owner:queue.<kind>#<id>`,
+ * removed (writeTargetNotNeeded, guarded). An owner decision names the queue entry the owner answered (`--by owner:queue.<kind>#<id>`,
  * which must exist); the planner may set a slot aside on its own (`--by planner[:<ref>]`). A bare owner is refused.
  */
-function runTargetNotNeeded(root: string, agent: string, slotId: string, record: string | undefined, candidateId: string | undefined, flags: Flags): CliResult {
+function runTargetNotNeeded(root: string, agent: string, slotId: string, record: string | undefined, candidateId: string | undefined, flags: Flags, guard: WriteGuard): CliResult {
   if (record !== undefined || candidateId !== undefined) throw new CliUsageError(`--not-needed sets the whole slot aside; it takes no <candidate> or #<record>\n${PIN_USAGE}`);
   if (flags.basis !== undefined || flags.ref !== undefined) throw new CliUsageError(`--not-needed takes --reason, --by and --at only\n${PIN_USAGE}`);
   if (!flags.reason?.trim()) throw new CliUsageError(`--not-needed requires --reason <text>\n${PIN_USAGE}`);
@@ -273,7 +275,7 @@ function runTargetNotNeeded(root: string, agent: string, slotId: string, record:
     if (bound !== undefined) return { exitCode: 1, message: `pin refused: ${bound}` };
   }
   try {
-    const doc = writeNotNeeded(join(root, "clossys"), agent as SlotAgent, slotId, { reason: flags.reason.trim(), since: at.slice(0, 10), decidedBy: flags.by }, { at: toIsoZ(at)! });
+    const doc = writeTargetNotNeeded(join(root, "clossys"), agent as SlotAgent, slotId, { reason: flags.reason.trim(), since: at.slice(0, 10), decidedBy: flags.by }, { at: toIsoZ(at)! }, guard);
     return { exitCode: 0, message: `${agent}/${slotId}: not needed (${doc.notNeeded!.reason}), decided by ${doc.notNeeded!.decidedBy}`, decision: { slot: `${agent}/${slotId}`, state: "not-needed", ...doc.notNeeded } };
   } catch (error) {
     return { exitCode: 1, message: `pin refused: ${error instanceof Error ? error.message : String(error)}` };
