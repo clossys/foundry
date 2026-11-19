@@ -1,7 +1,7 @@
 import type { BodySubstrate, SectionSubstrateRenderTest } from "./body-substrate.js";
 import type { SpecimenRenderPartName } from "../specimen/specimen-render-part-identities.js";
 import type { StudioSpecimenHostPartId } from './studio-host-parts.js';
-import type { InteractiveBackdropComponent } from "../tokens/interactive-backdrops.js";
+import { sectionPlacementFindings, type FigureAlt, type MediaPlacement } from "./media-placement.js";
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import sectionPlacement from "../catalog/ia/sections.json" with { type: "json" };
 import sectionRetired from "../catalog/retired/sections.json" with { type: "json" };
@@ -29,7 +29,12 @@ export interface SectionContract {
   /** Media the section renders on; absent means web only. A retired slide leaf names its twin's slide medium (foundry-build-0032, audit P3). */
   media?: readonly ("slide" | "web")[];
   anatomy: { band: "sections.band" | null; header: "sections.section-header" | null };
-  slots: readonly { name: string; type: "copy" | "media" | "records" | "action" | "region"; required: boolean; max?: number }[];
+  /**
+   * A media slot declares its placement (catalog-core/media-placement.ts): a `figure` names its
+   * text alternative in `alt`; a `backdrop` is decorative and is the only slot an interactive
+   * backdrop descriptor may fill. Other slot types carry neither.
+   */
+  slots: readonly { name: string; type: "copy" | "media" | "records" | "action" | "region"; required: boolean; max?: number; placement?: MediaPlacement; alt?: FigureAlt }[];
   members: { mode: "closed"; names: readonly string[] };
   /** Axes whose values still need specification; never treated as covered members. */
   unresolvedMemberAxes?: readonly string[];
@@ -41,13 +46,6 @@ export interface SectionContract {
   data: "host-injected";
   states?: readonly ("loading" | "empty" | "error")[];
   surface: "site" | "app" | "both";
-  /**
-   * The Foundry interactive backdrop components (tokens/interactive-backdrops.ts) the descriptor this
-   * slot's own code candidate carries (`meta.backdrop`) may name (foundry-build-0048 A4). Absent means
-   * no descriptor is allowed. Criterion interactive.backdrop judges a candidate against it; the
-   * provenance rule's interactiveBackdrops lists the same slots.
-   */
-  interactive?: { components: readonly InteractiveBackdropComponent[] };
   /** Producer requirement checks beyond the slot standard's, with params ("$contract" binds this contract). */
   requirements?: readonly { check: string; params?: Readonly<Record<string, unknown>> }[];
 }
@@ -78,6 +76,7 @@ export function sectionRegistryFindings(registry: SectionRegistry): string[] {
     if (ids.has(slot.id)) findings.push(`id: duplicate section slot ${slot.id}`);
     ids.add(slot.id);
     findings.push(...sectionCopySchemaFindings(slot));
+    findings.push(...sectionPlacementFindings(slot));
   }
   for (const slot of registry.slots) {
     const composes = slot.contract.composes;

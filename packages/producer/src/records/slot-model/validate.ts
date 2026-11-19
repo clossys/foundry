@@ -1,5 +1,5 @@
 import { pinIssues } from "@clossys/director";
-import { interactiveBackdropMetaIssues, previewInteractiveBackdropIssues } from "@clossys/designer/catalog";
+import { catalogSurfaceContract, interactiveBackdropMetaIssues, previewInteractiveBackdropIssues } from "@clossys/designer/catalog";
 import { checkPublicationOutputs } from "@clossys/publisher/content-map";
 import { pinMapIssues, pinIssues as targetPinIssues } from "../pin.js";
 import { parseFrontmatter } from "./frontmatter.js";
@@ -333,10 +333,11 @@ function validateJsonCandidate(kind: SlotKind, value: Record<string, unknown>, s
   if (!Object.hasOwn(meta, "source")) issues.push({ code: "candidate-source", path, message: "meta.source is required" });
   if (meta.vary !== undefined && !validVary(meta.vary)) fail('meta.vary must be {"<axis>": "<value>"} with one axis');
   else issues.push(...validateSource(meta.source, path));
-  // An interactive backdrop (foundry-build-0048 A4) rides as meta.backdrop on the hero's own code candidate, never as a candidate of its own.
+  // An interactive backdrop (foundry-build-0048 A4, U23) rides as meta.backdrop on the code candidate of a surface whose
+  // catalog contract declares a backdrop-placed slot, never as a candidate of its own.
   if (Object.hasOwn(meta, "backdrop")) {
     if (kind !== "element") issues.push({ code: "candidate-source", path, message: `meta.backdrop rides only on a Designer element code candidate, not on a ${kind} candidate` });
-    else issues.push(...interactiveBackdropMetaIssues(value, slot).map(message => ({ code: "candidate-source" as const, path, message })));
+    else issues.push(...interactiveBackdropMetaIssues(value, slot, catalogSurfaceContract(slot)).map(message => ({ code: "candidate-source" as const, path, message })));
   }
   // Preview props reach the mount unjudged, so they never carry one, on any slot (meta.backdrop is the only channel).
   issues.push(...previewInteractiveBackdropIssues(value).map(message => ({ code: "candidate-source" as const, path, message })));

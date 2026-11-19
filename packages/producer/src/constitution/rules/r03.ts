@@ -28,12 +28,13 @@ import { ledgerEvents, standardFor, type Standard } from "../../records/standard
 import { certifyEnv, slotDocOf } from "../certify/index.js";
 import { isAgentLoopRecord } from "../certify/loop.js";
 import { CERTIFY_INPUT_FIELDS } from "../certify/types.js";
-import { backdropFindings, candidateLineage, carriesBackdrop, lineageFindings, verbatimFindings, type ProvenanceRule, type ReferenceManifest } from "../certify/source.js";
+import { backdropFindings, candidateLineage, carriesBackdrop, lineageFindings, resolveProvenanceRule, verbatimFindings, type ProvenanceRule, type ReferenceManifest } from "../certify/source.js";
 import { candidateMeta, focusedLiveSlots, isObject, liveSlotRecords, registryFiles, row } from "../checks/shared.js";
 import type { CandidateRecord, Check, ConstitutionContext, Row, RuleModule, SlotRecord } from "../types.js";
 
 /** The Designer's provenance rule and reference manifest (workspace-relative). */
-export const PROVENANCE_RULE_PATH = "packages/designer/src/catalog/rules/provenance.json";
+const DESIGNER_PACKAGE = "packages/designer";
+export const PROVENANCE_RULE_PATH = `${DESIGNER_PACKAGE}/src/catalog/rules/provenance.json`;
 export const REFERENCE_MANIFEST_PATH = "packages/designer/references/manifest.json";
 /** `createGaps` when an adopt-first standard lists none (section 5a). */
 export const DEFAULT_CREATE_GAPS = Object.freeze(["missing-behavior", "a11y-failure", "foundry-signature"]);
@@ -97,7 +98,10 @@ export function provenanceOf(ctx: ConstitutionContext): Provenance {
   if (!found) {
     try {
       found = {
-        rule: JSON.parse(readFileSync(packagePath(ctx.root, PROVENANCE_RULE_PATH), "utf8")) as ProvenanceRule,
+        rule: resolveProvenanceRule(
+          JSON.parse(readFileSync(packagePath(ctx.root, PROVENANCE_RULE_PATH), "utf8")) as ProvenanceRule,
+          rel => JSON.parse(readFileSync(packagePath(ctx.root, `${DESIGNER_PACKAGE}/${rel}`), "utf8")) as unknown,
+        ),
         manifest: JSON.parse(readFileSync(packagePath(ctx.root, REFERENCE_MANIFEST_PATH), "utf8")) as ReferenceManifest,
       };
     } catch (error) {

@@ -3740,7 +3740,11 @@
         {
           "name": "media",
           "type": "media",
-          "required": false
+          "required": false,
+          "placement": "figure",
+          "alt": {
+            "copy": "media.title"
+          }
         },
         {
           "name": "footnote",
@@ -4532,7 +4536,11 @@
         {
           "name": "illustration",
           "type": "media",
-          "required": false
+          "required": false,
+          "placement": "figure",
+          "alt": {
+            "copy": "illustration.label"
+          }
         },
         {
           "name": "actions",
@@ -5749,7 +5757,11 @@
         {
           "name": "images",
           "type": "media",
-          "required": true
+          "required": true,
+          "placement": "figure",
+          "alt": {
+            "copy": "images.items[].label"
+          }
         }
       ],
       "members": {
@@ -5903,7 +5915,11 @@
         {
           "name": "media",
           "type": "media",
-          "required": false
+          "required": false,
+          "placement": "figure",
+          "alt": {
+            "copy": "media.title"
+          }
         },
         {
           "name": "actions",
@@ -5914,7 +5930,8 @@
         {
           "name": "backdrop",
           "type": "media",
-          "required": false
+          "required": false,
+          "placement": "backdrop"
         },
         {
           "name": "header.eyebrow",
@@ -5994,13 +6011,6 @@
       },
       "data": "host-injected",
       "surface": "site",
-      "interactive": {
-        "components": [
-          "particle-field",
-          "gradient-mesh",
-          "grid-glow"
-        ]
-      },
       "requirements": [
         {
           "check": "interactive.backdrop",
@@ -6392,7 +6402,11 @@
         {
           "name": "logos",
           "type": "media",
-          "required": true
+          "required": true,
+          "placement": "figure",
+          "alt": {
+            "copy": "logos[].name"
+          }
         }
       ],
       "members": {
@@ -6525,7 +6539,11 @@
         {
           "name": "mark",
           "type": "media",
-          "required": true
+          "required": true,
+          "placement": "figure",
+          "alt": {
+            "copy": "name"
+          }
         },
         {
           "name": "name",
@@ -6601,7 +6619,11 @@
         {
           "name": "mark",
           "type": "media",
-          "required": true
+          "required": true,
+          "placement": "figure",
+          "alt": {
+            "asset": "assets.mark"
+          }
         }
       ],
       "members": {
@@ -6673,7 +6695,11 @@
         {
           "name": "figure",
           "type": "media",
-          "required": true
+          "required": true,
+          "placement": "figure",
+          "alt": {
+            "copy": "figure.media.title"
+          }
         },
         {
           "name": "callouts",

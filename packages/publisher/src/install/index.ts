@@ -22,7 +22,7 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, realpath, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve } from "node:path";
-import { carriesInteractiveBackdrop, INTERACTIVE_BACKDROP_SLOT, interactiveBackdropMetaIssues, isInteractiveBackdropProp } from "@clossys/designer/catalog";
+import { carriesInteractiveBackdrop, catalogSurfaceContract, contractBackdropSlot, interactiveBackdropMetaIssues, isInteractiveBackdropProp } from "@clossys/designer/catalog";
 import type { SpecimenRecord, SpecimenRecordSource } from "../specimen/types.js";
 import { installedPath } from "../specimen/installed-path.js";
 
@@ -310,13 +310,15 @@ export async function resolvePage(page: InstallPageRecord, pins: InstallPins, so
       // Preview props reach the mount unjudged: any interactive backdrop in them is stripped, on every
       // slot, so the judged meta.backdrop below is the only one that ever mounts.
       dropInteractiveBackdropProps(mount.props);
-      // An interactive backdrop (foundry-build-0048 A4) rides as meta.backdrop on the hero's own code
-      // candidate: it reaches Hero's `backdrop` prop for the hero slot only, never for another slot whose
-      // code also renders Hero (the CTA). The same schema check as submit and pin; an invalid one stops the page.
-      if (slot === INTERACTIVE_BACKDROP_SLOT && carriesInteractiveBackdrop(found.item)) {
-        const issues = interactiveBackdropMetaIssues(found.item, slot);
+      // An interactive backdrop (foundry-build-0048 A4, U23) rides as meta.backdrop on a surface's own code
+      // candidate: it reaches the prop named by the backdrop-placed slot its catalog contract declares, and
+      // only there (never another slot whose code also renders the same block). The same check as submit
+      // and pin; a slot whose contract declares no backdrop, or an invalid descriptor, stops the page.
+      if (carriesInteractiveBackdrop(found.item)) {
+        const contract = catalogSurfaceContract(slot);
+        const issues = interactiveBackdropMetaIssues(found.item, slot, contract);
         if (issues.length) { for (const issue of issues) findings.push({ code: "invalid-backdrop", slot, detail: `${id}: ${issue}` }); return; }
-        mount.props.backdrop = { kind: "interactive", backdrop: found.item.meta.backdrop };
+        mount.props[contractBackdropSlot(contract)!] = { kind: "interactive", backdrop: found.item.meta.backdrop };
       }
       const parts = new Set<string>();
       eachNode(mount.props, node => { if (typeof node.$element === "string") parts.add(node.$element); });

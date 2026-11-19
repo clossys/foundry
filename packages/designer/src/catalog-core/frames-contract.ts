@@ -22,6 +22,8 @@ export interface FrameContract {
     id: string;
     required: boolean;
     accepts: "view" | "host-node" | `components.${string}` | "sections.*" | `sections.${string}`;
+    /** Opt-in backdrop slot (catalog-core/media-placement.ts): the only frame slot an interactive backdrop descriptor may fill. */
+    placement?: "backdrop";
   }[];
   /** Closed configuration values use axis.value names. Header position.sticky/static is independent of its surface. */
   members: { mode: "closed"; names: readonly string[] };
