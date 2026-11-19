@@ -17,7 +17,7 @@ import { SeatRefusal } from "../records/seat-owner.js";
 import { runIaCli } from "./owner.js";
 import { runLoopAgentStandard, runLoopConnected } from "../check/loop-connected.js";
 import { AGENT_LOOPS, LOOP_AGENTS, agentLoopIssues, readAgentPackageLoop, standardOf } from "../loop/agent-loops.js";
-import { agentWriteRef, planRun, resumeRun, routeHandsOn, runStatePath, startRun, undeclaredWrites, type AgentOutcome, type RunHooks } from "../loop/runner.js";
+import { agentWriteRef, planRun, resumeRun, routeHandsOn, runStatePath, startRun, stepAgentOf, undeclaredWrites, type AgentOutcome, type RunHooks } from "../loop/runner.js";
 import { judgeSnapshot, snapshotDigest, treeSnapshot } from "../loop/agent-snapshot.js";
 import { buildCandidateHeader, candidatePath, serializeCandidate, writeCandidateFile } from "../records/candidate.js";
 import { buildPin, cliActor, pinPath, writePinDoc } from "../records/pin.js";
@@ -667,6 +667,9 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     const decideBefore = treeSnapshot(root, slotPlan.state.runId);
     expect(undeclaredWrites(root, slotPlan.state, decide, [`producer/queue.slot/entries/${request}.json`], decideBefore)).toEqual([]);
     expect(undeclaredWrites(root, slotPlan.state, decide, [`producer/queue.slot/entries/${others}.json`], decideBefore)).toEqual([`producer/queue.slot/entries/${others}.json`]);
+    // U26 r2 (B2): a step is judged as its decider's agent, never the run's: decide-writer in a designer-owned run is writer's.
+    expect(stepAgentOf(root, slotPlan.state, standardStep("loop.slot", "decide-writer"))).toBe("writer");
+    expect(stepAgentOf(root, scopePlan.state, standardStep("loop.scope", "scope-director"))).toBe("director");
 
     // blind1 #4: a dot path under clossys/agents/ is never an agent's write.
     expect(agentWriteRef(root, "designer/.hidden/slot.json")).toEqual({ refused: expect.stringMatching(/a dot path under clossys\/agents\/$/) });

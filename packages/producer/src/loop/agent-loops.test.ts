@@ -331,6 +331,13 @@ describe("loop.connected", () => {
     const create = pkg("designer", "loop.create");
     create.steps.find(step => step.id === "create")!.reads.push("clossys/agents/<upstream>/*/pin.json");
     expect(loopConnectedIssues(withVersion(packageLoopSet(), "designer", "loop.create", create))).toContain("designer/loop.create: step create reads clossys/agents/<upstream>/*/pin.json; <upstream> stands only as the first segment of a read path");
+    // U26 r2 (blind B N5): the version does not load either: agentLoopIssues refuses a misplaced read and any write.
+    expect(agentLoopIssues("designer", "loop.create", create, { packageVersion: true })).toContain("designer/loop.create: step create reads clossys/agents/<upstream>/*/pin.json; <upstream> stands only as the first segment of a read path");
+    const writes = pkg("designer", "loop.create");
+    writes.steps.find(step => step.id === "create")!.writes.push("<upstream>/*/notes.md");
+    expect(agentLoopIssues("designer", "loop.create", writes, { packageVersion: true })).toContain("designer/loop.create: step create writes <upstream>/*/notes.md; <upstream> names only a read");
+    // A leading <upstream> read, the standard's own shape, still loads.
+    expect(agentLoopIssues("designer", "loop.create", pkg("designer", "loop.create"), { packageVersion: true })).toEqual([]);
   });
 
   it("refuses an output nothing consumes (mutation: writer create writes notes nobody reads)", () => {

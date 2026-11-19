@@ -458,6 +458,16 @@ function requestOf(ctx: { readonly root: string; readonly state: RunState }): Sl
   try { return readRequest(join(ctx.root, "clossys"), ctx.state.request); } catch (error) { if (error instanceof RequestError) return undefined; throw error; }
 }
 const requestOwner = (request: SlotRequest | undefined): AgentId | undefined => request ? targetOf(request)?.agent as AgentId | undefined : undefined;
+
+/**
+ * The agent an agent step runs as: its decider's agent, or for `<owner of slot>` the run slot's owner (else the run
+ * request's target owner). The packet, the snapshot judgement and the write allowlist all judge the step as this agent,
+ * never as the run's `--agent` (foundry-build-0048 U26: a cross-agent Producer standard, loop.scope, runs one step per agent).
+ */
+export function stepAgentOf(root: string, state: RunState, step: Pick<LoopStep, "decider">): AgentId | undefined {
+  if (step.decider.by !== "agent") return undefined;
+  return step.decider.agent === OWNER_OF_SLOT ? state.subject?.agent ?? requestOwner(requestOf({ root, state })) : step.decider.agent;
+}
 /** What a request run asks about: the reused slot or the proposed leaf once the agent decided, else the need. */
 const requestTo = (request: SlotRequest): string | undefined => {
   const target = targetOf(request)!;
@@ -609,7 +619,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     let exit: Exit; let wrote: readonly string[] | undefined; let findings: readonly Finding[] = []; let raisedByStep = false; let ledgerDecider: Decider; let cli = filled.text;
     let ran: readonly string[] | undefined;
     if (decider.by === "agent") {
-      const agent = decider.agent === OWNER_OF_SLOT ? subject?.agent ?? requestOwner(requestOf(ctx)) : decider.agent;
+      const agent = stepAgentOf(root, state, step);
       if (!agent) return stop(ctx, `step ${step.id} names ${OWNER_OF_SLOT}, but ${state.loop} runs for no slot`, 2);
       let skill: string | undefined;
       try { skill = skillFor(root, decider.skill, agent); }
@@ -836,9 +846,11 @@ function ownNewRequest(root: string, file: string, agent: LoopAgent): boolean {
  * U9a: the files an agent step of an agent's own loop version reported writing that it may not write: outside the root,
  * through `..`, through a symlink or a hard link (`agentWriteRef`), a Producer-owned file (anything but what the
  * standard's own step of that id declares, filled for the run, or the agent write allowlist `agentWriteClass`; a slot
- * request under the allowlist must be a new one the agent raised), or matching none of the step's `writes` (with
+ * request under the allowlist must be a new one the step's own agent raised), or matching none of the step's `writes` (with
  * `<slot>` the run's own slot). Producer's standard version is judged the same way (foundry-build-0048 U26 r1 B1: its
  * agent steps write only what they declare); empty only for a Producer version of a loop that is not an agent loop.
+ * Each step is judged as the agent its decider resolves to (stepAgentOf), the agent advance runs it as, never the run's
+ * `--agent` (U26 r2: loop.scope runs one step per agent, and one agent's step may not raise under another's name).
  * The runner judges the files the step reports (the resumer's `--wrote` list or the code hook's outcome) and refuses
  * symlinked and hard-linked ones; a write the step does not report is caught by the snapshot diff (agent-snapshot.ts) before this runs.
  *
@@ -848,7 +860,8 @@ function ownNewRequest(root: string, file: string, agent: LoopAgent): boolean {
  */
 export function undeclaredWrites(root: string, state: RunState, step: LoopStep, wrote: readonly string[] | undefined, before: TreeFiles | undefined): string[] {
   if ((state.version.ref.startsWith("producer/") && !isAgentLoop(state.loop)) || step.decider.by !== "agent" || !wrote?.length) return [];
-  const agent = state.agent ?? state.subject?.agent;
+  // The agent the step runs as (its decider), never the run's --agent: each step's writes are judged as its own agent's.
+  const agent = stepAgentOf(root, state, step);
   if (agent === undefined || !isLoopAgent(agent) || before === undefined) return [...wrote];
   const slot = state.subject ? `${state.subject.agent}/${state.subject.slotId}` : undefined;
   const fill = (write: string): string[] | undefined => {

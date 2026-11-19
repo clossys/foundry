@@ -280,6 +280,17 @@ export function loopExtensionIssues(agent: LoopAgent, loop: AgentLoopName, conte
       if (issue !== undefined) issues.push(issue);
     }
   }
+  // U26 r2 (blind B N5): `<upstream>` stands only as the first segment of a read; an agent version naming it in a
+  // write or mid-path does not load (it never stands for every agent).
+  for (const step of version.steps) {
+    if (!isObject(step)) continue;
+    for (const [use, paths] of [["read", step.reads], ["write", step.writes]] as const) {
+      for (const path of Array.isArray(paths) ? paths : []) {
+        const misplaced = typeof path === "string" ? upstreamIssue(path, use) : undefined;
+        if (misplaced !== undefined) issues.push(`${ref}: step ${String(step.id)} ${use}s ${path}; ${misplaced}`);
+      }
+    }
+  }
   return issues;
 }
 
