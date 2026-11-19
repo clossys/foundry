@@ -9,7 +9,11 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
+
+// Every decision here runs the constitution guard over the whole fixture consumer (U13 r4: no guard=false), so a
+// test takes seconds, not the config's 5 s default budget.
+vi.setConfig({ testTimeout: 60_000 });
 import { sha256Hex } from "../records/hash.js";
 import { readCandidateFile } from "../records/candidate.js";
 import { writeCandidate, writePin, writeSlotOptions, writeVerdict } from "../records/slot-write.js";
@@ -243,22 +247,19 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     expect(runGuard(w.consumer, "pin", [{ agent: "writer", slot: SLOT, candidate: good.name, records: [`clossys/agents/writer/${SLOT}/pin.json`] }]).filter(row => row.check.startsWith("R02"))).toEqual([]);
   });
 
-  it("not-needed: a bare owner is refused; the owner's answered entry reaches the guard, which refuses a parked slot (R04, D4) and writes nothing", async () => {
+  it("not-needed (guard on): an owner's queue answer sets a slot/2 slot aside; a bare owner is refused", async () => {
     const w = world();
+    // The not-needed write runs the pin guard (U13 r4, 4c): R02.2 judges the slot's upstream, so it is pinned first.
     w.pinUpstream();
     const before = tree(w.consumer);
     const bare = await runPinCli([`writer/${SLOT}`, "--not-needed", "--reason", "not on this site", "--by", "owner", "--at", AT, "--root", w.root], w.root);
     expect(bare.exitCode).toBe(1);
     expect(tree(w.consumer)).toEqual(before);
     w.queueEntry("not-needed");
-    const entered = tree(w.consumer);
-    // The not-needed write runs the pin guard (U13 r4, 4c). R04 (guard: retire, pin, pick) holds that the not-needed
-    // state no longer exists (D4: retire or pin), so the guard refuses the parked record and restores every file.
     const result = await runPinCli([`writer/${SLOT}`, "--not-needed", "--reason", "not on this site", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root);
-    expect(result.exitCode, result.message).toBe(1);
-    expect(result.message).toMatch(/refused by the constitution guard: .*R04 .*slot\.json carries notNeeded \(retire or pin, D4\)/);
-    expect(tree(w.consumer)).toEqual(entered);
-    expect(json(join(w.dir, "slot.json"))).not.toHaveProperty("status", "parked");
+    expect(result.exitCode, result.message).toBe(0);
+    const slot = json(join(w.dir, "slot.json"));
+    expect(slot).toMatchObject({ schema: "clossys.slot/2", status: "parked", contract: { notNeeded: { reason: "not on this site", decidedBy: `owner:queue.pick#${QUEUE_ID}` } } });
   });
 
   it("approve: the owner's approval is a gated pin-map record with basis picked naming its queue entry", async () => {

@@ -10,7 +10,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { resolvePage } from "@clossys/publisher/install";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
+
+// Every decision here runs the constitution guard over the whole fixture consumer (U13 r4: no guard=false), so a
+// test takes seconds, not the config's 5 s default budget.
+vi.setConfig({ testTimeout: 60_000 });
 import { danglingReason } from "../check/refs-dangling.js";
 import { ownerEntry } from "../cli/__fixtures__/owner-entry.js";
 import { pinUpstream } from "../cli/__fixtures__/upstream.js";

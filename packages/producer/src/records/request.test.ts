@@ -20,6 +20,9 @@ import {
   unfiledNeeds, type SlotRequest,
 } from "./request.js";
 
+// U13 r4: pin and pick run the full guard; at the workstation's shared load the guarded cases exceed 5 s.
+vi.setConfig({ testTimeout: 60_000 });
+
 // U7 r7: a hook run right after the pin verb writes a pin (cli/pin.ts clears the slot's re-verdict next), unset by default.
 const pinHook = vi.hoisted(() => ({ after: undefined as undefined | (() => void) }));
 vi.mock("../constitution/cascade.js", async importOriginal => {
