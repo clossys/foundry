@@ -13,6 +13,7 @@ import { isModelDir, isSlotFolderName, listModelDir, readModelBytes, withSlotRea
 import { skillFile } from "../records/ledger.js";
 import { candidateCodec } from "../records/candidate-codec.js";
 import { KIND_EXT } from "../records/slot-model/types.js";
+import { slotFamily } from "../records/slot-current.js";
 import { loadActions } from "../pipeline/actions.js";
 import { readCandidateHistory } from "./git.js";
 import type { AgentRecord, CandidateHistory, CandidateRecord, ConstitutionContext, FocusTarget, FoundryAgent, JsonRecord, MigrationsRecord, RetiredRecord, SlotRecord } from "./types.js";
@@ -156,8 +157,10 @@ function candidateRecordView(raw: { name: string; path: string; text: string; sh
   try { parsed = candidateCodec.parse(raw.name, raw.text); } catch { return raw; }
   if (!parsed.header) return raw;
   const header = parsed.header as unknown as Readonly<Record<string, unknown>>;
-  if (typeof kind !== "string" || !Object.hasOwn(KIND_EXT, kind)) return { ...raw, header };
-  return { ...raw, text: kind === "seat" ? parsed.content : parsed.view, header };
+  // A clossys.slot/2 kind (element/frame, copy, ...) reads as its reader family (element, strings, ...), as slot/1 kinds do.
+  const family = slotFamily(kind);
+  if (typeof family !== "string" || !Object.hasOwn(KIND_EXT, family)) return { ...raw, header };
+  return { ...raw, text: family === "seat" ? parsed.content : parsed.view, header };
 }
 
 /** Reads the records under `<consumer>/agents` for the run. `root` is the workspace root rows are relative to. */
