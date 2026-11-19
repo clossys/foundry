@@ -24,6 +24,7 @@ import type { Ref } from "../records/types.js";
 import { judgeSlotOptions } from "../records/slot-options.js";
 import { OPTION_TABLE, type SlotAgent } from "../records/slot-model/index.js";
 import { readSlotEntry } from "../records/slots.js";
+import { expectedCandidateSha, ledgerEventsOf } from "../records/ledger.js";
 
 export const SCORECARD_SCHEMA = "clossys.scorecard/1";
 export const SCORECARD_REF_TO = "producer/checks.scorecard" as const;
@@ -74,7 +75,9 @@ export function pinGate(root: string, consumer: string, agent: string, slotId: s
   const env = certifyEnv(ctx);
   const rows = slot.candidates.map(candidate => {
     const { submit } = submitOf(slot, candidate.name);
-    const submitted = !!submit && submit.sha256 === candidate.sha256;
+    // The submit's sha256 carried through each later migrate event that rewrote those bytes (records/ledger.ts, the one carry-forward rule).
+    const expected = expectedCandidateSha(ledgerEventsOf(slot.ledger?.value) ?? [], candidate.name);
+    const submitted = !!submit && expected.submitted && expected.sha256 === candidate.sha256;
     const pinSet = pinSetOf({ slot, candidate }, env);
     const { certified, reasons } = certify({ slot, candidate }, env, pinSet);
     return { candidate: candidate.name, sha256: candidate.sha256, submitted, certified, verdict: "certify" as const, reasons, pinSet, submit };

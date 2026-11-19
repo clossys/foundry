@@ -92,7 +92,7 @@ function censusRow(consumer: string, agent: SlotAgent, id: string, position: Slo
           const candidate = readCandidate(consumer, agent, id, pin.candidate);
           if (candidate.sha256 !== pin.sha256) row.pin = "hash-drift";
           else if (!doc) row.pin = "unvalidated-candidate";
-          else if (slotCandidateIssues(consumer, agent, id, candidate.name, candidate.bytes).length) row.pin = "invalid-candidate";
+          else if (slotCandidateIssues(consumer, agent, id, candidate.name, candidate.raw).length) row.pin = "invalid-candidate";
           else row.pin = "valid";
         } catch (error) {
           row.pin = (error as NodeJS.ErrnoException).code === "ENOENT" ? "missing-candidate" : "error";

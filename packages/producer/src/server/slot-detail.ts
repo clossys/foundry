@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { copyRef, type CopyRef, type CopyText } from "./copy-ref.js";
 import { iaLabel, slotLabel } from "../records/slot-labels.js";
 import { cardState, recordSpecimenInput, type RecordSpecimenInput, type SlotCardState } from "./slot-gallery.js";
-import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotIndex, usedByPlaced, type BlockReason } from "../records/slots.js";
+import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotCandidateIssues, slotIndex, usedByPlaced, type BlockReason } from "../records/slots.js";
 import { CANDIDATE_NAME, parseFrontmatter, pinStatus, validateCandidate, type PinStatus, type SlotAgent, type SlotModelIssue } from "../records/slot-model/index.js";
 import { parseJson } from "../errors.js";
 import { candidateImportIssue, specimenPreviewIssue } from "../specimen/library-source.js";
@@ -83,6 +83,7 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
   let writerCopy: Readonly<Record<string, string>> | undefined;
   const writer = () => writerCopy ??= pinnedWriterCopy(consumer);
   const candidates = entry.candidates.map(name => {
+    // The view: what the detail shows and renders, never the clossys header (its source is the header's).
     const candidate = readCandidate(consumer, agent, id, name);
     let content = candidate.bytes, source: unknown;
     if (name.endsWith(".md")) {
@@ -94,7 +95,7 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
       if (parsed.ok) source = (parsed.value as { meta?: { source?: unknown } } | null)?.meta?.source;
     }
     const version = Number(CANDIDATE_NAME.exec(name)![2]);
-    const issues = validateCandidate(doc.kind, id, name, candidate.bytes).map(issueCopy);
+    const issues = slotCandidateIssues(consumer, agent, id, name, candidate.raw).map(issueCopy);
     const element = CANDIDATE_NAME.exec(name)![1]!;
     if (agent === "designer" && doc.kind === "element" && !issues.length) {
       const item = JSON.parse(candidate.bytes);

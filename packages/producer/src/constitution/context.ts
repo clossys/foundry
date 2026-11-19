@@ -11,6 +11,8 @@ import { MIGRATIONS_FILE, validateMigrations, type MigrationsDoc } from "../reco
 import { agentDir, candidatesDir, designerIa, directorIa, MODEL_AGENTS, writerIa, type FoundryIa, type ModelAgent } from "../records/slot-model/index.js";
 import { isModelDir, isSlotFolderName, listModelDir, readModelBytes, withSlotReadScope } from "../records/slots.js";
 import { skillFile } from "../records/ledger.js";
+import { candidateCodec } from "../records/candidate-codec.js";
+import { KIND_EXT } from "../records/slot-model/types.js";
 import { loadActions } from "../pipeline/actions.js";
 import { readCandidateHistory } from "./git.js";
 import type { AgentRecord, CandidateHistory, CandidateRecord, ConstitutionContext, FocusTarget, FoundryAgent, JsonRecord, MigrationsRecord, RetiredRecord, SlotRecord } from "./types.js";
@@ -142,6 +144,22 @@ const FOUNDRY_IA: Record<FoundryAgent, () => FoundryIa> = { director: directorIa
 /** The installed package's leaves, plus the agent's own loop slots (Producer-standard leaves every content agent holds, U9a). */
 export const installedFoundryLeaves = (agent: FoundryAgent): ReadonlySet<string> => new Set([...FOUNDRY_IA[agent]().slots.keys(), ...AGENT_LOOPS]);
 
+/**
+ * A candidate as the checks read it (U13 r4, the one candidate codec): a clossys.candidate/1 file of a kind with
+ * kind rules is read as its view (records/candidate-codec.ts: the candidate without its header, the header's source
+ * where the int2 rules read it; a seat as its content, which carries no source), with its header beside it. The
+ * sha256 stays the raw file's (R14.1, the CHOOSE gate and the ledger compare file bytes). Producer loop, queue and
+ * ledger candidates are self-headered JSON their certifier reads whole; bytes with no header are their own view.
+ */
+function candidateRecordView(raw: { name: string; path: string; text: string; sha256: string }, kind: unknown): CandidateRecord {
+  let parsed: ReturnType<typeof candidateCodec.parse>;
+  try { parsed = candidateCodec.parse(raw.name, raw.text); } catch { return raw; }
+  if (!parsed.header) return raw;
+  const header = parsed.header as unknown as Readonly<Record<string, unknown>>;
+  if (typeof kind !== "string" || !Object.hasOwn(KIND_EXT, kind)) return { ...raw, header };
+  return { ...raw, text: kind === "seat" ? parsed.content : parsed.view, header };
+}
+
 /** Reads the records under `<consumer>/agents` for the run. `root` is the workspace root rows are relative to. */
 export function buildContext(root: string, consumer: string, options: ContextOptions = {}): ConstitutionContext {
   const rel = (abs: string) => posix(relative(root, abs));
@@ -171,14 +189,17 @@ export function buildContext(root: string, consumer: string, options: ContextOpt
       const slotEntries = listModelDir(slotAbs).sort();
       const record = (file: string) => (slotEntries.includes(file) ? readJsonRecord(join(slotAbs, file), rel(join(slotAbs, file))) : undefined);
       const candDir = candidatesDir(slotAbs);
+      const slotValue = record("slot.json")?.value;
+      const slotKind = typeof slotValue === "object" && slotValue !== null && !Array.isArray(slotValue) ? (slotValue as Record<string, unknown>).kind : undefined;
       const candidates: CandidateRecord[] = listModelDir(candDir).sort().flatMap(candidate => {
         const abs = join(candDir, candidate);
         if (isModelDir(abs)) return [];
         const read = readText(abs);
-        const base = { name: candidate, path: rel(abs), text: read.text, sha256: read.bytes ? sha256Hex(read.bytes) : "" };
-        if (read.error !== undefined) return [{ ...base, readError: read.error }];
+        const raw = { name: candidate, path: rel(abs), text: read.text, sha256: read.bytes ? sha256Hex(read.bytes) : "" };
+        if (read.error !== undefined) return [{ ...raw, readError: read.error }];
+        const base = candidateRecordView(raw, slotKind);
         if (!candidate.endsWith(".json")) return [base];
-        try { return [{ ...base, json: JSON.parse(read.text) as unknown }]; }
+        try { return [{ ...base, json: JSON.parse(base.text) as unknown }]; }
         catch (error) { return [{ ...base, jsonError: errorText(error) }]; }
       });
       slots.set(name, {

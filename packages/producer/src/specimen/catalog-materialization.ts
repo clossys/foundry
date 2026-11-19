@@ -115,6 +115,7 @@ export async function materializeCatalogCandidate(input: CatalogCandidateInput) 
   if (written.name !== candidate) fail("candidate version allocation differs");
   const read = readCandidate(input.root, "designer", input.slot, candidate);
   const record = await libraryRecordStore([input.root]).load(`${input.slot}/${input.element}`, version);
-  if (!record || read.bytes !== bytes) fail("canonical candidate readback differs");
+  // The readback is the candidate's view (the header the submit wrote is not the item): the same item as written.
+  if (!record || !sameJson(JSON.parse(read.bytes), JSON.parse(bytes))) fail("canonical candidate readback differs");
   return { status: "DRAFT" as const, approved: false as const, candidate, id: record.id, version, contentHash: record.contentHash, record, ports };
 }

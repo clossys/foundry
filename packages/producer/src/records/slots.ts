@@ -24,6 +24,7 @@ import {
 import { isAbsent, parseJson } from "../errors.js";
 import { candidateHeaderOf, candidateIssues, isCurrentSlot, placedAt, readSlotValue } from "./slot-current.js";
 import { isConvertedStore, isPin1, isSlot1, oldFormatRefusal } from "./store-format.js";
+import { candidateCodec } from "./candidate-codec.js";
 /** A candidate as its kind rules read it (a clossys.candidate/1 file without its header, with the header source): Designer checks parse this, never the raw bytes. */
 export { candidateView, viewIssues, viewPlacedAt } from "./slot-current.js";
 import { notNeededIssue } from "./slot-model/validate.js";
@@ -528,13 +529,40 @@ export function candidateStamp(consumer: string, agent: SlotAgent, id: string, n
   });
 }
 
-export function readCandidate(consumer: string, agent: ModelAgent, id: string, name: string): Candidate {
+/**
+ * Read one candidate (U13 r4, the one candidate codec): `bytes` is its view, the candidate without its
+ * clossys.candidate/1 header (the header's source where the int2 rules read it; a Producer seat as its content);
+ * `raw` is the file and `sha256` the file's. Bytes with no header are their own view. Readers that render, publish
+ * or derive from a candidate parse `bytes`, so the header never reaches a page; the slot's candidate rules
+ * (`slotCandidateIssues`), byte rewrites and compile-lock inputs take `raw`.
+ */
+export function readCandidate(consumer: string, agent: ModelAgent, id: string, name: string): CandidateView {
   return withSlotReadScope(() => {
     if (!CANDIDATE_NAME.test(name)) throw new Error(`invalid candidate name ${name}`);
     const path = join(candidatesDir(locate(consumer, agent, id).dir), name);
     const bytes = readBytes(path);
-    return { name, bytes, sha256: fsTextSha(path, bytes) };
+    return candidateViewOf(agent, id, { name, bytes, sha256: fsTextSha(path, bytes) });
   });
+}
+
+/** The view of candidate bytes read from `<agent>/<id>` (see readCandidate). */
+function candidateViewOf(agent: ModelAgent, id: string, read: Candidate): CandidateView {
+  let header: Readonly<Record<string, unknown>> | undefined;
+  try { header = candidateHeaderOf(read.name, read.bytes); } catch { header = undefined; }
+  if (!header) return { ...read, raw: read.bytes };
+  // A Producer loop candidate is self-headered JSON its own reader takes whole (loop/files.ts); a seat is its content.
+  if (agent === "producer" && !id.startsWith("seat.")) return { ...read, raw: read.bytes, header };
+  let parsed: ReturnType<typeof candidateCodec.parse>;
+  try { parsed = candidateCodec.parse(read.name, read.bytes); } catch { return { ...read, raw: read.bytes, header }; }
+  return { name: read.name, bytes: agent === "producer" ? parsed.content : parsed.view, sha256: read.sha256, raw: read.bytes, header };
+}
+
+/** A candidate as a reader that renders, publishes or judges it reads it (U13 r4, the one candidate codec). */
+export interface CandidateView extends Candidate {
+  /** The file bytes, header included: what the slot's candidate rules (`slotCandidateIssues`) judge. */
+  readonly raw: string;
+  /** The clossys.candidate/1 header, when the file carries one. */
+  readonly header?: Readonly<Record<string, unknown>>;
 }
 
 function readPinAt(dir: string): PinDoc | null {

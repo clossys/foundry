@@ -52,6 +52,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmdirSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { CANDIDATE_NAME, buildCandidateHeader, parseCandidateName, serializeCandidate, targetSchema } from "../records/candidate.js";
+import { RECUT_HEADER_CLI } from "../records/candidate-codec.js";
 import { fileState, type FileState } from "../records/migrations.js";
 import { parseYamlSubset, validateAgainst } from "../records/schema.js";
 import { parseFrontmatter } from "../records/slot-model/frontmatter.js";
@@ -69,7 +70,7 @@ import { LIBRARY_DIR, planLibraryCells, removeLibraryCell, type CellRoute, type 
 import { definedSlot, slotDefinitions, type SlotDefinition } from "./recut-slots.js";
 
 export const RECUT = "recut";
-export const RECUT_CLI = "clossys migrate recut";
+export const RECUT_CLI = RECUT_HEADER_CLI;
 export const RECUT_BY = `code:${RECUT_CLI}`;
 /** Who an ia.json `retired` row names (clossys.retire/1 `by`: migration[:<name>]). */
 export const RECUT_RETIRE_BY = `migration:${RECUT}`;
@@ -199,121 +200,9 @@ export function fateOf(table: PackageTable, id: string): { fate: RecutFate; targ
   return { fate: "unknown" };
 }
 
-// ---------------------------------------------------------------------------
-// Candidate header
-// ---------------------------------------------------------------------------
-
-const FRONT = /^---\r?\n([\s\S]*?)\r?\n---(\r?\n|$)/;
-const SVG_META = /<metadata[^>]*>([\s\S]*?)<\/metadata>/;
-
-export interface HeaderContext {
-  readonly agent: AgentId;
-  readonly slotId: string;
-  readonly at: Iso;
-  readonly version: string;
-  /** Where the bytes came from, relative to the consumer folder: the source ref of a derived header. */
-  readonly sourceRef: string;
-  /** The slot id a moved candidate (or a routed library cell) left: its int2 `slot` field follows it to `slotId`. */
-  readonly movedFrom?: string;
-  /** The command a new header names as its creator (default this recut; `clossys migrate slots` passes its own). */
-  readonly cli?: string;
-}
-
-/**
- * The first int2 source of `values` that is present, as it is; else a derived source naming `fallback`. The
- * header check (`checked`) fails the file when the candidate/1 source cannot hold it: never a silent derived.
- */
-function sourceOf(values: readonly unknown[], fallback: string): CandidateHeader["source"] {
-  for (const value of values) if (value !== undefined) return value as CandidateHeader["source"];
-  return { kind: "derived", ref: [fallback] };
-}
-
-/** A Markdown front matter's fields: the int2 `key: <JSON>` lines exactly, else the YAML subset (which throws on what it cannot read). */
-function frontFields(name: string, text: string, match: RegExpExecArray): { fields: Record<string, unknown>; body: string } | undefined {
-  const exact = parseFrontmatter(text);
-  if (exact.ok) return { fields: { ...exact.value.fields }, body: exact.value.body };
-  let front: unknown;
-  try { front = parseYamlSubset(match[1] ?? ""); } catch (error) { throw new Error(`${name}: its front matter cannot be read (${(error as Error).message}); not rewritten`); }
-  return object(front) ? { fields: front, body: text.slice(match[0].length) } : undefined;
-}
-
-function checked(header: CandidateHeader, name: string): CandidateHeader {
-  const issues = validateAgainst(targetSchema("candidate"), header);
-  if (issues.length) throw new Error(`${name}: the recut header is not a valid clossys.candidate/1: ${issues.slice(0, 3).map(issue => `${issue.path} ${issue.message}`).join("; ")}`);
-  return header;
-}
-
-/**
- * The bytes of a candidate under the recut: the existing candidate/1 header re-addressed to the slot it now
- * sits in, or a new one created by this command; the body is never changed.
- */
-export function recutCandidateBytes(name: string, text: string, context: HeaderContext, int2?: { readonly source?: unknown }): string {
-  const parts = parseCandidateName(name);
-  if (!parts) throw new Error(`${name} is not a candidate file name (<name>-v<n>.md|json|svg)`);
-  const id = `${context.agent}/${context.slotId}/${name}`;
-  const slot = `${context.agent}/${context.slotId}`;
-  const fresh = (source: CandidateHeader["source"]) => checked(buildCandidateHeader({
-    agent: context.agent, slotId: context.slotId, name, status: "submitted",
-    createdBy: { actor: "code", cli: context.cli ?? RECUT_CLI, version: context.version }, createdAt: context.at, source,
-  }), name);
-  const readdressed = (header: Record<string, unknown>) => checked({ ...header, id, agent: context.agent, slot } as unknown as CandidateHeader, name);
-  const current = (header: unknown) => object(header) && header.schema === "clossys.candidate/1" && header.id === id && header.slot === slot && header.agent === context.agent;
-  // The int2 `slot` field names the slot the file sits in: on a move it follows the candidate, as the header does.
-  // Any other value is kept as it is, for the kind rules to judge.
-  const follows = (fields: Record<string, unknown>) => context.movedFrom !== undefined && fields.slot === context.movedFrom ? { ...fields, slot: context.slotId } : fields;
-
-  if (parts.ext === "md") {
-    const match = FRONT.exec(text);
-    const front = match ? frontFields(name, text, match) : undefined;
-    if (front && "clossys" in front.fields) {
-      const { clossys, ...rest } = front.fields;
-      if (current(clossys)) return text;
-      if (!object(clossys)) throw new Error(`${name}: the clossys front matter is not an object`);
-      return serializeCandidate(name, readdressed(clossys), front.body, follows(rest));
-    }
-    // The int2 front matter: its source moves into the header, every other field stays beside it.
-    if (front) {
-      const { source, ...rest } = front.fields;
-      return serializeCandidate(name, fresh(sourceOf([source, int2?.source], context.sourceRef)), front.body, follows(rest));
-    }
-    return serializeCandidate(name, fresh(sourceOf([int2?.source], context.sourceRef)), text);
-  }
-  if (parts.ext === "json") {
-    const doc = JSON.parse(text) as unknown;
-    if (object(doc) && object(doc.clossys)) {
-      if (Object.keys(doc).some(key => key !== "clossys" && key !== "content")) throw new Error(`${name}: holds keys beside clossys and content; not rewritten`);
-      if (current(doc.clossys)) return text;
-      const content = object(doc.content) && object(doc.content.meta) ? { ...doc.content, meta: follows(doc.content.meta) } : doc.content;
-      return serializeCandidate(name, readdressed(doc.clossys), content);
-    }
-    // A Publisher page or publication record (clossys.page/1, clossys.publication/1) is the record today's install,
-    // projector and slot check read: kept as is.
-    if (context.agent === "publisher" && object(doc) && (doc.schema === PAGE_SCHEMA || doc.schema === PUBLICATION_SCHEMA)) return text;
-    if (object(doc) && typeof doc.schema === "string") throw new Error(`${name}: a top-level schema key (${doc.schema}) is a record, not an int2 candidate`);
-    let content: unknown = doc;
-    const sources: unknown[] = [int2?.source];
-    if (object(doc) && "meta" in doc) {
-      const meta = object(doc.meta) ? doc.meta : undefined;
-      const element = meta && object(meta.element) ? meta.element : undefined;
-      sources.push(meta?.source, element?.source);
-      // Only meta.source moves into the header; the rest of meta stays in the content, where the candidate view reads it.
-      if (meta) {
-        const { source: _moved, ...kept } = meta;
-        content = Object.keys(kept).length ? { ...doc, meta: follows(kept) } : Object.fromEntries(Object.entries(doc).filter(([key]) => key !== "meta"));
-      }
-    } else if (object(doc) && Object.keys(doc).length === 1 && "content" in doc) content = doc.content;
-    return serializeCandidate(name, fresh(sourceOf(sources, context.sourceRef)), content);
-  }
-  const meta = SVG_META.exec(text);
-  if (meta) {
-    let value: unknown;
-    try { value = JSON.parse(meta[1] ?? ""); } catch { throw new Error(`${name}: an SVG <metadata> that is not the clossys header; not rewritten`); }
-    if (!object(value) || !object(value.clossys)) throw new Error(`${name}: an SVG <metadata> that is not the clossys header; not rewritten`);
-    if (current(value.clossys)) return text;
-    return text.replace(meta[0], `<metadata>${JSON.stringify({ clossys: readdressed(value.clossys) })}</metadata>`);
-  }
-  return serializeCandidate(name, fresh(sourceOf([int2?.source], context.sourceRef)), text);
-}
+// Candidate header: records/candidate-codec.ts (the one candidate codec, U13 r4).
+import { recutCandidateBytes, type HeaderContext } from "../records/candidate-codec.js";
+export { recutCandidateBytes, type HeaderContext };
 
 // ---------------------------------------------------------------------------
 // Plan

@@ -42,7 +42,7 @@ export const LOCK_FILE = "compile.lock.json";
 export function writerCopyInputs(consumer: string): { path: string; bytes: string }[] {
   return writerCopyPins(consumer).map(({ entry, pin }) => {
     const candidate = readCandidate(consumer, "writer", entry.id, pin.candidate);
-    return { path: `agents/writer/${entry.id}/candidates/${candidate.name}`, bytes: candidate.bytes };
+    return { path: `agents/writer/${entry.id}/candidates/${candidate.name}`, bytes: candidate.raw }; // the lock hashes the file
   });
 }
 export const PUBLICATIONS_FILE = "publications.json";

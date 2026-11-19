@@ -30,7 +30,7 @@ import type { CliResult } from "./main.js";
 import { isOldTargetSlot, oldSlotRefusal, resolveCandidate } from "./pin.js";
 import { seatRefusal } from "../records/seat-owner.js";
 import { discoverRoot } from "./root.js";
-import { recutCandidateBytes } from "../migrate/recut.js";
+import { candidateCodec, recutCandidateBytes } from "../records/candidate-codec.js";
 import { candidateHeaderOf } from "../records/slot-current.js";
 import { cliActor, toIsoZ } from "../records/pin.js";
 
@@ -182,30 +182,6 @@ function parse(argv: readonly string[]): Flags {
   return flags;
 }
 
-/**
- * A headered candidate's content as the reissue transforms it: JSON, the `content` value (as JSON text); Markdown,
- * the body after the front matter, with its own front fields beside the clossys header kept. Bytes with no
- * clossys.candidate/1 header are returned as they are (writeReissue refuses them on a slot/2 slot).
- */
-export function headeredContent(name: string, text: string): { text: string; front: Record<string, unknown> } {
-  if (name.endsWith(".json")) {
-    let doc: unknown;
-    try { doc = JSON.parse(text); } catch { return { text, front: {} }; }
-    if (doc && typeof doc === "object" && !Array.isArray(doc) && "clossys" in doc) return { text: `${JSON.stringify((doc as { content?: unknown }).content ?? null, null, 2)}\n`, front: {} };
-    return { text, front: {} };
-  }
-  const match = /^---\n([\s\S]*?)\n---\n/.exec(text);
-  if (!match || !/^clossys: /m.test(match[1]!)) return { text, front: {} };
-  const front: Record<string, unknown> = {};
-  for (const line of match[1]!.split("\n")) {
-    const field = /^([A-Za-z][\w-]*): (.*)$/.exec(line);
-    if (!field) throw new Error(`${name}: front matter line ${JSON.stringify(line)} does not read`);
-    if (field[1] === "clossys") continue;
-    front[field[1]!] = JSON.parse(field[2]!);
-  }
-  return { text: text.slice(match[0].length), front };
-}
-
 const refuse = (message: string): CliResult => ({ exitCode: 1, message: /^reissue refused/.test(message) ? message : `reissue refused: ${message}` });
 
 export async function runReissueCli(argv: readonly string[], cwd: string, guard: WriteGuard = true): Promise<CliResult> {
@@ -235,14 +211,16 @@ export async function runReissueCli(argv: readonly string[], cwd: string, guard:
     const read = readCandidate(consumer, agent, id, old);
     const lock = readLock(dirname(resolve(consumer)));
     const oldText = readFileSync(join(entry.dir, "candidates", old), "utf8");
-    const split = headeredContent(old, oldText);
-    // A candidate submitted without a clossys header: its header is the recut mapping of it (what migrate slots writes).
-    const oldHeader = candidateHeaderOf(old, oldText) ? undefined : candidateHeaderOf(old, recutCandidateBytes(old, oldText, { agent, slotId: id, at: toIsoZ(at) ?? at, version: cliActor("clossys reissue").version, sourceRef: `agents/${agent}/${id}/candidates/${old}`, cli: "clossys reissue" } as Parameters<typeof recutCandidateBytes>[2]));
-    const plan = planReissue(split.text, KIND_EXT[doc.kind] === "json", { agent, slot: id, uses: doc.uses, lock, index: slotIndex(consumer) });
+    // The one candidate codec (U13 r4): a candidate submitted without a clossys header is read as its recut mapping
+    // (what migrate slots writes), so the reissue transforms the content and front fields beside the header only.
+    const headered = candidateHeaderOf(old, oldText) ? oldText : recutCandidateBytes(old, oldText, { agent, slotId: id, at: toIsoZ(at) ?? at, version: cliActor("clossys reissue").version, sourceRef: `agents/${agent}/${id}/candidates/${old}`, cli: "clossys reissue" } as Parameters<typeof recutCandidateBytes>[2]);
+    const split = candidateCodec.parse(old, headered);
+    const oldHeader = headered === oldText ? undefined : split.header;
+    const plan = planReissue(split.content, KIND_EXT[doc.kind] === "json", { agent, slot: id, uses: doc.uses, lock, index: slotIndex(consumer) });
     if (plan.issues.length) return refuse(`${target} ${old}: ${plan.issues.join("; ")}`);
     const events = (readLedger(entry.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
     const oldRung = events.filter(event => event.op === "submit" && (event.name === old || event.candidate === old)).at(-1)?.rung;
-    const rung = reissueRung(agent, oldRung, plan.content, ((candidateHeaderOf(old, oldText) ?? oldHeader) as { source?: unknown } | undefined)?.source);
+    const rung = reissueRung(agent, oldRung, plan.content, split.header?.source);
     const result = writeReissue(consumer, agent, id, { old, oldSha256: read.sha256, content: plan.content, ...(plan.uses ? { uses: plan.uses } : {}), rung, by: flags.by, at, front: split.front, ...(oldHeader ? { oldHeader: oldHeader as never } : {}) }, { guard });
     return {
       exitCode: 0, root,

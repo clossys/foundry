@@ -22,14 +22,15 @@ import {
   type ModelAgent, type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
-import { candidateIssues, isCurrentSlot, readSlotValue, slotReadIssues } from "./slot-current.js";
+import { candidateHeaderOf, candidateIssues, isCurrentSlot, readSlotValue, slotReadIssues } from "./slot-current.js";
+import { recutCandidateBytes } from "./candidate-codec.js";
 import { serializeSlot } from "./slot.js";
 import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
 import type { AgentId, CandidateHeader, Iso, Slot } from "./types.js";
-import { buildCandidateHeader, readCandidateFile, serializeCandidate } from "./candidate.js";
+import { buildCandidateHeader, candidateHeaderIssues, readCandidateFile, serializeCandidate } from "./candidate.js";
 import { cliActor, toIsoZ } from "./pin.js";
 import {
-  LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, skillFile, skillPath,
+  LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, expectedCandidateSha, skillFile, skillPath,
   type LedgerEvent, type LedgerRecordState, type LedgerSkill, type Provenance, type RecordFile, type Verb,
 } from "./ledger.js";
 import type { GuardOptions, GuardTarget, GuardVerb } from "../constitution/guard.js";
@@ -608,6 +609,42 @@ export function writeCritique(consumer: string, agent: ModelAgent, id: string, r
 }
 
 /**
+ * The bytes `writeCandidate` writes (one format, U13 r4). A clossys.slot/1 slot takes the int2 bytes as they are,
+ * judged by the int2 kind rules. A clossys.slot/2 slot takes a clossys.candidate/1 file only: int2 bytes are first
+ * judged by the int2 kind rules as they are (a missing source is refused, never derived), then written through the
+ * one candidate codec, the source moved into a header created by `clossys submit`; bytes that already carry a
+ * header must name this file and slot. The written bytes are then judged by the reader's rules (candidateIssues).
+ */
+function submittedBytes(dir: string, agent: SlotAgent, id: string, kind: SlotDoc["kind"], file: string, given: string, at: string | undefined): string {
+  const refused = (issues: readonly { message: string }[] | readonly string[]) => new Error(`candidate refused: ${issues.map(issue => typeof issue === "string" ? issue : issue.message).join("; ")}`);
+  let raw: unknown;
+  try { raw = JSON.parse(readFileSync(slotFile(dir), "utf8")); } catch { raw = undefined; }
+  const slotRead = isCurrentSlot(raw) ? readSlotValue(raw, slotFile(dir)) : undefined;
+  if (!slotRead?.current) {
+    const issues = validateCandidate(kind, id, file, given);
+    if (issues.length) throw refused(issues);
+    return given;
+  }
+  const expect = { agent: agent as AgentId, slotId: id as Slot["id"] };
+  let bytes = given;
+  if (candidateHeaderOf(file, given)) {
+    const header = candidateHeaderIssues(file, given, expect);
+    if (header.length) throw refused(header);
+  } else {
+    const int2 = validateCandidate(kind, id, file, given);
+    if (int2.length) throw refused(int2);
+    const createdAt = (toIsoZ(at ?? nowIso()) ?? at ?? nowIso()) as Iso;
+    bytes = recutCandidateBytes(file, given, { agent: agent as AgentId, slotId: id, at: createdAt, version: cliActor(SUBMIT_CLI).version, sourceRef: `agents/${agent}/${id}/candidates/${file}`, cli: SUBMIT_CLI });
+  }
+  const issues = candidateIssues(slotRead, agent, id, file, bytes);
+  if (issues.length) throw refused(issues);
+  return bytes;
+}
+
+/** The command a candidate header written by submit names as its creator. */
+const SUBMIT_CLI = "clossys submit";
+
+/**
  * Write `<name>-v<next>` (`<next>` the slot's `nextVersion`) into the slot's candidates and append its `submit {name, sha256}` event.
  * JSON kinds take the item object (serialized as two-space JSON); Markdown kinds take the file text.
  * Invalid candidates are refused. `canonical` also refuses aliased candidate paths (no ancestor may
@@ -629,9 +666,7 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
     const { doc, entry: current } = located(consumer, agent, id);
     const ext = KIND_EXT[doc.kind];
     const file = `${name}-v${nextVersion(current.dir, current.candidates)}.${ext}`;
-    const bytes = ext === "md" ? String(content) : jsonBytes(content);
-    const issues = validateCandidate(doc.kind, id, file, bytes);
-    if (issues.length) throw new Error(`candidate refused: ${issues.map(issue => issue.message).join("; ")}`);
+    const bytes = submittedBytes(entry.dir, agent, id, doc.kind, file, ext === "md" ? String(content) : jsonBytes(content), options.at);
     readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
     const directory = candidatesDir(entry.dir);
     if (options.canonical) canonicalDirectory(directory);
@@ -829,21 +864,6 @@ export interface ReissueResult {
 }
 
 /**
- * The sha256 the slot's ledger last recorded for `name`: its submit (`sha256`), or a migrate event's
- * `to` for it. Undefined when no event records its bytes.
- */
-function recordedSha(events: readonly Record<string, unknown>[], name: string): string | undefined {
-  let sha: string | undefined;
-  for (const event of events) {
-    if (event.op === "submit" && (event.name === name || event.candidate === name) && typeof event.sha256 === "string") sha = event.sha256;
-    else if (event.op === "migrate" && Array.isArray(event.files)) {
-      for (const file of event.files as Record<string, unknown>[]) if (file?.name === name && typeof file.to === "string") sha = file.to;
-    }
-  }
-  return sha;
-}
-
-/**
  * `clossys reissue` (slot-constitution.md section 5, Reissue): under one slot lock, write the next
  * version `<leaf>-v<n>` of a slot's candidate, record its submit (rung adopt, seed
  * `<slot>/<old>@<sha>`), move the slot's `uses` when the caller moved registryDependencies there,
@@ -889,7 +909,7 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
     if (issues.length) throw new Error(`reissue refused: ${issues.map(issue => issue.message).join("; ")}`);
     const ledger = readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
     const events = (ledger?.events ?? []) as unknown as Record<string, unknown>[];
-    const recorded = recordedSha(events, input.old);
+    const recorded = expectedCandidateSha(events, input.old).sha256;
     const code = recorded !== undefined && recorded !== old.sha256 ? "edited-in-place" : "superseded";
     const seed = `${id}/${input.old}@${old.sha256}`;
     const retiredDir = join(entry.dir, RETIRED_CANDIDATES);
@@ -1069,11 +1089,17 @@ export function rewriteCitationsInPlace(consumer: string, agent: SlotAgent, id: 
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
     const { doc } = located(consumer, agent, id);
+    let rawSlot: unknown;
+    try { rawSlot = JSON.parse(readFileSync(slotFile(entry.dir), "utf8")); } catch { rawSlot = undefined; }
+    const slotRead = readSlotValue(rawSlot, slotFile(entry.dir));
     for (const rewrite of change.candidates) {
       if (!CANDIDATE_NAME.test(rewrite.name) || !entry.candidates.includes(rewrite.name)) throw new Error(`citation rewrite refused: ${agent}/${id} has no candidate ${rewrite.name}`);
-      if (readCandidate(consumer, agent, id, rewrite.name).bytes !== rewrite.before) throw new Error(`citation rewrite refused: ${agent}/${id}/${rewrite.name} changed since it was read`);
-      const known = new Set(validateCandidate(doc.kind, id, rewrite.name, rewrite.before).map(issue => issue.message));
-      const added = validateCandidate(doc.kind, id, rewrite.name, rewrite.after).filter(issue => !known.has(issue.message));
+      if (readCandidate(consumer, agent, id, rewrite.name).raw !== rewrite.before) throw new Error(`citation rewrite refused: ${agent}/${id}/${rewrite.name} changed since it was read`);
+      // The slot's candidate rules (the header, then the kind's rules over the view) on both sides: a headered
+      // clossys.slot/2 candidate is judged as the reader judges it, never as raw bytes the int2 rules refuse.
+      const judge = (bytes: string) => slotRead ? candidateIssues(slotRead, agent, id, rewrite.name, bytes) : validateCandidate(doc.kind, id, rewrite.name, bytes);
+      const known = new Set(judge(rewrite.before).map(issue => issue.message));
+      const added = judge(rewrite.after).filter(issue => !known.has(issue.message));
       if (added.length) throw new Error(`citation rewrite refused: ${agent}/${id}/${rewrite.name}: ${added.map(issue => issue.message).join("; ")}`);
     }
     const pinPath = pinFile(entry.dir);

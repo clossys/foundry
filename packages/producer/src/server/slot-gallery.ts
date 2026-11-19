@@ -1,5 +1,5 @@
 /** IA-first Studio gallery data. Empty slots never depend on a candidate or a route. */
-import { hasAgentModel, hasPinFile as hasPinRecord, listSlots, readCandidate, readIa, readSlot, readSlotEntry, viewPlacedAt, type SlotEntry } from '../records/slots.js';
+import { hasAgentModel, hasPinFile as hasPinRecord, listSlots, readCandidate, readIa, readSlot, readSlotEntry, slotCandidateIssues, viewPlacedAt, type SlotEntry } from '../records/slots.js';
 import { type IaDoc, type NotNeeded, parseFrontmatter, validateCandidate, type SlotAgent, type SlotKind, type SlotStateRejection } from '../records/slot-model/index.js';
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
 import { iaLabel, slotLabel, slotLabels } from '../records/slot-labels.js';
@@ -62,11 +62,12 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
   if (!name) return out;
   if (!entry.candidates.includes(name)) return undefined;
   let source;
+  // The view: the record as shown, never its clossys header; the file bytes are what the slot's rules judge.
   try { source = readCandidate(consumer, agent, id, name); } catch (error) {
     if (agent === 'director') return undefined;
     throw error;
   }
-  if (validateCandidate(doc.kind, id, name, source.bytes).length) return undefined;
+  if (slotCandidateIssues(consumer, agent, id, name, source.raw).length) return undefined;
   if (agent === 'director' && entry.pin?.candidate === name && source.sha256 !== entry.pin.sha256) return undefined;
   if (entry.pin?.candidate === name && source.sha256 !== entry.pin.sha256) throw new Error(`Candidate hash mismatch: ${id}`);
   const parsed = parseFrontmatter(source.bytes);
@@ -168,7 +169,7 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
       kind = checkedSlot(consumer, agent, entry).kind;
       if (candidate) {
         const source = readCandidate(consumer, agent, id, candidate);
-        if (validateCandidate(kind, id, candidate, source.bytes).length || (entry.pin && source.sha256 !== entry.pin.sha256)) failing = true;
+        if (slotCandidateIssues(consumer, agent, id, candidate, source.raw).length || (entry.pin && source.sha256 !== entry.pin.sha256)) failing = true;
         if (!failing && agent === 'writer') {
           const parsed = parseFrontmatter(source.bytes);
           if (!parsed.ok) failing = true;
