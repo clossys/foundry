@@ -350,7 +350,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
     // One format (U13): the owner verbs write clossys.slot/2 and pin/2 only, so the scratch copy is converted first.
     const root = converted(workspace());
     const at = ["--root", root];
-    const seat = (...args: string[]) => runPipeline(["seat", "writer.candidates", "--by", "agent:writer", "--decided-by", "planner:U13-fixture", ...args, "--prompt-file", "packages/writer/actions/writer.candidates/skill.md", "--procedure", "Draft candidates", "--command", "clossys next", ...at], root);
+    const seat = (...args: string[]) => runPipeline(["seat", "writer.candidates", "--by", "agent:writer", "--decided-by", "planner:U13-fixture", ...args, "--prompt-file", "packages/writer/actions/writer.candidates/skill.md", "--procedure", "Draft the candidates for each open Writer slot.", "--command", "clossys next", ...at], root);
     expect((await seat("--model", "<model:mid>", "--tier", "mid")).exitCode).toBe(1);
     const seated = await seat("--model", "fixture-model", "--tier", "mid");
     expect(seated.exitCode, seated.message).toBe(0);

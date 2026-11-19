@@ -1,6 +1,6 @@
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { ASSERTIONS, OVERLAP_MIN } from "./assertions.js";
@@ -9,6 +9,9 @@ import { adapterIssues, CONFORM_AGENTS, missingPaths, packageSlot, readConformMo
 import { cellOf, conform, formatReport, readRegistry } from "./run.js";
 import { routingIssues } from "../queue/routing.js";
 import { AGENT_LOOPS, agentLoopIssues, readAgentPackageLoop } from "../loop/agent-loops.js";
+
+// U13 r4: the pin gate probe runs the guarded pin and approve verbs; at the workstation's shared load they exceed 5 s.
+vi.setConfig({ testTimeout: 60_000 });
 
 const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
 const FIXTURE = join(REPO, "packages/producer/test-fixtures/consumer/clossys");

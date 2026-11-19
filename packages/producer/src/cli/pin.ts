@@ -252,6 +252,8 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
       return { exitCode: 0, message: `${agent}/${target}: pinned ${pinned.candidate} (${pinned.sha256.slice(0, 12)}), decided by ${pinned.decidedBy} (${pinned.basis})`, output: doc };
     });
   } catch (error) {
+    // A guard finding names its checks and findings, as the submit and reissue refusals do (clossys.pin-refused/1).
+    if (error instanceof GuardRefusal) return { exitCode: 1, message: `pin refused: ${error.message}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, verb: error.verb, checks: error.checks, findings: error.findings } };
     return { exitCode: 1, message: `pin refused: ${error instanceof Error ? error.message : String(error)}` };
   }
 }
@@ -278,6 +280,8 @@ function runTargetNotNeeded(root: string, agent: string, slotId: string, record:
     const doc = writeTargetNotNeeded(join(root, "clossys"), agent as SlotAgent, slotId, { reason: flags.reason.trim(), since: at.slice(0, 10), decidedBy: flags.by }, { at: toIsoZ(at)! }, guard);
     return { exitCode: 0, message: `${agent}/${slotId}: not needed (${doc.notNeeded!.reason}), decided by ${doc.notNeeded!.decidedBy}`, decision: { slot: `${agent}/${slotId}`, state: "not-needed", ...doc.notNeeded } };
   } catch (error) {
+    // A guard finding names its checks and findings, as the submit and reissue refusals do (clossys.pin-refused/1).
+    if (error instanceof GuardRefusal) return { exitCode: 1, message: `pin refused: ${error.message}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, verb: error.verb, checks: error.checks, findings: error.findings } };
     return { exitCode: 1, message: `pin refused: ${error instanceof Error ? error.message : String(error)}` };
   }
 }

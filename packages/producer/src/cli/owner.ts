@@ -1000,12 +1000,20 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
   if ("error" in follow) return refuse("seat", follow.error);
   // The seat's candidate, pin and their submit and pin ledger events land as one guarded decision (U13 r4 step 5, N1):
   // a guard refusal or a slot-model finding puts every file back.
+  // Every record the seat places or creates (ia.json, its slot.json, later seats' renumbered slot.json) gets the ledger
+  // event an ia write gives it (R14.1), as commitIa appends them; the targets are read before any file is written.
+  const records: [string, string][] = [...(placed !== ia ? [[iaFile, jsonBytes(placed)] as [string, string]] : []), ...follow.writes];
+  const targets = [...records, ...(doc ? [[docFile, serializeSlot(doc)] as [string, string]] : [])].map(([file, text]) => iaWriteTarget(consumer, file, text));
+  const ledgers = [...new Set([...records.map(([file]) => file), ...(doc ? [docFile] : [])].map(file => join(dirname(file), LEDGER_FILE)))];
   let added: string[];
   try {
-    added = guarded(consumer, [iaFile, candidate, pinFile(dir), join(dir, LEDGER_FILE), ...(doc ? [docFile] : []), ...follow.writes.map(([file]) => file)], () => {
-      if (placed !== ia) replaceFile(iaFile, jsonBytes(placed));
-      for (const [file, bytes] of follow.writes) replaceFile(file, bytes);
+    added = guarded(consumer, [iaFile, candidate, pinFile(dir), join(dir, LEDGER_FILE), ...(doc ? [docFile] : []), ...follow.writes.map(([file]) => file), ...ledgers], () => {
+      for (const [file, text] of records) replaceFile(file, text);
       if (doc) createModelFile(docFile, serializeSlot(doc));
+      for (const target of targets) {
+        if (target.slot === undefined) appendIaEvent(consumer, target.agent, { by: decidedBy, at: atZ, fields: { kind: target.kind } });
+        else appendSlotDocEvent(consumer, target.agent, target.slot, { by: decidedBy, at: atZ, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: target.kind } });
+      }
       writeSeatDecision(consumer, slotId, { name, bytes, pin: `${JSON.stringify(pin, null, 2)}\n`, at: atZ });
     });
   } catch (error) { return refuse("seat", error instanceof Error ? error.message : String(error)); }

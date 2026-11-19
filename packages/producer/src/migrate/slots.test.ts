@@ -11,6 +11,7 @@ import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import "../constitution/guard.js"; // the migrate guard runs on every folder (U13 r4)
 import { sha256Hex } from "../records/hash.js";
+import { skillFile, skillPath } from "../records/ledger.js";
 import { consumerCopy, CONSUMER } from "../records/__fixtures__/slot2-workspace.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import { SLOT_LOCK } from "../records/slot-write.js";
@@ -239,7 +240,17 @@ describe("clossys migrate slots records itself in each folder's ledger (U13 r4, 
     mkdirSync(join(cell, "candidates"), { recursive: true });
     writeFileSync(join(cell, "candidates", "valid-v1.json"), bytes);
     // The legacy tree's pin/1, naming the headerless bytes the migration then recuts.
-    writeFileSync(join(cell, "pin.json"), `${JSON.stringify({ candidate: "valid-v1.json", sha256: sha256Hex(bytes), decidedBy: "planner:U13", basis: "planner", at: OPTIONS.at }, null, 2)}\n`);
+    const pin = `${JSON.stringify({ candidate: "valid-v1.json", sha256: sha256Hex(bytes), decidedBy: "planner:U13", basis: "planner", at: OPTIONS.at }, null, 2)}\n`;
+    writeFileSync(join(cell, "pin.json"), pin);
+    // U13 r4: the guarded migration refuses a folder whose files have no provenance (R14.1), so the legacy ledger
+    // records the submit and the pin the way the slot/1 writers did, citing the installed action skills (R14.2).
+    const skill = (path: string) => ({ path, sha256: sha256Hex(readFileSync(skillFile(path))) });
+    const ledger = JSON.parse(readFileSync(join(cell, "ledger.json"), "utf8")) as { schema: string; events: Record<string, unknown>[] };
+    ledger.events.push(
+      { op: "submit", at: OPTIONS.at, by: "planner", verb: "submit", skill: skill(skillPath("designer", "designer.candidates")), model: "none", tier: "none", name: "valid-v1.json", sha256: sha256Hex(bytes) },
+      { op: "pin", at: OPTIONS.at, by: "planner:U13", verb: "pin", skill: skill(skillPath("producer", "pin.designer")), model: "none", tier: "none", candidate: "valid-v1.json", sha256: sha256Hex(bytes), decidedBy: "planner:U13", basis: "planner", records: [{ file: "pin.json", sha256: sha256Hex(pin) }] },
+    );
+    writeFileSync(join(cell, "ledger.json"), `${JSON.stringify(ledger, null, 2)}\n`);
     apply(ws.root);
     const recut = readFileSync(join(cell, "candidates", "valid-v1.json"), "utf8");
     expect(recut).not.toBe(bytes);
