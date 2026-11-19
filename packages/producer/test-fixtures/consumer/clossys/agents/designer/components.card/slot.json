@@ -196,7 +196,7 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/card.tsx",
+        "file": "registry/aria-nova/ui/card.tsx",
         "export": "Card",
         "props": {}
       }

@@ -158,8 +158,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/toast.tsx",
-        "export": "Toast",
+        "file": "registry/aria-nova/ui/sonner.tsx",
+        "export": "Toaster",
         "props": {}
       }
     },

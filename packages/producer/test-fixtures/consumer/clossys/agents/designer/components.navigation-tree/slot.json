@@ -211,8 +211,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/navigation-tree.tsx",
-        "export": "NavigationTree",
+        "file": "registry/aria-nova/ui/sidebar.tsx",
+        "export": "Sidebar",
         "props": {}
       }
     },

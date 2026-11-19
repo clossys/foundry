@@ -222,8 +222,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/search-field.tsx",
-        "export": "SearchField",
+        "file": "registry/aria-nova/ui/input-group.tsx",
+        "export": "InputGroup",
         "props": {}
       }
     },

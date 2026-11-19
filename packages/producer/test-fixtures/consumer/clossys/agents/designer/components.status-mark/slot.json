@@ -190,8 +190,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/status-mark.tsx",
-        "export": "StatusMark",
+        "file": "ui/status.tsx",
+        "export": "Status",
         "props": {}
       }
     },

@@ -131,7 +131,7 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/scroll-area.tsx",
+        "file": "registry/aria-nova/ui/scroll-area.tsx",
         "export": "ScrollArea",
         "props": {}
       }

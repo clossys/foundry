@@ -158,14 +158,6 @@
       ]
     },
     "apg": "treeview",
-    "fixture": {
-      "schema": "clossys.element-preview/1",
-      "fixtures": {
-        "file": "registry/default/ui/tree.tsx",
-        "export": "Tree",
-        "props": {}
-      }
-    },
     "requirements": [
       {
         "check": "source.ref"

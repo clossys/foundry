@@ -185,7 +185,7 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/table.tsx",
+        "file": "registry/aria-nova/ui/table.tsx",
         "export": "Table",
         "props": {}
       }

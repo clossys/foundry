@@ -77,6 +77,7 @@
     "check:route-parity": "node scripts/check-route-parity.mjs",
     "check:slot-options": "node scripts/check-slot-options.mjs",
     "check:slot-defaults": "node scripts/check-slot-defaults.mjs",
+    "check:contract-fixtures": "node scripts/derive-contract-fixtures.mjs --from-references --check",
     "check:ia-source": "node scripts/check-ia-source.mjs",
     "check:no-consumer-content": "node scripts/check-no-consumer-content.mjs --repo ../..",
     "check:slot-state": "node scripts/check-slot-state.mjs",

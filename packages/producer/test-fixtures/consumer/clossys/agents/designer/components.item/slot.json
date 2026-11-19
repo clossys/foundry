@@ -193,7 +193,7 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/item.tsx",
+        "file": "registry/aria-nova/ui/item.tsx",
         "export": "Item",
         "props": {}
       }

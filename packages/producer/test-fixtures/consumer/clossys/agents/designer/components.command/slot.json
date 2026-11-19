@@ -293,7 +293,7 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/command.tsx",
+        "file": "registry/aria-nova/ui/command.tsx",
         "export": "Command",
         "props": {}
       }

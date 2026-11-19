@@ -201,8 +201,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/breadcrumbs.tsx",
-        "export": "Breadcrumbs",
+        "file": "registry/aria-nova/ui/breadcrumb.tsx",
+        "export": "Breadcrumb",
         "props": {}
       }
     },

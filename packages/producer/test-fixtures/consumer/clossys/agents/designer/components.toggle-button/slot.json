@@ -214,8 +214,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/toggle-button.tsx",
-        "export": "ToggleButton",
+        "file": "registry/aria-nova/ui/toggle.tsx",
+        "export": "Toggle",
         "props": {}
       }
     },

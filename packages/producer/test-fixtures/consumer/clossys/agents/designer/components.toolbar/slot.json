@@ -140,8 +140,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/toolbar.tsx",
-        "export": "Toolbar",
+        "file": "registry/aria-nova/ui/button-group.tsx",
+        "export": "ButtonGroup",
         "props": {}
       }
     },

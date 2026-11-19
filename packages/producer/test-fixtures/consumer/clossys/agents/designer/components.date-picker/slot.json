@@ -142,8 +142,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/date-picker.tsx",
-        "export": "DatePicker",
+        "file": "registry/aria-nova/ui/calendar.tsx",
+        "export": "Calendar",
         "props": {}
       }
     },

@@ -196,14 +196,6 @@
       ],
       "assets": []
     },
-    "fixture": {
-      "schema": "clossys.element-preview/1",
-      "fixtures": {
-        "file": "registry/default/ui/chart-bar.tsx",
-        "export": "ChartBar",
-        "props": {}
-      }
-    },
     "requirements": [
       {
         "check": "source.ref"

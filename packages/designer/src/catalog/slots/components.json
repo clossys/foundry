@@ -54,7 +54,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/avatar.tsx",
+          "file": "registry/aria-nova/ui/avatar.tsx",
           "export": "Avatar",
           "props": {}
         }
@@ -117,7 +117,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/badge.tsx",
+          "file": "registry/aria-nova/ui/badge.tsx",
           "export": "Badge",
           "props": {}
         }
@@ -182,8 +182,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/banner.tsx",
-          "export": "Banner",
+          "file": "registry/aria-nova/ui/alert.tsx",
+          "export": "Alert",
           "props": {}
         }
       }
@@ -259,8 +259,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/breadcrumbs.tsx",
-          "export": "Breadcrumbs",
+          "file": "registry/aria-nova/ui/breadcrumb.tsx",
+          "export": "Breadcrumb",
           "props": {}
         }
       }
@@ -339,7 +339,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/button.tsx",
+          "file": "registry/aria-nova/ui/button.tsx",
           "export": "Button",
           "props": {}
         }
@@ -406,7 +406,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/calendar.tsx",
+          "file": "registry/aria-nova/ui/calendar.tsx",
           "export": "Calendar",
           "props": {}
         }
@@ -458,7 +458,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/card.tsx",
+          "file": "registry/aria-nova/ui/card.tsx",
           "export": "Card",
           "props": {}
         }
@@ -517,14 +517,6 @@
           "themes.font-mono"
         ],
         "assets": []
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/chart-area.tsx",
-          "export": "ChartArea",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -580,14 +572,6 @@
           "themes.font-mono"
         ],
         "assets": []
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/chart-bar.tsx",
-          "export": "ChartBar",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -643,14 +627,6 @@
           "themes.font-mono"
         ],
         "assets": []
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/chart-heatmap.tsx",
-          "export": "ChartHeatmap",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -706,14 +682,6 @@
           "themes.font-mono"
         ],
         "assets": []
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/chart-line.tsx",
-          "export": "ChartLine",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -769,14 +737,6 @@
           "themes.font-mono"
         ],
         "assets": []
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/chart-range.tsx",
-          "export": "ChartRange",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -832,14 +792,6 @@
           "themes.font-mono"
         ],
         "assets": []
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/chart-scatter.tsx",
-          "export": "ChartScatter",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -895,14 +847,6 @@
           "themes.font-mono"
         ],
         "assets": []
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/chart-sparkline.tsx",
-          "export": "ChartSparkline",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -958,14 +902,6 @@
           "themes.font-mono"
         ],
         "assets": []
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/chart-status-strip.tsx",
-          "export": "ChartStatusStrip",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -1021,14 +957,6 @@
           "themes.font-mono"
         ],
         "assets": []
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/chart-waterfall.tsx",
-          "export": "ChartWaterfall",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -1089,7 +1017,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/checkbox.tsx",
+          "file": "registry/aria-nova/ui/checkbox.tsx",
           "export": "Checkbox",
           "props": {}
         }
@@ -1149,7 +1077,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/color-picker.tsx",
+          "file": "ui/color-picker.tsx",
           "export": "ColorPicker",
           "props": {}
         }
@@ -1218,8 +1146,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/combo-box.tsx",
-          "export": "ComboBox",
+          "file": "registry/aria-nova/ui/combobox.tsx",
+          "export": "Combobox",
           "props": {}
         }
       }
@@ -1274,14 +1202,6 @@
           "themes.ring"
         ],
         "assets": []
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/date-field.tsx",
-          "export": "DateField",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -1320,8 +1240,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/date-picker.tsx",
-          "export": "DatePicker",
+          "file": "registry/aria-nova/ui/calendar.tsx",
+          "export": "Calendar",
           "props": {}
         }
       }
@@ -1342,7 +1262,10 @@
           "dismissable"
         ]
       },
-      "props": [],
+      "props": [
+        "children",
+        "defaultOpen"
+      ],
       "allowedReads": {
         "themes": [
           "themes.border",
@@ -1398,9 +1321,21 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/dialog.tsx",
-          "export": "Dialog",
-          "props": {}
+          "file": "registry/aria-nova/ui/dialog.tsx",
+          "export": "DialogTrigger",
+          "props": {
+            "defaultOpen": true,
+            "children": [
+              {
+                "$component": "react-aria-components.Button",
+                "children": "Open"
+              },
+              {
+                "$component": "Dialog",
+                "children": "Content"
+              }
+            ]
+          }
         }
       }
     },
@@ -1446,8 +1381,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/disclosure.tsx",
-          "export": "Disclosure",
+          "file": "registry/aria-nova/ui/collapsible.tsx",
+          "export": "Collapsible",
           "props": {}
         }
       }
@@ -1501,7 +1436,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/field.tsx",
+          "file": "registry/aria-nova/ui/field.tsx",
           "export": "Field",
           "props": {}
         }
@@ -1532,8 +1467,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/file-trigger.tsx",
-          "export": "FileTrigger",
+          "file": "ui/file-upload.tsx",
+          "export": "FileUpload",
           "props": {}
         }
       }
@@ -1564,8 +1499,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/form.tsx",
-          "export": "Form",
+          "file": "registry/aria-nova/ui/field.tsx",
+          "export": "Field",
           "props": {}
         }
       }
@@ -1623,8 +1558,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/grid-list.tsx",
-          "export": "GridList",
+          "file": "registry/aria-nova/ui/item.tsx",
+          "export": "Item",
           "props": {}
         }
       }
@@ -1691,14 +1626,6 @@
           "assets.icon-layers",
           "assets.icon-integration"
         ]
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/icon.tsx",
-          "export": "Icon",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -1752,8 +1679,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/keyboard.tsx",
-          "export": "Keyboard",
+          "file": "registry/aria-nova/ui/kbd.tsx",
+          "export": "Kbd",
           "props": {}
         }
       }
@@ -1815,8 +1742,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/link.tsx",
-          "export": "Link",
+          "file": "registry/aria-nova/ui/button.tsx",
+          "export": "Button",
           "props": {}
         }
       }
@@ -1861,14 +1788,6 @@
           "assets.mark",
           "assets.lockup"
         ]
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/logo.tsx",
-          "export": "Logo",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -1942,8 +1861,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/menu.tsx",
-          "export": "Menu",
+          "file": "registry/aria-nova/ui/dropdown-menu.tsx",
+          "export": "DropdownMenu",
           "props": {}
         }
       }
@@ -2002,8 +1921,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/meter.tsx",
-          "export": "Meter",
+          "file": "registry/aria-nova/ui/progress.tsx",
+          "export": "Progress",
           "props": {}
         }
       }
@@ -2054,15 +1973,7 @@
         ],
         "assets": []
       },
-      "apg": "button",
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/native-action.tsx",
-          "export": "NativeAction",
-          "props": {}
-        }
-      }
+      "apg": "button"
     },
     "requires": [],
     "status": "draft"
@@ -2117,8 +2028,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/navigation-tree.tsx",
-          "export": "NavigationTree",
+          "file": "registry/aria-nova/ui/sidebar.tsx",
+          "export": "Sidebar",
           "props": {}
         }
       }
@@ -2179,15 +2090,7 @@
       "composes": [
         "components.button"
       ],
-      "apg": "spinbutton",
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/number-field.tsx",
-          "export": "NumberField",
-          "props": {}
-        }
-      }
+      "apg": "spinbutton"
     },
     "requires": [],
     "status": "draft"
@@ -2204,7 +2107,10 @@
           "placement"
         ]
       },
-      "props": [],
+      "props": [
+        "children",
+        "defaultOpen"
+      ],
       "allowedReads": {
         "themes": [
           "themes.border",
@@ -2239,9 +2145,21 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/popover.tsx",
-          "export": "Popover",
-          "props": {}
+          "file": "registry/aria-nova/ui/popover.tsx",
+          "export": "PopoverTrigger",
+          "props": {
+            "defaultOpen": true,
+            "children": [
+              {
+                "$component": "react-aria-components.Button",
+                "children": "Open"
+              },
+              {
+                "$component": "Popover",
+                "children": "Content"
+              }
+            ]
+          }
         }
       }
     },
@@ -2295,8 +2213,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/progress-bar.tsx",
-          "export": "ProgressBar",
+          "file": "registry/aria-nova/ui/progress.tsx",
+          "export": "Progress",
           "props": {}
         }
       }
@@ -2357,7 +2275,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/radio-group.tsx",
+          "file": "registry/aria-nova/ui/radio-group.tsx",
           "export": "RadioGroup",
           "props": {}
         }
@@ -2389,15 +2307,7 @@
         ],
         "assets": []
       },
-      "apg": "windowsplitter",
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/resize-handle.tsx",
-          "export": "ResizeHandle",
-          "props": {}
-        }
-      }
+      "apg": "windowsplitter"
     },
     "requires": [],
     "status": "draft"
@@ -2459,8 +2369,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/search-field.tsx",
-          "export": "SearchField",
+          "file": "registry/aria-nova/ui/input-group.tsx",
+          "export": "InputGroup",
           "props": {}
         }
       }
@@ -2531,7 +2441,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/select.tsx",
+          "file": "registry/aria-nova/ui/select.tsx",
           "export": "Select",
           "props": {}
         }
@@ -2589,14 +2499,6 @@
       "allowedReads": {
         "themes": [],
         "assets": []
-      },
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/semantic-content.tsx",
-          "export": "SemanticContent",
-          "props": {}
-        }
       }
     },
     "requires": [],
@@ -2627,7 +2529,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/separator.tsx",
+          "file": "registry/aria-nova/ui/separator.tsx",
           "export": "Separator",
           "props": {}
         }
@@ -2666,7 +2568,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/skeleton.tsx",
+          "file": "registry/aria-nova/ui/skeleton.tsx",
           "export": "Skeleton",
           "props": {}
         }
@@ -2713,7 +2615,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/slider.tsx",
+          "file": "registry/aria-nova/ui/slider.tsx",
           "export": "Slider",
           "props": {}
         }
@@ -2755,7 +2657,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/spinner.tsx",
+          "file": "registry/aria-nova/ui/spinner.tsx",
           "export": "Spinner",
           "props": {}
         }
@@ -2809,8 +2711,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/status-mark.tsx",
-          "export": "StatusMark",
+          "file": "ui/status.tsx",
+          "export": "Status",
           "props": {}
         }
       }
@@ -2870,7 +2772,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/switch.tsx",
+          "file": "registry/aria-nova/ui/switch.tsx",
           "export": "Switch",
           "props": {}
         }
@@ -2931,7 +2833,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/table.tsx",
+          "file": "registry/aria-nova/ui/table.tsx",
           "export": "Table",
           "props": {}
         }
@@ -2993,7 +2895,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/tabs.tsx",
+          "file": "registry/aria-nova/ui/tabs.tsx",
           "export": "Tabs",
           "props": {}
         }
@@ -3053,8 +2955,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/tag-group.tsx",
-          "export": "TagGroup",
+          "file": "ui/tags-input.tsx",
+          "export": "TagsInput",
           "props": {}
         }
       }
@@ -3114,8 +3016,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/text-field.tsx",
-          "export": "TextField",
+          "file": "registry/aria-nova/ui/input.tsx",
+          "export": "Input",
           "props": {}
         }
       }
@@ -3156,8 +3058,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/toast.tsx",
-          "export": "Toast",
+          "file": "registry/aria-nova/ui/sonner.tsx",
+          "export": "Toaster",
           "props": {}
         }
       }
@@ -3226,8 +3128,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/toggle-button.tsx",
-          "export": "ToggleButton",
+          "file": "registry/aria-nova/ui/toggle.tsx",
+          "export": "Toggle",
           "props": {}
         }
       }
@@ -3290,7 +3192,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/toggle-group.tsx",
+          "file": "registry/aria-nova/ui/toggle-group.tsx",
           "export": "ToggleGroup",
           "props": {}
         }
@@ -3326,8 +3228,8 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/toolbar.tsx",
-          "export": "Toolbar",
+          "file": "registry/aria-nova/ui/button-group.tsx",
+          "export": "ButtonGroup",
           "props": {}
         }
       }
@@ -3347,7 +3249,10 @@
           "placement"
         ]
       },
-      "props": [],
+      "props": [
+        "children",
+        "defaultOpen"
+      ],
       "allowedReads": {
         "themes": [
           "themes.border",
@@ -3381,9 +3286,21 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/tooltip.tsx",
-          "export": "Tooltip",
-          "props": {}
+          "file": "registry/aria-nova/ui/tooltip.tsx",
+          "export": "TooltipTrigger",
+          "props": {
+            "defaultOpen": true,
+            "children": [
+              {
+                "$component": "react-aria-components.Button",
+                "children": "Open"
+              },
+              {
+                "$component": "Tooltip",
+                "children": "Content"
+              }
+            ]
+          }
         }
       }
     },
@@ -3434,15 +3351,7 @@
           "assets.icon-chevron-right"
         ]
       },
-      "apg": "treeview",
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/tree.tsx",
-          "export": "Tree",
-          "props": {}
-        }
-      }
+      "apg": "treeview"
     },
     "requires": [],
     "status": "draft"
@@ -3540,7 +3449,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/sidebar.tsx",
+          "file": "registry/aria-nova/ui/sidebar.tsx",
           "export": "Sidebar",
           "props": {}
         }
@@ -3653,7 +3562,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/command.tsx",
+          "file": "registry/aria-nova/ui/command.tsx",
           "export": "Command",
           "props": {}
         }
@@ -3672,7 +3581,10 @@
         "mode": "closed",
         "names": []
       },
-      "props": [],
+      "props": [
+        "children",
+        "defaultOpen"
+      ],
       "allowedReads": {
         "themes": [
           "themes.primary",
@@ -3733,9 +3645,21 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/sheet.tsx",
-          "export": "Sheet",
-          "props": {}
+          "file": "registry/aria-nova/ui/sheet.tsx",
+          "export": "SheetTrigger",
+          "props": {
+            "defaultOpen": true,
+            "children": [
+              {
+                "$component": "react-aria-components.Button",
+                "children": "Open"
+              },
+              {
+                "$component": "Sheet",
+                "children": "Content"
+              }
+            ]
+          }
         }
       }
     },
@@ -3786,7 +3710,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/empty.tsx",
+          "file": "registry/aria-nova/ui/empty.tsx",
           "export": "Empty",
           "props": {}
         }
@@ -3843,7 +3767,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/item.tsx",
+          "file": "registry/aria-nova/ui/item.tsx",
           "export": "Item",
           "props": {}
         }
@@ -3878,7 +3802,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/scroll-area.tsx",
+          "file": "registry/aria-nova/ui/scroll-area.tsx",
           "export": "ScrollArea",
           "props": {}
         }
@@ -3897,7 +3821,10 @@
         "mode": "closed",
         "names": []
       },
-      "props": [],
+      "props": [
+        "children",
+        "defaultOpen"
+      ],
       "allowedReads": {
         "themes": [
           "themes.border",
@@ -3943,9 +3870,21 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/dropdown-menu.tsx",
-          "export": "DropdownMenu",
-          "props": {}
+          "file": "registry/aria-nova/ui/dropdown-menu.tsx",
+          "export": "DropdownMenuTrigger",
+          "props": {
+            "defaultOpen": true,
+            "children": [
+              {
+                "$component": "react-aria-components.Button",
+                "children": "Open"
+              },
+              {
+                "$component": "DropdownMenu",
+                "children": "Content"
+              }
+            ]
+          }
         }
       }
     },
@@ -4013,15 +3952,7 @@
         "components.link",
         "components.semantic-content",
         "components.table"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/rich-text.tsx",
-          "export": "RichText",
-          "props": {}
-        }
-      }
+      ]
     },
     "requires": [],
     "status": "draft"
@@ -4040,16 +3971,16 @@
         ]
       },
       "props": [
-        "video",
-        "poster",
-        "passage",
-        "captions",
-        "muted",
         "autoplay",
-        "loop",
-        "controls",
+        "captions",
         "className",
-        "decorative"
+        "controls",
+        "decorative",
+        "loop",
+        "muted",
+        "passage",
+        "poster",
+        "video"
       ],
       "allowedReads": {
         "themes": [
@@ -4184,7 +4115,7 @@
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
-          "file": "registry/default/ui/media-player.tsx",
+          "file": "ui/media-player.tsx",
           "export": "MediaPlayer",
           "props": {}
         }
@@ -4234,15 +4165,7 @@
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/specimen-swatch.tsx",
-          "export": "SpecimenSwatch",
-          "props": {}
-        }
-      }
+      ]
     },
     "requires": [],
     "status": "draft"
@@ -4289,15 +4212,7 @@
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/specimen-ladder.tsx",
-          "export": "SpecimenLadder",
-          "props": {}
-        }
-      }
+      ]
     },
     "requires": [],
     "status": "draft"
@@ -4341,15 +4256,7 @@
         "components.grid-list",
         "components.disclosure",
         "components.button"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/specimen-player.tsx",
-          "export": "SpecimenPlayer",
-          "props": {}
-        }
-      }
+      ]
     },
     "requires": [],
     "status": "draft"
@@ -4399,15 +4306,7 @@
         "components.disclosure",
         "components.logo",
         "components.icon"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/specimen-grid.tsx",
-          "export": "SpecimenGrid",
-          "props": {}
-        }
-      }
+      ]
     },
     "requires": [],
     "status": "draft"
@@ -4450,15 +4349,7 @@
         "components.disclosure",
         "components.table",
         "components.badge"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/specimen-matrix.tsx",
-          "export": "SpecimenMatrix",
-          "props": {}
-        }
-      }
+      ]
     },
     "requires": [],
     "status": "draft"
@@ -4506,15 +4397,7 @@
         "components.disclosure",
         "components.table",
         "components.badge"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/specimen-viewport.tsx",
-          "export": "SpecimenViewport",
-          "props": {}
-        }
-      }
+      ]
     },
     "requires": [],
     "status": "draft"
@@ -4555,15 +4438,7 @@
         "components.grid-list",
         "components.disclosure",
         "components.rich-text"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/specimen-passage.tsx",
-          "export": "SpecimenPassage",
-          "props": {}
-        }
-      }
+      ]
     },
     "requires": [],
     "status": "draft"
@@ -4610,15 +4485,7 @@
         "components.rich-text",
         "components.button",
         "components.navigation-tree"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/specimen-copy-in-context.tsx",
-          "export": "SpecimenCopyInContext",
-          "props": {}
-        }
-      }
+      ]
     },
     "requires": [],
     "status": "draft"
@@ -4661,15 +4528,7 @@
         "components.button",
         "components.icon",
         "components.semantic-content"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/canvas-zoom.tsx",
-          "export": "CanvasZoom",
-          "props": {}
-        }
-      }
+      ]
     },
     "requires": [],
     "status": "draft"
@@ -4710,15 +4569,7 @@
       "composes": [
         "components.button",
         "components.semantic-content"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "registry/default/ui/canvas-map.tsx",
-          "export": "CanvasMap",
-          "props": {}
-        }
-      }
+      ]
     },
     "requires": [],
     "status": "draft"

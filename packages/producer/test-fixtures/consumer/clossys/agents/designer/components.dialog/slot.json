@@ -174,7 +174,10 @@
         "dismissable"
       ]
     },
-    "props": [],
+    "props": [
+      "children",
+      "defaultOpen"
+    ],
     "allowedReads": {
       "themes": [
         "themes.border",
@@ -230,9 +233,21 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/dialog.tsx",
-        "export": "Dialog",
-        "props": {}
+        "file": "registry/aria-nova/ui/dialog.tsx",
+        "export": "DialogTrigger",
+        "props": {
+          "defaultOpen": true,
+          "children": [
+            {
+              "$component": "react-aria-components.Button",
+              "children": "Open"
+            },
+            {
+              "$component": "Dialog",
+              "children": "Content"
+            }
+          ]
+        }
       }
     },
     "requirements": [

@@ -13,6 +13,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { standardTastePath } from "../cli/critique.js";
 import { runConstitution } from "../constitution/run.js";
+import { resolveAgent } from "../agents.js";
+import { referenceIndex, slotReferenceShips, type ReferenceIndex } from "../specimen/reference-fixtures.js";
 import { ASSERTIONS, KIND_FAMILY, type Judgement } from "./assertions.js";
 import type { AgentModel, ConformModel } from "./model.js";
 import { probeRecipePages, type RecipePageFacts } from "./recipe-page.js";
@@ -33,6 +35,8 @@ export interface ProbeFacts {
   readonly iaContract?: Readonly<Record<string, readonly IaContractResult[] | string>>;
   /** Per agent: what `clossys pin` did with a hand-placed candidate (no submit record), or why it could not run. */
   readonly pinGate?: Readonly<Record<string, PinGateResult | string>>;
+  /** Whether an adopted Designer reference ships a file with an export (default: the installed Designer package's references). */
+  readonly referenceShips?: (slot: string, file: string, name: string) => boolean;
 }
 
 export interface PinGateResult { readonly target: string; readonly candidate: string; readonly accepted: boolean; readonly message: string; readonly verbs?: readonly VerbProbe[] }
@@ -275,6 +279,32 @@ export async function readProbeFacts(model: ConformModel): Promise<ProbeFacts> {
 export type Probe = (agent: AgentModel, model: ConformModel, facts: ProbeFacts) => Judgement;
 const pass = (rows: string[], evidence = 1): Judgement => ({ rows, evidence });
 
+/** The Designer package's adopted references, read once per process. */
+let designerReferences: ReferenceIndex | string | undefined;
+function defaultReferenceShips(): ((slot: string, file: string, name: string) => boolean) | string {
+  if (designerReferences === undefined) {
+    try { designerReferences = referenceIndex(resolveAgent("designer").packageRoot); }
+    catch (error) { designerReferences = `the Designer references cannot be read: ${error instanceof Error ? error.message : String(error)}`; }
+  }
+  const index = designerReferences;
+  return typeof index === "string" ? index : (slot, file, name) => slotReferenceShips(index, slot, file, name);
+}
+
+/** Live Designer component fixtures that mount a file or export none of the slot's own adopted references ships. */
+function unshippedComponentFixtures(agent: AgentModel, facts: ProbeFacts): string[] {
+  const live = agent.live.filter(slot => slot.id.startsWith("components.") && slot.contract.fixture !== undefined);
+  if (!live.length) return [];
+  const ships = facts.referenceShips ?? defaultReferenceShips();
+  if (typeof ships === "string") return [ships];
+  const rows: string[] = [];
+  for (const slot of live) {
+    const fixture = slot.contract.fixture as { fixtures?: { file?: unknown; export?: unknown } } | undefined;
+    const file = fixture?.fixtures?.file, name = fixture?.fixtures?.export;
+    if (typeof file !== "string" || typeof name !== "string" || !ships(slot.id, file, name)) rows.push(`${slot.id}: contract.fixture mounts ${String(file)}#${String(name)}, which none of its adopted references ships in the selected style`);
+  }
+  return rows;
+}
+
 export const PROBES: Readonly<Record<string, Probe>> = {
   "empty-l2": (agent, _model, facts) => {
     const found = facts.emptyL2Detected[agent.agent];
@@ -297,9 +327,13 @@ export const PROBES: Readonly<Record<string, Probe>> = {
     if (agent.skillText === undefined) return pass([`${agent.adapter?.skill ?? "skill"} is missing`]);
     return pass(/--basis picked/.test(agent.skillText) ? [`${agent.adapter!.skill} teaches \`--basis picked\`, which pin refuses (it needs owner:queue.<kind>#<id>)`] : []);
   },
-  "contract-fixture": agent => {
+  "contract-fixture": (agent, _model, facts) => {
     const fixtures = agent.live.filter(slot => slot.contract.fixture !== undefined).length;
-    return pass(fixtures ? [] : [`none of ${agent.live.length} live slot contracts carries contract.fixture`], agent.live.length);
+    const rows = fixtures ? [] : [`none of ${agent.live.length} live slot contracts carries contract.fixture`];
+    // U27: a Designer component fixture must mount a file and an export its own adopted reference ships in the
+    // selected style, so a stock candidate copied from that reference can certify; any other path or name is red.
+    if (agent.agent === "designer") rows.push(...unshippedComponentFixtures(agent, facts));
+    return pass(rows, agent.live.length);
   },
   "upstream-pinned": (agent, model) => {
     const upstream = agent.edges.map(edge => edge.to);

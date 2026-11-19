@@ -172,7 +172,7 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/toggle-group.tsx",
+        "file": "registry/aria-nova/ui/toggle-group.tsx",
         "export": "ToggleGroup",
         "props": {}
       }

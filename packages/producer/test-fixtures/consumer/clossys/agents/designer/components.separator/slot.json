@@ -122,7 +122,7 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/separator.tsx",
+        "file": "registry/aria-nova/ui/separator.tsx",
         "export": "Separator",
         "props": {}
       }

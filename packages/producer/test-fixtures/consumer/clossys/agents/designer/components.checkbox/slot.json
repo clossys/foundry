@@ -208,7 +208,7 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/checkbox.tsx",
+        "file": "registry/aria-nova/ui/checkbox.tsx",
         "export": "Checkbox",
         "props": {}
       }

@@ -375,14 +375,6 @@
       "components.semantic-content",
       "components.table"
     ],
-    "fixture": {
-      "schema": "clossys.element-preview/1",
-      "fixtures": {
-        "file": "registry/default/ui/rich-text.tsx",
-        "export": "RichText",
-        "props": {}
-      }
-    },
     "requirements": [
       {
         "check": "source.ref"

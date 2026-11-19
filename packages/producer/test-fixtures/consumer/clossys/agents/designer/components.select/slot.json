@@ -288,7 +288,7 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/select.tsx",
+        "file": "registry/aria-nova/ui/select.tsx",
         "export": "Select",
         "props": {}
       }

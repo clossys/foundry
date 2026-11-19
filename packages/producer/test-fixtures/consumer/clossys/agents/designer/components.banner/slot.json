@@ -245,8 +245,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/banner.tsx",
-        "export": "Banner",
+        "file": "registry/aria-nova/ui/alert.tsx",
+        "export": "Alert",
         "props": {}
       }
     },

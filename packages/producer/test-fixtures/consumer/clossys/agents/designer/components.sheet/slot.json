@@ -167,7 +167,10 @@
       "mode": "closed",
       "names": []
     },
-    "props": [],
+    "props": [
+      "children",
+      "defaultOpen"
+    ],
     "allowedReads": {
       "themes": [
         "themes.primary",
@@ -228,9 +231,21 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/sheet.tsx",
-        "export": "Sheet",
-        "props": {}
+        "file": "registry/aria-nova/ui/sheet.tsx",
+        "export": "SheetTrigger",
+        "props": {
+          "defaultOpen": true,
+          "children": [
+            {
+              "$component": "react-aria-components.Button",
+              "children": "Open"
+            },
+            {
+              "$component": "Sheet",
+              "children": "Content"
+            }
+          ]
+        }
       }
     },
     "requirements": [

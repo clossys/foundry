@@ -180,7 +180,7 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/color-picker.tsx",
+        "file": "ui/color-picker.tsx",
         "export": "ColorPicker",
         "props": {}
       }

@@ -243,7 +243,7 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/calendar.tsx",
+        "file": "registry/aria-nova/ui/calendar.tsx",
         "export": "Calendar",
         "props": {}
       }

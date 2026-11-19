@@ -293,8 +293,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/combo-box.tsx",
-        "export": "ComboBox",
+        "file": "registry/aria-nova/ui/combobox.tsx",
+        "export": "Combobox",
         "props": {}
       }
     },

@@ -111,8 +111,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/file-trigger.tsx",
-        "export": "FileTrigger",
+        "file": "ui/file-upload.tsx",
+        "export": "FileUpload",
         "props": {}
       }
     },

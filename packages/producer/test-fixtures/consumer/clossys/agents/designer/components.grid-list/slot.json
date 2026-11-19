@@ -183,8 +183,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/grid-list.tsx",
-        "export": "GridList",
+        "file": "registry/aria-nova/ui/item.tsx",
+        "export": "Item",
         "props": {}
       }
     },

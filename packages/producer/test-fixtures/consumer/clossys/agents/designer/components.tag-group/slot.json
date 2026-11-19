@@ -204,8 +204,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/tag-group.tsx",
-        "export": "TagGroup",
+        "file": "ui/tags-input.tsx",
+        "export": "TagsInput",
         "props": {}
       }
     },

@@ -247,8 +247,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "registry/default/ui/link.tsx",
-        "export": "Link",
+        "file": "registry/aria-nova/ui/button.tsx",
+        "export": "Button",
         "props": {}
       }
     },
