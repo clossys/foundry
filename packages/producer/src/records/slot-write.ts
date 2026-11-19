@@ -1179,6 +1179,71 @@ export function appendMigrationEvents(consumer: string, migration: FormatMigrati
   });
 }
 
+/** One candidate a store-format migration recut: its name and the sha256 of its bytes before and after. */
+export interface RecutFile { readonly name: string; readonly from: string; readonly to: string }
+
+/**
+ * One slot folder's `clossys migrate slots` write (U13 r4, B3/N7). Under the slot lock (the lock every decision
+ * write takes), `write` replaces the folder's planned files; then exactly one `migrate` event lands on the slot
+ * ledger: `migration: "slots"`, `files` the recut candidates' sha256 from and to (R02.3 and R14.1 carry a pinned
+ * or submitted sha through it), and `records` the slot.json and pin.json states the run changed. A folder with no
+ * ledger.json first gets one `submit` per candidate it holds, at the candidate's sha256 before the recut, so the
+ * migrate event carries a recorded submit (R14.1), plus the slot.json and pin.json states. An event the folder's
+ * ledger already ends with (a resumed run) is not appended again. The migrate guard (rules.json: R14) then runs on
+ * the folder's records and recut candidates; on any refusal or failure the folder's files and ledger are restored.
+ */
+export function writeSlotsMigrationFolder(consumer: string, agent: AgentId, id: string, input: {
+  readonly recuts: readonly RecutFile[];
+  readonly records: readonly RecordFile[];
+  readonly at: string;
+  readonly by: string;
+  readonly cli: string;
+  readonly write: () => void;
+}, guard: WriteGuard = true): { readonly event: boolean } {
+  const dir = join(consumer, "agents", agent, id);
+  return slotLocked(dir, () => {
+    const ledgerPath = join(dir, LEDGER_FILE);
+    const hadLedger = existsSync(ledgerPath);
+    const prior = readLedger(dir, "slot"); // an unreadable ledger refuses before anything is written
+    const cands = candidatesDir(dir);
+    const names = existsSync(cands) ? readdirSync(cands).filter(name => CANDIDATE_NAME.test(name)).sort() : [];
+    const before = snapshotFiles([...names.map(name => join(cands, name)), slotFile(dir), pinFile(dir), ledgerPath]);
+    const preSha = new Map(names.map(name => [name, sha256Of(readFileSync(join(cands, name)))]));
+    try {
+      input.write();
+      const who = provenance({ verb: "migrate", by: input.by, skill: actionContractPath("producer", "migrate") });
+      const files = input.recuts.filter(file => file.from !== file.to).map(file => ({ name: file.name, from: file.from, to: file.to }));
+      const recutFrom = new Map(input.recuts.map(file => [file.name, file.from]));
+      const recorded: RecordFile[] = hadLedger ? [...new Set(input.records)] : ["slot.json", "pin.json"];
+      const records = recorded.filter(file => hadLedger || existsSync(join(dir, file))).map(file => recordState(dir, file));
+      let appended = false;
+      if (!hadLedger) {
+        for (const name of names) {
+          // The bytes the folder held before this run (the journal's `from` on a resumed run).
+          const sha256 = recutFrom.get(name) ?? preSha.get(name)!;
+          const text = readFileSync(join(cands, name), "utf8");
+          const header = candidateHeaderOf(name, text);
+          const source = header?.source as { ref?: unknown } | undefined;
+          const refs = Array.isArray(source?.ref) ? source!.ref.filter((ref): ref is string => typeof ref === "string") : [];
+          const rung = agent === "designer" ? (refs.some(ref => /^shadcn(?:-aria|@aria)?\//.test(ref)) ? "L1" : "L2") : "adopt";
+          appendEvent(dir, "slot", ledgerEvent("submit", input.at, who, { name, sha256, rung, seed: refs[0] ?? `${agent}:${id}/${name}`, createdBy: input.cli }));
+        }
+      }
+      if (files.length || records.length) {
+        const last = [...(prior?.events ?? [])].reverse().find(event => event.op === "migrate") as Record<string, unknown> | undefined;
+        const same = hadLedger && last?.migration === "slots" && JSON.stringify(last.files) === JSON.stringify(files) && JSON.stringify(last.records ?? []) === JSON.stringify(records);
+        if (!same) { appendEvent(dir, "slot", ledgerEvent("migrate", input.at, who, { migration: "slots", files }, records)); appended = true; }
+      }
+      const targets: GuardTarget[] = [
+        { agent, slot: id, records: ["slot.json", "pin.json", LEDGER_FILE].map(file => recordPath(consumer, dir, file)) },
+        ...files.map(file => ({ agent, slot: id, candidate: file.name })),
+      ];
+      enforceGuard(consumer, "migrate", guard, targets);
+      return { event: appended };
+    } catch (error) { restoreFiles(before); throw error; }
+  });
+}
+
 /**
  * The next bytes of a `clossys.slot/2` slot.json under `change`, applied to the document as written (the
  * reader's view is never written back), with `updatedAt` stamped when the bytes change and judged as the

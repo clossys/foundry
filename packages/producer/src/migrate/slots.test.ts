@@ -8,6 +8,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
+import "../constitution/guard.js"; // the migrate guard runs on every folder (U13 r4)
 import { sha256Hex } from "../records/hash.js";
 import { consumerCopy, CONSUMER } from "../records/__fixtures__/slot2-workspace.js";
 import { checkSlotModel } from "../records/slot-check.js";

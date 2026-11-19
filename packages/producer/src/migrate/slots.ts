@@ -30,7 +30,8 @@ import { seatSlot } from "../records/seat-slot.js";
 import { serializeSlot, SLOT_AGENTS, SLOT_SCHEMA, SLOT_V1_SCHEMA } from "../records/slot.js";
 import { candidateHeaderOf } from "../records/slot-current.js";
 import { seatStepOf } from "../records/slot-model/types.js";
-import { appendMigrationEvents } from "../records/slot-write.js";
+import { appendMigrationEvents, writeSlotsMigrationFolder, type WriteGuard } from "../records/slot-write.js";
+import type { RecordFile } from "../records/ledger.js";
 import { isConvertedStore, storeFormatBytes, storeFormatPath } from "../records/store-format.js";
 import type { AgentId, Iso, Pin, PinMap, PinRecord, SlotId } from "../records/types.js";
 import { migratePinDoc } from "./pin-1-to-2.js";
@@ -277,7 +278,7 @@ function replaceVerified(path: string, bytes: string, io: SlotsApplyIo, label: s
   io.sync(path);
 }
 
-export interface SlotsApplied { readonly written: string[]; readonly skipped: string[]; readonly events: number; readonly marker: boolean }
+export interface SlotsApplied { readonly written: string[]; readonly skipped: string[]; readonly events: number; readonly ledgerEvents: number; readonly marker: boolean }
 
 /**
  * Applies a plan: refuses whole on a finding; journals the changes; replaces each file only after its new bytes
@@ -285,7 +286,7 @@ export interface SlotsApplied { readonly written: string[]; readonly skipped: st
  * codemod); removes the journal; and writes the store-format marker only when a fresh plan of the store then
  * finds nothing left to convert.
  */
-export function applySlotsMigration(root: string, plan: SlotsPlan, options: { at: string; version: string }, io: Partial<SlotsApplyIo> = {}): SlotsApplied {
+export function applySlotsMigration(root: string, plan: SlotsPlan, options: { at: string; version: string; guard?: WriteGuard }, io: Partial<SlotsApplyIo> = {}): SlotsApplied {
   if (plan.findings.length) throw new Error(`migrate slots: ${plan.findings.length} finding(s); nothing was written`);
   const disk: SlotsApplyIo = { ...DISK, ...io };
   const consumer = plan.consumer;
@@ -297,17 +298,34 @@ export function applySlotsMigration(root: string, plan: SlotsPlan, options: { at
     replaceVerified(journal, jsonBytes({ schema: JOURNAL_SCHEMA, startedAt: options.at, changes: plan.changes }), disk, SLOTS_JOURNAL);
   }
   const written: string[] = [], skipped: string[] = [];
+  const at = toIsoZ(options.at) ?? options.at;
+  // One folder at a time, in sorted order, under its slot lock: its files, then its one ledger migrate event (U13 r4).
+  const folders = new Map<string, SlotsChange[]>();
   for (const each of plan.changes) {
-    const path = guardedPath(consumer, real, each.file);
-    let now: string;
-    try { now = sha256Hex(readFileSync(path)); } catch { throw new Error(`migrate slots: ${each.file} is gone; the journal is kept`); }
-    if (now === each.to.sha256) { skipped.push(each.file); continue; }
-    if (now !== each.from.sha256) throw new Error(`migrate slots: ${each.file} changed since the plan; the journal is kept and nothing more is written`);
-    replaceVerified(path, each.bytes, disk, each.file);
-    written.push(each.file);
+    const key = each.file.split("/").slice(0, 3).join("/");
+    folders.set(key, [...(folders.get(key) ?? []), each]);
+  }
+  let ledgerEvents = 0;
+  for (const key of [...folders.keys()].sort()) {
+    const changes = folders.get(key)!;
+    const [, agent, id] = key.split("/") as [string, AgentId, SlotId];
+    const recuts = changes.filter(each => each.kind === "candidate").map(each => ({ name: each.file.slice(key.length + "/candidates/".length), from: each.from.sha256, to: each.to.sha256 }));
+    const records = changes.filter(each => each.kind !== "candidate").map(each => (each.kind === "pin" ? "pin.json" : "slot.json") as RecordFile);
+    const done = writeSlotsMigrationFolder(consumer, agent, id, { recuts, records, at, by: SLOTS_MIGRATION_BY, cli: SLOTS_MIGRATION_CLI, write: () => {
+      for (const each of changes) {
+        const path = guardedPath(consumer, real, each.file);
+        let now: string;
+        try { now = sha256Hex(readFileSync(path)); } catch { throw new Error(`migrate slots: ${each.file} is gone; the journal is kept`); }
+        if (now === each.to.sha256) { skipped.push(each.file); continue; }
+        if (now !== each.from.sha256) throw new Error(`migrate slots: ${each.file} changed since the plan; the journal is kept and nothing more is written`);
+        replaceVerified(path, each.bytes, disk, each.file);
+        written.push(each.file);
+      }
+    } }, options.guard ?? true);
+    if (done.event) ledgerEvents++;
   }
   const rewrites = plan.changes.filter(each => each.kind === "candidate").map(each => ({ file: each.file, from: each.from, to: each.to }));
-  const events = rewrites.length ? appendMigrationEvents(consumer, RECUT, rewrites, { by: SLOTS_MIGRATION_BY, at: toIsoZ(options.at) ?? options.at }).length : 0;
+  const events = rewrites.length ? appendMigrationEvents(consumer, RECUT, rewrites, { by: SLOTS_MIGRATION_BY, at }).length : 0;
   if (lstatOf(journal)) unlinkSync(journal);
   const after = planSlotsMigration(root, options);
   if (after.findings.length || after.changes.length) throw new Error(`migrate slots: the store still holds ${after.changes.length} file(s) to convert and ${after.findings.length} finding(s) after the run; no marker written`);
@@ -317,7 +335,7 @@ export function applySlotsMigration(root: string, plan: SlotsPlan, options: { at
     replaceVerified(path, storeFormatBytes({ convertedAt: toIsoZ(options.at) ?? options.at, createdBy: { actor: "code", cli: SLOTS_MIGRATION_CLI, version: options.version } }), disk, "store-format.json");
     marker = true;
   }
-  return { written, skipped, events, marker };
+  return { written, skipped, events, ledgerEvents, marker };
 }
 
 /**

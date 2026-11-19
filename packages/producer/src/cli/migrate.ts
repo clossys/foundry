@@ -7,6 +7,7 @@ import { applyLedgerBackfill, planLedgerBackfill } from "../migrate/ledger.js";
 import { RECUT_AGENTS, applyRecut, planFollowUp, planRecut, recutPending, recutProblems } from "../migrate/recut.js";
 import { applyContracts, planContracts } from "../migrate/contracts.js";
 import { applyRequestMigration, planRequestMigration } from "../migrate/requests.js";
+import "../constitution/guard.js"; // registers the write guard's runner (migrate slots runs the migrate guard per folder)
 import { SLOTS_JOURNAL, SLOTS_MIGRATION_CLI, applySlotsMigration, planSlotsMigration, slotsPending } from "../migrate/slots.js";
 import { cliActor } from "../records/pin.js";
 import { nowIso } from "./ia-sync.js";
