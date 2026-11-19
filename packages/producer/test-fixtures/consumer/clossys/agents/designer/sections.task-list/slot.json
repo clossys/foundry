@@ -433,6 +433,55 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/item.tsx",
+        "export": "Item",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "tasks": [
+              {
+                "title": "DRAFT heading",
+                "description": "DRAFT body",
+                "meta": "DRAFT label"
+              }
+            ],
+            "labels": {
+              "label": "DRAFT label",
+              "progress": "DRAFT label",
+              "done": "DRAFT label",
+              "todo": "DRAFT label",
+              "in-progress": "DRAFT label",
+              "blocked": "DRAFT label"
+            },
+            "states": {
+              "loading": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              },
+              "empty": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              },
+              "error": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              }
+            }
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

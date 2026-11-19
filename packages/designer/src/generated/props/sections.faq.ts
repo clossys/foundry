@@ -1,5 +1,5 @@
 // Generated from sections.faq by src/generated/props/generate.ts; do not edit.
-export const faqContractSha256 = "03afe05461c9fe4cbba8cde6e1ec4e66184c91da12ad527a7354204277a242f2";
+export const faqContractSha256 = "e90beb25392c67d6831888bf66eea6d439380d0fc20276a65831881801d1b686";
 
 export type FaqCopy = {
   header?: {

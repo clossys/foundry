@@ -256,6 +256,34 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "mist/blocks/call-to-action/one.tsx",
+        "export": "default",
+        "props": {
+          "copy": {
+            "header": {
+              "title": "DRAFT heading",
+              "eyebrow": "DRAFT eyebrow",
+              "description": "DRAFT lead"
+            },
+            "actions": {
+              "primary": {
+                "label": "DRAFT action"
+              },
+              "secondary": {
+                "label": "DRAFT action"
+              }
+            }
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

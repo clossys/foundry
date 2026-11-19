@@ -15,6 +15,7 @@ import { standardTastePath } from "../cli/critique.js";
 import { runConstitution } from "../constitution/run.js";
 import { resolveAgent } from "../agents.js";
 import { referenceIndex, slotReferenceShips, type ReferenceIndex } from "../specimen/reference-fixtures.js";
+import { draftCopyIssues, type CopyField } from "../specimen/block-fixtures.js";
 import { ASSERTIONS, KIND_FAMILY, type Judgement } from "./assertions.js";
 import type { AgentModel, ConformModel } from "./model.js";
 import { probeRecipePages, type RecipePageFacts } from "./recipe-page.js";
@@ -290,9 +291,15 @@ function defaultReferenceShips(): ((slot: string, file: string, name: string) =>
   return typeof index === "string" ? index : (slot, file, name) => slotReferenceShips(index, slot, file, name);
 }
 
-/** Live Designer component fixtures that mount a file or export none of the slot's own adopted references ships. */
+/** The layers whose live Designer fixtures must mount what the slot's own adopted reference ships (U27 components, U28 sections and frames). */
+const REFERENCED_FIXTURE_LAYERS = ["components.", "sections.", "frames."] as const;
+
+/**
+ * Live Designer component, section and frame fixtures that mount a file or export none of the slot's own adopted
+ * references ships; and section fixtures whose `props.copy` does not satisfy the contract's copy fields (U28).
+ */
 function unshippedComponentFixtures(agent: AgentModel, facts: ProbeFacts): string[] {
-  const live = agent.live.filter(slot => slot.id.startsWith("components.") && slot.contract.fixture !== undefined);
+  const live = agent.live.filter(slot => REFERENCED_FIXTURE_LAYERS.some(prefix => slot.id.startsWith(prefix)) && slot.contract.fixture !== undefined);
   if (!live.length) return [];
   const ships = facts.referenceShips ?? defaultReferenceShips();
   if (typeof ships === "string") return [ships];
@@ -301,6 +308,12 @@ function unshippedComponentFixtures(agent: AgentModel, facts: ProbeFacts): strin
     const fixture = slot.contract.fixture as { fixtures?: { file?: unknown; export?: unknown } } | undefined;
     const file = fixture?.fixtures?.file, name = fixture?.fixtures?.export;
     if (typeof file !== "string" || typeof name !== "string" || !ships(slot.id, file, name)) rows.push(`${slot.id}: contract.fixture mounts ${String(file)}#${String(name)}, which none of its adopted references ships in the selected style`);
+    if (slot.id.startsWith("sections.")) {
+      const copy = slot.contract.copy as { fields?: unknown } | undefined;
+      const fields = Array.isArray(copy?.fields) ? copy.fields as CopyField[] : [];
+      const props = (fixture as { fixtures?: { props?: Record<string, unknown> } } | undefined)?.fixtures?.props;
+      for (const issue of draftCopyIssues(fields, props?.copy)) rows.push(`${slot.id}: contract.fixture ${issue}`);
+    }
   }
   return rows;
 }

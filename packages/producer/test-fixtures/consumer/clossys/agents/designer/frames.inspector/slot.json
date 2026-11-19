@@ -246,6 +246,21 @@
       "components.card",
       "components.semantic-content"
     ],
+    "props": [
+      "children"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/examples/sheet-example.tsx",
+        "export": "SheetExample",
+        "props": {
+          "children": [
+            "DRAFT content"
+          ]
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

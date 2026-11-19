@@ -11,7 +11,8 @@ const committed = () => new Map(readdirSync(here).filter(name => name === "index
 describe("generated section props types", () => {
   it("commits exactly the generator output, one module per live section plus the index", () => {
     const expected = generateSectionProps(liveSections());
-    expect(liveSections()).toHaveLength(45);
+    // foundry-build-0048 U28: the five admin record sections (build-0048) are live, so their modules are generated too.
+    expect(liveSections()).toHaveLength(50);
     expect([...committed().keys()].sort()).toEqual([...expected.keys()].sort());
     for (const [name, text] of expected) expect(committed().get(name), name).toBe(text);
   });

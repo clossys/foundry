@@ -198,7 +198,28 @@
         "components.semantic-content",
         "components.status-mark"
       ],
-      "skipTarget": "main-content"
+      "skipTarget": "main-content",
+      "props": [
+        "children"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/hero-section/one/header.tsx",
+          "export": "HeroHeader",
+          "props": {
+            "children": [
+              "DRAFT skip-link",
+              "DRAFT progress (components.progress-bar)",
+              "DRAFT consent (sections.consent)",
+              "DRAFT header",
+              "DRAFT main (view)",
+              "DRAFT footer",
+              "DRAFT toasts (components.toast)"
+            ]
+          }
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -421,6 +442,30 @@
           "canvas"
         ],
         "scroll": "region"
+      },
+      "props": [
+        "children"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/blocks/sidebar-07/page.tsx",
+          "export": "default",
+          "props": {
+            "children": [
+              "DRAFT skip-link",
+              "DRAFT progress (components.progress-bar)",
+              "DRAFT sidebar",
+              "DRAFT header",
+              "DRAFT main (view)",
+              "DRAFT inspector",
+              "DRAFT command",
+              "DRAFT page-module (sections.*)",
+              "DRAFT state",
+              "DRAFT toasts (components.toast)"
+            ]
+          }
+        }
       }
     },
     "requires": [],
@@ -499,7 +544,23 @@
         "components.semantic-content",
         "components.link"
       ],
-      "skipTarget": "main-content"
+      "skipTarget": "main-content",
+      "props": [
+        "children"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/blocks/login-03/page.tsx",
+          "export": "default",
+          "props": {
+            "children": [
+              "DRAFT skip-link",
+              "DRAFT main (view)"
+            ]
+          }
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -657,6 +718,23 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "children"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/hero-section/one/header.tsx",
+          "export": "HeroHeader",
+          "props": {
+            "children": [
+              "DRAFT brand (components.logo)",
+              "DRAFT nav (components.link)",
+              "DRAFT actions (components.button)"
+            ]
+          }
+        }
       }
     },
     "requires": [],
@@ -842,6 +920,24 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "children"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/blocks/sidebar-07/page.tsx",
+          "export": "default",
+          "props": {
+            "children": [
+              "DRAFT context (sections.*)",
+              "DRAFT trail (components.breadcrumbs)",
+              "DRAFT actions",
+              "DRAFT info"
+            ]
+          }
+        }
       }
     },
     "requires": [],
@@ -1001,6 +1097,24 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "children"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/blocks/sidebar-07/page.tsx",
+          "export": "default",
+          "props": {
+            "children": [
+              "DRAFT header (components.button)",
+              "DRAFT tree (components.sidebar)",
+              "DRAFT account (components.menu)",
+              "DRAFT theme (components.menu)"
+            ]
+          }
+        }
       }
     },
     "requires": [],
@@ -1094,7 +1208,22 @@
         "frames.sheet",
         "components.card",
         "components.semantic-content"
-      ]
+      ],
+      "props": [
+        "children"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/sheet-example.tsx",
+          "export": "SheetExample",
+          "props": {
+            "children": [
+              "DRAFT content"
+            ]
+          }
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1226,6 +1355,24 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "children"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/footer/one.tsx",
+          "export": "default",
+          "props": {
+            "children": [
+              "DRAFT columns",
+              "DRAFT links (components.link)",
+              "DRAFT legal",
+              "DRAFT social (components.icon)"
+            ]
+          }
+        }
       }
     },
     "requires": [],
@@ -1304,7 +1451,24 @@
         "components.icon",
         "components.semantic-content",
         "components.sheet"
-      ]
+      ],
+      "props": [
+        "children"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/sheet-example.tsx",
+          "export": "SheetExample",
+          "props": {
+            "children": [
+              "DRAFT heading",
+              "DRAFT body",
+              "DRAFT footer"
+            ]
+          }
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1396,7 +1560,24 @@
         "components.icon",
         "components.command",
         "components.semantic-content"
-      ]
+      ],
+      "props": [
+        "children"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/command-example.tsx",
+          "export": "CommandExample",
+          "props": {
+            "children": [
+              "DRAFT search (components.search-field)",
+              "DRAFT groups",
+              "DRAFT empty"
+            ]
+          }
+        }
+      }
     },
     "requires": [],
     "status": "draft"

@@ -1,5 +1,5 @@
 // Generated from sections.wizard by src/generated/props/generate.ts; do not edit.
-export const wizardContractSha256 = "e5da3ce6d4dd581d3a9da2bc05dae57b0d2b4274e9295bb17578c241ec5b51e5";
+export const wizardContractSha256 = "7e921a067744eb09ed92c6ebaa11d8f75531a355f03723be3e3ecbce4bc759cd";
 
 export type WizardCopy = {
   header?: {

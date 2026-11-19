@@ -1,5 +1,5 @@
 // Generated from sections.data-table by src/generated/props/generate.ts; do not edit.
-export const dataTableContractSha256 = "7dcb40cddd494be5d5a6789e5d1bb7f53362ebe72e7ff4eb8f2b18417141d81b";
+export const dataTableContractSha256 = "831d52023734627ce68867df3f4623847c67fce84c64af7365373779a540e9cb";
 
 export type DataTableCopy = {
   header?: {

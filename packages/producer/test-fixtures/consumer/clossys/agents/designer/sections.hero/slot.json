@@ -396,6 +396,42 @@
           "dir": "auto"
         }
       ]
+    },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "mist/blocks/hero-section/one/hero-section.tsx",
+        "export": "default",
+        "props": {
+          "copy": {
+            "header": {
+              "heading": "DRAFT heading",
+              "eyebrow": "DRAFT eyebrow",
+              "description": "DRAFT lead"
+            },
+            "actions": {
+              "primary": {
+                "label": "DRAFT action"
+              },
+              "secondary": {
+                "label": "DRAFT action"
+              }
+            },
+            "media": {
+              "title": "DRAFT heading",
+              "series": [
+                {
+                  "name": "DRAFT label"
+                }
+              ]
+            }
+          }
+        }
+      }
     }
   },
   "tighten": [],

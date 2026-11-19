@@ -307,6 +307,46 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/magicui/safari.tsx",
+        "export": "Safari",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "figure": {
+              "caption": "DRAFT body",
+              "media": {
+                "title": "DRAFT heading",
+                "series": [
+                  {
+                    "name": "DRAFT label"
+                  }
+                ]
+              },
+              "chrome-label": "DRAFT label"
+            },
+            "callouts": {
+              "label": "DRAFT label",
+              "items": [
+                {
+                  "body": "DRAFT body"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

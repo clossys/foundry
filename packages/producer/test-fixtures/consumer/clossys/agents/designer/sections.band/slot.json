@@ -225,6 +225,20 @@
       "sourceLocale": "en",
       "fields": []
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "mist/blocks/content/one.tsx",
+        "export": "default",
+        "props": {
+          "copy": {}
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

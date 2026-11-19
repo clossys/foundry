@@ -1,5 +1,5 @@
 // Generated from sections.access-matrix by src/generated/props/generate.ts; do not edit.
-export const accessMatrixContractSha256 = "5eaf0c2f0e867470162e224c22ae590f17dc068d4514ad844138f1ec291c4d38";
+export const accessMatrixContractSha256 = "5b650696e8f8013d92788b80699d149cfb2e074a901b0a68b48ed8a1893b1027";
 
 export type AccessMatrixCopy = {
   header?: {

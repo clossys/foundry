@@ -308,6 +308,33 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "mist/blocks/team/one.tsx",
+        "export": "default",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "people": [
+              {
+                "name": "DRAFT label",
+                "role": "DRAFT label",
+                "initials": "DRAFT label"
+              }
+            ]
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

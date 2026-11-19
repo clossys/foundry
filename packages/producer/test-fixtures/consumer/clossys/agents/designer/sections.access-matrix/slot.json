@@ -356,6 +356,52 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/examples/table-example.tsx",
+        "export": "TableExample",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "roles": [
+              {
+                "label": "DRAFT label",
+                "locked-reason": "DRAFT label"
+              }
+            ],
+            "permissions": [
+              {
+                "label": "DRAFT label",
+                "permissions": [
+                  {
+                    "label": "DRAFT label",
+                    "description": "DRAFT body"
+                  }
+                ]
+              }
+            ],
+            "labels": {
+              "label": "DRAFT label",
+              "permission-header": "DRAFT label",
+              "cell": "DRAFT label",
+              "group-all": "DRAFT label",
+              "inherited": "DRAFT label",
+              "locked": "DRAFT label",
+              "change-summary": "DRAFT label"
+            }
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

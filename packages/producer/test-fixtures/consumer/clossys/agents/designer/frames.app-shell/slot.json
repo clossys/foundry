@@ -504,6 +504,30 @@
       ],
       "scroll": "region"
     },
+    "props": [
+      "children"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/blocks/sidebar-07/page.tsx",
+        "export": "default",
+        "props": {
+          "children": [
+            "DRAFT skip-link",
+            "DRAFT progress (components.progress-bar)",
+            "DRAFT sidebar",
+            "DRAFT header",
+            "DRAFT main (view)",
+            "DRAFT inspector",
+            "DRAFT command",
+            "DRAFT page-module (sections.*)",
+            "DRAFT state",
+            "DRAFT toasts (components.toast)"
+          ]
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

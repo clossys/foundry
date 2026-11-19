@@ -1,5 +1,5 @@
 // Generated from sections.pagination by src/generated/props/generate.ts; do not edit.
-export const paginationContractSha256 = "c61eb9f5b8cad46f9c00e62b9982dab792cd1fad42ee0cc39628baa9c28236df";
+export const paginationContractSha256 = "fe0ce4305408919ad1aedd88960bb20dfa4be1f6532e4d9fedcd3d228d58e06a";
 
 export type PaginationCopy = {
   page?: {

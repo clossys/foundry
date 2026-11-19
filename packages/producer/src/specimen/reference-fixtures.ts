@@ -16,6 +16,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
 import { DESIGNER_SHADCN_FLAVOR } from "@clossys/designer/shadcn-flavor";
 import { CONTRACT_FIXTURE_SCHEMA, type ContractFixture } from "../records/slot-model/contract-fixture.js";
+import { BLOCK_FIXTURE_RULES, blockContractProps, blockFixture, blockMount, hasDefaultExport } from "./block-fixtures.js";
 
 /**
  * The derivation's data, in one table (planner decisions, U27 round 2).
@@ -27,8 +28,9 @@ import { CONTRACT_FIXTURE_SCHEMA, type ContractFixture } from "../records/slot-m
 export const REFERENCE_FIXTURE_RULES = {
   layers: {
     components: { determined: true },
-    sections: { determined: false, reason: "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name" },
-    frames: { determined: false, reason: "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name" },
+    // U28: sections and frames mount their adopted reference's block with DRAFT props (block-fixtures.ts).
+    sections: { determined: true },
+    frames: { determined: true },
     themes: { determined: false, reason: "a token specimen mounts no component (the element certifier needs no fixture) and the contract declares no props to type one" },
     assets: { determined: false, reason: "an asset specimen mounts no component (the element certifier needs no fixture) and the contract declares no props to type one" },
   },
@@ -39,6 +41,8 @@ export const REFERENCE_FIXTURE_RULES = {
 export const GAPS_FILE = "src/catalog/contract-fixture-gaps.json";
 export const NO_REFERENCE = "no adopted reference";
 const LAYERS = Object.keys(REFERENCE_FIXTURE_RULES.layers) as (keyof typeof REFERENCE_FIXTURE_RULES.layers)[];
+/** The layers whose slot contracts carry adopted reference rows. */
+const REFERENCE_LAYERS = ["components", "sections", "frames"] as const;
 const CODE = /\.(?:tsx|ts|jsx|js)$/;
 
 interface ManifestFile { readonly path: string }
@@ -84,7 +88,7 @@ export interface ReferenceIndex {
   readonly ships: ReadonlyMap<string, readonly string[]>;
   /** Per manifest item: each code file it ships, by registry path, with that file's value exports. */
   readonly itemShips: ReadonlyMap<ManifestItem, ReadonlyMap<string, readonly string[]>>;
-  /** Each component slot's reference rows (src/catalog/slot-contracts/components.json). */
+  /** Each component, section and frame slot's reference rows (src/catalog/slot-contracts/<layer>.json). */
   readonly references: ReadonlyMap<string, readonly ReferenceRow[]>;
 }
 
@@ -96,14 +100,18 @@ export function referenceIndex(designerRoot: string, style: string = flavorStyle
     if (!CODE.test(file.path)) continue;
     const path = join(designerRoot, "references", item.dir, file.path);
     if (!existsSync(path)) continue;
-    const names = exportedNames(readFileSync(path, "utf8"));
+    const source = readFileSync(path, "utf8");
+    // A default export is mounted as `default` (U28: block references such as tailark sections export default).
+    const names = [...new Set([...exportedNames(source), ...(hasDefaultExport(source) ? ["default"] : [])])].sort();
     ships.set(file.path, [...new Set([...(ships.get(file.path) ?? []), ...names])].sort());
     if (!itemShips.has(item)) itemShips.set(item, new Map());
     itemShips.get(item)!.set(file.path, names);
   }
   const references = new Map<string, ReferenceRow[]>();
-  const contracts = join(designerRoot, "src/catalog/slot-contracts/components.json");
-  for (const row of json(contracts) as { slot: string; references?: ReferenceRow[] }[]) references.set(row.slot, row.references ?? []);
+  for (const layer of REFERENCE_LAYERS) {
+    const contracts = join(designerRoot, "src/catalog/slot-contracts", `${layer}.json`);
+    for (const row of json(contracts) as { slot: string; references?: ReferenceRow[] }[]) references.set(row.slot, row.references ?? []);
+  }
   return { style, manifest, ships, itemShips, references };
 }
 
@@ -166,6 +174,20 @@ export function referenceFixture(index: ReferenceIndex, slot: string, references
   return { gap: misses.join("; ") };
 }
 
+/** The fixture one section or frame slot's reference rows determine (block-fixtures.ts), or `{ gap }` naming why none. */
+export function blockReferenceFixture(index: ReferenceIndex, layer: "sections" | "frames", contract: Readonly<Record<string, unknown>>, references: readonly ReferenceRow[], designerRoot: string): { fixture: ContractFixture; props: readonly string[]; reference: string } | { gap: string } {
+  if (!references.length) return { gap: NO_REFERENCE };
+  const misses: string[] = [];
+  for (const row of references) {
+    const item = styled(index, row);
+    if ("gap" in item) { misses.push(item.gap); continue; }
+    const mount = blockMount(designerRoot, item, index.itemShips.get(item));
+    if ("gap" in mount) { misses.push(mount.gap); continue; }
+    return { reference: `${item.registry}/${item.name}@${item.version}`, props: blockContractProps(layer), fixture: blockFixture(layer, contract, mount) };
+  }
+  return { gap: misses.join("; ") };
+}
+
 /**
  * A fixture that mounts the same file and export as the derived one, sets every prop the derived one
  * sets and says something more (other props or values, inputs, frame) is richer, and is kept.
@@ -197,6 +219,8 @@ const text = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 export function planReferenceFixtures(designerRoot: string, studioSlots: readonly { id: string; contract?: Record<string, unknown> }[] = []): ReferenceFixturePlan {
   const index = referenceIndex(designerRoot);
   const references = index.references;
+  const retiredPath = join(designerRoot, "src/catalog/retired.json");
+  const retired = new Set(existsSync(retiredPath) ? (json(retiredPath) as { id: string }[]).map(entry => entry.id) : []);
   const files: { path: string; before: string; after: string }[] = [];
   const gaps: FixtureGap[] = [];
   let fixtures = 0, kept = 0;
@@ -209,6 +233,17 @@ export function planReferenceFixtures(designerRoot: string, studioSlots: readonl
       const contract = { ...(slot.contract ?? {}) };
       const existing = contract.fixture;
       delete contract.fixture;
+      if (layer === "sections" || layer === "frames") {
+        // U28: a block's props are its contract's (DRAFT copy, region placeholders); it declares no props list of its own.
+        delete contract.props;
+        const block = retired.has(slot.id) ? { gap: BLOCK_FIXTURE_RULES.retired } : blockReferenceFixture(index, layer, contract, references.get(slot.id) ?? [], designerRoot);
+        if ("gap" in block) { gaps.push({ slot: slot.id, layer, reason: block.gap }); slot.contract = contract; continue; }
+        contract.props = [...block.props];
+        contract.fixture = block.fixture;
+        fixtures++;
+        slot.contract = contract;
+        continue;
+      }
       const result = rule.determined ? referenceFixture(index, slot.id, references.get(slot.id) ?? []) : { gap: rule.reason };
       if ("gap" in result) { gaps.push({ slot: slot.id, layer, reason: result.gap }); slot.contract = contract; continue; }
       if (!Array.isArray(contract.props)) { gaps.push({ slot: slot.id, layer, reason: "the contract declares no props list, so no typed fixture can be written" }); slot.contract = contract; continue; }

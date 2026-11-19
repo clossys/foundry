@@ -1,5 +1,5 @@
 // Generated from sections.status-list by src/generated/props/generate.ts; do not edit.
-export const statusListContractSha256 = "0b0601653d7bf2f6de0c0002ea2120c05394be3a34c223e6495c30d5451e278a";
+export const statusListContractSha256 = "9938e86589ec46d6ae19ab3887d9a22e7f33275f74a151f79d64d5ee51b37b69";
 
 export type StatusListCopy = {
   header?: {

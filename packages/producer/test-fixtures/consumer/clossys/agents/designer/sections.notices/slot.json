@@ -278,6 +278,36 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/examples/alert-example.tsx",
+        "export": "AlertExample",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "notices": [
+              {
+                "title": "DRAFT heading",
+                "body": "DRAFT body",
+                "action": {
+                  "label": "DRAFT label"
+                },
+                "dismiss-label": "DRAFT label"
+              }
+            ]
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

@@ -363,6 +363,57 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/examples/progress-example.tsx",
+        "export": "ProgressExample",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "meters": [
+              {
+                "label": "DRAFT label",
+                "used-text": "DRAFT label",
+                "limit-text": "DRAFT label",
+                "period-text": "DRAFT label",
+                "projected-text": "DRAFT label",
+                "thresholds": [
+                  {
+                    "message": "DRAFT label"
+                  }
+                ]
+              }
+            ],
+            "labels": {
+              "label": "DRAFT label"
+            },
+            "states": {
+              "loading": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              },
+              "empty": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              },
+              "error": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              }
+            }
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

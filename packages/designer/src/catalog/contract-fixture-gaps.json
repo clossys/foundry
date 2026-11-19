@@ -7,12 +7,10 @@
         "determined": true
       },
       "sections": {
-        "determined": false,
-        "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+        "determined": true
       },
       "frames": {
-        "determined": false,
-        "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
+        "determined": true
       },
       "themes": {
         "determined": false,
@@ -38,7 +36,7 @@
       "contentText": "Content"
     }
   },
-  "fixtures": 50,
+  "fixtures": 99,
   "gaps": [
     {
       "slot": "components.chart-area",
@@ -183,417 +181,172 @@
     {
       "slot": "sections.specimen-swatch",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-color-ramp",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-type-ladder",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-spacing-ladder",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-radius-ladder",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-motion-player",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-asset-grid",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-icon-grid",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-variant-matrix",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-section-viewports",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-frame-viewports",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-rich-passage",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-copy-in-context",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.specimen-page-viewports",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.access-matrix",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.account-summary",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.activity-feed",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "no adopted reference"
     },
     {
       "slot": "sections.article",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.audit-log",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.band",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "tailwindcss-typography/typography ships 3 code files and no registry:page entry or typography file"
     },
     {
       "slot": "sections.boundary-message",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.call-to-action",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.candidate-preview",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "no adopted reference"
     },
     {
       "slot": "sections.cards",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.chat",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.column-mapper",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.comparison",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "no adopted reference"
     },
     {
       "slot": "sections.consent",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.content",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.data-grid",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.data-table",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.empty-state",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.error-state",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "no adopted reference"
     },
     {
       "slot": "sections.explorer",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.faq",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.features",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.filter-builder",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.form",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.gallery",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.hero",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "no adopted reference"
     },
     {
       "slot": "sections.legal-prose",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.link-index",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.logo-cloud",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.logo-hero",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.logo-mark",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.media",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.newsletter",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.notices",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.page-header",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.pagination",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.people",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.pricing",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.question-packet",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "no adopted reference"
     },
     {
       "slot": "sections.queue-list",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "no adopted reference"
     },
     {
       "slot": "sections.record-detail",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.resource-list",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.section-header",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "sections.sectioned-document",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.settings",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.sign-in-form",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "tailwindcss-typography/typography ships 3 code files and no registry:page entry or typography file"
     },
     {
       "slot": "sections.slot-detail",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "no adopted reference"
     },
     {
       "slot": "sections.slot-gallery",
       "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.stats",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.status-list",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.steps",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.table-of-contents",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.task-list",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.testimonials",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.timeline",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.usage",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
-    },
-    {
-      "slot": "sections.wizard",
-      "layer": "sections",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the section mounts with copy and region slots whose Writer keys and parts the contract does not name"
+      "reason": "no adopted reference"
     },
     {
       "slot": "frames.document",
       "layer": "frames",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
-    },
-    {
-      "slot": "frames.site-shell",
-      "layer": "frames",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
-    },
-    {
-      "slot": "frames.app-shell",
-      "layer": "frames",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
-    },
-    {
-      "slot": "frames.auth-shell",
-      "layer": "frames",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
-    },
-    {
-      "slot": "frames.site-header",
-      "layer": "frames",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
-    },
-    {
-      "slot": "frames.app-header",
-      "layer": "frames",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
-    },
-    {
-      "slot": "frames.app-sidebar",
-      "layer": "frames",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
-    },
-    {
-      "slot": "frames.inspector",
-      "layer": "frames",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
-    },
-    {
-      "slot": "frames.site-footer",
-      "layer": "frames",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
-    },
-    {
-      "slot": "frames.sheet",
-      "layer": "frames",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
-    },
-    {
-      "slot": "frames.command",
-      "layer": "frames",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
+      "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
       "slot": "frames.deck",
       "layer": "frames",
-      "reason": "the contract declares no props list, so no typed fixture can be written; the frame mounts with region slots and copy the contract does not name"
+      "reason": "no adopted reference"
     },
     {
       "slot": "themes.accent",

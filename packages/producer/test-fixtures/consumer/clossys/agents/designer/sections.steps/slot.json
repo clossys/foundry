@@ -279,6 +279,33 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "ui/timeline.tsx",
+        "export": "Timeline",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "steps": [
+              {
+                "heading": "DRAFT heading",
+                "description": "DRAFT body",
+                "ordinal": "DRAFT label"
+              }
+            ]
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

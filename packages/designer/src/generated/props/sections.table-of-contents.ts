@@ -1,5 +1,5 @@
 // Generated from sections.table-of-contents by src/generated/props/generate.ts; do not edit.
-export const tableOfContentsContractSha256 = "486720776042054f1564826a1abff9e272719c06b305c731150ae2713bc6a338";
+export const tableOfContentsContractSha256 = "fc8146e8d4e96ca61d7542d8d586ec219e434a6993b65cfade2810b189c78f2c";
 
 export type TableOfContentsCopy = {
   headings: Array<{

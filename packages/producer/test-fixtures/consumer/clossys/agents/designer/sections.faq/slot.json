@@ -277,6 +277,32 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "mist/blocks/faqs/one.tsx",
+        "export": "default",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "items": [
+              {
+                "question": "DRAFT label",
+                "answer": "DRAFT body"
+              }
+            ]
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

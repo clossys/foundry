@@ -219,6 +219,23 @@
       "components.semantic-content",
       "components.sheet"
     ],
+    "props": [
+      "children"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/examples/sheet-example.tsx",
+        "export": "SheetExample",
+        "props": {
+          "children": [
+            "DRAFT heading",
+            "DRAFT body",
+            "DRAFT footer"
+          ]
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

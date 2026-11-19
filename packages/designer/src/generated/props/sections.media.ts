@@ -1,5 +1,5 @@
 // Generated from sections.media by src/generated/props/generate.ts; do not edit.
-export const mediaContractSha256 = "8a87f2d2363adb7f97bfe58c532f06a3687b291c4e59977f1352c3ccb0bbbb4d";
+export const mediaContractSha256 = "f41470ca27da5af5afc987f8b89e905297618b12ec343eb1246c9ac262578e25";
 
 export type MediaCopy = {
   header?: {

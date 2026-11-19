@@ -341,6 +341,50 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/examples/field-example.tsx",
+        "export": "FieldExample",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "groups": [
+              {
+                "legend": "DRAFT label",
+                "description": "DRAFT body",
+                "controls": [
+                  {
+                    "label": "DRAFT label",
+                    "description": "DRAFT body",
+                    "placeholder": "DRAFT label",
+                    "options": [
+                      {
+                        "label": "DRAFT label"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "save-bar": {
+              "label": "DRAFT label",
+              "save": "DRAFT label",
+              "discard": "DRAFT label",
+              "unsaved": "DRAFT label"
+            }
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

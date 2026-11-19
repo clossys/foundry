@@ -396,6 +396,54 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "ui/faceted.tsx",
+        "export": "Faceted",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "fields": [
+              {
+                "label": "DRAFT label",
+                "options": [
+                  {
+                    "label": "DRAFT label"
+                  }
+                ]
+              }
+            ],
+            "operators": [
+              {
+                "label": "DRAFT label"
+              }
+            ],
+            "groups": [
+              {
+                "label": "DRAFT label"
+              }
+            ],
+            "labels": {
+              "add-rule": "DRAFT label",
+              "add-group": "DRAFT label",
+              "remove": "DRAFT label",
+              "match-all": "DRAFT label",
+              "match-any": "DRAFT label",
+              "value": "DRAFT label"
+            }
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

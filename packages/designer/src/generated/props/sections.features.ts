@@ -1,5 +1,5 @@
 // Generated from sections.features by src/generated/props/generate.ts; do not edit.
-export const featuresContractSha256 = "2fe32997f242760cb91eb30003d6b680bbe368e4ae40263c1fdfd6738738c076";
+export const featuresContractSha256 = "dd7221449dcc344b9f7c777b989c91cac257f664425438e477a97dcec8819d10";
 
 export type FeaturesCopy = {
   header?: {

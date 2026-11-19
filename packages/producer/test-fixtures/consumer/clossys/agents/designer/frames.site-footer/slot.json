@@ -289,6 +289,24 @@
         }
       ]
     },
+    "props": [
+      "children"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "mist/blocks/footer/one.tsx",
+        "export": "default",
+        "props": {
+          "children": [
+            "DRAFT columns",
+            "DRAFT links (components.link)",
+            "DRAFT legal",
+            "DRAFT social (components.icon)"
+          ]
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

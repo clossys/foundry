@@ -1,5 +1,5 @@
 // Generated from sections.data-grid by src/generated/props/generate.ts; do not edit.
-export const dataGridContractSha256 = "7b1eab825916272e9d033b3142d88cf5d95feefeaae5184cbf074e275da032f0";
+export const dataGridContractSha256 = "27bed8f5acbf94c5264ec4929ed382f9bb738b242f5545032a86d7c7bd229313";
 
 export type DataGridCopy = {
   header?: {

@@ -1,5 +1,5 @@
 // Generated from sections.audit-log by src/generated/props/generate.ts; do not edit.
-export const auditLogContractSha256 = "ced5d546706541cfb81cd52fcec4249564fac8ad6e71039be1a1b8272992c356";
+export const auditLogContractSha256 = "87ed873c573c0f5db21fca4707423345dae050dba01ad352f7b361d2a2c98603";
 
 export type AuditLogCopy = {
   header?: {

@@ -1,5 +1,5 @@
 // Generated from sections.task-list by src/generated/props/generate.ts; do not edit.
-export const taskListContractSha256 = "5620b49dfdbc91fa0a6226497b1eeee5114ed039264aef4536d9138830a2c265";
+export const taskListContractSha256 = "d2b32180f7a58f035a5a8ed499eef344ac13b17d81ba96eb1edaa4f33fd99694";
 
 export type TaskListCopy = {
   header?: {

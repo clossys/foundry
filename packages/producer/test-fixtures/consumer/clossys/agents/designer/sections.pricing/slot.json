@@ -384,6 +384,47 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "mist/blocks/pricing/one.tsx",
+        "export": "default",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "plans": [
+              {
+                "name": "DRAFT label",
+                "price": "DRAFT label",
+                "description": "DRAFT body",
+                "features": [
+                  "DRAFT label"
+                ],
+                "cta": {
+                  "label": "DRAFT label"
+                },
+                "badge": "DRAFT label",
+                "price-by-interval": [
+                  {
+                    "amount": "DRAFT label",
+                    "price-text": "DRAFT label"
+                  }
+                ]
+              }
+            ],
+            "interval": "DRAFT label"
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

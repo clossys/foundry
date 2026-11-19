@@ -1,5 +1,5 @@
 // Generated from sections.notices by src/generated/props/generate.ts; do not edit.
-export const noticesContractSha256 = "37831040a1f979913c537bd6c3bbd85c72d417de9258f6116f1034a4c4dba7cf";
+export const noticesContractSha256 = "177b7d316c46af863b085538e1ceb7df935888c30249a4f472c23ff646d597cd";
 
 export type NoticesCopy = {
   header?: {

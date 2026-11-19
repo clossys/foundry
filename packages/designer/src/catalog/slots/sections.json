@@ -1285,6 +1285,52 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/table-example.tsx",
+          "export": "TableExample",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "roles": [
+                {
+                  "label": "DRAFT label",
+                  "locked-reason": "DRAFT label"
+                }
+              ],
+              "permissions": [
+                {
+                  "label": "DRAFT label",
+                  "permissions": [
+                    {
+                      "label": "DRAFT label",
+                      "description": "DRAFT body"
+                    }
+                  ]
+                }
+              ],
+              "labels": {
+                "label": "DRAFT label",
+                "permission-header": "DRAFT label",
+                "cell": "DRAFT label",
+                "group-all": "DRAFT label",
+                "inherited": "DRAFT label",
+                "locked": "DRAFT label",
+                "change-summary": "DRAFT label"
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -1776,6 +1822,76 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/item-example.tsx",
+          "export": "ItemExample",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "grouping": [
+                {
+                  "label": "DRAFT label"
+                }
+              ],
+              "filters": {
+                "links": [
+                  {
+                    "label": "DRAFT label"
+                  }
+                ]
+              },
+              "labels": {
+                "label": "DRAFT label",
+                "unread": "DRAFT label",
+                "changed-from": "DRAFT label",
+                "changed-to": "DRAFT label",
+                "cleared": "DRAFT label"
+              },
+              "states": {
+                "loading": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "empty": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "error": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                }
+              },
+              "events": [
+                {
+                  "actor": {
+                    "name": "DRAFT label"
+                  },
+                  "summary": "DRAFT body",
+                  "time-text": "DRAFT label",
+                  "changes": [
+                    {
+                      "field": "DRAFT label",
+                      "from": "DRAFT label",
+                      "to": "DRAFT label"
+                    }
+                  ],
+                  "detail": "DRAFT body"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -2215,6 +2331,64 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/table-example.tsx",
+          "export": "TableExample",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "entries": [
+                {
+                  "actor": "DRAFT label",
+                  "action": "DRAFT action",
+                  "target": "DRAFT label",
+                  "time-text": "DRAFT label"
+                }
+              ],
+              "filter": {
+                "search": {
+                  "label": "DRAFT label",
+                  "placeholder": "DRAFT label"
+                }
+              },
+              "export": {
+                "label": "DRAFT label"
+              },
+              "labels": {
+                "time": "DRAFT label",
+                "actor": "DRAFT label",
+                "action": "DRAFT action",
+                "target": "DRAFT label",
+                "label": "DRAFT label"
+              },
+              "states": {
+                "loading": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "empty": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "error": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -2287,6 +2461,20 @@
       "copy": {
         "sourceLocale": "en",
         "fields": []
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/content/one.tsx",
+          "export": "default",
+          "props": {
+            "copy": {}
+          }
+        }
       }
     },
     "requires": [],
@@ -2573,6 +2761,34 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/call-to-action/one.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "header": {
+                "title": "DRAFT heading",
+                "eyebrow": "DRAFT eyebrow",
+                "description": "DRAFT lead"
+              },
+              "actions": {
+                "primary": {
+                  "label": "DRAFT action"
+                },
+                "secondary": {
+                  "label": "DRAFT action"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -3113,6 +3329,39 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/message.tsx",
+          "export": "Message",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "parts": [
+                {
+                  "content": "DRAFT body",
+                  "timestamp": "DRAFT label"
+                }
+              ],
+              "composer": {
+                "placeholder": "DRAFT label",
+                "label": "DRAFT label"
+              },
+              "labels": {
+                "status": "DRAFT label"
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -3546,6 +3795,57 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/comparator/one.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "columns": [
+                {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                }
+              ],
+              "rows": [
+                {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body",
+                  "cells": [
+                    {
+                      "text": "DRAFT label",
+                      "value": "DRAFT label",
+                      "delta": "DRAFT label"
+                    }
+                  ]
+                }
+              ],
+              "highlight": {
+                "label": "DRAFT label"
+              },
+              "controls": [
+                {
+                  "label": "DRAFT label"
+                }
+              ],
+              "labels": {
+                "label": "DRAFT label",
+                "feature": "DRAFT label"
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -3927,6 +4227,54 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/separator-example.tsx",
+          "export": "SeparatorExample",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead",
+                "actions": [
+                  {
+                    "label": "DRAFT label"
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "text": "DRAFT body",
+                  "items": [
+                    "DRAFT body"
+                  ]
+                }
+              ],
+              "media": {
+                "title": "DRAFT heading",
+                "series": [
+                  {
+                    "name": "DRAFT label"
+                  }
+                ]
+              },
+              "footnote": "DRAFT body",
+              "aside": [
+                {
+                  "label": "DRAFT label",
+                  "value": "DRAFT body"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -4173,6 +4521,59 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/table-example.tsx",
+          "export": "TableExample",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "cells": [
+                {
+                  "label": "DRAFT label"
+                }
+              ],
+              "rows": [
+                {
+                  "cells": [
+                    {
+                      "text": "DRAFT label"
+                    }
+                  ]
+                }
+              ],
+              "labels": {
+                "label": "DRAFT label",
+                "selection": "DRAFT label",
+                "sort": "DRAFT label"
+              },
+              "states": {
+                "loading": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "empty": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "error": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -4517,6 +4918,75 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/table-example.tsx",
+          "export": "TableExample",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "columns": [
+                {
+                  "label": "DRAFT label"
+                }
+              ],
+              "rows": [
+                {
+                  "cells": [
+                    {
+                      "text": "DRAFT label"
+                    }
+                  ]
+                }
+              ],
+              "toolbar": {
+                "search": {
+                  "label": "DRAFT label",
+                  "placeholder": "DRAFT label"
+                },
+                "actions": [
+                  {
+                    "label": "DRAFT label"
+                  }
+                ]
+              },
+              "pagination": {
+                "label": "DRAFT label",
+                "page-text": "DRAFT label",
+                "total-text": "DRAFT label"
+              },
+              "labels": {
+                "label": "DRAFT label",
+                "selection": "DRAFT label",
+                "sort": "DRAFT label"
+              },
+              "states": {
+                "loading": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "empty": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "error": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -4663,6 +5133,34 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/empty.tsx",
+          "export": "Empty",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "actions": [
+                {
+                  "label": "DRAFT action"
+                }
+              ],
+              "illustration": {
+                "label": "DRAFT label"
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -4807,6 +5305,33 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/empty.tsx",
+          "export": "Empty",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "code": "DRAFT label",
+              "retry": {
+                "label": "DRAFT label"
+              },
+              "report": {
+                "label": "DRAFT label"
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -5112,6 +5637,32 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/faqs/one.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "items": [
+                {
+                  "question": "DRAFT label",
+                  "answer": "DRAFT body"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -5265,6 +5816,32 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/features/one/features.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "items": [
+                {
+                  "heading": "DRAFT heading",
+                  "description": "DRAFT body"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -5484,6 +6061,54 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "ui/faceted.tsx",
+          "export": "Faceted",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "fields": [
+                {
+                  "label": "DRAFT label",
+                  "options": [
+                    {
+                      "label": "DRAFT label"
+                    }
+                  ]
+                }
+              ],
+              "operators": [
+                {
+                  "label": "DRAFT label"
+                }
+              ],
+              "groups": [
+                {
+                  "label": "DRAFT label"
+                }
+              ],
+              "labels": {
+                "add-rule": "DRAFT label",
+                "add-group": "DRAFT label",
+                "remove": "DRAFT label",
+                "match-all": "DRAFT label",
+                "match-any": "DRAFT label",
+                "value": "DRAFT label"
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -5738,6 +6363,56 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/field.tsx",
+          "export": "Field",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "fields": [
+                {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body",
+                  "placeholder": "DRAFT label",
+                  "options": [
+                    {
+                      "label": "DRAFT label"
+                    }
+                  ],
+                  "error": "DRAFT label"
+                }
+              ],
+              "submit": {
+                "label": "DRAFT label"
+              },
+              "error-summary": {
+                "heading": "DRAFT heading",
+                "items": [
+                  {
+                    "message": "DRAFT label"
+                  }
+                ]
+              },
+              "success": {
+                "message": "DRAFT body"
+              },
+              "error": {
+                "message": "DRAFT body"
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -5887,6 +6562,38 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/carousel-example.tsx",
+          "export": "CarouselExample",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "images": {
+                "label": "DRAFT label",
+                "items": [
+                  {
+                    "label": "DRAFT label",
+                    "caption": "DRAFT body",
+                    "media": {
+                      "title": "DRAFT heading"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -6094,6 +6801,42 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/hero-section/one/hero-section.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "header": {
+                "heading": "DRAFT heading",
+                "eyebrow": "DRAFT eyebrow",
+                "description": "DRAFT lead"
+              },
+              "actions": {
+                "primary": {
+                  "label": "DRAFT action"
+                },
+                "secondary": {
+                  "label": "DRAFT action"
+                }
+              },
+              "media": {
+                "title": "DRAFT heading",
+                "series": [
+                  {
+                    "name": "DRAFT label"
+                  }
+                ]
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -6383,6 +7126,34 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/item-example.tsx",
+          "export": "ItemExample",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "links": [
+                {
+                  "title": "DRAFT heading",
+                  "description": "DRAFT body",
+                  "label": "DRAFT label",
+                  "badge": "DRAFT label"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -6520,6 +7291,31 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/logo-cloud/one.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "logos": [
+                {
+                  "name": "DRAFT label"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -6854,6 +7650,46 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/magicui/safari.tsx",
+          "export": "Safari",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "figure": {
+                "caption": "DRAFT body",
+                "media": {
+                  "title": "DRAFT heading",
+                  "series": [
+                    {
+                      "name": "DRAFT label"
+                    }
+                  ]
+                },
+                "chrome-label": "DRAFT label"
+              },
+              "callouts": {
+                "label": "DRAFT label",
+                "items": [
+                  {
+                    "body": "DRAFT body"
+                  }
+                ]
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -7183,6 +8019,36 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/alert-example.tsx",
+          "export": "AlertExample",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "notices": [
+                {
+                  "title": "DRAFT heading",
+                  "body": "DRAFT body",
+                  "action": {
+                    "label": "DRAFT label"
+                  },
+                  "dismiss-label": "DRAFT label"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -7381,6 +8247,47 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/features/one/features.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "title": "DRAFT heading",
+              "description": "DRAFT body",
+              "breadcrumbs": {
+                "label": "DRAFT label",
+                "items": [
+                  {
+                    "label": "DRAFT label"
+                  }
+                ]
+              },
+              "actions": [
+                {
+                  "label": "DRAFT action"
+                }
+              ],
+              "meta": [
+                {
+                  "label": "DRAFT label",
+                  "value": "DRAFT label"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -7543,6 +8450,33 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/pagination-example.tsx",
+          "export": "PaginationExample",
+          "props": {
+            "copy": {
+              "page": {
+                "label": "DRAFT label",
+                "previous-label": "DRAFT label",
+                "next-label": "DRAFT label",
+                "page-text": "DRAFT label",
+                "no-results-label": "DRAFT label",
+                "page-size-label": "DRAFT label"
+              },
+              "total": {
+                "label": "DRAFT label",
+                "range-text": "DRAFT label"
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -7682,6 +8616,33 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/team/one.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "people": [
+                {
+                  "name": "DRAFT label",
+                  "role": "DRAFT label",
+                  "initials": "DRAFT label"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -7897,6 +8858,47 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/pricing/one.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "plans": [
+                {
+                  "name": "DRAFT label",
+                  "price": "DRAFT label",
+                  "description": "DRAFT body",
+                  "features": [
+                    "DRAFT label"
+                  ],
+                  "cta": {
+                    "label": "DRAFT label"
+                  },
+                  "badge": "DRAFT label",
+                  "price-by-interval": [
+                    {
+                      "amount": "DRAFT label",
+                      "price-text": "DRAFT label"
+                    }
+                  ]
+                }
+              ],
+              "interval": "DRAFT label"
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -8540,6 +9542,61 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/item.tsx",
+          "export": "Item",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "records": [
+                {
+                  "title": "DRAFT heading",
+                  "description": "DRAFT body",
+                  "meta": "DRAFT label"
+                }
+              ],
+              "toolbar": {
+                "label": "DRAFT label",
+                "search": {
+                  "label": "DRAFT label",
+                  "placeholder": "DRAFT label"
+                }
+              },
+              "pagination": {
+                "page-text": "DRAFT label",
+                "total-text": "DRAFT label"
+              },
+              "labels": {
+                "label": "DRAFT label"
+              },
+              "states": {
+                "loading": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "empty": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "error": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -8687,6 +9744,29 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/features/one/features.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT body",
+              "actions": [
+                {
+                  "label": "DRAFT action"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -8969,6 +10049,50 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/field-example.tsx",
+          "export": "FieldExample",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "groups": [
+                {
+                  "legend": "DRAFT label",
+                  "description": "DRAFT body",
+                  "controls": [
+                    {
+                      "label": "DRAFT label",
+                      "description": "DRAFT body",
+                      "placeholder": "DRAFT label",
+                      "options": [
+                        {
+                          "label": "DRAFT label"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "save-bar": {
+                "label": "DRAFT label",
+                "save": "DRAFT label",
+                "discard": "DRAFT label",
+                "unsaved": "DRAFT label"
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -9275,7 +10399,56 @@
         "assets": []
       },
       "data": "host-injected",
-      "surface": "app"
+      "surface": "app",
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/blocks/login-03/page.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "header": {
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "providers": [
+                {
+                  "label": "DRAFT label"
+                }
+              ],
+              "credentials": {
+                "identifier-label": "DRAFT label",
+                "identifier-placeholder": "DRAFT label",
+                "password-label": "DRAFT label",
+                "password-placeholder": "DRAFT label"
+              },
+              "verification": {
+                "code-label": "DRAFT label",
+                "description": "DRAFT body",
+                "placeholder": "DRAFT label"
+              },
+              "actions": {
+                "submit": "DRAFT action",
+                "verify": "DRAFT action",
+                "pending": "DRAFT action",
+                "back": "DRAFT action",
+                "resend": "DRAFT action",
+                "divider": "DRAFT label"
+              },
+              "error": {
+                "message": "DRAFT body",
+                "identifier": "DRAFT label",
+                "password": "DRAFT label",
+                "code": "DRAFT label"
+              }
+            }
+          }
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -9597,6 +10770,48 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/stats/one.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "stats": [
+                {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body",
+                  "value": "DRAFT label",
+                  "delta": "DRAFT label"
+                }
+              ],
+              "states": {
+                "loading": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "empty": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "error": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -9880,6 +11095,60 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/item-example.tsx",
+          "export": "ItemExample",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "items": [
+                {
+                  "heading": "DRAFT heading",
+                  "items": [
+                    {
+                      "label": "DRAFT label",
+                      "detail": "DRAFT body"
+                    }
+                  ],
+                  "label": "DRAFT label",
+                  "detail": "DRAFT body"
+                }
+              ],
+              "legend": "DRAFT label",
+              "labels": {
+                "available": "DRAFT label",
+                "partial": "DRAFT label",
+                "planned": "DRAFT label",
+                "not-offered": "DRAFT label"
+              },
+              "states": {
+                "loading": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "empty": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "error": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -10018,6 +11287,33 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "ui/timeline.tsx",
+          "export": "Timeline",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "steps": [
+                {
+                  "heading": "DRAFT heading",
+                  "description": "DRAFT body",
+                  "ordinal": "DRAFT label"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -10137,6 +11433,30 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "ui/scroll-spy.tsx",
+          "export": "ScrollSpy",
+          "props": {
+            "copy": {
+              "headings": [
+                {
+                  "label": "DRAFT label"
+                }
+              ],
+              "labels": {
+                "label": "DRAFT label"
+              },
+              "label": "DRAFT label"
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -10405,6 +11725,55 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/item.tsx",
+          "export": "Item",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "tasks": [
+                {
+                  "title": "DRAFT heading",
+                  "description": "DRAFT body",
+                  "meta": "DRAFT label"
+                }
+              ],
+              "labels": {
+                "label": "DRAFT label",
+                "progress": "DRAFT label",
+                "done": "DRAFT label",
+                "todo": "DRAFT label",
+                "in-progress": "DRAFT label",
+                "blocked": "DRAFT label"
+              },
+              "states": {
+                "loading": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "empty": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "error": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -10551,6 +11920,33 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "mist/blocks/testimonials/one.tsx",
+          "export": "default",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "quotes": [
+                {
+                  "quote": "DRAFT body",
+                  "attributor-name": "DRAFT label",
+                  "attributor-role": "DRAFT label"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -10688,6 +12084,33 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "ui/timeline.tsx",
+          "export": "Timeline",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "events": [
+                {
+                  "heading": "DRAFT heading",
+                  "date-text": "DRAFT label",
+                  "description": "DRAFT body"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -10930,6 +12353,57 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/examples/progress-example.tsx",
+          "export": "ProgressExample",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "meters": [
+                {
+                  "label": "DRAFT label",
+                  "used-text": "DRAFT label",
+                  "limit-text": "DRAFT label",
+                  "period-text": "DRAFT label",
+                  "projected-text": "DRAFT label",
+                  "thresholds": [
+                    {
+                      "message": "DRAFT label"
+                    }
+                  ]
+                }
+              ],
+              "labels": {
+                "label": "DRAFT label"
+              },
+              "states": {
+                "loading": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "empty": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                },
+                "error": {
+                  "label": "DRAFT label",
+                  "description": "DRAFT body"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],
@@ -11114,6 +12588,44 @@
             "dir": "auto"
           }
         ]
+      },
+      "props": [
+        "copy",
+        "variant"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "ui/stepper.tsx",
+          "export": "Stepper",
+          "props": {
+            "copy": {
+              "header": {
+                "eyebrow": "DRAFT eyebrow",
+                "heading": "DRAFT heading",
+                "description": "DRAFT lead"
+              },
+              "steps": [
+                {
+                  "label": "DRAFT label"
+                }
+              ],
+              "progress": {
+                "label": "DRAFT label"
+              },
+              "back": {
+                "label": "DRAFT label"
+              },
+              "next": {
+                "label": "DRAFT label",
+                "finish": "DRAFT label"
+              },
+              "review": {
+                "label": "DRAFT label"
+              }
+            }
+          }
+        }
       }
     },
     "requires": [],

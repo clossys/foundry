@@ -86,11 +86,12 @@ describe("Designer contract fixtures from adopted references", () => {
     }
     expect(fixtures).toBe(gaps.fixtures);
     expect(fixtures + gaps.gaps.filter(gap => gap.source !== "studio").length).toBe(total);
-    for (const layer of ["themes", "assets", "sections", "frames"]) expect(catalog(layer).filter(slot => slot.contract.fixture !== undefined), layer).toEqual([]);
+    // U28: sections and frames carry fixtures too (block-fixtures.test.ts); themes and assets mount nothing.
+    for (const layer of ["themes", "assets"]) expect(catalog(layer).filter(slot => slot.contract.fixture !== undefined), layer).toEqual([]);
   });
 
   it("the built-in consumer's live component slots carry the package fixture; every other live slot is a named gap", () => {
-    const packaged = new Map(catalog("components").map(slot => [slot.id, slot.contract]));
+    const packaged = new Map(["components", "sections", "frames"].flatMap(layer => catalog(layer)).map(slot => [slot.id, slot.contract]));
     const named = new Set(gapsDoc().gaps.map(gap => gap.slot));
     const live = placed();
     for (const id of live) expect(packaged.get(id)?.fixture !== undefined || named.has(id), id).toBe(true);
@@ -139,6 +140,8 @@ describe("a richer existing fixture is kept", () => {
       { id: "components.logo", contract: { props: [] } },
     ]);
     for (const layer of ["themes", "assets", "sections", "frames"]) write(`src/catalog/slots/${layer}.json`, []);
+    // U28: the index reads the section and frame slot contracts too.
+    for (const layer of ["sections", "frames"]) write(`src/catalog/slot-contracts/${layer}.json`, []);
     const plan = planReferenceFixtures(root);
     const rows = JSON.parse(plan.files.find(file => file.path.endsWith("slots/components.json"))!.after) as Row[];
     expect(rows[0]!.contract.fixture).toEqual(rich);

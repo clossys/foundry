@@ -351,6 +351,48 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "mist/blocks/stats/one.tsx",
+        "export": "default",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "stats": [
+              {
+                "label": "DRAFT label",
+                "description": "DRAFT body",
+                "value": "DRAFT label",
+                "delta": "DRAFT label"
+              }
+            ],
+            "states": {
+              "loading": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              },
+              "empty": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              },
+              "error": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              }
+            }
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

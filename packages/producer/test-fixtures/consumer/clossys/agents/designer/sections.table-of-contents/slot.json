@@ -272,6 +272,30 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "ui/scroll-spy.tsx",
+        "export": "ScrollSpy",
+        "props": {
+          "copy": {
+            "headings": [
+              {
+                "label": "DRAFT label"
+              }
+            ],
+            "labels": {
+              "label": "DRAFT label"
+            },
+            "label": "DRAFT label"
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

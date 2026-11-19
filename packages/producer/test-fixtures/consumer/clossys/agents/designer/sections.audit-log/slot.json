@@ -394,6 +394,64 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/examples/table-example.tsx",
+        "export": "TableExample",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "entries": [
+              {
+                "actor": "DRAFT label",
+                "action": "DRAFT action",
+                "target": "DRAFT label",
+                "time-text": "DRAFT label"
+              }
+            ],
+            "filter": {
+              "search": {
+                "label": "DRAFT label",
+                "placeholder": "DRAFT label"
+              }
+            },
+            "export": {
+              "label": "DRAFT label"
+            },
+            "labels": {
+              "time": "DRAFT label",
+              "actor": "DRAFT label",
+              "action": "DRAFT action",
+              "target": "DRAFT label",
+              "label": "DRAFT label"
+            },
+            "states": {
+              "loading": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              },
+              "empty": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              },
+              "error": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              }
+            }
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"
