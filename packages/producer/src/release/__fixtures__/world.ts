@@ -23,7 +23,8 @@ import { PRODUCER_ROOT } from "../../package-path.js";
 import { cliActor } from "../../records/pin.js";
 import { writeTargetPin } from "../../records/pin-map.js";
 import { positionIa, writeSlot } from "../../records/slot.js";
-import { writeCandidate } from "../../records/slot-write.js";
+import { skillPath } from "../../records/ledger.js";
+import { appendSlotDocEvent, writeCandidate } from "../../records/slot-write.js";
 import { serializeFrontmatter, slotPositions, type IaDoc, type SlotAgent } from "../../records/slot-model/index.js";
 import type { AgentId, Iso, Ref, Slot } from "../../records/types.js";
 import type { ReleaseBuilder } from "../build.js";
@@ -76,6 +77,10 @@ export interface ReleaseWorld {
   dispose(): void;
 }
 
+/**
+ * Writes one world slot's slot.json and records the write: a `slot` ledger event with the bytes' sha256, as the
+ * requests world records its slot.json (R14.1), so a guarded verb on the slot judges only what the verb writes.
+ */
 function slot(root: string, ref: string, extra: Partial<Slot> = {}): void {
   const spec = SLOTS[ref]!;
   const [agent, id] = ref.split("/") as [AgentId, string];
@@ -86,6 +91,7 @@ function slot(root: string, ref: string, extra: Partial<Slot> = {}): void {
     ia: positionIa(id, position), base: null, standard: spec.standard,
     brief: { purpose: "placeholder", mustDo: [], inputs: [], acceptance: [] }, contract: {}, tighten: [], ...extra,
   } as Slot);
+  appendSlotDocEvent(join(root, "clossys"), agent as SlotAgent, id, { by: "planner", at: AT, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: "ia", note: "release world slot.json" } });
 }
 
 /** The agent's ia.json placing its world slots. */

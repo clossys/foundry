@@ -4,10 +4,13 @@
  */
 import type { CandidateRecord, SlotRecord } from "../types.js";
 
-/** Why a candidate is not certified. `no-standard` and `no-fixture` are missing slot records; every other code is a fit failure. */
+/**
+ * Why a candidate is not certified. `no-standard` and `no-fixture` are missing slot records; every other code is a fit
+ * failure (`release`: a release manifest fails the release criteria, certify/release.ts).
+ */
 export type ReasonCode =
   | "invalid" | "no-standard" | "standard" | "no-fixture" | "fixture" | "requirement"
-  | "import" | "render" | "copy" | "citation" | "frame" | "section" | "step" | "limit";
+  | "import" | "render" | "copy" | "citation" | "frame" | "section" | "step" | "limit" | "release";
 
 export const MISSING_RECORD_CODES: ReadonlySet<ReasonCode> = new Set(["no-standard", "no-fixture"]);
 
