@@ -169,14 +169,16 @@ describe("loop.create's exit, candidates.certified (computed by clossys run, nev
 });
 
 describe("the CHOOSE gate on a hero code candidate carrying an interactive backdrop (foundry-build-0048 A4)", () => {
+  /**
+   * The source heroCode's candidate carries under the real guard (U13 r4): it customizes the trusted tailark-oss hero
+   * block (the provenance rule: a section's code adopts or customizes a reference-manifest item; original is for
+   * consumer-asset slots only).
+   */
+  const HERO_SOURCE = { kind: "derived", ref: ["tailark-oss/mist-hero-section-1@8139698"], hash: "sha256:315ecac252ac891e44ae37f2c2d946312c78f3998fd7ed5d7279ab0f1582ce52", license: "MIT" };
+
   const HERO = "sections.hero";
   const backdrop = { component: "grid-glow", params: { cell: 32, pulse: true } };
-  const HERO_SOURCE = { kind: "derived", ref: ["tailark-oss/mist-hero-section-1@8139698"], hash: "sha256:315ecac252ac891e44ae37f2c2d946312c78f3998fd7ed5d7279ab0f1582ce52", license: "MIT" };
-  /**
-   * The hero's own code candidate, customized from the trusted tailark-oss hero block (the provenance rule: a section's
-   * code adopts or customizes a reference-manifest item; original is for consumer-asset slots only), with
-   * `meta.backdrop` riding on it when given.
-   */
+  /** The hero's own code candidate (original, MIT), with `meta.backdrop` riding on it when given. */
   const heroCode = (descriptor?: unknown) => ({
     $schema: "https://ui.shadcn.com/schema/registry-item.json",
     name: "hero",
@@ -202,7 +204,9 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
     return {
       ...w, submit,
       gate: (name: string) => pinGate(w.root, w.consumer, "designer", HERO, name, AT),
-      pin: (candidate: string) => runPinCli([`designer/${HERO}`, candidate, "--by", w.answer(`designer/${HERO}`, candidate), "--at", AT, "--root", w.root], w.root),
+      /** The owner's typed queue.pick answer naming this hero candidate (U13 r4, B2), which pin() cites. */
+      queueEntry: (candidate = "hero-v1.json"): string => w.answer(`designer/${HERO}`, candidate),
+      pin: (candidate: string) => runPinCli([`designer/${HERO}`, candidate, "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root),
     };
   }
 
@@ -210,6 +214,7 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
     const w = heroWorld();
     const good = w.submit(heroCode(backdrop));
     expect(w.gate(good.name).refusals).toEqual([]);
+    w.queueEntry();
     const result = await w.pin(good.name);
     expect(result.message).toMatch(/pinned hero-v1\.json/);
     expect(result.exitCode).toBe(0);
@@ -234,6 +239,7 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
     // Placed by hand (no submit), an invalid descriptor is refused at the pin as well.
     mkdirSync(join(w.consumer, "agents", "designer", HERO, "candidates"), { recursive: true });
     writeFileSync(join(w.consumer, "agents", "designer", HERO, "candidates", "hero-v1.json"), `${JSON.stringify(heroCode({ component: "grid-glow", params: { cell: 4 } }), null, 2)}\n`);
+    w.queueEntry();
     const result = await w.pin("hero-v1.json");
     expect(result.exitCode).toBe(1);
     expect(result.message).toMatch(/grid-glow param cell is 4, outside 16\.\.96/);
