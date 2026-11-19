@@ -3,7 +3,10 @@
 // efe76fc5755eca1142dd4f74c1d6f0ace2887e3c (vendored: references/magicui/particles@efe76fc).
 // Local adaptations, imports only: the `@/lib/utils` import points at the vendored `cn`.
 // Adopted as an interactive backdrop (src/catalog/rules/backdrop-components.json);
-// check:source-ladder fails if these bytes drift from the vendored file.
+// check:source-ladder fails if these bytes drift from the vendored file. Upstream types its resize
+// timer as `NodeJS.Timeout`, which a browser-only consumer tree (no Node types) cannot resolve, so
+// this copy is not type-checked here rather than edited (as flickering-grid.tsx):
+// @ts-nocheck
 "use client"
 
 import React, {
