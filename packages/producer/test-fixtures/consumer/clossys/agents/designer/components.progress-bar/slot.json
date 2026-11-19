@@ -173,6 +173,14 @@
       ],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/progress-bar.tsx",
+        "export": "ProgressBar",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

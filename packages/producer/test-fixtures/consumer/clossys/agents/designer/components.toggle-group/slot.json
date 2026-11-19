@@ -169,6 +169,14 @@
     "composes": [
       "components.toggle-button"
     ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/toggle-group.tsx",
+        "export": "ToggleGroup",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

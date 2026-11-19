@@ -190,6 +190,14 @@
       "components": []
     },
     "composes": [],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/item.tsx",
+        "export": "Item",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

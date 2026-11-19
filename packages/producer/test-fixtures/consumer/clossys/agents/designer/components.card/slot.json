@@ -193,6 +193,14 @@
       ],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/card.tsx",
+        "export": "Card",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

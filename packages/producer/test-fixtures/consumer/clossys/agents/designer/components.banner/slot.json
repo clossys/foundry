@@ -242,6 +242,14 @@
     "composes": [
       "components.button"
     ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/banner.tsx",
+        "export": "Banner",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

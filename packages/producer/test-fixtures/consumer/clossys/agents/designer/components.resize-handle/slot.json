@@ -121,6 +121,14 @@
       "assets": []
     },
     "apg": "windowsplitter",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/resize-handle.tsx",
+        "export": "ResizeHandle",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

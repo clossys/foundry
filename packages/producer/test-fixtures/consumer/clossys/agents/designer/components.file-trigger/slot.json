@@ -108,6 +108,14 @@
       "themes": [],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/file-trigger.tsx",
+        "export": "FileTrigger",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

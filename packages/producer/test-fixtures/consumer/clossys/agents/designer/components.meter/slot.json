@@ -177,6 +177,14 @@
       "assets": []
     },
     "apg": "meter",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/meter.tsx",
+        "export": "Meter",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

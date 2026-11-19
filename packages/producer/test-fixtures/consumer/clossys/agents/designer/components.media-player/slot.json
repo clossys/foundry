@@ -360,6 +360,14 @@
         }
       ]
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/media-player.tsx",
+        "export": "MediaPlayer",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

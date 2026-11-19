@@ -244,6 +244,14 @@
       "assets": []
     },
     "apg": "link",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/link.tsx",
+        "export": "Link",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

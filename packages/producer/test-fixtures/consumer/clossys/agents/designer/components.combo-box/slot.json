@@ -290,6 +290,14 @@
       "components.popover"
     ],
     "apg": "combobox",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/combo-box.tsx",
+        "export": "ComboBox",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

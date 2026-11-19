@@ -208,6 +208,14 @@
       ]
     },
     "apg": "treeview",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/navigation-tree.tsx",
+        "export": "NavigationTree",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

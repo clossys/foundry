@@ -196,6 +196,14 @@
       ],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/field.tsx",
+        "export": "Field",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

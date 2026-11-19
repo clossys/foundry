@@ -177,6 +177,14 @@
       ],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/color-picker.tsx",
+        "export": "ColorPicker",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

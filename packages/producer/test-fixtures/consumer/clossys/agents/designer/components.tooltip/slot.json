@@ -164,6 +164,14 @@
       "assets": []
     },
     "apg": "tooltip",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/tooltip.tsx",
+        "export": "Tooltip",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

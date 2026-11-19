@@ -117,6 +117,14 @@
       ],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/form.tsx",
+        "export": "Form",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

@@ -211,6 +211,14 @@
       "assets": []
     },
     "apg": "button",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/toggle-button.tsx",
+        "export": "ToggleButton",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

@@ -227,6 +227,14 @@
         }
       ]
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/dialog.tsx",
+        "export": "Dialog",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

@@ -201,6 +201,14 @@
         "assets.icon-close"
       ]
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/tag-group.tsx",
+        "export": "TagGroup",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

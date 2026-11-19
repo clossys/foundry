@@ -182,6 +182,14 @@
       "components.checkbox"
     ],
     "apg": "table",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/table.tsx",
+        "export": "Table",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

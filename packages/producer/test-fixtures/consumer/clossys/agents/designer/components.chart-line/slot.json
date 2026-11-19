@@ -196,6 +196,14 @@
       ],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/chart-line.tsx",
+        "export": "ChartLine",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

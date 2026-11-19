@@ -182,6 +182,14 @@
       ],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/keyboard.tsx",
+        "export": "Keyboard",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

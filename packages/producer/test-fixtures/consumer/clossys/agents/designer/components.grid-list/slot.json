@@ -180,6 +180,14 @@
       "components.checkbox"
     ],
     "apg": "grid",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/grid-list.tsx",
+        "export": "GridList",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

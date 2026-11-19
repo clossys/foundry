@@ -231,6 +231,14 @@
         "assets.lockup"
       ]
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/logo.tsx",
+        "export": "Logo",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

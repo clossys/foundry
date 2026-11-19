@@ -353,6 +353,14 @@
       ],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/default/ui/date-field.tsx",
+        "export": "DateField",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

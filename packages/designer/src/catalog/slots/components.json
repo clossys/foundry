@@ -50,6 +50,14 @@
         "assets": [
           "assets.icon-user"
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/avatar.tsx",
+          "export": "Avatar",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -105,6 +113,14 @@
           "themes.sidebar-ring"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/badge.tsx",
+          "export": "Badge",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -162,7 +178,15 @@
       },
       "composes": [
         "components.button"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/banner.tsx",
+          "export": "Banner",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -231,6 +255,14 @@
             "dir": "auto"
           }
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/breadcrumbs.tsx",
+          "export": "Breadcrumbs",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -303,7 +335,15 @@
       "composes": [
         "components.icon"
       ],
-      "apg": "button"
+      "apg": "button",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/button.tsx",
+          "export": "Button",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -362,7 +402,15 @@
         "components.button",
         "components.select"
       ],
-      "apg": "grid"
+      "apg": "grid",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/calendar.tsx",
+          "export": "Calendar",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -406,6 +454,14 @@
           "themes.sidebar-accent-foreground"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/card.tsx",
+          "export": "Card",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -461,6 +517,14 @@
           "themes.font-mono"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/chart-area.tsx",
+          "export": "ChartArea",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -516,6 +580,14 @@
           "themes.font-mono"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/chart-bar.tsx",
+          "export": "ChartBar",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -571,6 +643,14 @@
           "themes.font-mono"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/chart-heatmap.tsx",
+          "export": "ChartHeatmap",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -626,6 +706,14 @@
           "themes.font-mono"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/chart-line.tsx",
+          "export": "ChartLine",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -681,6 +769,14 @@
           "themes.font-mono"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/chart-range.tsx",
+          "export": "ChartRange",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -736,6 +832,14 @@
           "themes.font-mono"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/chart-scatter.tsx",
+          "export": "ChartScatter",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -791,6 +895,14 @@
           "themes.font-mono"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/chart-sparkline.tsx",
+          "export": "ChartSparkline",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -846,6 +958,14 @@
           "themes.font-mono"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/chart-status-strip.tsx",
+          "export": "ChartStatusStrip",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -901,6 +1021,14 @@
           "themes.font-mono"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/chart-waterfall.tsx",
+          "export": "ChartWaterfall",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -957,7 +1085,15 @@
           "assets.icon-check"
         ]
       },
-      "apg": "checkbox"
+      "apg": "checkbox",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/checkbox.tsx",
+          "export": "Checkbox",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1009,6 +1145,14 @@
           "themes.font-mono"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/color-picker.tsx",
+          "export": "ColorPicker",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1070,7 +1214,15 @@
         "components.button",
         "components.popover"
       ],
-      "apg": "combobox"
+      "apg": "combobox",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/combo-box.tsx",
+          "export": "ComboBox",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1122,6 +1274,14 @@
           "themes.ring"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/date-field.tsx",
+          "export": "DateField",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1156,7 +1316,15 @@
         "components.popover",
         "components.calendar"
       ],
-      "apg": "dialog-modal"
+      "apg": "dialog-modal",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/date-picker.tsx",
+          "export": "DatePicker",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1226,6 +1394,14 @@
             "dir": "auto"
           }
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/dialog.tsx",
+          "export": "Dialog",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1266,7 +1442,15 @@
           "assets.icon-chevron-up"
         ]
       },
-      "apg": "disclosure"
+      "apg": "disclosure",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/disclosure.tsx",
+          "export": "Disclosure",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1313,6 +1497,14 @@
           "themes.ring"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/field.tsx",
+          "export": "Field",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1336,6 +1528,14 @@
       "allowedReads": {
         "themes": [],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/file-trigger.tsx",
+          "export": "FileTrigger",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1360,6 +1560,14 @@
           "themes.spacing"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/form.tsx",
+          "export": "Form",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1411,7 +1619,15 @@
       "composes": [
         "components.checkbox"
       ],
-      "apg": "grid"
+      "apg": "grid",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/grid-list.tsx",
+          "export": "GridList",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1475,6 +1691,14 @@
           "assets.icon-layers",
           "assets.icon-integration"
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/icon.tsx",
+          "export": "Icon",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1524,6 +1748,14 @@
           "themes.sidebar-accent-foreground"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/keyboard.tsx",
+          "export": "Keyboard",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1579,7 +1811,15 @@
         ],
         "assets": []
       },
-      "apg": "link"
+      "apg": "link",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/link.tsx",
+          "export": "Link",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1621,6 +1861,14 @@
           "assets.mark",
           "assets.lockup"
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/logo.tsx",
+          "export": "Logo",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1690,6 +1938,14 @@
       "memberRoots": {
         "presentation.popup": "rac:Menu",
         "presentation.inline": "rac:Menu"
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/menu.tsx",
+          "export": "Menu",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1742,7 +1998,15 @@
         ],
         "assets": []
       },
-      "apg": "meter"
+      "apg": "meter",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/meter.tsx",
+          "export": "Meter",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1790,7 +2054,15 @@
         ],
         "assets": []
       },
-      "apg": "button"
+      "apg": "button",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/native-action.tsx",
+          "export": "NativeAction",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1841,7 +2113,15 @@
           "assets.icon-chevron-right"
         ]
       },
-      "apg": "treeview"
+      "apg": "treeview",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/navigation-tree.tsx",
+          "export": "NavigationTree",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1899,7 +2179,15 @@
       "composes": [
         "components.button"
       ],
-      "apg": "spinbutton"
+      "apg": "spinbutton",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/number-field.tsx",
+          "export": "NumberField",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1947,6 +2235,14 @@
           "themes.sidebar-ring"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/popover.tsx",
+          "export": "Popover",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1995,6 +2291,14 @@
           "themes.sidebar-primary"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/progress-bar.tsx",
+          "export": "ProgressBar",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2049,7 +2353,15 @@
         ],
         "assets": []
       },
-      "apg": "radio"
+      "apg": "radio",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/radio-group.tsx",
+          "export": "RadioGroup",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2077,7 +2389,15 @@
         ],
         "assets": []
       },
-      "apg": "windowsplitter"
+      "apg": "windowsplitter",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/resize-handle.tsx",
+          "export": "ResizeHandle",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2135,7 +2455,15 @@
       },
       "composes": [
         "components.button"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/search-field.tsx",
+          "export": "SearchField",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2199,7 +2527,15 @@
         "components.button",
         "components.popover"
       ],
-      "apg": "listbox"
+      "apg": "listbox",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/select.tsx",
+          "export": "Select",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2253,6 +2589,14 @@
       "allowedReads": {
         "themes": [],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/semantic-content.tsx",
+          "export": "SemanticContent",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2279,6 +2623,14 @@
           "themes.sidebar-border"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/separator.tsx",
+          "export": "Separator",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2310,6 +2662,14 @@
           "themes.sidebar-accent"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/skeleton.tsx",
+          "export": "Skeleton",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2349,7 +2709,15 @@
         ],
         "assets": []
       },
-      "apg": "slider"
+      "apg": "slider",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/slider.tsx",
+          "export": "Slider",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2383,6 +2751,14 @@
           "themes.sidebar-accent-foreground"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/spinner.tsx",
+          "export": "Spinner",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2429,6 +2805,14 @@
           "assets.icon-danger",
           "assets.icon-info"
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/status-mark.tsx",
+          "export": "StatusMark",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2482,7 +2866,15 @@
         ],
         "assets": []
       },
-      "apg": "switch"
+      "apg": "switch",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/switch.tsx",
+          "export": "Switch",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2535,7 +2927,15 @@
       "composes": [
         "components.checkbox"
       ],
-      "apg": "table"
+      "apg": "table",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/table.tsx",
+          "export": "Table",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2589,7 +2989,15 @@
         ],
         "assets": []
       },
-      "apg": "tabs"
+      "apg": "tabs",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/tabs.tsx",
+          "export": "Tabs",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2641,6 +3049,14 @@
         "assets": [
           "assets.icon-close"
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/tag-group.tsx",
+          "export": "TagGroup",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2694,6 +3110,14 @@
           "themes.ring"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/text-field.tsx",
+          "export": "TextField",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2728,7 +3152,15 @@
       },
       "composes": [
         "components.button"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/toast.tsx",
+          "export": "Toast",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2790,7 +3222,15 @@
         ],
         "assets": []
       },
-      "apg": "button"
+      "apg": "button",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/toggle-button.tsx",
+          "export": "ToggleButton",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2846,7 +3286,15 @@
       },
       "composes": [
         "components.toggle-button"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/toggle-group.tsx",
+          "export": "ToggleGroup",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2874,7 +3322,15 @@
         ],
         "assets": []
       },
-      "apg": "toolbar"
+      "apg": "toolbar",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/toolbar.tsx",
+          "export": "Toolbar",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2921,7 +3377,15 @@
         ],
         "assets": []
       },
-      "apg": "tooltip"
+      "apg": "tooltip",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/tooltip.tsx",
+          "export": "Tooltip",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2970,7 +3434,15 @@
           "assets.icon-chevron-right"
         ]
       },
-      "apg": "treeview"
+      "apg": "treeview",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/tree.tsx",
+          "export": "Tree",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3064,6 +3536,14 @@
             "dir": "auto"
           }
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/sidebar.tsx",
+          "export": "Sidebar",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -3169,6 +3649,14 @@
             "dir": "auto"
           }
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/command.tsx",
+          "export": "Command",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -3241,6 +3729,14 @@
             "dir": "auto"
           }
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/sheet.tsx",
+          "export": "Sheet",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -3286,7 +3782,15 @@
         "assets": [],
         "components": []
       },
-      "composes": []
+      "composes": [],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/empty.tsx",
+          "export": "Empty",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3335,7 +3839,15 @@
         "assets": [],
         "components": []
       },
-      "composes": []
+      "composes": [],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/item.tsx",
+          "export": "Item",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3362,7 +3874,15 @@
         "assets": [],
         "components": []
       },
-      "composes": []
+      "composes": [],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/scroll-area.tsx",
+          "export": "ScrollArea",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3419,7 +3939,15 @@
       },
       "composes": [
         "components.icon"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/dropdown-menu.tsx",
+          "export": "DropdownMenu",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3485,7 +4013,15 @@
         "components.link",
         "components.semantic-content",
         "components.table"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/rich-text.tsx",
+          "export": "RichText",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3644,6 +4180,14 @@
             "dir": "auto"
           }
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/media-player.tsx",
+          "export": "MediaPlayer",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -3690,7 +4234,15 @@
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/specimen-swatch.tsx",
+          "export": "SpecimenSwatch",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3737,7 +4289,15 @@
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/specimen-ladder.tsx",
+          "export": "SpecimenLadder",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3781,7 +4341,15 @@
         "components.grid-list",
         "components.disclosure",
         "components.button"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/specimen-player.tsx",
+          "export": "SpecimenPlayer",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3831,7 +4399,15 @@
         "components.disclosure",
         "components.logo",
         "components.icon"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/specimen-grid.tsx",
+          "export": "SpecimenGrid",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3874,7 +4450,15 @@
         "components.disclosure",
         "components.table",
         "components.badge"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/specimen-matrix.tsx",
+          "export": "SpecimenMatrix",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3922,7 +4506,15 @@
         "components.disclosure",
         "components.table",
         "components.badge"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/specimen-viewport.tsx",
+          "export": "SpecimenViewport",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3963,7 +4555,15 @@
         "components.grid-list",
         "components.disclosure",
         "components.rich-text"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/specimen-passage.tsx",
+          "export": "SpecimenPassage",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -4010,7 +4610,15 @@
         "components.rich-text",
         "components.button",
         "components.navigation-tree"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/specimen-copy-in-context.tsx",
+          "export": "SpecimenCopyInContext",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -4053,7 +4661,15 @@
         "components.button",
         "components.icon",
         "components.semantic-content"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/canvas-zoom.tsx",
+          "export": "CanvasZoom",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -4094,7 +4710,15 @@
       "composes": [
         "components.button",
         "components.semantic-content"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/default/ui/canvas-map.tsx",
+          "export": "CanvasMap",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
