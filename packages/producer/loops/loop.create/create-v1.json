@@ -42,7 +42,8 @@
         "cli": "clossys brief <ref> --tighten <path> <op> <value> --why <why>",
         "reads": [
           "<slot>/slot.json",
-          "<inputs>"
+          "<inputs>",
+          "<upstream>/*/pin.json"
         ],
         "writes": [
           "<slot>/slot.json"
@@ -68,7 +69,8 @@
         "cli": "clossys next <ref> --submit <file>",
         "reads": [
           "<slot>/slot.json",
-          "<inputs>"
+          "<inputs>",
+          "<upstream>/*/pin.json"
         ],
         "writes": [
           "<slot>/candidates/*",

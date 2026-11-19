@@ -170,8 +170,9 @@ describe("own loops (W2, foundry-build-0048 U9a)", () => {
   });
   it("W1 judges the version that runs: the consumer's pin where the slot is held, else the package candidate", () => {
     const rows = (mutate: Mutation) => ASSERTIONS.W1!(world(mutate).agent, world(mutate).model, GOOD_FACTS).rows;
-    const dropNotes = (version: Record<string, any>) => { version.content.steps = version.content.steps.filter((step: any) => step.id !== "director-notes"); };
-    // Director's pinned cascade without its own step reaches no Director step; the package candidate does not matter then.
+    // Every step Director decides in its cascade: the package's own impact step and this world's director-notes.
+    const dropNotes = (version: Record<string, any>) => { version.content.steps = version.content.steps.filter((step: any) => step.decider?.agent !== "director"); };
+    // Director's pinned cascade without its own steps reaches no Director step; the package candidate does not matter then.
     expect(rows(agent => { dropNotes(agent.loops[4].pin); })).toEqual(["loop.cascade: no step reaches director"]);
     expect(rows(agent => { dropNotes(agent.loops[4].package); })).toEqual([]);
     expect(rows(agent => { agent.loops[2].pin = { ok: false, reason: "gone" }; })).toEqual(["loop.create: director's own version cannot be read"]);
@@ -448,19 +449,19 @@ describe("conformance over the repo and its fixture", () => {
     for (const agent of report.agents) {
       expect(agent.cells).toHaveLength(36);
       expect(agent.dogfood).toHaveLength(5);
-      // Shared today: placement records no decision; create, choose and cascade name the slot's owner, not a literal
-      // agent, and the cascade step names no skill.
-      for (const id of ["L2", "W1"]) expect(agent.cells.find(cell => cell.id === id)!.red, `${agent.agent} ${id}`).toBe(true);
+      // Shared today: placement records no decision.
+      expect(agent.cells.find(cell => cell.id === "L2")!.red, `${agent.agent} L2`).toBe(true);
       // U5: the scope and slot loops reach every agent through its own skill, so W1 keeps no scope or slot rows.
       expect(agent.cells.find(cell => cell.id === "W1")!.rows.filter(row => /^loop\.(scope|slot)\b|^(scope|slot):/.test(row)), agent.agent).toEqual([]);
       // The cascade rows (U6): a repin re-verdicts its dependants, every edge resolves, no input reads a candidate
       // file, release refuses needs-refresh.
       for (const id of ["X1", "X2", "X3", "X4"]) expect(agent.cells.find(cell => cell.id === id)!.rows, `${agent.agent} ${id}`).toEqual([]);
-      // U9a: every agent declares its five own loops, each extending Producer's standard; W1 judges them, so only the
-      // all-code cascade (no agent step, no skill) stays red. The fixture places director, designer and writer, adopts none of their
+      // U9a: every agent declares its five own loops, each extending Producer's standard; W1 judges them. U26: the cascade
+      // carries the owner's impact step and each adapter names its cascade skill, so W1 is green. The fixture places director, designer and writer, adopts none of their
       // loop slots, so W2 is red with all five missing (no vacuous pass); its Publisher IA is empty and places nothing.
       expect(agent.cells.find(cell => cell.id === "W2")!.rows, agent.agent).toEqual(agent.agent === "publisher" ? [] : AGENT_LOOPS.map(loop => `${agent.agent}/${loop}: missing (the consumer places ${agent.agent} but holds none of its loop slots; run clossys loop ${agent.agent}/${loop})`));
-      expect(agent.cells.find(cell => cell.id === "W1")!.rows, agent.agent).toEqual([`loop.cascade: no step reaches ${agent.agent}`, "cascade: names no skill"]);
+      expect(agent.cells.find(cell => cell.id === "W1")!.rows, agent.agent).toEqual([]);
+      expect(agent.cells.find(cell => cell.id === "W1")!.red, `${agent.agent} W1`).toBe(false);
     }
     // L1: the queue-entry/2 schema and loop.slot exist (U5), and no package slot edge names a slot no tree holds (U6
     // resolved every dangling edge), so no agent has an unfiled slotless need.

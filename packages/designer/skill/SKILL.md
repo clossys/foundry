@@ -143,6 +143,15 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    git commit -m "designer: pin <slot> <element> v<N>"
    ```
 
+## Cascade
+
+DRAFT, for owner approval (foundry-build-0048 U26): this wording is not approved yet.
+
+After a repin of one of your slots, Producer's `loop.cascade` re-verdicts every dependant, then its impact step is yours:
+read the slot and the re-verdicts and note the impact in your check scratch, by the skill
+`actions/designer.cascade/skill.md`. It pins nothing and runs only after every dependant
+passed; a failing re-verdict stops the cascade before it, with a queue.fix to that dependant's owner.
+
 ## Provenance rule (every item)
 
 Everything Designer pins comes from the shadcn universe: the trusted

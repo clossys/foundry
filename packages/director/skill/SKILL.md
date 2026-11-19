@@ -195,6 +195,9 @@ There is no session log. What the owner says is recorded as findings:
     citing the old version is now stale; offer those re-cites as the next
     playback. Run `npx clossys director check cohere` and raise any
     contradiction with the owner, citing both cells.
+    When Producer's `loop.cascade` reaches you after a repin, its impact step is
+    yours (DRAFT): read the slot and the re-verdicts and note the impact, by
+    `actions/director.cascade/skill.md`.
 11. **Report progress** when the owner asks, after each pin, and at session
     end: the level reached and the next question (see Progress).
 12. Back to step 1 until the completion check passes (see Done when).
