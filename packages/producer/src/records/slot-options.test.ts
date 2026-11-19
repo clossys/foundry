@@ -25,6 +25,8 @@ let root: string, dir: string;
 const brief = (vary?: Record<string, string>) => serializeFrontmatter({ slot: ID, source, feeds: [], functions: [], ...(vary ? { vary } : {}) }, body);
 const add = (name: string, bytes: string) => writeFileSync(join(dir, "candidates", name), bytes);
 const slotJson = () => JSON.parse(readFileSync(join(dir, "slot.json"), "utf8"));
+/** The class fields on this slot/1 fixture, written as bytes: the writer (writeSlotOptions) refuses slot/1 (U13 one format). */
+const setOptions = (fields: { options: number; varyOn: string }) => writeFileSync(join(dir, "slot.json"), jsonBytes({ ...slotJson(), ...fields }));
 
 beforeEach(() => {
   root = realpathSync(mkdtempSync(join(tmpdir(), "slot-options-")));
@@ -78,7 +80,7 @@ describe("checkSlotOptions", () => {
   });
 
   it("passes once slot.json carries the class and two tagged alternatives join the baseline", () => {
-    writeSlotOptions(consumer(), "director", ID, { options: 3, varyOn: "angle" });
+    setOptions({ options: 3, varyOn: "angle" });
     add("essence-ambitious-v1.md", brief({ angle: "ambitious" }));
     add("essence-human-v1.md", brief({ angle: "human" }));
     expect(codes()).toEqual([]);
@@ -89,7 +91,7 @@ describe("checkSlotOptions", () => {
   });
 
   it("refuses duplicate, foreign-axis and unlisted values", () => {
-    writeSlotOptions(consumer(), "director", ID, { options: 3, varyOn: "angle" });
+    setOptions({ options: 3, varyOn: "angle" });
     add("essence-human-v1.md", brief({ angle: "human" }));
     add("essence-human2-v1.md", brief({ angle: "human" }));
     add("essence-tone-v1.md", brief({ tone: "bold" }));

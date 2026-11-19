@@ -13,11 +13,12 @@
  * Read-only on the workspace: the scratch copy lives under the OS temp folder and is removed after each option.
  */
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { RULES_FILE } from "../cli/rules-file.js";
 import { writerCopyDuplicates } from "../records/writer-copy.js";
+import { QUEUE_ANSWER } from "./chain.js";
 import { gapsOf, interviewOf, INTERVIEW_AGENTS, type Gaps, type Interview, type InterviewAgent, type QuestionOption } from "./interview.js";
 
 export type RunCall = (argv: readonly string[], cwd: string) => Promise<{ exitCode: number; message?: string }>;
@@ -57,6 +58,9 @@ function digest(dir: string): string {
   return hash.digest("hex");
 }
 
+/** The scratch queue entry an owner decision's `<queue-answer>` names (owner:queue.pick#<id>). */
+const WIRING_ENTRY = "20261118T0000Z-owner-wiring";
+
 /** The option's calls with each fill placeholder replaced (a `.md` placeholder becomes a file in the scratch root). */
 function filled(option: QuestionOption, scratch: string): string[][] {
   const values = new Map<string, string>();
@@ -65,6 +69,12 @@ function filled(option: QuestionOption, scratch: string): string[][] {
       const file = join(scratch, "owner-wiring-answer.md");
       writeFileSync(file, "Owner words for the owner.wiring check.\n");
       values.set(key, file);
+    } else if (key === QUEUE_ANSWER) {
+      // An owner decision cites the queue entry holding the owner's answer (U13 r2); the scratch copy gets one.
+      const entries = join(scratch, "clossys", "agents", "producer", "queue.pick", "entries");
+      mkdirSync(entries, { recursive: true });
+      writeFileSync(join(entries, `${WIRING_ENTRY}.json`), `${JSON.stringify({ id: WIRING_ENTRY, kind: "queue-entry" })}\n`);
+      values.set(key, `owner:queue.pick#${WIRING_ENTRY}`);
     } else values.set(key, /^<model:/.test(key) ? "owner-wiring-model" : key === "<R-ID>" ? "R-OWNER-WIRING-CHECK"
       // A confirmation cites a ledger comment (OWNER_WORDS_REF); the scratch copy gets a well-formed one.
       : key === "<ref>" ? "owner-wiring/scratch#0 issuecomment-0" : "owner-wiring-check");

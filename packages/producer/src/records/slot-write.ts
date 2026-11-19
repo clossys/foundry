@@ -11,6 +11,7 @@
  * re-point (`repointThemeProbePin`), which `restoreThemeProbePin` undoes byte for byte, so the net
  * byte state it leaves is the one the ledger already records.
  */
+import { oldSlotRefusal } from "./store-format.js";
 import { createHash, randomUUID } from "node:crypto";
 import { closeSync, constants, cpSync, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { hostname, tmpdir } from "node:os";
@@ -748,6 +749,11 @@ function pinUnderLock(consumer: string, agent: SlotAgent, id: string, candidate:
   return pin;
 }
 
+/** The slot folder's slot.json as parsed JSON, or undefined when it is missing or does not parse. */
+function readSlotJson(dir: string): unknown {
+  try { return JSON.parse(readFileSync(slotFile(dir), "utf8")); } catch { return undefined; }
+}
+
 /** A P1 verdict as `clossys verdict --record` validated it (verdict.schema.json plus the slot's standard). */
 export type VerdictInput =
   | { readonly verdict: "pick"; readonly pick: string; readonly reason: string; readonly criteria: readonly string[] }
@@ -771,6 +777,9 @@ export function writeVerdict(consumer: string, agent: ModelAgent, id: string, ve
     if (input.inputsHash !== undefined && input.inputsHash !== inputsHash) throw new Error(`verdict refused: the record is for inputsHash ${input.inputsHash}, not the latest options packet's ${inputsHash ?? "none"}; re-run clossys options`);
     let fields: Record<string, unknown>;
     if (verdict.verdict === "pick") {
+      // One format (U13): a verdict pick on a clossys.slot/1 slot would write a pin/1; it is refused before anything
+      // is written (a slot/2 pick moves only through the CHOOSE gate: refuseTargetPin).
+      if (!isCurrentSlot(readSlotJson(current.dir))) throw new Error(oldSlotRefusal("verdict", `${agent}/${id}`));
       refuseTargetPin(current.dir, agent, id, "verdict");
       if (agent === SEAT_AGENT) throw new Error(`verdict refused: a Producer seat is pinned by clossys seat ${id.slice("seat.".length)}, not by a verdict pick`);
       if (!current.candidates.includes(verdict.pick)) throw new Error(`verdict refused: ${agent} slot ${id} has no candidate ${verdict.pick}`);
@@ -951,6 +960,26 @@ export function writeConfirm(consumer: string, agent: SlotAgent, id: string, can
     appendEvent(entry.dir, "slot", ledgerEvent("confirm", input.at, who, { candidate, sha256: pin.sha256, confirmed: pin.confirmed }, [recordState(entry.dir, "pin.json")]));
     return pin;
   });
+}
+
+/**
+ * A clossys.slot/2 confirmation's record write (U13 r2; `clossys pin --confirm` builds and checks the pin/2 or pin-map
+ * it writes): under the caller's slot lock, `write` replaces pin.json, the `confirm` event lands on the slot ledger
+ * (verb pin, the Producer's `pin.<agent>` skill, by the owner's queue answer) and the pin guard runs on pin.json and
+ * the confirmed candidate. Any failure restores pin.json and the ledger.
+ */
+export function writeTargetConfirm(consumer: string, agent: SlotAgent, id: string, input: { readonly candidate: string; readonly sha256: string; readonly confirmed: { readonly by: string; readonly ref: string; readonly at: string }; readonly by: string; readonly at: string; readonly record?: string }, write: () => void, guard?: WriteGuard, given?: WriteProvenance): LedgerEvent {
+  const dir = join(consumer, "agents", agent, id);
+  const who = provenance({ verb: "pin", by: input.by, skill: skillPath("producer", `pin.${agent}`) }, given);
+  readLedger(dir, "slot"); // an unreadable ledger refuses before anything is written
+  const before = snapshotFiles([pinFile(dir), join(dir, LEDGER_FILE)]);
+  try {
+    write();
+    const event = ledgerEvent("confirm", input.at, who, { candidate: input.candidate, sha256: input.sha256, confirmed: { ...input.confirmed }, ...(input.record !== undefined ? { record: input.record } : {}) }, [recordState(dir, "pin.json")]);
+    appendEvent(dir, "slot", event);
+    if (guard) enforceGuard(consumer, "pin", guard, [{ agent, slot: id, candidate: input.candidate, records: [recordPath(consumer, dir, "pin.json")] }]);
+    return event;
+  } catch (error) { restoreFiles(before); throw error; }
 }
 
 /**
@@ -1182,6 +1211,7 @@ export function writeSlotOptions(consumer: string, agent: SlotAgent, id: string,
   if (issues.length) throw new Error(`options refused: ${issues.map(issue => issue.message).join("; ")}`);
   const before = current ? current.before : jsonBytes(doc), after = current ? current.after : jsonBytes(next);
   if (before === after) return false;
+  if (!current) throw new Error(oldSlotRefusal("options", `${agent}/${id}`)); // U13: an old-format slot.json is never rewritten
   const who = provenance({ verb: "options", by: "planner", skill: skillPath("producer", "options") }, given);
   readLedger(entry.dir, "slot");
   replaceFile(slotFile(entry.dir), after);

@@ -63,6 +63,7 @@ import { seatSlot } from "../records/seat-slot.js";
 import { recutCandidateBytes } from "../migrate/recut.js";
 import { actorRefusal } from "../records/seat-owner.js";
 import { slotFromV1, targetKind, type SlotV1 } from "../migrate/slot-1-to-2.js";
+import { markCurrentStore } from "../migrate/slots.js";
 import type { AgentId, Iso, Ref, Slot, TargetSlotKind } from "../records/types.js";
 import { CliUsageError } from "./args.js";
 import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlot, packageStructureChange, planIaWrite, renameGroup, reorderGroup, setAxes, setExtension, setLayers, type Edit, type IaFile, type PositionFollow } from "./ia-regroup.js";
@@ -332,8 +333,11 @@ function adoptIa(agent: string, root: string, dry: boolean): CliResult {
   // A declared ref that names no slot is a dangling edge: refuse it rather than leave it out of the read graph.
   if (dangling.length) return refuse("ia", `${agent}: ${dangling.length} declared refs name no slot (dangling edges): ${dangling.slice(0, 8).join(", ")}${dangling.length > 8 ? ", ..." : ""}`);
   const slots = writes.length - 1;
-  return commitIa(consumer, root, writes, dry, `adopt the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots)`, [],
+  const result = commitIa(consumer, root, writes, dry, `adopt the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots)`, [],
     `ia: adopted the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots with their contracts)`);
+  // The adoption writes clossys.slot/2 only: a store it leaves all current carries the marker (U13 r2).
+  if (!dry && result.exitCode === 0) markCurrentStore(root, { at: new Date().toISOString(), version: cliActor("clossys ia").version, cli: "clossys ia --adopt" });
+  return result;
 }
 const ids = (value: string | undefined) => value ? value.split(",").map(id => id.trim()).filter(Boolean) : [];
 type AgentIaFile = { extensions?: string[]; nodes: { id: string; label: string; children: { id: string; label: string; slots: string[] }[] }[] } & Record<string, unknown>;
@@ -509,10 +513,11 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
 }
 
 /**
- * `current`: the slot.json this write leaves is `clossys.slot/2` even on a store not yet recut (a new slot, or a
- * stored slot/1 rewritten). Only the admin seat (init-admin.ts) asks it; the verb itself keeps the store's format.
+ * One format (U13 r2): every slot.json this verb writes is `clossys.slot/2` (a new slot is created as slot/2), and a
+ * stored `clossys.slot/1` slot is refused, never rewritten. `current` is kept for its caller (init-admin.ts) and is
+ * now the only behaviour.
  */
-export async function runIaCli(argv: readonly string[], cwd: string, options: { readonly current?: boolean } = {}): Promise<CliResult> {
+export async function runIaCli(argv: readonly string[], cwd: string, _options: { readonly current?: boolean } = {}): Promise<CliResult> {
   const flags = parseIa(argv);
   if (flags.help) return { exitCode: 0, message: IA_USAGE };
   if (flags.positional[0] === "sync") return runIaSync(flags, cwd);
@@ -629,6 +634,9 @@ export async function runIaCli(argv: readonly string[], cwd: string, options: { 
   // write edits, and the file written back is slot/2 again (currentSlotWrite).
   const storedV2 = stored?.schema === SLOT_V2_SCHEMA && !validateSlot(stored).length ? stored as unknown as Slot : undefined;
   if (stored?.schema === SLOT_V2_SCHEMA && !storedV2) return refuse("ia", `${target} slot.json is not a valid ${SLOT_V2_SCHEMA}; clossys check names why`);
+  // One format (U13): judged by the slot's own schema, never by what else the store holds. A new slot is created as
+  // clossys.slot/2; an existing slot/1 (or any other schema) is refused, never rewritten in place.
+  if (stored && !storedV2) return refuse("ia", oldSlotRefusal("ia", target).replace(/^ia refused: /, ""));
   const existing = storedV2 ? currentView(storedV2) as unknown as Record<string, unknown> : stored;
   const proposedKind = request?.proposal?.kind;
   if (proposedKind !== undefined && !(AGENT_KIND[agent] as readonly string[]).includes(proposedKind)) return refuse("ia", `--request ${request!.id} proposes kind ${proposedKind}, not a ${agent} slot kind (${AGENT_KIND[agent].join(", ")})`);
@@ -671,7 +679,7 @@ export async function runIaCli(argv: readonly string[], cwd: string, options: { 
   const recorded = [...overlaps, ...((request?.overlaps ?? []).filter(listed => !overlaps.some(item => item.slot === listed.slot)))];
   let slotBytes = jsonBytes(doc);
   let missing: readonly { id: string; rel: "input" | "uses"; owner: string }[] = [];
-  if (storedV2 || (options.current && (!stored || stored.schema === SLOT_SCHEMA)) || (!stored && recutStore(root))) {
+  {
     const written = currentSlotWrite(root, doc as unknown as SlotV1, position, storedV2, {
       kind: flags.values.has("--kind") ? undefined : storedV2?.kind, live: modelExists(pinFile(dir)), at: eventAt || new Date().toISOString(),
     });
@@ -820,7 +828,9 @@ export async function runConfigCli(argv: readonly string[], cwd: string): Promis
   const issues = validateFile("workspace-config", rel, bytes);
   if (issues.length) return refuse("config", issues.map(issue => issue.message).join("; "));
   replaceFile(file, bytes);
-  return { exitCode: 0, root, message: `config: wrote ${rel}${from ? ` from ${from}` : " (default)"}` };
+  // A fresh store is current from its first write (U13 r2): it carries the store-format marker, so its readers fail closed.
+  const marked = markCurrentStore(root, { at: new Date().toISOString(), version: cliActor("clossys config").version, cli: "clossys config --init" });
+  return { exitCode: 0, root, message: `config: wrote ${rel}${from ? ` from ${from}` : " (default)"}${marked ? "; marked the store clossys.slot/2 (store-format.json)" : ""}` };
 }
 
 // ---------------------------------------------------------------- clossys seat

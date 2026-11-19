@@ -9,9 +9,10 @@
  * the agent-wide order), the rule `retire --slot` follows; the targeted slot of a move is always
  * rewritten. Refs: an L2 is `<l1>/<l2>`; a bare id is the L1 node or the L0 layer of that id.
  */
+import { oldSlotRefusal } from "../records/store-format.js";
 import { iaPath, jsonBytes, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { nodeLayers, slotPositions } from "../records/slot-model/foundry-ia.js";
-import { validateIa, validateSlotDoc } from "../records/slot-model/validate.js";
+import { validateIa } from "../records/slot-model/validate.js";
 import { NODE_ID, type IaChange, type IaDoc, type ModelAgent } from "../records/slot-model/types.js";
 import { modelExists, readModelText } from "../records/slots.js";
 import { positionIa, serializeSlot, SLOT_SCHEMA as SLOT_V2_SCHEMA, validateSlot } from "../records/slot.js";
@@ -388,14 +389,10 @@ export function followPositions(consumer: string, agent: ModelAgent, before: IaF
     if (jsonBytes(doc.ia) !== jsonBytes(at) && (targeted || jsonBytes(doc.ia) === jsonBytes(was.get(id)))) nextDoc = { ...nextDoc, ia: { ...at } };
     if (targeted && slot?.extension === true) nextDoc = { ...nextDoc, extension: true };
     if (targeted && slot?.extension === false) { const { extension: _drop, ...rest } = nextDoc; nextDoc = rest; }
-    const bytes = jsonBytes(nextDoc);
-    if (bytes === jsonBytes(doc)) continue;
-    const issues = validateSlotDoc(nextDoc, file);
-    if (issues.length) return { error: `${agent}/${id}: ${issues.map(issue => issue.message).join("; ")}` };
-    writes.push([file, bytes]);
-    const levelChanged = position({ ...(doc.ia as object), order: 0 }) !== position({ ...at, order: 0 });
-    if (targeted || levelChanged) moved.push(`slot.json ${id}: ia ${position(doc.ia)} -> ${position(at)}${targeted && slot?.extension !== undefined ? `, extension ${slot.extension}` : ""}`);
-    else reordered++;
+    if (jsonBytes(nextDoc) === jsonBytes(doc)) continue;
+    // One format (U13): an old-format slot.json is never rewritten in place (its position, its extension key);
+    // the store is converted first (clossys migrate slots --apply).
+    return { error: oldSlotRefusal("ia", `${agent}/${id}`).replace(/^ia refused: /, "") };
   }
   return { writes, moved, reordered };
 }

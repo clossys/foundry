@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -7,7 +7,8 @@ import { runCli } from "../cli/main.js";
 import { readCandidate } from "../records/slots.js";
 import { writeCandidate, writePin } from "../records/slot-write.js";
 import { writerWording } from "../records/writer-wording.js";
-import { CONFIRM_REF, gapsOf, interviewIssues, interviewOf } from "./interview.js";
+import { gapsOf, interviewIssues, interviewOf } from "./interview.js";
+import { QUEUE_ANSWER } from "./chain.js";
 import { SEAT_POLICY_FILE } from "./seat-policy.js";
 import { consumerPath } from "../consumer-root.js";
 
@@ -25,7 +26,6 @@ afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: tru
 
 const SLOT = "strings.actions";
 const ITEM = `writer/${SLOT}`;
-const REF = "clossys/workspace#46 issuecomment-1";
 /** The pinned Director slot the fixture copy realises. */
 const VOICE = "identity.verbal.voice";
 /**
@@ -64,9 +64,9 @@ describe("Writer wording findings reach the Writer's owner questions (R2F-W1)", 
     expect(question.question).toContain("\"Request change!\"");
     expect(question.reason).toBeTruthy();
     const [rewrite, keep] = question.options;
-    expect(rewrite).toMatchObject({ recommended: true, calls: [["clossys", "pin", ITEM, row.rewrite!.candidate, "--basis", "picked", "--by", `owner:${CONFIRM_REF}`]] });
+    expect(rewrite).toMatchObject({ recommended: true, calls: [["clossys", "pin", ITEM, row.rewrite!.candidate, "--basis", "picked", "--by", QUEUE_ANSWER]] });
     expect(rewrite!.label).toMatch(/^Rewrite \(Recommended\): "Request change"/);
-    expect(keep).toMatchObject({ recommended: false, calls: [["clossys", "pin", ITEM, pinned, "--basis", "picked", "--by", `owner:${CONFIRM_REF}`]] });
+    expect(keep).toMatchObject({ recommended: false, calls: [["clossys", "pin", ITEM, pinned, "--basis", "picked", "--by", QUEUE_ANSWER]] });
     expect(keep!.label).toMatch(/^Keep as is: "Request change!"/);
     expect(question.freeText.calls?.at(-1)).toEqual(["clossys", "options", ITEM, "--redraft"]);
     expect(interviewIssues(interview, gapsOf(root))).toEqual([]);
@@ -74,8 +74,12 @@ describe("Writer wording findings reach the Writer's owner questions (R2F-W1)", 
     // The answer flows back through pin with the ledger ref; the slot is then settled and asked no more.
     // The pin is guarded (R05.1, R05.2): the slot is certified for the rewrite it pins first.
     await certifySlots(root, "writer", { [SLOT]: [row.rewrite!.candidate] });
+    const ENTRY = "20261118T0000Z-wording";
+    const entries = join(root, "clossys", "agents", "producer", "queue.pick", "entries");
+    mkdirSync(entries, { recursive: true });
+    writeFileSync(join(entries, `${ENTRY}.json`), `${JSON.stringify({ id: ENTRY, kind: "queue-entry" })}\n`);
     for (const call of rewrite!.calls) {
-      const result = await runCli([...call.slice(1).map(word => word.replace(CONFIRM_REF, REF)), "--root", root], root);
+      const result = await runCli([...call.slice(1).map(word => word === QUEUE_ANSWER ? `owner:queue.pick#${ENTRY}` : word), "--root", root], root);
       expect(result.exitCode, result.message).toBe(0);
     }
     expect(wordingOf(root)).toEqual([]);

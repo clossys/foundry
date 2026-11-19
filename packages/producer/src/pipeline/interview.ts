@@ -53,7 +53,7 @@ import { writerCopyPins } from "../records/writer-copy-slots.js";
 import { writerWording, type WordingRow } from "../records/writer-wording.js";
 import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
 import type { DirectorContent } from "./director-interview.js";
-import { agentOfItem, candidatesOf, chainCommand, contextOf, explainChain, INTERVIEW_AGENTS, openItems, packetOf, PLACEHOLDER_MEANING, SEAT_DECIDER, skillLine, skillOf, verbOf } from "./chain.js";
+import { agentOfItem, candidatesOf, chainCommand, contextOf, explainChain, INTERVIEW_AGENTS, openItems, packetOf, PLACEHOLDER_MEANING, QUEUE_ANSWER, skillLine, skillOf, verbOf } from "./chain.js";
 import type { Context, InterviewAgent, Packet } from "./chain.js";
 import { ladderIssues } from "./candidate-ladder.js";
 import { isDecide } from "./define.js";
@@ -468,9 +468,9 @@ function seatQuestions(items: readonly string[], context: Context, policy: SeatP
     return { procedure: part?.procedure ?? skillLine(target(item), packageRoot), command: part?.command ?? verbOf(target(item)) };
   };
   const by = (item: string) => target(item).decider === "owner" ? "owner" : `agent:${target(item).agent}`;
-  const llm = (item: string, tier: SeatTier) => ["clossys", "seat", item, "--by", by(item), "--model", `<model:${tier}>`, "--tier", tier, "--prompt-file", skillOf(target(item), packageRoot).path, "--procedure", human(item).procedure, "--command", human(item).command, "--decided-by", SEAT_DECIDER];
-  const noLlm = (item: string) => ["clossys", "seat", item, "--by", by(item), "--no-llm", "--procedure", human(item).procedure, "--command", human(item).command, "--decided-by", SEAT_DECIDER];
-  const fromSource = (item: string) => ["clossys", "seat", item, "--by", by(item), "--llm-from", `${/^pick\.(.+)$/.exec(item)![1]}.candidates`, "--prompt-file", skillOf(target(item), packageRoot).path, "--procedure", human(item).procedure, "--command", human(item).command, "--decided-by", SEAT_DECIDER];
+  const llm = (item: string, tier: SeatTier) => ["clossys", "seat", item, "--by", by(item), "--model", `<model:${tier}>`, "--tier", tier, "--prompt-file", skillOf(target(item), packageRoot).path, "--procedure", human(item).procedure, "--command", human(item).command, "--decided-by", QUEUE_ANSWER];
+  const noLlm = (item: string) => ["clossys", "seat", item, "--by", by(item), "--no-llm", "--procedure", human(item).procedure, "--command", human(item).command, "--decided-by", QUEUE_ANSWER];
+  const fromSource = (item: string) => ["clossys", "seat", item, "--by", by(item), "--llm-from", `${/^pick\.(.+)$/.exec(item)![1]}.candidates`, "--prompt-file", skillOf(target(item), packageRoot).path, "--procedure", human(item).procedure, "--command", human(item).command, "--decided-by", QUEUE_ANSWER];
   const tiers = (["mid", "high"] as const).filter(tier => !humanOnly && (policy.state !== "ok" || models[tier]));
   const classes = [
     { id: "seats.owner", header: "Owner seats", items: items.filter(item => target(item).decider === "owner") },
@@ -521,7 +521,7 @@ function policyQuestion(policy: SeatPolicyState, given: Readonly<Partial<Record<
 
 /** An argv that only prints a brief (`clossys options ...`): it records nothing, so it is never an owner answer. */
 const briefOnly = (argv: readonly string[]) => argv[0] === "clossys" && argv[1] === "options";
-const notNeeded = (items: readonly string[]) => ({ label: `Set ${items.length > 1 ? "them" : "it"} aside: not needed, for your reason.`, calls: items.map(item => ["clossys", "pin", item, "--not-needed", "--reason", "<reason>"]) });
+const notNeeded = (items: readonly string[]) => ({ label: `Set ${items.length > 1 ? "them" : "it"} aside: not needed, for your reason.`, calls: items.map(item => ["clossys", "pin", item, "--not-needed", "--reason", "<reason>", "--by", QUEUE_ANSWER]) });
 
 /** Owner packets of one step grouped by option shape: items whose answers differ only by item and candidate rank are one question. */
 function packetQuestions(packets: readonly Packet[]): Built[] {
@@ -571,12 +571,12 @@ function requestQuestion(gap: Gap, root: string, agentHeld: ReadonlySet<string> 
   const downstream = { label: `The ${gap.from} re-drafts ${plural(need.length, "slot")} without it.`, calls: need.map(redraft) };
   if (gap.code === "request.writer-keys") {
     const unapproved = writerKeysUnapproved(root).get(slotOf(gap.item)) ?? [];
-    if (newest[0] && (gap.keys ?? []).some(key => unapproved.includes(key))) rows.push({ label: `Approve ${newest[0]}, which holds the keys.`, calls: [["clossys", "approve", gap.item, newest[0]]] });
+    if (newest[0] && (gap.keys ?? []).some(key => unapproved.includes(key))) rows.push({ label: `Approve ${newest[0]}, which holds the keys.`, calls: [["clossys", "approve", gap.item, newest[0], "--by", QUEUE_ANSWER]] });
     rows.push({ label: `The Writer re-drafts ${gap.item} with the ${plural(gap.keys?.length ?? 0, "missing key")}.`, calls: [redraft(gap.item)] });
     rows.push({ label: `The Publisher re-drafts ${plural(need.length, "record")} without them.`, calls: need.map(redraft) });
   } else if (gap.code === "request.input-not-needed") {
     rows.push(downstream);
-    if (newest[0]) rows.push({ label: `Reopen it: pin ${newest[0]}.`, calls: [["clossys", "pin", gap.item, newest[0], "--basis", "picked"]] });
+    if (newest[0]) rows.push({ label: `Reopen it: pin ${newest[0]}.`, calls: [["clossys", "pin", gap.item, newest[0], "--basis", "picked", "--by", QUEUE_ANSWER]] });
     else rows.push({ label: `Reopen it: the ${to} drafts it.`, calls: [redraft(gap.item)] });
   } else if (gap.code === "request.input-unclear") {
     const evidence = { label: "Answer it as owner evidence; the Director re-drafts the cell on it.", calls: [["clossys", "evidence", "<id>", "--source", "owner", "--observed", new Date().toISOString().slice(0, 10), "--by", "owner", "--body", "<answer.md>"], redraft(gap.item)] };
@@ -585,7 +585,7 @@ function requestQuestion(gap: Gap, root: string, agentHeld: ReadonlySet<string> 
     rows.push(...(agentHeld.has(gap.item) ? [own, evidence] : [evidence, own]));
     rows.push(downstream);
   } else if (gap.code === "request.input-unpinned") {
-    for (const name of newest) rows.push({ label: `Pin ${name}.`, calls: [["clossys", "pin", gap.item, name, "--basis", "picked"]] });
+    for (const name of newest) rows.push({ label: `Pin ${name}.`, calls: [["clossys", "pin", gap.item, name, "--basis", "picked", "--by", QUEUE_ANSWER]] });
     rows.push(downstream);
   } else {
     rows.push({ label: `The ${to} drafts ${gap.item} now.`, calls: [redraft(gap.item)] }, downstream);
@@ -600,8 +600,6 @@ function requestQuestion(gap: Gap, root: string, agentHeld: ReadonlySet<string> 
 // ---------------------------------------------------------------- Director content
 const ARCHETYPE_QUESTION = "director.archetype";
 const AGENT_PICKS_QUESTION = "director.agent-picks";
-/** The placeholder the confirm argv carries for the ledger reference of the owner's words. */
-export const CONFIRM_REF = "<ref>";
 const today = () => new Date().toISOString().slice(0, 10);
 /** The owner's own words for a Director cell: recorded as owner evidence, then the cell is re-drafted on it. */
 const ownWords = (item: string) => ({
@@ -623,7 +621,7 @@ function archetypeQuestion(content: DirectorContent): Built {
 
 function contentQuestions(content: DirectorContent, after: readonly string[]): Built[] {
   return content.owner.map(row => {
-    const rows = row.round.slice(0, 4).map(candidate => ({ label: `${candidate.summary} (${candidate.name})`, calls: [["clossys", "pin", row.item, candidate.name, "--basis", "picked"]] }));
+    const rows = row.round.slice(0, 4).map(candidate => ({ label: `${candidate.summary} (${candidate.name})`, calls: [["clossys", "pin", row.item, candidate.name, "--basis", "picked", "--by", QUEUE_ANSWER]] }));
     // Never a lone answer: the owner can always ask the Director for another option first.
     if (rows.length < 2) rows.push({ label: "The Director drafts another option first.", calls: [["clossys", "options", row.item, "--more"]] });
     return {
@@ -642,15 +640,15 @@ function agentPicksQuestion(content: DirectorContent, unclear: ReadonlyMap<strin
   const rows = [
     // The owner's confirm keeps the agent pick (basis agent) and records the confirmation (owner Foundry
     // Director round 8): basis bulk would replace it with a blanket owner pin that Q7 never counts.
-    { label: `Confirm all ${plural(picks.length, "agent pick")}${failing ? ` (${failing} still have blocking findings)` : ""}.`, calls: picks.map(pick => ["clossys", "pin", pick.item, pick.candidate, "--confirm", "--ref", CONFIRM_REF]) },
+    { label: `Confirm all ${plural(picks.length, "agent pick")}${failing ? ` (${failing} still have blocking findings)` : ""}.`, calls: picks.map(pick => ["clossys", "pin", pick.item, pick.candidate, "--confirm", "--by", QUEUE_ANSWER]) },
     // By group (largest first): one group confirmed now, the others stay open for the next round.
     ...[...groups].sort((a, b) => b[1].length - a[1].length).slice(0, groups.size > 1 ? 3 : 0).map(([group, cells]) => ({
       label: `Confirm only the ${group} group (${plural(cells.length, "pick")}); the other groups stay open.`,
-      calls: picks.filter(pick => cells.includes(pick.cell)).map(pick => ["clossys", "pin", pick.item, pick.candidate, "--confirm", "--ref", CONFIRM_REF]),
+      calls: picks.filter(pick => cells.includes(pick.cell)).map(pick => ["clossys", "pin", pick.item, pick.candidate, "--confirm", "--by", QUEUE_ANSWER]),
     })),
   ];
   if (rows.length < 2) rows.push(notNeeded(picks.map(pick => pick.item)));
-  const options = optionsFrom(rows, {}).map(option => CONFIRM_REF in option.fill ? { ...option, fill: { ...option.fill, [CONFIRM_REF]: "where your words are recorded (the ledger comment with your answer)" } } : option);
+  const options = optionsFrom(rows, {});
   return {
     id: AGENT_PICKS_QUESTION, agent: "director", step: "pin.director", header: "Agent picks", items: picks.map(pick => pick.item),
     question: `Confirm ${plural(picks.length, "agent pick")} (the non-core cells the Director picked)?`, options,
@@ -688,12 +686,12 @@ function policyQuestions(gaps: readonly Gap[], all: readonly Gap[], root: string
       if (!entry) reason = "it is not a slot of the IA";
       else if (wiring.has(gap.item)) reason = "its citations are stale or broken (a wiring gap the agent closes first)";
       else if (!ready!.ready) reason = `its inputs do not clear (${listed(ready!.blockedBy.map(block => `${block.slot} ${block.reason}`))})`;
-      else if (gap.code === "agent-pick.unconfirmed") call = ["clossys", "pin", gap.item, entry.pin!.candidate, "--confirm", "--ref", CONFIRM_REF];
+      else if (gap.code === "agent-pick.unconfirmed") call = ["clossys", "pin", gap.item, entry.pin!.candidate, "--confirm", "--by", QUEUE_ANSWER];
       else {
         const packet = packetOf(steps.find(step => step.id === gap.step)!, gap.item, 1, context, { packageRoot });
         const first = (packet.options ?? []).find(option => option.argv && !briefOnly(option.argv) && option.argv.some(word => CANDIDATE_WORD.test(word)));
         if (!first) reason = "it has no candidate to approve or pin";
-        else call = [...first.argv!, ...(first.argv!.includes("--by") ? [] : ["--by", `owner:${CONFIRM_REF}`])];
+        else call = [...first.argv!, ...(first.argv!.includes("--by") ? [] : ["--by", QUEUE_ANSWER])];
       }
       if (call) inferred.push({ item: gap.item, call }); else perSlot.push({ gap, reason });
     }
@@ -710,7 +708,7 @@ function policyQuestions(gaps: readonly Gap[], all: readonly Gap[], root: string
       { label: `${verb} all ${plural(inferred.length, "slot")} by one policy: ${POLICY_WORDS[agent]}.`, calls: inferred.map(row => row.call) },
       ...sorted.slice(0, 3).map(([group, list]) => ({ label: `${verb} only the ${group} group (${plural(list.length, "slot")}); the other groups stay open for the next round.`, calls: list.map(row => row.call) })),
     ];
-    const options = optionsFrom(rows, {}).map(option => ({ ...option, fill: { ...option.fill, [CONFIRM_REF]: "where your policy words are recorded (the ledger comment with your answer)" } }));
+    const options = optionsFrom(rows, {});
     questions.push({
       id: `${agent}.policy`, agent, step: `pin.${agent}`, header: "Policy", items: inferred.map(row => row.item),
       question: `${verb} the ${agent[0]!.toUpperCase()}${agent.slice(1)}'s ${plural(inferred.length, "open slot")} by policy (${sorted.map(([group, list]) => `${group} ${list.length}`).join(", ")})? Each is the agent's pick or recommended candidate.`,
@@ -724,9 +722,9 @@ function policyQuestions(gaps: readonly Gap[], all: readonly Gap[], root: string
 function confirmQuestion(gap: Gap, reason: string, root: string): Built {
   const candidate = slotIndex(join(root, "clossys")).get(slotOf(gap.item))?.pin?.candidate ?? "";
   const options = optionsFrom([
-    { label: `Confirm ${candidate}.`, calls: [["clossys", "pin", gap.item, candidate, "--confirm", "--ref", CONFIRM_REF]] },
+    { label: `Confirm ${candidate}.`, calls: [["clossys", "pin", gap.item, candidate, "--confirm", "--by", QUEUE_ANSWER]] },
     notNeeded([gap.item]),
-  ], {}).map(option => CONFIRM_REF in option.fill ? { ...option, fill: { ...option.fill, [CONFIRM_REF]: "where your words are recorded (the ledger comment with your answer)" } } : option);
+  ], {});
   return {
     id: `${gap.agent}.confirm:${gap.item}`, agent: gap.agent, step: gap.step, header: "Confirm", items: [gap.item], reason,
     question: `Confirm ${gap.item}'s agent pick ${candidate}? Asked on its own: ${reason}.`, options,
@@ -742,13 +740,13 @@ function wordingQuestion(row: WordingRow): Built {
   const first = row.findings[0]!;
   const records = [...new Set(row.findings.map(finding => `${finding.record} [${finding.locale}]`))];
   const keep = row.pin.basis === "agent" && !row.pin.confirmed
-    ? ["clossys", "pin", item, row.pin.candidate, "--confirm", "--ref", CONFIRM_REF]
-    : ["clossys", "pin", item, row.pin.candidate, "--basis", "picked", "--by", `owner:${CONFIRM_REF}`];
+    ? ["clossys", "pin", item, row.pin.candidate, "--confirm", "--by", QUEUE_ANSWER]
+    : ["clossys", "pin", item, row.pin.candidate, "--basis", "picked", "--by", QUEUE_ANSWER];
   const more = records.length > 1 ? ` (+${records.length - 1} more)` : "";
   const options = optionsFrom([
-    { label: `Rewrite (Recommended): ${quoted(rewrite.texts[0]!.text)}${more} (${rewrite.candidate}).`, calls: [["clossys", "pin", item, rewrite.candidate, "--basis", "picked", "--by", `owner:${CONFIRM_REF}`]] },
+    { label: `Rewrite (Recommended): ${quoted(rewrite.texts[0]!.text)}${more} (${rewrite.candidate}).`, calls: [["clossys", "pin", item, rewrite.candidate, "--basis", "picked", "--by", QUEUE_ANSWER]] },
     { label: `Keep as is: ${quoted(first.current)}${more} (${row.pin.candidate}).`, calls: [keep] },
-  ], {}).map(option => ({ ...option, fill: { ...option.fill, [CONFIRM_REF]: "where your words are recorded (the ledger comment with your answer)" } }));
+  ], {});
   return {
     id: `writer.wording:${item}`, agent: "writer", step: "pin.writer", header: "Wording", items: [item], reason: WORDING_REASON,
     question: `${item} ${records[0]}: ${quoted(first.current)}. ${first.check}: ${first.message}${records.length > 1 ? ` Also ${listed(records.slice(1), 3)}.` : ""} Rewrite, keep as is, or say it in your own words? Asked on its own: ${WORDING_REASON}.`,

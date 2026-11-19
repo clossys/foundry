@@ -30,6 +30,10 @@ export interface StoreFormatDoc {
 
 export const storeFormatPath = (consumer: string): string => join(consumer, STORE_FORMAT_FILE);
 
+/** Why a verb refuses an old-format slot (U13: the verbs write slot/2 and pin/2 only). DRAFT copy (not owner-approved). */
+export const oldSlotRefusal = (verb: string, slot: string): string =>
+  `${verb} refused: ${slot} is a clossys.slot/1 slot; this verb writes clossys.slot/2 and clossys.pin/2 only: run clossys migrate slots --apply first`;
+
 /** True when the store carries the marker: anything at its path (fail closed; a link or a damaged file counts too). */
 export function isConvertedStore(consumer: string): boolean {
   try { lstatSync(storeFormatPath(consumer)); return true; } catch { return false; }

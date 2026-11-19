@@ -319,3 +319,19 @@ export function applySlotsMigration(root: string, plan: SlotsPlan, options: { at
   }
   return { written, skipped, events, marker };
 }
+
+/**
+ * The store-format marker for a store a verb just made current (U13 r2, review N4): `config --init` and `ia --adopt`
+ * write clossys.slot/2 only, so a store with no marker that a fresh plan finds nothing to convert or report (no slot/1,
+ * no pin/1, no unheadered candidate, no stopped run) gets the marker at once, and its readers fail closed on a later
+ * slot/1 or pin/1. A store holding any old-format file is left for `clossys migrate slots`. True when it was written.
+ */
+export function markCurrentStore(root: string, options: { at: string; version: string; cli: string }): boolean {
+  const consumer = join(root, "clossys");
+  if (isConvertedStore(consumer)) return false;
+  let plan: SlotsPlan;
+  try { plan = planSlotsMigration(root, options); } catch { return false; }
+  if (plan.resumed || plan.findings.length || plan.changes.length) return false;
+  replaceVerified(storeFormatPath(consumer), storeFormatBytes({ convertedAt: toIsoZ(options.at) ?? options.at, createdBy: { actor: "code", cli: options.cli, version: options.version } }), DISK, "store-format.json");
+  return true;
+}

@@ -320,55 +320,47 @@ describe("the ia verb's ledger events (R14.1) and the delta gate (D1)", () => {
     const events = (path: string) => (JSON.parse(read(path)) as { events: Record<string, unknown>[] }).events;
     return { root, consumer, constitution, ia, read, events };
   }
-  it("an ia write appends one event per written file, and R14.1 stays clean", async () => {
+  // One format (U13): this baseline is clossys.slot/1, and the ia verb writes clossys.slot/2 only. Each ia write
+  // below is refused with the migrate message before anything is written: no event, no record change, and the
+  // delta gate sees nothing new. (The ia verb's slot/2 events are pinned in cli/ia-regroup.test.ts.)
+  const MIGRATE = /is a clossys\.slot\/1 slot; this verb writes clossys\.slot\/2 and clossys\.pin\/2 only: run clossys migrate slots --apply first/;
+  it("an ia regroup on a slot/1 store is refused, appends no event, and R14.1 stays clean", async () => {
     const ws = iaWorkspace();
     const base = ws.constitution();
     expect(base.rows.filter(row => row.check === "R14.1")).toEqual([]);
-    const before = { designer: ws.events("designer/ledger.json").length, button: ws.events("designer/ui.button/ledger.json").length, card: ws.events("designer/ui.card/ledger.json").length };
-    // ui.card before ui.button: ia.json changes, and ui.button's slot.json is renumbered (ia.order only).
+    const before = { designer: ws.read("designer/ledger.json"), ia: ws.read("designer/ia.json"), button: ws.read("designer/ui.button/ledger.json"), slot: ws.read("designer/ui.button/slot.json") };
     const result = await ws.ia("designer", "--reorder", "controls/all", "--order", "ui.card,ui.button", "--owner-ref", DECISION);
-    expect(result.exitCode, result.message).toBe(0);
-    const agent = ws.events("designer/ledger.json"), button = ws.events("designer/ui.button/ledger.json");
-    expect(agent.length).toBe(before.designer + 1);
-    expect(agent.at(-1)).toMatchObject({ op: "ia", verb: "ia", kind: "ia", by: "owner", at: AT, model: "none", tier: "none", skill: { path: "packages/producer/actions/ia/skill.md" }, records: [{ file: "ia.json", sha256: sha(ws.read("designer/ia.json")) }] });
-    expect(button.length).toBe(before.button + 1);
-    expect(button.at(-1)).toMatchObject({ op: "slot", verb: "ia", kind: IA_POSITION_KIND, by: "owner", at: AT, records: [{ file: "slot.json", sha256: sha(ws.read("designer/ui.button/slot.json")) }] });
-    expect(ws.events("designer/ui.card/ledger.json").length).toBe(before.card); // not written, no event
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toMatch(MIGRATE);
+    expect({ designer: ws.read("designer/ledger.json"), ia: ws.read("designer/ia.json"), button: ws.read("designer/ui.button/ledger.json"), slot: ws.read("designer/ui.button/slot.json") }).toEqual(before);
     const after = ws.constitution();
     expect(after.rows.filter(row => row.check === "R14.1")).toEqual([]);
   });
 
-  it("an order-only renumber by the ia verb is unchanged in green; the regrouped agent record is changed", async () => {
+  it("a refused ia regroup leaves green unchanged: no new row, no changed record", async () => {
     const ws = iaWorkspace();
     const base = ws.constitution();
     const green = buildGreen(base.rows, base.index!, { workspace: WS, commit: "unknown" });
     const result = await ws.ia("designer", "--reorder", "controls/all", "--order", "ui.card,ui.button", "--owner-ref", DECISION);
-    expect(result.exitCode, result.message).toBe(0);
-    expect((JSON.parse(ws.read("designer/ui.button/slot.json")) as { ia: { order: number } }).ia.order).not.toBe((slotDoc("designer", "ui.button").ia as { order: number }).order);
+    expect(result.exitCode).toBe(1);
     const next = ws.constitution();
-    expect(next.index!.digests["designer/ui.button"]).toBe(base.index!.digests["designer/ui.button"]);
-    const delta = evaluateDelta(next.rows, next.index!, stored(green).read, scope(next));
-    expect(delta).toMatchObject({ ok: true, newRows: 0, changedRecords: ["designer"] });
-    expect(delta.changedRecords).not.toContain("designer/ui.button");
+    expect(next.index!.digests).toEqual(base.index!.digests);
+    expect(evaluateDelta(next.rows, next.index!, stored(green).read, scope(next))).toMatchObject({ ok: true, newRows: 0, changedRecords: [] });
   });
 
-  it("a real ia edit (a new contract) is an `ia` event and changes the record; --dry writes no event", async () => {
+  it("an ia contract edit on a slot/1 slot is refused, dry or real, and changes no record", async () => {
     const ws = iaWorkspace();
     const base = ws.constitution();
-    const green = buildGreen(base.rows, base.index!, { workspace: WS, commit: "unknown" });
     const contract = join(ws.root, "contract.json");
     writeFileSync(contract, `${JSON.stringify({ requirements: [{ check: "text.nonempty" }], ...(slotDoc("designer", "ui.button").contract as object), summary: "element ui.button, rewritten" }, null, 2)}\n`);
     const ledger = ws.read("designer/ui.button/ledger.json"), slot = ws.read("designer/ui.button/slot.json");
-    const dry = await ws.ia("designer/ui.button", "--contract", contract, "--dry");
-    expect(dry.exitCode, dry.message).toBe(0);
-    expect(ws.read("designer/ui.button/ledger.json")).toBe(ledger);
-    expect(ws.read("designer/ui.button/slot.json")).toBe(slot);
-    const result = await ws.ia("designer/ui.button", "--contract", contract);
-    expect(result.exitCode, result.message).toBe(0);
-    expect(ws.events("designer/ui.button/ledger.json").at(-1)).toMatchObject({ op: "slot", verb: "ia", kind: "ia", by: "planner", at: AT, records: [{ file: "slot.json", sha256: sha(ws.read("designer/ui.button/slot.json")) }] });
-    const next = ws.constitution();
-    expect(next.rows.filter(row => row.check === "R14.1")).toEqual([]);
-    expect(next.index!.digests["designer/ui.button"]).not.toBe(base.index!.digests["designer/ui.button"]);
-    expect(evaluateDelta(next.rows, next.index!, stored(green).read, scope(next)).changedRecords).toContain("designer/ui.button");
+    for (const dry of [["--dry"], []]) {
+      const result = await ws.ia("designer/ui.button", "--contract", contract, ...dry);
+      expect(result.exitCode).toBe(1);
+      expect(result.message).toMatch(MIGRATE);
+      expect(ws.read("designer/ui.button/ledger.json")).toBe(ledger);
+      expect(ws.read("designer/ui.button/slot.json")).toBe(slot);
+    }
+    expect(ws.constitution().index!.digests["designer/ui.button"]).toBe(base.index!.digests["designer/ui.button"]);
   });
 });

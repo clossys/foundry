@@ -126,7 +126,7 @@ describe("clossys ia --standard", () => {
     const root = workspace();
     expect((await runIaCli(["writer", "--start"], root)).exitCode).toBe(0);
     const contract = join(root, "contract.json");
-    put(contract, JSON.stringify({ summary: "strings home.hero", fixture: { keys: ["title"], locales: ["en"] }, requirements: [{ check: "text.nonempty" }] }));
+    put(contract, JSON.stringify({ summary: "strings home.hero", kind: "string", fixture: { keys: ["title"], locales: ["en"] }, requirements: [{ check: "text.nonempty" }] }));
     const result = await runIaCli(["writer/home.hero", "--contract", contract, "--under", "copy/hero", "--kind", "strings"], root);
     expect(result.exitCode, result.message).toBe(0);
     return root;
@@ -146,6 +146,8 @@ describe("clossys ia --standard", () => {
 
   it("refuses a standard of another kind or an invalid one, and a bad id", async () => {
     const root = await placed();
+    // A clossys.slot/2 slot is placed with its kind's default standard; a refused --standard leaves it as placed.
+    const placedStandard = slotJson(root).standard;
     cpSync(FIXTURE, dirOf(root), { recursive: true });
     const requirements = join(dirOf(root), "requirements.json");
     put(requirements, readFileSync(requirements, "utf8").replace("\"strings\"", "\"element\""));
@@ -153,14 +155,15 @@ describe("clossys ia --standard", () => {
     rmSync(join(dirOf(root), "taste.md"));
     expect((await runIaCli(["writer/home.hero", "--standard", "fixture-headline"], root)).message).toMatch(/is not valid: no taste\.md/);
     await expect(runIaCli(["writer/home.hero", "--standard", "Bad Id"], root)).rejects.toThrow(/--standard must be a standard id/);
-    expect(slotJson(root).standard).toBeUndefined();
+    expect(slotJson(root).standard).toBe(placedStandard);
+    expect(placedStandard).not.toBe("fixture-headline");
   });
 
   it("writes a contract and a standard together", async () => {
     const root = await placed();
     cpSync(FIXTURE, dirOf(root), { recursive: true });
     const contract = join(root, "contract2.json");
-    put(contract, JSON.stringify({ summary: "strings home.hero v2", fixture: { keys: ["title"], locales: ["en"] }, requirements: [{ check: "text.nonempty" }] }));
+    put(contract, JSON.stringify({ summary: "strings home.hero v2", kind: "string", fixture: { keys: ["title"], locales: ["en"] }, requirements: [{ check: "text.nonempty" }] }));
     const result = await runIaCli(["writer/home.hero", "--contract", contract, "--standard", "fixture-headline"], root);
     expect(result.exitCode, result.message).toBe(0);
     expect(slotJson(root)).toMatchObject({ standard: "fixture-headline", contract: { summary: "strings home.hero v2" } });

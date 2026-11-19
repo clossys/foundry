@@ -129,7 +129,7 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
   const consumer = consumerOf(cwd, flags.root);
   if (flags.classes) {
     if (flags.positional.length || flags.more || flags.redraft) throw new CliUsageError(`--classes takes no slot\n${OPTIONS_USAGE}`);
-    const changed: string[] = [], unplaced: string[] = [];
+    const changed: string[] = [], unplaced: string[] = [], refused: string[] = [];
     for (const agent of SLOT_AGENTS) {
       if (!OPTION_TABLE.groups[agent]) continue;
       for (const entry of listSlots(consumer, agent)) {
@@ -142,13 +142,15 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
         const want = klass.options > 1 ? `${klass.options}/${klass.varyOn}` : "1/";
         const have = `${doc.options ?? 1}/${(doc.options ?? 1) > 1 ? doc.varyOn ?? "" : ""}`;
         if (want === have && (klass.options > 1 || doc.varyOn === undefined)) continue;
+        // One format (U13): an old-format slot is never rewritten in place; it is named, and the run exits 1.
+        if (!flags.check && !isTargetSlot(dirname(consumer), agent, entry.id)) { refused.push(oldSlotRefusal("options", `${agent}/${entry.id}`)); continue; }
         if (!flags.check) writeSlotOptions(consumer, agent, entry.id, { options: klass.options, ...(klass.varyOn ? { varyOn: klass.varyOn } : {}) });
         changed.push(`${agent}/${entry.id}`);
       }
     }
     const verb = flags.check ? "drift" : "wrote";
     const open = unplaced.length ? `; ${unplaced.length} IA slot(s) have no slot.json yet (open ia items: clossys next)` : "";
-    return { exitCode: flags.check && changed.length ? 1 : 0, message: [...changed.map(slot => `${verb} ${slot}`), ...unplaced.map(slot => `ia gap ${slot}: no slot.json`), `options --classes: ${changed.length} slot.json ${flags.check ? "drifted" : "updated"}${open}`].join("\n"), output: { changed, unplaced } };
+    return { exitCode: (flags.check && changed.length) || refused.length ? 1 : 0, message: [...changed.map(slot => `${verb} ${slot}`), ...refused, ...unplaced.map(slot => `ia gap ${slot}: no slot.json`), `options --classes: ${changed.length} slot.json ${flags.check ? "drifted" : "updated"}${refused.length ? `, ${refused.length} refused` : ""}${open}`].join("\n"), output: { changed, unplaced, ...(refused.length ? { refused } : {}) } };
   }
   if (flags.check) {
     if (flags.positional.length !== 1 || flags.more || flags.redraft) throw new CliUsageError(`--check takes --classes or one <agent>/<slot>\n${OPTIONS_USAGE}`);

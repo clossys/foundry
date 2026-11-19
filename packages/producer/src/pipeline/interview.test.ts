@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -7,7 +7,8 @@ import { runGapsCli } from "../cli/gaps.js";
 import { runCli } from "../cli/main.js";
 import { runNextCli } from "../cli/next.js";
 import { ladderIssues } from "./candidate-ladder.js";
-import { CONFIRM_REF, gapsOf, interviewIssues, interviewOf, ROUND_SIZE } from "./interview.js";
+import { gapsOf, interviewIssues, interviewOf, ROUND_SIZE } from "./interview.js";
+import { QUEUE_ANSWER } from "./chain.js";
 import type { Gap, Question } from "./interview.js";
 import { runPipeline } from "./runner.js";
 import { readSeatPolicy, SEAT_POLICY_FILE } from "./seat-policy.js";
@@ -273,14 +274,18 @@ describe("Director content questions (next --owner --agent director)", { timeout
     }
     const question = interviewOf(root, { agent: "director" }).rounds.flat().find(each => each.id === "director.agent-picks")!;
     const confirm = question.options[0]!;
-    expect(confirm.fill).toHaveProperty(CONFIRM_REF);
-    for (const cell of cells) expect(confirm.calls).toContainEqual(["clossys", "pin", `director/${cell}`, pinOf(cell).candidate, "--confirm", "--ref", CONFIRM_REF]);
-    const REF = "clossys/workspace#46 issuecomment-1";
+    expect(confirm.fill).toHaveProperty(QUEUE_ANSWER);
+    for (const cell of cells) expect(confirm.calls).toContainEqual(["clossys", "pin", `director/${cell}`, pinOf(cell).candidate, "--confirm", "--by", QUEUE_ANSWER]);
+    // The answerer fills the queue entry holding the owner's answer (U13 r2: an owner confirmation cites it).
+    const ENTRY = "20261118T0000Z-agent-picks";
+    const entries = join(root, "clossys", "agents", "producer", "queue.pick", "entries");
+    mkdirSync(entries, { recursive: true });
+    writeFileSync(join(entries, `${ENTRY}.json`), `${JSON.stringify({ id: ENTRY, kind: "queue-entry" })}\n`);
     for (const call of confirm.calls) {
-      const result = await runCli([...call.slice(1).map(word => word === CONFIRM_REF ? REF : word), "--root", root], root);
+      const result = await runCli([...call.slice(1).map(word => word === QUEUE_ANSWER ? `owner:queue.pick#${ENTRY}` : word), "--root", root], root);
       expect(result.exitCode, result.message).toBe(0);
     }
-    for (const cell of cells) expect(pinOf(cell)).toMatchObject({ decidedBy: "agent:director", basis: "agent", confirmed: { by: "owner", ref: REF } });
+    for (const cell of cells) expect(pinOf(cell)).toMatchObject({ decidedBy: "agent:director", basis: "agent", confirmed: { by: "owner", ref: `producer/queue.pick#${ENTRY}` } });
     // A confirmed pick is no longer asked.
     const after = interviewOf(root, { agent: "director" }).rounds.flat().find(each => each.id === "director.agent-picks");
     for (const cell of cells) expect(after?.items ?? []).not.toContain(`director/${cell}`);
