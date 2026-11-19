@@ -203,7 +203,7 @@ function behaviourOff(doc: Doc, behaviour: SlotBehaviour): { key: string; have: 
  * Which agent holds each placed slot id in the consumer (every slot agent's ia.json, this agent's target
  * positions first): a slot/2 ref is `<agent>/<id>`.
  */
-function holders(consumerDir: string, agent: SyncAgent, state: SyncState): Map<string, AgentId[]> {
+function holders(consumerDir: string, agent: SyncAgent, state: Pick<SyncState, "positions">): Map<string, AgentId[]> {
   const out = new Map<string, AgentId[]>();
   const add = (id: string, holder: AgentId) => { const list = out.get(id) ?? []; if (!list.includes(holder)) out.set(id, [...list, holder]); };
   for (const id of state.positions.keys()) add(id, agent);
@@ -251,7 +251,11 @@ function syncedCurrent(consumerDir: string, current: Slot, id: string, slot: Fou
   return next;
 }
 /** The options a slot/2 adoption stamps: when it is written and the CLI version that writes it. */
-export interface CurrentSyncOptions { readonly at: Iso; readonly version: string; readonly cli?: string }
+export interface CurrentSyncOptions {
+  readonly at: Iso; readonly version: string; readonly cli?: string;
+  /** The recut migration only (a compatibility writer, U13): it lines up a clossys.slot/1 file before converting it. */
+  readonly migrating?: true;
+}
 /** A newly adopted package leaf in a slot/2 store: the slot/1 adoption, as slot-1-to-2 maps it, with the package refs and kind. */
 function adoptedCurrent(consumerDir: string, agent: SyncAgent, id: string, slot: FoundrySlot, position: SlotPosition, behaviour: SlotBehaviour, held: ReadonlyMap<string, readonly AgentId[]>, options: CurrentSyncOptions): Slot | undefined {
   const v1 = withBehaviour({ schema: SLOT_SCHEMA, id, agent, ia: { ...position }, ...packageFields(slot), inputs: behaviour.inputs, uses: behaviour.uses }, behaviour) as unknown as SlotV1;
@@ -268,6 +272,21 @@ function adoptedCurrent(consumerDir: string, agent: SyncAgent, id: string, slot:
   const family = familyFor(agent as (typeof CONTRACT_AGENTS)[number], id, `${position.l1}/${position.l2}`);
   return { ...made, contract: seededPackageContract(consumerDir, agent, made.contract, made.standard) as Slot["contract"], ...(family ? { family } : {}) };
 }
+/**
+ * Every package leaf of an adopted agent IA as a clossys.slot/2 file (`clossys ia <agent> --adopt`, foundry-build-0048
+ * U13: the adoption writes slot/2 only). `undefined` slot means the leaf has no slot/2 kind; `dropped` are its
+ * declared refs that name no slot (dangling edges the caller refuses).
+ */
+export function adoptedCurrentSlots(consumerDir: string, agent: SyncAgent, pkg: FoundryIa, ctx: RefContext, options: CurrentSyncOptions): { id: string; slot: Slot | undefined; dropped: string[] }[] {
+  const positions = slotPositions(agent, pkg.ia);
+  const held = holders(consumerDir, agent, { positions });
+  return [...positions].map(([id, position]) => {
+    const slot = pkg.slots.get(id)!;
+    const behaviour = packageBehaviour(agent, id, slot, position, ctx);
+    return { id, slot: adoptedCurrent(consumerDir, agent, id, slot, position, behaviour, held, options), dropped: behaviour.dropped };
+  });
+}
+
 /** True when any slot.json the agent places is a clossys.slot/2 (a recut store): a sync then adopts as slot/2. */
 export function currentStore(consumerDir: string, agent: SyncAgent, positions: ReadonlyMap<string, SlotPosition>): boolean {
   for (const id of positions.keys()) {
@@ -382,7 +401,6 @@ export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlyS
   if (!modelExists(iaFile) || readModelText(iaFile) !== iaBytes) writes.push([iaFile, iaBytes]);
   const feeds = feedsIndex([...(agent === "director" ? state.pkg : directorIa()).slots.values()].map(slot => [slot.id, slot.feeds] as const), known);
   const ctx: RefContext = { known, feeds };
-  const store = currentStore(consumerDir, agent, state.positions);
   let held: Map<string, AgentId[]> | undefined;
   const holderMap = () => held ??= holders(consumerDir, agent, state);
   for (const [id, position] of state.positions) {
@@ -394,11 +412,10 @@ export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlyS
       // A newly adopted leaf whose declared refs name no slot carries a dangling edge: refuse, never leave it out.
       const dropped = packageBehaviour(agent, id, slot, position, ctx).dropped;
       if (dropped.length) return { error: `${agent}/${id}: declared refs name no slot (dangling edges): ${dropped.join(", ")}` };
-      if (store) {
-        const made = adoptedCurrent(consumerDir, agent, id, slot, position, packageBehaviour(agent, id, slot, position, ctx), holderMap(), options ?? { at: new Date().toISOString() as Iso, version: "0.0.0" });
-        if (!made) continue;
-        bytes = serializeSlot(made);
-      } else bytes = jsonBytes(adoptedSlotDoc(agent, id, slot, position, ctx).doc);
+      // U13 one format: a newly adopted leaf is always written as clossys.slot/2, whatever the store holds.
+      const made = adoptedCurrent(consumerDir, agent, id, slot, position, packageBehaviour(agent, id, slot, position, ctx), holderMap(), options ?? { at: new Date().toISOString() as Iso, version: "0.0.0" });
+      if (!made) continue;
+      bytes = serializeSlot(made);
       adopted.push(id);
     } else {
       const text = readModelText(file);
@@ -410,6 +427,8 @@ export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlyS
         let doc: Doc = { ...current, ia: { ...position }, ...(slot ? packageFields(slot) : {}) };
         if (slot) doc = withBehaviour(doc, packageBehaviour(agent, id, slot, position, ctx));
         if (sameJson(current, doc) && Object.keys(current).join() === Object.keys(doc).join()) continue;
+        // U13 one format: a sync never rewrites a clossys.slot/1 slot; the store converts first (DRAFT copy).
+        if (!options?.migrating) return { error: `${agent}/${id} is a ${String(current.schema)} slot; ia sync writes clossys.slot/2 only: run clossys migrate slots --apply first` };
         bytes = jsonBytes(doc);
       }
       if (bytes === text) continue;

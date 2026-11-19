@@ -21,6 +21,7 @@ import {
 } from "./slot-model/index.js";
 import { LEDGER_FILE } from "./ledger.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readiness, slotIndex, type Readiness } from "./slots.js";
+import { isConvertedStore, isPin1, oldFormatRefusal } from "./store-format.js";
 import { CURRENT_AGENT_KINDS, OLD_SLOT_FORMAT, candidateIssues, isOldSlot, placedAt, readSlotValue, slotReadIssues, type SlotRead } from "./slot-current.js";
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -81,6 +82,10 @@ export interface SlotModelCheckOptions {
 }
 export function checkSlotModel(consumer: string, options: SlotModelCheckOptions = {}): SlotModelIssue[] {
   const issues: SlotModelIssue[] = [];
+  // A store the store-format marker says is converted is judged in the current format only (U13): a slot/1
+  // slot.json is the OLD_SLOT_FORMAT finding and a pin/1 pin.json a pin-invalid finding, whatever the caller asked.
+  const converted = isConvertedStore(consumer);
+  const current = options.current || converted;
   const ias = new Map<SlotAgent, IaDoc>();
   for (const agent of SLOT_AGENTS) {
     const path = iaPath(consumer, agent);
@@ -106,7 +111,7 @@ export function checkSlotModel(consumer: string, options: SlotModelCheckOptions 
       try {
         const value = readJsonFile(join(dir, SLOT_FILE));
         const path = `${rel}/${SLOT_FILE}`;
-        const found = options.current && isOldSlot(value) ? [{ code: "slot-invalid" as const, path, message: OLD_SLOT_FORMAT }] : slotReadIssues(value, path);
+        const found = current && isOldSlot(value) ? [{ code: "slot-invalid" as const, path, message: OLD_SLOT_FORMAT }] : slotReadIssues(value, path);
         issues.push(...found);
         if (!found.length) read = readSlotValue(value, path);
       } catch { issues.push({ code: "slot-invalid", path: `${rel}/${SLOT_FILE}`, message: "slot.json is missing or not JSON" }); }
@@ -128,7 +133,7 @@ export function checkSlotModel(consumer: string, options: SlotModelCheckOptions 
         let pins: PinDoc[] = [];
         try {
           const value = readJsonFile(join(dir, PIN_FILE));
-          const found = validatePin(value, `${rel}/${PIN_FILE}`);
+          const found = converted && isPin1(value) ? [{ code: "pin-invalid" as const, path: `${rel}/${PIN_FILE}`, message: oldFormatRefusal("pin.json") }] : validatePin(value, `${rel}/${PIN_FILE}`);
           issues.push(...found);
           if (!found.length) pins = pinRecords(value);
         } catch { issues.push({ code: "pin-invalid", path: `${rel}/${PIN_FILE}`, message: "pin.json is not JSON" }); }

@@ -215,6 +215,8 @@ export interface HeaderContext {
   readonly sourceRef: string;
   /** The slot id a moved candidate (or a routed library cell) left: its int2 `slot` field follows it to `slotId`. */
   readonly movedFrom?: string;
+  /** The command a new header names as its creator (default this recut; `clossys migrate slots` passes its own). */
+  readonly cli?: string;
 }
 
 /**
@@ -252,7 +254,7 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
   const slot = `${context.agent}/${context.slotId}`;
   const fresh = (source: CandidateHeader["source"]) => checked(buildCandidateHeader({
     agent: context.agent, slotId: context.slotId, name, status: "submitted",
-    createdBy: { actor: "code", cli: RECUT_CLI, version: context.version }, createdAt: context.at, source,
+    createdBy: { actor: "code", cli: context.cli ?? RECUT_CLI, version: context.version }, createdAt: context.at, source,
   }), name);
   const readdressed = (header: Record<string, unknown>) => checked({ ...header, id, agent: context.agent, slot } as unknown as CandidateHeader, name);
   const current = (header: unknown) => object(header) && header.schema === "clossys.candidate/1" && header.id === id && header.slot === slot && header.agent === context.agent;
@@ -667,7 +669,7 @@ export function planTreeSync(dir: string, at: Iso, version: string): { writes: [
   for (const agent of treeAgents(dir)) {
     const state = syncState(consumer, agent);
     if (!state.consumer) continue;
-    const plan = syncPlan(consumer, agent, knownSlots(consumer, agent, state), state, { at, version, cli: RECUT_CLI });
+    const plan = syncPlan(consumer, agent, knownSlots(consumer, agent, state), state, { at, version, cli: RECUT_CLI, migrating: true });
     if ("error" in plan) findings.push(`${agent}: the package tree is not placed: ${plan.error}`);
     else writes.push(...plan.writes);
   }

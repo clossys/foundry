@@ -22,7 +22,8 @@ import {
   type IaDoc, type ModelAgent, type NotNeeded, type PinDoc, type SlotModelIssue, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
 import { isAbsent, parseJson } from "../errors.js";
-import { candidateIssues, isCurrentSlot, placedAt, readSlotValue } from "./slot-current.js";
+import { candidateHeaderOf, candidateIssues, isCurrentSlot, placedAt, readSlotValue } from "./slot-current.js";
+import { isConvertedStore, isPin1, isSlot1, oldFormatRefusal } from "./store-format.js";
 /** A candidate as its kind rules read it (a clossys.candidate/1 file without its header, with the header source): Designer checks parse this, never the raw bytes. */
 export { candidateView, viewIssues, viewPlacedAt } from "./slot-current.js";
 import { notNeededIssue } from "./slot-model/validate.js";
@@ -55,6 +56,11 @@ interface ReadScope { readonly started: number; checked: Set<string> }
 export const SCOPE_TTL_MS = 1000;
 let scope: ReadScope | undefined;
 /** Runs `fn` (synchronous) in one slot read scope; nested calls share the outermost scope. */
+/** The consumer folder of a slot folder (`<consumer>/agents/<agent>/<slot>`). */
+const consumerOfSlotDir = (dir: string): string => dirname(dirname(dirname(dir)));
+/** True when an old-format value is read in a store the store-format marker says is converted: the reader refuses it (U13). */
+const refusedOld = (dir: string, value: unknown): boolean => (isSlot1(value) || isPin1(value)) && isConvertedStore(consumerOfSlotDir(dir));
+
 export function withSlotReadScope<T>(fn: () => T): T {
   if (scope) return fn();
   scope = { started: Date.now(), checked: new Set() };
@@ -355,12 +361,15 @@ function seatTextAt(consumer: string, step: string): string | undefined {
   if (!fsExists(docPath)) throw new Error(`Seat ${step}: slot.json is missing; a seat is a slot of kind seat`);
   let doc: unknown;
   try { doc = JSON.parse(readBytes(docPath)); } catch { throw new Error(`Seat ${step}: slot.json is not JSON`); }
-  const docIssues = validateSlotDoc(doc, docPath);
-  if (docIssues.length) throw new Error(`Seat ${step}: slot.json is invalid (${docIssues.map(issue => issue.message).join("; ")})`);
-  const slot = doc as SlotDoc;
+  if (refusedOld(dir, doc)) throw new Error(`Seat ${step}: ${oldFormatRefusal("slot.json")}`);
+  // A seat slot is a clossys.slot/2 of kind seat, or (in a store not yet converted) a clossys.slot/1 one.
+  const read = readSlotValue(doc, docPath);
+  if (!read) throw new Error(`Seat ${step}: slot.json is invalid (${(isCurrentSlot(doc) ? ["not a valid clossys.slot/2 seat"] : validateSlotDoc(doc, docPath).map(issue => issue.message)).join("; ")})`);
+  const slot = read.doc;
   if (slot.agent !== SEAT_AGENT || slot.kind !== "seat" || slot.id !== seatSlotId(step)) throw new Error(`Seat ${step}: slot.json must be the producer seat ${seatSlotId(step)}`);
   let value: unknown;
   try { value = JSON.parse(readBytes(path)); } catch { throw new Error(`Seat ${step}: pin.json is not JSON`); }
+  if (refusedOld(dir, value)) throw new Error(`Seat ${step}: ${oldFormatRefusal("pin.json")}`);
   const issues = validatePin(value, path);
   if (issues.length) throw new Error(`Seat ${step}: pin.json is invalid (${issues.map(issue => issue.message).join("; ")})`);
   const pin = pinView(value)!;
@@ -369,6 +378,11 @@ function seatTextAt(consumer: string, step: string): string | undefined {
   if (!fsExists(file)) throw new Error(`Seat ${step}: pinned candidate ${pin.candidate} does not exist`);
   const bytes = readBytes(file);
   if (fsTextSha(file, bytes) !== pin.sha256) throw new Error(`Seat ${step}: pin sha256 differs from ${pin.candidate}`);
+  // A headered seat candidate ({clossys, content}): the seat is its content.
+  if (candidateHeaderOf(pin.candidate, bytes)) {
+    const content = (JSON.parse(bytes) as { content?: unknown }).content;
+    return `${JSON.stringify(content ?? null, null, 2)}\n`;
+  }
   return bytes;
 }
 
@@ -409,6 +423,7 @@ function readNotNeeded(dir: string): NotNeeded | "invalid" | { readonly unreadab
   if (!fsExists(path)) return undefined;
   let value: unknown;
   try { value = readJson(path); } catch (error) { return { unreadable: error instanceof Error ? error.message : String(error) }; }
+  if (refusedOld(dir, value)) return { unreadable: oldFormatRefusal("slot.json") };
   if (isCurrentSlot(value)) {
     // clossys.slot/2 keeps the marker in its contract (clossys migrate slot-1-to-2).
     const contract = (value as { contract?: unknown }).contract;
@@ -465,7 +480,9 @@ export function inspectSlot(consumer: string, agent: ModelAgent, id: string): { 
   return withSlotReadScope(() => {
     const { position, dir } = locate(consumer, agent, id);
     const path = slotFile(dir);
-    const read = readSlotValue(readJson(path), path);
+    const value = readJson(path);
+    if (refusedOld(dir, value)) throw new Error(`Invalid ${agent} slot ${id}: ${oldFormatRefusal("slot.json")}`);
+    const read = readSlotValue(value, path);
     if (!read) throw new Error(`Invalid ${agent} slot ${id}`);
     return { doc: read.doc, placed: placedAt(read, id, agent, position) };
   });
@@ -478,8 +495,11 @@ export function inspectSlot(consumer: string, agent: ModelAgent, id: string): { 
  */
 export function slotCandidateIssues(consumer: string, agent: ModelAgent, id: string, name: string, bytes: string): SlotModelIssue[] {
   return withSlotReadScope(() => {
-    const path = slotFile(locate(consumer, agent, id).dir);
-    const read = readSlotValue(readJson(path), path);
+    const dir = locate(consumer, agent, id).dir;
+    const path = slotFile(dir);
+    const value = readJson(path);
+    if (refusedOld(dir, value)) return [{ code: "slot-invalid", path, message: oldFormatRefusal("slot.json") }];
+    const read = readSlotValue(value, path);
     if (!read) return [{ code: "slot-invalid", path, message: `Invalid ${agent} slot ${id}` }];
     return candidateIssues(read, agent, id, name, bytes);
   });
@@ -526,6 +546,8 @@ function readPinAt(dir: string): PinDoc | null {
   // slot as invalid-pin and the model check reports it; it never clears an input or acts as an
   // authoring fallback merely because its file is present.
   if (!parsed.ok) return null;
+  // A pin/1 in a converted store is no pin (U13): the slot is rejected as invalid-pin.
+  if (refusedOld(dir, parsed.value)) return null;
   return validatePin(parsed.value, path).length ? null : pinView(parsed.value) ?? null;
 }
 export function readPin(consumer: string, agent: SlotAgent, id: string): PinDoc | null {
@@ -536,11 +558,12 @@ export function readPin(consumer: string, agent: SlotAgent, id: string): PinDoc 
 /** Every pinned record of a slot: a pin map's records in record order, or the single pin; none when unpinned or invalid. */
 export function readPins(consumer: string, agent: SlotAgent, id: string): PinDoc[] {
   return withSlotReadScope(() => {
-    const path = pinFile(locate(consumer, agent, id).dir);
+    const dir = locate(consumer, agent, id).dir;
+    const path = pinFile(dir);
     assertModelPath(path);
     if (!fsExists(path)) return [];
     const parsed = parseJson(readBytes(path));
-    if (!parsed.ok || validatePin(parsed.value, path).length) return [];
+    if (!parsed.ok || refusedOld(dir, parsed.value) || validatePin(parsed.value, path).length) return [];
     return pinRecords(parsed.value);
   });
 }

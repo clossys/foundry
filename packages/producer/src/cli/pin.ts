@@ -9,9 +9,10 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { parseCandidateName } from "../records/candidate.js";
-import { cliActor, ownerAnswerRef, toIsoZ } from "../records/pin.js";
-import { writeTargetPin } from "../records/pin-map.js";
+import { candidatePath, parseCandidateName } from "../records/candidate.js";
+import { sha256Hex } from "../records/hash.js";
+import { buildPin, cliActor, ownerAnswerRef, pinIssues, pinPath, toIsoZ, writePinDoc } from "../records/pin.js";
+import { pinMapIssues, readPinFile, setPinMapRecord, writeTargetPin } from "../records/pin-map.js";
 import { answeredStep, readRequest, requestsDir, workQueue, type SlotRequest } from "../records/request.js";
 import type { WorkKind } from "../queue/routing.js";
 import { publicationOf } from "../release/paths.js";
@@ -130,49 +131,11 @@ export async function runPinCli(argv: readonly string[], cwd: string, guard: Wri
   if (!(SLOT_AGENTS as readonly string[]).includes(agent)) return { exitCode: 1, message: `pin refused: unknown agent ${agent} (expected ${SLOT_AGENTS.join(", ")})` };
   const workspace = dirname(consumerOf(cwd, flags.root));
   if (isTargetSlot(workspace, agent, id.split("#")[0]!)) return runTargetPin(workspace, agent, id, candidateId, flags);
-  // A release pin is a ready-pin (flows.md F8): only a clossys.slot/2 release slot takes one, through release.ready.
-  if (isReleaseSlot(agent, id.split("#")[0]!)) return { exitCode: 1, message: `pin refused: ${agent}/${id} is a release slot whose slot.json is not a readable clossys.slot/2 slot: a ready-pin needs release.ready` };
-  if (id.includes("#")) throw new CliUsageError(`a #record target is only for a clossys.slot/2 record slot, got ${target}\n${PIN_USAGE}`);
-  if (flags.notNeeded === (candidateId !== undefined)) {
-    throw new CliUsageError(`pin takes either <candidate-id> or --not-needed --reason <text>\n${PIN_USAGE}`);
-  }
-  if (!flags.notNeeded && flags.reason !== undefined) throw new CliUsageError(`--reason is only for --not-needed\n${PIN_USAGE}`);
-  if (flags.notNeeded && flags.basis !== undefined) throw new CliUsageError(`--basis is only for a pin, not --not-needed\n${PIN_USAGE}`);
-  if (!flags.confirm && flags.ref !== undefined) throw new CliUsageError(`--ref is only for --confirm\n${PIN_USAGE}`);
-  if (flags.confirm) {
-    if (flags.notNeeded) throw new CliUsageError(`--confirm confirms an agent pick; it takes no --not-needed\n${PIN_USAGE}`);
-    // A confirmation keeps the agent's basis: never --basis (bulk was the defect, owner Foundry Director round 8).
-    if (flags.basis !== undefined) throw new CliUsageError(`--confirm keeps the agent pick's basis agent; it takes no --basis\n${PIN_USAGE}`);
-    if (!CONFIRMED_BY.test(flags.by)) throw new CliUsageError(`--confirm is the owner's: --by must be owner[:<ref>], got ${flags.by}\n${PIN_USAGE}`);
-    if (!flags.ref?.trim()) throw new CliUsageError(`--confirm requires --ref <ledger ref> (where the owner's words are recorded)\n${PIN_USAGE}`);
-    if (!OWNER_WORDS_REF.test(flags.ref.trim())) throw new CliUsageError(`--confirm --ref must cite the ledger comment that holds the owner's words (${OWNER_WORDS_REF_FORM}), got ${flags.ref.trim()}\n${PIN_USAGE}`);
-  }
-  const basis = flags.notNeeded || flags.confirm ? undefined : pinBasis(flags.by, flags.basis);
-  const consumer = consumerOf(cwd, flags.root);
-  const entry = readSlotEntry(consumer, agent as SlotAgent, id);
-  if (!entry) return { exitCode: 1, message: `pin refused: unknown slot ${agent}/${id} (not in ${agent} ia.json)` };
-  const at = flags.at ?? new Date().toISOString();
-  if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${PIN_USAGE}`);
-  try {
-    if (flags.notNeeded) {
-      if (!flags.reason?.trim()) throw new CliUsageError(`--not-needed requires --reason <text>\n${PIN_USAGE}`);
-      const doc = writeNotNeeded(consumer, agent as SlotAgent, id, { reason: flags.reason, since: at.slice(0, 10), decidedBy: flags.by });
-      return { exitCode: 0, message: `${agent}/${id}: not needed (${doc.notNeeded!.reason}), decided by ${doc.notNeeded!.decidedBy}`, decision: { slot: `${agent}/${id}`, state: "not-needed", ...doc.notNeeded } };
-    }
-    const candidate = resolveCandidate(entry.candidates, candidateId!);
-    if (!candidate) return { exitCode: 1, message: `pin refused: ${agent}/${id} has no candidate ${candidateId}${entry.candidates.length ? ` (candidates: ${entry.candidates.join(", ")})` : " (no candidates)"}` };
-    if (flags.confirm) {
-      const pin = writeConfirm(consumer, agent as SlotAgent, id, candidate, { by: flags.by, ref: flags.ref!.trim(), at });
-      return { exitCode: 0, message: `${agent}/${id}: ${pin.candidate} picked by ${pin.decidedBy} (${pin.basis}), confirmed by ${pin.confirmed!.by} (${pin.confirmed!.ref})`, decision: { slot: `${agent}/${id}`, state: "pinned", ...pin } };
-    }
-    const pin = writePin(consumer, agent as SlotAgent, id, candidate, { decidedBy: flags.by, basis: basis!, at }, undefined, { guard });
-    return { exitCode: 0, message: `${agent}/${id}: pinned ${pin.candidate} (${pin.sha256.slice(0, 12)}), decided by ${pin.decidedBy} (${pin.basis})`, decision: { slot: `${agent}/${id}`, state: "pinned", ...pin } };
-  } catch (error) {
-    if (error instanceof CliUsageError) throw error;
-    if (error instanceof GuardRefusal) return { exitCode: 1, message: `pin refused: ${error.message}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${id}`, verb: error.verb, checks: error.checks, findings: error.findings } };
-    const message = error instanceof Error ? error.message : String(error);
-    return { exitCode: 1, message: /^(?:pin|not-needed|confirm) refused/.test(message) ? message : `pin refused: ${message}` };
-  }
+  // One format (foundry-build-0048 U13): this verb writes clossys.slot/2 and clossys.pin/2 only. A clossys.slot/1 slot
+  // (or a placed slot with no slot.json) is refused: clossys migrate slots converts the store first.
+  const slotId = id.split("#")[0]!;
+  if (isReleaseSlot(agent, slotId) && !isOldTargetSlot(workspace, agent, slotId)) return { exitCode: 1, message: `pin refused: ${agent}/${id} is a release slot whose slot.json is not a readable clossys.slot/2 slot: a ready-pin needs release.ready` };
+  return { exitCode: 1, message: oldSlotRefusal("pin", `${agent}/${slotId}`) };
 }
 
 /**
@@ -200,8 +163,27 @@ function typedAnswerRefusal(root: string, answer: { readonly to: string; readonl
   return undefined;
 }
 
+/** Why a verb refuses a `clossys.slot/1` slot (U13: the verbs write slot/2 and pin/2 only). DRAFT copy (not owner-approved). */
+export const oldSlotRefusal = (verb: string, slot: string): string =>
+  `${verb} refused: ${slot} is a clossys.slot/1 slot; this verb writes clossys.slot/2 and clossys.pin/2 only: run clossys migrate slots --apply first`;
+
+/** True when `<root>/clossys/agents/<agent>/<slot-id>/slot.json` is an old `clossys.slot/1` slot. */
+export function isOldTargetSlot(root: string, agent: string, slotId: string): boolean {
+  const file = join(root, "clossys", "agents", agent, slotId, "slot.json");
+  if (!existsSync(file)) return false;
+  try { return (JSON.parse(readFileSync(file, "utf8")) as { schema?: unknown }).schema === "clossys.slot/1"; } catch { return false; }
+}
+
+/**
+ * The gated slot/2 pin as another verb takes it (pick, approve): the same deciders, queue-answer binding, CHOOSE
+ * gate, scorecard and slot lock as `clossys pin`, writing clossys.pin/2 (or one pin-map record) only.
+ */
+export function pinTargetSlot(root: string, agent: string, target: string, candidate: string, input: { readonly by: string; readonly basis?: string; readonly at?: string }): CliResult {
+  return runTargetPin(root, agent, target, candidate, { positional: [], by: input.by, ...(input.basis !== undefined ? { basis: input.basis } : {}), ...(input.at !== undefined ? { at: input.at } : {}), notNeeded: false, confirm: false, help: false });
+}
+
 /** True when `<root>/clossys/agents/<agent>/<slot-id>/slot.json` is a target `clossys.slot/2` slot. */
-function isTargetSlot(root: string, agent: string, slotId: string): boolean {
+export function isTargetSlot(root: string, agent: string, slotId: string): boolean {
   const file = join(root, "clossys", "agents", agent, slotId, "slot.json");
   if (!existsSync(file)) return false;
   try { return (JSON.parse(readFileSync(file, "utf8")) as { schema?: unknown }).schema === "clossys.slot/2"; } catch { return false; }
@@ -218,7 +200,8 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
   const slotId = hash < 0 ? target : target.slice(0, hash);
   const record = hash < 0 ? undefined : target.slice(hash + 1);
   if (hash >= 0 && !record) throw new CliUsageError(`pin target #<record> is empty\n${PIN_USAGE}`);
-  if (flags.notNeeded || flags.confirm || flags.reason !== undefined || flags.ref !== undefined) {
+  if (flags.confirm) return runTargetConfirm(root, agent, slotId, record, candidateId, flags);
+  if (flags.notNeeded || flags.reason !== undefined || flags.ref !== undefined) {
     throw new CliUsageError(`a clossys.slot/2 pin takes <candidate> [--by] [--basis] [--at] only\n${PIN_USAGE}`);
   }
   if (candidateId === undefined) throw new CliUsageError(`pin requires <candidate>\n${PIN_USAGE}`);
@@ -286,6 +269,56 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
     });
   } catch (error) {
     return { exitCode: 1, message: `pin refused: ${error instanceof Error ? error.message : String(error)}` };
+  }
+}
+
+/**
+ * The owner's confirmation of an agent pick on a clossys.slot/2 slot (U13): the pin/2 (or pin-map record) must be the
+ * agent pick of exactly this candidate, still matching its bytes; the confirmation is added under the slot lock and
+ * the pin is rewritten as clossys.pin/2 with its decider, basis and refs kept. Never a pin/1.
+ */
+function runTargetConfirm(root: string, agent: string, slotId: string, record: string | undefined, candidateId: string | undefined, flags: Flags): CliResult {
+  if (flags.notNeeded) throw new CliUsageError(`--confirm confirms an agent pick; it takes no --not-needed\n${PIN_USAGE}`);
+  if (flags.basis !== undefined) throw new CliUsageError(`--confirm keeps the agent pick's basis agent; it takes no --basis\n${PIN_USAGE}`);
+  if (!CONFIRMED_BY.test(flags.by)) throw new CliUsageError(`--confirm is the owner's: --by must be owner[:<ref>], got ${flags.by}\n${PIN_USAGE}`);
+  if (!flags.ref?.trim()) throw new CliUsageError(`--confirm requires --ref <ledger ref> (where the owner's words are recorded)\n${PIN_USAGE}`);
+  const ref = flags.ref.trim();
+  if (!OWNER_WORDS_REF.test(ref)) throw new CliUsageError(`--confirm --ref must cite the ledger comment that holds the owner's words (${OWNER_WORDS_REF_FORM}), got ${ref}\n${PIN_USAGE}`);
+  if (candidateId === undefined) throw new CliUsageError(`pin --confirm requires <candidate>\n${PIN_USAGE}`);
+  const at = flags.at ?? new Date().toISOString();
+  const atZ = /^\d{4}-\d{2}-\d{2}T/.test(at) ? toIsoZ(at) : undefined;
+  if (!atZ) throw new CliUsageError(`--at must be an ISO timestamp\n${PIN_USAGE}`);
+  const target = `${agent}/${slotId}${record !== undefined ? `#${record}` : ""}`;
+  const lock = join(root, "clossys", "agents", agent, slotId, SLOT_LOCK);
+  try {
+    return withDirLock(lock, "Slot is unavailable or another decision write is in progress", (): CliResult => {
+      const file = pinPath(root, agent as AgentId, slotId);
+      const read = readPinFile(file, { agent: agent as AgentId, slotId });
+      if (read.kind !== "pin" && read.kind !== "pin-map") return { exitCode: 1, message: `confirm refused: ${target} has no clossys.pin/2 agent pick to confirm${read.kind === "none" ? "" : ` (${read.issues.join("; ")})`}` };
+      const held = read.kind === "pin-map" ? (record !== undefined ? read.doc.records[record] : undefined) : record === undefined ? read.doc : undefined;
+      if (!held) return { exitCode: 1, message: `confirm refused: ${target} names no pinned record` };
+      if (held.basis !== "agent") return { exitCode: 1, message: `confirm refused: ${target} is pinned with basis ${held.basis}; only an agent pick is confirmed` };
+      if (held.candidate !== candidateId && held.candidate.replace(/\.(?:md|json|svg)$/, "") !== candidateId) return { exitCode: 1, message: `confirm refused: ${target} holds the agent pick ${held.candidate}, not ${candidateId}` };
+      if (held.confirmed) return { exitCode: 1, message: `confirm refused: ${target} ${held.candidate} is already confirmed (${held.confirmed.ref})` };
+      const bytes = readFileSync(candidatePath(root, agent as AgentId, slotId, held.candidate));
+      if (sha256Hex(bytes) !== held.sha256) return { exitCode: 1, message: `confirm refused: ${target} ${held.candidate} bytes no longer match the pick's sha256` };
+      if (Date.parse(atZ) < Date.parse(held.at)) return { exitCode: 1, message: `confirm refused: --at ${atZ} is before the pick (${held.at})` };
+      const pinRecord: PinRecord = { candidate: held.candidate, sha256: held.sha256, decidedBy: held.decidedBy, basis: held.basis, at: held.at, confirmed: { by: "owner", ref, at: atZ } };
+      let doc;
+      if (read.kind === "pin-map") {
+        doc = setPinMapRecord(read.doc, { agent: agent as AgentId, slotId, record: record!, pin: pinRecord, refs: [], createdBy: cliActor("clossys pin"), at: atZ })!;
+        const issues = pinMapIssues(doc, { agent: agent as AgentId, slotId });
+        if (issues.length) return { exitCode: 1, message: `confirm refused: ${issues.join("; ")}` };
+      } else {
+        doc = buildPin({ agent: agent as AgentId, slotId, record: pinRecord, refs: read.doc.refs, createdBy: cliActor("clossys pin"), previous: read.doc });
+        const issues = pinIssues(doc, { agent: agent as AgentId, slotId });
+        if (issues.length) return { exitCode: 1, message: `confirm refused: ${issues.join("; ")}` };
+      }
+      writePinDoc(file, doc);
+      return { exitCode: 0, message: `${target}: ${held.candidate} picked by ${held.decidedBy} (${held.basis}), confirmed by owner (${ref})`, output: doc, decision: { slot: target, state: "pinned", ...pinRecord } };
+    });
+  } catch (error) {
+    return { exitCode: 1, message: `confirm refused: ${error instanceof Error ? error.message : String(error)}` };
   }
 }
 

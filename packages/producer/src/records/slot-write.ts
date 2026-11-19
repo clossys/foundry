@@ -24,7 +24,9 @@ import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlo
 import { isCurrentSlot, slotReadIssues } from "./slot-current.js";
 import { serializeSlot } from "./slot.js";
 import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
-import type { Slot } from "./types.js";
+import type { AgentId, CandidateHeader, Iso, Slot } from "./types.js";
+import { buildCandidateHeader, readCandidateFile, serializeCandidate } from "./candidate.js";
+import { cliActor, toIsoZ } from "./pin.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, skillFile, skillPath,
   type LedgerEvent, type LedgerRecordState, type LedgerSkill, type Provenance, type RecordFile, type Verb,
@@ -803,6 +805,10 @@ export interface ReissueInput {
   readonly rung: string;
   readonly by: string;
   readonly at: string;
+  /** A Markdown candidate's own front matter fields beside its clossys header, kept on the next version. */
+  readonly front?: Readonly<Record<string, unknown>>;
+  /** The old candidate's header when its file carries none (a candidate submitted before headers: the recut mapping of it). */
+  readonly oldHeader?: { readonly record?: string; readonly refs: readonly unknown[]; readonly source: unknown; readonly rationale: readonly unknown[] };
 }
 export interface ReissueResult {
   readonly name: string;
@@ -851,9 +857,25 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
     const ext = KIND_EXT[doc.kind];
     const leaf = id.split(".").at(-1)!;
     const file = `${leaf}-v${nextVersion(current.dir, current.candidates)}.${ext}`;
-    const bytes = ext === "md" ? String(input.content) : jsonBytes(input.content);
-    const issues = validateCandidate(doc.kind, id, file, bytes);
+    const contentBytes = ext === "md" ? String(input.content) : jsonBytes(input.content);
+    const issues = validateCandidate(doc.kind, id, file, contentBytes);
     if (issues.length) throw new Error(`reissue refused: ${issues.map(issue => issue.message).join("; ")}`);
+    // One format (foundry-build-0048 U13): a clossys.slot/2 slot takes a headered clossys.candidate/1 file only; the
+    // reissue carries the old header's record, refs, source and rationale to a fresh header naming clossys reissue.
+    // A slot/1 slot is refused (clossys migrate slots converts it): no reissue writes a slot/1 or a pin/1.
+    let raw: unknown;
+    try { raw = JSON.parse(readFileSync(slotFile(entry.dir), "utf8")); } catch { raw = undefined; }
+    if (!isCurrentSlot(raw)) throw new Error(`reissue refused: ${agent}/${id} is not a clossys.slot/2 slot; this verb writes clossys.slot/2 and clossys.pin/2 only: run clossys migrate slots --apply first`);
+    const oldHeader = readCandidateFile(join(candidatesDir(entry.dir), input.old), { agent: agent as AgentId, slotId: id }).header ?? input.oldHeader as CandidateHeader | undefined;
+    if (!oldHeader) throw new Error(`reissue refused: ${input.old} has no clossys.candidate/1 header`);
+    const header = buildCandidateHeader({
+      agent: agent as AgentId, slotId: id, name: file, status: "submitted",
+      createdBy: cliActor("clossys reissue"),
+      createdAt: toIsoZ(input.at) ?? (input.at as Iso),
+      ...(oldHeader.record !== undefined ? { record: oldHeader.record } : {}),
+      refs: [...oldHeader.refs], source: oldHeader.source, rationale: [...oldHeader.rationale],
+    });
+    const bytes = serializeCandidate(file, header, ext === "md" ? String(input.content) : input.content, input.front ?? {});
     const ledger = readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
     const events = (ledger?.events ?? []) as unknown as Record<string, unknown>[];
     const recorded = recordedSha(events, input.old);
@@ -877,6 +899,10 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
       writeFileSync(path, bytes, { flag: "wx" });
       forgetSlotReads();
       const sha256 = readCandidate(consumer, agent, id, file).sha256;
+      if (usesChanged) {
+        // A slot/2 slot's uses are refs: moving registryDependencies into them is an IA change, not a reissue.
+        throw new Error(`reissue refused: ${input.old} moves registryDependencies into uses (${uses!.join(", ")}); a clossys.slot/2 slot changes its refs through clossys ia`);
+      }
       if (usesChanged) {
         const next: SlotDoc = { ...doc, uses: uses! };
         const slotIssues = validateSlotDoc(next, slotFile(entry.dir));
