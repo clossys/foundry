@@ -47,6 +47,31 @@
           "raise": "queue.fix",
           "then": "loop.choose"
         }
+      },
+      {
+        "id": "impact",
+        "does": "DRAFT: the owner of the repinned slot reads what its repin changed and the re-verdicts of its dependants, and notes the impact in its own check scratch; it pins nothing and writes no other agent's tree",
+        "decider": {
+          "by": "agent",
+          "agent": "director",
+          "verb": "check",
+          "tier": "mid",
+          "skill": "packages/director/actions/director.cascade/skill.md"
+        },
+        "cli": "clossys slot <ref> --json",
+        "reads": [
+          "<slot>/slot.json",
+          "<slot>/pin.json",
+          ".clossys/checks/"
+        ],
+        "writes": [
+          ".clossys/checks/<agent>/<slot-id>/scratch/impact.md"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
       }
     ],
     "exit": "every pinned candidate whose pinSet changed is judged on the pinSet now and certifies; release can run",

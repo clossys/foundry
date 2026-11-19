@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   AGENT_LOOPS, LOOP_AGENTS, agentLoopIssues, agentWriteClass, loopConnectedIssues, loopExtensionIssues, packageLoopSet, pathPattern, patternsMeet,
-  readAgentPackageLoop, standardOf, type AgentLoopName, type LoopAgent, type LoopSet,
+  readAgentPackageLoop, readPatterns, requiredSteps, standardOf, type AgentLoopName, type LoopAgent, type LoopSet,
 } from "./agent-loops.js";
 import type { LoopVersion } from "../records/types.js";
 
@@ -272,10 +272,31 @@ describe("loop.connected", () => {
 
   it("refuses a removed handoff consumer (mutation: designer no longer reads director pins)", () => {
     const set = packageLoopSet();
-    const create = pkg("designer", "loop.create");
-    for (const step of create.steps) step.reads = step.reads.filter(path => path !== "director/*/pin.json");
-    const issues = loopConnectedIssues(withVersion(set, "designer", "loop.create", create));
-    expect(issues).toContain("handoff director -> designer: no step of designer's loops reads what director's loops write (its pins); the chain is broken here");
+    const broken = "handoff director -> designer: no step of designer's loops reads what director's loops write (its pins); the chain is broken here";
+    const create = pkg("designer", "loop.create"), choose = pkg("designer", "loop.choose");
+    for (const step of [...create.steps, ...choose.steps]) step.reads = step.reads.filter(path => path !== "director/*/pin.json");
+    // Create and choose both read Director's pins: either one alone keeps the handoff.
+    expect(loopConnectedIssues(withVersion(set, "designer", "loop.create", create))).not.toContain(broken);
+    const issues = loopConnectedIssues(withVersion(withVersion(set, "designer", "loop.create", create), "designer", "loop.choose", choose));
+    expect(issues).toContain(broken);
+  });
+
+  it("Producer's standard create and choose read the pins upstream of the slot's owner (<upstream>), never for Director", () => {
+    expect(readPatterns("<upstream>/*/pin.json", "designer")).toEqual([["director", "*", "pin.json"]]);
+    expect(readPatterns("<upstream>/*/pin.json", "writer")).toEqual([["director", "*", "pin.json"]]);
+    expect(readPatterns("<upstream>/*/pin.json", "publisher")).toEqual([["designer", "*", "pin.json"], ["writer", "*", "pin.json"]]);
+    expect(readPatterns("<upstream>/*/pin.json", "director")).toEqual([]);
+    expect(readPatterns("<slot>/slot.json", "writer")).toEqual([["writer", "*", "slot.json"]]);
+    // A set whose agents run only Producer's standards (what a consumer holding no loop slots runs) wires every handoff.
+    const set = packageLoopSet();
+    const standards = new Map([...set.versions].map(([agent, loops]) => [agent, new Map([...loops].map(([loop]) => {
+      const own = standard(loop);
+      return [loop, { ...own, steps: requiredSteps(own, agent) }] as const;
+    }))] as const));
+    expect(loopConnectedIssues({ ...set, versions: standards }).filter(issue => issue.startsWith("handoff "))).toEqual([]);
+    // Mutation: the standards' upstream reads dropped, the Director handoffs break.
+    const dropped = new Map([...standards].map(([agent, loops]) => [agent, new Map([...loops].map(([loop, version]) => [loop, { ...version, steps: version.steps.map(step => ({ ...step, reads: (step.reads ?? []).filter(path => !path.startsWith("<upstream>")) })) }] as const))] as const));
+    expect(loopConnectedIssues({ ...set, versions: dropped }).filter(issue => issue.startsWith("handoff director"))).toHaveLength(2);
   });
 
   it("refuses an output nothing consumes (mutation: writer create writes notes nobody reads)", () => {

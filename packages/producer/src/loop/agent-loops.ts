@@ -368,6 +368,20 @@ export function pathPattern(path: string, agent: LoopAgent | "*"): string[] | un
   return segments;
 }
 
+/** The agents whose pins flow into this agent by a chain handoff (CHAIN_HANDOFFS): Director for Designer and Writer. */
+export const upstreamOf = (agent: LoopAgent): LoopAgent[] => CHAIN_HANDOFFS.filter(([, down]) => down === agent).map(([up]) => up);
+
+/**
+ * The patterns of a read path in an agent step: `pathPattern`, except that a leading `<upstream>` (a standard step's
+ * read of what the agents upstream of the slot's owner pinned) is one pattern per upstream agent of `agent`, and none
+ * for an agent with no upstream (Director) or a Producer standard step (`*`).
+ */
+export function readPatterns(path: string, agent: LoopAgent | "*"): string[][] {
+  if (!/^<upstream>(?=\/|$)/.test(path)) { const pattern = pathPattern(path, agent); return pattern ? [pattern] : []; }
+  if (agent === "*") return [];
+  return upstreamOf(agent).flatMap(up => { const pattern = pathPattern(path.replace(/^<upstream>/, up), agent); return pattern ? [pattern] : []; });
+}
+
 const segmentRegex = (segment: string) => new RegExp(`^${segment.split("*").map(part => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*")}$`);
 function segmentsMeet(a: string, b: string): boolean {
   if (a === "*" || b === "*" || a === "**" || b === "**" || a === b) return true;
@@ -441,7 +455,7 @@ export function loopConnectedIssues(set: LoopSet): string[] {
       for (const step of stepsOf(content)) {
         const ref = `${agent}/${loop}`;
         if (isAgentStep(step)) {
-          for (const path of step.reads ?? []) { const pattern = pathPattern(path, agent); if (pattern) reads.push(pattern); }
+          for (const path of step.reads ?? []) reads.push(...readPatterns(path, agent));
           for (const path of step.writes ?? []) {
             // (d): judged by the same allowlist the extension rule and the runner use.
             const issue = agentStepWriteIssue(agent, ref, step, path, standard);

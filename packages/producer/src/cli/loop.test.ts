@@ -123,13 +123,14 @@ describe("clossys loop", () => {
     expect(tree(join(root, "clossys"))).toEqual(before);
     // No vacuous pass: the fixture's IA places director, designer and writer (Publisher's IA is empty) and holds none
     // of their loop slots, so loop.agent-standard is red with every loop of those three missing. The loops that run
-    // are Producer's standards, which wire no agent handoff of their own, so loop.connected is red too.
+    // are Producer's standards; their create and choose read the pins upstream of the slot's owner (U26), so they
+    // wire the Director handoffs and loop.connected finds none broken.
     const missing = runLoopAgentStandard(root).findings;
     expect(missing).toHaveLength(3 * AGENT_LOOPS.length);
     expect(missing.some(finding => finding.subject.startsWith("publisher/"))).toBe(false);
     for (const finding of missing) expect(finding.detail, finding.subject).toMatch(/^missing: the consumer places [a-z]+ but holds none of its loop slots/);
     // Handoffs are judged only between agents the consumer runs: publisher, unplaced, is in none.
-    expect(runLoopConnected(root).findings.map(finding => finding.subject)).toEqual(["handoff director -> designer", "handoff director -> writer"]);
+    expect(runLoopConnected(root).findings.map(finding => finding.subject)).toEqual([]);
   }, LONG);
 
   it("never replaces a pin that is there but does not resolve (an owner pin stays the owner's)", async () => {
@@ -254,17 +255,23 @@ describe("loop.agent-standard on a consumer (mutation-proven)", () => {
 describe("loop.connected on a consumer (mutation-proven)", () => {
   it("refuses a pinned version that stops reading the upstream agent's pins (a broken handoff)", async () => {
     const root = copy();
-    for (const agent of LOOP_AGENTS) expect((await loop(root, `${agent}/loop.create`)).exitCode, agent).toBe(0);
+    for (const agent of LOOP_AGENTS) for (const name of ["loop.create", "loop.choose"]) expect((await loop(root, `${agent}/${name}`)).exitCode, `${agent}/${name}`).toBe(0);
     expect(runLoopConnected(root).findings).toEqual([]);
-    // Mutation: designer's pinned create no longer reads anything of Director's (its pin sha forged to match).
-    const dir = slotDir(root, "designer", "loop.create");
-    const file = join(dir, "candidates", "create-v1.json");
-    const doc = readJson(file);
-    for (const step of doc.content.steps) step.reads = (step.reads as string[]).filter(path => !/director/.test(path));
-    const bytes = `${JSON.stringify(doc, null, 2)}\n`;
-    writeFileSync(file, bytes);
-    const pin = readJson(join(dir, "pin.json"));
-    writeFileSync(join(dir, "pin.json"), `${JSON.stringify({ ...pin, sha256: createHash("sha256").update(bytes).digest("hex") }, null, 2)}\n`);
+    // Mutation: designer's pinned create and choose no longer read anything of Director's (their pin shas forged to match).
+    const unread = (name: string, file: string) => {
+      const dir = slotDir(root, "designer", name);
+      const path = join(dir, "candidates", file);
+      const doc = readJson(path);
+      for (const step of doc.content.steps) step.reads = (step.reads as string[]).filter(read => !/director/.test(read));
+      const bytes = `${JSON.stringify(doc, null, 2)}\n`;
+      writeFileSync(path, bytes);
+      const pin = readJson(join(dir, "pin.json"));
+      writeFileSync(join(dir, "pin.json"), `${JSON.stringify({ ...pin, sha256: createHash("sha256").update(bytes).digest("hex") }, null, 2)}\n`);
+    };
+    unread("loop.create", "create-v1.json");
+    // Choose alone still reads Director's pins: the handoff holds.
+    expect(runLoopConnected(root).findings).toEqual([]);
+    unread("loop.choose", "choose-v1.json");
     expect(runLoopConnected(root).findings).toContainEqual(expect.objectContaining({ subject: "handoff director -> designer" }));
   }, LONG);
 });
