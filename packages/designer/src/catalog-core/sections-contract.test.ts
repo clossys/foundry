@@ -79,6 +79,21 @@ function undoInteractiveBackdrop<T extends { id: string; contract: object }>(slo
   return { ...slot, contract } as T;
 }
 
+/**
+ * foundry-build-0048 U23 (owner 2026-11-18): every media slot declares placement (figure | backdrop) and every figure its
+ * alt; the hero drops contract.interactive (opt-in is now the backdrop-placed slot). Undo exactly that edit: strip the two
+ * slot keys everywhere and restore the hero's retired list in its prior key position.
+ */
+function undoMediaPlacement<T extends { id: string; contract: object }>(slot: T): T {
+  const contract = slot.contract as Record<string, unknown> & { slots?: Record<string, unknown>[] };
+  const slots = contract.slots?.map(row => { const { placement: _placement, alt: _alt, ...rest } = row; return rest; });
+  const entries = Object.entries({ ...contract, ...(slots ? { slots } : {}) });
+  if (slot.id !== "sections.hero") return { ...slot, contract: Object.fromEntries(entries) } as T;
+  const at = entries.findIndex(([key]) => key === "requirements");
+  entries.splice(at, 0, ["interactive", { components: ["particle-field", "gradient-mesh", "grid-glow"] }]);
+  return { ...slot, contract: Object.fromEntries(entries) } as T;
+}
+
 describe("S2-1 bounded section composition reconciliation", () => {
   it.each(Object.entries(reconciledComposes))("pins the exact component permissions for %s", (leaf, components) => {
     expect(loadSectionRegistry().slots.find(slot => slot.id === id(leaf))!.contract.allowedComposes)
@@ -92,7 +107,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
       for (const component of slot.contract.allowedComposes) expect(component).toMatch(/^components\./);
     }
     // SCROLL-1 A158/A159/A161: stats, TOC label, typed table cells and native band header are the exact new contract delta; keep existing normalization and unrelated pins unchanged.
-    const invariant = slots.filter(slot => !isWaveOne(slot) && !isLater(slot) && !isAdminRecord(slot) && slot.id !== "sections.logo-hero").map(undoInteractiveBackdrop).map(slot => {
+    const invariant = slots.filter(slot => !isWaveOne(slot) && !isLater(slot) && !isAdminRecord(slot) && slot.id !== "sections.logo-hero").map(undoMediaPlacement).map(undoInteractiveBackdrop).map(slot => {
       // foundry-build-0032 (audit P3/P7): undo exactly its two edits (twin media, stats sparkline) so this pin stays the prior digest.
       const { substrates: _substrates, substrateTests: _tests, copy: _copy, passageSchema: _passage, media: _media, ...unmedia } = slot.contract as typeof slot.contract & { media?: readonly string[] };
       const rest = slot.id === "sections.stats" ? { ...unmedia, allowedComposes: ["components.chart-sparkline", ...unmedia.allowedComposes] } : unmedia;
@@ -117,9 +132,14 @@ describe("S2-1 bounded section composition reconciliation", () => {
     // field moved.
     // foundry-build-0048 A4: the hero contract gains interactive and its interactive.backdrop requirement; re-pinned from the data. Undoing exactly that
     // edit restores the prior digest, so no other base field moved.
+    // foundry-build-0048 U23: every media slot declares placement (figure rows also alt) and the hero opts in through its
+    // backdrop-placed slot instead of contract.interactive; re-pinned from the data. undoMediaPlacement restores the A4 digest.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
+      .toBe("fdf86d560a377b2be9cc37f95b76a8dace74c0960f4ef8f2a1ffa396b600e2db");
+    const placed = original.map(undoMediaPlacement);
+    expect(createHash("sha256").update(JSON.stringify(placed)).digest("hex"))
       .toBe("570cba831b9687a21258754d8594749a08a7dad372555713f9e0de73746c111e");
-    const undone = original.map(undoInteractiveBackdrop);
+    const undone = placed.map(undoInteractiveBackdrop);
     expect(createHash("sha256").update(JSON.stringify(undone)).digest("hex"))
       .toBe("07423991983d04ee30d7665e4e819f52c92e1a1d6f485e631857b5f5a7352504");
     type Row = (typeof original)[number] & { contract: Record<string, unknown> };
@@ -140,7 +160,11 @@ describe("S2-1 bounded section composition reconciliation", () => {
     } : slot).sort((a, b) => a.id.localeCompare(b.id));
     expect(additions.map(slot => slot.id)).toEqual(waveOneIds.filter(slotId => slotId !== id("error-message")));
     // foundry-build-0018 fix r1: sign-in-form actions.divider is a label (budget 160), not an action.
+    // foundry-build-0048 U23: media slots declare placement (figure rows also alt); re-pinned from the data, and undoing exactly
+    // that edit restores the prior digest.
     expect(createHash("sha256").update(JSON.stringify(additions)).digest("hex"))
+      .toBe("1d391dad9cf1c5de452f17a460527eece42ae53ccadbce20ae6af1c15f3b8cf4");
+    expect(createHash("sha256").update(JSON.stringify(additions.map(undoMediaPlacement))).digest("hex"))
       .toBe("e431609cdec2064100fbdd38a08b2f67cefd6f0076aa0874e23415bfc750a6a9");
   });
 });

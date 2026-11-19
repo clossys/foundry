@@ -151,7 +151,11 @@
       {
         "name": "illustration",
         "type": "media",
-        "required": false
+        "required": false,
+        "placement": "figure",
+        "alt": {
+          "copy": "illustration.label"
+        }
       },
       {
         "name": "actions",

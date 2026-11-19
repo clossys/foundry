@@ -159,7 +159,11 @@
       {
         "name": "logos",
         "type": "media",
-        "required": true
+        "required": true,
+        "placement": "figure",
+        "alt": {
+          "copy": "logos[].name"
+        }
       }
     ],
     "members": {

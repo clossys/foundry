@@ -147,7 +147,11 @@
       {
         "name": "figure",
         "type": "media",
-        "required": true
+        "required": true,
+        "placement": "figure",
+        "alt": {
+          "copy": "figure.media.title"
+        }
       },
       {
         "name": "callouts",

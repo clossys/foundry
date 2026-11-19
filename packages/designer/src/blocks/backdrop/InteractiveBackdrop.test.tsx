@@ -37,7 +37,9 @@ beforeEach(() => {
   getContext = vi.fn(() => context);
   (HTMLCanvasElement.prototype as unknown as { getContext: unknown }).getContext = getContext;
   const computed = window.getComputedStyle.bind(window);
-  vi.spyOn(window, "getComputedStyle").mockImplementation(element => (element instanceof HTMLElement && element.hasAttribute("data-backdrop-probe") ? ({ color: "rgb(10, 20, 30)" } as CSSStyleDeclaration) : computed(element)));
+  // The probe reports its painted colour; every other property reads as unset, as a real declaration would.
+  const probe = { color: "rgb(10, 20, 30)", getPropertyValue: (name: string) => (name === "color" ? "rgb(10, 20, 30)" : "") };
+  vi.spyOn(window, "getComputedStyle").mockImplementation(element => (element instanceof HTMLElement && element.hasAttribute("data-backdrop-probe") ? (probe as unknown as CSSStyleDeclaration) : computed(element)));
 });
 afterEach(() => {
   vi.unstubAllGlobals();

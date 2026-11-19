@@ -209,7 +209,11 @@
       {
         "name": "media",
         "type": "media",
-        "required": false
+        "required": false,
+        "placement": "figure",
+        "alt": {
+          "copy": "media.title"
+        }
       },
       {
         "name": "footnote",

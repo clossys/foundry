@@ -139,7 +139,11 @@
       {
         "name": "images",
         "type": "media",
-        "required": true
+        "required": true,
+        "placement": "figure",
+        "alt": {
+          "copy": "images.items[].label"
+        }
       }
     ],
     "members": {
