@@ -371,12 +371,21 @@ export function pathPattern(path: string, agent: LoopAgent | "*"): string[] | un
 /** The agents whose pins flow into this agent by a chain handoff (CHAIN_HANDOFFS): Director for Designer and Writer. */
 export const upstreamOf = (agent: LoopAgent): LoopAgent[] => CHAIN_HANDOFFS.filter(([, down]) => down === agent).map(([up]) => up);
 
+/** Why a path names `<upstream>` where it may not: only a read may, and only as its whole first segment. */
+export function upstreamIssue(path: string, use: "read" | "write"): string | undefined {
+  if (!path.includes("<upstream>")) return undefined;
+  if (use === "write") return "<upstream> names only a read";
+  return /^<upstream>(?=\/|$)/.test(path) && !path.slice("<upstream>".length).includes("<upstream>") ? undefined : "<upstream> stands only as the first segment of a read path";
+}
+
 /**
  * The patterns of a read path in an agent step: `pathPattern`, except that a leading `<upstream>` (a standard step's
  * read of what the agents upstream of the slot's owner pinned) is one pattern per upstream agent of `agent`, and none
- * for an agent with no upstream (Director) or a Producer standard step (`*`).
+ * for an agent with no upstream (Director) or a Producer standard step (`*`). A path naming `<upstream>` anywhere else
+ * (`upstreamIssue`) reads nothing: it never stands for every agent.
  */
 export function readPatterns(path: string, agent: LoopAgent | "*"): string[][] {
+  if (upstreamIssue(path, "read") !== undefined) return [];
   if (!/^<upstream>(?=\/|$)/.test(path)) { const pattern = pathPattern(path, agent); return pattern ? [pattern] : []; }
   if (agent === "*") return [];
   return upstreamOf(agent).flatMap(up => { const pattern = pathPattern(path.replace(/^<upstream>/, up), agent); return pattern ? [pattern] : []; });
@@ -444,7 +453,7 @@ export function loopConnectedIssues(set: LoopSet): string[] {
   const producerReads: string[][] = [];
   for (const loop of CONNECTION_LOOPS) {
     if (loop === "loop.audit") continue;
-    for (const step of stepsOf(set.standards.get(loop))) if (!isAgentStep(step)) for (const path of step.reads ?? []) { const pattern = pathPattern(path, "*"); if (pattern) producerReads.push(pattern); }
+    for (const step of stepsOf(set.standards.get(loop))) if (!isAgentStep(step)) for (const path of step.reads ?? []) producerReads.push(...readPatterns(path, "*"));
   }
   const agentReads = new Map<LoopAgent, string[][]>();
   const agentWrites = new Map<LoopAgent, { loop: AgentLoopName; step: string; path: string; pattern: string[] }[]>();
@@ -455,8 +464,14 @@ export function loopConnectedIssues(set: LoopSet): string[] {
       for (const step of stepsOf(content)) {
         const ref = `${agent}/${loop}`;
         if (isAgentStep(step)) {
-          for (const path of step.reads ?? []) reads.push(...readPatterns(path, agent));
+          for (const path of step.reads ?? []) {
+            const misplaced = upstreamIssue(path, "read");
+            if (misplaced !== undefined) issues.push(`${ref}: step ${step.id} reads ${path}; ${misplaced}`);
+            reads.push(...readPatterns(path, agent));
+          }
           for (const path of step.writes ?? []) {
+            const misplaced = upstreamIssue(path, "write");
+            if (misplaced !== undefined) issues.push(`${ref}: step ${step.id} writes ${path}; ${misplaced}`);
             // (d): judged by the same allowlist the extension rule and the runner use.
             const issue = agentStepWriteIssue(agent, ref, step, path, standard);
             if (issue !== undefined) issues.push(issue);

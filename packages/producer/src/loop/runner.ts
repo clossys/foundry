@@ -619,9 +619,10 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
         ...(skill ? { skill } : {}), ...(subject ? { ref: refOf(subject) } : {}), ...(state.from ? { from: state.from } : {}),
         ...(state.request ? { request: state.request } : {}),
       };
-      // U9a fix round 4 (blind2 B1): an agent step of an agent's own loop is judged by what it changed, not only by
-      // what it reports: the tree before it is kept in the run state while the run waits; a resume without it stops.
-      const ownLoop = !state.version.ref.startsWith("producer/") && isAgentLoop(state.loop);
+      // U9a fix round 4 (blind2 B1): an agent step of an agent loop is judged by what it changed, not only by what it
+      // reports: the tree before it is kept in the run state while the run waits; a resume without it stops.
+      // foundry-build-0048 U26 (r1 B1): Producer's standard version is judged the same way as an agent's own version.
+      const ownLoop = isAgentLoop(state.loop);
       let before: TreeFiles | undefined;
       if (ownLoop) {
         if (held && state.waiting?.on === "agent") {
@@ -836,16 +837,17 @@ function ownNewRequest(root: string, file: string, agent: LoopAgent): boolean {
  * through `..`, through a symlink or a hard link (`agentWriteRef`), a Producer-owned file (anything but what the
  * standard's own step of that id declares, filled for the run, or the agent write allowlist `agentWriteClass`; a slot
  * request under the allowlist must be a new one the agent raised), or matching none of the step's `writes` (with
- * `<slot>` the run's own slot). Empty for a Producer version. The runner judges the files the step reports (the
- * resumer's `--wrote` list or the code hook's outcome) and refuses symlinked and hard-linked ones; a write the step does
- * not report is caught by the snapshot diff (agent-snapshot.ts) before this runs.
+ * `<slot>` the run's own slot). Producer's standard version is judged the same way (foundry-build-0048 U26 r1 B1: its
+ * agent steps write only what they declare); empty only for a Producer version of a loop that is not an agent loop.
+ * The runner judges the files the step reports (the resumer's `--wrote` list or the code hook's outcome) and refuses
+ * symlinked and hard-linked ones; a write the step does not report is caught by the snapshot diff (agent-snapshot.ts) before this runs.
  *
  * U9a fix round 4 (blind1 B1): a slot request and a candidate are create-only: one that was in `before` (the snapshot
  * taken before the step) is refused, unless the standard's own step names that exact file (loop.slot's decide step
  * answers its own `<request>` entry). Without a snapshot every write is refused (fail closed).
  */
 export function undeclaredWrites(root: string, state: RunState, step: LoopStep, wrote: readonly string[] | undefined, before: TreeFiles | undefined): string[] {
-  if (state.version.ref.startsWith("producer/") || step.decider.by !== "agent" || !wrote?.length) return [];
+  if ((state.version.ref.startsWith("producer/") && !isAgentLoop(state.loop)) || step.decider.by !== "agent" || !wrote?.length) return [];
   const agent = state.agent ?? state.subject?.agent;
   if (agent === undefined || !isLoopAgent(agent) || before === undefined) return [...wrote];
   const slot = state.subject ? `${state.subject.agent}/${state.subject.slotId}` : undefined;

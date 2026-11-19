@@ -13,6 +13,7 @@
       "cea41c2e485e4079401e92870f0d00953360c3e319d8d02f7862aad0885bc767"
     ],
     "packages/designer/actions/designer.cascade/skill.md": [
+      "53862cdd3e8e87daf48279c0272a8b36f5a090cce0d78cd6c75a63535ec69394",
       "954fa9e9021168331c9d7857904808a4ae87e39efc22b7487e0b655a75852f73"
     ],
     "packages/designer/actions/designer.scope/skill.md": [
@@ -40,7 +41,8 @@
       "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
     ],
     "packages/director/actions/director.cascade/skill.md": [
-      "68f4e7e071a796445c41643bc84b1be74158c6415ff50478c56ba2d0c8b3545d"
+      "68f4e7e071a796445c41643bc84b1be74158c6415ff50478c56ba2d0c8b3545d",
+      "7b9f49d7c38e91b074c2b1275a61add0a10d038bf71265c539eedb8050cf7084"
     ],
     "packages/director/actions/director.scope/skill.md": [
       "3e0eaf03a9d3d8e371e7e85720c70eeabb7ee8eb8e0725f3fc084cc48d1e255a"
@@ -125,7 +127,8 @@
       "c7f82644c9d1512bb7e80e72bf622342e0a05384cd6afbeb3c3ae0856d28a19b"
     ],
     "packages/publisher/actions/publisher.cascade/skill.md": [
-      "1ffa9e6bdeb021653fc06c7a4469a8193fecd52b9639d9435242fa3fa6711167"
+      "1ffa9e6bdeb021653fc06c7a4469a8193fecd52b9639d9435242fa3fa6711167",
+      "4ff808b807a045a71463815c181b72b88912517f46111aca7e5783c7fe4a9074"
     ],
     "packages/publisher/actions/publisher.scope/skill.md": [
       "6e7cfd161331412740a3a215a9f91089494efb98534df793323ef9c8ecbc5e40"
@@ -152,7 +155,8 @@
       "eeeab7f4307153953c1b2b51b4a599a30066b166542148df50f5693073fe22ee"
     ],
     "packages/writer/actions/writer.cascade/skill.md": [
-      "42d07afb46ed858045c838d2118cf40e44eb58ccc8621cd8522cae826907b6e5"
+      "42d07afb46ed858045c838d2118cf40e44eb58ccc8621cd8522cae826907b6e5",
+      "96a34eeee10cc40aa2836b9f28df9c7ab83ecb70dc68d9d57462f5c87b00cdca"
     ],
     "packages/writer/actions/writer.scope/skill.md": [
       "93a93a08e111e2afeb8cd3ff79b1662f8ff01cb58e423459d5f72d7ca85f51b0"

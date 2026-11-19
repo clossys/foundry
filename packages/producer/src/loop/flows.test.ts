@@ -931,7 +931,9 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     writeFileSync(join(w.root, "contract.json"), JSON.stringify({ requirements: [{ check: "text.nonempty" }] }));
     const decided = await w.cli("request", id, "--decide", "create", "--propose", "narratives.faq", "--under", "prose.reference/help", "--inputs", "director/focus.segment.core", "--contract", join(w.root, "contract.json"), "--by", "writer");
     expect(decided.exitCode, decided.message).toBe(0);
-    const sign = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
+    // The decide step changed its request entry, so the resume reports it: Producer's standard version is judged by
+    // what the step changed too, and an unreported change stops the run (foundry-build-0048 U26).
+    const sign = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `producer/queue.slot/entries/${id}.json`);
     const entry = /sign waits for the owner on (queue\.approve#\S+)/.exec(sign.message ?? "")![1]!;
     // Unsigned, the leaf is not placed: closing a create takes the owner's signature.
     const unsigned = await w.cli("request", id, "--close");
@@ -982,7 +984,7 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     // Reuse instead: no owner entry is raised, the requester is linked, the reused slot is not written.
     const reused = readFileSync(join(w.root, "clossys", "agents", "writer", "narratives.guide", "ledger.json"), "utf8");
     expect((await w.cli("request", id, "--decide", "reuse", "--slot", "writer/narratives.guide", "--by", "writer")).exitCode).toBe(0);
-    const done = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
+    const done = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `producer/queue.slot/entries/${id}.json`);
     expect(done.message).not.toMatch(/sign waits for the owner/);
     expect(done.message).toMatch(/done: loop\.slot done/);
     expect(done.exitCode).toBe(0);
@@ -1007,7 +1009,7 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     const decided = await w.cli("request", id, "--decide", "create", "--propose", "narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", "--inputs", inputs.slice(1).join(","), "--overlap-reason", reason, "--contract", join(w.root, "contract.json"), "--by", "writer");
     expect(decided.exitCode, decided.message).toBe(0);
     expect(w.read(`producer/queue.slot/entries/${id}.json`)).toMatchObject({ decision: "create", overlapReason: reason, overlaps: [{ slot: "writer/narratives.guide" }], proposal: { inputs: inputs.slice(1) } });
-    const sign = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
+    const sign = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `producer/queue.slot/entries/${id}.json`);
     const entry = /sign waits for the owner on (queue\.approve#\S+)/.exec(sign.message ?? "")![1]!;
     expect((await w.cli("answer", entry, "approve", "--by", "owner", "--via", "chat", "--quote", "a how-to is its own leaf")).exitCode).toBe(0);
     const done = await w.run("loop.slot", "--resume", "--run", runId);

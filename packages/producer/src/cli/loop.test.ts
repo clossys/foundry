@@ -129,7 +129,8 @@ describe("clossys loop", () => {
     expect(missing).toHaveLength(3 * AGENT_LOOPS.length);
     expect(missing.some(finding => finding.subject.startsWith("publisher/"))).toBe(false);
     for (const finding of missing) expect(finding.detail, finding.subject).toMatch(/^missing: the consumer places [a-z]+ but holds none of its loop slots/);
-    // Handoffs are judged only between agents the consumer runs: publisher, unplaced, is in none.
+    // No handoff is broken (the standards wire them all); that a handoff into an agent the consumer does not run is
+    // skipped (set.runs) is pinned in agent-loops.test.ts.
     expect(runLoopConnected(root).findings.map(finding => finding.subject)).toEqual([]);
   }, LONG);
 

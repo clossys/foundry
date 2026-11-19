@@ -69,6 +69,9 @@ The six Producer loops run one step at a time from the loop version the consumer
   `packages/<agent>/actions/<action-id>/skill.md`): run that skill, then
   `clossys run loop.<name> --resume --run <run-id> --step-exit <0|1|2> --model <serving model> [--wrote <file>]...`.
   The version names only the tier; the ledger records the model that served the step.
+  DRAFT (U26): name every file the step changed with `--wrote`. The run compares the tree before and after an agent
+  step of an agent loop, Producer's standard version included, and stops on an unreported change or a write the step
+  does not declare.
 - A human step raises its queue entry and the run waits: record the owner's chat words with
   `clossys answer <entry> <answer> --by owner --via chat --quote "<words>"`, then
   `clossys run loop.<name> --resume`. Resuming never runs a finished step again.

@@ -106,6 +106,11 @@ async function seated() {
   return { w, ok };
 }
 
+const MODEL = "claude-opus-5-5";
+const runOf = (message: string | undefined) => /run (\S+):/.exec(message ?? "")![1]!;
+const runState = (w: ReturnType<typeof world>, runId: string) => w.readJson(join(w.root, ".clossys", "runs", "loops", `${runId}.json`));
+const cascadeLedger = (w: ReturnType<typeof world>, runId: string) => w.readJson(join(w.consumer, "agents", "producer", "ledger.cascade", "entries", `${runId}.json`));
+
 const r075 = (root: string) => staleRows(buildContext(root, join(root, "clossys"))).map(row => `${row.slot} ${row.reason}`);
 const staleGate = (root: string) => runGates(root, "site", undefined);
 
@@ -158,12 +163,83 @@ describe("loop.cascade: a repin re-verdicts its dependants (R07.5)", () => {
     // 5. A web section again: the cascade passes the page and it goes back to live (a fixed point).
     ok(await w.pin("designer/sections.hero", w.submit("designer", "sections.hero", "hero", element("sections/hero.tsx", { media: ["web"] }))));
     const again = await w.cli("run", "loop.cascade", "--slot", "designer/sections.hero");
-    expect(again.exitCode, again.message).not.toBe(2);
+    // Clean: the run goes on to the owner's impact step and waits for agent:designer (U26).
+    expect(again.exitCode, again.message).toBe(0);
+    expect(again.message).toMatch(/step impact waits for agent:designer \(check, mid\)/);
+    expect(runState(w, runOf(again.message))).toMatchObject({ status: "waiting", waiting: { step: "impact", on: "agent" } });
     expect(w.status("publisher", "page.home")).toBe("live");
     expect(w.readJson(join(w.root, ".clossys", "checks", "publisher", "page.home", "cascade.json")).verdicts).toEqual([expect.objectContaining({ candidate: "home-v1.json", certified: true })]);
     expect(r075(w.root)).toEqual([]);
     expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("pass");
   }, 300_000);
+});
+
+describe("loop.cascade's impact step: the owner notes the repin and writes nothing else (U26)", () => {
+  it("a clean repin waits on the owner's impact step; only the note completes it; a stray write, reported or not, is refused; exit 1 asks the owner", async () => {
+    const { w, ok } = await seated();
+    const NOTE = ".clossys/checks/designer/sections.hero/scratch/impact.md";
+    const note = (file: string, text: string) => { mkdirSync(join(w.root, file, ".."), { recursive: true }); writeFileSync(join(w.root, file), text); };
+    // A web repin of the section: the page's re-verdict passes, so the run reaches impact and waits for its owner.
+    ok(await w.pin("designer/sections.hero", w.submit("designer", "sections.hero", "hero", element("sections/hero.tsx", { media: ["web"] }))));
+    const cascade = async () => {
+      const run = await w.cli("run", "loop.cascade", "--slot", "designer/sections.hero");
+      expect(run.exitCode, run.message).toBe(0);
+      expect(run.message).toMatch(/step impact waits for agent:designer \(check, mid\)/);
+      expect(run.message).toMatch(/packages\/designer\/actions\/designer\.cascade\/skill\.md/);
+      const runId = runOf(run.message);
+      expect(runState(w, runId)).toMatchObject({ status: "waiting", waiting: { step: "impact", on: "agent" } });
+      // The page passed its re-verdict (nothing flagged it).
+      expect(w.status("publisher", "page.home")).not.toBe("needs-refresh");
+      expect(w.queue("queue.fix")).toEqual([]);
+      return runId;
+    };
+    const resume = (runId: string, exit: string, ...wrote: string[]) =>
+      w.cli("run", "loop.cascade", "--resume", "--run", runId, "--step-exit", exit, "--model", MODEL, ...wrote.flatMap(file => ["--wrote", file]));
+    const refused = (runId: string, result: { exitCode: number; message: string }, why: RegExp) => {
+      expect(result.exitCode, result.message).toBe(1);
+      expect(result.message).toMatch(why);
+      expect(runState(w, runId).status).toBe("stopped");
+      expect(cascadeLedger(w, runId)).toMatchObject({ status: "stopped" });
+      expect(cascadeLedger(w, runId).steps.map((step: { id: string; exit: number }) => `${step.id}:${step.exit}`).at(-1)).toBe("impact:1");
+    };
+    const slotBytes = readFileSync(join(w.consumer, "agents", "designer", "sections.hero", "slot.json"), "utf8");
+
+    // 1. A reported write of a Producer record (the slot record) is refused: the run stops, it is not done.
+    const first = await cascade();
+    refused(first, await resume(first, "0", "designer/sections.hero/slot.json"), /step impact wrote designer\/sections\.hero\/slot\.json, which producer\/loop\.cascade\/package:cascade-v1\.json does not declare it writes/);
+    expect(readFileSync(join(w.consumer, "agents", "designer", "sections.hero", "slot.json"), "utf8")).toBe(slotBytes);
+    // 2. A reported write the step does not declare, even in its own check scratch, is refused.
+    const second = await cascade();
+    note(".clossys/checks/designer/sections.hero/scratch/other.md", "not the note\n");
+    refused(second, await resume(second, "0", ".clossys/checks/designer/sections.hero/scratch/other.md"), /step impact wrote \.clossys\/checks\/designer\/sections\.hero\/scratch\/other\.md, which .* does not declare it writes/);
+    // 3. A write the step makes and does not report is refused, beside a reported note.
+    const third = await cascade();
+    note(NOTE, "draft note\n");
+    note(".clossys/checks/designer/sections.hero/scratch/unreported.md", "left out of --wrote\n");
+    refused(third, await resume(third, "0", NOTE), /step impact added \.clossys\/checks\/designer\/sections\.hero\/scratch\/unreported\.md without reporting it \(--wrote\); producer\/loop\.cascade\/package:cascade-v1\.json refuses it/);
+    // 4. The note, reported, is the one write that completes the step: the run is done.
+    const fourth = await cascade();
+    note(NOTE, "sections.hero repinned to a web candidate; publisher/page.home re-verdicted and passed\n");
+    const done = await resume(fourth, "0", NOTE);
+    expect(done.exitCode, done.message).toBe(0);
+    expect(done.message).toMatch(/done/);
+    expect(runState(w, fourth).status).toBe("done");
+    expect(cascadeLedger(w, fourth)).toMatchObject({ status: "done" });
+    const steps = cascadeLedger(w, fourth).steps as { id: string; exit: number; decider: { by: string; agent?: string }; wrote: { file: string }[] }[];
+    expect(steps.at(-1)).toMatchObject({ id: "impact", exit: 0, decider: { by: "agent", agent: "designer" } });
+    expect(steps.at(-1)!.wrote.map(item => item.file)).toEqual([NOTE]);
+    // 5. Exit 1 raises a queue.clarify to the owner and the run keeps waiting (then: retry); resuming unanswered waits on.
+    expect(w.queue("queue.clarify")).toEqual([]);
+    const fifth = await cascade();
+    const failed = await resume(fifth, "1");
+    expect(failed.message).toMatch(/queue\.clarify#/);
+    expect(runState(w, fifth)).toMatchObject({ status: "waiting", waiting: { step: "impact", on: "entry" } });
+    expect(w.queue("queue.clarify")).toEqual([expect.objectContaining({ status: "open" })]);
+    const still = await w.cli("run", "loop.cascade", "--resume", "--run", fifth);
+    expect(still.exitCode, still.message).not.toBe(2);
+    expect(runState(w, fifth)).toMatchObject({ status: "waiting", waiting: { step: "impact", on: "entry" } });
+    expect(w.queue("queue.clarify")).toHaveLength(1);
+  }, 600_000);
 });
 
 describe("the pin gate and the pin are one critical section (U6)", () => {
