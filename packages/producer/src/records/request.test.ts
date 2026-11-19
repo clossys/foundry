@@ -8,6 +8,7 @@ import { REQUESTS_FILED } from "../loop/names.js";
 import { raiseEntry } from "../loop/route.js";
 import { runPinCli } from "../cli/pin.js";
 import { consumerFacts, rederive } from "../queue/routing.js";
+import { candidateCodec } from "./candidate-codec.js";
 import { SLOT_LOCK, writeCandidate } from "./slot-write.js";
 import { verifyCheck } from "../loop/runner.js";
 import { FIX_CHECKS } from "../queue/requester-check.js";
@@ -419,7 +420,8 @@ describe("owner-assigned change entries (U7 r4, typed answers)", () => {
     worlds.push(made);
     if (edit) {
       const pinned = String(JSON.parse(readFileSync(join(made.consumer, DIRECTOR, "pin.json"), "utf8")).candidate);
-      const bytes = readFileSync(join(made.consumer, DIRECTOR, "candidates", pinned), "utf8");
+      // The pinned file carries its own clossys.candidate/1 header; a new submit takes the int2 view (submit heads it).
+      const bytes = candidateCodec.parse(pinned, readFileSync(join(made.consumer, DIRECTOR, "candidates", pinned), "utf8")).view;
       writeCandidate(made.consumer, "director", "focus.reach.geography", "geography", edit(bytes), { at: "2026-11-20T10:59:00Z", provenance: { by: "agent:director", model: "none", tier: "none" } });
     }
     const entry = raiseWork(made.consumer, { kind: "change", target: "director/focus.reach.geography", from: "writer/sections.hero.copy", want: "repin", why: "the hero copy needs another geography", source: "cli", by: "writer", at: "2026-11-20T11:00:00Z" }).request;
