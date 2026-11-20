@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { ASSERTIONS, OVERLAP_MIN } from "./assertions.js";
+import { ASSERTIONS, enforcedFor, OVERLAP_MIN } from "./assertions.js";
 import { isContractRefusal, judgeDogfood, probeIaContract, probePinGate, PROBES, type PinGateResult, type ProbeFacts, type VerbProbe } from "./dogfood.js";
 import { adapterIssues, CONFORM_AGENTS, missingPaths, packageSlot, readConformModel, type Adapter, type AgentModel, type ConformModel, type LiveSlot } from "./model.js";
 import { cellOf, conform, formatReport, readRegistry } from "./run.js";
@@ -500,11 +500,17 @@ describe("conformance over the repo and its fixture", () => {
 
 describe("pin gate probe (the real pin verb on a temporary copy)", () => {
   const model = readConformModel(REPO, FIXTURE);
+  it("enforces R05.2 (a pin points only to a certified candidate) for every agent that pins, not only Director", () => {
+    // R05.2 CHOOSE red x3 (foundry-build-0048): C3 and DF.<agent>.CHOOSE read "R05.2 is building, not enforced for <agent>".
+    for (const agent of CONFORM_AGENTS) expect(enforcedFor(model, "R05.2", agent), agent).toBe(true);
+    expect(model.machinery.rules.get("R05.2")?.status).toBe("building");
+  });
   it("pins no hand-placed or uncertified candidate for any agent through any verb: each refusal is the CHOOSE gate's", async () => {
     const results = await probePinGate(FIXTURE, model.agents);
-    // Publisher's live slots are clossys.slot/1 (no CREATE and CHOOSE contract yet), so its probe names that gap.
-    expect(results.publisher).toBe("pin probe: publisher has no live clossys.slot/2 slot");
-    for (const agent of ["director", "designer", "writer"]) {
+    // R05.2 CHOOSE (foundry-build-0048): Publisher places no clossys.slot/2 slot of its own here, so the probe places one
+    // through the real `clossys ia` on the copy (its first held kind with a standard) and runs the same verbs on it.
+    expect((results.publisher as PinGateResult).target, String(results.publisher)).toMatch(/^publisher\/page\.conform-probe(?:#|$)/);
+    for (const agent of ["director", "designer", "writer", "publisher"]) {
       const result = results[agent];
       expect(typeof result, `${agent}: ${String(result)}`).toBe("object");
       const gate = result as PinGateResult;
@@ -530,6 +536,9 @@ describe("pin gate probe (the real pin verb on a temporary copy)", () => {
     // The C3 cell reads the probe: green on these refusals, red once one agent's pin accepts.
     const facts = { emptyL2Detected: {}, requestVerb: true, critiqueMonorepoPath: false, iaContract: {}, pinGate: results };
     for (const agent of model.agents) expect(ASSERTIONS.C3!(agent, model, facts).rows.filter(row => row.startsWith("pin ") && row.includes("accepted")), agent.agent).toEqual([]);
+    // R05.2 CHOOSE red x3 (designer, writer, publisher): the cell is green for every agent, R05.2 enforced for each.
+    for (const agent of model.agents) expect(ASSERTIONS.C3!(agent, model, facts), agent.agent).toMatchObject({ rows: [], evidence: expect.any(Number) });
+    for (const agent of model.agents) expect(ASSERTIONS.C3!(agent, model, facts).evidence, agent.agent).toBeGreaterThan(0);
     const writer = results.writer as PinGateResult;
     const opened = (verb: string, change: Partial<VerbProbe>) => ({ ...facts, pinGate: { ...results, writer: { ...writer, verbs: writer.verbs!.map(run => run.verb === verb && run.case === "submitted-uncertified" ? { ...run, ...change } : run) } } }) as ProbeFacts;
     const c3 = (given: ProbeFacts) => ASSERTIONS.C3!(model.agents.find(agent => agent.agent === "writer")!, model, given).rows;

@@ -255,32 +255,34 @@ describe("constitution delta gate (until E2)", () => {
     expect(refused.message).toMatch(/REFUSED: .*integrity/);
   });
   it("G2: --record-green refuses to add a key; with removals only it rewrites and re-seals the report", async () => {
-    // Two pre-existing findings, ui.card and home.hero unpinned, with their upstream ui.button pinned first
-    // (R02.2): site.home's R02.2 row stays while home.hero is unpinned, so fixing ui.card fixes one key.
+    // Two pre-existing findings, seat.director and home.hero unpinned (R04): site.home's R02.2 row stays while home.hero is
+    // unpinned, so fixing seat.director fixes one key. The fixed finding is the Producer seat's: R05.2 (a pin points only to
+    // a certified candidate) is enforced for every content agent (foundry-build-0048 R05.2 CHOOSE), so re-pinning one of
+    // this fixture's uncertified content candidates is itself a new enforced finding, never a removal-only change.
     const spec = cleanSpec();
-    spec.designer!["ui.card"]!.pin = false;
+    spec.producer!["seat.director"]!.pin = false;
     spec.writer!["home.hero"]!.pin = false;
     const path = join(mkdtempSync(join(tmpdir(), "constitution-green-")), "green.json");
     let consumer = writeWorkspace(spec).consumer;
     const cli = (...flags: string[]) => runCheck(parseArgs(["check", "--constitution", "--green", path, "--root", consumer, ...flags]), consumer);
     expect((await cli("--record-green")).exitCode).toBe(0);
     const seeded = JSON.parse(readFileSync(path, "utf8")) as GreenReport;
-    expect(Object.keys(seeded.keys)).toEqual(expect.arrayContaining(["R04 designer/ui.card .", "R04 writer/home.hero .", "R02.2 publisher/site.home slot.json"]));
-    // A new finding (the producer seat unpinned): --enforced blocks it and --record-green refuses, writing nothing.
+    expect(Object.keys(seeded.keys)).toEqual(expect.arrayContaining(["R04 producer/seat.director .", "R04 writer/home.hero .", "R02.2 publisher/site.home slot.json"]));
+    // A new finding (ui.card unpinned): --enforced blocks it and --record-green refuses, writing nothing.
     const worse = structuredClone(spec);
-    worse.producer!["seat.director"]!.pin = false;
+    worse.designer!["ui.card"]!.pin = false;
     consumer = writeWorkspace(worse).consumer;
     expect((await cli("--enforced")).exitCode).toBe(1);
     const refused = await cli("--record-green");
     expect(refused.exitCode).toBe(1);
-    expect(refused.message).toMatch(/REFUSED: the new report would add 1 key\(s\) .*R04 producer\/seat\.director \. \(recorded 0, produced 1\)/);
+    expect(refused.message).toMatch(/REFUSED: the new report would add 1 key\(s\) .*R04 designer\/ui\.card \. \(recorded 0, produced 1\)/);
     expect(readFileSync(path, "utf8")).toBe(`${JSON.stringify(seeded, null, 2)}\n`);
-    // ui.card fixed and its record changed: the key is stale (not blocking), and a re-record drops it.
+    // seat.director fixed and its record changed: the key is stale (not blocking), and a re-record drops it.
     const fixed = structuredClone(spec);
-    delete fixed.designer!["ui.card"]!.pin;
+    delete fixed.producer!["seat.director"]!.pin;
     consumer = writeWorkspace(fixed).consumer;
     const stale = await cli("--enforced");
-    expect(stale.exitCode).toBe(0);
+    expect(stale.exitCode, stale.message).toBe(0);
     expect(stale.message).toMatch(/stale 1 \(not blocking\)/);
     const rerecorded = await cli("--record-green");
     expect(rerecorded.exitCode).toBe(0);
@@ -288,7 +290,7 @@ describe("constitution delta gate (until E2)", () => {
     const next = JSON.parse(readFileSync(path, "utf8")) as GreenReport;
     expect(verifyGreen(next)).toEqual([]);
     expect(Object.keys(next.keys).every(key => key in seeded.keys)).toBe(true);
-    expect(Object.keys(next.keys)).toEqual(Object.keys(seeded.keys).filter(key => key !== "R04 designer/ui.card ."));
+    expect(Object.keys(next.keys)).toEqual(Object.keys(seeded.keys).filter(key => key !== "R04 producer/seat.director ."));
     expect(next.enforced).toBe(seeded.enforced - 1);
     const clean = await cli("--enforced");
     expect(clean.exitCode).toBe(0);

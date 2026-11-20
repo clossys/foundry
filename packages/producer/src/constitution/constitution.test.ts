@@ -62,8 +62,8 @@ describe("constitution runner", () => {
     const { root, consumer } = writeWorkspace(cleanSpec());
     const report = runConstitution({ root, consumer, history: () => NO_HISTORY, skillShas: FIXTURE_SKILL_SHAS, now: () => 0 });
     expect(report.ok).toBe(false);
-    // Director R05 rows fail outright (enforcedFor); every other row is pending or building.
-    expect(report.total).toBe(report.pending + report.building + report.rows.filter(row => row.agent === "director" && row.rule === "R05").length);
+    // Director R05 rows and every agent's R05.2 rows fail outright (enforcedFor); every other row is pending or building.
+    expect(report.total).toBe(report.pending + report.building + report.rows.filter(row => (row.agent === "director" && row.rule === "R05") || (row.check === "R05.2" && row.agent !== "producer")).length);
     expect(report.pending).toBeGreaterThan(0);
     expect(report.records).toEqual({ slots: 6, liveSlots: 6, pins: 6, candidates: 6 });
     const text = formatReport(report);
@@ -107,21 +107,26 @@ describe("constitution runner", () => {
     expect(formatReport(strict)).toMatch(/^R15 FAIL {2}rows \d+/m);
   });
 
-  it("a building check fails the run for the agents it lists in enforcedFor and stays building for the rest (R05, R15.5: director)", () => {
+  it("a building check fails the run for the agents it lists in enforcedFor and stays building for the rest (R05.1, R15.5: director; R05.2: every pinning agent)", () => {
     const enforcedFor = Object.fromEntries(readRules().flatMap(rule => rule.checks).filter(check => check.enforcedFor).map(check => [check.id, check.enforcedFor]));
-    expect(enforcedFor).toEqual({ "R05.1": ["director"], "R05.2": ["director"], "R15.5": ["director"] });
+    // R05.2 CHOOSE (foundry-build-0048): a pin points only to a certified candidate, enforced for all four agents.
+    expect(enforcedFor).toEqual({ "R05.1": ["director"], "R05.2": ["director", "designer", "writer", "publisher"], "R15.5": ["director"] });
     const { root, consumer } = writeWorkspace(cleanSpec());
     const report = runConstitution({ root, consumer, rule: "R05", history: () => NO_HISTORY, now: () => 0 });
-    const director = report.rows.filter(row => row.agent === "director");
-    const others = report.rows.filter(row => row.agent !== "director");
-    expect(director.length).toBeGreaterThan(0);
+    const enforced = (row: { agent: string; check: string }) => row.agent === "director" || (row.check === "R05.2" && row.agent !== "producer");
+    const failing = report.rows.filter(enforced);
+    const others = report.rows.filter(row => !enforced(row));
+    expect(failing.filter(row => row.agent === "director").length).toBeGreaterThan(0);
     expect(others.length).toBeGreaterThan(0);
-    expect(director.every(row => row.level !== "building")).toBe(true);
+    expect(failing.every(row => row.level !== "building")).toBe(true);
     expect(others.every(row => row.level === "building")).toBe(true);
     expect(report.ok).toBe(false);
-    expect(report.rules[0]).toMatchObject({ failing: director.length, building: others.length });
+    expect(report.rules[0]).toMatchObject({ failing: failing.length, building: others.length });
+    // Writer's R05.1 rows stay building; an R05.2 row of Writer's (a pin of an uncertified candidate) would fail the run.
     const writerOnly = runConstitution({ root, consumer, rule: "R05", agent: "writer", history: () => NO_HISTORY, now: () => 0 });
-    expect(writerOnly).toMatchObject({ ok: true, building: writerOnly.total });
+    const writerPins = writerOnly.rows.filter(row => row.check === "R05.2");
+    expect(writerOnly).toMatchObject({ ok: writerPins.length === 0, building: writerOnly.total - writerPins.length });
+    expect(writerOnly.rows.filter(row => row.check === "R05.1").length).toBeGreaterThan(0);
     const rules = readRules();
     const bad = rules.map(rule => rule.id !== "R04" ? rule : { ...rule, checks: rule.checks.map(check => ({ ...check, enforcedFor: ["director"] })) });
     expect(() => registeredRules(bad)).toThrow(/enforcedFor/);
