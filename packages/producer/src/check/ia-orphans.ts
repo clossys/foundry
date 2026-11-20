@@ -4,7 +4,7 @@
  *
  * roots     = each publication's pages, chrome and release slots, for a publication either form names (the ones
  *             `clossys ia publisher/release.<pub> --kind release` takes as existing): a `publications` entry of
- *             publisher/ia.json, or a `publisher/publication.<pub>` slot placed in its nodes and not retired (that slot
+ *             publisher/ia.json, or a valid `publisher/publication.<pub>` slot record placed in its nodes and not retired (that slot
  *             and its release slot are roots; its pages and chrome are reached through its refs)
  * forward   = from a reached slot: its `refs` (input, uses, places), its `brief.inputs`, and the refs of its pinned
  *             candidate (header `refs` plus every `<agent>/<slot-id>` string, value or key, in a JSON candidate's content;
@@ -22,6 +22,7 @@ import { join } from "node:path";
 import { placedIds } from "../constitution/context.js";
 import { releaseSlotId } from "../release/paths.js";
 import { SLOT_SCHEMA, consumerSlotFolders, readSlot, slotSchemaOf, treeResult, type TreeCheck, type TreeCheckResult, type TreeFinding } from "../records/slot.js";
+import { slotReadIssues } from "../records/slot-current.js";
 import { seatStepOf } from "../records/slot-model/types.js";
 import type { Ref, Slot } from "../records/types.js";
 
@@ -37,11 +38,13 @@ const slotOf = (to: string): string | undefined => {
 
 const PUBLICATION_SLOT = /^publication\.([a-z0-9][a-z0-9-]*)$/;
 
-/** Whether a placed `publisher/<id>` folder holds a slot.json that does not say it is retired. */
+/** Whether a placed `publisher/<id>` folder holds a valid slot record (the ia verb's validator) that is not retired. */
 function liveSlot(root: string, id: string): boolean {
   const file = join(root, "clossys", "agents", "publisher", id, "slot.json");
   if (!existsSync(file)) return false;
-  try { return (JSON.parse(readFileSync(file, "utf8")) as { status?: unknown }).status !== "retired"; } catch { return false; }
+  let record: unknown;
+  try { record = JSON.parse(readFileSync(file, "utf8")); } catch { return false; }
+  return slotReadIssues(record, file).length === 0 && (record as { status?: unknown }).status !== "retired";
 }
 
 /**

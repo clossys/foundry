@@ -5,6 +5,11 @@ import { CONSUMER, tallyhouseWorld } from "../records/__fixtures__/slot2-workspa
 import { IA_ORPHANS, publicationRoots, runIaOrphans } from "./ia-orphans.js";
 
 const agents = (root: string, ...path: string[]): string => join(root, "clossys", "agents", ...path);
+/** A valid publisher/publication.site slot record (the install-consumer fixture's, renamed). */
+const publicationSlot = (): Record<string, unknown> => ({
+  schema: "clossys.slot/1", id: "publication.site", agent: "publisher", ia: { l1: "site", l2: "publication", order: 2 },
+  kind: "publication", contract: {}, inputs: ["page.home"], uses: ["page.home"],
+});
 /** Tallyhouse without its one unreached folder (see the first test). */
 function reachedWorld() {
   const ws = tallyhouseWorld();
@@ -58,9 +63,14 @@ describe(IA_ORPHANS, () => {
     delete ia.publications;
     const place = (slots: string[]) => writeFileSync(iaFile, JSON.stringify({ ...ia, nodes: [{ id: "site", label: "Site", children: [{ id: "site.pages", label: "Pages", slots }] }] }));
     place(["publication.site"]);
+    // Placed with no slot.json: no publication exists.
+    expect(publicationRoots(ws.root).roots).toEqual([]);
     mkdirSync(agents(ws.root, "publisher", "publication.site"));
     const slotFile = agents(ws.root, "publisher", "publication.site", "slot.json");
+    // A slot.json the ia verb's validator refuses is no publication either.
     writeFileSync(slotFile, JSON.stringify({ status: "live" }));
+    expect(publicationRoots(ws.root).roots).toEqual([]);
+    writeFileSync(slotFile, JSON.stringify(publicationSlot()));
     expect(publicationRoots(ws.root).roots).toEqual(["publisher/publication.site", "publisher/release.site"]);
     expect(runIaOrphans(ws.root).findings).toEqual([{ subject: "designer/assets.lockup", detail: expect.stringMatching(/no slot.json/) }]);
     // Not placed, or retired: no publication exists, so nothing is reached and every folder is an orphan.
@@ -68,8 +78,23 @@ describe(IA_ORPHANS, () => {
     expect(publicationRoots(ws.root).roots).toEqual([]);
     expect(runIaOrphans(ws.root).findings.map(finding => finding.subject)).toContain("publisher/page.home");
     place(["publication.site"]);
-    writeFileSync(slotFile, JSON.stringify({ status: "retired" }));
+    writeFileSync(slotFile, JSON.stringify({ ...publicationSlot(), status: "retired" }));
     expect(publicationRoots(ws.root).roots).toEqual([]);
+  });
+
+  it("takes only publication.<pub> as a publication root: a placed page slot nothing references is still an orphan", () => {
+    const ws = tallyhouseWorld();
+    const iaFile = agents(ws.root, "publisher", "ia.json");
+    const ia = JSON.parse(readFileSync(iaFile, "utf8")) as Record<string, unknown>;
+    delete ia.publications;
+    writeFileSync(iaFile, JSON.stringify({ ...ia, nodes: [{ id: "site", label: "Site", children: [{ id: "site.pages", label: "Pages", slots: ["page.home", "page.stray", "publication.site"] }] }] }));
+    mkdirSync(agents(ws.root, "publisher", "publication.site"));
+    writeFileSync(agents(ws.root, "publisher", "publication.site", "slot.json"), JSON.stringify(publicationSlot()));
+    // page.stray: a valid, live, placed publisher slot that no slot and no pinned candidate names.
+    mkdirSync(agents(ws.root, "publisher", "page.stray"));
+    writeFileSync(agents(ws.root, "publisher", "page.stray", "slot.json"), JSON.stringify({ ...publicationSlot(), id: "page.stray", kind: "page", inputs: [], uses: [] }));
+    expect(publicationRoots(ws.root).roots).toEqual(["publisher/publication.site", "publisher/release.site"]);
+    expect(runIaOrphans(ws.root).findings.map(finding => finding.subject)).toEqual(["designer/assets.lockup", "publisher/page.stray"]);
   });
 
   it("reaches the legal narrative only through the pinned release candidate", () => {
@@ -94,6 +119,12 @@ describe(IA_ORPHANS, () => {
     mkdirSync(agents(ws.root, "producer", "check.stray"));
     place(["seat.designer.candidates", "check.stray"]);
     expect(runIaOrphans(ws.root).findings.map(finding => finding.subject)).toEqual(["producer/check.stray"]);
+    // The exemption is Producer's: the same seat id under another agent is an orphan though producer/ia.json places it.
+    rmSync(agents(ws.root, "producer", "check.stray"), { recursive: true });
+    place(["seat.designer.candidates"]);
+    mkdirSync(agents(ws.root, "writer", "seat.designer.candidates"));
+    writeFileSync(agents(ws.root, "writer", "seat.designer.candidates", "slot.json"), JSON.stringify({ schema: "clossys.slot/2", id: "seat.designer.candidates", agent: "writer", kind: "seat", refs: [] }));
+    expect(runIaOrphans(ws.root).findings).toEqual([{ subject: "writer/seat.designer.candidates", detail: expect.stringMatching(/no consumedBy path ends at a publication/) }]);
   });
 
   it("exempts Producer loop slots and fails a missing publisher/ia.json", () => {

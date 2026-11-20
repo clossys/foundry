@@ -12,7 +12,7 @@ import { parseArgs } from "../cli/args.js";
 import { runReleaseCli } from "../cli/release.js";
 import type { BuildRequest, ReleaseBuilder } from "../release/build.js";
 import { releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
-import { E2E_CAUSES, E2E_CHECK, E2E_COHORT, childEnv, e2eDoc, installFindings, producerPackageRoot, readScenario, renderFindings, type ScenarioStep } from "./e2e.js";
+import { E2E_CAUSES, E2E_CHECK, E2E_COHORT, childEnv, e2eDoc, installFindings, producerPackageRoot, readScenario, renderFindings, runScenario, type Clossys, type ScenarioStep } from "./e2e.js";
 
 const PACKAGE = producerPackageRoot();
 const SHIPPED = join(PACKAGE, "e2e");
@@ -84,6 +84,38 @@ describe("the shipped scenario", () => {
       expect(line, `${slot}: ${key} is a Writer key`).toBeDefined();
       expect(html, slot).toContain(`data-copy="${slot}"`);
     }
+  });
+});
+
+describe("runScenario", () => {
+  it("runs the shipped steps, the build and its repeat, then release.manifest and release.gates on that build", async () => {
+    const scenario = readScenario(SHIPPED);
+    const consumer = temp();
+    const ran: Array<[string, readonly string[]]> = [];
+    // A stand-in for the installed bin: every verb exits 0, a build writes the latest pointer and the routes it renders.
+    const clossys: Clossys = async (id, argv) => {
+      ran.push([id, argv]);
+      if (id === "build" || id === "build.repeat") {
+        const builds = join(consumer, ".clossys", "builds");
+        mkdirSync(builds, { recursive: true });
+        writeFileSync(join(builds, `latest-${scenario.publication}.json`), JSON.stringify({ id: "0123456789abcdef" }));
+        for (const [route, strings] of Object.entries(scenario.render)) {
+          mkdirSync(join(builds, "01234567", "site", route), { recursive: true });
+          writeFileSync(join(builds, "01234567", "site", route, "index.html"), strings.join("\n"));
+        }
+      }
+      return { code: 0, stdout: id.endsWith(".packet") ? JSON.stringify({ manifest: [] }) : "", stderr: "" };
+    };
+    let built: unknown;
+    await runScenario(scenario, SHIPPED, consumer, clossys, { say: () => undefined, findings: [], built: row => { built = row; } });
+    expect(built).toMatchObject({ publication: scenario.publication, id: "0123456789abcdef" });
+    expect(ran.slice(-4)).toEqual([
+      ["build", scenario.build.map(arg => arg.replaceAll("{scenario}", SHIPPED))],
+      ["build.repeat", scenario.build.map(arg => arg.replaceAll("{scenario}", SHIPPED))],
+      ["release.manifest", ["release", scenario.publication, "--manifest"]],
+      ["release.gates", ["release", scenario.publication, "--gates"]],
+    ]);
+    for (const step of scenario.steps.filter(step => step.run)) expect(ran.map(([id]) => id)).toContain(step.id);
   });
 });
 

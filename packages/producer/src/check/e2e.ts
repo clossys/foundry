@@ -360,23 +360,7 @@ export async function runE2e(options: E2eOptions = {}): Promise<{ exitCode: 0 | 
       if (ran.code !== expect) stop("e2e.step", id, `clossys ${argv.join(" ")} exited ${ran.code}, expected ${expect}: ${tail(ran.stderr || ran.stdout)}`);
       return ran;
     };
-    for (const step of scenario.steps) {
-      if (step.run) { await clossys(step.id, step.run.map(arg => fill(arg, shipped, scenario)), step.expect ?? 0); continue; }
-      await craft(step, scenario, shipped, consumer, clossys);
-    }
-    const buildArgv = scenario.build.map(arg => fill(arg, shipped, scenario));
-    await clossys("build", buildArgv);
-    const first = latest(consumer, scenario.publication);
-    if (!first) stop("e2e.render", scenario.publication, `release --build wrote no .clossys/builds/latest-${scenario.publication}.json`);
-    build = { publication: scenario.publication, id: first!.id, routes: Object.keys(scenario.render) };
-    const render = renderFindings(first!.dir, scenario.render);
-    if (render.length) { findings.push(...render); stop(render[0]!.cause, render[0]!.subject, render[0]!.detail); }
-    say(`render: ${Object.keys(scenario.render).length} route(s) hold ${Object.values(scenario.render).flat().length} pinned string(s) in build ${first!.id.slice(0, 12)}`);
-    await clossys("build.repeat", buildArgv);
-    const second = latest(consumer, scenario.publication);
-    if (second?.id !== first!.id) stop("e2e.repeat", scenario.publication, `the second build names ${second?.id.slice(0, 12) ?? "nothing"}, the first ${first!.id.slice(0, 12)}`);
-    say(`repeat: the second build names the same digest ${first!.id.slice(0, 12)}`);
-    for (const step of scenario.after ?? []) await clossys(step.id, step.run!.map(arg => fill(arg, shipped, scenario)), step.expect ?? 0);
+    await runScenario(scenario, shipped, consumer, clossys, { say, findings, built: row => { build = row; } });
   } catch (error) {
     if (error instanceof E2eStop) {
       if (!findings.includes(error.finding) && !findings.some(row => row.cause === error.finding.cause && row.subject === error.finding.subject && row.detail === error.finding.detail)) findings.push(error.finding);
@@ -399,7 +383,34 @@ export async function runE2e(options: E2eOptions = {}): Promise<{ exitCode: 0 | 
   return { exitCode: code, report, lines };
 }
 
-type Clossys = (id: string, argv: readonly string[], expect?: number) => Promise<Ran>;
+export type Clossys = (id: string, argv: readonly string[], expect?: number) => Promise<Ran>;
+
+/**
+ * The scenario's verbs on an installed consumer, in order: its steps (a craft step is its P2 sequence), the build with
+ * its render check, the repeat build with its digest check, then its `after` verbs (the release manifest and gates).
+ * `clossys` runs one verb and stops on an unexpected exit; `built` receives the first build once it exists.
+ */
+export async function runScenario(scenario: Scenario, shipped: string, consumer: string, clossys: Clossys, io: { say: (line: string) => void; findings: E2eFinding[]; built: (build: NonNullable<E2eReport["build"]>) => void }): Promise<void> {
+  const { say, findings } = io;
+  for (const step of scenario.steps) {
+    if (step.run) { await clossys(step.id, step.run.map(arg => fill(arg, shipped, scenario)), step.expect ?? 0); continue; }
+    await craft(step, scenario, shipped, consumer, clossys);
+  }
+  const buildArgv = scenario.build.map(arg => fill(arg, shipped, scenario));
+  await clossys("build", buildArgv);
+  const first = latest(consumer, scenario.publication);
+  if (!first) stop("e2e.render", scenario.publication, `release --build wrote no .clossys/builds/latest-${scenario.publication}.json`);
+  const build = { publication: scenario.publication, id: first!.id, routes: Object.keys(scenario.render) };
+  io.built(build);
+  const render = renderFindings(first!.dir, scenario.render);
+  if (render.length) { findings.push(...render); stop(render[0]!.cause, render[0]!.subject, render[0]!.detail); }
+  say(`render: ${Object.keys(scenario.render).length} route(s) hold ${Object.values(scenario.render).flat().length} pinned string(s) in build ${first!.id.slice(0, 12)}`);
+  await clossys("build.repeat", buildArgv);
+  const second = latest(consumer, scenario.publication);
+  if (second?.id !== first!.id) stop("e2e.repeat", scenario.publication, `the second build names ${second?.id.slice(0, 12) ?? "nothing"}, the first ${first!.id.slice(0, 12)}`);
+  say(`repeat: the second build names the same digest ${first!.id.slice(0, 12)}`);
+  for (const step of scenario.after ?? []) await clossys(step.id, step.run!.map(arg => fill(arg, shipped, scenario)), step.expect ?? 0);
+}
 
 /**
  * The P2 create sequence of one slot, every write a public verb: options, a create verdict naming the gap, the brief,
