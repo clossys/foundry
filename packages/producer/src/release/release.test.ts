@@ -26,6 +26,10 @@ import { RELEASE_GATES } from "./gates.js";
 import { latestManifest } from "./manifest.js";
 import { checkReleaseReady, readyFindings } from "./ready.js";
 import { clock, releaseWorld, geographyBrief, stubBuilder, type ReleaseWorld } from "./__fixtures__/world.js";
+import { buildCandidateHeader, serializeCandidate } from "../records/candidate.js";
+import { candidateIssues, readSlotValue } from "../records/slot-current.js";
+import { writeCandidateBytes } from "../records/slot-write.js";
+import { STEPS } from "../pipeline/steps/index.js";
 
 const worlds: ReleaseWorld[] = [];
 afterEach(() => { for (const world of worlds.splice(0)) world.dispose(); });
@@ -440,5 +444,57 @@ describe("slots.stale on the release inputs (U8a)", () => {
     const gates = await release(world, "--gates");
     expect(gates.exitCode).toBe(1);
     expect(stale(gates).find(row => row.subject === "designer/sections.hero")?.detail).toMatch(/^pinned hero-v2\.json is a legacy pin with no recorded pinSet or verdict/);
+  });
+});
+
+describe("a release slot holds the manifest, never a publication record (U39b fix r1)", () => {
+  const AT_SUBMIT = "2026-11-20T08:00:00Z";
+  const RECORD = {
+    schema: "clossys.publication/1", format: "web.page.responsive", entryOrder: ["home"], routePack: { packId: "site", homeRouteId: "home" },
+    meta: { source: { kind: "derived", ref: ["publisher:ia.json"] }, tree: { id: "site", name: "site.publication", children: [{ id: "site.pages", name: "site.pages", cells: ["page.home"] }] } },
+  };
+  const SKILL = STEPS.find(step => step.id === "publisher.candidates")!.command.skill!;
+  const REFUSAL = "publisher/release.site is a release slot: it holds the manifest clossys release <pub> --manifest writes, not a page or publication record";
+  const candidates = (world: ReleaseWorld) => readdirSync(join(world.root, "clossys/agents/publisher/release.site/candidates")).sort();
+
+  it("refuses a publication/1 record at next --submit, names it in clossys check and refuses it at clossys pin", async () => {
+    const world = make();
+    const now = clock();
+    expect((await release(world, "--build", now)).exitCode).toBe(0);
+    expect((await release(world, "--manifest", now)).exitCode).toBe(0);
+    // The submit verb (clossys next --submit): the reader's rules refuse the record before any byte lands.
+    world.write("drafts/site.json", `${JSON.stringify(RECORD, null, 2)}\n`);
+    const submit = await runCli(["next", "publisher/release.site", "--submit", join(world.root, "drafts/site.json"), "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", SKILL, "--rung", "adopt", "--seed", "release.site/site-v1.json", "--root", world.root], world.root);
+    expect(submit.exitCode, submit.message).not.toBe(0);
+    expect(submit.message).toContain(REFUSAL);
+    expect(candidates(world)).toEqual(["site-v1.json"]);
+    // The code writer takes bytes as given (it judges no kind): the headered record lands as site-v2.json with its submit event.
+    const header = buildCandidateHeader({ agent: "publisher" as never, slotId: "release.site" as never, name: "site-v2.json" as never, createdBy: cliActor("clossys release site --manifest"), createdAt: AT_SUBMIT as never, source: { kind: "derived", ref: ["publisher:ia.json"] } });
+    const { meta: _meta, ...content } = RECORD;
+    writeCandidateBytes(join(world.root, "clossys"), "publisher", "release.site", "site-v2.json", serializeCandidate("site-v2.json" as never, header, { ...content, meta: { tree: RECORD.meta.tree } }), { at: AT_SUBMIT }, { by: "code", skill: "packages/producer/actions/publisher.release/action.json", model: "none", tier: "none" });
+    expect(candidates(world)).toEqual(["site-v1.json", "site-v2.json"]);
+    // clossys check names it under the slot reader's rule.
+    const check = await runCli(["check", "--root", world.root], world.root);
+    expect(JSON.stringify(check.output ?? check.message)).toContain(REFUSAL);
+    // clossys pin refuses it even with the owner's ready answer naming its bytes.
+    const entry = world.signoff(now, "ready", "site-v2.json");
+    const pinned = await pin(world, "site-v2.json", entry);
+    expect(pinned.exitCode).toBe(1);
+    expect(pinned.message).toContain("pin refused: publisher/release.site site-v2.json is not ready");
+    expect(existsSync(join(world.root, "clossys/agents/publisher/release.site/pin.json"))).toBe(false);
+  });
+
+  it("refuses it on a release.<pub> slot that declares kind publication: the rule keys on the slot id too", () => {
+    const world = make();
+    const doc = JSON.parse(world.read("clossys/agents/publisher/release.site/slot.json")) as Record<string, unknown>;
+    const bytes = `${JSON.stringify(RECORD, null, 2)}\n`;
+    for (const kind of ["release", "publication"]) {
+      const read = readSlotValue({ ...doc, kind }, "slot.json")!;
+      expect(read.current?.kind).toBe(kind);
+      expect(candidateIssues(read, "publisher", "release.site", "site-v2.json", bytes).map(issue => issue.message), kind).toContain(REFUSAL);
+    }
+    // A publication slot not named release.<pub> keeps the publication record rules.
+    const other = readSlotValue({ ...doc, kind: "publication" }, "slot.json")!;
+    expect(candidateIssues(other, "publisher", "publication.site", "site-v2.json", bytes).map(issue => issue.message)).not.toContain(REFUSAL.replace("release.site", "publication.site"));
   });
 });

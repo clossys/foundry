@@ -12,6 +12,7 @@ import { mkdirSync, readdirSync, renameSync, symlinkSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runReleaseCli } from "../cli/release.js";
+import { writeCandidateBytes } from "../records/slot-write.js";
 import { gateRunners, SLOTS_STALE } from "./gates.js";
 import { latestManifest } from "./manifest.js";
 import { releaseDir } from "./paths.js";
@@ -78,5 +79,24 @@ describe("slots.stale: a shipped pin with no judged check fails closed (resolver
     alias(world, PIN_JSON);
     const stale = gateRunners(world.root, "site", undefined)[SLOTS_STALE]!();
     expect(stale.filter(row => row.subject === "publisher/page.home")).toEqual([{ check: SLOTS_STALE, subject: "publisher/page.home", detail: UNJUDGED }]);
+  });
+});
+
+describe("a submit reads only its own slot (U39b fix r1)", () => {
+  it("next --submit's writer (writeCandidate) lands a sibling's candidate while another slot's pin.json is a symbolic link", () => {
+    const world = make();
+    alias(world, "clossys/agents/designer/frames.site-shell/pin.json");
+    let thrown: unknown;
+    try { world.handPin("designer/sections.hero", 2); } catch (error) { thrown = error; }
+    expect(String(thrown ?? "")).toBe("");
+    expect(readdirSync(join(world.root, "clossys/agents/designer/sections.hero/candidates")).sort()).toEqual(["hero-v1.json", "hero-v2.json"]);
+  });
+
+  it("the code writer (writeCandidateBytes, clossys release --manifest and clossys loop) lands a candidate while another slot's pin.json is a symbolic link", () => {
+    const world = make();
+    alias(world, "clossys/agents/designer/frames.site-shell/pin.json");
+    const bytes = world.read("clossys/agents/designer/sections.hero/candidates/hero-v1.json");
+    expect(writeCandidateBytes(join(world.root, "clossys"), "designer", "sections.hero", "hero-v2.json", bytes, { at: "2026-11-20T08:00:00Z" }, { by: "code", skill: "packages/producer/actions/publisher.release/action.json", model: "none", tier: "none" }).name).toBe("hero-v2.json");
+    expect(readdirSync(join(world.root, "clossys/agents/designer/sections.hero/candidates")).sort()).toEqual(["hero-v1.json", "hero-v2.json"]);
   });
 });
