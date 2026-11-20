@@ -141,6 +141,14 @@
       ]
     },
     "apg": "disclosure",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/collapsible.tsx",
+        "export": "Collapsible",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

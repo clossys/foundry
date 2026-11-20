@@ -219,16 +219,16 @@
       ]
     },
     "props": [
-      "video",
-      "poster",
-      "passage",
-      "captions",
-      "muted",
       "autoplay",
-      "loop",
-      "controls",
+      "captions",
       "className",
-      "decorative"
+      "controls",
+      "decorative",
+      "loop",
+      "muted",
+      "passage",
+      "poster",
+      "video"
     ],
     "allowedReads": {
       "themes": [
@@ -359,6 +359,14 @@
           "dir": "auto"
         }
       ]
+    },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "ui/media-player.tsx",
+        "export": "MediaPlayer",
+        "props": {}
+      }
     },
     "requirements": [
       {

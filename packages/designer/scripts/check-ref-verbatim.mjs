@@ -900,8 +900,25 @@ export function checkElement(root, target, options = {}) {
 const plainObject = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
+ * The rule's interactiveBackdrops lists: a list passes through; a `{from}` data reference (U23) is read
+ * from this package, the surfaces whose catalog contract places a slot as the reference's placement,
+ * or the adopted backdrop registry's record ids. An unreadable reference throws.
+ */
+function backdropList(value, kind) {
+  if (Array.isArray(value)) return value;
+  if (!plainObject(value)) return [];
+  if (kind === "components") {
+    const registry = json(join(packageRoot, value.from));
+    return Array.isArray(registry?.components) ? registry.components.map((entry) => entry?.id).filter((id) => typeof id === "string") : [];
+  }
+  return (value.from ?? []).flatMap((path) => json(join(packageRoot, path)))
+    .filter((surface) => (surface?.contract?.slots ?? []).some((row) => row?.placement === value.placement))
+    .map((surface) => surface.id).sort();
+}
+
+/**
  * An interactive backdrop is data on the slot's own code candidate: meta.backdrop `{component,
- * params}` names one Foundry interactive backdrop component (the rule's
+ * params}` names one adopted interactive backdrop component (the rule's
  * interactiveBackdrops.components), and the code it rides on stays under the verbatim rule like any
  * other. A candidate outside an interactiveBackdrops slot, or naming another component, fails
  * REF-INTERACTIVE; the param schema is judged at submit, pin and compile.
@@ -909,11 +926,13 @@ const plainObject = (value) => typeof value === "object" && value !== null && !A
 function interactiveBackdropFindings(slot, candidate, key, options = {}) {
   if (!plainObject(candidate?.meta) || !Object.hasOwn(candidate.meta, "backdrop")) return [];
   const rule = defaults(options).rule.interactiveBackdrops ?? {};
+  const slots = backdropList(rule.slots, "slots");
+  const components = backdropList(rule.components, "components");
   const details = [];
-  if (!(rule.slots ?? []).some((pattern) => globMatch(pattern, slot))) details.push(`meta.backdrop in ${slot}, which is not an interactiveBackdrops slot of the provenance rule`);
+  if (!slots.some((pattern) => globMatch(pattern, slot))) details.push(`meta.backdrop in ${slot}, which is not an interactiveBackdrops slot of the provenance rule`);
   const backdrop = candidate.meta.backdrop;
   const component = plainObject(backdrop) && Object.hasOwn(backdrop, "component") ? backdrop.component : undefined;
-  if (!(rule.components ?? []).includes(component)) details.push(`meta.backdrop.component ${JSON.stringify(component ?? null)} is not one of the Foundry interactive backdrop components (${(rule.components ?? []).join(", ")})`);
+  if (!components.includes(component)) details.push(`meta.backdrop.component ${JSON.stringify(component ?? null)} is not one of the adopted interactive backdrop components (${components.join(", ")})`);
   return details.map((detail) => ({ element: key, code: "REF-INTERACTIVE", detail }));
 }
 

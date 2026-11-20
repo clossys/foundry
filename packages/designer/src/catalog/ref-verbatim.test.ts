@@ -1188,7 +1188,7 @@ describe("interactive backdrop descriptor on the hero's own code candidate (foun
       ...meta,
     },
   });
-  const backdrop = { component: "grid-glow", params: { cell: 32 } };
+  const backdrop = { component: "flickering-grid", params: { squareSize: 8 } };
   const check = (item: unknown, slot = "sections.hero") => checkRegistryItem(consumer([]), slot, item, { strict: true });
 
   it("a valid descriptor leaves the hero code's own verdict exactly as it is", () => {
@@ -1200,8 +1200,9 @@ describe("interactive backdrop descriptor on the hero's own code candidate (foun
   it("adds REF-INTERACTIVE for an unknown component or a foreign slot, on top of the code verdict", () => {
     for (const [label, item, slot] of [
       ["unknown component", hero({ backdrop: { component: "three-scene", params: {} } }), "sections.hero"],
+      ["a retired hand-built component", hero({ backdrop: { component: "grid-glow", params: {} } }), "sections.hero"],
       ["foreign slot (the CTA also renders Hero)", hero({ backdrop }), "sections.call-to-action"],
-      ["no descriptor object", hero({ backdrop: "grid-glow" }), "sections.hero"],
+      ["no descriptor object", hero({ backdrop: "flickering-grid" }), "sections.hero"],
     ] as const) {
       const plain = check(hero(), slot);
       const row = check(item, slot);

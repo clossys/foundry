@@ -31,8 +31,9 @@ import { designerPins, pinLabel } from "./slot-pins.mjs";
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const json = path => JSON.parse(readFileSync(path, "utf8"));
 
+/** The rule, its interactiveBackdrops data references read from this package (certify/source.ts resolveProvenanceRule). */
 export function loadRule(path = join(packageRoot, "src/catalog/rules/provenance.json")) {
-  return json(path);
+  return source().resolveProvenanceRule(json(path), rel => json(join(packageRoot, rel)));
 }
 
 export function loadManifest(path = join(packageRoot, "references/manifest.json")) {

@@ -66,6 +66,7 @@ import { assertRetiredLeaves } from "./retired-leaves.js";
 import { assertFrozenLeafSets } from "./leaf-freeze.js";
 import { withAssetCatalog } from "../catalog-assets/catalog.js";
 import type { BuildCatalogData, CatalogData, FillDoc, FrameSlot, Placement, Retired, Slot, Source, Standard, CatalogRule } from "./types.js";
+import { framePlacementFindings } from "./media-placement.js";
 export * from "./types.js";
 export * from "./breakpoints.js";
 export { validateSelectionStrategy } from "./selection-strategy.js";
@@ -122,6 +123,8 @@ export function loadBuildCatalog(reportLeafFreeze?: Parameters<typeof assertFroz
     retiredByLayer: { sections: sections.retired, frames: structuredClone(frameRetired) as readonly Retired[] },
     registryStatus: components.status,
   };
+  const placement = (frameSlots as unknown as readonly FrameSlot[]).flatMap(slot => framePlacementFindings(slot));
+  if (placement.length) throw new Error(`frame registry: ${placement.join("; ")}`);
   assertFrozenLeafSets(build.placements, build.slots, ["themes", "assets", "components"], reportLeafFreeze);
   assertIAPlacements(build.placements, build.slots);
   assertRetiredLeaves(build.retired, build.placements);
@@ -197,6 +200,8 @@ export { componentSelection } from "../catalog/component-selection.js";
 export { parseLocalFontPayload } from "./local-font.js";
 export type { LocalFontPayload, LocalFontSource } from "./types.js";
 
-// Interactive backdrop descriptors (foundry-build-0048 A4): the Foundry component list, per-component
-// param schema and the candidate envelope the Producer's validator and criterion judge.
+// Interactive backdrop descriptors (foundry-build-0048 A4, U23): the adopted component records, their
+// param schemas and the contract opt-in the Producer's validator, criterion and certify judge.
 export * from "../tokens/interactive-backdrops.js";
+// Media placement (foundry-build-0048 U23): figure or backdrop per media slot, and the catalog surface lookup.
+export * from "./media-placement.js";

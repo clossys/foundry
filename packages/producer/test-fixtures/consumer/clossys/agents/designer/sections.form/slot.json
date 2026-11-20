@@ -467,6 +467,56 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/field.tsx",
+        "export": "Field",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "fields": [
+              {
+                "label": "DRAFT label",
+                "description": "DRAFT body",
+                "placeholder": "DRAFT label",
+                "options": [
+                  {
+                    "label": "DRAFT label"
+                  }
+                ],
+                "error": "DRAFT label"
+              }
+            ],
+            "submit": {
+              "label": "DRAFT label"
+            },
+            "error-summary": {
+              "heading": "DRAFT heading",
+              "items": [
+                {
+                  "message": "DRAFT label"
+                }
+              ]
+            },
+            "success": {
+              "message": "DRAFT body"
+            },
+            "error": {
+              "message": "DRAFT body"
+            }
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

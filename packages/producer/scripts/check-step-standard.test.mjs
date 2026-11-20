@@ -159,16 +159,16 @@ proves("skill.ladder", f => {
 // The interview module, wrapped: one owner option loses its argv, or one request loses its addressee.
 const interview = (f, body) => ["--interview", f.module("interview.mjs", `import * as REAL from ${JSON.stringify(pathToFileURL(join(DIST, "interview.js")).href)};\nexport const interviewIssues = REAL.interviewIssues;\n${body}\n`)];
 /**
- * A workspace with open owner options, independent of the live records: a copy of this repository's
- * clossys/ with one Writer pin removed, so the Writer asks its approve and pin questions.
+ * A workspace with open owner options, independent of the live records: a copy of the synthetic
+ * fixture consumer. It ships no pins (SOURCE-MIGRATE step 11 retired the pinned content), so the
+ * Director asks its evidence question there unmodified.
  */
 const INTERVIEW_LIB = await import(pathToFileURL(join(DIST, "interview.js")).href);
 function openWorkspace(f) {
   const workspace = join(f.root, "workspace");
   cpSync(consumerPath(), join(workspace, "clossys"), { recursive: true });
-  rmSync(join(workspace, "clossys", "agents", "writer", "strings.descriptions", "pin.json"));
-  const open = INTERVIEW_LIB.interviewOf(workspace, { agent: "writer" }).rounds.flat().filter(question => question.options.length);
-  assert.ok(open.length, "the owner.argv fixture workspace has no open Writer owner option");
+  const open = INTERVIEW_LIB.interviewOf(workspace, { agent: "director" }).rounds.flat().filter(question => question.options.length);
+  assert.ok(open.length, "the owner.argv fixture workspace has no open Director owner option");
   return ["--workspace", workspace];
 }
 proves("owner.argv", f => [...openWorkspace(f), ...interview(f, `export function gapsOf(root, options) { return REAL.gapsOf(root, options); }

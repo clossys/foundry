@@ -219,6 +219,22 @@
       "components.link"
     ],
     "skipTarget": "main-content",
+    "props": [
+      "children"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/blocks/login-03/page.tsx",
+        "export": "default",
+        "props": {
+          "children": [
+            "DRAFT skip-link",
+            "DRAFT main (view)"
+          ]
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

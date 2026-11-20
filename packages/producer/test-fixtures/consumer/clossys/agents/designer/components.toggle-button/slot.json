@@ -211,6 +211,14 @@
       "assets": []
     },
     "apg": "button",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/toggle.tsx",
+        "export": "Toggle",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

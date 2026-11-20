@@ -297,6 +297,23 @@
       "components.command",
       "components.semantic-content"
     ],
+    "props": [
+      "children"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/examples/command-example.tsx",
+        "export": "CommandExample",
+        "props": {
+          "children": [
+            "DRAFT search (components.search-field)",
+            "DRAFT groups",
+            "DRAFT empty"
+          ]
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

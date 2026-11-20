@@ -37,9 +37,9 @@
     "magicui": {
       "namespace": "@magicui",
       "kind": "registry-json",
-      "source": "https://magicui.design/r/{name}.json",
+      "source": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/apps/www/public/r/{name}.json",
       "version": "efe76fc",
-      "versionBasis": "registry endpoint served at fetchedAt; byte-identical to the built registry JSON committed upstream at the commit recorded in upstream",
+      "versionBasis": "built registry JSON committed upstream at the commit recorded in upstream, read from that commit (the live magicui.design endpoint has moved past it)",
       "upstream": "github.com/magicuidesign/magicui@efe76fc5755eca1142dd4f74c1d6f0ace2887e3c",
       "license": "MIT",
       "licenseFiles": {
@@ -862,7 +862,8 @@
       "registry": "magicui",
       "name": "grid-pattern",
       "slots": [
-        "assets.pattern"
+        "assets.pattern",
+        "sections.hero"
       ]
     },
     {
@@ -1925,6 +1926,20 @@
       "name": "node-status-indicator",
       "slots": [
         "components.flow.node-status"
+      ]
+    },
+    {
+      "registry": "magicui",
+      "name": "particles",
+      "slots": [
+        "sections.hero"
+      ]
+    },
+    {
+      "registry": "magicui",
+      "name": "flickering-grid",
+      "slots": [
+        "sections.hero"
       ]
     }
   ],

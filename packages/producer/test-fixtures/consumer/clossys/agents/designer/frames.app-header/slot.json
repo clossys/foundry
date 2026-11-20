@@ -402,6 +402,24 @@
         }
       ]
     },
+    "props": [
+      "children"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/blocks/sidebar-07/page.tsx",
+        "export": "default",
+        "props": {
+          "children": [
+            "DRAFT context (sections.*)",
+            "DRAFT trail (components.breadcrumbs)",
+            "DRAFT actions",
+            "DRAFT info"
+          ]
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

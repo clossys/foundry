@@ -295,6 +295,33 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/examples/pagination-example.tsx",
+        "export": "PaginationExample",
+        "props": {
+          "copy": {
+            "page": {
+              "label": "DRAFT label",
+              "previous-label": "DRAFT label",
+              "next-label": "DRAFT label",
+              "page-text": "DRAFT label",
+              "no-results-label": "DRAFT label",
+              "page-size-label": "DRAFT label"
+            },
+            "total": {
+              "label": "DRAFT label",
+              "range-text": "DRAFT label"
+            }
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

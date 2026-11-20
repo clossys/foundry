@@ -348,11 +348,6 @@
           ]
         },
         {
-          "id": "components-specimens",
-          "label": "Specimens (retired)",
-          "slots": []
-        },
-        {
           "id": "components-structure",
           "label": "Structure",
           "slots": [

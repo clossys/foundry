@@ -196,6 +196,14 @@
       ],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/field.tsx",
+        "export": "Field",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

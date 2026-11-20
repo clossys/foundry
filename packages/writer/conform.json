@@ -47,7 +47,7 @@
     "slot": "packages/writer/actions/writer.slot/skill.md",
     "create": "packages/writer/actions/writer.candidates/skill.md",
     "choose": "packages/writer/actions/pick.writer/skill.md",
-    "cascade": null
+    "cascade": "packages/writer/actions/writer.cascade/skill.md"
   },
   "requests": {
     "issuing": [

@@ -58,44 +58,82 @@ describe("certify: one certifier for every rung (R03.3)", () => {
   });
 });
 
-describe("certify: interactive backdrop descriptor on the hero code candidate (foundry-build-0048 A4)", () => {
-  const COMPONENTS = ["particle-field", "gradient-mesh", "grid-glow"];
-  const hero = (backdrop: unknown, code = LABEL) => elementItem("ui/sections.hero.tsx", code, { meta: { source: { kind: "original", ref: [] }, backdrop } });
-  const fit = (item: Record<string, unknown>, interactive?: unknown) => {
-    const ctx = ctxOf({ designer: { "sections.hero": { candidates: { "hero-v1.json": item } } } });
-    const slot = slotOf(ctx, "designer", "sections.hero");
+describe("certify: interactive backdrop descriptor on a backdrop-declaring surface's code candidate (foundry-build-0048 A4, U23)", () => {
+  /** A contract slot list that declares (or not) a backdrop-placed media slot. */
+  const DECLARES = [{ name: "header", type: "region", required: true }, { name: "backdrop", type: "media", required: false, placement: "backdrop" }];
+  const FIGURE_ONLY = [{ name: "header", type: "region", required: true }, { name: "media", type: "media", required: false, placement: "figure", alt: { copy: "media.title" } }];
+  const surface = (slotId: string, backdrop: unknown, code = LABEL) => elementItem(`ui/${slotId}.tsx`, code, { meta: { source: { kind: "original", ref: [] }, backdrop } });
+  const fit = (item: Record<string, unknown>, slots?: unknown, slotId = "sections.hero") => {
+    const ctx = ctxOf({ designer: { [slotId]: { candidates: { "surface-v1.json": item } } } });
+    const slot = slotOf(ctx, "designer", slotId);
     const own = slotDocOf(slot).contract;
-    const contract = interactive === undefined ? own : { ...own, interactive };
-    return certifyFit({ slot, candidate: slot.candidates[0]!, contract }, certifyEnv(ctx)).map(item => `${item.code}: ${item.message}`);
+    const contract = slots === undefined ? own : { ...own, slots };
+    // The pin's kind certifier, judged against the given contract on its own (certifyFit runs the submit validator
+    // first, against the catalog contract; that layer is pinned separately below).
+    return certifyElement(slot, slot.candidates[0]!, contract, certifyEnv(ctx)).map(item => `${item.code}: ${item.message}`);
   };
 
-  it("fits a hero code candidate whose meta.backdrop names a component the contract lists; the code still mounts and renders", () => {
-    expect(fit(hero({ component: "grid-glow", params: { cell: 32 } }), { components: COMPONENTS })).toEqual([]);
-    expect(fit(hero({ component: "grid-glow", params: {} }, "export function Example(): never { throw new Error(\"boom\"); }\n"), { components: COMPONENTS }))
+  it("fits a descriptor on any surface whose contract declares a backdrop slot; the code still mounts and renders", () => {
+    expect(fit(surface("sections.hero", { component: "flickering-grid", params: { squareSize: 8 } }), DECLARES)).toEqual([]);
+    expect(fit(surface("sections.feature", { component: "particles", params: { quantity: 40 } }), DECLARES, "sections.feature")).toEqual([]);
+    expect(fit(surface("frames.site-shell", { component: "grid-pattern", params: {} }), [{ id: "main", required: true, accepts: ["sections"] }, { id: "ground", required: false, accepts: ["assets"], placement: "backdrop" }], "frames.site-shell")).toEqual([]);
+    expect(fit(surface("sections.hero", { component: "flickering-grid", params: {} }, "export function Example(): never { throw new Error(\"boom\"); }\n"), DECLARES))
       .toEqual([expect.stringMatching(/^render: .*boom/)]);
   });
 
-  it("refuses a component the contract does not list; a param outside the schema is refused before fit, by validation", () => {
-    expect(fit(hero({ component: "grid-glow", params: {} }))).toEqual([expect.stringMatching(/^invalid: slot sections\.hero contract\.interactive lists no interactive backdrop, not "grid-glow"/)]);
-    expect(fit(hero({ component: "particle-field", params: {} }), { components: ["grid-glow"] })).toEqual([expect.stringMatching(/contract\.interactive lists grid-glow, not "particle-field"/)]);
-    expect(fit(hero({ component: "grid-glow", params: { cell: 4 } }), { components: COMPONENTS })).toEqual([expect.stringMatching(/^invalid: grid-glow param cell is 4, outside 16\.\.96/)]);
+  it("refuses a descriptor on a surface that declares no backdrop slot, a component, or a frame without one", () => {
+    const refused = (slot: string) => [expect.stringMatching(new RegExp(`^invalid: slot ${slot.replace(".", "\\.")}: meta\\.backdrop rides only on the code candidate of a surface whose contract declares a backdrop-placed slot; the ${slot.replace(".", "\\.")} contract declares none`))];
+    expect(fit(surface("sections.hero", { component: "flickering-grid", params: {} }), FIGURE_ONLY)).toEqual(refused("sections.hero"));
+    expect(fit(surface("sections.feature", { component: "flickering-grid", params: {} }), [], "sections.feature")).toEqual(refused("sections.feature"));
+    expect(fit(surface("frames.site-shell", { component: "flickering-grid", params: {} }), [{ id: "main", required: true, accepts: ["sections"] }], "frames.site-shell")).toEqual(refused("frames.site-shell"));
+    expect(fit(surface("ui.button", { component: "flickering-grid", params: {} }), undefined, "ui.button")).toEqual(refused("ui.button"));
+  });
+
+  it("through certifyFit the submit validator refuses first, against the catalog contract of a surface that declares none", () => {
+    const ctx = ctxOf({ designer: { "sections.feature": { candidates: { "surface-v1.json": surface("sections.feature", { component: "particles", params: {} }) } } } });
+    const slot = slotOf(ctx, "designer", "sections.feature");
+    expect(certifyFit({ slot, candidate: slot.candidates[0]!, contract: { ...slotDocOf(slot).contract, slots: DECLARES } }, certifyEnv(ctx)).map(item => `${item.code}: ${item.message}`))
+      .toEqual(["invalid: meta.backdrop rides only on the code candidate of a surface whose contract declares a backdrop-placed slot; the sections.feature contract declares none"]);
+  });
+
+  it("refuses a component the registry does not adopt and a param outside the record's schema", () => {
+    expect(fit(surface("sections.hero", { component: "grid-glow", params: {} }), DECLARES)).toEqual([expect.stringMatching(/^invalid: slot sections\.hero: the interactive backdrop component is "grid-glow", not one of the adopted backdrop components/)]);
+    expect(fit(surface("sections.hero", { component: "flickering-grid", params: { squareSize: 1 } }), DECLARES)).toEqual([expect.stringMatching(/^invalid: slot sections\.hero: flickering-grid param squareSize is 1, outside 2\.\.16/)]);
   });
 
   it("refuses, pin-side and independent of the validator, an interactive backdrop in a candidate's preview props on any slot", () => {
-    const interactive = { kind: "interactive", backdrop: { component: "particle-field", params: { density: 160, links: true } } };
+    const interactive = { kind: "interactive", backdrop: { component: "particles", params: { quantity: 160 } } };
     const ctx = ctxOf({ designer: {
       "sections.call-to-action": { candidates: { "cta-v1.json": elementItem("ui/sections.call-to-action.tsx", LABEL, { meta: { source: { kind: "original", ref: [] }, preview: { fixtures: { props: { backdrop: interactive } } } } }) } },
-      "sections.hero": { candidates: { "hero-v1.json": hero({ component: "grid-glow", params: { cell: 32 } }) } },
+      "sections.hero": { candidates: { "hero-v1.json": surface("sections.hero", { component: "flickering-grid", params: { squareSize: 8 } }) } },
     } });
     const slot = slotOf(ctx, "designer", "sections.call-to-action");
+    const message = "is an interactive backdrop in preview props; it rides only as meta.backdrop on the code candidate of a surface whose contract declares a backdrop-placed slot";
     // Through certifyFit the validator refuses it first; certifyElement (the pin's kind certifier) refuses it on its own.
     expect(certifyFit({ slot, candidate: slot.candidates[0]! }, certifyEnv(ctx)).map(item => item.message)).toEqual([expect.stringMatching(/^meta\.preview\.fixtures\.props\.backdrop is an interactive backdrop in preview props/)]);
     expect(certifyElement(slot, slot.candidates[0]!, slotDocOf(slot).contract, certifyEnv(ctx)).map(item => `${item.code}: ${item.message}`))
-      .toEqual(["invalid: slot sections.call-to-action: meta.preview.fixtures.props.backdrop is an interactive backdrop in preview props; it rides only as meta.backdrop on the sections.hero code candidate"]);
+      .toEqual([`invalid: slot sections.call-to-action: meta.preview.fixtures.props.backdrop ${message}`]);
     const heroSlot = slotOf(ctx, "designer", "sections.hero");
-    const outOfRange = { ...JSON.parse(heroSlot.candidates[0]!.text), meta: { source: { kind: "original", ref: [] }, backdrop: { component: "grid-glow", params: { cell: 32 } }, preview: { fixtures: { backdrop: { kind: "interactive", backdrop: { component: "grid-glow", params: { cell: 4 } } } } } } };
-    expect(certifyElement(heroSlot, { ...heroSlot.candidates[0]!, json: outOfRange }, { ...slotDocOf(heroSlot).contract, interactive: { components: COMPONENTS } }, certifyEnv(ctx)).map(item => item.message))
-      .toEqual(["slot sections.hero: meta.preview.fixtures.backdrop is an interactive backdrop in preview props; it rides only as meta.backdrop on the sections.hero code candidate"]);
+    const outOfRange = { ...JSON.parse(heroSlot.candidates[0]!.text), meta: { source: { kind: "original", ref: [] }, backdrop: { component: "flickering-grid", params: { squareSize: 8 } }, preview: { fixtures: { backdrop: { kind: "interactive", backdrop: { component: "flickering-grid", params: { squareSize: 1 } } } } } } };
+    expect(certifyElement(heroSlot, { ...heroSlot.candidates[0]!, json: outOfRange }, { ...slotDocOf(heroSlot).contract, slots: DECLARES }, certifyEnv(ctx)).map(item => item.message))
+      .toEqual([`slot sections.hero: meta.preview.fixtures.backdrop ${message}`]);
+  });
+});
+
+describe("certify: a figure the candidate's preview fills ships with its alt (foundry-build-0048 U23 review N1)", () => {
+  const FIGURE_ONLY = [{ name: "header", type: "region", required: true }, { name: "media", type: "media", required: false, placement: "figure", alt: { copy: "media.title" } }];
+  const fit = (props: Record<string, unknown>) => {
+    const item = elementItem("ui/sections.hero.tsx", LABEL, { meta: { source: { kind: "original", ref: [] }, preview: { fixtures: { file: "ui/sections.hero.tsx", export: "Example", props: { label: "Go", ...props } } } } });
+    const ctx = ctxOf({ designer: { "sections.hero": { candidates: { "hero-v1.json": item } } } });
+    const slot = slotOf(ctx, "designer", "sections.hero");
+    return certifyElement(slot, slot.candidates[0]!, { ...slotDocOf(slot).contract, slots: FIGURE_ONLY }, certifyEnv(ctx)).filter(reason => reason.code === "invalid").map(reason => reason.message);
+  };
+
+  it("fits an absent figure and a present one with its alt; refuses a present one whose alt is absent or blank", () => {
+    expect(fit({})).toEqual([]);
+    expect(fit({ media: { kind: "mark", title: "Clossys mark" } })).toEqual([]);
+    expect(fit({ media: { kind: "mark" } })).toEqual(["slot sections.hero: sections.hero figure media is filled, but its text alternative media.title is absent or blank; a present figure ships with its alt"]);
+    expect(fit({ media: { kind: "mark", title: { $copy: "" } } })).toEqual([expect.stringMatching(/media\.title is absent or blank/)]);
   });
 });
 

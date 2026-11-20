@@ -1,15 +1,17 @@
-import { act, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { checkBackdropElement } from "../../backdrop/contract.js";
-import { INTERACTIVE_BACKDROP_COMPONENT_IDS, type InteractiveBackdropDescriptor } from "../../tokens/interactive-backdrops.js";
-import { GRADIENT_MESH_MAX_DURATION, gradientMeshDuration, InteractiveBackdrop } from "./InteractiveBackdrop.js";
+import { BACKDROP_REGISTRY, INTERACTIVE_BACKDROP_COMPONENT_IDS, type InteractiveBackdropDescriptor } from "../../tokens/interactive-backdrops.js";
+import { BACKDROP_INK_KEYS, BACKDROP_RENDERER_KEYS, backdropInkClass, backdropRendererKey, InteractiveBackdrop } from "./InteractiveBackdrop.js";
+import { GRADIENT_MESH_GROUND_KEYS, GRADIENT_MESH_MAX_DURATION, gradientMeshDuration, gradientMeshGroundClass } from "./GradientMesh.js";
 import { InteractiveBackdrop as InteractiveBackdropBoundary } from "./interactive-backdrop-boundary.js";
 
-const descriptors: Record<(typeof INTERACTIVE_BACKDROP_COMPONENT_IDS)[number], InteractiveBackdropDescriptor> = {
-  "particle-field": { component: "particle-field", params: { links: true, density: 24 } },
+const descriptors: Record<string, InteractiveBackdropDescriptor> = {
+  particles: { component: "particles", params: { quantity: 24 } },
+  "flickering-grid": { component: "flickering-grid", params: { squareSize: 6 } },
+  "grid-pattern": { component: "grid-pattern", params: { width: 32 } },
   "gradient-mesh": { component: "gradient-mesh", params: { intensity: 0.4 } },
-  "grid-glow": { component: "grid-glow", params: { pulse: true } },
 };
 const motion = (reduced: boolean) => vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: reduced, addEventListener() {}, removeEventListener() {} })));
 
@@ -17,128 +19,157 @@ let raf: ReturnType<typeof vi.fn>;
 let animate: ReturnType<typeof vi.fn>;
 let cancel: ReturnType<typeof vi.fn>;
 let getContext: ReturnType<typeof vi.fn>;
-let addListener: ReturnType<typeof vi.spyOn>;
+let observed: string[];
 beforeEach(() => {
   raf = vi.fn(() => 7);
   vi.stubGlobal("requestAnimationFrame", raf);
   vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  observed = [];
+  class Observer { constructor(readonly kind: string) {} observe() { observed.push(this.kind); } disconnect() {} unobserve() {} }
+  vi.stubGlobal("ResizeObserver", class extends Observer { constructor() { super("resize"); } });
+  vi.stubGlobal("IntersectionObserver", class extends Observer { constructor() { super("intersection"); } });
   cancel = vi.fn();
   animate = vi.fn(() => ({ cancel }));
   (HTMLElement.prototype as unknown as { animate: unknown }).animate = animate;
-  const context = { clearRect: vi.fn(), beginPath: vi.fn(), arc: vi.fn(), fill: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(), stroke: vi.fn() };
+  // Every 2D call is a no-op; a 1x1 read-back paints the probe colour rgb(10, 20, 30).
+  const calls: Record<string | symbol, unknown> = { getImageData: () => ({ data: [10, 20, 30, 255] }) };
+  const context = new Proxy(calls, { get: (target, key) => (key in target ? target[key] : (target[key] = vi.fn())), set: (target, key, value) => { target[key] = value; return true; } });
   getContext = vi.fn(() => context);
   (HTMLCanvasElement.prototype as unknown as { getContext: unknown }).getContext = getContext;
-  addListener = vi.spyOn(window, "addEventListener");
+  const computed = window.getComputedStyle.bind(window);
+  // The probe reports its painted colour; every other property reads as unset, as a real declaration would.
+  const probe = { color: "rgb(10, 20, 30)", getPropertyValue: (name: string) => (name === "color" ? "rgb(10, 20, 30)" : "") };
+  vi.spyOn(window, "getComputedStyle").mockImplementation(element => (element instanceof HTMLElement && element.hasAttribute("data-backdrop-probe") ? (probe as unknown as CSSStyleDeclaration) : computed(element)));
 });
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   delete (HTMLElement.prototype as unknown as { animate?: unknown }).animate;
 });
-const pointerListeners = () => addListener.mock.calls.filter(([type]) => type === "pointermove");
 
-describe("Foundry interactive backdrops (foundry-build-0048 A4)", () => {
-  it.each(INTERACTIVE_BACKDROP_COMPONENT_IDS)("%s renders a still, decorative frame on the server", component => {
-    const html = renderToString(<InteractiveBackdrop descriptor={descriptors[component]} />);
+describe("the adapter renders adopted registry records (foundry-build-0048 U23)", () => {
+  it("ships exactly one renderer per registry record, keyed by the record's source", () => {
+    expect([...BACKDROP_RENDERER_KEYS].sort()).toEqual(BACKDROP_REGISTRY.components.map(backdropRendererKey).sort());
+    expect(BACKDROP_REGISTRY.components.map(backdropRendererKey)).toEqual(["magicui/particles", "magicui/flickering-grid", "magicui/grid-pattern", "foundry/GradientMesh"]);
+  });
+
+  it("pins the ink and ground colour maps one-to-one to the registry colours, and refuses any other colour (U23 review N2)", () => {
+    expect([...BACKDROP_INK_KEYS].sort()).toEqual([...BACKDROP_REGISTRY.colors].sort());
+    expect([...GRADIENT_MESH_GROUND_KEYS].sort()).toEqual([...BACKDROP_REGISTRY.colors].sort());
+    for (const color of BACKDROP_REGISTRY.colors) {
+      expect(backdropInkClass(color)).toBe(`text-${color}`);
+      expect(gradientMeshGroundClass(color)).toBe(`bg-${color}`);
+    }
+    for (const color of ["destructive", "", "toString", "constructor"]) {
+      expect(() => backdropInkClass(color)).toThrow(/has no ink utility/);
+      expect(() => gradientMeshGroundClass(color)).toThrow(/has no ground utility/);
+    }
+  });
+
+  it.each(INTERACTIVE_BACKDROP_COMPONENT_IDS.filter(id => id !== "particles"))("%s renders a still, decorative layer on the server", component => {
+    const html = renderToString(<InteractiveBackdrop descriptor={descriptors[component]!} />);
     expect(html).toContain(`data-interactive-backdrop="${component}"`);
     expect(html).toContain('aria-hidden="true"');
     expect(html).toContain('data-motion="static"');
     expect(html).toMatch(/pointer-events:\s*none/);
-    expect(html).not.toMatch(/<canvas|tabindex|<a |<button|<input/);
+    expect(html).not.toMatch(/tabindex|<a |<button|<input/);
     // Colour is a token utility, never an inline value.
     expect(html).not.toMatch(/style="[^"]*(?:color|fill|stroke|background)/);
   });
 
-  it.each(INTERACTIVE_BACKDROP_COMPONENT_IDS)("%s under prefers-reduced-motion is the still frame and starts nothing", component => {
-    motion(true);
-    const { container } = render(<InteractiveBackdrop descriptor={descriptors[component]} />);
-    const layer = container.querySelector(`[data-interactive-backdrop="${component}"]`)!;
-    expect(layer.getAttribute("data-motion")).toBe("static");
-    expect(checkBackdropElement(layer)).toMatchObject({ ok: true });
-    expect(container.querySelector("canvas")).toBeNull();
-    expect(raf).not.toHaveBeenCalled();
-    expect(animate).not.toHaveBeenCalled();
-    expect(pointerListeners()).toEqual([]);
+  it("particles (reduced motion: omit) renders no layer on the server, where motion reads as reduced", () => {
+    expect(renderToString(<InteractiveBackdrop descriptor={descriptors.particles!} />)).toBe("");
   });
 
-  it.each(INTERACTIVE_BACKDROP_COMPONENT_IDS)("%s without matchMedia stays still", component => {
-    vi.stubGlobal("matchMedia", undefined);
-    const { container } = render(<InteractiveBackdrop descriptor={descriptors[component]} />);
-    expect(container.querySelector("[data-interactive-backdrop]")!.getAttribute("data-motion")).toBe("static");
-    expect(raf).not.toHaveBeenCalled();
-    expect(animate).not.toHaveBeenCalled();
-  });
-
-  it("particle-field animates a canvas when motion is welcome, and stops on unmount", () => {
+  it("particles: an adopted Magic UI canvas in the painted token colour when motion is welcome", () => {
     motion(false);
-    const { container, unmount } = render(<InteractiveBackdrop descriptor={descriptors["particle-field"]} />);
-    const layer = container.querySelector('[data-interactive-backdrop="particle-field"]')!;
+    const { container, unmount } = render(<InteractiveBackdrop descriptor={descriptors.particles!} />);
+    const layer = container.querySelector('[data-interactive-backdrop="particles"]')!;
     expect(layer.getAttribute("data-motion")).toBe("animated");
+    expect(layer).toHaveAttribute("aria-hidden", "true");
     expect(checkBackdropElement(layer)).toMatchObject({ ok: true });
-    const canvas = layer.querySelector("canvas")!;
-    expect(canvas).toHaveClass("text-primary");
+    expect(layer.querySelector('[data-backdrop-probe="color"]')).toHaveClass("text-primary");
+    expect(layer.querySelector("canvas")).not.toBeNull();
     expect(getContext).toHaveBeenCalledWith("2d");
-    expect(raf).toHaveBeenCalledTimes(1);
-    act(() => { (raf.mock.calls[0]![0] as FrameRequestCallback)(16); });
-    expect(raf).toHaveBeenCalledTimes(2);
+    expect(raf).toHaveBeenCalled();
     unmount();
     expect(cancelAnimationFrame).toHaveBeenCalledWith(7);
   });
 
-  it("particle-field at speed 0 is the still frame even when motion is welcome", () => {
-    motion(false);
-    const { container } = render(<InteractiveBackdrop descriptor={{ component: "particle-field", params: { speed: 0 } }} />);
-    expect(container.querySelector("[data-interactive-backdrop]")!.getAttribute("data-motion")).toBe("static");
-    expect(container.querySelector("canvas")).toBeNull();
+  it("particles under prefers-reduced-motion renders no layer and starts nothing", () => {
+    motion(true);
+    const { container } = render(<InteractiveBackdrop descriptor={descriptors.particles!} />);
+    expect(container.querySelector("[data-interactive-backdrop]")).toBeNull();
     expect(raf).not.toHaveBeenCalled();
   });
 
-  it("gradient-mesh drifts its three fields when motion is welcome, and cancels on unmount", () => {
+  it("flickering-grid animates its own canvas when motion is welcome, and is held still under reduced motion", () => {
     motion(false);
-    const { container, unmount } = render(<InteractiveBackdrop descriptor={descriptors["gradient-mesh"]} />);
+    const live = render(<InteractiveBackdrop descriptor={descriptors["flickering-grid"]!} />);
+    const layer = live.container.querySelector('[data-interactive-backdrop="flickering-grid"]')!;
+    expect(layer.getAttribute("data-motion")).toBe("animated");
+    expect(checkBackdropElement(layer)).toMatchObject({ ok: true });
+    expect(layer.querySelector("canvas")).not.toBeNull();
+    expect(observed).toEqual(expect.arrayContaining(["resize", "intersection"]));
+    live.unmount();
+    motion(true);
+    const still = render(<InteractiveBackdrop descriptor={descriptors["flickering-grid"]!} />);
+    const stillLayer = still.container.querySelector('[data-interactive-backdrop="flickering-grid"]')!;
+    expect(stillLayer.getAttribute("data-motion")).toBe("static");
+    expect(checkBackdropElement(stillLayer)).toMatchObject({ ok: true });
+  });
+
+  it("grid-pattern is a static SVG painted through the layer's currentColor", () => {
+    motion(false);
+    const { container } = render(<InteractiveBackdrop descriptor={{ component: "grid-pattern", params: { color: "border", width: 24, height: 48 } }} />);
+    const layer = container.querySelector('[data-interactive-backdrop="grid-pattern"]')!;
+    expect(layer.getAttribute("data-motion")).toBe("static");
+    expect(layer).toHaveClass("text-border");
+    expect(checkBackdropElement(layer)).toMatchObject({ ok: true });
+    const pattern = layer.querySelector("svg pattern")!;
+    expect(pattern.getAttribute("width")).toBe("24");
+    expect(pattern.getAttribute("height")).toBe("48");
+    expect(layer.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(raf).not.toHaveBeenCalled();
+  });
+
+  it("gradient-mesh drifts its three fields when motion is welcome, holds them still when reduced, and cancels on unmount", () => {
+    motion(false);
+    const { container, unmount } = render(<InteractiveBackdrop descriptor={descriptors["gradient-mesh"]!} />);
     const layer = container.querySelector('[data-interactive-backdrop="gradient-mesh"]')!;
     expect(layer.getAttribute("data-motion")).toBe("animated");
     expect(checkBackdropElement(layer)).toMatchObject({ ok: true });
     expect(animate).toHaveBeenCalledTimes(3);
-    expect([...layer.children].map(child => [...child.classList].find(name => name.startsWith("bg-")))).toEqual(["bg-primary", "bg-accent", "bg-secondary"]);
+    const mesh = layer.querySelector("[data-gradient-mesh]")!;
+    expect([...mesh.children].map(child => [...child.classList].find(name => name.startsWith("bg-")))).toEqual(["bg-primary", "bg-accent", "bg-secondary"]);
     unmount();
     expect(cancel).toHaveBeenCalledTimes(3);
+    animate.mockClear();
+    motion(true);
+    const still = render(<InteractiveBackdrop descriptor={descriptors["gradient-mesh"]!} />);
+    expect(still.container.querySelector("[data-gradient-mesh]")!.getAttribute("data-gradient-mesh")).toBe("static");
+    expect(animate).not.toHaveBeenCalled();
   });
 
-  it("grid-glow follows the pointer and pulses when motion is welcome, and detaches on unmount", () => {
-    motion(false);
-    const remove = vi.spyOn(window, "removeEventListener");
-    const { container, unmount } = render(<InteractiveBackdrop descriptor={descriptors["grid-glow"]} />);
-    const layer = container.querySelector('[data-interactive-backdrop="grid-glow"]')!;
-    expect(layer.getAttribute("data-motion")).toBe("animated");
-    expect(checkBackdropElement(layer)).toMatchObject({ ok: true });
-    const glow = layer.querySelector<HTMLElement>("[data-grid-glow]")!;
-    vi.spyOn(glow.parentElement!, "getBoundingClientRect").mockReturnValue({ left: 0, top: 0, width: 200, height: 100, right: 200, bottom: 100, x: 0, y: 0, toJSON() {} });
-    expect(pointerListeners()).toHaveLength(1);
-    act(() => { window.dispatchEvent(new PointerEvent("pointermove", { clientX: 50, clientY: 75 })); });
-    expect(glow.style.left).toBe("25%");
-    expect(glow.style.top).toBe("75%");
-    expect(animate).toHaveBeenCalledTimes(1);
-    unmount();
-    expect(remove.mock.calls.some(([type]) => type === "pointermove")).toBe(true);
-    expect(cancel).toHaveBeenCalledTimes(1);
-  });
-
-  it("grid-glow with neither follow nor pulse is still", () => {
-    motion(false);
-    const { container } = render(<InteractiveBackdrop descriptor={{ component: "grid-glow", params: { follow: false, pulse: false } }} />);
-    expect(container.querySelector("[data-interactive-backdrop]")!.getAttribute("data-motion")).toBe("static");
-    expect(pointerListeners()).toEqual([]);
+  it("without matchMedia every layer stays still", () => {
+    vi.stubGlobal("matchMedia", undefined);
+    for (const component of INTERACTIVE_BACKDROP_COMPONENT_IDS) {
+      const { container, unmount } = render(<InteractiveBackdrop descriptor={descriptors[component]!} />);
+      const layer = container.querySelector("[data-interactive-backdrop]");
+      if (layer) expect(layer.getAttribute("data-motion"), component).toBe("static");
+      unmount();
+    }
     expect(animate).not.toHaveBeenCalled();
   });
 
   it("drops an invalid descriptor: it paints nothing and never throws", () => {
     for (const descriptor of [
       { component: "three-scene", params: {} },
-      { component: "particle-field", params: { color: "https://example.com/x.js" } },
-      { component: "grid-glow", params: { cell: 4 } },
+      { component: "particle-field", params: {} },
+      { component: "particles", params: { color: "https://example.com/x.js" } },
+      { component: "flickering-grid", params: { squareSize: 1 } },
       { component: "gradient-mesh", params: {}, script: "x" },
-      Object.create({ component: "grid-glow", params: {} }),
+      Object.create({ component: "flickering-grid", params: {} }),
     ]) {
       expect(renderToString(<InteractiveBackdrop descriptor={descriptor as never} />), JSON.stringify(descriptor)).toBe("");
     }

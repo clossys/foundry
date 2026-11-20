@@ -95,7 +95,7 @@
     "slot": "packages/designer/actions/designer.slot/skill.md",
     "create": "packages/designer/actions/designer.candidates/skill.md",
     "choose": "packages/designer/actions/pick.designer/skill.md",
-    "cascade": null
+    "cascade": "packages/designer/actions/designer.cascade/skill.md"
   },
   "requests": {
     "issuing": [

@@ -132,6 +132,14 @@
       ],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/skeleton.tsx",
+        "export": "Skeleton",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

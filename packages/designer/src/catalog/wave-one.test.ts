@@ -58,7 +58,7 @@ describe("wave-one Section and Frame catalog joins", () => {
       }
     }
     const logo = registry.slots.find(slot => slot.id === "sections.logo-mark")!;
-    expect(logo.contract.slots).toEqual([{ name: "mark", type: "media", required: true }]);
+    expect(logo.contract.slots).toEqual([{ name: "mark", type: "media", required: true, placement: "figure", alt: { asset: "assets.mark" } }]);
     expect(logo.contract.allowedReads.assets).toContain("assets.mark");
   });
 

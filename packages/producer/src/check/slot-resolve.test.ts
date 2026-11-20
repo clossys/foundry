@@ -91,23 +91,19 @@ const native = (root: string, flags: string[] = []) => spawnSync(process.execPat
  * in the findings.
  * U9a with U19 (foundry-build-0048 U20 repin, as U19 r5c repinned check-readiness-strict and ref-verbatim-default): the
  * store places all four loop agents (each has an ia.json) and adopted none of their loops, so the red checks are exactly
- * three: loop.agent-standard (20 rows: each of the four agents' five loops missing), loop.connected (4 rows: the four
- * Director -> Designer + Writer -> Publisher handoffs, none a read while no agent loop is held) and
- * publisher.admin-seated (6 rows: the five admin pages and publication.admin not placed).
+ * two: loop.agent-standard (20 rows: each of the four agents' five loops missing) and publisher.admin-seated (6 rows:
+ * the five admin pages and publication.admin not placed). loop.connected is green (U26): the loops that run are
+ * Producer's standards, whose create and choose read the pins upstream of the slot's owner, so all four Director ->
+ * Designer + Writer -> Publisher handoffs are reads.
  */
 const ADMIN_SEAT = ["page.admin-home", "page.admin-gallery", "page.admin-slot", "page.admin-requests", "page.admin-questions", "publication.admin"].map(id => `publisher/${id}`);
 const LOOP_ROWS = LOOP_AGENTS.flatMap(agent => AGENT_LOOPS.map(loop => `${agent}/${loop}`));
-/** The four flows.md N3 handoffs (Director -> Designer + Writer -> Publisher): none is a read while no agent loop is held. */
-const HANDOFFS = [["director", "designer"], ["director", "writer"], ["designer", "publisher"], ["writer", "publisher"]] as const;
 function unseated(report: any): void {
-  expect(Object.keys(report.checks ?? {})).toEqual(["loop.agent-standard", "loop.connected", "publisher.admin-seated"]);
+  expect(Object.keys(report.checks ?? {})).toEqual(["loop.agent-standard", "publisher.admin-seated"]);
   const standard = report.checks["loop.agent-standard"];
   expect(standard.status).toBe("fail");
   expect(standard.findings.map((row: any) => row.subject)).toEqual(LOOP_ROWS);
   for (const row of standard.findings) expect(row.detail, row.subject).toBe(`missing: the consumer places ${row.subject.split("/")[0]} but holds none of its loop slots; run clossys loop ${row.subject}`);
-  const connected = report.checks["loop.connected"];
-  expect(connected.status).toBe("fail");
-  expect(connected.findings).toEqual(HANDOFFS.map(([from, to]) => ({ subject: `handoff ${from} -> ${to}`, detail: `no step of ${to}'s loops reads what ${from}'s loops write (its pins); the chain is broken here` })));
   const admin = report.checks["publisher.admin-seated"];
   expect(admin.status).toBe("fail");
   expect(admin.findings.map((row: any) => row.subject).sort()).toEqual([...ADMIN_SEAT].sort());
@@ -185,11 +181,11 @@ describe("default native model enforcement", () => {
       const report = JSON.parse(result.stdout);
       expect(report.exitCode).toBe(1);
       unseated(report);
-      // The one aggregate finding is the check message: slot integrity clean, the three unseated checks its red rows.
+      // The one aggregate finding is the check message: slot integrity clean, the two unseated checks its red rows.
       expect(report.findings.map((row: any) => row.rule)).toEqual(["check"]);
       expect(report.findings[0].message).toContain("Slot integrity found 0 findings across 4 slots");
       expect(report.findings[0].message).toContain("loop.agent-standard: fail (20)");
-      expect(report.findings[0].message).toContain("loop.connected: fail (4)");
+      expect(report.findings[0].message).not.toContain("loop.connected: fail");
       expect(report.findings[0].message).toContain("publisher.admin-seated: fail (6)");
       expect(report.slots).toMatchObject({ reportOnly: false, exitCode: 0, verdict: "satisfied", findings: [] });
       expect(report.slots.rows).toHaveLength(4);

@@ -208,6 +208,14 @@
       ]
     },
     "apg": "treeview",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/sidebar.tsx",
+        "export": "Sidebar",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

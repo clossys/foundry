@@ -202,6 +202,14 @@
       ],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/input.tsx",
+        "export": "Input",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

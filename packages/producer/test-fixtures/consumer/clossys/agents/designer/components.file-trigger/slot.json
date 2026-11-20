@@ -108,6 +108,14 @@
       "themes": [],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "ui/file-upload.tsx",
+        "export": "FileUpload",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

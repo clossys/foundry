@@ -7,8 +7,33 @@
  * list matches the source roots the rendered-class-rules gate (PROC-3) measures.
  */
 
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { scanClassCandidates, type ClassScanResult } from "./class-scan.js";
+
+/** The adopted backdrop registry (foundry-build-0048 U23), relative to the package root. */
+export const BACKDROP_REGISTRY_PATH = join("src", "catalog", "rules", "backdrop-components.json");
+
+/**
+ * The fixed classes the adopted backdrop registry hands its source components: every record's
+ * `props.className` and `reducedMotion.props.className`. They are data in JSON, which the text scan
+ * (`.ts`/`.tsx` only) never reads, so they are read here from exactly those fields, never by scanning
+ * JSON blindly. Fails closed: an unreadable registry, or a className that is not a string, throws.
+ */
+export function backdropRegistryClasses(packageRoot: string): string[] {
+  const registry = JSON.parse(readFileSync(join(packageRoot, BACKDROP_REGISTRY_PATH), "utf8")) as { components?: unknown };
+  if (!Array.isArray(registry.components)) throw new Error(`${BACKDROP_REGISTRY_PATH}: components is not a list`);
+  const classes = new Set<string>();
+  for (const entry of registry.components as Record<string, unknown>[]) {
+    const reduced = entry?.reducedMotion as { props?: Record<string, unknown> } | undefined;
+    for (const props of [entry?.props as Record<string, unknown> | undefined, reduced?.props]) {
+      if (props === undefined || !Object.hasOwn(props, "className")) continue;
+      if (typeof props.className !== "string") throw new Error(`${BACKDROP_REGISTRY_PATH}: ${String(entry?.id)} className is not a string`);
+      for (const token of props.className.split(/\s+/)) if (token) classes.add(token);
+    }
+  }
+  return [...classes].sort();
+}
 
 export const COMPILED_CSS_SOURCE_DIRS = ["components", "blocks", "shell", "frames", "runtime", "studio", "specimen"] as const;
 
@@ -39,6 +64,8 @@ function scanDirs<D extends string>(packageRoot: string, dirs: readonly D[]): Cl
       if (!skippedByDesign.some((x) => x.file === s.file)) skippedByDesign.push(s);
     }
   }
+  // The backdrop registry's fixed classes reach the rendered layer through data, not a source literal.
+  for (const c of backdropRegistryClasses(packageRoot)) candidates.add(c);
 
   return {
     candidates: [...candidates].sort(),

@@ -143,6 +143,15 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    git commit -m "designer: pin <slot> <element> v<N>"
    ```
 
+## Cascade
+
+DRAFT, for owner approval (foundry-build-0048 U26): this wording is not approved yet.
+
+After a repin of one of your slots, Producer's `loop.cascade` re-verdicts every dependant, then its impact step is yours:
+read the slot and the re-verdicts and note the impact in your check scratch, by the skill
+`actions/designer.cascade/skill.md`. It pins nothing and runs only after every dependant
+passed; a failing re-verdict stops the cascade before it, with a queue.fix to that dependant's owner.
+
 ## Provenance rule (every item)
 
 Everything Designer pins comes from the shadcn universe: the trusted
@@ -158,12 +167,13 @@ Fontsource font provider). The rule is `src/catalog/rules/provenance.json`.
 - A theme (`themes.*`) customizes a shadcn theme preset (`shadcn/neutral`, or
   a `registry:theme`/`registry:style` reference) with the brand tokens.
 - `original` only in a consumer-asset slot.
-- DRAFT: An interactive backdrop (`sections.hero` only) is data, not code: one
-  `meta.backdrop` descriptor `{component, params}` on the hero's own code
-  candidate, naming a Foundry component (`particle-field`, `gradient-mesh`,
-  `grid-glow`) with params inside that component's schema. It is never a
-  candidate of its own; the hero's code keeps its own source and the verbatim
-  rule. Never write backdrop code.
+- DRAFT: An interactive backdrop is data, not code, and only on a surface
+  whose contract declares a slot with `placement: "backdrop"`: one
+  `meta.backdrop` descriptor `{component, params}` on that surface's own code
+  candidate, naming an adopted record of
+  `src/catalog/rules/backdrop-components.json` with params inside that
+  record's schema. It is never a candidate of its own; the surface's code
+  keeps its own source and the verbatim rule. Never write backdrop code.
 
 ```sh
 npx designer-ref-verbatim --root clossys --pinned   # every pinned candidate; exit 1 on a violation

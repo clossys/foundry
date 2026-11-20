@@ -1,5 +1,5 @@
 // Generated from sections.page-header by src/generated/props/generate.ts; do not edit.
-export const pageHeaderContractSha256 = "282f4190f165eac34d04c5c2d1296ad69a9954a1d58378d20615f788952cca46";
+export const pageHeaderContractSha256 = "5d4204a5572ff83915009e8d1ddf61a23440dab9e7f900384c9c165388134a01";
 
 export type PageHeaderCopy = {
   header?: {

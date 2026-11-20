@@ -7,7 +7,9 @@
  * can import the built file.
  *
  * Manifest: `{ registries: {<id>: ...}, items: [{registry, name, version, hash, type, files: [{path, sha256}]}] }`.
- * Rule (provenance.json): `{ consumerAssets: {slots: [<glob>]}, interactiveBackdrops: {slots: [<glob>], components: [<id>]}, classes: [{slots, sourceTypes?, sourceItems?}] }`.
+ * Rule (provenance.json): `{ consumerAssets: {slots: [<glob>]}, interactiveBackdrops: {slots, components}, classes: [{slots, sourceTypes?, sourceItems?}] }`.
+ * The interactiveBackdrops lists are data references (`{from}`) that resolveProvenanceRule reads from the
+ * adopted backdrop registry and the surface contracts; resolved, they are `[<glob>]` and `[<id>]`.
  */
 import { createHash } from "node:crypto";
 
@@ -16,10 +18,57 @@ export interface ManifestItem { readonly registry: string; readonly name: string
 export interface ReferenceManifest { readonly registries?: Readonly<Record<string, unknown>>; readonly items?: readonly ManifestItem[] }
 export interface ProvenanceRule {
   readonly consumerAssets?: { readonly slots?: readonly string[] };
-  /** Slots where an interactive backdrop descriptor may stand, and the Foundry components it may name (foundry-build-0048 A4). */
-  readonly interactiveBackdrops?: { readonly slots?: readonly string[]; readonly components?: readonly string[] };
+  /**
+   * Slots where an interactive backdrop descriptor may stand, and the adopted components it may name
+   * (foundry-build-0048 A4, U23): references into the Designer's data until resolveProvenanceRule
+   * resolves them to lists. An unresolved reference admits nothing.
+   */
+  readonly interactiveBackdrops?: { readonly slots?: readonly string[] | BackdropSlotsReference; readonly components?: readonly string[] | BackdropComponentsReference };
   readonly classes?: readonly { readonly slots: string; readonly sourceTypes?: readonly string[]; readonly sourceItems?: readonly string[] }[];
 }
+/** The surface contracts (Designer catalog files) whose slots placed as `placement` admit a backdrop. */
+export interface BackdropSlotsReference { readonly from: readonly string[]; readonly placement: string }
+/** The adopted backdrop component registry (a Designer rules file) whose record ids are the components. */
+export interface BackdropComponentsReference { readonly from: string }
+
+const plain = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
+
+/**
+ * The rule with its interactiveBackdrops references read through `read` (a Designer-package-relative
+ * path to parsed JSON): `slots` becomes every catalog surface whose contract places a slot as the
+ * reference's placement, `components` every adopted registry record id. Lists pass through; so the
+ * rule never carries a second copy of either list. Throws when a referenced file is unreadable or
+ * malformed, so a gate never runs on a half-resolved rule.
+ */
+export function resolveProvenanceRule(rule: ProvenanceRule, read: (path: string) => unknown): ProvenanceRule {
+  const backdrops = rule.interactiveBackdrops;
+  if (!backdrops) return rule;
+  let slots = backdrops.slots;
+  if (plain(slots)) {
+    const reference = slots as BackdropSlotsReference;
+    const found: string[] = [];
+    for (const path of reference.from) {
+      const surfaces = read(path);
+      if (!Array.isArray(surfaces)) throw new Error(`provenance rule: ${path} is not a list of slots`);
+      for (const surface of surfaces) {
+        const rows = plain(surface) && plain(surface.contract) && Array.isArray(surface.contract.slots) ? surface.contract.slots : [];
+        if (rows.some(row => plain(row) && row.placement === reference.placement) && plain(surface) && typeof surface.id === "string") found.push(surface.id);
+      }
+    }
+    slots = found.sort();
+  }
+  let components = backdrops.components;
+  if (plain(components)) {
+    const path = (components as BackdropComponentsReference).from;
+    const registry = read(path);
+    if (!plain(registry) || !Array.isArray(registry.components)) throw new Error(`provenance rule: ${path} is not a backdrop component registry`);
+    components = registry.components.map(entry => (plain(entry) && typeof entry.id === "string" ? entry.id : "")).filter(Boolean);
+  }
+  return { ...rule, interactiveBackdrops: { ...backdrops, slots, components } };
+}
+
+const listOf = (value: unknown): readonly string[] => (Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : []);
+
 export interface Reference { readonly registry?: string; readonly item?: string; readonly version?: string; readonly hash?: string }
 export interface Lineage {
   readonly slot?: string;
@@ -95,16 +144,18 @@ export const carriesBackdrop = (item: Item): boolean => !!item?.meta && typeof i
  * Findings for the interactive backdrop descriptor a Designer candidate carries (foundry-build-0048
  * A4); [] when it carries none. The descriptor rides as `meta.backdrop` on the slot's own code
  * candidate, whose code keeps its own lineage (candidateLineage, lineageFindings); here only its slot
- * and component are judged against the rule's interactiveBackdrops (the param schema is judged at
+ * and component are judged against the rule's resolved interactiveBackdrops (the param schema is judged at
  * submit, pin and compile).
  */
 export function backdropFindings(label: string, slot: string, item: Item, rule: ProvenanceRule): string[] {
   if (!carriesBackdrop(item)) return [];
   const findings: string[] = [];
-  if (!(rule.interactiveBackdrops?.slots ?? []).some(pattern => globMatch(pattern, slot))) findings.push(`${label}: meta.backdrop in ${slot}, which is not an interactiveBackdrops slot of the provenance rule`);
+  const slots = listOf(rule.interactiveBackdrops?.slots);
+  const components = listOf(rule.interactiveBackdrops?.components);
+  if (!slots.some(pattern => globMatch(pattern, slot))) findings.push(`${label}: meta.backdrop in ${slot}, which is not an interactiveBackdrops slot of the provenance rule`);
   const backdrop = item!.meta!.backdrop;
   const component = backdrop && typeof backdrop === "object" && !Array.isArray(backdrop) && Object.hasOwn(backdrop, "component") ? (backdrop as { component?: unknown }).component : undefined;
-  if (typeof component !== "string" || !(rule.interactiveBackdrops?.components ?? []).includes(component)) findings.push(`${label}: meta.backdrop.component ${JSON.stringify(component ?? null)} is not one of the Foundry interactive backdrop components (${(rule.interactiveBackdrops?.components ?? []).join(", ")})`);
+  if (typeof component !== "string" || !components.includes(component)) findings.push(`${label}: meta.backdrop.component ${JSON.stringify(component ?? null)} is not one of the adopted interactive backdrop components (${components.join(", ")})`);
   return findings;
 }
 

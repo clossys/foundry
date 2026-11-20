@@ -290,6 +290,14 @@
         }
       ]
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/command.tsx",
+        "export": "Command",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

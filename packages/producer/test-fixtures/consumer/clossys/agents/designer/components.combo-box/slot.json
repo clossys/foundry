@@ -290,6 +290,14 @@
       "components.popover"
     ],
     "apg": "combobox",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/combobox.tsx",
+        "export": "Combobox",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

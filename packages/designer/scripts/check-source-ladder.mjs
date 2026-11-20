@@ -40,6 +40,18 @@
  *                         a pending-owner-ratification amendment is not signed and still fails; the
  *                         finding names the pending file.
  *
+ * Adopted interactive backdrops (foundry-build-0048 U23, owner 2026-11-18): every record of
+ * src/catalog/rules/backdrop-components.json carries the same light `ladder` record, judged by the
+ * rules above, and its source is checked:
+ *   backdrop-rung         a vendored registry source records rung L2 choosing `@<registry>/<item>`; a
+ *                         Foundry source records rung L4 (the no-alternative basis);
+ *   backdrop-source       a registry source has no vendored manifest row at its registry/item@version
+ *                         with an allowed licence matching the chosen licence, or the vendored file
+ *                         or the partner copy is missing; a Foundry source file is missing;
+ *   backdrop-copy-drift   the partner copy, with its leading `//` header lines removed and its one
+ *                         import rewrite reversed (COPY_IMPORT_REWRITES), is not byte-for-byte the
+ *                         vendored upstream file.
+ *
  * Offline only: it reads recorded numbers and vendored files, never the network. Dependency-free
  * (node builtins only), so it runs in check:gates' safety job.
  *
@@ -104,8 +116,9 @@ function partFields(part, where, add, { numbers }) {
  * @param {string[]} [input.consumerSlots] every consumer Designer slot id, pinned or not
  * @param {Set<string>} [input.pinStockItems] vendored shadcn-aria item names a pin may take (ui, block, component, font)
  * @param {{signed: Record<string, Set<string>>, pending: Map<string, string>}} [input.leafFreeze] owner-signed leaf ids per frozen layer; pending id -> amendment file
+ * @param {{registry: object, sources: Record<string, {manifest?: object, vendored?: string, copy?: string, foundry?: boolean}>}} [input.backdrops] the adopted backdrop registry and what each record's source resolves to
  */
-export function checkSourceLadder({ roster, stockItems, stockFills, componentModules, aliases = new Map(), consumerPins = [], consumerSlots = [], pinStockItems = new Set(), leafFreeze }) {
+export function checkSourceLadder({ roster, stockItems, stockFills, componentModules, aliases = new Map(), consumerPins = [], consumerSlots = [], pinStockItems = new Set(), leafFreeze, backdrops }) {
   const findings = [];
   const leaves = new Set();
   for (const layer of LAYERS) for (const row of roster[layer] ?? []) for (const leaf of row.leaves ?? []) leaves.add(leaf);
@@ -130,29 +143,7 @@ export function checkSourceLadder({ roster, stockItems, stockFills, componentMod
     }
 
     if (ladder === undefined) { add("missing-ladder", `non-stock offer (${(offer.leaves ?? []).join(", ")}) has no ladder record`); continue; }
-    if (!ladder || typeof ladder !== "object" || Array.isArray(ladder)) { add("ladder-fields", "ladder must be an object"); continue; }
-
-    if (ladder.category !== undefined && !CATEGORIES.includes(ladder.category)) add("ladder-fields", `category must be one of ${CATEGORIES.join(", ")}`);
-    if (!text(ladder.reason)) add("ladder-fields", "reason is required");
-    if (ladder.checkedAt !== undefined && !(typeof ladder.checkedAt === "string" && /^\d{4}-\d{2}-\d{2}(?:T[\d:.]+Z?)?$/.test(ladder.checkedAt))) add("ladder-fields", "checkedAt must be an ISO date");
-    if (ladder.rejected !== undefined && !Array.isArray(ladder.rejected)) add("ladder-fields", "rejected must be an array");
-    if (rejected.length > MAX_REJECTED) add("ladder-fields", `at most ${MAX_REJECTED} rejected candidates (${rejected.length} recorded)`);
-    if (rejected.length + (ladder.chosen ? 1 : 0) > MAX_CANDIDATES) add("ladder-fields", `at most ${MAX_CANDIDATES} candidates in all`);
-    rejected.forEach((entry, index) => partFields(entry, `rejected[${index}]`, add, { numbers: true }));
-    const chosenStars = count(ladder.chosen?.stars) ? ladder.chosen.stars : -1;
-    rejected.forEach((entry, index) => {
-      if (!entry || typeof entry !== "object" || text(entry.reason)) return;
-      const more = count(entry.stars) && entry.stars > chosenStars;
-      add("popularity", `rejected[${index}] (${entry.id ?? "?"}) has no one-line reason${more ? `; it has more stars (${entry.stars}) than the chosen part` : ""}`);
-    });
-    if (ladder.chosen?.licence !== undefined && !licenceAllowed(ladder.chosen.licence)) add("licence", `chosen licence ${JSON.stringify(ladder.chosen.licence)} is not MIT, Apache-2.0, BSD or ISC`);
-    if (LIGHT_CATEGORIES.includes(ladder.category)) continue;
-
-    if (!RUNGS.includes(ladder.rung)) { add("ladder-fields", `rung must be one of ${RUNGS.join(", ")}`); continue; }
-    if (ladder.rung === "L2") partFields(ladder.chosen, "chosen", add, { numbers: true });
-    if (ladder.rung === "L3") partFields(ladder.chosen, "chosen", add, { numbers: false });
-    if (ladder.rung === "L4" && (!text(ladder.slotNeeded) || !text(ladder.reason))) add("l4-justification", "rung L4 needs slotNeeded and reason");
-    if (ladder.rung !== "L4" && ladder.slotNeeded !== undefined) add("ladder-fields", "slotNeeded is recorded only on rung L4");
+    ladderRecordFindings(ladder, add);
   }
 
   for (const module of componentModules) {
@@ -164,7 +155,103 @@ export function checkSourceLadder({ roster, stockItems, stockFills, componentMod
     if (!rostered) findings.push({ rule: "unrostered-component", subject: `src/components/${module.file}`, detail: `exports ${module.names.join(", ")}; no roster row for ${[...candidates].join(" | ")}` });
   }
   findings.push(...checkConsumerPins({ consumerPins, pinStockItems }), ...checkConsumerLeafFreeze({ consumerSlots, leafFreeze }));
+  if (backdrops) findings.push(...checkBackdropComponents(backdrops));
   return findings;
+}
+
+/** The one local adaptation a partner copy may make, upstream import specifier -> local specifier. */
+export const COPY_IMPORT_REWRITES = Object.freeze([["@/lib/utils", "../../preview-runtime/components/_parts/utils/index.js"]]);
+
+/** A partner copy as upstream wrote it: leading `//` header lines removed, import rewrites reversed. */
+export function partnerCopyBody(copyText) {
+  const lines = copyText.split("\n");
+  let start = 0;
+  while (start < lines.length && lines[start].startsWith("//")) start += 1;
+  let body = lines.slice(start).join("\n");
+  for (const [upstream, local] of COPY_IMPORT_REWRITES) body = body.split(`"${local}"`).join(`"${upstream}"`);
+  return body;
+}
+
+/**
+ * backdrop-rung, backdrop-source, backdrop-copy-drift and the ladder record rules over the adopted
+ * backdrop registry. `sources[id]` is what the record's source resolved to on disk. Pure.
+ */
+export function checkBackdropComponents({ registry, sources }) {
+  const findings = [];
+  const components = Array.isArray(registry?.components) ? registry.components : undefined;
+  if (!components || !components.length) return [{ rule: "backdrop-source", subject: "backdrops", detail: "backdrop-components.json lists no components" }];
+  for (const record of components) {
+    const subject = `backdrops/${record?.id ?? "?"}`;
+    const add = (rule, detail) => findings.push({ rule, subject, detail });
+    const source = record?.source ?? {};
+    const resolved = sources?.[record?.id] ?? {};
+    const ladder = record?.ladder;
+    if (ladder === undefined) add("missing-ladder", "adopted backdrop record has no ladder record");
+    else ladderRecordFindings(ladder, add);
+    if (typeof source.foundry === "string") {
+      if (ladder?.rung !== "L4") add("backdrop-rung", `a Foundry source (${source.foundry}) records rung L4 with its no-alternative basis, not ${ladder?.rung ?? "none"}`);
+      if (!resolved.foundry) add("backdrop-source", `Foundry source ${source.foundry} does not exist`);
+      continue;
+    }
+    if (![source.registry, source.item, source.version, source.file, source.copy].every(text)) { add("backdrop-source", "a registry source names registry, item, version, file and copy"); continue; }
+    if (ladder?.rung !== "L2" || ladder?.chosen?.id !== `@${source.registry}/${source.item}`) add("backdrop-rung", `a vendored registry source records rung L2 choosing @${source.registry}/${source.item}`);
+    const row = resolved.manifest;
+    if (!row) { add("backdrop-source", `no vendored manifest row for ${source.registry}/${source.item}@${source.version}`); continue; }
+    if (!licenceAllowed(row.license)) add("backdrop-source", `vendored licence ${JSON.stringify(row.license)} is not MIT, Apache-2.0, BSD or ISC`);
+    else if (ladder?.chosen?.licence !== undefined && ladder.chosen.licence !== row.license) add("backdrop-source", `ladder licence ${ladder.chosen.licence} differs from the vendored licence ${row.license}`);
+    if (!(row.files ?? []).some(file => file?.path === source.file)) add("backdrop-source", `${source.file} is not a vendored file of ${row.dir}`);
+    if (typeof resolved.vendored !== "string") { add("backdrop-source", `vendored file ${row.dir}/${source.file} is missing`); continue; }
+    if (typeof resolved.copy !== "string") { add("backdrop-source", `partner copy ${source.copy} is missing`); continue; }
+    if (partnerCopyBody(resolved.copy) !== resolved.vendored) add("backdrop-copy-drift", `${source.copy} is not byte-for-byte ${row.dir}/${source.file} (header and import rewrites aside)`);
+  }
+  return findings;
+}
+
+/** The adopted backdrop registry and each record's source as read from disk. */
+export function backdropsFrom(designer) {
+  const registry = JSON.parse(fs.readFileSync(path.join(designer, "src/catalog/rules/backdrop-components.json"), "utf8"));
+  const manifest = JSON.parse(fs.readFileSync(path.join(designer, "references/manifest.json"), "utf8"));
+  const readIf = file => fs.existsSync(file) ? fs.readFileSync(file, "utf8") : undefined;
+  const sources = {};
+  for (const record of Array.isArray(registry.components) ? registry.components : []) {
+    const source = record?.source ?? {};
+    if (typeof source.foundry === "string") { sources[record.id] = { foundry: fs.existsSync(path.join(designer, source.foundry)) }; continue; }
+    const row = (manifest.items ?? []).find(item => item.registry === source.registry && item.name === source.item && item.version === source.version);
+    sources[record.id] = {
+      manifest: row,
+      vendored: row && typeof source.file === "string" ? readIf(path.join(designer, "references", row.dir, source.file)) : undefined,
+      copy: typeof source.copy === "string" ? readIf(path.join(designer, source.copy)) : undefined,
+    };
+  }
+  return { registry, sources };
+}
+
+/** The ladder record rules (ladder-fields, l4-justification, popularity, licence) over one record. Pure. */
+export function ladderRecordFindings(ladder, add) {
+  const rejected = Array.isArray(ladder?.rejected) ? ladder.rejected : [];
+  if (!ladder || typeof ladder !== "object" || Array.isArray(ladder)) { add("ladder-fields", "ladder must be an object"); return; }
+
+  if (ladder.category !== undefined && !CATEGORIES.includes(ladder.category)) add("ladder-fields", `category must be one of ${CATEGORIES.join(", ")}`);
+  if (!text(ladder.reason)) add("ladder-fields", "reason is required");
+  if (ladder.checkedAt !== undefined && !(typeof ladder.checkedAt === "string" && /^\d{4}-\d{2}-\d{2}(?:T[\d:.]+Z?)?$/.test(ladder.checkedAt))) add("ladder-fields", "checkedAt must be an ISO date");
+  if (ladder.rejected !== undefined && !Array.isArray(ladder.rejected)) add("ladder-fields", "rejected must be an array");
+  if (rejected.length > MAX_REJECTED) add("ladder-fields", `at most ${MAX_REJECTED} rejected candidates (${rejected.length} recorded)`);
+  if (rejected.length + (ladder.chosen ? 1 : 0) > MAX_CANDIDATES) add("ladder-fields", `at most ${MAX_CANDIDATES} candidates in all`);
+  rejected.forEach((entry, index) => partFields(entry, `rejected[${index}]`, add, { numbers: true }));
+  const chosenStars = count(ladder.chosen?.stars) ? ladder.chosen.stars : -1;
+  rejected.forEach((entry, index) => {
+    if (!entry || typeof entry !== "object" || text(entry.reason)) return;
+    const more = count(entry.stars) && entry.stars > chosenStars;
+    add("popularity", `rejected[${index}] (${entry.id ?? "?"}) has no one-line reason${more ? `; it has more stars (${entry.stars}) than the chosen part` : ""}`);
+  });
+  if (ladder.chosen?.licence !== undefined && !licenceAllowed(ladder.chosen.licence)) add("licence", `chosen licence ${JSON.stringify(ladder.chosen.licence)} is not MIT, Apache-2.0, BSD or ISC`);
+  if (LIGHT_CATEGORIES.includes(ladder.category)) return;
+
+  if (!RUNGS.includes(ladder.rung)) { add("ladder-fields", `rung must be one of ${RUNGS.join(", ")}`); return; }
+  if (ladder.rung === "L2") partFields(ladder.chosen, "chosen", add, { numbers: true });
+  if (ladder.rung === "L3") partFields(ladder.chosen, "chosen", add, { numbers: false });
+  if (ladder.rung === "L4" && (!text(ladder.slotNeeded) || !text(ladder.reason))) add("l4-justification", "rung L4 needs slotNeeded and reason");
+  if (ladder.rung !== "L4" && ladder.slotNeeded !== undefined) add("ladder-fields", "slotNeeded is recorded only on rung L4");
 }
 
 /** Whether a pin's reason names an aria item, which is how a pin records passing it over. */
@@ -297,7 +384,7 @@ export function loadInputs(designer, consumer = defaultConsumer(designer)) {
   if (!componentModules.length) throw new Error("No component modules exported from src/components/index.ts");
   const aliasFile = path.join(designer, "src/catalog/component-aliases.ts");
   const aliases = fs.existsSync(aliasFile) ? aliasesFrom(fs.readFileSync(aliasFile, "utf8")) : new Map();
-  return { roster, stockItems, stockFills, componentModules, aliases, pinStockItems, leafFreeze: leafFreezeFrom(path.join(designer, "src/catalog/ia")), ...consumerFrom(consumer) };
+  return { roster, stockItems, stockFills, componentModules, aliases, pinStockItems, leafFreeze: leafFreezeFrom(path.join(designer, "src/catalog/ia")), backdrops: backdropsFrom(designer), ...consumerFrom(consumer) };
 }
 
 export function summarize(findings) {

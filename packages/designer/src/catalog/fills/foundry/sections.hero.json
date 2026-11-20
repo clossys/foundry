@@ -66,7 +66,7 @@
           },
           {
             "path": "packages/designer/src/blocks/backdrop/InteractiveBackdrop.tsx",
-            "sha256": "822aab8c8e7e3040eec3aafcc6e0f8665df6d2ff46310c377d593f9f6a716c27"
+            "sha256": "262602b383d611b96f118299a75d87364bcfa264f5b1d7d774ba18e5791d4fac"
           },
           {
             "path": "packages/designer/src/blocks/Hero.tsx",
@@ -74,7 +74,7 @@
           },
           {
             "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
-            "sha256": "71621544cd05951f7e011183b730cf46b1d8fc651415852bd7566627aad5a08c"
+            "sha256": "d59f217fe819d1bc09d24e154c1912dfac4bc7203c4073abf8f5b94f1f24efcb"
           },
           {
             "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -126,7 +126,7 @@
           },
           {
             "path": "packages/designer/src/tokens/interactive-backdrops.ts",
-            "sha256": "28adf71d8391262df86ce03faf6b3eac900f9c0be5c706541bef8b5b618d587d"
+            "sha256": "6ceac9b77ff9fe687c27fe86763e124543c07d3bbc12c84870bc0cd0eabbe244"
           },
           {
             "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",

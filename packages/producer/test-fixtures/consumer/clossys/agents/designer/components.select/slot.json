@@ -285,6 +285,14 @@
       "components.popover"
     ],
     "apg": "listbox",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/select.tsx",
+        "export": "Select",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

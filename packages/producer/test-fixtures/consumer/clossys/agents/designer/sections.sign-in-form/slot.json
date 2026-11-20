@@ -467,6 +467,55 @@
     },
     "data": "host-injected",
     "surface": "app",
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/blocks/login-03/page.tsx",
+        "export": "default",
+        "props": {
+          "copy": {
+            "header": {
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "providers": [
+              {
+                "label": "DRAFT label"
+              }
+            ],
+            "credentials": {
+              "identifier-label": "DRAFT label",
+              "identifier-placeholder": "DRAFT label",
+              "password-label": "DRAFT label",
+              "password-placeholder": "DRAFT label"
+            },
+            "verification": {
+              "code-label": "DRAFT label",
+              "description": "DRAFT body",
+              "placeholder": "DRAFT label"
+            },
+            "actions": {
+              "submit": "DRAFT action",
+              "verify": "DRAFT action",
+              "pending": "DRAFT action",
+              "back": "DRAFT action",
+              "resend": "DRAFT action",
+              "divider": "DRAFT label"
+            },
+            "error": {
+              "message": "DRAFT body",
+              "identifier": "DRAFT label",
+              "password": "DRAFT label",
+              "code": "DRAFT label"
+            }
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

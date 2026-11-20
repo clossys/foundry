@@ -444,6 +444,76 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/examples/item-example.tsx",
+        "export": "ItemExample",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "grouping": [
+              {
+                "label": "DRAFT label"
+              }
+            ],
+            "filters": {
+              "links": [
+                {
+                  "label": "DRAFT label"
+                }
+              ]
+            },
+            "labels": {
+              "label": "DRAFT label",
+              "unread": "DRAFT label",
+              "changed-from": "DRAFT label",
+              "changed-to": "DRAFT label",
+              "cleared": "DRAFT label"
+            },
+            "states": {
+              "loading": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              },
+              "empty": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              },
+              "error": {
+                "label": "DRAFT label",
+                "description": "DRAFT body"
+              }
+            },
+            "events": [
+              {
+                "actor": {
+                  "name": "DRAFT label"
+                },
+                "summary": "DRAFT body",
+                "time-text": "DRAFT label",
+                "changes": [
+                  {
+                    "field": "DRAFT label",
+                    "from": "DRAFT label",
+                    "to": "DRAFT label"
+                  }
+                ],
+                "detail": "DRAFT body"
+              }
+            ]
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

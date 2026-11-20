@@ -139,7 +139,11 @@
       {
         "name": "images",
         "type": "media",
-        "required": true
+        "required": true,
+        "placement": "figure",
+        "alt": {
+          "copy": "images.items[].label"
+        }
       }
     ],
     "members": {
@@ -265,6 +269,38 @@
           "dir": "auto"
         }
       ]
+    },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/examples/carousel-example.tsx",
+        "export": "CarouselExample",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "images": {
+              "label": "DRAFT label",
+              "items": [
+                {
+                  "label": "DRAFT label",
+                  "caption": "DRAFT body",
+                  "media": {
+                    "title": "DRAFT heading"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
     },
     "requirements": [
       {

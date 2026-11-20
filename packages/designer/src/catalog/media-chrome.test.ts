@@ -22,7 +22,7 @@ const catalogDirectory = dirname(fileURLToPath(import.meta.url));
 describe("media specimen chrome catalog contract", () => {
   it("keeps the figure required and exposes optional callouts with exactly three chrome members", () => {
     expect(section.contract.slots).toEqual([
-      { name: "figure", type: "media", required: true },
+      { name: "figure", type: "media", required: true, placement: "figure", alt: { copy: "figure.media.title" } },
       { name: "callouts", type: "records", required: false },
     ]);
     expect(section.contract.members).toEqual({ mode: "closed", names: ["chrome.browser", "chrome.device", "chrome.bare"] });

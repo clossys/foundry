@@ -138,6 +138,15 @@ in a candidate.
    git commit -m "writer: <slot> <name> v<N>"
    ```
 
+## Cascade
+
+DRAFT, for owner approval (foundry-build-0048 U26): this wording is not approved yet.
+
+After a repin of one of your slots, Producer's `loop.cascade` re-verdicts every dependant, then its impact step is yours:
+read the slot and the re-verdicts and note the impact in your check scratch, by the skill
+`actions/writer.cascade/skill.md`. It pins nothing and runs only after every dependant
+passed; a failing re-verdict stops the cascade before it, with a queue.fix to that dependant's owner.
+
 ## Interview
 
 Run the Producer skill's Interview contract (`clossys-producer`, section Interview) for agent

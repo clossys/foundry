@@ -173,6 +173,14 @@
       ],
       "assets": []
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/progress.tsx",
+        "export": "Progress",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

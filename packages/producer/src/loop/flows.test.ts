@@ -932,7 +932,9 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     writeFileSync(join(w.root, "contract.json"), JSON.stringify({ requirements: [{ check: "text.nonempty" }] }));
     const decided = await w.cli("request", id, "--decide", "create", "--propose", "narratives.faq", "--under", "prose.reference/help", "--inputs", "director/focus.segment.core", "--contract", join(w.root, "contract.json"), "--by", "writer");
     expect(decided.exitCode, decided.message).toBe(0);
-    const sign = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
+    // The decide step changed its request entry, so the resume reports it: Producer's standard version is judged by
+    // what the step changed too, and an unreported change stops the run (foundry-build-0048 U26).
+    const sign = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `producer/queue.slot/entries/${id}.json`);
     const entry = /sign waits for the owner on (queue\.approve#\S+)/.exec(sign.message ?? "")![1]!;
     // Unsigned, the leaf is not placed: closing a create takes the owner's signature.
     const unsigned = await w.cli("request", id, "--close");
@@ -983,7 +985,7 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     // Reuse instead: no owner entry is raised, the requester is linked, the reused slot is not written.
     const reused = readFileSync(join(w.root, "clossys", "agents", "writer", "narratives.guide", "ledger.json"), "utf8");
     expect((await w.cli("request", id, "--decide", "reuse", "--slot", "writer/narratives.guide", "--by", "writer")).exitCode).toBe(0);
-    const done = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
+    const done = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `producer/queue.slot/entries/${id}.json`);
     expect(done.message).not.toMatch(/sign waits for the owner/);
     expect(done.message).toMatch(/done: loop\.slot done/);
     expect(done.exitCode).toBe(0);
@@ -1008,7 +1010,7 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     const decided = await w.cli("request", id, "--decide", "create", "--propose", "narratives.how-to", "--under", "prose.reference/help", "--kind", "strings", "--inputs", inputs.slice(1).join(","), "--overlap-reason", reason, "--contract", join(w.root, "contract.json"), "--by", "writer");
     expect(decided.exitCode, decided.message).toBe(0);
     expect(w.read(`producer/queue.slot/entries/${id}.json`)).toMatchObject({ decision: "create", overlapReason: reason, overlaps: [{ slot: "writer/narratives.guide" }], proposal: { inputs: inputs.slice(1) } });
-    const sign = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
+    const sign = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `producer/queue.slot/entries/${id}.json`);
     const entry = /sign waits for the owner on (queue\.approve#\S+)/.exec(sign.message ?? "")![1]!;
     expect((await w.cli("answer", entry, "approve", "--by", "owner", "--via", "chat", "--quote", "a how-to is its own leaf")).exitCode).toBe(0);
     const done = await w.run("loop.slot", "--resume", "--run", runId);
@@ -1047,4 +1049,56 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     expect(red.steps.at(-1)).toMatchObject({ id: "demand", exit: 1 });
     expect(red.checks["requests.filed"]).toBe("fail");
   });
+
+  // foundry-build-0048 U26 r2 (B1, B2): each standard loop.scope step is judged as the agent its decider names, never as
+  // the run's --agent. A step files its own request (the skill's job) and reports it; another agent's request is refused.
+  /** A slot of `agent`'s gains an input naming a slot no agent holds yet, cited before the run so the step only raises. */
+  function citeIn(w: ReturnType<typeof fixture>, slot: string, need: string) {
+    const file = join(w.root, "clossys", "agents", slot, "slot.json");
+    const doc = JSON.parse(readFileSync(file, "utf8"));
+    doc.refs.push({ to: need, rel: "input" });
+    writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+  }
+  const DIRECTOR_SLOT = "director/context.customer.need";
+  const DESIGNER_SLOT = "designer/assets.app-icon";
+  const raiseFrom = async (w: ReturnType<typeof fixture>, slot: string, target: string, by: string) => {
+    const raised = await w.cli("request", "--target", target, "--from", slot, "--why", "the slot cites it", "--by", by);
+    expect(raised.exitCode, raised.message).toBe(0);
+    return (raised.output as { id: string }).id;
+  };
+
+  for (const scoped of [[], ["--agent", "designer"]] as const) {
+    it(`lets a standard loop.scope step file its own request and report it with --wrote (${scoped.length ? "--agent designer" : "no --agent"})`, async () => {
+      const w = fixture();
+      citeIn(w, DIRECTOR_SLOT, "director/narratives.origin");
+      const start = await w.run("loop.scope", ...scoped);
+      expect(start.message).toMatch(/step scope-director waits for agent:director \(decide, mid\)/);
+      const runId = waitingRun(start.message);
+      // The director's step raises from the director's own slot, as director.scope/skill.md says.
+      const id = await raiseFrom(w, DIRECTOR_SLOT, "director/narratives.origin", "director");
+      const next = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `producer/queue.slot/entries/${id}.json`);
+      expect(next.exitCode, next.message).toBe(0);
+      expect(next.message).toMatch(/step scope-designer waits for agent:designer/);
+      expect(w.read(`producer/queue.slot/entries/${id}.json`)).toMatchObject({ kind: "slot", from: DIRECTOR_SLOT, target: "director/narratives.origin", status: "open" });
+      let last = next;
+      for (let step = 0; step < 3; step++) last = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
+      expect(last.message).toMatch(/done: loop\.scope done/);
+      const ledger = JSON.parse(readFileSync(join(w.root, "clossys", "agents", "producer", "ledger.scope", "entries", `${runId}.json`), "utf8")) as LedgerEntry;
+      expect(ledger.steps.find(step => step.id === "scope-director")).toMatchObject({ exit: 0, wrote: [{ file: `producer/queue.slot/entries/${id}.json` }] });
+    });
+
+    it(`refuses a standard loop.scope step that files a request under another agent's name (${scoped.length ? "--agent designer" : "no --agent"})`, async () => {
+      const w = fixture();
+      citeIn(w, DESIGNER_SLOT, "director/proof.case-study");
+      const start = await w.run("loop.scope", ...scoped);
+      expect(start.message).toMatch(/step scope-director waits for agent:director/);
+      const runId = waitingRun(start.message);
+      // The director's step raises as the designer, from the designer's slot: a write the director may not make.
+      const id = await raiseFrom(w, DESIGNER_SLOT, "director/proof.case-study", "designer");
+      const refused = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `producer/queue.slot/entries/${id}.json`);
+      expect(refused.exitCode, refused.message).toBe(1);
+      expect(refused.message).toMatch(new RegExp(`step scope-director wrote producer/queue\\.slot/entries/${id}\\.json, which producer/loop\\.scope\\S* does not declare it writes`));
+      expect(refused.message).not.toMatch(/scope-designer waits/);
+    });
+  }
 });

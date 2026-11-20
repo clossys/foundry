@@ -49,6 +49,18 @@ describe("THIRD-PARTY-NOTICES.md", () => {
     mentions(`The ${glyphs.length} glyphs`);
   });
 
+  it("has a Magic UI section for every vendored Magic UI backdrop, with its MIT licence (foundry-build-0048 U23 review N3)", () => {
+    const registry = JSON.parse(read("src/catalog/rules/backdrop-components.json")) as { components: { source: { registry?: string; item?: string; version?: string } }[] };
+    const magicui = registry.components.map(entry => entry.source).filter(source => source.registry === "magicui");
+    expect(magicui.length).toBeGreaterThan(0);
+    mentions("\n## Magic UI\n");
+    const section = notices.slice(notices.indexOf("\n## Magic UI\n"), notices.indexOf("\n## ", notices.indexOf("\n## Magic UI\n") + 1));
+    for (const text of ["SPDX-License-Identifier: MIT", "MIT License", "Copyright (c) Magic UI", ...new Set(magicui.map(source => source.version!))]) {
+      expect(section.includes(text), `the Magic UI section must contain ${JSON.stringify(text)}`).toBe(true);
+    }
+    for (const source of magicui) expect(section.includes(`\`${source.item}\``), `the Magic UI section must name ${source.item}`).toBe(true);
+  });
+
   it("has a section for every package this package would install at runtime", () => {
     const runtime = ["dependencies", "optionalDependencies", "bundleDependencies", "bundledDependencies"].flatMap(key => {
       const value = pkg[key] ?? {};

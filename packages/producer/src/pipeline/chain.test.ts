@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -44,6 +44,38 @@ function converted(root: string): string {
   const plan = planSlotsMigration(root, { at: "2026-11-17T12:00:00.000Z", version: "0.0.0-test" });
   expect(plan.findings).toEqual([]);
   applySlotsMigration(root, plan, { at: "2026-11-17T12:00:00.000Z", version: "0.0.0-test" });
+  return root;
+}
+/**
+ * The fixture consumer ships its slots without candidates (the repository's own records are retired,
+ * SOURCE-MIGRATE step 11). These write the candidates a case holds, into the scratch copy only.
+ */
+/** A held Designer favicon candidate, favicon-v2: a neutral vector with a 21.875 corner radius. */
+function heldFavicon(root: string): string {
+  const dir = join(root, "clossys", "agents", "designer", "assets.favicon", "candidates");
+  mkdirSync(dir, { recursive: true });
+  const svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" width=\"100\" height=\"100\" role=\"img\" aria-label=\"Fixture mark\">\n  <rect width=\"100\" height=\"100\" rx=\"21.875\" fill=\"#0A0A0A\"/>\n  <circle cx=\"50\" cy=\"50\" r=\"24\" fill=\"#FAFAFA\"/>\n</svg>\n";
+  const candidate = {
+    name: "favicon", type: "registry:item",
+    files: [{ path: "favicon/vector.svg", type: "registry:file", content: svg }],
+    meta: {
+      slot: "assets.favicon", source: { kind: "original", ref: [], license: "MIT" },
+      element: {
+        id: "favicon", package: "designer", layer: "assets", slot: "assets.favicon", kind: "registry:item", license: "MIT",
+        creator: { agent: "designer", model: "fixture-model", by: "fixture" }, reason: "A fixture favicon: one filled circle on a rounded square.",
+        createdAt: "2026-11-03T00:00:00Z", checks: [{ check: "ref-verbatim", status: "exempt", note: "non-code asset payload" }],
+        deps: { npm: {}, registry: [] }, reads: { copyKeys: [], themeVars: [] },
+      },
+    },
+  };
+  writeFileSync(join(dir, "favicon-v2.json"), `${JSON.stringify(candidate, null, 2)}\n`);
+  return root;
+}
+/** A held Director brief candidate, so the migrate step's first input (Director candidates) matches a file. */
+function heldBrief(root: string): string {
+  const dir = join(root, "clossys", "agents", "director", "advantage.model.margin", "candidates");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "fixture-margin-v1.md"), "---\nslot: \"advantage.model.margin\"\nsource: {\"kind\":\"original\",\"ref\":[]}\nfeeds: []\nfunctions: []\n---\n\n## Direction\n\n- Unit: one seat per month.\n- Target: 60 percent by 2027.\n- Lever: annual plans.\n\n## Because\n\n- The owner set it.\n\n## Watch\n\n- If margin falls below 50 in any quarter, then revisit the lever.\n");
   return root;
 }
 /**
@@ -141,7 +173,7 @@ describe("clossys run", { timeout: 60_000 }, () => {
     expect(ownerStep(migrators, ["migrate", "copy-keys"])!.id).toBe("migrate");
     expect(ownerStep(migrators, ["migrate", "citations-to-slots"])!.id).toBe("migrate");
     expect(ownerStep(migrators, ["migrate", "copy-keys"], "not-a-migrator")!.id).toBe("migrate");
-    const root = workspace();
+    const root = heldBrief(workspace());
     const steps = [real("migrate")];
     expect(runChain(root, { steps, dry: true }).rows[0]!.state).toBe("would-run");
     process.env[STEP_ENV] = "migrate";
@@ -260,7 +292,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
   });
 
   it("refuses a submission that fails its schema and records nothing", async () => {
-    const root = unseated(workspace());
+    const root = heldFavicon(unseated(workspace()));
     const slot = "assets.favicon";
     const dir = join(root, "clossys", "agents", "designer", slot, "candidates");
     const before = readdirSync(dir);
@@ -274,7 +306,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
   });
 
   it("refuses a submission whose skill is not the contract's", async () => {
-    const root = workspace();
+    const root = heldFavicon(workspace());
     const slot = "assets.favicon";
     const good = join(root, "clossys", "agents", "designer", slot, "candidates", "favicon-v2.json");
     const result = await runPipeline(["next", `designer/${slot}`, "--submit", good, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", "skill/SKILL.md", "--rung", "L4", "--reason", "fixture: no stock or partner seed fits", "--root", root], root);
@@ -284,7 +316,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
   });
 
   it("records an accepted submission with its model, tier, basis and skill hash", async () => {
-    const root = unseated(workspace());
+    const root = heldFavicon(unseated(workspace()));
     const slot = "assets.favicon";
     const dir = join(root, "clossys", "agents", "designer", slot, "candidates");
     const source = join(root, "favicon.json");
@@ -315,7 +347,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
   });
 
   it("refuses a byte-identical candidate and a created candidate with no reason no seed fit", async () => {
-    const root = unseated(workspace());
+    const root = heldFavicon(unseated(workspace()));
     const slot = "assets.favicon";
     const dir = join(root, "clossys", "agents", "designer", slot, "candidates");
     const before = readdirSync(dir);

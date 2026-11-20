@@ -205,6 +205,14 @@
       ]
     },
     "apg": "checkbox",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/checkbox.tsx",
+        "export": "Checkbox",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

@@ -1,8 +1,8 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { backdropFindings, candidateLineage, carriesBackdrop, consumerOwnDerivation, globMatch, lineageFindings, parseRef, seedItem, sha256, treeHash, verbatimFindings, type ProvenanceRule, type ReferenceManifest } from "./source.js";
+import { backdropFindings, candidateLineage, carriesBackdrop, consumerOwnDerivation, globMatch, lineageFindings, parseRef, resolveProvenanceRule, seedItem, sha256, treeHash, verbatimFindings, type ProvenanceRule, type ReferenceManifest } from "./source.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const producerRoot = join(here, "../../..");
@@ -68,19 +68,50 @@ describe("certify/source.ts helpers", () => {
     expect(lineage?.source?.item).toBe("button");
   });
 
-  it("interactive backdrop: meta.backdrop rides on a code candidate in an interactiveBackdrops slot only, without changing the code's lineage (foundry-build-0048 A4)", () => {
-    const rule: ProvenanceRule = { ...RULE, interactiveBackdrops: { slots: ["sections.hero"], components: ["particle-field", "gradient-mesh", "grid-glow"] } };
+  it("interactive backdrop: meta.backdrop rides on a code candidate in an interactiveBackdrops slot only, without changing the code's lineage (foundry-build-0048 A4, U23)", () => {
+    const rule: ProvenanceRule = { ...RULE, interactiveBackdrops: { slots: ["sections.hero"], components: ["particles", "flickering-grid", "grid-pattern", "gradient-mesh"] } };
     const hero = (backdrop?: unknown) => ({ files: [{ path: "hero.tsx" }], meta: { source: { kind: "original", ref: [] }, ...(backdrop === undefined ? {} : { backdrop }) } });
     expect(carriesBackdrop(hero())).toBe(false);
     expect(backdropFindings("d", "sections.hero", hero(), rule)).toEqual([]);
-    expect(carriesBackdrop(hero({ component: "grid-glow", params: {} }))).toBe(true);
-    expect(candidateLineage("sections.hero", hero({ component: "grid-glow", params: {} }))).toEqual(candidateLineage("sections.hero", hero()));
-    expect(backdropFindings("d", "sections.hero", hero({ component: "grid-glow", params: {} }), rule)).toEqual([]);
-    expect(backdropFindings("d", "sections.call-to-action", hero({ component: "grid-glow", params: {} }), rule)).toEqual([expect.stringMatching(/meta\.backdrop in sections\.call-to-action, which is not an interactiveBackdrops slot/)]);
-    expect(backdropFindings("d", "sections.hero", hero({ component: "three-scene", params: {} }), rule)).toEqual([expect.stringMatching(/"three-scene" is not one of the Foundry interactive backdrop components/)]);
-    expect(backdropFindings("d", "sections.hero", hero("grid-glow"), rule)).toEqual([expect.stringMatching(/meta\.backdrop\.component null/)]);
-    // A rule without interactiveBackdrops admits none.
-    expect(backdropFindings("d", "sections.hero", hero({ component: "grid-glow", params: {} }), RULE)).toHaveLength(2);
+    expect(carriesBackdrop(hero({ component: "flickering-grid", params: {} }))).toBe(true);
+    expect(candidateLineage("sections.hero", hero({ component: "flickering-grid", params: {} }))).toEqual(candidateLineage("sections.hero", hero()));
+    expect(backdropFindings("d", "sections.hero", hero({ component: "flickering-grid", params: {} }), rule)).toEqual([]);
+    expect(backdropFindings("d", "sections.call-to-action", hero({ component: "flickering-grid", params: {} }), rule)).toEqual([expect.stringMatching(/meta\.backdrop in sections\.call-to-action, which is not an interactiveBackdrops slot/)]);
+    expect(backdropFindings("d", "sections.hero", hero({ component: "grid-glow", params: {} }), rule)).toEqual([expect.stringMatching(/"grid-glow" is not one of the adopted interactive backdrop components/)]);
+    expect(backdropFindings("d", "sections.hero", hero("flickering-grid"), rule)).toEqual([expect.stringMatching(/meta\.backdrop\.component null/)]);
+    // A rule without interactiveBackdrops admits none, and so does an unresolved data reference.
+    expect(backdropFindings("d", "sections.hero", hero({ component: "flickering-grid", params: {} }), RULE)).toHaveLength(2);
+    const unresolved: ProvenanceRule = { ...RULE, interactiveBackdrops: { slots: { from: ["slots.json"], placement: "backdrop" }, components: { from: "registry.json" } } };
+    expect(backdropFindings("d", "sections.hero", hero({ component: "flickering-grid", params: {} }), unresolved)).toHaveLength(2);
+  });
+
+  it("resolveProvenanceRule reads the backdrop slots from surface contracts and the components from the registry (U23)", () => {
+    const files: Record<string, unknown> = {
+      "sections.json": [
+        { id: "sections.hero", contract: { slots: [{ name: "backdrop", type: "media", placement: "backdrop" }] } },
+        { id: "sections.media", contract: { slots: [{ name: "figure", type: "media", placement: "figure" }] } },
+      ],
+      "frames.json": [{ id: "frames.site-shell", contract: { slots: [{ id: "ground", placement: "backdrop" }] } }, { id: "frames.app-shell", contract: { slots: [{ id: "main" }] } }],
+      "registry.json": { components: [{ id: "ripple" }, { id: "particles" }] },
+    };
+    const read = (path: string) => { if (!(path in files)) throw new Error(`unreadable ${path}`); return files[path]; };
+    const rule: ProvenanceRule = { ...RULE, interactiveBackdrops: { slots: { from: ["sections.json", "frames.json"], placement: "backdrop" }, components: { from: "registry.json" } } };
+    expect(resolveProvenanceRule(rule, read).interactiveBackdrops).toEqual({ slots: ["frames.site-shell", "sections.hero"], components: ["ripple", "particles"] });
+    // Lists pass through; a rule without backdrops is returned as is.
+    const listed: ProvenanceRule = { ...RULE, interactiveBackdrops: { slots: ["sections.hero"], components: ["particles"] } };
+    expect(resolveProvenanceRule(listed, read)).toEqual(listed);
+    expect(resolveProvenanceRule(RULE, read)).toBe(RULE);
+    expect(() => resolveProvenanceRule({ ...RULE, interactiveBackdrops: { components: { from: "missing.json" } } }, read)).toThrow(/unreadable missing\.json/);
+    expect(() => resolveProvenanceRule({ ...RULE, interactiveBackdrops: { components: { from: "sections.json" } } }, read)).toThrow(/not a backdrop component registry/);
+    expect(() => resolveProvenanceRule({ ...RULE, interactiveBackdrops: { slots: { from: ["registry.json"], placement: "backdrop" } } }, read)).toThrow(/not a list of slots/);
+  });
+
+  it("the shipped Designer provenance rule resolves to the catalog's backdrop surfaces and the adopted registry", () => {
+    const designer = join(producerRoot, "../designer");
+    const read = (path: string) => JSON.parse(readFileSync(join(designer, path), "utf8")) as unknown;
+    const resolved = resolveProvenanceRule(read("src/catalog/rules/provenance.json") as ProvenanceRule, read).interactiveBackdrops;
+    expect(resolved?.slots).toEqual(["sections.hero"]);
+    expect(resolved?.components).toEqual((read("src/catalog/rules/backdrop-components.json") as { components: { id: string }[] }).components.map(entry => entry.id));
   });
 });
 
@@ -99,8 +130,8 @@ describe.skipIf(!existsSync(builtSource))("the Designer scripts call certify/sou
     for (const lineage of lineages) expect(script.lineageFindings("x", lineage, { rule: RULE, manifest: MANIFEST })).toEqual(lineageFindings("x", lineage, { rule: RULE, manifest: MANIFEST }));
     const item = { ...adopted(), meta: { source: { kind: "registry", ref: ["shadcn/button@1.0.0"], hash: "sha256:seed" } } };
     expect(script.candidateLineage("ui.button", item)).toEqual(candidateLineage("ui.button", item));
-    const backdrop = { files: [], meta: { source: { kind: "original", ref: [] }, backdrop: { component: "grid-glow", params: {} } } };
-    const backdropRule: ProvenanceRule = { ...RULE, interactiveBackdrops: { slots: ["sections.hero"], components: ["grid-glow"] } };
+    const backdrop = { files: [], meta: { source: { kind: "original", ref: [] }, backdrop: { component: "flickering-grid", params: {} } } };
+    const backdropRule: ProvenanceRule = { ...RULE, interactiveBackdrops: { slots: ["sections.hero"], components: ["flickering-grid"] } };
     for (const slot of ["sections.hero", "sections.call-to-action"]) expect(script.backdropFindings("x", slot, backdrop, { rule: backdropRule })).toEqual(backdropFindings("x", slot, backdrop, backdropRule));
   }, 60_000);
 

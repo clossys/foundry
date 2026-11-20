@@ -169,6 +169,14 @@
     "composes": [
       "components.toggle-button"
     ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/toggle-group.tsx",
+        "export": "ToggleGroup",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

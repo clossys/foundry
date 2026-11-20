@@ -1,5 +1,5 @@
 // Generated from sections.band by src/generated/props/generate.ts; do not edit.
-export const bandContractSha256 = "ae1c769c4899f3198d5b1f772e2ee56d2dda2e194b9d75bfb6fb0b4dd5cb386c";
+export const bandContractSha256 = "d266147617247a6d9c2a8ebb49ea846a1ebbdea64abfb6b0869029fa391f13f8";
 
 export type BandCopy = Record<string, never>;
 export type BandVariant = {

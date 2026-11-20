@@ -273,6 +273,14 @@
       "components.icon"
     ],
     "apg": "button",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/button.tsx",
+        "export": "Button",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

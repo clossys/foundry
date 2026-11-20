@@ -1,5 +1,5 @@
 import { store } from "../test/store.js";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -97,6 +97,8 @@ describe("main — argument handling", () => {
 });
 
 describe("main — default ground root", () => {
+  // The CLI resolves roots from process.cwd(), which is a real path; on macOS tmpdir() is a symlink
+  // (/var -> /private/var), so repository temp roots start from its real path to compare equal.
   it("uses clossys/agents/director and does not fall back to old strategy roots", () => {
     const cwd = mkdtempSync(join(tmpdir(), "strategy-cli-cwd-")); const original = process.cwd();
     process.chdir(cwd);
@@ -113,7 +115,7 @@ describe("main — default ground root", () => {
   });
 
   it.each(["directory", "worktree-file"])("finds the default from nested cwd with a .git %s", marker => {
-    const repo = mkdtempSync(join(tmpdir(), "strategy-cli-repo-"));
+    const repo = mkdtempSync(join(realpathSync(tmpdir()), "strategy-cli-repo-"));
     const original = process.cwd();
     const cwd = join(repo, "packages", "app");
     const root = join(repo, "clossys", "agents", "director");
@@ -132,7 +134,7 @@ describe("main — default ground root", () => {
   });
 
   it("keeps explicit --root and positional roots relative to nested cwd", () => {
-    const repo = mkdtempSync(join(tmpdir(), "strategy-cli-repo-"));
+    const repo = mkdtempSync(join(realpathSync(tmpdir()), "strategy-cli-repo-"));
     const original = process.cwd();
     const cwd = join(repo, "packages", "app");
     const explicitRoot = join(cwd, "custom", "agents", "director");
@@ -150,7 +152,7 @@ describe("main — default ground root", () => {
   });
 
   it("uses the repository default for wont-claim from nested cwd", () => {
-    const repo = mkdtempSync(join(tmpdir(), "strategy-cli-repo-"));
+    const repo = mkdtempSync(join(realpathSync(tmpdir()), "strategy-cli-repo-"));
     const original = process.cwd();
     const cwd = join(repo, "packages", "app");
     const root = join(repo, "clossys", "agents", "director");

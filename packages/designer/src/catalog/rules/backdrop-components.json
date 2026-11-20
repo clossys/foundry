@@ -1,0 +1,115 @@
+{
+  "schema": "clossys.backdrop-components/1",
+  "why": "DRAFT: The interactive backdrop components a backdrop descriptor {component, params} may name, as adopted records (foundry-build-0048 U23, owner 2026-11-18: Foundry owns the slot contract and the candidate recipe; the engine is adopted OSS). Each record names its source (a vendored registry item copied byte-for-byte, or a Foundry part with a recorded no-alternative basis), its motion and reduced-motion policy, and its param schema mapped onto the source's own props. The component list and every param schema derive from these records only (tokens/interactive-backdrops.ts); a surface accepts a descriptor only when its contract declares a backdrop-placed slot. check:source-ladder judges each record's ladder and source. Param ranges and defaults are DRAFT.",
+  "colors": ["primary", "secondary", "accent", "foreground", "muted-foreground", "border"],
+  "components": [
+    {
+      "id": "particles",
+      "source": {
+        "registry": "magicui",
+        "item": "particles",
+        "version": "efe76fc",
+        "file": "registry/magicui/particles.tsx",
+        "copy": "src/components/partners/magicui/particles.tsx",
+        "export": "Particles"
+      },
+      "motion": "animated",
+      "reducedMotion": { "mode": "omit" },
+      "props": { "className": "absolute inset-0" },
+      "params": {
+        "color": { "type": "color", "default": "primary", "prop": "color", "as": "hex" },
+        "quantity": { "type": "number", "min": 8, "max": 200, "integer": true, "default": 80, "prop": "quantity" },
+        "staticity": { "type": "number", "min": 10, "max": 100, "default": 50, "prop": "staticity" },
+        "ease": { "type": "number", "min": 10, "max": 100, "default": 50, "prop": "ease" },
+        "size": { "type": "number", "min": 0.2, "max": 2, "default": 0.4, "prop": "size" },
+        "vx": { "type": "number", "min": -1, "max": 1, "default": 0, "prop": "vx" },
+        "vy": { "type": "number", "min": -1, "max": 1, "default": 0, "prop": "vy" }
+      },
+      "ladder": {
+        "rung": "L2",
+        "chosen": { "id": "@magicui/particles", "url": "https://magicui.design/docs/components/particles", "stars": 23192, "weeklyDownloads": 0, "licence": "MIT" },
+        "reason": "particles: replaces the hand-built particle-field (audit 2026-11-18 finding 6); Magic UI is the most popular shadcn-compatible motion registry; weeklyDownloads 0: registry-distributed, no npm download count",
+        "checkedAt": "2026-11-18"
+      }
+    },
+    {
+      "id": "flickering-grid",
+      "source": {
+        "registry": "magicui",
+        "item": "flickering-grid",
+        "version": "efe76fc",
+        "file": "registry/magicui/flickering-grid.tsx",
+        "copy": "src/components/partners/magicui/flickering-grid.tsx",
+        "export": "FlickeringGrid"
+      },
+      "motion": "animated",
+      "reducedMotion": { "mode": "props", "props": { "flickerChance": 0 } },
+      "props": { "className": "absolute inset-0" },
+      "params": {
+        "color": { "type": "color", "default": "muted-foreground", "prop": "color", "as": "hex" },
+        "squareSize": { "type": "number", "min": 2, "max": 16, "integer": true, "default": 4, "prop": "squareSize" },
+        "gridGap": { "type": "number", "min": 2, "max": 16, "integer": true, "default": 6, "prop": "gridGap" },
+        "flickerChance": { "type": "number", "min": 0, "max": 1, "default": 0.3, "prop": "flickerChance" },
+        "maxOpacity": { "type": "number", "min": 0.05, "max": 1, "default": 0.3, "prop": "maxOpacity" }
+      },
+      "ladder": {
+        "rung": "L2",
+        "chosen": { "id": "@magicui/flickering-grid", "url": "https://magicui.design/docs/components/flickering-grid", "stars": 23192, "weeklyDownloads": 0, "licence": "MIT" },
+        "rejected": [
+          { "id": "@magicui/interactive-grid-pattern", "url": "https://magicui.design/docs/components/interactive-grid-pattern", "stars": 23192, "weeklyDownloads": 0, "licence": "MIT", "reason": "reacts only to hover on its own squares, which a backdrop under pointer-events: none never receives" }
+        ],
+        "reason": "flickering-grid: replaces the hand-built grid-glow (audit 2026-11-18 finding 6); it animates on its own canvas, so it works behind content; weeklyDownloads 0: registry-distributed, no npm download count",
+        "checkedAt": "2026-11-18"
+      }
+    },
+    {
+      "id": "grid-pattern",
+      "source": {
+        "registry": "magicui",
+        "item": "grid-pattern",
+        "version": "efe76fc",
+        "file": "registry/magicui/grid-pattern.tsx",
+        "copy": "src/components/partners/magicui/grid-pattern.tsx",
+        "export": "GridPattern"
+      },
+      "motion": "static",
+      "props": { "className": "fill-current/20 stroke-current/30" },
+      "params": {
+        "color": { "type": "color", "default": "muted-foreground", "as": "currentColor" },
+        "width": { "type": "number", "min": 16, "max": 96, "integer": true, "default": 40, "prop": "width" },
+        "height": { "type": "number", "min": 16, "max": 96, "integer": true, "default": 40, "prop": "height" }
+      },
+      "ladder": {
+        "rung": "L2",
+        "chosen": { "id": "@magicui/grid-pattern", "url": "https://magicui.design/docs/components/grid-pattern", "stars": 23192, "weeklyDownloads": 0, "licence": "MIT" },
+        "rejected": [
+          { "id": "@magicui/dot-pattern", "url": "https://magicui.design/docs/components/dot-pattern", "stars": 23192, "weeklyDownloads": 0, "licence": "MIT", "reason": "imports motion/react, a new npm dependency the bump freeze does not admit" }
+        ],
+        "reason": "grid-pattern: the static SVG pattern backdrop, already vendored; no dependencies; weeklyDownloads 0: registry-distributed, no npm download count",
+        "checkedAt": "2026-11-18"
+      }
+    },
+    {
+      "id": "gradient-mesh",
+      "source": {
+        "foundry": "src/blocks/backdrop/GradientMesh.tsx",
+        "export": "GradientMesh"
+      },
+      "motion": "animated",
+      "reducedMotion": { "mode": "component" },
+      "params": {
+        "from": { "type": "color", "default": "primary", "prop": "from", "as": "token" },
+        "via": { "type": "color", "default": "accent", "prop": "via", "as": "token" },
+        "to": { "type": "color", "default": "secondary", "prop": "to", "as": "token" },
+        "speed": { "type": "number", "min": 0, "max": 2, "default": 0.5, "prop": "speed" },
+        "intensity": { "type": "number", "min": 0.1, "max": 1, "default": 0.5, "prop": "intensity" }
+      },
+      "ladder": {
+        "rung": "L4",
+        "slotNeeded": "a soft drifting colour-field backdrop behind hero copy, painted from theme tokens",
+        "reason": "gradient-mesh: no Magic UI item at efe76fc paints a drifting multi-colour field (audit 2026-11-18 finding 6 found no verified equivalent); kept as a Foundry part built from stock Tailwind token utilities and the Web Animations API",
+        "checkedAt": "2026-11-18"
+      }
+    }
+  ]
+}

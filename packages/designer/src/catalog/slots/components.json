@@ -50,6 +50,14 @@
         "assets": [
           "assets.icon-user"
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/avatar.tsx",
+          "export": "Avatar",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -105,6 +113,14 @@
           "themes.sidebar-ring"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/badge.tsx",
+          "export": "Badge",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -162,7 +178,15 @@
       },
       "composes": [
         "components.button"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/alert.tsx",
+          "export": "Alert",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -231,6 +255,14 @@
             "dir": "auto"
           }
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/breadcrumb.tsx",
+          "export": "Breadcrumb",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -303,7 +335,15 @@
       "composes": [
         "components.icon"
       ],
-      "apg": "button"
+      "apg": "button",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/button.tsx",
+          "export": "Button",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -362,7 +402,15 @@
         "components.button",
         "components.select"
       ],
-      "apg": "grid"
+      "apg": "grid",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/calendar.tsx",
+          "export": "Calendar",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -406,6 +454,14 @@
           "themes.sidebar-accent-foreground"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/card.tsx",
+          "export": "Card",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -957,7 +1013,15 @@
           "assets.icon-check"
         ]
       },
-      "apg": "checkbox"
+      "apg": "checkbox",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/checkbox.tsx",
+          "export": "Checkbox",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1009,6 +1073,14 @@
           "themes.font-mono"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "ui/color-picker.tsx",
+          "export": "ColorPicker",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1070,7 +1142,15 @@
         "components.button",
         "components.popover"
       ],
-      "apg": "combobox"
+      "apg": "combobox",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/combobox.tsx",
+          "export": "Combobox",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1156,7 +1236,15 @@
         "components.popover",
         "components.calendar"
       ],
-      "apg": "dialog-modal"
+      "apg": "dialog-modal",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/calendar.tsx",
+          "export": "Calendar",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1174,7 +1262,10 @@
           "dismissable"
         ]
       },
-      "props": [],
+      "props": [
+        "children",
+        "defaultOpen"
+      ],
       "allowedReads": {
         "themes": [
           "themes.border",
@@ -1226,6 +1317,26 @@
             "dir": "auto"
           }
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/dialog.tsx",
+          "export": "DialogTrigger",
+          "props": {
+            "defaultOpen": true,
+            "children": [
+              {
+                "$component": "react-aria-components.Button",
+                "children": "Open"
+              },
+              {
+                "$component": "Dialog",
+                "children": "Content"
+              }
+            ]
+          }
+        }
       }
     },
     "requires": [],
@@ -1266,7 +1377,15 @@
           "assets.icon-chevron-up"
         ]
       },
-      "apg": "disclosure"
+      "apg": "disclosure",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/collapsible.tsx",
+          "export": "Collapsible",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1313,6 +1432,14 @@
           "themes.ring"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/field.tsx",
+          "export": "Field",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1336,6 +1463,14 @@
       "allowedReads": {
         "themes": [],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "ui/file-upload.tsx",
+          "export": "FileUpload",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1360,6 +1495,14 @@
           "themes.spacing"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/field.tsx",
+          "export": "Field",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1411,7 +1554,15 @@
       "composes": [
         "components.checkbox"
       ],
-      "apg": "grid"
+      "apg": "grid",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/item.tsx",
+          "export": "Item",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1524,6 +1675,14 @@
           "themes.sidebar-accent-foreground"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/kbd.tsx",
+          "export": "Kbd",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1579,7 +1738,15 @@
         ],
         "assets": []
       },
-      "apg": "link"
+      "apg": "link",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/button.tsx",
+          "export": "Button",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1690,6 +1857,14 @@
       "memberRoots": {
         "presentation.popup": "rac:Menu",
         "presentation.inline": "rac:Menu"
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/dropdown-menu.tsx",
+          "export": "DropdownMenu",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -1742,7 +1917,15 @@
         ],
         "assets": []
       },
-      "apg": "meter"
+      "apg": "meter",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/progress.tsx",
+          "export": "Progress",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1841,7 +2024,15 @@
           "assets.icon-chevron-right"
         ]
       },
-      "apg": "treeview"
+      "apg": "treeview",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/sidebar.tsx",
+          "export": "Sidebar",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -1916,7 +2107,10 @@
           "placement"
         ]
       },
-      "props": [],
+      "props": [
+        "children",
+        "defaultOpen"
+      ],
       "allowedReads": {
         "themes": [
           "themes.border",
@@ -1947,6 +2141,26 @@
           "themes.sidebar-ring"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/popover.tsx",
+          "export": "PopoverTrigger",
+          "props": {
+            "defaultOpen": true,
+            "children": [
+              {
+                "$component": "react-aria-components.Button",
+                "children": "Open"
+              },
+              {
+                "$component": "Popover",
+                "children": "Content"
+              }
+            ]
+          }
+        }
       }
     },
     "requires": [],
@@ -1995,6 +2209,14 @@
           "themes.sidebar-primary"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/progress.tsx",
+          "export": "Progress",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2049,7 +2271,15 @@
         ],
         "assets": []
       },
-      "apg": "radio"
+      "apg": "radio",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/radio-group.tsx",
+          "export": "RadioGroup",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2135,7 +2365,15 @@
       },
       "composes": [
         "components.button"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/input-group.tsx",
+          "export": "InputGroup",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2199,7 +2437,15 @@
         "components.button",
         "components.popover"
       ],
-      "apg": "listbox"
+      "apg": "listbox",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/select.tsx",
+          "export": "Select",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2279,6 +2525,14 @@
           "themes.sidebar-border"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/separator.tsx",
+          "export": "Separator",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2310,6 +2564,14 @@
           "themes.sidebar-accent"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/skeleton.tsx",
+          "export": "Skeleton",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2349,7 +2611,15 @@
         ],
         "assets": []
       },
-      "apg": "slider"
+      "apg": "slider",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/slider.tsx",
+          "export": "Slider",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2383,6 +2653,14 @@
           "themes.sidebar-accent-foreground"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/spinner.tsx",
+          "export": "Spinner",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2429,6 +2707,14 @@
           "assets.icon-danger",
           "assets.icon-info"
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "ui/status.tsx",
+          "export": "Status",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2482,7 +2768,15 @@
         ],
         "assets": []
       },
-      "apg": "switch"
+      "apg": "switch",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/switch.tsx",
+          "export": "Switch",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2535,7 +2829,15 @@
       "composes": [
         "components.checkbox"
       ],
-      "apg": "table"
+      "apg": "table",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/table.tsx",
+          "export": "Table",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2589,7 +2891,15 @@
         ],
         "assets": []
       },
-      "apg": "tabs"
+      "apg": "tabs",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/tabs.tsx",
+          "export": "Tabs",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2641,6 +2951,14 @@
         "assets": [
           "assets.icon-close"
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "ui/tags-input.tsx",
+          "export": "TagsInput",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2694,6 +3012,14 @@
           "themes.ring"
         ],
         "assets": []
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/input.tsx",
+          "export": "Input",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -2728,7 +3054,15 @@
       },
       "composes": [
         "components.button"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/sonner.tsx",
+          "export": "Toaster",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2790,7 +3124,15 @@
         ],
         "assets": []
       },
-      "apg": "button"
+      "apg": "button",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/toggle.tsx",
+          "export": "Toggle",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2846,7 +3188,15 @@
       },
       "composes": [
         "components.toggle-button"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/toggle-group.tsx",
+          "export": "ToggleGroup",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2874,7 +3224,15 @@
         ],
         "assets": []
       },
-      "apg": "toolbar"
+      "apg": "toolbar",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/button-group.tsx",
+          "export": "ButtonGroup",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -2891,7 +3249,10 @@
           "placement"
         ]
       },
-      "props": [],
+      "props": [
+        "children",
+        "defaultOpen"
+      ],
       "allowedReads": {
         "themes": [
           "themes.border",
@@ -2921,7 +3282,27 @@
         ],
         "assets": []
       },
-      "apg": "tooltip"
+      "apg": "tooltip",
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/tooltip.tsx",
+          "export": "TooltipTrigger",
+          "props": {
+            "defaultOpen": true,
+            "children": [
+              {
+                "$component": "react-aria-components.Button",
+                "children": "Open"
+              },
+              {
+                "$component": "Tooltip",
+                "children": "Content"
+              }
+            ]
+          }
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3064,6 +3445,14 @@
             "dir": "auto"
           }
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/sidebar.tsx",
+          "export": "Sidebar",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -3169,6 +3558,14 @@
             "dir": "auto"
           }
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/command.tsx",
+          "export": "Command",
+          "props": {}
+        }
       }
     },
     "requires": [],
@@ -3184,7 +3581,10 @@
         "mode": "closed",
         "names": []
       },
-      "props": [],
+      "props": [
+        "children",
+        "defaultOpen"
+      ],
       "allowedReads": {
         "themes": [
           "themes.primary",
@@ -3241,6 +3641,26 @@
             "dir": "auto"
           }
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/sheet.tsx",
+          "export": "SheetTrigger",
+          "props": {
+            "defaultOpen": true,
+            "children": [
+              {
+                "$component": "react-aria-components.Button",
+                "children": "Open"
+              },
+              {
+                "$component": "Sheet",
+                "children": "Content"
+              }
+            ]
+          }
+        }
       }
     },
     "requires": [],
@@ -3286,7 +3706,15 @@
         "assets": [],
         "components": []
       },
-      "composes": []
+      "composes": [],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/empty.tsx",
+          "export": "Empty",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3335,7 +3763,15 @@
         "assets": [],
         "components": []
       },
-      "composes": []
+      "composes": [],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/item.tsx",
+          "export": "Item",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3362,7 +3798,15 @@
         "assets": [],
         "components": []
       },
-      "composes": []
+      "composes": [],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/scroll-area.tsx",
+          "export": "ScrollArea",
+          "props": {}
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3377,7 +3821,10 @@
         "mode": "closed",
         "names": []
       },
-      "props": [],
+      "props": [
+        "children",
+        "defaultOpen"
+      ],
       "allowedReads": {
         "themes": [
           "themes.border",
@@ -3419,7 +3866,27 @@
       },
       "composes": [
         "components.icon"
-      ]
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/dropdown-menu.tsx",
+          "export": "DropdownMenuTrigger",
+          "props": {
+            "defaultOpen": true,
+            "children": [
+              {
+                "$component": "react-aria-components.Button",
+                "children": "Open"
+              },
+              {
+                "$component": "DropdownMenu",
+                "children": "Content"
+              }
+            ]
+          }
+        }
+      }
     },
     "requires": [],
     "status": "draft"
@@ -3504,16 +3971,16 @@
         ]
       },
       "props": [
-        "video",
-        "poster",
-        "passage",
-        "captions",
-        "muted",
         "autoplay",
-        "loop",
-        "controls",
+        "captions",
         "className",
-        "decorative"
+        "controls",
+        "decorative",
+        "loop",
+        "muted",
+        "passage",
+        "poster",
+        "video"
       ],
       "allowedReads": {
         "themes": [
@@ -3644,6 +4111,14 @@
             "dir": "auto"
           }
         ]
+      },
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "ui/media-player.tsx",
+          "export": "MediaPlayer",
+          "props": {}
+        }
       }
     },
     "requires": [],

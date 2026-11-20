@@ -208,7 +208,11 @@
       {
         "name": "media",
         "type": "media",
-        "required": false
+        "required": false,
+        "placement": "figure",
+        "alt": {
+          "copy": "media.title"
+        }
       },
       {
         "name": "actions",
@@ -219,7 +223,8 @@
       {
         "name": "backdrop",
         "type": "media",
-        "required": false
+        "required": false,
+        "placement": "backdrop"
       },
       {
         "name": "header.eyebrow",
@@ -299,13 +304,6 @@
     },
     "data": "host-injected",
     "surface": "site",
-    "interactive": {
-      "components": [
-        "particle-field",
-        "gradient-mesh",
-        "grid-glow"
-      ]
-    },
     "requirements": [
       {
         "check": "interactive.backdrop",
@@ -398,6 +396,42 @@
           "dir": "auto"
         }
       ]
+    },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "mist/blocks/hero-section/one/hero-section.tsx",
+        "export": "default",
+        "props": {
+          "copy": {
+            "header": {
+              "heading": "DRAFT heading",
+              "eyebrow": "DRAFT eyebrow",
+              "description": "DRAFT lead"
+            },
+            "actions": {
+              "primary": {
+                "label": "DRAFT action"
+              },
+              "secondary": {
+                "label": "DRAFT action"
+              }
+            },
+            "media": {
+              "title": "DRAFT heading",
+              "series": [
+                {
+                  "name": "DRAFT label"
+                }
+              ]
+            }
+          }
+        }
+      }
     }
   },
   "tighten": [],

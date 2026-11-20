@@ -1,5 +1,5 @@
 // Generated from sections.resource-list by src/generated/props/generate.ts; do not edit.
-export const resourceListContractSha256 = "c3cc443ce739f646d9745136d857015f2f9b9d5b0b8e7cc55a985bda1003a501";
+export const resourceListContractSha256 = "79cefc2a1d79a171b27f2f7233081ac0c5920f7dda2b03678f8ef1e8a4f6a862";
 
 export type ResourceListCopy = {
   header?: {

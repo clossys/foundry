@@ -1,5 +1,5 @@
 // Generated from sections.gallery by src/generated/props/generate.ts; do not edit.
-export const galleryContractSha256 = "76d4a7e630d8496761798a013e496e7f843ab6504efab1c7e14789df3e8194bf";
+export const galleryContractSha256 = "4f22da375b596225c2c481ee3038abd3ecf95ed24401c311957a5aecdb1817bf";
 
 export type GalleryCopy = {
   header?: {

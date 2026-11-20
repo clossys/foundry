@@ -213,6 +213,14 @@
         "assets.icon-user"
       ]
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/avatar.tsx",
+        "export": "Avatar",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

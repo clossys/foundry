@@ -1,5 +1,5 @@
 // Generated from sections.settings by src/generated/props/generate.ts; do not edit.
-export const settingsContractSha256 = "f4d3ee447a46931861b393ceef159b407bc6144baade0bafd9429c3ad0bc4876";
+export const settingsContractSha256 = "60174a47849a79ac0bc56d5641ff6c56b7b39a445f4e1dde6486139f8776a627";
 
 export type SettingsCopy = {
   header?: {

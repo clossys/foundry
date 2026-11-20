@@ -198,6 +198,14 @@
         }
       ]
     },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/breadcrumb.tsx",
+        "export": "Breadcrumb",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

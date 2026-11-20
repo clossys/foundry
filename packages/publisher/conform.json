@@ -43,7 +43,7 @@
     "slot": "packages/publisher/actions/publisher.slot/skill.md",
     "create": "packages/publisher/actions/publisher.candidates/skill.md",
     "choose": "packages/publisher/actions/pick.publisher/skill.md",
-    "cascade": null
+    "cascade": "packages/publisher/actions/publisher.cascade/skill.md"
   },
   "requests": {
     "issuing": [

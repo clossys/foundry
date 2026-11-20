@@ -8,6 +8,7 @@
  *   same L2, `ia.order`. A tighten entry now looser than a new base is kept and raises `queue.clarify` (13.5).
  * - A consumer-added slot (`base: null`) whose id the package now ships is adopted.
  * - A slot/1 file is never rewritten here: `clossys migrate slot-1-to-2` first.
+ * - Each slot.json written gets one slot-ledger event (verb ia, R14.1) through records/slot-write.ts writeSyncedSlot.
  * - A second run writes nothing. Afterwards `records.computed-match` and `ia.orphans` run (F1 step 2).
  */
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -18,8 +19,9 @@ import { recordsComputedMatch } from "../check/records-computed-match.js";
 import { validateAgainst } from "../records/schema.js";
 import {
   SLOT_AGENTS, SLOT_SCHEMA, listBaseSlots, packageVersion, readBaseSlot, readSlot, recordSchema, serializeSlot,
-  slotSchemaOf, syncedSlot, tightenIssue, writeSlot, type TreeCheck, type TreeCheckResult,
+  slotSchemaOf, syncedSlot, tightenIssue, type TreeCheck, type TreeCheckResult,
 } from "../records/slot.js";
+import { writeSyncedSlot } from "../records/slot-write.js";
 import type { AgentId, Iso, QueueEntry, Slot } from "../records/types.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -118,7 +120,8 @@ export async function runIaSyncCli(argv: readonly string[], cwd: string): Promis
   const stamp = at ?? nowIso();
   const plan = planIaSync(root, stamp);
   const clarified = !check ? raiseClarify(root, plan.clarify, stamp) : [];
-  if (!check) for (const change of plan.changes) writeSlot(change.file, change.slotDoc);
+  // One slot-ledger event per slot.json written (R14.1), through the one writer; an unchanged slot writes neither.
+  if (!check) for (const change of plan.changes) writeSyncedSlot(join(root, "clossys"), change.agent, change.slot, change.slotDoc, { at: stamp, fields: { kind: "sync", action: change.action } });
   const checks: TreeCheckResult[] = check ? [] : [recordsComputedMatch.run(root), iaOrphans.run(root)];
   const failed = checks.filter(result => result.status === "fail");
   const lines = [

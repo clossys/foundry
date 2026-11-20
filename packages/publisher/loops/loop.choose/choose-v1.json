@@ -91,7 +91,9 @@
         "reads": [
           "<slot>/candidates/*",
           "<slot>/ledger.json",
-          ".clossys/checks/<agent>/<slot-id>/*"
+          ".clossys/checks/<agent>/<slot-id>/*",
+          "designer/*/pin.json",
+          "writer/*/pin.json"
         ],
         "writes": [
           "<slot>/pin.json",

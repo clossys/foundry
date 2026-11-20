@@ -45,11 +45,14 @@ describe.each(entries.map(entry => [entry.id, entry] as const))("%s", (_id, entr
 });
 
 describe("interactive.backdrop", () => {
-  it("refuses meta.backdrop on a slot whose contract allows no interactive backdrop, naming the contract, not the component", () => {
-    const subject = { kind: "element", text: "", json: { files: [{ path: "hero.tsx", type: "registry:block", content: "" }], meta: { source: { kind: "registry", ref: ["shadcn/hero@1.0.0"] }, backdrop: { component: "grid-glow", params: {} } } } };
-    for (const params of [{}, { contract: { requirements: [] } }, { contract: { interactive: { components: [] } } }]) {
-      expect(DESIGNER_STANDARD_CRITERIA["interactive.backdrop"]!(subject, params), JSON.stringify(params)).toEqual([expect.stringMatching(/^the slot contract allows no interactive backdrop \(contract\.interactive\.components\)/)]);
+  it("refuses meta.backdrop on a surface whose contract declares no backdrop-placed slot, naming the contract, not the component", () => {
+    const subject = { kind: "element", text: "", json: { files: [{ path: "hero.tsx", type: "registry:block", content: "" }], meta: { source: { kind: "registry", ref: ["shadcn/hero@1.0.0"] }, backdrop: { component: "flickering-grid", params: {} } } } };
+    const figure = { name: "media", type: "media", required: false, placement: "figure", alt: { copy: "media.title" } };
+    // A retired contract.interactive list opts nothing in: only a slot placed as a backdrop does.
+    for (const params of [{}, { contract: { requirements: [] } }, { contract: { slots: [figure] } }, { contract: { interactive: { components: ["flickering-grid"] } } }]) {
+      expect(DESIGNER_STANDARD_CRITERIA["interactive.backdrop"]!(subject, params), JSON.stringify(params)).toEqual([expect.stringMatching(/^meta\.backdrop rides only on the code candidate of a surface whose contract declares a backdrop-placed slot; the slot contract declares none$/)]);
     }
+    expect(DESIGNER_STANDARD_CRITERIA["interactive.backdrop"]!(subject, { contract: { slots: [figure, { name: "backdrop", type: "media", required: false, placement: "backdrop" }] } })).toEqual([]);
   });
 });
 

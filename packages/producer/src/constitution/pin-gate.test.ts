@@ -177,7 +177,7 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
   const HERO_SOURCE = { kind: "derived", ref: ["tailark-oss/mist-hero-section-1@8139698"], hash: "sha256:315ecac252ac891e44ae37f2c2d946312c78f3998fd7ed5d7279ab0f1582ce52", license: "MIT" };
 
   const HERO = "sections.hero";
-  const backdrop = { component: "grid-glow", params: { cell: 32, pulse: true } };
+  const backdrop = { component: "flickering-grid", params: { squareSize: 8, flickerChance: 0.2 } };
   /** The hero's own code candidate (original, MIT), with `meta.backdrop` riding on it when given. */
   const heroCode = (descriptor?: unknown) => ({
     $schema: "https://ui.shadcn.com/schema/registry-item.json",
@@ -186,12 +186,13 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
     files: [{ path: "hero.tsx", type: "registry:block", content: "export function Hero() { return <section><h1>Hero</h1></section>; }\n" }],
     meta: { slot: HERO, source: HERO_SOURCE, ...(descriptor === undefined ? {} : { backdrop: descriptor }) },
   });
-  /** A temp consumer whose hero contract (synced from the package: interactive.components and the interactive.backdrop row) gains a render fixture. */
+  /** A temp consumer whose hero contract (synced from the package: a backdrop-placed slot and the interactive.backdrop row) gains a render fixture. */
   function heroWorld() {
     const w = world();
     const file = join(w.consumer, "agents", "designer", HERO, "slot.json");
     const doc = JSON.parse(readFileSync(file, "utf8"));
-    expect(doc.contract.interactive).toEqual({ components: ["particle-field", "gradient-mesh", "grid-glow"] });
+    expect(doc.contract.interactive).toBeUndefined();
+    expect(doc.contract.slots).toContainEqual({ name: "backdrop", type: "media", required: false, placement: "backdrop" });
     expect(doc.contract.requirements).toContainEqual({ check: "interactive.backdrop", params: { contract: "$contract" } });
     // The synced hero contract carries no render sample; the world adds one (typed by an empty contract.props) so certify renders the code.
     doc.contract.props = [];
@@ -231,29 +232,45 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
   it("refuses an invalid descriptor at submit, and the pin of a candidate that slipped in by hand", async () => {
     const w = heroWorld();
     for (const [label, descriptor, message] of [
-      ["bad params", { component: "particle-field", params: { density: 999 } }, /outside 8\.\.160/],
-      ["a URL colour", { component: "grid-glow", params: { glow: "https://example.com/x.js" } }, /not one of the token colours/],
-      ["an unknown component", { component: "three-scene", params: {} }, /not one of the Foundry components/],
-      ["not an object", "grid-glow", /not an object \{component, params\}/],
+      ["bad params", { component: "particles", params: { quantity: 999 } }, /particles param quantity is 999, outside 8\.\.200/],
+      ["a URL colour", { component: "flickering-grid", params: { color: "https://example.com/x.js" } }, /not one of the token colours/],
+      ["an unknown component", { component: "three-scene", params: {} }, /not one of the adopted backdrop components particles, flickering-grid, grid-pattern, gradient-mesh/],
+      ["a retired hand-built component", { component: "grid-glow", params: { cell: 32 } }, /"grid-glow", not one of the adopted backdrop components/],
+      ["not an object", "flickering-grid", /not an object \{component, params\}/],
     ] as const) expect(() => w.submit(heroCode(descriptor)), label).toThrow(message);
     // Placed by hand (no submit), an invalid descriptor is refused at the pin as well.
     mkdirSync(join(w.consumer, "agents", "designer", HERO, "candidates"), { recursive: true });
-    writeFileSync(join(w.consumer, "agents", "designer", HERO, "candidates", "hero-v1.json"), `${JSON.stringify(heroCode({ component: "grid-glow", params: { cell: 4 } }), null, 2)}\n`);
+    writeFileSync(join(w.consumer, "agents", "designer", HERO, "candidates", "hero-v1.json"), `${JSON.stringify(heroCode({ component: "flickering-grid", params: { squareSize: 1 } }), null, 2)}\n`);
     w.queueEntry();
     const result = await w.pin("hero-v1.json");
     expect(result.exitCode).toBe(1);
-    expect(result.message).toMatch(/grid-glow param cell is 4, outside 16\.\.96/);
+    expect(result.message).toMatch(/flickering-grid param squareSize is 1, outside 2\.\.16/);
     expect(existsSync(join(w.consumer, "agents", "designer", HERO, "pin.json"))).toBe(false);
+  });
+
+  it("refuses meta.backdrop on a surface whose contract declares no backdrop slot, at submit and at pin (U23 surface opt-in)", async () => {
+    const w = heroWorld();
+    const CTA = "sections.call-to-action";
+    const cta = { ...heroCode(backdrop), name: "cta", meta: { ...heroCode(backdrop).meta, slot: CTA } };
+    const NONE = /meta\.backdrop rides only on the code candidate of a surface whose contract declares a backdrop-placed slot; the sections\.call-to-action contract declares none/;
+    expect(() => writeCandidate(w.consumer, "designer", CTA, "cta", cta, { at: AT, provenance: { by: "agent:designer", model: "claude-opus-5-5", tier: "high" } })).toThrow(NONE);
+    mkdirSync(join(w.consumer, "agents", "designer", CTA, "candidates"), { recursive: true });
+    writeFileSync(join(w.consumer, "agents", "designer", CTA, "candidates", "cta-v1.json"), `${JSON.stringify(cta, null, 2)}\n`);
+    w.queueEntry();
+    const result = await runPinCli([`designer/${CTA}`, "cta-v1.json", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root, false);
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toMatch(NONE);
+    expect(existsSync(join(w.consumer, "agents", "designer", CTA, "pin.json"))).toBe(false);
   });
 
   it("refuses an interactive backdrop in preview props at submit and at pin: a CTA rendering Hero, and a hero's out-of-range descriptor", async () => {
     const w = heroWorld();
     const CTA = "sections.call-to-action";
-    const interactive = { kind: "interactive", backdrop: { component: "particle-field", params: { density: 160, links: true } } };
+    const interactive = { kind: "interactive", backdrop: { component: "particles", params: { quantity: 160, staticity: 40 } } };
     // The CTA's code renders Hero; it has no meta.backdrop and carries the descriptor in its preview props.
     const cta = { ...heroCode(), name: "cta", meta: { slot: CTA, source: { kind: "original", ref: [], license: "MIT" }, preview: { fixtures: { file: "hero.tsx", export: "Hero", props: { backdrop: interactive } } } } };
-    const hero = { ...heroCode(backdrop), meta: { ...heroCode(backdrop).meta, preview: { fixtures: { file: "hero.tsx", export: "Hero", props: { backdrop: { kind: "interactive", backdrop: { component: "grid-glow", params: { cell: 4 } } } } } } } };
-    const PREVIEW = /meta\.preview\.fixtures\.props\.backdrop is an interactive backdrop in preview props; it rides only as meta\.backdrop on the sections\.hero code candidate/;
+    const hero = { ...heroCode(backdrop), meta: { ...heroCode(backdrop).meta, preview: { fixtures: { file: "hero.tsx", export: "Hero", props: { backdrop: { kind: "interactive", backdrop: { component: "flickering-grid", params: { squareSize: 1 } } } } } } } };
+    const PREVIEW = /meta\.preview\.fixtures\.props\.backdrop is an interactive backdrop in preview props; it rides only as meta\.backdrop on the code candidate of a surface whose contract declares a backdrop-placed slot/;
     expect(() => writeCandidate(w.consumer, "designer", CTA, "cta", cta, { at: AT, provenance: { by: "agent:designer", model: "claude-opus-5-5", tier: "high" } })).toThrow(PREVIEW);
     expect(() => w.submit(hero)).toThrow(PREVIEW);
     // Placed by hand (no submit), both are refused at the pin, naming the preview prop.

@@ -331,6 +331,47 @@
         }
       ]
     },
+    "props": [
+      "copy",
+      "variant"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "mist/blocks/features/one/features.tsx",
+        "export": "default",
+        "props": {
+          "copy": {
+            "header": {
+              "eyebrow": "DRAFT eyebrow",
+              "heading": "DRAFT heading",
+              "description": "DRAFT lead"
+            },
+            "title": "DRAFT heading",
+            "description": "DRAFT body",
+            "breadcrumbs": {
+              "label": "DRAFT label",
+              "items": [
+                {
+                  "label": "DRAFT label"
+                }
+              ]
+            },
+            "actions": [
+              {
+                "label": "DRAFT action"
+              }
+            ],
+            "meta": [
+              {
+                "label": "DRAFT label",
+                "value": "DRAFT label"
+              }
+            ]
+          }
+        }
+      }
+    },
     "requirements": [
       {
         "check": "compose.layers"

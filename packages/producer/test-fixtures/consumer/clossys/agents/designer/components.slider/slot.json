@@ -156,6 +156,14 @@
       "assets": []
     },
     "apg": "slider",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/slider.tsx",
+        "export": "Slider",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"

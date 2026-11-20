@@ -27,6 +27,9 @@
  *   Foundry (non-provenance) L1; every `extension: true` leaf is listed; every leaf in a provenance tab
  *   is listed.
  * - R01.15 IA-FANOUT (warn): an L0 with one L1, or an L1 with one leaf.
+ * - R01.16 IA-EMPTY-GROUP: every L2 group (a node's child) places at least one leaf. An empty group is
+ *   filled, or dropped through `clossys ia <agent> --drop <l1>/<l2>`; a package group whose leaves all
+ *   retired is left out of the consumer tree by the package IA (foundry-build-0048 U33).
  */
 import { MODEL_AGENTS, type ModelAgent } from "../../records/slot-model/index.js";
 import { isCurrentSlot } from "../../records/slot-current.js";
@@ -504,6 +507,20 @@ export function iaFanout(ctx: ConstitutionContext): Row[] {
   return rows;
 }
 
+/**
+ * R01.16 IA-EMPTY-GROUP: an L2 group that places no leaf. Read from the raw nodes, not the level view, so a group is
+ * caught however its L1 is read (a layered L1, a dotted-prefix L1, or the child of an undotted node read as L0).
+ */
+export function iaEmptyGroup(ctx: ConstitutionContext): Row[] {
+  const rows: Row[] = [];
+  for (const view of viewsOf(ctx)) for (const node of rawNodes(view.agent.ia!.value as Record<string, unknown>)) {
+    for (const child of node.children) if (!child.slots.length) {
+      rows.push(iaRow("R01.16", view, `L2 group ${node.id}/${child.id}${child.label ? ` (${child.label})` : ""} places no leaf: fill it or drop it (clossys ia ${view.agent.agent} --drop ${node.id}/${child.id})`));
+    }
+  }
+  return rows;
+}
+
 /** The IA checks, by check id; R01 (checks/R01-catalog.ts) spreads them into its module. */
 export const R01_IA_CHECKS: Readonly<Record<string, Check>> = {
   "R01.7": iaAxis,
@@ -515,4 +532,5 @@ export const R01_IA_CHECKS: Readonly<Record<string, Check>> = {
   "R01.13": navIaParity,
   "R01.14": iaExtensionFacet,
   "R01.15": iaFanout,
+  "R01.16": iaEmptyGroup,
 };

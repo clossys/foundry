@@ -203,6 +203,14 @@
       "assets": []
     },
     "apg": "radio",
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/radio-group.tsx",
+        "export": "RadioGroup",
+        "props": {}
+      }
+    },
     "requirements": [
       {
         "check": "source.ref"
