@@ -1,7 +1,7 @@
 /** Runtime specimen inputs: canonical Designer slots; a consumer without the slot model has none. */
 import { createHash } from "node:crypto";
 import type { InstallPins } from "@clossys/publisher/install";
-import { hasPinFile, hasSlotModel, listSlots, readCandidate, readSlot, viewPlacedAt } from "../records/slots.js";
+import { hasPinFile, hasSlotModel, listSlots, readCandidate, readSlot, slotCandidateIssues, viewPlacedAt } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate } from "../records/slot-model/index.js";
 import { hostPackageImports } from "./host-packages.js";
 import { isAgentLoop } from "../loop/agent-loops.js";
@@ -54,7 +54,7 @@ export function slotInstallInputs(consumer: string): SlotInstallInputs | undefin
       const match = CANDIDATE_NAME.exec(name);
       if (!match) continue;
       const candidate = readCandidate(consumer, "designer", entry.id, name);
-      if (validateCandidate("element", entry.id, name, candidate.bytes).length) continue;
+      if (slotCandidateIssues(consumer, "designer", entry.id, name, candidate.raw).length) continue;
       const item = JSON.parse(candidate.bytes);
       const element = match[1]!, version = Number(match[2]);
       if (!Number.isSafeInteger(version) || element.includes("..") || item.name !== element

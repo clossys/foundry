@@ -15,8 +15,14 @@ describe('Studio render reports preserve strict catalog capability', () => {
     await expect(prepareStudioSelection(undefined, unavailableEvidence)).rejects.toThrow('fixture certificate absent');
     const prepared = await prepareStudioSelection(undefined, unavailableEvidence, report);
     expect(reports.some(finding => finding.gate === 'specimen-certificates' && finding.message.includes('fixture certificate absent'))).toBe(true);
-    const input = { ...prepared.input, library: structuredClone(prepared.input.library) };
-    const source = input.library.surfaces!.files.find(file => /\.tsx$/.test(file.path))!;
+    // Retired native specimens are never seated, so the Studio selection carries no surface source of its own.
+    expect(prepared.input.library.surfaces!.files.filter(file => /\.tsx?$/.test(file.path))).toEqual([]);
+    // An adopted surface's actual source bytes, edited: Studio still renders them while strict stays red.
+    const { syntheticSurface } = await agentModule('designer', 'catalog-core/__fixtures__/surface-engine/synthetic.js');
+    const { applyLibraryChange, libraryHash } = await agentModule('designer', 'catalog-core/api.js');
+    const adopted = syntheticSurface(), input = adopted.input;
+    input.library = structuredClone(applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: 'surfaces', change: { op: 'adopt', slot: adopted.bundle.slot, source: 'synthetic' } }], surfaceBundles: [adopted.bundle] }, { componentOptions: input.componentOptions, surfaceOptions: input.surfaceOptions }));
+    const source = input.library.surfaces!.files.find((file: { path: string }) => /\.tsx?$/.test(file.path))!;
     expect(source).toBeDefined();
     const edit = '\n// Studio render fixture: changed actual source bytes.\n';
     source.content += edit;

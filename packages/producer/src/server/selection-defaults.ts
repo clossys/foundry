@@ -3,12 +3,15 @@ import type { SurfaceDependency } from "@clossys/designer/catalog";
 import { applyLibraryChange, emittedTokenProperties, libraryHash, loadCatalog, loadComponentCompositionRules, loadComponentRegistry, planComponentDefaults, planSurfaceDefaults, resolve, DEFAULT_COMPONENT_PREFERENCE, DEFAULT_COMPONENT_PICKS, DEFAULT_COMPONENT_FALLBACK, type CompositeCatalogData, type CompositeEngineInput, type CompositeLibraryData, type LibraryData, type SurfaceSourceBundle } from "@clossys/designer/catalog";
 import { installedHeadlessLibrary, loadCatalogBundles, prepareCatalogSurfaceDefaults } from "@clossys/designer/catalog-bundles";
 import { agentModule } from "./cells.js";
+import { resolveAgent } from "../agents.js";
+import { designerRetired } from "../records/slot-model/foundry-ia.js";
 import type { StudioDesignerLibrary } from "./theme.js";
 import type { StudioSelectionLeaf } from "./selection.js";
 import { DESIGNER_SPECIMEN_REQUIRED_LEAVES } from "../specimen/designer-specimen-requirements.js";
 import { studioEvidence, studioSurfaceDefaults, type StudioReportSink } from './studio-render-policy.js';
 
-const REQUIRED = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree", "components.button", "components.rich-text", "components.semantic-content", "sections.record-detail", "sections.cards", "components.card", "components.table", ...DESIGNER_SPECIMEN_REQUIRED_LEAVES];
+/** Seats Studio always fills; each is a live Designer leaf (retired leaves are never seated). */
+export const STUDIO_REQUIRED_LEAVES: readonly string[] = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree", "components.button", "components.rich-text", "components.semantic-content", "sections.link-index", "components.card", "components.table", ...DESIGNER_SPECIMEN_REQUIRED_LEAVES];
 const meta = (fill: any) => fill.$extensions["com.clossys.fill"];
 
 /** Preserve authored selections; fill missing seats through Designer's default planners. */
@@ -59,17 +62,21 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sou
   const candidates = new Map<string, any>([...catalog.components.fills, ...surfaceCatalog.fills].map(fill => [meta(fill).id, fill]));
   const defaults = new Map<string, any>([...componentPlan.rows, ...surfacePlan.rows].flatMap(row => row.fill && candidates.has(row.fill) ? [[row.slot, candidates.get(row.fill)] as const] : []));
   // Native surface slots are the source of eligible specimen seats, not a second leaf list.
-  const specimenIds = surfaceCatalog.slots.flatMap(slot => /^sections\.specimen-[a-z][a-z0-9-]*$/.test(slot.id) ? [slot.id] : []);
-  const needed = new Set([...REQUIRED, ...await studioModuleRequirements(), ...specimenIds]);
+  // A retired specimen (Designer's retired-leaf list) is no longer offered, so it is never seated.
+  const retired = designerRetired(resolveAgent("designer").packageRoot);
+  const specimenIds = surfaceCatalog.slots.flatMap(slot => /^sections\.specimen-[a-z][a-z0-9-]*$/.test(slot.id) && !retired.has(slot.id) ? [slot.id] : []);
+  const needed = new Set([...STUDIO_REQUIRED_LEAVES, ...await studioModuleRequirements(), ...specimenIds]);
   const visit = (leaf: string) => {
     const fill = own.get(leaf) ?? defaults.get(leaf); if (!fill) return;
     const descriptor: any = Object.values(fill.components ?? fill.sections ?? fill.frames ?? {})[0];
     for (const dependency of [...descriptor?.composes ?? [], ...descriptor?.reads?.components ?? [], ...descriptor?.parts ?? []]) if (/^(components|sections|frames)\./.test(dependency) && !needed.has(dependency)) { needed.add(dependency); visit(dependency); }
   };
+  // The Studio runtime projects these seats itself (selection.ts studio-compat), so no surface import reaches them.
+  for (const leaf of STUDIO_RUNTIME_PROJECTIONS) needed.add(leaf);
   for (const leaf of [...needed]) visit(leaf);
   // Registered compositions require their planned inputs even without a direct candidate.
   for (const row of componentPlan.decisions) if (needed.has(row.slot) && "reads" in row) for (const leaf of row.reads) if (!needed.has(leaf)) { needed.add(leaf); visit(leaf); }
-  // A needed seat's asset reads are needed values too (sections.cards reads assets.image).
+  // A needed seat's asset reads are needed values too (a card or media section reads assets.image).
   const assetReads = [...needed].flatMap(leaf => {
     const fill = own.get(leaf) ?? defaults.get(leaf);
     const descriptor: any = fill ? Object.values(fill.components ?? fill.sections ?? fill.frames ?? {})[0] : undefined;
@@ -113,3 +120,6 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sou
   const qualified = report ? await studioEvidence('specimen-certificates', () => nativeEvidence.qualifySpecimenSurfaces(selected), () => selected, report) : await nativeEvidence.qualifySpecimenSurfaces(selected);
   return { input: qualified, leaves, surfaceBundles: preparedSurfaces.surfaceBundles };
 }
+
+/** Seats the Studio runtime entry projects through its own compat wrappers (dialog, tooltip); a surface scan never reaches them. */
+const STUDIO_RUNTIME_PROJECTIONS: readonly string[] = ["components.dialog", "components.tooltip"];

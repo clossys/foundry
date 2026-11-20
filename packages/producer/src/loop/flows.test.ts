@@ -117,6 +117,9 @@ function stub(root: string, options: { checkExits?: Exit[]; waitOnce?: string[];
   const at = "2026-11-20T07:59:00Z";
   return {
     calls, code_,
+    // The stub world is structure only (unledgered placeholder picks, no Director): the runner's own confirm and
+    // put-back writes run no constitution rule here; flows-ledgered.test.ts runs them with the installed guard.
+    guard: { rules: [] },
     agent(packet: AgentPacket): AgentOutcome {
       if (waitOnce.delete(packet.step)) { calls.push({ step: packet.step, kind: "agent", wait: true }); return "wait"; }
       calls.push({ step: packet.step, kind: "agent" });
@@ -623,7 +626,8 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     expect(started.entry, started.message).toMatch(/^queue\.approve#/);
     expect(started.state!.vars.manifest).toBe("site-v1.json");
     const wrote = (id: string) => started.state!.steps.find(step => step.id === id)!.wrote!.map(row => row.file);
-    expect(wrote("manifest")).toEqual(["publisher/release.site/candidates/site-v1.json"]);
+    // The manifest and its submit event in the release slot's ledger (release/manifest.ts, R14.1).
+    expect(wrote("manifest")).toEqual(["publisher/release.site/candidates/site-v1.json", "publisher/release.site/ledger.json"]);
     expect(wrote("build").some(file => file.startsWith(".clossys/builds/"))).toBe(true);
     ownerAnswer(w.root, started.entry!, "ready", now);
     const done = await resumeRun(w.root, started.state!.runId, hooks, { now });

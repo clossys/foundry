@@ -115,47 +115,66 @@ function lineageIssues(root: string, publication: string, slotId: string, name: 
   return issues;
 }
 
-/** Every reason the pin `pin` on `publisher/<release slot of publication>` is not a ready-pin now. */
+/**
+ * The release certifier's criteria (R05.1, constitution/certify/release.ts): every reason the manifest candidate `name`
+ * of `publication` is not a sound release candidate, judged from its own bytes and what they name. The release slot
+ * is a readable clossys.slot/2 slot; the manifest is readable, code-written and shape-valid; it is for this
+ * publication; it recorded every release gate as `pass`; every pin it lists carries a sha256; the build it names is
+ * on disk, digests to its id and sits at its path; the build stamp agrees on publication, pins, path, routes, locales
+ * and exports; `previous`, `diff` and the header source are recomputed. What only the pin decides (the owner's
+ * answer, the pin's sha256, the pins and gates as they are now) stays in `readyFindings`.
+ */
+export function releaseCandidateIssues(root: string, publication: string, name: string): { issues: string[]; manifest: ManifestFile } {
+  const slotId = releaseSlotId(root, publication);
+  const issues: string[] = [];
+  const slotIssue = releaseSlotIssue(root, slotId);
+  if (slotIssue) issues.push(slotIssue);
+  const manifest = readManifest(root, publication, name);
+  for (const issue of manifest.issues) issues.push(`manifest ${name}: ${issue}`);
+  const content = manifest.content;
+  if (!content) return { issues, manifest };
+  if (content.publication !== publication) issues.push(`manifest ${name} is for ${content.publication}, not ${publication}`);
+  for (const gate of releaseGates(root, publication)) {
+    const status = content.checks[gate];
+    if (status !== "pass") issues.push(`manifest ${name} records gate ${gate} as ${status ?? "not run"}`);
+  }
+  for (const [ref, value] of Object.entries(content.pins)) if (!/@[0-9a-f]{64}$/.test(value)) issues.push(`manifest ${name} lists ${ref} as ${value}, with no sha256`);
+  const issue = buildIssue(root, content.build.id);
+  if (issue) issues.push(issue);
+  if (content.build.path !== buildPath(content.build.id)) issues.push(`manifest build.path ${content.build.path} is not ${buildPath(content.build.id)}`);
+  const stamp = readBuildStamp(root, content.build.id);
+  if (!stamp) issues.push(`build ${content.build.id.slice(0, 12)} has no stamp: what it read is unknown`);
+  else {
+    if (stamp.publication !== publication) issues.push(`build ${content.build.id.slice(0, 12)} is a build of ${stamp.publication}`);
+    for (const row of pinDiff(stamp.pins, content.pins)) issues.push(`build ${content.build.id.slice(0, 12)} read ${row.ref} as ${row.from ?? "absent"}, the manifest lists ${row.to ?? "absent"}`);
+    for (const field of ["path", "routes", "locales", "exports"] as const) {
+      if (!same(content.build[field], stamp[field])) issues.push(`manifest ${name} build.${field} is ${JSON.stringify(content.build[field])}, the build stamp says ${JSON.stringify(stamp[field])}`);
+    }
+  }
+  issues.push(...lineageIssues(root, publication, slotId, name, manifest, content));
+  return { issues, manifest };
+}
+
+/** Every reason the pin `pin` on `publisher/<release slot of publication>` is not a ready-pin now: the release certifier's criteria, then the pin's own. */
 export function readyFindings(root: string, publication: string, pin: ReadyPin): Finding[] {
   const slotId = releaseSlotId(root, publication);
   const subject = `publisher/${slotId}`;
   const out = (detail: string): Finding => ({ check: RELEASE_READY, subject, detail });
   const findings: Finding[] = [];
   if (pin.basis !== "picked") findings.push(out(`basis ${pin.basis}: a ready-pin is the owner's pick (picked)`));
-  const slotIssue = releaseSlotIssue(root, slotId);
-  if (slotIssue) findings.push(out(slotIssue));
-  const manifest = readManifest(root, publication, pin.candidate);
-  for (const issue of manifest.issues) findings.push(out(`manifest ${pin.candidate}: ${issue}`));
+  const { issues, manifest } = releaseCandidateIssues(root, publication, pin.candidate);
+  findings.push(...issues.map(out));
   findings.push(...answerIssues(root, subject, pin, manifest).map(out));
   if (pin.sha256 !== undefined && manifest.sha256 && pin.sha256 !== manifest.sha256) findings.push(out(`the pin's sha256 ${pin.sha256.slice(0, 12)} is not the manifest's ${manifest.sha256.slice(0, 12)}`));
   const content = manifest.content;
   if (!content) return findings;
-  if (content.publication !== publication) findings.push(out(`manifest ${pin.candidate} is for ${content.publication}, not ${publication}`));
-  for (const gate of releaseGates(root, publication)) {
-    const status = content.checks[gate];
-    if (status !== "pass") findings.push(out(`manifest ${pin.candidate} records gate ${gate} as ${status ?? "not run"}`));
-  }
   const now = currentPins(root);
   for (const row of pinDiff(content.pins, now)) {
     findings.push(out(row.from === null
       ? `manifest ${pin.candidate} is missing ${row.ref} (${row.to})`
       : row.to === null ? `manifest ${pin.candidate} lists ${row.ref}, which no longer resolves as a slot` : `${row.ref} is ${row.to} now, not ${row.from} as manifest ${pin.candidate} lists`));
   }
-  for (const [ref, value] of Object.entries(content.pins)) if (!/@[0-9a-f]{64}$/.test(value)) findings.push(out(`manifest ${pin.candidate} lists ${ref} as ${value}, with no sha256`));
-  const issue = buildIssue(root, content.build.id);
-  if (issue) findings.push(out(issue));
-  if (content.build.path !== buildPath(content.build.id)) findings.push(out(`manifest build.path ${content.build.path} is not ${buildPath(content.build.id)}`));
-  const stamp = readBuildStamp(root, content.build.id);
-  if (!stamp) findings.push(out(`build ${content.build.id.slice(0, 12)} has no stamp: what it read is unknown`));
-  else {
-    if (stamp.publication !== publication) findings.push(out(`build ${content.build.id.slice(0, 12)} is a build of ${stamp.publication}`));
-    for (const row of pinDiff(stamp.pins, content.pins)) findings.push(out(`build ${content.build.id.slice(0, 12)} read ${row.ref} as ${row.from ?? "absent"}, the manifest lists ${row.to ?? "absent"}`));
-    for (const field of ["path", "routes", "locales", "exports"] as const) {
-      if (!same(content.build[field], stamp[field])) findings.push(out(`manifest ${pin.candidate} build.${field} is ${JSON.stringify(content.build[field])}, the build stamp says ${JSON.stringify(stamp[field])}`));
-    }
-  }
-  findings.push(...lineageIssues(root, publication, slotId, pin.candidate, manifest, content).map(out));
-  const gates = runGates(root, publication, stamp);
+  const gates = runGates(root, publication, readBuildStamp(root, content.build.id));
   for (const [gate, status] of Object.entries(gates.checks)) if (status !== "pass") findings.push(out(`gate ${gate} fails now`));
   for (const finding of gates.findings) findings.push({ ...finding });
   return findings;

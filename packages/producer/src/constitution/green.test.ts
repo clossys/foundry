@@ -1,7 +1,8 @@
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
 import { parseArgs } from "../cli/args.js";
 import { runCheck } from "../cli/check.js";
 // Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
@@ -10,7 +11,12 @@ import { runIaCli } from "../cli/owner.js";
 import { buildGreen, evaluateDelta, formatDelta, greenDigest, IA_POSITION_KIND, isIaPositionEvent, ledgerRecordView, POSITION_FIELDS, readGreen, rowKey, seedGrowth, slotRecordView, slotWriteKind, verifyGreen, type GreenReport } from "./green.js";
 import { singleReaderRows } from "./rules/r11.js";
 import { runConstitution } from "./run.js";
+import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
+import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/index.js";
 import { AT, cleanSpec, ledgerDoc, ledgerEvent, NO_HISTORY, sha, slotDoc, writeWorkspace, type WorkspaceSpec } from "./__fixtures__/workspace.js";
+
+// U13 r4: pin and migrate run the full guard; at the workstation's shared load the guarded cases exceed 5 s.
+vi.setConfig({ testTimeout: 60_000 });
 
 const WS = "(no package.json)";
 
@@ -249,32 +255,34 @@ describe("constitution delta gate (until E2)", () => {
     expect(refused.message).toMatch(/REFUSED: .*integrity/);
   });
   it("G2: --record-green refuses to add a key; with removals only it rewrites and re-seals the report", async () => {
-    // Two pre-existing findings, ui.card and home.hero unpinned, with their upstream ui.button pinned first
-    // (R02.2): site.home's R02.2 row stays while home.hero is unpinned, so fixing ui.card fixes one key.
+    // Two pre-existing findings, seat.director and home.hero unpinned (R04): site.home's R02.2 row stays while home.hero is
+    // unpinned, so fixing seat.director fixes one key. The fixed finding is the Producer seat's: R05.2 (a pin points only to
+    // a certified candidate) is enforced for every content agent (foundry-build-0048 R05.2 CHOOSE), so re-pinning one of
+    // this fixture's uncertified content candidates is itself a new enforced finding, never a removal-only change.
     const spec = cleanSpec();
-    spec.designer!["ui.card"]!.pin = false;
+    spec.producer!["seat.director"]!.pin = false;
     spec.writer!["home.hero"]!.pin = false;
     const path = join(mkdtempSync(join(tmpdir(), "constitution-green-")), "green.json");
     let consumer = writeWorkspace(spec).consumer;
     const cli = (...flags: string[]) => runCheck(parseArgs(["check", "--constitution", "--green", path, "--root", consumer, ...flags]), consumer);
     expect((await cli("--record-green")).exitCode).toBe(0);
     const seeded = JSON.parse(readFileSync(path, "utf8")) as GreenReport;
-    expect(Object.keys(seeded.keys)).toEqual(expect.arrayContaining(["R04 designer/ui.card .", "R04 writer/home.hero .", "R02.2 publisher/site.home slot.json"]));
-    // A new finding (the producer seat unpinned): --enforced blocks it and --record-green refuses, writing nothing.
+    expect(Object.keys(seeded.keys)).toEqual(expect.arrayContaining(["R04 producer/seat.director .", "R04 writer/home.hero .", "R02.2 publisher/site.home slot.json"]));
+    // A new finding (ui.card unpinned): --enforced blocks it and --record-green refuses, writing nothing.
     const worse = structuredClone(spec);
-    worse.producer!["seat.director"]!.pin = false;
+    worse.designer!["ui.card"]!.pin = false;
     consumer = writeWorkspace(worse).consumer;
     expect((await cli("--enforced")).exitCode).toBe(1);
     const refused = await cli("--record-green");
     expect(refused.exitCode).toBe(1);
-    expect(refused.message).toMatch(/REFUSED: the new report would add 1 key\(s\) .*R04 producer\/seat\.director \. \(recorded 0, produced 1\)/);
+    expect(refused.message).toMatch(/REFUSED: the new report would add 1 key\(s\) .*R04 designer\/ui\.card \. \(recorded 0, produced 1\)/);
     expect(readFileSync(path, "utf8")).toBe(`${JSON.stringify(seeded, null, 2)}\n`);
-    // ui.card fixed and its record changed: the key is stale (not blocking), and a re-record drops it.
+    // seat.director fixed and its record changed: the key is stale (not blocking), and a re-record drops it.
     const fixed = structuredClone(spec);
-    delete fixed.designer!["ui.card"]!.pin;
+    delete fixed.producer!["seat.director"]!.pin;
     consumer = writeWorkspace(fixed).consumer;
     const stale = await cli("--enforced");
-    expect(stale.exitCode).toBe(0);
+    expect(stale.exitCode, stale.message).toBe(0);
     expect(stale.message).toMatch(/stale 1 \(not blocking\)/);
     const rerecorded = await cli("--record-green");
     expect(rerecorded.exitCode).toBe(0);
@@ -282,7 +290,7 @@ describe("constitution delta gate (until E2)", () => {
     const next = JSON.parse(readFileSync(path, "utf8")) as GreenReport;
     expect(verifyGreen(next)).toEqual([]);
     expect(Object.keys(next.keys).every(key => key in seeded.keys)).toBe(true);
-    expect(Object.keys(next.keys)).toEqual(Object.keys(seeded.keys).filter(key => key !== "R04 designer/ui.card ."));
+    expect(Object.keys(next.keys)).toEqual(Object.keys(seeded.keys).filter(key => key !== "R04 producer/seat.director ."));
     expect(next.enforced).toBe(seeded.enforced - 1);
     const clean = await cli("--enforced");
     expect(clean.exitCode).toBe(0);
@@ -320,55 +328,144 @@ describe("the ia verb's ledger events (R14.1) and the delta gate (D1)", () => {
     const events = (path: string) => (JSON.parse(read(path)) as { events: Record<string, unknown>[] }).events;
     return { root, consumer, constitution, ia, read, events };
   }
-  it("an ia write appends one event per written file, and R14.1 stays clean", async () => {
+  // One format (U13): this baseline is clossys.slot/1, and the ia verb writes clossys.slot/2 only. Each ia write
+  // below is refused with the migrate message before anything is written: no event, no record change, and the
+  // delta gate sees nothing new. (The ia verb's slot/2 events are pinned in cli/ia-regroup.test.ts.)
+  const MIGRATE = /is a clossys\.slot\/1 slot; this verb writes clossys\.slot\/2 and clossys\.pin\/2 only: run clossys migrate slots --apply first/;
+  it("an ia regroup on a slot/1 store is refused, appends no event, and R14.1 stays clean", async () => {
     const ws = iaWorkspace();
     const base = ws.constitution();
     expect(base.rows.filter(row => row.check === "R14.1")).toEqual([]);
-    const before = { designer: ws.events("designer/ledger.json").length, button: ws.events("designer/ui.button/ledger.json").length, card: ws.events("designer/ui.card/ledger.json").length };
-    // ui.card before ui.button: ia.json changes, and ui.button's slot.json is renumbered (ia.order only).
+    const before = { designer: ws.read("designer/ledger.json"), ia: ws.read("designer/ia.json"), button: ws.read("designer/ui.button/ledger.json"), slot: ws.read("designer/ui.button/slot.json") };
     const result = await ws.ia("designer", "--reorder", "controls/all", "--order", "ui.card,ui.button", "--owner-ref", DECISION);
-    expect(result.exitCode, result.message).toBe(0);
-    const agent = ws.events("designer/ledger.json"), button = ws.events("designer/ui.button/ledger.json");
-    expect(agent.length).toBe(before.designer + 1);
-    expect(agent.at(-1)).toMatchObject({ op: "ia", verb: "ia", kind: "ia", by: "owner", at: AT, model: "none", tier: "none", skill: { path: "packages/producer/actions/ia/skill.md" }, records: [{ file: "ia.json", sha256: sha(ws.read("designer/ia.json")) }] });
-    expect(button.length).toBe(before.button + 1);
-    expect(button.at(-1)).toMatchObject({ op: "slot", verb: "ia", kind: IA_POSITION_KIND, by: "owner", at: AT, records: [{ file: "slot.json", sha256: sha(ws.read("designer/ui.button/slot.json")) }] });
-    expect(ws.events("designer/ui.card/ledger.json").length).toBe(before.card); // not written, no event
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toMatch(MIGRATE);
+    expect({ designer: ws.read("designer/ledger.json"), ia: ws.read("designer/ia.json"), button: ws.read("designer/ui.button/ledger.json"), slot: ws.read("designer/ui.button/slot.json") }).toEqual(before);
     const after = ws.constitution();
     expect(after.rows.filter(row => row.check === "R14.1")).toEqual([]);
   });
 
-  it("an order-only renumber by the ia verb is unchanged in green; the regrouped agent record is changed", async () => {
+  it("a refused ia regroup leaves green unchanged: no new row, no changed record", async () => {
     const ws = iaWorkspace();
     const base = ws.constitution();
     const green = buildGreen(base.rows, base.index!, { workspace: WS, commit: "unknown" });
     const result = await ws.ia("designer", "--reorder", "controls/all", "--order", "ui.card,ui.button", "--owner-ref", DECISION);
-    expect(result.exitCode, result.message).toBe(0);
-    expect((JSON.parse(ws.read("designer/ui.button/slot.json")) as { ia: { order: number } }).ia.order).not.toBe((slotDoc("designer", "ui.button").ia as { order: number }).order);
+    expect(result.exitCode).toBe(1);
     const next = ws.constitution();
-    expect(next.index!.digests["designer/ui.button"]).toBe(base.index!.digests["designer/ui.button"]);
-    const delta = evaluateDelta(next.rows, next.index!, stored(green).read, scope(next));
-    expect(delta).toMatchObject({ ok: true, newRows: 0, changedRecords: ["designer"] });
-    expect(delta.changedRecords).not.toContain("designer/ui.button");
+    expect(next.index!.digests).toEqual(base.index!.digests);
+    expect(evaluateDelta(next.rows, next.index!, stored(green).read, scope(next))).toMatchObject({ ok: true, newRows: 0, changedRecords: [] });
   });
 
-  it("a real ia edit (a new contract) is an `ia` event and changes the record; --dry writes no event", async () => {
+  it("an ia contract edit on a slot/1 slot is refused, dry or real, and changes no record", async () => {
     const ws = iaWorkspace();
     const base = ws.constitution();
-    const green = buildGreen(base.rows, base.index!, { workspace: WS, commit: "unknown" });
     const contract = join(ws.root, "contract.json");
     writeFileSync(contract, `${JSON.stringify({ requirements: [{ check: "text.nonempty" }], ...(slotDoc("designer", "ui.button").contract as object), summary: "element ui.button, rewritten" }, null, 2)}\n`);
     const ledger = ws.read("designer/ui.button/ledger.json"), slot = ws.read("designer/ui.button/slot.json");
-    const dry = await ws.ia("designer/ui.button", "--contract", contract, "--dry");
-    expect(dry.exitCode, dry.message).toBe(0);
-    expect(ws.read("designer/ui.button/ledger.json")).toBe(ledger);
-    expect(ws.read("designer/ui.button/slot.json")).toBe(slot);
-    const result = await ws.ia("designer/ui.button", "--contract", contract);
+    for (const dry of [["--dry"], []]) {
+      const result = await ws.ia("designer/ui.button", "--contract", contract, ...dry);
+      expect(result.exitCode).toBe(1);
+      expect(result.message).toMatch(MIGRATE);
+      expect(ws.read("designer/ui.button/ledger.json")).toBe(ledger);
+      expect(ws.read("designer/ui.button/slot.json")).toBe(slot);
+    }
+    expect(ws.constitution().index!.digests["designer/ui.button"]).toBe(base.index!.digests["designer/ui.button"]);
+  });
+});
+
+describe("the ia verb's ledger events (R14.1) and the delta gate (D1) on a clossys.slot/2 store (U13 r3, N9)", () => {
+  const DECISION = "6873279813";
+  const IA: IaDoc = {
+    schema: "clossys.ia/1", source: "workspace#owner", extensions: [], nodes: [
+      { id: "assets.logo", label: "Logo", children: [{ id: "logo-artwork", label: "Artwork", slots: ["assets.logo-mark", "assets.logo-word"] }] },
+      { id: "frames.page-shells", label: "Page shells", children: [{ id: "page-shells-workspaces", label: "Workspaces", slots: ["frames.workspace"] }] },
+    ],
+  };
+  /** Designer slot/1 slots at their IA positions, converted by the real migration (clossys migrate slots --apply). */
+  function slot2Workspace() {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "constitution-green-slot2-")));
+    const consumer = join(root, "clossys");
+    const agents = join(consumer, "agents", "designer");
+    mkdirSync(agents, { recursive: true });
+    writeFileSync(join(consumer, "clossys.config.ts"), "export default {};\n");
+    writeFileSync(join(consumer, "owner-decisions.json"), `${JSON.stringify({ schema: "clossys.owner-decisions/1", decisions: [{ id: DECISION, ref: "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review)", date: "2026-11-13", scope: ["ia"], summary: "IA review." }] }, null, 2)}\n`);
+    writeFileSync(join(agents, "ia.json"), jsonBytes(IA));
+    for (const [id, position] of slotPositions("designer", IA)) {
+      mkdirSync(join(agents, id), { recursive: true });
+      writeFileSync(join(agents, id, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id, agent: "designer", ia: position, kind: "element", standard: "element.fixture", contract: { summary: `element ${id}` }, inputs: [], uses: [] }));
+    }
+    const plan = planSlotsMigration(root, { at: AT, version: "0.0.0-test" });
+    expect(plan.findings).toEqual([]);
+    applySlotsMigration(root, plan, { at: AT, version: "0.0.0-test" });
+    // The migration rewrites slot.json only; a slot/2 store's records carry provenance (R14.1), so each migrated
+    // slot.json and the agent ia.json get the ledger event that records its bytes (fixture events, as baselineSpec's).
+    const record = (file: string) => [{ file, sha256: sha(readFileSync(join(agents, ...file.split("/")), "utf8")) }];
+    writeFileSync(join(agents, "ledger.json"), jsonBytes(ledgerDoc([ledgerEvent("ia", "ia", "packages/producer/actions/ia/skill.md", {}, record("ia.json"))])));
+    for (const id of slotPositions("designer", IA).keys()) {
+      writeFileSync(join(agents, id, "ledger.json"), jsonBytes(ledgerDoc([ledgerEvent("slot", "ia", "packages/producer/actions/ia/skill.md", {}, record(`${id}/slot.json`).map(each => ({ ...each, file: "slot.json" })))])));
+    }
+    const constitution = () => runConstitution({ root, consumer, history: () => NO_HISTORY, index: true, now: () => 0 });
+    const ia = (...args: string[]) => runIaCli([...args, "--at", AT, "--root", root], root);
+    const read = (path: string) => readFileSync(join(consumer, "agents", path), "utf8");
+    const events = (path: string) => (JSON.parse(read(path)) as { events: Record<string, unknown>[] }).events;
+    return { root, consumer, constitution, ia, read, events };
+  }
+  const r141 = (rows: readonly { check: string }[]) => rows.filter(row => row.check === "R14.1");
+
+  it("an ia regroup on slot/2 appends one event per written file, and R14.1 stays clean", async () => {
+    const ws = slot2Workspace();
+    expect(JSON.parse(ws.read("designer/assets.logo-mark/slot.json")).schema).toBe("clossys.slot/2");
+    expect(r141(ws.constitution().rows)).toEqual([]);
+    const before = { designer: ws.events("designer/ledger.json").length, mark: ws.events("designer/assets.logo-mark/ledger.json").length, word: ws.events("designer/assets.logo-word/ledger.json").length, shell: ws.events("designer/frames.workspace/ledger.json").length };
+    const result = await ws.ia("designer", "--reorder", "assets.logo/logo-artwork", "--order", "assets.logo-word,assets.logo-mark", "--owner-ref", DECISION);
     expect(result.exitCode, result.message).toBe(0);
-    expect(ws.events("designer/ui.button/ledger.json").at(-1)).toMatchObject({ op: "slot", verb: "ia", kind: "ia", by: "planner", at: AT, records: [{ file: "slot.json", sha256: sha(ws.read("designer/ui.button/slot.json")) }] });
+    const agent = ws.events("designer/ledger.json");
+    expect(agent.length).toBe(before.designer + 1);
+    expect(agent.at(-1)).toMatchObject({ op: "ia", verb: "ia", kind: "ia", by: "owner", at: AT, records: [{ file: "ia.json", sha256: sha(ws.read("designer/ia.json")) }] });
+    // Each renumbered slot.json is one position event; a slot the regroup did not write gets none.
+    for (const id of ["assets.logo-mark", "assets.logo-word"]) {
+      const slot = ws.events(`designer/${id}/ledger.json`);
+      expect(slot.length, id).toBe(before[id === "assets.logo-mark" ? "mark" : "word"] + 1);
+      expect(slot.at(-1)).toMatchObject({ op: "slot", verb: "ia", kind: IA_POSITION_KIND, by: "owner", at: AT, records: [{ file: "slot.json", sha256: sha(ws.read(`designer/${id}/slot.json`)) }] });
+    }
+    expect(ws.events("designer/frames.workspace/ledger.json").length).toBe(before.shell);
+    expect(r141(ws.constitution().rows)).toEqual([]);
+  });
+
+  it("an order-only renumber on slot/2 is unchanged in green; the regrouped agent record is changed", async () => {
+    const ws = slot2Workspace();
+    const base = ws.constitution();
+    const green = buildGreen(base.rows, base.index!, { workspace: WS, commit: "unknown" });
+    const before = ws.read("designer/assets.logo-mark/slot.json");
+    const result = await ws.ia("designer", "--reorder", "assets.logo/logo-artwork", "--order", "assets.logo-word,assets.logo-mark", "--owner-ref", DECISION);
+    expect(result.exitCode, result.message).toBe(0);
+    expect(ws.read("designer/assets.logo-mark/slot.json")).not.toBe(before);
     const next = ws.constitution();
-    expect(next.rows.filter(row => row.check === "R14.1")).toEqual([]);
-    expect(next.index!.digests["designer/ui.button"]).not.toBe(base.index!.digests["designer/ui.button"]);
-    expect(evaluateDelta(next.rows, next.index!, stored(green).read, scope(next)).changedRecords).toContain("designer/ui.button");
+    expect(next.index!.digests["designer/assets.logo-mark"]).toBe(base.index!.digests["designer/assets.logo-mark"]);
+    const delta = evaluateDelta(next.rows, next.index!, stored(green).read, scope(next));
+    expect(delta, formatDelta(delta)).toMatchObject({ ok: true, newRows: 0, changedRecords: ["designer"] });
+  });
+
+  it("a real ia edit (a new contract) on slot/2 is an `ia` event and changes the record; --dry writes no event", async () => {
+    const ws = slot2Workspace();
+    const base = ws.constitution();
+    const green = buildGreen(base.rows, base.index!, { workspace: WS, commit: "unknown" });
+    const contract = join(ws.root, "contract.json");
+    writeFileSync(contract, jsonBytes({ requirements: [{ check: "text.nonempty" }] }));
+    const ledger = ws.read("designer/frames.workspace/ledger.json"), slot = ws.read("designer/frames.workspace/slot.json");
+    const dry = await ws.ia("designer/frames.workspace", "--contract", contract, "--owner-ref", DECISION, "--dry");
+    expect(dry.exitCode, dry.message).toBe(0);
+    expect(ws.read("designer/frames.workspace/ledger.json")).toBe(ledger);
+    expect(ws.read("designer/frames.workspace/slot.json")).toBe(slot);
+    const result = await ws.ia("designer/frames.workspace", "--contract", contract, "--owner-ref", DECISION);
+    expect(result.exitCode, result.message).toBe(0);
+    expect(JSON.parse(ws.read("designer/frames.workspace/slot.json")).schema).toBe("clossys.slot/2");
+    expect(ws.events("designer/frames.workspace/ledger.json").at(-1)).toMatchObject({ op: "slot", verb: "ia", kind: "ia", at: AT, records: [{ file: "slot.json", sha256: sha(ws.read("designer/frames.workspace/slot.json")) }] });
+    const next = ws.constitution();
+    expect(r141(next.rows)).toEqual([]);
+    expect(next.index!.digests["designer/frames.workspace"]).not.toBe(base.index!.digests["designer/frames.workspace"]);
+    const delta = evaluateDelta(next.rows, next.index!, stored(green).read, scope(next));
+    expect(delta.changedRecords).toContain("designer/frames.workspace");
+    expect(delta.newRows).toBe(0);
   });
 });

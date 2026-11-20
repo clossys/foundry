@@ -101,16 +101,18 @@ describe("the admin plan states each data-bound binding and each dynamic route",
 });
 
 describe("clossys init seeds the admin slots and adopts the loops of the agents it places", () => {
-  it("a fresh init seeds every admin slot with its package default; on a bare workspace only the publication pins (no page's frame, sections or copy is pinned upstream)", async () => {
+  it("a fresh init seeds every admin slot with its package default; on a bare workspace none pins (no page's frame, sections or copy is pinned upstream, so no page and not the publication)", async () => {
     const root = workspace();
     const result = await runInitCli(["--at", AT], root);
     expect(result.exitCode, result.message).toBe(0);
     const { admin } = outputOf(result);
     expect(admin.seeded).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT]);
-    // The publication certifies on its contract fixture (certify/page.ts certifyPublication) and pins; each page waits.
-    expect(admin.pinned).toEqual([ADMIN_PUBLICATION_SLOT]);
-    expect(admin.waiting.map(item => item.slot)).toEqual(PAGES);
+    // Each page waits for its upstream pins, and the publication waits for its pages: the guarded pin refuses it over
+    // unpinned upstream (constitution R02.2, upstream is pinned before downstream), as cli/init-admin.test.ts pins.
+    expect(admin.pinned).toEqual([]);
+    expect(admin.waiting.map(item => item.slot)).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT]);
     for (const item of admin.waiting) expect(item.reason, item.slot).toMatch(/refused/);
+    expect(admin.waiting.at(-1)!.reason).toContain("R02.2");
     const plan = adminPlan(root);
     for (const page of plan.pages) {
       const dir = publisherSlot(root, page.id);
@@ -118,9 +120,9 @@ describe("clossys init seeds the admin slots and adopts the loops of the agents 
       expect(JSON.parse(readFileSync(join(dir, "candidates", ADMIN_SEED), "utf8")), page.id).toEqual(page.record);
       expect(existsSync(join(dir, "pin.json")), page.id).toBe(false);
     }
-    expect(existsSync(join(publisherSlot(root, ADMIN_PUBLICATION_SLOT), "pin.json"))).toBe(true);
+    expect(existsSync(join(publisherSlot(root, ADMIN_PUBLICATION_SLOT), "pin.json"))).toBe(false);
     expect(JSON.parse(readFileSync(join(publisherSlot(root, ADMIN_PUBLICATION_SLOT), "candidates", ADMIN_SEED), "utf8"))).toEqual(plan.record);
-    expect(result.message).toContain(`seeded 6 admin records; pinned 1; 5 wait for upstream pins: ${PAGES.join(", ")}`);
+    expect(result.message).toContain(`seeded 6 admin records; pinned 0; 6 wait for upstream pins: ${[...PAGES, ADMIN_PUBLICATION_SLOT].join(", ")}`);
   }, 120_000);
 
   it("a second init seeds nothing new and leaves every seeded candidate byte-identical; a slot holding another candidate is the consumer's", async () => {
@@ -134,8 +136,9 @@ describe("clossys init seeds the admin slots and adopts the loops of the agents 
     expect(again.exitCode, again.message).toBe(0);
     const { admin } = outputOf(again);
     expect(admin.seeded).toEqual([]);
-    // page.admin-home holds the consumer's candidate and publication.admin is pinned: neither is retried.
-    expect(admin.waiting.map(item => item.slot)).toEqual(PAGES.slice(1));
+    // page.admin-home holds the consumer's candidate, so it is not retried; every other seeded slot (publication.admin too, still unpinned) is.
+    expect(admin.pinned).toEqual([]);
+    expect(admin.waiting.map(item => item.slot)).toEqual([...PAGES.slice(1), ADMIN_PUBLICATION_SLOT]);
     expect([...PAGES, ADMIN_PUBLICATION_SLOT].map(seed)).toEqual(before);
   }, 120_000);
 
@@ -145,7 +148,7 @@ describe("clossys init seeds the admin slots and adopts the loops of the agents 
     writeFileSync(join(publisherSlot(root, "page.admin-gallery"), "candidates", ".DS_Store"), "\0\0\0\1Bud1");
     const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
     expect(again.exitCode, again.message).toBe(0);
-    expect(outputOf(again).admin.waiting.map(item => item.slot)).toEqual(PAGES);
+    expect(outputOf(again).admin.waiting.map(item => item.slot)).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT]);
   }, 120_000);
 
   it("on a workspace placing Director, Designer and Writer too, a fresh init adopts and pins all four agents' loops", async () => {

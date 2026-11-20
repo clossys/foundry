@@ -26,7 +26,10 @@ import type { ModelAgent, SlotAgent } from "../records/slot-model/types.js";
 import { candidatesDir, slotDir } from "../records/slot-model/layout.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { readCandidate, readLedger, readSlot, readSlotEntry } from "../records/slots.js";
-import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
+import { CandidateRefusal } from "../records/candidate.js";
+import { readCandidateText } from "../records/slot-current.js";
+import type { Actor, AgentId, Tier } from "../records/types.js";
+import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, submittedBytes, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { nextPacket, openItems, openPackets, skillFile } from "../pipeline/chain.js";
 import type { Packet } from "../pipeline/chain.js";
@@ -63,7 +66,8 @@ export const NEXT_USAGE = "Usage: clossys next [--json] [--root <dir>]\n"
   + "  create (for the latest options packet's inputsHash). The submit refuses on any finding of a constitution check whose\n"
   + "  rules.json guard lists submit, on the new file (absolute: findings the slot already had count too).\n"
   + "  --stage: one P2 craft stage (section 5b) as a craft:<stage> slot-ledger event, in order brief, diverge, render, critique,\n"
-  + "  then at most 2 refine rounds; diverge takes --file with 3 to 4 {id, idea, axes} directions (cap 4). A Producer seat\n"
+  + "  then at most 2 refine rounds; diverge takes --file with 3 to 4 {id, idea, axes} directions (cap 4). Refused under a\n"
+  + "  plumb recipe (R15.7: its plumb action computes the candidate, so no craft stage is recorded). A Producer seat\n"
   + "  slot (producer/seat.<step>) crafts under the seats action's skill; clossys seat writes the seat.";
 
 const TIERS = ["low", "mid", "high"] as const;
@@ -246,12 +250,32 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   if (ext === "json") { try { content = JSON.parse(bytes); } catch { return reject(`${flags.submit} is not JSON`); } }
   // A candidate byte-identical to one the slot holds adds no option: refused before anything is written.
   // The bytes writeCandidate would write: the slot kind's extension decides the serialization.
-  const canonical = KIND_EXT[readSlot(consumer, agent as SlotAgent, slot).kind] === "md" ? String(content) : jsonBytes(content);
+  const family = readSlot(consumer, agent as SlotAgent, slot).kind;
+  const canonical = KIND_EXT[family] === "md" ? String(content) : jsonBytes(content);
   const digest = sha(canonical);
+  // U37/U38: under clossys.slot/2 the submission is written as one clossys.candidate/1 file (records/slot-write.ts
+  // submittedBytes, the one submit serializer: the header created by this submission's agent, skill, model and tier).
+  // Its identity with a held candidate is judged on the bytes and on the content digest of the one candidate reader
+  // (records/slots.ts readCandidate over slot-current.ts readCandidateText: the view and the header without its
+  // per-file provenance). The probe is the bytes writeCandidate would write; a submission it refuses is refused
+  // by writeCandidate below, in its order, with its message.
+  let rawSlot: unknown;
+  try { rawSlot = JSON.parse(readFileSync(join(entry.dir, "slot.json"), "utf8")); } catch { rawSlot = undefined; }
+  const createdBy: Actor = { actor: "agent", agent: agent as AgentId, skill: contractSkill, skillSha256: sha(skillBytes), model: flags.model!, tier: flags.tier! as Tier };
+  const probe = `${stem}-v1.${KIND_EXT[family]}`;
+  let probeBytes = canonical;
+  // Only the serializer's refusal of these bytes (CandidateRefusal) leaves the probe as the bytes themselves; any other
+  // error is a fault and propagates.
+  try { probeBytes = submittedBytes(entry.dir, agent as SlotAgent, slot, family, probe, canonical, "2000-01-01T00:00:00Z", createdBy); } catch (error) {
+    if (!(error instanceof CandidateRefusal)) throw error;
+    probeBytes = canonical;
+  }
+  const contentDigest = readCandidateText(rawSlot, agent as ModelAgent, slot, probe, probeBytes).contentDigest;
   for (const name of entry.candidates) {
-    let held: string | null = null;
-    try { held = readCandidate(consumer, agent as SlotAgent, slot, name).sha256; } catch { held = null; }
-    if (held === digest) return reject(`${flags.submit} is byte-identical to ${target} candidate ${name}; submit a candidate that differs`);
+    let held: { sha256: string; contentDigest: string } | null = null;
+    try { held = readCandidate(consumer, agent as SlotAgent, slot, name); } catch { held = null; }
+    if (held?.sha256 === digest) return reject(`${flags.submit} is byte-identical to ${target} candidate ${name}; submit a candidate that differs`);
+    if (held?.contentDigest === contentDigest) return reject(`${flags.submit} has the same content as ${target} candidate ${name} (it differs only in header provenance or JSON layout); submit a candidate that differs`);
   }
   // P2 (adapt, create) only after the slot's latest verdict is create, for the latest options packet's inputs:
   // a slot-state precondition, refused after the submission's own content checks.
@@ -269,6 +293,7 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
       provenance: { verb: "submit", by: flags.basis === "agent" ? `agent:${owning.id}` : flags.basis!, skill, model: flags.model!, tier: flags.tier! },
       fields: { basis: flags.basis!, rung: ladder!.rung, ...(ladder!.seed !== undefined ? { seed: ladder!.seed } : {}), ...(ladder!.reason !== undefined ? { reason: ladder!.reason } : {}), ladder: ladder! },
       guard,
+      header: { createdBy },
     });
   } catch (error) {
     if (error instanceof GuardRefusal) return { ...reject(error.message), output: { schema: "clossys.next-submit-refused/1", slot: target, verb: error.verb, checks: error.checks, findings: error.findings } };
@@ -311,8 +336,8 @@ export function p2Refusal(slotDir: string, agent: string, ladder: CandidateLadde
  * `clossys next <agent>/<slot> --stage <stage> ...` (also `clossys craft <stage> <agent>/<slot> ...`,
  * cli/craft.ts): one P2 craft stage (section 5b) as a `craft:<stage>` slot-ledger event through the
  * writer, which refuses a stage out of order (brief, diverge, render, critique, then at most 2
- * refine rounds), a diverge outside 3 to 4 directions and a diverge whose directions share a value
- * on an axis. The brief is assembled here (cli/craft-brief.ts). Craft runs only on a P2 slot: its
+ * refine rounds), any stage under a plumb recipe (R15.7, the judge's predicate), a diverge outside
+ * 3 to 4 directions and a diverge whose directions share a value on an axis. The brief is assembled here (cli/craft-brief.ts). Craft runs only on a P2 slot: its
  * latest verdict is create.
  */
 export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT): Promise<CliResult> {

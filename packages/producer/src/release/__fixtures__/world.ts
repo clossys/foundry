@@ -23,7 +23,8 @@ import { PRODUCER_ROOT } from "../../package-path.js";
 import { cliActor } from "../../records/pin.js";
 import { writeTargetPin } from "../../records/pin-map.js";
 import { positionIa, writeSlot } from "../../records/slot.js";
-import { writeCandidate } from "../../records/slot-write.js";
+import { skillPath } from "../../records/ledger.js";
+import { appendSlotDocEvent, writeCandidate } from "../../records/slot-write.js";
 import { serializeFrontmatter, slotPositions, type IaDoc, type SlotAgent } from "../../records/slot-model/index.js";
 import type { AgentId, Iso, Ref, Slot } from "../../records/types.js";
 import type { ReleaseBuilder } from "../build.js";
@@ -76,6 +77,10 @@ export interface ReleaseWorld {
   dispose(): void;
 }
 
+/**
+ * Writes one world slot's slot.json and records the write: a `slot` ledger event with the bytes' sha256, as the
+ * requests world records its slot.json (R14.1), so a guarded verb on the slot judges only what the verb writes.
+ */
 function slot(root: string, ref: string, extra: Partial<Slot> = {}): void {
   const spec = SLOTS[ref]!;
   const [agent, id] = ref.split("/") as [AgentId, string];
@@ -86,10 +91,11 @@ function slot(root: string, ref: string, extra: Partial<Slot> = {}): void {
     ia: positionIa(id, position), base: null, standard: spec.standard,
     brief: { purpose: "placeholder", mustDo: [], inputs: [], acceptance: [] }, contract: {}, tighten: [], ...extra,
   } as Slot);
+  appendSlotDocEvent(join(root, "clossys"), agent as SlotAgent, id, { by: "planner", at: AT, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: "ia", note: "release world slot.json" } });
 }
 
-/** The agent's ia.json placing its world slots. */
-function iaDoc(agent: string): IaDoc {
+/** The agent's ia.json placing its world slots (`omit`: slots left out, their L1/L2 groups kept). */
+function iaDoc(agent: string, omit: ReadonlySet<string> = new Set()): IaDoc {
   const nodes: { id: string; label: string; children: { id: string; label: string; slots: string[] }[] }[] = [];
   for (const [ref, spec] of Object.entries(SLOTS)) {
     const [owner, id] = ref.split("/") as [string, string];
@@ -99,7 +105,7 @@ function iaDoc(agent: string): IaDoc {
     if (!node) nodes.push(node = { id: l1, label: l1, children: [] });
     let child = node.children.find(each => each.id === l2);
     if (!child) node.children.push(child = { id: l2, label: l2, slots: [] });
-    child.slots.push(id);
+    if (!omit.has(ref)) child.slots.push(id);
   }
   return { schema: "clossys.ia/1", source: "workspace#release-world", extensions: [], nodes } as IaDoc;
 }
@@ -158,7 +164,11 @@ const CANDIDATE: Record<string, { name: string; record?: string; content: (versi
   },
 };
 
-export function releaseWorld(options: { locales?: { required?: string[]; from?: string } } = {}): ReleaseWorld {
+/**
+ * `releaseSlot: false` leaves `publisher/release.site` out: no slot.json and no ia.json placement (its `releases/site`
+ * group stays, empty), so a test creates it through the real verb (`clossys ia publisher/release.site --kind release`).
+ */
+export function releaseWorld(options: { locales?: { required?: string[]; from?: string }; releaseSlot?: boolean } = {}): ReleaseWorld {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "release-world-")));
   const consumer = join(root, "clossys");
   const put = (rel: string, text: string): void => { mkdirSync(dirname(join(root, rel)), { recursive: true }); writeFileSync(join(root, rel), text); };
@@ -168,7 +178,7 @@ export function releaseWorld(options: { locales?: { required?: string[]; from?: 
   for (const agent of ["director", "designer", "writer", "publisher"]) cpSync(join(PRODUCER_ROOT, "..", agent, "standards"), join(root, "packages", agent, "standards"), { recursive: true });
   for (const agent of ["director", "designer", "writer"]) put(`clossys/agents/${agent}/ia.json`, `${JSON.stringify(iaDoc(agent), null, 2)}\n`);
   put("clossys/agents/publisher/ia.json", `${JSON.stringify({
-    ...iaDoc("publisher"),
+    ...iaDoc("publisher", options.releaseSlot === false ? new Set(["publisher/release.site"]) : undefined),
     publications: { site: { node: "directory/sites/site", starter: "site", root: "/", pages: ["page.home"], chrome: [], release: "release.site", redirects: [] } },
   }, null, 2)}\n`);
   slot(root, "director/focus.reach.geography", {
@@ -193,7 +203,7 @@ export function releaseWorld(options: { locales?: { required?: string[]; from?: 
     refs: [{ to: "designer/frames.site-shell", rel: "uses" } as Ref, { to: "designer/sections.hero", rel: "uses" } as Ref, { to: "writer/sections.hero.copy", rel: "uses" } as Ref],
     contract: { fixture: { route: { path: "/" } } },
   });
-  slot(root, "publisher/release.site", { contract: { locales: options.locales ?? { from: "director/focus.reach.geography:Language" } } });
+  if (options.releaseSlot !== false) slot(root, "publisher/release.site", { contract: { locales: options.locales ?? { from: "director/focus.reach.geography:Language" } } });
 
   /** Submits candidate `<name>-v<version>` through the submit verb (writeCandidate), in the shape it validates. */
   const submit = (ref: string, version: number, content?: unknown) => {

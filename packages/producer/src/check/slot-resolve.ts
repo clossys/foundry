@@ -13,16 +13,17 @@ import { buildCheckOutputEnvelope, envelopeToExitCode } from "../generated/check
 import { sha256Hex } from "../records/hash.js";
 import { loadReferencesManifest } from "../records/validate.js";
 import { candidateHeaderOf, candidateView } from "../records/slot-current.js";
-import { assertModelTree, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
+import { assertModelTree, listSlots, readCandidate, readIa, readLedgerText, readSlot, readSlotRecordText } from "../records/slots.js";
+import { lastRecordState, ledgerEventsOf } from "../records/ledger.js";
 import { agentModule } from "../read/cells.js";
 import { checkSlotModel, formatCoverage, slotCoverage, writerRecords, type AgentCoverage } from "../records/slot-check.js";
 import { writerDeclarationsText } from "../publish/studio-defaults.js";
 import {
-  SLOT_AGENTS, parseFrontmatter, validateIa, validateSource,
+  SLOT_AGENTS, parseFrontmatter, slotDir, validateIa, validateSource,
   type SlotModelCode, type SourceDoc,
 } from "../records/slot-model/index.js";
 
-export type SlotFailureCode = "not-in-ia" | "no-candidate" | "no-pin" | "multi-pin" | "pin-missing-file" | "hash-drift" | "schema" | "copy-missing-key" | "copy-empty" | "no-source" | "source-ref-unknown" | "orphan-candidate" | "ia-path" | "candidate-status";
+export type SlotFailureCode = "not-in-ia" | "no-candidate" | "no-pin" | "multi-pin" | "pin-missing-file" | "hash-drift" | "schema" | "copy-missing-key" | "copy-empty" | "no-source" | "source-ref-unknown" | "orphan-candidate" | "ia-path" | "candidate-status" | "pin-unledgered";
 export type SlotSource = SourceDoc;
 export interface SlotCandidate {
   id: string; hash?: string; schemaIssues: string[]; copyKeys: string[]; source?: SlotSource;
@@ -189,6 +190,29 @@ const modelCode = (code: SlotModelCode): SlotFailureCode => {
   return "schema";
 };
 
+/**
+ * The pin-ledger binding (R05.2 CHOOSE, foundry-build-0048; the U38 event/digest binding): a clossys.slot/2 slot's
+ * pin.json is written only with the ledger event that records its bytes (`clossys pin` and the guarded verbs append
+ * `records: [{file: "pin.json", sha256}]`). A pin.json with no such event, or whose bytes differ from the last event
+ * that recorded pin.json, was written by hand, outside the CHOOSE gate.
+ */
+export function pinLedgerMismatch(dir: string): string | undefined {
+  const slotText = readSlotRecordText(dir, "slot.json");
+  let schema: unknown;
+  try { schema = slotText === undefined ? undefined : (JSON.parse(slotText) as { schema?: unknown }).schema; } catch { return undefined; }
+  if (schema !== "clossys.slot/2") return undefined;
+  const pin = readSlotRecordText(dir, "pin.json");
+  if (pin === undefined) return undefined;
+  const actual = sha256Hex(pin);
+  let events: Record<string, unknown>[] = [];
+  try { const text = readLedgerText(dir); events = (text === undefined ? undefined : ledgerEventsOf(JSON.parse(text))) ?? []; } catch { events = []; }
+  const state = lastRecordState(events, "pin.json");
+  const how = "a pin is written only through clossys pin (the CHOOSE gate), never by hand";
+  if (!state) return `pin.json has no ledger event that wrote it: ${how}`;
+  if (state.sha256 !== actual) return `pin.json bytes (${actual.slice(0, 12)}) differ from its last ledger event (${String(state.sha256).slice(0, 12)}): ${how}`;
+  return undefined;
+}
+
 export async function runSlotResolve(rootIn: string) {
   const root = resolve(rootIn), writer = new Map<string, string[]>(), inputErrors: string[] = [];
   let stores: SlotStore[] = [], rows: SlotRow[] = [], coverage: AgentCoverage[] = [];
@@ -213,6 +237,13 @@ export async function runSlotResolve(rootIn: string) {
     rows = resolveSlots(stores, writer, references, await writerAliases(root, inputErrors));
     coverage = slotCoverage(root);
   } catch { inputErrors.push("Slot model inputs could not be read or validated."); }
+  for (const row of rows) {
+    const store = stores.find(item => item.agent === row.agent);
+    if (!store?.pins[row.slot]?.length) continue;
+    let message: string | undefined;
+    try { message = pinLedgerMismatch(slotDir(root, row.agent, row.slot)); } catch (error) { message = `pin.json's ledger binding could not be read: ${error instanceof Error ? error.message : String(error)}`; }
+    if (message) { row.findings.push({ code: "pin-unledgered", message }); row.status = "violated"; }
+  }
   for (const issue of modelIssues) {
     const row = rows.find(row => {
       const prefix = `agents/${row.agent}/`;

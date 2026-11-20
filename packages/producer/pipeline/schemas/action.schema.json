@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://clossys.com/schemas/producer/action.schema.json",
   "title": "Action contract (packages/<agent>/actions/<id>/action.json)",
-  "description": "One pipeline step's contract (docs/step-standard.md). check:step-standard validates every action file against this schema and the rules it states.",
+  "description": "One pipeline step's contract (docs/step-standard.md). check:step-standard validates every action file against this schema and the rules it states. standards names the standards, as <agent>/<id>, whose candidates this action computes; a plumb recipe (rung plumb) names only a plumb action, and produces only for the standards that action lists (R15.5, checked in src/records/recipes.ts).",
   "type": "object",
   "required": [
     "schema",
@@ -205,6 +205,14 @@
       "items": {
         "type": "string",
         "minLength": 1
+      }
+    },
+    "standards": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^(director|designer|writer|publisher|producer)/[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
       }
     },
     "decider": {

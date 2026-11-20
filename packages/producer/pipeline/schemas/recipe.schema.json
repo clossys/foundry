@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://clossys.com/schemas/producer/recipe.schema.json",
   "title": "Recipe (packages/<agent>/recipes/<id>/recipe.json)",
-  "description": "The maker of candidates for the standards it produces for (R15.5). A recipe has no rubric: the closed key set refuses one. generator names an optional deterministic tool file in the recipe folder (generate.mjs). axes are the direction axes the diverge stage keeps pairwise distinct (R15.7). Read by src/records/recipes.ts.",
+  "description": "The maker of candidates for the standards it produces for (R15.5). A recipe has no rubric: the closed key set refuses one. generator names an optional deterministic tool file in the recipe folder (generate.mjs). axes are the direction axes the diverge stage keeps pairwise distinct (R15.7). rung plumb marks a deterministic recipe: its candidates are computed by the plumb action it names (action, an action.json id of kind plumb whose standards list each standard the recipe produces for), its craft.md runs clossys verbs only, with no model stage, it has no axes and no generator, and it records no craft events. action is required with rung plumb and refused otherwise; these pairings are checked in code (src/records/recipes.ts), since the validator reads no if/then. Read by src/records/recipes.ts.",
   "type": "object",
   "required": [
     "schema",
@@ -32,7 +32,8 @@
       "enum": [
         "adopt",
         "adapt",
-        "create"
+        "create",
+        "plumb"
       ]
     },
     "axes": {
@@ -45,6 +46,10 @@
     "generator": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]*\\.mjs$"
+    },
+    "action": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
     }
   }
 }

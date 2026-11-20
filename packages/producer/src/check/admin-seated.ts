@@ -9,8 +9,9 @@
  *   composition; the publication contract names publication `admin`, the package root, and exactly the plan's pages
  *   in plan order; every other contract key equals the contract `clossys init` writes (admin-plan.ts adminContract),
  *   with no key extra or missing; the slot is clossys.slot/2, its standard is its kind, and it carries no tighten entry;
- * - each admin slot cites, as inputs and uses, every composition unit the workspace holds (a held unit not cited is a
- *   finding, `clossys init` rewires it) and nothing outside its composition (an undeclared input);
+ * - each admin slot cites, as inputs and uses, every slot of its package plan the workspace holds (a page's composition
+ *   and the Writer copy slots its seeded record cites, admin-plan.ts AdminPage.cites; a publication's pages): a held one
+ *   not cited is a finding, `clossys init` rewires it; and nothing outside that plan (an undeclared input);
  * - the plan itself holds (admin-plan.ts adminPlanFindings): each data-bound section reads under route parameters its
  *   page supplies, and no agent id is a value a static admin route reserves for `<agent>`; the admin publication is fixed,
  *   so its root (the plan's, and the seated contract's) is a static prefix, never `/`, with every page route under it.
@@ -126,7 +127,7 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
       const expected = page.uses.map(id => `designer/${id}`);
       if (!composes || !same(composes, expected)) issues.push(`contract composes ${JSON.stringify(contract.composes ?? null)}, not the package composition ${expected.join(", ")}`);
       return issues;
-    }, page.uses, ["publication", "route", "package", "layout", "composes"]);
+    }, page.cites, ["publication", "route", "package", "layout", "composes"]);
   }
   const pageIds = plan.pages.map(page => page.id);
   judge(plan.publication, "publication", contract => {

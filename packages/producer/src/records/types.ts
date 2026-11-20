@@ -294,7 +294,7 @@ export type TargetSlotKind =
   | "element/token" | "element/asset" | "element/component" | "element/section" | "element/frame"   // Designer
   | "voice" | "prose" | "copy"                                // Writer
   | "layout" | "chrome" | "page" | "publication" | "release" // Publisher
-  | "loop" | "queue" | "ledger";                              // Producer
+  | "loop" | "queue" | "ledger" | "seat";                     // Producer
 
 export interface Common {
   schema: string;

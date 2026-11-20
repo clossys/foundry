@@ -136,6 +136,8 @@ export const GATE_REFUSAL = /no submit record|no passing verdict|pinned only thr
 
 /** A schema-valid candidate that certifies against no contract (no keys, no derived source): submitted, never passing. */
 function uncertifiedBytes(slot: { readonly id: string; readonly kind?: string }, ext: string): unknown {
+  // A Publisher page (the placed probe slot): schema-valid, but no frame, no sections and an inline title (page.assembled).
+  if (ext === "json" && slot.kind === "page") return { schema: "clossys.page/1", path: `/${PIN_PROBE_NAME}`, title: "Conform probe page", frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] } } };
   if (ext === "json") return { name: PIN_PROBE_NAME, type: "registry:file", files: [{ path: `${PIN_PROBE_NAME}.svg`, type: "registry:file", content: "<svg/>" }], meta: { source: { kind: "original", ref: [] } } };
   const head = `---\nslot: "${slot.id}"\n`;
   return slot.kind === "brief"
@@ -167,12 +169,21 @@ export async function probePinGate(consumer: string, agents: readonly AgentModel
   const AT = "2026-11-17T12:00:00Z";
   try {
     cpSync(consumer, join(temp, "clossys"), { recursive: true });
+    // An owner approval names the typed queue entry the owner answered for that candidate (U13 r4, B2): approve writes
+    // one answered clossys.queue-entry/1 bound to the slot and candidate before each run, so it reaches the CHOOSE gate.
+    const { ownerEntry } = await import("../cli/__fixtures__/owner-entry.js");
     for (const agent of agents) {
       const slots = agent.live.filter(slot => slot.schema === "clossys.slot/2" && slot.kind !== "release")
         .map(slot => ({ slot, dir: join(temp, "clossys", "agents", agent.agent, slot.id, "candidates") }))
         .map(item => ({ ...item, names: existsSync(item.dir) ? readdirSync(item.dir).filter(name => /-v\d+\.(md|json|svg)$/.test(name)).sort() : [] }));
-      const pick = slots.find(item => item.names.length) ?? slots[0];
-      if (!pick) { out[agent.agent] = `pin probe: ${agent.agent} has no live clossys.slot/2 slot`; continue; }
+      let pick: { slot: { readonly id: string; readonly kind?: string; readonly standard?: string }; dir: string; names: string[] } | undefined = slots.find(item => item.names.length) ?? slots[0];
+      if (!pick) {
+        // No live slot/2 slot of its own (Publisher's are package slots): place one on the copy through the real
+        // `clossys ia`, of the agent's first held kind with a standard, so the same verbs reach the CHOOSE gate.
+        const placedSlot = await placePinProbeSlot(temp, agent);
+        if (typeof placedSlot === "string") { out[agent.agent] = placedSlot; continue; }
+        pick = { slot: placedSlot, dir: join(temp, "clossys", "agents", agent.agent, placedSlot.id, "candidates"), names: [] };
+      }
       const source = pick.names.at(-1);
       const ext = source?.split(".").pop() ?? (["director", "writer"].includes(agent.agent) ? "md" : "json");
       const placed = `${PIN_PROBE_NAME}-v1.${ext}`;
@@ -197,7 +208,7 @@ export async function probePinGate(consumer: string, agents: readonly AgentModel
             writeFileSync(file, JSON.stringify({ schema: "clossys.verdict/1", slot: pick.slot.id, pick: candidate, reason: "conform probe", criteria: [criterion ?? "conform-probe"] }));
             return runVerdictCli([slotTarget, "--record", file, "--model", "conform-probe", "--tier", "high", "--by", `agent:${agent.agent}`, "--at", AT, "--root", temp], temp);
           }],
-          ...(agent.agent === "writer" ? [["approve", () => runApproveCli([slotTarget, candidate, "--by", "owner", "--at", AT, "--root", temp], temp)]] as [VerbProbe["verb"], () => Promise<{ exitCode: number; message?: string }>][] : []),
+          ...(agent.agent === "writer" ? [["approve", () => runApproveCli([slotTarget, candidate, "--by", ownerEntry(join(temp, "clossys"), { id: `20261117T1200Z-${PIN_PROBE_NAME}-${kind}`, about: slotTarget, answer: { candidate }, at: AT }), "--at", AT, "--root", temp], temp)]] as [VerbProbe["verb"], () => Promise<{ exitCode: number; message?: string }>][] : []),
         ];
         for (const [verb, run] of runs) {
           let result: { exitCode: number; message?: string };
@@ -216,6 +227,31 @@ export async function probePinGate(consumer: string, agents: readonly AgentModel
     rmSync(temp, { recursive: true, force: true });
   }
   return out;
+}
+
+/** The slot the pin probe places on the copy for an agent that holds no live clossys.slot/2 slot: `<kind>.conform-probe`. */
+export const PIN_PROBE_SLOT = "conform-probe";
+const PIN_PROBE_UNDER = "conform/pin-probe";
+
+/**
+ * Places `<agent>/<kind>.conform-probe` on the probe's copy (cwd `temp`, consumer `temp/clossys`) with the real `clossys ia`:
+ * the first held kind (not release) that one of the agent's standards covers, that standard, and a contract carrying the
+ * standard's requirements (and, for a routed kind, a sample route fixture). A refusal is the probe failing, reported as such, never as a gated pin.
+ */
+async function placePinProbeSlot(temp: string, agent: AgentModel): Promise<{ id: string; kind: string; standard: string } | string> {
+  const { runIaCli } = await import("../cli/owner.js");
+  const kinds = (agent.adapter?.kinds ?? []).filter(kind => kind !== "release");
+  const kind = kinds.find(each => agent.standards.some(standard => standard.doc?.kinds.includes(each)));
+  const standard = kind === undefined ? undefined : agent.standards.find(each => each.doc?.kinds.includes(kind));
+  if (kind === undefined || standard?.doc === undefined) return `pin probe: ${agent.agent} has no live clossys.slot/2 slot and no held kind with a standard to place one`;
+  const id = `${kind}.${PIN_PROBE_SLOT}`;
+  const file = join(temp, `pin-probe-contract-${agent.agent}.json`);
+  // A routed kind's fixture is its sample route (certify/page.ts), so the probe's refusal is about the candidate, not a missing fixture.
+  const fixture = kind === "page" || kind === "publication" ? { fixture: { route: { path: `/${PIN_PROBE_NAME}` } } } : {};
+  writeFileSync(file, JSON.stringify({ requirements: standard.doc.requirements.map(item => ({ check: item.check })), ...fixture }));
+  const result = await runIaCli([`${agent.agent}/${id}`, "--under", PIN_PROBE_UNDER, "--kind", kind, "--standard", standard.id, "--contract", file], temp);
+  if (result.exitCode !== 0) return `pin probe could not place ${agent.agent}/${id} (exit ${result.exitCode}): ${(result.message ?? "").split("\n")[0]}`;
+  return { id, kind, standard: standard.id };
 }
 
 /** Runs the real constitution over a copy of the consumer with one empty L2 group per agent. */
@@ -350,9 +386,15 @@ export const PROBES: Readonly<Record<string, Probe>> = {
   },
   "upstream-pinned": (agent, model) => {
     const upstream = agent.edges.map(edge => edge.to);
-    const pinned = model.agents.filter(other => other.agent !== agent.agent).flatMap(other => other.live.filter(slot => slot.pin !== undefined).map(slot => slot.id));
-    const hit = upstream.filter(id => pinned.includes(id) || pinned.includes(id.split("/")[1] ?? ""));
-    return pass(hit.length ? [] : [`none of ${new Set(upstream).size} upstream inputs is pinned, so no upstream cascade can reach ${agent.agent}`], upstream.length);
+    const reaches = (id: string, ids: readonly string[]) => ids.includes(id) || ids.includes(id.split("/")[1] ?? "");
+    // U37: a pin counts only when the slot/2 readers take it as intact (LiveSlot.pinRejection absent), not when a pin
+    // file merely exists: a pinned candidate the readers refuse feeds no cascade.
+    const others = model.agents.filter(other => other.agent !== agent.agent).flatMap(other => other.live.filter(slot => slot.pin !== undefined));
+    const pinned = others.filter(slot => slot.pinRejection === undefined).map(slot => slot.id);
+    const refused = others.filter(slot => slot.pinRejection !== undefined && upstream.some(id => reaches(id, [slot.id])));
+    const hit = upstream.filter(id => reaches(id, pinned));
+    const why = refused.length ? `; pinned but refused by the slot/2 reader: ${[...new Set(refused.map(slot => `${slot.id} (${slot.pinRejection})`))].join(", ")}` : "";
+    return pass(hit.length ? [] : [`none of ${new Set(upstream).size} upstream inputs is pinned with a pin the slot/2 reader takes, so no upstream cascade can reach ${agent.agent}${why}`], upstream.length);
   },
   "current-format": agent => {
     const old = agent.live.filter(slot => slot.schema === "clossys.slot/1");

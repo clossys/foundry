@@ -69,7 +69,7 @@ export interface PinCheck {
 
 const checksDir = (root: string, agent: string, slotId: string) => join(root, ".clossys", "checks", agent, slotId);
 export const reverdictPath = (root: string, agent: string, slotId: string) => join(checksDir(root, agent, slotId), "cascade.json");
-const scorecardPath = (root: string, agent: string, slotId: string) => join(checksDir(root, agent, slotId), "scorecard.json");
+export const scorecardPath = (root: string, agent: string, slotId: string) => join(checksDir(root, agent, slotId), "scorecard.json");
 
 function readJson(file: string): Record<string, unknown> | undefined {
   if (!existsSync(file)) return undefined;

@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { copyRef, type CopyRef, type CopyText } from "./copy-ref.js";
 import { iaLabel, slotLabel } from "../records/slot-labels.js";
 import { cardState, recordSpecimenInput, type RecordSpecimenInput, type SlotCardState } from "./slot-gallery.js";
-import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotIndex, usedByPlaced, type BlockReason } from "../records/slots.js";
-import { CANDIDATE_NAME, parseFrontmatter, pinStatus, validateCandidate, type PinStatus, type SlotAgent, type SlotModelIssue } from "../records/slot-model/index.js";
+import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotCandidateIssues, slotIndex, usedByPlaced, type BlockReason } from "../records/slots.js";
+import { CANDIDATE_NAME, parseFrontmatter, pinStatus, type PinStatus, type SlotAgent, type SlotModelIssue } from "../records/slot-model/index.js";
 import { parseJson } from "../errors.js";
 import { candidateImportIssue, specimenPreviewIssue } from "../specimen/library-source.js";
 import { pinnedWriterCopy } from "../specimen/specimen-tree.js";
@@ -54,7 +54,7 @@ const BLOCK_COPY: Record<BlockReason, string> = {
 };
 const blockCopy = (reason: BlockReason) => copyRef(BLOCK_COPY[reason]);
 
-/** The codes validateCandidate emits. */
+/** The candidate codes the candidate validators emit (records/slots.ts slotCandidateIssues; the slot is read valid first). */
 export type CandidateIssueCode = Extract<SlotModelIssue["code"], `candidate-${string}`>;
 /** One Writer key per candidate validator code; the validator's message is the `{message}` value. */
 export const CANDIDATE_ISSUE_COPY: Record<CandidateIssueCode, string> = {
@@ -83,18 +83,21 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
   let writerCopy: Readonly<Record<string, string>> | undefined;
   const writer = () => writerCopy ??= pinnedWriterCopy(consumer);
   const candidates = entry.candidates.map(name => {
+    // The view: what the detail shows and renders, never the clossys header (its source is the header's).
     const candidate = readCandidate(consumer, agent, id, name);
+    // Content and source come from the view (a headered candidate's source is its header's); the issues from the
+    // candidate judged by its slot as stored (records/slots.ts slotCandidateIssues).
     let content = candidate.bytes, source: unknown;
     if (name.endsWith(".md")) {
       const parsed = parseFrontmatter(candidate.bytes);
       if (parsed.ok) { content = parsed.value.body; source = parsed.value.fields.source; }
     } else {
-      // Malformed JSON has no source; validateCandidate below records it as an issue.
+      // Malformed JSON has no source; slotCandidateIssues below records it as an issue.
       const parsed = parseJson(candidate.bytes);
       if (parsed.ok) source = (parsed.value as { meta?: { source?: unknown } } | null)?.meta?.source;
     }
     const version = Number(CANDIDATE_NAME.exec(name)![2]);
-    const issues = validateCandidate(doc.kind, id, name, candidate.bytes).map(issueCopy);
+    const issues = slotCandidateIssues(consumer, agent, id, name, candidate.raw).map(issueCopy);
     const element = CANDIDATE_NAME.exec(name)![1]!;
     if (agent === "designer" && doc.kind === "element" && !issues.length) {
       const item = JSON.parse(candidate.bytes);

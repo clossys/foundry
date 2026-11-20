@@ -15,7 +15,7 @@
  *
  * Structure and real slot ids only; nothing outside the tmp root is written.
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runRequestCli } from "../../cli/request.js";
@@ -25,7 +25,11 @@ import { liveSlotRecords } from "../../constitution/checks/shared.js";
 import { buildContext } from "../../constitution/context.js";
 import { SCORECARD_SCHEMA, writeScorecard, type ScorecardRow } from "../../constitution/pin-gate.js";
 import { listRequests, raiseWork } from "../../records/request.js";
+import { sha256Hex } from "../../records/hash.js";
+import { lastRecordState, skillPath } from "../../records/ledger.js";
 import { writeSlot } from "../../records/slot.js";
+import { appendSlotDocEvent } from "../../records/slot-write.js";
+import { inspectSlot, readLedger } from "../../records/slots.js";
 import type { Ref, SlotRequest } from "../../records/types.js";
 import { releaseWorld, type ReleaseWorld } from "../../release/__fixtures__/world.js";
 
@@ -75,6 +79,27 @@ function placeSlots(root: string): void {
   const publisher = join(root, "clossys/agents/publisher/ia.json");
   const doc = JSON.parse(readFileSync(publisher, "utf8")) as Record<string, unknown>;
   writeFileSync(publisher, `${JSON.stringify({ ...doc, source: "workspace#owner", extensions: [], nodes: [node("composition.pages", "Pages", [["pages-site", "Site", ["page.home"]], ["releases-site", "Releases", ["release.site"]]])] }, null, 2)}\n`);
+}
+
+/** The slots placeSlots places, as `<agent>/<slot-id>`. */
+const PLACED = ["director/focus.reach.geography", "director/identity.verbal.voice", "designer/frames.site-shell", "designer/sections.hero", "writer/sections.hero.copy", "publisher/page.home", "publisher/release.site"] as const;
+
+/**
+ * The world writes slot.json by hand (the release world, then cite); each placed slot whose ledger does not record its
+ * slot.json bytes gets one `slot` event that does (R14.1), so a guarded verb on it judges only what the verb writes.
+ */
+function recordSlotStates(root: string): void {
+  const consumer = join(root, "clossys");
+  for (const placed of PLACED) {
+    const [agent, id] = placed.split("/") as [string, string];
+    const dir = join(consumer, "agents", agent, id);
+    if (!existsSync(join(dir, "slot.json"))) continue;
+    // A slot the world leaves off its IA position is no verb's target here (located() refuses it).
+    try { if (!inspectSlot(consumer, agent as never, id).placed) continue; } catch { continue; }
+    const events = (readLedger(dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
+    if (lastRecordState(events, "slot.json")?.sha256 === sha256Hex(readFileSync(join(dir, "slot.json")))) continue;
+    appendSlotDocEvent(consumer, agent as never, id, { by: "planner", at: REQUESTS_AT, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: "ia", note: "requests world slot.json" } });
+  }
 }
 
 /**
@@ -153,6 +178,7 @@ export async function requestsWorld(): Promise<RequestsWorld> {
   cite(root, "publisher/release.site", [{ to: "director/focus.reach.geography", key: "Language", rel: "input" } as Ref]);
   for (const from of new Set(NEEDS.map(need => need.from))) cite(root, from, NEEDS.filter(need => need.from === from).map(need => ({ to: need.to, rel: need.rel } as Ref)));
 
+  recordSlotStates(root);
   recordPinVerdicts(root);
 
   // kind slot: SCOPE's demand step files one entry per slotless need.

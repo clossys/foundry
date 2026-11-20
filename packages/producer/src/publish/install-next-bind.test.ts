@@ -19,6 +19,8 @@ import { NEXT_ROUTE_MARKER } from "@clossys/publisher/install";
 import { parseArgs } from "../cli/args.js";
 import { certifySlots, directorTraced } from "../cli/__fixtures__/certified.js";
 import { runPinCli } from "../cli/pin.js";
+import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
+import { candidateView } from "../records/slot-current.js";
 import { writeCandidate } from "../records/slot-write.js";
 import { withDesignerSlots } from "../specimen/__fixtures__/canonical-library.js";
 import { publishNext, type PublishNextResult } from "./install-next.js";
@@ -27,6 +29,7 @@ import { localItemRunner, NEXT_BIND_ASSEMBLY, NEXT_BIND_PROJECTION, NEXT_BIND_ST
 const fixture = join(import.meta.dirname, "__fixtures__", "install-consumer");
 const template = join(import.meta.dirname, "..", "..", "..", "publisher", "templates", "site");
 const temps: string[] = [];
+const MIGRATED_AT = "2026-11-03T00:00:00Z";
 afterAll(() => { for (const dir of temps) rmSync(dir, { recursive: true, force: true }); });
 
 /** A temp consumer holding the fixture records and the site template as `apps/site`. */
@@ -35,6 +38,11 @@ async function consumer(): Promise<{ root: string; site: string; app: string }> 
   temps.push(root);
   cpSync(fixture, root, { recursive: true });
   await withDesignerSlots(join(root, "clossys"));
+  // One format (U13): the guarded verbs (clossys ia, as certifySlots runs it) write clossys.slot/2 only and refuse a
+  // clossys.slot/1 slot, so the fixture store is converted by the real migration (clossys migrate slots --apply) first.
+  const plan = planSlotsMigration(root, { at: MIGRATED_AT, version: "0.0.0-test" });
+  if (plan.findings.length) throw new Error(`fixture store does not migrate: ${JSON.stringify(plan.findings)}`);
+  applySlotsMigration(root, plan, { at: MIGRATED_AT, version: "0.0.0-test" });
   const site = join(root, "apps", "site");
   cpSync(template, site, { recursive: true, filter: source => !/[\\/](?:node_modules|\.next)(?:[\\/]|$)/.test(source.slice(template.length)) });
   return { root, site, app: join(site, "app") };
@@ -119,12 +127,16 @@ describe("clossys publish --install --next --bind", () => {
     const { root, site, app } = await consumer();
     expect(blocking(await install(root, app))).toEqual([]);
     const strings = join(root, "clossys", "agents", "writer", "strings.site", "candidates");
-    const current = JSON.parse(readFileSync(join(strings, "..", "pin.json"), "utf8")).candidate as string;
+    // The converted store pins Writer strings by a clossys.pin-map/1, one record per strings file (records.site).
+    const current = JSON.parse(readFileSync(join(strings, "..", "pin.json"), "utf8")).records.site.candidate as string;
     // The re-pin is guarded (R05.1, R05.2, R14.1, R20.2): the new version is submitted through the writer, cites the
-    // fixture's pinned Director voice, and the slot is certified.
-    const next = writeCandidate(join(root, "clossys"), "writer", "strings.site", "site", directorTraced(readFileSync(join(strings, current), "utf8").replace("Pages assembled from records", "Pages reinstalled from a new pin"), "identity.verbal.voice")).name;
+    // fixture's pinned Director voice, and the slot is certified. It is derived from the pinned version's view (its
+    // content and source, without its clossys.candidate/1 header): the writer gives the new file its own header.
+    const content = candidateView(current, readFileSync(join(strings, current), "utf8"));
+    const next = writeCandidate(join(root, "clossys"), "writer", "strings.site", "site", directorTraced(content.replace("Pages assembled from records", "Pages reinstalled from a new pin"), "identity.verbal.voice")).name;
     await certifySlots(root, "writer", { "strings.site": [next] });
-    const pinned = await runPinCli(["writer/strings.site", next.replace(/\.md$/, ""), "--by", "planner:SITE-TEMPLATE", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
+    // A converted Writer strings slot pins per record (clossys.pin-map/1), by the candidate's file name.
+    const pinned = await runPinCli(["writer/strings.site#site", next, "--by", "planner:SITE-TEMPLATE", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
     expect(pinned.exitCode, pinned.message).toBe(0);
     // Until it is reinstalled, the installed page module is stale and the check run says so.
     expect((await install(root, app, true)).files.filter(file => file.state === "drift").map(file => file.file)).toContain("clossys/pages/home.tsx");

@@ -19,6 +19,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire, isBuiltin } from "node:module";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { isModuleAbsent } from "../errors.js";
 import { DESIGNER_SHADCN_UTILS, shadcnComponentsJsonText } from "@clossys/designer/shadcn-flavor";
 import {
   installAndBind, isBlocking, needComponentSelection, PAGE_HOST_EXPORT, pageHostModule, relativeSpecifier, substrateDependencies,
@@ -28,7 +29,7 @@ import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { isHostPackage } from "../specimen/host-packages.js";
 import { dependencyPart, treeDependencyParts } from "../specimen/specimen-tree.js";
 import { firstComponentSource } from "@clossys/publisher/build";
-import { hasSlotModel, readCandidate, readIa, readPin, readSlot, viewPlacedAt } from "../records/slots.js";
+import { hasSlotModel, readCandidate, readIa, readPin, readSlot, slotCandidateIssues, viewPlacedAt } from "../records/slots.js";
 import { slotPositions, validateCandidate } from "../records/slot-model/index.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { readWriter } from "./site-source.js";
@@ -131,7 +132,9 @@ async function ensureFlavorUtils(dir: string): Promise<void> {
  * `images.unoptimized` in a Next config does), so an image keeps the URL its item gave it. Read
  * from the substrate's installed `next` at build time; without Next there is nothing to configure.
  * The Publisher's record specimens do the same (`@clossys/publisher` specimen build).
+ * Only an absent `next` (MODULE_NOT_FOUND, isModuleAbsent) means no define; any other error is thrown.
  */
+const NEXT_ABSENT_CATCH = 'if ((error as { code?: unknown } | null)?.code !== "MODULE_NOT_FOUND") throw error; return {};';
 export const NEXT_IMAGE_VITE_DEFINE = [
   'import { createRequire } from "node:module";',
   "",
@@ -140,7 +143,7 @@ export const NEXT_IMAGE_VITE_DEFINE = [
   "  try {",
   '    const { imageConfigDefault } = createRequire(import.meta.url)("next/dist/shared/lib/image-config.js") as { imageConfigDefault?: object };',
   '    return imageConfigDefault ? { "process.env.__NEXT_IMAGE_OPTS": JSON.stringify({ ...imageConfigDefault, unoptimized: true }) } : {};',
-  "  } catch { return {}; }",
+  `  } catch (error) { ${NEXT_ABSENT_CATCH} }`,
   "}",
 ].join("\n");
 
@@ -154,7 +157,7 @@ export function nextImageDefine(substrate: string): Record<string, string> {
   try {
     const { imageConfigDefault } = createRequire(join(substrate, "package.json"))("next/dist/shared/lib/image-config.js") as { imageConfigDefault?: object };
     return imageConfigDefault ? { "process.env.__NEXT_IMAGE_OPTS": JSON.stringify({ ...imageConfigDefault, unoptimized: true }) } : {};
-  } catch { return {}; }
+  } catch (error) { if (!isModuleAbsent(error)) throw error; return {}; }
 }
 
 /**
@@ -190,8 +193,11 @@ export const SUBSTRATE_VITE_CONFIG = [
   "",
 ].join("\n");
 
-/** The substrate Vite config as written before NEXT_IMAGE_VITE_DEFINE. */
-const LEGACY_SUBSTRATE_VITE_CONFIGS = [[
+/**
+ * The substrate Vite configs as written before NEXT_IMAGE_VITE_DEFINE, and with its earlier
+ * catch-all (any require error read as no Next), so an installed substrate gains the current one.
+ */
+const LEGACY_SUBSTRATE_VITE_CONFIGS = [SUBSTRATE_VITE_CONFIG.replace(`catch (error) { ${NEXT_ABSENT_CATCH} }`, "catch { return {}; }"), [
   'import { fileURLToPath } from "node:url";',
   'import tailwindcss from "@tailwindcss/vite";',
   'import { defineConfig } from "vite";',
@@ -491,9 +497,10 @@ export async function pageRecordFromCell(root: string, id: string, pins: Install
     }
     const pin = readPin(consumer, "publisher", cellId);
     if (!pin) throw new Error(`publish --install: Publisher page slot ${cellId} has no valid pin`);
+    // The view: the page as published, never its clossys header; the file bytes are what the slot's rules judge.
     const candidate = readCandidate(consumer, "publisher", cellId, pin.candidate);
     if (candidate.sha256 !== pin.sha256) throw new Error(`publish --install: Publisher page slot ${cellId} has pin hash drift`);
-    if (validateCandidate(slot.kind, cellId, candidate.name, candidate.bytes).length) {
+    if (slotCandidateIssues(consumer, "publisher", cellId, candidate.name, candidate.raw).length) {
       throw new Error(`publish --install: invalid pinned Publisher page candidate ${cellId}`);
     }
     const page = JSON.parse(candidate.bytes) as NativePageCandidate;

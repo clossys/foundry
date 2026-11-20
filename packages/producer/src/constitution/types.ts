@@ -4,7 +4,7 @@
  * one `ConstitutionContext`, built once per run from one read of the tree. A rule module never opens
  * a file itself; the same records in give the same rows out.
  */
-import type { ModelAgent } from "../records/slot-model/index.js";
+import type { ModelAgent, SlotModelIssue } from "../records/slot-model/index.js";
 import type { MigratedEvent } from "../records/migrations.js";
 
 /** Rule ids R01..R16 and R20 (R17-R19 are reserved by slot-constitution.md and not yet registered). */
@@ -32,15 +32,29 @@ export interface Row {
   readonly level?: "building" | "warn";
 }
 
-/** One file under a slot's `candidates/` folder, read once. */
+/**
+ * One file under a slot's `candidates/` folder, read once through the one candidate reader
+ * (records/slot-current.ts readCandidateText). `text` and `json` are what the kind rules read: the view of a
+ * clossys.candidate/1 file under a slot/2 slot (no header, the header's `source` where the int2 rules read it),
+ * else the bytes as they are. A rule that must see the bytes as written (a scan of every byte) reads `raw`.
+ */
 export interface CandidateRecord {
   readonly name: string;
   /** Workspace-relative path. */
   readonly path: string;
+  /** The view: what every kind rule reads (records/slot-current.ts readCandidateText; a Producer seat's content). */
   readonly text: string;
-  /** Hex sha256 of the file bytes. */
+  /** The file's bytes as written. */
+  readonly raw: string;
+  /** Hex sha256 of the file bytes (`raw`): pins, the ledger, R08 and R14 name a file by it. */
   readonly sha256: string;
-  /** Parsed JSON for a `.json` candidate; undefined for `.md` or unparseable JSON. */
+  /** The content identity (records/slot-current.ts contentDigest): the view and the header without its provenance. Empty when unreadable. */
+  readonly contentDigest: string;
+  /** The clossys.candidate/1 header the view stripped. */
+  readonly header?: Readonly<Record<string, unknown>>;
+  /** That header's issues where the file sits (schema, id, agent and slot naming, one source); empty without a viewed header. */
+  readonly headerIssues: readonly SlotModelIssue[];
+  /** Parsed JSON of the view for a `.json` candidate; undefined for `.md` or unparseable JSON. */
   readonly json?: unknown;
   readonly jsonError?: string;
   /** Why the file could not be read (an alias, not a regular file); `text` is then empty. */

@@ -24,7 +24,8 @@ import { consumerFacts, placedSlots, readDeclarations, routeEntry, RoutingError,
 import { FIX_CHECKS, fixCheck, requesterCheck, requesterPinSets, requesterSlots } from "../queue/requester-check.js";
 import { PRODUCER_ROOT, skillPath } from "./ledger.js";
 import { resolveOwnerRef } from "./owner-decisions.js";
-import { OWNER_QUEUE_ANSWER } from "./pin.js";
+import { OWNER_QUEUE_ANSWER, pinPath } from "./pin.js";
+import { readPinFile } from "./pin-map.js";
 import { isRecordSlot } from "./resolve.js";
 import { validateAgainst } from "./schema.js";
 import { recordSchema, serializeSlot, SLOT_SCHEMA, validateSlot } from "./slot.js";
@@ -32,7 +33,7 @@ import { slotDir, slotFile } from "./slot-model/layout.js";
 import { AGENT_KIND } from "./slot-model/types.js";
 import { listSlots, modelExists, readModelText, readSlot, readSlotEntry } from "./slots.js";
 import { appendSlotDocEvent, replaceModelFile } from "./slot-write.js";
-import type { Actor, EntryRoute, OptionStep, Overlap, OwnerOption, Proposal, Ref, RequestEvent, RequestOp, Slot, SlotRequest } from "./types.js";
+import type { Actor, EntryRoute, OptionStep, Overlap, OwnerOption, PinRecord, Proposal, Ref, RequestEvent, RequestOp, Slot, SlotRequest } from "./types.js";
 
 export const REQUEST_SCHEMA = "clossys.queue-entry/2";
 /** The decision-entry schema queue.fix still holds runner-raised fixes in (queue/entry.ts). */
@@ -236,7 +237,15 @@ function stepIssues(request: SlotRequest, option: OwnerOption): string[] {
   const { verb, args } = option.then;
   const at = `$.options ${option.id}`;
   const target = targetOf(request);
-  if (verb === "pin") return request.kind === "change" && args.length === 2 && args[0] === request.target && /^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.(md|json|svg)$/.test(args[1] ?? "") ? [] : [`${at}: pin takes [<this target>, <candidate file>] on a change entry`];
+  if (verb === "pin") {
+    // A pin is [<this target>, <candidate>]; the owner's confirmation of an agent pick (U13 r3) is
+    // [<this target>[#<record>], <candidate>, --confirm].
+    const candidate = /^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.(md|json|svg)$/.test(args[1] ?? "");
+    const pin = args.length === 2 && args[0] === request.target;
+    const record = (args[0] ?? "").startsWith(`${request.target}#`) && /^[a-z0-9][a-z0-9.-]*$/.test((args[0] ?? "").slice(request.target.length + 1));
+    const confirm = args.length === 3 && args[2] === "--confirm" && (args[0] === request.target || record);
+    return request.kind === "change" && candidate && (pin || confirm) ? [] : [`${at}: pin takes [<this target>, <candidate file>] (or [<this target>[#<record>], <candidate file>, --confirm]) on a change entry`];
+  }
   if (verb === "close") return request.kind !== "slot" && args.length === 1 && (outcomesFor(request.kind) as readonly string[]).includes(args[0]!) ? [] : [`${at}: close takes one outcome of a ${request.kind} entry (${outcomesFor(request.kind).join(", ") || "none: a slot closes by its decision"})`];
   if (verb === "handoff") return args.length === 1 && target !== undefined && args[0] === target.agent ? [] : [`${at}: handoff takes [<the target's agent>]`];
   return args.length === 0 ? [] : [`${at}: reject takes no args`];
@@ -491,6 +500,8 @@ const optionId = (verb: string, name: string) => `${verb}-${name.toLowerCase().r
  * data. Labels are DRAFT copy (not owner-approved).
  * - A change that wants a repin of a non-record slot: `pin-<candidate>` per candidate of the target but its pinned one
  *   (`pin <target> <candidate>`, through the pin gate, then closes changed).
+ * - A change that wants a repin, on any slot: `confirm-<candidate>` per unconfirmed agent pick it holds
+ *   (`pin <target>[#<record>] <candidate> --confirm`, then closes changed).
  * - `handoff` when the table, the owner reservation set aside, routes the entry to an agent (`handoff <agent>`).
  * - A change or fix: `decline` (`close declined`).
  * None is a raise refused: an owner entry is never a free-text question.
@@ -504,6 +515,7 @@ function ownerOptions(consumer: string, entry: { readonly kind: WorkKind; readon
       if (name !== slot?.pin?.candidate) out.push({ id: optionId("pin", name), label: `Pin ${name} on ${entry.target}`, then: { verb: "pin", args: [entry.target, name] } });
     }
   }
+  if (entry.kind === "change" && entry.want === "repin") out.push(...confirmOptions(consumer, entry.target));
   let handoff: EntryRoute | undefined;
   try { handoff = routeEntry(facts ?? consumerFacts(consumer), { kind: entry.kind, target: entry.target, assignee: target.agent }, { delegated: true }); } catch (error) {
     if (!(error instanceof RoutingError)) throw error;
@@ -512,6 +524,19 @@ function ownerOptions(consumer: string, entry: { readonly kind: WorkKind; readon
   if (entry.kind !== "slot") out.push({ id: "decline", label: `Decline: close it declined`, then: { verb: "close", args: ["declined"] } });
   if (!out.length) throw new RequestError(`the owner would have no option on ${entry.kind} ${entry.target} (no candidate to pin, no agent to hand it to): nothing was written`);
   return out;
+}
+/**
+ * The owner's confirmation of an agent pick (U13 r3): `confirm-<candidate>` per unconfirmed agent pick the target holds,
+ * the pin/2 or each pin-map record (`pin <target>[#<record>] <candidate> --confirm`, which keeps the agent's pick and
+ * records the owner's confirmation bound to this answer, then closes changed). DRAFT labels.
+ */
+function confirmOptions(consumer: string, slot: string): OwnerOption[] {
+  const target = targetOf({ target: slot });
+  if (!target) return [];
+  const pin = readPinFile(pinPath(dirname(consumer), target.agent, target.need));
+  const held: [string, PinRecord][] = pin.kind === "pin" ? [[slot, pin.doc]] : pin.kind === "pin-map" ? Object.entries(pin.doc.records).map(([key, record]) => [`${slot}#${key}`, record]) : [];
+  return held.filter(([, record]) => record.basis === "agent" && !record.confirmed)
+    .map(([to, record]) => ({ id: optionId("confirm", record.candidate), label: `Confirm ${record.decidedBy}'s pick ${record.candidate} on ${to}`, then: { verb: "pin" as const, args: [to, record.candidate, "--confirm"] } }));
 }
 /** The options Producer asks the owner on an agent's fix claim it cannot accept itself (DRAFT labels). */
 const claimOptions = (request: SlotRequest): OwnerOption[] => [
@@ -586,17 +611,23 @@ export function raiseWork(consumer: string, input: RaiseWorkInput, options: { re
     const id = `${stampOf(input.at)}-${input.kind}-${target.need.replace(/\./g, "-")}`.slice(0, 80).replace(/-+$/, "");
     const route = routeOf(consumer, { kind: input.kind, target: input.target, assignee: target.agent }, options.facts);
     const choices = route.assignee === "owner" ? ownerOptions(consumer, { kind: input.kind, target: input.target, ...(input.want !== undefined ? { want: input.want } : {}) }, options.facts) : undefined;
+    // The owner's own repin change on a slot routed to its agent, where the slot holds an unconfirmed agent pick: the
+    // confirmation is the owner's alone, so Producer asks it at once (U13 r3, N3): the confirm options and keep-open
+    // (the agent works the change), an asked event; the entry stays the agent's.
+    const confirms = !choices && input.kind === "change" && input.want === "repin" && input.from === "owner" ? confirmOptions(consumer, input.target) : [];
+    const asking: OwnerOption[] | undefined = confirms.length ? [...confirms, { id: "keep-open", label: `Keep it open with ${route.assignee}`, then: { verb: "reject", args: [] } }] : undefined;
     const draft: SlotRequest = {
       schema: REQUEST_SCHEMA, id, kind: input.kind, from: input.from, assignee: route.assignee as SlotRequest["assignee"], target: input.target, status: "open", opened: `${id}#1`,
       why: input.why, source: input.source,
       createdBy: input.createdBy ?? { actor: "code", cli: SOURCE_CLI[input.source], version: producerVersion() },
       createdAt: input.at, refs: [...(SLOT_REF.test(input.from) && input.from !== input.target ? [{ to: input.from as Ref["to"], rel: "raisedBy" as const }] : []), ...(input.cites ?? [])], route,
-      ...(choices ? { options: choices } : {}),
+      ...(choices ? { options: choices } : asking ? { options: asking } : {}),
       ...(input.want !== undefined ? { want: input.want } : {}),
       ...(input.check !== undefined ? { check: input.check } : {}), ...(input.findings !== undefined ? { findings: [...input.findings] } : {}), ...(input.cause !== undefined ? { cause: input.cause } : {}),
       events: [
         { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.detail ?? input.why },
         routedEvent(id, 2, input.at, route),
+        ...(asking ? [{ id: `${id}#3`, at: input.at, op: "asked" as const, by: "producer", detail: `${input.target} holds an unconfirmed agent pick: the owner confirms it (${confirms.map(option => option.id).join(", ")}) or keeps it open with ${route.assignee}` }] : []),
       ],
     };
     if (options.dry) return { request: draft, created: true };
@@ -791,7 +822,7 @@ async function runAnswer(consumer: string, id: string, input: AnswerInput): Prom
       withRequestLock(consumer, id, () => stillAnswered(readRequest(consumer, id), "pinned"));
       const { runPinCli } = await import("../cli/pin.js");
       let pinned: Awaited<ReturnType<typeof runPinCli>>;
-      try { pinned = await runPinCli([step.args[0]!, step.args[1]!, "--by", self, "--at", input.at, "--root", dirname(consumer)], dirname(consumer)); } catch (error) {
+      try { pinned = await runPinCli([step.args[0]!, step.args[1]!, ...step.args.slice(2), "--by", self, "--at", input.at, "--root", dirname(consumer)], dirname(consumer)); } catch (error) {
         throw new StepFailure("pin", [error instanceof Error ? error.message : String(error)]);
       }
       if (pinned.exitCode !== 0) {
@@ -799,9 +830,10 @@ async function runAnswer(consumer: string, id: string, input: AnswerInput): Prom
         const gate = (pinned.output as { refusals?: unknown } | undefined)?.refusals;
         throw new StepFailure(Array.isArray(gate) ? "pin.gate" : "pin", (pinned.message ?? "pin refused").split("\n").map(line => line.trim()).filter(Boolean));
       }
-      applied = `pin ${step.args[0]} ${step.args[1]} is applied (the pin gate passed)`;
-      const closed = closeWork(consumer, id, { by: self, at: input.at, outcome: "changed", result: step.args[0]!, answered: event, note: applied });
-      return { request: closed, option, ok: true, message: `${step.args[0]}: pinned ${step.args[1]}; request ${id} closed changed, notified ${closed.from}` };
+      const confirm = step.args[2] === "--confirm";
+      applied = confirm ? `pin ${step.args[0]} ${step.args[1]} --confirm is applied (the agent pick is confirmed)` : `pin ${step.args[0]} ${step.args[1]} is applied (the pin gate passed)`;
+      const closed = closeWork(consumer, id, { by: self, at: input.at, outcome: "changed", result: step.args[0]!.split("#")[0]!, answered: event, note: applied });
+      return { request: closed, option, ok: true, message: `${step.args[0]}: ${confirm ? "confirmed" : "pinned"} ${step.args[1]}; request ${id} closed changed, notified ${closed.from}` };
     }
     const outcome = step.args[0] as NonNullable<SlotRequest["outcome"]>;
     const closed = closeWork(consumer, id, { by: self, at: input.at, outcome, result: outcome === "fixed" ? answered.request.target : `${workQueue(answered.request.kind as WorkKind)}#${id}`, answered: event });

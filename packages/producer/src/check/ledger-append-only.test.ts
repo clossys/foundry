@@ -2,10 +2,14 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { runCli } from "../cli/main.js";
 import { AnswerRefused, answerQueueEntry } from "../queue/answer.js";
 import { checkLedgerAppendOnly, LEDGER_APPEND_ONLY } from "./ledger-append-only.js";
+
+// U13 r4: pin and migrate run the full guard; at the workstation's shared load the guarded cases exceed 5 s.
+vi.setConfig({ testTimeout: 60_000 });
 
 const roots: string[] = [];
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });

@@ -5,7 +5,7 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, expect, it } from "vitest";
 // Director's own fixtures (test-only source import; @clossys/director ships them in no export).
-import { stageFinding, stageSlot } from "../../../director/src/__fixtures__/slot-model.js";
+import { stageFinding, stagePassingSlot, stageSlot } from "../../../director/src/__fixtures__/slot-model.js";
 
 /**
  * `clossys director check …` end to end through the compiled clossys CLI: @clossys/director is a
@@ -27,7 +27,7 @@ function strategy(root: string, evidence = true) {
   if (evidence) stageFinding(root);
   stageSlot(root, "advantage.proposition.proof", 1, 'Never-claim: "guaranteed results"', { watch });
   stageSlot(root, "identity.verbal.voice", 1, "Never: “risk-free”", { watch });
-  stageSlot(root, id, 1, "Need: Fictional studio scheduling.", { watch });
+  stagePassingSlot(root, id, 1, { watch });
   put(root, "contracts/fixture.json", JSON.stringify({ schemaVersion: 1, id: "fixture.brief", owner: "fixture", requires: [id], optional: [] }));
 }
 function project(marker: "directory" | "file" = "directory") {

@@ -10,6 +10,7 @@ import { sha256Hex } from "../records/hash.js";
 import { MIGRATIONS_FILE, validateMigrations, type MigrationsDoc } from "../records/migrations.js";
 import { agentDir, candidatesDir, designerIa, directorIa, MODEL_AGENTS, writerIa, type FoundryIa, type ModelAgent } from "../records/slot-model/index.js";
 import { isModelDir, isSlotFolderName, listModelDir, readModelBytes, withSlotReadScope } from "../records/slots.js";
+import { readCandidateText } from "../records/slot-current.js";
 import { skillFile } from "../records/ledger.js";
 import { loadActions } from "../pipeline/actions.js";
 import { readCandidateHistory } from "./git.js";
@@ -144,6 +145,29 @@ export const installedFoundryLeaves = (agent: FoundryAgent): ReadonlySet<string>
 
 /** Reads the records under `<consumer>/agents` for the run. `root` is the workspace root rows are relative to. */
 export function buildContext(root: string, consumer: string, options: ContextOptions = {}): ConstitutionContext {
+  return assembleContext(root, consumer, options);
+}
+
+/** A slot to read again: a folder a write changed (or the target of a guard run). */
+export interface ChangedSlot { readonly agent: string; readonly slot: string }
+
+/**
+ * The context of the tree as it is now, built on `base` (a context of the same consumer read earlier in the same
+ * run, under the caller's slot lock): every agent's own files (its listing, ia.json, ledger.json and retired/), the
+ * lockfile and the migration manifest are read again, as is every slot folder in `changed` and every folder `base`
+ * does not hold; the record of any other slot folder is `base`'s (its `live` re-derived from the ia.json read now).
+ * It equals buildContext(root, consumer, options) whenever no folder outside `changed` was written since `base`
+ * was read, which is what a guard session's caller states (constitution/guard.ts GuardSession).
+ */
+export function refreshContext(base: ConstitutionContext, changed: readonly ChangedSlot[], options: ContextOptions = {}): ConstitutionContext {
+  const keep = new Map<string, ReadonlyMap<string, SlotRecord>>();
+  for (const agent of base.agents) keep.set(agent.agent, agent.slots);
+  const dropped = new Set(changed.map(each => `${each.agent}/${each.slot}`));
+  return assembleContext(base.root, base.consumer, options, (agent, name) => (dropped.has(`${agent}/${name}`) ? undefined : keep.get(agent)?.get(name)));
+}
+
+/** buildContext, with `reuse` naming the slot records of an earlier read that still hold (refreshContext). */
+function assembleContext(root: string, consumer: string, options: ContextOptions, reuse?: (agent: string, name: string) => SlotRecord | undefined): ConstitutionContext {
   const rel = (abs: string) => posix(relative(root, abs));
   const readRetired = (dir: string): RetiredRecord[] => listModelDir(dir).sort().flatMap(name => {
     const abs = join(dir, name);
@@ -168,22 +192,31 @@ export function buildContext(root: string, consumer: string, options: ContextOpt
       const slotAbs = join(dir, name);
       // retired/ and the non-slot `_` folders (`_retired/<slot>`, `_evidence`) are not slots (records/slots.ts).
       if (!isSlotFolderName(name) || !isModelDir(slotAbs)) continue;
+      const kept = reuse?.(agent, name);
+      if (kept) { slots.set(name, kept.live === live.has(name) ? kept : { ...kept, live: live.has(name) }); continue; }
       const slotEntries = listModelDir(slotAbs).sort();
       const record = (file: string) => (slotEntries.includes(file) ? readJsonRecord(join(slotAbs, file), rel(join(slotAbs, file))) : undefined);
       const candDir = candidatesDir(slotAbs);
+      const slotJson = record("slot.json");
+      // One reader for every rule (records/slot-current.ts readCandidateText): the view as text and json, the bytes as raw.
       const candidates: CandidateRecord[] = listModelDir(candDir).sort().flatMap(candidate => {
         const abs = join(candDir, candidate);
         if (isModelDir(abs)) return [];
         const read = readText(abs);
-        const base = { name: candidate, path: rel(abs), text: read.text, sha256: read.bytes ? sha256Hex(read.bytes) : "" };
-        if (read.error !== undefined) return [{ ...base, readError: read.error }];
+        const path = rel(abs);
+        if (read.error !== undefined) return [{ name: candidate, path, text: read.text, raw: read.text, sha256: read.bytes ? sha256Hex(read.bytes) : "", contentDigest: "", headerIssues: [], readError: read.error }];
+        const doc = readCandidateText(slotJson?.value, agent, name, candidate, read.text, path);
+        const base = {
+          name: candidate, path, text: doc.view, raw: doc.raw, sha256: read.bytes ? sha256Hex(read.bytes) : "",
+          contentDigest: read.bytes ? doc.contentDigest : "", headerIssues: doc.headerIssues, ...(doc.header ? { header: doc.header } : {}),
+        };
         if (!candidate.endsWith(".json")) return [base];
-        try { return [{ ...base, json: JSON.parse(read.text) as unknown }]; }
+        try { return [{ ...base, json: JSON.parse(doc.view) as unknown }]; }
         catch (error) { return [{ ...base, jsonError: errorText(error) }]; }
       });
       slots.set(name, {
         agent, id: name, dir: rel(slotAbs), live: live.has(name), entries: slotEntries,
-        slot: record("slot.json"), pin: record("pin.json"), ledger: record("ledger.json"),
+        slot: slotJson, pin: record("pin.json"), ledger: record("ledger.json"),
         candidates, retired: slotEntries.includes("retired") ? readRetired(join(slotAbs, "retired")) : [],
       });
     }
