@@ -15,6 +15,9 @@ import { STEPS } from "../pipeline/steps/index.js";
 import "./main.js";
 import { runNextSubmitCli } from "./next.js";
 import { runCraftCli } from "./craft.js";
+import { craftIssues } from "../constitution/rules/r15.js";
+import { loadRecipes, plumbCraftRunIssue } from "../records/recipes.js";
+import { plumbCraftRefusal, writeCritique } from "../records/slot-write.js";
 
 const ID = "components.button";
 const DIRECTOR = "identity.brand.essence";
@@ -180,5 +183,51 @@ describe("craft diverge: pairwise-distinct axes, checked at once", () => {
     expect((await stage("diverge", partial)).message).toMatch(/direction 1 has no value on axis structure; fix: .*\(the recipe's axes: tone, length, structure\)/);
     const full = partial.map((each, index) => ({ ...each, axes: { ...each.axes, structure: ["claim", "question", "list"][index] } }));
     expect((await stage("diverge", full)).exitCode).toBe(0);
+  });
+});
+
+describe("craft under a plumb recipe: the writer refuses what R15.7 rejects (one predicate)", () => {
+  const REPO = fileURLToPath(new URL("../../../../", import.meta.url));
+  const plumbRecipe = () => {
+    const path = join(workspace, "packages", "designer", "recipes", RECIPE, "recipe.json");
+    writeFileSync(path, jsonBytes({ ...(JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>), rung: "plumb", axes: [], action: "fixture.plumb" }));
+  };
+  const PLUMB = (stage: string) => new RegExp(`craft:${stage} refused: recipe ${RECIPE} is plumb: a plumb recipe records no craft events \\(its plumb action computes the candidate\\); fix: .*\\(R15\\.7\\)`);
+
+  it("refuses every stage named under a plumb recipe, by next --stage and by craft, and records nothing", async () => {
+    ledger(event("verdict", { verdict: "create" }));
+    plumbRecipe();
+    expect((await stage("brief", undefined, "--recipe", RECIPE)).message).toMatch(PLUMB("brief"));
+    expect((await craft("brief", "--recipe", RECIPE)).message).toMatch(PLUMB("brief"));
+    expect((await stage("diverge", { recipe: RECIPE, directions: directions(3) })).message).toMatch(PLUMB("diverge"));
+    expect((await stage("render", { recipe: RECIPE })).message).toMatch(PLUMB("render"));
+    expect(ops()).toEqual(["verdict"]);
+  });
+
+  it("refuses a later stage once the open run's brief names the plumb recipe, and the judge reports the same issue", async () => {
+    ledger(event("verdict", { verdict: "create" }));
+    expect((await stage("brief", undefined, "--recipe", RECIPE)).exitCode).toBe(0);
+    plumbRecipe();
+    expect((await stage("diverge", directions(3))).message).toMatch(PLUMB("diverge"));
+    expect(() => writeCritique(join(workspace, "clossys"), "designer", ID, { verdict: "x" }, { at: AT, validate: () => [] }, { by: "planner" })).toThrow(PLUMB("critique"));
+    expect(ops()).toEqual(["verdict", "craft:brief"]);
+    const run = (JSON.parse(readFileSync(join(slotDir, "ledger.json"), "utf8")) as { events: Record<string, unknown>[] }).events.filter(each => String(each.op).startsWith("craft:"));
+    const recipes = loadRecipes(workspace);
+    expect(craftIssues(run, recipes, "designer")).toEqual([plumbCraftRunIssue(run, recipes, "designer")]);
+  });
+
+  it("still records a crafted (create) recipe's stages", async () => {
+    ledger(event("verdict", { verdict: "create" }));
+    expect((await stage("brief", undefined, "--recipe", RECIPE)).exitCode).toBe(0);
+    expect(plumbCraftRefusal(join(workspace, "clossys"), "designer", [], "brief", { recipe: RECIPE })).toBeUndefined();
+  });
+
+  it("the release slot case: the real publisher release recipe (plumb) refuses a craft event, as R15.7 does", () => {
+    const refusal = plumbCraftRefusal(join(REPO, "clossys"), "publisher", [], "brief", { recipe: "release" });
+    expect(refusal).toMatch(/^craft:brief refused: recipe release is plumb: a plumb recipe records no craft events/);
+    const events = [{ op: "craft:brief", recipe: "release" }];
+    expect(craftIssues(events, loadRecipes(REPO), "publisher")).toEqual(["recipe release is plumb: a plumb recipe records no craft events (its plumb action computes the candidate)"]);
+    // A crafted Publisher recipe is not refused.
+    expect(plumbCraftRefusal(join(REPO, "clossys"), "publisher", [], "brief", { recipe: "assemble.page" })).toBeUndefined();
   });
 });
