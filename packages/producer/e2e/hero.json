@@ -1,0 +1,80 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "hero",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "registry/sections/hero.tsx",
+      "type": "registry:component",
+      "target": "components/sections/hero.tsx",
+      "content": "export function SimpleHero({ heading, body }: { heading: string; body: string }) {\n  return (\n    <section data-section=\"hero\">\n      <h1 data-copy=\"hero.heading\">{heading}</h1>\n      <p data-copy=\"hero.body\">{body}</p>\n    </section>\n  );\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.hero",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "tailark-oss/mist-hero-section-1@8139698"
+      ],
+      "hash": "sha256:315ecac252ac891e44ae37f2c2d946312c78f3998fd7ed5d7279ab0f1582ce52",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "hero",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.hero",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT"
+      },
+      "creator": {
+        "agent": "designer",
+        "model": "fixture"
+      },
+      "reason": "e2e scenario: one crafted element for a fresh consumer",
+      "createdAt": "2026-11-05T18:26:59Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          {
+            "slot": "hero.heading",
+            "prop": "heading",
+            "previewKey": "home.hero.heading"
+          },
+          {
+            "slot": "hero.body",
+            "prop": "body",
+            "previewKey": "home.hero.body"
+          }
+        ],
+        "themeVars": []
+      }
+    },
+    "preview": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "heading": {
+          "$copy": "home.hero.heading"
+        },
+        "body": {
+          "$copy": "home.hero.body"
+        }
+      },
+      "inputs": {
+        "copy": [
+          "home.hero.body",
+          "home.hero.heading"
+        ]
+      },
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

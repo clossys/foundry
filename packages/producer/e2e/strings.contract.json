@@ -1,0 +1,22 @@
+{
+  "kind": "string",
+  "maxChars": 120,
+  "requirements": [
+    {
+      "check": "copy.entries"
+    }
+  ],
+  "fixture": {
+    "keys": [
+      "site.name",
+      "home.hero.heading",
+      "home.hero.body",
+      "home.title",
+      "site.publication",
+      "site.pages"
+    ],
+    "locales": [
+      "en"
+    ]
+  }
+}

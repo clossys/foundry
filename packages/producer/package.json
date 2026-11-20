@@ -25,6 +25,7 @@
   },
   "files": [
     "dist",
+    "e2e",
     "schemas",
     "src",
     "standards",
@@ -85,6 +86,7 @@
     "check:slot-state": "node scripts/check-slot-state.mjs",
     "check:slot-pins": "node scripts/check-slot-pins.mjs",
     "check:views": "node scripts/check-views.mjs",
+    "check:e2e": "node dist/cli/index.js check --e2e",
     "check:constitution": "node dist/cli/index.js check --root \"${CLOSSYS_ROOT:-test-fixtures/consumer}\" --constitution",
     "check:cli-verbs": "node scripts/check-cli-verbs.mjs",
     "check:no-studio-imports": "node --test scripts/check-no-studio-imports.test.mjs && node scripts/check-no-studio-imports.mjs",

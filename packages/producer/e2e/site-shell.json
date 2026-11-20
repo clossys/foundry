@@ -1,0 +1,71 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "site-shell",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "registry/frames/site-shell.tsx",
+      "type": "registry:component",
+      "target": "components/frames/site-shell.tsx",
+      "content": "import type * as React from \"react\";\n\nexport function PlainFrame({ title, children }: { title: string; children?: React.ReactNode }) {\n  return (\n    <main data-frame=\"plain\">\n      <header><p data-copy=\"frame.title\">{title}</p></header>\n      {children}\n    </main>\n  );\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "frames.site-shell",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "tailark-oss/mist-hero-section-1-header@8139698"
+      ],
+      "hash": "sha256:d88ac2c6f6dee57c80af744c8f30151b4d573b7621099c3da26ef24d4a2c473c",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "site-shell",
+      "package": "designer",
+      "layer": "frames",
+      "slot": "frames.site-shell",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT"
+      },
+      "creator": {
+        "agent": "designer",
+        "model": "fixture"
+      },
+      "reason": "e2e scenario: one crafted element for a fresh consumer",
+      "createdAt": "2026-11-05T18:26:59Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          {
+            "slot": "frame.title",
+            "prop": "title",
+            "previewKey": "site.name"
+          }
+        ],
+        "themeVars": []
+      }
+    },
+    "preview": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "title": {
+          "$copy": "site.name"
+        }
+      },
+      "inputs": {
+        "copy": [
+          "site.name"
+        ]
+      },
+      "container": "page",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

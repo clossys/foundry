@@ -521,7 +521,9 @@ async function importedPackages(substrate: string): Promise<string[]> {
   const found = new Set<string>();
   async function walk(dir: string): Promise<void> {
     for (const entry of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
-      if (entry.name === "node_modules" || entry.name.startsWith(".") || (dir === substrate && entry.name === "clossys")) continue;
+      // `clossys/` holds the generated pages and `dist/` the substrate's own bundled build output: neither is a source
+      // that imports a package (a rebuild over minified `dist/` code would read its fragments as package names).
+      if (entry.name === "node_modules" || entry.name.startsWith(".") || (dir === substrate && (entry.name === "clossys" || entry.name === "dist"))) continue;
       const path = join(dir, entry.name);
       if (entry.isDirectory()) { await walk(path); continue; }
       if (!/\.[cm]?[jt]sx?$/.test(entry.name)) continue;
@@ -582,6 +584,9 @@ export async function renderBoundPage(page: BoundPage, substrate: string): Promi
     // The host imports Publisher and Designer; a substrate outside the workspace resolves them from here.
     nodePaths: hostNodePaths(),
     plugins: [{ name: "host-react", setup(build) { build.onResolve({ filter: /^react(-dom)?(\/.*)?$/ }, args => ({ path: requireHere.resolve(args.path), external: true })); } }],
+    // A bundled CommonJS module (use-sync-external-store, under @tiptap/react) requires the external host React; an
+    // ESM bundle has no `require` of its own, so esbuild's shim would throw "Dynamic require ... is not supported".
+    banner: { js: 'import { createRequire as __clossysCreateRequire } from "node:module"; const require = __clossysCreateRequire(import.meta.url);' },
   });
   const bundle = join(substrate, ".clossys", `render-${createHash("sha256").update(result.outputFiles[0]!.text).digest("hex").slice(0, 12)}.mjs`);
   await mkdir(join(substrate, ".clossys"), { recursive: true });

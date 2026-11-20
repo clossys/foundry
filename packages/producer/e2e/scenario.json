@@ -1,0 +1,352 @@
+{
+  "schema": "clossys.e2e-scenario/1",
+  "publication": "site",
+  "model": "e2e-fixture",
+  "tier": "low",
+  "steps": [
+    {
+      "id": "config.init",
+      "run": [
+        "config",
+        "--init"
+      ]
+    },
+    {
+      "id": "ia.director.start",
+      "run": [
+        "ia",
+        "director",
+        "--start"
+      ]
+    },
+    {
+      "id": "ia.designer.start",
+      "run": [
+        "ia",
+        "designer",
+        "--start"
+      ]
+    },
+    {
+      "id": "ia.writer.start",
+      "run": [
+        "ia",
+        "writer",
+        "--start"
+      ]
+    },
+    {
+      "id": "ia.publisher.start",
+      "run": [
+        "ia",
+        "publisher",
+        "--start"
+      ]
+    },
+    {
+      "id": "seat.director.candidates",
+      "run": [
+        "seat",
+        "director.candidates",
+        "--by",
+        "agent:director",
+        "--model",
+        "{model}",
+        "--tier",
+        "{tier}",
+        "--prompt-file",
+        "packages/director/actions/director.candidates/skill.md",
+        "--decided-by",
+        "planner"
+      ]
+    },
+    {
+      "id": "seat.designer.candidates",
+      "run": [
+        "seat",
+        "designer.candidates",
+        "--by",
+        "agent:designer",
+        "--model",
+        "{model}",
+        "--tier",
+        "{tier}",
+        "--prompt-file",
+        "packages/designer/actions/designer.candidates/skill.md",
+        "--decided-by",
+        "planner"
+      ]
+    },
+    {
+      "id": "seat.writer.candidates",
+      "run": [
+        "seat",
+        "writer.candidates",
+        "--by",
+        "agent:writer",
+        "--model",
+        "{model}",
+        "--tier",
+        "{tier}",
+        "--prompt-file",
+        "packages/writer/actions/writer.candidates/skill.md",
+        "--decided-by",
+        "planner"
+      ]
+    },
+    {
+      "id": "seat.publisher.candidates",
+      "run": [
+        "seat",
+        "publisher.candidates",
+        "--by",
+        "agent:publisher",
+        "--model",
+        "{model}",
+        "--tier",
+        "{tier}",
+        "--prompt-file",
+        "packages/publisher/actions/publisher.candidates/skill.md",
+        "--decided-by",
+        "planner"
+      ]
+    },
+    {
+      "id": "seat.verdict",
+      "run": [
+        "seat",
+        "verdict",
+        "--by",
+        "agent:producer",
+        "--model",
+        "{model}",
+        "--tier",
+        "{tier}",
+        "--prompt-file",
+        "packages/producer/actions/verdict/skill.md",
+        "--decided-by",
+        "planner"
+      ]
+    },
+    {
+      "id": "ia.voice",
+      "run": [
+        "ia",
+        "director/identity.verbal.voice",
+        "--contract",
+        "{scenario}/voice.contract.json",
+        "--standard",
+        "brief.profile",
+        "--under",
+        "identity/identity.verbal"
+      ]
+    },
+    {
+      "id": "craft.voice",
+      "craft": {
+        "ref": "director/identity.verbal.voice",
+        "standard": "brief.profile",
+        "file": "voice.md",
+        "candidate": "voice-v1.md",
+        "gap": "decisive",
+        "rung": "create",
+        "skill": "packages/director/actions/director.candidates/skill.md"
+      }
+    },
+    {
+      "id": "ia.frame",
+      "run": [
+        "ia",
+        "designer/frames.site-shell",
+        "--contract",
+        "{scenario}/frame.contract.json",
+        "--standard",
+        "frame",
+        "--under",
+        "frames/frames.site",
+        "--kind",
+        "element",
+        "--inputs",
+        "identity.verbal.voice"
+      ]
+    },
+    {
+      "id": "craft.frame",
+      "craft": {
+        "ref": "designer/frames.site-shell",
+        "standard": "frame",
+        "file": "site-shell.json",
+        "candidate": "site-shell-v1.json",
+        "gap": "source.ref",
+        "rung": "L4",
+        "skill": "packages/designer/actions/designer.candidates/skill.md"
+      }
+    },
+    {
+      "id": "ia.hero",
+      "run": [
+        "ia",
+        "designer/sections.hero",
+        "--contract",
+        "{scenario}/section.contract.json",
+        "--standard",
+        "section.site",
+        "--under",
+        "sections/sections.story",
+        "--kind",
+        "element",
+        "--inputs",
+        "identity.verbal.voice"
+      ]
+    },
+    {
+      "id": "craft.hero",
+      "craft": {
+        "ref": "designer/sections.hero",
+        "standard": "section.site",
+        "file": "hero.json",
+        "candidate": "hero-v1.json",
+        "gap": "source.ref",
+        "rung": "L4",
+        "skill": "packages/designer/actions/designer.candidates/skill.md"
+      }
+    },
+    {
+      "id": "ia.strings",
+      "run": [
+        "ia",
+        "writer/strings.site",
+        "--contract",
+        "{scenario}/strings.contract.json",
+        "--standard",
+        "string",
+        "--under",
+        "strings/strings.site",
+        "--kind",
+        "strings",
+        "--inputs",
+        "identity.verbal.voice"
+      ]
+    },
+    {
+      "id": "craft.strings",
+      "craft": {
+        "ref": "writer/strings.site",
+        "standard": "string",
+        "file": "site.md",
+        "candidate": "site-v1.md",
+        "pin": "writer/strings.site#site",
+        "gap": "copy.entries",
+        "rung": "create",
+        "skill": "packages/writer/actions/writer.candidates/skill.md"
+      }
+    },
+    {
+      "id": "ia.page",
+      "run": [
+        "ia",
+        "publisher/page.home",
+        "--contract",
+        "{scenario}/page.contract.json",
+        "--standard",
+        "page",
+        "--under",
+        "site/site-pages",
+        "--kind",
+        "page",
+        "--inputs",
+        "strings.site,frames.site-shell,sections.hero",
+        "--uses",
+        "frames.site-shell,sections.hero"
+      ]
+    },
+    {
+      "id": "craft.page",
+      "craft": {
+        "ref": "publisher/page.home",
+        "standard": "page",
+        "file": "home.json",
+        "candidate": "home-v1.json",
+        "gap": "page.assembled",
+        "rung": "create",
+        "skill": "packages/publisher/actions/publisher.candidates/skill.md"
+      }
+    },
+    {
+      "id": "ia.publication",
+      "run": [
+        "ia",
+        "publisher/publication.site",
+        "--contract",
+        "{scenario}/publication.contract.json",
+        "--standard",
+        "publication",
+        "--under",
+        "site/site-pages",
+        "--kind",
+        "publication",
+        "--inputs",
+        "strings.site,page.home",
+        "--uses",
+        "page.home"
+      ]
+    },
+    {
+      "id": "craft.publication",
+      "craft": {
+        "ref": "publisher/publication.site",
+        "standard": "publication",
+        "file": "publication.json",
+        "candidate": "site-v1.json",
+        "gap": "publication.routes",
+        "rung": "create",
+        "skill": "packages/publisher/actions/publisher.candidates/skill.md"
+      }
+    },
+    {
+      "id": "ia.release",
+      "run": [
+        "ia",
+        "publisher/release.site",
+        "--contract",
+        "{scenario}/release.contract.json",
+        "--standard",
+        "release",
+        "--under",
+        "releases/site",
+        "--kind",
+        "release"
+      ]
+    }
+  ],
+  "build": [
+    "release",
+    "site",
+    "--build",
+    "--selection",
+    "{scenario}/component-selection.js"
+  ],
+  "render": {
+    "install-home/site/home": [
+      "<main data-frame=\"plain\">",
+      "<p data-copy=\"frame.title\">Plain Studio</p>",
+      "<h1 data-copy=\"hero.heading\">Pages built from pinned records</h1>",
+      "<p data-copy=\"hero.body\">Every word on this page comes from a Writer key.</p>"
+    ]
+  },
+  "peers": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-aria-components": "1.21.1",
+    "@internationalized/date": "3.12.4",
+    "lucide-react": "1.65.0",
+    "sonner": "2.0.8",
+    "tailwindcss": "4.3.3",
+    "@tiptap/react": "3.32.1",
+    "@tiptap/starter-kit": "3.32.1",
+    "@tiptap/markdown": "3.32.1",
+    "@tiptap/extension-table": "3.32.1",
+    "recharts": "3.8.0",
+    "media-chrome": "4.19.3"
+  }
+}

@@ -21,8 +21,9 @@ import { PUBLICATION_ID, releaseSlotId } from "../release/paths.js";
 import { currentPins, pinDiff } from "../release/pins.js";
 import { checkReleaseReady, RELEASE_READY } from "../release/ready.js";
 
-export const RELEASE_USAGE = "Usage: clossys release <publication> --build|--manifest|--gates|--ready [--root <dir>] [--json]\n"
+export const RELEASE_USAGE = "Usage: clossys release <publication> --build|--manifest|--gates|--ready [--selection <module>[#export]] [--root <dir>] [--json]\n"
   + "  --build     build the publication from the pins as they resolve now into .clossys/builds/<id>/\n"
+  + "  --selection (with --build) the consumer's component selection module every route mounts inside, as publish --install takes it\n"
   + "  --manifest  write the release candidate publisher/release.<pub>/candidates/<pub>-v<n>.json for the latest build\n"
   + "  --gates     run every release gate against the latest manifest; any failure exits 1 (no gate can be skipped)\n"
   + "  --ready     check the ready-pin (release.ready)\n"
@@ -68,6 +69,7 @@ async function releaseCli(argv: readonly string[], cwd: string, options: Release
   const actions: Action[] = [];
   let publication: string | undefined;
   let rootFlag: string | undefined;
+  let selectionArg: string | undefined;
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     if (arg === "--help" || arg === "-h") return { exitCode: 0, message: RELEASE_USAGE };
@@ -76,6 +78,9 @@ async function releaseCli(argv: readonly string[], cwd: string, options: Release
     else if (arg === "--root") {
       rootFlag = argv[++index];
       if (rootFlag === undefined || rootFlag.startsWith("--")) return usage("--root requires a value");
+    } else if (arg === "--selection") {
+      selectionArg = argv[++index];
+      if (selectionArg === undefined || selectionArg.startsWith("--")) return usage("--selection requires <module>[#export]");
     } else if (arg.startsWith("--")) return usage(`Unknown argument: ${arg}`);
     else if (publication === undefined) publication = arg;
     else return usage(`release takes one publication (got ${publication} and ${arg})`);
@@ -84,6 +89,10 @@ async function releaseCli(argv: readonly string[], cwd: string, options: Release
   if (!PUBLICATION_ID.test(publication)) return usage(`${publication} is not a publication id ([a-z0-9-])`);
   if (actions.length !== 1) return usage(actions.length ? `release takes one of --build, --manifest, --gates, --ready (got ${actions.map(a => `--${a}`).join(", ")})` : "release requires --build, --manifest, --gates or --ready");
   const action = actions[0]!;
+  if (selectionArg !== undefined && action !== "build") return usage("--selection is taken only with --build");
+  const hash = selectionArg?.lastIndexOf("#") ?? -1;
+  const selection = selectionArg === undefined ? undefined
+    : hash > 0 ? { module: selectionArg.slice(0, hash), export: selectionArg.slice(hash + 1) } : { module: selectionArg };
   const root = discoverRoot(resolve(cwd, rootFlag ?? "."));
   const slotRef = `publisher/${releaseSlotId(root, publication)}`;
   const now = options.now ?? (() => new Date());
@@ -95,7 +104,7 @@ async function releaseCli(argv: readonly string[], cwd: string, options: Release
   if (action === "build") {
     const { locales } = releaseLocales(root, publication);
     try {
-      const stamp = await runBuild(root, publication, { locales, now, ...(options.builder ? { builder: options.builder } : {}) });
+      const stamp = await runBuild(root, publication, { locales, now, cwd, ...(selection ? { selection } : {}), ...(options.builder ? { builder: options.builder } : {}) });
       return done(root, { publication, action, wrote: [stamp.path], findings: [], build: stamp }, `release ${publication}: built ${stamp.id.slice(0, 12)} into ${stamp.path} (${stamp.routes} routes, ${stamp.locales.join(", ") || "no locales"})`);
     } catch (error) {
       return { exitCode: 1, root, message: `release ${publication} --build failed: ${(error as Error).message}`, output: { publication, action, wrote: [], findings: [{ check: "release.build", subject: slotRef, detail: (error as Error).message }] } };

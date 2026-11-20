@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.publication/1",
+  "format": "web.page.responsive",
+  "entryOrder": [
+    "home"
+  ],
+  "routePack": {
+    "packId": "site",
+    "homeRouteId": "home"
+  },
+  "meta": {
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "publisher:page.home"
+      ]
+    },
+    "tree": {
+      "id": "site",
+      "name": "site.publication",
+      "children": [
+        {
+          "id": "site.pages",
+          "name": "site.pages",
+          "cells": [
+            "page.home"
+          ]
+        }
+      ]
+    }
+  }
+}

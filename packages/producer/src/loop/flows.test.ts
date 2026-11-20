@@ -373,8 +373,8 @@ describe("F6 failed check (T6)", () => {
     expect(second.state!.raised).toEqual([]);
     const ledger = w.ledger("loop.audit");
     expect(ledger.map(entry => entry.outcome)).toEqual([`raised ${raised.join(", ")}`, "no new entry"]);
-    expect(stepLine(ledger[0]!)).toEqual(["strict:code:1", "route:code:0"]);
-    expect(ledger[0]!.checks).toEqual({ "constitution.strict": "fail", "ia.orphans": "fail", "refs.dangling": "fail" });
+    expect(stepLine(ledger[0]!)).toEqual(["strict:code:1", "route:code:0", "e2e:code:0"]);
+    expect(ledger[0]!.checks).toEqual({ "constitution.strict": "fail", "consumer.e2e": "pass", "ia.orphans": "fail", "refs.dangling": "fail" });
 
     const hooks = stub(w.root);
     const refine = await startRun(w.root, { loop: "loop.refine", from: raised[0]! }, hooks, { now });

@@ -58,6 +58,25 @@
           "producer/queue.clarify/entries/"
         ],
         "checks": []
+      },
+      {
+        "id": "e2e",
+        "does": "prove a fresh consumer end to end: pack the installed cohort, install the tarballs into an empty directory, drive the shipped scenario with public verbs only and assert the rendered page",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys check --e2e",
+        "reads": [
+          "node_modules/@clossys/"
+        ],
+        "writes": [],
+        "checks": [
+          "consumer.e2e"
+        ],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "loop.refine"
+        }
       }
     ],
     "exit": "a run raises no new entry",

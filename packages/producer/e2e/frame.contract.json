@@ -1,0 +1,1 @@
+{"kind": "frame", "props": ["title", "children"], "fixture": {"schema": "clossys.element-preview/1", "fixtures": {"file": "registry/frames/site-shell.tsx", "export": "PlainFrame", "props": {"title": "Example"}}}, "requirements": [{"check": "source.ref"}]}

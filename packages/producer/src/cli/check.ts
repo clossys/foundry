@@ -3,6 +3,7 @@ import { checkLedgerAppendOnly } from "../check/ledger-append-only.js";
 import { runLoopReachable } from "../check/loop-reachable.js";
 import { runLoopAgentStandard, runLoopConnected } from "../check/loop-connected.js";
 import { adminSeatedSummary, runAdminSeated } from "../check/admin-seated.js";
+import { E2E_CHECK, runE2e } from "../check/e2e.js";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -106,6 +107,7 @@ const consumerRoot = (dir: string) => statSync(join(dir, "clossys", "clossys.con
 
 /** Slot integrity is enforced in every check invocation, alongside requested checks. */
 export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
+  if (args.e2e) return runE2eCheck(args, cwd);
   const start = resolve(cwd, args.root ?? ".");
   let root = start;
   let consumer = start;
@@ -235,4 +237,19 @@ async function runConstitutionCheck(args: CliArgs, root: string, consumer: strin
     verb: "check", root, check: true, exitCode, message: lines.join("\n"),
     output: { ...report, ...(focus ? { focus, ...(changed ? { changed } : {}) } : {}), delta: deltaOut, enforced: { ok: delta.enforced === 0, findings: delta.enforced }, ...(recorded ? { recorded } : {}) },
   };
+}
+
+/** `clossys check --e2e` (consumer.e2e): progress lines stream to stdout as each stage ends; --json prints the report. */
+export async function runE2eCheck(args: CliArgs, cwd: string): Promise<CliResult> {
+  const { exitCode, report } = await runE2e({
+    ...(args.from !== undefined ? { from: resolve(cwd, args.from) } : {}),
+    ...(args.scenario !== undefined ? { scenario: resolve(cwd, args.scenario) } : {}),
+    ...(args.keep ? { keep: true } : {}),
+    ...(args.json ? {} : { log: (line: string) => { process.stdout.write(`${line}\n`); } }),
+  });
+  const first = report.findings[0];
+  const message = exitCode === 0
+    ? `${E2E_CHECK}: pass (${report.steps.length} verbs, build ${report.build?.id.slice(0, 12) ?? "none"})`
+    : `${E2E_CHECK}: ${report.status}${first ? ` ${first.cause} ${first.subject}: ${first.detail}` : ""}`;
+  return { exitCode, message, verb: "check", output: report };
 }

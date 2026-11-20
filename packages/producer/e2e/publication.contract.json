@@ -1,0 +1,14 @@
+{
+  "kind": "publication",
+  "publication": "site",
+  "requirements": [
+    {
+      "check": "publication.routes"
+    }
+  ],
+  "fixture": {
+    "route": {
+      "path": "/"
+    }
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "base": "shipped",
+  "without": ["craft.strings.pin"]
+}

@@ -171,7 +171,7 @@ export async function probePinGate(consumer: string, agents: readonly AgentModel
     cpSync(consumer, join(temp, "clossys"), { recursive: true });
     // An owner approval names the typed queue entry the owner answered for that candidate (U13 r4, B2): approve writes
     // one answered clossys.queue-entry/1 bound to the slot and candidate before each run, so it reaches the CHOOSE gate.
-    const { ownerEntry } = await import("../cli/__fixtures__/owner-entry.js");
+    const { ownerEntry } = await import("../pipeline/owner-entry.js");
     for (const agent of agents) {
       const slots = agent.live.filter(slot => slot.schema === "clossys.slot/2" && slot.kind !== "release")
         .map(slot => ({ slot, dir: join(temp, "clossys", "agents", agent.agent, slot.id, "candidates") }))

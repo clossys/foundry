@@ -1,0 +1,45 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/",
+  "title": "home.title",
+  "frame": "frames.site-shell",
+  "sections": [
+    "sections.hero"
+  ],
+  "copy": {
+    "frame.title": "strings.site#site.name",
+    "hero.heading": "strings.site#home.hero.heading",
+    "hero.body": "strings.site#home.hero.body"
+  },
+  "nav": {
+    "nav": true
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page"
+      },
+      "blocks": {
+        "Route": {
+          "slots": [
+            {
+              "section": "sections.hero",
+              "state": "active"
+            }
+          ]
+        }
+      },
+      "publication": "site",
+      "entryId": "home",
+      "entryMeta": {
+        "pin": {
+          "nav": true
+        }
+      }
+    }
+  }
+}
