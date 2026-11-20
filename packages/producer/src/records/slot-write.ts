@@ -22,9 +22,9 @@ import {
 } from "./slot-model/index.js";
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
 import { isCurrentSlot, slotReadIssues } from "./slot-current.js";
-import { serializeSlot } from "./slot.js";
+import { SlotFormatError, serializeSlot, validateSlot } from "./slot.js";
 import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
-import type { Slot } from "./types.js";
+import type { AgentId, Slot } from "./types.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, skillFile, skillPath,
   type LedgerEvent, type LedgerRecordState, type LedgerSkill, type Provenance, type RecordFile, type Verb,
@@ -104,6 +104,7 @@ function replaceFile(path: string, bytes: string): void {
  *
  * - writeSlotSeed, rewriteCitationsInPlace: migrations, `by` fixed by the migration;
  * - writeSlotOptions: `clossys options`, takes no `by` at all;
+ * - writeSyncedSlot: `clossys ia sync`, takes no `by` (the event is by `producer`);
  * - appendIaEvent, appendSlotDocEvent: the event of a verb that judged its actor already (`clossys ia`, retire after
  *   its actor guard, a request link written by the request writer under its seat check, `clossys loop` adoption
  *   after loop/agent-loop-adopt.ts assertActor).
@@ -114,6 +115,7 @@ export const PRODUCER_INTERNAL_WRITERS: readonly { readonly writer: string; read
   { writer: "writeSlotOptions", callers: ["cli/options.ts"] },
   { writer: "appendIaEvent", callers: ["cli/owner.ts", "loop/agent-loop-adopt.ts"] },
   { writer: "appendSlotDocEvent", callers: ["cli/owner.ts", "loop/agent-loop-adopt.ts", "records/request.ts"] },
+  { writer: "writeSyncedSlot", callers: ["cli/ia-sync.ts"] },
 ];
 
 /** Replace a slot-model file atomically, creating its parent folder. */
@@ -466,6 +468,35 @@ export function appendSlotDocEvent(consumer: string, agent: ModelAgent, id: stri
     const event = ledgerEvent("slot", input.at, provenance({ verb: input.verb, by: input.by, skill: input.skill }, given), { ...input.fields }, [recordState(entry.dir, "slot.json")]);
     appendEvent(entry.dir, "slot", event);
     return event;
+  });
+}
+
+/**
+ * `clossys ia sync`'s one slot.json write (R14.1): the synced clossys.slot/2 doc's canonical bytes at
+ * `<consumer>/agents/<agent>/<id>/slot.json` and one `slot` event (verb ia, by producer) recording them,
+ * together under the slot lock. The slot need not be placed in an ia.json (sync is what creates it). The
+ * event is validated and the ledger read before slot.json is replaced, so a refused event writes nothing.
+ * False, with no write and no event, when the bytes are already there.
+ */
+export function writeSyncedSlot(consumer: string, agent: AgentId, id: string, slot: Slot, input: { readonly at: string; readonly fields?: Readonly<Record<string, unknown>> }, given?: WriteProvenance): boolean {
+  const dir = join(consumer, "agents", agent, id);
+  const file = slotFile(dir);
+  const issues = validateSlot(slot);
+  if (issues.length) throw new SlotFormatError(file, issues);
+  canonicalDirectory(dir);
+  const bytes = serializeSlot(slot);
+  if (existsSync(file) && readFileSync(file, "utf8") === bytes) return false;
+  mkdirSync(dir, { recursive: true });
+  return slotLocked(dir, () => {
+    if (existsSync(file) && readFileSync(file, "utf8") === bytes) return false;
+    const who = provenance({ verb: "ia", by: "producer", skill: skillPath("producer", "ia") }, given);
+    const event = ledgerEvent("slot", input.at, who, { ...input.fields }, [{ file: "slot.json", sha256: sha256Of(bytes) }]);
+    const refused = eventIssues(event, "slot");
+    if (refused.length) throw new Error(`ledger event refused: ${refused.join("; ")}`);
+    readLedger(dir, "slot");
+    replaceFile(file, bytes);
+    appendEvent(dir, "slot", event);
+    return true;
   });
 }
 
