@@ -30,7 +30,7 @@
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -53,7 +53,7 @@ export const E2E_CAUSES = {
   "e2e.step": "a scenario verb exited other than the scenario expects",
   "e2e.render": "the latest build lacks a route's index.html, or the HTML lacks a pinned string or marker",
   "e2e.repeat": "a second build of the same pins named another digest",
-  "e2e.portable": "a build file holds an absolute path of the consumer, or the consumer moved to another directory built the same pins to another digest",
+  "e2e.portable": "a build file holds an absolute path of the consumer or of the machine (its home or temp folder), or the consumer moved to another directory built the same pins to another digest",
 } as const;
 export type E2eCause = keyof typeof E2E_CAUSES;
 
@@ -296,14 +296,26 @@ export function renderFindings(buildDir: string, render: Scenario["render"]): E2
   return out;
 }
 
+/** This machine's own absolute directories a build must not hold either: the home folder (an npm cache, a checkout) and the real temp folder. */
+export function machineRoots(): { readonly home: string; readonly tmp: string } {
+  return { home: homedir(), tmp: realpathSync(tmpdir()) };
+}
+
 /**
- * Portable findings: every build file holding one of `roots` (the consumer's absolute directories) as bytes. A build
- * is the same bytes wherever the consumer lives; an absolute path in it leaks the machine's layout and makes the
- * digest depend on where the consumer folder is.
+ * Portable findings: every build file holding one of `roots` (the consumer's absolute directories) or one of the
+ * machine's directories (`machine`: home, real temp) as bytes. A build is the same bytes wherever the consumer lives;
+ * an absolute path in it leaks the machine's layout, and a consumer path makes the digest depend on where it is.
  */
-export function portableFindings(buildDir: string, roots: readonly string[]): E2eFinding[] {
+export function portableFindings(buildDir: string, roots: readonly string[], machine: { readonly home?: string; readonly tmp?: string } = machineRoots()): E2eFinding[] {
   const out: E2eFinding[] = [];
-  const needles = [...new Set(roots.filter(Boolean))].map(root => ({ root, bytes: Buffer.from(root) }));
+  // A root of "/" (or a relative one) would match every file; only absolute paths below the root are needles.
+  const absolute = (path: string | undefined): path is string => typeof path === "string" && path.startsWith("/") && path.length > 1;
+  const labelled = [
+    ...roots.filter(absolute).map(root => ({ root, what: "the consumer's absolute path" })),
+    ...(absolute(machine.home) ? [{ root: machine.home, what: "the machine's home path" }] : []),
+    ...(absolute(machine.tmp) ? [{ root: machine.tmp, what: "the machine's temp path" }] : []),
+  ];
+  const needles = labelled.filter((row, index) => labelled.findIndex(other => other.root === row.root) === index).map(row => ({ ...row, bytes: Buffer.from(row.root) }));
   const walk = (at: string): void => {
     for (const entry of readdirSync(at, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))) {
       const path = join(at, entry.name);
@@ -311,7 +323,7 @@ export function portableFindings(buildDir: string, roots: readonly string[]): E2
       if (!entry.isFile()) continue;
       const bytes = readFileSync(path);
       const hit = needles.find(needle => bytes.includes(needle.bytes));
-      if (hit) out.push(finding("e2e.portable", relative(buildDir, path).split(sep).join("/"), `holds the consumer's absolute path ${hit.root}`));
+      if (hit) out.push(finding("e2e.portable", relative(buildDir, path).split(sep).join("/"), `holds ${hit.what} ${hit.root}`));
     }
   };
   walk(buildDir);

@@ -4,12 +4,14 @@
  * both, and its compiled Writer copy holds every key the page binds. The real shadcn CLI
  * runs; `REGISTRY_URL` points its one base-color fetch at a loopback stub.
  */
-import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runCli } from "../cli/main.js";
+import { documentTitle, type TitledPageRecord } from "./install.js";
 import { withDesignerSlots } from "../specimen/__fixtures__/canonical-library.js";
 
 const fixtureSource = join(import.meta.dirname, "__fixtures__", "install-consumer");
@@ -103,4 +105,65 @@ describe("clossys publish --install", () => {
     expect(result.exitCode).toBe(2);
     expect(result.message).toContain("publish --install requires --page");
   });
+});
+
+describe("documentTitle: the page's document title is its Writer title key's text", () => {
+  const page = (title?: string) => ({ id: "home", frame: "frames.plain", sections: [], ...(title === undefined ? {} : { title }) }) as unknown as TitledPageRecord;
+  const copy = { "home.title": "Plain <Studio> & home" };
+
+  it("a title key Writer does not hold is a blocking missing-copy-key, and no text", () => {
+    expect(documentTitle(page("home.no.such.title"), copy)).toEqual({ finding: { code: "missing-copy-key", detail: "home: Writer has no key home.no.such.title (for the page title)" } });
+  });
+
+  it("a record without a title key is an info unbound-copy-slot, and no text (never the page id)", () => {
+    for (const title of [undefined, ""]) expect(documentTitle(page(title), copy)).toEqual({ finding: { code: "unbound-copy-slot", severity: "info", detail: "home: the page names no Writer title key, so the document has no title" } });
+  });
+
+  it("a title key Writer holds is its text, with no finding", () => {
+    expect(documentTitle(page("home.title"), copy)).toEqual({ text: "Plain <Studio> & home" });
+  });
+});
+
+describe("clossys publish --install: the document title", () => {
+  const pageWith = (dir: string, title?: string): string => {
+    const record = JSON.parse(readFileSync(join(fixture, "clossys", "publisher", "pages", "home.json"), "utf8"));
+    const path = join(dir, "home.json");
+    writeFileSync(path, JSON.stringify(title === undefined ? record : { ...record, title }));
+    return path;
+  };
+
+  it("a title key Writer does not hold blocks the render: missing-copy-key, exit 1, no HTML", async () => {
+    const dir = temp("producer-install-title-missing-"), out = join(dir, "out");
+    const result = await runCli(["publish", "--install", "--page", pageWith(dir, "home.no.such.title"), "--root", fixture, "--out", out, "--selection", selection()]);
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toContain("  missing-copy-key: home: Writer has no key home.no.such.title (for the page title)");
+    expect(result.message).not.toContain("Page: ");
+    expect(existsSync(join(out, "site", "home", "index.html"))).toBe(false);
+  }, 120_000);
+
+  it("a record with no title key renders with an info unbound-copy-slot and no <title>", async () => {
+    const dir = temp("producer-install-title-unbound-"), out = join(dir, "out");
+    const result = await runCli(["publish", "--install", "--page", pageWith(dir), "--root", fixture, "--out", out, "--selection", selection()]);
+    expect(result.exitCode).toBe(0);
+    expect(result.message).toContain("  info unbound-copy-slot: home: the page names no Writer title key, so the document has no title");
+    const html = readFileSync(join(out, "site", "home", "index.html"), "utf8");
+    expect(html).toContain("Pages assembled from records");
+    expect(html).not.toContain("<title>");
+  }, 120_000);
+
+  it("a title key Writer holds is the escaped <title> text", async () => {
+    const consumer = temp("producer-install-title-held-");
+    cpSync(fixture, consumer, { recursive: true });
+    const strings = join(consumer, "clossys", "agents", "writer", "strings.site");
+    const candidate = join(strings, "candidates", "site-v2.md");
+    writeFileSync(candidate, `${readFileSync(candidate, "utf8").trimEnd()}\n\n### home.title\n<!-- {"id":"home.title","bindings":[]} -->\nPlain <Studio> & home\n`);
+    const pin = JSON.parse(readFileSync(join(strings, "pin.json"), "utf8"));
+    writeFileSync(join(strings, "pin.json"), `${JSON.stringify({ ...pin, sha256: createHash("sha256").update(readFileSync(candidate)).digest("hex") }, null, 2)}\n`);
+    const out = join(consumer, "out");
+    const result = await runCli(["publish", "--install", "--page", pageWith(consumer, "home.title"), "--root", consumer, "--out", out, "--selection", join(consumer, "component-selection.ts")]);
+    expect(result.message).toContain("Findings: 0");
+    expect(result.message).not.toContain("unbound-copy-slot: home: the page names no Writer title key");
+    expect(result.exitCode).toBe(0);
+    expect(readFileSync(join(out, "site", "home", "index.html"), "utf8")).toContain("<title>Plain &lt;Studio&gt; &amp; home</title>");
+  }, 120_000);
 });

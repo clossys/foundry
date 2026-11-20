@@ -5,6 +5,7 @@
  * Vite build is a stub runner so no bundler runs here.
  */
 import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -84,6 +85,20 @@ describe("clossys publish --install --site", () => {
     expect(routes.origin).toBe("https://example.test");
     expect(readFileSync(join(result.substrate, "public", "sitemap.xml"), "utf8")).toContain("<loc>https://example.test/about</loc>");
     expect(readFileSync(join(result.substrate, "vite.config.ts"), "utf8")).not.toMatch(/localhost|example\.test|clossys\.com/);
+  }, 180_000);
+
+  it("a route whose content-map title key Writer does not hold is a blocking missing-copy-key, and renders no HTML", async () => {
+    const consumer = await nativeFixture();
+    const cell = join(consumer, "clossys", "agents", "publisher", "page.home");
+    const candidate = join(cell, "candidates", "page-v1.json");
+    writeFileSync(candidate, `${JSON.stringify({ ...JSON.parse(readFileSync(candidate, "utf8")), title: "site.no.such.title" }, null, 2)}\n`);
+    const pin = JSON.parse(readFileSync(join(cell, "pin.json"), "utf8"));
+    writeFileSync(join(cell, "pin.json"), `${JSON.stringify({ ...pin, sha256: createHash("sha256").update(readFileSync(candidate)).digest("hex") }, null, 2)}\n`);
+    const out = join(temp("producer-site-title-"), "out");
+    const result = await publishSite({ root: consumer, site: "example-site", out, selection: { module: join(consumer, "component-selection.ts") } });
+    expect(result.findings).toContainEqual({ code: "missing-copy-key", detail: "home: Writer has no key site.no.such.title (for the page title)" });
+    expect(result.html).toEqual({});
+    expect(existsSync(join(out, "site", "index.html"))).toBe(false);
   }, 180_000);
 
   it.each(["missing pin", "hash drift"])("refuses native %s", async problem => {

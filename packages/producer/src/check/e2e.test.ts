@@ -183,6 +183,22 @@ describe("install and render findings", () => {
     ]);
   });
 
+  it("names a build file holding the machine's home or temp path, a path that does not depend on where the consumer lives", () => {
+    const root = temp(), build = join(root, "consumer", ".clossys", "builds", "abc");
+    mkdirSync(join(build, "site"), { recursive: true });
+    const machine = { home: "/Users/someone", tmp: "/private/var/folders/xy/T" };
+    writeFileSync(join(build, "site", "index.html"), "<title>Plain Studio home</title>");
+    expect(portableFindings(build, [join(root, "consumer")], machine)).toEqual([]);
+    writeFileSync(join(build, "site", "cache.js"), 'import "/Users/someone/.npm/_cacache/react/index.js";');
+    writeFileSync(join(build, "site", "scratch.js"), 'import "/private/var/folders/xy/T/esbuild-1/out.js";');
+    expect(portableFindings(build, [join(root, "consumer")], machine).map(row => `${row.cause} ${row.subject} ${row.detail}`)).toEqual([
+      "e2e.portable site/cache.js holds the machine's home path /Users/someone",
+      "e2e.portable site/scratch.js holds the machine's temp path /private/var/folders/xy/T",
+    ]);
+    // A home of "/" would match every file: it is no needle.
+    expect(portableFindings(build, [join(root, "consumer")], { home: "/", tmp: "" }).map(row => row.subject)).toEqual([]);
+  });
+
   it("drops every CLOSSYS_* and npm_* variable from the child environment and points the registry at the stub", () => {
     const env = childEnv("http://127.0.0.1:1/r", { PATH: "/bin", CLOSSYS_ROOT: "/elsewhere", CLOSSYS_SKIP: "1", npm_config_prefix: "/x", INIT_CWD: "/y" });
     expect(env).toEqual({ PATH: "/bin", REGISTRY_URL: "http://127.0.0.1:1/r", NO_COLOR: "1", FORCE_COLOR: "0" });
