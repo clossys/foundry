@@ -21,13 +21,14 @@
  *   the runner's events for the run's own state file), the index only to a rebuild of the log (`engineLogIssue`,
  *   `engineIndexIssue`; engine.md "The one writer"). A removal of either is refused.
  *
- * The run's own state file, its lock and its temp file are the only paths left out: the runner writes them itself.
+ * The run's own state file, its lock and its temp file are left out: the runner writes them itself. So is the engine
+ * lock's own state (ENGINE_LOCK_STATE): the engine's lock protocol writes it, and it is never a record.
  * A run waiting on an agent step whose snapshot is missing or does not hash to its digest stops (fail closed).
  */
 import { createHash } from "node:crypto";
 import { lstatSync, readdirSync, readFileSync, readlinkSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { EVENTS_FILE, INDEX_FILE, verifyChain } from "../engine/chain.js";
+import { EVENTS_FILE, INDEX_FILE, LOCK_FILE, verifyChain } from "../engine/chain.js";
 import { indexAgreement } from "../engine/derived.js";
 import { sha256Hex } from "../records/hash.js";
 import { LEDGER_FILE, LEDGER_SCHEMA, eventIssues } from "../records/ledger.js";
@@ -47,8 +48,14 @@ export const SNAPSHOT_TREES = ["clossys", ".clossys"] as const;
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 const escapeRegex = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/**
+ * The engine lock and the siblings its recovery makes (engine/lock.ts: `.recover-<instance>` markers, nested for a
+ * dead recoverer, and `.new-<token>-<id>` staging files): the engine's own coordination state, never a record. A
+ * writer that dies mid-recovery leaves one behind, and it is no step's write.
+ */
+const ENGINE_LOCK_STATE = new RegExp(`^${escapeRegex(LOCK_FILE)}(?:\\.recover-[0-9a-f]{32})*(?:\\.new-[0-9a-f-]{36}-[0-9a-f-]{36})?$`);
 
-/** The snapshot of `clossys/` and `.clossys/` under `root`, leaving out only run `runId`'s own state, lock and temp files. */
+/** The snapshot of `clossys/` and `.clossys/` under `root`, leaving out only run `runId`'s own state, lock and temp files and the engine lock's state. */
 export function treeSnapshot(root: string, runId: string): TreeFiles {
   const own = new Set([`.clossys/runs/loops/${runId}.json`, `.clossys/runs/loops/${runId}.lock`]);
   const ownTemp = new RegExp(`^\\.clossys/runs/loops/${escapeRegex(runId)}\\.json\\.\\d+\\.tmp$`);
@@ -66,7 +73,7 @@ export function treeSnapshot(root: string, runId: string): TreeFiles {
     try { names = readdirSync(dir).sort(); } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return; throw error; }
     for (const name of names) {
       const at = `${rel}/${name}`;
-      if (own.has(at) || ownTemp.test(at)) continue;
+      if (own.has(at) || ownTemp.test(at) || ENGINE_LOCK_STATE.test(at)) continue;
       mark(join(dir, name), at);
     }
   };

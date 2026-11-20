@@ -157,6 +157,127 @@ describe("engine.side-door (engine/side-door.ts)", () => {
     expect(found()).toEqual(["packages/writer/src/local.ts:6 sink writeAtomic", "packages/writer/src/local.ts:7 sink writeJson"]);
   });
 
+  // Each TypeScript wrapper around the fs binding: the cast must not hide the namespace.
+  for (const [form, init] of [
+    ["as", "require(\"node:fs\") as typeof import(\"node:fs\")"],
+    ["satisfies", "require(\"node:fs\") satisfies object"],
+    ["parentheses", "(require(\"node:fs\"))"],
+    ["non-null", "require(\"node:fs\")!"],
+    ["type assertion", "<typeof import(\"node:fs\")>require(\"node:fs\")"],
+    ["nested", "((<any>require(\"node:fs\"))! as typeof import(\"node:fs\"))"],
+  ] as const) {
+    it(`fires on a write through an fs binding wrapped in ${form}`, () => {
+      put("packages/producer/src/pipeline/cast.ts", [
+        "import { join } from \"node:path\";",
+        `const fs = ${init};`,
+        "export const save = (root: string) => fs.writeFileSync(join(root, \".clossys\", \"runs\", \"a.jsonl\"), \"\");",
+      ].join("\n"));
+      expect(found()).toEqual(["packages/producer/src/pipeline/cast.ts:3 write writeFileSync"]);
+    });
+  }
+
+  it("fires through wrappers around the callee, its receiver, the path and a wrapper call", () => {
+    put("packages/writer/src/wrapped.ts", [
+      "import * as fs from \"node:fs\";",
+      "import { join } from \"node:path\";",
+      "import { slotDir } from \"@clossys/producer/records/slots\";",
+      "const save = (path: string) => fs.writeFileSync(path, \"\");",
+      "export function go(root: string, id: string) {",
+      "  (fs as any).writeFileSync(join(root, \".clossys\", \"a\"), \"\");",
+      "  (fs.rmSync)(join(root, \".clossys\", \"b\") as string);",
+      "  fs.mkdirSync!((<string>join(root, \".clossys\"))!);",
+      "  (<typeof fs>fs).appendFileSync(<string>\".clos\" + \"sys/c\", \"\");",
+      "  fs.writeFileSync(join((slotDir as any)(root, \"writer\", id), \"x\"), \"\");",
+      "  (save satisfies (path: string) => void)(join(root, \"agents\", \"writer\", id, \"pin.json\"));",
+      "  fs.writeFileSync(join(root, \"out\") as string, \"\");",
+      "}",
+    ].join("\n"));
+    expect(found()).toEqual([
+      "packages/writer/src/wrapped.ts:6 write writeFileSync",
+      "packages/writer/src/wrapped.ts:7 write rmSync",
+      "packages/writer/src/wrapped.ts:8 write mkdirSync",
+      "packages/writer/src/wrapped.ts:9 write appendFileSync",
+      "packages/writer/src/wrapped.ts:10 write writeFileSync",
+      "packages/writer/src/wrapped.ts:11 sink save",
+    ]);
+  });
+
+  it("fires through the other fs alias forms: import-equals, createRequire, inline require, re-binding, members and element access", () => {
+    put("packages/producer/src/loop/alias.ts", [
+      "import * as fs from \"node:fs\";",
+      "import { createRequire } from \"node:module\";",
+      "import fs1 = require(\"node:fs\");",
+      "const load = createRequire(import.meta.url);",
+      "const fs2 = load(\"node:fs\") as typeof fs;",
+      "const fs3 = fs as any;",
+      "const { writeFileSync: put, promises: fsp } = fs;",
+      "const remove = (fs.rmSync)!;",
+      "const P = \".clossys/x\";",
+      "export async function go() {",
+      "  fs1.writeFileSync(P, \"\");",
+      "  fs2.writeFileSync(P, \"\");",
+      "  fs3.writeFileSync(P, \"\");",
+      "  put(P, \"\");",
+      "  await fsp.writeFile(P, \"\");",
+      "  remove(P);",
+      "  fs[\"renameSync\"](P, P);",
+      "  require(\"node:fs\").unlinkSync(P);",
+      "  (await import(\"node:fs\")).default.writeFileSync(P, \"\");",
+      "  fs.openSync(P, \"a\" as string);",
+      "  fs.openSync(P, \"r\" as const);",
+      "}",
+    ].join("\n"));
+    expect(found()).toEqual([11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(line => `packages/producer/src/loop/alias.ts:${line} write ${
+      ["writeFileSync", "writeFileSync", "writeFileSync", "writeFileSync", "writeFile", "rmSync", "renameSync", "unlinkSync", "writeFileSync", "openSync"][line - 11]}`));
+  });
+
+  it("fires through a choice between fs functions, a re-bound named import and an object-literal write wrapper", () => {
+    put("packages/producer/src/pipeline/store.ts", [
+      "import { createRequire } from \"node:module\";",
+      "import { writeFileSync } from \"node:fs\";",
+      "const require = createRequire(import.meta.url);",
+      "const fs = require(\"node:fs\") as typeof import(\"node:fs\");",
+      "const state: { originals?: Partial<typeof fs> } = {};",
+      "const raw = {",
+      "  rename: (from: string, to: string) => ((state.originals?.renameSync ?? fs.renameSync) as typeof fs.renameSync)(from, to),",
+      "  write(path: string) { (path ? fs.writeFileSync : undefined)!(path, \"\"); },",
+      "  remove: (<(path: string) => void>((path: string) => fs.rmSync(path))),",
+      "};",
+      "const w = writeFileSync;",
+      "export function store(root: string) {",
+      "  raw.rename(root + \"/.clossys/runs/a.tmp\", root + \"/.clossys/runs/a.jsonl\");",
+      "  raw.write(`${root}/.clossys/runs/b`);",
+      "  raw.remove(`${root}/.clossys/runs/c`);",
+      "  w(`${root}/.clossys/x`, \"\");",
+      "  raw.rename(root + \"/out/a\", root + \"/out/b\");",
+      "}",
+    ].join("\n"));
+    expect(found()).toEqual([
+      "packages/producer/src/pipeline/store.ts:13 sink rename",
+      "packages/producer/src/pipeline/store.ts:14 sink write",
+      "packages/producer/src/pipeline/store.ts:15 sink remove",
+      "packages/producer/src/pipeline/store.ts:16 write writeFileSync",
+    ]);
+  });
+
+  it("fires through write wrappers and path helpers whose function is wrapped in a cast: exported, local and imported", () => {
+    put("packages/writer/src/cast-wrap.ts", [
+      "import { writeFileSync } from \"node:fs\";",
+      "import { join } from \"node:path\";",
+      "export const save = ((path: string) => writeFileSync(path, \"\")) as (path: string) => void;",
+      "export const runsDir = ((root: string) => join(root, \".clossys\", \"runs\")) satisfies (root: string) => string;",
+      "const local = (<(path: string) => void>((path: string) => writeFileSync(path, \"\")));",
+      "export const go = (root: string) => local(join(root, \".clossys\", \"y\"));",
+    ].join("\n"));
+    put("packages/writer/src/cast-use.ts", [
+      "import { writeFileSync } from \"node:fs\";",
+      "import { runsDir, save } from \"./cast-wrap.js\";",
+      "export const go = (root: string) => save(root + \"/.clossys/x\");",
+      "export const log = (root: string) => writeFileSync(runsDir(root) + \"/a.jsonl\", \"\");",
+    ].join("\n"));
+    expect(found()).toEqual(["packages/writer/src/cast-use.ts:3 sink save", "packages/writer/src/cast-use.ts:4 write writeFileSync", "packages/writer/src/cast-wrap.ts:6 sink local"]);
+  });
+
   it("matches engine path strings", () => {
     for (const text of [".clossys/events.jsonl", "x/.clossys", "agents/designer/hero/pin.json", "clossys/agents/writer", "candidates/a.md", "ledger.json"]) expect(isEnginePathString(text), text).toBe(true);
     for (const text of ["dist/out.json", "clossys-site", "report.md", ".clossysrc"]) expect(isEnginePathString(text), text).toBe(false);

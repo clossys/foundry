@@ -172,6 +172,31 @@ interface Vocabulary {
 /** The placeholder a piece of a path the fold cannot know becomes: it names no path. */
 const UNKNOWN = "\0";
 
+/** Whether a node only wraps an expression for the type checker or for grouping: `(x)`, `x as T`, `x satisfies T`, `x!`, `<T>x`. */
+const isWrapper = (node: ts.Node): node is ts.ParenthesizedExpression | ts.AsExpression | ts.SatisfiesExpression | ts.NonNullExpression | ts.TypeAssertion =>
+  ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isSatisfiesExpression(node) || ts.isNonNullExpression(node) || ts.isTypeAssertionExpression(node);
+/** An expression with every such wrapper removed, so a cast never hides an fs binding, a path or a callee. */
+const strip = (node: ts.Expression): ts.Expression => {
+  let at = node;
+  while (isWrapper(at)) at = at.expression;
+  return at;
+};
+/** The variable declaration a function expression initializes, through any wrappers around it. */
+const declarationOf = (fn: ts.Node): ts.VariableDeclaration | undefined => {
+  let at = fn;
+  while (at.parent && isWrapper(at.parent)) at = at.parent;
+  return at.parent && ts.isVariableDeclaration(at.parent) && at.parent.initializer === at ? at.parent : undefined;
+};
+/** The object-literal property name a function expression initializes (`{ rename: (from, to) => ... }`), through any wrappers. */
+const propertyOf = (fn: ts.Node): ts.Identifier | undefined => {
+  let at = fn;
+  while (at.parent && isWrapper(at.parent)) at = at.parent;
+  return at.parent && ts.isPropertyAssignment(at.parent) && at.parent.initializer === at && ts.isIdentifier(at.parent.name) ? at.parent.name : undefined;
+};
+/** The member a property or string-literal element access names (`fs.writeFileSync`, `fs["writeFileSync"]`). */
+const memberName = (node: ts.Expression): string | undefined => ts.isPropertyAccessExpression(node) ? node.name.text
+  : ts.isElementAccessExpression(node) && ts.isStringLiteralLike(strip(node.argumentExpression)) ? (strip(node.argumentExpression) as ts.StringLiteralLike).text : undefined;
+
 /** One file's facts, given the helper and sink names known across files so far. */
 function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocabulary: Vocabulary): FileFacts {
   const { helpers, sinks } = vocabulary;
@@ -210,8 +235,68 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
     const symbol = symbolOf(name);
     if (symbol) initializers.set(symbol, [...(initializers.get(symbol) ?? []), init]);
   };
+  /** Local names bound to a `createRequire(...)` result: they load modules as `require` does. */
+  const requireNames = new Set<string>(["require"]);
+  const isCreateRequire = (expr: ts.Expression): boolean => {
+    const node = strip(expr);
+    if (!ts.isCallExpression(node)) return false;
+    const callee = strip(node.expression);
+    return (ts.isIdentifier(callee) && callee.text === "createRequire") || memberName(callee) === "createRequire";
+  };
+  const isRequire = (expr: ts.Expression): boolean => { const node = strip(expr); return (ts.isIdentifier(node) && requireNames.has(node.text)) || isCreateRequire(node); };
+  /**
+   * Whether an expression is an fs module namespace, through any wrappers: a `require` (or `createRequire(...)`) or
+   * `import()` of an fs module, awaited or not, a name bound to one, or its `.default` or `.promises`.
+   */
+  const isFsNamespace = (expr: ts.Expression): boolean => {
+    let node = strip(expr);
+    if (ts.isAwaitExpression(node)) node = strip(node.expression);
+    if (ts.isCallExpression(node)) {
+      const arg = node.arguments[0] && strip(node.arguments[0]);
+      return arg !== undefined && ts.isStringLiteralLike(arg) && FS_MODULES.has(arg.text) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || isRequire(node.expression));
+    }
+    if (ts.isIdentifier(node)) return fsNamespaces.has(node.text);
+    const member = memberName(node);
+    return (member === "default" || member === "promises") && isFsNamespace((node as ts.PropertyAccessExpression | ts.ElementAccessExpression).expression);
+  };
+  /** The fs member an expression names (`fs.writeFileSync`, `fs["rmSync"]`, `require("fs").rename`), through any wrappers. */
+  const fsMemberOf = (expr: ts.Expression): string | undefined => {
+    const node = strip(expr);
+    const member = memberName(node);
+    return member !== undefined && isFsNamespace((node as ts.PropertyAccessExpression | ts.ElementAccessExpression).expression) ? member : undefined;
+  };
+  /**
+   * The fs function an expression names, through wrappers: an fs member, a name bound to one, or either side of a
+   * choice between alternatives (`saved ?? fs.renameSync`, `ok ? fs.rmSync : skip`).
+   */
+  const fsCallOf = (expr: ts.Expression): string | undefined => {
+    const node = strip(expr);
+    if (ts.isIdentifier(node)) return fsNames.get(node.text);
+    if (ts.isBinaryExpression(node) && (node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken || node.operatorToken.kind === ts.SyntaxKind.BarBarToken)) return fsCallOf(node.left) ?? fsCallOf(node.right);
+    if (ts.isConditionalExpression(node)) return fsCallOf(node.whenTrue) ?? fsCallOf(node.whenFalse);
+    return fsMemberOf(node);
+  };
+  /** Binds `name` to what `init` holds: an fs namespace, a destructured set of fs members, one fs member, or a `createRequire` result. */
+  const bindFs = (name: ts.BindingName | ts.Expression, init: ts.Expression) => {
+    if (isFsNamespace(init)) {
+      if (ts.isIdentifier(name)) fsNamespaces.add(name.text);
+      else if (ts.isObjectBindingPattern(name)) for (const element of name.elements) {
+        if (!ts.isIdentifier(element.name)) continue;
+        const original = element.propertyName && (ts.isIdentifier(element.propertyName) || ts.isStringLiteralLike(element.propertyName)) ? element.propertyName.text : element.name.text;
+        if (original === "promises" || original === "default") fsNamespaces.add(element.name.text); else fsNames.set(element.name.text, original);
+      }
+      return;
+    }
+    if (!ts.isIdentifier(name)) return;
+    if (isCreateRequire(init)) { requireNames.add(name.text); return; }
+    const member = fsCallOf(init);
+    if (member !== undefined) fsNames.set(name.text, member);
+  };
   const visitBindings = (node: ts.Node): void => {
     if (ts.isImportDeclaration(node) && node.importClause && ts.isStringLiteral(node.moduleSpecifier)) bindImport(node.moduleSpecifier.text, node.importClause);
+    // `import fs = require("node:fs")`.
+    if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference) && ts.isStringLiteralLike(node.moduleReference.expression)
+      && FS_MODULES.has(node.moduleReference.expression.text)) fsNamespaces.add(node.name.text);
     if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
       const stem = moduleStem(file, node.moduleSpecifier.text);
       if (stem && !node.exportClause) stars.push(stem);
@@ -220,24 +305,16 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
       }
     }
     if (ts.isVariableDeclaration(node) && node.initializer) {
-      const init = ts.isAwaitExpression(node.initializer) ? node.initializer.expression : node.initializer;
-      if (ts.isCallExpression(init) && init.arguments[0] && ts.isStringLiteralLike(init.arguments[0]) && FS_MODULES.has(init.arguments[0].text)
-        && ((ts.isIdentifier(init.expression) && init.expression.text === "require") || init.expression.kind === ts.SyntaxKind.ImportKeyword)) {
-        if (ts.isIdentifier(node.name)) fsNamespaces.add(node.name.text);
-        else if (ts.isObjectBindingPattern(node.name)) for (const element of node.name.elements) {
-          if (!ts.isIdentifier(element.name)) continue;
-          const original = element.propertyName && ts.isIdentifier(element.propertyName) ? element.propertyName.text : element.name.text;
-          if (original === "promises") fsNamespaces.add(element.name.text); else fsNames.set(element.name.text, original);
-        }
-      }
+      bindFs(node.name, node.initializer);
       if (ts.isIdentifier(node.name)) addInit(node.name, node.initializer);
       else if (ts.isObjectBindingPattern(node.name) || ts.isArrayBindingPattern(node.name)) {
         for (const element of node.name.elements) if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) addInit(element.name, node.initializer);
       }
     }
-    if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken && ts.isIdentifier(node.left)) addInit(node.left, node.right);
+    if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken && ts.isIdentifier(node.left)) { bindFs(node.left, node.right); addInit(node.left, node.right); }
+    const holder = declarationOf(node);
     const nameNode = ts.isFunctionDeclaration(node) && node.name ? node.name
-      : (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) && ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name) ? node.parent.name : undefined;
+      : (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) && holder && ts.isIdentifier(holder.name) ? holder.name : undefined;
     if (nameNode && (ts.isFunctionDeclaration(node) || ts.isArrowFunction(node) || ts.isFunctionExpression(node)) && node.body) {
       const exprs: ts.Expression[] = [];
       if (!ts.isBlock(node.body)) exprs.push(node.body);
@@ -252,14 +329,17 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
   };
   visitBindings(sf);
 
-  const calleeOf = (call: ts.CallExpression) => ts.isIdentifier(call.expression) ? call.expression : ts.isPropertyAccessExpression(call.expression) ? call.expression.name : undefined;
+  const calleeOf = (call: ts.CallExpression) => { const expr = strip(call.expression); return ts.isIdentifier(expr) ? expr : ts.isPropertyAccessExpression(expr) ? expr.name : undefined; };
   /** The cross-file binding (`<module stem>#<name>`, re-exports followed) an identifier or namespace member names. */
   const bindingOf = (node: ts.Node): string | undefined => {
     if (ts.isIdentifier(node) && !(ts.isPropertyAccessExpression(node.parent) && node.parent.name === node)) {
       const key = imported.get(node.text);
       return key === undefined ? undefined : vocabulary.resolve(key);
     }
-    if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) && namespaces.has(node.expression.text)) return vocabulary.resolve(`${namespaces.get(node.expression.text)!}#${node.name.text}`);
+    if (ts.isPropertyAccessExpression(node)) {
+      const receiver = strip(node.expression);
+      if (ts.isIdentifier(receiver) && namespaces.has(receiver.text)) return vocabulary.resolve(`${namespaces.get(receiver.text)!}#${node.name.text}`);
+    }
     return undefined;
   };
   /** A local const's one initializer, for the fold. */
@@ -275,19 +355,21 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
    */
   const fold = (node: ts.Expression, depth = 0): string => {
     if (depth > 12) return UNKNOWN;
-    const inner = ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isNonNullExpression(node) || ts.isSatisfiesExpression(node) ? node.expression : node;
+    const inner = strip(node);
     if (inner !== node) return fold(inner, depth + 1);
     if (ts.isStringLiteralLike(node)) return node.text;
     if (ts.isTemplateExpression(node)) return node.head.text + node.templateSpans.map(span => fold(span.expression, depth + 1) + span.literal.text).join("");
     if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) return fold(node.left, depth + 1) + fold(node.right, depth + 1);
     if (ts.isCallExpression(node)) {
       const callee = calleeOf(node);
-      if (callee && (callee.text === "join" || callee.text === "resolve") && !(ts.isPropertyAccessExpression(node.expression) && ts.isArrayLiteralExpression(node.expression.expression))) {
+      const target = strip(node.expression);
+      const array = ts.isPropertyAccessExpression(target) ? strip(target.expression) : undefined;
+      if (callee && (callee.text === "join" || callee.text === "resolve") && !(array && ts.isArrayLiteralExpression(array))) {
         return node.arguments.map(arg => fold(arg, depth + 1)).join("/");
       }
-      if (callee?.text === "join" && ts.isPropertyAccessExpression(node.expression) && ts.isArrayLiteralExpression(node.expression.expression)) {
+      if (callee?.text === "join" && array && ts.isArrayLiteralExpression(array)) {
         const sep = node.arguments[0] ? fold(node.arguments[0], depth + 1) : ",";
-        return node.expression.expression.elements.map(element => ts.isSpreadElement(element) ? UNKNOWN : fold(element, depth + 1)).join(sep);
+        return array.elements.map(element => ts.isSpreadElement(element) ? UNKNOWN : fold(element, depth + 1)).join(sep);
       }
       return UNKNOWN;
     }
@@ -339,15 +421,8 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
   const visitCalls = (node: ts.Node): void => {
     if (ts.isCallExpression(node)) {
       calls.push(node);
-      const expr = node.expression;
-      let call: string | undefined;
-      if (ts.isIdentifier(expr) && fsNames.has(expr.text)) call = fsNames.get(expr.text);
-      else if (ts.isPropertyAccessExpression(expr)) {
-        const target = expr.expression;
-        const base = ts.isIdentifier(target) ? target.text : ts.isPropertyAccessExpression(target) && ts.isIdentifier(target.expression) && target.name.text === "promises" ? target.expression.text : undefined;
-        if (base && fsNamespaces.has(base)) call = expr.name.text;
-      }
-      const flag = node.arguments[1];
+      const call = fsCallOf(node.expression);
+      const flag = node.arguments[1] && strip(node.arguments[1]);
       const writingOpen = call !== undefined && OPEN_CALLS.has(call) && !(flag === undefined || (ts.isStringLiteralLike(flag) && /^r$|^rs$/.test(flag.text)));
       if (call && ((WRITE_CALLS as readonly string[]).includes(call) || writingOpen)) {
         const pair = /^(?:rename|copyFile|cp|symlink|link)/.test(call);
@@ -374,12 +449,13 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
   // wrapped index, outside the engine surface's exemptions. A call to one that hands it a derived path is a sink
   // finding, like a call to an imported wrapper.
   const within = (fn: ts.Node, node: ts.Node) => { for (let at: ts.Node | undefined = node; at; at = at.parent) if (at === fn) return true; return false; };
-  const localFns: { symbol: ts.Symbol; fn: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression; params: () => (Set<ts.Symbol> | undefined)[] }[] = [];
+  const localFns: { symbol: ts.Symbol; fn: ts.FunctionDeclaration | ts.MethodDeclaration | ts.ArrowFunction | ts.FunctionExpression; params: () => (Set<ts.Symbol> | undefined)[] }[] = [];
   const collectFns = (node: ts.Node): void => {
-    const name = ts.isFunctionDeclaration(node) && node.name ? node.name
-      : (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) && ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name) ? node.parent.name : undefined;
+    const holder = declarationOf(node);
+    const name = (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) && node.name && ts.isIdentifier(node.name) ? node.name
+      : (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) ? (holder && ts.isIdentifier(holder.name) ? holder.name : propertyOf(node)) : undefined;
     const symbol = name && symbolOf(name);
-    if (symbol && (ts.isFunctionDeclaration(node) || ts.isArrowFunction(node) || ts.isFunctionExpression(node)) && node.parameters.length) {
+    if (symbol && (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node) || ts.isArrowFunction(node) || ts.isFunctionExpression(node)) && node.parameters.length) {
       let cached: (Set<ts.Symbol> | undefined)[] | undefined;
       const fn = node;
       localFns.push({ symbol, fn, params: () => cached ??= fn.parameters.map(param => { const at = ts.isIdentifier(param.name) ? symbolOf(param.name) : undefined; return at ? closure(new Set([at])) : undefined; }) });
@@ -388,7 +464,13 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
   };
   collectFns(sf);
   const localSinks = new Map<ts.Symbol, Set<number>>();
-  const localSinkOf = (call: ts.CallExpression) => { const symbol = ts.isIdentifier(call.expression) ? symbolOf(call.expression) : undefined; return symbol && localSinks.get(symbol); };
+  /** The local function a call names: by its name, or (`raw.rename(...)`) by the object-literal property or method it reads. */
+  const localSinkOf = (call: ts.CallExpression) => {
+    const target = strip(call.expression);
+    const member = ts.isPropertyAccessExpression(target) ? symbolOf(target.name) : undefined;
+    const symbol = ts.isIdentifier(target) ? symbolOf(target) : member && (checker.getRootSymbols(member)[0] ?? member);
+    return symbol && localSinks.get(symbol);
+  };
   for (let grew = true; grew;) {
     grew = false;
     for (const { symbol, fn, params } of localFns) {
@@ -415,7 +497,8 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
     }
     if (isScript(file) && SCRIPT_WRITERS.includes(callee.text)) { findings.push({ file, line: lineOf(call), kind: "script", call: callee.text, text: textOf(call) }); continue; }
     // A write wrapper is matched through the import that binds it, never by its bare name.
-    const bound = ts.isIdentifier(call.expression) ? imported.get(callee.text) : undefined;
+    const target = strip(call.expression);
+    const bound = ts.isIdentifier(target) ? imported.get(callee.text) : undefined;
     const at = bound === undefined ? undefined : sinks.get(bound);
     if (!at || exempt(call)) continue;
     if ([...at].some(index => call.arguments[index] && reach(call.arguments[index]!, tainted))) findings.push({ file, line: lineOf(call), kind: "sink", call: callee.text, text: textOf(call) });
@@ -453,7 +536,7 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
         const local = element.propertyName ?? element.name;
         const symbol = symbolOf(local);
         const decl = symbol?.valueDeclaration;
-        if (decl && ts.isVariableDeclaration(decl) && !(decl.initializer && (ts.isArrowFunction(decl.initializer) || ts.isFunctionExpression(decl.initializer)))) exportConstant(element.name.text, symbol, decl.initializer);
+        if (decl && ts.isVariableDeclaration(decl) && !(decl.initializer && (ts.isArrowFunction(strip(decl.initializer)) || ts.isFunctionExpression(strip(decl.initializer))))) exportConstant(element.name.text, symbol, decl.initializer);
       }
     }
   }
@@ -462,7 +545,7 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
     const decls: { name: ts.Identifier; fn?: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression }[] = ts.isFunctionDeclaration(statement) && statement.name ? [{ name: statement.name, fn: statement }]
       : ts.isVariableStatement(statement) ? statement.declarationList.declarations.filter(decl => ts.isIdentifier(decl.name)).map(decl => ({
         name: decl.name as ts.Identifier,
-        ...(decl.initializer && (ts.isArrowFunction(decl.initializer) || ts.isFunctionExpression(decl.initializer)) ? { fn: decl.initializer } : {}),
+        ...(decl.initializer && (ts.isArrowFunction(strip(decl.initializer)) || ts.isFunctionExpression(strip(decl.initializer))) ? { fn: strip(decl.initializer) as ts.ArrowFunction | ts.FunctionExpression } : {}),
       })) : [];
     for (const { name, fn } of decls) {
       const symbol = symbolOf(name);
@@ -494,14 +577,17 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
  * (to a fixpoint), or inside the body of a primitive.
  */
 function transactionContexts(sf: ts.SourceFile, transactions: SurfaceTransactions, symbolOf: (node: ts.Node) => ts.Symbol | undefined): (node: ts.Node) => boolean {
-  const wrapperCall = (node: ts.Node): boolean => ts.isCallExpression(node) && ((ts.isIdentifier(node.expression) && transactions.wrappers.includes(node.expression.text))
-    || (ts.isPropertyAccessExpression(node.expression) && transactions.wrappers.includes(node.expression.name.text)));
+  const wrapperCall = (node: ts.Node): boolean => {
+    if (!ts.isCallExpression(node)) return false;
+    const callee = strip(node.expression);
+    return (ts.isIdentifier(callee) && transactions.wrappers.includes(callee.text)) || (ts.isPropertyAccessExpression(callee) && transactions.wrappers.includes(callee.name.text));
+  };
   /** Local (non-exported) functions by symbol, and the identifiers that reference each. */
   const locals = new Map<ts.Symbol, { readonly fn: ts.Node; readonly refs: ts.Identifier[] }>();
   const named = (fn: ts.Node): ts.Identifier | undefined => ts.isFunctionDeclaration(fn) && fn.name ? fn.name
-    : (ts.isArrowFunction(fn) || ts.isFunctionExpression(fn)) && ts.isVariableDeclaration(fn.parent) && ts.isIdentifier(fn.parent.name) ? fn.parent.name : undefined;
+    : (ts.isArrowFunction(fn) || ts.isFunctionExpression(fn)) && declarationOf(fn) && ts.isIdentifier(declarationOf(fn)!.name) ? declarationOf(fn)!.name as ts.Identifier : undefined;
   const exported = (fn: ts.Node): boolean => {
-    const holder = ts.isFunctionDeclaration(fn) ? fn : fn.parent?.parent?.parent;
+    const holder = ts.isFunctionDeclaration(fn) ? fn : declarationOf(fn)?.parent?.parent;
     return holder !== undefined && ts.canHaveModifiers(holder) && (ts.getModifiers(holder)?.some(mod => mod.kind === ts.SyntaxKind.ExportKeyword) ?? false);
   };
   const primitive = (fn: ts.Node): boolean => { const name = named(fn); return name !== undefined && transactions.primitives.includes(name.text); };

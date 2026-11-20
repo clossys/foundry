@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "./hash.js";
 import { jsonBytes, serializeFrontmatter, slotPositions, type IaDoc } from "./slot-model/index.js";
 import { isModelDir, modelExists, readModelBytes, readModelText } from "./slots.js";
-import { directorStoreWriter, writeNotNeeded, writePin } from "./slot-write.js";
+import { directorStoreWriter, repointThemeProbePin, restoreThemeProbePin, writeNotNeeded, writePin } from "./slot-write.js";
 
 const ID = "identity.brand.essence";
 const source = { kind: "original", ref: [] };
@@ -46,6 +46,26 @@ describe("G24: a slot decision is one locked write of whole files", () => {
     expect(() => pin("essence-v1.md")).toThrow(/another decision write is in progress/);
     expect(existsSync(join(dir, "pin.json"))).toBe(false);
     expect(() => writeNotNeeded(consumer, "director", ID, { reason: "x", since: at, decidedBy: "owner" })).toThrow(/another decision write is in progress/);
+  });
+
+  it("re-points and restores a theme probe pin under the slot lock, each engine event committed with its write", () => {
+    const themeId = "themes.brand";
+    const themeDir = join(consumer, "agents", "designer", themeId);
+    mkdirSync(themeDir, { recursive: true });
+    const original = jsonBytes({ candidate: "primary-v1.json", sha256: sha256Hex("a") });
+    writeFileSync(join(themeDir, "pin.json"), original);
+    ownedLock(join(themeDir, ".slot-write.lock"), { pid: process.pid, host: hostname(), at: Date.now() });
+    expect(() => repointThemeProbePin(consumer, themeId, original, "b")).toThrow(/another decision write is in progress/);
+    expect(() => restoreThemeProbePin(consumer, themeId, original)).toThrow(/another decision write is in progress/);
+    expect(readFileSync(join(themeDir, "pin.json"), "utf8")).toBe(original);
+    expect(existsSync(join(root, ".clossys", "events.jsonl")), "no event without its write").toBe(false);
+    rmSync(join(themeDir, ".slot-write.lock"), { recursive: true });
+    repointThemeProbePin(consumer, themeId, original, "b");
+    expect(JSON.parse(readFileSync(join(themeDir, "pin.json"), "utf8"))).toMatchObject({ candidate: "primary-v1.json", sha256: sha256Hex("b") });
+    expect(restoreThemeProbePin(consumer, themeId, original)).toBe(true);
+    expect(existsSync(join(themeDir, ".slot-write.lock"))).toBe(false);
+    const kinds = readFileSync(join(root, ".clossys", "events.jsonl"), "utf8").trim().split("\n").map(line => (JSON.parse(line) as { kind: string }).kind);
+    expect(kinds).toEqual(["pin.probe-repoint", "pin.probe-restore"]);
   });
 
   it("replaces pin.json and slot.json by rename, leaving no staged file or lock behind", () => {

@@ -1191,18 +1191,23 @@ export function repointedThemePin(original: string, candidateText: string): stri
 /** Re-point the theme slot's pin at the probe's mutated candidate bytes. */
 export function repointThemeProbePin(consumer: string, id: string, original: string, candidateText: string): ThemeProbePin {
   const path = themeProbePath(consumer, id);
-  if (readFileSync(path, "utf8") !== original) throw new Error("theme probe refused: the pin changed since it was read");
-  const repointed = repointedThemePin(original, candidateText);
-  replaceFile(path, repointed);
-  recordEvent([path], { actor: "code:theme-probe", kind: "pin.probe-repoint", subject: `designer/${id}` });
-  return { path, original, repointed };
+  // Under the slot lock, as every pin write: the check, the write and its engine event are one transaction.
+  return slotLocked(dirname(path), () => {
+    if (readFileSync(path, "utf8") !== original) throw new Error("theme probe refused: the pin changed since it was read");
+    const repointed = repointedThemePin(original, candidateText);
+    replaceFile(path, repointed);
+    recordEvent([path], { actor: "code:theme-probe", kind: "pin.probe-repoint", subject: `designer/${id}` });
+    return { path, original, repointed };
+  });
 }
 /** Put the theme slot's original pin text back; true when the file now holds exactly those bytes. */
 export function restoreThemeProbePin(consumer: string, id: string, original: string): boolean {
   const path = themeProbePath(consumer, id);
-  replaceFile(path, original);
-  recordEvent([path], { actor: "code:theme-probe", kind: "pin.probe-restore", subject: `designer/${id}` });
-  return readFileSync(path, "utf8") === original;
+  return slotLocked(dirname(path), () => {
+    replaceFile(path, original);
+    recordEvent([path], { actor: "code:theme-probe", kind: "pin.probe-restore", subject: `designer/${id}` });
+    return readFileSync(path, "utf8") === original;
+  });
 }
 
 /** One record a citation codemod rewrites in place: the bytes it read, and the bytes it writes. */

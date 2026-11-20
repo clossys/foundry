@@ -92,6 +92,23 @@ describe("an agent step's engine changes (loop/agent-snapshot.ts engineLogIssue,
     expect(judge(before, [key(1), key(2)])).toEqual([]);
   });
 
+  it("leaves the engine lock's own state out of the step's diff: the lock, a dead recoverer's markers and staging file", () => {
+    write(1, "a");
+    const before = treeSnapshot(root, "r1");
+    agentWrite(2, "b");
+    const marker = `.clossys/engine.lock.recover-${"a".repeat(32)}`;
+    const uuid = "0f0e0d0c-0b0a-4908-8706-050403020100";
+    for (const left of [".clossys/engine.lock", marker, `${marker}.recover-${"b".repeat(32)}`, `${marker}.new-${uuid}-${uuid}`]) writeFileSync(join(root, left), "{}");
+    expect(judge(before, [key(2)])).toEqual([]);
+    // Anything else beside the lock is still judged.
+    writeFileSync(join(root, ".clossys", "engine.lock.recover-x"), "{}");
+    writeFileSync(join(root, ".clossys", "engine.locked"), "{}");
+    expect(judge(before, [key(2)])).toEqual([
+      "added .clossys/engine.lock.recover-x without reporting it (--wrote)",
+      "added .clossys/engine.locked without reporting it (--wrote)",
+    ]);
+  });
+
   it("refuses an appended event that names a file the step did not change", () => {
     write(1, "a");
     const before = treeSnapshot(root, "r1");
