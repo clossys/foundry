@@ -31,7 +31,7 @@ describe("the pinned test world", () => {
 
   it("pins every closure slot but the BLOCKED ones and the slots that read them", () => {
     const order: string[] = closure(consumer);
-    expect(order.length).toBe(122);
+    expect(order.length).toBe(121);
     expect(Object.keys(BLOCKED).every(ref => order.includes(ref))).toBe(true);
     expect([...blockedIn(consumer, order).keys()]).toEqual([...blocked.keys()]);
     expect(order.filter(ref => !pinned(ref))).toEqual(order.filter(ref => blocked.has(ref)));

@@ -1370,15 +1370,23 @@ function retireSlot(consumer: string, root: string, agent: SlotAgent, slot: stri
   const next = { ...withoutSlot(ia, slot), retired: [...history, record] };
   const issues = validateIa(next, iaFile);
   if (issues.length) return refuse("retire", issues.map(issue => issue.message).join("; "));
-  // Positions number slots across the whole agent IA: every slot after the retired one moves up, so its slot.json follows.
+  // Positions number slots across the whole agent IA: every slot after the retired one moves up, so its slot.json
+  // follows in its own format: a clossys.slot/1 ia is the position itself, a clossys.slot/2 ia the slash-path
+  // positionIa of it, rewritten and validated as slot/2 (as `ia --remove` renumbers).
   const was = slotPositions(agent, ia as unknown as IaDoc), now = slotPositions(agent, next as unknown as IaDoc);
   const renumbered: [string, string][] = [];
   for (const [id, position] of now) {
     const file = slotFile(slotDir(consumer, agent, id));
     if (!modelExists(file)) continue;
     const doc = readModelJson(file) as Record<string, unknown> & { ia?: unknown };
-    if (jsonBytes(doc.ia) === jsonBytes(position) || jsonBytes(doc.ia) !== jsonBytes(was.get(id))) continue;
-    renumbered.push([file, jsonBytes({ ...doc, ia: position })]);
+    const v2 = doc.schema === SLOT_V2_SCHEMA;
+    const want = v2 ? positionIa(id, position) : position, had = v2 ? positionIa(id, was.get(id)) : was.get(id);
+    if (jsonBytes(doc.ia) === jsonBytes(want) || jsonBytes(doc.ia) !== jsonBytes(had)) continue;
+    if (!v2) { renumbered.push([file, jsonBytes({ ...doc, ia: position })]); continue; }
+    const moved = { ...doc, ia: want } as unknown as Slot;
+    const invalid = validateSlot(moved);
+    if (invalid.length) return refuse("retire", `${agent}/${id}: ${invalid.map(issue => `${issue.path} ${issue.message}`).join("; ")}`);
+    renumbered.push([file, serializeSlot(moved)]);
   }
   const folder = isModelDir(dir);
   const moveBack = () => { if (folder && modelExists(to) && !modelExists(dir)) moveModelEntry(to, dir); dropEmptyDir(dirname(to)); };

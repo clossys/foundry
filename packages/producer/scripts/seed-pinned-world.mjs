@@ -537,6 +537,55 @@ function candidateOf(root, consumer, agent, id, doc, standard) {
   throw new Error(`no fixture generator for ${agent}/${id} (${doc.kind}, standard ${doc.standard})`);
 }
 
+// ---------------------------------------------------------------- record migrations (through the verbs)
+
+/** The retired slot and the slot that takes its place: shadcn stock ships no Link; Button's link variant covers it. */
+const RETIRE = { "components.link": { into: "components.button", reason: "duplicate: shadcn stock ships no Link component; the Button link variant covers it" } };
+
+/** The Designer slots with a slot.json, and their documents. */
+function designerSlots(consumer) {
+  const dir = join(consumer, "agents", "designer");
+  return readdirSync(dir).filter(id => !id.startsWith("_") && existsSync(join(dir, id, "slot.json"))).map(id => [id, readSlot(consumer, "designer", id)]);
+}
+
+/**
+ * The slots whose installed file a component's stock source imports (`@/components/ui/<name>`), when that source is
+ * in the consumer's engine (shadcn-aria): the installer is the slot whose contract fixture ships `ui/<name>.tsx`. A
+ * foreign-engine source (diceui is radix) is never adopted, so its imports name no use.
+ */
+function importedSlots(consumer, slots, id, doc) {
+  const file = doc.contract?.fixture?.fixtures?.file;
+  if (doc.standard !== "component" || !file) return [];
+  const row = manifest().find(each => each.registry === "shadcn-aria" && each.files.some(entry => entry.path === file));
+  if (!row) return [];
+  const text = normalizedSeedFile(consumer, refId(row), file, { manifest: { items: manifest() }, referencesDir: REFERENCES });
+  const names = [...text.matchAll(/from\s+["']@\/components\/ui\/([\w-]+)["']/g)].map(match => match[1]);
+  return [...new Set(names.flatMap(name => slots.filter(([other, each]) => other !== id && !RETIRE[other] && each.contract?.fixture?.fixtures?.file?.endsWith(`/ui/${name}.tsx`)).map(([other]) => other)))];
+}
+
+/**
+ * The base's record migrations, run through `clossys ia --uses` and `clossys retire --slot` before any slot is seeded;
+ * a migrated base passes through unchanged, so a rerun writes the same bytes.
+ * 1. Every `uses` of a RETIRE slot names the slot that replaces it; then the retired slot leaves the IA.
+ * 2. A component's `uses` lists every slot its stock source imports (R05.1 [import]: an import from a slot that
+ *    `uses` does not list is refused).
+ */
+async function migrate(w) {
+  let slots = designerSlots(w.consumer);
+  for (const [id, doc] of slots) {
+    const uses = [...new Set((doc.uses ?? []).map(use => RETIRE[use]?.into ?? use))];
+    for (const use of importedSlots(w.consumer, slots, id, doc)) if (!uses.includes(use)) uses.push(use);
+    if (uses.length === (doc.uses ?? []).length && uses.every((use, index) => use === doc.uses[index])) continue;
+    const ref = `designer/${id}`;
+    await w.run(ref, "ia", ref, "--contract", w.file(`${id}.contract.json`, doc.contract), "--uses", uses.join(","), "--at", AT);
+  }
+  slots = designerSlots(w.consumer);
+  for (const [id, { reason }] of Object.entries(RETIRE)) {
+    if (!slots.some(([each]) => each === id)) continue;
+    await w.run(`designer/${id}`, "retire", `designer/${id}`, "--slot", "--by", "agent:designer", "--reason", reason, "--at", AT);
+  }
+}
+
 // ---------------------------------------------------------------- slots the real certifier refuses
 
 /**
@@ -545,8 +594,6 @@ function candidateOf(root, consumer, agent, id, doc, standard) {
  * world is pinned everywhere else. A slot leaves this list when its standard or contract admits a candidate.
  */
 export const BLOCKED = {
-  "designer/components.dialog": "R05.1 [import] and R07.1: its normalized reference imports @/components/ui/button (components.button), which its slot.json uses does not list",
-  "designer/components.link": "R06.6 identical content: its contract fixture names the stock button file components.button ships; retire --slot is refused while 40 slot.json files list it in uses",
   "designer/components.logo": "component source.ref: the standard admits registry, composition and npm sources only; the consumer's own placeholder is an original, and a composition must name its parts (source.schema parts)",
   "designer/components.semantic-content": "component source.ref: the standard admits registry, composition and npm sources only; the consumer's own placeholder is an original, and the contract reads no slot a composition could name as a part",
   "designer/components.media-player": "ref-verbatim REF-FLAVOR: the contract fixture's reference diceui/media-player is new-york, the consumer flavor is aria-nova",
@@ -643,6 +690,7 @@ export async function seed({ from = FIXTURE, out, only, keep = false, resume } =
     if (!existsSync(join(root, ".git"))) execFileSync("git", ["init", "-q"], { cwd: root });
     if (!existsSync(join(root, "clossys", "components.json"))) await setup(root);
     const w = world(root, scratch);
+    await migrate(w);
     const all = closure(w.consumer);
     for (const ref of Object.keys(BLOCKED)) if (!all.includes(ref)) throw new Error(`BLOCKED names ${ref}, which the closure does not read`);
     const blocked = blockedIn(w.consumer, all);

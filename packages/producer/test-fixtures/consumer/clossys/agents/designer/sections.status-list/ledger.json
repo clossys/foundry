@@ -80,6 +80,25 @@
           "sha256": "3c731a2b15b8baf9b22d974b3a37c330c3559373491972bdf6983be2ec361bed"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer",
+      "verb": "retire",
+      "skill": {
+        "path": "packages/producer/actions/retire/skill.md",
+        "sha256": "a52f3873b4d4b217153a28d88cb3a21f8b5dc74ccdafb1920f0ac1626ac491ea"
+      },
+      "model": "none",
+      "tier": "none",
+      "reason": "renumbered after designer/components.link retired",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "2aaeb27055be1c4744f20025f631ec1fb7de70cbbec31ae362de8deaa8eba08b"
+        }
+      ]
     }
   ]
 }
