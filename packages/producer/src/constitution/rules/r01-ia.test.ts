@@ -8,7 +8,7 @@ import { formatReport, runConstitution } from "../run.js";
 import type { Check, ConstitutionContext, Row } from "../types.js";
 import { cleanSpec, expectCatches, NO_FOUNDRY_LEAVES, NO_HISTORY, slotDoc, writeWorkspace, type Agent, type WorkspaceSpec } from "../__fixtures__/workspace.js";
 import {
-  iaAxis, iaDepth, iaExtensionFacet, iaFanout, iaLabelUnique, iaNoConsumer, iaNoMirror, iaSharedAxis, iaView, keyOf, navIaParity, R01_IA_CHECKS, slug,
+  iaAxis, iaDepth, iaEmptyGroup, iaExtensionFacet, iaFanout, iaLabelUnique, iaNoConsumer, iaNoMirror, iaSharedAxis, iaView, keyOf, navIaParity, R01_IA_CHECKS, slug,
 } from "./r01-ia.js";
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -91,15 +91,17 @@ function navSpec(pages = NAV_PAGES, groups = ["workspace", "producer", "director
 }
 
 describe("R01 IA checks registry", () => {
-  it("registers R01.7-R01.14 building and R01.15 warn, owned by IA-C, and R01.1-R01.6 stay enforced", () => {
+  it("registers R01.7-R01.14 building and R01.15 warn, owned by IA-C, R01.16 building (U33), and R01.1-R01.6 stay enforced", () => {
     const r01 = registeredRules().find(rule => rule.id === "R01")!;
     expect(r01.status).toBe("enforced");
     expect(r01.run.map(check => [check.id, check.status])).toEqual([
       ...[1, 2, 3, 4, 5, 6].map(n => [`R01.${n}`, "enforced"]),
       ...[7, 8, 9, 10, 11, 12, 13, 14].map(n => [`R01.${n}`, "building"]),
       ["R01.15", "warn"],
+      ["R01.16", "building"],
     ]);
-    expect(r01.checks.filter(check => check.status !== "enforced").every(check => check.owner === "IA-C")).toBe(true);
+    expect(r01.checks.filter(check => check.status !== "enforced" && check.id !== "R01.16").every(check => check.owner === "IA-C")).toBe(true);
+    expect(r01.checks.find(check => check.id === "R01.16")).toEqual({ id: "R01.16", status: "building", owner: "U33" });
     for (const [id, check] of Object.entries(R01_IA_CHECKS)) expect(R01.checks[id]).toBe(check);
   });
 
@@ -423,6 +425,49 @@ describe("R01.15 IA-FANOUT (warn)", () => {
       ia.nodes.push({ id: "panels", label: "Panels", children: [{ id: "all", label: "All", slots: ["ui.panel", "ui.sheet"] }] });
       ia.layers[0].nodes.push("panels");
     })), clean())).toThrow(/silent on the broken workspace/);
+  });
+});
+
+describe("R01.16 IA-EMPTY-GROUP", () => {
+  /** Adds an L2 group that places no leaf under the agent's first L1 node. */
+  const emptyGroup = (agent: Agent) => (consumer: string) => editIa(consumer, agent, ia => { ia.nodes[0].children.push({ id: "empty", label: "Empty", slots: [] }); });
+
+  it("passes the clean workspace and flags an L2 group with no leaf, for every agent", () => {
+    expect(iaEmptyGroup(clean())).toEqual([]);
+    for (const agent of ["director", "designer", "writer", "publisher", "producer"] as const) {
+      const rows = expectCatches(iaEmptyGroup, clean(), broken(emptyGroup(agent)));
+      expect(rows.every(item => item.agent === agent && item.check === "R01.16"), agent).toBe(true);
+      expect(reasons(rows), agent).toEqual([expect.stringMatching(new RegExp(`^${agent}:\\*: L2 group [^ ]+/empty \\(Empty\\) places no leaf: fill it or drop it \\(clossys ia ${agent} --drop [^ ]+/empty\\)$`))]);
+    }
+  });
+
+  it("catches the child of an undotted node read as L0 and a dotted node with no layers alike", () => {
+    const flat = broken(consumer => editIa(consumer, "designer", ia => {
+      delete ia.layers;
+      ia.nodes = [
+        { id: "themes.colors", label: "Colors", children: [{ id: "base", label: "Base", slots: ["ui.button"] }, { id: "spare", label: "Spare", slots: [] }] },
+        { id: "studio", label: "Studio", children: [{ id: "pages", label: "Pages", slots: [] }] },
+      ];
+    }));
+    expect(reasons(iaEmptyGroup(flat))).toEqual([
+      "designer:*: L2 group themes.colors/spare (Spare) places no leaf: fill it or drop it (clossys ia designer --drop themes.colors/spare)",
+      "designer:*: L2 group studio/pages (Pages) places no leaf: fill it or drop it (clossys ia designer --drop studio/pages)",
+    ]);
+  });
+
+  it("fails the strict run on an empty L2 group and reports it, as a building row, without strict", () => {
+    const { root, consumer } = writeWorkspace(cleanSpec());
+    emptyGroup("writer")(consumer);
+    const strict = runConstitution({ root, consumer, rule: "R01", strict: true, history: () => NO_HISTORY, now: () => 0 });
+    expect(strict.ok).toBe(false);
+    expect(strict.rows).toEqual([expect.objectContaining({ check: "R01.16", agent: "writer", level: "building" })]);
+    expect(strict.rules.find(rule => rule.id === "R01")).toMatchObject({ failing: 1, building: 1 });
+    const relaxed = runConstitution({ root, consumer, rule: "R01", strict: false, history: () => NO_HISTORY, now: () => 0 });
+    expect(relaxed).toMatchObject({ ok: true, total: 1, building: 1 });
+  });
+
+  it("mutation proof: a disabled R01.16 fails the failing-first contract", () => {
+    expect(() => expectCatches(() => [], clean(), broken(emptyGroup("director")))).toThrow(/silent on the broken workspace/);
   });
 });
 
