@@ -112,6 +112,36 @@ describe("engine.side-door (engine/side-door.ts)", () => {
     expect(found()).toEqual(["packages/writer/scripts/run:1 shell shell", "scripts/githooks/pre-push:3 shell shell", "scripts/leak.sh:3 shell shell"]);
   });
 
+  it("fires on a child-process call whose argument reaches an engine or slot path through taint, or names a slot path", () => {
+    put("packages/producer/src/engine/chain.ts", "export const ENGINE_DIR = \".clossys\";\n");
+    put("packages/writer/src/spawn.ts", [
+      "import { execFileSync, execSync } from \"node:child_process\";",
+      "import { join } from \"node:path\";",
+      "import { slotDir } from \"@clossys/producer/records/slots\";",
+      "import { ENGINE_DIR } from \"../../producer/src/engine/chain.js\";",
+      "const eventsPath = (root: string) => join(root, ENGINE_DIR, \"events.jsonl\");",
+      "const ARGS = [\"-f\", ENGINE_DIR];",
+      "export const a = () => execFileSync(\"git\", [\"checkout\", \"--\", eventsPath(\"/r\")]);",
+      "export const b = (c: string) => execFileSync(\"rm\", [\"-rf\", slotDir(c, \"writer\", \"hero\")]);",
+      "export const c = () => execFileSync(\"rm\", ARGS);",
+      "export const d = () => execFileSync(\"git\", [\"status\"], { cwd: ENGINE_DIR });",
+      "export const e = () => execSync(\"cp a agents/designer/hero/slot.json\");",
+      "export const f = () => execFileSync(\"git\", [\"status\"], { cwd: \"/tmp\" });",
+    ].join("\n"));
+    expect(found()).toEqual([
+      "packages/writer/src/spawn.ts:7 exec execFileSync",
+      "packages/writer/src/spawn.ts:8 exec execFileSync",
+      "packages/writer/src/spawn.ts:9 exec execFileSync",
+      "packages/writer/src/spawn.ts:10 exec execFileSync",
+      "packages/writer/src/spawn.ts:11 exec execSync",
+    ]);
+  });
+
+  it("fires on a shell line that names a slot-record path", () => {
+    put("scripts/slot.sh", "#!/bin/sh\ncp a agents/designer/hero/slot.json\nmv x \"$ROOT/clossys/agents/writer/hero/pin.json\"\necho agents and slots\n");
+    expect(found()).toEqual(["scripts/slot.sh:2 shell shell", "scripts/slot.sh:3 shell shell"]);
+  });
+
   it("fires on writes whose path comes from an imported engine constant: named, renamed, namespace, re-exported and derived", () => {
     put("packages/producer/src/engine/chain.ts", [
       "export const ENGINE_DIR = \".clossys\";",

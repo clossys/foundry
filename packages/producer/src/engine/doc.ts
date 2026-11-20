@@ -182,7 +182,7 @@ export function engineDoc(): string {
     "",
     "## Check engine.side-door",
     "",
-    `Rule R-ENGINE-SIDE-DOOR. A static scan of ${code(SIDE_DOOR_SCOPE)} that fails on every write to ${code(".clossys/**")} or to a slot record outside the engine API that the files it reads show (what it reads and cannot see is stated below). No allowlist and no baseline. Excluded: ${SIDE_DOOR_EXCLUDED}`,
+    `Rule R-ENGINE-SIDE-DOOR. A static scan of ${code(SIDE_DOOR_SCOPE)} for writes to ${code(".clossys/**")} or to a slot record outside the engine API. It fails on every finding of the rules stated below. No allowlist and no baseline. Excluded: ${SIDE_DOOR_EXCLUDED}`,
     "",
     SIDE_DOOR_READS,
     "",
