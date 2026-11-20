@@ -14,9 +14,11 @@
  * 4. render: the publication's latest build must hold an `index.html` for every route the scenario names, holding
  *    every pinned string and marker it names, and a second build of the same pins must name the same digest.
  *
- * The only stand-in is network isolation: the shadcn CLI's one base-colour fetch is answered by a loopback stub
- * (`REGISTRY_URL`); the items it installs are the scenario's own inline registry files. Third-party npm packages come
- * from the npm registry or cache as any consumer's install would.
+ * There are two stand-ins. Agent judgement is scripted: the shipped candidate files, the fixed verdicts and the three
+ * fixed design directions, critique scores hard-coded to 4 under the model `e2e-fixture-critic`, and a critique render
+ * that is a copy of the candidate's bytes, not a visual render. And network isolation: the shadcn CLI's one base-colour
+ * fetch is answered by a loopback stub (`REGISTRY_URL`); the items it installs are the scenario's own inline registry
+ * files. Third-party npm packages come from the npm registry or cache as any consumer's install would.
  *
  * `--scenario <file>` runs another scenario: `{ "base": "shipped", "without": [<step id>...] }` is the shipped one
  * minus those steps; `<craft step id>.pin` drops only that craft's pin verb (scripts/rules/fixtures/R-E2E-CONSUMER drops
@@ -393,7 +395,7 @@ type Clossys = (id: string, argv: readonly string[], expect?: number) => Promise
 
 /**
  * The P2 create sequence of one slot, every write a public verb: options, a create verdict naming the gap, the brief,
- * three directions that differ on one axis, the render stage, a critique packet over the committed candidate's render,
+ * three directions that differ on one axis, the render stage, a critique packet whose render is a copy of the candidate's bytes,
  * the critique record carrying that packet's manifest, the submit at the contract's rung, and the CHOOSE pin (`pin`, when
  * the slot pins per record, names the `<ref>#<record>` the pin verb takes; `unpinned` skips it).
  * The files it hands the verbs (verdict, diverge, critique) are inputs under the consumer's `e2e/` folder, never records.
