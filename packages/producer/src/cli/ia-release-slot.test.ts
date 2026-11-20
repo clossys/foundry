@@ -130,4 +130,63 @@ describe("clossys ia publisher/release.<pub> --kind release creates the release 
     expect(ready.exitCode, ready.message).toBe(0);
     expect(readFileSync(join(world.root, SLOT, "slot.json"), "utf8")).toContain("\"kind\": \"release\"");
   });
+
+  it("rewrites a placed release slot's contract and standard; only a second create is refused (review B1)", async () => {
+    const world = make();
+    const now = clock();
+    expect((await create(world)).exitCode).toBe(0);
+    const rewrite = (value: unknown) => runCli(["ia", "publisher/release.site", "--contract", contract(world, value), "--at", AT, "--root", world.root], world.root);
+    // A contract rewrite that adds a gates entry is written (still kind release), and clossys release reads it: an
+    // unknown gate fails closed.
+    const unknown = { ...CONTRACT, gates: ["release.made-up"] };
+    const added = await rewrite(unknown);
+    expect(added.exitCode, added.message).toBe(0);
+    expect(json(world, `${SLOT}/slot.json`)).toMatchObject({ schema: "clossys.slot/2", kind: "release", standard: "release", contract: unknown });
+    expect((await release(world, "--build", now)).exitCode).toBe(0);
+    expect((await release(world, "--manifest", now)).exitCode).toBe(0);
+    const failed = await release(world, "--gates", now);
+    expect(failed.exitCode).toBe(1);
+    expect(failed.message).toContain("release.made-up");
+    // Rewritten again with a gate the Producer runs, then the standard named alone: the release runs clean on it.
+    const known = { ...CONTRACT, gates: ["slots.stale"] };
+    const fixed = await rewrite(known);
+    expect(fixed.exitCode, fixed.message).toBe(0);
+    const ledger = world.read(`${SLOT}/ledger.json`);
+    const standard = await runCli(["ia", "publisher/release.site", "--standard", "release", "--at", AT, "--root", world.root], world.root);
+    expect(standard.exitCode, standard.message).toBe(0);
+    expect(world.read(`${SLOT}/ledger.json`)).not.toBe(ledger);
+    const doc = json(world, `${SLOT}/slot.json`);
+    expect(doc).toMatchObject({ schema: "clossys.slot/2", kind: "release", standard: "release", contract: known });
+    expect(slotReadIssues(doc, `${SLOT}/slot.json`)).toEqual([]);
+    for (const flag of ["--build", "--manifest", "--gates"]) {
+      const run = await release(world, flag, now);
+      expect(run.exitCode, `${flag}: ${run.message}`).toBe(0);
+    }
+    // A second create is still refused, by --kind release or by --under, and writes nothing.
+    const before = world.read(`${SLOT}/slot.json`), events = world.read(`${SLOT}/ledger.json`);
+    for (const again of [await ia(world, "publisher/release.site", "--kind", "release"), await ia(world, "publisher/release.site", "--under", "releases/site")]) {
+      expect(again.exitCode).toBe(1);
+      expect(again.message).toContain("publisher/release.site already exists: a release slot is created once");
+    }
+    expect(world.read(`${SLOT}/slot.json`)).toBe(before);
+    expect(world.read(`${SLOT}/ledger.json`)).toBe(events);
+  });
+
+  it("refuses a --standard other than release on a release slot, on create and on a rewrite (review N1)", async () => {
+    const world = make();
+    const made = await ia(world, "publisher/release.site", "--kind", "release", "--standard", "publication", "--under", "releases/site");
+    expect(made.exitCode).toBe(1);
+    expect(made.message).toContain("ia refused: publisher/release.site is a release slot: it is judged by --standard release, not publication");
+    expect(existsSync(join(world.root, SLOT))).toBe(false);
+    expect((await create(world)).exitCode).toBe(0);
+    const before = world.read(`${SLOT}/slot.json`), ledger = world.read(`${SLOT}/ledger.json`);
+    const alone = await runCli(["ia", "publisher/release.site", "--standard", "publication", "--at", AT, "--root", world.root], world.root);
+    expect(alone.exitCode).toBe(1);
+    expect(alone.message).toContain("is a release slot: it is judged by --standard release, not publication");
+    const withContract = await ia(world, "publisher/release.site", "--standard", "page");
+    expect(withContract.exitCode).toBe(1);
+    expect(withContract.message).toContain("is a release slot: it is judged by --standard release, not page");
+    expect(world.read(`${SLOT}/slot.json`)).toBe(before);
+    expect(world.read(`${SLOT}/ledger.json`)).toBe(ledger);
+  });
 });

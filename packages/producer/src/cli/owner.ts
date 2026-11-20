@@ -603,11 +603,12 @@ export async function runIaCli(argv: readonly string[], cwd: string, _options: {
     if (issues.length) return refuse("ia", issues.map(issue => issue.message).join("; "));
     return commitIa(consumer, root, [[iaFile, jsonBytes(next)], ...follow.writes], dry, `remove ${target} from ${agent} ia.json`, followLines(follow), `ia: removed ${target} from ${agent} ia.json`, iaWho(owner.ref, eventAt));
   }
-  // REL-SLOT: a release slot is created here once, for an existing publication, as clossys.slot/2 kind release.
-  const release = releasePlacement(consumer, root, agent, slot, one(flags, "--kind"), modelExists(slotFile(dir)));
-  if (release && "error" in release) return refuse("ia", release.error);
   const standardId = one(flags, "--standard");
   if (standardId !== undefined && !STANDARD_ID.test(standardId)) throw new CliUsageError(`--standard must be a standard id such as element.button, got ${standardId}\n${IA_USAGE}`);
+  // REL-SLOT: a release slot is created here once, for an existing publication, as clossys.slot/2 kind release; a placed
+  // release slot keeps its contract and standard rewrites (undefined: the write below runs as for any slot).
+  const release = releasePlacement(consumer, root, agent, slot, { kind: one(flags, "--kind"), under: flags.values.has("--under"), standard: standardId }, modelExists(slotFile(dir)));
+  if (release && "error" in release) return refuse("ia", release.error);
   // --standard alone keeps the slot's written contract; otherwise the contract file is required.
   const fromRequest = request !== undefined && !flags.values.has("--contract");
   const contractFile = (standardId !== undefined && !flags.values.has("--contract")) || fromRequest ? undefined : need(flags, "--contract", IA_USAGE);
@@ -730,6 +731,8 @@ export async function runIaCli(argv: readonly string[], cwd: string, _options: {
 
 /** The slot/1 kind family a release slot is judged as before it is written (records/request.ts KIND_FAMILY release). */
 const RELEASE_FAMILY: SlotKind = "publication";
+/** The one standard a release slot is judged by (packages/publisher/standards/release/). */
+const RELEASE_STANDARD = "release";
 
 /**
  * REL-SLOT: the release slot `publisher/release.<pub>` that `clossys release <pub>` reads (release/paths.ts). It applies
@@ -737,14 +740,22 @@ const RELEASE_FAMILY: SlotKind = "publication";
  * slot whatever kind it declares): undefined for every other slot. The slot is created once, by the Publisher, for a
  * publication that exists (a placed `publisher/publication.<pub>` slot that is not retired, or a publisher ia.json
  * publication) and whose release slot id it is. Its candidates are the manifests the release engine writes.
+ * A release slot is judged by the release standard only. Once its slot.json exists, a second create (`--kind release`
+ * or `--under`) is refused; a contract or standard rewrite returns undefined and is written as for any placed slot.
  */
-function releasePlacement(consumer: string, root: string, agent: SlotAgent, slot: string, givenKind: string | undefined, exists: boolean): { publication: string } | { error: string } | undefined {
+function releasePlacement(consumer: string, root: string, agent: SlotAgent, slot: string, given: { readonly kind: string | undefined; readonly under: boolean; readonly standard: string | undefined }, exists: boolean): { publication: string } | { error: string } | undefined {
   const releaseId = RELEASE_SLOT.test(slot);
+  const givenKind = given.kind;
   if (givenKind !== "release" && !(agent === "publisher" && releaseId)) return undefined;
   const target = `${agent}/${slot}`;
   if (agent !== "publisher") return { error: `${target}: a release slot is a Publisher slot, publisher/release.<publication>; ${agent} holds no release slot` };
   if (!releaseId) return { error: `${target}: a release slot id is release.<publication>, not ${slot}` };
   if (givenKind !== undefined && givenKind !== "release") return { error: `${target} is a release slot id: it takes --kind release, not ${givenKind}` };
+  if (given.standard !== undefined && given.standard !== RELEASE_STANDARD) return { error: `${target} is a release slot: it is judged by --standard ${RELEASE_STANDARD}, not ${given.standard}` };
+  if (exists) {
+    if (givenKind !== undefined || given.under) return { error: `${target} already exists: a release slot is created once (its manifests are written by clossys release ${publicationOf(root, slot)} --manifest; --contract or --standard alone rewrites it)` };
+    return undefined;
+  }
   const publication = publicationOf(root, slot);
   const listed = listedPublications(root).includes(publication);
   const publicationDir = slotDir(consumer, "publisher", `publication.${publication}`);
@@ -755,7 +766,6 @@ function releasePlacement(consumer: string, root: string, agent: SlotAgent, slot
   if (!listed && !placed) return { error: `${target}: no publication ${publication} exists (place publisher/publication.${publication} first); a release slot belongs to an existing publication` };
   const named = releaseSlotId(root, publication);
   if (named !== slot) return { error: `${target}: publication ${publication} names its release slot publisher/${named} in publisher ia.json, not ${slot}` };
-  if (exists) return { error: `${target} already exists: a release slot is created once (its manifests are written by clossys release ${publication} --manifest)` };
   return { publication };
 }
 

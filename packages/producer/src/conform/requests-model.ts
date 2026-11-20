@@ -23,7 +23,7 @@ import { jsonBytes, slotPositions, type IaDoc, type SlotAgent } from "../records
 import { positionIa, writeSlot } from "../records/slot.js";
 import { slotReadIssues } from "../records/slot-current.js";
 import { slotFromV1, targetKind, type SlotV1 } from "../migrate/slot-1-to-2.js";
-import { appendRetireCandidate, appendRetireSlot, PRODUCER_INTERNAL_WRITERS, writeCandidate, writeConfirm, writeNotNeeded, writePin } from "../records/slot-write.js";
+import { appendRetireCandidate, appendRetireSlot, PRODUCER_INTERNAL_WRITERS, writeCandidate, writeConfirm, writeNotNeeded, writePin, writeReissue } from "../records/slot-write.js";
 import { fixCheck, requesterCheck } from "../queue/requester-check.js";
 import type { Slot, SlotRequest } from "../records/types.js";
 
@@ -489,6 +489,8 @@ export function seatGuardIssues(repo: string, cli: string = join(repo, "packages
       ["appendRetireCandidate --by owner", () => appendRetireCandidate(consumer, "designer", PROBE_ID, { name: "button-v2.json", sha256: "0".repeat(64), reason: "superseded: seat probe", by: "owner", at: PROBE_AT })],
       ["appendRetireSlot --by planner", () => appendRetireSlot(consumer, "designer", PROBE_ID, { reason: "not-needed: seat probe", by: "planner", at: PROBE_AT })],
       ["writeCandidate --by agent:judge", () => writeCandidate(consumer, "designer", PROBE_ID, "button", { name: "button" }, { provenance: { by: "agent:judge" }, at: PROBE_AT })],
+      // The reissue verb judges the seat before it calls the writer: this row keeps the writer's own guard live.
+      ["writeReissue --by agent:writer", () => writeReissue(consumer, "designer", PROBE_ID, { old: "button-v1.json", oldSha256: "0".repeat(64), content: { name: "button" }, rung: "adopt", by: "agent:writer", at: PROBE_AT })],
     ];
     for (const [what, call] of writers) {
       const before = filesOf(consumer);
