@@ -173,12 +173,12 @@ describe("records/standards", () => {
       expect(cardContractIssues(undefined)).toEqual([]);
     });
 
-    it("lists the 28 card standards of section 5a", () => {
+    it("lists the 29 card standards of section 5a", () => {
       const ids = Object.entries(CARD_STANDARDS).flatMap(([agent, list]) => list.map(id => `${agent}/${id}`));
-      expect(ids).toHaveLength(28);
-      expect(new Set(ids).size).toBe(28);
+      expect(ids).toHaveLength(29);
+      expect(new Set(ids).size).toBe(29);
       for (const agent of Object.keys(CARD_STANDARDS)) expect(STANDARD_AGENTS).toContain(agent);
-      expect(ids).toEqual(expect.arrayContaining(["producer/section.studio", "producer/seat", "publisher/page", "designer/token.color", "writer/string"]));
+      expect(ids).toEqual(expect.arrayContaining(["producer/section.studio", "producer/seat", "publisher/page", "publisher/release", "designer/token.color", "writer/string"]));
     });
 
     it("R18.13 coverage reports every gap and clears a valid contract", () => {
