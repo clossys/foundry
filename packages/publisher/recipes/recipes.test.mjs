@@ -39,9 +39,9 @@ const rules = issues => issues.map(item => item.rule);
 
 /** Craft recipes run the 5b stages (rung create, at least three axes); plumb recipes run a plumb action's clossys verbs only. */
 const CRAFT_RECIPE_IDS = ["assemble.page"];
-const PLUMB_RECIPE_IDS = [];
+const PLUMB_RECIPE_IDS = ["release"];
 const RECIPE_IDS = [...CRAFT_RECIPE_IDS, ...PLUMB_RECIPE_IDS].sort();
-const STANDARD_COUNT = 2;
+const STANDARD_COUNT = 3;
 
 /** The faults of a plumb recipe's craft.md: a model stage, a stage not marked deterministic, a command that is not a clossys verb. */
 function plumbCraftFaults(text) {
@@ -147,6 +147,17 @@ describe("a plumb recipe's craft.md runs clossys verbs only, with no model stage
       assert.doesNotMatch(text, /\.\.\/|packages\/producer\/src/, `${id} names no judge source`);
     });
   }
+  it("release: builds, writes the manifest, runs the gates, then checks the release slot, in that order", () => {
+    const text = readFileSync(join(HERE, "release", "craft.md"), "utf8");
+    const commands = [...text.matchAll(/^```[^\n]*\n([\s\S]*?)^```/gm)].flatMap(block => block[1].split("\n").map(line => line.trim()).filter(Boolean));
+    assert.deepEqual(commands, [
+      "clossys release <pub> --build",
+      "clossys release <pub> --manifest",
+      "clossys release <pub> --gates",
+      "clossys check --constitution --slot publisher/release.<pub>",
+    ]);
+    assert.doesNotMatch(text, /--ready\b/, "the owner writes the ready-pin, never the recipe");
+  });
 });
 
 describe("craft.md runs the fixed 5b stages with a check at each", () => {

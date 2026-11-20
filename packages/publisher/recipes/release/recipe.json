@@ -1,0 +1,10 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "release",
+  "produces": [
+    "release"
+  ],
+  "rung": "plumb",
+  "axes": [],
+  "action": "publisher.release"
+}
