@@ -17,6 +17,7 @@ import type { LedgerEntry } from "../records/types.js";
 import { closeWork, raiseWork } from "../records/request.js";
 import { cliActor } from "../records/pin.js";
 import { writeTargetPin } from "../records/pin-map.js";
+import { candidateCodec } from "../records/candidate-codec.js";
 import { latestBuild } from "./build.js";
 import { RELEASE_GATES } from "./gates.js";
 import { latestManifest } from "./manifest.js";
@@ -410,9 +411,14 @@ describe("slots.stale on the release inputs (U8a)", () => {
 
   it("fails a pin on another candidate with the same bytes as a judged one (the verdict binds the candidate name)", async () => {
     const world = make();
-    const judged = world.read("clossys/agents/designer/sections.hero/candidates/hero-v1.json");
-    const name = world.handPin("designer/sections.hero", 2, JSON.parse(judged));
-    expect(world.read(`clossys/agents/designer/sections.hero/candidates/${name}`)).toBe(judged);
+    // The candidate as its rules read it is copied (its view: the item with its source), not the headered file:
+    // each candidate's header names its own file, so the copy's content bytes equal the judged one's.
+    const judged = candidateCodec.parse("hero-v1.json", world.read("clossys/agents/designer/sections.hero/candidates/hero-v1.json"));
+    const name = world.handPin("designer/sections.hero", 2, JSON.parse(judged.view));
+    const copied = candidateCodec.parse(name, world.read(`clossys/agents/designer/sections.hero/candidates/${name}`));
+    expect(copied.header).toBeDefined();
+    expect(copied.content).toBe(judged.content);
+    expect(copied.view).toBe(judged.view);
     const gates = await release(world, "--gates");
     expect(gates.exitCode).toBe(1);
     expect(stale(gates).find(row => row.subject === "designer/sections.hero")?.detail).toMatch(/^pinned hero-v2\.json is a legacy pin with no recorded pinSet or verdict/);
