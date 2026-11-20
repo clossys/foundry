@@ -960,7 +960,9 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     const pinKey = `clossys/agents/${slot}/pin.json`;
     const noPin = { ...after }; delete noPin[pinKey];
     expect(judge(clearing.before, noPin, pick)).toContain(`removed ${own}`);
-    expect(judge({ ...clearing.before, [pinKey]: after[pinKey]! }, after, pick)).toEqual([`removed ${own}`]);
+    // A step that left the pin as it was logged no pin event either: the engine log and index are as they are now too.
+    const unlogged = { [".clossys/events.jsonl"]: after[".clossys/events.jsonl"]!, [".clossys/index.json"]: after[".clossys/index.json"]! };
+    expect(judge({ ...clearing.before, ...unlogged, [pinKey]: after[pinKey]! }, after, pick)).toEqual([`removed ${own}`]);
     // Refused: a non-pick verb removing its own re-verdict (refine-brief of loop.create, or a cascade step).
     const create = standardOf("loop.create");
     if (!create.ok) throw new Error(create.reason);

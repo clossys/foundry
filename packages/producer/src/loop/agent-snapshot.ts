@@ -15,11 +15,19 @@
  * - every reported file then goes through the write allowlist (runner.ts undeclaredWrites), with the snapshot so a
  *   queue entry or candidate that was there before the step is refused (create-only).
  *
+ * - the engine's event log and index (`.clossys/events.jsonl`, `.clossys/index.json`) change as a consequence of the
+ *   step's verbs, never by the step's own hand: the log only by a pure append that verifies on the chain and whose new
+ *   events name only files this step changed (or the run's own state file), the index only to a rebuild of the log
+ *   (`engineLogIssue`, `engineIndexIssue`; engine.md "The one writer"). A removal of either is refused.
+ *
  * The run's own state file, its lock and its temp file are the only paths left out: the runner writes them itself.
  * A run waiting on an agent step whose snapshot is missing or does not hash to its digest stops (fail closed).
  */
+import { createHash } from "node:crypto";
 import { lstatSync, readdirSync, readFileSync, readlinkSync } from "node:fs";
 import { join, relative, sep } from "node:path";
+import { EVENTS_FILE, INDEX_FILE, verifyChain } from "../engine/chain.js";
+import { indexAgreement } from "../engine/derived.js";
 import { sha256Hex } from "../records/hash.js";
 import { LEDGER_FILE, LEDGER_SCHEMA, eventIssues } from "../records/ledger.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
@@ -140,6 +148,56 @@ export function ledgerAppendIssue(root: string, key: string, beforeMark: string 
   return undefined;
 }
 
+/** The run's own state file as a snapshot key: left out of the snapshot, and the one input a run event may name unchanged. */
+export const ownStateKey = (runId: string): string => `.clossys/runs/loops/${runId}.json`;
+
+/**
+ * Why a change to the engine's event log is not the append the step's verbs make; undefined when it is: the log is a
+ * regular file with one link that verifies on its chain; the log before the step (its sha256 in `beforeMark`; none when
+ * it was absent) is a whole-line prefix of it, so no prior event changed or went; at least one event was appended; and
+ * every appended event's inputs name only files this step changed (`changed`) or the run's own state file. An event
+ * naming a file the step left as it was is a claim no write backs, and is refused.
+ */
+export function engineLogIssue(root: string, beforeMark: string | undefined, afterMark: string | undefined, changed: ReadonlySet<string>, stepId: string, runId?: string): string | undefined {
+  const shown = EVENTS_FILE;
+  if (!/^file:[0-9a-f]{64}:1$/.test(afterMark ?? "")) return `${shown}: is not a regular file with one link`;
+  let bytes: Buffer;
+  try { bytes = readFileSync(join(root, ...EVENTS_FILE.split("/"))); } catch { return `${shown}: cannot be read`; }
+  if (sha256Hex(bytes) !== markSha(afterMark)) return `${shown}: changed while it was judged`;
+  const text = bytes.toString("utf8");
+  const torn = text !== "" && !text.endsWith("\n");
+  const lines = text === "" ? [] : (torn ? text : text.slice(0, -1)).split("\n");
+  const report = verifyChain(root, { lines, torn });
+  if (!report.ok) return `${shown}: does not verify (${report.issues[0]!.message})`;
+  let kept: number | undefined;
+  if (beforeMark === undefined) kept = 0;
+  else {
+    const was = markSha(beforeMark);
+    const hash = createHash("sha256");
+    if (was === hash.copy().digest("hex")) kept = 0;
+    else for (const [index, line] of lines.entries()) {
+      hash.update(`${line}\n`);
+      if (hash.copy().digest("hex") === was) { kept = index + 1; break; }
+    }
+  }
+  if (kept === undefined) return `${shown}: the log before step ${stepId} is not a prefix of it (an event was changed or removed)`;
+  const appended = report.events.slice(kept);
+  if (!appended.length) return `${shown}: changed with no event appended`;
+  const own = runId === undefined ? undefined : ownStateKey(runId);
+  for (const event of appended) {
+    const unbacked = event.inputs.find(input => !changed.has(input.path) && input.path !== own);
+    if (unbacked) return `${shown} event seq ${event.seq} (${event.kind} ${event.subject}): names ${unbacked.path}, which step ${stepId} did not change`;
+  }
+  return undefined;
+}
+
+/** Why the engine index after the step is not the rebuild of the log and the records; undefined when it is. */
+export function engineIndexIssue(root: string, afterMark: string | undefined): string | undefined {
+  if (!/^file:[0-9a-f]{64}:1$/.test(afterMark ?? "")) return `${INDEX_FILE}: is not a regular file with one link`;
+  const agreement = indexAgreement(root);
+  return agreement.agrees ? undefined : `${INDEX_FILE}: is not the rebuild of the log (${agreement.diffs[0] ?? "unreadable"})`;
+}
+
 /** The run slot's own ledger, as a snapshot key. */
 export const ownLedgerKey = (subject: { agent: string; slotId: string }): string => `clossys/agents/${subject.agent}/${subject.slotId}/${LEDGER_FILE}`;
 
@@ -172,13 +230,17 @@ export interface SnapshotJudgement {
 /**
  * The diff of an agent step: every removed file (the standard pick's own cascade re-verdict aside, `pickClearsCascade`),
  * every changed or added file the step did not report (the own slot's ledger aside, judged by `ledgerAppendIssue`), and
- * every changed symlink or non-regular file. `standard` is the Producer loop the consumer runs now for the run's loop.
+ * every changed symlink or non-regular file. The engine's log and index are judged by `engineLogIssue` and
+ * `engineIndexIssue`, never by `reported`. `standard` is the Producer loop the consumer runs now for the run's loop;
+ * `runId` names the run whose own state file its run events may name.
  */
-export function judgeSnapshot(root: string, before: TreeFiles, after: TreeFiles, reported: ReadonlySet<string>, step: Pick<LoopStep, "id" | "decider" | "cli">, agent: string, subject: { agent: string; slotId: string } | undefined, standard?: LoopVersion): SnapshotJudgement {
+export function judgeSnapshot(root: string, before: TreeFiles, after: TreeFiles, reported: ReadonlySet<string>, step: Pick<LoopStep, "id" | "decider" | "cli">, agent: string, subject: { agent: string; slotId: string } | undefined, standard?: LoopVersion, runId?: string): SnapshotJudgement {
   const issues: string[] = [], appended: string[] = [];
   const ledger = subject && subject.agent === agent ? ownLedgerKey(subject) : undefined;
   const cascade = subject && subject.agent === agent ? ownCascadeKey(subject) : undefined;
-  for (const key of [...new Set([...Object.keys(before), ...Object.keys(after)])].sort()) {
+  const keys = [...new Set([...Object.keys(before), ...Object.keys(after)])].sort();
+  const changed = new Set(keys.filter(key => before[key] !== after[key] && key !== EVENTS_FILE && key !== INDEX_FILE));
+  for (const key of keys) {
     const was = before[key], now = after[key];
     if (was === now) continue;
     const shown = displayPath(key);
@@ -187,6 +249,16 @@ export function judgeSnapshot(root: string, before: TreeFiles, after: TreeFiles,
       issues.push(`removed ${shown}`); continue;
     }
     if (!now.startsWith("file:")) { issues.push(`${was === undefined ? "added" : "changed"} ${shown}, which is ${now.startsWith("link:") ? "a symlink" : "not a regular file"}`); continue; }
+    if (key === EVENTS_FILE) {
+      const why = engineLogIssue(root, was, now, changed, step.id, runId);
+      if (why !== undefined) issues.push(`changed ${why}`);
+      continue;
+    }
+    if (key === INDEX_FILE) {
+      const why = engineIndexIssue(root, now);
+      if (why !== undefined) issues.push(`changed ${why}`);
+      continue;
+    }
     if (key === ledger) {
       const why = ledgerAppendIssue(root, key, was, now, step, agent, subject!.slotId);
       if (why !== undefined) issues.push(`changed ${why}`); else appended.push(key);

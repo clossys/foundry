@@ -107,6 +107,12 @@ const consumerRoot = (dir: string) => statSync(join(dir, "clossys", "clossys.con
 /** Slot integrity is enforced in every check invocation, alongside requested checks. */
 export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
   const start = resolve(cwd, args.root ?? ".");
+  // engine.side-door scans a foundry checkout's source, not a workspace: --root is the checkout.
+  if (args.sideDoor) {
+    const { formatSideDoor, sideDoorFindings } = await import("../engine/side-door.js");
+    const findings = sideDoorFindings(start);
+    return { verb: "check", root: start, check: true, exitCode: findings.length ? 1 : 0, message: formatSideDoor(findings), output: { check: "engine.side-door", ok: findings.length === 0, findings } };
+  }
   let root = start;
   let consumer = start;
   if (hasModelRoot(start)) {
@@ -117,6 +123,11 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
     consumer = join(root, "clossys");
   }
   if (args.constitution) return runConstitutionCheck(args, root, consumer);
+  if (args.engine) {
+    const { formatEngineCheck, runEngineCheck } = await import("../engine/check.js");
+    const report = runEngineCheck(root);
+    return { verb: "check", root, check: true, exitCode: report.ok ? 0 : 1, message: formatEngineCheck(report), output: report };
+  }
   const slots = await runSlotResolve(consumer);
   const page = args.pages !== undefined ? await runPageCheck(args, cwd) : undefined;
   const suites = args.suites || (page && consumerRoot(start))
