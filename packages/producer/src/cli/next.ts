@@ -65,7 +65,8 @@ export const NEXT_USAGE = "Usage: clossys next [--json] [--root <dir>]\n"
   + "  create (for the latest options packet's inputsHash). The submit refuses on any finding of a constitution check whose\n"
   + "  rules.json guard lists submit, on the new file (absolute: findings the slot already had count too).\n"
   + "  --stage: one P2 craft stage (section 5b) as a craft:<stage> slot-ledger event, in order brief, diverge, render, critique,\n"
-  + "  then at most 2 refine rounds; diverge takes --file with 3 to 4 {id, idea, axes} directions (cap 4). A Producer seat\n"
+  + "  then at most 2 refine rounds; diverge takes --file with 3 to 4 {id, idea, axes} directions (cap 4). Refused under a\n"
+  + "  plumb recipe (R15.7: its plumb action computes the candidate, so no craft stage is recorded). A Producer seat\n"
   + "  slot (producer/seat.<step>) crafts under the seats action's skill; clossys seat writes the seat.";
 
 const TIERS = ["low", "mid", "high"] as const;
@@ -329,8 +330,8 @@ export function p2Refusal(slotDir: string, agent: string, ladder: CandidateLadde
  * `clossys next <agent>/<slot> --stage <stage> ...` (also `clossys craft <stage> <agent>/<slot> ...`,
  * cli/craft.ts): one P2 craft stage (section 5b) as a `craft:<stage>` slot-ledger event through the
  * writer, which refuses a stage out of order (brief, diverge, render, critique, then at most 2
- * refine rounds), a diverge outside 3 to 4 directions and a diverge whose directions share a value
- * on an axis. The brief is assembled here (cli/craft-brief.ts). Craft runs only on a P2 slot: its
+ * refine rounds), any stage under a plumb recipe (R15.7, the judge's predicate), a diverge outside
+ * 3 to 4 directions and a diverge whose directions share a value on an axis. The brief is assembled here (cli/craft-brief.ts). Craft runs only on a P2 slot: its
  * latest verdict is create.
  */
 export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT): Promise<CliResult> {

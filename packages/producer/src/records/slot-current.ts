@@ -36,6 +36,25 @@ const FAMILY: Readonly<Partial<Record<TargetSlotKind, SlotKind>>> = {
 };
 /** The reader's kind family of a current kind (`copy` is `strings`), or the value itself when it names none. */
 export const slotFamily = (kind: unknown): unknown => typeof kind === "string" ? FAMILY[kind as TargetSlotKind] ?? kind : kind;
+
+/** A release slot id, `release.<publication>` (release/paths.ts RELEASE_SLOT, which records cannot import). */
+const RELEASE_SLOT_ID = /^release\.[a-z0-9][a-z0-9-]*$/;
+/**
+ * True for a release slot: a Publisher clossys.slot/2 slot of target kind `release`, or one named `release.<pub>` whatever
+ * kind it declares. A release slot holds the manifests `clossys release <pub> --manifest` writes, so the publication
+ * family's record rules never make a page/1 or publication/1 record fit there.
+ */
+export const isReleaseSlot = (agent: string, id: string, kind: unknown): boolean => agent === "publisher" && (kind === "release" || RELEASE_SLOT_ID.test(id));
+
+/** True when candidate bytes are a Publisher page/1 or publication/1 record, bare or as a clossys.candidate/1 content. */
+function publisherRecord(name: string, bytes: string): boolean {
+  if (!name.endsWith(".json")) return false;
+  try {
+    const doc = JSON.parse(bytes) as unknown;
+    const record = object(doc) && object(doc.content) ? doc.content : doc;
+    return object(record) && (record.schema === PAGE_SCHEMA || record.schema === PUBLICATION_SCHEMA);
+  } catch { return false; }
+}
 /** The current kinds each slot-model agent holds (each content agent holds its own loop slots, loop/agent-loops.ts). */
 export const CURRENT_AGENT_KINDS: Readonly<Record<ModelAgent, readonly TargetSlotKind[]>> = {
   director: ["brief", "loop"],
@@ -370,6 +389,10 @@ function targetIssues(kind: Exclude<SlotKind, "seat">, name: string, bytes: stri
  * queue, ledger) have no kind rules beyond the header.
  */
 export function candidateIssues(read: SlotRead, agent: ModelAgent, id: string, name: string, bytes: string, path = name): SlotModelIssue[] {
+  // A release slot holds the release manifest, never a Publisher page or publication record, headered or bare.
+  if (read.current && isReleaseSlot(agent, id, read.current.kind) && publisherRecord(name, bytes)) {
+    return [{ code: "candidate-invalid", path, message: `${agent}/${id} is a release slot: it holds the manifest clossys release <pub> --manifest writes, not a page or publication record` }];
+  }
   if (!read.current || pageRecord(agent, name, bytes)) return validateCandidate(read.doc.kind, id, name, bytes, path);
   if (!parseCandidateName(name)) return [{ code: "candidate-name", path, message: "candidate file name must be <name>-v<n>.<ext>" }];
   const issues: SlotModelIssue[] = candidateHeaderIssues(name, bytes, { agent: agent as AgentId, slotId: id as SlotId }).map(message => ({ code: "candidate-invalid", path, message }));

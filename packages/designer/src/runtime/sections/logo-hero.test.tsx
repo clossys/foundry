@@ -31,7 +31,7 @@ describe("logo-only public hero", () => {
     expect(renderToStaticMarkup(<LogoHero mark={mark.src} name={mark.name} />)).toContain('aria-label=');
   });
   it("is a registered draft section with a block id, package fill and runtime renderer", () => {
-    expect(BLOCK_ENTRIES.find(row => row.id === "say.logo-hero")).toMatchObject({ export: "LogoHero", sectionLeaf: "sections.logo-hero", lifecycle: "draft" });
+    expect(BLOCK_ENTRIES.find(row => row.id === "say.logo-hero")).toMatchObject({ export: "LogoHero", sectionLeaf: "sections.hero", lifecycle: "draft" });
     expect(loadSectionRegistry().slots.find(row => row.id === renderer.leaf)).toMatchObject({ status: "draft", contract: { surface: "site", passageSchema: "passages.logo-hero" } });
     expect(FOUNDRY_SECTION_MAP["logo-hero"]).toMatchObject({ export: "LogoHero", slotMap: { mark: "./blocks#LogoHero.mark", name: "./blocks#LogoHero.name" } });
     expect(renderer.sample(specimenDataset)).toEqual({ mark: mark.src, name: mark.name });

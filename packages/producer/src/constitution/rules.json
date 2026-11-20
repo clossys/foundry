@@ -276,7 +276,10 @@
         ],
         "fix": "pin only a certified candidate: fix and resubmit it, or pin a certified option",
         "enforcedFor": [
-          "director"
+          "director",
+          "designer",
+          "writer",
+          "publisher"
         ]
       },
       {
