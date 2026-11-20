@@ -1,6 +1,6 @@
 import type { Catalog, CatalogTree, TokenEntry, TokenGroupMap } from "./types.js";
 
-/** Token display tree: 6 L1 groups (the Tailwind namespaces), 31 L2 groups. */
+/** Token display tree: 6 L1 groups (the Tailwind namespaces), 32 L2 groups. */
 export const TOKEN_GROUPS: CatalogTree<TokenGroupMap> = [
   {
     id: "color",
@@ -10,6 +10,7 @@ export const TOKEN_GROUPS: CatalogTree<TokenGroupMap> = [
       { id: "ink", label: "Ink" },
       { id: "line", label: "Line" },
       { id: "primary", label: "Primary" },
+      { id: "action", label: "Action" },
       { id: "control", label: "Control" },
       { id: "status", label: "Status" },
       { id: "overlay", label: "Overlay" },
@@ -72,7 +73,7 @@ export const TOKEN_GROUPS: CatalogTree<TokenGroupMap> = [
 ];
 
 /**
- * Token leaves: 168 in all (color 72, type 39, layout 17, shape 13, depth 16,
+ * Token leaves: 183 in all (color 79, type 41, layout 23, shape 13, depth 16,
  * motion 11). Reference values are the current package defaults; a renamed
  * leaf lists the ids it replaces in `previousIds`, and `sourceRows` gives
  * their declaration rows in `styles/tokens.css`. Contrast pairs mirror the
@@ -248,6 +249,20 @@ export const TOKEN_ENTRIES: readonly TokenEntry[] = [
     notes: ["Renamed from ink on accent, with the primary rename. Kept as a role."],
   },
   {
+    id: "--color-ink-on-action", label: "Ink on action",
+    l1: "color", l2: "ink", tier: "brand-optional", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "invariant", reference: { alias: "--color-ink-on-inverse" },
+    fallback: { alias: "--color-ink-on-inverse" },
+    utilities: ["bg-ink-on-action", "text-ink-on-action", "border-ink-on-action"],
+    pairs: [
+      { fg: "--color-ink-on-action", bg: "--color-action", min: 4.5 },
+      { fg: "--color-ink-on-action", bg: "--color-action-hover", min: 4.5 },
+      { fg: "--color-ink-on-action", bg: "--color-action-pressed", min: 4.5 },
+    ],
+    sourceRows: [], previousIds: [],
+    notes: ["Label ink on a primary action fill, apart from the primary role."],
+  },
+  {
     id: "--color-line-base", label: "Line base",
     l1: "color", l2: "line", tier: "brand-required", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
     modes: "per-mode", reference: { light: { literal: "oklch(0.8761 0 0)" }, dark: { literal: "oklch(0.30 0 0)" } },
@@ -345,6 +360,51 @@ export const TOKEN_ENTRIES: readonly TokenEntry[] = [
     ],
     sourceRows: [25], previousIds: ["--color-accent-on-inverse"],
     notes: ["Renamed from accent with the primary rename."],
+  },
+  {
+    id: "--color-action", label: "Action",
+    l1: "color", l2: "action", tier: "brand-required", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "per-mode", reference: { light: { literal: "#0A0A0A" }, dark: { literal: "#FAFAFA" } },
+    utilities: ["bg-action", "text-action", "border-action"],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["The primary action fill palette, separate from the primary and focus roles."],
+  },
+  {
+    id: "--color-action-hover", label: "Action hover",
+    l1: "color", l2: "action", tier: "brand-required", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "per-mode", reference: { light: { literal: "#262626" }, dark: { literal: "#E5E5E5" } },
+    utilities: ["bg-action-hover", "text-action-hover", "border-action-hover"],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["The primary action fill palette, separate from the primary and focus roles."],
+  },
+  {
+    id: "--color-action-pressed", label: "Action pressed",
+    l1: "color", l2: "action", tier: "brand-required", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "per-mode", reference: { light: { literal: "#404040" }, dark: { literal: "#D4D4D4" } },
+    utilities: ["bg-action-pressed", "text-action-pressed", "border-action-pressed"],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["The primary action fill palette, separate from the primary and focus roles."],
+  },
+  {
+    id: "--color-action-on-inverse", label: "Action on inverse",
+    l1: "color", l2: "action", tier: "brand-required", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "per-mode", reference: { light: { literal: "#FAFAFA" }, dark: { literal: "#0A0A0A" } },
+    utilities: ["bg-action-on-inverse", "text-action-on-inverse", "border-action-on-inverse"],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["The primary action fill palette, separate from the primary and focus roles."],
+  },
+  {
+    id: "--color-action-on-inverse-hover", label: "Action on inverse hover",
+    l1: "color", l2: "action", tier: "brand-required", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "per-mode", reference: { light: { literal: "#E5E5E5" }, dark: { literal: "#262626" } },
+    utilities: ["bg-action-on-inverse-hover", "text-action-on-inverse-hover", "border-action-on-inverse-hover"],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["The primary action fill palette, separate from the primary and focus roles."],
   },
   {
     id: "--color-control-tonal", label: "Control tonal",
@@ -1124,6 +1184,24 @@ export const TOKEN_ENTRIES: readonly TokenEntry[] = [
     notes: ["New. No line height is declared today; text inherits 1.5."],
   },
   {
+    id: "--text-display-2xl", label: "Text display 2xl",
+    l1: "type", l2: "text", tier: "fixed-standard", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "invariant", reference: { literal: "clamp(4.5rem, 10vw, 8rem)" },
+    utilities: ["text-display-2xl"],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["Fluid display size emitted for the selected display type member."],
+  },
+  {
+    id: "--text-heading-2xl", label: "Text heading 2xl",
+    l1: "type", l2: "text", tier: "fixed-standard", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "invariant", reference: { literal: "clamp(3rem, 6vw, 5rem)" },
+    utilities: ["text-heading-2xl"],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["Fluid heading size emitted for the selected heading type member."],
+  },
+  {
     id: "--tracking-tight", label: "Tracking tight",
     l1: "type", l2: "tracking", tier: "brand-optional", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
     modes: "invariant", reference: { literal: "-0.02em" },
@@ -1362,6 +1440,60 @@ export const TOKEN_ENTRIES: readonly TokenEntry[] = [
     utilities: [],
     pairs: [],
     sourceRows: [128], previousIds: [],
+  },
+  {
+    id: "--ui-layout-dock-min-block", label: "Layout dock min block",
+    l1: "layout", l2: "region", tier: "fixed-standard", lever: false, inTheme: false, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "invariant", reference: { literal: "160px" },
+    utilities: [],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["Smallest block size of a frame's resizable bottom dock."],
+  },
+  {
+    id: "--ui-layout-dock-default-block", label: "Layout dock default block",
+    l1: "layout", l2: "region", tier: "fixed-standard", lever: false, inTheme: false, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "invariant", reference: { literal: "240px" },
+    utilities: [],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["Initial block size of a frame's resizable bottom dock."],
+  },
+  {
+    id: "--ui-layout-dock-max-block", label: "Layout dock max block",
+    l1: "layout", l2: "region", tier: "fixed-standard", lever: false, inTheme: false, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "invariant", reference: { literal: "480px" },
+    utilities: [],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["Largest block size of a frame's resizable bottom dock."],
+  },
+  {
+    id: "--ui-layout-inspector-w", label: "Layout inspector w",
+    l1: "layout", l2: "region", tier: "fixed-standard", lever: false, inTheme: false, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "invariant", reference: { literal: "280px" },
+    utilities: [],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["Initial width of a frame's resizable inspector panel."],
+  },
+  {
+    id: "--ui-layout-inspector-min-w", label: "Layout inspector min w",
+    l1: "layout", l2: "region", tier: "fixed-standard", lever: false, inTheme: false, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "invariant", reference: { literal: "220px" },
+    utilities: [],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["Smallest width of a frame's resizable inspector panel."],
+  },
+  {
+    id: "--ui-layout-inspector-max-w", label: "Layout inspector max w",
+    l1: "layout", l2: "region", tier: "fixed-standard", lever: false, inTheme: false, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "invariant", reference: { literal: "420px" },
+    utilities: [],
+    pairs: [],
+    sourceRows: [], previousIds: [],
+    notes: ["Largest width of a frame's resizable inspector panel."],
   },
   {
     id: "--radius-xs", label: "Radius xs",

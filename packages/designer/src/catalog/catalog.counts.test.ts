@@ -17,14 +17,11 @@ describe("block inventory count ownership", () => {
     expect(BLOCK_CATALOG.entries.length).toBeGreaterThan(0);
   });
 
-  it("keeps README block inventories free of hand-maintained shipping counts", () => {
-    const structure = readme.split("- **`blocks`**")[1]?.split("- **`shell`**")[0];
-    const shipped = readme.split("**Blocks:**")[1]?.split("**Views:**")[0];
-    for (const inventory of [structure, shipped]) {
-      expect(inventory).toBeDefined();
-      expect(inventory).toContain("catalog.coverage.test.ts");
-      expect(inventory).not.toMatch(/\b[\w-]+ ship\b/);
-    }
+  it("keeps the README free of a hand-maintained block inventory or shipping count", () => {
+    // The package README is a short pointer; the catalog and its coverage test own the inventory.
+    expect(readme).not.toMatch(/\*\*Blocks:\*\*|- \*\*`blocks`\*\*/);
+    expect(readme).not.toMatch(/\b\d+\s+(?:blocks?|leaves|components|sections)\b/i);
+    expect(readme).not.toMatch(/\b[\w-]+ ship\b/);
   });
 
   it("keeps the leaf header and lifecycle check free of hand-maintained count pins", () => {
