@@ -26,6 +26,7 @@ import type { ModelAgent, SlotAgent } from "../records/slot-model/types.js";
 import { candidatesDir, slotDir } from "../records/slot-model/layout.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { readCandidate, readLedger, readSlot, readSlotEntry } from "../records/slots.js";
+import { CandidateRefusal } from "../records/candidate.js";
 import { readCandidateText } from "../records/slot-current.js";
 import type { Actor, AgentId, Tier } from "../records/types.js";
 import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, submittedBytes, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
@@ -263,7 +264,12 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   const createdBy: Actor = { actor: "agent", agent: agent as AgentId, skill: contractSkill, skillSha256: sha(skillBytes), model: flags.model!, tier: flags.tier! as Tier };
   const probe = `${stem}-v1.${KIND_EXT[family]}`;
   let probeBytes = canonical;
-  try { probeBytes = submittedBytes(entry.dir, agent as SlotAgent, slot, family, probe, canonical, "2000-01-01T00:00:00Z", createdBy); } catch { probeBytes = canonical; }
+  // Only the serializer's refusal of these bytes (CandidateRefusal) leaves the probe as the bytes themselves; any other
+  // error is a fault and propagates.
+  try { probeBytes = submittedBytes(entry.dir, agent as SlotAgent, slot, family, probe, canonical, "2000-01-01T00:00:00Z", createdBy); } catch (error) {
+    if (!(error instanceof CandidateRefusal)) throw error;
+    probeBytes = canonical;
+  }
   const contentDigest = readCandidateText(rawSlot, agent as ModelAgent, slot, probe, probeBytes).contentDigest;
   for (const name of entry.candidates) {
     let held: { sha256: string; contentDigest: string } | null = null;

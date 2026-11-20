@@ -15,9 +15,11 @@
  * about the submitted file. The guard reads the candidate through the one candidate reader (records/slot-current.ts
  * readCandidateText): a source.ref the header carries is judged (R07.1, R06.4) as an int2 file's is, and an adopt is
  * verbatim when its content digest (the view and the header without its per-file provenance) equals the seed's, a
- * retired seed's bytes included (R03.2). A Designer element takes no header (cli/next.ts HEADERED_KINDS), and a
- * Publisher page/1 or publication/1 record none either (init-outputs-slot2.e2e.test.ts pins one); no fixture Designer
- * slot reaches a valid rung under the full guard, so the Designer case here is the guard's refusal of an invalid one.
+ * retired seed's bytes included (R03.2). Under clossys.slot/2 every submit writes a clossys.candidate/1 file, a Designer
+ * element included (records/slot-write.ts submittedBytes, the one submit serializer); a Publisher page/1 or
+ * publication/1 record is kept as the record it is (records/candidate-codec.ts; init-outputs-slot2.e2e.test.ts pins one).
+ * No fixture Designer slot reaches a valid rung under the full guard, so the Designer case here is the guard's refusal
+ * of an invalid one (next-submit-probe.test.ts covers the submit's identity probe on a Designer element).
  */
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";

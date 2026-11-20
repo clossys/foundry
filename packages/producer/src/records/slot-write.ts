@@ -28,7 +28,7 @@ import { recutCandidateBytes } from "./candidate-codec.js";
 import { SlotFormatError, serializeSlot, validateSlot } from "./slot.js";
 import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
 import type { Actor, AgentId, CandidateHeader, Iso, Slot } from "./types.js";
-import { buildCandidateHeader, candidateHeaderIssues, serializeCandidate } from "./candidate.js";
+import { buildCandidateHeader, CandidateRefusal, candidateHeaderIssues, serializeCandidate } from "./candidate.js";
 import { cliActor, toIsoZ } from "./pin.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, expectedCandidateSha, skillFile, skillPath,
@@ -674,9 +674,11 @@ export function writeCritique(consumer: string, agent: ModelAgent, id: string, r
  * one candidate codec, the source moved into a header created by `clossys submit` (or by `createdBy`: `clossys next
  * --submit` names the submitting agent, skill, model and tier, U37); bytes that already carry a
  * header must name this file and slot. The written bytes are then judged by the reader's rules (candidateIssues).
+ * Every refusal of the bytes is a CandidateRefusal (records/candidate.ts), the codec's and the serializer's included;
+ * any other error is a fault and is not one.
  */
 export function submittedBytes(dir: string, agent: SlotAgent, id: string, kind: SlotDoc["kind"], file: string, given: string, at: string | undefined, createdBy?: Actor): string {
-  const refused = (issues: readonly { message: string }[] | readonly string[]) => new Error(`candidate refused: ${issues.map(issue => typeof issue === "string" ? issue : issue.message).join("; ")}`);
+  const refused = (issues: readonly { message: string }[] | readonly string[]) => new CandidateRefusal(`candidate refused: ${issues.map(issue => typeof issue === "string" ? issue : issue.message).join("; ")}`);
   let raw: unknown;
   try { raw = JSON.parse(readFileSync(slotFile(dir), "utf8")); } catch { raw = undefined; }
   const slotRead = isCurrentSlot(raw) ? readSlotValue(raw, slotFile(dir)) : undefined;

@@ -12,7 +12,7 @@
  * Readers that render or publish a candidate consume its view or content, never its raw bytes, so the header never
  * reaches a page.
  */
-import { buildCandidateHeader, parseCandidateName, serializeCandidate, targetSchema } from "./candidate.js";
+import { buildCandidateHeader, CandidateRefusal, parseCandidateName, serializeCandidate, targetSchema } from "./candidate.js";
 import { parseYamlSubset, validateAgainst } from "./schema.js";
 import { parseFrontmatter } from "./slot-model/frontmatter.js";
 import { candidateHeaderOf, candidateView } from "./slot-current.js";
@@ -55,13 +55,13 @@ function frontFields(name: string, text: string, match: RegExpExecArray): { fiel
   const exact = parseFrontmatter(text);
   if (exact.ok) return { fields: { ...exact.value.fields }, body: exact.value.body };
   let front: unknown;
-  try { front = parseYamlSubset(match[1] ?? ""); } catch (error) { throw new Error(`${name}: its front matter cannot be read (${(error as Error).message}); not rewritten`); }
+  try { front = parseYamlSubset(match[1] ?? ""); } catch (error) { throw new CandidateRefusal(`${name}: its front matter cannot be read (${(error as Error).message}); not rewritten`); }
   return object(front) ? { fields: front, body: text.slice(match[0].length) } : undefined;
 }
 
 function checked(header: CandidateHeader, name: string): CandidateHeader {
   const issues = validateAgainst(targetSchema("candidate"), header);
-  if (issues.length) throw new Error(`${name}: the recut header is not a valid clossys.candidate/1: ${issues.slice(0, 3).map(issue => `${issue.path} ${issue.message}`).join("; ")}`);
+  if (issues.length) throw new CandidateRefusal(`${name}: the recut header is not a valid clossys.candidate/1: ${issues.slice(0, 3).map(issue => `${issue.path} ${issue.message}`).join("; ")}`);
   return header;
 }
 
@@ -71,7 +71,7 @@ function checked(header: CandidateHeader, name: string): CandidateHeader {
  */
 export function recutCandidateBytes(name: string, text: string, context: HeaderContext, int2?: { readonly source?: unknown }): string {
   const parts = parseCandidateName(name);
-  if (!parts) throw new Error(`${name} is not a candidate file name (<name>-v<n>.md|json|svg)`);
+  if (!parts) throw new CandidateRefusal(`${name} is not a candidate file name (<name>-v<n>.md|json|svg)`);
   const id = `${context.agent}/${context.slotId}/${name}`;
   const slot = `${context.agent}/${context.slotId}`;
   const fresh = (source: CandidateHeader["source"]) => checked(buildCandidateHeader({
@@ -90,7 +90,7 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
     if (front && "clossys" in front.fields) {
       const { clossys, ...rest } = front.fields;
       if (current(clossys)) return text;
-      if (!object(clossys)) throw new Error(`${name}: the clossys front matter is not an object`);
+      if (!object(clossys)) throw new CandidateRefusal(`${name}: the clossys front matter is not an object`);
       return serializeCandidate(name, readdressed(clossys), front.body, follows(rest));
     }
     // The int2 front matter: its source moves into the header, every other field stays beside it.
@@ -101,9 +101,10 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
     return serializeCandidate(name, fresh(sourceOf([int2?.source], context.sourceRef)), text);
   }
   if (parts.ext === "json") {
-    const doc = JSON.parse(text) as unknown;
+    let doc: unknown;
+    try { doc = JSON.parse(text) as unknown; } catch (error) { throw new CandidateRefusal((error as Error).message, { cause: error }); }
     if (object(doc) && object(doc.clossys)) {
-      if (Object.keys(doc).some(key => key !== "clossys" && key !== "content")) throw new Error(`${name}: holds keys beside clossys and content; not rewritten`);
+      if (Object.keys(doc).some(key => key !== "clossys" && key !== "content")) throw new CandidateRefusal(`${name}: holds keys beside clossys and content; not rewritten`);
       if (current(doc.clossys)) return text;
       const content = object(doc.content) && object(doc.content.meta) ? { ...doc.content, meta: follows(doc.content.meta) } : doc.content;
       return serializeCandidate(name, readdressed(doc.clossys), content);
@@ -111,7 +112,7 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
     // A Publisher page or publication record (clossys.page/1, clossys.publication/1) is the record today's install,
     // projector and slot check read: kept as is.
     if (context.agent === "publisher" && object(doc) && (doc.schema === PAGE_SCHEMA || doc.schema === PUBLICATION_SCHEMA)) return text;
-    if (object(doc) && typeof doc.schema === "string") throw new Error(`${name}: a top-level schema key (${doc.schema}) is a record, not an int2 candidate`);
+    if (object(doc) && typeof doc.schema === "string") throw new CandidateRefusal(`${name}: a top-level schema key (${doc.schema}) is a record, not an int2 candidate`);
     let content: unknown = doc;
     const sources: unknown[] = [int2?.source];
     if (object(doc) && "meta" in doc) {
@@ -129,8 +130,8 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
   const meta = SVG_META.exec(text);
   if (meta) {
     let value: unknown;
-    try { value = JSON.parse(meta[1] ?? ""); } catch { throw new Error(`${name}: an SVG <metadata> that is not the clossys header; not rewritten`); }
-    if (!object(value) || !object(value.clossys)) throw new Error(`${name}: an SVG <metadata> that is not the clossys header; not rewritten`);
+    try { value = JSON.parse(meta[1] ?? ""); } catch { throw new CandidateRefusal(`${name}: an SVG <metadata> that is not the clossys header; not rewritten`); }
+    if (!object(value) || !object(value.clossys)) throw new CandidateRefusal(`${name}: an SVG <metadata> that is not the clossys header; not rewritten`);
     if (current(value.clossys)) return text;
     return text.replace(meta[0], `<metadata>${JSON.stringify({ clossys: readdressed(value.clossys) })}</metadata>`);
   }
