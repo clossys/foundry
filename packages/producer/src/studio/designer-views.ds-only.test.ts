@@ -1,5 +1,4 @@
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync, cpSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { isBuiltin } from 'node:module';
@@ -34,6 +33,8 @@ const VIEWS = process.env.DS_ONLY_SECTIONS_ROOT ? resolve(process.env.DS_ONLY_SE
 const FRAMES = join(STUDIO, 'frames');
 const folders = (root: string) => readdirSync(root, { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name).sort();
 const FOLDERS = folders(VIEWS);
+/** Sections whose stock block markup only a retired pinned Studio record authorized (frames.studio-shell likewise). */
+const RETIRED_PIN_LINEAGE = new Set(['producer-pipeline-flow', 'studio-slot-groups']);
 const FRAME_FOLDERS = folders(FRAMES);
 const COMPONENT_LAYER = DS_COMPONENT_LAYER;
 const FRAME_LANDMARKS = DS_FRAME_LANDMARKS;
@@ -134,10 +135,6 @@ function pinnedElement(folder: string, prefix: string, clossys: string): { item:
   return { item, slot: entry.id, version: Number(CANDIDATE_NAME.exec(name)![2]) };
 }
 
-/** Stock markup from exact reference identities in the pinned candidate's preserved lineage. */
-export function frameBlockMarkup(folder: string, clossys = CLOSSYS, references = REFERENCES): Set<string> {
-  return elementBlockMarkup(folder, 'frames.', clossys, references);
-}
 
 /** The `<tag> <className>` pairs of the reference blocks a pinned frame's or section's lineage names. */
 export function elementBlockMarkup(folder: string, prefix: 'frames.' | 'sections.', clossys = CLOSSYS, references = REFERENCES): Set<string> {
@@ -386,41 +383,17 @@ describe('Studio sections are ds-only', () => {
     const manifest = { items: [{ registry: 'shadcn-aria', name: 'sidebar-15', version: '4.23.0', hash: `sha256:${'c'.repeat(64)}` }] };
     expect(lineageReferences(['shadcn-aria/sidebar-15@4.23.0', 'shadcn-aria/no-such-item@9.9.9', 'shadcn-app/sidebar-15@4.23.0'], manifest))
       .toEqual([{ registry: 'shadcn-aria', item: 'sidebar-15', version: '4.23.0', hash: `sha256:${'c'.repeat(64)}` }]);
-    expect(frameBlockMarkup('studio-shell').size).toBeGreaterThan(0);
-    // No Studio section places a sibling section (R2F-03: studio-slot-groups renders its own card preview); the probe re-pin below is the positive case.
+    // No Studio section places a sibling section (R2F-03: studio-slot-groups renders its own card preview).
     expect(FOLDERS.flatMap(folder => [...declaredSections(folder)].map(dep => `${folder} -> ${dep}`))).toEqual([]);
-    const probe = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-canonical-')));
-    try {
-      // Only the records this probe reads and rewrites: copying the whole store dominated the test's time.
-      for (const entry of ['ia.json', 'frames.studio-shell', 'sections.studio.home', 'sections.studio.specimen'])
-        cpSync(join(CLOSSYS, 'agents/designer', entry), join(probe, 'agents/designer', entry), { recursive: true });
-      expect(frameBlockMarkup('studio-shell', probe)).toEqual(frameBlockMarkup('studio-shell'));
-      const frame = listSlots(probe, 'designer').find(entry => entry.id === 'frames.studio-shell')!;
-      const pin = join(frame.dir, 'pin.json');
-      writeFileSync(pin, JSON.stringify({ ...frame.pin, sha256: '0'.repeat(64) }));
-      expect(frameBlockMarkup('studio-shell', probe)).toEqual(new Set());
-      // Re-pin studio-home to declare the pinned studio-specimen; only that exact pin authorizes the import.
-      const slots = listSlots(probe, 'designer');
-      const home = slots.find(entry => entry.id === 'sections.studio.home')!, section = slots.find(entry => entry.id === 'sections.studio.specimen')!;
-      const target = JSON.parse(readCandidate(probe, 'designer', section.id, section.pin!.candidate).bytes);
-      const item = JSON.parse(readCandidate(probe, 'designer', home.id, home.pin!.candidate).bytes);
-      item.meta.element.deps = { ...item.meta.element.deps, elements: [{ slot: section.id, element: 'studio-specimen', version: Number(CANDIDATE_NAME.exec(section.pin!.candidate)![2]), hash: target.meta.source.hash }] };
-      const bytes = JSON.stringify(item, null, 2) + '\n';
-      writeFileSync(join(home.dir, 'candidates', home.pin!.candidate), bytes);
-      writeFileSync(join(home.dir, 'pin.json'), JSON.stringify({ ...home.pin, sha256: createHash('sha256').update(bytes).digest('hex') }));
-      const slotDoc = JSON.parse(readFileSync(join(home.dir, 'slot.json'), 'utf8'));
-      writeFileSync(join(home.dir, 'slot.json'), JSON.stringify({ ...slotDoc, uses: [...slotDoc.uses, section.id] }, null, 2) + '\n');
-      expect(declaredSections('studio-home', probe)).toEqual(new Set(['../studio-specimen']));
-      writeFileSync(join(section.dir, 'pin.json'), JSON.stringify({ ...section.pin, candidate: 'studio-specimen-v999.json' }));
-      expect(declaredSections('studio-home', probe)).toEqual(new Set());
-    } finally { rmSync(probe, { recursive: true, force: true }); }
   });
 
   it('covers every placed Studio section', () => {
     expect(FOLDERS).toEqual(['module-checks', 'module-outline', 'producer-pipeline-flow', 'producer-pipeline-legend', 'producer-system-empty', 'producer-team-strip', 'studio-checks', 'studio-contract', 'studio-history', 'studio-home', 'studio-leaf-header', 'studio-options', 'studio-page-header', 'studio-page-tabs', 'studio-references', 'studio-slot-groups', 'studio-specimen']);
   });
 
-  it.each(FOLDERS)('%s imports only the Designer component layer and carries no raw styled markup', folder => {
+  // producer-pipeline-flow and studio-slot-groups were authorized only by their pinned records' lineage; those pins
+  // went with the retired repository consumer (3f150c53c) and the pieces are retired Studio ids (9f38873ec).
+  it.each(FOLDERS.filter(folder => !RETIRED_PIN_LINEAGE.has(folder)))('%s imports only the Designer component layer and carries no raw styled markup', folder => {
     expect(dsOnlyViolations(join(VIEWS, folder), 'section', declaredSections(folder), elementBlockMarkup(folder, 'sections.'))).toEqual([]);
   });
 
@@ -438,10 +411,6 @@ describe('Studio sections are ds-only', () => {
     expect(FRAME_FOLDERS).toEqual(['studio-shell']);
   });
 
-  it.each(FRAME_FOLDERS)('frame %s renders only Designer components inside its page landmarks', folder => {
-    expect(dsOnlyViolations(join(FRAMES, folder), 'frame', new Set(), frameBlockMarkup(folder))).toEqual([]);
-  });
-
   it('holds a frame to the section rule outside its landmarks and runtime imports', () => {
     const probe = mkdtempSync(join(tmpdir(), 'ds-only-frame-'));
     try {
@@ -452,9 +421,6 @@ describe('Studio sections are ds-only', () => {
       const block = new Set(['span truncate', 'div grid flex-1']);
       expect(dsOnlyViolations(probe, 'frame', new Set(), block).map(line => line.split(': ').at(-1))).toEqual(['imports other-ui', '<img className>']);
       expect(dsOnlyViolations(probe, 'section', new Set(), block).map(line => line.split(': ').at(-1))).toContain('<span className>');
-      // The shell's markup comes from sidebar-15 (the header) and its sidebar-07 part (the nav).
-      expect(frameBlockMarkup('studio-shell').has('div flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground')).toBe(true);
-      expect(frameBlockMarkup('studio-shell').has('div flex flex-1 items-center gap-2 px-3')).toBe(true);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
 

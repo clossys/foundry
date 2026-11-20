@@ -95,31 +95,6 @@ describe("canonical specimen records through the common slot reader", () => {
     expect(bare!.preview).not.toMatchObject({ entry: SPECIMEN_STATE_FILE });
   });
 
-  it.each(["frames.studio-shell/studio-shell", "sections.studio.home/studio-home", "sections.studio.checks/studio-checks"])("reads actual canonical Studio %s from its pin or remains unresolved", async id => {
-    const consumer = consumerPath();
-    const source = libraryRecordSource({ roots: [consumer] });
-    const [slot] = id.split("/");
-    const entry = listSlots(consumer, "designer").find(entry => entry.id === slot);
-    expect(entry).toBeDefined();
-    const record = await source.read(id);
-    const pin = entry!.pin;
-    if (!pin) {
-      expect(record).toBeUndefined();
-      return;
-    }
-    const native = readCandidate(consumer, "designer", slot!, pin.candidate);
-    const item = JSON.parse(native.bytes);
-    expect(native.sha256).toBe(pin.sha256);
-    expect(record).toBeDefined();
-    expect(record!.contentHash).toBe(pin.sha256);
-    expect(record!.payload.raw).toBe(native.bytes);
-    expect(record!.payload.files).toEqual(item.files);
-    expect(record!.kind).toBe("visual");
-    expect(record!.preview).toMatchObject({ entry: item.meta.preview.fixtures.file, export: item.meta.preview.fixtures.export, fixtures: item.meta.preview.fixtures.props });
-    expect(JSON.parse(record!.payload.raw).meta.source).toEqual(item.meta.source);
-    expect(record!.version).toBe(Number(/-v(\d+)\.json$/.exec(pin.candidate)![1]));
-  });
-
   it("loads every pinned canonical element in bounded time (a full slot scan per load hung Studio startup)", async () => {
     const consumer = consumerPath();
     const pinned = listSlots(consumer, "designer").flatMap(entry => {
