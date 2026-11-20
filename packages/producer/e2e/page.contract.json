@@ -1,0 +1,18 @@
+{
+  "kind": "page",
+  "publication": "site",
+  "route": "/",
+  "requirements": [
+    {
+      "check": "page.assembled"
+    },
+    {
+      "check": "page.no-inline-copy"
+    }
+  ],
+  "fixture": {
+    "route": {
+      "path": "/"
+    }
+  }
+}

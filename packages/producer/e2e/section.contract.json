@@ -1,0 +1,1 @@
+{"kind": "section", "props": ["heading", "body"], "fixture": {"schema": "clossys.element-preview/1", "fixtures": {"file": "registry/sections/hero.tsx", "export": "SimpleHero", "props": {"heading": "Example heading", "body": "Example body"}}}, "requirements": [{"check": "source.ref"}]}

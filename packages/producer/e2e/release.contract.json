@@ -1,0 +1,18 @@
+{
+  "kind": "publication",
+  "locales": {
+    "required": [
+      "en"
+    ]
+  },
+  "requirements": [
+    {
+      "check": "release.manifest"
+    }
+  ],
+  "fixture": {
+    "route": {
+      "path": "/"
+    }
+  }
+}

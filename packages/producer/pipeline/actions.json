@@ -2462,6 +2462,10 @@
         "stage": "publish.assemble",
         "summary": "Generate the Studio map, copy, bindings, icons, provenance, brand and flow theme.",
         "run": "clossys pipeline trace studio.map -- npm run generate:studio-map",
+        "chain": {
+          "skip": "Foundry's own Studio build: it writes Studio source and the Writer's Studio copy, which ship in no package; it runs only from a Foundry checkout",
+          "onDemand": "--studio"
+        },
         "inputs": [
           {
             "glob": "consumer:agents/*/ia.json",
@@ -2559,6 +2563,10 @@
         "stage": "publish.assemble",
         "summary": "Measure every native specimen section with the installed build and write its compiler evidence.",
         "run": "clossys pipeline trace specimen.evidence -- npm run generate:specimen-evidence",
+        "chain": {
+          "skip": "Foundry's own Studio build: it runs a Designer repository script that ships in no package; it runs only from a Foundry checkout",
+          "onDemand": "--studio"
+        },
         "inputs": [
           {
             "glob": "consumer:agents/designer/*/pin.json",
@@ -2607,6 +2615,10 @@
         "stage": "publish.assemble",
         "summary": "Compose the actual Studio runtime for the Studio checks.",
         "run": "clossys pipeline trace studio.compose -- npm run studio:compose",
+        "chain": {
+          "skip": "Foundry's own Studio build: it composes the Studio, which ships in no package; it runs only from a Foundry checkout",
+          "onDemand": "--studio"
+        },
         "inputs": [
           {
             "glob": "consumer:agents/designer/*/pin.json",
@@ -3027,6 +3039,10 @@
         "stage": "publish.check",
         "summary": "Record the page-check source receipt in the build output.",
         "run": "clossys pipeline trace build.receipt -- node scripts/generate-page-check-receipt.mjs",
+        "chain": {
+          "skip": "Foundry's own build receipt: it reads the Foundry repository's git state and ships in no package; it runs only from a Foundry checkout",
+          "onDemand": "--studio"
+        },
         "inputs": [
           {
             "glob": "consumer:agents/*/ia.json",
@@ -3099,6 +3115,10 @@
         "stage": "publish.check",
         "summary": "Studio render, routing, assembly and propagation checks.",
         "run": "clossys pipeline trace studio.checks -- npm run studio:check",
+        "chain": {
+          "skip": "Foundry's own Studio checks: they drive the Studio, which ships in no package; they run only from a Foundry checkout",
+          "onDemand": "--studio"
+        },
         "inputs": [
           {
             "glob": "pkg:studio/generated/studio-map.json",

@@ -38,6 +38,8 @@ import type { GuardOptions, GuardTarget, GuardVerb } from "../constitution/guard
 import type { Row } from "../constitution/types.js";
 import { validateAgainst } from "../constitution/schema.js";
 import { fileState, MIGRATIONS_FILE, MIGRATIONS_SCHEMA, validateMigrations, type FileState, type FormatMigration, type MigratedEvent, type MigrationsDoc } from "./migrations.js";
+import { consumerEngineRoot, engineRootOf, inputsOf } from "../engine/chain.js";
+import { deferEvents, dropHeldEvents, logEvent, recordEvent } from "../engine/log.js";
 
 // ---------------------------------------------------------------------------
 // Locks and atomic replacement, shared by slot decisions and the Director store.
@@ -85,7 +87,8 @@ export function withDirLock<T>(lock: string, busy: string, action: () => T): T {
   }
   // A writer in a process whose reader keeps answers (the record memo) never reads its own old answers.
   forgetSlotReads();
-  try { return action(); } finally { rmSync(lock, { recursive: true, force: true }); forgetSlotReads(); }
+  // The write's engine events append when it commits, still under this lock (engine/log.ts deferEvents).
+  try { return deferEvents(action); } finally { rmSync(lock, { recursive: true, force: true }); forgetSlotReads(); }
 }
 /** Replace `path` by renaming a fully written sibling over it: a reader sees the old bytes or the new, never a torn file. */
 function replaceFile(path: string, bytes: string): void {
@@ -156,6 +159,8 @@ function snapshotFiles(paths: readonly string[]): Snapshot {
   return new Map(paths.map(path => [path, existsSync(path) ? readFileSync(path) : null]));
 }
 function restoreFiles(snapshot: Snapshot): void {
+  // The undone write's held engine events name bytes that are gone: they are never appended.
+  dropHeldEvents(snapshot.keys());
   for (const [path, bytes] of snapshot) {
     if (bytes === null) rmSync(path, { force: true });
     else { const staged = join(dirname(path), `.${randomUUID()}.tmp`); writeFileSync(staged, bytes, { flag: "wx" }); renameSync(staged, path); }
@@ -313,6 +318,20 @@ function appendEvent(dir: string, scope: "slot" | "agent", event: LedgerEvent): 
   if (issues.length) throw new Error(`ledger event refused: ${issues.join("; ")}`);
   const doc = readLedger(dir, scope);
   replaceFile(join(dir, LEDGER_FILE), jsonBytes({ schema: LEDGER_SCHEMA, events: [...(doc?.events ?? []), event] }));
+  logLedgerEvent(dir, scope, event.op, event.by, (event.records ?? []).map(record => record.file));
+}
+/** A ledger op as the op of an engine event kind (lowercase, dashes). */
+export const engineOp = (op: string) => op.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^[^a-z]+/, "") || "event";
+/**
+ * The engine event of a ledger write (engine.md "Writers"), under the lock that guards `dir`: kind `<scope>.<op>`,
+ * subject `<agent>[/<slot>]`, inputs the folder's ledger.json and the record files the event names. A folder outside
+ * a workspace (no `<root>/clossys/agents/<agent>`) logs nothing.
+ */
+function logLedgerEvent(dir: string, scope: "slot" | "agent", op: string, by: string, files: readonly string[]): void {
+  const root = engineRootOf(join(dir, LEDGER_FILE));
+  if (root === undefined) return;
+  const subject = relative(join(root, "clossys", "agents"), dir).split(sep).join("/");
+  recordEvent([join(dir, LEDGER_FILE), ...files.map(file => join(dir, file))], { actor: by, kind: `${scope}.${engineOp(op)}`, subject });
 }
 /** One agent-ledger write at a time. */
 const AGENT_LOCK = ".agent-write.lock";
@@ -353,7 +372,10 @@ export function writeBackfilledLedger(dir: string, scope: "slot" | "agent", even
   const lock = join(dir, scope === "slot" ? SLOT_LOCK : AGENT_LOCK);
   return withDirLock(lock, `The ${scope} ledger in ${dir} is unavailable or another write is in progress`, () => {
     const outcome = decide();
-    if (outcome === "written") replaceFile(join(dir, LEDGER_FILE), bytes);
+    if (outcome === "written") {
+      replaceFile(join(dir, LEDGER_FILE), bytes);
+      logLedgerEvent(dir, scope, "backfill", "code:migrate-ledger", []);
+    }
     return outcome;
   });
 }
@@ -1169,16 +1191,23 @@ export function repointedThemePin(original: string, candidateText: string): stri
 /** Re-point the theme slot's pin at the probe's mutated candidate bytes. */
 export function repointThemeProbePin(consumer: string, id: string, original: string, candidateText: string): ThemeProbePin {
   const path = themeProbePath(consumer, id);
-  if (readFileSync(path, "utf8") !== original) throw new Error("theme probe refused: the pin changed since it was read");
-  const repointed = repointedThemePin(original, candidateText);
-  replaceFile(path, repointed);
-  return { path, original, repointed };
+  // Under the slot lock, as every pin write: the check, the write and its engine event are one transaction.
+  return slotLocked(dirname(path), () => {
+    if (readFileSync(path, "utf8") !== original) throw new Error("theme probe refused: the pin changed since it was read");
+    const repointed = repointedThemePin(original, candidateText);
+    replaceFile(path, repointed);
+    recordEvent([path], { actor: "code:theme-probe", kind: "pin.probe-repoint", subject: `designer/${id}` });
+    return { path, original, repointed };
+  });
 }
 /** Put the theme slot's original pin text back; true when the file now holds exactly those bytes. */
 export function restoreThemeProbePin(consumer: string, id: string, original: string): boolean {
   const path = themeProbePath(consumer, id);
-  replaceFile(path, original);
-  return readFileSync(path, "utf8") === original;
+  return slotLocked(dirname(path), () => {
+    replaceFile(path, original);
+    recordEvent([path], { actor: "code:theme-probe", kind: "pin.probe-restore", subject: `designer/${id}` });
+    return readFileSync(path, "utf8") === original;
+  });
 }
 
 /** One record a citation codemod rewrites in place: the bytes it read, and the bytes it writes. */
@@ -1283,6 +1312,8 @@ export function appendMigrationEvents(consumer: string, migration: FormatMigrati
     const issues = validateMigrations(next);
     if (issues.length) throw new Error(`migration events refused: ${issues.slice(0, 3).join("; ")}`);
     replaceFile(path, jsonBytes(next));
+    const root = consumerEngineRoot(consumer);
+    if (root !== undefined) logEvent(root, { actor: input.by, kind: "migration.record", subject: `migration:${migration}`, inputs: inputsOf(root, [path]) });
     return added;
   });
 }

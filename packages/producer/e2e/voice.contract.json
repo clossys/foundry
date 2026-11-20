@@ -1,0 +1,1 @@
+{ "question": "How do we sound?", "mustContain": [{ "key": "Sound", "hint": "how we sound" }, { "key": "Do", "hint": "habits we keep" }, { "key": "Never", "hint": "what we never do" }], "fixture": { "headings": ["Direction", "Because", "Watch"] }, "requirements": [{ "check": "brief.sections" }, { "check": "brief.keys" }] }

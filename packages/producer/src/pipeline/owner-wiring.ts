@@ -16,7 +16,7 @@ import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ownerEntry, type OwnerEntryInput } from "../cli/__fixtures__/owner-entry.js";
+import { ownerEntry, type OwnerEntryInput } from "./owner-entry.js";
 import { RULES_FILE } from "../cli/rules-file.js";
 import { seatSlotId, SEAT_AGENT } from "../records/slot-model/types.js";
 import { writerCopyDuplicates } from "../records/writer-copy.js";

@@ -105,7 +105,7 @@ interface Stub extends RunHooks {
 
 /**
  * The stub decider. Agents: refine-brief writes nothing; create-candidates writes one placeholder candidate; pick pins
- * the newest candidate (basis agent). Code: `clossys check <ref>` passes unless `checkExits` says otherwise; an owner
+ * the newest candidate (basis agent). Code: `clossys check --constitution --slot <ref>` passes unless `checkExits` says otherwise; an owner
  * pick's `clossys pin` writes the owner pin; release steps write a placeholder manifest.
  */
 function stub(root: string, options: { checkExits?: Exit[]; waitOnce?: string[]; codeFor?: (call: CodeCall) => CodeOutcome | undefined; agentFor?: (packet: AgentPacket) => AgentOutcome | undefined } = {}): Stub {
@@ -373,8 +373,8 @@ describe("F6 failed check (T6)", () => {
     expect(second.state!.raised).toEqual([]);
     const ledger = w.ledger("loop.audit");
     expect(ledger.map(entry => entry.outcome)).toEqual([`raised ${raised.join(", ")}`, "no new entry"]);
-    expect(stepLine(ledger[0]!)).toEqual(["strict:code:1", "route:code:0"]);
-    expect(ledger[0]!.checks).toEqual({ "constitution.strict": "fail", "ia.orphans": "fail", "refs.dangling": "fail" });
+    expect(stepLine(ledger[0]!)).toEqual(["strict:code:1", "route:code:0", "e2e:code:0"]);
+    expect(ledger[0]!.checks).toEqual({ "constitution.strict": "fail", "consumer.e2e": "pass", "ia.orphans": "fail", "refs.dangling": "fail" });
 
     const hooks = stub(w.root);
     const refine = await startRun(w.root, { loop: "loop.refine", from: raised[0]! }, hooks, { now });
@@ -730,8 +730,8 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
   });
 
   it("B8: a code step's argv is built per template token, never split on the whitespace of a filled value", () => {
-    const filled = stepArgv("clossys brief <ref> --tighten <path> <op> <value> --why <why>", { ref: "designer/components.button", path: "mustDo", op: "add", value: "a b; rm -rf x", why: "the owner said so" });
-    expect(filled.argv).toEqual(["clossys", "brief", "designer/components.button", "--tighten", "mustDo", "add", "a b; rm -rf x", "--why", "the owner said so"]);
+    const filled = stepArgv("clossys brief <ref> --tighten --path <path> --op <op> --value <value> --why <why> --by <by>", { ref: "designer/components.button", path: "mustDo", op: "add", value: "a b; rm -rf x", why: "the owner said so", by: "owner:chat 2026-11-20" });
+    expect(filled.argv).toEqual(["clossys", "brief", "designer/components.button", "--tighten", "--path", "mustDo", "--op", "add", "--value", "a b; rm -rf x", "--why", "the owner said so", "--by", "owner:chat 2026-11-20"]);
     expect(filled.unfilled).toEqual([]);
   });
 

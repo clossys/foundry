@@ -55,6 +55,8 @@ import { closeWork, freshRaiseIssues, isContentAgent, readRequest, REQUEST_ID, R
 import { FIX_CHECKS } from "../queue/requester-check.js";
 import { cascadeClean, runCascade } from "./cascade.js";
 import { CASCADE_REVERDICT } from "../constitution/cascade.js";
+import { inputsOf } from "../engine/chain.js";
+import { commitEvent } from "../engine/log.js";
 
 export type Exit = 0 | 1 | 2;
 
@@ -212,6 +214,11 @@ function saveState(root: string, state: RunState): void {
   const temp = `${file}.${process.pid}.tmp`;
   writeFileSync(temp, `${JSON.stringify(state, null, 2)}\n`);
   renameSync(temp, file);
+  logRun(root, "run.state", state, [file]);
+}
+/** The engine event of a run record (engine.md "Writers"): subject `loop:<loop>/<run id>`, by the run CLI. */
+function logRun(root: string, kind: string, state: Pick<RunState, "loop" | "runId">, files: readonly string[]): void {
+  commitEvent(root, { actor: `code:${RUN_CLI}`, kind, subject: `loop:${state.loop}/${state.runId}`, inputs: inputsOf(root, files) });
 }
 
 export function readRunState(root: string, runId: string): RunState | undefined {
@@ -667,7 +674,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
         // Every change the step made: a removal, an unreported write, or a ledger change that is not its own append.
         const reported = new Set((wrote ?? []).map(file => snapshotKey(root, wroteFile(root, file))));
         const current = isAgentLoop(state.loop) ? currentStandardOf(root, state.loop) : undefined;
-        const judged = judgeSnapshot(root, before, treeSnapshot(root, state.runId), reported, step, agent, state.subject, current?.ok ? current.standard : undefined);
+        const judged = judgeSnapshot(root, before, treeSnapshot(root, state.runId), reported, step, agent, state.subject, current?.ok ? current.standard : undefined, state.runId);
         if (judged.issues.length) {
           delete state.waiting;
           recordStep(ctx, step, ledgerDecider, cli, 1, wrote, vars);
@@ -1171,8 +1178,9 @@ function revertPin(ctx: Context, subject: SlotSubject): { exit: Exit; wrote: str
     writeFileSync(temp, bytes);
     renameSync(temp, file);
   };
+  let reverted: { exit: Exit; wrote: string[] };
   try {
-    return lockSlot(root, subject, () => {
+    reverted = lockSlot(root, subject, () => {
       const now = existsSync(file) ? readFileSync(file, "utf8") : null;
       if (now === before) return { exit: 1 as Exit, wrote: [] };
       if (before === null) { unlinkSync(file); return { exit: 1 as Exit, wrote: [`${refOf(subject)}/pin.json`] }; }
@@ -1189,6 +1197,10 @@ function revertPin(ctx: Context, subject: SlotSubject): { exit: Exit; wrote: str
   } catch (error) {
     return { exit: 1, wrote: [], why: `the owner's reject could not put back the pin ${refOf(subject)} had when the run started: ${failure(error)}` };
   }
+  // The run's own record of the put-back (engine.md "Writers"), beside the slot ledger's decision event: a removal
+  // has no ledger event, and every put-back names the run that made it.
+  if (reverted.wrote.length) logRun(root, "pin.revert", state, [file]);
+  return reverted;
 }
 
 /**
@@ -1321,6 +1333,7 @@ function writeLedger(ctx: Context, status: RunState["status"] & LedgerEntry["sta
     return adoptLedger(root, state)!;
   }
   try { writeSync(fd, `${JSON.stringify(entry, null, 2)}\n`); } finally { closeSync(fd); }
+  logRun(root, "run.record", state, [file]);
   state.status = status; state.outcome = outcome; state.ledger = ledgerPath(root, file);
   delete state.waiting;
   saveState(root, state);

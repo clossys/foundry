@@ -6,6 +6,10 @@
   "stage": "publish.assemble",
   "summary": "Generate the Studio map, copy, bindings, icons, provenance, brand and flow theme.",
   "run": "clossys pipeline trace studio.map -- npm run generate:studio-map",
+  "chain": {
+    "skip": "Foundry's own Studio build: it writes Studio source and the Writer's Studio copy, which ship in no package; it runs only from a Foundry checkout",
+    "onDemand": "--studio"
+  },
   "inputs": [
     {
       "glob": "consumer:agents/*/ia.json",

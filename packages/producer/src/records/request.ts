@@ -28,6 +28,7 @@ import { OWNER_QUEUE_ANSWER, pinPath } from "./pin.js";
 import { readPinFile } from "./pin-map.js";
 import { isRecordSlot } from "./resolve.js";
 import { validateAgainst } from "./schema.js";
+import { actorLine, recordEvent } from "../engine/log.js";
 import { recordSchema, serializeSlot, SLOT_SCHEMA, validateSlot } from "./slot.js";
 import { slotDir, slotFile } from "./slot-model/layout.js";
 import { AGENT_KIND } from "./slot-model/types.js";
@@ -341,8 +342,11 @@ export function writeRequest(consumer: string, request: SlotRequest): string {
   const temp = join(dir, `.${request.id}.${process.pid}.${Date.now()}.tmp`);
   writeFileSync(temp, `${JSON.stringify(request, null, 2)}\n`);
   renameSync(temp, file);
+  recordEvent([file], { actor: requestActor(request), kind: "request.write", subject: `request:${request.id}` });
   return file;
 }
+/** Who made a request's last change: its last event's `by`, else who raised it. */
+const requestActor = (request: SlotRequest) => actorLine(request.events.at(-1)?.by, actorLine(request.createdBy, `code:request`));
 
 /**
  * Creates a new entry exclusively: the draft's id, else `-2`..`-9`, whichever is free. The bytes go to a temp file that
@@ -361,7 +365,11 @@ function createRequest(consumer: string, draft: SlotRequest): SlotRequest {
     if (issues.length) throw new RequestError(`request ${id} would be invalid: ${issues.slice(0, 5).join("; ")}`);
     const temp = join(dir, `.${id}.${process.pid}.${Date.now()}.tmp`);
     writeFileSync(temp, `${JSON.stringify(doc, null, 2)}\n`);
-    try { linkSync(temp, requestPath(consumer, id, draft.kind)); return doc; } catch (error) {
+    try {
+      linkSync(temp, requestPath(consumer, id, draft.kind));
+      recordEvent([requestPath(consumer, id, draft.kind)], { actor: requestActor(doc), kind: "request.create", subject: `request:${id}` });
+      return doc;
+    } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
     } finally { unlinkSync(temp); }
   }

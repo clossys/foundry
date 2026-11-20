@@ -6,6 +6,10 @@
   "stage": "publish.check",
   "summary": "Record the page-check source receipt in the build output.",
   "run": "clossys pipeline trace build.receipt -- node scripts/generate-page-check-receipt.mjs",
+  "chain": {
+    "skip": "Foundry's own build receipt: it reads the Foundry repository's git state and ships in no package; it runs only from a Foundry checkout",
+    "onDemand": "--studio"
+  },
   "inputs": [
     {
       "glob": "consumer:agents/*/ia.json",

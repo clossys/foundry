@@ -93,6 +93,12 @@
       "kind": "static"
     },
     {
+      "id": "producer check:e2e",
+      "cwd": "packages/producer",
+      "run": "npm run check:e2e",
+      "kind": "test"
+    },
+    {
       "id": "producer test:assemble-only",
       "cwd": "packages/producer",
       "run": "npm run test:assemble-only",

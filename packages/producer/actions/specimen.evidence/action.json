@@ -6,6 +6,10 @@
   "stage": "publish.assemble",
   "summary": "Measure every native specimen section with the installed build and write its compiler evidence.",
   "run": "clossys pipeline trace specimen.evidence -- npm run generate:specimen-evidence",
+  "chain": {
+    "skip": "Foundry's own Studio build: it runs a Designer repository script that ships in no package; it runs only from a Foundry checkout",
+    "onDemand": "--studio"
+  },
   "inputs": [
     {
       "glob": "consumer:agents/designer/*/pin.json",

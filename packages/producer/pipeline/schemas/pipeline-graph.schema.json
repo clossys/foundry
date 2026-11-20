@@ -251,9 +251,10 @@
                     "minLength": 20
                   },
                   "onDemand": {
-                    "description": "The clossys run flag that runs this step's run after all (W2-G: capture runs only with --capture).",
+                    "description": "The clossys run flag that runs this step's run after all (W2-G: capture runs only with --capture; Foundry's own Studio build steps only with --studio).",
                     "enum": [
-                      "--capture"
+                      "--capture",
+                      "--studio"
                     ]
                   }
                 }

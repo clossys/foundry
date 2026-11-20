@@ -11,6 +11,7 @@
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
+import type { PageHostSelection } from "@clossys/publisher/install";
 import { currentPins, pinDiff, type PinMapOf } from "./pins.js";
 import { BUILDS_DIR, PUBLICATION_ID, buildDir, buildsDir, latestBuildFile } from "./paths.js";
 
@@ -26,6 +27,10 @@ export interface BuildRequest {
   /** An empty folder the builder writes the whole output into. */
   readonly out: string;
   readonly pins: PinMapOf;
+  /** The consumer's component selection module every route mounts inside (`release --build --selection`). */
+  readonly selection?: PageHostSelection;
+  /** Resolves a relative `selection.module`. */
+  readonly cwd?: string;
 }
 
 export interface BuildOutput {
@@ -113,6 +118,9 @@ export interface RunBuildOptions {
   readonly builder?: ReleaseBuilder;
   readonly locales: readonly string[];
   readonly now?: () => Date;
+  /** Passed to the builder: without one every route of the default builder is a `need-component-selection`. */
+  readonly selection?: PageHostSelection;
+  readonly cwd?: string;
 }
 
 /**
@@ -129,7 +137,10 @@ export async function runBuild(root: string, publication: string, options: RunBu
   let id: string;
   let output: BuildOutput;
   try {
-    output = await builder({ root, publication, locales: [...options.locales], out: staging, pins });
+    output = await builder({
+      root, publication, locales: [...options.locales], out: staging, pins,
+      ...(options.selection ? { selection: options.selection } : {}), ...(options.cwd ? { cwd: options.cwd } : {}),
+    });
     checkOutput(output, staging);
     id = buildDigest(staging);
     const after = pinDiff(pins, currentPins(root));
@@ -156,13 +167,18 @@ export async function runBuild(root: string, publication: string, options: RunBu
 
 /**
  * The default builder: the same code path as `clossys preview` (publisher.md 9.6, one path for release --build and
- * preview). It installs and builds every route from the pins and copies the install output into `site/`.
+ * preview). It installs and builds every route from the pins, from empty installs, and copies the install output into `site/`.
  * Any install or build finding fails the build.
  */
-export const previewBuilder: ReleaseBuilder = async ({ root, publication, locales, out }) => {
+export const previewBuilder: ReleaseBuilder = async ({ root, publication, locales, out, selection, cwd }) => {
   const { preparePreview, buildPreview } = await import("../preview/serve.js");
   const prepared = await preparePreview({ root, publication, locales });
-  const result = await buildPreview(prepared);
+  // A release build starts from empty installs: a substrate an earlier build of the same pins left behind holds its
+  // build output and render bundles, which the next install reports as `unchanged` and Tailwind scans into the
+  // stylesheet, so the same pins would name another digest. `clossys preview` keeps its substrate between runs.
+  rmSync(prepared.installs, { recursive: true, force: true });
+  mkdirSync(prepared.installs, { recursive: true });
+  const result = await buildPreview(prepared, { ...(selection ? { selection } : {}), ...(cwd ? { cwd } : {}) });
   if (result.findings.length) throw new Error(`the build failed: ${result.findings.map(row => `${row.page}: ${row.code} ${row.detail ?? ""}`.trim()).join("; ")}`);
   const missing = prepared.routes.filter(route => !result.built.includes(route.page));
   if (missing.length) throw new Error(`the build did not build ${missing.map(route => route.page).join(", ")}`);

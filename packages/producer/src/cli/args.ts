@@ -63,6 +63,18 @@ export interface CliArgs {
   slot?: string[];
   /** check --constitution: only the slots whose records changed against this git ref (`npm run check:changed`). */
   changed?: string;
+  /** check: the consumer.e2e gate (src/check/e2e.ts): pack the cohort, install it into an empty directory, drive the shipped scenario, assert the rendered page. */
+  e2e?: boolean;
+  /** check --e2e: take the cohort tarballs from this directory instead of packing them. */
+  from?: string;
+  /** check --e2e: run this scenario file instead of the shipped one. */
+  scenario?: string;
+  /** check --e2e: keep the temp directory. */
+  keep?: boolean;
+  /** check --engine: verify the event chain, the index against a rebuild and every logged record's bytes (engine/check.ts). */
+  engine?: boolean;
+  /** check --side-door: the engine.side-door static scan of a foundry checkout (engine/side-door.ts). */
+  sideDoor?: boolean;
 }
 
 export class CliUsageError extends Error {
@@ -86,6 +98,8 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Brief: clossys brief <agent>/<slot> [--json] (the resolved brief: base plus tighten); clossys brief <agent>/<slot> --tighten --path <path> --op <max|min|require|add|remove|narrow> --value <json> --why <text> --by owner:<ref>|planner:<ref> (appends one stricter entry; a looser one is refused)\n"
   + "Candidate options: clossys options [<agent>/<slot> [--more]] | clossys options --classes [--check]; clossys pick <agent>/<slot> <candidate-id> --by agent:<seat>\n"
   + "Constitution: clossys check --constitution [--enforced | --strict] [--record-green] [--green <file>] [--rule <R01..R16|R20>] [--agent <agent>] [--slot <agent>/<slot>]... [--changed <ref>] [--json] [--root <dir>] (every rule over every record; exits 1 on any enforced or pending row; building checks report only unless --strict; warn checks never fail; --enforced, the chain's constitution step, exits 1 until E2 only on a new finding (an enforced row whose key the last green report lacks) or a hand-edited report; rows on records changed since that report (and their R07 dependants) and stale keys are counted, never blocking; --strict exits 1 on every enforced row, building rows included (the full gate); every run prints the new, changed-record, stale and total counts; --record-green seeds a missing green report, or rewrites it only when it adds no key (removals only); --agent keeps the rows about one agent's records; --slot <agent>/<slot> (repeatable) is the per-slot preflight: only that slot's rows, each with its one-line fix; --changed <git ref> runs it on every slot whose records changed against the ref, npm run check:changed)\n"
+  + "End to end: clossys check --e2e [--from <tarball dir>] [--scenario <file>] [--keep] [--json] (consumer.e2e: packs the six first-party packages, installs the tarballs into an empty directory, drives the scenario Producer ships with the installed bin only and asserts the built HTML; a finding names its cause)\n"
+  + "Engine: clossys check --engine [--root <dir>] [--json] (the event chain .clossys/events.jsonl verifies, .clossys/index.json agrees with a rebuild and every logged record holds its logged bytes; exits 1 on any finding); clossys index [--rebuild] [--root <dir>] (compare, or rewrite, the derived index); clossys check --side-door [--root <foundry checkout>] (engine.side-door: every .clossys or slot-record write goes through the engine API)\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Install: clossys publish --install --page <page id | page record.json> --selection <component selection module>[#export] [--out <dir>] [--records <consumer dir>]...\n"
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)\n"
@@ -136,6 +150,12 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--agent": args.agent = value(); break;
       case "--slot": args.slot = [...(args.slot ?? []), value()]; break;
       case "--changed": args.changed = value(); break;
+      case "--e2e": args.e2e = true; break;
+      case "--from": args.from = value(); break;
+      case "--scenario": args.scenario = value(); break;
+      case "--keep": args.keep = true; break;
+      case "--engine": args.engine = true; break;
+      case "--side-door": args.sideDoor = true; break;
       case "--port": {
         const port = value();
         if (!/^\d+$/.test(port) || Number(port) > 65535) throw new CliUsageError("--port must be an integer from 0 to 65535");
@@ -156,6 +176,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.suites || args.strict) && args.verb !== "check") throw new CliUsageError("--suites and --strict require check");
   if ((args.slots || args.readiness) && args.verb !== "check") throw new CliUsageError("--slots and --readiness require check");
   if (args.constitution && args.verb !== "check") throw new CliUsageError("--constitution requires check");
+  if ((args.engine || args.sideDoor) && args.verb !== "check") throw new CliUsageError("--engine and --side-door require check");
+  if ([args.engine, args.sideDoor, args.constitution].filter(Boolean).length > 1) throw new CliUsageError("check takes one of --engine, --side-door or --constitution");
   if (args.enforced && !args.constitution) throw new CliUsageError("--enforced requires check --constitution");
   if ((args.recordGreen || args.green !== undefined) && !args.constitution) throw new CliUsageError("--record-green and --green require check --constitution");
   if (args.recordGreen && (args.rule !== undefined || args.agent !== undefined)) throw new CliUsageError("--record-green needs a full run: no --rule or --agent");
@@ -166,6 +188,9 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.slot !== undefined || args.changed !== undefined) && !args.constitution) throw new CliUsageError("--slot and --changed require check --constitution");
   if (args.recordGreen && (args.slot !== undefined || args.changed !== undefined)) throw new CliUsageError("--record-green needs a full run: no --slot or --changed");
   if (args.slot !== undefined && !args.slot.every(target => /^(director|designer|writer|publisher|producer)\/[a-z0-9][a-z0-9._-]*$/.test(target))) throw new CliUsageError("--slot must be <agent>/<slot> (agent director, designer, writer, publisher or producer)");
+  if (args.e2e && args.verb !== "check") throw new CliUsageError("--e2e requires check");
+  if ((args.from !== undefined || args.scenario !== undefined || args.keep) && !args.e2e) throw new CliUsageError("--from, --scenario and --keep require check --e2e");
+  if (args.e2e && (args.constitution || args.suites || args.slots || args.readiness || args.pages !== undefined || args.strict)) throw new CliUsageError("check --e2e runs alone: no --constitution, --suites, --slots, --readiness, --pages or --strict");
   if (args.records.length && args.verb !== "publish") throw new CliUsageError("--records requires publish");
   if ((args.install || args.page !== undefined || args.site !== undefined || args.build || args.origin !== undefined) && args.verb !== "publish") throw new CliUsageError("--install, --page, --site, --origin and --build require publish");
   if (args.page !== undefined && args.site !== undefined) throw new CliUsageError("publish --install takes --page or --site, not both");

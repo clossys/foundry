@@ -6,6 +6,10 @@
   "stage": "publish.assemble",
   "summary": "Compose the actual Studio runtime for the Studio checks.",
   "run": "clossys pipeline trace studio.compose -- npm run studio:compose",
+  "chain": {
+    "skip": "Foundry's own Studio build: it composes the Studio, which ships in no package; it runs only from a Foundry checkout",
+    "onDemand": "--studio"
+  },
   "inputs": [
     {
       "glob": "consumer:agents/designer/*/pin.json",

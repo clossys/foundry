@@ -966,6 +966,30 @@
       "note": "Shipped code opens the slot model (ia.json, slot.json, pin.json, candidates) only through packages/producer/src/records/slots.ts and writes it only through records/slot-write.ts. The fixture is a package source file that reads a Designer pin.json by hand."
     },
     {
+      "id": "R-ENGINE-SIDE-DOOR",
+      "owner_words": {
+        "quote": "get us a world class producer, no more talking, just do it, completely",
+        "date": "2026-11-20"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:engine-side-door"
+      ],
+      "related": [
+        ".#check:single-reader"
+      ],
+      "fixture": "scripts/rules/fixtures/R-ENGINE-SIDE-DOOR",
+      "fixture_runs": [
+        {
+          "check": ".#check:engine-side-door",
+          "cwd": ".",
+          "run": "node packages/producer/dist/cli/index.js check --side-door --root {fixture}",
+          "expect": "packages/writer/src/side-door\\.mjs:6 write appendFileSync: writes an engine or slot-record path outside the engine API"
+        }
+      ],
+      "note": "Every write to a workspace's .clossys/** or to a slot record goes through the Producer engine API (packages/producer/docs/engine.md), so it leaves an event in .clossys/events.jsonl: clossys check --side-door statically scans the producer, designer, writer, publisher and director src, bin and scripts plus the repository scripts and fails on any write, write wrapper, script record-writer call or unpaired slot-model primitive outside the engine surface. No allowlist and no baseline. The fixture is a package source file that appends to the event log by hand."
+    },
+    {
       "id": "R-PIN-PROPAGATION",
       "owner_words": {
         "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
@@ -1012,6 +1036,30 @@
         }
       ],
       "note": "Every placed, valid candidate renders from its own bytes and only the valid pin is used by pages: an unpinned Designer candidate is a specimen option the route accepts. The fixture is a built surface (stub modules over a two-slot model) whose specimen inputs list no options; with that defect removed the same fixture passes."
+    },
+    {
+      "id": "R-E2E-CONSUMER",
+      "owner_words": {
+        "quote": "producer owns processes, no fakes",
+        "date": "2026-11-20"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/producer#check:e2e"
+      ],
+      "related": [
+        "packages/producer#test"
+      ],
+      "fixture": "scripts/rules/fixtures/R-E2E-CONSUMER",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:e2e",
+          "cwd": "packages/producer",
+          "run": "node dist/cli/index.js check --e2e --scenario {fixture}/scenario.json",
+          "expect": "^\\s*e2e\\.step\\s+craft\\.page\\.brief\\s.*input writer/strings\\.site is unpinned"
+        }
+      ],
+      "note": "A consumer built only from tarballs and public verbs renders its pinned page: clossys check --e2e packs the cohort, installs it into an empty directory, drives the shipped scenario with the installed bin and asserts the built HTML. Causes: e2e.usage (the check could not start: a bad flag, or no cohort package beside this Producer); e2e.pack (npm pack of a cohort package failed, or --from lacks one of its tarballs); e2e.install (npm install of the tarballs into the empty directory failed); e2e.one-copy (the install holds other than one copy of a first-party package, or one not resolved from its tarball); e2e.bin (node_modules/.bin/clossys is missing or is not the installed @clossys/producer); e2e.scenario (the scenario is missing, malformed, or names a step or file it does not hold); e2e.step (a scenario verb exited other than the scenario expects); e2e.render (the latest build lacks a route's index.html, or the HTML lacks a pinned string or marker); e2e.repeat (a second build of the same pins named another digest)."
     }
   ],
   "exemptions": [

@@ -169,10 +169,11 @@ export interface ActionGap { readonly unit: string; readonly reason: string; rea
 /**
  * How `clossys run` executes a plumb step: the concrete command when the run names placeholders
  * (`<file>`), or `skip` with why the chain never runs it (a server, a caller-chosen target).
- * A skip with `onDemand` names the `clossys run` flag that runs `run` after all (capture: `--capture`).
+ * A skip with `onDemand` names the `clossys run` flag that runs `run` after all (capture: `--capture`;
+ * the Foundry Studio build steps, whose scripts ship in no package: `--studio`).
  * Absent, the chain runs `run` itself.
  */
-export type ActionChain = string | { readonly skip: string; readonly onDemand?: "--capture" };
+export type ActionChain = string | { readonly skip: string; readonly onDemand?: "--capture" | "--studio" };
 /** packages/<package>/actions/<id>/action.json (pipeline/schemas/action.schema.json). */
 export interface ActionContract {
   readonly schema: typeof ACTION_SCHEMA;

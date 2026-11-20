@@ -11,6 +11,7 @@
 import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { QueueEntry, QueueName } from "../records/types.js";
+import { actorLine, recordEvent } from "../engine/log.js";
 
 export const QUEUE_NAMES: readonly QueueName[] = ["queue.pick", "queue.approve", "queue.clarify", "queue.fix"];
 export const ENTRY_ID = /^[0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*$/;
@@ -124,6 +125,7 @@ export function createQueueEntry(root: string, entry: QueueEntry): QueueEntry {
       throw error;
     }
     try { writeSync(fd, serializeEntry(doc)); } finally { closeSync(fd); }
+    recordEvent([queueEntryPath(root, entry.queue, id)], { actor: entryActor(doc), kind: "queue.create", subject: `${doc.queue}/${id}` });
     return doc;
   }
   throw new FeedbackRefused(`${entry.queue}#${entry.id}: the id and its suffixes -2..-9 are all taken; nothing was written (pass another --slug)`);
@@ -135,7 +137,10 @@ export function replaceQueueEntry(file: string, entry: QueueEntry): void {
   const fd = openSync(temp, "wx");
   try { writeSync(fd, serializeEntry(entry)); } finally { closeSync(fd); }
   renameSync(temp, file);
+  recordEvent([file], { actor: entryActor(entry), kind: "queue.replace", subject: `${entry.queue}/${entry.id}` });
 }
+/** Who made an entry's last change: its last event's `by`, else who created it. */
+const entryActor = (entry: QueueEntry) => actorLine(entry.events.at(-1)?.by, actorLine(entry.createdBy, "code:queue"));
 
 export const queueLockPath = (root: string, queue: QueueName, id: string): string => join(root, ".clossys", "locks", "queue", queue, `${id}.lock`);
 
