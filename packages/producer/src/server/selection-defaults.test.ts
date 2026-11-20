@@ -1,14 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { applyLibraryChange, libraryHash, resolve } from "@clossys/designer/catalog";
-import { prepareStudioSelection } from "./selection-defaults.js";
+import { prepareStudioSelection, STUDIO_REQUIRED_LEAVES } from "./selection-defaults.js";
+import { resolveAgent } from "../agents.js";
+import { designerRetired } from "../records/slot-model/foundry-ia.js";
 
 describe("Studio missing selection defaults", () => {
+  it("seats no retired Designer leaf as a required seat", () => {
+    // Designer's retired-leaf list is the oracle; a required seat on a retired leaf fills a slot that is no longer offered.
+    const retired = designerRetired(resolveAgent("designer").packageRoot);
+    expect(retired.size).toBeGreaterThan(0);
+    expect(STUDIO_REQUIRED_LEAVES.filter(leaf => retired.has(leaf))).toEqual([]);
+  });
+
   it("uses Designer default preference and only the required dependency closure", async () => {
     const { input, leaves } = await defaultPrepare();
     const profile = resolve(input);
     const badge = Object.values(input.library.components.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "components.badge")!.components)[0]!;
     expect(badge.origin).toMatchObject({ kind: "adopted", source: "shadcn@aria" });
-    expect(leaves.find(leaf => leaf.leaf === "sections.cards")).toMatchObject({ source: "fallback", fill: "foundry/sections.cards" });
+    expect(leaves.find(leaf => leaf.leaf === "sections.link-index")).toMatchObject({ source: "fallback", fill: "foundry/sections.link-index" });
     expect(leaves.find(leaf => leaf.leaf === "components.badge")).toMatchObject({ source: "fallback", fill: "shadcn@aria/components.badge" });
     expect(leaves.every(leaf => (leaf.source === "fallback" || leaf.source === "unavailable") && leaf.message?.startsWith("NEED:"))).toBe(true);
     expect(Object.keys(profile.components.components).length).toBeLessThan(input.catalog.components.slots.length);

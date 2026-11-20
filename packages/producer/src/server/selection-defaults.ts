@@ -8,7 +8,8 @@ import type { StudioSelectionLeaf } from "./selection.js";
 import { DESIGNER_SPECIMEN_REQUIRED_LEAVES } from "../specimen/designer-specimen-requirements.js";
 import { studioEvidence, studioSurfaceDefaults, type StudioReportSink } from './studio-render-policy.js';
 
-const REQUIRED = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree", "components.button", "components.rich-text", "components.semantic-content", "sections.record-detail", "sections.cards", "components.card", "components.table", ...DESIGNER_SPECIMEN_REQUIRED_LEAVES];
+/** Seats Studio always fills; each is a live Designer leaf (retired leaves are never seated). */
+export const STUDIO_REQUIRED_LEAVES: readonly string[] = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree", "components.button", "components.rich-text", "components.semantic-content", "sections.link-index", "components.card", "components.table", ...DESIGNER_SPECIMEN_REQUIRED_LEAVES];
 const meta = (fill: any) => fill.$extensions["com.clossys.fill"];
 
 /** Preserve authored selections; fill missing seats through Designer's default planners. */
@@ -60,7 +61,7 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sou
   const defaults = new Map<string, any>([...componentPlan.rows, ...surfacePlan.rows].flatMap(row => row.fill && candidates.has(row.fill) ? [[row.slot, candidates.get(row.fill)] as const] : []));
   // Native surface slots are the source of eligible specimen seats, not a second leaf list.
   const specimenIds = surfaceCatalog.slots.flatMap(slot => /^sections\.specimen-[a-z][a-z0-9-]*$/.test(slot.id) ? [slot.id] : []);
-  const needed = new Set([...REQUIRED, ...await studioModuleRequirements(), ...specimenIds]);
+  const needed = new Set([...STUDIO_REQUIRED_LEAVES, ...await studioModuleRequirements(), ...specimenIds]);
   const visit = (leaf: string) => {
     const fill = own.get(leaf) ?? defaults.get(leaf); if (!fill) return;
     const descriptor: any = Object.values(fill.components ?? fill.sections ?? fill.frames ?? {})[0];
@@ -71,7 +72,7 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sou
   for (const leaf of [...needed]) visit(leaf);
   // Registered compositions require their planned inputs even without a direct candidate.
   for (const row of componentPlan.decisions) if (needed.has(row.slot) && "reads" in row) for (const leaf of row.reads) if (!needed.has(leaf)) { needed.add(leaf); visit(leaf); }
-  // A needed seat's asset reads are needed values too (sections.cards reads assets.image).
+  // A needed seat's asset reads are needed values too (a card or media section reads assets.image).
   const assetReads = [...needed].flatMap(leaf => {
     const fill = own.get(leaf) ?? defaults.get(leaf);
     const descriptor: any = fill ? Object.values(fill.components ?? fill.sections ?? fill.frames ?? {})[0] : undefined;
