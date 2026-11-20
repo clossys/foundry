@@ -19,10 +19,13 @@ import { sha256Hex } from "../records/hash.js";
 import { writeTargetPin } from "../records/pin-map.js";
 import { cliActor } from "../records/pin.js";
 import { seatRefusal } from "../records/seat-owner.js";
-import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/index.js";
-import { appendRetireCandidate, appendRetireSlot, PRODUCER_INTERNAL_WRITERS, writeCandidate, writeConfirm, writeNotNeeded, writePin } from "../records/slot-write.js";
+import { jsonBytes, slotPositions, type IaDoc, type SlotAgent } from "../records/slot-model/index.js";
+import { positionIa, writeSlot } from "../records/slot.js";
+import { slotReadIssues } from "../records/slot-current.js";
+import { slotFromV1, targetKind, type SlotV1 } from "../migrate/slot-1-to-2.js";
+import { appendRetireCandidate, appendRetireSlot, PRODUCER_INTERNAL_WRITERS, writeCandidate, writeConfirm, writeNotNeeded, writePin, writeReissue } from "../records/slot-write.js";
 import { fixCheck, requesterCheck } from "../queue/requester-check.js";
-import type { SlotRequest } from "../records/types.js";
+import type { Slot, SlotRequest } from "../records/types.js";
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 function json(path: string): unknown {
@@ -322,24 +325,45 @@ const changedFiles = (before: ReadonlyMap<string, string>, after: ReadonlyMap<st
   [...new Set([...before.keys(), ...after.keys()])].filter(file => before.get(file) !== after.get(file)).sort();
 
 /**
- * The probe consumer: a Designer slot (clossys.slot/1, a planner pin on its one candidate, the component standard)
- * and a Designer clossys.slot/2 target slot. Every pin-writing verb is driven against it with a seat that may not act.
+ * One probe slot as a valid clossys.slot/2 file (foundry-build-0048 M1b): the slot/1 shape the verbs judge, mapped by
+ * the one slot/1-to-2 mapping (migrate/slot-1-to-2.ts slotFromV1, what `clossys ia` writes on a recut store), written
+ * through writeSlot (schemas/slot.json) and read back by the slot reader (slotReadIssues). A probe slot that does not
+ * read throws, so no probe row is judged on a slot a verb would refuse by format before its seat guard runs.
+ */
+function writeProbeSlot(dir: string, ia: IaDoc, doc: SlotV1, status: Slot["status"]): void {
+  const kind = targetKind(doc);
+  if (kind === undefined) throw new Error(`probe slot ${doc.agent}/${doc.id} has no clossys.slot/2 kind`);
+  const position = slotPositions(doc.agent as SlotAgent, ia).get(doc.id);
+  if (!position) throw new Error(`probe slot ${doc.agent}/${doc.id} is not placed in the probe ia.json`);
+  const file = join(dir, "clossys/agents", doc.agent, doc.id, "slot.json");
+  writeSlot(file, slotFromV1(doc, { kind, status, ia: positionIa(doc.id, position), inputs: [], uses: [], createdBy: cliActor("clossys conform"), at: PROBE_AT }));
+  const issues = slotReadIssues(JSON.parse(readFileSync(file, "utf8")), file);
+  if (issues.length) throw new Error(`probe slot ${doc.agent}/${doc.id} does not read as clossys.slot/2: ${issues.map(issue => issue.message).join("; ")}`);
+}
+
+/**
+ * The probe consumer: a Designer element/component slot (a planner pin on its one candidate, the component standard)
+ * and a Designer element/section target slot, both valid clossys.slot/2 files placed in the probe ia.json. Every
+ * pin-writing verb is driven against it with a seat that may not act.
  */
 function probeWorld(repo: string, dir: string): string {
   const write = (rel: string, text: string): void => { mkdirSync(dirname(join(dir, rel)), { recursive: true }); writeFileSync(join(dir, rel), text); };
   write("clossys/clossys.config.ts", "export default {};\n");
   write("package-lock.json", jsonBytes({ name: "probe", lockfileVersion: 3, packages: { "": { name: "probe" } } }));
-  const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#seat-probe", extensions: [], nodes: [{ id: "components", label: "Components", children: [{ id: "group", label: "Group", slots: [PROBE_ID] }] }] };
+  const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#seat-probe", extensions: [], nodes: [
+    { id: "components", label: "Components", children: [{ id: "group", label: "Group", slots: [PROBE_ID] }] },
+    { id: "sections", label: "Sections", children: [{ id: "story", label: "Story", slots: [PROBE_TARGET] }] },
+  ] };
   write("clossys/agents/designer/ia.json", jsonBytes(ia));
   const slot = `clossys/agents/designer/${PROBE_ID}`;
-  write(`${slot}/slot.json`, jsonBytes({ schema: "clossys.slot/1", id: PROBE_ID, agent: "designer", ia: slotPositions("designer", ia).get(PROBE_ID), inputs: [], uses: [], kind: "element", standard: "component", contract: { variant: "solid" } }));
+  writeProbeSlot(dir, ia, { schema: "clossys.slot/1", id: PROBE_ID, agent: "designer", kind: "element", standard: "component", contract: { variant: "solid" } }, "live");
   const candidate = jsonBytes({ name: "button", type: "registry:ui", dependencies: [], registryDependencies: [], files: [], meta: { source: { kind: "registry", ref: ["shadcn-aria/button@4.23.0"] } } });
   write(`${slot}/candidates/button-v1.json`, candidate);
   // An unpinned second candidate: the retire probes have something a guardless retire would move.
   write(`${slot}/candidates/button-v2.json`, jsonBytes({ name: "button", type: "registry:ui", dependencies: [], registryDependencies: [], files: [], meta: { source: { kind: "registry", ref: ["shadcn-aria/button@4.23.0"] }, note: "seat probe" } }));
   write(`${slot}/pin.json`, jsonBytes({ candidate: "button-v1.json", sha256: sha256Hex(candidate), decidedBy: "planner:seat-probe", basis: "planner", at: PROBE_AT }));
   cpSync(join(repo, "packages/designer/standards/component"), join(dir, "packages/designer/standards/component"), { recursive: true });
-  write(`clossys/agents/designer/${PROBE_TARGET}/slot.json`, jsonBytes({ schema: "clossys.slot/2", id: `designer/${PROBE_TARGET}`, agent: "designer", kind: "section", status: "open" }));
+  writeProbeSlot(dir, ia, { schema: "clossys.slot/1", id: PROBE_TARGET, agent: "designer", kind: "element", standard: "section.site", contract: { kind: "section" } }, "starter");
   write("pick.json", JSON.stringify({ schema: "clossys.verdict/1", slot: PROBE_ID, pick: "button-v1.json", reason: "seat probe", criteria: ["fidelity", "polish"] }));
   write("create.json", JSON.stringify({ schema: "clossys.verdict/1", slot: PROBE_ID, create: true, reason: "seat probe", gaps: [{ id: "fidelity", class: "missing-behavior" }, { id: "brief:variant", class: "a11y-failure" }] }));
   return join(dir, "clossys");
@@ -465,6 +489,8 @@ export function seatGuardIssues(repo: string, cli: string = join(repo, "packages
       ["appendRetireCandidate --by owner", () => appendRetireCandidate(consumer, "designer", PROBE_ID, { name: "button-v2.json", sha256: "0".repeat(64), reason: "superseded: seat probe", by: "owner", at: PROBE_AT })],
       ["appendRetireSlot --by planner", () => appendRetireSlot(consumer, "designer", PROBE_ID, { reason: "not-needed: seat probe", by: "planner", at: PROBE_AT })],
       ["writeCandidate --by agent:judge", () => writeCandidate(consumer, "designer", PROBE_ID, "button", { name: "button" }, { provenance: { by: "agent:judge" }, at: PROBE_AT })],
+      // The reissue verb judges the seat before it calls the writer: this row keeps the writer's own guard live.
+      ["writeReissue --by agent:writer", () => writeReissue(consumer, "designer", PROBE_ID, { old: "button-v1.json", oldSha256: "0".repeat(64), content: { name: "button" }, rung: "adopt", by: "agent:writer", at: PROBE_AT })],
     ];
     for (const [what, call] of writers) {
       const before = filesOf(consumer);
