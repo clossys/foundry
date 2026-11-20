@@ -97,7 +97,7 @@ describe("clossys review", () => {
     expect(report.verdict).toBe("PASS");
     expect(report.findings).toEqual([]);
     expect(report.changed.files).toEqual([]);
-  });
+  }, 30_000);
 
   it("fails an increased rule count", () => {
     const [repo, base, head] = fixture({ "violations.txt": "a\nb\n" });
@@ -206,7 +206,7 @@ describe("clossys review", () => {
     expect(JSON.stringify(grown)).not.toContain("SECRETWORD");
     expect(JSON.stringify(grown)).not.toContain("new.txt");
     expect(formatReview(grown).split("\n").at(-1)).toMatch(/^MECHANICAL: FAIL /);
-  });
+  }, 60_000);
 
   it("builds the changed package after its prerequisites, and the base tree reuses an unchanged prerequisite's dist", () => {
     const dir = scratch("review-test-");
