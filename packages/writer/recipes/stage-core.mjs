@@ -10,7 +10,8 @@
  *          upstream input at its pinned sha256 (a finding at its file sha256), reads the taste-log
  *          window, and is one paragraph; before any direction exists.
  * diverge: 3 to 4 one-line directions, a value on every recipe axis, values pairwise distinct per
- *          axis (cosmetic variants fail here, not at R15.7), each citing pinned upstream by id.
+ *          axis (cosmetic variants fail here, not at R15.7), each citing pinned upstream by id;
+ *          refused under a plumb recipe ("plumb: no diverge") and when the recipe lists no axes.
  * draft:   the agent's stage-check.mjs adds a draft check of the candidate it is about to render.
  *
  * Two roots: `root` (every function's first argument, the CLI's --root, else the working directory)
@@ -194,7 +195,11 @@ export function checkDivergeWith(root, agent, slot, file, hooks = {}) {
   try { world = slotWorld(root, agent, slot); } catch (error) { return [issue("R15.1", error.message, "fix the slot before crafting")]; }
   const doc = Array.isArray(file) ? { directions: file } : isRecord(file) ? file : {};
   const recipe = recipeOf(root, world, doc.recipe, out);
+  // A plumb recipe has no diverge stage (R15.7): its plumb action computes the candidate. Refused, never judged by axes.
+  if (recipe?.rung === "plumb") return [...out, issue("R15.7", `recipe ${String(doc.recipe)} is plumb: plumb: no diverge`, `compute the candidate with the recipe's plumb action (${String(recipe.action)}) and record no craft stage`)];
   const axes = Array.isArray(recipe?.axes) ? recipe.axes : [];
+  // No recipe axes means nothing for the directions to differ on: never a vacuous pass.
+  if (recipe && !axes.length) out.push(issue("R15.7", `recipe ${String(doc.recipe)} lists no axes`, "list the recipe's diverge axes in recipe.json (a crafted recipe has at least one)"));
   const directions = Array.isArray(doc.directions) ? doc.directions : [];
   if (directions.length < DIRECTIONS.min || directions.length > DIRECTIONS.max) out.push(issue("R15.7", `${directions.length} directions`, `write ${DIRECTIONS.min} directions (cap ${DIRECTIONS.max})`));
   const ids = new Set();

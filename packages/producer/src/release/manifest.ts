@@ -16,6 +16,8 @@ import { actionContractPath } from "../records/ledger.js";
 import { cliActor, toIsoZ } from "../records/pin.js";
 import { resolveSlot } from "../records/resolve.js";
 import { writeCandidateBytes } from "../records/slot-write.js";
+import { readSlotEntry } from "../records/slots.js";
+import type { ModelAgent } from "../records/slot-model/index.js";
 import { canonical } from "../records/slot-model/layout.js";
 import type { CandidateHeader } from "../records/types.js";
 import { buildIssue, latestBuild, type BuildExport } from "./build.js";
@@ -103,6 +105,19 @@ export interface WrittenManifest {
   readonly reused: boolean;
 }
 
+/**
+ * Reads every shipped pin's slot through the model reader (records/slots.ts readSlotEntry) before the manifest is
+ * written: an aliased or unreadable pin.json refuses the manifest, so that pin never ships (U29b). The candidate
+ * writer reads only its own slot, so this is the manifest's own read of the slots it ships, not a sibling scan.
+ */
+function readShippedSlots(root: string, pins: PinMapOf): void {
+  const consumer = join(root, "clossys");
+  for (const ref of Object.keys(pins)) {
+    const [agent, slotId] = ref.split("#")[0]!.split("/") as [ModelAgent, string];
+    readSlotEntry(consumer, agent, slotId);
+  }
+}
+
 export function writeManifest(root: string, publication: string, options: { now?: () => Date } = {}): WrittenManifest {
   const slotId = releaseSlotId(root, publication);
   const slot = readReleaseSlot(root, publication);
@@ -139,6 +154,7 @@ export function writeManifest(root: string, publication: string, options: { now?
     source: content.previous ? { kind: "derived", ref: [rel(content.previous).replace("/candidates/", "/")] } : { kind: "original", ref: [] },
   });
   const file = candidatePath(root, "publisher", slotId, name);
+  readShippedSlots(root, pins);
   // The one candidate writer (records/slot-write.ts): the file and its `submit {name, sha256}` event land under the slot
   // lock, so R14.1 and the pin gate find the manifest's provenance like every other candidate's. The event cites the
   // plumb action that runs the release (publisher.release), by Producer code.
