@@ -23,10 +23,16 @@
       "type": "array"
     },
     "compiler": {
-      "type": "object"
+      "type": [
+        "object",
+        "null"
+      ]
     },
     "command": {
-      "type": "object"
+      "type": [
+        "object",
+        "null"
+      ]
     },
     "certificates": {
       "type": "array",

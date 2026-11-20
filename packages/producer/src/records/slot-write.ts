@@ -27,8 +27,8 @@ import { candidateHeaderOf, candidateIssues, isCurrentSlot, readSlotValue, slotR
 import { recutCandidateBytes } from "./candidate-codec.js";
 import { SlotFormatError, serializeSlot, validateSlot } from "./slot.js";
 import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
-import type { AgentId, CandidateHeader, Iso, Slot } from "./types.js";
-import { buildCandidateHeader, candidateHeaderIssues, readCandidateFile, serializeCandidate } from "./candidate.js";
+import type { Actor, AgentId, CandidateHeader, Iso, Slot } from "./types.js";
+import { buildCandidateHeader, CandidateRefusal, candidateHeaderIssues, serializeCandidate } from "./candidate.js";
 import { cliActor, toIsoZ } from "./pin.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, expectedCandidateSha, skillFile, skillPath,
@@ -671,11 +671,14 @@ export function writeCritique(consumer: string, agent: ModelAgent, id: string, r
  * The bytes `writeCandidate` writes (one format, U13 r4). A clossys.slot/1 slot takes the int2 bytes as they are,
  * judged by the int2 kind rules. A clossys.slot/2 slot takes a clossys.candidate/1 file only: int2 bytes are first
  * judged by the int2 kind rules as they are (a missing source is refused, never derived), then written through the
- * one candidate codec, the source moved into a header created by `clossys submit`; bytes that already carry a
+ * one candidate codec, the source moved into a header created by `clossys submit` (or by `createdBy`: `clossys next
+ * --submit` names the submitting agent, skill, model and tier, U37); bytes that already carry a
  * header must name this file and slot. The written bytes are then judged by the reader's rules (candidateIssues).
+ * Every refusal of the bytes is a CandidateRefusal (records/candidate.ts), the codec's and the serializer's included;
+ * any other error is a fault and is not one.
  */
-function submittedBytes(dir: string, agent: SlotAgent, id: string, kind: SlotDoc["kind"], file: string, given: string, at: string | undefined): string {
-  const refused = (issues: readonly { message: string }[] | readonly string[]) => new Error(`candidate refused: ${issues.map(issue => typeof issue === "string" ? issue : issue.message).join("; ")}`);
+export function submittedBytes(dir: string, agent: SlotAgent, id: string, kind: SlotDoc["kind"], file: string, given: string, at: string | undefined, createdBy?: Actor): string {
+  const refused = (issues: readonly { message: string }[] | readonly string[]) => new CandidateRefusal(`candidate refused: ${issues.map(issue => typeof issue === "string" ? issue : issue.message).join("; ")}`);
   let raw: unknown;
   try { raw = JSON.parse(readFileSync(slotFile(dir), "utf8")); } catch { raw = undefined; }
   const slotRead = isCurrentSlot(raw) ? readSlotValue(raw, slotFile(dir)) : undefined;
@@ -693,7 +696,7 @@ function submittedBytes(dir: string, agent: SlotAgent, id: string, kind: SlotDoc
     const int2 = validateCandidate(kind, id, file, given);
     if (int2.length) throw refused(int2);
     const createdAt = (toIsoZ(at ?? nowIso()) ?? at ?? nowIso()) as Iso;
-    bytes = recutCandidateBytes(file, given, { agent: agent as AgentId, slotId: id, at: createdAt, version: cliActor(SUBMIT_CLI).version, sourceRef: `agents/${agent}/${id}/candidates/${file}`, cli: SUBMIT_CLI });
+    bytes = recutCandidateBytes(file, given, { agent: agent as AgentId, slotId: id, at: createdAt, version: cliActor(SUBMIT_CLI).version, sourceRef: `agents/${agent}/${id}/candidates/${file}`, cli: SUBMIT_CLI, ...(createdBy ? { createdBy } : {}) });
   }
   const issues = candidateIssues(slotRead, agent, id, file, bytes);
   if (issues.length) throw refused(issues);
@@ -711,12 +714,15 @@ const SUBMIT_CLI = "clossys submit";
  * under the slot lock, so two writers never take one version and the ledger names every file; a
  * `verify` issue (or a refused event) removes the file again. `fields` are the submit's own record
  * (`next --submit`: its basis and ladder); `provenance` its verb, by, skill, model and tier.
+ * `header` (U37) names who a clossys.candidate/1 header this write creates names as `createdBy` (`submittedBytes`:
+ * on a clossys.slot/2 slot only); without it the header names `clossys submit`.
  */
 export function writeCandidate(consumer: string, agent: SlotAgent, id: string, name: string, content: unknown, options: {
   readonly canonical?: boolean; readonly provenance?: WriteProvenance; readonly at?: string;
   readonly fields?: Readonly<Record<string, unknown>>; readonly verify?: (file: string) => readonly string[];
   /** Run the write verb's constitution guard on the new file after its event lands; a finding undoes both. */
   readonly guard?: WriteGuard;
+  readonly header?: { readonly createdBy: Actor };
 } = {}): { name: string; sha256: string } {
   assertActor(dirname(consumer), options.provenance?.by ?? "planner", agent, "candidate", authorsOf(agent));
   const { entry } = locatedOne(consumer, agent, id);
@@ -725,7 +731,8 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
     const { doc, entry: current } = locatedOne(consumer, agent, id);
     const ext = KIND_EXT[doc.kind];
     const file = `${name}-v${nextVersion(current.dir, current.candidates)}.${ext}`;
-    const bytes = submittedBytes(entry.dir, agent, id, doc.kind, file, ext === "md" ? String(content) : jsonBytes(content), options.at);
+    const at = options.at ?? nowIso();
+    const bytes = submittedBytes(entry.dir, agent, id, doc.kind, file, ext === "md" ? String(content) : jsonBytes(content), at, options.header?.createdBy);
     readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
     const directory = candidatesDir(entry.dir);
     if (options.canonical) canonicalDirectory(directory);
@@ -742,7 +749,7 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
       const sha256 = readCandidate(consumer, agent, id, file).sha256;
       const refused = options.verify?.(file) ?? [];
       if (refused.length) throw new Error(`candidate refused: ${file} fails the slot model check: ${refused.slice(0, 5).join("; ")}`);
-      appendEvent(entry.dir, "slot", ledgerEvent("submit", options.at ?? nowIso(), who, { ...options.fields, name: file, sha256 }));
+      appendEvent(entry.dir, "slot", ledgerEvent("submit", at, who, { ...options.fields, name: file, sha256 }));
       if (options.guard) {
         try { enforceGuard(consumer, guardVerb, options.guard, [{ agent, slot: id, candidate: file }]); }
         catch (error) { restoreFiles(ledger); throw error; }
@@ -952,13 +959,16 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
     try { raw = JSON.parse(readFileSync(slotFile(entry.dir), "utf8")); } catch { raw = undefined; }
     const slotRead = isCurrentSlot(raw) ? readSlotValue(raw, slotFile(entry.dir)) : undefined;
     if (!slotRead?.current) throw new Error(`reissue refused: ${agent}/${id} is not a clossys.slot/2 slot; this verb writes clossys.slot/2 and clossys.pin/2 only: run clossys migrate slots --apply first`);
-    const oldHeader = readCandidateFile(join(candidatesDir(entry.dir), input.old), { agent: agent as AgentId, slotId: id }).header ?? input.oldHeader as CandidateHeader | undefined;
+    // The old file's header as the one candidate reader (records/slots.ts readCandidate, U37c) read it above.
+    const oldHeader = (old.header as CandidateHeader | undefined) ?? input.oldHeader as CandidateHeader | undefined;
     if (!oldHeader) throw new Error(`reissue refused: ${input.old} has no clossys.candidate/1 header`);
     const header = buildCandidateHeader({
       agent: agent as AgentId, slotId: id, name: file, status: "submitted",
       createdBy: cliActor("clossys reissue"),
       createdAt: toIsoZ(input.at) ?? (input.at as Iso),
+      // The header's content fields (`record`, `briefSha256`) carry over, so the reissue's content digest is its seed's (R03.2, U37c).
       ...(oldHeader.record !== undefined ? { record: oldHeader.record } : {}),
+      ...(oldHeader.briefSha256 !== undefined ? { briefSha256: oldHeader.briefSha256 } : {}),
       refs: [...oldHeader.refs], source: oldHeader.source, rationale: [...oldHeader.rationale],
     });
     const bytes = serializeCandidate(file, header, ext === "md" ? String(input.content) : input.content, input.front ?? {});

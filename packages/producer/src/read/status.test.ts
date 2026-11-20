@@ -13,8 +13,8 @@ import { agentCensus, SLOT_STATES, STATUS_AGENTS, statusView } from "./status.js
 
 /**
  * Both fixture consumers: the current one (recut, clossys.slot/2) and the old-tree one (slot/1, before the recut).
- * The Studio server census judges a candidate by the slot/1 rules only, so pinned parity holds on the old-tree store;
- * on the recut store it calls a current-format candidate invalid (left to the verb cutover, 14.4 step 6).
+ * The Studio server census judges a pinned candidate as the slot/2 readers do (U37), so the current fixture's own
+ * pinned clossys.candidate/1 brief is in parity; the pin-adding parity cases below still run on the old-tree store only.
  */
 const FIXTURES = [
   ["the current fixture consumer", fileURLToPath(new URL("../../test-fixtures/consumer", import.meta.url)), false],
@@ -177,11 +177,12 @@ describe.each(FIXTURES)("on %s", (_name, FIXTURE, pinnedParity) => {
     it("orders ledger runs newest first and caps them", () => {
       const dir = join(root, "clossys", "agents", "producer", "ledger.fill", "entries");
       mkdirSync(dir, { recursive: true });
-      for (const day of [1, 2, 3]) writeFileSync(join(dir, `run-${day}.json`), JSON.stringify({ id: `2026010${day}T0000Z-run`, loop: "loop.fill", status: "done", outcome: `outcome ${day}`, createdAt: `2026-01-0${day}T00:00:00Z` }));
+      // Dated after every record the fixture consumer holds (its pins included), so the newest run is the view's `at`.
+      for (const day of [1, 2, 3]) writeFileSync(join(dir, `run-${day}.json`), JSON.stringify({ id: `2030010${day}T0000Z-run`, loop: "loop.fill", status: "done", outcome: `outcome ${day}`, createdAt: `2030-01-0${day}T00:00:00Z` }));
       const view = statusView(root, { ledger: 2 });
-      expect(view.ledger.map(run => run.id)).toEqual(["20260103T0000Z-run", "20260102T0000Z-run"]);
+      expect(view.ledger.map(run => run.id)).toEqual(["20300103T0000Z-run", "20300102T0000Z-run"]);
       expect(schemaIssues(view)).toEqual([]);
-      expect(view.at).toBe("2026-01-03T00:00:00Z");
+      expect(view.at).toBe("2030-01-03T00:00:00Z");
     });
   });
 

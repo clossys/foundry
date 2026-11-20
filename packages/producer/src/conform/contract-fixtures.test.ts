@@ -66,8 +66,11 @@ describe("Designer contract fixtures from adopted references", () => {
       const fixture = fixtureOf(id);
       if (!fixture) continue;
       if (fixture.fixtures.export.endsWith("Trigger")) expect(fixture.fixtures.props.defaultOpen, id).toBe(true);
-      // The props a fixture sets are declared, so the fixture types against its contract.
-      expect(catalog("components").find(row => row.id === id)!.contract.props, id).toEqual(expect.arrayContaining(Object.keys(fixture.fixtures.props)));
+      // The props a fixture sets are declared, so the fixture types against its contract; the trigger's
+      // mount props are fixture-only (contract.fixtureProps), never props a candidate must expose (K1).
+      const contract = catalog("components").find(row => row.id === id)!.contract as { props: string[]; fixtureProps?: string[] };
+      expect([...contract.props, ...(contract.fixtureProps ?? [])], id).toEqual(expect.arrayContaining(Object.keys(fixture.fixtures.props)));
+      if (fixture.fixtures.export.endsWith("Trigger")) expect(contract.props, id).not.toEqual(expect.arrayContaining(["defaultOpen"]));
     }
   });
 
@@ -101,6 +104,7 @@ describe("Designer contract fixtures from adopted references", () => {
       const doc = JSON.parse(readFileSync(join(consumer, id, "slot.json"), "utf8")) as { contract: Record<string, unknown> };
       expect(doc.contract.fixture, id).toEqual(packaged.get(id)!.fixture);
       expect(doc.contract.props, id).toEqual(packaged.get(id)!.props);
+      expect(doc.contract.fixtureProps, id).toEqual((packaged.get(id) as { fixtureProps?: unknown }).fixtureProps);
     }
   });
 

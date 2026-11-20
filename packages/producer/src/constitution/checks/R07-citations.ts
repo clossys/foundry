@@ -38,7 +38,8 @@ export function versionCitations(ctx: ConstitutionContext): Row[] {
   const homes = slotHomes(ctx);
   const rows: Row[] = [];
   for (const slot of allSlots(ctx)) for (const candidate of slot.candidates) {
-    const cites = versionCites(candidate.text, homes).filter(cite => cite.slot !== slot.id);
+    // Every byte as written, the header's refs and rationale included.
+    const cites = versionCites(candidate.raw, homes).filter(cite => cite.slot !== slot.id);
     if (!cites.length) continue;
     rows.push(row("R07", "R07.2", slot, `${cites.length} version citation${cites.length === 1 ? "" : "s"}: ${listed([...new Set(cites.map(cite => cite.text))].sort(), 3)}`, candidate.path, candidate.name));
   }

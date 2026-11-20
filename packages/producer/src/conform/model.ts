@@ -11,6 +11,7 @@ import { AGENT_LOOPS, AGENT_LOOPS_DIR, readAgentLoopPin, type AgentLoopName } fr
 import { loopStem } from "../loop/names.js";
 import { validateValue, type JsonSchema } from "../pipeline/schema.js";
 import { loadStandards, type Standard } from "../records/standards.js";
+import { pinBlocker } from "../records/slots.js";
 import { readAgentRequests, readRequestMachinery, resetRequestFacts, type AgentRequestFacts, type RequestMachinery } from "./requests-model.js";
 
 export const CONFORM_AGENTS = ["director", "designer", "writer", "publisher"] as const;
@@ -88,6 +89,12 @@ export interface LiveSlot {
   readonly folder?: string;
   readonly ledger: readonly Record<string, unknown>[];
   readonly pin?: Record<string, unknown>;
+  /**
+   * U37: why the slot/2 readers (records/slots.ts pinBlocker: `readiness`, `clossys direct`, `clossys status`) do not take
+   * the pin as intact (`invalid-candidate`, `hash-drift`, `invalid-pin`, ...); absent when they do, or when there is no
+   * pin. A pin file on disk is not a pin the readers can use.
+   */
+  readonly pinRejection?: string;
   /**
    * U9 (S6): the agent and id the slot record names. A package leaf (U9 fix r1, blind2 B1): its slot data's own `agent`,
    * else the agent its package's conform.json declares; its data's own `id`, else the key its tree file maps the data
@@ -274,6 +281,12 @@ function readSkillHashes(repo: string): Set<string> {
   return new Set(object(doc) && object(doc.skills) ? Object.keys(doc.skills) : []);
 }
 
+/** The slot/2 reader's rejection of a slot's pin (records/slots.ts pinBlocker), or undefined when it takes the pin as intact. */
+function readerRejection(consumer: string, agent: ConformAgent, id: string): string | undefined {
+  try { return pinBlocker(consumer, agent, id); }
+  catch (error) { return `unreadable: ${error instanceof Error ? error.message : String(error)}`; }
+}
+
 function readAgent(repo: string, consumer: string, agent: ConformAgent, standards: readonly Standard[], hashed: ReadonlySet<string>): AgentModel {
   const packageDir = join(repo, "packages", agent);
   let requestFacts: AgentRequestFacts | undefined;
@@ -304,6 +317,7 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
     const refsOf = (rel: string) => [...new Set(refs.filter(ref => ref.rel === rel && typeof ref.to === "string").map(ref => ref.to as string))];
     const ledger = json(join(agentDir, id, "ledger.json"));
     const pin = json(join(agentDir, id, "pin.json"));
+    const pinRejection = object(pin) ? readerRejection(consumer, agent, id) : undefined;
     return {
       id, source: "placed" as const, ...(typeof doc.schema === "string" ? { schema: doc.schema } : {}), ...(typeof doc.kind === "string" ? { kind: doc.kind } : {}),
       contract: object(doc.contract) ? doc.contract : {},
@@ -312,6 +326,7 @@ function readAgent(repo: string, consumer: string, agent: ConformAgent, standard
       ...(object(slot) ? { folder: `agents/${agent}/${id}` } : {}),
       ledger: object(ledger) && Array.isArray(ledger.events) ? ledger.events.filter(object) : [],
       ...(object(pin) ? { pin } : {}),
+      ...(pinRejection !== undefined ? { pinRejection } : {}),
       ...(typeof doc.agent === "string" ? { owner: doc.agent } : {}), ...(typeof doc.id === "string" ? { recordId: doc.id } : {}),
       inputsDeclared: doc.schema === "clossys.slot/2" ? Array.isArray(doc.refs) : Array.isArray(doc.inputs),
     };

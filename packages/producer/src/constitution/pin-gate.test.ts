@@ -21,6 +21,8 @@ import { pinUpstream } from "../cli/__fixtures__/upstream.js";
 import { runPinCli } from "../cli/pin.js";
 import { skillPath } from "../records/ledger.js";
 import { appendSlotDocEvent, writeCandidate } from "../records/slot-write.js";
+import { buildCandidateHeader, serializeCandidate } from "../records/candidate.js";
+import { pinBlocker } from "../records/slots.js";
 import { verifyCheck } from "../loop/runner.js";
 import { pinGate, SCORECARD_REF_TO, SCORECARD_SCHEMA } from "./pin-gate.js";
 import { designerPins } from "../publish/install.js";
@@ -127,6 +129,85 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     const edited = await w.pin(good.name);
     expect(edited.exitCode).toBe(1);
     expect(edited.message).toMatch(/copy-v1\.md changed since its submit/);
+    expect(existsSync(join(w.dir, "pin.json"))).toBe(false);
+  });
+
+  // U37: the slot/2 readers (`clossys direct`, `clossys status`) require a clossys.candidate/1 header; the gate takes one.
+  /** `text` (int2 copy) as a clossys.candidate/1 file: its front matter `source` moved into the header, the rest kept. */
+  const headered = (name: string, text: string, change: (header: Record<string, unknown>) => void = () => {}) => {
+    const [, front, body] = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(text)!;
+    const fields = Object.fromEntries(front!.split("\n").map(line => [line.slice(0, line.indexOf(":")), JSON.parse(line.slice(line.indexOf(":") + 1))]));
+    const { source, ...rest } = fields;
+    const header = buildCandidateHeader({ agent: "writer", slotId: SLOT, name, createdBy: { actor: "agent", agent: "writer", skill: "packages/writer/skills/writer/SKILL.md", skillSha256: "0".repeat(64), model: "claude-opus-5-5", tier: "high" }, createdAt: AT, source }) as unknown as Record<string, unknown>;
+    change(header);
+    return serializeCandidate(name, header as never, body!, rest);
+  };
+  /** Place `bytes` as the next candidate with a submit event at its bytes, shaped as the candidates write's own. */
+  const submitBytes = (w: ReturnType<typeof world>, name: string, bytes: string) => {
+    writeFileSync(join(w.dir, "candidates", name), bytes);
+    const file = join(w.dir, "ledger.json");
+    const ledger = JSON.parse(readFileSync(file, "utf8"));
+    const last = [...ledger.events].reverse().find((event: { op: string }) => event.op === "submit");
+    ledger.events.push({ ...last, name, sha256: createHash("sha256").update(bytes).digest("hex") });
+    writeFileSync(file, `${JSON.stringify(ledger, null, 2)}\n`);
+  };
+
+  it("pins a clossys.candidate/1 candidate: the header judged by its schema, the body by the copy rules, and the slot/2 reader takes the pin", async () => {
+    const w = world();
+    w.submit(BAD);
+    submitBytes(w, "copy-v2.md", headered("copy-v2.md", GOOD));
+    const result = await w.pin("copy-v2.md");
+    expect(result.message).toMatch(/pinned copy-v2\.md/);
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(readFileSync(join(w.dir, "pin.json"), "utf8")).records.copy).toMatchObject({ candidate: "copy-v2.md" });
+    expect(pinBlocker(w.consumer, "writer", SLOT)).toBeUndefined();
+  });
+
+  it("judges a headered candidate's body by every copy rule: the header relaxes none", async () => {
+    const w = world();
+    w.submit(GOOD);
+    submitBytes(w, "copy-v2.md", headered("copy-v2.md", BAD));
+    const result = await w.pin("copy-v2.md");
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toMatch(/copy-v2\.md has no passing verdict: \[limit\] en header\.heading is \d+ characters, past the copy contract's maxLength/);
+  });
+
+  it("refuses a malformed clossys.candidate/1 header, naming the header", async () => {
+    const w = world();
+    w.submit(BAD);
+    submitBytes(w, "copy-v2.md", headered("copy-v2.md", GOOD, header => { header.createdAt = "yesterday"; header.slot = `writer/sections.other.copy`; }));
+    const result = await w.pin("copy-v2.md");
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toMatch(/copy-v2\.md has no passing verdict: \[invalid\] clossys header: /);
+    expect(existsSync(join(w.dir, "pin.json"))).toBe(false);
+  });
+
+  it("writeCandidate's header option writes a Writer copy candidate as a clossys.candidate/1 file the gate pins and the reader takes", async () => {
+    const w = world();
+    w.submit(BAD);
+    const createdBy = { actor: "agent" as const, agent: "writer" as const, skill: "packages/writer/skills/writer/SKILL.md", skillSha256: "0".repeat(64), model: "claude-opus-5-5", tier: "high" as const };
+    const good = writeCandidate(w.consumer, "writer", SLOT, "copy", GOOD, { at: AT, provenance: { by: "agent:writer", model: "claude-opus-5-5", tier: "high" }, header: { createdBy } });
+    const bytes = readFileSync(join(w.dir, "candidates", good.name), "utf8");
+    expect(bytes).toMatch(/^---\nclossys: \{"schema":"clossys\.candidate\/1"/);
+    expect(bytes).not.toMatch(/^source: /m);
+    expect(bytes.endsWith(GOOD.slice(GOOD.indexOf("\n---\n") + 5))).toBe(true);
+    // A body the copy rules refuse is refused before anything is written, header or not.
+    expect(() => writeCandidate(w.consumer, "writer", SLOT, "copy", GOOD.replace(/^source: .*\n/m, ""), { at: AT, header: { createdBy } })).toThrow(/candidate refused/);
+    const result = await w.pin(good.name);
+    expect(result.exitCode).toBe(0);
+    expect(pinBlocker(w.consumer, "writer", SLOT)).toBeUndefined();
+  });
+
+  it("refuses a second source beside the clossys header's (front matter source), naming the header", async () => {
+    const w = world();
+    w.submit(BAD);
+    const once = headered("copy-v2.md", GOOD);
+    const twice = once.replace(/\n---\n/, `\nsource: {"kind":"original","ref":[]}\n---\n`);
+    expect(twice).not.toBe(once);
+    submitBytes(w, "copy-v2.md", twice);
+    const result = await w.pin("copy-v2.md");
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toMatch(/copy-v2\.md has no passing verdict: \[invalid\] clossys header: source is the clossys header's; the candidate carries a second one/);
     expect(existsSync(join(w.dir, "pin.json"))).toBe(false);
   });
 

@@ -10,10 +10,8 @@ import { sha256Hex } from "../records/hash.js";
 import { MIGRATIONS_FILE, validateMigrations, type MigrationsDoc } from "../records/migrations.js";
 import { agentDir, candidatesDir, designerIa, directorIa, MODEL_AGENTS, writerIa, type FoundryIa, type ModelAgent } from "../records/slot-model/index.js";
 import { isModelDir, isSlotFolderName, listModelDir, readModelBytes, withSlotReadScope } from "../records/slots.js";
+import { readCandidateText } from "../records/slot-current.js";
 import { skillFile } from "../records/ledger.js";
-import { candidateCodec } from "../records/candidate-codec.js";
-import { KIND_EXT } from "../records/slot-model/types.js";
-import { slotFamily } from "../records/slot-current.js";
 import { loadActions } from "../pipeline/actions.js";
 import { readCandidateHistory } from "./git.js";
 import type { AgentRecord, CandidateHistory, CandidateRecord, ConstitutionContext, FocusTarget, FoundryAgent, JsonRecord, MigrationsRecord, RetiredRecord, SlotRecord } from "./types.js";
@@ -145,25 +143,6 @@ const FOUNDRY_IA: Record<FoundryAgent, () => FoundryIa> = { director: directorIa
 /** The installed package's leaves, plus the agent's own loop slots (Producer-standard leaves every content agent holds, U9a). */
 export const installedFoundryLeaves = (agent: FoundryAgent): ReadonlySet<string> => new Set([...FOUNDRY_IA[agent]().slots.keys(), ...AGENT_LOOPS]);
 
-/**
- * A candidate as the checks read it (U13 r4, the one candidate codec): a clossys.candidate/1 file of a kind with
- * kind rules is read as its view (records/candidate-codec.ts: the candidate without its header, the header's source
- * where the int2 rules read it; a seat as its content, which carries no source), with its header beside it. The
- * sha256 stays the raw file's (R14.1, the CHOOSE gate and the ledger compare file bytes). Producer loop, queue and
- * ledger candidates are self-headered JSON their certifier reads whole; bytes with no header are their own view.
- */
-function candidateRecordView(raw: { name: string; path: string; text: string; sha256: string }, kind: unknown): CandidateRecord {
-  let parsed: ReturnType<typeof candidateCodec.parse>;
-  try { parsed = candidateCodec.parse(raw.name, raw.text); } catch { return raw; }
-  if (!parsed.header) return raw;
-  const header = parsed.header as unknown as Readonly<Record<string, unknown>>;
-  const viewSha256 = sha256Hex(parsed.view);
-  // A clossys.slot/2 kind (element/frame, copy, ...) reads as its reader family (element, strings, ...), as slot/1 kinds do.
-  const family = slotFamily(kind);
-  if (typeof family !== "string" || !Object.hasOwn(KIND_EXT, family)) return { ...raw, header, viewSha256 };
-  return { ...raw, text: family === "seat" ? parsed.content : parsed.view, header, viewSha256 };
-}
-
 /** Reads the records under `<consumer>/agents` for the run. `root` is the workspace root rows are relative to. */
 export function buildContext(root: string, consumer: string, options: ContextOptions = {}): ConstitutionContext {
   return assembleContext(root, consumer, options);
@@ -218,22 +197,26 @@ function assembleContext(root: string, consumer: string, options: ContextOptions
       const slotEntries = listModelDir(slotAbs).sort();
       const record = (file: string) => (slotEntries.includes(file) ? readJsonRecord(join(slotAbs, file), rel(join(slotAbs, file))) : undefined);
       const candDir = candidatesDir(slotAbs);
-      const slotValue = record("slot.json")?.value;
-      const slotKind = typeof slotValue === "object" && slotValue !== null && !Array.isArray(slotValue) ? (slotValue as Record<string, unknown>).kind : undefined;
+      const slotJson = record("slot.json");
+      // One reader for every rule (records/slot-current.ts readCandidateText): the view as text and json, the bytes as raw.
       const candidates: CandidateRecord[] = listModelDir(candDir).sort().flatMap(candidate => {
         const abs = join(candDir, candidate);
         if (isModelDir(abs)) return [];
         const read = readText(abs);
-        const raw = { name: candidate, path: rel(abs), text: read.text, sha256: read.bytes ? sha256Hex(read.bytes) : "" };
-        if (read.error !== undefined) return [{ ...raw, readError: read.error }];
-        const base = candidateRecordView(raw, slotKind);
+        const path = rel(abs);
+        if (read.error !== undefined) return [{ name: candidate, path, text: read.text, raw: read.text, sha256: read.bytes ? sha256Hex(read.bytes) : "", contentDigest: "", headerIssues: [], readError: read.error }];
+        const doc = readCandidateText(slotJson?.value, agent, name, candidate, read.text, path);
+        const base = {
+          name: candidate, path, text: doc.view, raw: doc.raw, sha256: read.bytes ? sha256Hex(read.bytes) : "",
+          contentDigest: read.bytes ? doc.contentDigest : "", headerIssues: doc.headerIssues, ...(doc.header ? { header: doc.header } : {}),
+        };
         if (!candidate.endsWith(".json")) return [base];
-        try { return [{ ...base, json: JSON.parse(base.text) as unknown }]; }
+        try { return [{ ...base, json: JSON.parse(doc.view) as unknown }]; }
         catch (error) { return [{ ...base, jsonError: errorText(error) }]; }
       });
       slots.set(name, {
         agent, id: name, dir: rel(slotAbs), live: live.has(name), entries: slotEntries,
-        slot: record("slot.json"), pin: record("pin.json"), ledger: record("ledger.json"),
+        slot: slotJson, pin: record("pin.json"), ledger: record("ledger.json"),
         candidates, retired: slotEntries.includes("retired") ? readRetired(join(slotAbs, "retired")) : [],
       });
     }

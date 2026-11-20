@@ -9,7 +9,9 @@
  *     "container"?: "canvas" | ..., "theme"?: "light" | "dark", "width"?: <px> }
  *
  * It is typed by the contract's props: every top-level key of `fixtures.props` is named in
- * `contract.props`. It carries no copy snapshot (`copy` absent or `{}`): copy comes from the pinned
+ * `contract.props` (props every candidate must take, checked by K1) or `contract.fixtureProps`
+ * (mount-only props the fixture passes, such as an overlay trigger's `children` and `defaultOpen`,
+ * which K1 never requires of a candidate). It carries no copy snapshot (`copy` absent or `{}`): copy comes from the pinned
  * Writer keys `inputs.copy` declares, exactly as for a candidate's own preview.
  */
 import type { SlotModelIssue } from "./validate.js";
@@ -45,10 +47,14 @@ export function contractFixtureIssues(contract: Readonly<Record<string, unknown>
     fail("fixtures must be { file, export, props } with a props object");
   } else {
     const declared = contract.props;
+    const mountOnly = contract.fixtureProps ?? [];
     if (!strings(declared)) fail("is typed by contract.props, which must list prop names");
+    else if (!strings(mountOnly)) fail("is typed by contract.fixtureProps, which must list prop names when present");
     else {
-      const undeclared = Object.keys(fixtures.props).filter(key => !declared.includes(key)).sort();
-      if (undeclared.length) fail(`props ${undeclared.join(", ")} are not declared in contract.props`);
+      const both = mountOnly.filter(key => declared.includes(key)).sort();
+      if (both.length) fail(`props ${both.join(", ")} are listed in both contract.props and contract.fixtureProps`);
+      const undeclared = Object.keys(fixtures.props).filter(key => !declared.includes(key) && !mountOnly.includes(key)).sort();
+      if (undeclared.length) fail(`props ${undeclared.join(", ")} are not declared in contract.props or contract.fixtureProps`);
     }
   }
   const inputs = fixture.inputs;

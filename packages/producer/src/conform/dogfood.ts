@@ -386,9 +386,15 @@ export const PROBES: Readonly<Record<string, Probe>> = {
   },
   "upstream-pinned": (agent, model) => {
     const upstream = agent.edges.map(edge => edge.to);
-    const pinned = model.agents.filter(other => other.agent !== agent.agent).flatMap(other => other.live.filter(slot => slot.pin !== undefined).map(slot => slot.id));
-    const hit = upstream.filter(id => pinned.includes(id) || pinned.includes(id.split("/")[1] ?? ""));
-    return pass(hit.length ? [] : [`none of ${new Set(upstream).size} upstream inputs is pinned, so no upstream cascade can reach ${agent.agent}`], upstream.length);
+    const reaches = (id: string, ids: readonly string[]) => ids.includes(id) || ids.includes(id.split("/")[1] ?? "");
+    // U37: a pin counts only when the slot/2 readers take it as intact (LiveSlot.pinRejection absent), not when a pin
+    // file merely exists: a pinned candidate the readers refuse feeds no cascade.
+    const others = model.agents.filter(other => other.agent !== agent.agent).flatMap(other => other.live.filter(slot => slot.pin !== undefined));
+    const pinned = others.filter(slot => slot.pinRejection === undefined).map(slot => slot.id);
+    const refused = others.filter(slot => slot.pinRejection !== undefined && upstream.some(id => reaches(id, [slot.id])));
+    const hit = upstream.filter(id => reaches(id, pinned));
+    const why = refused.length ? `; pinned but refused by the slot/2 reader: ${[...new Set(refused.map(slot => `${slot.id} (${slot.pinRejection})`))].join(", ")}` : "";
+    return pass(hit.length ? [] : [`none of ${new Set(upstream).size} upstream inputs is pinned with a pin the slot/2 reader takes, so no upstream cascade can reach ${agent.agent}${why}`], upstream.length);
   },
   "current-format": agent => {
     const old = agent.live.filter(slot => slot.schema === "clossys.slot/1");
