@@ -16,7 +16,7 @@
  *   record folders R10 still accepts until the ledger form (W2-B) are accepted here too.
  * - R01.5 Designer, Director and Writer live slots are Foundry-placed leaves or listed extensions.
  * - R01.6 inside one agent, no two live slots share a contract (sha256 of canonical JSON, fixture left out).
- * - R01.7-R01.15 the IA checks (levels, axes, labels, nav parity, extension facet, fanout) live in
+ * - R01.7-R01.16 the IA checks (levels, axes, labels, nav parity, extension facet, fanout, empty groups) live in
  *   rules/r01-ia.ts; rules.json registers them `building` (R01.15 `warn`) until the IA data units land.
  */
 import { createHash } from "node:crypto";

@@ -478,10 +478,11 @@ describe("conformance over the repo and its fixture", () => {
     for (const agent of ["director", "designer", "writer"]) expect(s6(agent).rows, agent).toEqual([]);
     expect(s6("publisher").rows.length).toBeGreaterThan(0);
     expect(s6("publisher").rows.every(row => row.endsWith(": declares no inputs list"))).toBe(true);
-    // S3 (U9 fix r1, blind2 B3): Designer's empty specimens group is a report-only finding, so S3 is green.
+    // S3 (U9 fix r1, blind2 B3): an empty group is a report-only finding, so S3 is green. U33: Designer's retired
+    // specimens group retires with its leaves, so no placed tree holds an empty group (R01.16).
     const s3 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "S3")!;
     for (const agent of ["director", "designer", "writer"]) expect(s3(agent).red, agent).toBe(false);
-    expect(s3("designer").findings).toEqual([expect.stringMatching(/components-specimens lists no L3$/)]);
+    for (const agent of ["director", "designer", "writer"]) expect(s3(agent).findings, agent).toEqual([]);
     const director = report.agents.find(agent => agent.agent === "director")!;
     expect(director.cells.find(cell => cell.id === "K3")!.red).toBe(false);
     // The request lens (U7): routing is valid and release refuses an open fix for every agent. U8: no agent keeps a
