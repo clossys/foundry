@@ -11,8 +11,9 @@ import { surfaceOf } from "./surface-library.js";
 import { surfaceRuntimeIdentity } from "./surface-check.js";
 import type { RuntimeFillDescriptor } from "./runtime-ports.js";
 /** 66 -> 76 (planner:wd-reg): components.rich-text (6463e7e59), components.media-player (78237484a) and the eight
- * owner-signed components.specimen-* leaves (25a8fc7b2) joined the registry; the R2F-53 chart deletion removed fills, not slots. */
-const COMPONENT_SLOTS = 76;
+ * owner-signed components.specimen-* leaves (25a8fc7b2) joined the registry; the R2F-53 chart deletion removed fills, not slots.
+ * 76 -> 78: components.canvas-map and components.canvas-zoom joined with the C5-DREC canvas leaves (8d35489c6). */
+const COMPONENT_SLOTS = 78;
 const source = { entry: "unit.ts", files: { "unit.ts": "// unit corpus; no actual qualification" }, dependencies: {} };
 const descriptor = { id: "unit", source, sourceHash: runtimeHash(source) };
 const fixture = () => standardM1Runtime({ engine: standardM1FixtureEngine(), identity: { kind: "artifact", name: "unit", sha256: runtimeHash(source) }, source, css: [{ id: "unit.css", contents: "body{}" }] });
