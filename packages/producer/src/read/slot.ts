@@ -18,7 +18,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { installedPackageRoot } from "../package-path.js";
-import { inspectSlot, readCandidate, readLedger, readSlotEntry, slotIndex, usedByPlaced } from "../records/slots.js";
+import { inspectSlot, readCandidate, readLedger, readSlotEntry, slotCandidateIssues, slotIndex, usedByPlaced } from "../records/slots.js";
 import { canonical, MODEL_AGENTS, parseFrontmatter, pinStatus, validateCandidate, type ModelAgent, type PinBasis } from "../records/slot-model/index.js";
 import { readRecordHeader } from "../records/schema.js";
 import { packageDefaultsRel } from "../records/candidate.js";
@@ -87,8 +87,9 @@ function int2Model(consumer: string, agent: ModelAgent, id: string): Model | und
   const index = slotIndex(consumer);
   const events = (readLedger(entry.dir)?.events ?? []) as readonly Record<string, unknown>[];
   const files = entry.candidates.map(name => {
+    // The view (no clossys header) is what the model shows; the file bytes are what the slot's rules judge.
     const candidate = readCandidate(consumer, agent, id, name);
-    return { name, bytes: candidate.bytes, sha256: candidate.sha256, path: join(entry.dir, "candidates", name) };
+    return { name, bytes: candidate.bytes, raw: candidate.raw, sha256: candidate.sha256, path: join(entry.dir, "candidates", name) };
   });
   const status = (doc as { status?: unknown }).status;
   const tighten = (doc as { tighten?: unknown }).tighten;
@@ -97,7 +98,7 @@ function int2Model(consumer: string, agent: ModelAgent, id: string): Model | und
     brief: int2Brief(id, doc.contract as Record<string, unknown>, doc.inputs, input => index.get(input)?.agent),
     tightenCount: Array.isArray(tighten) ? tighten.length : 0, contract: doc.contract,
     files, pins: entry.pin ? [{ ...entry.pin }] : [],
-    issues: file => [...new Set(validateCandidate(doc.kind, id, file.name, file.bytes).map(issue => issue.code))],
+    issues: file => [...new Set(slotCandidateIssues(consumer, agent, id, file.name, files.find(each => each.name === file.name)?.raw ?? file.bytes).map(issue => issue.code))],
     ledgerEvent: name => events.find(event => Array.isArray(event.records)
       && event.records.some(row => isObject(row) && (row.file === `candidates/${name}` || row.file === name))),
     consumedBy: usedByPlaced(consumer, id).map(row => `${row.agent}/${row.id}`),

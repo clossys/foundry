@@ -17,6 +17,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { buildContext } from "./context.js";
+import type { GuardSession } from "./guard.js";
 import { certify, certifyEnv, pinSetOf } from "./certify/index.js";
 import { submitOf } from "./rules/r03.js";
 import type { Reason } from "./certify/types.js";
@@ -24,6 +25,7 @@ import type { Ref } from "../records/types.js";
 import { judgeSlotOptions } from "../records/slot-options.js";
 import { OPTION_TABLE, type SlotAgent } from "../records/slot-model/index.js";
 import { readSlotEntry } from "../records/slots.js";
+import { expectedCandidateSha, ledgerEventsOf } from "../records/ledger.js";
 
 export const SCORECARD_SCHEMA = "clossys.scorecard/1";
 export const SCORECARD_REF_TO = "producer/checks.scorecard" as const;
@@ -61,8 +63,13 @@ export interface PinGate {
 const sha = (text: string) => createHash("sha256").update(text).digest("hex");
 
 /** Judges every candidate of `<agent>/<slot>` and the pick among them. */
-export function pinGate(root: string, consumer: string, agent: string, slotId: string, pick: string, at: string, options: { readonly verdict?: "release.ready" } = {}): PinGate {
+/**
+ * `options.session` (U29c): the pin's guard session (guard.ts GuardSession) starts from the context the gate read,
+ * so the pin guard that follows under the same slot lock re-reads only the slot it pinned.
+ */
+export function pinGate(root: string, consumer: string, agent: string, slotId: string, pick: string, at: string, options: { readonly verdict?: "release.ready"; readonly session?: GuardSession } = {}): PinGate {
   const ctx = buildContext(root, consumer, { focus: [{ agent, slot: slotId }] });
+  if (options.session) options.session.context = ctx;
   const slot = ctx.agents.find(each => each.agent === agent)?.slots.get(slotId);
   const empty: Scorecard = { schema: SCORECARD_SCHEMA, slot: `${agent}/${slotId}`, at, pick, candidates: [] };
   if (!slot) return { refusals: [`${agent}/${slotId} is no live slot`], scorecard: empty };
@@ -74,7 +81,9 @@ export function pinGate(root: string, consumer: string, agent: string, slotId: s
   const env = certifyEnv(ctx);
   const rows = slot.candidates.map(candidate => {
     const { submit } = submitOf(slot, candidate.name);
-    const submitted = !!submit && submit.sha256 === candidate.sha256;
+    // The submit's sha256 carried through each later migrate event that rewrote those bytes (records/ledger.ts, the one carry-forward rule).
+    const expected = expectedCandidateSha(ledgerEventsOf(slot.ledger?.value) ?? [], candidate.name);
+    const submitted = !!submit && expected.submitted && expected.sha256 === candidate.sha256;
     const pinSet = pinSetOf({ slot, candidate }, env);
     const { certified, reasons } = certify({ slot, candidate }, env, pinSet);
     return { candidate: candidate.name, sha256: candidate.sha256, submitted, certified, verdict: "certify" as const, reasons, pinSet, submit };

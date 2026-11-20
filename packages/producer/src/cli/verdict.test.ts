@@ -67,13 +67,14 @@ const pick = { pick: "button-v1.json", reason: "fixture: the stock button fits",
 const create = { create: true, reason: "fixture: no candidate has the loading state", gaps: [{ id: "fidelity", class: "missing-behavior" }, { id: "brief:variant", class: "a11y-failure" }] };
 
 describe("clossys verdict --record", () => {
-  it("records a pick and pins it basis agent in the same lock", async () => {
+  it("refuses a pick on a clossys.slot/1 slot (migrate first) and writes nothing (U13 one format)", async () => {
+    // A verdict pick used to pin/1 the slot basis agent; one format (U13) writes slot/2 and pin/2 only, and a
+    // slot/2 pick moves through the CHOOSE gate (clossys pin), never a verdict.
     const result = await record(pick);
-    expect(result.exitCode, result.message).toBe(0);
-    expect(load(join(slotDir, "pin.json"))).toEqual({ candidate: "button-v1.json", sha256: sha256Hex(CANDIDATE), decidedBy: "agent:designer.verdict", basis: "agent", at: AT });
-    expect(events().map(event => event.op)).toEqual(["verdict", "pick"]);
-    expect(events()[0]).toMatchObject({ op: "verdict", verb: "verdict", by: "agent:designer.verdict", model: "fixture-model", tier: "high", verdict: "pick", pick: "button-v1.json", sha256: sha256Hex(CANDIDATE), criteria: ["fidelity", "polish"] });
-    expect(result.decision).toMatchObject({ slot: `designer/${ID}`, state: "pinned", candidate: "button-v1.json", basis: "agent" });
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toMatch(/is a clossys\.slot\/1 slot; .*run clossys migrate slots --apply first/);
+    expect(existsSync(join(slotDir, "pin.json"))).toBe(false);
+    expect(existsSync(join(slotDir, "ledger.json"))).toBe(false);
   });
 
   it("records a create with the latest options inputsHash, which opens P2 (next --stage brief)", async () => {
@@ -114,10 +115,10 @@ describe("clossys verdict --record", () => {
     expect((await record(pick)).message).toMatch(/names no standard/);
   });
 
-  it("undoes the verdict and its pin when the guard refuses", async () => {
+  it("undoes the verdict when the guard refuses", async () => {
     const path = `clossys/agents/designer/${ID}/ledger.json`;
     const firing = { rules: [{ id: "R14", statement: "", scope: "all-records", status: "enforced", check: "", test: "", checks: [], run: [{ id: "R14.1", status: "enforced", guard: ["verdict"], fn: () => [{ rule: "R14", check: "R14.1", agent: "designer", slot: ID, reason: "synthetic", path }] }] }] };
-    const result = await record(pick, `designer/${ID}`, firing);
+    const result = await record(create, `designer/${ID}`, firing);
     expect(result.exitCode).toBe(1);
     expect(result.message).toMatch(/R14\.1/);
     expect(existsSync(join(slotDir, "ledger.json"))).toBe(false);

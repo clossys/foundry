@@ -190,6 +190,8 @@ export interface ActionContract {
   readonly record: typeof RUN_RECORD;
   readonly checks: readonly string[];
   readonly uses: readonly string[];
+  /** A plumb action's standards (`<agent>/<id>`) whose candidates it computes; a plumb recipe naming it produces only for these (R15.5). */
+  readonly standards?: readonly string[];
   readonly decider?: Decider;
   readonly packet?: ActionPacket;
   readonly skill?: "skill.md";

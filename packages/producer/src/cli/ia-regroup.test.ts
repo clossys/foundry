@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { jsonBytes, slotPositions, type IaDoc, type SlotAgent } from "../records/slot-model/index.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import { resolveOwnerRef, validateOwnerDecisions } from "../records/owner-decisions.js";
+import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
+import { positionIa } from "../records/slot.js";
 // Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
 import "./main.js";
 import { IA_USAGE, runIaCli, runOwnerDecisionCli } from "./owner.js";
@@ -21,6 +23,15 @@ let consumer: string;
 const agentDir = (agent: string) => join(consumer, "agents", agent);
 const iaOf = (agent: string) => load(join(agentDir(agent), "ia.json"));
 const slotOf = (agent: string, id: string) => load(join(agentDir(agent), id, "slot.json"));
+/**
+ * A slot's placement in ia.json terms ({l0?, l1, l2, order}), after checking its clossys.slot/2 slot.json follows it
+ * (its ia is the slash-path positionIa of that placement).
+ */
+const placedAt = (agent: SlotAgent, id: string) => {
+  const at = slotPositions(agent, iaOf(agent) as IaDoc).get(id);
+  expect(slotOf(agent, id).ia, `${agent}/${id} slot.json ia`).toEqual(positionIa(id, at));
+  return at!;
+};
 
 /** An agent IA and a slot.json at its derived position for every slot. */
 function agentIa(agent: SlotAgent, ia: IaDoc, kind: string) {
@@ -28,7 +39,7 @@ function agentIa(agent: SlotAgent, ia: IaDoc, kind: string) {
   writeFileSync(join(agentDir(agent), "ia.json"), jsonBytes(ia));
   for (const [id, position] of slotPositions(agent, ia)) {
     mkdirSync(join(agentDir(agent), id), { recursive: true });
-    writeFileSync(join(agentDir(agent), id, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id, agent, ia: position, kind, contract: {}, inputs: [], uses: [] }));
+    writeFileSync(join(agentDir(agent), id, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id, agent, ia: position, kind, standard: `${kind}.fixture`, contract: {}, inputs: [], uses: [] }));
   }
 }
 // The regroup mechanics run on workspace-owned IAs: a package-sourced IA regroups its declared extensions only (see below).
@@ -58,6 +69,11 @@ beforeEach(() => {
   writeFileSync(join(consumer, "owner-decisions.json"), jsonBytes(DECISIONS));
   agentIa("designer", designer, "element");
   agentIa("director", director, "brief");
+  // One format (U13): the regroup verbs write clossys.slot/2 only and refuse a clossys.slot/1 slot, so the fixture
+  // slots are converted by the real migration (clossys migrate slots --apply) before each case.
+  const plan = planSlotsMigration(workspace, { at: AT, version: "0.0.0-test" });
+  expect(plan.findings).toEqual([]);
+  applySlotsMigration(workspace, plan, { at: AT, version: "0.0.0-test" });
 });
 afterEach(() => rmSync(workspace, { recursive: true, force: true }));
 
@@ -190,15 +206,16 @@ describe("clossys ia <agent>/<slot> --move", () => {
     const next = iaOf("designer");
     expect(next.nodes[2].children[0].slots).toEqual([]);
     expect(next.nodes[3].children[0].slots).toEqual(["frames.workspace", "frames.studio-shell"]);
-    expect(slotOf("designer", "frames.studio-shell")).toMatchObject({ id: "frames.studio-shell", ia: { l0: "frames", l1: "frames.page-shells", l2: "page-shells-workspaces", order: 5 } });
-    expect(slotOf("designer", "frames.workspace").ia).toEqual({ l0: "frames", l1: "frames.page-shells", l2: "page-shells-workspaces", order: 4 });
+    expect(slotOf("designer", "frames.studio-shell").id).toBe("frames.studio-shell");
+    expect(placedAt("designer", "frames.studio-shell")).toEqual({ l0: "frames", l1: "frames.page-shells", l2: "page-shells-workspaces", order: 5 });
+    expect(placedAt("designer", "frames.workspace")).toEqual({ l0: "frames", l1: "frames.page-shells", l2: "page-shells-workspaces", order: 4 });
     expect(lastChange("designer")).toEqual({ op: "move", ownerRef: REF, at: AT, detail: "moved frames.studio-shell from frames.extensions/extensions to frames.page-shells/page-shells-workspaces", slotFiles: 2 });
     clean();
   });
 
   it("takes <l0>/<l1>/<l2> and checks the L0", async () => {
     expect(await owned("designer/assets.favicon", "--move", "--under", "frames/page-shells/page-shells-empty")).toMatchObject({ exitCode: 0 });
-    expect(slotOf("designer", "assets.favicon").ia).toMatchObject({ l0: "frames", l1: "frames.page-shells", l2: "page-shells-empty" });
+    expect(placedAt("designer", "assets.favicon")).toMatchObject({ l0: "frames", l1: "frames.page-shells", l2: "page-shells-empty" });
     const before = tree();
     expect(await owned("designer/assets.app-icon", "--move", "--under", "themes/frames.page-shells/page-shells-empty")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/in L0 frames, not themes/) });
     expect(tree()).toEqual(before);
@@ -215,8 +232,9 @@ describe("clossys ia <agent>/<slot> --extension", () => {
   it("keeps slot.json extension and the ia.json extensions list in sync", async () => {
     expect(await owned("designer/frames.studio-shell", "--extension", "true")).toMatchObject({ exitCode: 0 });
     expect(iaOf("designer").extensions).toEqual(["frames.studio-shell"]);
-    expect(slotOf("designer", "frames.studio-shell").extension).toBe(true);
-    expect(lastChange("designer")).toMatchObject({ op: "extension", slotFiles: 1 });
+    // A clossys.slot/2 slot.json carries no extension key: the ia.json extensions list is the one record of it.
+    expect(slotOf("designer", "frames.studio-shell")).not.toHaveProperty("extension");
+    expect(lastChange("designer")).toMatchObject({ op: "extension", slotFiles: 0 });
     clean();
     expect(await owned("designer/frames.studio-shell", "--extension", "false")).toMatchObject({ exitCode: 0 });
     expect(iaOf("designer").extensions).toEqual([]);
@@ -230,7 +248,8 @@ describe("clossys ia <agent>/<slot> --extension", () => {
   it("rides along with a move", async () => {
     expect(await owned("designer/frames.studio-shell", "--move", "--under", "frames.page-shells/page-shells-workspaces", "--extension", "true")).toMatchObject({ exitCode: 0 });
     expect(iaOf("designer").extensions).toEqual(["frames.studio-shell"]);
-    expect(slotOf("designer", "frames.studio-shell")).toMatchObject({ extension: true, ia: { l2: "page-shells-workspaces" } });
+    expect(placedAt("designer", "frames.studio-shell")).toMatchObject({ l2: "page-shells-workspaces" });
+    expect(slotOf("designer", "frames.studio-shell")).not.toHaveProperty("extension");
     clean();
   });
 });
@@ -252,9 +271,9 @@ describe("tab and group operations", () => {
   it("--rename changes the label and keeps the id; --id renames it and the slot.json positions follow", async () => {
     expect(await owned("designer", "--rename", "assets.app-identity", "--label", "Identity")).toMatchObject({ exitCode: 0 });
     expect(iaOf("designer").nodes[1]).toMatchObject({ id: "assets.app-identity", label: "Identity" });
-    expect(slotOf("designer", "assets.favicon").ia.l1).toBe("assets.app-identity");
+    expect(placedAt("designer", "assets.favicon").l1).toBe("assets.app-identity");
     expect(await owned("designer", "--rename", "assets.app-identity/app-identity-browser", "--id", "browser")).toMatchObject({ exitCode: 0 });
-    expect(slotOf("designer", "assets.favicon").ia).toMatchObject({ l1: "assets.app-identity", l2: "browser" });
+    expect(placedAt("designer", "assets.favicon")).toMatchObject({ l1: "assets.app-identity", l2: "browser" });
     expect(await owned("director", "--rename", "strategy", "--id", "direction", "--label", "Direction")).toMatchObject({ exitCode: 0 });
     expect(iaOf("director").layers[1]).toEqual({ id: "direction", label: "Direction", nodes: ["focus"] });
     expect(await owned("director", "--rename", "focus", "--id", "context")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/already an L1/) });
@@ -266,10 +285,10 @@ describe("tab and group operations", () => {
     const next = iaOf("designer");
     expect(next.nodes.map((node: { id: string }) => node.id)).toEqual(["assets.logo", "frames.extensions", "frames.page-shells"]);
     expect(next.nodes[0].children.map((group: { id: string }) => group.id)).toEqual(["logo-artwork", "app-identity-browser", "app-identity-application"]);
-    expect(slotOf("designer", "assets.favicon").ia).toEqual({ l0: "assets", l1: "assets.logo", l2: "app-identity-browser", order: 2 });
+    expect(placedAt("designer", "assets.favicon")).toEqual({ l0: "assets", l1: "assets.logo", l2: "app-identity-browser", order: 2 });
     expect(lastChange("designer")).toMatchObject({ op: "merge", slotFiles: 2 });
     expect(await owned("designer", "--merge", "assets.logo/app-identity-application", "--into", "assets.logo/app-identity-browser")).toMatchObject({ exitCode: 0 });
-    expect(slotOf("designer", "assets.app-icon").ia).toEqual({ l0: "assets", l1: "assets.logo", l2: "app-identity-browser", order: 3 });
+    expect(placedAt("designer", "assets.app-icon")).toEqual({ l0: "assets", l1: "assets.logo", l2: "app-identity-browser", order: 3 });
     expect(await owned("designer", "--merge", "assets.logo", "--into", "assets.logo/logo-artwork")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/within one level/) });
     clean();
   });
@@ -293,11 +312,11 @@ describe("tab and group operations", () => {
 
   it("--reorder takes an exact permutation of one parent's members", async () => {
     expect(await owned("designer", "--reorder", "assets.app-identity", "--order", "app-identity-application,app-identity-browser")).toMatchObject({ exitCode: 0 });
-    expect(slotOf("designer", "assets.app-icon").ia.order).toBe(2);
-    expect(slotOf("designer", "assets.favicon").ia.order).toBe(3);
+    expect(placedAt("designer", "assets.app-icon").order).toBe(2);
+    expect(placedAt("designer", "assets.favicon").order).toBe(3);
     expect(await owned("designer", "--reorder", "L0", "--order", "frames,assets")).toMatchObject({ exitCode: 0 });
     expect(iaOf("designer").nodes.map((node: { id: string }) => node.id)).toEqual(["frames.extensions", "frames.page-shells", "assets.logo", "assets.app-identity"]);
-    expect(slotOf("designer", "frames.studio-shell").ia.order).toBe(0);
+    expect(placedAt("designer", "frames.studio-shell").order).toBe(0);
     expect(await owned("designer", "--reorder", "frames", "--order", "frames.page-shells,frames.extensions")).toMatchObject({ exitCode: 0 });
     expect(iaOf("designer").nodes.map((node: { id: string }) => node.id)).toEqual(["frames.page-shells", "frames.extensions", "assets.logo", "assets.app-identity"]);
     expect(await owned("designer", "--reorder", "assets.logo/logo-artwork", "--order", "assets.logo-word,assets.logo-mark")).toMatchObject({ exitCode: 0 });
@@ -323,15 +342,15 @@ describe("L0 levels: layers, assign and axes, for every agent that declares laye
     const layers = join(workspace, "layers.json"), axes = join(workspace, "axes.json");
     writeFileSync(layers, jsonBytes([{ id: "situation", label: "Situation", nodes: ["context"] }, { id: "strategy", label: "Strategy", nodes: ["focus", "execution"] }]));
     expect(await owned("director", "--layers", layers)).toMatchObject({ exitCode: 0 });
-    expect(slotOf("director", "execution.plan.milestones").ia).toEqual({ l1: "execution", l2: "execution.plan", order: 2 });
+    expect(placedAt("director", "execution.plan.milestones")).toEqual({ l1: "execution", l2: "execution.plan", order: 2 });
     writeFileSync(axes, jsonBytes({ ...AXES, L1: { situation: AXES.L1.situation, strategy: AXES.L1.strategy } }));
     expect(await owned("director", "--axes", axes)).toMatchObject({ exitCode: 0 });
-    expect(slotOf("director", "context.market.size").ia).toEqual({ l0: "situation", l1: "context", l2: "context.market", order: 0 });
-    expect(slotOf("director", "execution.plan.milestones").ia).toEqual({ l0: "strategy", l1: "execution", l2: "execution.plan", order: 2 });
+    expect(placedAt("director", "context.market.size")).toEqual({ l0: "situation", l1: "context", l2: "context.market", order: 0 });
+    expect(placedAt("director", "execution.plan.milestones")).toEqual({ l0: "strategy", l1: "execution", l2: "execution.plan", order: 2 });
     expect(lastChange("director")).toMatchObject({ op: "axes", slotFiles: 3 });
     // Once the layers are the L0, regrouping them re-levels the slots in the same write.
     expect(await owned("director", "--assign", "execution", "--layer", "plan", "--label", "Plan")).toMatchObject({ exitCode: 0 });
-    expect(slotOf("director", "execution.plan.milestones").ia).toEqual({ l0: "plan", l1: "execution", l2: "execution.plan", order: 2 });
+    expect(placedAt("director", "execution.plan.milestones")).toEqual({ l0: "plan", l1: "execution", l2: "execution.plan", order: 2 });
     expect(lastChange("director")).toMatchObject({ op: "assign", slotFiles: 1 });
     clean();
   });
@@ -378,17 +397,17 @@ describe("--dry", () => {
       expect(result, args.join(" ")).toMatchObject({ exitCode: 0, message: expect.stringMatching(/^ia --dry: .*wrote nothing|nothing written/), });
     }
     const moved = await owned("designer/frames.studio-shell", "--move", "--under", "frames.page-shells/page-shells-workspaces", "--dry");
-    expect(moved.message).toMatch(/slot\.json frames\.studio-shell: ia frames\/frames\.extensions\/extensions#4 -> frames\/frames\.page-shells\/page-shells-workspaces#5/);
+    expect(moved.message).toMatch(/slot\.json frames\.studio-shell: ia \S*extensions#4 -> \S*page-shells-workspaces#5/);
     expect(moved.output).toMatchObject({ dry: true, writes: ["clossys/agents/designer/ia.json", "clossys/agents/designer/frames.workspace/slot.json", "clossys/agents/designer/frames.studio-shell/slot.json"] });
     const axed = await owned("director", "--axes", axes, "--dry");
-    expect(axed.message).toMatch(/slot\.json context\.market\.size: ia context\/context\.market#0 -> situation\/context\/context\.market#0/);
+    expect(axed.message).toMatch(/slot\.json context\.market\.size: ia \S*market#0 -> situation\/\S*market#0/);
     expect(tree()).toEqual(before);
   });
 });
 
 describe("--contract --under: a slot placed before the end renumbers every later slot.json (IA-V2)", () => {
   const later = ["assets.favicon", "assets.app-icon", "frames.studio-shell", "frames.workspace"];
-  const orders = () => Object.fromEntries(["assets.logo-mark", "assets.logo-word", "assets.logo-glyph", ...later].filter(id => tree()[`clossys/agents/designer/${id}/slot.json`]).map(id => [id, slotOf("designer", id).ia.order]));
+  const orders = () => Object.fromEntries(["assets.logo-mark", "assets.logo-word", "assets.logo-glyph", ...later].filter(id => tree()[`clossys/agents/designer/${id}/slot.json`]).map(id => [id, placedAt("designer", id).order]));
   let contract: string;
   // The new leaf and its two L2 siblings read different material (U5: the placement overlap check refuses a leaf whose
   // inputs equal or nest in a sibling's of one L2 and kind family; two input-less leaves overlap only on equal contract
@@ -397,7 +416,9 @@ describe("--contract --under: a slot placed before the end renumbers every later
   beforeEach(() => {
     contract = join(workspace, "contract.json"); writeFileSync(contract, jsonBytes({ shape: "svg", requirements: [{ check: "svg.viewbox" }] }));
     for (const [id, input] of [["assets.logo-mark", "context.market.size"], ["assets.logo-word", "focus.where.segment"]] as const) {
-      writeFileSync(join(agentDir("designer"), id, "slot.json"), jsonBytes({ ...slotOf("designer", id), inputs: [input] }));
+      // A clossys.slot/2 input is a ref (rel input) in refs and the brief's inputs.
+      const doc = slotOf("designer", id), ref = { to: `director/${input}`, rel: "input" };
+      writeFileSync(join(agentDir("designer"), id, "slot.json"), jsonBytes({ ...doc, refs: [...doc.refs, ref], brief: { ...doc.brief, inputs: [...doc.brief.inputs, ref] } }));
     }
   });
 
@@ -407,14 +428,14 @@ describe("--contract --under: a slot placed before the end renumbers every later
     expect(result.message).toMatch(/4 other slot\.json renumbered \(order only\)/);
     clean();
     expect(orders()).toEqual({ "assets.logo-mark": 0, "assets.logo-word": 1, "assets.logo-glyph": 2, "assets.favicon": 3, "assets.app-icon": 4, "frames.studio-shell": 5, "frames.workspace": 6 });
-    expect(slotOf("designer", "assets.favicon").ia).toEqual({ l0: "assets", l1: "assets.app-identity", l2: "app-identity-browser", order: 3 });
+    expect(placedAt("designer", "assets.favicon")).toEqual({ l0: "assets", l1: "assets.app-identity", l2: "app-identity-browser", order: 3 });
     expect(lastChange("designer")).toEqual({ op: "place", ownerRef: REF, at: AT, detail: "placed assets.logo-glyph under assets.logo/logo-artwork; 4 later slot.json renumbered (order only)", slotFiles: 5 });
   });
 
   it("renumbers without an owner ref too, and records no change", async () => {
     expect(await ia("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork", ...glyph)).toMatchObject({ exitCode: 0 });
     clean();
-    expect(slotOf("designer", "frames.workspace").ia.order).toBe(6);
+    expect(placedAt("designer", "frames.workspace").order).toBe(6);
     expect(iaOf("designer").changes).toBeUndefined();
   });
 
@@ -441,14 +462,16 @@ describe("--contract --under: a slot placed before the end renumbers every later
 
   it("--dry fails (exit 1) exactly when the real write would be refused, and writes nothing", async () => {
     const before = tree();
-    const args = ["designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork", "--inputs", "assets.not-a-slot"];
+    // A clossys.slot/2 input no slot holds is a slot request to the agent that would hold it (see the dry line below);
+    // one no agent could hold is refused, dry or real.
+    const raised = await owned("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork", "--inputs", "assets.not-a-slot", "--dry");
+    expect(raised).toMatchObject({ exitCode: 0, message: expect.stringMatching(/would raise a slot request to designer for assets\.not-a-slot \(input\)/) });
+    const args = ["designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork", "--inputs", "zz.not-a-slot"];
     const dry = await owned(...args, "--dry");
-    expect(dry).toMatchObject({ exitCode: 1, message: expect.stringMatching(/^ia --dry refused: the slot model check would fail after the write: ref-unknown .*assets\.not-a-slot/) });
-    expect(dry.message).toMatch(/write clossys\/agents\/designer\/assets\.logo-glyph\/slot\.json/);
-    expect(dry.output).toMatchObject({ dry: true, refused: true, writes: expect.arrayContaining(["clossys/agents/designer/ia.json"]) });
+    expect(dry).toMatchObject({ exitCode: 1, message: expect.stringMatching(/^ia refused: no consumer slot folder holds zz\.not-a-slot/) });
     expect(tree()).toEqual(before);
     const real = await owned(...args);
-    expect(real).toMatchObject({ exitCode: 1, message: expect.stringMatching(/^ia refused: the slot model check fails after the write: ref-unknown/) });
+    expect(real).toMatchObject({ exitCode: 1, message: expect.stringMatching(/^ia refused: no consumer slot folder holds zz\.not-a-slot/) });
     expect(tree()).toEqual(before);
   });
 });
@@ -486,7 +509,7 @@ describe("a package-sourced IA: package regroups land in the package catalog, a 
     packaged(["frames.studio-shell"]);
     const result = await owned("designer/frames.studio-shell", "--move", "--under", "frames.page-shells/page-shells-empty");
     expect(result).toMatchObject({ exitCode: 0 });
-    expect(slotOf("designer", "frames.studio-shell")).toMatchObject({ ia: { l1: "frames.page-shells", l2: "page-shells-empty" } });
+    expect(placedAt("designer", "frames.studio-shell")).toMatchObject({ l1: "frames.page-shells", l2: "page-shells-empty" });
   });
 });
 

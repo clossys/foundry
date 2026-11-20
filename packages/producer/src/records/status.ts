@@ -1,4 +1,4 @@
-import { listSlots, readCandidate, readSlot } from "./slots.js";
+import { listSlots, readCandidate, readSlot, slotCandidateIssues } from "./slots.js";
 import { validateCandidate } from "./slot-model/index.js";
 import type { Hash, PinState, ReferenceRef, ReferencesManifest } from "./types.js";
 import { parseJson } from "../errors.js";
@@ -86,7 +86,7 @@ export function workspaceSlotStatus(
         detail.push(`pinned hash sha256:${pin.sha256} differs from candidate hash sha256:${candidate.sha256}`);
       }
       let issues: readonly unknown[];
-      try { issues = validateCandidate(readSlot(root, "designer", entry.id).kind, entry.id, pin.candidate, candidate.bytes); }
+      try { readSlot(root, "designer", entry.id); issues = slotCandidateIssues(root, "designer", entry.id, pin.candidate, candidate.raw); }
       catch (error) { issues = [(error as Error).message]; }
       if (!item || issues.length) {
         flags.add("failing");

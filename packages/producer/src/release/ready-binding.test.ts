@@ -18,6 +18,8 @@ import { answerQueueEntry } from "../queue/answer.js";
 import type { Iso, LedgerEntry, Ref } from "../records/types.js";
 import { readdirSync } from "node:fs";
 import { latestBuild, type ReleaseBuilder } from "./build.js";
+import { certifyWorld, resultKey } from "../constitution/certify/index.js";
+import { buildContext } from "../constitution/context.js";
 import { checkReleaseReady, readyFindings } from "./ready.js";
 import { clock, releaseWorld, stubBuilder, type ReleaseWorld } from "./__fixtures__/world.js";
 
@@ -84,8 +86,11 @@ describe("R1: the owner's ready answer is bound to one manifest", () => {
     answerQueueEntry(world.root, { entry: started.entry!, answer: "ready", by: "owner", via: "chat", quote: "ship it" }, now());
     const stale = await pin(world, "site-v1.json", started.entry!);
     expect(stale.exitCode).toBe(1);
-    expect(stale.message).toContain(`names ${v}`);
-    expect(stale.message).toContain("is not bound to this manifest");
+    // clossys pin refuses on the owner's answer first (cli/pin.ts); release.ready finds the same binding broken.
+    expect(stale.message).toContain(`about candidate ${v}, not site-v1.json`);
+    const details = findings(world, "site-v1.json", started.entry!);
+    expect(details.some(detail => detail.includes(`names ${v}`))).toBe(true);
+    expect(details.some(detail => detail.includes("is not bound to this manifest"))).toBe(true);
     expect(exists(pinFile(world))).toBe(false);
     const done = await resumeRun(world.root, started.state!.runId, hooks, { now });
     expect(done.exitCode, done.message).toBe(0);
@@ -310,5 +315,52 @@ describe("R6: loop.release records release.ready from the check, not the pin ste
     expect(ledger.status).toBe("stopped");
     expect(ledger.checks["release.ready"]).toBe("fail");
     expect(ledger.status).not.toBe("pinned-ready");
+  });
+});
+
+describe("the release certifier (R05.1, conform K3)", () => {
+  /** The certification reasons of a release manifest, judged afresh by the certifier R05 runs. */
+  const reasons = (world: ReleaseWorld, name: string) => {
+    const ctx = buildContext(world.root, join(world.root, "clossys"));
+    return certifyWorld(ctx, { cache: false }).results.get(resultKey("publisher", "release.site", name))!.certification.reasons;
+  };
+
+  it("judges a manifest by the release criteria, not as a publication record", async () => {
+    const world = make();
+    const name = await built(world, clock());
+    const honest = reasons(world, name);
+    expect(honest.filter(item => item.code === "release" || item.code === "invalid")).toEqual([]);
+    expect(honest.map(item => item.message).join("; ")).not.toContain("clossys.publication/1");
+  });
+
+  it("certifies a release slot afresh with the cache on: a manifest whose build is gone is never certified from the cache", async () => {
+    const world = make();
+    const name = await built(world, clock());
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "release-certify-cache-")));
+    dirs.push(dir);
+    const cache = join(dir, "certify.json");
+    const judged = () => certifyWorld(buildContext(world.root, join(world.root, "clossys")), { cache });
+    const releaseReasons = (reasons: readonly { code: string; message: string }[]) => reasons.filter(item => item.code === "release").map(item => item.message);
+    const first = judged().results.get(resultKey("publisher", "release.site", name))!.certification;
+    expect(releaseReasons(first.reasons)).toEqual([]);
+    expect(exists(cache)).toBe(true);
+    // The build the manifest names leaves the disk (its stamp removed): nothing in the manifest's cache key changed.
+    const build = latestBuild(world.root, "site")!;
+    unlinkSync(join(world.root, ".clossys/builds", `${build.id.slice(0, 8)}.json`));
+    const again = judged();
+    // The cache is on and serves the other slots; the release slot is judged afresh and fails on the missing build.
+    expect(again.hits).toBeGreaterThan(0);
+    const second = again.results.get(resultKey("publisher", "release.site", name))!.certification;
+    expect(second.certified).toBe(false);
+    expect(releaseReasons(second.reasons)).toContain(`build ${build.id.slice(0, 12)} has no stamp: what it read is unknown`);
+  });
+
+  it("refuses a manifest whose build fields are not the build stamp's, and one whose lineage was edited", async () => {
+    const world = make();
+    const name = await built(world, clock());
+    editManifest(world, name, content => { content.build.routes = 9; content.diff = []; });
+    const messages = reasons(world, name).filter(item => item.code === "release").map(item => item.message);
+    expect(messages).toContain(`manifest ${name} build.routes is 9, the build stamp says 1`);
+    expect(messages).toContain(`manifest ${name} diff does not match its pins against no previous version`);
   });
 });

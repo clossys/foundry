@@ -258,8 +258,16 @@ export const candidatesOf = (root: string, item: string): string[] => {
 };
 const version = (name: string) => Number(/-v(\d+)\.[a-z]+$/.exec(name)?.[1] ?? 0);
 
+/**
+ * The decider every owner option's recording call names (one format, U13 r2): the queue entry holding the owner's
+ * answer, `owner:queue.<kind>#<id>`, filled by the answerer. A clossys.pin/2 owner decision (seat, pin, approve,
+ * confirm) is recorded as the owner's and cites that entry; the CLI never records an owner basis without it.
+ */
+export const QUEUE_ANSWER = "<queue-answer>";
 /** What the answerer fills for each placeholder an owner option's argv carries (the one table; `filled` refuses any other). */
 export const PLACEHOLDER_MEANING: Readonly<Record<string, string>> = {
+  // DRAFT copy (not owner-approved).
+  [QUEUE_ANSWER]: "the queue entry holding the owner's answer to this question (owner:queue.<kind>#<id>)",
   "<id>": "a record id for the answer (owner-<topic>-<date>)",
   "<answer.md>": "a file with the owner's words, verbatim",
   "<source>": "where the finding was observed (a URL or a document path)",
@@ -314,12 +322,12 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
     const by = owner ? "owner" : `agent:${target.agent}`;
     const source = /^pick\.(.+)$/.exec(item)?.[1];
     const sourceSeat = source ? context.seats[`${source}.candidates`] : undefined;
-    const seatArgs = (tier: string, model: string) => ["clossys", "seat", item, "--by", by, "--model", model, "--tier", tier, "--prompt-file", skill, "--procedure", procedure, "--command", command];
+    const seatArgs = (tier: string, model: string) => ["clossys", "seat", item, "--by", by, "--model", model, "--tier", tier, "--prompt-file", skill, "--procedure", procedure, "--command", command, "--decided-by", QUEUE_ANSWER];
     if (sourceSeat && sourceSeat.llm && sourceSeat.llm !== "open") add(`The llm that made ${source}'s options picks (${sourceSeat.llm.model}, ${sourceSeat.llm.tier}); you confirm in Studio.`, seatArgs(sourceSeat.llm.tier, sourceSeat.llm.model));
     else if (owner) add("You decide; a mid-tier llm drafts a recommendation from the step's skill first.", seatArgs("mid", "<model:mid>"));
     else add(`The ${target.agent} agent does it at mid tier with its skill; you review the result in Studio.`, seatArgs("mid", "<model:mid>"));
     add(owner ? "You decide; a high-tier llm drafts the recommendation." : `The ${target.agent} agent does it at high tier.`, seatArgs("high", "<model:high>"));
-    add("Human only, no llm: the seat stays listed open until an llm part is added.", ["clossys", "seat", item, "--by", by, "--no-llm", "--procedure", procedure, "--command", command]);
+    add("Human only, no llm: the seat stays listed open until an llm part is added.", ["clossys", "seat", item, "--by", by, "--no-llm", "--procedure", procedure, "--command", command, "--decided-by", QUEUE_ANSWER]);
   } else if (step.id === "ia" && !item.includes("/")) {
     add(`Adopt the Foundry IA for ${item}: its tree and every slot's contract, inputs and uses.`, ["clossys", "ia", item, "--adopt"]);
     add(`Start an empty IA for ${item} and place each slot yourself (clossys ia ${item}/<slot> --under <l1>/<l2>).`, ["clossys", "ia", item, "--start"]);
@@ -342,15 +350,15 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
   } else if (step.id === "writer.approve") {
     const names = candidatesOf(root, item).filter(name => name.endsWith(".md"));
     const keys = writerKeysUnapproved(root).get(item.slice("writer/".length)) ?? [];
-    for (const name of names.slice(-2).reverse()) add(`Approve ${name}${name === names.at(-1) ? ` (its ${keys.length} new key${keys.length === 1 ? "" : "s"}: ${keys.slice(0, 4).join(", ")}${keys.length > 4 ? ", ..." : ""})` : ""}.`, ["clossys", "approve", item, name]);
+    for (const name of names.slice(-2).reverse()) add(`Approve ${name}${name === names.at(-1) ? ` (its ${keys.length} new key${keys.length === 1 ? "" : "s"}: ${keys.slice(0, 4).join(", ")}${keys.length > 4 ? ", ..." : ""})` : ""}.`, ["clossys", "approve", item, name, "--by", QUEUE_ANSWER]);
     // Never a lone approve: the owner can always ask the Writer for another draft first.
     add("Ask the Writer for another draft before approving.", ["clossys", "options", item, "--more"]);
   } else if (step.id.startsWith("pin.")) {
     const names = candidatesOf(root, item);
-    for (const name of names.slice(-3).reverse()) add(`Pin ${name}.`, ["clossys", "pin", item, name, "--basis", "picked"]);
+    for (const name of names.slice(-3).reverse()) add(`Pin ${name}.`, ["clossys", "pin", item, name, "--basis", "picked", "--by", QUEUE_ANSWER]);
     // A slot adopted from the package IA with no candidate yet: the first answer asks for its options.
     if (!names.length) add(`Ask the ${item.slice(0, item.indexOf("/"))} agent for candidates first (the brief for fresh options).`, ["clossys", "options", item, "--more"]);
-    add("Not needed: the slot ships nothing.", ["clossys", "pin", item, "--not-needed", "--reason", "<why>"]);
+    add("Not needed: the slot ships nothing.", ["clossys", "pin", item, "--not-needed", "--reason", "<why>", "--by", QUEUE_ANSWER]);
   }
   options.splice(4);
   options.push({ id: "other", label: "Something else: answer in your own words.", recommended: false, argv: null, fill: {} });

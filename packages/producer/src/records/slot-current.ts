@@ -30,6 +30,7 @@ const FAMILY: Readonly<Partial<Record<TargetSlotKind, SlotKind>>> = {
   "element/token": "element", "element/asset": "element", "element/component": "element", "element/section": "element", "element/frame": "element",
   voice: "strings", prose: "strings", copy: "strings",
   page: "page", layout: "page", chrome: "page", publication: "publication", release: "publication",
+  seat: "seat",
 };
 /** The reader's kind family of a current kind (`copy` is `strings`), or the value itself when it names none. */
 export const slotFamily = (kind: unknown): unknown => typeof kind === "string" ? FAMILY[kind as TargetSlotKind] ?? kind : kind;
@@ -39,7 +40,7 @@ export const CURRENT_AGENT_KINDS: Readonly<Record<ModelAgent, readonly TargetSlo
   designer: ["element/token", "element/asset", "element/component", "element/section", "element/frame", "loop"],
   writer: ["voice", "prose", "copy", "loop"],
   publisher: ["page", "layout", "chrome", "publication", "release", "loop"],
-  producer: ["loop", "queue", "ledger"],
+  producer: ["loop", "queue", "ledger", "seat"],
 };
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);

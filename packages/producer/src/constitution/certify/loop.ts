@@ -35,7 +35,7 @@ export function certifyLoop(slot: SlotRecord, candidate: CandidateRecord, contra
   if (contract.loop !== loop) out.push(reason("fixture", `contract.loop must be ${loop}, the slot's own id`));
   if (contract.extends !== `producer/${loop}`) out.push(reason("fixture", `contract.extends must be producer/${loop}, the standard loop it extends`));
   if (candidate.jsonError !== undefined || !isObject(candidate.json)) return [...out, reason("invalid", `${candidate.name} is not a JSON loop candidate${candidate.jsonError ? `: ${candidate.jsonError}` : ""}`)];
-  const header = candidate.json.clossys;
+  const header = candidate.header ?? candidate.json.clossys;
   if (!isObject(header) || header.schema !== "clossys.candidate/1" || header.slot !== `${agent}/${loop}`) {
     out.push(reason("invalid", `${candidate.name} has no clossys.candidate/1 header naming ${agent}/${loop}`));
   }

@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join, posix, resolve } from "node:path";
 import { adaptTheme, installedPath, recordStoreSource, SPECIMEN_SAMPLE_COPY_KEYS, specimenKindOf, type SpecimenAliasContext, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore, type SpecimenTheme } from "@clossys/publisher/specimen";
-import { listSlots, pinStamp, readCandidate, readSlot, readSlotEntry, viewIssues, viewPlacedAt, type SlotEntry } from "../records/slots.js";
+import { listSlots, pinStamp, readCandidate, readSlot, readSlotEntry, slotCandidateIssues, viewIssues, viewPlacedAt, type SlotEntry } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate } from "../records/slot-model/index.js";
 import { contractFixtureIssues, contractFixtureOf, type ContractFixture } from "../records/slot-model/contract-fixture.js";
 import { RecordError } from "../records/validate.js";
@@ -204,7 +204,7 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
       if (!viewPlacedAt(doc, slot, "designer", entry.position) || doc.kind !== "element") docIssues.push({ code: "slot-mismatch", path: "slot.json", message: "slot identity or position differs from the IA" });
       if (docIssues.length) throw new RecordError(`slot ${slot}`, docIssues);
       const read = readCandidate(root, "designer", slot, candidate.name);
-      const issues = validateCandidate("element", slot, candidate.name, read.bytes);
+      const issues = slotCandidateIssues(root, "designer", slot, candidate.name, read.raw);
       if (entry.pin?.candidate === candidate.name && entry.pin.sha256 !== read.sha256) issues.push({ code: "pin-hash", path: "pin.json", message: "pinned candidate bytes do not match sha256" });
       if (issues.length) throw new RecordError(`candidate ${slot}/${candidate.name}`, issues);
       const item = JSON.parse(read.bytes);

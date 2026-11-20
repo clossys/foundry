@@ -27,8 +27,12 @@ import "../constitution/guard.js"; // registers the write guard's runner
 import { DESIGNER_RUNG_KIND } from "../pipeline/candidate-ladder.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
-import { resolveCandidate } from "./pin.js";
+import { isOldTargetSlot, oldSlotRefusal, resolveCandidate } from "./pin.js";
+import { seatRefusal } from "../records/seat-owner.js";
 import { discoverRoot } from "./root.js";
+import { candidateCodec, recutCandidateBytes } from "../records/candidate-codec.js";
+import { candidateHeaderOf } from "../records/slot-current.js";
+import { cliActor, toIsoZ } from "../records/pin.js";
 
 export const REISSUE_USAGE = "Usage: clossys reissue <agent>/<slot> <candidate> --by agent:<seat> [--at <iso timestamp>] [--root <dir>] [--json]\n"
   + "  Writes the slot's next version <leaf>-v<n> of <candidate>: exact dependencies from the root package-lock.json,\n"
@@ -116,10 +120,11 @@ export function withoutPreviewProps(doc: Json): Json {
 }
 
 /** The reissue's ladder rung: adopt, or for the Designer the old submit's L1/L2, else L1 for stock shadcn and L2 for a partner registry. */
-export function reissueRung(agent: ModelAgent, oldRung: unknown, doc: unknown): string {
+export function reissueRung(agent: ModelAgent, oldRung: unknown, doc: unknown, headerSource?: unknown): string {
   if (agent !== "designer") return "adopt";
   if (typeof oldRung === "string" && (DESIGNER_RUNG_KIND as Record<string, string>)[oldRung] === "adopt") return oldRung;
-  const source = isObject(doc) && isObject(doc.meta) && isObject(doc.meta.source) ? doc.meta.source : undefined;
+  // A headered candidate's source sits in its clossys.candidate/1 header, not in meta.source (U13).
+  const source = isObject(doc) && isObject(doc.meta) && isObject(doc.meta.source) ? doc.meta.source : isObject(headerSource) ? headerSource : undefined;
   const refs = Array.isArray(source?.ref) ? source!.ref : typeof source?.ref === "string" ? [source.ref] : [];
   return refs.some(ref => typeof ref === "string" && /^shadcn(?:-aria|@aria)?\//.test(ref)) ? "L1" : "L2";
 }
@@ -196,16 +201,27 @@ export async function runReissueCli(argv: readonly string[], cwd: string, guard:
   if (!entry) return refuse(`unknown slot ${target} (not in ${agent} ia.json)`);
   const old = resolveCandidate(entry.candidates, candidateId);
   if (!old || !CANDIDATE_NAME.test(old)) return refuse(`${target} has no candidate ${candidateId}${entry.candidates.length ? ` (candidates: ${entry.candidates.join(", ")})` : ""}`);
+  // One format (foundry-build-0048 U13): a reissue writes a headered candidate in a clossys.slot/2 slot only.
+  // The seat rule judges who acts before the format refusal judges what is written (Q9).
+  const crossing = seatRefusal(flags.by, agent);
+  if (crossing !== undefined) return refuse(crossing);
+  if (isOldTargetSlot(root, agent, id)) return refuse(oldSlotRefusal("reissue", target));
   try {
     const doc = readSlot(consumer, agent, id);
     const read = readCandidate(consumer, agent, id, old);
     const lock = readLock(dirname(resolve(consumer)));
-    const plan = planReissue(read.bytes, KIND_EXT[doc.kind] === "json", { agent, slot: id, uses: doc.uses, lock, index: slotIndex(consumer) });
+    const oldText = readFileSync(join(entry.dir, "candidates", old), "utf8");
+    // The one candidate codec (U13 r4): a candidate submitted without a clossys header is read as its recut mapping
+    // (what migrate slots writes), so the reissue transforms the content and front fields beside the header only.
+    const headered = candidateHeaderOf(old, oldText) ? oldText : recutCandidateBytes(old, oldText, { agent, slotId: id, at: toIsoZ(at) ?? at, version: cliActor("clossys reissue").version, sourceRef: `agents/${agent}/${id}/candidates/${old}`, cli: "clossys reissue" } as Parameters<typeof recutCandidateBytes>[2]);
+    const split = candidateCodec.parse(old, headered);
+    const oldHeader = headered === oldText ? undefined : split.header;
+    const plan = planReissue(split.content, KIND_EXT[doc.kind] === "json", { agent, slot: id, uses: doc.uses, lock, index: slotIndex(consumer) });
     if (plan.issues.length) return refuse(`${target} ${old}: ${plan.issues.join("; ")}`);
     const events = (readLedger(entry.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
     const oldRung = events.filter(event => event.op === "submit" && (event.name === old || event.candidate === old)).at(-1)?.rung;
-    const rung = reissueRung(agent, oldRung, plan.content);
-    const result = writeReissue(consumer, agent, id, { old, oldSha256: read.sha256, content: plan.content, ...(plan.uses ? { uses: plan.uses } : {}), rung, by: flags.by, at }, { guard });
+    const rung = reissueRung(agent, oldRung, plan.content, split.header?.source);
+    const result = writeReissue(consumer, agent, id, { old, oldSha256: read.sha256, content: plan.content, ...(plan.uses ? { uses: plan.uses } : {}), rung, by: flags.by, at, front: split.front, ...(oldHeader ? { oldHeader: oldHeader as never } : {}) }, { guard });
     return {
       exitCode: 0, root,
       decision: { slot: target, reissued: old, candidate: result.name, sha256: result.sha256, rung, seed: result.seed, retired: result.code, repinned: result.repinned, usesChanged: result.usesChanged, anchors: plan.anchors, by: flags.by, at },

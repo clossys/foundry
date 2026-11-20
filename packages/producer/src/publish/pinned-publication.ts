@@ -28,7 +28,7 @@ export async function readPinnedPublication(consumer: string, publicationId: str
       // The candidate as written: its citations are slot ids, resolved through each cited slot's pin.
       try {
         const read = readCandidate(consumer, "publisher", id, name);
-        onRead?.(`agents/publisher/${id}/candidates/${name}`, read.bytes);
+        onRead?.(`agents/publisher/${id}/candidates/${name}`, read.raw); // the lock hashes the file; the projection reads the view
         return read;
       } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error; }
     },

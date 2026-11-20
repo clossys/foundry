@@ -37,9 +37,18 @@ export interface CandidateRecord {
   readonly name: string;
   /** Workspace-relative path. */
   readonly path: string;
+  /** The file text, or for a headered candidate of a kind with kind rules its view (see `header`). */
   readonly text: string;
-  /** Hex sha256 of the file bytes. */
+  /** Hex sha256 of the file bytes (the raw file, header included, even when `text` is the view). */
   readonly sha256: string;
+  /** The clossys.candidate/1 header; `text` and `json` are then the candidate's view without it (records/candidate-codec.ts). */
+  readonly header?: Readonly<Record<string, unknown>>;
+  /**
+   * Hex sha256 of a headered candidate's view (the codec's `view`: the file without its clossys.candidate/1 header,
+   * whatever `text` holds for its family). The header names the file, so two files with one view differ only in it;
+   * R03.2's verbatim adopt of a seed compares this.
+   */
+  readonly viewSha256?: string;
   /** Parsed JSON for a `.json` candidate; undefined for `.md` or unparseable JSON. */
   readonly json?: unknown;
   readonly jsonError?: string;

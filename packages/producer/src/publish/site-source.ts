@@ -9,7 +9,7 @@ import { agentModule } from "../read/cells.js";
 import { isAgentLoop } from "../loop/agent-loops.js";
 import { readPinnedPublication } from "./pinned-publication.js";
 import { writerDeclarationsText } from "./studio-defaults.js";
-import { hasPinFile, hasSlotModel, listSlots, readCandidate, readIa, readSlot, viewPlacedAt } from "../records/slots.js";
+import { hasPinFile, hasSlotModel, listSlots, readCandidate, readIa, readSlot, slotCandidateIssues, viewPlacedAt } from "../records/slots.js";
 import { parseFrontmatter, validateCandidate } from "../records/slot-model/index.js";
 import type { PageCopyBinding, PublisherInput, WriterInput, WriterRecord, WriterSectionBinding } from "@clossys/publisher/build";
 
@@ -72,9 +72,10 @@ export async function pinnedWriterRows(consumer: string): Promise<{ rows: Writer
     if (!viewPlacedAt(doc, entry.id, "writer", entry.position) || doc.kind !== "strings") {
       throw new Error(`Invalid Writer slot: ${entry.id}`);
     }
+    // The view: the copy as published, never its clossys header; the file bytes are what the slot's rules judge.
     const candidate = readCandidate(consumer, "writer", entry.id, entry.pin.candidate);
     if (candidate.sha256 !== entry.pin.sha256) throw new Error(`Writer candidate hash mismatch: ${entry.id}`);
-    if (validateCandidate(doc.kind, entry.id, candidate.name, candidate.bytes).length) throw new Error(`Invalid Writer candidate: ${entry.id}`);
+    if (slotCandidateIssues(consumer, "writer", entry.id, candidate.name, candidate.raw).length) throw new Error(`Invalid Writer candidate: ${entry.id}`);
     const parsed = parseFrontmatter(candidate.bytes);
     if (!parsed.ok) throw new Error(`Invalid Writer candidate envelope: ${entry.id}`);
     rows.push(...parser.parseWriterSlotBody(parsed.value.body, parsed.value.fields.locales));

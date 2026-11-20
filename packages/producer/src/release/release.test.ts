@@ -17,10 +17,14 @@ import type { LedgerEntry } from "../records/types.js";
 import { closeWork, raiseWork } from "../records/request.js";
 import { cliActor } from "../records/pin.js";
 import { writeTargetPin } from "../records/pin-map.js";
+import { sha256Hex } from "../records/hash.js";
+import { lastRecordState } from "../records/ledger.js";
+import { readLedger } from "../records/slots.js";
+import { candidateCodec } from "../records/candidate-codec.js";
 import { latestBuild } from "./build.js";
 import { RELEASE_GATES } from "./gates.js";
 import { latestManifest } from "./manifest.js";
-import { checkReleaseReady } from "./ready.js";
+import { checkReleaseReady, readyFindings } from "./ready.js";
 import { clock, releaseWorld, geographyBrief, stubBuilder, type ReleaseWorld } from "./__fixtures__/world.js";
 
 const worlds: ReleaseWorld[] = [];
@@ -90,6 +94,15 @@ describe("clossys release --manifest", () => {
     expect(Object.keys(content.checks)).toEqual([...RELEASE_GATES]);
     expect(Object.values(content.checks).every(status => status === "pass")).toBe(true);
     expect(content.previous).toBeNull();
+    // The manifest has provenance like every candidate (R14.1): one submit event with its name and the bytes' sha256,
+    // written by Producer code through the publisher.release action; the world's slot.json write is recorded too.
+    const dir = join(world.root, "clossys/agents/publisher/release.site");
+    const events = (readLedger(dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
+    const submits = events.filter(event => event.op === "submit");
+    expect(submits).toHaveLength(1);
+    expect(submits[0]).toMatchObject({ name: "site-v1.json", sha256: manifest.sha256 });
+    expect(JSON.stringify(submits[0])).toContain("packages/producer/actions/publisher.release/action.json");
+    expect(lastRecordState(events, "slot.json")?.sha256).toBe(sha256Hex(readFileSync(join(dir, "slot.json"))));
   });
 
   it("does not write the same manifest twice, and refuses when the pins moved since the build", async () => {
@@ -233,7 +246,10 @@ describe("the ready-pin", () => {
     const entry = world.signoff(now, "not-ready");
     const result = await pin(world, "site-v1.json", entry);
     expect(result.exitCode).toBe(1);
-    expect(result.message).toContain("not ready");
+    // clossys pin refuses on the owner's answer first (cli/pin.ts); release.ready names the same answer.
+    expect(result.message).toContain("was answered not-ready");
+    expect(readyFindings(world.root, "site", { candidate: "site-v1.json" as never, decidedBy: `owner:${entry}`, basis: "picked", at: "2026-11-21T00:00:00Z" as never }).map(row => row.detail))
+      .toContain(`${entry} was answered not-ready, not ready`);
   });
 
   it("is refused for an answer raised before the manifest was written", async () => {
@@ -243,7 +259,10 @@ describe("the ready-pin", () => {
     await release(world, "--manifest");
     const result = await pin(world, "site-v1.json", entry);
     expect(result.exitCode).toBe(1);
-    expect(result.message).toContain("before the manifest was written");
+    // clossys pin refuses on the owner's answer first (cli/pin.ts): it was raised before the manifest, so it names none.
+    expect(result.message).toContain("about no candidate, not site-v1.json");
+    expect(readyFindings(world.root, "site", { candidate: "site-v1.json" as never, decidedBy: `owner:${entry}`, basis: "picked", at: "2026-11-21T00:00:00Z" as never }).map(row => row.detail)
+      .some(detail => detail.includes("before the manifest was written"))).toBe(true);
   });
 
   it("is refused for a planner or agent pin", async () => {
@@ -410,9 +429,14 @@ describe("slots.stale on the release inputs (U8a)", () => {
 
   it("fails a pin on another candidate with the same bytes as a judged one (the verdict binds the candidate name)", async () => {
     const world = make();
-    const judged = world.read("clossys/agents/designer/sections.hero/candidates/hero-v1.json");
-    const name = world.handPin("designer/sections.hero", 2, JSON.parse(judged));
-    expect(world.read(`clossys/agents/designer/sections.hero/candidates/${name}`)).toBe(judged);
+    // The candidate as its rules read it is copied (its view: the item with its source), not the headered file:
+    // each candidate's header names its own file, so the copy's content bytes equal the judged one's.
+    const judged = candidateCodec.parse("hero-v1.json", world.read("clossys/agents/designer/sections.hero/candidates/hero-v1.json"));
+    const name = world.handPin("designer/sections.hero", 2, JSON.parse(judged.view));
+    const copied = candidateCodec.parse(name, world.read(`clossys/agents/designer/sections.hero/candidates/${name}`));
+    expect(copied.header).toBeDefined();
+    expect(copied.content).toBe(judged.content);
+    expect(copied.view).toBe(judged.view);
     const gates = await release(world, "--gates");
     expect(gates.exitCode).toBe(1);
     expect(stale(gates).find(row => row.subject === "designer/sections.hero")?.detail).toMatch(/^pinned hero-v2\.json is a legacy pin with no recorded pinSet or verdict/);

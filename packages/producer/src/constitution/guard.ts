@@ -21,7 +21,7 @@
 import { dirname } from "node:path";
 import { byteExactAdoption, checkRegistryItem } from "@clossys/designer/ref-verbatim";
 import { rungKind } from "../pipeline/candidate-ladder.js";
-import { buildContext, type ContextOptions } from "./context.js";
+import { buildContext, refreshContext, type ContextOptions } from "./context.js";
 import { fixHint, REF_VERBATIM_FIX, REF_VERBATIM_ID } from "./fix.js";
 import { registeredRules, type RegisteredRule } from "./registry.js";
 import { submitOf } from "./rules/r03.js";
@@ -82,7 +82,19 @@ export interface GuardOptions extends ContextOptions {
    * injected registry.
    */
   readonly refVerbatim?: boolean;
+  /**
+   * One run's guard session (U29c): the context the run's last passing guard (or its pin gate, pin-gate.ts) read.
+   * A guard given one re-reads only its targets' slot folders and the agent-level files (refreshContext), not the
+   * whole tree; the caller states that nothing else under `<consumer>/agents` was written since, which holds for a
+   * run whose writes are its targets' folders under their slot locks (`clossys pin`, `clossys migrate slots`).
+   * The rows judged are the same rows a fresh read gives (guard-session.test.ts). A refusal, or a check that throws,
+   * clears it.
+   */
+  readonly session?: GuardSession;
 }
+
+/** The context a run's guards carry from one guarded write to the next (GuardOptions.session). */
+export interface GuardSession { context?: ConstitutionContext }
 
 /** The Designer ref-verbatim gate as a guard: the verbs it runs on and the fix its refusals print (fix.ts). */
 export const REF_VERBATIM_GUARD = { id: REF_VERBATIM_ID, verbs: ["submit", "pin", "pick", "reissue"] as readonly GuardVerb[], fix: REF_VERBATIM_FIX } as const;
@@ -125,9 +137,15 @@ export function refVerbatimRows(ctx: ConstitutionContext, targets: readonly Guar
 export function runGuard(consumer: string, verb: GuardVerb, targets: readonly GuardTarget[], options: GuardOptions = {}): Row[] {
   const checks = guardChecks(verb, options.rules);
   const refVerbatim = (options.refVerbatim ?? options.rules === undefined) && REF_VERBATIM_GUARD.verbs.includes(verb);
+  const { session } = options;
+  const prior = session?.context;
+  if (session) delete session.context;
   if ((!checks.length && !refVerbatim) || !targets.length) return [];
   const focus = targets.map(target => ({ agent: target.agent, slot: target.slot, ...(target.candidate ? { candidate: target.candidate } : {}) }));
-  const ctx = buildContext(options.root ?? dirname(consumer), consumer, { ...options, focus });
+  const root = options.root ?? dirname(consumer);
+  const ctx = prior && prior.root === root && prior.consumer === consumer
+    ? refreshContext(prior, targets, { ...options, focus })
+    : buildContext(root, consumer, { ...options, focus });
   const rows: Row[] = refVerbatim ? refVerbatimRows(ctx, targets) : [];
   for (const check of checks) {
     let found: Row[];
@@ -138,6 +156,7 @@ export function runGuard(consumer: string, verb: GuardVerb, targets: readonly Gu
     }
     rows.push(...targetRows(found.map(row => ({ ...row, check: row.check || check.id })), targets));
   }
+  if (session && !rows.length) session.context = ctx;
   return rows;
 }
 

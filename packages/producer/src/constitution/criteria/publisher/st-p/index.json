@@ -21,6 +21,13 @@
       "export": "routes",
       "fixtures": "__fixtures__/publication.routes.json",
       "summary": "A clossys.publication/1 record: format, unique entry order, home route in it, derived source, tree of page slots."
+    },
+    {
+      "id": "release.manifest",
+      "module": "release",
+      "export": "manifest",
+      "fixtures": "__fixtures__/release.manifest.json",
+      "summary": "A release manifest of one publication: every gate recorded pass, every pin with a sha256, a build named by its digest at its build path, a lineage (previous, diff, source) that agrees with itself."
     }
   ]
 }

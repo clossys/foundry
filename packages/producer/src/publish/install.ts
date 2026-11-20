@@ -28,7 +28,7 @@ import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { isHostPackage } from "../specimen/host-packages.js";
 import { dependencyPart, treeDependencyParts } from "../specimen/specimen-tree.js";
 import { firstComponentSource } from "@clossys/publisher/build";
-import { hasSlotModel, readCandidate, readIa, readPin, readSlot, viewPlacedAt } from "../records/slots.js";
+import { hasSlotModel, readCandidate, readIa, readPin, readSlot, slotCandidateIssues, viewPlacedAt } from "../records/slots.js";
 import { slotPositions, validateCandidate } from "../records/slot-model/index.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { readWriter } from "./site-source.js";
@@ -491,9 +491,10 @@ export async function pageRecordFromCell(root: string, id: string, pins: Install
     }
     const pin = readPin(consumer, "publisher", cellId);
     if (!pin) throw new Error(`publish --install: Publisher page slot ${cellId} has no valid pin`);
+    // The view: the page as published, never its clossys header; the file bytes are what the slot's rules judge.
     const candidate = readCandidate(consumer, "publisher", cellId, pin.candidate);
     if (candidate.sha256 !== pin.sha256) throw new Error(`publish --install: Publisher page slot ${cellId} has pin hash drift`);
-    if (validateCandidate(slot.kind, cellId, candidate.name, candidate.bytes).length) {
+    if (slotCandidateIssues(consumer, "publisher", cellId, candidate.name, candidate.raw).length) {
       throw new Error(`publish --install: invalid pinned Publisher page candidate ${cellId}`);
     }
     const page = JSON.parse(candidate.bytes) as NativePageCandidate;

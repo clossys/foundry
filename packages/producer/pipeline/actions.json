@@ -3413,7 +3413,10 @@
         "checks": [
           "workspace"
         ],
-        "uses": []
+        "uses": [],
+        "standards": [
+          "publisher/release"
+        ]
       }
     }
   ]
