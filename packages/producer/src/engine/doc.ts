@@ -6,7 +6,7 @@
 import { CHAIN_ISSUES, ENGINE_DIR, EVENTS_FILE, INDEX_FILE, LOCK_FILE, RECORD_AGENTS } from "./chain.js";
 import { INDEX_FIELDS } from "./derived.js";
 import { ENGINE_LOCK_WAIT_MS, FOREIGN_LOCK_MS, OWNERLESS_LOCK_MS } from "./lock.js";
-import { ENGINE_SURFACE, PAIRED_APPENDERS, PAIRED_WRITERS, SCRIPT_WRITERS, SIDE_DOOR_MESSAGES, SIDE_DOOR_SCOPE, WRITE_CALLS } from "./side-door.js";
+import { ENGINE_SURFACE, surfaceFunctions, PAIRED_APPENDERS, PAIRED_WRITERS, SCRIPT_WRITERS, SIDE_DOOR_MESSAGES, SIDE_DOOR_SCOPE, WRITE_CALLS } from "./side-door.js";
 import { ENGINE_TYPES, GENESIS } from "./types.js";
 
 export const ENGINE_DOC = "packages/producer/docs/engine.md";
@@ -143,11 +143,11 @@ export function engineDoc(): string {
     "",
     "## The one writer",
     "",
-    `${code("appendEvent(root, draft)")} validates the draft, takes the engine lock, chains the event to the last line, appends it as one line (fsync) and updates the index, all under the lock. It writes nothing on an invalid draft (EngineEventError), a torn or invalid last line (EngineLogError) or a busy lock (EngineBusyError). ${code("recordEvent(paths, draft)")} is the call a record writer makes after it wrote its files: the root comes from the first path, the inputs are every path with the sha256 of its bytes now.`,
+    `${code("appendEvent(root, draft)")} validates the draft, takes the engine lock, chains the event to the last line, appends it as one line (fsync) and updates the index, all under the lock. It writes nothing on an invalid draft (EngineEventError), a torn or invalid last line (EngineLogError) or a busy lock (EngineBusyError). ${code("recordEvent(paths, draft)")} is the call a record writer makes after it wrote its files: the root comes from the first path, the inputs are every path with the sha256 of its bytes now. Since its files are already on disk, any failure of that append (a busy lock past the wait, a torn log) is a RecordCommittedError (code ${code("RECORD_COMMITTED")}), never an EngineBusyError: the write is done and must not be retried. The loop runner's own events (${code("commitEvent")}) and a transaction's commit refuse the same way.`,
     "",
-    `A record write under a slot-record lock is one transaction of events (${code("deferEvents(write)")}): its events are held and appended in order when the write returns. A write its guard refuses puts its files back and drops the held events that name them, so a refused write logs nothing and the log never names bytes that are gone. A write that throws without undoing keeps its events.`,
+    `A record write under a slot-record lock is one transaction of events (${code("deferEvents(write)")}): its events are held and appended in order when the write returns. A write its guard refuses puts its files back and drops the held events that name them, so a refused write logs nothing and the log never names bytes that are gone. A write that throws without undoing keeps its events. A scope opened inside another joins the outer one, so its events append when the outermost write returns.`,
     "",
-    `An agent step of a loop is judged by what it changed: the log may change only by a pure append that verifies on the chain and whose new events name only files the step changed or the run's own state file, and the index only to its rebuild (${code("engineLogIssue")} and ${code("engineIndexIssue")}, loop/agent-snapshot.ts).`,
+    `An agent step of a loop is judged by what it changed: the log may change only by a pure append that verifies on the chain, and the index only to its rebuild (${code("engineLogIssue")} and ${code("engineIndexIssue")}, loop/agent-snapshot.ts). Each new event is either the step's own (a kind its decider verb makes, by the step's agent or the Producer code that verb runs, never an owner, a planner or another agent: ${code("AGENT_STEP_EVENTS")}) naming only files the step changed, each by the sha256 of its bytes; or the runner's run.state event for the run's own state file, by its bytes. A forged approval line chains as well as a real one, so the chain alone never clears it.`,
     "",
     "### Lock",
     "",
@@ -157,7 +157,7 @@ export function engineDoc(): string {
       ["stale: same host", "the owner pid is no longer alive"],
       ["stale: another host", `held longer than ${FOREIGN_LOCK_MS / 60_000} min`],
       ["stale: no readable owner", `older than ${OWNERLESS_LOCK_MS / 1000} s`],
-      ["takeover", "rename the judged lock aside, compare the moved bytes with the judged ones, put a fresh lock back if they differ"],
+      ["takeover", "read the stale lock instance (its bytes, device, inode and mtime from one open), create that instance's own recovery marker (O_EXCL, named by a hash of the instance), re-read and re-judge the lock under the marker, then rename a fresh lock over it: the lock file is never absent, and only the one process holding the marker of the exact instance it judged replaces it; a marker whose owner died is itself recovered the same way"],
       ["release", "only while the lock still carries the holder's token"],
       ["order", "a writer takes its record lock (slot, agent, entry) first and the engine lock last"],
     ]),
@@ -188,7 +188,7 @@ export function engineDoc(): string {
     "",
     "The engine API (writes here log events):",
     "",
-    table(["File", "Functions", "Why"], ENGINE_SURFACE.map(row => [code(row.file), row.functions === "*" ? "all" : row.functions.map(code).join(", "), row.why])),
+    table(["File", "Functions", "Why"], ENGINE_SURFACE.map(row => [code(row.file), surfaceFunctions(row.functions), row.why])),
     "",
     `Record writers a script must not call directly: ${SCRIPT_WRITERS.map(code).join(", ")}.`,
     "",

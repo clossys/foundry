@@ -97,11 +97,11 @@ Removing lines from the end leaves a valid shorter chain; the index head is what
 
 ## The one writer
 
-`appendEvent(root, draft)` validates the draft, takes the engine lock, chains the event to the last line, appends it as one line (fsync) and updates the index, all under the lock. It writes nothing on an invalid draft (EngineEventError), a torn or invalid last line (EngineLogError) or a busy lock (EngineBusyError). `recordEvent(paths, draft)` is the call a record writer makes after it wrote its files: the root comes from the first path, the inputs are every path with the sha256 of its bytes now.
+`appendEvent(root, draft)` validates the draft, takes the engine lock, chains the event to the last line, appends it as one line (fsync) and updates the index, all under the lock. It writes nothing on an invalid draft (EngineEventError), a torn or invalid last line (EngineLogError) or a busy lock (EngineBusyError). `recordEvent(paths, draft)` is the call a record writer makes after it wrote its files: the root comes from the first path, the inputs are every path with the sha256 of its bytes now. Since its files are already on disk, any failure of that append (a busy lock past the wait, a torn log) is a RecordCommittedError (code `RECORD_COMMITTED`), never an EngineBusyError: the write is done and must not be retried. The loop runner's own events (`commitEvent`) and a transaction's commit refuse the same way.
 
-A record write under a slot-record lock is one transaction of events (`deferEvents(write)`): its events are held and appended in order when the write returns. A write its guard refuses puts its files back and drops the held events that name them, so a refused write logs nothing and the log never names bytes that are gone. A write that throws without undoing keeps its events.
+A record write under a slot-record lock is one transaction of events (`deferEvents(write)`): its events are held and appended in order when the write returns. A write its guard refuses puts its files back and drops the held events that name them, so a refused write logs nothing and the log never names bytes that are gone. A write that throws without undoing keeps its events. A scope opened inside another joins the outer one, so its events append when the outermost write returns.
 
-An agent step of a loop is judged by what it changed: the log may change only by a pure append that verifies on the chain and whose new events name only files the step changed or the run's own state file, and the index only to its rebuild (`engineLogIssue` and `engineIndexIssue`, loop/agent-snapshot.ts).
+An agent step of a loop is judged by what it changed: the log may change only by a pure append that verifies on the chain, and the index only to its rebuild (`engineLogIssue` and `engineIndexIssue`, loop/agent-snapshot.ts). Each new event is either the step's own (a kind its decider verb makes, by the step's agent or the Producer code that verb runs, never an owner, a planner or another agent: `AGENT_STEP_EVENTS`) naming only files the step changed, each by the sha256 of its bytes; or the runner's run.state event for the run's own state file, by its bytes. A forged approval line chains as well as a real one, so the chain alone never clears it.
 
 ### Lock
 
@@ -112,7 +112,7 @@ An agent step of a loop is judged by what it changed: the log may change only by
 | stale: same host | the owner pid is no longer alive |
 | stale: another host | held longer than 15 min |
 | stale: no readable owner | older than 60 s |
-| takeover | rename the judged lock aside, compare the moved bytes with the judged ones, put a fresh lock back if they differ |
+| takeover | read the stale lock instance (its bytes, device, inode and mtime from one open), create that instance's own recovery marker (O_EXCL, named by a hash of the instance), re-read and re-judge the lock under the marker, then rename a fresh lock over it: the lock file is never absent, and only the one process holding the marker of the exact instance it judged replaces it; a marker whose owner died is itself recovered the same way |
 | release | only while the lock still carries the holder's token |
 | order | a writer takes its record lock (slot, agent, entry) first and the engine lock last |
 
@@ -171,12 +171,12 @@ The engine API (writes here log events):
 | File | Functions | Why |
 |---|---|---|
 | `packages/producer/src/engine/` | all | the event log, its lock and its derived index |
-| `packages/producer/src/records/slot-write.ts` | all | the slot-model writer: every write appends a ledger event, which it logs |
-| `packages/producer/src/records/pin.ts` | `writePinDoc` | pin and pin-map documents |
-| `packages/producer/src/records/request.ts` | `writeRequest`, `createRequest` | work requests (queue-entry/2) |
-| `packages/producer/src/records/library.ts` | `writeElementVersion` | element library versions |
-| `packages/producer/src/queue/entry.ts` | `createQueueEntry`, `replaceQueueEntry` | queue entries, the answer write path |
-| `packages/producer/src/loop/runner.ts` | `writeLedger`, `revertPin`, `saveState`, `logRun` | loop run records, the run state and the run's pin revert |
+| `packages/producer/src/records/slot-write.ts` | writes inside withDirLock, slotLocked, agentLocked, deferEvents; replaceModelFile, createModelFile, removeModelFile, moveModelEntry, dropEmptyModelDir, withDirLock | the slot-model writer, per call: a write inside a record transaction (withDirLock, slotLocked, agentLocked, deferEvents), whose ledger event it logs, or in a paired slot-model primitive or the lock itself |
+| `packages/producer/src/records/pin.ts` | writePinDoc | pin and pin-map documents |
+| `packages/producer/src/records/request.ts` | writeRequest, createRequest | work requests (queue-entry/2) |
+| `packages/producer/src/records/library.ts` | writeElementVersion | element library versions |
+| `packages/producer/src/queue/entry.ts` | createQueueEntry, replaceQueueEntry | queue entries, the answer write path |
+| `packages/producer/src/loop/runner.ts` | writeLedger, revertPin, saveState, logRun | loop run records, the run state and the run's pin revert |
 
 Record writers a script must not call directly: `appendEvent`, `recordEvent`, `writePinDoc`, `writeRequest`, `writeElementVersion`, `createQueueEntry`, `replaceQueueEntry`, `writeCandidate`, `writeCandidateBytes`, `writePin`, `writeConfirm`, `writeNotNeeded`, `writeTargetDecision`, `writeTargetConfirm`, `writeTargetNotNeeded`, `writeSeatDecision`, `writeVerdict`, `writeReissue`, `writeCritique`, `writeSlotSeed`, `writeSlotOptions`, `writeSyncedSlot`, `replaceModelFile`, `createModelFile`, `removeModelFile`, `moveModelEntry`.
 

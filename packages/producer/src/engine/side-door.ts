@@ -5,9 +5,12 @@
  * compiler. A finding is one of:
  *   - write: a file-system write (WRITE_CALLS, or an open with a write flag) whose path argument is derived from
  *     engine vocabulary (a `.clossys` path string, a slot-model path string, a slot-model path helper, or a local
- *     name, function return or exported helper derived from one), outside ENGINE_SURFACE;
- *   - sink: a call, outside ENGINE_SURFACE, that hands a derived path to a function of another file whose parameter
- *     reaches a write (a write wrapper);
+ *     name, function return, exported helper or exported constant derived from one, through any import or
+ *     re-export), outside ENGINE_SURFACE. A path built from pieces (`".clos" + "sys"`, a template, `join` or
+ *     `resolve` segments, `[...].join("/")`, constants of this file or imported ones) is judged by its folded text;
+ *     a piece it cannot know folds to a placeholder that names no path;
+ *   - sink: a call, outside ENGINE_SURFACE, that hands a derived path to a function (of this file or, through its
+ *     import, of another) whose parameter reaches a write (a write wrapper);
  *   - script: a script that calls a record writer of the engine surface (SCRIPT_WRITERS) directly instead of running
  *     the clossys verb that judges its actor;
  *   - unpaired: a file that uses a slot-model file primitive (PAIRED_WRITERS) and appends no ledger event
@@ -18,10 +21,21 @@ import { readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import ts from "typescript";
 
+/**
+ * A surface file whose writes are proved per call: a write is the engine's only inside a record transaction (a
+ * function passed to one of `wrappers`, or a local function every reference to which sits in one), or in the body of
+ * one of `primitives` (a slot-model file primitive, paired at its callers by the `unpaired` rule, or the lock that
+ * the transaction holds). Every other write in the file is a finding.
+ */
+export interface SurfaceTransactions { readonly wrappers: readonly string[]; readonly primitives: readonly string[] }
 /** The files and functions that are the engine API: their writes log events. `*` is the whole file. */
-export const ENGINE_SURFACE: readonly { readonly file: string; readonly functions: readonly string[] | "*" ; readonly why: string }[] = [
+export const ENGINE_SURFACE: readonly { readonly file: string; readonly functions: readonly string[] | "*" | SurfaceTransactions; readonly why: string }[] = [
   { file: "packages/producer/src/engine/", functions: "*", why: "the event log, its lock and its derived index" },
-  { file: "packages/producer/src/records/slot-write.ts", functions: "*", why: "the slot-model writer: every write appends a ledger event, which it logs" },
+  {
+    file: "packages/producer/src/records/slot-write.ts",
+    functions: { wrappers: ["withDirLock", "slotLocked", "agentLocked", "deferEvents"], primitives: ["replaceModelFile", "createModelFile", "removeModelFile", "moveModelEntry", "dropEmptyModelDir", "withDirLock"] },
+    why: "the slot-model writer, per call: a write inside a record transaction (withDirLock, slotLocked, agentLocked, deferEvents), whose ledger event it logs, or in a paired slot-model primitive or the lock itself",
+  },
   { file: "packages/producer/src/records/pin.ts", functions: ["writePinDoc"], why: "pin and pin-map documents" },
   { file: "packages/producer/src/records/request.ts", functions: ["writeRequest", "createRequest"], why: "work requests (queue-entry/2)" },
   { file: "packages/producer/src/records/library.ts", functions: ["writeElementVersion"], why: "element library versions" },
@@ -93,6 +107,10 @@ export function sideDoorFiles(root: string): string[] {
   return [...new Set(files)].sort();
 }
 
+const isTransactions = (functions: readonly string[] | "*" | SurfaceTransactions): functions is SurfaceTransactions => functions !== "*" && !Array.isArray(functions);
+/** A surface row's functions as a table cell (engine.md). */
+export const surfaceFunctions = (functions: readonly string[] | "*" | SurfaceTransactions): string =>
+  functions === "*" ? "all" : isTransactions(functions) ? `writes inside ${functions.wrappers.join(", ")}; ${functions.primitives.join(", ")}` : (functions as readonly string[]).join(", ");
 const surfaceOf = (file: string) => ENGINE_SURFACE.find(row => (row.file.endsWith("/") ? file.startsWith(row.file) : file === row.file));
 const isScript = (file: string) => file.startsWith("scripts/") || /^packages\/[^/]+\/scripts\//.test(file);
 
@@ -132,19 +150,45 @@ interface FileFacts {
   readonly helpers: string[];
   /** Exported functions whose parameter (by index) reaches a write. */
   readonly sinks: Map<string, Set<number>>;
+  /** Exported constants (`<module stem>#<name>`) derived from engine vocabulary. */
+  readonly constants: string[];
+  /** Exported string constants whose text folds whole (`<module stem>#<name>` to the text). */
+  readonly values: Map<string, string>;
+  /** Re-exports: `<module stem>#<name>` this module exports to the `<module stem>#<name>` it binds, and `export *` stems. */
+  readonly reexports: Map<string, string>;
+  readonly stars: string[];
 }
 
+/** Cross-file vocabulary: helpers by name, sinks, constants and folded values by `<module stem>#<name>`. */
+interface Vocabulary {
+  readonly helpers: ReadonlySet<string>;
+  readonly sinks: ReadonlyMap<string, ReadonlySet<number>>;
+  readonly constants: ReadonlySet<string>;
+  readonly values: ReadonlyMap<string, string>;
+  /** `<module stem>#<name>` to the binding it re-exports, through every `export {...} from` and `export * from`. */
+  readonly resolve: (key: string) => string;
+}
+
+/** The placeholder a piece of a path the fold cannot know becomes: it names no path. */
+const UNKNOWN = "\0";
+
 /** One file's facts, given the helper and sink names known across files so far. */
-function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, helpers: ReadonlySet<string>, sinks: ReadonlyMap<string, ReadonlySet<number>>): FileFacts {
+function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocabulary: Vocabulary): FileFacts {
+  const { helpers, sinks } = vocabulary;
   const fsNames = new Map<string, string>();
   const fsNamespaces = new Set<string>();
   /** Named imports from repository modules: local name to the `<module stem>#<exported name>` it binds. */
   const imported = new Map<string, string>();
+  /** Namespace imports of repository modules (`import * as chain from "./chain.js"`): local name to the module stem. */
+  const namespaces = new Map<string, string>();
+  const reexports = new Map<string, string>();
+  const stars: string[] = [];
   const bindImport = (module: string, clause: ts.ImportClause) => {
     const stem = moduleStem(file, module);
     if (stem && clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
       for (const element of clause.namedBindings.elements) imported.set(element.name.text, `${stem}#${(element.propertyName ?? element.name).text}`);
     }
+    if (stem && clause.namedBindings && ts.isNamespaceImport(clause.namedBindings)) namespaces.set(clause.namedBindings.name.text, stem);
     if (!FS_MODULES.has(module)) return;
     if (clause.name) fsNamespaces.add(clause.name.text);
     const bindings = clause.namedBindings;
@@ -168,6 +212,13 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, helpe
   };
   const visitBindings = (node: ts.Node): void => {
     if (ts.isImportDeclaration(node) && node.importClause && ts.isStringLiteral(node.moduleSpecifier)) bindImport(node.moduleSpecifier.text, node.importClause);
+    if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+      const stem = moduleStem(file, node.moduleSpecifier.text);
+      if (stem && !node.exportClause) stars.push(stem);
+      else if (stem && node.exportClause && ts.isNamedExports(node.exportClause)) {
+        for (const element of node.exportClause.elements) reexports.set(`${stemOf(file)}#${element.name.text}`, `${stem}#${(element.propertyName ?? element.name).text}`);
+      }
+    }
     if (ts.isVariableDeclaration(node) && node.initializer) {
       const init = ts.isAwaitExpression(node.initializer) ? node.initializer.expression : node.initializer;
       if (ts.isCallExpression(init) && init.arguments[0] && ts.isStringLiteralLike(init.arguments[0]) && FS_MODULES.has(init.arguments[0].text)
@@ -202,6 +253,50 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, helpe
   visitBindings(sf);
 
   const calleeOf = (call: ts.CallExpression) => ts.isIdentifier(call.expression) ? call.expression : ts.isPropertyAccessExpression(call.expression) ? call.expression.name : undefined;
+  /** The cross-file binding (`<module stem>#<name>`, re-exports followed) an identifier or namespace member names. */
+  const bindingOf = (node: ts.Node): string | undefined => {
+    if (ts.isIdentifier(node) && !(ts.isPropertyAccessExpression(node.parent) && node.parent.name === node)) {
+      const key = imported.get(node.text);
+      return key === undefined ? undefined : vocabulary.resolve(key);
+    }
+    if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) && namespaces.has(node.expression.text)) return vocabulary.resolve(`${namespaces.get(node.expression.text)!}#${node.name.text}`);
+    return undefined;
+  };
+  /** A local const's one initializer, for the fold. */
+  const constInit = (node: ts.Identifier): ts.Expression | undefined => {
+    const symbol = symbolOf(node);
+    const decl = symbol?.valueDeclaration;
+    if (!decl || !ts.isVariableDeclaration(decl) || !decl.initializer || !ts.isIdentifier(decl.name)) return undefined;
+    return ts.isVariableDeclarationList(decl.parent) && decl.parent.flags & ts.NodeFlags.Const ? decl.initializer : undefined;
+  };
+  /**
+   * The text a path expression folds to: literals, templates, `+`, `join`/`resolve` segments (joined by `/`),
+   * `[...].join(sep)`, consts of this file and imported constants; anything else is UNKNOWN.
+   */
+  const fold = (node: ts.Expression, depth = 0): string => {
+    if (depth > 12) return UNKNOWN;
+    const inner = ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isNonNullExpression(node) || ts.isSatisfiesExpression(node) ? node.expression : node;
+    if (inner !== node) return fold(inner, depth + 1);
+    if (ts.isStringLiteralLike(node)) return node.text;
+    if (ts.isTemplateExpression(node)) return node.head.text + node.templateSpans.map(span => fold(span.expression, depth + 1) + span.literal.text).join("");
+    if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) return fold(node.left, depth + 1) + fold(node.right, depth + 1);
+    if (ts.isCallExpression(node)) {
+      const callee = calleeOf(node);
+      if (callee && (callee.text === "join" || callee.text === "resolve") && !(ts.isPropertyAccessExpression(node.expression) && ts.isArrayLiteralExpression(node.expression.expression))) {
+        return node.arguments.map(arg => fold(arg, depth + 1)).join("/");
+      }
+      if (callee?.text === "join" && ts.isPropertyAccessExpression(node.expression) && ts.isArrayLiteralExpression(node.expression.expression)) {
+        const sep = node.arguments[0] ? fold(node.arguments[0], depth + 1) : ",";
+        return node.expression.expression.elements.map(element => ts.isSpreadElement(element) ? UNKNOWN : fold(element, depth + 1)).join(sep);
+      }
+      return UNKNOWN;
+    }
+    const binding = bindingOf(node);
+    if (binding !== undefined) return vocabulary.values.get(binding) ?? UNKNOWN;
+    if (ts.isIdentifier(node)) { const init = constInit(node); return init ? fold(init, depth + 1) : UNKNOWN; }
+    return UNKNOWN;
+  };
+  const folds = (node: ts.Node) => ts.isBinaryExpression(node) || ts.isTemplateExpression(node) || (ts.isCallExpression(node) && ["join", "resolve"].includes(calleeOf(node)?.text ?? ""));
   /** Whether `node` is derived from engine vocabulary (or, with `params`, which parameter symbols it reaches). */
   const reach = (node: ts.Node, tainted: ReadonlySet<ts.Symbol>): boolean => {
     let hit = false;
@@ -209,6 +304,9 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, helpe
       if (hit) return;
       if (ts.isStringLiteralLike(inner) && isEnginePathString(inner.text)) { hit = true; return; }
       if (ts.isTemplateExpression(inner) && [inner.head.text, ...inner.templateSpans.map(span => span.literal.text)].some(isEnginePathString)) { hit = true; return; }
+      if (folds(inner) && isEnginePathString(fold(inner as ts.Expression))) { hit = true; return; }
+      const binding = bindingOf(inner);
+      if (binding !== undefined && vocabulary.constants.has(binding)) { hit = true; return; }
       if (ts.isCallExpression(inner)) {
         const callee = calleeOf(inner);
         if (callee && helpers.has(callee.text)) { hit = true; return; }
@@ -261,7 +359,10 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, helpe
   visitCalls(sf);
 
   const surface = surfaceOf(file);
-  const exempt = (node: ts.Node) => surface !== undefined && (surface.functions === "*" || enclosingNames(node).some(name => (surface.functions as readonly string[]).includes(name)));
+  const transactions = surface && isTransactions(surface.functions) ? surface.functions : undefined;
+  const inTransaction = transactions === undefined ? () => false : transactionContexts(sf, transactions, symbolOf);
+  const exempt = (node: ts.Node) => surface !== undefined && (surface.functions === "*"
+    || (transactions !== undefined ? inTransaction(node) : enclosingNames(node).some(name => (surface.functions as readonly string[]).includes(name))));
   const lineOf = (node: ts.Node) => sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
   const textOf = (node: ts.Node) => node.getText(sf).replace(/\s+/g, " ").slice(0, 140);
   const findings: SideDoorFinding[] = [];
@@ -269,9 +370,49 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, helpe
     if (exempt(write.node) || !write.args.some(arg => reach(arg, tainted))) continue;
     findings.push({ file, line: lineOf(write.node), kind: "write", call: write.call, text: textOf(write.node) });
   }
+  // Write wrappers of this file: a function whose parameter (by index) reaches a write, or a wrapper call at its
+  // wrapped index, outside the engine surface's exemptions. A call to one that hands it a derived path is a sink
+  // finding, like a call to an imported wrapper.
+  const within = (fn: ts.Node, node: ts.Node) => { for (let at: ts.Node | undefined = node; at; at = at.parent) if (at === fn) return true; return false; };
+  const localFns: { symbol: ts.Symbol; fn: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression; params: () => (Set<ts.Symbol> | undefined)[] }[] = [];
+  const collectFns = (node: ts.Node): void => {
+    const name = ts.isFunctionDeclaration(node) && node.name ? node.name
+      : (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) && ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name) ? node.parent.name : undefined;
+    const symbol = name && symbolOf(name);
+    if (symbol && (ts.isFunctionDeclaration(node) || ts.isArrowFunction(node) || ts.isFunctionExpression(node)) && node.parameters.length) {
+      let cached: (Set<ts.Symbol> | undefined)[] | undefined;
+      const fn = node;
+      localFns.push({ symbol, fn, params: () => cached ??= fn.parameters.map(param => { const at = ts.isIdentifier(param.name) ? symbolOf(param.name) : undefined; return at ? closure(new Set([at])) : undefined; }) });
+    }
+    ts.forEachChild(node, collectFns);
+  };
+  collectFns(sf);
+  const localSinks = new Map<ts.Symbol, Set<number>>();
+  const localSinkOf = (call: ts.CallExpression) => { const symbol = ts.isIdentifier(call.expression) ? symbolOf(call.expression) : undefined; return symbol && localSinks.get(symbol); };
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const { symbol, fn, params } of localFns) {
+      const ownWrites = writes.filter(write => within(fn, write.node) && !exempt(write.node));
+      const ownCalls = calls.filter(call => within(fn, call) && !exempt(call) && localSinkOf(call) !== undefined);
+      if (!ownWrites.length && !ownCalls.length) continue;
+      params().forEach((reached, index) => {
+        if (!reached || localSinks.get(symbol)?.has(index)) return;
+        if (ownWrites.some(write => write.args.some(arg => reach(arg, reached)))
+          || ownCalls.some(call => [...localSinkOf(call)!].some(at => call.arguments[at] && reach(call.arguments[at]!, reached)))) {
+          localSinks.set(symbol, new Set([...(localSinks.get(symbol) ?? []), index]));
+          grew = true;
+        }
+      });
+    }
+  }
   for (const call of calls) {
     const callee = calleeOf(call);
     if (!callee) continue;
+    const local = localSinkOf(call);
+    if (local && !exempt(call) && [...local].some(index => call.arguments[index] && reach(call.arguments[index]!, tainted))) {
+      findings.push({ file, line: lineOf(call), kind: "sink", call: callee.text, text: textOf(call) });
+      continue;
+    }
     if (isScript(file) && SCRIPT_WRITERS.includes(callee.text)) { findings.push({ file, line: lineOf(call), kind: "script", call: callee.text, text: textOf(call) }); continue; }
     // A write wrapper is matched through the import that binds it, never by its bare name.
     const bound = ts.isIdentifier(call.expression) ? imported.get(callee.text) : undefined;
@@ -298,6 +439,24 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, helpe
   // Exported helpers (return an engine path) and sinks (a parameter reaches a write), for the other files.
   const exportedHelpers: string[] = [];
   const exportedSinks = new Map<string, Set<number>>();
+  const exportedConstants: string[] = [];
+  const exportedValues = new Map<string, string>();
+  const exportConstant = (name: string, symbol: ts.Symbol | undefined, init: ts.Expression | undefined) => {
+    const key = `${stemOf(file)}#${name}`;
+    if (symbol && tainted.has(symbol)) exportedConstants.push(key);
+    if (init) { const text = fold(init); if (!text.includes(UNKNOWN)) exportedValues.set(key, text); }
+  };
+  for (const statement of sf.statements) {
+    // `export { NAME }` and `export { NAME as OTHER }` of a local const.
+    if (ts.isExportDeclaration(statement) && !statement.moduleSpecifier && statement.exportClause && ts.isNamedExports(statement.exportClause)) {
+      for (const element of statement.exportClause.elements) {
+        const local = element.propertyName ?? element.name;
+        const symbol = symbolOf(local);
+        const decl = symbol?.valueDeclaration;
+        if (decl && ts.isVariableDeclaration(decl) && !(decl.initializer && (ts.isArrowFunction(decl.initializer) || ts.isFunctionExpression(decl.initializer)))) exportConstant(element.name.text, symbol, decl.initializer);
+      }
+    }
+  }
   for (const statement of sf.statements) {
     if (!(ts.canHaveModifiers(statement) && ts.getModifiers(statement)?.some(mod => mod.kind === ts.SyntaxKind.ExportKeyword))) continue;
     const decls: { name: ts.Identifier; fn?: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression }[] = ts.isFunctionDeclaration(statement) && statement.name ? [{ name: statement.name, fn: statement }]
@@ -308,10 +467,11 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, helpe
     for (const { name, fn } of decls) {
       const symbol = symbolOf(name);
       if (symbol && tainted.has(symbol) && returns.has(symbol)) exportedHelpers.push(name.text);
+      if (!fn && ts.isVariableStatement(statement)) exportConstant(name.text, symbol, statement.declarationList.declarations.find(decl => decl.name === name)?.initializer);
       // A surface function is the engine API itself: calling it is the right door, never a sink.
-      if (!fn || exempt(fn.body ?? fn) || (surface && surface.functions !== "*" && (surface.functions as readonly string[]).includes(name.text))) continue;
+      if (!fn || exempt(fn.body ?? fn) || (surface && Array.isArray(surface.functions) && (surface.functions as readonly string[]).includes(name.text))) continue;
       const inside = (node: ts.Node) => { for (let at: ts.Node | undefined = node; at; at = at.parent) if (at === fn) return true; return false; };
-      const own = writes.filter(write => inside(write.node));
+      const own = writes.filter(write => inside(write.node) && !exempt(write.node));
       if (!own.length) continue;
       fn.parameters.forEach((param, index) => {
         if (!ts.isIdentifier(param.name)) return;
@@ -325,7 +485,57 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, helpe
       });
     }
   }
-  return { findings, helpers: exportedHelpers, sinks: exportedSinks };
+  return { findings, helpers: exportedHelpers, sinks: exportedSinks, constants: exportedConstants, values: exportedValues, reexports, stars };
+}
+
+/**
+ * Whether a node of a per-call surface file (SurfaceTransactions) sits in a record transaction: inside a function
+ * passed to a wrapper (or a wrapper call's argument), inside a local function every reference to which is in one
+ * (to a fixpoint), or inside the body of a primitive.
+ */
+function transactionContexts(sf: ts.SourceFile, transactions: SurfaceTransactions, symbolOf: (node: ts.Node) => ts.Symbol | undefined): (node: ts.Node) => boolean {
+  const wrapperCall = (node: ts.Node): boolean => ts.isCallExpression(node) && ((ts.isIdentifier(node.expression) && transactions.wrappers.includes(node.expression.text))
+    || (ts.isPropertyAccessExpression(node.expression) && transactions.wrappers.includes(node.expression.name.text)));
+  /** Local (non-exported) functions by symbol, and the identifiers that reference each. */
+  const locals = new Map<ts.Symbol, { readonly fn: ts.Node; readonly refs: ts.Identifier[] }>();
+  const named = (fn: ts.Node): ts.Identifier | undefined => ts.isFunctionDeclaration(fn) && fn.name ? fn.name
+    : (ts.isArrowFunction(fn) || ts.isFunctionExpression(fn)) && ts.isVariableDeclaration(fn.parent) && ts.isIdentifier(fn.parent.name) ? fn.parent.name : undefined;
+  const exported = (fn: ts.Node): boolean => {
+    const holder = ts.isFunctionDeclaration(fn) ? fn : fn.parent?.parent?.parent;
+    return holder !== undefined && ts.canHaveModifiers(holder) && (ts.getModifiers(holder)?.some(mod => mod.kind === ts.SyntaxKind.ExportKeyword) ?? false);
+  };
+  const primitive = (fn: ts.Node): boolean => { const name = named(fn); return name !== undefined && transactions.primitives.includes(name.text); };
+  const collect = (node: ts.Node): void => {
+    if (ts.isFunctionDeclaration(node) || ts.isArrowFunction(node) || ts.isFunctionExpression(node)) {
+      const name = named(node);
+      const symbol = name && symbolOf(name);
+      if (symbol && !exported(node)) locals.set(symbol, { fn: node, refs: [] });
+    }
+    ts.forEachChild(node, collect);
+  };
+  collect(sf);
+  const refer = (node: ts.Node): void => {
+    if (ts.isIdentifier(node) && named(node.parent) !== node && !(ts.isVariableDeclaration(node.parent) && node.parent.name === node)) {
+      const symbol = symbolOf(node);
+      const local = symbol && locals.get(symbol);
+      if (local) local.refs.push(node);
+    }
+    ts.forEachChild(node, refer);
+  };
+  refer(sf);
+  const inTx = new Set<ts.Node>();
+  const inside = (node: ts.Node): boolean => {
+    for (let at: ts.Node | undefined = node; at; at = at.parent) {
+      if (at.parent && wrapperCall(at.parent) && (at.parent as ts.CallExpression).arguments.includes(at as ts.Expression)) return true;
+      if (inTx.has(at) || ((ts.isFunctionDeclaration(at) || ts.isArrowFunction(at) || ts.isFunctionExpression(at)) && primitive(at))) return true;
+    }
+    return false;
+  };
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const { fn, refs } of locals.values()) if (!inTx.has(fn) && refs.length && refs.every(inside)) { inTx.add(fn); changed = true; }
+  }
+  return inside;
 }
 
 /** Every side-door finding under a repository root (`files` defaults to SIDE_DOOR_SCOPE). */
@@ -336,19 +546,43 @@ export function sideDoorFindings(root: string, files = sideDoorFiles(root)): Sid
   const checker = program.getTypeChecker();
   const helpers = new Set<string>(HELPERS);
   const sinks = new Map<string, Set<number>>();
-  // Exported helpers and write wrappers are vocabulary in every file; iterate until no new one appears.
+  const constants = new Set<string>();
+  const values = new Map<string, string>();
+  const reexports = new Map<string, string>();
+  const stars = new Map<string, string[]>();
+  /** A binding through its re-exports (`export {...} from`, then `export * from`), to the module that declares it. */
+  const resolveKey = (key: string, seen = new Set<string>()): string => {
+    if (seen.has(key)) return key;
+    seen.add(key);
+    const named = reexports.get(key);
+    if (named !== undefined) return resolveKey(named, seen);
+    if (constants.has(key) || values.has(key)) return key;
+    const at = key.indexOf("#");
+    for (const stem of stars.get(key.slice(0, at)) ?? []) {
+      const through = resolveKey(`${stem}${key.slice(at)}`, seen);
+      if (constants.has(through) || values.has(through)) return through;
+    }
+    return key;
+  };
+  const vocabulary: Vocabulary = { helpers, sinks, constants, values, resolve: key => resolveKey(key) };
+  const size = () => helpers.size + [...sinks.values()].reduce((sum, set) => sum + set.size, 0) + constants.size + values.size + reexports.size + [...stars.values()].reduce((sum, list) => sum + list.length, 0);
+  // Exported helpers, write wrappers, constants and their re-exports are vocabulary in every file; iterate until no new one appears.
   for (;;) {
-    const before = helpers.size + [...sinks.values()].reduce((sum, set) => sum + set.size, 0);
+    const before = size();
     const out: SideDoorFinding[] = [];
     for (const [index, file] of files.entries()) {
       const sf = program.getSourceFile(absolute[index]!);
       if (!sf) throw new Error(`cannot parse ${file}`);
-      const facts = analyse(file, sf, checker, helpers, sinks);
+      const facts = analyse(file, sf, checker, vocabulary);
       for (const name of facts.helpers) helpers.add(name);
       for (const [name, at] of facts.sinks) sinks.set(name, new Set([...(sinks.get(name) ?? []), ...at]));
+      for (const key of facts.constants) constants.add(key);
+      for (const [key, text] of facts.values) values.set(key, text);
+      for (const [key, target] of facts.reexports) reexports.set(key, target);
+      if (facts.stars.length) stars.set(stemOf(file), [...new Set([...(stars.get(stemOf(file)) ?? []), ...facts.stars])]);
       out.push(...facts.findings);
     }
-    if (helpers.size + [...sinks.values()].reduce((sum, set) => sum + set.size, 0) === before) {
+    if (size() === before) {
       return out.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line));
     }
   }

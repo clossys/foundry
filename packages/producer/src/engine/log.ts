@@ -5,6 +5,10 @@
  * writer makes after it left its files; inside `deferEvents()` (every slot-record lock) it holds the event until the
  * write commits, so a write its guard refuses and undoes logs nothing.
  *
+ * A record writer's event comes after its files are on disk, so an append that fails then (the engine busy past the
+ * wait, a torn log tail) cannot undo the write: it surfaces as RecordCommittedError (code RECORD_COMMITTED), never as
+ * the EngineBusyError a caller may retry, so no caller writes the record a second time.
+ *
  * Node runs this file with type stripping in child writers (engine/*.test.ts, records/ledger.test.ts).
  */
 import { closeSync, fstatSync, fsyncSync, mkdirSync, openSync, readSync, writeSync } from "node:fs";
@@ -84,6 +88,27 @@ export function appendEvent(root: string, draft: EventDraft, options: AppendOpti
 }
 
 /**
+ * A record write is on disk but its engine event was not appended (the cause: the engine busy past the wait, a torn
+ * log tail, an invalid draft). The write is done and must not be retried: a retry would write the record again.
+ */
+export class RecordCommittedError extends Error {
+  readonly code = "RECORD_COMMITTED";
+  /** The subjects whose events were not appended. */
+  readonly subjects: readonly string[];
+  constructor(subjects: readonly string[], cause: unknown) {
+    const why = cause instanceof Error ? cause.message : String(cause);
+    super(`record committed: the write of ${subjects.join(", ")} is on disk, but its engine event was not appended (${why}). Do not retry the write: it is done, and a retry would write the record a second time`, { cause });
+    this.name = "RecordCommittedError";
+    this.subjects = subjects;
+  }
+}
+
+/** Append the event of a write whose files are already on disk: any failure is a RecordCommittedError (not retryable). */
+export function commitEvent(root: string, draft: EventDraft, options?: AppendOptions): EngineEvent {
+  try { return appendEvent(root, draft, options); } catch (error) { throw new RecordCommittedError([draft.subject], error); }
+}
+
+/**
  * Log one event about record files a writer just left: the workspace root comes from the first path
  * (chain.ts engineRootOf), the inputs are every path with the sha256 of its bytes now. A path outside any workspace
  * logs nothing and returns undefined.
@@ -99,11 +124,12 @@ interface HeldEvent { readonly root: string; readonly draft: EventDraft; readonl
 let held: HeldEvent[] | undefined;
 
 /**
- * Append `draft` to the log of `root`, or hold it while a `deferEvents` write is open (returns undefined then). A
- * held draft is validated now, with its `at` fixed now, so a bad draft refuses at the call that made it.
+ * Append `draft` to the log of `root` (the event of a write already on disk: `commitEvent`), or hold it while a
+ * `deferEvents` write is open (returns undefined then). A held draft is validated now, with its `at` fixed now, so a
+ * bad draft refuses at the call that made it.
  */
 export function logEvent(root: string, draft: EventDraft, options?: AppendOptions): EngineEvent | undefined {
-  if (held === undefined) return appendEvent(root, draft, options);
+  if (held === undefined) return commitEvent(root, draft, options);
   const whole: EventDraft = { ...draft, at: draft.at ?? new Date().toISOString() };
   const issues = draftIssues({ actor: whole.actor, kind: whole.kind, subject: whole.subject, at: whole.at!, inputs: whole.inputs });
   if (issues.length) throw new EngineEventError(issues);
@@ -116,7 +142,9 @@ export function logEvent(root: string, draft: EventDraft, options?: AppendOption
  * `recordEvent`/`logEvent` makes inside it is held and appended in order when `write` returns. A write its guard
  * refuses puts its files back (records/slot-write.ts restoreFiles) and drops the held events naming them
  * (`dropHeldEvents`), so the log never names bytes that are gone. A write that throws without undoing keeps its
- * events, since what it wrote stays on disk. A scope opened inside another joins the outer one.
+ * events, since what it wrote stays on disk. A scope opened inside another joins the outer one: its events are held
+ * past the inner scope (and past any record lock the inner write released) and append when the outermost write
+ * returns. A held event that cannot be appended at the commit is a RecordCommittedError: the write is on disk.
  */
 export function deferEvents<T>(write: () => T): T {
   if (held !== undefined) return write();
@@ -135,7 +163,10 @@ export function deferEvents<T>(write: () => T): T {
   return out;
 }
 function appendHeld(events: readonly HeldEvent[]): void {
-  for (const event of events) appendEvent(event.root, event.draft, event.options);
+  for (const [index, event] of events.entries()) {
+    try { appendEvent(event.root, event.draft, event.options); }
+    catch (error) { throw new RecordCommittedError(events.slice(index).map(rest => rest.draft.subject), error); }
+  }
 }
 
 /** Drop the held events that name any of `paths` (absolute): the write put those files back as they were. */

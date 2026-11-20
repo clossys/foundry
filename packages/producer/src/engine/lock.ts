@@ -1,19 +1,24 @@
 /**
  * The engine lock: one writer of a workspace's event log at a time. `.clossys/engine.lock` is created with O_EXCL
- * (`wx`) and holds its owner, `{ pid, host, at, token }`. A lock whose owner is gone is taken over:
+ * (`wx`) and holds its owner, `{ pid, host, at, token }`. A lock whose owner is gone is stale:
  *   - same host, owner pid no longer alive;
  *   - another host, held longer than FOREIGN_LOCK_MS (no event append takes minutes);
  *   - no readable owner (a writer that died between create and write), older than OWNERLESS_LOCK_MS.
- * Takeover renames the judged lock aside and checks the moved bytes are the ones judged, so of two racing
- * recoveries exactly one wins and a fresh lock moved by mistake is put back. A live lock is waited on up to
- * `waitMs`, then refused with EngineBusyError naming the holder. Release removes the lock only while it still
- * carries the holder's token.
+ *
+ * Recovery never vacates the lock path. A writer that judged one exact lock instance stale (its bytes, device, inode
+ * and mtime) first creates that instance's recovery marker with O_EXCL (`engine.lock.recover-<instance hash>`), so of
+ * all the writers that judged the same instance exactly one recovers it. Under the marker it re-reads the lock: only
+ * when it is still the very instance judged, and still stale, does the writer rename its own fully written lock over
+ * it (an atomic replace). Any other lock there (a recovery that already won, a fresh writer) is left alone. A marker
+ * whose recoverer died is itself recovered by the same rule, one level down. A live lock is waited on up to `waitMs`,
+ * then refused with EngineBusyError naming the holder. Release removes the lock only while it still carries the
+ * holder's token.
  *
  * Lock order: a writer takes its own record lock (slot, agent, entry) first and the engine lock last; nothing
  * waits on another lock while holding this one.
  */
-import { randomUUID } from "node:crypto";
-import { closeSync, fsyncSync, linkSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeSync } from "node:fs";
+import { createHash, randomUUID } from "node:crypto";
+import { closeSync, fstatSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, unlinkSync, writeSync } from "node:fs";
 import { hostname } from "node:os";
 import { dirname } from "node:path";
 
@@ -65,12 +70,22 @@ export function staleOwner(raw: string, mtimeMs: number, now = Date.now(), host 
   return now - owner.at > FOREIGN_LOCK_MS;
 }
 
-function readLock(lock: string): { raw: string; mtimeMs: number } | undefined {
-  try { return { raw: readFileSync(lock, "utf8"), mtimeMs: statSync(lock).mtimeMs }; } catch (error) {
+/** One lock file as read: its bytes and the identity of the inode that held them. */
+export interface SeenLock { readonly raw: string; readonly dev: number; readonly ino: number; readonly mtimeMs: number }
+
+/** The lock at `lock` as one instance (bytes and fstat of the same open file), or undefined when there is none. */
+function readLock(lock: string): SeenLock | undefined {
+  let fd: number;
+  try { fd = openSync(lock, "r"); } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
     throw error;
   }
+  try {
+    const stat = fstatSync(fd);
+    return { raw: readFileSync(fd, "utf8"), dev: stat.dev, ino: stat.ino, mtimeMs: stat.mtimeMs };
+  } finally { closeSync(fd); }
 }
+const sameLock = (a: SeenLock, b: SeenLock) => a.dev === b.dev && a.ino === b.ino && a.mtimeMs === b.mtimeMs && a.raw === b.raw;
 
 /** Create the lock exclusively; false when it exists. */
 function tryCreate(lock: string, owner: LockOwner): boolean {
@@ -83,21 +98,66 @@ function tryCreate(lock: string, owner: LockOwner): boolean {
   return true;
 }
 
-/** Move a lock judged stale aside; true when the judged bytes were the ones moved (a fresh lock is put back). */
-function takeOver(lock: string, judged: string): boolean {
-  const aside = `${lock}.stale-${randomUUID()}`;
-  try { renameSync(lock, aside); } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+/**
+ * Test seam (engine/lock.test.ts): called at each recovery step with the step's name and the lock path. Unset in
+ * production. `judged`: a writer judged the lock stale and is about to recover it; `replace`: it holds the
+ * instance's marker, re-verified the instance and is about to rename its own lock over it; `declined`: the recovery
+ * left the lock as it was (another writer recovered it, or holds the marker).
+ */
+export const recoveryProbe: { at?: (step: "judged" | "replace" | "declined", lock: string) => void } = {};
+
+/** The recovery marker of one lock instance: every writer that judged that same instance contends for this one file. */
+export function recoveryMarker(lock: string, seen: SeenLock): string {
+  const id = createHash("sha256").update(`${seen.dev}\0${seen.ino}\0${seen.mtimeMs}\0${seen.raw}`).digest("hex").slice(0, 32);
+  return `${lock}.recover-${id}`;
+}
+/** The recovery marker of the lock at `lock` as it is now; undefined when there is no lock. */
+export function currentRecoveryMarker(lock: string): string | undefined {
+  const seen = readLock(lock);
+  return seen && recoveryMarker(lock, seen);
+}
+
+/** A marker of a marker of a ... : recoveries of dead recoverers nest at most this deep. */
+const MAX_RECOVERY_DEPTH = 4;
+
+/** Write `owner` to a fresh sibling and rename it over `lock`: the lock path is never absent. */
+function replaceLock(lock: string, owner: LockOwner): void {
+  const fresh = `${lock}.new-${owner.token}-${randomUUID()}`;
+  if (!tryCreate(fresh, owner)) throw new Error(`${fresh} exists`);
+  try { renameSync(fresh, lock); } catch (error) {
+    try { unlinkSync(fresh); } catch { /* already gone */ }
     throw error;
   }
-  let moved = "";
-  try { moved = readFileSync(aside, "utf8"); } catch { /* gone: nothing to put back */ }
-  if (moved !== judged) {
-    // Another recovery replaced the stale lock between our read and our rename: put its lock back.
-    try { linkSync(aside, lock); } catch { /* a third writer holds the lock now; the moved holder's release sees a foreign token */ }
+}
+/** Remove `lock` only while it still carries `token`. */
+function releaseIfMine(lock: string, token: string): void {
+  const held = readLock(lock);
+  if (held && parseOwner(held.raw)?.token === token) { try { unlinkSync(lock); } catch { /* already gone */ } }
+}
+
+/**
+ * Recover the stale lock instance `judged` at `lock` for `owner`: true when `lock` now carries `owner` (this writer
+ * holds it), false when it was left as it was. Only the writer holding the instance's marker may replace it, and only
+ * while the lock is still that exact instance and still stale.
+ */
+function recoverLock(lock: string, judged: SeenLock, owner: LockOwner, depth = 0): boolean {
+  if (depth > MAX_RECOVERY_DEPTH) return false;
+  const marker = recoveryMarker(lock, judged);
+  if (!tryCreate(marker, { ...owner, at: Date.now() })) {
+    const seen = readLock(marker);
+    // Released meanwhile: its recoverer finished, so the instance is gone or about to be judged afresh.
+    if (!seen || !staleOwner(seen.raw, seen.mtimeMs)) return false;
+    // The marker's recoverer died before it finished: recover the marker by the same rule.
+    if (!recoverLock(marker, seen, { ...owner, at: Date.now() }, depth + 1)) return false;
   }
-  try { unlinkSync(aside); } catch { /* already gone */ }
-  return moved === judged;
+  try {
+    const now = readLock(lock);
+    if (!now || !sameLock(now, judged)) return false;
+    if (!staleOwner(now.raw, now.mtimeMs)) return false;
+    recoveryProbe.at?.("replace", lock);
+    replaceLock(lock, { ...owner, at: Date.now() });
+    return true;
+  } finally { releaseIfMine(marker, owner.token); }
 }
 
 /** Hold the lock at `lock` while `action` runs. Waits up to `waitMs` for a live holder, then throws EngineBusyError. */
@@ -109,12 +169,13 @@ export function withEngineLock<T>(lock: string, action: () => T, waitMs = ENGINE
     if (tryCreate(lock, { ...owner, at: Date.now() })) break;
     const held = readLock(lock);
     if (!held) continue;
-    if (staleOwner(held.raw, held.mtimeMs)) { takeOver(lock, held.raw); continue; }
+    if (staleOwner(held.raw, held.mtimeMs)) {
+      recoveryProbe.at?.("judged", lock);
+      if (recoverLock(lock, held, owner)) break;
+      recoveryProbe.at?.("declined", lock);
+    }
     if (Date.now() >= deadline) throw new EngineBusyError(lock, parseOwner(held.raw));
     pause(POLL_MS);
   }
-  try { return action(); } finally {
-    const held = readLock(lock);
-    if (held && parseOwner(held.raw)?.token === owner.token) { try { unlinkSync(lock); } catch { /* already gone */ } }
-  }
+  try { return action(); } finally { releaseIfMine(lock, owner.token); }
 }

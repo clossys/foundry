@@ -53,7 +53,7 @@ import { FIX_CHECKS } from "../queue/requester-check.js";
 import { cascadeClean, runCascade } from "./cascade.js";
 import { CASCADE_REVERDICT } from "../constitution/cascade.js";
 import { inputsOf } from "../engine/chain.js";
-import { appendEvent as appendEngineEvent } from "../engine/log.js";
+import { commitEvent } from "../engine/log.js";
 
 export type Exit = 0 | 1 | 2;
 
@@ -209,7 +209,7 @@ function saveState(root: string, state: RunState): void {
 }
 /** The engine event of a run record (engine.md "Writers"): subject `loop:<loop>/<run id>`, by the run CLI. */
 function logRun(root: string, kind: string, state: Pick<RunState, "loop" | "runId">, files: readonly string[]): void {
-  appendEngineEvent(root, { actor: `code:${RUN_CLI}`, kind, subject: `loop:${state.loop}/${state.runId}`, inputs: inputsOf(root, files) });
+  commitEvent(root, { actor: `code:${RUN_CLI}`, kind, subject: `loop:${state.loop}/${state.runId}`, inputs: inputsOf(root, files) });
 }
 
 export function readRunState(root: string, runId: string): RunState | undefined {
