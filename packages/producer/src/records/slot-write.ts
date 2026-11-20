@@ -21,7 +21,7 @@ import {
   CANDIDATE_NAME, KIND_EXT, SEAT_AGENT, agentDir, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
   type ModelAgent, type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
-import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
+import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot, readSlotEntry } from "./slots.js";
 import { candidateHeaderOf, candidateIssues, isCurrentSlot, readSlotValue, slotReadIssues } from "./slot-current.js";
 import { recutCandidateBytes } from "./candidate-codec.js";
 import { SlotFormatError, serializeSlot, validateSlot } from "./slot.js";
@@ -212,6 +212,16 @@ const slotLocked = <T>(dir: string, action: () => T): T => withDirLock(join(dir,
 function located(consumer: string, agent: ModelAgent, id: string) {
   const doc = readSlot(consumer, agent, id);
   const entry = listSlots(consumer, agent).find(row => row.id === id);
+  if (!entry) throw new Error(`${agent} slot ${id} is not in ia.json`);
+  return { doc, entry };
+}
+/**
+ * `located` for one slot only: reads this slot's folder and never a sibling's, so a candidate submit (`next --submit`,
+ * a release manifest) is not refused by a sibling slot the model reader cannot read; that sibling fails on its own read.
+ */
+function locatedOne(consumer: string, agent: ModelAgent, id: string) {
+  const doc = readSlot(consumer, agent, id);
+  const entry = readSlotEntry(consumer, agent, id);
   if (!entry) throw new Error(`${agent} slot ${id} is not in ia.json`);
   return { doc, entry };
 }
@@ -691,10 +701,10 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
   readonly guard?: WriteGuard;
 } = {}): { name: string; sha256: string } {
   assertActor(dirname(consumer), options.provenance?.by ?? "planner", agent, "candidate", authorsOf(agent));
-  const { entry } = located(consumer, agent, id);
+  const { entry } = locatedOne(consumer, agent, id);
   if (options.canonical) canonicalDirectory(entry.dir);
   return slotLocked(entry.dir, () => {
-    const { doc, entry: current } = located(consumer, agent, id);
+    const { doc, entry: current } = locatedOne(consumer, agent, id);
     const ext = KIND_EXT[doc.kind];
     const file = `${name}-v${nextVersion(current.dir, current.candidates)}.${ext}`;
     const bytes = submittedBytes(entry.dir, agent, id, doc.kind, file, ext === "md" ? String(content) : jsonBytes(content), options.at);
@@ -732,7 +742,7 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
  */
 export function writeCandidateBytes(consumer: string, agent: SlotAgent, id: string, name: string, bytes: string, input: { readonly at: string; readonly fields?: Readonly<Record<string, unknown>> }, given?: WriteProvenance): { name: string; sha256: string } {
   if (!CANDIDATE_FILE.test(name)) throw new Error(`candidate refused: ${name} is not a candidate file name (<name>-v<n>.json)`);
-  const { entry } = located(consumer, agent, id);
+  const { entry } = locatedOne(consumer, agent, id);
   canonicalDirectory(entry.dir);
   return slotLocked(entry.dir, () => {
     readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
