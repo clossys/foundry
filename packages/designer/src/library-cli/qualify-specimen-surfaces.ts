@@ -40,12 +40,12 @@ const native = SPECIMEN_SECTION_EXPORTS.map(row => row.id).sort();
 const retired = retiredLeafIds(retiredLeaves as unknown as Parameters<typeof retiredLeafIds>[0]);
 /** A retired specimen is no longer offered: it is never seated, certified or replayed. */
 export const SEATED_NATIVE_SPECIMENS: readonly string[] = native.filter(id => !retired.has(id));
-const seated = SEATED_NATIVE_SPECIMENS;
 const same = (a: unknown, b: unknown) => stableStringify(a) === stableStringify(b);
 
-/** Verify the actual compiler command/logs, exact compiler source, inputs, declarations and emitted bytes. */
-export async function checkNativeSpecimenEvidence(evidence: NativeSpecimenEvidence): Promise<void> {
-  if (evidence.version !== 1 || !same(evidence.certificates.map(row => row.slot).sort(), seated)) fail("complete unique native certificate inventory required");
+/** Verify the actual compiler command/logs, exact compiler source, inputs, declarations and emitted bytes.
+ * `seated` is the specimen inventory the evidence must cover exactly; production always uses SEATED_NATIVE_SPECIMENS. */
+export async function checkNativeSpecimenEvidence(evidence: NativeSpecimenEvidence, seated: readonly string[] = SEATED_NATIVE_SPECIMENS): Promise<void> {
+  if (evidence.version !== 1 || !same(evidence.certificates.map(row => row.slot).sort(), [...seated].sort())) fail("complete unique native certificate inventory required");
   if (!evidence.certificates.length) {
     if (evidence.compiler !== null || evidence.command !== null) fail("an empty certificate inventory carries no compiler invocation");
     return;
@@ -94,8 +94,8 @@ export async function specimenSurfaceEnvironment(input: CompositeEngineInput, su
 }
 
 /** Current identities are computed only for byte-identical compiler inputs; S2/S5/S8 remain authoritative. */
-export async function replayNativeSpecimenEvidence(input: CompositeEngineInput, evidence: NativeSpecimenEvidence): Promise<CompositeEngineInput> {
-  await checkNativeSpecimenEvidence(evidence);
+export async function replayNativeSpecimenEvidence(input: CompositeEngineInput, evidence: NativeSpecimenEvidence, seated: readonly string[] = SEATED_NATIVE_SPECIMENS): Promise<CompositeEngineInput> {
+  await checkNativeSpecimenEvidence(evidence, seated);
   const profile = resolve(input);
   const measurements: SurfaceMeasurement[] = [];
   for (const row of Object.values(profile.surfaces?.fills ?? {}).filter(row => seated.includes(surfaceEntryOf(row.document).slot))) {

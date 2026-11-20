@@ -420,10 +420,7 @@ describe("component catalog coverage", () => {
     const additions = new Set(railPublic.map(row => row.name));
     const exported = [...Object.keys(COMPONENT_EXPORTS).filter(name => !additions.has(name)), ...Object.keys(CHART_EXPORTS)];
     expect(duplicates(exported)).toEqual([]);
-    // R2F-52: act.icon-button is the stock Button at size="icon", so it shares act.button's export; act.button places it.
-    const placing = COMPONENT_ENTRIES.filter((entry) => entry.id !== "act.icon-button").flatMap((entry) => (entry.export === null ? [] : [entry.export]));
-    expect(COMPONENT_ENTRIES.find((entry) => entry.id === "act.icon-button")?.export).toBe("Button");
-    const accounted = [...placing.filter((name) => name !== "Toaster"), ...Object.keys(COMPONENT_EXPORT_EXCLUSIONS)];
+    const accounted = [...leafExports.filter((name) => name !== "Toaster"), ...Object.keys(COMPONENT_EXPORT_EXCLUSIONS)];
     expect(duplicates(accounted)).toEqual([]);
     expect([...exported].sort()).toEqual([...accounted].sort());
   });

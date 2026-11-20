@@ -59,6 +59,18 @@ it("seats no retired native specimen", async () => {
   expect(specimenSlots.filter(id => !retired.has(id)).filter(id => !seated(id))).toEqual([]);
 }, 30_000);
 
-// The no-argument default prepare is deterministic and its result is only read, so the three tests share one run.
+it("keeps a consumer's explicit surface selections and regenerates no surface bundles for them", async () => {
+  const prepared = await defaultPrepare();
+  const surfaces = prepared.input.library.surfaces!.fills.map(doc => doc.$extensions["com.clossys.fill"].slot);
+  expect(surfaces.length).toBeGreaterThan(0);
+  const before = libraryHash(prepared.input.library);
+  const explicit = await prepareStudioSelection({ catalog: prepared.input.catalog, library: prepared.input.library, activeIds: surfaces, componentOptions: prepared.input.componentOptions });
+  expect(libraryHash(explicit.input.library)).toBe(before);
+  expect(explicit.surfaceBundles).toHaveLength(0);
+  expect(explicit.input.catalog.surfaces).toBe(prepared.input.catalog.surfaces);
+  for (const slot of surfaces) expect(explicit.leaves.find(row => row.leaf === slot), slot).toMatchObject({ source: "consumer" });
+}, 60_000); // one shared default prepare plus one explicit prepare
+
+// The no-argument default prepare is deterministic and its result is only read, so these tests share one run.
 let shared: ReturnType<typeof prepareStudioSelection> | undefined;
 function defaultPrepare() { return shared ??= prepareStudioSelection(); }

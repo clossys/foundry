@@ -346,9 +346,6 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
 
 const MODEL_API = "Data-model API for a block; not a component.";
 const HOOK = "Hook paired with a block; not a component.";
-const SCROLL_KIT = "Scroll section kit host for frame ports; not a block leaf.";
-const STOCK_FIELD = "Stock shadcn@aria field wrapper the data blocks compose from the selected component leaves; not a block leaf.";
-const TOKEN_SPECIMEN = "Studio specimen renderer for token and asset leaves; not a block leaf.";
 
 /**
  * Runtime exports of the blocks entry that are not leaves, each with the
@@ -416,25 +413,6 @@ export const BLOCK_EXPORT_EXCLUSIONS: Readonly<Record<string, string>> = {
   clearSelection: MODEL_API,
   navigate: MODEL_API,
   minimapModel: MODEL_API,
-  assertLibraryBoardRecords: MODEL_API,
-  assertLibraryBoardCommand: MODEL_API,
-  useHeadingScrollSpy: HOOK,
-  frameLinkNavigation: "Frame link click helper shared by navigation blocks; not a component.",
-  CHUNK_ROOT_MARGIN: "Chunk prefetch observer margin; not a component.",
-  HEADING_ROOT_MARGIN: "Heading scroll-spy observer margin; not a component.",
-  LIBRARY_BOARD_CONFIG: "Library board arrangement config; not a component.",
-  ChunkHost: SCROLL_KIT,
-  LibraryBoardSection: "Implementation of the arrangement.library-board section; its home is the sections catalog.",
-  StockSelect: STOCK_FIELD,
-  StockCombobox: STOCK_FIELD,
-  SpecimenSwatch: TOKEN_SPECIMEN,
-  SpecimenColorRamp: TOKEN_SPECIMEN,
-  SpecimenTypeLadder: TOKEN_SPECIMEN,
-  SpecimenSpacingLadder: TOKEN_SPECIMEN,
-  SpecimenRadiusLadder: TOKEN_SPECIMEN,
-  SpecimenMotionPlayer: TOKEN_SPECIMEN,
-  SpecimenAssetGrid: TOKEN_SPECIMEN,
-  SpecimenIconGrid: TOKEN_SPECIMEN,
 };
 
 export const BLOCK_CATALOG = {
