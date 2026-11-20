@@ -47,6 +47,7 @@ const unmapped = [
   "items.specimen-stack", "say.specimen", "matrix.specimen-panel", "say.anatomy-callouts", "matrix.scene",
   "matrix.catalog-workspace", "matrix.flow-canvas", "matrix.catalog-browser", "matrix.canvas-surface",
   "items.raw", "matrix.raw", "items.relation-graph", "form.refresh-status", "say.call-to-action", "items.usage-summary",
+  "items.chunk-host", "form.stock-select", "form.stock-combobox",
 ];
 
 describe("legacy block section homes", () => {
@@ -70,11 +71,11 @@ describe("legacy block section homes", () => {
     });
     expect(mapping).toEqual({ ...Object.fromEntries(followed), "say.logo-hero": "sections.hero" });
     expect(retired.filter(row => row.id !== "sections.error-message" && !liveHome(row.replacedBy)).map(row => row.id).sort()).toEqual(homeless);
-    expect(BLOCK_ENTRIES).toHaveLength(91);
+    expect(BLOCK_ENTRIES).toHaveLength(94);
     expect(BLOCK_ENTRIES.map(block => block.id).sort()).toEqual([...Object.keys(expected), "say.logo-hero", ...homeless, ...unmapped].sort());
   });
 
-  it("attaches homes to mapped entries and leaves the other 36 addresses absent", () => {
+  it("attaches homes to mapped entries and leaves the other 39 addresses absent", () => {
     const mapped = BLOCK_ENTRIES.filter(block => block.sectionLeaf !== undefined);
     expect(Object.fromEntries(mapped.map(block => [block.id, block.sectionLeaf]))).toEqual({ ...expected, "say.logo-hero": "sections.hero" });
     expect(BLOCK_ENTRIES.filter(block => block.sectionLeaf === undefined).map(block => block.id).sort()).toEqual([...homeless, ...unmapped].sort());

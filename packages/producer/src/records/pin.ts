@@ -17,6 +17,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ISO, parseCandidateName, slotDir, targetSchema } from "./candidate.js";
 import { validateAgainst } from "./schema.js";
+import { actorLine, recordEvent, recordSubject } from "../engine/log.js";
 import type { Actor, AgentId, Iso, Pin, PinMap, PinRecord, Ref, SlotId } from "./types.js";
 
 export const PIN_FILE = "pin.json";
@@ -150,6 +151,9 @@ export function writePinDoc(file: string, doc: Pin | PinMap): void {
   const temp = `${file}.${process.pid}.tmp`;
   writeFileSync(temp, `${JSON.stringify(doc, null, 2)}\n`);
   renameSync(temp, file);
+  // The engine event (engine.md "Writers"): the pin's decider, else who created the document.
+  const subject = recordSubject(file);
+  if (subject !== undefined) recordEvent([file], { actor: actorLine("decidedBy" in doc ? doc.decidedBy : undefined, actorLine(doc.createdBy, "code:pin")), kind: `${doc.kind}.write`, subject });
 }
 
 /** Normalizes a timestamp to the target `...Z` form; undefined when it is not a date. */

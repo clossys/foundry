@@ -87,9 +87,9 @@ export interface WorkRef {
 // Tokens
 // ---------------------------------------------------------------------------
 
-/** Token L1 groups follow the Tailwind v4 namespaces. 6 L1, 31 L2. */
+/** Token L1 groups follow the Tailwind v4 namespaces. 6 L1, 32 L2. */
 export type TokenGroupMap = {
-  color: "surface" | "ink" | "line" | "primary" | "control" | "status" | "overlay" | "focus" | "palette" | "data";
+  color: "surface" | "ink" | "line" | "primary" | "action" | "control" | "status" | "overlay" | "focus" | "palette" | "data";
   type: "font" | "display" | "weight" | "text" | "tracking" | "leading";
   layout: "spacing" | "breakpoint" | "container" | "region";
   shape: "radius" | "border" | "focus" | "icon";
@@ -415,8 +415,12 @@ export interface ComponentContract {
 export type ComponentEntry = CatalogLeafBase &
   ComponentPlacement & {
     readonly id: ComponentId;
-    /** Export name, or null for a leaf with nothing built yet. */
+    /** Export name, or null for a leaf with nothing built yet or a recipe of another leaf. */
     readonly export: string | null;
+    /** The built leaf whose export this leaf renders with fixed props; it has no export of its own. */
+    readonly recipeOf?: ComponentId;
+    /** Part exports that compose only inside this leaf, each declared in one of its files. */
+    readonly anatomy?: readonly string[];
     /** Package-relative source files, empty when nothing exists. */
     readonly files: readonly string[];
     readonly racBase: RacBase;

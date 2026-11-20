@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { hashFiles, listFiles } from "./hash.js";
 import type { SchemaIssue } from "./schema.js";
 import type { ElementRecord, PreviewRecord } from "./types.js";
+import { actorLine, recordEvent } from "../engine/log.js";
 import { loadElement, loadPreview, RecordError, validateElement, validatePreview } from "./validate.js";
 
 /**
@@ -126,6 +127,7 @@ export function writeElementVersion(libraryRoot: string, input: NewElementVersio
     writeFileSync(join(staging, PREVIEW_FILE), `${JSON.stringify(preview.value, null, 2)}\n`);
     if (existsSync(dir)) throw new Error(`${dir} already exists; versions are immutable`);
     renameSync(staging, dir);
+    recordEvent([...paths, ELEMENT_FILE, PREVIEW_FILE].map(path => join(dir, path)), { actor: actorLine((checked.value as { createdBy?: unknown }).createdBy, "code:library"), kind: "library.version", subject: `library:${slot}/${id}/v${version}` });
     return { dir, element: checked.value, preview: preview.value };
   } catch (error) {
     rmSync(staging, { recursive: true, force: true });

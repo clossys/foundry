@@ -39,18 +39,22 @@ import {
 } from "./index.js";
 import type { TokenId } from "./types.js";
 import { CANONICAL_SECTION_BLOCK_REGISTRATIONS } from "./blocks.js";
+import { resolveComponentId } from "./component-aliases.js";
+import retiredLeaves from "./retired.json" with { type: "json" };
 import legalProseFill from "./fills/foundry/sections.legal-prose.json" with { type: "json" };
+import comparisonFill from "./fills/foundry/sections.comparison.json" with { type: "json" };
 import sectionSlots from "./slots/sections.json" with { type: "json" };
 
-/** Frozen token leaf ids, 169. */
+/** Frozen token leaf ids, 183. */
 const FROZEN_TOKEN_IDS: readonly string[] = [
   "--color-surface-base", "--color-surface-sunken", "--color-surface-raised", "--color-surface-inverse",
   "--color-surface-inverse-raised", "--color-surface-aside", "--color-surface-selected",
   "--color-surface-glass", "--color-surface-glass-inverse", "--color-ink-primary", "--color-ink-secondary",
   "--color-ink-muted", "--color-ink-link", "--color-ink-on-inverse", "--color-ink-on-inverse-muted",
-  "--color-ink-on-primary", "--color-line-base", "--color-line-strong", "--color-line-on-inverse", "--color-line-control",
+  "--color-ink-on-primary", "--color-ink-on-action", "--color-line-base", "--color-line-strong", "--color-line-on-inverse", "--color-line-control",
   "--color-line-panel", "--color-primary", "--color-primary-text", "--color-primary-hover",
-  "--color-primary-tint", "--color-primary-on-inverse", "--color-control-tonal",
+  "--color-primary-tint", "--color-primary-on-inverse", "--color-action", "--color-action-hover",
+  "--color-action-pressed", "--color-action-on-inverse", "--color-action-on-inverse-hover", "--color-control-tonal",
   "--color-control-tonal-hover", "--color-control-tonal-inverse", "--color-control-tonal-inverse-hover",
   "--color-control-quiet", "--color-status-success", "--color-status-success-text",
   "--color-status-success-tint", "--color-status-warning", "--color-status-warning-text",
@@ -72,12 +76,15 @@ const FROZEN_TOKEN_IDS: readonly string[] = [
   "--text-base", "--text-base--line-height", "--text-lg", "--text-lg--line-height", "--text-xl",
   "--text-xl--line-height", "--text-2xl", "--text-2xl--line-height", "--text-3xl", "--text-3xl--line-height",
   "--text-4xl", "--text-4xl--line-height", "--text-5xl", "--text-5xl--line-height", "--text-6xl",
-  "--text-6xl--line-height", "--text-7xl", "--text-7xl--line-height", "--tracking-tight", "--tracking-wider",
+  "--text-6xl--line-height", "--text-7xl", "--text-7xl--line-height", "--text-display-2xl", "--text-heading-2xl",
+  "--tracking-tight", "--tracking-wider",
   "--tracking-widest", "--leading-tight", "--leading-snug", "--spacing", "--breakpoint-sm",
   "--breakpoint-md", "--breakpoint-lg", "--breakpoint-xl", "--breakpoint-2xl", "--container-content",
   "--container-reading", "--container-wide", "--container-form", "--container-notice",
   "--ui-layout-sidebar-w", "--ui-layout-sidebar-rail-w", "--ui-layout-aside-w", "--ui-layout-drawer-w",
-  "--ui-layout-gutter", "--ui-layout-tap-target", "--radius-xs", "--radius-sm", "--radius-md",
+  "--ui-layout-gutter", "--ui-layout-tap-target", "--ui-layout-dock-min-block", "--ui-layout-dock-default-block",
+  "--ui-layout-dock-max-block", "--ui-layout-inspector-w", "--ui-layout-inspector-min-w", "--ui-layout-inspector-max-w",
+  "--radius-xs", "--radius-sm", "--radius-md",
   "--radius-panel", "--ui-border-hairline", "--ui-border-rule", "--ui-border-panel", "--ui-focus-width",
   "--ui-focus-offset", "--ui-icon-stroke", "--ui-icon-sm", "--ui-icon-md", "--ui-icon-lg", "--shadow-raised",
   "--shadow-floating", "--shadow-panel", "--blur-glass", "--blur-notice", "--ui-z-base", "--ui-z-sticky",
@@ -111,7 +118,7 @@ const FROZEN_ICON_IDS: readonly string[] = [
   "Box", "Layers", "Plug", "PanelLeft",
 ];
 
-/** Frozen component leaf ids, 79. */
+/** Frozen component leaf ids, 93. */
 const FROZEN_COMPONENT_IDS: readonly string[] = [
   "act.button", "act.native-action", "act.icon-button", "act.menu", "act.toolbar", "act.toggle-button",
   "act.link", "act.breadcrumb", "reveal.tabs", "act.navigation-tree",
@@ -134,6 +141,11 @@ const FROZEN_COMPONENT_IDS: readonly string[] = [
   "inform.progress-bar", "inform.spinner", "inform.skeleton",
   "group.card", "group.separator", "reveal.disclosure", "reveal.accordion", "group.group", "enter.resize-handle",
   "reveal.dialog", "reveal.popover", "reveal.tooltip", "reveal.sheet", "reveal.preview-card",
+  "components.toggle-group", "components.canvas-map", "components.canvas-zoom",
+  "components.semantic-content", "components.rich-text", "components.media-player",
+  "components.specimen-swatch", "components.specimen-ladder", "components.specimen-player", "components.specimen-grid",
+  "components.specimen-matrix", "components.specimen-viewport", "components.specimen-passage",
+  "components.specimen-copy-in-context",
 ];
 
 /** Frozen block leaf ids: additions require review; existing addresses stay pinned. */
@@ -156,10 +168,13 @@ const FROZEN_BLOCK_IDS: readonly string[] = [
   "form.refresh-status",
   "form.save-bar",
   "form.settings-section",
+  "form.stock-combobox",
+  "form.stock-select",
   "form.toolbar",
   "items.activity-feed",
   "items.app-navigation",
   "items.cards",
+  "items.chunk-host",
   "items.event-item",
   "items.explorer",
   "items.faq",
@@ -246,10 +261,10 @@ function aliases(value: unknown): TokenId[] {
 describe("token catalog coverage", () => {
   const ids = TOKEN_ENTRIES.map((entry) => entry.id);
 
-  it("matches the frozen id list exactly, 169 leaves", () => {
+  it("matches the frozen id list exactly, 183 leaves", () => {
     expect(duplicates(ids)).toEqual([]);
-    expect(FROZEN_TOKEN_IDS).toHaveLength(169);
-    expect(ids).toHaveLength(169);
+    expect(FROZEN_TOKEN_IDS).toHaveLength(183);
+    expect(ids).toHaveLength(183);
     expect([...ids].sort()).toEqual([...FROZEN_TOKEN_IDS].sort());
   });
 
@@ -379,10 +394,30 @@ describe("component catalog coverage", () => {
   const leafExports = COMPONENT_ENTRIES.flatMap((entry) => (entry.export === null ? [] : [entry.export]));
   const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-  it("matches the frozen id list exactly, 79 leaves", () => {
+  const anatomy = COMPONENT_ENTRIES.flatMap((entry) => entry.anatomy ?? []);
+  const byId = new Map(COMPONENT_ENTRIES.map((entry) => [entry.id, entry]));
+
+  /** Value names a source file exports, from its own declarations and named export lists. */
+  const exportedNames = (file: string): Set<string> => {
+    const ast = ts.createSourceFile(file, readFileSync(join(packageRoot, file), "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const names = new Set<string>();
+    const exported = (node: ts.Node) => ts.canHaveModifiers(node) && (ts.getModifiers(node) ?? []).some(m => m.kind === ts.SyntaxKind.ExportKeyword);
+    for (const node of ast.statements) {
+      if (ts.isExportDeclaration(node) && !node.isTypeOnly && node.exportClause && ts.isNamedExports(node.exportClause)) {
+        for (const binding of node.exportClause.elements) if (!binding.isTypeOnly) names.add(binding.name.text);
+      } else if ((ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) && node.name && exported(node)) {
+        names.add(node.name.text);
+      } else if (ts.isVariableStatement(node) && exported(node)) {
+        for (const declaration of node.declarationList.declarations) if (ts.isIdentifier(declaration.name)) names.add(declaration.name.text);
+      }
+    }
+    return names;
+  };
+
+  it("matches the frozen id list exactly, 93 leaves", () => {
     expect(duplicates(ids)).toEqual([]);
-    expect(FROZEN_COMPONENT_IDS).toHaveLength(79);
-    expect(ids).toHaveLength(79);
+    expect(FROZEN_COMPONENT_IDS).toHaveLength(93);
+    expect(ids).toHaveLength(93);
     expect([...ids].sort()).toEqual([...FROZEN_COMPONENT_IDS].sort());
   });
 
@@ -415,14 +450,51 @@ describe("component catalog coverage", () => {
     }
   });
 
-  it("places every component and chart export exactly once: as a leaf or an exclusion", () => {
+  it("places every component and chart export exactly once: as a leaf, a leaf's anatomy or an exclusion", () => {
     // Source-adoption additions have the independent parent proof above; retain every earlier catalog omission.
     const additions = new Set(railPublic.map(row => row.name));
     const exported = [...Object.keys(COMPONENT_EXPORTS).filter(name => !additions.has(name)), ...Object.keys(CHART_EXPORTS)];
     expect(duplicates(exported)).toEqual([]);
-    const accounted = [...leafExports.filter((name) => name !== "Toaster"), ...Object.keys(COMPONENT_EXPORT_EXCLUSIONS)];
+    const accounted = [...leafExports.filter((name) => name !== "Toaster"), ...anatomy, ...Object.keys(COMPONENT_EXPORT_EXCLUSIONS)];
     expect(duplicates(accounted)).toEqual([]);
     expect([...exported].sort()).toEqual([...accounted].sort());
+  });
+
+  it("declares each anatomy part in one of its own leaf's files", () => {
+    expect(anatomy.length).toBeGreaterThan(0);
+    for (const entry of COMPONENT_ENTRIES) {
+      if (!entry.anatomy) continue;
+      expect(entry.export, entry.id).toEqual(expect.any(String));
+      const declared = new Set(entry.files.flatMap((file) => [...exportedNames(file)]));
+      for (const name of entry.anatomy) {
+        expect(declared.has(name), `${entry.id}#${name}`).toBe(true);
+        // A part is a React component: a function, or a memo/forwardRef element type.
+        const part = (COMPONENT_EXPORTS as Record<string, unknown>)[name];
+        const renderable = typeof part === "function" || (typeof part === "object" && part !== null && "$$typeof" in part);
+        expect(renderable, `${entry.id}#${name}`).toBe(true);
+      }
+    }
+  });
+
+  it("points every recipe at a built leaf with its own export, in that leaf's files", () => {
+    const recipes = COMPONENT_ENTRIES.filter((entry) => entry.recipeOf !== undefined);
+    expect(recipes.map((entry) => entry.id)).toEqual(["act.icon-button"]);
+    for (const entry of recipes) {
+      const host = byId.get(entry.recipeOf!);
+      expect(host?.export, entry.id).toEqual(expect.any(String));
+      expect(host?.recipeOf, entry.id).toBeUndefined();
+      expect(resolveComponentId(entry.id), entry.id).toBe(resolveComponentId(host!.id));
+      expect(entry.files, entry.id).toEqual(host?.files);
+    }
+  });
+
+  it("marks exactly the built leaves whose canonical leaf is retired as deprecated", () => {
+    const retired = new Set(retiredLeaves.map((entry) => entry.id));
+    for (const entry of COMPONENT_ENTRIES) {
+      const name = `components.${entry.id.slice(entry.id.indexOf(".") + 1)}`;
+      const isRetired = retired.has(resolveComponentId(entry.id)) || retired.has(name);
+      expect(entry.lifecycle === "deprecated", entry.id).toBe(isRetired && entry.export !== null);
+    }
   });
 
   it("registers the shell's toast once, from the shell entry", () => {
@@ -431,15 +503,16 @@ describe("component catalog coverage", () => {
   });
 
   // planner:r2f-53: six zero-caller parked charts were deleted and recorded as gaps (parked 9 -> 3, gaps 18 -> 24).
-  it("counts 42 leaves on the default branch (3 parked), 13 in flight and 24 gaps", () => {
+  // foundry-build-0048: built leaves registered (in flight 13 -> 9, gaps 24 -> 18) and 14 exported leaves added.
+  it("counts 63 leaves on the default branch, 3 parked, 9 in flight and 18 gaps", () => {
     const count = (status: string) => COMPONENT_ENTRIES.filter((entry) => entry.status === status).length;
-    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([39, 3, 13, 24]);
+    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([63, 3, 9, 18]);
   });
 
-  it("gives built leaves an export and real files, and unbuilt leaves neither", () => {
+  it("gives built leaves an export (a recipe uses its host's) and real files, and unbuilt leaves neither", () => {
     for (const entry of COMPONENT_ENTRIES) {
       const built = entry.status === "main" || entry.status === "parked";
-      expect(entry.export !== null, entry.id).toBe(built);
+      expect(entry.export !== null, entry.id).toBe(built && entry.recipeOf === undefined);
       expect(entry.files.length > 0, entry.id).toBe(built);
       for (const file of entry.files) expect(existsSync(join(packageRoot, file)), file).toBe(true);
     }
@@ -476,12 +549,30 @@ describe("block catalog coverage", () => {
     expect([...exported].sort()).toEqual([...accounted].sort());
   });
 
+  it("registers each canonical section export once, at a section slot, declared in its own source", () => {
+    expect(CANONICAL_SECTION_BLOCK_REGISTRATIONS.map(entry => [entry.id, entry.export])).toEqual([
+      ["sections.legal-prose", "LegalProse"],
+      ["sections.comparison", "LibraryBoardSection"],
+      ...["swatch", "color-ramp", "type-ladder", "spacing-ladder", "radius-ladder", "motion-player", "asset-grid", "icon-grid"].map(leaf =>
+        [`sections.specimen-${leaf}`, `Specimen${leaf.split("-").map(part => part[0]!.toUpperCase() + part.slice(1)).join("")}`]),
+    ]);
+    const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+    for (const registration of CANONICAL_SECTION_BLOCK_REGISTRATIONS) {
+      expect(sectionSlots.find(slot => slot.id === registration.id)?.contract.kind, registration.id).toBe("section");
+      const source = readFileSync(join(packageRoot, registration.source), "utf8");
+      expect(source, registration.export).toMatch(new RegExp(`export (?:function|const) ${registration.export}\\b`));
+      expect(BLOCK_EXPORTS, registration.export).toHaveProperty(registration.export);
+      expect(BLOCK_ENTRIES.some(entry => entry.export === registration.export), registration.export).toBe(false);
+      expect(BLOCK_EXPORT_EXCLUSIONS, registration.export).not.toHaveProperty(registration.export);
+    }
+    const comparison = comparisonFill.sections.comparison;
+    expect(comparison.consumption.sourceFiles.map(file => file.path)).toContain("packages/designer/src/blocks/library-board/LibraryBoardSection.tsx");
+  });
+
   it("registers LegalProse exactly once at its existing canonical section and own implementation", () => {
     const fill = legalProseFill.sections["legal-prose"];
-    expect(CANONICAL_SECTION_BLOCK_REGISTRATIONS).toEqual([{
-      id: "sections.legal-prose", export: "LegalProse", source: "src/blocks/LegalProse.tsx",
-    }]);
-    const [registration] = CANONICAL_SECTION_BLOCK_REGISTRATIONS;
+    const registration = CANONICAL_SECTION_BLOCK_REGISTRATIONS.find(entry => entry.export === "LegalProse")!;
+    expect(registration).toEqual({ id: "sections.legal-prose", export: "LegalProse", source: "src/blocks/LegalProse.tsx" });
     expect(registration.id).toBe(fill.slot);
     expect(registration.export).toBe(fill.impl.export);
     expect(legalProseFill.$extensions["com.clossys.fill"].slot).toBe(registration.id);
