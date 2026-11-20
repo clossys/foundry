@@ -47,6 +47,7 @@ import { workspacePath } from "../pipeline/trace.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
+import { errorMessage } from "../errors.js";
 
 /** The step a Producer seat slot crafts under: the seats action (`clossys seat` writes the seat). */
 const SEAT_STEP = "seats";
@@ -187,9 +188,11 @@ export async function runNextCli(argv: readonly string[], cwd: string, steps: re
 export function submitTarget(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS): readonly string[] {
   if (argv[0] !== "next" || !argv.includes("--submit")) return argv;
   if (argv.slice(1).some(arg => /^(director|designer|writer|publisher)\//.test(arg))) return argv;
+  // Help needs no workspace; anything else needs its root, and a root that cannot be resolved fails here with its
+  // cause (RootDiscoveryError), never as the argv unchanged and a "no open candidates slot" refusal downstream.
+  if (argv.includes("--help") || argv.includes("-h")) return argv;
   const rootAt = argv.indexOf("--root");
-  let root: string;
-  try { root = rootOf(cwd, rootAt < 0 ? undefined : argv[rootAt + 1]); } catch { return argv; }
+  const root = rootOf(cwd, rootAt < 0 ? undefined : argv[rootAt + 1]);
   const context = { root, steps, agents: slotCounts(root), seats: readSeats(root, steps) };
   for (const step of steps) {
     if (!step.id.endsWith(".candidates")) continue;
@@ -260,7 +263,8 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   // per-file provenance). The probe is the bytes writeCandidate would write; a submission it refuses is refused
   // by writeCandidate below, in its order, with its message.
   let rawSlot: unknown;
-  try { rawSlot = JSON.parse(readFileSync(join(entry.dir, "slot.json"), "utf8")); } catch { rawSlot = undefined; }
+  try { rawSlot = JSON.parse(readFileSync(join(entry.dir, "slot.json"), "utf8")); }
+  catch (error) { return reject(`${target} slot.json cannot be read: ${errorMessage(error)}`); }
   const createdBy: Actor = { actor: "agent", agent: agent as AgentId, skill: contractSkill, skillSha256: sha(skillBytes), model: flags.model!, tier: flags.tier! as Tier };
   const probe = `${stem}-v1.${KIND_EXT[family]}`;
   let probeBytes = canonical;
@@ -272,10 +276,13 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   }
   const contentDigest = readCandidateText(rawSlot, agent as ModelAgent, slot, probe, probeBytes).contentDigest;
   for (const name of entry.candidates) {
-    let held: { sha256: string; contentDigest: string } | null = null;
-    try { held = readCandidate(consumer, agent as SlotAgent, slot, name); } catch { held = null; }
-    if (held?.sha256 === digest) return reject(`${flags.submit} is byte-identical to ${target} candidate ${name}; submit a candidate that differs`);
-    if (held?.contentDigest === contentDigest) return reject(`${flags.submit} has the same content as ${target} candidate ${name} (it differs only in header provenance or JSON layout); submit a candidate that differs`);
+    // A held candidate that cannot be read is a broken record: its identity with the submission is unknown, so the
+    // submission is refused with the cause, never judged against it as if it were absent.
+    let held: { sha256: string; contentDigest: string };
+    try { held = readCandidate(consumer, agent as SlotAgent, slot, name); }
+    catch (error) { return reject(`${target} candidate ${name} cannot be read: ${errorMessage(error)}`); }
+    if (held.sha256 === digest) return reject(`${flags.submit} is byte-identical to ${target} candidate ${name}; submit a candidate that differs`);
+    if (held.contentDigest === contentDigest) return reject(`${flags.submit} has the same content as ${target} candidate ${name} (it differs only in header provenance or JSON layout); submit a candidate that differs`);
   }
   // P2 (adapt, create) only after the slot's latest verdict is create, for the latest options packet's inputs:
   // a slot-state precondition, refused after the submission's own content checks.
@@ -360,7 +367,7 @@ export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly
   const contractSkill = owning.command.skill;
   if (!contractSkill || flags.skill !== contractSkill) return refuse(`--skill ${flags.skill} is not ${owning.id}'s skill (${contractSkill ?? "none"})`);
   let skillBytes: Buffer;
-  try { skillBytes = readFileSync(skillFile(owning, packageRoot)!); } catch { return refuse(`${owning.id}'s skill ${contractSkill} is missing`); }
+  try { skillBytes = readFileSync(skillFile(owning, packageRoot)!); } catch (error) { return refuse(`${owning.id}'s skill ${contractSkill} cannot be read: ${errorMessage(error)}`); }
   const root = rootOf(cwd, flags.root);
   const consumer = join(root, "clossys");
   const entry = readSlotEntry(consumer, agent as ModelAgent, slot);
@@ -372,7 +379,7 @@ export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly
   let fields: Record<string, unknown> = {};
   if (flags.file !== undefined) {
     try { fields = JSON.parse(readFileSync(resolve(cwd, flags.file), "utf8")) as Record<string, unknown>; }
-    catch { return refuse(`cannot read ${flags.file} as JSON`); }
+    catch (error) { return refuse(`cannot read ${flags.file} as JSON: ${errorMessage(error)}`); }
     if (Array.isArray(fields)) fields = { directions: fields };
     if (!fields || typeof fields !== "object") return refuse(`${flags.file} is not a JSON object`);
   }

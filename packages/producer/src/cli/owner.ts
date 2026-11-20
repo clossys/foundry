@@ -57,6 +57,7 @@ import { IA_KIND, slotWriteKind } from "../constitution/green.js";
 import { isTargetSlot, oldSlotRefusal, pinTargetSlot, resolveCandidate } from "./pin.js";
 import { parseCandidateName } from "../records/candidate.js";
 import { readPinFile, usesPinMap } from "../records/pin-map.js";
+import { errorMessage, isAbsent } from "../errors.js";
 import { consumerSlotFolders, positionIa, serializeSlot, SLOT_SCHEMA as SLOT_V2_SCHEMA, validateSlot } from "../records/slot.js";
 import { currentView, slotReadIssues } from "../records/slot-current.js";
 import { buildPin, cliActor, ownerAnswerRef, pinIssues, toIsoZ } from "../records/pin.js";
@@ -381,7 +382,7 @@ function runIaRegroup(flags: Flags, cwd: string, target: string, op: string): Cl
   else if (op === "--assign") edit = assignGroup(ia, value, need(flags, "--layer", IA_USAGE), one(flags, "--label"));
   else {
     let parsed: unknown;
-    try { parsed = readJsonFile(resolve(cwd, value)); } catch { return refuse("ia", `${op} ${value} is not a readable JSON file`); }
+    try { parsed = readJsonFile(resolve(cwd, value)); } catch (error) { return refuse("ia", `${op} ${value} is not a readable JSON file: ${errorMessage(error)}`); }
     edit = op === "--layers" ? setLayers(ia, parsed) : setAxes(ia, parsed);
   }
   return applyEdit(consumer, root, agent, ia, edit, op.slice(2), owner.ref!, at, flags.bare.has("--dry"));
@@ -432,7 +433,7 @@ function runIaSeatStandard(flags: Flags, cwd: string, target: string, slot: stri
   let contract: unknown = existing.contract;
   const contractFile = one(flags, "--contract");
   if (contractFile !== undefined) {
-    try { contract = readJsonFile(resolve(cwd, contractFile)); } catch { return refuse("ia", `--contract ${contractFile} is not a readable JSON file`); }
+    try { contract = readJsonFile(resolve(cwd, contractFile)); } catch (error) { return refuse("ia", `--contract ${contractFile} is not a readable JSON file: ${errorMessage(error)}`); }
     if (!isRecordValue(contract) || contract.step !== step) return refuse("ia", `--contract must keep the seat's step ${JSON.stringify(step)}`);
   }
   if (!existsSync(packagePath(root, `packages/${SEAT_AGENT}/standards/${standardId}/requirements.json`))) return refuse("ia", `standard ${standardId} does not exist under packages/${SEAT_AGENT}/standards/`);
@@ -493,7 +494,9 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
     const plan = syncPlan(consumer, agent, knownSlots(consumer, agent, state), state, { at: at as Iso, version: cliActor("clossys ia sync").version, cli: "clossys ia sync" });
     if ("error" in plan) {
       // A store still on the old trees places the retired leaves as undeclared: the recut, not an extension, moves them.
-      const hint = state.undeclared.length > 0 && !recutStore(root) ? "this store is not recut to the current trees: run clossys migrate recut first" : "declare them as extensions or upstream them into the package first";
+      const recut = state.undeclared.length > 0 ? recutStore(root) : true;
+      if (typeof recut === "object") return refuse("ia", `sync refused: ${plan.error}; the store format cannot be judged: ${recut.error}`);
+      const hint = !recut ? "this store is not recut to the current trees: run clossys migrate recut first" : "declare them as extensions or upstream them into the package first";
       return refuse("ia", `sync refused: ${plan.error}; ${hint}`);
     }
     for (const [path, bytes] of plan.writes) {
@@ -605,7 +608,7 @@ export async function runIaCli(argv: readonly string[], cwd: string, _options: {
   const fromRequest = request !== undefined && !flags.values.has("--contract");
   const contractFile = (standardId !== undefined && !flags.values.has("--contract")) || fromRequest ? undefined : need(flags, "--contract", IA_USAGE);
   let contract: unknown = fromRequest ? request!.proposal!.contract : undefined;
-  if (contractFile !== undefined) { try { contract = readJsonFile(resolve(cwd, contractFile)); } catch { return refuse("ia", `--contract ${contractFile} is not a readable JSON file`); } }
+  if (contractFile !== undefined) { try { contract = readJsonFile(resolve(cwd, contractFile)); } catch (error) { return refuse("ia", `--contract ${contractFile} is not a readable JSON file: ${errorMessage(error)}`); } }
   const underFlag = one(flags, "--under") ?? request?.proposal?.under;
   if (request && placed) return refuse("ia", `${target} is already placed: close request ${request.id} with a reuse decision instead`);
   let next = ia;
@@ -720,11 +723,22 @@ export async function runIaCli(argv: readonly string[], cwd: string, _options: {
   return after.length ? { ...committed, message: [committed.message, ...after].join("\n") } : committed;
 }
 
-/** True when the workspace holds a recut store: some slot.json under clossys/agents is `clossys.slot/2`. */
-function recutStore(root: string): boolean {
+/**
+ * One present slot.json of a store-wide scan, parsed: a file that cannot be read or parsed is a broken record and comes
+ * back as an error naming it, never as a slot of the other format or as no slot.
+ */
+function scannedSlot(root: string, file: string): { doc: unknown } | { error: string } {
+  try { return { doc: JSON.parse(readModelText(file)) }; }
+  catch (error) { return { error: `${relative(root, file)} cannot be read as JSON: ${errorMessage(error)}` }; }
+}
+
+/** True when the workspace holds a recut store: some slot.json under clossys/agents is `clossys.slot/2`. An unreadable one is an error. */
+function recutStore(root: string): boolean | { error: string } {
   for (const folder of consumerSlotFolders(root)) {
     if (!folder.hasSlot) continue;
-    try { if ((JSON.parse(readModelText(folder.file)) as { schema?: unknown }).schema === SLOT_V2_SCHEMA) return true; } catch { /* judged by clossys check */ }
+    const read = scannedSlot(root, folder.file);
+    if ("error" in read) return read;
+    if ((read.doc as { schema?: unknown } | null)?.schema === SLOT_V2_SCHEMA) return true;
   }
   return false;
 }
@@ -734,14 +748,15 @@ function recutStore(root: string): boolean {
  * hold, such as an owner extension): the one kind the agent's `clossys.slot/2` slots under the same L1 hold. The L1
  * decides it, as the package trees do (Writer Voice, Prose and Copy; a Designer layer). None, or more than one, is none.
  */
-function placedKind(root: string, agent: AgentId, l1: string): TargetSlotKind | undefined {
+function placedKind(root: string, agent: AgentId, l1: string): TargetSlotKind | undefined | { error: string } {
   const kinds = new Set<TargetSlotKind>();
   for (const folder of consumerSlotFolders(root)) {
     if (folder.agent !== agent || !folder.hasSlot) continue;
-    try {
-      const doc = JSON.parse(readModelText(folder.file)) as Partial<Slot>;
-      if (doc.schema === SLOT_V2_SCHEMA && doc.ia?.l1 === l1 && typeof doc.kind === "string") kinds.add(doc.kind);
-    } catch { /* judged by clossys check */ }
+    // An unreadable sibling may hold the L1's kind: the kind is then unknown, and the write is refused naming the file.
+    const read = scannedSlot(root, folder.file);
+    if ("error" in read) return read;
+    const doc = read.doc as Partial<Slot> | null;
+    if (doc?.schema === SLOT_V2_SCHEMA && doc.ia?.l1 === l1 && typeof doc.kind === "string") kinds.add(doc.kind);
   }
   return kinds.size === 1 ? [...kinds][0] : undefined;
 }
@@ -759,7 +774,12 @@ function currentSlotWrite(root: string, doc: SlotV1, position: { l1: string; l2:
   for (const folder of consumerSlotFolders(root)) holders.set(folder.id, [...(holders.get(folder.id) ?? []), folder.agent]);
   const ia = positionIa(doc.id, position);
   // A Publisher --kind (page, publication) is itself a slot/2 kind, judged by validateSlot below.
-  const kind = options.kind ?? targetKind(doc) ?? placedKind(root, doc.agent, ia.l1) ?? (doc.agent === "publisher" ? doc.kind as TargetSlotKind : undefined);
+  let kind = options.kind ?? targetKind(doc);
+  if (kind === undefined) {
+    const placed = placedKind(root, doc.agent, ia.l1);
+    if (typeof placed === "object") return placed;
+    kind = placed ?? (doc.agent === "publisher" ? doc.kind as TargetSlotKind : undefined);
+  }
   if (!kind) return { error: `${doc.agent}/${doc.id} kind ${doc.kind} has no ${SLOT_V2_SCHEMA} kind` };
   // An id no consumer slot folder holds is left out of the refs and returned: the caller raises a slot request for it.
   const missing: { id: string; rel: "input" | "uses" }[] = [];
@@ -795,7 +815,7 @@ export async function runEvidenceCli(argv: readonly string[], cwd: string): Prom
   for (const [key, value] of Object.entries(fields)) if (/[\r\n]/.test(value)) return refuse("evidence", `${key} must be one line`);
   let body: string;
   const bodyFile = need(flags, "--body", EVIDENCE_USAGE);
-  try { body = readFileSync(resolve(cwd, bodyFile), "utf8"); } catch { return refuse("evidence", `cannot read --body ${bodyFile}`); }
+  try { body = readFileSync(resolve(cwd, bodyFile), "utf8"); } catch (error) { return refuse("evidence", `cannot read --body ${bodyFile}: ${errorMessage(error)}`); }
   if (!body.trim()) return refuse("evidence", "the body is empty");
   const root = rootOf(cwd, flags);
   const rel = `clossys/evidence/director/${flags.bare.has("--finding") ? "findings/" : ""}${id}.md`;
@@ -826,7 +846,7 @@ export async function runConfigCli(argv: readonly string[], cwd: string): Promis
   }
   let bytes = DEFAULT_CONFIG;
   const from = one(flags, "--from");
-  if (from) { try { bytes = readFileSync(resolve(cwd, from), "utf8"); } catch { return refuse("config", `cannot read --from ${from}`); } }
+  if (from) { try { bytes = readFileSync(resolve(cwd, from), "utf8"); } catch (error) { return refuse("config", `cannot read --from ${from}: ${errorMessage(error)}`); } }
   const issues = validateFile("workspace-config", rel, bytes);
   if (issues.length) return refuse("config", issues.map(issue => issue.message).join("; "));
   replaceFile(file, bytes);
@@ -1090,12 +1110,18 @@ export async function runApproveCli(argv: readonly string[], cwd: string): Promi
   if (!isTargetSlot(root, "writer", slotId)) return refuse("approve", oldSlotRefusal("approve", `writer/${slotId}`).replace(/^approve refused: /, ""));
   if (!ownerAnswerRef(by)) return refuse("approve", `--by ${by} names no queue answer; the owner approves with --by owner:queue.<kind>#<id>`);
   const dir = slotDir(consumer, "writer", slotId);
-  let names: string[] = [];
-  try { names = readdirSync(join(dir, "candidates")).filter(name => !name.startsWith(".")); } catch { names = []; }
+  // No candidates folder is no candidate; any other failure to list it is a broken record, refused with its cause.
+  let names: string[];
+  try { names = readdirSync(join(dir, "candidates")).filter(name => !name.startsWith(".")); }
+  catch (error) {
+    if (!isAbsent(error)) return refuse("approve", `cannot list ${target} candidates: ${errorMessage(error)}`);
+    names = [];
+  }
   const candidate = resolveCandidate(names, candidateId);
   if (!candidate) return refuse("approve", `${target} has no candidate ${candidateId}`);
   let kind: unknown;
-  try { kind = (JSON.parse(readFileSync(slotFile(dir), "utf8")) as { kind?: unknown }).kind; } catch { kind = undefined; }
+  try { kind = (JSON.parse(readFileSync(slotFile(dir), "utf8")) as { kind?: unknown }).kind; }
+  catch (error) { return refuse("approve", `writer/${slotId} slot.json cannot be read: ${errorMessage(error)}`); }
   const record = hash >= 0 ? slot.slice(hash + 1) : usesPinMap("writer", typeof kind === "string" ? kind : undefined) ? parseCandidateName(candidate)?.name : undefined;
   const pinTarget = record !== undefined ? `${slotId}#${record}` : slotId;
   const before = writerKeysUnapproved(root).get(slotId) ?? [];
@@ -1139,7 +1165,7 @@ export async function runOwnerDecisionCli(argv: readonly string[], cwd: string):
   if (!scope.length || unknown.length) return refuse("owner-decision", `--scope must list one or more of ${OWNER_DECISION_SCOPES.join(", ")}${unknown.length ? ` (not ${unknown.join(", ")})` : ""}`);
   const quoteFile = need(flags, "--quote-file", OWNER_DECISION_USAGE);
   let quote: string;
-  try { quote = readFileSync(resolve(cwd, quoteFile), "utf8").replace(/\r?\n$/, ""); } catch { return refuse("owner-decision", `cannot read --quote-file ${quoteFile}`); }
+  try { quote = readFileSync(resolve(cwd, quoteFile), "utf8").replace(/\r?\n$/, ""); } catch (error) { return refuse("owner-decision", `cannot read --quote-file ${quoteFile}: ${errorMessage(error)}`); }
   if (!quote.trim() || /[\r\n]/.test(quote)) return refuse("owner-decision", "--quote-file holds the owner's words on one non-empty line");
   const date = one(flags, "--date") ?? new Date().toISOString().slice(0, 10);
   const root = rootOf(cwd, flags);
@@ -1147,7 +1173,7 @@ export async function runOwnerDecisionCli(argv: readonly string[], cwd: string):
   let doc: { schema: string; decisions: OwnerDecision[] } = { schema: OWNER_DECISIONS_SCHEMA, decisions: [] };
   if (existsSync(file)) {
     let value: unknown;
-    try { value = readJsonFile(file); } catch { return refuse("owner-decision", `${rel} is not JSON`); }
+    try { value = readJsonFile(file); } catch (error) { return refuse("owner-decision", `${rel} is not JSON: ${errorMessage(error)}`); }
     const issues = validateOwnerDecisions(value);
     if (issues.length) return refuse("owner-decision", `${rel} is invalid before the write: ${issues.slice(0, 3).join("; ")}`);
     doc = value as typeof doc;
@@ -1212,7 +1238,11 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
   // A present pin.json names the pinned candidate even when it no longer validates: never retire what it names.
   const pinText = readSlotRecordText(entry.dir, "pin.json");
   let pinned = entry.pin?.candidate;
-  if (!pinned && pinText !== undefined) { try { pinned = (JSON.parse(pinText) as { candidate?: string }).candidate; } catch { pinned = undefined; } }
+  // A pin.json that does not parse may name this candidate: the retire is refused naming it, never read as no pin.
+  if (!pinned && pinText !== undefined) {
+    try { pinned = (JSON.parse(pinText) as { candidate?: string } | null)?.candidate; }
+    catch (error) { return refuse("retire", `clossys/agents/${agent}/${slot}/pin.json cannot be read as JSON (${errorMessage(error)}); it may pin ${candidate}: repair the pin first`); }
+  }
   if (pinned === candidate) return refuse("retire", `${candidate} is the pinned candidate of ${target}; repin first (clossys pin ${target} <candidate>)`);
   const from = join(candidatesDir(entry.dir), candidate);
   const retired = join(entry.dir, RETIRED_DIR), to = join(retired, candidate), file = join(retired, `${candidate}.json`);
@@ -1245,10 +1275,15 @@ function retireSlot(consumer: string, root: string, agent: SlotAgent, slot: stri
   catch (error) { return refuse("retire", `cannot read every slot.json to find what uses ${target}: ${error instanceof Error ? error.message : String(error)}`); }
   if (users.length) return refuse("retire", `${target} is used by ${users.map(user => `${user.agent}/${user.id}`).join(", ")}; change their uses first`);
   const dependents: string[] = [];
+  // A slot counts as pinned when its pin.json is present, valid or not: a pin that no longer validates may still pin
+  // the slot. A pinned slot whose slot.json cannot be read may take the target as an input, so the guard refuses
+  // naming it; it never passes the guard by skipping the slot.
   for (const other of SLOT_AGENTS) for (const entry of listSlots(consumer, other)) {
-    if ((other === agent && entry.id === slot) || !entry.pin) continue;
+    if (other === agent && entry.id === slot) continue;
+    if (!entry.pin && readSlotRecordText(entry.dir, "pin.json") === undefined) continue;
     let inputs: readonly string[];
-    try { inputs = readSlot(consumer, other, entry.id).inputs; } catch { continue; }
+    try { inputs = readSlot(consumer, other, entry.id).inputs; }
+    catch (error) { return refuse("retire", `cannot read pinned slot ${other}/${entry.id} to find whether it takes ${target} as an input: ${errorMessage(error)}`); }
     if (inputs.includes(slot)) dependents.push(`${other}/${entry.id}`);
   }
   if (dependents.length) return refuse("retire", `pinned slots take ${target} as an input: ${dependents.join(", ")}; repin or change their inputs first`);
