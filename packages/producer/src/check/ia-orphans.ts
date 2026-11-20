@@ -2,18 +2,27 @@
  * `ia.orphans` (system.md 9): every consumer slot folder is reachable from a publication in
  * `clossys/agents/publisher/ia.json`. It walks consumer slot folders only (never the package tree).
  *
- * roots     = each publication's pages, chrome and release slots
+ * roots     = each publication's pages, chrome and release slots, for a publication either form names (the ones
+ *             `clossys ia publisher/release.<pub> --kind release` takes as existing): a `publications` entry of
+ *             publisher/ia.json, or a `publisher/publication.<pub>` slot placed in its nodes and not retired (that slot
+ *             and its release slot are roots; its pages and chrome are reached through its refs)
  * forward   = from a reached slot: its `refs` (input, uses, places), its `brief.inputs`, and the refs of its pinned
  *             candidate (header `refs` plus every `<agent>/<slot-id>` string, value or key, in a JSON candidate's content;
  *             a release manifest names its pins as keys)
  * backward  = a slot whose `consumedBy` ref names a reached slot is reached
- * orphans   = every slot folder minus reached minus Producer `loop.*` slots (exempt by design)
+ * orphans   = every slot folder minus reached minus Producer `loop.*` slots (exempt by design) minus the Producer seat
+ *             slots `seat.<step>` placed in producer/ia.json: a seat seats a decide step of the pipeline, no publication
+ *             consumes it, and `clossys seat` writes it with no refs (records/seat-slot.ts), so its tie to the IA is its
+ *             placement. A seat folder producer/ia.json does not place is still an orphan.
  *
  * A folder with no readable `slot.json` is still a slot folder: it is reached only through the edges of others.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { placedIds } from "../constitution/context.js";
+import { releaseSlotId } from "../release/paths.js";
 import { SLOT_SCHEMA, consumerSlotFolders, readSlot, slotSchemaOf, treeResult, type TreeCheck, type TreeCheckResult, type TreeFinding } from "../records/slot.js";
+import { seatStepOf } from "../records/slot-model/types.js";
 import type { Ref, Slot } from "../records/types.js";
 
 export const IA_ORPHANS = "ia.orphans";
@@ -26,16 +35,33 @@ const slotOf = (to: string): string | undefined => {
   return match ? `${match[1]}/${match[2]}` : undefined;
 };
 
-/** The publication roots of the consumer: `publisher/<slot-id>` for every page, chrome and release slot. */
+const PUBLICATION_SLOT = /^publication\.([a-z0-9][a-z0-9-]*)$/;
+
+/** Whether a placed `publisher/<id>` folder holds a slot.json that does not say it is retired. */
+function liveSlot(root: string, id: string): boolean {
+  const file = join(root, "clossys", "agents", "publisher", id, "slot.json");
+  if (!existsSync(file)) return false;
+  try { return (JSON.parse(readFileSync(file, "utf8")) as { status?: unknown }).status !== "retired"; } catch { return false; }
+}
+
+/**
+ * The publication roots of the consumer: `publisher/<slot-id>` for every page, chrome and release slot a
+ * `publications` entry names, and every placed, live `publisher/publication.<pub>` slot with its release slot.
+ */
 export function publicationRoots(root: string): { roots: string[]; findings: TreeFinding[] } {
   const file = join(root, "clossys", "agents", "publisher", "ia.json");
   if (!existsSync(file)) return { roots: [], findings: [{ subject: "publisher/ia.json", detail: "missing: no publication roots" }] };
-  let doc: { publications?: Record<string, { pages?: unknown; chrome?: unknown; release?: unknown }> };
+  let doc: { publications?: Record<string, { pages?: unknown; chrome?: unknown; release?: unknown }>; nodes?: unknown };
   try { doc = JSON.parse(readFileSync(file, "utf8")); } catch (error) { return { roots: [], findings: [{ subject: "publisher/ia.json", detail: `not JSON: ${(error as Error).message}` }] }; }
   const roots: string[] = [];
   for (const publication of Object.values(doc.publications ?? {})) {
     const ids = [...asStrings(publication.pages), ...asStrings(publication.chrome), ...asStrings(publication.release)];
     for (const id of ids) roots.push(`publisher/${id}`);
+  }
+  for (const id of placedIds(doc)) {
+    const publication = PUBLICATION_SLOT.exec(id)?.[1];
+    if (publication === undefined || !liveSlot(root, id)) continue;
+    for (const slot of [id, releaseSlotId(root, publication)]) if (!roots.includes(`publisher/${slot}`)) roots.push(`publisher/${slot}`);
   }
   return { roots, findings: [] };
 }
@@ -67,9 +93,17 @@ function candidateEdges(dir: string): string[] {
   return out;
 }
 
+/** The seat slot ids producer/ia.json places (none when it is missing or unreadable). */
+function placedSeats(root: string): Set<string> {
+  const file = join(root, "clossys", "agents", "producer", "ia.json");
+  if (!existsSync(file)) return new Set();
+  try { return new Set(placedIds(JSON.parse(readFileSync(file, "utf8"))).filter(id => seatStepOf(id) !== undefined)); } catch { return new Set(); }
+}
+
 export function runIaOrphans(root: string): TreeCheckResult {
   const folders = consumerSlotFolders(root);
   const { roots, findings } = publicationRoots(root);
+  const seats = placedSeats(root);
   const forward = new Map<string, string[]>();
   const backward = new Map<string, string[]>();
   for (const folder of folders) {
@@ -97,8 +131,9 @@ export function runIaOrphans(root: string): TreeCheckResult {
   }
   for (const folder of folders) {
     const key = `${folder.agent}/${folder.id}`;
-    if (reached.has(key) || (folder.agent === "producer" && folder.id.startsWith("loop."))) continue;
-    findings.push({ subject: key, detail: folder.hasSlot ? "no consumedBy path ends at a publication in publisher/ia.json" : "slot folder with no slot.json, and nothing reachable places it" });
+    if (reached.has(key) || (folder.agent === "producer" && (folder.id.startsWith("loop.") || seats.has(folder.id)))) continue;
+    const seat = folder.agent === "producer" && seatStepOf(folder.id) !== undefined;
+    findings.push({ subject: key, detail: seat ? "seat slot folder producer/ia.json does not place" : folder.hasSlot ? "no consumedBy path ends at a publication in publisher/ia.json" : "slot folder with no slot.json, and nothing reachable places it" });
   }
   return treeResult(IA_ORPHANS, findings);
 }

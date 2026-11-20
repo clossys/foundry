@@ -56,6 +56,15 @@ describe("the shipped scenario", () => {
       expect(arg, step.id).not.toMatch(/^--root$|clossys\/agents\/|\.clossys\/|node_modules|dist\//);
     }
     for (const arg of scenario.build) expect(arg).not.toMatch(/^--root$|clossys\/agents\//);
+    for (const step of scenario.after ?? []) for (const arg of step.run ?? []) expect(arg, step.id).not.toMatch(/^--root$|clossys\/agents\/|\.clossys\/|node_modules|dist\//);
+  });
+
+  it("releases the built page: after the build and its repeat, the manifest is written and every release gate runs strict", () => {
+    expect((scenario.after ?? []).map(step => [step.id, step.run])).toEqual([
+      ["release.manifest", ["release", scenario.publication, "--manifest"]],
+      ["release.gates", ["release", scenario.publication, "--gates"]],
+    ]);
+    for (const step of scenario.after ?? []) expect(step.expect ?? 0, step.id).toBe(0);
   });
 
   it("holds every file a craft step submits and every {scenario}/ file a step names", () => {
@@ -89,6 +98,9 @@ describe("readScenario", () => {
     expect(unpinned.steps.length).toBe(shipped.steps.length);
     expect(unpinned.steps.find(step => step.id === "craft.strings")!.craft!.unpinned).toBe(true);
     expect(unpinned.steps.filter(step => step.craft?.unpinned).map(step => step.id)).toEqual(["craft.strings"]);
+    const ungated = readScenario(SHIPPED, write({ base: "shipped", without: ["release.gates"] }));
+    expect(ungated.steps).toEqual(shipped.steps);
+    expect(ungated.after!.map(step => step.id)).toEqual(["release.manifest"]);
   });
 
   it("refuses a step it does not hold, a run step's .pin, bad peers and a malformed scenario", () => {
@@ -100,6 +112,11 @@ describe("readScenario", () => {
     expect(() => readScenario(SHIPPED, write({ ...shipped, schema: "clossys.e2e-scenario/0" }))).toThrow(/schema is/);
     expect(() => readScenario(SHIPPED, write({ ...shipped, steps: [{ id: "x" }] }))).toThrow(/needs run or craft/);
     expect(() => readScenario(SHIPPED, write({ ...shipped, steps: [{ id: "x", run: ["config"] }, { id: "x", run: ["config"] }] }))).toThrow(/unique/);
+    expect(() => readScenario(SHIPPED, write({ ...shipped, after: [{ id: "config.init", run: ["config"] }] }))).toThrow(/unique/);
+    expect(() => readScenario(SHIPPED, write({ ...shipped, after: [{ id: "build", run: ["config"] }] }))).toThrow(/unique/);
+    expect(() => readScenario(SHIPPED, write({ ...shipped, after: { id: "x" } }))).toThrow(/after is a list/);
+    const craft = (shipped.steps as ScenarioStep[]).find(step => step.craft)!;
+    expect(() => readScenario(SHIPPED, write({ ...shipped, after: [{ ...craft, id: "after.craft" }] }))).toThrow(/after runs verbs only/);
   });
 
   it("the R-E2E-CONSUMER fixture drops exactly the Writer strings pin, an input the page's brief requires pinned", () => {
