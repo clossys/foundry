@@ -53,7 +53,13 @@ async function store() {
   await run("ia", "publisher/page.home", "--contract", file("page.json", { kind: "page", route: "/", frame: "required", sections: "ordered", requirements: [{ check: "page.assembled" }] }), "--standard", "page", "--under", "site/site-pages", "--kind", "page", "--at", AT);
   await run("ia", "writer/strings.site", "--contract", file("strings.json", { requirements: [{ check: "copy.entries" }] }), "--under", "copy.page-metadata/site", "--kind", "strings", "--at", AT);
   await run("ia", "publisher/publication.site", "--contract", file("publication.json", { kind: "publication", fixture: { route: { path: "/" } }, requirements: [{ check: "publication.routes" }] }), "--standard", "publication", "--under", "site/site-pages", "--kind", "publication", "--inputs", "strings.site", "--uses", "page.home", "--at", AT);
-  // The publication's pinned upstream (fixture setup, not under test): the Writer strings, pinned by the pin writer directly.
+  // The publication's pinned upstream (fixture setup, not under test): the page it uses and the Writer strings it reads,
+  // each pinned by the pin writer directly. The guarded pin refuses a publication over an unpinned upstream (R02.2).
+  const page = "page-v1.json";
+  const pageFile = agent("publisher", "page.home", "candidates", page);
+  mkdirSync(join(pageFile, ".."), { recursive: true });
+  cpSync(join(INSTALL, "publisher", "page.home", "candidates", page), pageFile);
+  writeTargetPin(root, { agent: "publisher", slotId: "page.home", candidate: page, decidedBy: BY, basis: "planner", at: AT, createdBy: cliActor("clossys pin") } as never);
   const strings = "site-v1.md";
   const stringsFile = agent("writer", "strings.site", "candidates", strings);
   mkdirSync(join(stringsFile, ".."), { recursive: true });

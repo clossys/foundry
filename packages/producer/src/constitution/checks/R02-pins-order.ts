@@ -4,7 +4,8 @@
  *   forms (`migrated`, `migration[:<ref>]`) removed: a pin names a real decider;
  * - R02.2 upstream before downstream: every slot in a live slot's dependency set (`inputs` ∪ `uses`)
  *   is live and has an intact pin (valid, its candidate present, the candidate's bytes matching the
- *   pinned sha256), the same test the slot reader's readiness applies (records/slots.ts inputBlocker);
+ *   pinned sha256; a Writer pin map when every record is), the same test the slot reader's readiness
+ *   applies (records/slots.ts inputBlocker);
  * - R02.3 each pin equals the slot ledger's last decision event (`pin`, `pick` or `verdict`) in
  *   candidate, sha256, decidedBy, basis and at; a later `migrate` event that rewrote the pinned
  *   candidate's bytes carries the sha256 forward (records/ledger.ts).
@@ -15,15 +16,17 @@
  */
 import { DECIDED_BY, PIN_BASES } from "../../records/slot-model/index.js";
 import { DECISION_OPS, ledgerEventsOf } from "../../records/ledger.js";
+import { pinMapIssues } from "../../records/pin.js";
 import type { ConstitutionContext, Row, RuleModule, SlotRecord } from "../types.js";
 import { allSlots, dependencySet, isObject, listed, liveSlotRecords, row } from "./shared.js";
 
+const PIN_MAP_SCHEMA = "clossys.pin-map/1";
 /** A decidedBy only a migration writes; R02.1 removes these forms from the closed list. */
 const MIGRATION_DECIDED = /^(?:migrated|migration(?::.*)?)$/;
 
 /** The pin records of a pin.json value: `[key, record]` per pin-map record, else `[undefined, the pin]` (pin/1 and pin/2). */
 export function pinRecordsOf(value: Record<string, unknown>): [string | undefined, Record<string, unknown>][] {
-  if (value.schema !== "clossys.pin-map/1") return [[undefined, value]];
+  if (value.schema !== PIN_MAP_SCHEMA) return [[undefined, value]];
   const records = isObject(value.records) ? value.records : {};
   return Object.keys(records).sort().map(key => [key, isObject(records[key]) ? records[key] as Record<string, unknown> : {}]);
 }
@@ -50,11 +53,31 @@ export function pinBasis(ctx: ConstitutionContext): Row[] {
   return rows;
 }
 
-/** Why a slot's pin is not intact, or undefined when it is. */
+/**
+ * Why a slot's pin is not intact, or undefined when it is. A pin (pin/1, pin/2) is intact when it names a present
+ * candidate whose bytes match its sha256. A Writer `clossys.pin-map/1` (N6) is intact when it is a valid pin map of this
+ * slot (records/pin.ts pinMapIssues) holding at least one record and every record is intact the same way: the slot
+ * reader's readiness rule (records/slots.ts inputBlocker: a pin map clears an input when every record does). A pin map
+ * on any other agent's slot, an invalid one or an empty one is an invalid pin.
+ */
 export function pinBlocker(slot: SlotRecord): string | undefined {
   if (!slot.pin) return "unpinned";
   const value = slot.pin.value;
-  if (slot.pin.error !== undefined || !isObject(value) || typeof value.candidate !== "string" || typeof value.sha256 !== "string") return "invalid pin";
+  if (slot.pin.error !== undefined || !isObject(value)) return "invalid pin";
+  if (value.schema !== PIN_MAP_SCHEMA) return recordBlocker(slot, value);
+  if (slot.agent !== "writer" || pinMapIssues(value, { agent: "writer", slotId: slot.id }).length) return "invalid pin";
+  const records = pinRecordsOf(value);
+  if (!records.length) return "invalid pin";
+  for (const [key, record] of records) {
+    const blocker = recordBlocker(slot, record);
+    if (blocker) return `${recordLabel(key)}${blocker}`;
+  }
+  return undefined;
+}
+
+/** Why one pin record is not intact: it names a present candidate whose bytes match its sha256. */
+function recordBlocker(slot: SlotRecord, value: Record<string, unknown>): string | undefined {
+  if (typeof value.candidate !== "string" || typeof value.sha256 !== "string") return "invalid pin";
   const candidate = slot.candidates.find(each => each.name === value.candidate);
   if (!candidate || candidate.readError !== undefined) return `pinned candidate ${value.candidate} is missing`;
   if (candidate.sha256 !== value.sha256) return `pinned candidate ${value.candidate} bytes do not match the pin`;
@@ -102,7 +125,7 @@ export function pinMatchesLedger(ctx: ConstitutionContext): Row[] {
     const pin = slot.pin?.value;
     if (!slot.pin || slot.pin.error !== undefined || !isObject(pin)) continue;
     const events = slot.ledger?.error === undefined ? ledgerEventsOf(slot.ledger?.value) : undefined;
-    const map = pin.schema === "clossys.pin-map/1";
+    const map = pin.schema === PIN_MAP_SCHEMA;
     for (const [key, record] of pinRecordsOf(pin)) {
       // A pin-map record's decision is the last decision event naming that record; other events (migrate) apply to all.
       const own = events && map ? events.filter(event => !DECISION_OPS.includes(event.op as string) || eventRecord(event) === key) : events;
