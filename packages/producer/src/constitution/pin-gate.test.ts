@@ -256,7 +256,8 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
     expect(() => writeCandidate(w.consumer, "designer", CTA, "cta", cta, { at: AT, provenance: { by: "agent:designer", model: "claude-opus-5-5", tier: "high" } })).toThrow(NONE);
     mkdirSync(join(w.consumer, "agents", "designer", CTA, "candidates"), { recursive: true });
     writeFileSync(join(w.consumer, "agents", "designer", CTA, "candidates", "cta-v1.json"), `${JSON.stringify(cta, null, 2)}\n`);
-    w.queueEntry();
+    // The owner's typed answer names the slot and candidate pinned (U13 owner-decision predicate), so the refusal is the backdrop rule's.
+    w.answer(`designer/${CTA}`, "cta-v1.json");
     const result = await runPinCli([`designer/${CTA}`, "cta-v1.json", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root, false);
     expect(result.exitCode).toBe(1);
     expect(result.message).toMatch(NONE);
