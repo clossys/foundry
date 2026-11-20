@@ -74,7 +74,7 @@ export function reviewDoc(config: ReviewConfig = FOUNDRY_CONFIG): string {
     "## E2E and leak scan",
     "",
     config.e2e ? `- E2E: ${code(config.e2e.argv.join(" "))} when one of ${config.e2e.packages.map(code).join(", ")} changed.` : "- E2E: none configured.",
-    config.leakScan ? `- Leak scan: ${code(config.leakScan.join(" "))}, unchanged; only its exit code is kept.` : "- Leak scan: none configured.",
+    config.leakScan ? `- Leak scan: ${code(config.leakScan.join(" "))}, unchanged, in the head tree and then the merge base's tree, before either installs anything. Only each failure's file and kind are kept, as counts: a kind that occurs more often at the head is \`leak-scan\` (subject: the kind), failures the merge base already has are one \`leak-scan.preexisting\` note. Nothing else of its output is stored or printed; output that is not its JSON report falls back to its exit code.` : "- Leak scan: none configured.",
     config.install ? `- Install, in each fresh tree: ${code(config.install.join(" "))}.` : "- Install: none.",
     "",
     "## Mutation",

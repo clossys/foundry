@@ -1,8 +1,10 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { forbiddenFindings, FORBIDDEN_RULES, type Change } from "./changes.js";
 import { REVIEW_DOC, reviewDoc } from "./doc.js";
-import { normalizeOutput, tailSha } from "./exec.js";
+import { normalizeOutput, scratch, tailSha } from "./exec.js";
+import { buildSet } from "./graph.js";
 import { applyMutant, lineMutants, mask, selectMutants, type Mutant } from "./mutate.js";
 import { CLOSSYS_CLI, commandOf, parsePacket, validationItems } from "./receipt.js";
 
@@ -62,6 +64,25 @@ describe("receipt commands", () => {
     expect(normalizeOutput("\u001b[32mok\u001b[0m 12ms in /work/tree/a\r\n", ["/work/tree"])).toBe("ok 0ms in <root>/a\n");
     expect(tailSha("passed in 31ms\n", [])).toBe(tailSha("passed in 7ms\n\n", []));
     expect(tailSha("1 failed\n", [])).not.toBe(tailSha("passed\n", []));
+  });
+});
+
+describe("build set", () => {
+  it("orders by manifest edges only: a test-dist-closure edge adds a package but never builds it first", () => {
+    const tree = scratch("review-graph-");
+    const manifest = (dir: string, body: Record<string, unknown>) => { mkdirSync(join(tree, dir), { recursive: true }); writeFileSync(join(tree, dir, "package.json"), JSON.stringify(body)); };
+    manifest(".", { name: "ws", workspaces: ["packages/*"] });
+    manifest("packages/base", { name: "base", scripts: { build: "x" } });
+    manifest("packages/ui", { name: "ui", dependencies: { base: "*" }, scripts: { build: "x" } });
+    manifest("packages/pages", { name: "pages", dependencies: { ui: "*", base: "*" }, scripts: { build: "x" } });
+    manifest("packages/app", { name: "app", dependencies: { ui: "*", pages: "*" }, scripts: { build: "x" } });
+    manifest("packages/types", { name: "types" });
+    manifest("packages/tool", { name: "tool", devDependencies: { types: "*" }, scripts: { build: "x" } });
+    writeFileSync(join(tree, "packages/ui/test-dist-closure.json"), JSON.stringify({ requires: [{ path: "packages/pages/dist/a.js", builtBy: "pages" }, { path: "packages/tool/dist/b.js", builtBy: "tool (generate)" }] }));
+    const { order, prerequisites } = buildSet(tree, ["packages/app"]);
+    expect(order.map(workspace => workspace.name)).toEqual(["base", "ui", "pages", "app", "tool"]);
+    expect([...prerequisites].sort()).toEqual(["packages/base", "packages/pages", "packages/tool", "packages/types", "packages/ui"]);
+    expect(buildSet(tree, ["packages/base"]).order.map(workspace => workspace.name)).toEqual(["base"]);
   });
 });
 

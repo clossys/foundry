@@ -33,35 +33,50 @@ export function listWorkspaces(tree: string): Workspace[] {
   });
 }
 
-const edges = (workspace: Workspace, byName: Map<string, Workspace>, tree: string): string[] => {
+const known = (names: Iterable<string>, byName: Map<string, Workspace>, self: string) => [...names].filter(name => byName.has(name) && name !== self).sort();
+
+/** Manifest edges: the first-party packages a workspace's build needs built first. */
+const manifestEdges = (workspace: Workspace, byName: Map<string, Workspace>): string[] => {
   const names = new Set<string>();
   for (const field of DEPENDENCY_FIELDS) for (const name of Object.keys((workspace.manifest[field] as Record<string, string> | undefined) ?? {})) names.add(name);
-  const closure = join(tree, workspace.dir, "test-dist-closure.json");
-  if (existsSync(closure)) {
-    for (const entry of (JSON.parse(readFileSync(closure, "utf8")) as { requires?: { builtBy?: string }[] }).requires ?? []) {
-      const name = entry.builtBy?.split(" ")[0];
-      if (name) names.add(name);
-    }
-  }
-  return [...names].filter(name => byName.has(name) && name !== workspace.name);
+  return known(names, byName, workspace.name);
 };
 
-/** The packages to build for targets (package dirs): targets plus their prerequisite closure, dependencies first. */
+/** test-dist-closure.json edges: packages whose build output the workspace's tests need; they never order the build. */
+const closureEdges = (workspace: Workspace, byName: Map<string, Workspace>, tree: string): string[] => {
+  const closure = join(tree, workspace.dir, "test-dist-closure.json");
+  if (!existsSync(closure)) return [];
+  const requires = (JSON.parse(readFileSync(closure, "utf8")) as { requires?: { builtBy?: string }[] }).requires ?? [];
+  return known(requires.map(entry => entry.builtBy?.split(" ")[0] ?? ""), byName, workspace.name);
+};
+
+/**
+ * The packages to build for targets (package dirs): targets, their manifest dependencies and the packages their tests
+ * need built (test-dist-closure.json), each with its own dependencies, in manifest dependency order (as the root
+ * topological build orders them: a closure edge adds a package to the set but never orders it).
+ */
 export function buildSet(tree: string, targets: readonly string[]): { order: Workspace[]; prerequisites: Set<string> } {
   const workspaces = listWorkspaces(tree);
   const byName = new Map(workspaces.map(workspace => [workspace.name, workspace]));
   const byDir = new Map(workspaces.map(workspace => [workspace.dir, workspace]));
-  const order: Workspace[] = [], seen = new Set<string>(), prerequisites = new Set<string>();
+  const wanted = new Set<string>();
+  const want = (workspace: Workspace) => {
+    if (wanted.has(workspace.dir)) return;
+    wanted.add(workspace.dir);
+    for (const name of [...manifestEdges(workspace, byName), ...closureEdges(workspace, byName, tree)]) want(byName.get(name)!);
+  };
+  for (const dir of [...targets].sort()) { const workspace = byDir.get(dir); if (workspace) want(workspace); }
+  const order: Workspace[] = [], seen = new Set<string>();
   const visit = (workspace: Workspace, stack: Set<string>) => {
     if (seen.has(workspace.dir) || stack.has(workspace.dir)) return;
     stack.add(workspace.dir);
-    for (const name of edges(workspace, byName, tree).sort()) visit(byName.get(name)!, stack);
+    for (const name of manifestEdges(workspace, byName)) visit(byName.get(name)!, stack);
     stack.delete(workspace.dir);
     seen.add(workspace.dir);
     order.push(workspace);
   };
-  for (const dir of [...targets].sort()) { const workspace = byDir.get(dir); if (workspace) visit(workspace, new Set()); }
-  for (const workspace of order) if (!targets.includes(workspace.dir)) prerequisites.add(workspace.dir);
+  for (const dir of [...wanted].sort()) visit(byDir.get(dir)!, new Set());
+  const prerequisites = new Set([...wanted].filter(dir => !targets.includes(dir)));
   return { order: order.filter(workspace => workspace.manifest.scripts?.build), prerequisites };
 }
 

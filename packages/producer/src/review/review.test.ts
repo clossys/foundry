@@ -178,6 +178,36 @@ describe("clossys review", () => {
     expect(readFileSync(join(receiptDir(packet), "receipt.md"), "utf8")).toContain("| c1 | `node check.mjs` | 0 |");
   }, 60_000);
 
+  it("fails a new leak-scan failure and notes the ones the base already had, never printing their details", () => {
+    // A stand-in public-safety check: one failure per line of leaks.txt ("<file> <kind> <detail>"), as its --json report.
+    const scan = "import { readFileSync } from \"node:fs\";\nconst failures = readFileSync(\"leaks.txt\", \"utf8\").split(\"\\n\").filter(Boolean).map(line => { const [rel, kind, detail] = line.split(\" \"); return { rel, kind, detail, severity: \"error\", line: 1 }; });\nconsole.log(JSON.stringify({ mode: \"repo\", failures }));\nprocess.exit(failures.length ? 1 : 0);\n";
+    const withScan = { ...CONFIG, leakScan: ["node", "scan.mjs"] };
+    const leaky = (lines: string, head: Record<string, string | null>) => {
+      const dir = scratch("review-test-");
+      roots.push(dir);
+      sh(dir, "init", "--quiet", "--initial-branch=main");
+      write(dir, { ...BASE, "scan.mjs": scan, "leaks.txt": lines });
+      sh(dir, "add", "-A");
+      sh(dir, "commit", "--quiet", "-m", "base");
+      const base = sh(dir, "rev-parse", "HEAD");
+      write(dir, head);
+      sh(dir, "add", "-A");
+      sh(dir, "commit", "--quiet", "-m", "head");
+      return runReview({ repo: dir, base, head: sh(dir, "rev-parse", "HEAD"), config: withScan });
+    };
+    const pre = "old.txt word-kind SECRETWORD\n";
+    const same = leaky(pre, { "notes.md": "x\n" });
+    expect(fails(same)).toEqual([]);
+    expect(same.findings.filter(finding => finding.id === "leak-scan.preexisting").map(finding => finding.detail)).toEqual(["1 failure(s) the merge base already has; not this change's"]);
+    expect(same.steps.find(item => item.step === "leak-scan")).toMatchObject({ status: "pass", detail: "0 new, 1 pre-existing" });
+    const grown = leaky(pre, { "leaks.txt": `${pre}new.txt file-kind SECRETWORD\n` });
+    expect(fails(grown)).toEqual(["leak-scan"]);
+    expect(grown.findings.find(finding => finding.id === "leak-scan")).toMatchObject({ subject: "file-kind" });
+    expect(JSON.stringify(grown)).not.toContain("SECRETWORD");
+    expect(JSON.stringify(grown)).not.toContain("new.txt");
+    expect(formatReview(grown).split("\n").at(-1)).toMatch(/^MECHANICAL: FAIL /);
+  });
+
   it("builds the changed package after its prerequisites, and the base tree reuses an unchanged prerequisite's dist", () => {
     const dir = scratch("review-test-");
     roots.push(dir);

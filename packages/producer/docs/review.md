@@ -22,6 +22,7 @@ run: the verdict is PASS with no findings. Counts and fixtures compare against t
 |---|---|---|
 | changed | `-` | never: the files and packages of git diff --name-status base...head |
 | forbidden | `forbidden.*` | any forbidden path below |
+| leak-scan | `leak-scan` | the repository's public-safety check reports a failure kind more often at the head than at the merge base (details are never stored or printed) |
 | install | `install` | the install in the head tree (and the base tree, for the counts) exits non-zero |
 | build | `build` | a build of a changed package or its prerequisite exits non-zero; each package builds once, dependencies first |
 | types | `types` | tsc --noEmit -p <package> exits non-zero for a changed workspace package with a tsconfig.json |
@@ -29,7 +30,6 @@ run: the verdict is PASS with no findings. Counts and fixtures compare against t
 | counts | `count.increase / count.probe` | a probe finds more of a rule at head than at the merge base, or cannot run at head |
 | fixtures | `fixture.drift / fixture.generate` | the head generator, run on the base copy of a generated fixture, writes anything diff -r finds in the head's committed copy |
 | e2e | `e2e` | clossys check --e2e exits non-zero when the producer, designer, writer or publisher package changed |
-| leak-scan | `leak-scan` | the repository's public-safety check exits non-zero (its output is never stored or printed) |
 | receipt | `receipt.*` | with --packet: the receipt is missing, names another head, was taken dirty, or a re-run differs in exit code or output tail |
 | mutation | `mutation.survived (note)` | never: each mutant is reported killed, survived, invalid (does not compile) or uncovered |
 
@@ -71,7 +71,7 @@ skips the fixture with a `fixture.skipped` note.
 ## E2E and leak scan
 
 - E2E: `node packages/producer/dist/cli/index.js check --e2e --json` when one of `packages/producer`, `packages/designer`, `packages/writer`, `packages/publisher` changed.
-- Leak scan: `npm run -s check:safety`, unchanged; only its exit code is kept.
+- Leak scan: `npm run -s check:safety -- --json`, unchanged, in the head tree and then the merge base's tree, before either installs anything. Only each failure's file and kind are kept, as counts: a kind that occurs more often at the head is `leak-scan` (subject: the kind), failures the merge base already has are one `leak-scan.preexisting` note. Nothing else of its output is stored or printed; output that is not its JSON report falls back to its exit code.
 - Install, in each fresh tree: `npm ci --no-audit --no-fund --prefer-offline`.
 
 ## Mutation

@@ -7,7 +7,7 @@
 import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { changedFiles, forbiddenFindings, headHunks, packageOf } from "./changes.js";
-import { FOUNDRY_CONFIG, type ReviewConfig } from "./config.js";
+import { FOUNDRY_CONFIG, jsonOf, type ReviewConfig } from "./config.js";
 import { addWorktree, git, run, scratch, type Worktree } from "./exec.js";
 import { buildSet, coveringTests, SOURCE_FILE, TEST_FILE, testCommand } from "./graph.js";
 import { applyMutant, COMPILE_ERROR, fileMutants, MUTANT_CAP, selectMutants } from "./mutate.js";
@@ -20,6 +20,7 @@ export const REVIEW_SCHEMA = "clossys.review/1";
 export const REVIEW_STEPS: readonly { readonly step: string; readonly finding: string; readonly fails: string }[] = [
   { step: "changed", finding: "-", fails: "never: the files and packages of git diff --name-status base...head" },
   { step: "forbidden", finding: "forbidden.*", fails: "any forbidden path below" },
+  { step: "leak-scan", finding: "leak-scan", fails: "the repository's public-safety check reports a failure kind more often at the head than at the merge base (details are never stored or printed)" },
   { step: "install", finding: "install", fails: "the install in the head tree (and the base tree, for the counts) exits non-zero" },
   { step: "build", finding: "build", fails: "a build of a changed package or its prerequisite exits non-zero; each package builds once, dependencies first" },
   { step: "types", finding: "types", fails: "tsc --noEmit -p <package> exits non-zero for a changed workspace package with a tsconfig.json" },
@@ -27,7 +28,6 @@ export const REVIEW_STEPS: readonly { readonly step: string; readonly finding: s
   { step: "counts", finding: "count.increase / count.probe", fails: "a probe finds more of a rule at head than at the merge base, or cannot run at head" },
   { step: "fixtures", finding: "fixture.drift / fixture.generate", fails: "the head generator, run on the base copy of a generated fixture, writes anything diff -r finds in the head's committed copy" },
   { step: "e2e", finding: "e2e", fails: "clossys check --e2e exits non-zero when the producer, designer, writer or publisher package changed" },
-  { step: "leak-scan", finding: "leak-scan", fails: "the repository's public-safety check exits non-zero (its output is never stored or printed)" },
   { step: "receipt", finding: "receipt.*", fails: "with --packet: the receipt is missing, names another head, was taken dirty, or a re-run differs in exit code or output tail" },
   { step: "mutation", finding: "mutation.survived (note)", fails: "never: each mutant is reported killed, survived, invalid (does not compile) or uncovered" },
 ];
@@ -46,6 +46,18 @@ export interface ReviewOptions {
 
 const npmBuild = (name: string) => ["npm", "run", "build", `--workspace=${name}`];
 const lastLine = (output: string) => output.trim().split("\n").slice(-1)[0]?.slice(0, 200) ?? "";
+/** The last few lines that are not npm's own wrapper lines: the failing tool's message. */
+const tailLines = (output: string, count = 4) => output.trim().split("\n").filter(line => line.trim() && !/^npm (error|ERR!)/.test(line)).slice(-count).map(line => line.slice(0, 200)).join(" | ") || lastLine(output);
+
+/** A public-safety JSON report as counts per file and kind; never its details. Null when the output is not one. */
+export function leakKeys(stdout: string): Map<string, number> | null {
+  let doc: Record<string, unknown>;
+  try { doc = jsonOf(stdout); } catch { return null; }
+  if (!Array.isArray(doc.failures)) return null;
+  const out = new Map<string, number>();
+  for (const item of doc.failures as { rel?: unknown; kind?: unknown }[]) { const key = `${String(item.rel)}\u0000${String(item.kind)}`; out.set(key, (out.get(key) ?? 0) + 1); }
+  return out;
+}
 
 export function runReview(options: ReviewOptions): ReviewReport {
   const config = options.config ?? FOUNDRY_CONFIG;
@@ -65,6 +77,9 @@ export function runReview(options: ReviewOptions): ReviewReport {
   const forbidden = forbiddenFindings(repo, base, head, changes);
   findings.push(...forbidden);
   const trees: Worktree[] = [];
+  let baseWorktree: Worktree | undefined;
+  /** The merge base's tree, made once on first use (leak scan, counts). */
+  const baseAt = () => { if (!baseWorktree) { baseWorktree = addWorktree(repo, mergeBase, "base"); trees.push(baseWorktree); } return baseWorktree.dir; };
   let packages: string[] = [];
   try {
     if (!changes.length && !options.packet) {
@@ -77,23 +92,20 @@ export function runReview(options: ReviewOptions): ReviewReport {
       packages = [...new Set(files.map(file => packageOf(at, file)))].sort();
       step("changed", "pass", `${files.length} file(s), ${packages.length} package(s)`);
       step("forbidden", forbidden.length ? "fail" : "pass", `${forbidden.length} finding(s)`);
+      if (config.leakScan) leakScan(config.leakScan, at, baseAt, config.timeoutMs, step, fail, findings);
+      else step("leak-scan", "skip", "no leak scan configured");
       const installed = install(config, at, "head", step, fail);
       const counting = config.counts.length > 0 && changes.length > 0;
       const built = installed && build(at, [...packages, ...(counting ? config.probePackages : [])], step, fail, config.timeoutMs);
       types(at, packages, step, fail, config.timeoutMs);
       const covering = coveringTests(at, files, file => packageOf(at, file));
       const red = tests(at, covering.all, step, fail, config.timeoutMs);
-      if (counting && built) countDeltas(repo, mergeBase, at, config, trees, counts, step, fail);
+      if (counting && built) countDeltas(repo, mergeBase, at, baseAt, config, counts, step, fail);
       else step("counts", "skip", counting ? "the head build failed" : "no probes or no changes");
       fixtures(repo, mergeBase, at, files, config, step, fail, findings);
       const e2e = config.e2e && packages.some(pkg => config.e2e!.packages.includes(pkg));
       if (e2e) { const result = run(config.e2e!.argv, at, { timeoutMs: config.timeoutMs }); step("e2e", result.exit ? "fail" : "pass", `exit ${result.exit}`, result.ms); if (result.exit) fail("e2e", config.e2e!.argv.join(" "), lastLine(result.output)); }
       else step("e2e", "skip", "no e2e package changed");
-      if (config.leakScan) {
-        const result = run(config.leakScan, at, { timeoutMs: config.timeoutMs });
-        step("leak-scan", result.exit ? "fail" : "pass", `exit ${result.exit}`, result.ms);
-        if (result.exit) fail("leak-scan", config.leakScan.join(" "), `exit ${result.exit}; output withheld, run it in the checkout`);
-      } else step("leak-scan", "skip", "no leak scan configured");
       if (options.packet) {
         const file = receiptFileFor(options.packet, options.receipt);
         if (!file) { fail("receipt.missing", options.packet, "no receipt.json for the packet; run clossys receipt --packet"); step("receipt", "fail", "missing"); }
@@ -114,6 +126,38 @@ export function runReview(options: ReviewOptions): ReviewReport {
 
 type StepFn = (name: string, status: StepStatus, detail: string, ms?: number) => void;
 type FailFn = (id: string, subject: string, detail: string) => void;
+
+/**
+ * The public-safety check, unchanged, in the head tree and the merge base's tree before either installs anything.
+ * Only each failure's file and kind are kept, as counts; a kind that grows at the head fails, failures the base already
+ * had are a note. The reported subject is the kind alone and nothing of the check's output is printed. Output that is
+ * not the check's JSON report falls back to its exit code.
+ */
+function leakScan(argv: readonly string[], at: string, baseAt: () => string, timeoutMs: number, step: StepFn, fail: FailFn, findings: Finding[]): void {
+  const command = argv.join(" ");
+  const head = run(argv, at, { timeoutMs });
+  const after = leakKeys(head.stdout);
+  if (!after) {
+    step("leak-scan", head.exit ? "fail" : "pass", `exit ${head.exit}; no JSON report`, head.ms);
+    if (head.exit) fail("leak-scan", command, `exit ${head.exit}; output withheld, run it in the checkout`);
+    return;
+  }
+  if (!after.size) { step("leak-scan", head.exit ? "fail" : "pass", `exit ${head.exit}, 0 failure(s)`, head.ms); if (head.exit) fail("leak-scan", command, `exit ${head.exit} with no failure listed; output withheld`); return; }
+  const base = run(argv, baseAt(), { timeoutMs });
+  const before = leakKeys(base.stdout);
+  const grown = new Map<string, number>();
+  let preexisting = 0;
+  for (const [key, count] of after) {
+    const had = Math.min(count, before?.get(key) ?? 0);
+    preexisting += had;
+    const kind = key.slice(key.indexOf("\u0000") + 1);
+    if (count > had) grown.set(kind, (grown.get(kind) ?? 0) + count - had);
+  }
+  for (const [kind, count] of [...grown].sort()) fail("leak-scan", kind, `${count} new failure(s) of this kind at the head${before ? "" : " (the base gave no JSON report)"}; details withheld, run ${command} in the checkout`);
+  if (preexisting) findings.push({ id: "leak-scan.preexisting", level: "note", subject: command, detail: `${preexisting} failure(s) the merge base already has; not this change's` });
+  const total = [...grown.values()].reduce((sum, count) => sum + count, 0);
+  step("leak-scan", total ? "fail" : "pass", `${total} new, ${preexisting} pre-existing`, head.ms + base.ms);
+}
 
 function install(config: ReviewConfig, at: string, label: string, step: StepFn, fail: FailFn): boolean {
   if (!config.install) { if (label === "head") step("install", "skip", "no install configured"); return true; }
@@ -139,7 +183,7 @@ function build(at: string, targets: readonly string[], step: StepFn, fail: FailF
     }
     const result = run(npmBuild(workspace.name), at, { timeoutMs });
     ms += result.ms;
-    if (result.exit) { ok = false; fail("build", `${label}: ${workspace.name}`, lastLine(result.output)); }
+    if (result.exit) { ok = false; fail("build", `${label}: ${workspace.name}`, tailLines(result.output)); }
   }
   const names = order.map(item => item.name + (copied.includes(item.name) ? " (dist from head, unchanged)" : prerequisites.has(item.dir) ? " (prerequisite)" : ""));
   step("build", ok ? "pass" : "fail", `${label}: ${names.join(", ") || "nothing to build"}`, ms);
@@ -184,10 +228,9 @@ function probe(config: ReviewConfig, at: string): Map<string, Record<string, num
 }
 
 /** Rule finding counts per probe at the merge base and at head; any increase fails. */
-function countDeltas(repo: string, mergeBase: string, at: string, config: ReviewConfig, trees: Worktree[], counts: Record<string, { base: number | null; head: number | null }>, step: StepFn, fail: FailFn): void {
+function countDeltas(repo: string, mergeBase: string, at: string, baseAt: () => string, config: ReviewConfig, counts: Record<string, { base: number | null; head: number | null }>, step: StepFn, fail: FailFn): void {
   const started = Date.now();
-  const baseTree = addWorktree(repo, mergeBase, "base");
-  trees.push(baseTree);
+  const baseTree = { dir: baseAt() };
   const treeOf = (tree: string, rev: string, dir: string) => { const result = run(["git", "rev-parse", `${rev}:${dir}`], tree); return result.exit ? "" : result.stdout.trim(); };
   const reuse: Reuse = { from: at, same: dir => { const before = treeOf(repo, mergeBase, dir); return before !== "" && before === treeOf(at, "HEAD", dir); } };
   const baseReady = install(config, baseTree.dir, "base", step, fail) && build(baseTree.dir, config.probePackages, step, (id, subject, detail) => fail("count.probe", subject, `base ${id}: ${detail}`), config.timeoutMs, "base", reuse);

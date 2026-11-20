@@ -84,7 +84,7 @@ export const FOUNDRY_CONFIG: ReviewConfig = {
     args: ["--out", "{out}"], cwd: "packages/producer", triggers: ["packages/producer/", "packages/designer/", "packages/writer/", "packages/publisher/", "packages/director/"],
   }],
   e2e: { packages: ["packages/producer", "packages/designer", "packages/writer", "packages/publisher"], argv: ["node", CLI, "check", "--e2e", "--json"] },
-  leakScan: ["npm", "run", "-s", "check:safety"],
+  leakScan: ["npm", "run", "-s", "check:safety", "--", "--json"],
   // A cold publisher build (tsc plus its client-boundary scan) can take longer than ten minutes on a loaded machine.
   timeoutMs: 1_800_000,
 };
