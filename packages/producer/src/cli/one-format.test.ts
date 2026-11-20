@@ -26,7 +26,8 @@ import { runCli } from "./main.js";
 import { runPickCli } from "./options.js";
 import { runApproveCli, runIaCli, runSeatCli } from "./owner.js";
 import { runPinCli } from "./pin.js";
-import { answerRequest, raiseWork } from "../records/request.js";
+import { ownerDecisionRefusal } from "../records/owner-answer.js";
+import { answerRequest, raiseWork, readRequest, requestsDir } from "../records/request.js";
 import { runGuard } from "../constitution/guard.js";
 import { runReissueCli } from "./reissue.js";
 import { bareEntry, ownerEntry, type OwnerEntryInput } from "./__fixtures__/owner-entry.js";
@@ -206,6 +207,45 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     expect((await confirm(["--by", `owner:queue.change#${entry.id}`])).exitCode).toBe(1);
     expect(readFileSync(join(w.dir, "pin.json"), "utf8")).toBe(bytes);
     expect(confirms()).toHaveLength(1);
+  });
+
+  it("replay (guard on): a typed answer that already ran authorises nothing again, even when its log ends on the owner's answer", async () => {
+    const w = world();
+    w.pinUpstream();
+    const good = w.submit();
+    const next = writeCandidate(w.consumer, "writer", SLOT, "copy", GOOD.replace("Ship your site this week", "Launch your site this week"), { at: AT, provenance: { by: "agent:writer", model: "claude-opus-5-5", tier: "high" } });
+    expect((await runPickCli([`writer/${SLOT}#copy`, good.name, "--by", "agent:writer", "--at", AT, "--root", w.root], w.root)).exitCode).toBe(0);
+    const entry = raiseWork(w.consumer, { kind: "change", target: `writer/${SLOT}`, from: "owner", want: "repin", why: "confirm the hero copy", source: "cli", by: "owner", at: AT }).request;
+    const option = entry.options!.find(each => each.then.args[2] === "--confirm")!;
+    expect((await answerRequest(w.consumer, entry.id, { option: option.id, at: LATER, via: "chat", quote: "Confirm it." })).ok).toBe(true);
+    const by = `owner:queue.change#${entry.id}`;
+    const decision = { kind: "confirm", slot: `writer/${SLOT}`, target: `writer/${SLOT}#copy`, candidate: good.name } as const;
+    const confirms = () => ((json(join(w.dir, "ledger.json")).events ?? []) as { op: string }[]).filter(event => event.op === "confirm").length;
+    expect(confirms()).toBe(1);
+    // Later the planner repins another candidate (dropping the confirmation), and the agent picks the first one again:
+    // an unconfirmed agent pick of the very candidate the old answer confirmed.
+    expect((await runPinCli([`writer/${SLOT}#copy`, next.name, "--by", "planner:U13", "--at", LATER, "--root", w.root], w.root)).exitCode).toBe(0);
+    const again = await runPickCli([`writer/${SLOT}#copy`, good.name, "--by", "agent:writer", "--at", LATER, "--root", w.root], w.root);
+    expect(again.exitCode, again.message).toBe(0);
+    const picked = readFileSync(join(w.dir, "pin.json"), "utf8");
+    expect(picked).not.toContain("\"confirmed\"");
+    // The entry closed when its step ran: replaying its answer is refused as closed.
+    const replay = () => runPinCli([...option.then.args, "--by", by, "--at", "2026-11-18T12:00:00Z", "--root", w.root], w.root);
+    expect(ownerDecisionRefusal(w.root, by, decision)).toMatch(/is closed: its answer already ran$/);
+    expect(await replay()).toMatchObject({ exitCode: 1, message: expect.stringMatching(/is closed: its answer already ran/) });
+    // The closed entry's log ending on the owner's answer again (an answered event after the close; the entry still
+    // reads as a valid work entry) is the same answer, already run: the status alone refuses it.
+    const file = join(requestsDir(w.consumer, "change"), `${entry.id}.json`);
+    const doc = json(file) as { events: Record<string, unknown>[] };
+    const answer = doc.events.find(event => event.op === "answered")!;
+    doc.events.push({ ...answer, id: `${entry.id}#${doc.events.length + 1}`, at: "2026-11-18T11:30:00Z" });
+    writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    expect(readRequest(w.consumer, entry.id)).toMatchObject({ status: "closed", events: expect.arrayContaining([expect.objectContaining({ op: "closed" })]) });
+    expect(readRequest(w.consumer, entry.id).events.at(-1)).toMatchObject({ op: "answered", by: "owner", option: option.id });
+    expect(ownerDecisionRefusal(w.root, by, decision)).toMatch(/is closed: its answer already ran$/);
+    expect(await replay()).toMatchObject({ exitCode: 1, message: expect.stringMatching(/is closed: its answer already ran/) });
+    expect(readFileSync(join(w.dir, "pin.json"), "utf8")).toBe(picked);
+    expect(confirms()).toBe(1);
   });
 
   it("re-pick: a confirmed agent pick is owner-held; a planner repin replaces it and drops the confirmation, under the CHOOSE gate", async () => {

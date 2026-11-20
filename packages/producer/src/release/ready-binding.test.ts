@@ -333,6 +333,28 @@ describe("the release certifier (R05.1, conform K3)", () => {
     expect(honest.map(item => item.message).join("; ")).not.toContain("clossys.publication/1");
   });
 
+  it("certifies a release slot afresh with the cache on: a manifest whose build is gone is never certified from the cache", async () => {
+    const world = make();
+    const name = await built(world, clock());
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "release-certify-cache-")));
+    dirs.push(dir);
+    const cache = join(dir, "certify.json");
+    const judged = () => certifyWorld(buildContext(world.root, join(world.root, "clossys")), { cache });
+    const releaseReasons = (reasons: readonly { code: string; message: string }[]) => reasons.filter(item => item.code === "release").map(item => item.message);
+    const first = judged().results.get(resultKey("publisher", "release.site", name))!.certification;
+    expect(releaseReasons(first.reasons)).toEqual([]);
+    expect(exists(cache)).toBe(true);
+    // The build the manifest names leaves the disk (its stamp removed): nothing in the manifest's cache key changed.
+    const build = latestBuild(world.root, "site")!;
+    unlinkSync(join(world.root, ".clossys/builds", `${build.id.slice(0, 8)}.json`));
+    const again = judged();
+    // The cache is on and serves the other slots; the release slot is judged afresh and fails on the missing build.
+    expect(again.hits).toBeGreaterThan(0);
+    const second = again.results.get(resultKey("publisher", "release.site", name))!.certification;
+    expect(second.certified).toBe(false);
+    expect(releaseReasons(second.reasons)).toContain(`build ${build.id.slice(0, 12)} has no stamp: what it read is unknown`);
+  });
+
   it("refuses a manifest whose build fields are not the build stamp's, and one whose lineage was edited", async () => {
     const world = make();
     const name = await built(world, clock());
