@@ -62,6 +62,7 @@ import { currentView, slotReadIssues } from "../records/slot-current.js";
 import { buildPin, cliActor, ownerAnswerRef, pinIssues, toIsoZ } from "../records/pin.js";
 import { seatSlot } from "../records/seat-slot.js";
 import { recutCandidateBytes } from "../migrate/recut.js";
+import { listedPublications, publicationOf, RELEASE_SLOT, releaseSlotId } from "../release/paths.js";
 import { actorRefusal } from "../records/seat-owner.js";
 import { ownerDecisionRefusal } from "../records/owner-answer.js";
 import { slotFromV1, targetKind, type SlotV1 } from "../migrate/slot-1-to-2.js";
@@ -78,6 +79,7 @@ export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--s
   + "       clossys ia <agent>/<slot> --standard <id> [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia producer/<seat> --standard <id> [--contract <file>] [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia producer/<seat> --move --under <l1>/<l2> --owner-ref <ref> [--dry] [--root <dir>]  (a placed seat; a new seat is placed by clossys seat <step>)\n"
+  + "       clossys ia publisher/release.<pub> --kind release --contract <file> [--standard release] [--under <l1>/<l2>] [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent>/<slot> --remove [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent>/<slot> --request <id> --approved queue.approve#<id> [--at <iso>] [--dry] [--root <dir>]  (places the leaf a create decision proposes; clossys request <id> --close runs it)\n"
   + "       clossys ia <agent> --adopt | --start [--dry] [--root <dir>]\n"
@@ -88,6 +90,8 @@ export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--s
   + "  --owner-ref sign why the material differs (a --request placement carries the reason its decision recorded).\n"
   + "  --standard names the standard the slot is judged by (packages/<agent>/standards/<id>/, R15.1): it must exist, be valid and serve the slot's kind; alone it keeps the written contract.\n"
   + "  producer/<seat>: names the standard of a seat slot clossys seat wrote (kind seat); --contract may add requirements but keeps the seat's step. Nothing else of a seat is written here.\n"
+  + "  publisher/release.<pub>: creates the release slot (clossys.slot/2 kind release) of an existing publication <pub> (a placed\n"
+  + "  publisher/publication.<pub> slot or a publisher ia.json publication), once; its candidates are the manifests clossys release <pub> --manifest writes.\n"
   + "  --adopt writes the agent's Foundry IA (ia.json and every slot.json, inputs and uses derived) where it has no ia.json (Director, Designer, Writer; the Director's first).\n"
   + "  --start writes an empty workspace IA instead; --under then adds its L1/L2 groups as it places each slot.\n"
   + "  sync refreshes ia.json and every slot.json structure field from the package IA the consumer resolves (declared extensions kept; candidates, pins and ledgers untouched); --check lists the drift and exits 1 on any.\n"
@@ -599,6 +603,9 @@ export async function runIaCli(argv: readonly string[], cwd: string, _options: {
     if (issues.length) return refuse("ia", issues.map(issue => issue.message).join("; "));
     return commitIa(consumer, root, [[iaFile, jsonBytes(next)], ...follow.writes], dry, `remove ${target} from ${agent} ia.json`, followLines(follow), `ia: removed ${target} from ${agent} ia.json`, iaWho(owner.ref, eventAt));
   }
+  // REL-SLOT: a release slot is created here once, for an existing publication, as clossys.slot/2 kind release.
+  const release = releasePlacement(consumer, root, agent, slot, one(flags, "--kind"), modelExists(slotFile(dir)));
+  if (release && "error" in release) return refuse("ia", release.error);
   const standardId = one(flags, "--standard");
   if (standardId !== undefined && !STANDARD_ID.test(standardId)) throw new CliUsageError(`--standard must be a standard id such as element.button, got ${standardId}\n${IA_USAGE}`);
   // --standard alone keeps the slot's written contract; otherwise the contract file is required.
@@ -642,7 +649,8 @@ export async function runIaCli(argv: readonly string[], cwd: string, _options: {
   const existing = storedV2 ? currentView(storedV2) as unknown as Record<string, unknown> : stored;
   const proposedKind = request?.proposal?.kind;
   if (proposedKind !== undefined && !(AGENT_KIND[agent] as readonly string[]).includes(proposedKind)) return refuse("ia", `--request ${request!.id} proposes kind ${proposedKind}, not a ${agent} slot kind (${AGENT_KIND[agent].join(", ")})`);
-  const kind = (one(flags, "--kind") ?? proposedKind ?? (existing?.kind as string | undefined) ?? AGENT_KIND[agent][0]) as SlotKind;
+  // A release slot is judged as its kind family (publication) until its clossys.slot/2 file is written as kind release.
+  const kind = (release ? RELEASE_FAMILY : one(flags, "--kind") ?? proposedKind ?? (existing?.kind as string | undefined) ?? AGENT_KIND[agent][0]) as SlotKind;
   if (!(SLOT_KINDS as readonly string[]).includes(kind)) throw new CliUsageError(`--kind must be one of ${SLOT_KINDS.join(", ")}\n${IA_USAGE}`);
   if (contractFile === undefined && !fromRequest) {
     if (existing?.contract === undefined) return refuse("ia", `${target} has no written contract: --standard alone names the standard of a written slot (add --contract <file>)`);
@@ -683,7 +691,7 @@ export async function runIaCli(argv: readonly string[], cwd: string, _options: {
   let missing: readonly { id: string; rel: "input" | "uses"; owner: string }[] = [];
   {
     const written = currentSlotWrite(root, doc as unknown as SlotV1, position, storedV2, {
-      kind: flags.values.has("--kind") ? undefined : storedV2?.kind, live: modelExists(pinFile(dir)), at: eventAt || new Date().toISOString(),
+      kind: release ? "release" : flags.values.has("--kind") ? undefined : storedV2?.kind, live: modelExists(pinFile(dir)), at: eventAt || new Date().toISOString(),
     });
     if ("error" in written) return refuse("ia", written.error);
     slotBytes = written.bytes;
@@ -718,6 +726,37 @@ export async function runIaCli(argv: readonly string[], cwd: string, _options: {
     throw error;
   }
   return after.length ? { ...committed, message: [committed.message, ...after].join("\n") } : committed;
+}
+
+/** The slot/1 kind family a release slot is judged as before it is written (records/request.ts KIND_FAMILY release). */
+const RELEASE_FAMILY: SlotKind = "publication";
+
+/**
+ * REL-SLOT: the release slot `publisher/release.<pub>` that `clossys release <pub>` reads (release/paths.ts). It applies
+ * to `--kind release` on any target and to any Publisher `release.<pub>` id (which the slot/2 reader takes as a release
+ * slot whatever kind it declares): undefined for every other slot. The slot is created once, by the Publisher, for a
+ * publication that exists (a placed `publisher/publication.<pub>` slot that is not retired, or a publisher ia.json
+ * publication) and whose release slot id it is. Its candidates are the manifests the release engine writes.
+ */
+function releasePlacement(consumer: string, root: string, agent: SlotAgent, slot: string, givenKind: string | undefined, exists: boolean): { publication: string } | { error: string } | undefined {
+  const releaseId = RELEASE_SLOT.test(slot);
+  if (givenKind !== "release" && !(agent === "publisher" && releaseId)) return undefined;
+  const target = `${agent}/${slot}`;
+  if (agent !== "publisher") return { error: `${target}: a release slot is a Publisher slot, publisher/release.<publication>; ${agent} holds no release slot` };
+  if (!releaseId) return { error: `${target}: a release slot id is release.<publication>, not ${slot}` };
+  if (givenKind !== undefined && givenKind !== "release") return { error: `${target} is a release slot id: it takes --kind release, not ${givenKind}` };
+  const publication = publicationOf(root, slot);
+  const listed = listedPublications(root).includes(publication);
+  const publicationDir = slotDir(consumer, "publisher", `publication.${publication}`);
+  let placed = false;
+  if (modelExists(slotFile(publicationDir))) {
+    try { placed = (readModelJson(slotFile(publicationDir)) as { status?: unknown }).status !== "retired"; } catch { placed = false; }
+  }
+  if (!listed && !placed) return { error: `${target}: no publication ${publication} exists (place publisher/publication.${publication} first); a release slot belongs to an existing publication` };
+  const named = releaseSlotId(root, publication);
+  if (named !== slot) return { error: `${target}: publication ${publication} names its release slot publisher/${named} in publisher ia.json, not ${slot}` };
+  if (exists) return { error: `${target} already exists: a release slot is created once (its manifests are written by clossys release ${publication} --manifest)` };
+  return { publication };
 }
 
 /** True when the workspace holds a recut store: some slot.json under clossys/agents is `clossys.slot/2`. */
