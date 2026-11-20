@@ -39,7 +39,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 // The Designer's flavor generator: one writer for every components.json (Node builtins only).
-import { shadcnComponentsJsonText } from '../../designer/scripts/ref-verbatim/flavor.mjs';
+import { shadcnComponentsJsonText } from '@clossys/designer/shadcn-flavor';
 import { consumerPath, consumerUnder } from './consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
