@@ -228,3 +228,39 @@ describe("judge independence (R16.1)", () => {
     }
   });
 });
+
+describe("stage-check diverge reads the recipe rung (census row 75)", () => {
+  // A temp packages/ tree holding this agent's own stage-check bytes, the Publisher's real release recipe (plumb, axes []),
+  // a crafted recipe with no axes, the release standard and a consumer slot: the copied check resolves its recipes there.
+  const world = async () => {
+    const { cpSync, mkdirSync, mkdtempSync, realpathSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const tmp = realpathSync(mkdtempSync(join(tmpdir(), "stage-check-plumb-")));
+    const recipes = join(tmp, "packages", "designer", "recipes");
+    mkdirSync(recipes, { recursive: true });
+    for (const name of ["stage-check.mjs"]) cpSync(join(HERE, name), join(recipes, name));
+    cpSync(join(ROOT, "packages", "publisher", "recipes", "release"), join(recipes, "release"), { recursive: true });
+    mkdirSync(join(recipes, "flat"));
+    writeFileSync(join(recipes, "flat", "recipe.json"), JSON.stringify({ schema: "clossys.recipe/1", id: "flat", produces: ["release"], rung: "create", axes: [] }));
+    cpSync(join(ROOT, "packages", "publisher", "standards", "release"), join(tmp, "packages", "designer", "standards", "release"), { recursive: true });
+    const slot = join(tmp, "clossys", "agents", "designer", "release.site");
+    mkdirSync(slot, { recursive: true });
+    writeFileSync(join(slot, "slot.json"), JSON.stringify({ schema: "clossys.slot/1", id: "release.site", agent: "designer", standard: "release", contract: {}, inputs: [] }));
+    const { checkDiverge: diverge } = await import(pathToFileURL(join(recipes, "stage-check.mjs")).href);
+    return { tmp, diverge };
+  };
+  const directions = [1, 2, 3].map(n => ({ id: `d${n}`, idea: `idea ${n}`, axes: {}, traits: [] }));
+
+  it("refuses diverge under a plumb recipe with an explicit plumb: no diverge issue, never a green", async () => {
+    const { tmp, diverge } = await world();
+    const found = diverge(tmp, "release.site", { recipe: "release", directions });
+    assert.ok(found.length > 0, "a plumb diverge is not clean");
+    assert.ok(found.some(item => item.rule === "R15.7" && /recipe release is plumb: plumb: no diverge/.test(item.what)), JSON.stringify(found));
+  });
+
+  it("does not pass axes: [] vacuously", async () => {
+    const { tmp, diverge } = await world();
+    const found = diverge(tmp, "release.site", { recipe: "flat", directions });
+    assert.ok(found.some(item => item.rule === "R15.7" && /recipe flat lists no axes/.test(item.what)), JSON.stringify(found));
+  });
+});

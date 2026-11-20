@@ -8,7 +8,7 @@
  */
 import { join } from "node:path";
 import { loadSchema, validateValue } from "../../pipeline/schema.js";
-import { loadRecipes, produceIssues, recipesFor, type Recipe } from "../../records/recipes.js";
+import { craftRunRecipe, loadRecipes, plumbCraftRunIssue, produceIssues, recipesFor, type Recipe } from "../../records/recipes.js";
 import type { ModelAgent } from "../../records/slot-model/index.js";
 import { modelExists, readModelText } from "../../records/slots.js";
 import {
@@ -130,10 +130,11 @@ const CRAFT_ORDER = /^brief diverge render critique(?: refine(?: render)?(?: cri
 export function craftIssues(events: readonly Record<string, unknown>[], recipes: readonly Recipe[], agent: string): string[] {
   const issues: string[] = [];
   const diverge = events.find(event => event.op === "craft:diverge");
-  const recipeId = [...(diverge ? [diverge] : []), ...events].map(event => event.recipe).find((value): value is string => typeof value === "string");
-  const recipe = recipes.find(item => item.id === recipeId && item.agent === agent) ?? recipes.find(item => item.id === recipeId);
+  const recipe = craftRunRecipe(events, recipes, agent);
   // A plumb recipe's candidate is computed by its plumb action: any craft event under it is the fault, not the stage order.
-  if (recipe?.doc?.rung === "plumb" && events.length) return [`recipe ${recipe.id} is plumb: a plumb recipe records no craft events (its plumb action computes the candidate)`];
+  // The same predicate refuses the event at write time (records/slot-write.ts appendCraftEvent).
+  const plumb = plumbCraftRunIssue(events, recipes, agent);
+  if (plumb) return [plumb];
   const stages = events.map(event => String(event.op).slice("craft:".length));
   if (!CRAFT_ORDER.test(stages.join(" "))) issues.push(`craft events ${stages.join(", ") || "(none)"} are not brief, diverge, render, critique, then at most 2 refine rounds`);
   if (!diverge) return issues;
