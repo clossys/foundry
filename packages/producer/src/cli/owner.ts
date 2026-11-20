@@ -607,7 +607,7 @@ export async function runIaCli(argv: readonly string[], cwd: string, _options: {
   if (standardId !== undefined && !STANDARD_ID.test(standardId)) throw new CliUsageError(`--standard must be a standard id such as element.button, got ${standardId}\n${IA_USAGE}`);
   // REL-SLOT: a release slot is created here once, for an existing publication, as clossys.slot/2 kind release; a placed
   // release slot keeps its contract and standard rewrites (undefined: the write below runs as for any slot).
-  const release = releasePlacement(consumer, root, agent, slot, { kind: one(flags, "--kind"), under: flags.values.has("--under"), standard: standardId }, modelExists(slotFile(dir)));
+  const release = releasePlacement(consumer, root, ia, agent, slot, { kind: one(flags, "--kind"), under: flags.values.has("--under"), standard: standardId }, modelExists(slotFile(dir)));
   if (release && "error" in release) return refuse("ia", release.error);
   // --standard alone keeps the slot's written contract; otherwise the contract file is required.
   const fromRequest = request !== undefined && !flags.values.has("--contract");
@@ -740,10 +740,11 @@ const RELEASE_STANDARD = "release";
  * slot whatever kind it declares): undefined for every other slot. The slot is created once, by the Publisher, for a
  * publication that exists (a placed `publisher/publication.<pub>` slot that is not retired, or a publisher ia.json
  * publication) and whose release slot id it is. Its candidates are the manifests the release engine writes.
- * A release slot is judged by the release standard only. Once its slot.json exists, a second create (`--kind release`
+ * The publication's own slot.json counts only when the slot reader takes it, it is not retired and it is placed in
+ * publisher ia.json; an unreadable or invalid one refuses with its cause. A release slot is judged by the release standard only. Once its slot.json exists, a second create (`--kind release`
  * or `--under`) is refused; a contract or standard rewrite returns undefined and is written as for any placed slot.
  */
-function releasePlacement(consumer: string, root: string, agent: SlotAgent, slot: string, given: { readonly kind: string | undefined; readonly under: boolean; readonly standard: string | undefined }, exists: boolean): { publication: string } | { error: string } | undefined {
+function releasePlacement(consumer: string, root: string, ia: AgentIaFile, agent: SlotAgent, slot: string, given: { readonly kind: string | undefined; readonly under: boolean; readonly standard: string | undefined }, exists: boolean): { publication: string } | { error: string } | undefined {
   const releaseId = RELEASE_SLOT.test(slot);
   const givenKind = given.kind;
   if (givenKind !== "release" && !(agent === "publisher" && releaseId)) return undefined;
@@ -758,12 +759,21 @@ function releasePlacement(consumer: string, root: string, agent: SlotAgent, slot
   }
   const publication = publicationOf(root, slot);
   const listed = listedPublications(root).includes(publication);
-  const publicationDir = slotDir(consumer, "publisher", `publication.${publication}`);
-  let placed = false;
-  if (modelExists(slotFile(publicationDir))) {
-    try { placed = (readModelJson(slotFile(publicationDir)) as { status?: unknown }).status !== "retired"; } catch { placed = false; }
+  // A publication slot.json is evidence only when the slot reader takes it: an unreadable or invalid record refuses
+  // with its cause, and a valid one counts only when it is not retired and is placed in publisher ia.json.
+  const publicationId = `publication.${publication}`, publicationRef = `publisher/${publicationId}`;
+  const publicationFile = slotFile(slotDir(consumer, "publisher", publicationId));
+  let placed = false, unplacedWhy = "";
+  if (modelExists(publicationFile)) {
+    let record: unknown;
+    try { record = readModelJson(publicationFile); } catch (error) { return { error: `${target}: ${publicationRef} slot.json does not read (${error instanceof Error ? error.message : String(error)}); a release slot belongs to an existing publication` }; }
+    const issues = slotReadIssues(record, publicationFile);
+    if (issues.length) return { error: `${target}: ${publicationRef} slot.json is not a valid slot (${issues.slice(0, 3).map(issue => issue.message).join("; ")}); a release slot belongs to an existing publication` };
+    const retired = (record as { status?: unknown }).status === "retired", inIa = isPlaced(ia, publicationId);
+    placed = !retired && inIa;
+    unplacedWhy = retired ? `: ${publicationRef} is retired` : inIa ? "" : `: ${publicationRef} is not placed in publisher ia.json`;
   }
-  if (!listed && !placed) return { error: `${target}: no publication ${publication} exists (place publisher/publication.${publication} first); a release slot belongs to an existing publication` };
+  if (!listed && !placed) return { error: `${target}: no publication ${publication} exists${unplacedWhy} (place ${publicationRef} first); a release slot belongs to an existing publication` };
   const named = releaseSlotId(root, publication);
   if (named !== slot) return { error: `${target}: publication ${publication} names its release slot publisher/${named} in publisher ia.json, not ${slot}` };
   return { publication };

@@ -59,13 +59,18 @@ describe("clossys ia publisher/release.<pub> --kind release creates the release 
     expect(designer.message).toContain("ia refused: designer/release.site: a release slot is a Publisher slot");
     expect(existsSync(join(world.root, "clossys/agents/designer/release.site"))).toBe(false);
 
+    const publisherIa = world.read("clossys/agents/publisher/ia.json");
     const id = await ia(world, "publisher/launch.site", "--kind", "release", "--under", "releases/site");
     expect(id.exitCode).toBe(1);
     expect(id.message).toContain("a release slot id is release.<publication>, not launch.site");
+    expect(existsSync(join(world.root, "clossys/agents/publisher/launch.site"))).toBe(false);
+    expect(world.read("clossys/agents/publisher/ia.json")).toBe(publisherIa);
 
     const kind = await ia(world, "publisher/release.site", "--kind", "page", "--under", "releases/site");
     expect(kind.exitCode).toBe(1);
     expect(kind.message).toContain("publisher/release.site is a release slot id: it takes --kind release, not page");
+    expect(existsSync(join(world.root, SLOT))).toBe(false);
+    expect(world.read("clossys/agents/publisher/ia.json")).toBe(publisherIa);
     // No --kind on a release id is still a release slot create, judged by the same rules.
     const blog = await ia(world, "publisher/release.blog", "--under", "releases/site");
     expect(blog.exitCode).toBe(1);
@@ -96,6 +101,45 @@ describe("clossys ia publisher/release.<pub> --kind release creates the release 
     const wrong = await create(world);
     expect(wrong.exitCode).toBe(1);
     expect(wrong.message).toContain("publication site names its release slot publisher/release.main in publisher ia.json, not release.site");
+  });
+
+  it("counts a publication slot.json only when the slot reader takes it and it is placed; an unreadable or invalid one refuses with its cause (review F1)", async () => {
+    const world = make();
+    const DOCS = "clossys/agents/publisher/publication.docs", SITE = "clossys/agents/publisher/publication.site";
+    const docsRelease = "clossys/agents/publisher/release.docs";
+    const publisherIa = () => world.read("clossys/agents/publisher/ia.json");
+    const refused = async (slotId: string, cause: string, folder: string) => {
+      const before = publisherIa();
+      const result = await ia(world, `publisher/${slotId}`, "--kind", "release", "--under", "releases/site");
+      expect(result.exitCode, result.message).toBe(1);
+      expect(result.message).toContain(cause);
+      expect(existsSync(join(world.root, folder))).toBe(false);
+      expect(publisherIa()).toBe(before);
+    };
+    // Unreadable, for a publication ia.json does not list: the parse failure is the cause, not "no publication".
+    world.write(`${DOCS}/slot.json`, "{ not json\n");
+    await refused("release.docs", "publisher/release.docs: publisher/publication.docs slot.json does not read (", docsRelease);
+    // Unreadable, for the publication ia.json lists (site): still refused with the cause, never ignored.
+    expect(existsSync(join(world.root, SITE, "slot.json"))).toBe(false);
+    world.write(`${SITE}/slot.json`, "{ not json\n");
+    await refused("release.site", "publisher/release.site: publisher/publication.site slot.json does not read (", SLOT);
+    // Invalid (it parses, but the slot reader refuses it): refused with the reader's issues.
+    world.write(`${DOCS}/slot.json`, "{}\n");
+    await refused("release.docs", "publisher/release.docs: publisher/publication.docs slot.json is not a valid slot (", docsRelease);
+    // Valid and not retired, but not placed in publisher ia.json (a fresh world: the verb places it, then the IA drops it).
+    const other = make();
+    const placedDocs = await runCli(["ia", "publisher/publication.docs", "--contract", contract(other, { kind: "publication", requirements: [{ check: "publication.routes" }] }), "--standard", "publication", "--under", "pages/site", "--kind", "publication", "--at", AT, "--root", other.root], other.root);
+    expect(placedDocs.exitCode, placedDocs.message).toBe(0);
+    expect(slotReadIssues(JSON.parse(other.read(`${DOCS}/slot.json`)), `${DOCS}/slot.json`)).toEqual([]);
+    const otherIa = JSON.parse(other.read("clossys/agents/publisher/ia.json")) as { nodes: { children: { slots: string[] }[] }[] };
+    for (const node of otherIa.nodes) for (const child of node.children) child.slots = child.slots.filter(id => id !== "publication.docs");
+    other.write("clossys/agents/publisher/ia.json", `${JSON.stringify(otherIa, null, 2)}\n`);
+    const iaBefore = other.read("clossys/agents/publisher/ia.json");
+    const unplaced = await ia(other, "publisher/release.docs", "--kind", "release", "--under", "releases/site");
+    expect(unplaced.exitCode, unplaced.message).toBe(1);
+    expect(unplaced.message).toContain("publisher/release.docs: no publication docs exists: publisher/publication.docs is not placed in publisher ia.json");
+    expect(existsSync(join(other.root, docsRelease))).toBe(false);
+    expect(other.read("clossys/agents/publisher/ia.json")).toBe(iaBefore);
   });
 
   it("is the slot clossys release reads: build, manifest, gates and the ready-pin run on it, and it still refuses a publication record", async () => {
