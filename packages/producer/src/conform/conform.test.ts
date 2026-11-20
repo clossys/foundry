@@ -3,6 +3,8 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { createHash } from "node:crypto";
+import { candidateView } from "../records/slot-current.js";
 import { ASSERTIONS, OVERLAP_MIN } from "./assertions.js";
 import { isContractRefusal, judgeDogfood, probeIaContract, probePinGate, PROBES, type PinGateResult, type ProbeFacts, type VerbProbe } from "./dogfood.js";
 import { adapterIssues, CONFORM_AGENTS, missingPaths, packageSlot, readConformModel, type Adapter, type AgentModel, type ConformModel, type LiveSlot } from "./model.js";
@@ -443,6 +445,35 @@ describe("dogfood probes", () => {
     const judgement = judgeDogfood(row(["upstream-pinned"]), refused.agent, refused.model, refused.facts);
     expect(cellOf("DF", "DF", judgement).red).toBe(true);
     expect(judgement.rows.join("\n")).toMatch(/pinned but refused by the slot\/2 reader: .*\(invalid-candidate\)/);
+  });
+  it("upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37)", { timeout: 60_000 }, () => {
+    // A copy of the fixture consumer whose one pin (director/focus.segment.core -> core-v1.md) is intact, then the
+    // same copy with core-v1.md rewritten as its int2 document without the clossys.candidate/1 header and the pin's
+    // sha256 moved to the new bytes: the pin still names the file it holds, but the slot/2 reader refuses the file.
+    const consumer = join(mkdtempSync(join(tmpdir(), "u37-reader-")), "clossys");
+    cpSync(FIXTURE, consumer, { recursive: true });
+    const slotDir = join(consumer, "agents/director/focus.segment.core");
+    const judge = () => {
+      const model = readConformModel(REPO, consumer);
+      const director = model.agents.find(agent => agent.agent === "director")!.live.find(item => item.id === "focus.segment.core")!;
+      const designer = model.agents.find(agent => agent.agent === "designer")!;
+      return { director, judgement: judgeDogfood(row(["upstream-pinned"]), designer, model, GOOD_FACTS) };
+    };
+    const intact = judge();
+    expect(intact.director.pin).toBeDefined();
+    expect(intact.director.pinRejection).toBeUndefined();
+    expect(cellOf("DF", "DF", intact.judgement).red).toBe(false);
+    const held = readFileSync(join(slotDir, "candidates/core-v1.md"), "utf8");
+    const headerless = candidateView("core-v1.md", held);
+    expect(headerless).not.toBe(held);
+    writeFileSync(join(slotDir, "candidates/core-v1.md"), headerless);
+    const pin = JSON.parse(readFileSync(join(slotDir, "pin.json"), "utf8"));
+    writeFileSync(join(slotDir, "pin.json"), `${JSON.stringify({ ...pin, sha256: createHash("sha256").update(headerless).digest("hex") }, null, 2)}\n`);
+    const broken = judge();
+    expect(broken.director.pin).toBeDefined();
+    expect(broken.director.pinRejection).toBe("invalid-candidate");
+    expect(cellOf("DF", "DF", broken.judgement).red).toBe(true);
+    expect(broken.judgement.rows.join("\n")).toMatch(/pinned but refused by the slot\/2 reader: focus\.segment\.core \(invalid-candidate\)/);
   });
 });
 

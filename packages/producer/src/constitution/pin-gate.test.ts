@@ -182,7 +182,7 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     expect(existsSync(join(w.dir, "pin.json"))).toBe(false);
   });
 
-  it("the candidates write's header option (next --submit on a Director slot/2 brief) writes a clossys.candidate/1 file the gate pins and the reader takes", async () => {
+  it("writeCandidate's header option writes a Writer copy candidate as a clossys.candidate/1 file the gate pins and the reader takes", async () => {
     const w = world();
     w.submit(BAD);
     const createdBy = { actor: "agent" as const, agent: "writer" as const, skill: "packages/writer/skills/writer/SKILL.md", skillSha256: "0".repeat(64), model: "claude-opus-5-5", tier: "high" as const };
@@ -197,6 +197,20 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     const result = await w.pin(good.name);
     expect(result.exitCode).toBe(0);
     expect(pinBlocker(w.consumer, "writer", SLOT)).toBeUndefined();
+  });
+
+  it("refuses a second source beside the clossys header's (front matter source), naming the header", async () => {
+    const w = world();
+    w.submit(BAD);
+    const once = headered("copy-v2.md", GOOD);
+    const twice = once.replace(/\n---\n/, `\nsource: {"kind":"original","ref":[]}\n---\n`);
+    expect(twice).not.toBe(once);
+    submitBytes(w, "copy-v2.md", twice);
+    w.queueEntry();
+    const result = await w.pin("copy-v2.md");
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toMatch(/copy-v2\.md has no passing verdict: \[invalid\] clossys header: source is the clossys header's; the candidate carries a second one/);
+    expect(existsSync(join(w.dir, "pin.json"))).toBe(false);
   });
 
   it("judges every candidate without writing: the gate itself is read-only", () => {

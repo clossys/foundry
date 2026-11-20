@@ -27,7 +27,7 @@ import { candidatesDir, slotDir } from "../records/slot-model/layout.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { readCandidate, readLedger, readSlot, readSlotEntry } from "../records/slots.js";
 import { candidateView, headeredMarkdown, isCurrentSlot } from "../records/slot-current.js";
-import type { Actor, Tier } from "../records/types.js";
+import type { Actor, AgentId, Tier } from "../records/types.js";
 import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { nextPacket, openItems, openPackets, skillFile } from "../pipeline/chain.js";
@@ -197,6 +197,14 @@ export function submitTarget(argv: readonly string[], cwd: string, steps: readon
   return argv;
 }
 
+/**
+ * The slot/2 kind families whose `next --submit` candidate carries a clossys.candidate/1 header (U37): the Markdown
+ * kinds, a Director brief and Writer strings. A Designer element stays int2 JSON: the submit guard's constitution
+ * rules read a JSON candidate's `meta.source` and registry files where the int2 item has them, not under a header's
+ * `content`. A Publisher page/1 or publication/1 record carries a top-level `schema` its readers take as it is.
+ */
+const HEADERED_KINDS = ["brief", "strings"] as const;
+
 const reject = (message: string): CliResult => ({ exitCode: 1, unrecorded: true, message: `next --submit refused: ${message}` });
 
 /** `clossys next <agent>/<slot> --submit <file> ...`: the `<agent>.candidates` step. */
@@ -248,19 +256,21 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   if (ext === "json") { try { content = JSON.parse(bytes); } catch { return reject(`${flags.submit} is not JSON`); } }
   // A candidate byte-identical to one the slot holds adds no option: refused before anything is written.
   // The bytes writeCandidate would write: the slot kind's extension decides the serialization.
-  const canonical = KIND_EXT[readSlot(consumer, agent as SlotAgent, slot).kind] === "md" ? String(content) : jsonBytes(content);
+  const family = readSlot(consumer, agent as SlotAgent, slot).kind;
+  const canonical = KIND_EXT[family] === "md" ? String(content) : jsonBytes(content);
   const digest = sha(canonical);
-  // U37: a Director clossys.slot/2 brief is written as a clossys.candidate/1 file (the header the slot/2 readers
-  // require, created by this submission's agent, skill, model and tier); its identity with a held candidate is then
-  // judged on the candidate view (the document without its header), as well as on the bytes.
+  // U37: a clossys.slot/2 Markdown candidate (Director brief, Writer strings; HEADERED_KINDS) is written as a
+  // clossys.candidate/1 file (the header the slot/2 readers require, created by this submission's agent, skill, model
+  // and tier); its identity with a held candidate is then judged on the candidate view (the document without its
+  // header), as well as on the bytes. A loop slot's candidate is not of these kinds.
   let rawSlot: unknown;
   try { rawSlot = JSON.parse(readFileSync(join(entry.dir, "slot.json"), "utf8")); } catch { rawSlot = undefined; }
-  const createdBy: Actor = { actor: "agent", agent: "director", skill: contractSkill, skillSha256: sha(skillBytes), model: flags.model!, tier: flags.tier! as Tier };
-  const headered = agent === "director" && ext === "md" && isCurrentSlot(rawSlot);
+  const createdBy: Actor = { actor: "agent", agent: agent as AgentId, skill: contractSkill, skillSha256: sha(skillBytes), model: flags.model!, tier: flags.tier! as Tier };
+  const headered = isCurrentSlot(rawSlot) && (HEADERED_KINDS as readonly string[]).includes(family);
   let viewDigest: string | undefined;
   if (headered) {
-    const probe = `${stem}-v1.md`;
-    try { viewDigest = sha(candidateView(probe, headeredMarkdown(probe, canonical, { agent: "director", slotId: slot, createdBy, createdAt: "2000-01-01T00:00:00Z" }))); }
+    const probe = `${stem}-v1.${KIND_EXT[family]}`;
+    try { viewDigest = sha(candidateView(probe, headeredMarkdown(probe, canonical, { agent: agent as AgentId, slotId: slot, createdBy, createdAt: "2000-01-01T00:00:00Z" }))); }
     catch (error) { return reject(error instanceof Error ? error.message : String(error)); }
   }
   for (const name of entry.candidates) {
