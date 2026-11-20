@@ -3,10 +3,14 @@
  * with the package (`clossys pipeline check` writes these entries on its scratch copy), so it is runtime code, not a
  * fixture. `ownerEntry` writes a typed clossys.queue-entry/1 decision entry the owner answered (schema, every answer rule, `resolveOwnerAnswer`), about one
  * slot, whose answered option is bound to the decision: the candidate a pin names, or `not-needed` / `seat` about the
- * whole slot. `bareEntry` writes any other bytes at the same path, for the refusals.
+ * whole slot. It writes through the engine API (queue/entry.ts `createQueueEntry`, or `replaceQueueEntry` under the
+ * entry's lock when the id is already taken), so each entry leaves its `queue.create` / `queue.replace` event.
+ * Tests write any other bytes at the same path with `bareEntry` (cli/__fixtures__/owner-entry.ts), for the refusals.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { createQueueEntry, queueEntryPath, replaceQueueEntry, withQueueEntryLock } from "../queue/entry.js";
+import type { QueueEntry, QueueName } from "../records/types.js";
 
 export interface OwnerEntryInput {
   /** The queue folder, `pick` (default) or `approve`. */
@@ -36,20 +40,17 @@ export function ownerEntry(consumer: string, input: OwnerEntryInput): string {
   const by = input.answeredBy ?? "owner";
   const answered = { at: input.at, op: "answered", by, via: "chat", answer: chosen.id, ...(by === "owner" ? { quote: `yes, ${chosen.id}` } : {}) };
   const status = input.status ?? "answered";
+  const name: QueueName = `queue.${queue}`;
   const entry = {
     schema: "clossys.queue-entry/1", id: input.id, agent: "producer", kind: "queue-entry", status,
     createdBy: { actor: "code", cli: "clossys test", version: "0.0.0" }, createdAt: input.at, refs: [],
-    queue: `queue.${queue}`, ask: `Decide ${input.about}?`, subject: { to: input.about, rel: "input" }, decider: "owner",
+    queue: name, ask: `Decide ${input.about}?`, subject: { to: input.about, rel: "input" }, decider: "owner",
     options, default: null, events: status === "answered" ? [raised, answered] : [raised],
-  };
-  bareEntry(consumer, queue, input.id, `${JSON.stringify(entry, null, 2)}\n`);
+  } as unknown as QueueEntry;
+  // The queue writer takes the workspace root, the folder that holds `clossys/`.
+  const root = dirname(consumer);
+  const file = queueEntryPath(root, name, input.id);
+  if (existsSync(file)) withQueueEntryLock(root, name, input.id, () => replaceQueueEntry(file, entry));
+  else createQueueEntry(root, entry);
   return `owner:queue.${queue}#${input.id}`;
-}
-
-/** Write any bytes at a queue entry path (`{}`, an untyped object, non-JSON) and return its `--by` ref. */
-export function bareEntry(consumer: string, queue: string, id: string, bytes = `${JSON.stringify({ id, kind: "queue-entry" })}\n`): string {
-  const file = entryFile(consumer, queue, id);
-  mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, bytes);
-  return `owner:queue.${queue}#${id}`;
 }
