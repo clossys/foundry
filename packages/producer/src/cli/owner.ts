@@ -37,7 +37,7 @@ import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from 
 import { feedsIndex } from "../records/slot-model/derive.js";
 import { PRODUCER_IA_SOURCE } from "../records/slot-model/pipeline-seats.js";
 import { adoptedCurrentSlots, driftCounts, knownSlots, SYNC_AGENTS, syncDrift, syncPlan, syncState, workspaceSourceRepairs, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
-import { validateIa, validateSlotDoc } from "../records/slot-model/validate.js";
+import { pinRecords, validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
 import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, retireAnswerUses, retireBinding, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writeSeatDecision } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner (seat, approve)
@@ -727,9 +727,13 @@ export async function runIaCli(argv: readonly string[], cwd: string, _options: {
  * One present slot.json of a store-wide scan, parsed: a file that cannot be read or parsed is a broken record and comes
  * back as an error naming it, never as a slot of the other format or as no slot.
  */
-function scannedSlot(root: string, file: string): { doc: unknown } | { error: string } {
-  try { return { doc: JSON.parse(readModelText(file)) }; }
+function scannedSlot(root: string, file: string): { doc: Record<string, unknown> } | { error: string } {
+  let doc: unknown;
+  try { doc = JSON.parse(readModelText(file)); }
   catch (error) { return { error: `${relative(root, file)} cannot be read as JSON: ${errorMessage(error)}` }; }
+  // A slot.json that parses to null, a list or a scalar is no slot of either format: named, never read as a slot/1.
+  if (typeof doc !== "object" || doc === null || Array.isArray(doc)) return { error: `${relative(root, file)} is not a JSON object (${doc === null ? "null" : Array.isArray(doc) ? "a list" : typeof doc})` };
+  return { doc: doc as Record<string, unknown> };
 }
 
 /** True when the workspace holds a recut store: some slot.json under clossys/agents is `clossys.slot/2`. An unreadable one is an error. */
@@ -738,7 +742,7 @@ function recutStore(root: string): boolean | { error: string } {
     if (!folder.hasSlot) continue;
     const read = scannedSlot(root, folder.file);
     if ("error" in read) return read;
-    if ((read.doc as { schema?: unknown } | null)?.schema === SLOT_V2_SCHEMA) return true;
+    if (read.doc.schema === SLOT_V2_SCHEMA) return true;
   }
   return false;
 }
@@ -755,8 +759,8 @@ function placedKind(root: string, agent: AgentId, l1: string): TargetSlotKind | 
     // An unreadable sibling may hold the L1's kind: the kind is then unknown, and the write is refused naming the file.
     const read = scannedSlot(root, folder.file);
     if ("error" in read) return read;
-    const doc = read.doc as Partial<Slot> | null;
-    if (doc?.schema === SLOT_V2_SCHEMA && doc.ia?.l1 === l1 && typeof doc.kind === "string") kinds.add(doc.kind);
+    const doc = read.doc as Partial<Slot>;
+    if (doc.schema === SLOT_V2_SCHEMA && doc.ia?.l1 === l1 && typeof doc.kind === "string") kinds.add(doc.kind);
   }
   return kinds.size === 1 ? [...kinds][0] : undefined;
 }
@@ -1235,15 +1239,23 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
   const bound = candidate ? retireRefusal(root, agent, slot, fields.by, candidate) : undefined;
   if (bound) return bound;
   if (!candidate) return refuse("retire", `${target} has no candidate ${candidateId}`);
-  // A present pin.json names the pinned candidate even when it no longer validates: never retire what it names.
+  // A present pin.json is the slot's pin whatever its state: one that does not parse, or parses but is no pin this
+  // store reads (it fails the pin schema, or is a pin/1 in a converted store), may pin this candidate, so the retire
+  // is refused naming it, never read as no pin. A valid pin is judged on every record it pins (each record of a pin
+  // map, not only the first), each record's candidate resolved as `clossys pin` resolves a candidate id.
   const pinText = readSlotRecordText(entry.dir, "pin.json");
-  let pinned = entry.pin?.candidate;
-  // A pin.json that does not parse may name this candidate: the retire is refused naming it, never read as no pin.
-  if (!pinned && pinText !== undefined) {
-    try { pinned = (JSON.parse(pinText) as { candidate?: string } | null)?.candidate; }
-    catch (error) { return refuse("retire", `clossys/agents/${agent}/${slot}/pin.json cannot be read as JSON (${errorMessage(error)}); it may pin ${candidate}: repair the pin first`); }
+  if (pinText !== undefined) {
+    const pinRel = `clossys/agents/${agent}/${slot}/pin.json`;
+    let pinValue: unknown;
+    try { pinValue = JSON.parse(pinText); }
+    catch (error) { return refuse("retire", `${pinRel} cannot be read as JSON (${errorMessage(error)}); it may pin ${candidate}: repair the pin first`); }
+    if (!entry.pin) {
+      const issues = validatePin(pinValue, pinRel).map(issue => issue.message);
+      return refuse("retire", `${pinRel} is not a valid pin (${issues.length ? issues.join("; ") : "a pin format this store no longer reads"}); it may pin ${candidate}: repair the pin first`);
+    }
+    const pinned = pinRecords(pinValue).map(record => resolveCandidate(entry.candidates, record.candidate) ?? record.candidate);
+    if (pinned.includes(candidate)) return refuse("retire", `${candidate} is the pinned candidate of ${target}; repin first (clossys pin ${target} <candidate>)`);
   }
-  if (pinned === candidate) return refuse("retire", `${candidate} is the pinned candidate of ${target}; repin first (clossys pin ${target} <candidate>)`);
   const from = join(candidatesDir(entry.dir), candidate);
   const retired = join(entry.dir, RETIRED_DIR), to = join(retired, candidate), file = join(retired, `${candidate}.json`);
   if (modelExists(to) || modelExists(file)) return refuse("retire", `${target} already has ${RETIRED_DIR}/${candidate}`);

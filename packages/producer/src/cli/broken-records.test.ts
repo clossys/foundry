@@ -31,7 +31,7 @@ const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.me
 const AT = "2026-11-20T12:00:00Z";
 const MODEL = "fixture-model";
 const roots: string[] = [];
-afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
+afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); }, 120_000);
 
 function copyOf(from: string, prefix: string): { root: string; consumer: string } {
   const root = realpathSync(mkdtempSync(join(tmpdir(), `broken-records-${prefix}-`)));
@@ -141,66 +141,120 @@ describe("clossys retire --slot: the dependents guard on a broken pinned slot", 
   });
 });
 
-describe("clossys retire <candidate>: a pin.json that does not parse", { timeout: 300_000 }, () => {
-  it("refuses retiring a candidate the broken pin may name, naming pin.json and the parse error", async () => {
+describe("clossys retire <candidate>: a pin.json that does not parse or validate", { timeout: 300_000 }, () => {
+  const retireCore = (root: string) => runRetireCli([`director/${CORE_SLOT}`, "core-v1", "--by", "agent:director", "--reason", "superseded: by a test", "--at", AT, "--root", root], root);
+  const CORE_PIN = `clossys/agents/director/${CORE_SLOT}/pin.json`.replace(/\./g, "\\.");
+  const pinOf = (dir: string) => JSON.parse(readFileSync(join(dir, "pin.json"), "utf8")) as Record<string, unknown>;
+
+  it("refuses retiring the candidate a valid pin names (the guard the broken pins must not pass)", async () => {
+    const { root, consumer } = copyOf(FIXTURE, "retire-candidate-healthy");
+    const dir = join(consumer, "agents", "director", CORE_SLOT);
+    const before = snapshot(dir);
+    expect(await retireCore(root)).toMatchObject({ exitCode: 1, message: `retire refused: core-v1.md is the pinned candidate of director/${CORE_SLOT}; repin first (clossys pin director/${CORE_SLOT} <candidate>)` });
+    expect(snapshot(dir)).toEqual(before);
+  });
+
+  it("refuses on a pin.json that does not parse, naming it and the parse error", async () => {
     const { root, consumer } = copyOf(FIXTURE, "retire-candidate");
     const dir = join(consumer, "agents", "director", CORE_SLOT);
     writeFileSync(join(dir, "pin.json"), TRUNCATED);
     const before = snapshot(dir);
-    const result = await runRetireCli([`director/${CORE_SLOT}`, "core-v1", "--by", "agent:director", "--reason", "superseded: by a test", "--at", AT, "--root", root], root);
+    const result = await retireCore(root);
     expect(result.exitCode).toBe(1);
-    expect(result.message).toMatch(new RegExp(`^retire refused: clossys/agents/director/${CORE_SLOT.replace(/\./g, "\\.")}/pin\\.json cannot be read as JSON \\(.+\\); it may pin core-v1\\.md: repair the pin first$`));
+    expect(result.message).toMatch(new RegExp(`^retire refused: ${CORE_PIN} cannot be read as JSON \\(.+\\); it may pin core-v1\\.md: repair the pin first$`));
     expect(snapshot(dir)).toEqual(before);
   });
+
+  it("refuses retiring a candidate a later record of a valid pin map names, not only the first record", async () => {
+    const { root, consumer } = copyOf(FIXTURE, "retire-candidate-pin-map");
+    const dir = join(consumer, "agents", "director", CORE_SLOT);
+    // A second held candidate, and a pin map pinning both: record aaa sorts first, so a first-record reading misses core.
+    cpSync(join(dir, "candidates", "core-v1.md"), join(dir, "candidates", "aaa-v1.md"));
+    const { candidate: _candidate, sha256, decidedBy, basis, at, ...common } = pinOf(dir);
+    const record = { sha256, decidedBy, basis, at };
+    writeFileSync(join(dir, "pin.json"), JSON.stringify({ ...common, schema: "clossys.pin-map/1", kind: "pin-map", records: { aaa: { candidate: "aaa-v1.md", ...record }, core: { candidate: "core-v1.md", ...record } } }));
+    const before = snapshot(dir);
+    expect(await retireCore(root)).toMatchObject({ exitCode: 1, message: `retire refused: core-v1.md is the pinned candidate of director/${CORE_SLOT}; repin first (clossys pin director/${CORE_SLOT} <candidate>)` });
+    expect(snapshot(dir)).toEqual(before);
+  });
+
+  // Each parses but is no pin this store reads: the slot reader views no pin, so the retire must not read it as unpinned.
+  for (const [label, broken] of [
+    ["null", () => null],
+    ["a pin-map shape under the pin/2 schema", (pin: Record<string, unknown>) => ({ ...pin, kind: "pin-map", records: { core: { candidate: "core-v1.md" } } })],
+    ["a candidate id without its extension", (pin: Record<string, unknown>) => ({ ...pin, candidate: "core-v1" })],
+  ] as const) {
+    it(`refuses on a pin.json that parses but does not validate (${label}), naming it and the pin issues`, async () => {
+      const { root, consumer } = copyOf(FIXTURE, "retire-candidate-invalid");
+      const dir = join(consumer, "agents", "director", CORE_SLOT);
+      writeFileSync(join(dir, "pin.json"), JSON.stringify(broken(pinOf(dir))));
+      const before = snapshot(dir);
+      const result = await retireCore(root);
+      expect(result.exitCode).toBe(1);
+      expect(result.message).toMatch(new RegExp(`^retire refused: ${CORE_PIN} is not a valid pin \\(.+\\); it may pin core-v1\\.md: repair the pin first$`));
+      expect(snapshot(dir)).toEqual(before);
+    });
+  }
 });
 
-describe("clossys ia: an unreadable slot.json in a store-wide scan", { timeout: 300_000 }, () => {
-  it("ia sync names the unreadable slot.json instead of reading the store as not recut", async () => {
-    const { root, consumer } = copyOf(join(legacyTreeConsumer, ".."), "sync-legacy");
-    // The healthy legacy store gets the recut hint.
-    const healthy = await runIaCli(["sync", "--agent", "writer", "--dry"], root);
-    expect(healthy.exitCode).toBe(1);
-    expect(healthy.message).toContain("this store is not recut to the current trees: run clossys migrate recut first");
-    const director = readdirSync(join(consumer, "agents", "director")).find(name => existsSync(join(consumer, "agents", "director", name, "slot.json")))!;
-    writeFileSync(join(consumer, "agents", "director", director, "slot.json"), TRUNCATED);
-    const before = snapshot(join(consumer, "agents"));
-    const result = await runIaCli(["sync", "--agent", "writer", "--dry"], root);
-    expect(result.exitCode).toBe(1);
-    expect(result.message).toContain(`the store format cannot be judged: clossys/agents/director/${director}/slot.json cannot be read as JSON: `);
-    expect(result.message).not.toContain("this store is not recut");
-    expect(snapshot(join(consumer, "agents"))).toEqual(before);
-  });
+// A slot.json that does not parse, and one that parses to null (no slot of either format): each is named with its cause.
+const BROKEN_SLOTS = [
+  ["does not parse", TRUNCATED, "cannot be read as JSON: "],
+  ["parses to null", "null", "is not a JSON object (null)"],
+] as const;
 
-  it("ia <slot> refuses a new slot whose kind its agent's slots decide while one of them cannot be read", async () => {
-    const { root, consumer } = copyOf(FIXTURE, "placed-kind");
-    const contract = json(root, "contract.json", { purpose: "An owner rule beside the package's own.", requirements: [{ check: "text.nonempty" }] });
-    // The healthy store: the new slot takes the kind of the Writer slots under its L1 (a dry run writes nothing).
-    await verb(root, "ia", "writer/owner.house-rule", "--under", "voice.tone/attitude", "--kind", "strings", "--contract", contract, "--dry");
-    // A Writer slot folder the IA does not place (every placed slot.json is read first, by the position follow): its
-    // slot.json may hold the L1's kind, so the kind is unknown while it cannot be read.
-    mkdirSync(join(consumer, "agents", "writer", "owner.stray"));
-    writeFileSync(join(consumer, "agents", "writer", "owner.stray", "slot.json"), TRUNCATED);
-    const before = snapshot(join(consumer, "agents", "writer"));
-    const result = await runIaCli(["writer/owner.house-rule", "--under", "voice.tone/attitude", "--kind", "strings", "--contract", contract, "--root", root], root);
-    expect(result.exitCode).toBe(1);
-    expect(result.message).toContain("clossys/agents/writer/owner.stray/slot.json cannot be read as JSON: ");
-    expect(snapshot(join(consumer, "agents", "writer"))).toEqual(before);
-  });
+describe("clossys ia: an unreadable slot.json in a store-wide scan", { timeout: 300_000 }, () => {
+  for (const [label, bytes, cause] of BROKEN_SLOTS) {
+    it(`ia sync names a slot.json that ${label} instead of reading the store as not recut`, async () => {
+      const { root, consumer } = copyOf(join(legacyTreeConsumer, ".."), "sync-legacy");
+      // The healthy legacy store gets the recut hint.
+      const healthy = await runIaCli(["sync", "--agent", "writer", "--dry"], root);
+      expect(healthy.exitCode).toBe(1);
+      expect(healthy.message).toContain("this store is not recut to the current trees: run clossys migrate recut first");
+      const director = readdirSync(join(consumer, "agents", "director")).find(name => existsSync(join(consumer, "agents", "director", name, "slot.json")))!;
+      writeFileSync(join(consumer, "agents", "director", director, "slot.json"), bytes);
+      const before = snapshot(join(consumer, "agents"));
+      const result = await runIaCli(["sync", "--agent", "writer", "--dry"], root);
+      expect(result.exitCode).toBe(1);
+      expect(result.message).toContain(`the store format cannot be judged: clossys/agents/director/${director}/slot.json ${cause}`);
+      expect(result.message).not.toContain("this store is not recut");
+      expect(snapshot(join(consumer, "agents"))).toEqual(before);
+    });
+
+    it(`ia <slot> refuses a new slot whose kind its agent's slots decide while one of their slot.json ${label}`, async () => {
+      const { root, consumer } = copyOf(FIXTURE, "placed-kind");
+      const contract = json(root, "contract.json", { purpose: "An owner rule beside the package's own.", requirements: [{ check: "text.nonempty" }] });
+      // The healthy store: the new slot takes the kind of the Writer slots under its L1 (a dry run writes nothing).
+      await verb(root, "ia", "writer/owner.house-rule", "--under", "voice.tone/attitude", "--kind", "strings", "--contract", contract, "--dry");
+      // A Writer slot folder the IA does not place (every placed slot.json is read first, by the position follow): its
+      // slot.json may hold the L1's kind, so the kind is unknown while it cannot be read.
+      mkdirSync(join(consumer, "agents", "writer", "owner.stray"));
+      writeFileSync(join(consumer, "agents", "writer", "owner.stray", "slot.json"), bytes);
+      const before = snapshot(join(consumer, "agents", "writer"));
+      const result = await runIaCli(["writer/owner.house-rule", "--under", "voice.tone/attitude", "--kind", "strings", "--contract", contract, "--root", root], root);
+      expect(result.exitCode).toBe(1);
+      expect(result.message).toContain(`clossys/agents/writer/owner.stray/slot.json ${cause}`);
+      expect(snapshot(join(consumer, "agents", "writer"))).toEqual(before);
+    });
+  }
 });
 
 describe("clossys approve: a candidates folder that cannot be listed", { timeout: 300_000 }, () => {
-  it("refuses with the listing error, not as a slot holding no candidate", async () => {
+  // A mode-000 folder is readable by root: the case holds only for an unprivileged run.
+  it.skipIf(process.getuid?.() === 0)("refuses with the listing error, not as a slot holding no candidate", async () => {
     const { root, consumer } = copyOf(FIXTURE, "approve");
     const writer = JSON.parse(readFileSync(join(consumer, "agents", "writer", "ia.json"), "utf8")) as { nodes: { children: { slots: string[] }[] }[] };
     const slot = writer.nodes[0]!.children[0]!.slots[0]!;
     const candidates = join(consumer, "agents", "writer", slot, "candidates");
     mkdirSync(candidates, { recursive: true });
+    const before = snapshot(consumer);
     chmodSync(candidates, 0o000);
     try {
       const result = await runApproveCli([`writer/${slot}`, "copy-v1", "--by", "owner:queue.approve#20261120T1200Z-approve", "--at", AT, "--root", root], root);
       expect(result.exitCode).toBe(1);
       expect(result.message).toMatch(new RegExp(`^approve refused: cannot list writer/${slot.replace(/\./g, "\\.")} candidates: .*EACCES`));
     } finally { chmodSync(candidates, 0o755); }
+    expect(snapshot(consumer)).toEqual(before);
   });
 });
 
@@ -217,21 +271,22 @@ describe("clossys next --submit: a broken candidate or root", { timeout: 300_000
   const submit = (root: string, element: unknown) => runNextSubmitCli(["designer/sections.hero", "--submit", json(root, `hero-${Math.random().toString(36).slice(2, 8)}.json`, `${JSON.stringify(element, null, 2)}\n`),
     "--model", MODEL, "--tier", "mid", "--skill", DESIGNER_SKILL, "--basis", "agent", "--rung", "L1", "--seed", "shadcn-aria/hero", "--root", root], root, undefined, undefined, { rules: [] });
 
-  it("refuses a submission while a held candidate cannot be read, naming it and the cause, and writes nothing", async () => {
+  // A mode-000 file is readable by root: the case holds only for an unprivileged run.
+  it.skipIf(process.getuid?.() === 0)("refuses a submission while a held candidate cannot be read, naming it and the cause, and writes nothing", async () => {
     const { root, consumer } = copyOf(FIXTURE, "submit-held");
     const first = await submit(root, hero("Hero"));
     expect(first.exitCode, first.message).toBe(0);
     const name = (first.output as { candidate: string }).candidate;
     const dir = join(consumer, "agents", "designer", "sections.hero");
     const held = join(dir, "candidates", name);
+    const before = snapshot(consumer);
     chmodSync(held, 0o000);
     try {
-      const files = readdirSync(join(dir, "candidates")).sort();
       const again = await submit(root, hero("Other"));
       expect(again.exitCode).toBe(1);
       expect(again.message).toMatch(new RegExp(`^next --submit refused: designer/sections\\.hero candidate ${name.replace(".", "\\.")} cannot be read: .*EACCES`));
-      expect(readdirSync(join(dir, "candidates")).sort()).toEqual(files);
     } finally { chmodSync(held, 0o644); }
+    expect(snapshot(consumer)).toEqual(before);
   });
 
   it("a bare next --submit whose root cannot be resolved fails with the root error, not as a slot-less submission", async () => {
@@ -249,8 +304,10 @@ describe("the owner and next refusals of an unreadable input carry the cause", {
     await verb(root, "owner-decision", "init");
     writeFileSync(join(consumer, "owner-decisions.json"), TRUNCATED);
     const quote = json(root, "quote.txt", "Keep it.");
+    const before = snapshot(consumer);
     const result = await runOwnerDecisionCli(["add", "--ref", "example/site#1 issuecomment-1000000001", "--scope", "ia", "--quote-file", quote, "--root", root], root);
     expect(result).toMatchObject({ exitCode: 1, message: expect.stringMatching(/^owner-decision refused: clossys\/owner-decisions\.json is not JSON: .+/) });
+    expect(snapshot(consumer)).toEqual(before);
   });
 
   it("each unreadable input file's refusal names the read error", async () => {

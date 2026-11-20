@@ -190,7 +190,7 @@ export function submitTarget(argv: readonly string[], cwd: string, steps: readon
   if (argv.slice(1).some(arg => /^(director|designer|writer|publisher)\//.test(arg))) return argv;
   // Help needs no workspace; anything else needs its root, and a root that cannot be resolved fails here with its
   // cause (RootDiscoveryError), never as the argv unchanged and a "no open candidates slot" refusal downstream.
-  if (argv.includes("--help") || argv.includes("-h")) return argv;
+  if (argv.includes("--help")) return argv;
   const rootAt = argv.indexOf("--root");
   const root = rootOf(cwd, rootAt < 0 ? undefined : argv[rootAt + 1]);
   const context = { root, steps, agents: slotCounts(root), seats: readSeats(root, steps) };
