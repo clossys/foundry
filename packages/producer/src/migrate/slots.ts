@@ -31,6 +31,7 @@ import { serializeSlot, SLOT_AGENTS, SLOT_SCHEMA, SLOT_V1_SCHEMA } from "../reco
 import { candidateHeaderOf } from "../records/slot-current.js";
 import { seatStepOf } from "../records/slot-model/types.js";
 import { appendMigrationEvents, writeSlotsMigrationFolder, type WriteGuard } from "../records/slot-write.js";
+import type { GuardSession } from "../constitution/guard.js";
 import type { RecordFile } from "../records/ledger.js";
 import { isConvertedStore, storeFormatBytes, storeFormatPath } from "../records/store-format.js";
 import type { AgentId, Iso, Pin, PinMap, PinRecord, SlotId } from "../records/types.js";
@@ -306,6 +307,11 @@ export function applySlotsMigration(root: string, plan: SlotsPlan, options: { at
     folders.set(key, [...(folders.get(key) ?? []), each]);
   }
   let ledgerEvents = 0;
+  // One guard session for the run (U29c, guard.ts GuardSession): the first folder's guard reads the tree, each later
+  // one re-reads only its own folder and the agent-level files. The run writes nothing else under agents/ meanwhile.
+  const guard = options.guard ?? true;
+  const session: GuardSession = {};
+  const sessionGuard: WriteGuard = { ...(guard === true ? {} : guard), session };
   for (const key of [...folders.keys()].sort()) {
     const changes = folders.get(key)!;
     const [, agent, id] = key.split("/") as [string, AgentId, SlotId];
@@ -321,7 +327,7 @@ export function applySlotsMigration(root: string, plan: SlotsPlan, options: { at
         replaceVerified(path, each.bytes, disk, each.file);
         written.push(each.file);
       }
-    } }, options.guard ?? true);
+    } }, sessionGuard);
     if (done.event) ledgerEvents++;
   }
   const rewrites = plan.changes.filter(each => each.kind === "candidate").map(each => ({ file: each.file, from: each.from, to: each.to }));

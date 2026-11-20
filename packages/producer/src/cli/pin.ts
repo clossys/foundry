@@ -22,6 +22,7 @@ import { CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, PIN_BASES, SLOT_AG
 import { listSlots, readSlotEntry } from "../records/slots.js";
 import { GuardRefusal, SLOT_LOCK, withDirLock, writeConfirm, writeNotNeeded, writePin, writeTargetConfirm, writeTargetDecision, writeTargetNotNeeded, type WriteGuard } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
+import type { GuardSession } from "../constitution/guard.js";
 import { pinGate, writeScorecard } from "../constitution/pin-gate.js";
 import { clearReverdict, reverdictPath, scorecardPath } from "../constitution/cascade.js";
 import { seatRefusal } from "../records/seat-owner.js";
@@ -232,7 +233,9 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
       // (its owner pin, else package v1); the pin names that loop, so an owner repin of it refuses this pin until recertified.
       const loopStandard = isLoopAgent(agent) && isAgentLoop(slotId) && record === undefined ? currentStandardOf(root, slotId) : undefined;
       if (loopStandard !== undefined && !loopStandard.ok) return { exitCode: 1, message: `pin refused: ${agent}/${slotId}: producer/${slotId} cannot be read: ${loopStandard.reason}` };
-      const gate = pinGate(root, join(root, "clossys"), agent, slotId, candidate, toIsoZ(at)!, releasePin ? { verdict: "release.ready" } : {});
+      // The gate's read seeds the pin guard's session: the guard re-reads only this slot's folder (U29c, guard.ts GuardSession).
+      const session: GuardSession = {};
+      const gate = pinGate(root, join(root, "clossys"), agent, slotId, candidate, toIsoZ(at)!, { ...(releasePin ? { verdict: "release.ready" as const } : {}), session });
       if (gate.refusals.length) return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate}:\n${gate.refusals.map(line => `  ${line}`).join("\n")}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals: gate.refusals, scorecard: gate.scorecard } };
       let doc!: ReturnType<typeof writeTargetPin>;
       // One guarded decision write (U13 r4, B1): the scorecard, the pin, the cleared re-verdict and the `pick` or `pin`
@@ -247,7 +250,7 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
         // A new pin carries the verdict the gate just gave (its scorecard row); an older re-verdict no longer holds.
         clearReverdict(root, agent, slotId);
         return doc.kind === "pin-map" ? doc.records[record!]! : doc;
-      }, guard);
+      }, { ...(guard === true ? {} : guard), session });
       const pinned = doc.kind === "pin-map" ? doc.records[record!]! : doc;
       return { exitCode: 0, message: `${agent}/${target}: pinned ${pinned.candidate} (${pinned.sha256.slice(0, 12)}), decided by ${pinned.decidedBy} (${pinned.basis})`, output: doc };
     });
