@@ -172,6 +172,9 @@ describe("R01.4 an agent tree holds only live slots, tombstones, ledger.json and
       const hero = join(consumer, "agents", "writer", "home.hero");
       mkdirSync(join(hero, "critiques"), { recursive: true });
       writeFileSync(join(hero, "critiques", "hero-v1.json"), "{}\n");
+      // A stray beside a real critiques/ folder is still a row: the exception covers the critiques entry alone.
+      mkdirSync(join(hero, "drafts"), { recursive: true });
+      writeFileSync(join(hero, "drafts", "hero-v2.json"), "{}\n");
       const button = join(consumer, "agents", "designer", "ui.button");
       mkdirSync(join(button, "drafts"), { recursive: true });
       writeFileSync(join(button, "drafts", "button-v1.json"), "{}\n");
@@ -180,6 +183,7 @@ describe("R01.4 an agent tree holds only live slots, tombstones, ledger.json and
     expect(reasons(treeShape(ctx))).toEqual([
       "director:brand.voice: a live slot folder holds only slot.json, pin.json, candidates/, ledger.json and retired/; found critiques",
       "designer:ui.button: a live slot folder holds only slot.json, pin.json, candidates/, ledger.json and retired/; found drafts",
+      "writer:home.hero: a live slot folder holds only slot.json, pin.json, candidates/, ledger.json and retired/; found drafts",
     ]);
   });
 
