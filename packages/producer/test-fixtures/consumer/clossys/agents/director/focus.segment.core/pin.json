@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "director/focus.segment.core/pin",
+  "agent": "director",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-20T01:29:35.605Z",
+  "updatedAt": "2026-11-20T01:29:35.605Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "director/focus.segment.core",
+      "sha256": "c83ade81b0989b746ba138638deff759c6bfa62220fb9561045e0d1fa02f6ea1"
+    }
+  ],
+  "candidate": "core-v1.md",
+  "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd",
+  "decidedBy": "planner:fixture-data",
+  "basis": "planner",
+  "at": "2026-11-20T01:29:35.605Z"
+}

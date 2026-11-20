@@ -21,10 +21,10 @@ import {
   type ModelAgent, type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
-import { isCurrentSlot, slotReadIssues } from "./slot-current.js";
+import { candidateHeaderReadIssues, headeredMarkdown, isCurrentSlot, slotReadIssues } from "./slot-current.js";
 import { SlotFormatError, serializeSlot, validateSlot } from "./slot.js";
 import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
-import type { AgentId, Slot } from "./types.js";
+import type { Actor, AgentId, Slot } from "./types.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, skillFile, skillPath,
   type LedgerEvent, type LedgerRecordState, type LedgerSkill, type Provenance, type RecordFile, type Verb,
@@ -643,12 +643,15 @@ export function writeCritique(consumer: string, agent: ModelAgent, id: string, r
  * under the slot lock, so two writers never take one version and the ledger names every file; a
  * `verify` issue (or a refused event) removes the file again. `fields` are the submit's own record
  * (`next --submit`: its basis and ladder); `provenance` its verb, by, skill, model and tier.
+ * `header` (U37) writes the judged int2 Markdown as a clossys.candidate/1 file created by `header.createdBy`
+ * (`headeredMarkdown`): only on a clossys.slot/2 slot, and refused when the slot/2 reader would not take the header.
  */
 export function writeCandidate(consumer: string, agent: SlotAgent, id: string, name: string, content: unknown, options: {
   readonly canonical?: boolean; readonly provenance?: WriteProvenance; readonly at?: string;
   readonly fields?: Readonly<Record<string, unknown>>; readonly verify?: (file: string) => readonly string[];
   /** Run the write verb's constitution guard on the new file after its event lands; a finding undoes both. */
   readonly guard?: WriteGuard;
+  readonly header?: { readonly createdBy: Actor };
 } = {}): { name: string; sha256: string } {
   assertActor(dirname(consumer), options.provenance?.by ?? "planner", agent, "candidate", authorsOf(agent));
   const { entry } = located(consumer, agent, id);
@@ -657,9 +660,20 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
     const { doc, entry: current } = located(consumer, agent, id);
     const ext = KIND_EXT[doc.kind];
     const file = `${name}-v${nextVersion(current.dir, current.candidates)}.${ext}`;
-    const bytes = ext === "md" ? String(content) : jsonBytes(content);
-    const issues = validateCandidate(doc.kind, id, file, bytes);
+    const int2 = ext === "md" ? String(content) : jsonBytes(content);
+    const issues = validateCandidate(doc.kind, id, file, int2);
     if (issues.length) throw new Error(`candidate refused: ${issues.map(issue => issue.message).join("; ")}`);
+    const at = options.at ?? nowIso();
+    let bytes = int2;
+    if (options.header) {
+      let raw: unknown;
+      try { raw = JSON.parse(readFileSync(join(current.dir, "slot.json"), "utf8")); } catch { raw = undefined; }
+      if (!isCurrentSlot(raw)) throw new Error(`candidate refused: ${agent}/${id} is not a clossys.slot/2 slot; a clossys.candidate/1 header is written for slot/2 slots only`);
+      try { bytes = headeredMarkdown(file, int2, { agent, slotId: id, createdBy: options.header.createdBy, createdAt: at }); }
+      catch (error) { throw new Error(`candidate refused: ${(error as Error).message}`); }
+      const headerIssues = candidateHeaderReadIssues(agent, id, file, bytes);
+      if (headerIssues.length) throw new Error(`candidate refused: ${headerIssues.map(issue => issue.message).join("; ")}`);
+    }
     readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
     const directory = candidatesDir(entry.dir);
     if (options.canonical) canonicalDirectory(directory);
@@ -676,7 +690,7 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
       const sha256 = readCandidate(consumer, agent, id, file).sha256;
       const refused = options.verify?.(file) ?? [];
       if (refused.length) throw new Error(`candidate refused: ${file} fails the slot model check: ${refused.slice(0, 5).join("; ")}`);
-      appendEvent(entry.dir, "slot", ledgerEvent("submit", options.at ?? nowIso(), who, { ...options.fields, name: file, sha256 }));
+      appendEvent(entry.dir, "slot", ledgerEvent("submit", at, who, { ...options.fields, name: file, sha256 }));
       if (options.guard) {
         try { enforceGuard(consumer, guardVerb, options.guard, [{ agent, slot: id, candidate: file }]); }
         catch (error) { restoreFiles(ledger); throw error; }

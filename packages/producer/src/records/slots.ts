@@ -769,6 +769,19 @@ function inputBlocker(entry: SlotEntry): BlockReason | undefined {
   return undefined;
 }
 
+/**
+ * Why the readers (`readiness`, and through it `clossys direct` and `clossys status`) do not take a slot's pin as an
+ * intact pin, or undefined when they do: a valid pin over the current bytes of a candidate its slot accepts. A slot
+ * not in its agent's IA is `missing`. The pin file existing is not enough (foundry-build-0048 U37: conform's
+ * upstream-pinned probe counts only a pin this reader accepts).
+ */
+export function pinBlocker(consumer: string, agent: SlotAgent, id: string): BlockReason | undefined {
+  return withSlotReadScope(() => {
+    const entry = readSlotEntry(consumer, agent, id);
+    return entry ? inputBlocker(entry) : "missing";
+  });
+}
+
 /** A slot is ready when it declares inputs and every input has an intact pin. */
 export function readiness(consumer: string, agent: SlotAgent, id: string, index = slotIndex(consumer)): Readiness {
   return withSlotReadScope(() => {

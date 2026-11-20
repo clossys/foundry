@@ -25,6 +25,7 @@ import { CORE_CRITERIA } from "../criteria/core/index.js";
 import { canonicalJson, certifyKey, type CertifyKey } from "../criteria/core/verdict.js";
 import { candidateCitations, dependencySet, focusedLiveSlots, isObject, registryFiles, slotDoc, stringList } from "../checks/shared.js";
 import type { CandidateRecord, ConstitutionContext, SlotRecord } from "../types.js";
+import { candidateHeaderOf, candidateHeaderReadIssues, candidateView, isCurrentSlot } from "../../records/slot-current.js";
 import { cachePath, openCache, type CertifyCache } from "./cache.js";
 import { certifyBrief } from "./brief.js";
 import { certifyElement, hostRequire } from "./element.js";
@@ -49,15 +50,38 @@ export function slotDocOf(slot: SlotRecord): { doc: Record<string, unknown>; kin
   return { doc, ...(kind ? { kind } : {}), contract: isObject(doc.contract) ? doc.contract : {} };
 }
 
+/**
+ * The candidate the kind rules read (foundry-build-0048 U37: one candidate format, the gate and the readers agree). A
+ * clossys.candidate/1 file under a clossys.slot/2 slot of a known kind is judged first by its header (`header`: schema,
+ * id, agent and slot naming where it sits, one source; records/slot-current.ts candidateHeaderReadIssues) and then by
+ * every rule of its kind over its view (records/slot-current.ts candidateView: the candidate without its header, with
+ * the header's `source` where the int2 rules read it). The view moves the source; it relaxes no body rule. Any other
+ * candidate (no header, a slot/1 slot, an agent loop slot) is read as it is, as before.
+ */
+export function judgedCandidate(slot: SlotRecord, candidate: CandidateRecord): { readonly candidate: CandidateRecord; readonly header: readonly Reason[] } {
+  if (candidate.readError || !isCurrentSlot(slot.slot?.value) || !slotDocOf(slot).kind) return { candidate, header: [] };
+  if (!candidateHeaderOf(candidate.name, candidate.text)) return { candidate, header: [] };
+  const header = candidateHeaderReadIssues(slot.agent, slot.id, candidate.name, candidate.text, candidate.path).map(issue => reason("invalid", `clossys header: ${issue.message}`));
+  const text = candidateView(candidate.name, candidate.text);
+  if (!candidate.name.endsWith(".json")) return { candidate: { ...candidate, text }, header };
+  const { json: _raw, jsonError: _error, ...rest } = candidate;
+  try { return { candidate: { ...rest, text, json: JSON.parse(text) as unknown }, header }; }
+  catch (error) { return { candidate: { ...rest, text, jsonError: error instanceof Error ? error.message : String(error) }, header }; }
+}
+
 /** Kind fit only (schema, fixture shape, kind certifier): what the dry run measures with no standard. */
 export function certifyFit(input: CertifyInput, env: CertifyEnv): Reason[] {
-  const { slot, candidate } = input;
+  const { slot } = input;
   const { kind, contract: own } = slotDocOf(slot);
   const contract = input.contract ?? own;
   // An agent's own loop slot (U9a): its own certifier, against Producer's standard loop.
-  if (!kind && isAgentLoopSlot(slot, slotDocOf(slot).doc)) return candidate.readError ? [reason("invalid", candidate.readError)] : certifyLoop(slot, candidate, contract, env.root);
+  if (!kind && isAgentLoopSlot(slot, slotDocOf(slot).doc)) return input.candidate.readError ? [reason("invalid", input.candidate.readError)] : certifyLoop(slot, input.candidate, contract, env.root);
   if (!kind) return [reason("invalid", `slot ${slot.id} has no known kind`)];
-  if (candidate.readError) return [reason("invalid", candidate.readError)];
+  if (input.candidate.readError) return [reason("invalid", input.candidate.readError)];
+  // A malformed clossys header is refused outright; a valid one is judged no further than its schema and placement,
+  // and the body it carries by every rule below.
+  const { candidate, header } = judgedCandidate(slot, input.candidate);
+  if (header.length) return [...header];
   const invalid = validateCandidate(kind, slot.id, candidate.name, candidate.text, candidate.path).map(issue => reason("invalid", issue.message));
   if (invalid.length) return invalid;
   if (kind !== "element" && contract.fixture !== undefined) {
@@ -76,7 +100,8 @@ export function certifyFit(input: CertifyInput, env: CertifyEnv): Reason[] {
 
 /** The standard part: the slot's standard exists, is well-formed, serves the kind, and its requirements pass. */
 export function standardReasons(input: CertifyInput, env: CertifyEnv, pinSet: string): Reason[] {
-  const { slot, candidate } = input;
+  const { slot } = input;
+  const { candidate } = judgedCandidate(slot, input.candidate);
   const { doc, kind, contract: own } = slotDocOf(slot);
   const contract = input.contract ?? own;
   if (!kind && isAgentLoopSlot(slot, doc)) return loopStandardReasons(slot, doc, env.root);
@@ -141,7 +166,8 @@ function copyKeysOf(value: unknown, out: Set<string>): Set<string> {
  * imports reach. It is recomputed every run, so a pin that changes, appears or disappears changes it.
  */
 export function pinSetOf(input: CertifyInput, env: CertifyEnv): string {
-  const { slot, candidate } = input;
+  const { slot } = input;
+  const { candidate } = judgedCandidate(slot, input.candidate);
   const { doc, kind, contract: own } = slotDocOf(slot);
   const contract = input.contract ?? own;
   const reads = new Set<string>([...(dependencySet(slot) ?? [])]);

@@ -26,6 +26,8 @@ import type { ModelAgent, SlotAgent } from "../records/slot-model/types.js";
 import { candidatesDir, slotDir } from "../records/slot-model/layout.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { readCandidate, readLedger, readSlot, readSlotEntry } from "../records/slots.js";
+import { candidateView, headeredMarkdown, isCurrentSlot } from "../records/slot-current.js";
+import type { Actor, Tier } from "../records/types.js";
 import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { nextPacket, openItems, openPackets, skillFile } from "../pipeline/chain.js";
@@ -248,10 +250,25 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   // The bytes writeCandidate would write: the slot kind's extension decides the serialization.
   const canonical = KIND_EXT[readSlot(consumer, agent as SlotAgent, slot).kind] === "md" ? String(content) : jsonBytes(content);
   const digest = sha(canonical);
+  // U37: a Director clossys.slot/2 brief is written as a clossys.candidate/1 file (the header the slot/2 readers
+  // require, created by this submission's agent, skill, model and tier); its identity with a held candidate is then
+  // judged on the candidate view (the document without its header), as well as on the bytes.
+  let rawSlot: unknown;
+  try { rawSlot = JSON.parse(readFileSync(join(entry.dir, "slot.json"), "utf8")); } catch { rawSlot = undefined; }
+  const createdBy: Actor = { actor: "agent", agent: "director", skill: contractSkill, skillSha256: sha(skillBytes), model: flags.model!, tier: flags.tier! as Tier };
+  const headered = agent === "director" && ext === "md" && isCurrentSlot(rawSlot);
+  let viewDigest: string | undefined;
+  if (headered) {
+    const probe = `${stem}-v1.md`;
+    try { viewDigest = sha(candidateView(probe, headeredMarkdown(probe, canonical, { agent: "director", slotId: slot, createdBy, createdAt: "2000-01-01T00:00:00Z" }))); }
+    catch (error) { return reject(error instanceof Error ? error.message : String(error)); }
+  }
   for (const name of entry.candidates) {
     let held: string | null = null;
     try { held = readCandidate(consumer, agent as SlotAgent, slot, name).sha256; } catch { held = null; }
-    if (held === digest) return reject(`${flags.submit} is byte-identical to ${target} candidate ${name}; submit a candidate that differs`);
+    let heldView: string | null = null;
+    if (viewDigest !== undefined) { try { heldView = sha(candidateView(name, readFileSync(join(candidatesDir(entry.dir), name), "utf8"))); } catch { heldView = null; } }
+    if (held === digest || (heldView !== null && heldView === viewDigest)) return reject(`${flags.submit} is byte-identical to ${target} candidate ${name}; submit a candidate that differs`);
   }
   // P2 (adapt, create) only after the slot's latest verdict is create, for the latest options packet's inputs:
   // a slot-state precondition, refused after the submission's own content checks.
@@ -269,6 +286,7 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
       provenance: { verb: "submit", by: flags.basis === "agent" ? `agent:${owning.id}` : flags.basis!, skill, model: flags.model!, tier: flags.tier! },
       fields: { basis: flags.basis!, rung: ladder!.rung, ...(ladder!.seed !== undefined ? { seed: ladder!.seed } : {}), ...(ladder!.reason !== undefined ? { reason: ladder!.reason } : {}), ladder: ladder! },
       guard,
+      ...(headered ? { header: { createdBy } } : {}),
     });
   } catch (error) {
     if (error instanceof GuardRefusal) return { ...reject(error.message), output: { schema: "clossys.next-submit-refused/1", slot: target, verb: error.verb, checks: error.checks, findings: error.findings } };

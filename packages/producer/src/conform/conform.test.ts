@@ -435,6 +435,15 @@ describe("dogfood probes", () => {
     const judgement = judgeDogfood(row([name]), bad.agent, bad.model, { ...bad.facts, ...facts });
     expect(cellOf("DF", "DF", judgement).red).toBe(true);
   });
+  it("upstream-pinned: a pin file the slot/2 reader refuses is no pin (U37)", () => {
+    const refused = world((_agent, _machinery, other) => {
+      other.live = other.live.map((item: LiveSlot) => item.pin === undefined ? item : { ...item, pinRejection: "invalid-candidate" });
+    });
+    expect(refused.model.agents.flatMap(agent => agent.live).some(item => item.pin !== undefined)).toBe(true);
+    const judgement = judgeDogfood(row(["upstream-pinned"]), refused.agent, refused.model, refused.facts);
+    expect(cellOf("DF", "DF", judgement).red).toBe(true);
+    expect(judgement.rows.join("\n")).toMatch(/pinned but refused by the slot\/2 reader: .*\(invalid-candidate\)/);
+  });
 });
 
 describe("conformance over the repo and its fixture", () => {

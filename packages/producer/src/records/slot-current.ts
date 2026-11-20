@@ -13,11 +13,11 @@
  * for (a release manifest, a Designer SVG, a Writer JSON record, a Director brief with only its header) is judged
  * by the target rules alone (`targetIssues`).
  */
-import { candidateHeaderIssues, parseCandidateName } from "./candidate.js";
+import { buildCandidateHeader, candidateHeaderIssues, parseCandidateName, serializeCandidate } from "./candidate.js";
 import { parseYamlSubset, readRecordHeader } from "./schema.js";
 import { parseFrontmatter } from "./slot-model/frontmatter.js";
 import { positionIa, sameJson, SLOT_SCHEMA, SLOT_V1_SCHEMA, validateSlot } from "./slot.js";
-import type { AgentId, Slot, SlotId, TargetSlotKind } from "./types.js";
+import type { Actor, AgentId, CandidateHeader, Iso, Slot, SlotId, TargetSlotKind } from "./types.js";
 import { contractIssues, notNeededIssue, optionIssues, validateCandidate, validateSlotDoc, validateSource, type SlotModelIssue } from "./slot-model/validate.js";
 import { CANDIDATE_STATUS_KEYS, KIND_EXT, LEGACY_PROVENANCE_KEYS, PAGE_SCHEMA, PUBLICATION_SCHEMA, type ModelAgent, type NotNeeded, type SlotDoc, type SlotKind, type SlotPosition } from "./slot-model/types.js";
 
@@ -174,6 +174,24 @@ export function candidateView(name: string, bytes: string): string {
   return bytes;
 }
 
+/**
+ * U37: the bytes a create-path writer (`clossys next --submit` for a Director slot/2 brief) writes for an int2
+ * Markdown candidate: a new clossys.candidate/1 header (status submitted, `createdBy` the submitting actor) with the
+ * front matter `source` moved into it, every other front matter field kept beside it and the body byte for byte, as
+ * `clossys migrate recut` would write it. `candidateView` of the result is the int2 document the kind rules judged.
+ * Throws on a candidate that is not int2 Markdown with a `source`: nothing is guessed.
+ */
+export function headeredMarkdown(name: string, int2: string, input: { readonly agent: AgentId; readonly slotId: SlotId; readonly createdBy: Actor; readonly createdAt: Iso }): string {
+  if (!name.endsWith(".md")) throw new Error(`${name}: a clossys.candidate/1 header is written here for a Markdown candidate only`);
+  const parsed = parseFrontmatter(int2);
+  if (!parsed.ok) throw new Error(`${name}: its front matter cannot be read, so no header is written`);
+  const { source, ...rest } = parsed.value.fields;
+  if (Object.hasOwn(rest, "clossys")) throw new Error(`${name}: already carries a clossys front matter key`);
+  if (source === undefined) throw new Error(`${name}: has no front matter source to move into the header`);
+  const header = buildCandidateHeader({ agent: input.agent, slotId: input.slotId, name, status: "submitted", createdBy: input.createdBy, createdAt: input.createdAt, source: source as CandidateHeader["source"] });
+  return serializeCandidate(name, header, parsed.value.body, rest);
+}
+
 /** A second source beside the header's: a candidate/1 file's JSON `meta.source` or Markdown front matter `source`. */
 function secondSource(name: string, bytes: string, path: string): SlotModelIssue[] {
   if (!candidateHeaderOf(name, bytes)) return [];
@@ -187,6 +205,19 @@ function secondSource(name: string, bytes: string, path: string): SlotModelIssue
     second = parsed.ok && Object.hasOwn(parsed.value.fields, "source");
   }
   return second ? [{ code: "candidate-source", path, message: "source is the clossys header's; the candidate carries a second one" }] : [];
+}
+
+/**
+ * The header issues of a clossys.candidate/1 file under a current slot, as `candidateIssues` judges them: the header
+ * against schemas/candidate.json with its id, agent and slot naming where the file sits, and no second source beside
+ * the header's. The pin gate's certifier judges a headered candidate's header by this, then its body by every rule of
+ * its kind over its view (constitution/certify/index.ts judgedCandidate), so the gate and the readers read one format.
+ */
+export function candidateHeaderReadIssues(agent: ModelAgent, id: string, name: string, bytes: string, path = name): SlotModelIssue[] {
+  return [
+    ...candidateHeaderIssues(name, bytes, { agent: agent as AgentId, slotId: id as SlotId }).map(message => ({ code: "candidate-invalid" as const, path, message })),
+    ...secondSource(name, bytes, path),
+  ];
 }
 
 /** The extensions a target-format candidate of each kind family takes (the int2 rules hold the int2 extension). */
