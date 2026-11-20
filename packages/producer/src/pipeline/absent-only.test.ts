@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { openItems, packetOf, skillLine, skillOf, type Context } from "./chain.js";
+import { candidatesOf, openItems, packetOf, skillLine, skillOf, type Context } from "./chain.js";
 import type { Step } from "./define.js";
 import { appendRecord, buildRecord, currentSha, observe, readRuns, readSink, readStore, RUN_SCHEMA, storeFile, storeIgnored, type RunRecord } from "./trace.js";
 
@@ -42,6 +42,22 @@ describe("chain", () => {
     mkdirSync(agents, { recursive: true });
     for (const agent of ["director", "designer", "writer", "publisher", "producer"]) symlinkSync(join(root, "elsewhere"), join(agents, agent));
     expect(() => openItems(step({ open: "slots-without-slot-json" } as Partial<Step>), context())).toThrow(/Symbolic links/);
+  });
+  it("candidatesOf throws a candidates folder under an aliased slot instead of listing none", () => {
+    mkdirSync(join(root, "elsewhere", "tokens.color", "candidates"), { recursive: true });
+    mkdirSync(join(root, "clossys", "agents"), { recursive: true });
+    symlinkSync(join(root, "elsewhere"), join(root, "clossys", "agents", "designer"));
+    expect(() => candidatesOf(root, "designer/tokens.color")).toThrow(/Symbolic links/);
+    expect(candidatesOf(root, "writer/copy.hero")).toEqual([]);
+  });
+  it("throws a slot.json presence check it cannot make instead of opening the slot", () => {
+    const designer = join(root, "clossys", "agents", "designer");
+    mkdirSync(join(designer, "tokens.color"), { recursive: true });
+    writeFileSync(join(designer, "ia.json"), JSON.stringify({ nodes: [{ children: [{ slots: ["tokens.color"] }] }] }));
+    const open = () => openItems(step({ open: "slots-without-slot-json" } as Partial<Step>), context());
+    expect(open()).toContain("designer/tokens.color");
+    lock(join(designer, "tokens.color"));
+    expect(open).toThrow(expect.objectContaining({ code: "EACCES", syscall: "lstat" }));
   });
   it("skillOf and skillLine throw when the skill file cannot be read", () => {
     const probe = step({ command: { skill: "actions/probe/skill.md" }, package: "producer" } as Partial<Step>);
