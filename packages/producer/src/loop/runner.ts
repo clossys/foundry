@@ -36,6 +36,9 @@ import { mergeRefs, readPinFile } from "../records/pin-map.js";
 import { isRecordSlot, resolveSlot, slotRecords, type Resolution } from "../records/resolve.js";
 import { validateAgainst } from "../records/schema.js";
 import { recordSchema, writeSlot } from "../records/slot.js";
+import { SLOT_LOCK, withDirLock, writeTargetConfirm, writeTargetDecision, type WriteGuard } from "../records/slot-write.js";
+import type { SlotAgent } from "../records/slot-model/index.js";
+import "../constitution/guard.js"; // registers the write guard's runner (the confirm and revert writes are guarded)
 import type { AgentId, Decider, DeciderVerb, Iso, LedgerEntry, LoopStep, LoopVersion, QueueEntry, Ref, Tier } from "../records/types.js";
 import { RUN_BY, RUN_CLI, entryName, producerVersion, raiseEntry, raiseFix, raisedOf, routeFindings, type Finding, type Raise, type Raised } from "./route.js";
 import { dependantsOf, fillNames, MissingSkillError, nextFillSlot, readSubject, refOf, skillFor, slotCandidates, slotVars, stepArgv, whenMatches, type SlotSubject } from "./slots.js";
@@ -93,6 +96,12 @@ export interface CodeOutcome {
 export interface RunHooks {
   agent(packet: AgentPacket): AgentOutcome | Promise<AgentOutcome>;
   code(call: CodeCall): CodeOutcome | Promise<CodeOutcome>;
+  /**
+   * The constitution guard the runner's own pin writes run (B5: the owner's confirm on a confirm step, a reject's
+   * put-back): omitted, the installed guard, as `clossys pin` runs it. A test whose stub world is no constitution-clean
+   * consumer substitutes a registry, as runPinCli's `guard` parameter takes one.
+   */
+  readonly guard?: WriteGuard;
 }
 
 type LedgerStep = LedgerEntry["steps"][number];
@@ -1113,45 +1122,99 @@ async function humanStep(ctx: Context, step: LoopStep, subject: SlotSubject | un
   return { exitCode: 0, state, entry: entryName(entry), message: `run ${state.runId}: ${step.id} waits for the owner on ${entryName(entry)}` };
 }
 
-/** B5: the owner's approve on a confirm step: the agent's pin gains `confirmed` (by the owner, from this entry). */
+/** The slot's write lock (records/slot-write.ts SLOT_LOCK): the lock `clossys pin` takes around a decision write. */
+const lockSlot = <T>(root: string, subject: SlotSubject, action: () => T): T =>
+  withDirLock(join(root, "clossys", "agents", subject.agent, subject.slotId, SLOT_LOCK), "Slot is unavailable or another decision write is in progress", action);
+const failure = (error: unknown): string => error instanceof Error ? error.message : String(error);
+
+/**
+ * B5: the owner's approve on a confirm step: the agent's pin gains `confirmed` (by the owner, from this entry). The
+ * write is the ledgered confirmation `clossys pin --confirm` makes (writeTargetConfirm under the slot lock): pin.json
+ * and its `confirm` event land together and the pin guard runs, so the slot's pin stays bound to its ledger.
+ */
 function confirmPin(ctx: Context, subject: SlotSubject, entry: QueueEntry): { exit: Exit; wrote: string[]; why?: string } {
   const { root } = ctx;
   const { agent, slotId } = subject;
   const file = pinPath(root, agent, slotId);
-  const read = readPinFile(file, { agent, slotId });
-  if (read.kind !== "pin" || read.issues.length) return { exit: 1, wrote: [], why: `${refOf(subject)} has no valid pin for the owner to confirm${read.kind === "pin" || read.kind === "invalid" || read.kind === "pin/1" ? `: ${read.issues.join("; ")}` : ""}` };
-  const pin = read.doc;
-  if (pin.basis !== "agent") return { exit: 1, wrote: [], why: `${refOf(subject)} is pinned by ${pin.decidedBy} (basis ${pin.basis}); only an agent pick is confirmed` };
-  const at = iso(ctx.now());
-  const answers: Ref = { to: `producer/${entry.queue}` as Ref["to"], record: entry.id, rel: "answers" };
-  const doc = {
-    ...buildPin({
-      agent, slotId, createdBy: pin.createdBy, previous: pin, refs: mergeRefs(pin.refs, [answers]),
-      record: { candidate: pin.candidate, sha256: pin.sha256, decidedBy: pin.decidedBy, basis: pin.basis, at: pin.at, confirmed: { by: "owner", ref: entryName(entry), at } },
-    }),
-    updatedAt: at,
-  };
-  const issues = pinIssues(doc, { agent, slotId });
-  if (issues.length) return { exit: 1, wrote: [], why: `the confirmed pin of ${refOf(subject)} would not be valid: ${issues.join("; ")}` };
-  writePinDoc(file, doc);
-  return { exit: 0, wrote: [`${refOf(subject)}/pin.json`] };
+  try {
+    return lockSlot(root, subject, () => {
+      const read = readPinFile(file, { agent, slotId });
+      if (read.kind !== "pin" || read.issues.length) return { exit: 1 as Exit, wrote: [], why: `${refOf(subject)} has no valid pin for the owner to confirm${read.kind === "pin" || read.kind === "invalid" || read.kind === "pin/1" ? `: ${read.issues.join("; ")}` : ""}` };
+      const pin = read.doc;
+      if (pin.basis !== "agent") return { exit: 1 as Exit, wrote: [], why: `${refOf(subject)} is pinned by ${pin.decidedBy} (basis ${pin.basis}); only an agent pick is confirmed` };
+      const at = iso(ctx.now());
+      const answers: Ref = { to: `producer/${entry.queue}` as Ref["to"], record: entry.id, rel: "answers" };
+      const confirmed = { by: "owner" as const, ref: entryName(entry), at };
+      const doc = {
+        ...buildPin({
+          agent, slotId, createdBy: pin.createdBy, previous: pin, refs: mergeRefs(pin.refs, [answers]),
+          record: { candidate: pin.candidate, sha256: pin.sha256, decidedBy: pin.decidedBy, basis: pin.basis, at: pin.at, confirmed },
+        }),
+        updatedAt: at,
+      };
+      const issues = pinIssues(doc, { agent, slotId });
+      if (issues.length) return { exit: 1 as Exit, wrote: [], why: `the confirmed pin of ${refOf(subject)} would not be valid: ${issues.join("; ")}` };
+      writeTargetConfirm(join(root, "clossys"), agent as SlotAgent, slotId, { candidate: pin.candidate, sha256: pin.sha256, confirmed, by: `owner:${entryName(entry)}`, at }, () => writePinDoc(file, doc), ctx.hooks.guard ?? true);
+      return { exit: 0 as Exit, wrote: [`${refOf(subject)}/pin.json`, `${refOf(subject)}/ledger.json`] };
+    });
+  } catch (error) {
+    return { exit: 1, wrote: [], why: `the owner's confirm of ${refOf(subject)} was refused: ${failure(error)}` };
+  }
 }
 
-/** B5: the owner rejected the agent's pick: the slot's pin goes back to what it was when the run started. */
+/**
+ * B5: the owner rejected the agent's pick: the slot's pin goes back to what it was when the run started. A pin put
+ * back is ledgered as the decision it restores (writeTargetDecision under the slot lock, the `pick` or `pin` event
+ * `clossys pin` writes, with the restored record's candidate, sha256, decidedBy and basis), so the restored bytes are
+ * the ones the slot's last ledger event records; the pin guard runs on it and a refusal leaves the slot as it was.
+ */
 function revertPin(ctx: Context, subject: SlotSubject): { exit: Exit; wrote: string[]; why?: string } {
   const { root, state } = ctx;
-  const file = pinPath(root, subject.agent, subject.slotId);
+  const { agent, slotId } = subject;
+  const file = pinPath(root, agent, slotId);
   const before = state.startPinDoc ?? null;
-  const now = existsSync(file) ? readFileSync(file, "utf8") : null;
-  if (now === before) return { exit: 1, wrote: [] };
-  if (before === null) unlinkSync(file);
-  else {
+  const restore = (bytes: string) => {
     const temp = `${file}.${process.pid}.tmp`;
-    writeFileSync(temp, before);
+    writeFileSync(temp, bytes);
     renameSync(temp, file);
+  };
+  let reverted: { exit: Exit; wrote: string[] };
+  try {
+    reverted = lockSlot(root, subject, () => {
+      const now = existsSync(file) ? readFileSync(file, "utf8") : null;
+      if (now === before) return { exit: 1 as Exit, wrote: [] };
+      if (before === null) { unlinkSync(file); return { exit: 1 as Exit, wrote: [`${refOf(subject)}/pin.json`] }; }
+      const key = restoredRecord(before, now === null ? undefined : readPinFile(file, { agent, slotId }));
+      writeTargetDecision(join(root, "clossys"), agent as SlotAgent, slotId, key !== undefined ? { record: key } : {}, () => {
+        restore(before);
+        const read = readPinFile(file, { agent, slotId });
+        const record = read.kind === "pin" ? read.doc : read.kind === "pin-map" && key !== undefined ? read.doc.records[key] : undefined;
+        if (!record) throw new Error(`the pin ${refOf(subject)} had when the run started is not a clossys.pin/2 or clossys.pin-map/1 record`);
+        return { candidate: record.candidate, sha256: record.sha256, decidedBy: record.decidedBy, basis: record.basis, at: record.at };
+      }, ctx.hooks.guard ?? true);
+      return { exit: 1 as Exit, wrote: [`${refOf(subject)}/pin.json`, `${refOf(subject)}/ledger.json`] };
+    });
+  } catch (error) {
+    return { exit: 1, wrote: [], why: `the owner's reject could not put back the pin ${refOf(subject)} had when the run started: ${failure(error)}` };
   }
-  logRun(root, "pin.revert", state, [file]);
-  return { exit: 1, wrote: [`${refOf(subject)}/pin.json`] };
+  // The run's own record of the put-back (engine.md "Writers"), beside the slot ledger's decision event: a removal
+  // has no ledger event, and every put-back names the run that made it.
+  if (reverted.wrote.length) logRun(root, "pin.revert", state, [file]);
+  return reverted;
+}
+
+/**
+ * The pin-map record a restored pin re-records (undefined for a pin/2): the first record whose bytes differ from the
+ * slot's pin now (every record when the pin now is no pin map), else the first record.
+ */
+function restoredRecord(before: string, current: ReturnType<typeof readPinFile> | undefined): string | undefined {
+  let doc: unknown;
+  try { doc = JSON.parse(before); } catch { return undefined; }
+  const records = (doc as { schema?: unknown; records?: Record<string, unknown> }).schema === "clossys.pin-map/1" ? (doc as { records?: Record<string, unknown> }).records ?? {} : undefined;
+  if (!records) return undefined;
+  const now = current?.kind === "pin-map" ? current.doc.records as Record<string, unknown> : {};
+  const keys = Object.keys(records);
+  return keys.find(key => JSON.stringify(records[key]) !== JSON.stringify(now[key])) ?? keys[0];
 }
 
 /** The clarify a retry waits on: answered, the step runs again (from advance's loop). */

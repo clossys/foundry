@@ -3,7 +3,8 @@
  * certifier both passes and fails against it for every Director standard.
  *
  * The repository's own clossys/ records are retired (SOURCE-MIGRATE step 11), and the fixture consumer
- * ships its Director slots unpinned. Each standard's proof therefore runs on a scratch copy of the
+ * ships its Director slots unpinned but for its fixture-data pins (a clossys.candidate/1 brief made through the verbs,
+ * U37), which each standard's proof judges too. Each standard's proof runs on a scratch copy of the
  * fixture consumer in which one slot of that standard holds a pinned brief written from the slot's
  * own contract keys and citing the Director input that slot declares. The fixture consumer itself is never written.
  */
@@ -74,7 +75,8 @@ describe("Director contract fixtures (R05 for agent director)", () => {
   for (const standard of STANDARDS) {
     it(`${standard}: a pinned candidate passes its fixture and standard; without "## Watch", or against a fixture asking one more heading, it fails`, () => {
       const pinned = slots.filter(slot => standardOf(slot) === standard && slot.pin).map(slot => ({ slot, candidate: slot.candidates.find(item => item.name === (slot.pin!.value as { candidate?: string }).candidate)! })).filter(input => input.candidate);
-      expect(pinned.map(input => input.slot.id), standard).toEqual([chosen.get(standard)]);
+      const shipped = baseSlots.filter(slot => standardOf(slot) === standard && slot.pin).map(slot => slot.id);
+      expect(pinned.map(input => input.slot.id).sort(), standard).toEqual([...shipped, chosen.get(standard)!].sort());
       const passing = pinned.filter(input => certify(input, env).certified);
       expect(passing.length, `${standard}: ${JSON.stringify(pinned.map(input => certify(input, env).reasons))}`).toBeGreaterThan(0);
       for (const { slot, candidate } of passing) {

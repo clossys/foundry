@@ -117,6 +117,9 @@ function stub(root: string, options: { checkExits?: Exit[]; waitOnce?: string[];
   const at = "2026-11-20T07:59:00Z";
   return {
     calls, code_,
+    // The stub world is structure only (unledgered placeholder picks, no Director): the runner's own confirm and
+    // put-back writes run no constitution rule here; flows-ledgered.test.ts runs them with the installed guard.
+    guard: { rules: [] },
     agent(packet: AgentPacket): AgentOutcome {
       if (waitOnce.delete(packet.step)) { calls.push({ step: packet.step, kind: "agent", wait: true }); return "wait"; }
       calls.push({ step: packet.step, kind: "agent" });

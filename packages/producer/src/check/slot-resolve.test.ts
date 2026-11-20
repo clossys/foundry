@@ -10,6 +10,7 @@ import { serializeFrontmatter, slotPositions, type IaDoc, type SlotAgent } from 
 import { parseArgs } from "../cli/args.js";
 import { migrateSlot1To2 } from "../migrate/slot-1-to-2.js";
 import { recutCandidateBytes } from "../migrate/recut.js";
+import { applyLedgerBackfill, planLedgerBackfill } from "../migrate/ledger.js";
 import { AGENT_LOOPS, LOOP_AGENTS } from "../loop/agent-loops.js";
 
 const hash = "a".repeat(64);
@@ -68,6 +69,11 @@ function fixture() {
     save(join(dir, "pin.json"), { ...JSON.parse(readFileSync(join(dir, "pin.json"), "utf8")), sha256: sha256Hex(bytes) });
   }
   migrateSlot1To2(root, { at, version: "0.0.0" });
+  commitFixture(root);
+  // R05.2 CHOOSE (foundry-build-0048): `clossys check` fails a pin.json no ledger event wrote. These pins predate the
+  // ledger, so `clossys migrate ledger` backfills each slot's events from the commit above, as it does for a real store.
+  const backfill = applyLedgerBackfill(consumer, planLedgerBackfill(consumer));
+  if (backfill.refused.length) throw new Error(`ledger backfill refused: ${JSON.stringify(backfill.refused)}`);
   commitFixture(root);
   return { root, consumer, dirs };
 }
@@ -207,17 +213,24 @@ describe("default native model enforcement", () => {
       const path = join(f.dirs.designer!, "candidates/sample-v1.json");
       const original = JSON.parse(readFileSync(path, "utf8"));
       const refRules = (report: any) => report.findings.filter((row: any) => String(row.rule).startsWith("REF-"));
+      const pinPath = join(f.dirs.designer!, "pin.json");
+      // The pin bytes its backfilled ledger event recorded: this test re-pins by hand, which R05.2 CHOOSE (foundry-build-0048)
+      // makes a slot finding whenever the bytes leave that state; the reference gate is judged on the suites either way.
+      const ledgered = sha256Hex(readFileSync(pinPath));
       const run = (item: any, exit: number) => {
         save(path, item);
-        const pin = JSON.parse(readFileSync(join(f.dirs.designer!, "pin.json"), "utf8"));
-        save(join(f.dirs.designer!, "pin.json"), { ...pin, sha256: sha256Hex(readFileSync(path)) });
+        const pin = JSON.parse(readFileSync(pinPath, "utf8"));
+        save(pinPath, { ...pin, sha256: sha256Hex(readFileSync(path)) });
+        const handPinned = sha256Hex(readFileSync(pinPath)) !== ledgered;
         const result = native(f.root);
         // The unseated admin workspace holds the aggregate at exit 1 (violated); the reference gate follows the bytes.
         expect(result.status, result.stderr).toBe(1);
         const report = JSON.parse(result.stdout);
         expect(report).toMatchObject({ exitCode: 1, verdict: "violated" });
         unseated(report);
-        expect(report.slots).toMatchObject({ exitCode: 0, verdict: "satisfied", findings: [] });
+        expect(report.slots).toMatchObject(handPinned
+          ? { exitCode: 1, verdict: "violated", findings: [{ rule: "pin-unledgered", severity: "error", path: "designer:components.synthetic", message: expect.stringMatching(/^pin\.json bytes \([0-9a-f]{12}\) differ from its last ledger event/) }] }
+          : { exitCode: 0, verdict: "satisfied", findings: [] });
         expect(report.suites.suites).toMatchObject([{ suite: "ref-verbatim", exitCode: exit }]);
         return report;
       };

@@ -62,6 +62,351 @@
           "sha256": "bdb8eb0539b9048e030f07c535fe3f909944ec773c0a49166ec2b31f1e4e9355"
         }
       ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T12:00:00Z",
+      "by": "agent:director",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "claude-opus-5-5",
+      "tier": "mid",
+      "verdict": "create",
+      "create": true,
+      "reason": "DRAFT fixture data: the slot holds no candidate and brief.profile is create-only, so no candidate answers its keys or draws its boundary.",
+      "gaps": [
+        {
+          "id": "brief.keys"
+        },
+        {
+          "id": "brief.boundary"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-20T01:29:15.217Z",
+      "by": "agent:director.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/director/actions/director.candidates/skill.md",
+        "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
+      },
+      "model": "claude-opus-5-5",
+      "tier": "mid",
+      "recipe": "create.structured",
+      "standard": "brief.profile",
+      "requirements": [
+        "brief.sections",
+        "brief.keys",
+        "brief.derived-upstream",
+        "brief.because-cited",
+        "brief.watch-trigger",
+        "brief.plain-direction",
+        "brief.boundary",
+        "brief.direction-values"
+      ],
+      "inputs": [
+        {
+          "finding": "finding:fixture-segment-draft",
+          "sha256": "6f096e16dc66a34626a653e5ebd1ca69dfe8ee89393d85a037e8eae92ffc8477"
+        }
+      ],
+      "tasteLog": 0,
+      "brief": "DRAFT fixture data for the test consumer: profile the first segment the fixture serves, from the one recorded fixture finding. Answer Who, Situation and Not in plain words, cite the finding in Because, and watch a numeric threshold per quarter. This is not owner research and must be replaced by real direction before any release.",
+      "assembled": {
+        "inputs": [],
+        "contract": {
+          "value": {
+            "question": "Who exactly do we serve first, and who do we turn away?",
+            "mustContain": [
+              {
+                "key": "Who",
+                "hint": "the segment, specific enough to find"
+              },
+              {
+                "key": "Situation",
+                "hint": "the situation they are in"
+              },
+              {
+                "key": "Not",
+                "hint": "who we turn away"
+              }
+            ],
+            "fixture": {
+              "headings": [
+                "Direction",
+                "Because",
+                "Watch"
+              ]
+            },
+            "requirements": [
+              {
+                "check": "brief.sections"
+              },
+              {
+                "check": "brief.keys"
+              },
+              {
+                "check": "brief.derived-upstream"
+              },
+              {
+                "check": "brief.because-cited"
+              },
+              {
+                "check": "brief.watch-trigger"
+              },
+              {
+                "check": "brief.plain-direction"
+              },
+              {
+                "check": "brief.boundary"
+              },
+              {
+                "check": "brief.direction-values"
+              }
+            ]
+          },
+          "sha256": "9553e16a0b7b72e18f2a064e0587ef5f0689d50346b8efac70c78ded57dc7c25"
+        },
+        "standard": {
+          "id": "brief.profile",
+          "sha256": "a0893f602561c853949803611607e0d69438bbae833e23f0e3a912a170612860",
+          "requirements": [
+            {
+              "check": "brief.sections",
+              "params": {}
+            },
+            {
+              "check": "brief.keys",
+              "params": {
+                "contract": "$contract"
+              }
+            },
+            {
+              "check": "brief.derived-upstream",
+              "params": {}
+            },
+            {
+              "check": "brief.because-cited",
+              "params": {}
+            },
+            {
+              "check": "brief.watch-trigger",
+              "params": {}
+            },
+            {
+              "check": "brief.plain-direction",
+              "params": {}
+            },
+            {
+              "check": "brief.boundary",
+              "params": {}
+            },
+            {
+              "check": "brief.direction-values",
+              "params": {
+                "maxWords": 40,
+                "maxSentences": 2
+              }
+            }
+          ],
+          "taste": [
+            {
+              "id": "decisive",
+              "anchors": {
+                "1": "Lists options or restates the question; a team could not act on it.",
+                "2": "Leans one way but hedges every answer with may, could or depending.",
+                "3": "Chooses, but one answer is vague enough to read two ways.",
+                "4": "Every answer is a choice a team could act on; one wording still softens it.",
+                "5": "Every answer is one plain choice a team could act on tomorrow, with nothing to reinterpret."
+              }
+            },
+            {
+              "id": "evidence-weight",
+              "anchors": {
+                "1": "The Because lines restate the direction or cite nothing that decides it.",
+                "2": "Reasons are generic (market trends, best practice) and would back any answer.",
+                "3": "Reasons are specific but one of them would not change the answer if it were false.",
+                "4": "Each reason is specific and decisive; the strongest is not first.",
+                "5": "The deciding reason leads, each line would flip the answer if false, and nothing is padding."
+              }
+            },
+            {
+              "id": "tripwire-usefulness",
+              "anchors": {
+                "1": "The watch is a wish (keep an eye on growth) with no threshold that matters.",
+                "2": "A threshold exists but crossing it would not change any decision.",
+                "3": "Threshold and action are real but the window is too long to catch a wrong call early.",
+                "4": "Threshold, window and action are real; the action is slightly vague about who acts.",
+                "5": "Crossing the line would plainly reverse or revisit this direction, early enough to matter."
+              }
+            },
+            {
+              "id": "sharp-edges",
+              "anchors": {
+                "1": "Describes everyone; nothing is excluded.",
+                "2": "Names a group but its traits fit any customer.",
+                "3": "Distinct traits; the boundary is stated only by implication.",
+                "4": "Distinct traits and an explicit boundary; one trait is a demographic, not a behaviour.",
+                "5": "Two or three behaviours that pick this one out, and a stated who-or-what-it-is-not."
+              }
+            }
+          ]
+        },
+        "recipe": {
+          "id": "create.structured",
+          "axes": [
+            "selection",
+            "cut",
+            "evidence"
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-20T01:29:16.563Z",
+      "by": "agent:director.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/director/actions/director.candidates/skill.md",
+        "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
+      },
+      "model": "claude-opus-5-5",
+      "tier": "mid",
+      "recipe": "create.structured",
+      "directions": [
+        {
+          "id": "solo-owner",
+          "idea": "DRAFT: serve the owner of a small service business who edits the site alone",
+          "axes": {
+            "selection": "owner-operator traits",
+            "cut": "not agencies or enterprise web teams",
+            "evidence": "the fixture finding's first group"
+          },
+          "traits": [
+            "finding:fixture-segment-draft"
+          ]
+        },
+        {
+          "id": "no-developer",
+          "idea": "DRAFT: serve small teams with no developer on call",
+          "axes": {
+            "selection": "team without technical staff",
+            "cut": "not teams with an in-house developer",
+            "evidence": "the fixture finding's situation line"
+          },
+          "traits": [
+            "finding:fixture-segment-draft"
+          ]
+        },
+        {
+          "id": "own-site",
+          "idea": "DRAFT: serve businesses that already run their own website",
+          "axes": {
+            "selection": "already runs a site",
+            "cut": "not businesses without any site yet",
+            "evidence": "the fixture finding's site ownership line"
+          },
+          "traits": [
+            "finding:fixture-segment-draft"
+          ]
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-20T01:29:18.120Z",
+      "by": "agent:director.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/director/actions/director.candidates/skill.md",
+        "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
+      },
+      "model": "claude-opus-5-5",
+      "tier": "mid",
+      "renders": [
+        {
+          "direction": "solo-owner",
+          "candidate": "core-v1.md",
+          "path": ".clossys/renders/director/focus.segment.core/render-1.md",
+          "sha256": "f277ff0152d236e05842e5444a9de3a7ce0534a02147e3a773cd7713673f4028"
+        },
+        {
+          "direction": "no-developer",
+          "candidate": "core-v2.md",
+          "path": ".clossys/renders/director/focus.segment.core/render-2.md",
+          "sha256": "69d1bc01a71f58be6df143b2dc2858be2ea527265a7d1e8d75ac69138744fa9b"
+        },
+        {
+          "direction": "own-site",
+          "candidate": "core-v3.md",
+          "path": ".clossys/renders/director/focus.segment.core/render-3.md",
+          "sha256": "545faa544cec15bb9284aa4fe357cce24601a500ffffa1bc61dda5d6dffeff69"
+        }
+      ],
+      "recipe": "create.structured"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T12:30:00Z",
+      "by": "agent:director.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "claude-opus-5-5",
+      "tier": "mid",
+      "critique": "critiques/core-v1.json",
+      "sha256": "91bae2a51622cf7e63b6885ddc3561c38b4b3e7af5007dc704141c5f4033091f"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-20T01:29:28.349Z",
+      "by": "planner",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/director/actions/director.candidates/skill.md",
+        "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
+      },
+      "model": "claude-opus-5-5",
+      "tier": "mid",
+      "basis": "planner",
+      "rung": "create",
+      "reason": "DRAFT fixture data: create-only profile with no candidate (gaps brief.keys, brief.boundary); derives from the recorded fixture finding fixture-segment-draft",
+      "ladder": {
+        "rung": "create",
+        "reason": "DRAFT fixture data: create-only profile with no candidate (gaps brief.keys, brief.boundary); derives from the recorded fixture finding fixture-segment-draft"
+      },
+      "name": "core-v1.md",
+      "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-20T01:29:35.605Z",
+      "by": "planner:fixture-data",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.director/skill.md",
+        "sha256": "6cc66877d0b4c923d9adc797198f19a71d16b02212ce9690f8f35351c18208ab"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "core-v1.md",
+      "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd",
+      "decidedBy": "planner:fixture-data",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "52309197772ffdac12726f1e4149412cc91790965a80e47711ebeb1ca2ff105d"
+        }
+      ]
     }
   ]
 }

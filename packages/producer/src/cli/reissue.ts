@@ -210,9 +210,10 @@ export async function runReissueCli(argv: readonly string[], cwd: string, guard:
     const doc = readSlot(consumer, agent, id);
     const read = readCandidate(consumer, agent, id, old);
     const lock = readLock(dirname(resolve(consumer)));
-    const oldText = readFileSync(join(entry.dir, "candidates", old), "utf8");
-    // The one candidate codec (U13 r4): a candidate submitted without a clossys header is read as its recut mapping
-    // (what migrate slots writes), so the reissue transforms the content and front fields beside the header only.
+    // The one candidate reader (records/slots.ts readCandidate, U37c) gives the file as it is (`raw`). The one candidate
+    // codec (U13 r4): a candidate submitted without a clossys header is read as its recut mapping (what migrate slots
+    // writes), so the reissue transforms the content and front fields beside the header only.
+    const oldText = read.raw;
     const headered = candidateHeaderOf(old, oldText) ? oldText : recutCandidateBytes(old, oldText, { agent, slotId: id, at: toIsoZ(at) ?? at, version: cliActor("clossys reissue").version, sourceRef: `agents/${agent}/${id}/candidates/${old}`, cli: "clossys reissue" } as Parameters<typeof recutCandidateBytes>[2]);
     const split = candidateCodec.parse(old, headered);
     const oldHeader = headered === oldText ? undefined : split.header;

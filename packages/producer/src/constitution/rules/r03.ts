@@ -23,10 +23,9 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
 import { packagePath } from "../../package-path.js";
-import { candidateCodec } from "../../records/candidate-codec.js";
-import { sha256Hex } from "../../records/hash.js";
 import { ladderIssues, rungKind, type GenericRung } from "../../pipeline/candidate-ladder.js";
 import { ledgerEvents, standardFor, type Standard } from "../../records/standards.js";
+import { readCandidateText } from "../../records/slot-current.js";
 import { certifyEnv, slotDocOf } from "../certify/index.js";
 import { isAgentLoopRecord } from "../certify/loop.js";
 import { CERTIFY_INPUT_FIELDS } from "../certify/types.js";
@@ -114,50 +113,29 @@ export function provenanceOf(ctx: ConstitutionContext): Provenance {
   return found;
 }
 
-/** A seed's bytes: the raw file's sha256 and, for a headered one, its view's (the file without its header). */
-interface SeedSha { readonly sha256: string; readonly viewSha256?: string }
-
-/** The view sha256 of a headered file's text (records/candidate-codec.ts), undefined when it carries no header. */
-function viewShaOf(name: string, text: string): string | undefined {
-  try {
-    const parsed = candidateCodec.parse(name, text);
-    return parsed.header ? sha256Hex(parsed.view) : undefined;
-  } catch { return undefined; }
-}
-
 /**
- * The sha256 of the seed named `<slot>/<candidate>` (or `<agent>:<slot>/<candidate>`), optionally
- * with the `@<sha256>` a reissue records (slot-constitution.md section 5, Reissue: `seed
- * <slot>/<old>@<sha>`, the old file retired). A live candidate gives its own bytes' sha (and must
- * still hold the recorded one); a retired one counts only when the seed slot's ledger has a
- * `retire-candidate` event for that name with the recorded sha. Else undefined: no such seed.
- * A headered seed also gives its view's sha: from the live record, or from the retired file the
- * seed slot keeps under `retired/` when its bytes are the recorded ones (foundry-build-0048 U13 r4).
+ * The content digest (records/slot-current.ts contentDigest) of the seed named `<slot>/<candidate>` (or
+ * `<agent>:<slot>/<candidate>`), optionally with the `@<sha256>` a reissue records (slot-constitution.md section 5,
+ * Reissue: `seed <slot>/<old>@<sha>`, the old file retired). A live candidate gives its own digest (and its bytes must
+ * still hold the recorded sha). A retired one counts only when the seed slot's ledger has a `retire-candidate` event
+ * for that name with the recorded sha and the slot's `retired/` folder still holds those very bytes (their raw sha is
+ * the recorded one): their digest is the seed's. Else a reason: no such seed, or a retired seed whose bytes are gone.
  */
-function seedSha(ctx: ConstitutionContext, slot: SlotRecord, seed: string): SeedSha | undefined {
+function seedDigest(ctx: ConstitutionContext, slot: SlotRecord, seed: string): { digest: string } | { missing: string } {
+  const none = { missing: "names no candidate (<slot>/<candidate>, or a retired one with its recorded @<sha256>)" };
   const m = /^(?:([a-z]+):)?([^/\s]+)\/([^/\s@]+)(?:@([0-9a-f]{64}))?$/.exec(seed);
-  if (!m) return undefined;
+  if (!m) return none;
   const agent = m[1] ?? slot.agent;
   const seedSlot = ctx.agents.find(item => item.agent === agent)?.slots.get(m[2]!);
   const recorded = m[4];
   const live: CandidateRecord | undefined = seedSlot?.candidates.find(candidate => candidate.name === m[3]);
-  if (live) return recorded === undefined || recorded === live.sha256 ? { sha256: live.sha256, ...(live.viewSha256 !== undefined ? { viewSha256: live.viewSha256 } : {}) } : undefined;
-  if (recorded === undefined || !seedSlot) return undefined;
+  if (live) return recorded === undefined || recorded === live.sha256 ? { digest: live.contentDigest } : none;
+  if (recorded === undefined || !seedSlot) return none;
   const retired = ledgerEvents(seedSlot.ledger?.value).some(event => event.op === "retire-candidate" && event.name === m[3] && event.sha256 === recorded);
-  if (!retired) return undefined;
-  const kept = seedSlot.retired.find(record => record.name === m[3] && record.sha256 === recorded && record.error === undefined);
-  const viewSha256 = kept ? viewShaOf(kept.name, kept.text) : undefined;
-  return { sha256: recorded, ...(viewSha256 !== undefined ? { viewSha256 } : {}) };
-}
-
-/**
- * Whether a candidate is its seed verbatim: the same bytes, or, when both are headered clossys.candidate/1 files, the
- * same view. The header names its own file (id, createdAt, createdBy), so an adopted file's header always differs from
- * its seed's; everything the header does not hold must not.
- */
-function verbatimOf(candidate: CandidateRecord, seed: SeedSha): boolean {
-  if (candidate.sha256 === seed.sha256) return true;
-  return candidate.viewSha256 !== undefined && seed.viewSha256 !== undefined && candidate.viewSha256 === seed.viewSha256;
+  if (!retired) return none;
+  const bytes = seedSlot.retired.find(record => record.name === m[3] && record.error === undefined && record.sha256 === recorded);
+  if (!bytes) return { missing: `names a retired candidate whose bytes (sha256 ${recorded.slice(0, 12)}) are not in ${seedSlot.dir}/retired/` };
+  return { digest: readCandidateText(seedSlot.slot?.value, seedSlot.agent, seedSlot.id, bytes.name, bytes.text, bytes.path).contentDigest };
 }
 
 /** R03.2: adopted candidates are verbatim (every candidate, not only pins). */
@@ -182,9 +160,10 @@ export const r03_2: Check = ctx => {
         continue;
       }
       if (rung !== "adopt" || !text(submit!.seed)) continue;
-      const seed = seedSha(ctx, slot, submit!.seed);
-      if (!seed) rows.push(row("R03", "R03.2", slot, `adopts seed ${submit!.seed}, which names no candidate (<slot>/<candidate>, or a retired one with its recorded @<sha256>)`, candidate.path, candidate.name));
-      else if (!verbatimOf(candidate, seed)) rows.push(row("R03", "R03.2", slot, `adopts seed ${submit!.seed} but its bytes differ (sha256 ${candidate.sha256.slice(0, 12)} != ${seed.sha256.slice(0, 12)}${candidate.viewSha256 !== undefined && seed.viewSha256 !== undefined ? `; view ${candidate.viewSha256.slice(0, 12)} != ${seed.viewSha256.slice(0, 12)}` : ""})`, candidate.path, candidate.name));
+      // Verbatim is the same content digest: every body byte, every field value and the source, not the per-file header provenance.
+      const seed = seedDigest(ctx, slot, submit!.seed);
+      if ("missing" in seed) rows.push(row("R03", "R03.2", slot, `adopts seed ${submit!.seed}, which ${seed.missing}`, candidate.path, candidate.name));
+      else if (seed.digest !== candidate.contentDigest) rows.push(row("R03", "R03.2", slot, `adopts seed ${submit!.seed} but its bytes differ (content sha256 ${candidate.contentDigest.slice(0, 12)} != ${seed.digest.slice(0, 12)})`, candidate.path, candidate.name));
     }
   }
   return rows;
