@@ -14,6 +14,10 @@
  * then refused with EngineBusyError naming the holder. Release removes the lock only while it still carries the
  * holder's token.
  *
+ * Limit: staleness is judged by pid, host and age, never by asking the holder, so a second writer is possible only
+ * when a live holder is judged stale under these rules (a foreign holder past FOREIGN_LOCK_MS or seen so through
+ * clock skew, a machine sharing the host name, a live writer with no readable owner past OWNERLESS_LOCK_MS).
+ *
  * Lock order: a writer takes its own record lock (slot, agent, entry) first and the engine lock last; nothing
  * waits on another lock while holding this one.
  */

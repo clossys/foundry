@@ -116,6 +116,8 @@ An agent step of a loop is judged by what it changed: the log may change only by
 | release | only while the lock still carries the holder's token |
 | order | a writer takes its record lock (slot, agent, entry) first and the engine lock last |
 
+Limit of the stale rule: staleness is judged by pid, host and age, never by asking the holder. A second writer is possible only when a live holder is judged stale under these time rules: a writer on another host still holding the lock after 15 min (or seen that old through clock skew between the hosts), a writer on another machine that reports the same host name (its pid is not alive here), or a live writer whose lock still has no readable owner after 60 s. No other path admits two writers.
+
 ## Writers
 
 Each wired writer keeps its on-disk record and adds one event per write.
@@ -155,7 +157,7 @@ The index is never the source of truth: `appendEvent` keeps it current, a rebuil
 
 ## Check engine.side-door
 
-Rule R-ENGINE-SIDE-DOOR. A static scan of `packages/<producer|designer|writer|publisher|director>/{src,bin,scripts} and scripts/` (tests and fixtures excluded) that fails on every write to `.clossys/**` or to a slot record outside the engine API. No allowlist and no baseline.
+Rule R-ENGINE-SIDE-DOOR. A static scan of `packages/<producer|designer|writer|publisher|director>/{src,bin,scripts} and scripts/` that fails on every write to `.clossys/**` or to a slot record outside the engine API. No allowlist and no baseline. Excluded: test files (`*.test.*`, `*.spec.*`), declaration files (`*.d.ts`) and folders named `node_modules`, `__fixtures__`, `__tests__`, `__golden__`, `fixtures` at any depth. Build output at a package root (`dist`, `build`) is outside the scanned folders; a `build` folder inside `src` is source and is scanned.
 
 | Finding | Means |
 |---|---|

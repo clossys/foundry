@@ -74,7 +74,15 @@ const MODEL_FILE = /(?:^|\/)(?:ia|slot|pin|seat|ledger)\.json$|(?:^|\/)candidate
 const ENGINE_PATH = /(?:^|\/)\.clossys(?:\/|$)/;
 const PATH_CALLS = new Set(["join", "resolve", "dirname", "normalize", "relative", "basename", "String", "concat", "replace", "replaceAll", "slice", "trim", "toString", "fileURLToPath"]);
 const FS_MODULES = new Set(["fs", "node:fs", "fs/promises", "node:fs/promises"]);
-const SKIP_DIRS = new Set(["node_modules", "dist", "build", ".next", ".turbo", "coverage", "__fixtures__", "__tests__", "__golden__", "fixtures"]);
+/**
+ * Folders skipped at any depth of the scanned folders: installed dependencies, fixtures and test-only trees. Build
+ * output (`dist`, `build`) sits at a package root, outside the scanned folders, so it is never walked; a folder named
+ * `build` (or `dist`) inside `src`, `bin` or `scripts` is source and is scanned.
+ */
+export const SIDE_DOOR_SKIPPED_DIRS = Object.freeze(["node_modules", "__fixtures__", "__tests__", "__golden__", "fixtures"]);
+const SKIP_DIRS = new Set<string>(SIDE_DOOR_SKIPPED_DIRS);
+/** What the scan leaves out, as engine.md states it. */
+export const SIDE_DOOR_EXCLUDED = `test files (\`*.test.*\`, \`*.spec.*\`), declaration files (\`*.d.ts\`) and folders named ${SIDE_DOOR_SKIPPED_DIRS.map(name => `\`${name}\``).join(", ")} at any depth. Build output at a package root (\`dist\`, \`build\`) is outside the scanned folders; a \`build\` folder inside \`src\` is source and is scanned.`;
 const CODE = /\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
 const TEST = /\.(?:test|spec)\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
 

@@ -68,6 +68,16 @@ describe("engine.side-door (engine/side-door.ts)", () => {
     expect(sideDoorFiles(root)).toEqual(["packages/producer/src/engine/log.ts", "packages/producer/src/records/slot-write.ts", "packages/writer/src/report.mjs"]);
   });
 
+  it("fires on a .clossys write from a file under src/build/, and skips build output only at the package root", () => {
+    const leak = "import { writeFileSync } from \"node:fs\";\nexport const d = (root: string) => writeFileSync(root + \"/.clossys/events.jsonl\", \"\");\n";
+    put("packages/publisher/src/build/d.ts", leak);
+    put("packages/designer/src/build/theme/d.ts", leak);
+    put("packages/publisher/build/d.js", leak);
+    put("packages/designer/dist/build/d.js", leak);
+    expect(found()).toEqual(["packages/designer/src/build/theme/d.ts:2 write writeFileSync", "packages/publisher/src/build/d.ts:2 write writeFileSync"]);
+    expect(sideDoorFiles(root)).toEqual(["packages/designer/src/build/theme/d.ts", "packages/publisher/src/build/d.ts"]);
+  });
+
   it("fires on writes whose path comes from an imported engine constant: named, renamed, namespace, re-exported and derived", () => {
     put("packages/producer/src/engine/chain.ts", [
       "export const ENGINE_DIR = \".clossys\";",
