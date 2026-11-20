@@ -6,7 +6,7 @@
 import { CHAIN_ISSUES, ENGINE_DIR, EVENTS_FILE, INDEX_FILE, LOCK_FILE, RECORD_AGENTS } from "./chain.js";
 import { INDEX_FIELDS } from "./derived.js";
 import { ENGINE_LOCK_WAIT_MS, FOREIGN_LOCK_MS, OWNERLESS_LOCK_MS } from "./lock.js";
-import { ENGINE_SURFACE, surfaceFunctions, PAIRED_APPENDERS, PAIRED_WRITERS, SCRIPT_WRITERS, SIDE_DOOR_EXCLUDED, SIDE_DOOR_MESSAGES, SIDE_DOOR_SCOPE, WRITE_CALLS } from "./side-door.js";
+import { ENGINE_SURFACE, surfaceFunctions, PAIRED_APPENDERS, PAIRED_WRITERS, SCRIPT_WRITERS, SIDE_DOOR_EXCLUDED, SIDE_DOOR_MESSAGES, SIDE_DOOR_READS, SIDE_DOOR_SCOPE, WRITE_CALLS } from "./side-door.js";
 import { ENGINE_TYPES, GENESIS } from "./types.js";
 
 export const ENGINE_DOC = "packages/producer/docs/engine.md";
@@ -182,7 +182,9 @@ export function engineDoc(): string {
     "",
     "## Check engine.side-door",
     "",
-    `Rule R-ENGINE-SIDE-DOOR. A static scan of ${code(SIDE_DOOR_SCOPE)} that fails on every write to ${code(".clossys/**")} or to a slot record outside the engine API. No allowlist and no baseline. Excluded: ${SIDE_DOOR_EXCLUDED}`,
+    `Rule R-ENGINE-SIDE-DOOR. A static scan of ${code(SIDE_DOOR_SCOPE)} that fails on every write to ${code(".clossys/**")} or to a slot record outside the engine API that the files it reads show (what it reads and cannot see is stated below). No allowlist and no baseline. Excluded: ${SIDE_DOOR_EXCLUDED}`,
+    "",
+    SIDE_DOOR_READS,
     "",
     table(["Finding", "Means"], Object.entries(SIDE_DOOR_MESSAGES).map(([kind, means]) => [code(kind), means])),
     "",

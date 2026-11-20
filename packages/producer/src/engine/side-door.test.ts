@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -76,6 +76,40 @@ describe("engine.side-door (engine/side-door.ts)", () => {
     put("packages/designer/dist/build/d.js", leak);
     expect(found()).toEqual(["packages/designer/src/build/theme/d.ts:2 write writeFileSync", "packages/publisher/src/build/d.ts:2 write writeFileSync"]);
     expect(sideDoorFiles(root)).toEqual(["packages/designer/src/build/theme/d.ts", "packages/publisher/src/build/d.ts"]);
+  });
+
+  it("fires on a child-process call whose arguments name .clossys: named, renamed, namespace, require and split forms", () => {
+    put("packages/producer/src/shell.ts", [
+      "import { execSync, spawnSync as run } from \"node:child_process\";",
+      "import * as cp from \"child_process\";",
+      "const { execFileSync } = require(\"node:child_process\");",
+      "const LOG = \".clos\" + \"sys/events.jsonl\";",
+      "export const a = () => execSync(\"echo x >> .clossys/events.jsonl\");",
+      "export const b = () => run(\"sh\", [\"-c\", `echo x > ${\".clossys\"}/index.json`]);",
+      "export const c = () => cp.exec(\"touch \" + LOG);",
+      "export const d = () => execFileSync(\"rm\", [\"-f\", \".clossys/engine.lock\"]);",
+      "export const e = () => require(\"child_process\").spawn(\"git\", [\"status\"]);",
+      "export const f = () => execSync(\"git status\");",
+    ].join("\n"));
+    put("packages/producer/src/engine/shell.ts", "import { execSync } from \"node:child_process\";\nexport const ok = () => execSync(\"echo x >> .clossys/events.jsonl\");\n");
+    expect(found()).toEqual([
+      "packages/producer/src/shell.ts:5 exec execSync",
+      "packages/producer/src/shell.ts:6 exec spawnSync",
+      "packages/producer/src/shell.ts:7 exec exec",
+      "packages/producer/src/shell.ts:8 exec execFileSync",
+    ]);
+  });
+
+  it("fires on a shell or hook file in scope that names .clossys, and reads no other non-code file", () => {
+    put("scripts/leak.sh", "#!/bin/sh\nset -e\necho x >> .clossys/events.jsonl\n");
+    put("scripts/githooks/pre-push", "#!/bin/sh\n# guard\ncat .clossys/index.json > /dev/null\n");
+    put("packages/writer/scripts/run", "echo x > .clossys/engine.lock\n");
+    chmodSync(join(root, "packages/writer/scripts/run"), 0o755);
+    put("packages/designer/src/vendor/LICENSE", "see .clossys/notes\n");
+    put("packages/designer/src/notes.md", "write .clossys/events.jsonl\n");
+    put("scripts/fixtures/leak.sh", "echo x >> .clossys/events.jsonl\n");
+    put("scripts/clean.sh", "#!/bin/sh\nrm -rf dist\n");
+    expect(found()).toEqual(["packages/writer/scripts/run:1 shell shell", "scripts/githooks/pre-push:3 shell shell", "scripts/leak.sh:3 shell shell"]);
   });
 
   it("fires on writes whose path comes from an imported engine constant: named, renamed, namespace, re-exported and derived", () => {

@@ -157,7 +157,9 @@ The index is never the source of truth: `appendEvent` keeps it current, a rebuil
 
 ## Check engine.side-door
 
-Rule R-ENGINE-SIDE-DOOR. A static scan of `packages/<producer|designer|writer|publisher|director>/{src,bin,scripts} and scripts/` that fails on every write to `.clossys/**` or to a slot record outside the engine API. No allowlist and no baseline. Excluded: test files (`*.test.*`, `*.spec.*`), declaration files (`*.d.ts`) and folders named `node_modules`, `__fixtures__`, `__tests__`, `__golden__`, `fixtures` at any depth. Build output at a package root (`dist`, `build`) is outside the scanned folders; a `build` folder inside `src` is source and is scanned.
+Rule R-ENGINE-SIDE-DOOR. A static scan of `packages/<producer|designer|writer|publisher|director>/{src,bin,scripts} and scripts/` that fails on every write to `.clossys/**` or to a slot record outside the engine API that the files it reads show (what it reads and cannot see is stated below). No allowlist and no baseline. Excluded: test files (`*.test.*`, `*.spec.*`), declaration files (`*.d.ts`) and folders named `node_modules`, `__fixtures__`, `__tests__`, `__golden__`, `fixtures` at any depth. Build output at a package root (`dist`, `build`) is outside the scanned folders; a `build` folder inside `src` is source and is scanned.
+
+The scan parses the files ending in `.mjs`, `.cjs`, `.js`, `.jsx`, `.ts`, `.tsx`, `.mts`, `.cts` with the TypeScript compiler, and reads the shell and hook files (`.sh`, `.bash`, `.zsh`, and extensionless files that are executable or start with `#!`) line by line: a line that names `.clossys` is a finding. No other file is read. A child-process call (`exec`, `execSync`, `execFile`, `execFileSync`, `spawn`, `spawnSync`, `fork`) whose arguments name `.clossys` is a finding, since the command it runs is not parsed. A static scan cannot see a path known only at run time (read from input, the environment or a file), a command built from such a path, or a symlinked folder under a scanned folder (not walked). An agent step's writes are judged by the agent snapshot instead.
 
 | Finding | Means |
 |---|---|
@@ -165,6 +167,8 @@ Rule R-ENGINE-SIDE-DOOR. A static scan of `packages/<producer|designer|writer|pu
 | `sink` | hands an engine or slot-record path to a write wrapper outside the engine API |
 | `script` | a script calls a record writer directly; run the clossys verb instead |
 | `unpaired` | uses a slot-model file primitive in a file that appends no ledger event, so no engine event names the write |
+| `exec` | runs a child process whose command names .clossys; the command is not parsed, so its writes bypass the engine API |
+| `shell` | a shell or hook file names .clossys; its writes bypass the engine API |
 
 Write calls: `writeFileSync`, `writeFile`, `appendFileSync`, `appendFile`, `unlinkSync`, `unlink`, `mkdirSync`, `mkdir`, `rmSync`, `rm`, `rmdirSync`, `rmdir`, `renameSync`, `rename`, `copyFileSync`, `copyFile`, `cpSync`, `cp`, `createWriteStream`, `symlinkSync`, `symlink`, `linkSync`, `link`, `truncateSync`, `truncate`, `utimesSync`, `utimes`, `chmodSync`, `chmod`, and an open with a write flag.
 

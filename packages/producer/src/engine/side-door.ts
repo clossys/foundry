@@ -14,10 +14,14 @@
  *   - script: a script that calls a record writer of the engine surface (SCRIPT_WRITERS) directly instead of running
  *     the clossys verb that judges its actor;
  *   - unpaired: a file that uses a slot-model file primitive (PAIRED_WRITERS) and appends no ledger event
- *     (PAIRED_APPENDERS), so no event names what it wrote.
+ *     (PAIRED_APPENDERS), so no event names what it wrote;
+ *   - exec: a child-process call (CHILD_CALLS) outside ENGINE_SURFACE whose arguments name `.clossys` (in their text
+ *     or their folded text), since a spawned shell or tool can write there unseen;
+ *   - shell: a line of a shell or hook file in scope (SHELL_FILE, or an extensionless file that is executable or starts
+ *     with `#!`) that names `.clossys`.
  * No allowlist and no baseline: every finding fails the check.
  */
-import { readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import ts from "typescript";
 
@@ -74,6 +78,15 @@ const MODEL_FILE = /(?:^|\/)(?:ia|slot|pin|seat|ledger)\.json$|(?:^|\/)candidate
 const ENGINE_PATH = /(?:^|\/)\.clossys(?:\/|$)/;
 const PATH_CALLS = new Set(["join", "resolve", "dirname", "normalize", "relative", "basename", "String", "concat", "replace", "replaceAll", "slice", "trim", "toString", "fileURLToPath"]);
 const FS_MODULES = new Set(["fs", "node:fs", "fs/promises", "node:fs/promises"]);
+const CODE_EXTENSIONS = Object.freeze(["mjs", "cjs", "js", "jsx", "ts", "tsx", "mts", "cts"]);
+const CODE = new RegExp(`\\.(?:${CODE_EXTENSIONS.join("|")})$`);
+const CHILD_MODULES = new Set(["child_process", "node:child_process"]);
+/** Child-process functions: a command they run can write anywhere, so one that names `.clossys` is a finding. */
+export const CHILD_CALLS = Object.freeze(["exec", "execSync", "execFile", "execFileSync", "spawn", "spawnSync", "fork"]);
+/** Shell files read line by line (with extensionless executables and `#!` files). */
+const SHELL_EXTENSIONS = Object.freeze(["sh", "bash", "zsh"]);
+const SHELL_FILE = new RegExp(`\\.(?:${SHELL_EXTENSIONS.join("|")})$`);
+const ENGINE_NAME = ".clossys";
 /**
  * Folders skipped at any depth of the scanned folders: installed dependencies, fixtures and test-only trees. Build
  * output (`dist`, `build`) sits at a package root, outside the scanned folders, so it is never walked; a folder named
@@ -81,9 +94,11 @@ const FS_MODULES = new Set(["fs", "node:fs", "fs/promises", "node:fs/promises"])
  */
 export const SIDE_DOOR_SKIPPED_DIRS = Object.freeze(["node_modules", "__fixtures__", "__tests__", "__golden__", "fixtures"]);
 const SKIP_DIRS = new Set<string>(SIDE_DOOR_SKIPPED_DIRS);
+/** What the scan reads and what a static scan cannot see, as engine.md states it. */
+export const SIDE_DOOR_READS = `The scan parses the files ending in ${CODE_EXTENSIONS.map(ext => `\`.${ext}\``).join(", ")} with the TypeScript compiler, and reads the shell and hook files (${SHELL_EXTENSIONS.map(ext => `\`.${ext}\``).join(", ")}, and extensionless files that are executable or start with \`#!\`) line by line: a line that names \`.clossys\` is a finding. No other file is read. A child-process call (${CHILD_CALLS.map(name => `\`${name}\``).join(", ")}) whose arguments name \`.clossys\` is a finding, since the command it runs is not parsed. A static scan cannot see a path known only at run time (read from input, the environment or a file), a command built from such a path, or a symlinked folder under a scanned folder (not walked). An agent step's writes are judged by the agent snapshot instead.`;
 /** What the scan leaves out, as engine.md states it. */
 export const SIDE_DOOR_EXCLUDED = `test files (\`*.test.*\`, \`*.spec.*\`), declaration files (\`*.d.ts\`) and folders named ${SIDE_DOOR_SKIPPED_DIRS.map(name => `\`${name}\``).join(", ")} at any depth. Build output at a package root (\`dist\`, \`build\`) is outside the scanned folders; a \`build\` folder inside \`src\` is source and is scanned.`;
-const CODE = /\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
+
 const TEST = /\.(?:test|spec)\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
 
 /** Whether a string names an engine path (`.clossys`) or a slot-model path (routes and URLs are not paths). */
@@ -97,8 +112,8 @@ export function isEnginePathString(text: string): boolean {
 }
 
 const toPosix = (path: string) => path.split(sep).join("/");
-/** Repository-relative files in scope. */
-export function sideDoorFiles(root: string): string[] {
+/** Repository-relative files in the scanned folders that `keep` accepts (by name and absolute path). */
+function scopeFiles(root: string, keep: (name: string, path: string) => boolean): string[] {
   const files: string[] = [];
   const walk = (dir: string) => {
     let entries;
@@ -107,12 +122,38 @@ export function sideDoorFiles(root: string): string[] {
       if (SKIP_DIRS.has(entry.name)) continue;
       const path = join(dir, entry.name);
       if (entry.isDirectory()) walk(path);
-      else if (CODE.test(entry.name) && !TEST.test(entry.name) && !entry.name.endsWith(".d.ts")) files.push(toPosix(relative(root, path)));
+      else if (entry.isFile() && keep(entry.name, path)) files.push(toPosix(relative(root, path)));
     }
   };
   for (const pkg of SIDE_DOOR_PACKAGES) for (const sub of ["src", "bin", "scripts"]) walk(join(root, "packages", pkg, sub));
   try { if (statSync(join(root, "scripts")).isDirectory()) walk(join(root, "scripts")); } catch { /* no repository scripts */ }
   return [...new Set(files)].sort();
+}
+/** Repository-relative code files in scope (parsed). */
+export function sideDoorFiles(root: string): string[] {
+  return scopeFiles(root, name => CODE.test(name) && !TEST.test(name) && !name.endsWith(".d.ts"));
+}
+/** Whether an extensionless file is a program: executable, or starting with `#!`. */
+function isProgram(path: string): boolean {
+  try {
+    if (statSync(path).mode & 0o111) return true;
+    return readFileSync(path, "utf8").startsWith("#!");
+  } catch { return false; }
+}
+/** Repository-relative shell and hook files in scope (read line by line). */
+export function sideDoorShellFiles(root: string): string[] {
+  return scopeFiles(root, (name, path) => SHELL_FILE.test(name) || (!name.includes(".") && isProgram(path)));
+}
+/** Findings of the shell files: every line that names `.clossys`. */
+export function shellFindings(root: string, files = sideDoorShellFiles(root)): SideDoorFinding[] {
+  const findings: SideDoorFinding[] = [];
+  for (const file of files) {
+    const lines = readFileSync(join(root, file), "utf8").split("\n");
+    for (const [index, line] of lines.entries()) {
+      if (line.includes(ENGINE_NAME)) findings.push({ file, line: index + 1, kind: "shell", call: "shell", text: line.trim().replace(/\s+/g, " ").slice(0, 140) });
+    }
+  }
+  return findings;
 }
 
 const isTransactions = (functions: readonly string[] | "*" | SurfaceTransactions): functions is SurfaceTransactions => functions !== "*" && !Array.isArray(functions);
@@ -122,7 +163,7 @@ export const surfaceFunctions = (functions: readonly string[] | "*" | SurfaceTra
 const surfaceOf = (file: string) => ENGINE_SURFACE.find(row => (row.file.endsWith("/") ? file.startsWith(row.file) : file === row.file));
 const isScript = (file: string) => file.startsWith("scripts/") || /^packages\/[^/]+\/scripts\//.test(file);
 
-export interface SideDoorFinding { readonly file: string; readonly line: number; readonly kind: "write" | "sink" | "script" | "unpaired"; readonly call: string; readonly text: string }
+export interface SideDoorFinding { readonly file: string; readonly line: number; readonly kind: "write" | "sink" | "script" | "unpaired" | "exec" | "shell"; readonly call: string; readonly text: string }
 
 /** A repository file without its extension. */
 const stemOf = (file: string) => file.replace(CODE, "");
@@ -210,6 +251,9 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
   const { helpers, sinks } = vocabulary;
   const fsNames = new Map<string, string>();
   const fsNamespaces = new Set<string>();
+  /** child_process bindings: local function names to the original, and namespace names. */
+  const childNames = new Map<string, string>();
+  const childNamespaces = new Set<string>();
   /** Named imports from repository modules: local name to the `<module stem>#<exported name>` it binds. */
   const imported = new Map<string, string>();
   /** Namespace imports of repository modules (`import * as chain from "./chain.js"`): local name to the module stem. */
@@ -222,6 +266,13 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
       for (const element of clause.namedBindings.elements) imported.set(element.name.text, `${stem}#${(element.propertyName ?? element.name).text}`);
     }
     if (stem && clause.namedBindings && ts.isNamespaceImport(clause.namedBindings)) namespaces.set(clause.namedBindings.name.text, stem);
+    if (CHILD_MODULES.has(module)) {
+      if (clause.name) childNamespaces.add(clause.name.text);
+      const bindings = clause.namedBindings;
+      if (bindings && ts.isNamespaceImport(bindings)) childNamespaces.add(bindings.name.text);
+      else if (bindings) for (const element of bindings.elements) childNames.set(element.name.text, (element.propertyName ?? element.name).text);
+      return;
+    }
     if (!FS_MODULES.has(module)) return;
     if (clause.name) fsNamespaces.add(clause.name.text);
     const bindings = clause.namedBindings;
@@ -284,8 +335,36 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
     if (ts.isConditionalExpression(node)) return fsCallOf(node.whenTrue) ?? fsCallOf(node.whenFalse);
     return fsMemberOf(node);
   };
+  /** Whether an expression is a child_process namespace: a `require`/`import()` of it (awaited or not) or a name bound to one. */
+  const isChildNamespace = (expr: ts.Expression): boolean => {
+    let node = strip(expr);
+    if (ts.isAwaitExpression(node)) node = strip(node.expression);
+    if (ts.isCallExpression(node)) {
+      const arg = node.arguments[0] && strip(node.arguments[0]);
+      return arg !== undefined && ts.isStringLiteralLike(arg) && CHILD_MODULES.has(arg.text) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || isRequire(node.expression));
+    }
+    if (ts.isIdentifier(node)) return childNamespaces.has(node.text);
+    return memberName(node) === "default" && isChildNamespace((node as ts.PropertyAccessExpression | ts.ElementAccessExpression).expression);
+  };
+  /** The child_process function a callee names (`execSync`, `cp.spawn`, `require("child_process").exec`), if any. */
+  const childCallOf = (expr: ts.Expression): string | undefined => {
+    const node = strip(expr);
+    const name = ts.isIdentifier(node) ? childNames.get(node.text)
+      : memberName(node) !== undefined && isChildNamespace((node as ts.PropertyAccessExpression | ts.ElementAccessExpression).expression) ? memberName(node) : undefined;
+    return name !== undefined && CHILD_CALLS.includes(name) ? name : undefined;
+  };
   /** Binds `name` to what `init` holds: an fs namespace, a destructured set of fs members, one fs member, or a `createRequire` result. */
   const bindFs = (name: ts.BindingName | ts.Expression, init: ts.Expression) => {
+    if (isChildNamespace(init)) {
+      if (ts.isIdentifier(name)) childNamespaces.add(name.text);
+      else if (ts.isObjectBindingPattern(name)) for (const element of name.elements) {
+        if (!ts.isIdentifier(element.name)) continue;
+        const original = element.propertyName && (ts.isIdentifier(element.propertyName) || ts.isStringLiteralLike(element.propertyName)) ? element.propertyName.text : element.name.text;
+        childNames.set(element.name.text, original);
+      }
+      return;
+    }
+    if (ts.isIdentifier(name) && childCallOf(init) !== undefined) { childNames.set(name.text, childCallOf(init)!); return; }
     if (isFsNamespace(init)) {
       if (ts.isIdentifier(name)) fsNamespaces.add(name.text);
       else if (ts.isObjectBindingPattern(name)) for (const element of name.elements) {
@@ -305,6 +384,8 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
     // `import fs = require("node:fs")`.
     if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference) && ts.isStringLiteralLike(node.moduleReference.expression)
       && FS_MODULES.has(node.moduleReference.expression.text)) fsNamespaces.add(node.name.text);
+    if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference) && ts.isStringLiteralLike(node.moduleReference.expression)
+      && CHILD_MODULES.has(node.moduleReference.expression.text)) childNamespaces.add(node.name.text);
     if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
       const stem = moduleStem(file, node.moduleSpecifier.text);
       if (stem && !node.exportClause) stars.push(stem);
@@ -426,9 +507,13 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
   /** The write calls of the file: [call node, call name, path arguments]. */
   const writes: { node: ts.CallExpression; call: string; args: readonly ts.Expression[] }[] = [];
   const calls: ts.CallExpression[] = [];
+  /** Child-process calls of the file: [call node, function name]. */
+  const execs: { node: ts.CallExpression; call: string }[] = [];
   const visitCalls = (node: ts.Node): void => {
     if (ts.isCallExpression(node)) {
       calls.push(node);
+      const child = childCallOf(node.expression);
+      if (child !== undefined) execs.push({ node, call: child });
       const call = fsCallOf(node.expression);
       const flag = node.arguments[1] && strip(node.arguments[1]);
       const writingOpen = call !== undefined && OPEN_CALLS.has(call) && !(flag === undefined || (ts.isStringLiteralLike(flag) && /^r$|^rs$/.test(flag.text)));
@@ -452,6 +537,18 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
   for (const write of writes) {
     if (exempt(write.node) || !write.args.some(arg => reach(arg, tainted))) continue;
     findings.push({ file, line: lineOf(write.node), kind: "write", call: write.call, text: textOf(write.node) });
+  }
+  // A child-process call whose arguments name `.clossys`: in their source text, or in the folded text of an argument
+  // or of an element of an array argument (a split string, a template, a const of this file or an imported constant).
+  const namesEngine = (arg: ts.Expression): boolean => {
+    if (arg.getText(sf).includes(ENGINE_NAME)) return true;
+    const node = strip(arg);
+    const pieces = ts.isArrayLiteralExpression(node) ? node.elements.filter(element => !ts.isSpreadElement(element)) : [node];
+    return pieces.some(piece => fold(piece).includes(ENGINE_NAME));
+  };
+  for (const exec of execs) {
+    if (exempt(exec.node) || !exec.node.arguments.some(namesEngine)) continue;
+    findings.push({ file, line: lineOf(exec.node), kind: "exec", call: exec.call, text: textOf(exec.node) });
   }
   // Write wrappers of this file: a function whose parameter (by index) reaches a write, or a wrapper call at its
   // wrapped index, outside the engine surface's exemptions. A call to one that hands it a derived path is a sink
@@ -633,7 +730,7 @@ function transactionContexts(sf: ts.SourceFile, transactions: SurfaceTransaction
 }
 
 /** Every side-door finding under a repository root (`files` defaults to SIDE_DOOR_SCOPE). */
-export function sideDoorFindings(root: string, files = sideDoorFiles(root)): SideDoorFinding[] {
+export function sideDoorFindings(root: string, files = sideDoorFiles(root), shellFiles = sideDoorShellFiles(root)): SideDoorFinding[] {
   const options: ts.CompilerOptions = { allowJs: true, noLib: true, noResolve: true, noEmit: true, types: [], jsx: ts.JsxEmit.Preserve, target: ts.ScriptTarget.Latest };
   const absolute = files.map(file => join(root, file));
   const program = ts.createProgram({ rootNames: absolute, options, host: ts.createCompilerHost(options) });
@@ -677,6 +774,7 @@ export function sideDoorFindings(root: string, files = sideDoorFiles(root)): Sid
       out.push(...facts.findings);
     }
     if (size() === before) {
+      out.push(...shellFindings(root, shellFiles));
       return out.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line));
     }
   }
@@ -687,6 +785,8 @@ export const SIDE_DOOR_MESSAGES: Readonly<Record<SideDoorFinding["kind"], string
   sink: "hands an engine or slot-record path to a write wrapper outside the engine API",
   script: "a script calls a record writer directly; run the clossys verb instead",
   unpaired: "uses a slot-model file primitive in a file that appends no ledger event, so no engine event names the write",
+  exec: "runs a child process whose command names .clossys; the command is not parsed, so its writes bypass the engine API",
+  shell: "a shell or hook file names .clossys; its writes bypass the engine API",
 };
 
 /** The check's report: one line per finding, `file:line kind call: message`. */
