@@ -12,7 +12,7 @@ import { parseArgs } from "../cli/args.js";
 import { runReleaseCli } from "../cli/release.js";
 import type { BuildRequest, ReleaseBuilder } from "../release/build.js";
 import { releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
-import { E2E_CAUSES, E2E_CHECK, E2E_COHORT, childEnv, e2eDoc, installFindings, producerPackageRoot, readScenario, renderFindings, type ScenarioStep } from "./e2e.js";
+import { E2E_CAUSES, E2E_CHECK, E2E_COHORT, childEnv, e2eDoc, installFindings, portableFindings, producerPackageRoot, readScenario, renderFindings, type ScenarioStep } from "./e2e.js";
 
 const PACKAGE = producerPackageRoot();
 const SHIPPED = join(PACKAGE, "e2e");
@@ -75,6 +75,15 @@ describe("the shipped scenario", () => {
       expect(line, `${slot}: ${key} is a Writer key`).toBeDefined();
       expect(html, slot).toContain(`data-copy="${slot}"`);
     }
+  });
+
+  it("asserts the document title is the page's Writer title text, never the page id", () => {
+    const strings = readFileSync(join(SHIPPED, "site.md"), "utf8").split("\n");
+    const page = JSON.parse(readFileSync(join(SHIPPED, "home.json"), "utf8")) as { title: string };
+    const heading = strings.indexOf(`### ${page.title}`);
+    expect(heading, `${page.title} is a Writer key`).toBeGreaterThan(-1);
+    const text = strings.slice(heading + 1).find(line => line.trim() && !line.startsWith("<!--"))!;
+    expect(Object.values(scenario.render).flat()).toContain(`<title>${text}</title>`);
   });
 });
 
@@ -157,6 +166,20 @@ describe("install and render findings", () => {
     expect(rows.map(row => `${row.cause} ${row.subject} ${row.detail}`)).toEqual([
       'e2e.render install-home/site/home index.html lacks "Every word on this page"',
       "e2e.render install-about/site/about the build holds no site/install-about/site/about/index.html",
+    ]);
+  });
+
+  it("names every build file holding an absolute path of the consumer, and passes one that holds none", () => {
+    const root = temp(), build = join(root, "consumer", ".clossys", "builds", "abc");
+    mkdirSync(join(build, "site", "install-home", ".clossys"), { recursive: true });
+    writeFileSync(join(build, "site", "install-home", "index.html"), "<title>Plain Studio home</title>");
+    writeFileSync(join(build, "site", "install-home", "app.js"), 'import "../../node_modules/react/index.js";');
+    expect(portableFindings(build, [join(root, "consumer"), root])).toEqual([]);
+    writeFileSync(join(build, "site", "install-home", ".clossys", "render-1.mjs"), `import "${join(root, "consumer", "node_modules", "react", "index.js")}";`);
+    writeFileSync(join(build, "site", "install-home", "pack.json"), JSON.stringify({ from: join(root, "pack") }));
+    expect(portableFindings(build, [join(root, "consumer"), root]).map(row => `${row.cause} ${row.subject} ${row.detail}`)).toEqual([
+      `e2e.portable site/install-home/.clossys/render-1.mjs holds the consumer's absolute path ${join(root, "consumer")}`,
+      `e2e.portable site/install-home/pack.json holds the consumer's absolute path ${root}`,
     ]);
   });
 

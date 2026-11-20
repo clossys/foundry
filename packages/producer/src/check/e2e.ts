@@ -12,7 +12,9 @@
  *    processes of that installed bin only. A step is a public verb; nothing writes a record, imports package code or
  *    points `CLOSSYS_ROOT` anywhere (every `CLOSSYS_*` variable is dropped from the child environment);
  * 4. render: the publication's latest build must hold an `index.html` for every route the scenario names, holding
- *    every pinned string and marker it names, and a second build of the same pins must name the same digest.
+ *    every pinned string and marker it names, and a second build of the same pins must name the same digest;
+ * 5. portable: no file of the build holds an absolute path of the consumer, and the consumer moved to another
+ *    directory (another name, another depth) builds the same pins to the same digest.
  *
  * There are two stand-ins. Agent judgement is scripted: the shipped candidate files, the fixed verdicts and the three
  * fixed design directions, critique scores hard-coded to 4 under the model `e2e-fixture-critic`, and a critique render
@@ -26,7 +28,7 @@
  * Exit 0 green, 1 a finding (its cause code, the verb, its exit and stderr tail), 2 it could not run.
  */
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
@@ -38,7 +40,7 @@ export const E2E_SCENARIO_SCHEMA = "clossys.e2e-scenario/1";
 export const E2E_COHORT = ["producer", "director", "designer", "writer", "publisher", "controller"] as const;
 
 /** The rule this check enforces, one line: scripts/rules/registry.json R-E2E-CONSUMER carries it as its note. */
-export const E2E_STATEMENT = "A consumer built only from tarballs and public verbs renders its pinned page: clossys check --e2e packs the cohort, installs it into an empty directory, drives the shipped scenario with the installed bin and asserts the built HTML.";
+export const E2E_STATEMENT = "A consumer built only from tarballs and public verbs renders its pinned page: clossys check --e2e packs the cohort, installs it into an empty directory, drives the shipped scenario with the installed bin and asserts the built HTML, whose files hold no absolute path of the consumer and build to the same digest from another directory.";
 
 /** Every cause a `consumer.e2e` finding names, with what it means. The doc text below is generated from this table. */
 export const E2E_CAUSES = {
@@ -51,6 +53,7 @@ export const E2E_CAUSES = {
   "e2e.step": "a scenario verb exited other than the scenario expects",
   "e2e.render": "the latest build lacks a route's index.html, or the HTML lacks a pinned string or marker",
   "e2e.repeat": "a second build of the same pins named another digest",
+  "e2e.portable": "a build file holds an absolute path of the consumer, or the consumer moved to another directory built the same pins to another digest",
 } as const;
 export type E2eCause = keyof typeof E2E_CAUSES;
 
@@ -293,6 +296,28 @@ export function renderFindings(buildDir: string, render: Scenario["render"]): E2
   return out;
 }
 
+/**
+ * Portable findings: every build file holding one of `roots` (the consumer's absolute directories) as bytes. A build
+ * is the same bytes wherever the consumer lives; an absolute path in it leaks the machine's layout and makes the
+ * digest depend on where the consumer folder is.
+ */
+export function portableFindings(buildDir: string, roots: readonly string[]): E2eFinding[] {
+  const out: E2eFinding[] = [];
+  const needles = [...new Set(roots.filter(Boolean))].map(root => ({ root, bytes: Buffer.from(root) }));
+  const walk = (at: string): void => {
+    for (const entry of readdirSync(at, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))) {
+      const path = join(at, entry.name);
+      if (entry.isDirectory()) { walk(path); continue; }
+      if (!entry.isFile()) continue;
+      const bytes = readFileSync(path);
+      const hit = needles.find(needle => bytes.includes(needle.bytes));
+      if (hit) out.push(finding("e2e.portable", relative(buildDir, path).split(sep).join("/"), `holds the consumer's absolute path ${hit.root}`));
+    }
+  };
+  walk(buildDir);
+  return out;
+}
+
 const disk = (dir: string): number => {
   let bytes = 0;
   const walk = (at: string): void => {
@@ -311,7 +336,8 @@ export async function runE2e(options: E2eOptions = {}): Promise<{ exitCode: 0 | 
   const lines: string[] = [];
   const say = (line: string): void => { lines.push(line); log(line); };
   const work = realpathSync(mkdtempSync(join(realpathSync(tmpdir()), "clossys-e2e-")));
-  const consumer = join(work, "consumer"), pack = join(work, "pack");
+  const pack = join(work, "pack");
+  let consumer = join(work, "consumer");
   mkdirSync(consumer); mkdirSync(pack);
   const steps: E2eStepRow[] = [];
   const findings: E2eFinding[] = [];
@@ -333,8 +359,8 @@ export async function runE2e(options: E2eOptions = {}): Promise<{ exitCode: 0 | 
     const installed = await exec("npm", ["install", "--no-audit", "--no-fund", "--loglevel=error"], { cwd: consumer, env: npmEnv, timeoutMs: 1_200_000 });
     if (installed.code !== 0) stop("e2e.install", "npm install", `exited ${installed.code}: ${tail(installed.stderr || installed.stdout)}`);
     say(`install: npm install exited 0 (${Math.round((Date.now() - started) / 1000)}s)`);
-    const bin = join(consumer, "node_modules", ".bin", "clossys");
-    const shipped = join(consumer, "node_modules", "@clossys", "producer", "e2e");
+    const shippedIn = (at: string): string => join(at, "node_modules", "@clossys", "producer", "e2e");
+    const shipped = shippedIn(consumer);
     const scenario = readScenario(shipped, options.scenario ? resolve(options.scenario) : undefined);
     const peers = Object.entries(scenario.peers ?? {}).map(([name, version]) => `${name}@${version}`);
     if (peers.length) {
@@ -347,7 +373,7 @@ export async function runE2e(options: E2eOptions = {}): Promise<{ exitCode: 0 | 
     say(`one-copy: ${E2E_COHORT.length} first-party packages, one copy each, from their tarballs; bin: node_modules/.bin/clossys`);
     const clossys = async (id: string, argv: readonly string[], expect = 0): Promise<Ran> => {
       const at = Date.now();
-      const ran = await exec(bin, argv, { cwd: consumer, env: npmEnv });
+      const ran = await exec(join(consumer, "node_modules", ".bin", "clossys"), argv, { cwd: consumer, env: npmEnv });
       steps.push({ id, argv, exit: ran.code, expect, ms: Date.now() - at });
       say(`${ran.code === expect ? "ok  " : "FAIL"} ${id}: clossys ${argv.join(" ")} (exit ${ran.code})`);
       if (ran.code !== expect) stop("e2e.step", id, `clossys ${argv.join(" ")} exited ${ran.code}, expected ${expect}: ${tail(ran.stderr || ran.stdout)}`);
@@ -369,6 +395,22 @@ export async function runE2e(options: E2eOptions = {}): Promise<{ exitCode: 0 | 
     const second = latest(consumer, scenario.publication);
     if (second?.id !== first!.id) stop("e2e.repeat", scenario.publication, `the second build names ${second?.id.slice(0, 12) ?? "nothing"}, the first ${first!.id.slice(0, 12)}`);
     say(`repeat: the second build names the same digest ${first!.id.slice(0, 12)}`);
+    const origin = consumer;
+    const leaks = portableFindings(first!.dir, [origin, work]);
+    if (leaks.length) { findings.push(...leaks); stop(leaks[0]!.cause, leaks[0]!.subject, leaks[0]!.detail); }
+    // The same consumer at another name and depth: its build must be the same bytes, so the same digest.
+    const moved = join(work, "moved", "elsewhere", "consumer");
+    mkdirSync(dirname(moved), { recursive: true });
+    renameSync(origin, moved);
+    consumer = moved;
+    await clossys("build.moved", scenario.build.map(arg => fill(arg, shippedIn(moved), scenario)));
+    const third = latest(moved, scenario.publication);
+    if (third) {
+      const movedLeaks = portableFindings(third.dir, [origin, moved, work]);
+      if (movedLeaks.length) { findings.push(...movedLeaks); stop(movedLeaks[0]!.cause, movedLeaks[0]!.subject, movedLeaks[0]!.detail); }
+    }
+    if (third?.id !== first!.id) stop("e2e.portable", scenario.publication, `the consumer moved to ${relative(work, moved)} builds ${third?.id.slice(0, 12) ?? "nothing"}, at ${relative(work, origin)} it built ${first!.id.slice(0, 12)}`);
+    say(`portable: no build file holds the consumer's path, and moved to ${relative(work, moved)} it builds the same digest ${first!.id.slice(0, 12)}`);
   } catch (error) {
     if (error instanceof E2eStop) {
       if (!findings.includes(error.finding) && !findings.some(row => row.cause === error.finding.cause && row.subject === error.finding.subject && row.detail === error.finding.detail)) findings.push(error.finding);

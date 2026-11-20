@@ -6,7 +6,7 @@
  * `<Image>` throws React error #130 ("element type is invalid ... got: object") in Studio.
  * This builds such an import with the substrate's own package.json and renders it.
  */
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -248,8 +248,7 @@ describe("publishing substrate CommonJS interop", () => {
   }, 120_000);
 
   /** A substrate with a host stub and one page whose frame is `probe/item.tsx`'s Probe: what the site's static render bundles. */
-  async function renderProbePage(source: string): Promise<string> {
-    const dir = temp();
+  async function renderProbePage(source: string, title?: string, dir = temp()): Promise<string> {
     await ensureSubstrate(dir);
     substrateModules(dir);
     mkdirSync(join(dir, "probe"));
@@ -258,8 +257,18 @@ describe("publishing substrate CommonJS interop", () => {
     writeFileSync(join(dir, SUBSTRATE_HOST_FILE), "import type { ReactNode } from \"react\";\nexport function PageHost({ children }: { children?: ReactNode }) { return <>{children}</>; }\n");
     const frame = { slot: "sections.probe", key: "sections.probe", role: "frame", id: "probe", version: 1, entry: { file: "probe/item.tsx", export: "Probe" }, props: {}, copy: {}, text: {}, assets: {} };
     const page = { schema: "clossys.bound-page/1", id: "probe", frame, sections: [], parts: [] } as unknown as BoundPage;
-    return renderBoundPage(page, dir);
+    return renderBoundPage(page, dir, title);
   }
+
+  it("the static per-route HTML titles the document with the Writer title text, and leaves no render bundle in the substrate", async () => {
+    const dir = temp();
+    const html = await renderProbePage("export function Probe() {\n  return <p>probe</p>\n}\n", "Plain <Studio> & home", dir);
+    expect(html).toContain("<title>Plain &lt;Studio&gt; &amp; home</title>");
+    expect(html).not.toContain("<title>probe</title>");
+    // The bundle imports the host React by its absolute path: a release copies the substrate, so it must not stay there.
+    expect(existsSync(join(dir, ".clossys")) ? readdirSync(join(dir, ".clossys")).filter(name => name.startsWith("render-")) : []).toEqual([]);
+    expect(await renderProbePage("export function Probe() {\n  return <p>probe</p>\n}\n")).not.toContain("<title>");
+  }, 120_000);
 
   it("a real site's static per-route HTML keeps a placeholder host's image as the item wrote it", async () => {
     const html = await renderProbePage(avatarProbe);

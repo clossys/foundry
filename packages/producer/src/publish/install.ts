@@ -15,7 +15,7 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire, isBuiltin } from "node:module";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -456,6 +456,8 @@ export async function writerCopy(root: string): Promise<Record<string, string>> 
 
 /** The fields of a clossys.page/1 candidate install reads. `copy` maps copy slot to `<writer slot>#<key>`; `bindings` does per section instance key. */
 export interface NativePageCandidate {
+  /** The Writer key (or `<writer slot>#<key>` ref) of the page's document title (page.assembled requires one). */
+  readonly title?: string;
   readonly frame: string | null;
   readonly sections: readonly string[];
   readonly copy: Readonly<Record<string, string>>;
@@ -480,11 +482,14 @@ export function installCopy(page: Pick<NativePageCandidate, "copy" | "bindings">
   return { copy: keysOf(page.copy), ...(bindings.length ? { bindings: Object.fromEntries(bindings.map(([key, binding]) => [key, { copy: keysOf(binding.copy!) }])) } : {}) };
 }
 
+/** A page record with the Writer key of its document title: the `<title>` of its rendered HTML is that key's text. */
+export type TitledPageRecord = InstallPageRecord & { readonly title?: string };
+
 /**
  * The page record for a page id, read from the consumer's pinned Publisher page slot. Theme
  * slots (`themes.*`) the consumer pinned are included; the candidate's copy refs bind copy slots.
  */
-export async function pageRecordFromCell(root: string, id: string, pins: InstallPins, writer?: Readonly<Record<string, string>>): Promise<InstallPageRecord> {
+export async function pageRecordFromCell(root: string, id: string, pins: InstallPins, writer?: Readonly<Record<string, string>>): Promise<TitledPageRecord> {
   const cellId = id.startsWith("page.") ? id : `page.${id}`;
   const consumer = join(root, "clossys");
   if (hasSlotModel(consumer) && readIa(consumer, "publisher")) {
@@ -506,7 +511,8 @@ export async function pageRecordFromCell(root: string, id: string, pins: Install
     const page = JSON.parse(candidate.bytes) as NativePageCandidate;
     if (!page.frame) throw new Error(`publish --install: Publisher page slot ${cellId} names no installable frame`);
     const include = Object.keys(pins).filter(slot => slot.startsWith("themes.")).sort();
-    return { id: cellId.slice("page.".length), frame: page.frame, sections: page.sections, ...(include.length ? { include } : {}), ...installCopy(page, writer) };
+    const title = typeof page.title === "string" && page.title ? { title: page.title.includes("#") ? writerKeyOf(page.title, writer) : page.title } : {};
+    return { id: cellId.slice("page.".length), frame: page.frame, sections: page.sections, ...(include.length ? { include } : {}), ...title, ...installCopy(page, writer) };
   }
   throw new Error("publish --install: the consumer has no Publisher slot model (clossys/agents/publisher/ia.json)");
 }
@@ -572,8 +578,17 @@ function hostNodePaths(): string[] {
   return paths;
 }
 
-/** Write the page module, bundle it with esbuild and render it with this process's React. */
-export async function renderBoundPage(page: BoundPage, substrate: string): Promise<string> {
+/** HTML text escaping for the document title. */
+const escapeText = (text: string): string => text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+/**
+ * Write the page module, bundle it with esbuild and render it with this process's React. `title` is the page's
+ * Writer title text, the document `<title>`; without one the document has none (never the page id).
+ *
+ * The bundle imports the host React by its absolute path in this install, so it is a transient of the render: it is
+ * removed once imported and never stays in the substrate, whose files a release copies and digests.
+ */
+export async function renderBoundPage(page: BoundPage, substrate: string, title?: string): Promise<string> {
   const esbuild = await import("esbuild");
   const file = join(substrate, "clossys", "pages", `${page.id}.tsx`);
   await mkdir(join(substrate, "clossys", "pages"), { recursive: true });
@@ -591,11 +606,11 @@ export async function renderBoundPage(page: BoundPage, substrate: string): Promi
   const bundle = join(substrate, ".clossys", `render-${createHash("sha256").update(result.outputFiles[0]!.text).digest("hex").slice(0, 12)}.mjs`);
   await mkdir(join(substrate, ".clossys"), { recursive: true });
   await writeFile(bundle, result.outputFiles[0]!.text);
-  const module = await import(pathToFileURL(bundle).href);
+  const module = await import(pathToFileURL(bundle).href).finally(() => rm(bundle, { force: true }));
   const React = await import("react");
   const { renderToStaticMarkup } = await import("react-dom/server");
   const body = renderToStaticMarkup(React.createElement(module.default));
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${page.id}</title></head><body>${body}</body></html>\n`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${title === undefined ? "" : `<title>${escapeText(title)}</title>`}</head><body>${body}</body></html>\n`;
 }
 
 /** The consumer's pinned Designer elements, from its slot model (`clossys/agents/designer`). */
@@ -608,6 +623,16 @@ export function designerPins(root: string): InstallPins {
 /** A selection module path the caller named relative to `cwd` becomes absolute; a package specifier stays as is. */
 export const selectionModule = (module: string, cwd = process.cwd()) => /\.(?:[cm]?[jt]sx?)$/.test(module) ? resolve(cwd, module) : module;
 
+/**
+ * The document title of a page: the Writer text of its title key. A title key Writer does not hold is a blocking
+ * `missing-copy-key`; a record with no title key renders no `<title>` and says so (never the page id).
+ */
+export function documentTitle(page: TitledPageRecord, copy: Readonly<Record<string, string>>): { text?: string; finding?: InstallFinding } {
+  if (typeof page.title !== "string" || !page.title) return { finding: { code: "unbound-copy-slot", severity: "info", detail: `${page.id}: the page names no Writer title key, so the document has no title` } };
+  if (!Object.hasOwn(copy, page.title)) return { finding: { code: "missing-copy-key", detail: `${page.id}: Writer has no key ${page.title} (for the page title)` } };
+  return { text: copy[page.title]! };
+}
+
 export async function publishInstall(options: PublishInstallOptions): Promise<PublishInstallResult> {
   const root = resolve(options.root);
   const pins = designerPins(root);
@@ -615,7 +640,7 @@ export async function publishInstall(options: PublishInstallOptions): Promise<Pu
   const copy = await writerCopy(root);
   const page = /^(page\.)?[a-z0-9][a-z0-9-]*$/.test(options.page) && !existsSync(file)
     ? await pageRecordFromCell(root, options.page, pins, copy)
-    : JSON.parse(await readFile(file, "utf8")) as InstallPageRecord;
+    : JSON.parse(await readFile(file, "utf8")) as TitledPageRecord;
   if (typeof page?.id !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(page.id)) throw new Error(`publish --install: ${options.page} needs a page id ([a-z0-9-])`);
   const out = resolve(options.out ?? defaultInstallOut(root, page.id));
   if (existsSync(out) && !existsSync(join(out, MARKER))) throw new Error(`publish: ${out} exists and was not written by clossys publish --install`);
@@ -629,6 +654,8 @@ export async function publishInstall(options: PublishInstallOptions): Promise<Pu
   const result = await installAndBind({ page, pins, source, substrate, runner: options.runner ?? shadcnRunner(), copy, ownedSubstrate: true });
   const findings: InstallFinding[] = [...result.findings];
   if (result.page && !options.selection) findings.push(needComponentSelection(page.id));
+  const title = documentTitle(page, copy);
+  if (title.finding) findings.push(title.finding);
   if (result.page) {
     const failed = await ensureSubstrateDependencies(substrate, substrateDependencies(result.slots), options.npm ?? npmRunner());
     if (failed) findings.push(failed);
@@ -637,7 +664,7 @@ export async function publishInstall(options: PublishInstallOptions): Promise<Pu
   if (result.page && options.selection && !findings.some(isBlocking)) {
     try {
       await writeSubstrateHost(substrate, { ...options.selection, module: selectionModule(options.selection.module, options.cwd) }, copy);
-      const markup = await renderBoundPage(result.page, substrate);
+      const markup = await renderBoundPage(result.page, substrate, title.text);
       html = join(out, "site", page.id, "index.html");
       await mkdir(join(out, "site", page.id), { recursive: true });
       await writeFile(html, markup);

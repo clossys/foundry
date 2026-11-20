@@ -203,7 +203,8 @@ export async function publishSite(options: PublishSiteOptions): Promise<PublishS
       for (const [index, page] of pages.entries()) {
         const route = plan.routes[index]!;
         try {
-          const markup = await renderBoundPage(page, substrate);
+          // The content-map title's Writer text, the same title the routed entry sets (siteTable).
+          const markup = await renderBoundPage(page, substrate, copy[route.title] || undefined);
           const file = htmlPath(out, route.path);
           await mkdir(join(file, ".."), { recursive: true });
           await writeFile(file, markup);

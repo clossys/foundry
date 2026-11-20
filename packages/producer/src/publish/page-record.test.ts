@@ -47,7 +47,8 @@ describe("Publisher page record selection", () => {
   it("reads the exact pinned page despite a newer draft candidate", async () => {
     nativePage();
     const pins = { "themes.zinc": { element: "zinc", version: 1 }, "sections.hero": { element: "hero", version: 1 }, "themes.font": { element: "font", version: 1 } };
-    const expected = { id: "home", frame: page.frame, sections: page.sections, copy: { "hero.title": "title" }, bindings: { "sections.hero#2": { copy: { "hero.title": "second-title" } } }, include: ["themes.font", "themes.zinc"] };
+    // The record carries the page's Writer title key: the rendered document's <title> is its text.
+    const expected = { id: "home", frame: page.frame, sections: page.sections, title: "example.title", copy: { "hero.title": "title" }, bindings: { "sections.hero#2": { copy: { "hero.title": "second-title" } } }, include: ["themes.font", "themes.zinc"] };
     expect(await pageRecordFromCell(root, "home", pins)).toEqual(expected);
     expect(await pageRecordFromCell(root, "page.home", pins)).toEqual(expected);
   });
