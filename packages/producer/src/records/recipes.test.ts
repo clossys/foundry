@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { generatorIssues, loadRecipes, produceIssues, readRecipe, recipesFor } from "./recipes.js";
+import { generatorIssues, loadRecipes, plumbCraftIssues, produceIssues, readRecipe, recipesFor } from "./recipes.js";
 import { loadStandards } from "./standards.js";
 
 const FIXTURES = fileURLToPath(new URL("../constitution/__fixtures__/", import.meta.url));
@@ -57,5 +57,30 @@ describe("records/recipes", () => {
       "adopt recipe produces for fixture-headline, which has no seeds",
       "produces ghost, which is not a writer standard",
     ]);
+  });
+  it("a plumb recipe reads its plumb action and pairs only with the standards that action lists", () => {
+    const root = workspace();
+    recipeJson(root, { ...BASE, rung: "plumb", axes: [], action: "fixture.plumb" });
+    put(join(root, "packages", "writer", "recipes", "fixture-headline-craft", "craft.md"), "# plumb\n\n### 1. compute (deterministic)\n\n```sh\nclossys produce writer/<slot>\n```\n");
+    put(join(root, "packages", "producer", "actions", "fixture.plumb", "action.json"), `${JSON.stringify({ schema: "clossys.action/1", id: "fixture.plumb", kind: "plumb", standards: ["writer/fixture-headline"] })}\n`);
+    const recipe = readRecipe(root, "writer", "fixture-headline-craft");
+    expect(recipe.issues).toEqual([]);
+    expect(recipe.action).toEqual({ id: "fixture.plumb", path: "packages/producer/actions/fixture.plumb/action.json", kind: "plumb", standards: ["writer/fixture-headline"] });
+    const standards = loadStandards(root);
+    expect(produceIssues(recipe, standards)).toEqual([]);
+    expect(recipesFor(loadRecipes(root), standards[0]!).map(item => item.id)).toEqual(["fixture-headline-craft"]);
+    put(join(root, "packages", "producer", "actions", "fixture.plumb", "action.json"), `${JSON.stringify({ schema: "clossys.action/1", id: "fixture.plumb", kind: "plumb", standards: ["writer/other"] })}\n`);
+    const elsewhere = readRecipe(root, "writer", "fixture-headline-craft");
+    expect(produceIssues(elsewhere, standards)).toEqual(["plumb action fixture.plumb does not produce for writer/fixture-headline (its standards: writer/other)"]);
+    expect(recipesFor(loadRecipes(root), standards[0]!)).toEqual([]);
+  });
+
+  it("plumbCraftIssues: CLI verbs only, every stage deterministic, no model stage", () => {
+    expect(plumbCraftIssues("### 1. build (deterministic)\n\n```sh\nclossys release <pub> --build\n```\n")).toEqual([]);
+    expect(plumbCraftIssues("### 1. brief (model)\n\n```sh\nclossys next x --stage brief\n```\n")).toEqual([
+      'craft.md has a model stage "### 1. brief (model)": a plumb recipe runs no model',
+      'craft.md stage "### 1. brief (model)" is not marked (deterministic)',
+    ]);
+    expect(plumbCraftIssues("### 1. run (deterministic)\n\n```sh\nnpm run build\n```\n")).toEqual(['craft.md runs "npm run build", not a clossys verb: a plumb recipe\'s stages are CLI verbs only']);
   });
 });

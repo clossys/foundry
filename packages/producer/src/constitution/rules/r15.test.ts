@@ -136,6 +136,47 @@ describe("R15.5 recipes", () => {
   });
 });
 
+/** The fixture recipe rewritten as a plumb recipe naming a plumb action that produces for the fixture standard. */
+const PLUMB_ACTION = "fixture.plumb";
+const PLUMB_CRAFT = "# fixture-headline-craft\n\nPlumb: the fixture plumb action computes the headline.\n\n### 1. compute (deterministic)\n\n```sh\nclossys produce writer/<slot>\n```\n\n### 2. submit (deterministic)\n\n```sh\nclossys check --constitution --slot writer/<slot>\n```\n";
+const plumbAction = (fields: Record<string, unknown> = {}): Edit => root => put(join(root, "packages", "producer", "actions", PLUMB_ACTION, "action.json"), { schema: "clossys.action/1", id: PLUMB_ACTION, kind: "plumb", standards: [`writer/${STANDARD_ID}`], ...fields });
+function plumb(recipe: Record<string, unknown> = {}, craft = PLUMB_CRAFT, action: Edit | null = plumbAction()): Edit {
+  return (root, consumer) => {
+    editRecipe(doc => { doc.rung = "plumb"; doc.axes = []; doc.action = PLUMB_ACTION; Object.assign(doc, recipe); for (const [key, value] of Object.entries(recipe)) if (value === undefined) delete doc[key]; })(root, consumer);
+    put(join(recipeDir(root), "craft.md"), craft);
+    action?.(root, consumer);
+  };
+}
+
+describe("R15.5 plumb recipes (deterministic, no craft)", () => {
+  it("accepts a plumb recipe whose plumb action produces for its standard, clean under every R15 check", () => {
+    const ctx = ctxOf(plumb());
+    for (const [id, check] of Object.entries(R15_CHECKS)) expect(check(ctx), id).toEqual([]);
+  });
+  it("catches a plumb recipe with a model stage (mutation: a craft stage in a plumb recipe)", () => {
+    catches(r15_5, ctxOf(plumb({}, PLUMB_CRAFT.replace("### 1. compute (deterministic)", "### 1. brief (model)"))), /craft\.md has a model stage "### 1\. brief \(model\)": a plumb recipe runs no model/);
+  });
+  it("catches a plumb stage that runs anything but a clossys verb, or is not marked deterministic", () => {
+    catches(r15_5, ctxOf(plumb({}, PLUMB_CRAFT.replace("clossys produce writer/<slot>", "node scripts/make.mjs"))), /runs "node scripts\/make\.mjs", not a clossys verb/);
+    catches(r15_5, ctxOf(plumb({}, PLUMB_CRAFT.replace("### 2. submit (deterministic)", "### 2. submit"))), /stage "### 2\. submit" is not marked \(deterministic\)/);
+    catches(r15_5, ctxOf(plumb({}, "# plumb\n\nNo stages.\n")), /has no numbered stage[\s\S]*runs no command/);
+  });
+  it("catches a plumb recipe whose action is missing, or is not plumb", () => {
+    catches(r15_5, ctxOf(plumb({}, PLUMB_CRAFT, null)), /action fixture\.plumb is not an action\.json under packages\/\*\/actions\//);
+    catches(r15_5, ctxOf(plumb({}, PLUMB_CRAFT, plumbAction({ kind: "decide:creative" }))), /action fixture\.plumb is kind decide:creative, not plumb/);
+  });
+  it("catches a plumb action that does not produce for the recipe's standard; the standard then has no recipe", () => {
+    const rows = catches(r15_5, ctxOf(plumb({}, PLUMB_CRAFT, plumbAction({ standards: ["writer/other"] }))), /plumb action fixture\.plumb does not produce for writer\/fixture-headline/);
+    expect(rows.map(row => row.reason).join("\n")).toMatch(/no valid recipe under packages\/writer\/recipes\/ produces for fixture-headline/);
+  });
+  it("catches a recipe claiming rung plumb without an action, with axes or a generator, and a craft recipe naming an action", () => {
+    catches(r15_5, ctxOf(plumb({ action: undefined })), /rung plumb names no action/);
+    catches(r15_5, ctxOf(plumb({ axes: ["tone"] })), /rung plumb lists axes tone: a plumb recipe has no diverge stage/);
+    catches(r15_5, ctxOf(root => { plumb({ generator: "generate.mjs" })(root, ""); put(join(recipeDir(root), "generate.mjs"), "export default s => s;\n"); }), /rung plumb names generator generate\.mjs/);
+    catches(r15_5, ctxOf(editRecipe(doc => { doc.action = PLUMB_ACTION; })), /action fixture\.plumb is for a plumb recipe; a create recipe is crafted and names no action/);
+  });
+});
+
 describe("R15.6 exemplars", () => {
   it("catches too few and too many exemplars", () => {
     catches(r15_6, ctxOf(editExemplars(list => { list.splice(4); })), /4 exemplars; a standard holds 5-12/);
@@ -188,6 +229,15 @@ describe("R15.7 craft process ran", () => {
     catches(r15_7, ctxOf(craftRun(FULL, DIRECTIONS.slice(0, 2))), /2 directions; 3 to 4 required/);
     const cosmetic = DIRECTIONS.map(direction => ({ ...direction, axes: { ...direction.axes, tone: "warm" } }));
     catches(r15_7, ctxOf(craftRun(FULL, cosmetic)), /repeat a value on axis tone/);
+  });
+  it("a plumb recipe records no craft events: a rung plumb submit needs none, craft events under it are a row", () => {
+    const plumbSubmit: Edit = (root, consumer) => {
+      plumb()(root, consumer);
+      put(join(consumer, "agents", "writer", "home.hero", "ledger.json"), { schema: "clossys.ledger/1", events: [{ op: "submit", at: "2026-11-13T00:00:01Z", by: "producer", name: "hero-v1.md", rung: "plumb" }] });
+    };
+    expect(r15_7(ctxOf(plumbSubmit))).toEqual([]);
+    const crafted: Edit = (root, consumer) => { plumb()(root, consumer); craftRun(["brief"], DIRECTIONS, true)(root, consumer); };
+    catches(r15_7, ctxOf(crafted), /recipe fixture-headline-craft is plumb: a plumb recipe records no craft events/);
   });
   it("craftIssues judges the axes the recipe names", () => {
     const events = [{ op: "craft:brief" }, { op: "craft:diverge", recipe: "r", directions: DIRECTIONS.map(direction => ({ ...direction, axes: { tone: direction.axes.tone } })) }, { op: "craft:render" }, { op: "craft:critique" }];

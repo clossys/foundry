@@ -3,6 +3,10 @@
  * `packages/<agent>/recipes/<id>/` as `recipe.json`, `craft.md` and an optional deterministic
  * `generate.mjs`. Recipes read standards (which they produce for); no judge reads a recipe (R16.1),
  * so nothing under `src/constitution/` (criteria, certify, checks) imports this module.
+ *
+ * A `plumb` recipe is deterministic: the plumb action it names (`action`, an action.json of kind
+ * plumb whose `standards` list the standards it produces for) computes its candidates, its craft.md
+ * runs clossys verbs only, and it has no model stage, no axes, no generator and no craft events.
  */
 import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -20,9 +24,21 @@ export interface RecipeDoc {
   readonly schema: typeof RECIPE_SCHEMA;
   readonly id: string;
   readonly produces: readonly string[];
-  readonly rung: "adopt" | "adapt" | "create";
+  readonly rung: "adopt" | "adapt" | "create" | "plumb";
   readonly axes: readonly string[];
   readonly generator?: string;
+  /** The plumb action that computes the candidates (rung plumb only). */
+  readonly action?: string;
+}
+
+/** The plumb action a plumb recipe names, as its action.json declares it. */
+export interface RecipeAction {
+  readonly id: string;
+  /** Workspace-relative action.json path. */
+  readonly path: string;
+  readonly kind: string;
+  /** The standards (`<agent>/<id>`) whose candidates the action computes. */
+  readonly standards: readonly string[];
 }
 
 export interface Recipe {
@@ -36,7 +52,51 @@ export interface Recipe {
   readonly files: Readonly<Record<string, string>>;
   /** The generator source, when the recipe names one and it exists. */
   readonly generatorText?: string;
+  /** The named plumb action, when the recipe is plumb and its action.json reads. */
+  readonly action?: RecipeAction;
   readonly issues: readonly string[];
+}
+
+/** The packages that hold action contracts (`packages/<package>/actions/<id>/action.json`). */
+export const ACTION_PACKAGES = Object.freeze(["director", "designer", "writer", "publisher", "producer"] as const);
+
+/** Reads the action contract `id` from whichever package holds it; an issue when none does or it does not read. */
+export function readRecipeAction(root: string, id: string): { action?: RecipeAction; issue?: string } {
+  for (const pkg of ACTION_PACKAGES) {
+    const rel = `packages/${pkg}/actions/${id}/action.json`;
+    const abs = packagePath(root, rel);
+    if (!existsSync(abs)) continue;
+    let doc: unknown;
+    try { doc = JSON.parse(readFileSync(abs, "utf8")); } catch (error) { return { issue: `action ${id}: ${rel} does not parse: ${(error as Error).message}` }; }
+    if (!isRecord(doc) || doc.id !== id) return { issue: `action ${id}: ${rel} does not declare id ${id}` };
+    const standards = Array.isArray(doc.standards) ? doc.standards.filter((item): item is string => typeof item === "string") : [];
+    return { action: { id, path: rel, kind: typeof doc.kind === "string" ? doc.kind : "(none)", standards } };
+  }
+  return { issue: `action ${id} is not an action.json under packages/*/actions/` };
+}
+
+/** A stage heading (`### <n>. <name> ...`) of a craft.md. */
+const STAGE_HEADING = /^#{2,6}\s+\d+\.\s.*$/gm;
+/** A model node: a heading marked `(model ...)`. */
+const MODEL_HEADING = /^#{1,6}\s.*\(model\b.*$/gim;
+
+/**
+ * The issues of a plumb recipe's craft.md: no model stage, at least one stage, every stage marked
+ * `(deterministic)`, and every command in a fenced block a `clossys <verb>` call (CLI verbs only).
+ */
+export function plumbCraftIssues(text: string): string[] {
+  const issues: string[] = [];
+  for (const heading of text.match(MODEL_HEADING) ?? []) issues.push(`craft.md has a model stage "${heading.trim()}": a plumb recipe runs no model`);
+  const stages = text.match(STAGE_HEADING) ?? [];
+  if (!stages.length) issues.push("craft.md has no numbered stage: a plumb recipe lists the clossys verbs it runs");
+  for (const heading of stages) if (!/\(deterministic\)/.test(heading)) issues.push(`craft.md stage "${heading.trim()}" is not marked (deterministic)`);
+  const commands: string[] = [];
+  for (const block of text.matchAll(/^```[^\n]*\n([\s\S]*?)^```/gm)) {
+    for (const line of block[1]!.split("\n").map(item => item.trim()).filter(Boolean)) commands.push(line);
+  }
+  if (!commands.length) issues.push("craft.md runs no command: a plumb recipe runs clossys verbs");
+  for (const line of commands) if (!/^clossys [a-z]/.test(line)) issues.push(`craft.md runs "${line}", not a clossys verb: a plumb recipe's stages are CLI verbs only`);
+  return issues;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -87,6 +147,21 @@ export function readRecipe(root: string, agent: ModelAgent, id: string): Recipe 
   }
   if (!files["craft.md"]) issues.push("no craft.md");
   for (const name of Object.keys(files)) if (RUBRIC_FILE.test(name)) issues.push(`${name} is a rubric file: a recipe has no rubric`);
+  let action: RecipeAction | undefined;
+  if (doc?.rung === "plumb") {
+    if (!doc.action) issues.push("rung plumb names no action: a plumb recipe names the plumb action that computes its candidates");
+    if (doc.axes.length) issues.push(`rung plumb lists axes ${doc.axes.join(", ")}: a plumb recipe has no diverge stage`);
+    if (doc.generator) issues.push(`rung plumb names generator ${doc.generator}: a plumb recipe runs clossys verbs only`);
+    if (doc.action) {
+      const read = readRecipeAction(root, doc.action);
+      if (read.issue) issues.push(read.issue);
+      if (read.action) {
+        action = read.action;
+        if (read.action.kind !== "plumb") issues.push(`action ${doc.action} is kind ${read.action.kind}, not plumb`);
+      }
+    }
+    if (files["craft.md"]) issues.push(...plumbCraftIssues(readFileSync(join(abs, "craft.md"), "utf8")));
+  } else if (doc?.action) issues.push(`action ${doc.action} is for a plumb recipe; a ${doc.rung} recipe is crafted and names no action`);
   let generatorText: string | undefined;
   if (doc?.generator) {
     if (!files[doc.generator]) issues.push(`generator ${doc.generator} is not a file in the recipe folder`);
@@ -95,7 +170,7 @@ export function readRecipe(root: string, agent: ModelAgent, id: string): Recipe 
       issues.push(...generatorIssues(generatorText));
     }
   }
-  return { agent, id, dir, ...(doc ? { doc } : {}), ...(raw !== undefined ? { raw } : {}), files, ...(generatorText !== undefined ? { generatorText } : {}), issues };
+  return { agent, id, dir, ...(doc ? { doc } : {}), ...(raw !== undefined ? { raw } : {}), files, ...(generatorText !== undefined ? { generatorText } : {}), ...(action ? { action } : {}), issues };
 }
 
 /** Every recipe of every agent under `root`. */
@@ -113,14 +188,18 @@ export function loadRecipes(root: string): Recipe[] {
   return out;
 }
 
-/** The valid recipes of the standard's agent that produce for it (R15.5). */
+/** Whether a plumb recipe's action declares that it computes candidates for `<agent>/<standard>`. */
+const actionProducesFor = (recipe: Recipe, standard: string) => recipe.doc?.rung !== "plumb" || !!recipe.action?.standards.includes(`${recipe.agent}/${standard}`);
+
+/** The valid recipes of the standard's agent that produce for it (R15.5); a plumb recipe only where its action does. */
 export function recipesFor(recipes: readonly Recipe[], standard: Pick<Standard, "agent" | "id">): Recipe[] {
-  return recipes.filter(recipe => recipe.agent === standard.agent && !recipe.issues.length && recipe.doc?.produces.includes(standard.id));
+  return recipes.filter(recipe => recipe.agent === standard.agent && !recipe.issues.length && recipe.doc?.produces.includes(standard.id) && actionProducesFor(recipe, standard.id));
 }
 
 /**
  * R15.5 and R15.9 (the recipe half): every `produces` entry names a standard of the recipe's agent,
- * and an `adopt` recipe produces only for standards with seeds.
+ * an `adopt` recipe produces only for standards with seeds, and a `plumb` recipe produces only for
+ * standards its plumb action lists in `standards`.
  */
 export function produceIssues(recipe: Recipe, standards: readonly Standard[]): string[] {
   if (!recipe.doc) return [];
@@ -129,6 +208,7 @@ export function produceIssues(recipe: Recipe, standards: readonly Standard[]): s
     const standard = standards.find(item => item.agent === recipe.agent && item.id === id);
     if (!standard) { issues.push(`produces ${id}, which is not a ${recipe.agent} standard`); continue; }
     if (recipe.doc.rung === "adopt" && !(standard.doc?.seeds.length)) issues.push(`adopt recipe produces for ${id}, which has no seeds`);
+    if (recipe.action && !actionProducesFor(recipe, id)) issues.push(`plumb action ${recipe.action.id} does not produce for ${recipe.agent}/${id} (its standards: ${recipe.action.standards.join(", ") || "none"})`);
   }
   return issues;
 }

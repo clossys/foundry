@@ -1,6 +1,7 @@
 /**
  * The Publisher recipes (unit RC-ND): every Publisher standard has a valid recipe (R15.5), every
- * craft.md runs the fixed 5b stages with a mechanical self-check per stage, the stage checks pass real
+ * craft recipe's craft.md runs the fixed 5b stages with a mechanical self-check per stage, every plumb
+ * recipe's craft.md runs clossys verbs only (no model stage) through a real plumb action, the stage checks pass real
  * pins and fail on the faults they exist for (the 3S-ND worklist classes: a page with no Designer frame,
  * an inline title instead of a Writer key), the draft check agrees with the judge, and no judge imports
  * a recipe (R16.1).
@@ -36,8 +37,24 @@ const readJson = path => JSON.parse(readFileSync(path, "utf8"));
 const clone = value => structuredClone(value);
 const rules = issues => issues.map(item => item.rule);
 
-const RECIPE_IDS = ["assemble.page"];
+/** Craft recipes run the 5b stages (rung create, at least three axes); plumb recipes run a plumb action's clossys verbs only. */
+const CRAFT_RECIPE_IDS = ["assemble.page"];
+const PLUMB_RECIPE_IDS = [];
+const RECIPE_IDS = [...CRAFT_RECIPE_IDS, ...PLUMB_RECIPE_IDS].sort();
 const STANDARD_COUNT = 2;
+
+/** The faults of a plumb recipe's craft.md: a model stage, a stage not marked deterministic, a command that is not a clossys verb. */
+function plumbCraftFaults(text) {
+  const faults = [];
+  for (const heading of text.match(/^#{1,6}\s.*\(model\b.*$/gim) ?? []) faults.push(`model stage ${heading.trim()}`);
+  const stages = text.match(/^### \d+\. .*$/gm) ?? [];
+  if (!stages.length) faults.push("no stage");
+  for (const heading of stages) if (!/\(deterministic\)$/.test(heading.trim())) faults.push(`stage not deterministic: ${heading.trim()}`);
+  const commands = [...text.matchAll(/^```[^\n]*\n([\s\S]*?)^```/gm)].flatMap(block => block[1].split("\n").map(line => line.trim()).filter(Boolean));
+  if (!commands.length) faults.push("no command");
+  for (const line of commands) if (!/^clossys [a-z]/.test(line)) faults.push(`not a clossys verb: ${line}`);
+  return faults;
+}
 
 function pinned(slot) {
   const pin = readJson(join(CONSUMER, "agents", AGENT, slot, "pin.json"));
@@ -78,8 +95,23 @@ describe("Publisher recipes load clean and cover every standard (R15.5)", () => 
     for (const recipe of recipes) {
       assert.deepEqual(recipe.issues, [], recipe.id);
       assert.deepEqual(produceIssues(recipe, standards), [], recipe.id);
+    }
+    for (const recipe of recipes.filter(item => CRAFT_RECIPE_IDS.includes(item.id))) {
       assert.equal(recipe.doc.rung, "create", recipe.id);
       assert.ok(recipe.doc.axes.length >= 3, `${recipe.id} has at least three axes`);
+      assert.equal(recipe.doc.action, undefined, `${recipe.id} is crafted and names no plumb action`);
+    }
+  });
+
+  it("every plumb recipe names a real plumb action that produces for its standards, with no axes and no generator", () => {
+    for (const recipe of recipes.filter(item => PLUMB_RECIPE_IDS.includes(item.id))) {
+      assert.equal(recipe.doc.rung, "plumb", recipe.id);
+      assert.deepEqual(recipe.doc.axes, [], `${recipe.id} has no diverge axes`);
+      assert.equal(recipe.doc.generator, undefined, `${recipe.id} has no generator`);
+      const action = readJson(join(ROOT, recipe.action.path));
+      assert.equal(action.id, recipe.doc.action, recipe.id);
+      assert.equal(action.kind, "plumb", `${recipe.id}: ${recipe.doc.action} is a plumb action`);
+      for (const id of recipe.doc.produces) assert.ok(action.standards.includes(`${AGENT}/${id}`), `${recipe.doc.action} produces for ${AGENT}/${id}`);
     }
   });
 
@@ -99,9 +131,27 @@ describe("Publisher recipes load clean and cover every standard (R15.5)", () => 
   });
 });
 
+describe("a plumb recipe's craft.md runs clossys verbs only, with no model stage", () => {
+  it("the fault finder refuses a model stage, an unmarked stage and a non-clossys command (mutation)", () => {
+    const good = "### 1. build (deterministic)\n\n```sh\nclossys release <pub> --build\n```\n";
+    assert.deepEqual(plumbCraftFaults(good), []);
+    assert.ok(plumbCraftFaults(good.replace("build (deterministic)", "brief (model)")).some(fault => fault.startsWith("model stage")));
+    assert.ok(plumbCraftFaults(good.replace(" (deterministic)", "")).some(fault => fault.startsWith("stage not deterministic")));
+    assert.ok(plumbCraftFaults(good.replace("clossys release <pub> --build", "node stage-check.mjs draft")).some(fault => fault.startsWith("not a clossys verb")));
+  });
+  for (const id of PLUMB_RECIPE_IDS) {
+    it(`${id}: deterministic clossys stages only, no model node, no craft event`, () => {
+      const text = readFileSync(join(HERE, id, "craft.md"), "utf8");
+      assert.deepEqual(plumbCraftFaults(text), [], id);
+      assert.doesNotMatch(text, /--stage (?:brief|diverge|render|critique|refine)\b/, `${id} records no craft event`);
+      assert.doesNotMatch(text, /\.\.\/|packages\/producer\/src/, `${id} names no judge source`);
+    });
+  }
+});
+
 describe("craft.md runs the fixed 5b stages with a check at each", () => {
   const STAGES = ["### 0. Preconditions", "### 1. brief (model)", "### 2. diverge (model)", "### 3. render (deterministic)", "### 4. critique (model, fresh critic)", "### 5. refine (at most 2 rounds)", "### 6. submit (deterministic)"];
-  for (const id of RECIPE_IDS) {
+  for (const id of CRAFT_RECIPE_IDS) {
     it(`${id}: stages in order, judgement only at brief, diverge and critique, a check before every record`, () => {
       const text = readFileSync(join(HERE, id, "craft.md"), "utf8");
       const at = STAGES.map(heading => text.indexOf(heading));
