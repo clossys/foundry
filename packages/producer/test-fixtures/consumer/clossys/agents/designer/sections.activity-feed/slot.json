@@ -8,7 +8,7 @@
     "l0": "sections",
     "l1": "sections/sections",
     "l2": "sections/sections/sections-records",
-    "order": 180
+    "order": 178
   },
   "createdBy": {
     "actor": "code",
@@ -155,7 +155,7 @@
     "allowedComposes": [
       "components.avatar",
       "components.badge",
-      "components.link",
+      "components.button",
       "components.icon",
       "components.semantic-content"
     ],

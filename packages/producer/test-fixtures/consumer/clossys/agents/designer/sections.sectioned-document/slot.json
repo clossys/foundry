@@ -8,7 +8,7 @@
     "l0": "sections",
     "l1": "sections/sections",
     "l2": "sections/sections/sections-reading",
-    "order": 165
+    "order": 163
   },
   "createdBy": {
     "actor": "code",
@@ -80,10 +80,6 @@
     },
     {
       "to": "designer/components.semantic-content",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.status-mark",
       "rel": "uses"
     },
     {
@@ -171,9 +167,8 @@
       "components.disclosure",
       "components.icon",
       "components.item",
-      "components.link",
-      "components.semantic-content",
-      "components.status-mark"
+      "components.button",
+      "components.semantic-content"
     ],
     "parts": [],
     "allowedReads": {

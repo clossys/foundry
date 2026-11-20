@@ -170,7 +170,7 @@
       ]
     },
     "composes": [
-      "components.link"
+      "components.button"
     ],
     "apg": "breadcrumb",
     "copy": {

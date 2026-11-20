@@ -371,7 +371,7 @@
     },
     "composes": [
       "components.badge",
-      "components.link",
+      "components.button",
       "components.semantic-content",
       "components.table"
     ],

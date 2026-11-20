@@ -12,8 +12,8 @@
  * The run is a pure function of the unpinned base: the committed fixture with every seeded record taken out
  * (candidates, critiques, pins, scorecards, renders and the ledger events the verbs above wrote). The clock is
  * fixed (AT), so a rerun writes the same bytes; pinned-world.test.ts reruns it and compares the trees.
- * BLOCKED lists the closure slots the real certifier refuses every candidate shape for, with the rule; the run
- * leaves them (and their downstream) unpinned and prints them. Any other refusal stops the run (exit 1).
+ * BLOCKED lists the closure slots the run cannot fill (a refused shape, or a craft standard with no generator), with
+ * why; the run leaves them (and their downstream) unpinned and prints them. Any other refusal stops the run (exit 1).
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -417,7 +417,30 @@ function consumerAsset(id, doc, standard) {
  */
 const CONSUMER_COMPONENTS = {
   "components.icon": { file: "ui/icon.tsx", export: "Icon", source: () => npmSource("lucide-react"), content: 'export { ArrowRight as Icon } from "lucide-react";\n' },
+  "components.logo": { file: "ui/logo.tsx", export: "Logo", source: () => ORIGINAL, content: [
+    'import type { SVGProps } from "react";',
+    "",
+    "export function Logo(props: SVGProps<SVGSVGElement>) {",
+    "  return (",
+    '    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Fixture Works" {...props}>',
+    '      <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="2.25" />',
+    '      <path d="M8 12h8" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" />',
+    "    </svg>",
+    "  );",
+    "}",
+    "",
+  ].join("\n") },
+  "components.semantic-content": { file: "ui/semantic-content.tsx", export: "SemanticContent", source: () => ORIGINAL, content: [
+    'import type { ElementType, HTMLAttributes } from "react";',
+    "",
+    "export function SemanticContent({ as: Tag = \"div\", ...props }: HTMLAttributes<HTMLElement> & { as?: ElementType }) {",
+    "  return <Tag {...props} />;",
+    "}",
+    "",
+  ].join("\n") },
 };
+/** The consumer's own code (a consumer-asset slot only: R03.2 and ref-verbatim refuse an original anywhere else). */
+const ORIGINAL = { kind: "original", ref: [], license: "MIT" };
 /** An npm package source: `npm/<name>@<installed version>`, hashed over the installed package.json, with its licence. */
 function npmSource(name) {
   const version = lockedVersion(name);
@@ -539,8 +562,42 @@ function candidateOf(root, consumer, agent, id, doc, standard) {
 
 // ---------------------------------------------------------------- record migrations (through the verbs)
 
-/** The retired slot and the slot that takes its place: shadcn stock ships no Link; Button's link variant covers it. */
-const RETIRE = { "components.link": { into: "components.button", reason: "duplicate: shadcn stock ships no Link component; the Button link variant covers it" } };
+/**
+ * The slots the base retires, in order, each with the Designer slot that takes its place (`into`), or none:
+ * - link: shadcn stock ships no Link; Button's link variant covers it.
+ * - media-player and status-mark (owner 2026-11-20, "retire both"): no stock item in the consumer's engine ships
+ *   either, so every consumer drops them; the Writer copy of the media player goes with it.
+ */
+const RETIRE = {
+  "designer/components.link": { into: "components.button", reason: "duplicate: shadcn stock ships no Link component; the Button link variant covers it" },
+  "writer/components.media-player.copy": { into: null, reason: "not-needed: the copy of designer/components.media-player, which retires" },
+  "designer/components.media-player": { into: null, reason: "not-needed: no stock media player ships in the consumer's engine; owner 2026-11-20" },
+  "designer/components.status-mark": { into: null, reason: "not-needed: no stock status mark ships in the consumer's engine; owner 2026-11-20" },
+};
+const DROP = Symbol("drop");
+/** A Designer slot id the base retires, as its replacement id, DROP (no replacement) or undefined (not retired). */
+const retiredAs = id => { const hit = RETIRE[`designer/${id}`]; return hit ? hit.into ?? DROP : undefined; };
+/**
+ * A contract with every retired Designer slot id replaced by the slot that takes its place, or dropped from its list
+ * (composes, allowedComposes, accepts and the fixture's `(<slot id>)` labels); a replacement already listed is not
+ * listed twice.
+ */
+function withoutRetired(value) {
+  if (Array.isArray(value)) {
+    const out = [];
+    for (const each of value) {
+      const next = withoutRetired(each);
+      if (next === DROP || (next !== each && out.includes(next))) continue;
+      out.push(next);
+    }
+    return out;
+  }
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, each]) => [key, withoutRetired(each)]).filter(([, each]) => each !== DROP));
+  if (typeof value !== "string") return value;
+  const as = retiredAs(value);
+  if (as !== undefined) return as;
+  return value.replace(/\((components\.[a-z0-9.-]+)\)/g, (match, id) => { const into = retiredAs(id); return typeof into === "string" ? `(${into})` : match; });
+}
 
 /** The Designer slots with a slot.json, and their documents. */
 function designerSlots(consumer) {
@@ -560,44 +617,49 @@ function importedSlots(consumer, slots, id, doc) {
   if (!row) return [];
   const text = normalizedSeedFile(consumer, refId(row), file, { manifest: { items: manifest() }, referencesDir: REFERENCES });
   const names = [...text.matchAll(/from\s+["']@\/components\/ui\/([\w-]+)["']/g)].map(match => match[1]);
-  return [...new Set(names.flatMap(name => slots.filter(([other, each]) => other !== id && !RETIRE[other] && each.contract?.fixture?.fixtures?.file?.endsWith(`/ui/${name}.tsx`)).map(([other]) => other)))];
+  return [...new Set(names.flatMap(name => slots.filter(([other, each]) => other !== id && retiredAs(other) === undefined && each.contract?.fixture?.fixtures?.file?.endsWith(`/ui/${name}.tsx`)).map(([other]) => other)))];
 }
 
 /**
  * The base's record migrations, run through `clossys ia --uses` and `clossys retire --slot` before any slot is seeded;
  * a migrated base passes through unchanged, so a rerun writes the same bytes.
- * 1. Every `uses` of a RETIRE slot names the slot that replaces it; then the retired slot leaves the IA.
+ * 1. No Designer slot names a RETIRE slot: its `uses` and its contract name the slot that takes its place, or drop it;
+ *    then each retired slot leaves the IA, in RETIRE order.
  * 2. A component's `uses` lists every slot its stock source imports (R05.1 [import]: an import from a slot that
  *    `uses` does not list is refused).
  */
 async function migrate(w) {
   let slots = designerSlots(w.consumer);
   for (const [id, doc] of slots) {
-    const uses = [...new Set((doc.uses ?? []).map(use => RETIRE[use]?.into ?? use))];
+    if (retiredAs(id) !== undefined) continue;
+    const uses = [...new Set((doc.uses ?? []).map(use => retiredAs(use) ?? use).filter(use => use !== DROP))];
     for (const use of importedSlots(w.consumer, slots, id, doc)) if (!uses.includes(use)) uses.push(use);
-    if (uses.length === (doc.uses ?? []).length && uses.every((use, index) => use === doc.uses[index])) continue;
+    const contract = withoutRetired(doc.contract);
+    const sameUses = uses.length === (doc.uses ?? []).length && uses.every((use, index) => use === doc.uses[index]);
+    if (sameUses && JSON.stringify(contract) === JSON.stringify(doc.contract)) continue;
     const ref = `designer/${id}`;
-    await w.run(ref, "ia", ref, "--contract", w.file(`${id}.contract.json`, doc.contract), "--uses", uses.join(","), "--at", AT);
+    await w.run(ref, "ia", ref, "--contract", w.file(`${id}.contract.json`, contract), "--uses", uses.join(","), "--at", AT);
   }
-  slots = designerSlots(w.consumer);
-  for (const [id, { reason }] of Object.entries(RETIRE)) {
-    if (!slots.some(([each]) => each === id)) continue;
-    await w.run(`designer/${id}`, "retire", `designer/${id}`, "--slot", "--by", "agent:designer", "--reason", reason, "--at", AT);
+  for (const [ref, { reason }] of Object.entries(RETIRE)) {
+    const [agent, id] = ref.split("/");
+    if (!existsSync(join(w.consumer, "agents", agent, id, "slot.json"))) continue;
+    await w.run(ref, "retire", ref, "--slot", "--by", `agent:${agent}`, "--reason", reason, "--at", AT);
   }
 }
 
 // ---------------------------------------------------------------- slots the real certifier refuses
 
 /**
- * Closure slots no candidate shape passes today, with the rule that refuses it (each shape was put through the
- * real verbs). The run seeds none of them, nor any slot that reads one (its R02.2 upstream is unpinned); the
- * world is pinned everywhere else. A slot leaves this list when its standard or contract admits a candidate.
+ * Closure slots the run cannot fill today, with why: no candidate shape passes the real verbs, or the slot's
+ * standard is craft work the seeder has no generator for. The run seeds none of them, nor any slot that reads one
+ * (its R02.2 upstream is unpinned); the world is pinned everywhere else. A slot leaves this list when its standard
+ * or contract admits a candidate and the seeder can make one.
  */
 export const BLOCKED = {
-  "designer/components.logo": "component source.ref: the standard admits registry, composition and npm sources only; the consumer's own placeholder is an original, and a composition must name its parts (source.schema parts)",
-  "designer/components.semantic-content": "component source.ref: the standard admits registry, composition and npm sources only; the consumer's own placeholder is an original, and the contract reads no slot a composition could name as a part",
-  "designer/components.media-player": "ref-verbatim REF-FLAVOR: the contract fixture's reference diceui/media-player is new-york, the consumer flavor is aria-nova",
-  "designer/components.status-mark": "ref-verbatim REF-FLAVOR: the contract fixture's reference diceui/status is new-york, the consumer flavor is aria-nova",
+  "designer/frames.site-footer": "no fixture generator: a frame candidate is craft work (a composition of pinned parts over the contract's landmarks, slots and members); the slot-mapped reference tailark-oss/mist-footer-1 is radix, so a verbatim adopt fails ref-verbatim REF-FLAVOR against aria-nova",
+  "designer/frames.site-header": "no fixture generator: a frame candidate is craft work (a composition of pinned parts over the contract's landmarks, slots and members); the slot-mapped reference tailark-oss/mist-hero-section-1-header is radix, so a verbatim adopt fails ref-verbatim REF-FLAVOR against aria-nova",
+  "designer/frames.site-shell": "no fixture generator: a frame candidate is craft work (a composition of pinned parts over the contract's landmarks, slots, members and skip target); its slot-mapped references are parts (a toaster, a skip link, a navigation menu), not a shell to adopt",
+  "designer/sections.hero": "no fixture generator: a section.site candidate is craft work (a composition of pinned parts over the contract's anatomy, slots and members); the slot-mapped tailark-oss hero references are radix, so a verbatim adopt fails ref-verbatim REF-FLAVOR against aria-nova",
 };
 
 /** The closure slots the run leaves unpinned: BLOCKED and everything that reads one, with the blocking slot. */

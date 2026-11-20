@@ -8,7 +8,7 @@
     "l0": "frames",
     "l1": "frames/frames",
     "l2": "frames/frames/frames-shells",
-    "order": 202
+    "order": 200
   },
   "createdBy": {
     "actor": "code",
@@ -216,7 +216,7 @@
     },
     "composes": [
       "components.semantic-content",
-      "components.link"
+      "components.button"
     ],
     "skipTarget": "main-content",
     "props": [

@@ -8,7 +8,7 @@
     "l0": "sections",
     "l1": "sections/sections",
     "l2": "sections/sections/sections-records",
-    "order": 173
+    "order": 171
   },
   "createdBy": {
     "actor": "code",
@@ -101,10 +101,6 @@
     {
       "to": "designer/components.semantic-content",
       "rel": "uses"
-    },
-    {
-      "to": "designer/components.status-mark",
-      "rel": "uses"
     }
   ],
   "base": null,
@@ -195,8 +191,7 @@
       "components.avatar",
       "components.badge",
       "components.icon",
-      "components.status-mark",
-      "components.link",
+      "components.button",
       "components.meter",
       "components.semantic-content"
     ],

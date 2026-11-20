@@ -31,10 +31,24 @@ describe("the pinned test world", () => {
 
   it("pins every closure slot but the BLOCKED ones and the slots that read them", () => {
     const order: string[] = closure(consumer);
-    expect(order.length).toBe(121);
+    expect(order.length).toBe(115);
     expect(Object.keys(BLOCKED).every(ref => order.includes(ref))).toBe(true);
     expect([...blockedIn(consumer, order).keys()]).toEqual([...blocked.keys()]);
     expect(order.filter(ref => !pinned(ref))).toEqual(order.filter(ref => blocked.has(ref)));
+  });
+
+  it("pins the consumer-supplied logo and semantic content as originals, and holds no retired component (B1 r5, owner 2026-11-20)", () => {
+    for (const id of ["components.logo", "components.semantic-content"]) {
+      const dir = join(consumer, "agents", "designer", id);
+      expect(pinned(`designer/${id}`)).toBe(true);
+      const candidates = treeFiles(join(dir, "candidates")).map((file: string) => readFileSync(join(dir, "candidates", file), "utf8"));
+      expect(candidates.length).toBeGreaterThan(0);
+      for (const text of candidates) expect(JSON.parse(text).clossys.source.kind).toBe("original");
+    }
+    for (const ref of ["designer/components.link", "designer/components.media-player", "designer/components.status-mark", "writer/components.media-player.copy"]) {
+      const [agent, id] = ref.split("/") as [string, string];
+      expect(existsSync(join(consumer, "agents", agent, id, "slot.json"))).toBe(false);
+    }
   });
 
   it("pins no retired strings.* slot", () => {

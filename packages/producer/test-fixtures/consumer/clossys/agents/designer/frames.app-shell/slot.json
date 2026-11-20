@@ -8,7 +8,7 @@
     "l0": "frames",
     "l1": "frames/frames",
     "l2": "frames/frames/frames-shells",
-    "order": 201
+    "order": 199
   },
   "createdBy": {
     "actor": "code",
@@ -488,7 +488,6 @@
       "components.tabs",
       "components.tooltip",
       "components.dialog",
-      "components.link",
       "components.popover",
       "components.semantic-content"
     ],

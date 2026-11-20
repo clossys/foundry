@@ -8,7 +8,7 @@
     "l0": "frames",
     "l1": "frames/frames",
     "l2": "frames/frames/frames-bars",
-    "order": 205
+    "order": 203
   },
   "createdBy": {
     "actor": "code",
@@ -180,7 +180,7 @@
       {
         "id": "links",
         "required": false,
-        "accepts": "components.link"
+        "accepts": "components.button"
       },
       {
         "id": "legal",
@@ -253,7 +253,7 @@
       ]
     },
     "composes": [
-      "components.link",
+      "components.button",
       "components.icon",
       "components.logo",
       "components.separator",
@@ -296,7 +296,7 @@
         "props": {
           "children": [
             "DRAFT columns",
-            "DRAFT links (components.link)",
+            "DRAFT links (components.button)",
             "DRAFT legal",
             "DRAFT social (components.icon)"
           ]

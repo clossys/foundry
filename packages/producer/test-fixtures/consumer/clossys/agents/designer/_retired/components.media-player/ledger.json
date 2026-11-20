@@ -16,7 +16,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "4ce4d17289f4a0d620b6b56ce1bffd6ef23f388fcfa0ea3eb26f7d644afc33f0"
+          "sha256": "4cc112dc2b3f9fe1c58931d727ab88fc6c46e0d5da44100da8211074bec4c249"
         }
       ]
     },
@@ -31,11 +31,11 @@
       },
       "model": "none",
       "tier": "none",
-      "kind": "ia-position",
+      "kind": "ia",
       "records": [
         {
           "file": "slot.json",
-          "sha256": "7624011d96693093a8670fea2f8c26b0a80b5cf6cb66655e70de073d687ba9be"
+          "sha256": "0f604631f13a46b38d88d063a9651adacb51c32fa5a2cdc9c47440358e7ba6cd"
         }
       ]
     },
@@ -58,7 +58,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "d1f87436ce4c40fbb85e6ee4a07d678b90e41d1895702d78b48ac49393996eab"
+          "sha256": "f79f02f54183a5488fbbae28879cec621d2e5a563df03f8afa64bb3f9e2ef4a4"
         }
       ]
     },
@@ -77,7 +77,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "76655faab2e560703fad1cb2df538e77b7f4a9033dc683b308c7a9fde62f1fd7"
+          "sha256": "93f00d2cd3c1af37f2c1fd3b11611d030c9a8809435a7aa1e8d12adb12d881b2"
         }
       ]
     },
@@ -96,7 +96,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "122193150309721682bca59a6d41d6958e1e90bf801869df8587cb2a064d4e52"
+          "sha256": "677bee1f778613d21afc4d5645d3ae2b3287c1a2b216ba5b88a64801294cd578"
         }
       ]
     },
@@ -115,9 +115,22 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "9816c77911cfb8c893f49cf27ef60bf117e0ba35aee93c23a3471859a8ef2cc0"
+          "sha256": "25a174e1d42d21c41a27f1284cddb44499a191dfbddd9f8dfeeefa6d0bf3a337"
         }
       ]
+    },
+    {
+      "op": "retire-slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer",
+      "verb": "retire",
+      "skill": {
+        "path": "packages/producer/actions/retire/skill.md",
+        "sha256": "a52f3873b4d4b217153a28d88cb3a21f8b5dc74ccdafb1920f0ac1626ac491ea"
+      },
+      "model": "none",
+      "tier": "none",
+      "code": "not-needed"
     }
   ]
 }

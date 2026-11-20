@@ -8,7 +8,7 @@
     "l0": "frames",
     "l1": "frames/frames",
     "l2": "frames/frames/frames-bars",
-    "order": 206
+    "order": 204
   },
   "createdBy": {
     "actor": "code",
@@ -120,10 +120,6 @@
     },
     {
       "to": "designer/components.semantic-content",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.status-mark",
       "rel": "uses"
     },
     {
@@ -295,9 +291,7 @@
       "components.menu",
       "components.popover",
       "components.button",
-      "components.link",
       "components.toggle-button",
-      "components.status-mark",
       "components.icon",
       "components.tooltip",
       "components.semantic-content",

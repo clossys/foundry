@@ -8,7 +8,7 @@
     "l0": "sections",
     "l1": "sections/sections",
     "l2": "sections/sections/sections-forms",
-    "order": 190
+    "order": 188
   },
   "createdBy": {
     "actor": "code",
@@ -422,7 +422,6 @@
       "components.text-field",
       "components.button",
       "components.form",
-      "components.link",
       "components.semantic-content",
       "components.banner",
       "components.field"
