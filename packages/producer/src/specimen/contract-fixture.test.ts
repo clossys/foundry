@@ -42,13 +42,17 @@ describe("the slot contract fixture (slot.json contract.fixture)", () => {
   it("is validated with the slot and typed by contract.props", () => {
     expect(contractFixtureIssues({ props: ["action", "body", "title"], fixture: CONTRACT_FIXTURE })).toEqual([]);
     expect(contractFixtureIssues({ props: [] })).toEqual([]);
-    expect(contractFixtureIssues({ props: ["title"], fixture: CONTRACT_FIXTURE }).map(issue => issue.message)).toEqual(["contract.fixture props action, body are not declared in contract.props"]);
+    expect(contractFixtureIssues({ props: ["title"], fixture: CONTRACT_FIXTURE }).map(issue => issue.message)).toEqual(["contract.fixture props action, body are not declared in contract.props or contract.fixtureProps"]);
+    // Mount-only props (contract.fixtureProps) type the fixture without becoming props a candidate must expose.
+    expect(contractFixtureIssues({ props: ["title"], fixtureProps: ["action", "body"], fixture: CONTRACT_FIXTURE })).toEqual([]);
+    expect(contractFixtureIssues({ props: ["title", "body"], fixtureProps: ["action", "body"], fixture: CONTRACT_FIXTURE }).map(issue => issue.message)).toEqual(["contract.fixture props body are listed in both contract.props and contract.fixtureProps"]);
+    expect(contractFixtureIssues({ props: ["title"], fixtureProps: "action", fixture: CONTRACT_FIXTURE }).map(issue => issue.message)).toEqual(["contract.fixture is typed by contract.fixtureProps, which must list prop names when present"]);
     expect(contractFixtureIssues({ fixture: CONTRACT_FIXTURE }).map(issue => issue.message)).toEqual(["contract.fixture is typed by contract.props, which must list prop names"]);
     expect(contractFixtureIssues({ props: [], fixture: { ...CONTRACT_FIXTURE, fixtures: { file: "x.tsx", props: {} } } }).map(issue => issue.message)).toEqual(["contract.fixture fixtures must be { file, export, props } with a props object"]);
     expect(contractFixtureIssues({ props: ["action", "body", "title"], fixture: { ...CONTRACT_FIXTURE, copy: { "card.title": "x" } } }).map(issue => issue.message)).toEqual([expect.stringMatching(/carries no copy snapshot/)]);
     // The slot validator runs it: a slot.json with an untyped fixture is an invalid slot.
     setContract(CONTRACT_FIXTURE, ["title"]);
-    expect(validateSlotDoc(slotDoc())).toEqual([{ code: "slot-invalid", path: "slot.json", message: "contract.fixture props action, body are not declared in contract.props" }]);
+    expect(validateSlotDoc(slotDoc())).toEqual([{ code: "slot-invalid", path: "slot.json", message: "contract.fixture props action, body are not declared in contract.props or contract.fixtureProps" }]);
     setContract(CONTRACT_FIXTURE);
     expect(validateSlotDoc(slotDoc())).toEqual([]);
   });
@@ -129,7 +133,7 @@ describe("candidate certification against the slot contract fixture", () => {
 
   it("reports an untyped contract fixture as the reason, and needs no fixture for a candidate that mounts no component", () => {
     setContract(CONTRACT_FIXTURE, ["title"]);
-    expect(certify(1)).toEqual({ certified: false, mounts: true, reasons: ["the slot's contract.fixture props action, body are not declared in contract.props"] });
+    expect(certify(1)).toEqual({ certified: false, mounts: true, reasons: ["the slot's contract.fixture props action, body are not declared in contract.props or contract.fixtureProps"] });
     const theme = listSlots(root, "designer").find(entry => entry.id === "themes.preset")!;
     const bytes = readFileSync(join(candidatesDir(theme.dir), theme.pin!.candidate), "utf8");
     expect(certifyCandidate({ root, slot: "themes.preset", name: theme.pin!.candidate, bytes, contract: {}, layer: "themes" })).toEqual({ certified: true, mounts: false, reasons: [] });

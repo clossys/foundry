@@ -47,6 +47,8 @@ export interface ComponentContract {
   memberRoots?: Readonly<Record<string, ComponentContract["root"]>>;
   members: TokenContract["members"];
   props: readonly string[];
+  /** Mount-only props the contract fixture passes (an overlay trigger's children, defaultOpen); K1 never requires them. */
+  fixtureProps?: readonly string[];
   allowedReads: LeafReads;
   composes?: readonly string[];
 }

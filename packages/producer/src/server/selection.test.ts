@@ -8,7 +8,7 @@ import * as ReactDOMClient from "react-dom/client";
 import * as ReactDOMServer from "react-dom/server";
 import * as JSXRuntime from "react/jsx-runtime";
 import * as JSXDevRuntime from "react/jsx-dev-runtime";
-import { applyLibraryChange, libraryHash, resolve } from "@clossys/designer/catalog";
+import { applyLibraryChange, libraryHash } from "@clossys/designer/catalog";
 import { describe, expect, it } from "vitest";
 import { prepareStudioSelection } from "./selection-defaults.js";
 import { compileSelection, selectionRuntime, type StudioSelection } from "./selection.js";
@@ -55,7 +55,8 @@ describe("Studio selected runtime", () => {
       const tooltip = firstRuntime.tooltip.Tooltip({ trigger, children: "Close command menu" });
       expect(tooltip.props.children[0]).toBe(trigger);
       expect(tooltip.props.children[1].type).toBe(firstRuntime.components.Tooltip);
-      expect(tooltip.props.behaviorTiming["tokens.behavior-timing.tooltip-delay"]).toEqual(resolve(prepared.input).values.members["tokens.behavior-timing.tooltip-delay"]!.value.light);
+      // Interaction timing is not a themes leaf: the Studio wrapper passes its fixed pair under the keys the stock Tooltip reads.
+      expect(tooltip.props.behaviorTiming).toEqual({ "tooltip-delay": { value: 500, unit: "ms" }, "tooltip-close": { value: 300, unit: "ms" } });
 
       const library = applyLibraryChange(prepared.input.catalog, prepared.input.library, { baseHash: libraryHash(prepared.input.library), changes: [{ portion: "components", change: { op: "adopt", slot: "components.badge", source: "foundry" } }] }, { componentOptions: prepared.input.componentOptions, surfaceOptions: prepared.input.surfaceOptions });
       const second = await compileSelection(temporary, { ...prepared.input, library }, prepared.leaves, libraryHash(library));
@@ -66,7 +67,8 @@ describe("Studio selected runtime", () => {
       const secondRuntime = await import(pathToFileURL(secondPath).href);
       const secondBadge = ReactDOMServer.renderToStaticMarkup(React.createElement(secondRuntime.components.Badge, null, "Selected"));
       expect(secondBadge).toContain('data-ds-fill="foundry/components.badge"');
-      expect(secondBadge).not.toContain('data-slot="badge"');
+      // R2F-29 (0fe20ed5f): the foundry Badge fill is the stock shadcn@aria leaf, so it keeps the stock anatomy.
+      expect(secondBadge).toContain('data-slot="badge"');
       expect(second.hash).not.toBe(first.hash);
     } finally { await server?.close(); global.__studioDesignerRuntime = previous; await rm(temporary, { recursive: true, force: true }); }
   }, 30_000);

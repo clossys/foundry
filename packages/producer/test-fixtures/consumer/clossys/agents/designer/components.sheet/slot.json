@@ -167,10 +167,7 @@
       "mode": "closed",
       "names": []
     },
-    "props": [
-      "children",
-      "defaultOpen"
-    ],
+    "props": [],
     "allowedReads": {
       "themes": [
         "themes.primary",
@@ -228,6 +225,10 @@
         }
       ]
     },
+    "fixtureProps": [
+      "children",
+      "defaultOpen"
+    ],
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {

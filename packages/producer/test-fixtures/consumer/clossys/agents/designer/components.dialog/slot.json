@@ -174,10 +174,7 @@
         "dismissable"
       ]
     },
-    "props": [
-      "children",
-      "defaultOpen"
-    ],
+    "props": [],
     "allowedReads": {
       "themes": [
         "themes.border",
@@ -230,6 +227,10 @@
         }
       ]
     },
+    "fixtureProps": [
+      "children",
+      "defaultOpen"
+    ],
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
