@@ -111,7 +111,8 @@ export function deriveContractFixtures(root: string): ContractFixtureReport {
         proposals.push({ slot: entry.id, status: "no-source", pinned: pinnedJson, mounts, reason: preview === undefined ? "pinned-without-preview" : "pinned-preview-without-fixture" });
       } else {
         const declared = Array.isArray(doc.contract.props) ? (doc.contract.props as unknown[]).filter((name): name is string => typeof name === "string") : [];
-        const propsToDeclare = Object.keys(fixture.fixtures.props).filter(key => !declared.includes(key)).sort();
+        const mountOnly = Array.isArray(doc.contract.fixtureProps) ? (doc.contract.fixtureProps as unknown[]).filter((name): name is string => typeof name === "string") : [];
+        const propsToDeclare = Object.keys(fixture.fixtures.props).filter(key => !declared.includes(key) && !mountOnly.includes(key)).sort();
         contract = { ...doc.contract, props: [...declared, ...propsToDeclare], fixture };
         proposals.push({ slot: entry.id, status: "derived", pinned: pinnedJson, mounts, fixture, propsToDeclare });
       }

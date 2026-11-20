@@ -1262,10 +1262,7 @@
           "dismissable"
         ]
       },
-      "props": [
-        "children",
-        "defaultOpen"
-      ],
+      "props": [],
       "allowedReads": {
         "themes": [
           "themes.border",
@@ -1318,6 +1315,10 @@
           }
         ]
       },
+      "fixtureProps": [
+        "children",
+        "defaultOpen"
+      ],
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
@@ -2107,10 +2108,7 @@
           "placement"
         ]
       },
-      "props": [
-        "children",
-        "defaultOpen"
-      ],
+      "props": [],
       "allowedReads": {
         "themes": [
           "themes.border",
@@ -2142,6 +2140,10 @@
         ],
         "assets": []
       },
+      "fixtureProps": [
+        "children",
+        "defaultOpen"
+      ],
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
@@ -3249,10 +3251,7 @@
           "placement"
         ]
       },
-      "props": [
-        "children",
-        "defaultOpen"
-      ],
+      "props": [],
       "allowedReads": {
         "themes": [
           "themes.border",
@@ -3283,6 +3282,10 @@
         "assets": []
       },
       "apg": "tooltip",
+      "fixtureProps": [
+        "children",
+        "defaultOpen"
+      ],
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
@@ -3581,10 +3584,7 @@
         "mode": "closed",
         "names": []
       },
-      "props": [
-        "children",
-        "defaultOpen"
-      ],
+      "props": [],
       "allowedReads": {
         "themes": [
           "themes.primary",
@@ -3642,6 +3642,10 @@
           }
         ]
       },
+      "fixtureProps": [
+        "children",
+        "defaultOpen"
+      ],
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
@@ -3821,10 +3825,7 @@
         "mode": "closed",
         "names": []
       },
-      "props": [
-        "children",
-        "defaultOpen"
-      ],
+      "props": [],
       "allowedReads": {
         "themes": [
           "themes.border",
@@ -3866,6 +3867,10 @@
       },
       "composes": [
         "components.icon"
+      ],
+      "fixtureProps": [
+        "children",
+        "defaultOpen"
       ],
       "fixture": {
         "schema": "clossys.element-preview/1",
