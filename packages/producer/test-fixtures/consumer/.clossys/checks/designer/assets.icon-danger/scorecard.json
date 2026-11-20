@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "icon-danger-v1.json",
-      "sha256": "8c1b7d7c93d936e5a709e425d9437f717c23e424b639c25edb5ea0766571c7a8",
+      "sha256": "7bb36380831e105bb6923ec3d10aa765c9077857ab14cecf253600b915fa8dce",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "1c907b1c948485e0a3bd240809cb5ba0f30583f4cddc1996b878f3f73bc99784"
+      "pinSet": "6182b142c5e3be7d261649574f237acf1d3752ad68c768a5a4218a382de76019"
     }
   ]
 }

@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "icon-legal-v1.json",
-      "sha256": "aa9e18df6c60c676fc794fb9563854de6afdaaf0cf66690ef610dff5dde8032b",
+      "sha256": "cbcd1ea8de9b81250acb1bdfb22ccb8b535304c699c4a83772b774ab29265d0e",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "b9d5118fdddca6489175af4e235b7734c2e4d13a6b9e76f5fb4c6e93b69fa417"
+      "pinSet": "fd7e614db33e0c028b74fb3e2014bef36994a065ab860c4d44593c7f56beb813"
     }
   ]
 }

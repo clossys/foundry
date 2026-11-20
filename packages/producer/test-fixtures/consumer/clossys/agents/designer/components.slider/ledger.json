@@ -119,7 +119,7 @@
         "seed": "shadcn-aria/slider"
       },
       "name": "slider-v1.json",
-      "sha256": "9bb654860588064ee998f44e6394b9654093766a9879962fda6baf24f45a833e"
+      "sha256": "b59ff7d2b525bf0d5421a4fc189696a0dbda0015d2f5c26331c812539f2d522e"
     },
     {
       "op": "pin",
@@ -133,13 +133,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "slider-v1.json",
-      "sha256": "9bb654860588064ee998f44e6394b9654093766a9879962fda6baf24f45a833e",
+      "sha256": "b59ff7d2b525bf0d5421a4fc189696a0dbda0015d2f5c26331c812539f2d522e",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "057c94bd5a1cf0ef856f774edbb4d9bec6e6efa64268d4fa86861eaf136c9070"
+          "sha256": "90ea6abc8067b936bcdcac7871b62e847e414494a60df4ffcddfa77f5bf36eb0"
         }
       ]
     }

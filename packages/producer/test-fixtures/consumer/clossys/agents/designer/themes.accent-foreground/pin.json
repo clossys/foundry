@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.accent-foreground",
-      "sha256": "e88b163ae34267ef0314d0d7bc0b8f9c62e4dadbcde25879bea537e191cdb849"
+      "sha256": "b07687d3b34dab3b32b8c42fd99c17ae126cb99da7af6d8b1f9ff914ff06ae4b"
     }
   ],
   "candidate": "accent-foreground-v1.json",
-  "sha256": "93889dcef5cb33d5ce6bab979244fb9536b1c36d4cfe2d0714c2442ff05ec3de",
+  "sha256": "a2dec74a6a67df3367a521a76de92a95892cb75ba9bcc63bda2f9882c170ed71",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

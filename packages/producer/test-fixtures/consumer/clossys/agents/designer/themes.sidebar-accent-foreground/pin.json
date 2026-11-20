@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.sidebar-accent-foreground",
-      "sha256": "1781724a939b7b65fd0bea3d4c86ba065af5930c296bc9e694aea98d2c2f50c4"
+      "sha256": "f5c187e9b0c7b91e10ddac5553f5902560ab5765f9817b0ff87c603c530e07df"
     }
   ],
   "candidate": "sidebar-accent-foreground-v1.json",
-  "sha256": "ff3ec91f020bdc470ebb5bdd5fd6f1176c825b6468d2da4955ad5d4effef5d63",
+  "sha256": "befff83a4c11d86242526750cffebee00e244e635166e83716a19d0ab7b88b82",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

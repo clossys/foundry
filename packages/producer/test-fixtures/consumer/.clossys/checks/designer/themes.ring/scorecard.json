@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "ring-v1.json",
-      "sha256": "245d264b8ccf5fb30a78546b737e5d8d1ef04f4a9f5d03284efb229945a3dc4d",
+      "sha256": "9d41cc14f6f60e0d2cd5a81e6891cecb365ff3081ff8972d9270fd2fa462ad44",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "338a7228eac702d7e936c0e11116c7158b54ac4fcf5b1cffdd071d81f9a59aa6"
+      "pinSet": "99dd15f66c5974b672984e8f5a365b8b676d8783a19d1d6d8d96b3e63eca2978"
     }
   ]
 }

@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "sidebar-primary-foreground-v1.json",
-      "sha256": "20a25b3af642581ad63c06d4b65183e2a39fe42871d44e8d3601fa9829008a07",
+      "sha256": "c9e29bf109cc559c5b91c5a676ef3997168396cca8403f69694e54a426899559",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "ac6babc1d527b46075a2093f04835d408c7529b50eb380b8361e14e6fd1b6abf"
+      "pinSet": "d1fc0cb8f99c61648d2d37bfd7bdb968a1a0f8888b07ed0c2d7f26a18773a46e"
     }
   ]
 }

@@ -7,9 +7,12 @@
     "status": "submitted",
     "slot": "designer/components.disclosure",
     "createdBy": {
-      "actor": "code",
-      "cli": "clossys submit",
-      "version": "0.1.0"
+      "actor": "agent",
+      "agent": "designer",
+      "skill": "packages/designer/actions/designer.candidates/skill.md",
+      "skillSha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930",
+      "model": "fixture-model",
+      "tier": "high"
     },
     "createdAt": "2026-11-19T00:00:00Z",
     "refs": [],
@@ -33,7 +36,7 @@
       {
         "path": "registry/aria-nova/ui/collapsible.tsx",
         "type": "registry:ui",
-        "content": "\"use client\"\n\nimport {\n  DisclosurePanel as CollapsibleContentPrimitive,\n  Disclosure as CollapsiblePrimitive,\n  Button as CollapsibleTriggerPrimitive,\n  type ButtonProps,\n  type DisclosurePanelProps,\n  type DisclosureProps,\n} from \"react-aria-components\"\n\nfunction Collapsible({ ...props }: DisclosureProps) {\n  return <CollapsiblePrimitive data-slot=\"collapsible\" {...props} />\n}\n\nfunction CollapsibleTrigger({ ...props }: ButtonProps) {\n  return (\n    <CollapsibleTriggerPrimitive\n      slot=\"trigger\"\n      data-slot=\"collapsible-trigger\"\n      {...props}\n    />\n  )\n}\n\nfunction CollapsibleContent({ ...props }: DisclosurePanelProps) {\n  return (\n    <CollapsibleContentPrimitive data-slot=\"collapsible-content\" {...props} />\n  )\n}\n\nexport { Collapsible, CollapsibleTrigger, CollapsibleContent }\n"
+        "content": "\n\nimport {\n  DisclosurePanel as CollapsibleContentPrimitive,\n  Disclosure as CollapsiblePrimitive,\n  Button as CollapsibleTriggerPrimitive,\n  type ButtonProps,\n  type DisclosurePanelProps,\n  type DisclosureProps,\n} from \"react-aria-components\"\n\nfunction Collapsible({ ...props }: DisclosureProps) {\n  return <CollapsiblePrimitive data-slot=\"collapsible\" {...props} />\n}\n\nfunction CollapsibleTrigger({ ...props }: ButtonProps) {\n  return (\n    <CollapsibleTriggerPrimitive\n      slot=\"trigger\"\n      data-slot=\"collapsible-trigger\"\n      {...props}\n    />\n  )\n}\n\nfunction CollapsibleContent({ ...props }: DisclosurePanelProps) {\n  return (\n    <CollapsibleContentPrimitive data-slot=\"collapsible-content\" {...props} />\n  )\n}\n\nexport { Collapsible, CollapsibleTrigger, CollapsibleContent }\n"
       }
     ],
     "meta": {

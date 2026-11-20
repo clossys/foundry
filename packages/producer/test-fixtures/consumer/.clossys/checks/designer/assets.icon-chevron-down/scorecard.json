@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "icon-chevron-down-v1.json",
-      "sha256": "0849a519491e741ac2209c501dd850c33322612b49cbfd4b5a643663ca99380f",
+      "sha256": "196083314dcec5380dba4834f05d95d3de2683507ed349a5e865e051c9215222",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "32a22764fe16fa1c90fa1b981f6893e7697695ef7a2dbac904834450de7d6e57"
+      "pinSet": "6774a671e45904a99c5d55f4f2d4a8ad3ebab5a18db4df178dbc356e7f6841c6"
     }
   ]
 }

@@ -83,109 +83,109 @@
             "agent": "writer",
             "slot": "lexicon.formality",
             "candidate": "formality-v1.md",
-            "sha256": "31273042f82910bcb068f81400f5f7df2f66d7a7d1b1df9de97686a7270648e2"
+            "sha256": "1e914c401254ec89e3ec9aac78259376c592eeeefd52a6cd70590a97942d257b"
           },
           {
             "agent": "writer",
             "slot": "lexicon.warmth",
             "candidate": "warmth-v1.md",
-            "sha256": "f0d65420107f7bd324a2886d84d6d1a92fd583a8f826b7a45329e0c37e1a86b0"
+            "sha256": "7cf5a6b4fea3b362d78d22343f2e18f0b9c29efef211a07d31825cf00cacf4f6"
           },
           {
             "agent": "writer",
             "slot": "lexicon.energy",
             "candidate": "energy-v1.md",
-            "sha256": "c6fa52ad021763af4a6326867afbb5bdadbed22c3ada902f55162cd827ac261d"
+            "sha256": "8addd1c3bfb8b37a8feae159976eef83b5392f5e77cbe4a45d160a8598095774"
           },
           {
             "agent": "writer",
             "slot": "lexicon.person",
             "candidate": "person-v1.md",
-            "sha256": "30f05131c3cc4a2571c95147eb29f47858136dc58414519deeed9e36caca6943"
+            "sha256": "52d4db42e48e75823e85404bf70a4c7a300771a2ebdbcf505c0b567cd33b5ebf"
           },
           {
             "agent": "writer",
             "slot": "lexicon.mood",
             "candidate": "mood-v1.md",
-            "sha256": "1a4bfde7aa8019afdb38fe653e62e149e6b1c43ff5f534bc29e2b47c0e1d77e2"
+            "sha256": "eaed3f30521151c3116577fb03e6da1022f9532e52655fc8d8d233faab036e1c"
           },
           {
             "agent": "writer",
             "slot": "lexicon.sentence-length",
             "candidate": "sentence-length-v1.md",
-            "sha256": "40a20eb900cb4f3ef21a3413e7dba16addeda825a84817254ca7647bece0f798"
+            "sha256": "9650fb2707e43400e3759bf4ebf8550f54eb36368dccab90ad98d99754d5f813"
           },
           {
             "agent": "writer",
             "slot": "lexicon.reading-level",
             "candidate": "reading-level-v1.md",
-            "sha256": "c6cc2b391ec30b33b2833ebcd38acb706670958c98f5b0c4b2f7b04bc89aacef"
+            "sha256": "c723ce163dd81b55ca4cca6418bcf741140e369dd73d628e6e7320393bfa2d77"
           },
           {
             "agent": "writer",
             "slot": "lexicon.capitalization",
             "candidate": "capitalization-v1.md",
-            "sha256": "b0fc72d84aef431bac841613e75a48ee1610c28f14272be283f2b0acc6f1a699"
+            "sha256": "217237eea7b514f5b2a9fb9d14f076fa535f05f9de553764ae35d5d1e196effa"
           },
           {
             "agent": "writer",
             "slot": "lexicon.punctuation",
             "candidate": "punctuation-v1.md",
-            "sha256": "3de0fd01e50a5390c28871f220155191412abee726298d91392718d61eec9470"
+            "sha256": "5e63443d82de11cb8da09b80d13c294716ce7c4180d5ee5c5342836f364f93f6"
           },
           {
             "agent": "writer",
             "slot": "lexicon.preferred-terms",
             "candidate": "preferred-terms-v1.md",
-            "sha256": "31260ab81f0268d109c7effdf51bec396423f535fbc15add81a914f4172a70fb"
+            "sha256": "58794a3e65d3e215969aa5388520304db8a4c144365e40ebf200bbc0401f83c4"
           },
           {
             "agent": "writer",
             "slot": "lexicon.avoid-terms",
             "candidate": "avoid-terms-v1.md",
-            "sha256": "1dc2bccf90b7ffe45d6fdd00cf7d0d886507acb786d5e52e93488233aa7687f4"
+            "sha256": "7cee3d4012e7b7b00384d679161c204b63e16ddbadcf22f7ee9e5969b501761b"
           },
           {
             "agent": "writer",
             "slot": "lexicon.avoid-patterns",
             "candidate": "avoid-patterns-v1.md",
-            "sha256": "9a024e1be93d40be989e973b1cb3652e739a314d847ee3fa6d0708f631ac0440"
+            "sha256": "2d96ce800a7572fb3e02df3a0c8feb903c5fac2942c9b73c54922665b45f389f"
           },
           {
             "agent": "director",
             "slot": "advantage.proposition.promise",
             "candidate": "promise-v1.md",
-            "sha256": "ce2fb24f2f9f4cd6b26f3c3266bc5eefe60608ec9f5eea8a2adc8722ab4a47df"
+            "sha256": "393f344d3ea6400bf21d12cfb20f0e01e9403dd56a8a5119090f22a268a0dd28"
           },
           {
             "agent": "director",
             "slot": "advantage.proposition.proof",
             "candidate": "proof-v1.md",
-            "sha256": "534e1f8b883e57477c6b8a93cc682a00a6854900cbeb7ee52cf144a961173600"
+            "sha256": "bfdeb99fc2f544308af50b0ce8ba09976e42578f89dd50b15732166c06bf865d"
           },
           {
             "agent": "director",
             "slot": "identity.naming.name",
             "candidate": "name-v1.md",
-            "sha256": "28814c7f6d483f6d3bd33e06fd9475b19a49a2fa5b2705a041320fc92e792ef9"
+            "sha256": "aa5e2e5d1b992271f3cd6441d7bdad9145d9b08d646658d40cc95ab8d270fe8d"
           },
           {
             "agent": "director",
             "slot": "aspiration.purpose.mission",
             "candidate": "mission-v1.md",
-            "sha256": "6aa52c264672baf3fbb169703a916da0326f59b1968f9dd56823357d68ae7564"
+            "sha256": "a31b5f28302be45ca5efa59092871961f15f8198d5bec6e22d056fe73371807c"
           },
           {
             "agent": "director",
             "slot": "focus.segment.core",
             "candidate": "core-v1.md",
-            "sha256": "261c0ea12bdc9716dec575b09af518b1dae6555a2045d3919d70ef57a946278a"
+            "sha256": "c39c1ec383f72fe5e7e6c5665e5e4d3fe86b1a12f5fb29304187f7b18b0b8db4"
           },
           {
             "agent": "director",
             "slot": "identity.verbal.voice",
             "candidate": "voice-v1.md",
-            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
           }
         ],
         "contract": {
@@ -453,7 +453,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "meta-v1.md",
-      "sha256": "562b22011837996c0c1f40955431668078b7a71aea31f3b93a5084c7c84c3668"
+      "sha256": "54983477ee8a2a4689b424eb04de90d94ce27fd49db90b18b0eb4b7c4ebde331"
     },
     {
       "op": "pin",
@@ -467,14 +467,14 @@
       "model": "none",
       "tier": "none",
       "candidate": "meta-v1.md",
-      "sha256": "562b22011837996c0c1f40955431668078b7a71aea31f3b93a5084c7c84c3668",
+      "sha256": "54983477ee8a2a4689b424eb04de90d94ce27fd49db90b18b0eb4b7c4ebde331",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "record": "meta",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "3c5163f9fc11e913478de2b13f41261a6b464772ea34ad7792ccc318589115df"
+          "sha256": "3197aa74540d4cd1372e43b8859bae347b3f8d1f8c59657f2273ff4bbaa3e174"
         }
       ]
     }

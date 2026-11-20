@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "toggle-button-v1.json",
-      "sha256": "ef2859c9a0514496294cd83f8f7762bbdd7facfa5b24f6b4f65b7182f282a4b2",
+      "sha256": "aa94231c62f53ed1e87976677c8d3c6e2feab69fc1d45e251155f8a65ed68912",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "5f10d67e6281e52f6a84f94b6f919489689fe1f8e8b6eeb8597df9b1ac75e74f"
+      "pinSet": "25ea290dcf9f14e637e653b0c74f5f3864639719b85bdbdcfeecdefcf0fbbb87"
     }
   ]
 }

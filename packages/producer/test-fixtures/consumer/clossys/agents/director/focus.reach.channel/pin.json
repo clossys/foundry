@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "director/focus.reach.channel",
-      "sha256": "285b660864bf5e4043d4cb82db14bdba93557e20919812a2a71a53c8f086863d"
+      "sha256": "b9396d883185130d5827ec0ff89bd7b753dcec79e3a872909da3e6efec24b3f9"
     }
   ],
   "candidate": "channel-v1.md",
-  "sha256": "ae3a97be032ffe10ba7c58ac30909ef9e2f0df0607baf2c2b8642f4ba3314266",
+  "sha256": "fab91184c603e441ce03ebd02bb93fa8fbbfecc6bd975a7e4767d706e8219d01",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

@@ -119,7 +119,7 @@
         "seed": "shadcn-aria/collapsible"
       },
       "name": "disclosure-v1.json",
-      "sha256": "2e02983631a60c3ca2c9b7bd58f874b655d544fcfcfacee598f6554316b933fb"
+      "sha256": "0c3dc92440e40f59e6d3d8a1e8cbdf4a874e2c6971a15580eda530876247eb01"
     },
     {
       "op": "pin",
@@ -133,13 +133,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "disclosure-v1.json",
-      "sha256": "2e02983631a60c3ca2c9b7bd58f874b655d544fcfcfacee598f6554316b933fb",
+      "sha256": "0c3dc92440e40f59e6d3d8a1e8cbdf4a874e2c6971a15580eda530876247eb01",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "91b5cd784e0ffd6e9dbefab013020eac7ec805f1a7090e84232dc1eeea3f7822"
+          "sha256": "f6892d35e13f57781bd4555f2746f9def6a7bd36482fc8b3c3e7096d1728b653"
         }
       ]
     }

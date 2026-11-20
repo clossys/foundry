@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/lexicon.avoid-terms",
-      "sha256": "df4bc46f620e2635c94e1ab2abd22f84e133499ec365005bcf07843e5665932f"
+      "sha256": "951291408f45634583549f8cc2164780bf515641fc3e65549f14e258c8b91c40"
     }
   ],
   "candidate": "avoid-terms-v1.md",
-  "sha256": "1dc2bccf90b7ffe45d6fdd00cf7d0d886507acb786d5e52e93488233aa7687f4",
+  "sha256": "7cee3d4012e7b7b00384d679161c204b63e16ddbadcf22f7ee9e5969b501761b",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

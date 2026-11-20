@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.popover",
-      "sha256": "9f8314155fa96c8b3ddc4f051912406945356b19ba6341a35b1decf6fc96c4c4"
+      "sha256": "9a43c2b884b0c3cba4f3f3501f09bddcd33c1c5aed2fd5a9651037c81f7cb664"
     }
   ],
   "candidate": "popover-v1.json",
-  "sha256": "1c20bb834c576da229896cda9a107407de827a2d7ac0866fcb714d7ce735f84f",
+  "sha256": "2efe29a0e6c0f7ea46090c0ea003c9e09f628a7fa7e3b1cdc3f4d546aa3c77cf",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

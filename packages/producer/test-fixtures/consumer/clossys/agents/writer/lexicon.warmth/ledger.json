@@ -101,13 +101,13 @@
             "agent": "director",
             "slot": "identity.verbal.voice",
             "candidate": "voice-v1.md",
-            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
           },
           {
             "agent": "director",
             "slot": "identity.brand.personality",
             "candidate": "personality-v1.md",
-            "sha256": "f85d6742ab148aa72f18205f3ff830389e643644bc732626776fe26337b2d3c2"
+            "sha256": "556cf36aaa83bd42033ed609d7f53da3cfbd9f7aa718515af5eac98ffea93b4a"
           }
         ],
         "contract": {
@@ -281,7 +281,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "warmth-v1.md",
-      "sha256": "f0d65420107f7bd324a2886d84d6d1a92fd583a8f826b7a45329e0c37e1a86b0"
+      "sha256": "7cf5a6b4fea3b362d78d22343f2e18f0b9c29efef211a07d31825cf00cacf4f6"
     },
     {
       "op": "pin",
@@ -295,13 +295,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "warmth-v1.md",
-      "sha256": "f0d65420107f7bd324a2886d84d6d1a92fd583a8f826b7a45329e0c37e1a86b0",
+      "sha256": "7cf5a6b4fea3b362d78d22343f2e18f0b9c29efef211a07d31825cf00cacf4f6",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "84bd1ec54c7454bd67109c4e2bb7b2e9a34fd9888ebb82ac89ed1332344dde5e"
+          "sha256": "2e3a0df9b8cf1e500b5b7cb41b28f3b4c883a73240d52ecddd487e993d6dde48"
         }
       ]
     }

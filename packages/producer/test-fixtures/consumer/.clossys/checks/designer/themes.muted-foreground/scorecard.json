@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "muted-foreground-v1.json",
-      "sha256": "e65d099bf7e3e15a26d324a93316102b310363f0e26feb7d07dc95a619f6285a",
+      "sha256": "bdb8e4c6ed3dd289709236482ad527625b1f742f2cc83e66226f497abcdfe43d",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "7a2090b598cca67755a1bb5f31834d2493aaa25e66a9fb7fac929b956867ca2e"
+      "pinSet": "7d52a0fe5d7e5af54ccdb01b266c321ec14a4a57d14cfd3a36a32c712dd96d73"
     }
   ]
 }

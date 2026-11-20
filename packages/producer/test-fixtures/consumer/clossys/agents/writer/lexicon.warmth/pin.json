@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/lexicon.warmth",
-      "sha256": "0573ee1b0a43b5ac7d9587b0228065f9a75a698cf1b95d8142e0e112d4c24524"
+      "sha256": "3fafdc54ada1edabf5ba86f4a84807c879bbae62a933fb8ad2f1ddbd9e5a8bfc"
     }
   ],
   "candidate": "warmth-v1.md",
-  "sha256": "f0d65420107f7bd324a2886d84d6d1a92fd583a8f826b7a45329e0c37e1a86b0",
+  "sha256": "7cf5a6b4fea3b362d78d22343f2e18f0b9c29efef211a07d31825cf00cacf4f6",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

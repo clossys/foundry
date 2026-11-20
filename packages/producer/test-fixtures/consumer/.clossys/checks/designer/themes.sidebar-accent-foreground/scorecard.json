@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "sidebar-accent-foreground-v1.json",
-      "sha256": "ff3ec91f020bdc470ebb5bdd5fd6f1176c825b6468d2da4955ad5d4effef5d63",
+      "sha256": "befff83a4c11d86242526750cffebee00e244e635166e83716a19d0ab7b88b82",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "92ee57ad083bfa3f75d01e97932d81ed63af8fd831bc369121db9ba4b157d4f5"
+      "pinSet": "3a28051240099789458d94cad50ec45fd2c7d73bb027a458d7d49ca98df04c66"
     }
   ]
 }

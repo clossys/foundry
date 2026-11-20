@@ -119,7 +119,7 @@
         "seed": "shadcn-aria/badge"
       },
       "name": "badge-v1.json",
-      "sha256": "e73e290a0a5831fc7a677a71f6a3925ef332a7fccac396244057aaff328e5535"
+      "sha256": "95a5fb6c27522f14abbbd5f193e47bfcd853e49b33771d91a8f5cb500f2ae2f8"
     },
     {
       "op": "pin",
@@ -133,13 +133,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "badge-v1.json",
-      "sha256": "e73e290a0a5831fc7a677a71f6a3925ef332a7fccac396244057aaff328e5535",
+      "sha256": "95a5fb6c27522f14abbbd5f193e47bfcd853e49b33771d91a8f5cb500f2ae2f8",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "b41e156b67b57cba2bfe2d26820e95c9141491dd54be9dd12b0ccd40d9dbde96"
+          "sha256": "ebcde1b5e8e0d509a4de82ec847d05c975988f2de2b273df97714944df2a7073"
         }
       ]
     }

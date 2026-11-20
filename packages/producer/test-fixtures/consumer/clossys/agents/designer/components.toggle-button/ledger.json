@@ -119,7 +119,7 @@
         "seed": "shadcn-aria/toggle"
       },
       "name": "toggle-button-v1.json",
-      "sha256": "ef2859c9a0514496294cd83f8f7762bbdd7facfa5b24f6b4f65b7182f282a4b2"
+      "sha256": "aa94231c62f53ed1e87976677c8d3c6e2feab69fc1d45e251155f8a65ed68912"
     },
     {
       "op": "pin",
@@ -133,13 +133,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "toggle-button-v1.json",
-      "sha256": "ef2859c9a0514496294cd83f8f7762bbdd7facfa5b24f6b4f65b7182f282a4b2",
+      "sha256": "aa94231c62f53ed1e87976677c8d3c6e2feab69fc1d45e251155f8a65ed68912",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "06c47fd3588cf980b3dc1bec14b8bd07c30aa71a707ad4af1bdabafbdf5246c9"
+          "sha256": "48c3043b8d66072662a56626b13ebe1546a54f00d32af61c335101835760ed53"
         }
       ]
     }

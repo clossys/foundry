@@ -20,6 +20,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { normalizedSeedFile } from "@clossys/designer/ref-verbatim";
 
 /** The seed clock: every record the verbs write in this run carries it. */
 export const AT = "2026-11-19T00:00:00Z";
@@ -456,14 +457,15 @@ async function setup(root) {
 
 /**
  * A component candidate (component, adopt-first): L1 adopts the stock reference item the slot's preview fixture
- * names, its code byte-exact (R03.4: meta.refVerbatim.files maps each shipped file to the reference file).
+ * names, its code byte-exact to the normalized reference (R03.4 and ref-verbatim: the reference file normalized
+ * to the consumer's components.json; meta.refVerbatim.files maps each shipped file to the reference file).
  */
-function component(root, id, doc, standard) {
+function component(root, consumer, id, doc, standard) {
   const file = doc.contract?.fixture?.fixtures?.file;
   const rows = file ? manifest().filter(row => row.files.some(each => each.path === file) && ["shadcn-aria", "diceui"].includes(row.registry)) : [];
   const row = rows.find(each => (each.slots ?? []).includes(id)) ?? rows.find(each => each.name === file.split("/").at(-1).replace(/\.tsx$/, "")) ?? rows[0];
   if (!row) throw new Refused(`designer/${id}`, `no stock reference item ships the contract fixture ${file ?? "(none)"}`);
-  const files = row.files.filter(each => each.path.endsWith(".tsx")).map(each => ({ path: each.path, type: row.type, content: referenceText(row, each.path) }));
+  const files = row.files.filter(each => each.path.endsWith(".tsx")).map(each => ({ path: each.path, type: row.type, content: normalizedSeedFile(consumer, refId(row), each.path, { manifest: { items: manifest() }, referencesDir: REFERENCES }) }));
   const code = files;
   const item = {
     name: id.split(".").at(-1),
@@ -486,7 +488,7 @@ function candidateOf(root, consumer, agent, id, doc, standard) {
     if (doc.standard.startsWith("token.")) return token(id, doc, standard);
     if (doc.standard === "asset.glyph") return glyph(id, doc, standard);
     if (doc.standard === "asset.logo-mark" || doc.standard === "asset.media-rule") return consumerAsset(id, doc, standard);
-    if (doc.standard === "component" && doc.contract?.fixture) return component(root, id, doc, standard);
+    if (doc.standard === "component" && doc.contract?.fixture) return component(root, consumer, id, doc, standard);
   }
   if (agent === "director") return { ext: "md", body: brief(consumer, id, doc), rung: "create", reason: "fixture world: the brief standards are create-only and no package default fits a synthetic consumer" };
   if (agent === "writer") {
@@ -507,9 +509,7 @@ function candidateOf(root, consumer, agent, id, doc, standard) {
  * world is pinned everywhere else. A slot leaves this list when its standard or contract admits a candidate.
  */
 export const BLOCKED = {
-  "designer/components.card": "ref-verbatim REF-HUNK-CLASS: the stock file's class font-heading is cn-font-heading in its normalized reference; the normalized bytes fail R03.4 (adopt-first, byte-exact to the reference)",
-  "designer/components.toast": "ref-verbatim REF-HUNK-STRUCTURE and REF-ADAPTATION H-IMPORT: the normalized reference swaps the icon import (IconPlaceholder to lucide); the normalized bytes fail R03.4",
-  "designer/components.dialog": "ref-verbatim REF-ADAPTATION H-IMPORT: the normalized reference rewrites the registry imports; the normalized bytes fail R03.4",
+  "designer/components.dialog": "R05.1 [import] and R07.1: its normalized reference imports @/components/ui/button, which resolves to components.link (link ships the same stock button file as components.button) and slot.json uses does not list link",
   "designer/components.media-player": "ref-verbatim REF-FLAVOR: the contract fixture's reference diceui/media-player is new-york, the consumer flavor is aria-nova",
   "designer/components.status-mark": "ref-verbatim REF-FLAVOR: the contract fixture's reference diceui/status is new-york, the consumer flavor is aria-nova",
   "designer/components.icon": "R05.1 [no-fixture]: no contract fixture (contract-fixture-gaps: no adopted reference); an npm re-export fails R03.2 (adopt rung needs a registry source) and R03.4",

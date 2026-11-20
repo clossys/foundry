@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "punctuation-v1.md",
-      "sha256": "3de0fd01e50a5390c28871f220155191412abee726298d91392718d61eec9470",
+      "sha256": "5e63443d82de11cb8da09b80d13c294716ce7c4180d5ee5c5342836f364f93f6",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "ad0f91c9837063d66e11b06b8c30b7b8ea6e363b0652f9eb9d6eb3109d4c3342"
+      "pinSet": "95c16864a6ce61e98bc5f64dcf35ba5008c09cf54ac8af0804343ef2ee3caee1"
     }
   ]
 }

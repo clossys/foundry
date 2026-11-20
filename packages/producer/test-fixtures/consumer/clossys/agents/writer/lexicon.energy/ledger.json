@@ -101,13 +101,13 @@
             "agent": "director",
             "slot": "identity.verbal.voice",
             "candidate": "voice-v1.md",
-            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
           },
           {
             "agent": "director",
             "slot": "identity.brand.personality",
             "candidate": "personality-v1.md",
-            "sha256": "f85d6742ab148aa72f18205f3ff830389e643644bc732626776fe26337b2d3c2"
+            "sha256": "556cf36aaa83bd42033ed609d7f53da3cfbd9f7aa718515af5eac98ffea93b4a"
           }
         ],
         "contract": {
@@ -281,7 +281,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "energy-v1.md",
-      "sha256": "c6fa52ad021763af4a6326867afbb5bdadbed22c3ada902f55162cd827ac261d"
+      "sha256": "8addd1c3bfb8b37a8feae159976eef83b5392f5e77cbe4a45d160a8598095774"
     },
     {
       "op": "pin",
@@ -295,13 +295,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "energy-v1.md",
-      "sha256": "c6fa52ad021763af4a6326867afbb5bdadbed22c3ada902f55162cd827ac261d",
+      "sha256": "8addd1c3bfb8b37a8feae159976eef83b5392f5e77cbe4a45d160a8598095774",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "3ebb58cd0633ddb6b95724d6e03c0e433a6cc381c64930ec091a31813965e273"
+          "sha256": "8c980fc95c0da68e6f68db438d14949777f08597d54f203a1a986b05e3136629"
         }
       ]
     }

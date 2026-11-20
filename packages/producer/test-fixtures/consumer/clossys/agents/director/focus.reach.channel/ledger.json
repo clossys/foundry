@@ -101,7 +101,7 @@
             "agent": "director",
             "slot": "focus.segment.core",
             "candidate": "core-v1.md",
-            "sha256": "261c0ea12bdc9716dec575b09af518b1dae6555a2045d3919d70ef57a946278a"
+            "sha256": "c39c1ec383f72fe5e7e6c5665e5e4d3fe86b1a12f5fb29304187f7b18b0b8db4"
           }
         ],
         "contract": {
@@ -317,7 +317,7 @@
         "reason": "fixture world: the brief standards are create-only and no package default fits a synthetic consumer"
       },
       "name": "channel-v1.md",
-      "sha256": "ae3a97be032ffe10ba7c58ac30909ef9e2f0df0607baf2c2b8642f4ba3314266"
+      "sha256": "fab91184c603e441ce03ebd02bb93fa8fbbfecc6bd975a7e4767d706e8219d01"
     },
     {
       "op": "pin",
@@ -331,13 +331,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "channel-v1.md",
-      "sha256": "ae3a97be032ffe10ba7c58ac30909ef9e2f0df0607baf2c2b8642f4ba3314266",
+      "sha256": "fab91184c603e441ce03ebd02bb93fa8fbbfecc6bd975a7e4767d706e8219d01",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "79b7de17976c89c24d04a17a1f6dc760e03cbe6c96157279ddb7117c3d045c19"
+          "sha256": "6bcb735ef3ad67929a435110f208a20929d9ccee8169b0239fa22e36f7bde5d8"
         }
       ]
     }

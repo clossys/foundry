@@ -7,7 +7,7 @@
     {
       "rank": 1,
       "candidate": "proof-v1.md",
-      "sha256": "534e1f8b883e57477c6b8a93cc682a00a6854900cbeb7ee52cf144a961173600",
+      "sha256": "bfdeb99fc2f544308af50b0ce8ba09976e42578f89dd50b15732166c06bf865d",
       "submitted": true,
       "certified": true,
       "verdict": "certify",

@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "reading-level-v1.md",
-      "sha256": "c6cc2b391ec30b33b2833ebcd38acb706670958c98f5b0c4b2f7b04bc89aacef",
+      "sha256": "c723ce163dd81b55ca4cca6418bcf741140e369dd73d628e6e7320393bfa2d77",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "4f9351a5d0446e9b279ee07864b3aebcacdea2823963c7c33b00f83cc0826324"
+      "pinSet": "28b07c18cdb6b22c1da205f620a97372a6cd25ddf7ae21025f320dd3b3f011f6"
     }
   ]
 }

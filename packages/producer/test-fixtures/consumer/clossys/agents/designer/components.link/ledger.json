@@ -119,7 +119,7 @@
         "seed": "shadcn-aria/button"
       },
       "name": "link-v1.json",
-      "sha256": "29505719f90a9a7a13d930fd46b82096729d129a22fbd355d93c8d7382f2a7fa"
+      "sha256": "cf3be60b4b1cdc5eba00b8184441bedc1b0ac9568713c1b9bab87f21b62b4cd2"
     },
     {
       "op": "pin",
@@ -133,13 +133,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "link-v1.json",
-      "sha256": "29505719f90a9a7a13d930fd46b82096729d129a22fbd355d93c8d7382f2a7fa",
+      "sha256": "cf3be60b4b1cdc5eba00b8184441bedc1b0ac9568713c1b9bab87f21b62b4cd2",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "572d6c60c86f1ea720e155a4021f1f8d791cddebf617d7285f853c837b6a13db"
+          "sha256": "fe4c5c264ecc02e5b361ed0278ede33d6edaf7205b3e03e5a3805115243fd267"
         }
       ]
     }

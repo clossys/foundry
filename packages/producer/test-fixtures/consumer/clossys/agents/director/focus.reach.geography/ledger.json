@@ -314,7 +314,7 @@
         "reason": "fixture world: the brief standards are create-only and no package default fits a synthetic consumer"
       },
       "name": "geography-v1.md",
-      "sha256": "9d799ddde97fb0e119e59d4b56dd03ce8093a9a13c4c0ec9ea2398526858ccfc"
+      "sha256": "c0a56cae9e82b110d3fbd893219892cfba8ee8a1215803104e79e8fd4ef09491"
     },
     {
       "op": "pin",
@@ -328,13 +328,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "geography-v1.md",
-      "sha256": "9d799ddde97fb0e119e59d4b56dd03ce8093a9a13c4c0ec9ea2398526858ccfc",
+      "sha256": "c0a56cae9e82b110d3fbd893219892cfba8ee8a1215803104e79e8fd4ef09491",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "e29ed978a4c76dc812d721ccaddde8a049482a3b63500d25b85db545dddf6c9c"
+          "sha256": "1d6e9fcb1f85f680e4497bfa58ab60405e0175f71321525741061aa5a87e68e3"
         }
       ]
     }

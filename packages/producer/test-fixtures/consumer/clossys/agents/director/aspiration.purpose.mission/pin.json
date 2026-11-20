@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "director/aspiration.purpose.mission",
-      "sha256": "cf5504e27c93d43ea0e4e77d83dbfbd9b0c6d0d4ac01524dfcd5857e955dfdc1"
+      "sha256": "2c93c3c3470bb936ff8d283f96f06a52adbe8370f7d6d948339ee1375e064e7c"
     }
   ],
   "candidate": "mission-v1.md",
-  "sha256": "6aa52c264672baf3fbb169703a916da0326f59b1968f9dd56823357d68ae7564",
+  "sha256": "a31b5f28302be45ca5efa59092871961f15f8198d5bec6e22d056fe73371807c",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

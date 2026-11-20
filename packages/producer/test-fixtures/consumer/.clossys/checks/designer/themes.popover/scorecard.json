@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "popover-v1.json",
-      "sha256": "1c20bb834c576da229896cda9a107407de827a2d7ac0866fcb714d7ce735f84f",
+      "sha256": "2efe29a0e6c0f7ea46090c0ea003c9e09f628a7fa7e3b1cdc3f4d546aa3c77cf",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "c7a5b2c5a67271ce9c69518b146e7c3e75eaeebdd0350cfa6a8a01893ab56683"
+      "pinSet": "1b2b3a4dd97f49aefa8211f2ecc22cea0ae0fd49b46a77105d757e9b6b60d3af"
     }
   ]
 }

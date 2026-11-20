@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.ring",
-      "sha256": "bdd23e1dcef68d7cad53c26f4cff96434bf1ae82ead215f8f2147f7fb558ccf9"
+      "sha256": "85f0684fea641ce1075879c4f30294b381f03a96acd054ca8d5743ff02a81f47"
     }
   ],
   "candidate": "ring-v1.json",
-  "sha256": "245d264b8ccf5fb30a78546b737e5d8d1ef04f4a9f5d03284efb229945a3dc4d",
+  "sha256": "9d41cc14f6f60e0d2cd5a81e6891cecb365ff3081ff8972d9270fd2fa462ad44",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

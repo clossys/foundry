@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.lockup",
-      "sha256": "25744f490c38c160543bacdb635f8521a9bbdc9b5ade63e85ef73d8a75811229"
+      "sha256": "3361d3c685275f8278e6c13afbfc066ae7d9ece2276b1c13daa0d8d0193aa24e"
     }
   ],
   "candidate": "lockup-v1.json",
-  "sha256": "faaf51b3114f88eae9e472365b9e5eca6f82391b39abe1cb1cb86b5a08d4ece7",
+  "sha256": "357ba7e24feb38396aec2ef0471b3dc858de5aa46157502b2a0852961f21e4ee",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

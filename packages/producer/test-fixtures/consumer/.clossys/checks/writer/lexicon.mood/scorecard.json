@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "mood-v1.md",
-      "sha256": "1a4bfde7aa8019afdb38fe653e62e149e6b1c43ff5f534bc29e2b47c0e1d77e2",
+      "sha256": "eaed3f30521151c3116577fb03e6da1022f9532e52655fc8d8d233faab036e1c",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "22dd38cafee58f4c9c3666313cd2cf17e7b39afcf62c67adfe60073365c23635"
+      "pinSet": "712fd752c1ae967b461643a122ce3b6ae6eb2f3079ab0fbe9f9791ebf6ac2d8b"
     }
   ]
 }

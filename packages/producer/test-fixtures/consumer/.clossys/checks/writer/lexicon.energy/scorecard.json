@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "energy-v1.md",
-      "sha256": "c6fa52ad021763af4a6326867afbb5bdadbed22c3ada902f55162cd827ac261d",
+      "sha256": "8addd1c3bfb8b37a8feae159976eef83b5392f5e77cbe4a45d160a8598095774",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "beb598b393ddcf13d6c57e127425a040aba580900f1b7355122bc1156f09b3ad"
+      "pinSet": "099da84ade5f6f07e0f94c1c2ea8fec6f4ef1badd0c2b6f45c29a09d700588a7"
     }
   ]
 }

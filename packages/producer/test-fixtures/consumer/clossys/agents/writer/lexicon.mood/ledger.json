@@ -101,7 +101,7 @@
             "agent": "director",
             "slot": "identity.verbal.voice",
             "candidate": "voice-v1.md",
-            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
           }
         ],
         "contract": {
@@ -275,7 +275,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "mood-v1.md",
-      "sha256": "1a4bfde7aa8019afdb38fe653e62e149e6b1c43ff5f534bc29e2b47c0e1d77e2"
+      "sha256": "eaed3f30521151c3116577fb03e6da1022f9532e52655fc8d8d233faab036e1c"
     },
     {
       "op": "pin",
@@ -289,13 +289,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "mood-v1.md",
-      "sha256": "1a4bfde7aa8019afdb38fe653e62e149e6b1c43ff5f534bc29e2b47c0e1d77e2",
+      "sha256": "eaed3f30521151c3116577fb03e6da1022f9532e52655fc8d8d233faab036e1c",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "cd399c92292275a03ae28ce3319d1511b39d30d7e83f401d7565edbfbda6ac50"
+          "sha256": "487dc17a9cc6d69e75851d5ee253cab780c3721cf47d1e889bb5fdea95304578"
         }
       ]
     }

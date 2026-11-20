@@ -189,11 +189,20 @@ export function seedItem(manifest: ReferenceManifest, refs: unknown): ManifestIt
 }
 
 /**
- * Byte-exact seed files (R03.4): every `meta.refVerbatim.files` mapping `{<payload path>: <reference
- * path>}` names a seed file whose manifest sha256 equals the candidate file's bytes. A payload file
- * the mapping does not name is an added file (a variant or wrapper composing the seed), allowed.
+ * The seed file a candidate file is compared with (R03.4): `<registry>/<name>@<version>` and its manifest path give
+ * the reference text as the consumer installs it (ref-verbatim's normalized reference). It throws when the seed file
+ * cannot be read or normalized.
  */
-export function verbatimFindings(label: string, item: unknown, manifest: ReferenceManifest): string[] {
+export type SeedReference = (ref: string, path: string) => string;
+
+/**
+ * Byte-exact seed files (R03.4): every `meta.refVerbatim.files` mapping `{<payload path>: <reference
+ * path>}` names a seed file of the manifest item, and the candidate file's bytes equal that seed file as
+ * the consumer installs it: `reference` gives the normalized reference text (the one ref-verbatim
+ * compares with), else the manifest sha256 of the raw file is the bar. A payload file the mapping does
+ * not name is an added file (a variant or wrapper composing the seed), allowed.
+ */
+export function verbatimFindings(label: string, item: unknown, manifest: ReferenceManifest, reference?: SeedReference): string[] {
   const doc = item && typeof item === "object" ? item as { files?: unknown; meta?: { source?: { ref?: unknown }; refVerbatim?: { files?: unknown } } } : {};
   const mapping = doc.meta?.refVerbatim?.files;
   if (!mapping || typeof mapping !== "object" || Array.isArray(mapping) || !Object.keys(mapping).length) return [`${label}: adopts a seed but meta.refVerbatim.files maps no file to it`];
@@ -201,13 +210,20 @@ export function verbatimFindings(label: string, item: unknown, manifest: Referen
   if (!seed) return [`${label}: source.ref names no reference-manifest item`];
   const files = new Map((Array.isArray(doc.files) ? doc.files : []).filter((file): file is { path: string; content: string } => !!file && typeof file.path === "string" && typeof file.content === "string").map(file => [file.path, file.content]));
   const seedFiles = new Map((seed.files ?? []).map(file => [file.path, file.sha256]));
+  const key = `${seed.registry}/${seed.name}@${seed.version}`;
   const findings: string[] = [];
-  for (const [payload, reference] of Object.entries(mapping as Record<string, unknown>)) {
+  for (const [payload, path] of Object.entries(mapping as Record<string, unknown>)) {
     const content = files.get(payload);
     if (content === undefined) { findings.push(`${label}: maps ${payload}, which the candidate does not ship`); continue; }
-    const want = typeof reference === "string" ? seedFiles.get(reference) : undefined;
-    if (!want) { findings.push(`${label}: maps ${payload} to ${String(reference)}, which ${seed.registry}/${seed.name}@${seed.version} does not list`); continue; }
-    if (sha256(content) !== want) findings.push(`${label}: ${payload} is not byte-exact to ${seed.registry}/${seed.name}@${seed.version} ${reference as string}`);
+    const raw = typeof path === "string" ? seedFiles.get(path) : undefined;
+    if (!raw) { findings.push(`${label}: maps ${payload} to ${String(path)}, which ${key} does not list`); continue; }
+    if (!reference) {
+      if (sha256(content) !== raw) findings.push(`${label}: ${payload} is not byte-exact to ${key} ${path as string}`);
+      continue;
+    }
+    let want: string;
+    try { want = sha256(reference(key, path as string)); } catch (error) { findings.push(`${label}: cannot read the normalized reference ${key} ${path as string}: ${(error as Error).message}`); continue; }
+    if (sha256(content) !== want) findings.push(`${label}: ${payload} is not byte-exact to the normalized reference ${key} ${path as string}`);
   }
   return findings;
 }

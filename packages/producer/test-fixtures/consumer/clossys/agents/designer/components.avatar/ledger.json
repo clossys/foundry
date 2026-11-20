@@ -119,7 +119,7 @@
         "seed": "shadcn-aria/avatar"
       },
       "name": "avatar-v1.json",
-      "sha256": "b8f3f9f22e799b6e4a7d89e0645aef586ba98b06a532e050549d98cca46d583f"
+      "sha256": "3a4eb8957e61456e137983661af1493ef6dada3f275ac7bcf96a0aae3e1b1804"
     },
     {
       "op": "pin",
@@ -133,13 +133,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "avatar-v1.json",
-      "sha256": "b8f3f9f22e799b6e4a7d89e0645aef586ba98b06a532e050549d98cca46d583f",
+      "sha256": "3a4eb8957e61456e137983661af1493ef6dada3f275ac7bcf96a0aae3e1b1804",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "e5e3aa51843b826c9854e07f4e70716e41d51f44a2fa344ad8151bbc896bbec3"
+          "sha256": "4169894017b9966ad4d68cd58d6418ae986342735209a6641c6c29c57855bcd1"
         }
       ]
     }

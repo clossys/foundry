@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "director/identity.brand.essence",
-      "sha256": "8a3cee0ae73dd95741bf9dfc2043bb1d3faa4b71c8e4e3272ccaf6a7b72b165d"
+      "sha256": "148810ccf4ad2e3fec8a1214cdf9da52ab610114a62b0eaf9a4473f12ccb2e4b"
     }
   ],
   "candidate": "essence-v1.md",
-  "sha256": "ddc61558e45ee1dc8662e081d40409dd9438a37d0dc93464efa8e319119b02e5",
+  "sha256": "0e6faca610a7112af6b84833dab579d4d456dd05a9eec4b32407416442d65263",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

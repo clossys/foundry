@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "icon-close-v1.json",
-      "sha256": "72098babc1590dfa66782ce34d6ba19b203491db5c08dca98faee6bf647e114e",
+      "sha256": "0928dcaf54d5ffcf1ea924da7e2226dee6ef00476974771b075374ecf9e0b6a1",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "281d4cdd6148f94d586e9dbd80a56b3803f647725a93ed02a5ab521b454d4040"
+      "pinSet": "368190550152fbda426319c27f1ce0cf6d37c16fc89b46a446c54be639c241b6"
     }
   ]
 }

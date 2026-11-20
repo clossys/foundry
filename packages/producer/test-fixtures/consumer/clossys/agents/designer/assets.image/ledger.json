@@ -100,49 +100,49 @@
             "agent": "director",
             "slot": "advantage.proposition.promise",
             "candidate": "promise-v1.md",
-            "sha256": "ce2fb24f2f9f4cd6b26f3c3266bc5eefe60608ec9f5eea8a2adc8722ab4a47df"
+            "sha256": "393f344d3ea6400bf21d12cfb20f0e01e9403dd56a8a5119090f22a268a0dd28"
           },
           {
             "agent": "director",
             "slot": "focus.category.definition",
             "candidate": "definition-v1.md",
-            "sha256": "299e529dc57b12f65a7148a6816b8175b37da843210e8fab21749079a92b6f7f"
+            "sha256": "aa13638b9ad5aca20634e0a602faf41b3b7a432032861c019608b0ae81b7a8bb"
           },
           {
             "agent": "director",
             "slot": "focus.segment.core",
             "candidate": "core-v1.md",
-            "sha256": "261c0ea12bdc9716dec575b09af518b1dae6555a2045d3919d70ef57a946278a"
+            "sha256": "c39c1ec383f72fe5e7e6c5665e5e4d3fe86b1a12f5fb29304187f7b18b0b8db4"
           },
           {
             "agent": "director",
             "slot": "identity.brand.essence",
             "candidate": "essence-v1.md",
-            "sha256": "ddc61558e45ee1dc8662e081d40409dd9438a37d0dc93464efa8e319119b02e5"
+            "sha256": "0e6faca610a7112af6b84833dab579d4d456dd05a9eec4b32407416442d65263"
           },
           {
             "agent": "director",
             "slot": "identity.brand.personality",
             "candidate": "personality-v1.md",
-            "sha256": "f85d6742ab148aa72f18205f3ff830389e643644bc732626776fe26337b2d3c2"
+            "sha256": "556cf36aaa83bd42033ed609d7f53da3cfbd9f7aa718515af5eac98ffea93b4a"
           },
           {
             "agent": "director",
             "slot": "identity.verbal.voice",
             "candidate": "voice-v1.md",
-            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
           },
           {
             "agent": "director",
             "slot": "identity.visual.imagery",
             "candidate": "imagery-v1.md",
-            "sha256": "105804a683aa5b5ab19949b6d4d7bf0dac3319fdb14ba0a944b3f8600ae84cd8"
+            "sha256": "b57079616787be16449d74b7afaf67dddb820db5f78c1a4b17a65998ad435c20"
           },
           {
             "agent": "director",
             "slot": "identity.visual.style",
             "candidate": "style-v1.md",
-            "sha256": "a37d3e74a657d00c4ac60fd92abe873d49bf9250c7834cea81b2eb5fc05ff425"
+            "sha256": "7d0992da68a3022b4b95339cc6e876a5a085d79a1ba59ebc6d67d101990c96ed"
           }
         ],
         "contract": {
@@ -334,7 +334,7 @@
         "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream"
       },
       "name": "image-v1.json",
-      "sha256": "a10dfce7ffa82ac5ea92469431d69c78778487c6869964b2865f88da7b6cc965"
+      "sha256": "3d369af3c021537747d5a26a3283096a695383a5e19cdae1e07923e15d0d5531"
     },
     {
       "op": "pin",
@@ -348,13 +348,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "image-v1.json",
-      "sha256": "a10dfce7ffa82ac5ea92469431d69c78778487c6869964b2865f88da7b6cc965",
+      "sha256": "3d369af3c021537747d5a26a3283096a695383a5e19cdae1e07923e15d0d5531",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "62908ec9d0aeb7e9b4011aac2f37b4c29af725cfc6b54636b16757228fa1a539"
+          "sha256": "24076126fa374f0e69d486d111850f96909a97d4fa0aef0f219f74e654dc8c8a"
         }
       ]
     }

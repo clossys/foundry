@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "formality-v1.md",
-      "sha256": "31273042f82910bcb068f81400f5f7df2f66d7a7d1b1df9de97686a7270648e2",
+      "sha256": "1e914c401254ec89e3ec9aac78259376c592eeeefd52a6cd70590a97942d257b",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "947f3fc46d017e93144e887c93df95cfaa54eb064ba228f8b736c41384ef44c6"
+      "pinSet": "ff510ca69a0931bd968939a69f266db6d8ecd5a27a19716a7616071f51406fe2"
     }
   ]
 }

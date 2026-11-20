@@ -101,13 +101,13 @@
             "agent": "director",
             "slot": "identity.brand.essence",
             "candidate": "essence-v1.md",
-            "sha256": "ddc61558e45ee1dc8662e081d40409dd9438a37d0dc93464efa8e319119b02e5"
+            "sha256": "0e6faca610a7112af6b84833dab579d4d456dd05a9eec4b32407416442d65263"
           },
           {
             "agent": "director",
             "slot": "identity.verbal.voice",
             "candidate": "voice-v1.md",
-            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
           }
         ],
         "contract": {
@@ -330,7 +330,7 @@
         "reason": "fixture world: the brief standards are create-only and no package default fits a synthetic consumer"
       },
       "name": "style-v1.md",
-      "sha256": "a37d3e74a657d00c4ac60fd92abe873d49bf9250c7834cea81b2eb5fc05ff425"
+      "sha256": "7d0992da68a3022b4b95339cc6e876a5a085d79a1ba59ebc6d67d101990c96ed"
     },
     {
       "op": "pin",
@@ -344,13 +344,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "style-v1.md",
-      "sha256": "a37d3e74a657d00c4ac60fd92abe873d49bf9250c7834cea81b2eb5fc05ff425",
+      "sha256": "7d0992da68a3022b4b95339cc6e876a5a085d79a1ba59ebc6d67d101990c96ed",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "1342ceefad89809c8fefec261f78a542c902a35d56cd2f8aba8e5198d4d00029"
+          "sha256": "b7e72e74317666e777db35f39e11c74b839c63dc0253ca8bbe32eb915b519ff8"
         }
       ]
     }

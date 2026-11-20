@@ -101,7 +101,7 @@
             "agent": "director",
             "slot": "identity.brand.essence",
             "candidate": "essence-v1.md",
-            "sha256": "ddc61558e45ee1dc8662e081d40409dd9438a37d0dc93464efa8e319119b02e5"
+            "sha256": "0e6faca610a7112af6b84833dab579d4d456dd05a9eec4b32407416442d65263"
           }
         ],
         "contract": {
@@ -324,7 +324,7 @@
         "reason": "fixture world: the brief standards are create-only and no package default fits a synthetic consumer"
       },
       "name": "voice-v1.md",
-      "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+      "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
     },
     {
       "op": "pin",
@@ -338,13 +338,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "voice-v1.md",
-      "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355",
+      "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "fad61bd537f30835f46c95b3a3ecbc21bcaab0eb82d21a0ad438b6fc18d65642"
+          "sha256": "8c12b766fdc17b48bca9ab163dea9631051fa3adc234cd5f72f31b48b9c8a9e7"
         }
       ]
     }

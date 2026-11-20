@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "spacing-v1.json",
-      "sha256": "59d1b37bd95f6baccc1cc456eefc41337025604e0cc006882907c66200fbff26",
+      "sha256": "a5aba621c5fe45e0796c659e09e30cb319a8e71fc1a0704d8003a36ebfe1857e",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "ab10b34f102292c22ce5c2621225fc9173c7a639ed88d442a95299585412f52c"
+      "pinSet": "667dd57a7915e97c7340d8d7434457873d64c46d3d852a8ca197f696a062e7c4"
     }
   ]
 }

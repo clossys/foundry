@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-document",
-      "sha256": "22736df3deb956d2132c0ea871171d195f72b25d23211e1e345466bf820f6a64"
+      "sha256": "b0984e5b9664fdc2471fd45bab8d632bb799fbb1d1ad9d41171bdd8f1327faa4"
     }
   ],
   "candidate": "icon-document-v1.json",
-  "sha256": "ac8070e6cdc6bb2abc2353f0f0a068652be0059f4acd3df1b420bae46d85e712",
+  "sha256": "1817cc65c20a7a826470e2c1ec716f1931a42ae6e30a955a4c1e38dad961cc2e",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

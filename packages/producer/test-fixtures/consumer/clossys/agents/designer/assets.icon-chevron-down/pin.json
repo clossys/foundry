@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-chevron-down",
-      "sha256": "d877e75667395a16d112f09c2ff19939a180d1eafbeacf3cc4451fd6afaa2495"
+      "sha256": "84f911eb335314c2b1202f8c14b7404a1941727652f9cb150f399e03fb2db5ae"
     }
   ],
   "candidate": "icon-chevron-down-v1.json",
-  "sha256": "0849a519491e741ac2209c501dd850c33322612b49cbfd4b5a643663ca99380f",
+  "sha256": "196083314dcec5380dba4834f05d95d3de2683507ed349a5e865e051c9215222",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

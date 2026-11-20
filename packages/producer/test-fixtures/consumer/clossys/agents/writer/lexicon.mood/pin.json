@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/lexicon.mood",
-      "sha256": "05c59f3441a3546501e6708a4b4df78de581c7c3b3bcd0a8875dcffca92d20f7"
+      "sha256": "111457bcb1f5eca5f99f8d353307ac3698369f463c5d5be9736e86a0db5e1d09"
     }
   ],
   "candidate": "mood-v1.md",
-  "sha256": "1a4bfde7aa8019afdb38fe653e62e149e6b1c43ff5f534bc29e2b47c0e1d77e2",
+  "sha256": "eaed3f30521151c3116577fb03e6da1022f9532e52655fc8d8d233faab036e1c",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

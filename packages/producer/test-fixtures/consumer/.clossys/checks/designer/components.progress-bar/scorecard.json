@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "progress-bar-v1.json",
-      "sha256": "ccd6e17bebf46e56f268c6291583ab044b5c3e431318b16394b290cba1f308c0",
+      "sha256": "0721b88dd5aade7e804f6d6d739669ef236357f3cc888e3db7a8b87f231a3d20",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "059f96a58f27ce2341d6b9164a99a72a302abe82586006a9bf443f8f3e0dcea1"
+      "pinSet": "04c480b981afaa6663ffb0223cac324fd077ce01af2af1fdc1bfa2a0dbc49592"
     }
   ]
 }

@@ -119,7 +119,7 @@
         "seed": "shadcn-aria/separator"
       },
       "name": "separator-v1.json",
-      "sha256": "f9eb5cfdf939ca12264970fe18adf1785255cdb8e0c2b1b69390b8f60606c546"
+      "sha256": "4a81afcd3bbc9f79441332f0339083e70c50eba4236de0ce30966725cec1fb72"
     },
     {
       "op": "pin",
@@ -133,13 +133,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "separator-v1.json",
-      "sha256": "f9eb5cfdf939ca12264970fe18adf1785255cdb8e0c2b1b69390b8f60606c546",
+      "sha256": "4a81afcd3bbc9f79441332f0339083e70c50eba4236de0ce30966725cec1fb72",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "be9351e605f19a543b4351fd12b4b4f702394d8e68d2d2cbc6d5067707416f9d"
+          "sha256": "e0cac5b071b47cad53df8d0706a88cdcde908c8fb0cbc75b3a66ae79b82f8d4f"
         }
       ]
     }

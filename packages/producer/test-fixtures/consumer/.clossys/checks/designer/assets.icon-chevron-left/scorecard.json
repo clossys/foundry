@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "icon-chevron-left-v1.json",
-      "sha256": "ccafcf5521442167007992d39381a717612ad0f2c0db882cbbcf35c962418fc3",
+      "sha256": "8a11af01039aa64ff6396da5c84784113914781a5802abfb763d5c23317f5d88",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "39dbfdfbb0c0f0a3506010457532bbcbee8cf87569c1bf13816d13cab0924ff1"
+      "pinSet": "aa0676a57d0da16941dc63f4a08f80fa75eb81b275b201797784816c6a4b9497"
     }
   ]
 }

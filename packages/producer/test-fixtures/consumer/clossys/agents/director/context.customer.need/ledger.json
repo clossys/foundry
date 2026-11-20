@@ -317,7 +317,7 @@
         "reason": "fixture world: the brief standards are create-only and no package default fits a synthetic consumer"
       },
       "name": "need-v1.md",
-      "sha256": "180a225815a79370ca77c30cc3666fd8cd4d53e98de9e7ef65139c3b420b33f1"
+      "sha256": "7ed4acb5ade99b8c3db11affe6dc7619cb19e107282baa5fc3936111270c4275"
     },
     {
       "op": "pin",
@@ -331,13 +331,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "need-v1.md",
-      "sha256": "180a225815a79370ca77c30cc3666fd8cd4d53e98de9e7ef65139c3b420b33f1",
+      "sha256": "7ed4acb5ade99b8c3db11affe6dc7619cb19e107282baa5fc3936111270c4275",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "716d7f175ca1d86d377f82f5b3dea6397a1188e89670d8785f804c4cacb2c37b"
+          "sha256": "349f94070d9c2c5fa9ce23c689f46e858f404dd20047e1654fb0da9a3d4a2406"
         }
       ]
     }

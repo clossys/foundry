@@ -7,9 +7,12 @@
     "status": "submitted",
     "slot": "designer/components.separator",
     "createdBy": {
-      "actor": "code",
-      "cli": "clossys submit",
-      "version": "0.1.0"
+      "actor": "agent",
+      "agent": "designer",
+      "skill": "packages/designer/actions/designer.candidates/skill.md",
+      "skillSha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930",
+      "model": "fixture-model",
+      "tier": "high"
     },
     "createdAt": "2026-11-19T00:00:00Z",
     "refs": [],
@@ -34,7 +37,7 @@
       {
         "path": "registry/aria-nova/ui/separator.tsx",
         "type": "registry:ui",
-        "content": "\"use client\"\n\nimport { cn } from \"cn\"\nimport { Separator as SeparatorPrimitive } from \"react-aria-components\"\n\nfunction Separator({\n  className,\n  orientation = \"horizontal\",\n  ...props\n}: React.ComponentProps<typeof SeparatorPrimitive>) {\n  return (\n    <SeparatorPrimitive\n      data-slot=\"separator\"\n      orientation={orientation}\n      className={cn(\n        \"block shrink-0 border-0 bg-border aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=vertical]:w-px aria-[orientation=vertical]:self-stretch [:is(hr)]:h-px [:is(hr)]:w-full\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport { Separator }\n"
+        "content": "\n\nimport { cn } from \"cn\"\nimport { Separator as SeparatorPrimitive } from \"react-aria-components\"\n\nfunction Separator({\n  className,\n  orientation = \"horizontal\",\n  ...props\n}: React.ComponentProps<typeof SeparatorPrimitive>) {\n  return (\n    <SeparatorPrimitive\n      data-slot=\"separator\"\n      orientation={orientation}\n      className={cn(\n        \"block shrink-0 border-0 bg-border aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=vertical]:w-px aria-[orientation=vertical]:self-stretch [:is(hr)]:h-px [:is(hr)]:w-full\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport { Separator }\n"
       }
     ],
     "meta": {

@@ -1,5 +1,5 @@
 ---
-clossys: {"schema":"clossys.candidate/1","id":"director/identity.visual.style/style-v1.md","agent":"director","kind":"candidate","status":"submitted","slot":"director/identity.visual.style","createdBy":{"actor":"code","cli":"clossys submit","version":"0.1.0"},"createdAt":"2026-11-19T00:00:00Z","refs":[],"source":{"kind":"derived","ref":["finding:fixture-segment-draft","director:identity.brand.essence","director:identity.verbal.voice"]},"rationale":[]}
+clossys: {"schema":"clossys.candidate/1","id":"director/identity.visual.style/style-v1.md","agent":"director","kind":"candidate","status":"submitted","slot":"director/identity.visual.style","createdBy":{"actor":"agent","agent":"director","skill":"packages/director/actions/director.candidates/skill.md","skillSha256":"ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986","model":"fixture-model","tier":"mid"},"createdAt":"2026-11-19T00:00:00Z","refs":[],"source":{"kind":"derived","ref":["finding:fixture-segment-draft","director:identity.brand.essence","director:identity.verbal.voice"]},"rationale":[]}
 slot: "identity.visual.style"
 feeds: []
 functions: []

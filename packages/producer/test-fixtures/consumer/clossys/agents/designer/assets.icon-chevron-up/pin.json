@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-chevron-up",
-      "sha256": "ec55a494b51b0e2295747359d67cc4c877fce9c40602cf3dd89b2d6c3f3abf44"
+      "sha256": "9197fc164b63c08f0f70bb67fec9485e7e7951f233e98e087c5aa0a5aaa21f34"
     }
   ],
   "candidate": "icon-chevron-up-v1.json",
-  "sha256": "c2cfa0ad37fbb292b4627f055e1f3147c277983448c4e3a5c41804d48b3b1c5f",
+  "sha256": "89e68c03e7075cfc4bc061c5719f31d378e227467e8b5011f2bce5d6162d4265",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

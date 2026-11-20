@@ -1,5 +1,5 @@
 ---
-clossys: {"schema":"clossys.candidate/1","id":"director/focus.reach.channel/channel-v1.md","agent":"director","kind":"candidate","status":"submitted","slot":"director/focus.reach.channel","createdBy":{"actor":"code","cli":"clossys submit","version":"0.1.0"},"createdAt":"2026-11-19T00:00:00Z","refs":[],"source":{"kind":"derived","ref":["finding:fixture-segment-draft","director:focus.segment.core"]},"rationale":[]}
+clossys: {"schema":"clossys.candidate/1","id":"director/focus.reach.channel/channel-v1.md","agent":"director","kind":"candidate","status":"submitted","slot":"director/focus.reach.channel","createdBy":{"actor":"agent","agent":"director","skill":"packages/director/actions/director.candidates/skill.md","skillSha256":"ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986","model":"fixture-model","tier":"mid"},"createdAt":"2026-11-19T00:00:00Z","refs":[],"source":{"kind":"derived","ref":["finding:fixture-segment-draft","director:focus.segment.core"]},"rationale":[]}
 slot: "focus.reach.channel"
 feeds: []
 functions: []

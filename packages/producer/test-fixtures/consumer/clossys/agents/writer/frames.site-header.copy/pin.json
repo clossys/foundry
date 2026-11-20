@@ -16,13 +16,13 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/frames.site-header.copy",
-      "sha256": "c650d5a32738a55d65cc92c2386f6ac270499305e27fa4329796c93a76f1e9e6"
+      "sha256": "602f2fccfe2717bef4cf9772040ece99240d7d76052f1c1802b91794a84813b8"
     }
   ],
   "records": {
     "copy": {
       "candidate": "copy-v1.md",
-      "sha256": "ee9384cbfaa119964df1d5cd06374fa3ee5c116e3c6c823a5c757466421c7529",
+      "sha256": "6bea0910a4d17e9608c6d853056d68dd12ac2c544b2cf3fc2da4b060e99ef92a",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "at": "2026-11-19T00:00:00Z"

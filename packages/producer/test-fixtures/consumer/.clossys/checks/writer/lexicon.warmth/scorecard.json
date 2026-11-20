@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "warmth-v1.md",
-      "sha256": "f0d65420107f7bd324a2886d84d6d1a92fd583a8f826b7a45329e0c37e1a86b0",
+      "sha256": "7cf5a6b4fea3b362d78d22343f2e18f0b9c29efef211a07d31825cf00cacf4f6",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "eaf6b3fc2e09a218de0495b5e473a34ad0e6b9e979cd21cbf39eff9d617c31f7"
+      "pinSet": "6991a2afaeefda1b559e36870d523f508308d88f4ab5406b530286236eb15819"
     }
   ]
 }

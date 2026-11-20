@@ -101,19 +101,19 @@
             "agent": "director",
             "slot": "identity.verbal.voice",
             "candidate": "voice-v1.md",
-            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
           },
           {
             "agent": "director",
             "slot": "focus.reach.geography",
             "candidate": "geography-v1.md",
-            "sha256": "9d799ddde97fb0e119e59d4b56dd03ce8093a9a13c4c0ec9ea2398526858ccfc"
+            "sha256": "c0a56cae9e82b110d3fbd893219892cfba8ee8a1215803104e79e8fd4ef09491"
           },
           {
             "agent": "director",
             "slot": "focus.segment.core",
             "candidate": "core-v1.md",
-            "sha256": "261c0ea12bdc9716dec575b09af518b1dae6555a2045d3919d70ef57a946278a"
+            "sha256": "c39c1ec383f72fe5e7e6c5665e5e4d3fe86b1a12f5fb29304187f7b18b0b8db4"
           }
         ],
         "contract": {
@@ -287,7 +287,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "reading-level-v1.md",
-      "sha256": "c6cc2b391ec30b33b2833ebcd38acb706670958c98f5b0c4b2f7b04bc89aacef"
+      "sha256": "c723ce163dd81b55ca4cca6418bcf741140e369dd73d628e6e7320393bfa2d77"
     },
     {
       "op": "pin",
@@ -301,13 +301,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "reading-level-v1.md",
-      "sha256": "c6cc2b391ec30b33b2833ebcd38acb706670958c98f5b0c4b2f7b04bc89aacef",
+      "sha256": "c723ce163dd81b55ca4cca6418bcf741140e369dd73d628e6e7320393bfa2d77",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "018ed3c59c19b56b9dbcb18884087466056bd9b430d778d718e548ed6f503aa8"
+          "sha256": "6ced7bebfec0cb7ba5b53258d55dd2ff2a05ea8f297c0acab8252990f26326da"
         }
       ]
     }

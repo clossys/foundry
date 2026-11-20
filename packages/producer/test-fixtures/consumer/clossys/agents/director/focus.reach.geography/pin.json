@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "director/focus.reach.geography",
-      "sha256": "c846b6d1d5ff8f5ed31daf070386f20eea319fded2340701b423a7bdf81ecbed"
+      "sha256": "dc567942459eedb6650ca54e73dfd134d19aa532be1111d22e768cd23593e1b1"
     }
   ],
   "candidate": "geography-v1.md",
-  "sha256": "9d799ddde97fb0e119e59d4b56dd03ce8093a9a13c4c0ec9ea2398526858ccfc",
+  "sha256": "c0a56cae9e82b110d3fbd893219892cfba8ee8a1215803104e79e8fd4ef09491",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

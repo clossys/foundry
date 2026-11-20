@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "channel-v1.md",
-      "sha256": "ae3a97be032ffe10ba7c58ac30909ef9e2f0df0607baf2c2b8642f4ba3314266",
+      "sha256": "fab91184c603e441ce03ebd02bb93fa8fbbfecc6bd975a7e4767d706e8219d01",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "947e85101e6e2c43167de44651b9bf42b339480017c557e99c0f1637c7cef6be"
+      "pinSet": "981a6f4ccdc5a8628234a5c85493e34af1081c0451d9fbbc4e6c2c4212b6f57d"
     }
   ]
 }

@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/components.toggle-button",
-      "sha256": "b53e6cac8f9b34e1dd94d3f1c5d85353a91002e65893adcf0936a33a3eaafd91"
+      "sha256": "6b63c8a51671b2aa84ec2c24460c32374d9f1389528622abd3c4d202719d19a0"
     }
   ],
   "candidate": "toggle-button-v1.json",
-  "sha256": "ef2859c9a0514496294cd83f8f7762bbdd7facfa5b24f6b4f65b7182f282a4b2",
+  "sha256": "aa94231c62f53ed1e87976677c8d3c6e2feab69fc1d45e251155f8a65ed68912",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

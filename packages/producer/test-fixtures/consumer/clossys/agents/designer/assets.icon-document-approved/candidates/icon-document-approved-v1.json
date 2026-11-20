@@ -7,9 +7,12 @@
     "status": "submitted",
     "slot": "designer/assets.icon-document-approved",
     "createdBy": {
-      "actor": "code",
-      "cli": "clossys submit",
-      "version": "0.1.0"
+      "actor": "agent",
+      "agent": "designer",
+      "skill": "packages/designer/actions/designer.candidates/skill.md",
+      "skillSha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930",
+      "model": "fixture-model",
+      "tier": "mid"
     },
     "createdAt": "2026-11-19T00:00:00Z",
     "refs": [],

@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "accent-v1.json",
-      "sha256": "24c561ef009b38eff9c7a8951fda0007e51f7cd814ebf28d0d05a3c4dd45bdd4",
+      "sha256": "4c72b58db89ba733d8346178b98a19ebc54135867df81c4f5566d528a9c17492",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "155bc65cfdf8e12cf8376b8d3a197a5297b699e08769c8a37654456b53b96ebf"
+      "pinSet": "08b1216c6f5a5370edd86d7ff9caba52f8e5fc4971905788bfabb08f46df80bd"
     }
   ]
 }

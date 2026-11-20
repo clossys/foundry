@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "director/focus.category.definition",
-      "sha256": "4f32cc2c24bd5471decaf127f520ed52c352d21e9ca4d2ebe036fc78a5d19ec1"
+      "sha256": "9e1c58f0a61ed97b76c8313980c9b7ae593e363f3772d73177e18e78d8b7f15b"
     }
   ],
   "candidate": "definition-v1.md",
-  "sha256": "299e529dc57b12f65a7148a6816b8175b37da843210e8fab21749079a92b6f7f",
+  "sha256": "aa13638b9ad5aca20634e0a602faf41b3b7a432032861c019608b0ae81b7a8bb",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

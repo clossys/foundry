@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "director/identity.brand.personality",
-      "sha256": "5b894c5750a565a19e0b9517161ba2bb55bfccaedaf1695bf9c29e3c4179f927"
+      "sha256": "7451a118936bd0c5efe5bcb9a4c7d84d8b948b56e679dae029c39eb68e3e2582"
     }
   ],
   "candidate": "personality-v1.md",
-  "sha256": "f85d6742ab148aa72f18205f3ff830389e643644bc732626776fe26337b2d3c2",
+  "sha256": "556cf36aaa83bd42033ed609d7f53da3cfbd9f7aa718515af5eac98ffea93b4a",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

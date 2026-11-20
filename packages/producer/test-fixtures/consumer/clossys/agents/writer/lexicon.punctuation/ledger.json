@@ -101,13 +101,13 @@
             "agent": "director",
             "slot": "identity.verbal.voice",
             "candidate": "voice-v1.md",
-            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
           },
           {
             "agent": "director",
             "slot": "focus.reach.geography",
             "candidate": "geography-v1.md",
-            "sha256": "9d799ddde97fb0e119e59d4b56dd03ce8093a9a13c4c0ec9ea2398526858ccfc"
+            "sha256": "c0a56cae9e82b110d3fbd893219892cfba8ee8a1215803104e79e8fd4ef09491"
           }
         ],
         "contract": {
@@ -281,7 +281,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "punctuation-v1.md",
-      "sha256": "3de0fd01e50a5390c28871f220155191412abee726298d91392718d61eec9470"
+      "sha256": "5e63443d82de11cb8da09b80d13c294716ce7c4180d5ee5c5342836f364f93f6"
     },
     {
       "op": "pin",
@@ -295,13 +295,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "punctuation-v1.md",
-      "sha256": "3de0fd01e50a5390c28871f220155191412abee726298d91392718d61eec9470",
+      "sha256": "5e63443d82de11cb8da09b80d13c294716ce7c4180d5ee5c5342836f364f93f6",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "fcc0cb05c746a1907d4fa6623a814a0a8528227a2aac063bd0e060376a3f843e"
+          "sha256": "1725d1ad53eec5b87736cacf0ea5164de18e71af10c544f6c0c034be6dca8b5c"
         }
       ]
     }

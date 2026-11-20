@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-chevron-left",
-      "sha256": "1c053408b6b870a87cf6c7e1158179c68b16b5bbd29e62a45734df45e93a4b91"
+      "sha256": "2eebad83ddddc2b87c3a4d316b01281ec32129eea46e92fd3e5ae473d33f7b66"
     }
   ],
   "candidate": "icon-chevron-left-v1.json",
-  "sha256": "ccafcf5521442167007992d39381a717612ad0f2c0db882cbbcf35c962418fc3",
+  "sha256": "8a11af01039aa64ff6396da5c84784113914781a5802abfb763d5c23317f5d88",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

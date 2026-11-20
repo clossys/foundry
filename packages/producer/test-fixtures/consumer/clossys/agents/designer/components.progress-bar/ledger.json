@@ -119,7 +119,7 @@
         "seed": "shadcn-aria/progress"
       },
       "name": "progress-bar-v1.json",
-      "sha256": "ccd6e17bebf46e56f268c6291583ab044b5c3e431318b16394b290cba1f308c0"
+      "sha256": "0721b88dd5aade7e804f6d6d739669ef236357f3cc888e3db7a8b87f231a3d20"
     },
     {
       "op": "pin",
@@ -133,13 +133,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "progress-bar-v1.json",
-      "sha256": "ccd6e17bebf46e56f268c6291583ab044b5c3e431318b16394b290cba1f308c0",
+      "sha256": "0721b88dd5aade7e804f6d6d739669ef236357f3cc888e3db7a8b87f231a3d20",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "a19b7e637d4f40365fa53207984f28e28746e954fe09a53e0d05a1d793653abb"
+          "sha256": "b772c370207430663fb6aaf3099b3f3eead0e7d6f203858b605dbeee043e4bf1"
         }
       ]
     }

@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "acquisition-v1.md",
-      "sha256": "edda31c4ae349f82a295621b9c2fa1ab67aeb5baed03180a5709481704e24701",
+      "sha256": "008ee7d913ee2ba6ff9eadb6d71051aa8a8dfde66c77bca8c106f407493706e2",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "f350ad66877a0c9a77c2da1d3434716c3264d8f0177c0a3f51996dfc664f7833"
+      "pinSet": "7a2ae0e42b39e86f898f50fc513f0347f9ec14f594c54dfd62c1899e7f22d31a"
     }
   ]
 }

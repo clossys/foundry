@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-danger",
-      "sha256": "78e448719257e41aaf896fb54a130d433a49f5d6f13c241cb7a37da6eefeaae4"
+      "sha256": "7f87c32333e9746de6ed45db7595936f2c1f21efba6ae7b1c7034f0d3e61ba78"
     }
   ],
   "candidate": "icon-danger-v1.json",
-  "sha256": "8c1b7d7c93d936e5a709e425d9437f717c23e424b639c25edb5ea0766571c7a8",
+  "sha256": "7bb36380831e105bb6923ec3d10aa765c9077857ab14cecf253600b915fa8dce",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

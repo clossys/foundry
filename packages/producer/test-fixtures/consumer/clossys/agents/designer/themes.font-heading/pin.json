@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.font-heading",
-      "sha256": "71c4e1ea10083b91abf0955a6a8c940a465056541df51d024832195195356b43"
+      "sha256": "7231a06f646783bd06e721e751405aa07b77f060ac541bffa7e1d65569207ef0"
     }
   ],
   "candidate": "font-heading-v1.json",
-  "sha256": "95f458542a454ba6e5a231311025c5a6780c32839cf485a987e510aa236295a6",
+  "sha256": "9ae43d5f3a87bb90f32a1db460b0154d602d991e7df0796adf9d2ce996032496",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

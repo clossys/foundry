@@ -101,25 +101,25 @@
             "agent": "director",
             "slot": "identity.verbal.voice",
             "candidate": "voice-v1.md",
-            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
           },
           {
             "agent": "director",
             "slot": "identity.naming.name",
             "candidate": "name-v1.md",
-            "sha256": "28814c7f6d483f6d3bd33e06fd9475b19a49a2fa5b2705a041320fc92e792ef9"
+            "sha256": "aa5e2e5d1b992271f3cd6441d7bdad9145d9b08d646658d40cc95ab8d270fe8d"
           },
           {
             "agent": "director",
             "slot": "identity.naming.architecture",
             "candidate": "architecture-v1.md",
-            "sha256": "103bc33a1a5cea5061ff23ef9570142b4e896bfb661ea1cb8a1d36b4dd211ce3"
+            "sha256": "c7fad03c582751f8aa712d10a74b75c543834d99c143646fb86b7bf0535b1e2d"
           },
           {
             "agent": "director",
             "slot": "focus.category.definition",
             "candidate": "definition-v1.md",
-            "sha256": "299e529dc57b12f65a7148a6816b8175b37da843210e8fab21749079a92b6f7f"
+            "sha256": "aa13638b9ad5aca20634e0a602faf41b3b7a432032861c019608b0ae81b7a8bb"
           }
         ],
         "contract": {
@@ -294,7 +294,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "preferred-terms-v1.md",
-      "sha256": "31260ab81f0268d109c7effdf51bec396423f535fbc15add81a914f4172a70fb"
+      "sha256": "58794a3e65d3e215969aa5388520304db8a4c144365e40ebf200bbc0401f83c4"
     },
     {
       "op": "pin",
@@ -308,13 +308,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "preferred-terms-v1.md",
-      "sha256": "31260ab81f0268d109c7effdf51bec396423f535fbc15add81a914f4172a70fb",
+      "sha256": "58794a3e65d3e215969aa5388520304db8a4c144365e40ebf200bbc0401f83c4",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "64344ccfb52830221f1a68722009e0533442c5339998d396e3ca7a38643f2506"
+          "sha256": "1cd440475e276e765ccdd89e2d7c5d4fd3155af0f60cbacbdc074a00163e2883"
         }
       ]
     }
