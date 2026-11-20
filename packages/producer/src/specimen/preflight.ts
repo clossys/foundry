@@ -96,7 +96,7 @@ export interface PreflightResult {
 /** The submission schema of a Designer element candidate (the `designer.candidates` step's output). */
 export const CANDIDATE_SCHEMA = "candidate-element";
 
-/** Browser APIs layout-measuring libraries read on mount that jsdom does not ship (as in specimen-mount.test.ts). */
+/** Browser APIs layout-measuring libraries read on mount that jsdom does not ship. */
 export const BROWSER_STUBS = `
 const SIZE = { width: 480, height: 240 };
 window.ResizeObserver = class {

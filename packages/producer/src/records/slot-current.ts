@@ -32,6 +32,7 @@ const FAMILY: Readonly<Partial<Record<TargetSlotKind, SlotKind>>> = {
   "element/token": "element", "element/asset": "element", "element/component": "element", "element/section": "element", "element/frame": "element",
   voice: "strings", prose: "strings", copy: "strings",
   page: "page", layout: "page", chrome: "page", publication: "publication", release: "publication",
+  seat: "seat",
 };
 /** The reader's kind family of a current kind (`copy` is `strings`), or the value itself when it names none. */
 export const slotFamily = (kind: unknown): unknown => typeof kind === "string" ? FAMILY[kind as TargetSlotKind] ?? kind : kind;
@@ -41,7 +42,7 @@ export const CURRENT_AGENT_KINDS: Readonly<Record<ModelAgent, readonly TargetSlo
   designer: ["element/token", "element/asset", "element/component", "element/section", "element/frame", "loop"],
   writer: ["voice", "prose", "copy", "loop"],
   publisher: ["page", "layout", "chrome", "publication", "release", "loop"],
-  producer: ["loop", "queue", "ledger"],
+  producer: ["loop", "queue", "ledger", "seat"],
 };
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
@@ -226,7 +227,7 @@ export function candidateHeaderReadIssues(agent: ModelAgent, id: string, name: s
   ];
 }
 
-/** The kind families whose clossys.candidate/1 candidates are read through their view (loop, queue, ledger and seat are not). */
+/** The kind families whose clossys.candidate/1 candidates are read through their view (loop, queue and ledger are not; a seat is read as its content). */
 const VIEWED_FAMILIES: ReadonlySet<unknown> = new Set<SlotKind>(["brief", "element", "strings", "page", "publication"]);
 /** Header fields that say who made a file, when and why: per-file provenance, never content (the content digest leaves them out). */
 export const HEADER_PROVENANCE = ["id", "slot", "agent", "status", "createdBy", "createdAt", "refs", "rationale"] as const;
@@ -241,9 +242,9 @@ const HEADER_UNDIGESTED: ReadonlySet<string> = new Set<string>([...HEADER_PROVEN
 export interface CandidateText {
   /** The file's bytes, as written: what the raw sha256 (pins, the ledger, R08, R14) and the certify cache key read. */
   readonly raw: string;
-  /** What the kind rules read: `candidateView` of a viewed candidate (see `viewsCandidate`), else the raw bytes. */
+  /** What the kind rules read: `candidateView` of a viewed candidate (see `viewsCandidate`), a seat's content (`seatContent`), else the raw bytes. */
   readonly view: string;
-  /** The clossys.candidate/1 header of a viewed candidate. */
+  /** The clossys.candidate/1 header of a viewed candidate or a seat. */
   readonly header?: Readonly<Record<string, unknown>>;
   /** The header's issues where the file sits (`candidateHeaderReadIssues`); empty when no header is viewed. */
   readonly headerIssues: readonly SlotModelIssue[];
@@ -259,6 +260,18 @@ export interface CandidateText {
  */
 export function viewsCandidate(slotValue: unknown): boolean {
   return isCurrentSlot(slotValue) && VIEWED_FAMILIES.has(slotFamily((slotValue as Record<string, unknown>).kind));
+}
+
+/** True when a slot.json value is a Producer seat (kind seat, clossys.slot/2 or, in a store not yet converted, slot/1). */
+const isSeatSlot = (slotValue: unknown): boolean => object(slotValue) && slotFamily(slotValue.kind) === "seat";
+
+/**
+ * A headered seat candidate's content (U13 r4): a seat is read as the `content` of its {clossys, content} JSON, as
+ * two-space JSON text (records/candidate-codec.ts parse, records/slots.ts seatTextAt). Bytes of any other form are viewed.
+ */
+function seatContent(name: string, bytes: string): string {
+  if (!name.endsWith(".json")) return candidateView(name, bytes);
+  return `${JSON.stringify((JSON.parse(bytes) as { content?: unknown }).content ?? null, null, 2)}\n`;
 }
 
 /**
@@ -288,9 +301,10 @@ export function contentDigest(name: string, view: string, header?: Readonly<Reco
  * from a rule and its per-file provenance never changes a content identity. `slotValue` is the slot's parsed slot.json.
  */
 export function readCandidateText(slotValue: unknown, agent: ModelAgent, id: string, name: string, bytes: string, path = name): CandidateText {
-  const header = viewsCandidate(slotValue) ? candidateHeaderOf(name, bytes) : undefined;
+  const seat = isSeatSlot(slotValue);
+  const header = seat || viewsCandidate(slotValue) ? candidateHeaderOf(name, bytes) : undefined;
   if (!header) return { raw: bytes, view: bytes, headerIssues: [], contentDigest: contentDigest(name, bytes) };
-  const view = candidateView(name, bytes);
+  const view = seat ? seatContent(name, bytes) : candidateView(name, bytes);
   return { raw: bytes, view, header, headerIssues: candidateHeaderReadIssues(agent, id, name, bytes, path), contentDigest: contentDigest(name, view, header) };
 }
 

@@ -109,7 +109,7 @@ export function planCopyKeyMigration(consumer: string, catalog: CopyKeyCatalog =
       if (agent !== "writer" || !segments.size) continue;
       for (const name of entry.candidates) {
         const candidate = join(candidatesDir(entry.dir), name);
-        const bytes = readCandidate(consumer, agent, entry.id, name).bytes, renamed = renameRecordIds(bytes, segments);
+        const bytes = readCandidate(consumer, agent, entry.id, name).raw, renamed = renameRecordIds(bytes, segments);
         if (renamed === bytes) continue;
         files.push({ path: rel(candidate), before: bytes, after: renamed });
         if (entry.pin?.candidate !== name || entry.pin.sha256 !== sha256Hex(bytes)) continue;

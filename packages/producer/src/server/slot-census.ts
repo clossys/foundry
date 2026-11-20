@@ -64,7 +64,7 @@ function censusRow(consumer: string, agent: SlotAgent, id: string, position: Slo
           else if (!doc) row.pin = 'unvalidated-candidate';
           // U37: judged as the slot/2 readers judge it (`clossys status`, `clossys direct`): a clossys.candidate/1 file by its
           // header and its view, an int2 file by its kind rules, so the Studio census and the readers never disagree on a pin.
-          else if (slotCandidateIssues(consumer, agent, id, candidate.name, candidate.bytes).length) row.pin = 'invalid-candidate';
+          else if (slotCandidateIssues(consumer, agent, id, candidate.name, candidate.raw).length) row.pin = 'invalid-candidate';
           else row.pin = 'valid';
         } catch (error) {
           row.pin = (error as NodeJS.ErrnoException).code === 'ENOENT' ? 'missing-candidate' : 'error';

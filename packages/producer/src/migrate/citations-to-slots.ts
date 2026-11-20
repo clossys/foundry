@@ -79,7 +79,7 @@ export function planCitationsToSlots(consumer: string): CitationsPlan {
     const afterOf = new Map<string, { before: string; after: string }>();
     for (const name of entry.candidates) {
       let before: string;
-      try { before = readCandidate(consumer, agent, entry.id, name).bytes; }
+      try { before = readCandidate(consumer, agent, entry.id, name).raw; } // the file bytes: the rewrite keeps any clossys header
       catch (error) { findings.push({ agent, slot: entry.id, message: `${name} could not be read: ${(error as Error).message}` }); continue; }
       const anchored = recite?.candidate === name ? reciteLineAnchors(before, agent, recite.cites) : { text: before, count: 0 };
       const rewritten = slotCitationsInText(anchored.text, owner);

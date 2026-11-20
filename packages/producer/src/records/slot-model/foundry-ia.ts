@@ -148,11 +148,15 @@ export function designerIa(): FoundryIa {
   const nodes: IaNode[] = [];
   const order = [...catalog.placements].sort((a, b) => DESIGNER_LAYERS.indexOf(a.layer as typeof DESIGNER_LAYERS[number]) - DESIGNER_LAYERS.indexOf(b.layer as typeof DESIGNER_LAYERS[number]));
   for (const placement of order) for (const node of placement.nodes) {
-    const live = (ids: readonly string[]) => ids.filter(id => !retired.has(id));
-    // A group whose leaves all retired stays, empty, as recut leaves it.
-    const children: IaLeafGroup[] = "leaves" in node
-      ? [{ id: node.id, label: node.label, slots: live(node.leaves) }]
-      : node.children.map(child => ({ id: child.id, label: child.label, slots: live(leavesOf(child)) }));
+    const groups = "leaves" in node
+      ? [{ id: node.id, label: node.label, leaves: [...node.leaves] }]
+      : node.children.map(child => ({ id: child.id, label: child.label, leaves: leavesOf(child) }));
+    // A group whose leaves all retired retires with them, as Writer's tree does, so the consumer tree holds no
+    // empty L2 (R01.16); a package group that never listed a leaf stays, so R01.16 still reports it.
+    const children: IaLeafGroup[] = groups
+      .filter(group => !group.leaves.length || group.leaves.some(id => !retired.has(id)))
+      .map(group => ({ id: group.id, label: group.label, slots: group.leaves.filter(id => !retired.has(id)) }));
+    if (groups.length && !children.length) continue;
     nodes.push({ id: `${placement.layer}.${node.id}`, label: node.label, children });
   }
   // The read graph: every Designer decision reads the Designer brief's Director slots, and each

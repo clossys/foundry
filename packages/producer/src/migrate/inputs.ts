@@ -60,7 +60,7 @@ export function planInputsMigration(consumer: string, catalog: InputsCatalog = f
       if (agent === "writer" && entry.pin) {
         try {
           const candidate = readCandidate(consumer, agent, entry.id, entry.pin.candidate);
-          for (const ref of sourceCitations(candidateDocument({ bytes: candidate.bytes, view: candidate.view, path: entry.pin.candidate }).fields, "director")) read.add(ref.slot);
+          for (const ref of sourceCitations(candidateDocument({ bytes: candidate.bytes, raw: candidate.raw, path: entry.pin.candidate }).fields, "director")) read.add(ref.slot);
         } catch (error) {
           // The plan still runs on the inputs it can read; the unread pinned candidate is named, never skipped silently.
           findings.push({ agent, slot: entry.id, message: `${agent}/${entry.id}: pinned candidate ${entry.pin.candidate} cannot be read (${(error as Error).message}); its Director reads are not planned` });

@@ -42,7 +42,7 @@ export interface CandidateRecord {
   readonly name: string;
   /** Workspace-relative path. */
   readonly path: string;
-  /** The view: what every kind rule reads. */
+  /** The view: what every kind rule reads (records/slot-current.ts readCandidateText; a Producer seat's content). */
   readonly text: string;
   /** The file's bytes as written. */
   readonly raw: string;

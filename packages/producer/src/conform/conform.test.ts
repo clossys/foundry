@@ -1,6 +1,6 @@
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { createHash } from "node:crypto";
@@ -11,6 +11,9 @@ import { adapterIssues, CONFORM_AGENTS, missingPaths, packageSlot, readConformMo
 import { cellOf, conform, formatReport, readRegistry } from "./run.js";
 import { routingIssues } from "../queue/routing.js";
 import { AGENT_LOOPS, agentLoopIssues, readAgentPackageLoop } from "../loop/agent-loops.js";
+
+// U13 r4: the pin gate probe runs the guarded pin and approve verbs; at the workstation's shared load they exceed 5 s.
+vi.setConfig({ testTimeout: 60_000 });
 
 const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
 const FIXTURE = join(REPO, "packages/producer/test-fixtures/consumer/clossys");
@@ -518,10 +521,11 @@ describe("conformance over the repo and its fixture", () => {
     for (const agent of ["director", "designer", "writer"]) expect(s6(agent).rows, agent).toEqual([]);
     expect(s6("publisher").rows.length).toBeGreaterThan(0);
     expect(s6("publisher").rows.every(row => row.endsWith(": declares no inputs list"))).toBe(true);
-    // S3 (U9 fix r1, blind2 B3): Designer's empty specimens group is a report-only finding, so S3 is green.
+    // S3 (U9 fix r1, blind2 B3): an empty group is a report-only finding, so S3 is green. U33: Designer's retired
+    // specimens group retires with its leaves, so no placed tree holds an empty group (R01.16).
     const s3 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "S3")!;
     for (const agent of ["director", "designer", "writer"]) expect(s3(agent).red, agent).toBe(false);
-    expect(s3("designer").findings).toEqual([expect.stringMatching(/components-specimens lists no L3$/)]);
+    for (const agent of ["director", "designer", "writer"]) expect(s3(agent).findings, agent).toEqual([]);
     const director = report.agents.find(agent => agent.agent === "director")!;
     expect(director.cells.find(cell => cell.id === "K3")!.red).toBe(false);
     // The request lens (U7): routing is valid and release refuses an open fix for every agent. U8: no agent keeps a
@@ -556,9 +560,12 @@ describe("pin gate probe (the real pin verb on a temporary copy)", () => {
       }
       // The submitted candidate reaches the certification: pin names its failing verdict, not a missing submit.
       expect(verbs.find(run => run.case === "submitted-uncertified" && run.verb === "pin")!.message).toMatch(/no passing verdict/);
-      for (const verb of ["pick", "verdict", ...(agent === "writer" ? ["approve"] : [])]) {
-        expect(verbs.find(run => run.case === "submitted-uncertified" && run.verb === verb)!.message, `${agent} ${verb}`).toMatch(/pinned only through the CHOOSE gate/);
+      // One format (U13): pick and approve pin through the gated slot/2 path, so they name the failing verdict too; a
+      // verdict's own pick is still refused outright on a slot/2 slot.
+      for (const verb of ["pick", ...(agent === "writer" ? ["approve"] : [])]) {
+        expect(verbs.find(run => run.case === "submitted-uncertified" && run.verb === verb)!.message, `${agent} ${verb}`).toMatch(/no passing verdict/);
       }
+      expect(verbs.find(run => run.case === "submitted-uncertified" && run.verb === "verdict")!.message, `${agent} verdict`).toMatch(/pinned only through the CHOOSE gate/);
     }
     // The C3 cell reads the probe: green on these refusals, red once one agent's pin accepts.
     const facts = { emptyL2Detected: {}, requestVerb: true, critiqueMonorepoPath: false, iaContract: {}, pinGate: results };

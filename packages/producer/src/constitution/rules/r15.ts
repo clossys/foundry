@@ -100,7 +100,11 @@ export const r15_4: Check = ctx => {
   return world.standards.flatMap(standard => tasteIssues(standard, world.registered).map(issue => folderRow("R15.4", standard, "standards", issue)));
 };
 
-/** R15.5: every standard has a valid recipe producing for it; every recipe is valid, rubric-free and deterministic. */
+/**
+ * R15.5: every standard has a valid recipe producing for it; every recipe is valid, rubric-free and
+ * deterministic; a plumb recipe names an existing plumb action that produces for its standards and
+ * runs clossys verbs only, with no model stage (records/recipes.ts readRecipe and produceIssues).
+ */
 export const r15_5: Check = ctx => {
   const world = standardsWorld(ctx);
   const rows: Row[] = [];
@@ -125,14 +129,16 @@ const CRAFT_ORDER = /^brief diverge render critique(?: refine(?: render)?(?: cri
 /** The issues of one P2 run's craft events (between two submits): order, directions and their axes. */
 export function craftIssues(events: readonly Record<string, unknown>[], recipes: readonly Recipe[], agent: string): string[] {
   const issues: string[] = [];
+  const diverge = events.find(event => event.op === "craft:diverge");
+  const recipeId = [...(diverge ? [diverge] : []), ...events].map(event => event.recipe).find((value): value is string => typeof value === "string");
+  const recipe = recipes.find(item => item.id === recipeId && item.agent === agent) ?? recipes.find(item => item.id === recipeId);
+  // A plumb recipe's candidate is computed by its plumb action: any craft event under it is the fault, not the stage order.
+  if (recipe?.doc?.rung === "plumb" && events.length) return [`recipe ${recipe.id} is plumb: a plumb recipe records no craft events (its plumb action computes the candidate)`];
   const stages = events.map(event => String(event.op).slice("craft:".length));
   if (!CRAFT_ORDER.test(stages.join(" "))) issues.push(`craft events ${stages.join(", ") || "(none)"} are not brief, diverge, render, critique, then at most 2 refine rounds`);
-  const diverge = events.find(event => event.op === "craft:diverge");
   if (!diverge) return issues;
   const directions = Array.isArray(diverge.directions) ? diverge.directions.filter(isObject) : [];
   if (directions.length < 3 || directions.length > 4) issues.push(`craft:diverge has ${directions.length} directions; 3 to 4 required`);
-  const recipeId = [diverge, ...events].map(event => event.recipe).find((value): value is string => typeof value === "string");
-  const recipe = recipes.find(item => item.id === recipeId && item.agent === agent) ?? recipes.find(item => item.id === recipeId);
   const axisValues = directions.map(direction => isObject(direction.axes) ? direction.axes : {});
   const axes = recipe?.doc?.axes.length ? [...recipe.doc.axes] : [...new Set(axisValues.flatMap(values => Object.keys(values)))].sort();
   if (!axes.length) issues.push("craft:diverge directions carry no axes");
@@ -151,6 +157,8 @@ export const critiqueName = (candidate: string) => `${candidate.replace(/\.[^.]+
 /**
  * R15.7: every P2 candidate (a submit with rung adapt or create, or any submit preceded by craft
  * events) has the section 5b craft events in order and a critique record. The process, never the scores.
+ * A plumb recipe has no craft events: a submit with rung plumb is no P2 candidate, and craft events
+ * recorded under a plumb recipe are a row (craftIssues).
  */
 export const r15_7: Check = ctx => {
   const world = standardsWorld(ctx);

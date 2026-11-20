@@ -6,6 +6,7 @@ import { buildCandidateHeader, candidateCreatedBy, candidatePath, packageDefault
 import type { AgentId } from "../records/types.js";
 import { buildPin, cliActor, ownerAnswerRef, pinIssues, pinRecordIssues, toIsoZ } from "../records/pin.js";
 import type { PinRecord } from "../records/types.js";
+import { ownerEntry } from "../cli/__fixtures__/owner-entry.js";
 import { runPinCli } from "../cli/pin.js";
 
 // A temp workspace: a `packages/` folder (so package defaults and versions read from it) and a `clossys/` consumer.
@@ -117,15 +118,20 @@ describe("clossys.pin/2 rules", () => {
     w.slot("designer", "sections.hero");
     const sha = w.candidate("designer", "sections.hero", "hero-v1.json");
     w.submit("designer", "sections.hero", "hero-v1.json", sha);
-    const bare = await runPinCli(["designer/sections.hero", "hero-v1.json", "--by", "owner", "--at", AT], w.root, false);
+    const bare = await runPinCli(["designer/sections.hero", "hero-v1.json", "--by", "owner", "--at", AT], w.root);
     expect(bare.exitCode).toBe(1);
     expect(bare.message).toMatch(/names no queue answer/);
-    const missingEntry = await runPinCli(["designer/sections.hero", "hero-v1.json", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT], w.root, false);
+    const missingEntry = await runPinCli(["designer/sections.hero", "hero-v1.json", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT], w.root);
     expect(missingEntry.message).toMatch(/is not a queue entry/);
-    const missing = await runPinCli(["designer/sections.hero", "hero-v2.json", "--by", "planner", "--at", AT], w.root, false);
+    const missing = await runPinCli(["designer/sections.hero", "hero-v2.json", "--by", "planner", "--at", AT], w.root);
     expect(missing.message).toMatch(/no candidate hero-v2.json/);
+    // An untyped object at the entry path decides nothing (U13 r4, B2); the owner's typed answer naming hero-v1.json does.
     w.queueEntry("pick", QUEUE_ID);
-    const refused = await runPinCli(["designer/sections.hero", "hero-v1.json", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT], w.root, false);
+    const untyped = await runPinCli(["designer/sections.hero", "hero-v1.json", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT], w.root);
+    expect(untyped.exitCode).toBe(1);
+    expect(untyped.message).toMatch(/is not a typed queue entry \(clossys\.queue-entry\/1 or \/2\)/);
+    ownerEntry(join(w.root, "clossys"), { id: QUEUE_ID, about: "designer/sections.hero", answer: { candidate: "hero-v1.json" }, at: AT });
+    const refused = await runPinCli(["designer/sections.hero", "hero-v1.json", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT], w.root);
     expect(refused.exitCode).toBe(1);
     expect(refused.message).toMatch(/hero-v1\.json has no passing verdict: \[invalid\] slot sections\.hero has no known kind; \[no-standard\]/);
     expect(refused.output).toMatchObject({ schema: "clossys.pin-refused/1", slot: "designer/sections.hero", scorecard: { candidates: [{ rank: 1, candidate: "hero-v1.json", sha256: sha, submitted: true, certified: false }] } });

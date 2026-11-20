@@ -1,7 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
 import { editedInPlace } from "../constitution/checks/R08-immutability.js";
 import { pinMatchesLedger, upstreamPinned } from "../constitution/checks/R02-pins-order.js";
 import { eventsNameSkill, llmNamesModel, recordsMatchLedger } from "../constitution/checks/R14-provenance.js";
@@ -10,6 +11,9 @@ import { cleanSpec, NO_FOUNDRY_LEAVES, sha, validPin, writeWorkspace, type Works
 import { fileState, MIGRATIONS_SCHEMA } from "../records/migrations.js";
 import { runMigrateCli } from "../cli/migrate.js";
 import { applyLedgerBackfill, commitInfo, planLedgerBackfill, type LedgerPlan } from "./ledger.js";
+
+// U13 r4: pin and migrate run the full guard; at the workstation's shared load the guarded cases exceed 5 s.
+vi.setConfig({ testTimeout: 60_000 });
 
 const CLAUDE = "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>";
 const BUTTON = "clossys/agents/designer/ui.button";

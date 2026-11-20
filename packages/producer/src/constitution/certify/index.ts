@@ -33,6 +33,7 @@ import { certifyPage, certifyPublication } from "./page.js";
 import { requirementsVerdictSync } from "./requirements.js";
 import { certifySeat } from "./seat.js";
 import { certifyLoop, isAgentLoopSlot, loopStandardReasons, loopStandardSha } from "./loop.js";
+import { certifyRelease, isReleaseTargetSlot } from "./release.js";
 import { certifyStrings } from "./strings.js";
 import { MISSING_RECORD_CODES, reason, type Certification, type CertifyInput, type Reason } from "./types.js";
 
@@ -70,6 +71,8 @@ export function certifyFit(input: CertifyInput, env: CertifyEnv): Reason[] {
   const contract = input.contract ?? own;
   // An agent's own loop slot (U9a): its own certifier, against Producer's standard loop.
   if (!kind && isAgentLoopSlot(slot, slotDocOf(slot).doc)) return input.candidate.readError ? [reason("invalid", input.candidate.readError)] : certifyLoop(slot, input.candidate, contract, env.root);
+  // A release slot (target kind release): its candidates are release manifests, certified by the release criteria.
+  if (isReleaseTargetSlot(slot)) return certifyRelease(slot, input.candidate, env.root);
   if (!kind) return [reason("invalid", `slot ${slot.id} has no known kind`)];
   if (input.candidate.readError) return [reason("invalid", input.candidate.readError)];
   // A malformed clossys header is refused outright; a valid one is judged no further than its schema and placement,
@@ -281,6 +284,9 @@ export function certifyWorld(ctx: ConstitutionContext, options: CertifyWorldOpti
       const pinSet = pinSetOf(input, env);
       // Keyed on the bytes as written: a header-only edit (a wrong id, a second source) is judged again, never served from cache.
       const key = certifyKey({ candidate: { name: candidate.name, bytes: candidate.raw }, kind: kind ?? "unknown", standard: { id: standard?.id ?? "none", sha256: standard?.sha256 ?? "none", requirements: [] }, contract, pinSet });
+      // A release manifest's verdict reads the build on disk and the release slot's pin state, which no cache key
+      // covers: it is certified afresh every run (a release slot holds a handful of manifests).
+      if (isReleaseTargetSlot(slot)) { results.set(resultKey(slot.agent, slot.id, candidate.name), { slot, candidate, key, certification: certify(input, env, pinSet) }); continue; }
       let certification = cache.get(key);
       if (!certification) { certification = certify(input, env, pinSet); cache.set(key, certification); }
       results.set(resultKey(slot.agent, slot.id, candidate.name), { slot, candidate, key, certification });

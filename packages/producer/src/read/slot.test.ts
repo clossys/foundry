@@ -220,7 +220,7 @@ describe("Tallyhouse golden (target clossys.slot/2 records)", () => {
   const packages = { packageRoot: (agent: string) => join(TALLYHOUSE, "packages", agent) };
   const REFS = ["writer/sections.hero.copy#home.hero", "designer/sections.hero", "director/identity.naming.name"];
   const PINS = ["writer/sections.hero.copy/pin.json", "designer/sections.hero/pin.json", "director/identity.naming.name/pin.json"];
-  /** A copy whose pins carry the real sha256 of their candidates (the fixture's digests are illustrative). */
+  /** A copy whose pins are re-sealed with the real sha256 of their candidates. */
   function sealedCopy(): string {
     const root = tempDir("slot-view-tally-");
     cpSync(TALLYHOUSE, root, { recursive: true });
@@ -259,8 +259,25 @@ describe("Tallyhouse golden (target clossys.slot/2 records)", () => {
     ]);
   });
 
-  it("the fixture as shipped: pins whose digest does not match their bytes resolve nothing (system.md 8)", () => {
-    for (const ref of REFS) expect(slotView(TALLYHOUSE, ref, packages).pin).toEqual([]);
+  it("the fixture as shipped: every pin names the sha256 of its candidate bytes, so each resolves as in a sealed copy", () => {
+    for (const ref of REFS) {
+      const shipped = slotView(TALLYHOUSE, ref, packages).pin;
+      expect(shipped, ref).not.toEqual([]);
+      expect(shipped, ref).toEqual(slotView(sealedCopy(), ref, packages).pin);
+    }
+  });
+
+  it("pins whose digest does not match their bytes resolve nothing (system.md 8)", () => {
+    const root = tempDir("slot-view-tally-drift-");
+    cpSync(TALLYHOUSE, root, { recursive: true });
+    for (const rel of PINS) {
+      const file = join(root, "clossys/agents", rel);
+      const doc = JSON.parse(readFileSync(file, "utf8"));
+      const rows = doc.records ? Object.values(doc.records) as { sha256: string }[] : [doc];
+      for (const row of rows) row.sha256 = "0".repeat(64);
+      writeFileSync(file, JSON.stringify(doc));
+    }
+    for (const ref of REFS) expect(slotView(root, ref, packages).pin, ref).toEqual([]);
   });
 
   it("a Tallyhouse package default is the sample pin of a slot with no consumer candidate", () => {

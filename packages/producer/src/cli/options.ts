@@ -17,18 +17,21 @@
  *       a judge seat picks one candidate: pin.json with basis "agent", shown as "confirm"
  *       in Studio until the owner pins with `clossys pin`.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { CERTIFY_REPORT_SCHEMA, certifiedOptions } from "../constitution/pin-gate.js";
-import { OPTION_TABLE, SLOT_AGENTS, pinStatus, type SlotAgent } from "../records/slot-model/index.js";
+import { OPTION_TABLE, SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
 import { checkSlotOptions, classCounts, classify, slotOptions, type SlotOptions } from "../records/slot-options.js";
 import { inspectSlot, listSlots, modelExists, readCandidate, readSlotEntry } from "../records/slots.js";
-import { writePin, writeSlotOptions } from "../records/slot-write.js";
+import { writeSlotOptions } from "../records/slot-write.js";
+import { readPinFile } from "../records/pin-map.js";
+import { pinRecordStatus } from "../records/pin.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { CliUsageError } from "./args.js";
 import { errorMessage } from "../errors.js";
 import type { CliResult } from "./main.js";
-import { resolveCandidate } from "./pin.js";
+import { isTargetSlot, oldSlotRefusal, pinTargetSlot, resolveCandidate } from "./pin.js";
+import { seatRefusal } from "../records/seat-owner.js";
 import { discoverRoot } from "./root.js";
 
 export const OPTIONS_USAGE = "Usage: clossys options [<agent>/<slot> [--more | --redraft | --check]] [--root <dir>] [--json]\n"
@@ -126,7 +129,7 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
   const consumer = consumerOf(cwd, flags.root);
   if (flags.classes) {
     if (flags.positional.length || flags.more || flags.redraft) throw new CliUsageError(`--classes takes no slot\n${OPTIONS_USAGE}`);
-    const changed: string[] = [], unplaced: string[] = [];
+    const changed: string[] = [], unplaced: string[] = [], refused: string[] = [];
     for (const agent of SLOT_AGENTS) {
       if (!OPTION_TABLE.groups[agent]) continue;
       for (const entry of listSlots(consumer, agent)) {
@@ -139,13 +142,15 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
         const want = klass.options > 1 ? `${klass.options}/${klass.varyOn}` : "1/";
         const have = `${doc.options ?? 1}/${(doc.options ?? 1) > 1 ? doc.varyOn ?? "" : ""}`;
         if (want === have && (klass.options > 1 || doc.varyOn === undefined)) continue;
+        // One format (U13): an old-format slot is never rewritten in place; it is named, and the run exits 1.
+        if (!flags.check && !isTargetSlot(dirname(consumer), agent, entry.id)) { refused.push(oldSlotRefusal("options", `${agent}/${entry.id}`)); continue; }
         if (!flags.check) writeSlotOptions(consumer, agent, entry.id, { options: klass.options, ...(klass.varyOn ? { varyOn: klass.varyOn } : {}) });
         changed.push(`${agent}/${entry.id}`);
       }
     }
     const verb = flags.check ? "drift" : "wrote";
     const open = unplaced.length ? `; ${unplaced.length} IA slot(s) have no slot.json yet (open ia items: clossys next)` : "";
-    return { exitCode: flags.check && changed.length ? 1 : 0, message: [...changed.map(slot => `${verb} ${slot}`), ...unplaced.map(slot => `ia gap ${slot}: no slot.json`), `options --classes: ${changed.length} slot.json ${flags.check ? "drifted" : "updated"}${open}`].join("\n"), output: { changed, unplaced } };
+    return { exitCode: (flags.check && changed.length) || refused.length ? 1 : 0, message: [...changed.map(slot => `${verb} ${slot}`), ...refused, ...unplaced.map(slot => `ia gap ${slot}: no slot.json`), `options --classes: ${changed.length} slot.json ${flags.check ? "drifted" : "updated"}${refused.length ? `, ${refused.length} refused` : ""}${open}`].join("\n"), output: { changed, unplaced, ...(refused.length ? { refused } : {}) } };
   }
   if (flags.check) {
     if (flags.positional.length !== 1 || flags.more || flags.redraft) throw new CliUsageError(`--check takes --classes or one <agent>/<slot>\n${OPTIONS_USAGE}`);
@@ -197,17 +202,32 @@ export async function runPickCli(argv: readonly string[], cwd: string): Promise<
   if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${PICK_USAGE}`);
   // No cross-edit: the pin writer itself runs the shared seat guard (records/seat-owner.ts assertSeat) for a pick.
   const consumer = consumerOf(cwd, flags.root);
-  const entry = readSlotEntry(consumer, agent, id);
-  if (!entry) return { exitCode: 1, message: `pick refused: unknown slot ${agent}/${id} (not in ${agent} ia.json)` };
-  const candidate = resolveCandidate(entry.candidates, candidateId);
-  if (!candidate) return { exitCode: 1, message: `pick refused: ${agent}/${id} has no candidate ${candidateId}` };
-  if (entry.pin && pinStatus(entry.pin.basis) === "pinned") return { exitCode: 1, message: `pick refused: ${agent}/${id} already holds an owner pick (${entry.pin!.candidate} by ${entry.pin!.decidedBy}); only the owner changes it with clossys pin` };
-  try {
-    // P1.4: a pick is a pin with basis agent; it re-runs the guards rules.json lists for pick.
-    const pin = writePin(consumer, agent, id, candidate, { decidedBy: flags.by, at, basis: "agent" }, undefined, { guard: true });
-    return { exitCode: 0, message: `${agent}/${id}: picked ${pin.candidate} (${pin.sha256.slice(0, 12)}) by ${pin.decidedBy}; confirm until the owner pins`, decision: { slot: `${agent}/${id}`, state: "pinned", ...pin } };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { exitCode: 1, message: message.startsWith("pick refused") ? message : message.startsWith("pin refused") ? message.replace("pin refused", "pick refused") : `pick refused: ${message}` };
-  }
+  // One format (foundry-build-0048 U13): a pick writes clossys.pin/2 (or one pin-map record) through the gated pin path,
+  // on a clossys.slot/2 slot only; it never writes a clossys.pin/1.
+  const workspace = dirname(consumer);
+  const slotId = id.split("#")[0]!;
+  // The seat rule judges who acts before the format refusal judges what is written: a foreign seat is refused by name.
+  const crossing = seatRefusal(flags.by, agent);
+  if (crossing !== undefined) return { exitCode: 1, message: `pick refused: ${crossing}` };
+  if (!isTargetSlot(workspace, agent, slotId)) return { exitCode: 1, message: oldSlotRefusal("pick", `${agent}/${slotId}`) };
+  return pickTargetSlot(workspace, agent, id, candidateId, flags.by, at);
 }
+
+/** A pick on a clossys.slot/2 slot: an agent pin (basis agent) that never replaces an owner's pick. */
+function pickTargetSlot(workspace: string, agent: SlotAgent, target: string, candidateId: string, by: string, at: string): CliResult {
+  const hash = target.indexOf("#");
+  const slotId = hash < 0 ? target : target.slice(0, hash);
+  const record = hash < 0 ? undefined : target.slice(hash + 1);
+  const dir = join(workspace, "clossys", "agents", agent, slotId);
+  let names: string[] = [];
+  try { names = readdirSync(join(dir, "candidates")).filter(name => !name.startsWith(".")); } catch { names = []; }
+  const candidate = resolveCandidate(names, candidateId) ?? (names.filter(name => name.replace(/\.svg$/, "") === candidateId).length === 1 ? `${candidateId}.svg` : undefined);
+  if (!candidate) return { exitCode: 1, message: `pick refused: ${agent}/${slotId} has no candidate ${candidateId}` };
+  const held = readPinFile(join(dir, "pin.json"), { agent, slotId });
+  const owner = held.kind === "pin" ? held.doc : held.kind === "pin-map" && record !== undefined ? held.doc.records[record] : undefined;
+  if (owner && pinRecordStatus(owner) === "pinned") return { exitCode: 1, message: `pick refused: ${agent}/${target} already holds an owner pick (${owner.candidate} by ${owner.decidedBy}); only the owner changes it with clossys pin` };
+  const result = pinTargetSlot(workspace, agent, target, candidate, { by, basis: "agent", at });
+  if (result.exitCode !== 0) return { ...result, message: result.message.replace(/^pin refused/, "pick refused") };
+  return { ...result, message: `${agent}/${target}: picked ${candidate} by ${by}; confirm until the owner pins` };
+}
+

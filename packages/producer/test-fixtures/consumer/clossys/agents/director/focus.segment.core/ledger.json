@@ -385,6 +385,28 @@
       },
       "name": "core-v1.md",
       "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-20T01:29:35.605Z",
+      "by": "planner:fixture-data",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.director/skill.md",
+        "sha256": "6cc66877d0b4c923d9adc797198f19a71d16b02212ce9690f8f35351c18208ab"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "core-v1.md",
+      "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd",
+      "decidedBy": "planner:fixture-data",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "52309197772ffdac12726f1e4149412cc91790965a80e47711ebeb1ca2ff105d"
+        }
+      ]
     }
   ]
 }

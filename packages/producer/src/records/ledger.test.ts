@@ -92,15 +92,15 @@ describe("ledger events (records/ledger.ts)", () => {
 });
 
 describe("the single writer appends one ledger event per write", () => {
-  it("records submit, pin, confirm, options, not-needed, slot, retire and migrate, each with the bytes it wrote", () => {
+  it("records submit, pin, confirm, not-needed, slot, retire and migrate, each with the bytes it wrote", () => {
     const first = writeCandidate(consumer, "director", ID, "essence", brief("one"), { at, fields: { basis: "planner" }, provenance: { by: "agent:director", model: "fixture-llm", tier: "high" } });
     expect(first).toEqual({ name: "essence-v1.md", sha256: fileSha(join(dir, "candidates", "essence-v1.md")) });
     writeCandidate(consumer, "director", ID, "essence", brief("two"), { at });
     writePin(consumer, "director", ID, "essence-v1.md", { decidedBy: "agent:director", basis: "agent", at });
     writeConfirm(consumer, "director", ID, "essence-v1.md", { by: "owner", ref: "clossys/workspace#46 issuecomment-1", at });
     writePin(consumer, "director", ID, "essence-v2.md", { decidedBy: "owner", basis: "picked", at });
-    expect(writeSlotOptions(consumer, "director", ID, { options: 2, varyOn: "tone", at })).toBe(true);
-    expect(writeSlotOptions(consumer, "director", ID, { options: 2, varyOn: "tone", at })).toBe(false);
+    // The options writer writes clossys.slot/2 only (U13 one format): on this slot/1 slot it refuses and appends nothing.
+    expect(() => writeSlotOptions(consumer, "director", ID, { options: 2, varyOn: "tone", at })).toThrow(/is a clossys\.slot\/1 slot; .*run clossys migrate slots --apply first/);
     appendSlotDocEvent(consumer, "director", ID, { by: "planner", at, verb: "ia", skill: skillPath("producer", "ia"), fields: { note: "renumbered" } });
     const v1 = readFileSync(join(dir, "candidates", "essence-v1.md"), "utf8");
     const rewritten = rewriteCitationsInPlace(consumer, "director", ID, { candidates: [{ name: "essence-v1.md", before: v1, after: v1.replace("Essence: one", "Essence: one ") }] }, { by: "planner", at });
@@ -110,17 +110,17 @@ describe("the single writer appends one ledger event per write", () => {
 
     const list = events();
     expect(list.map(event => `${String(event.op)}/${String(event.verb)}`)).toEqual([
-      "submit/submit", "submit/submit", "pick/pick", "confirm/pin", "pin/pin", "slot/options", "slot/ia", "migrate/migrate", "not-needed/pin", "retire-candidate/retire",
+      "submit/submit", "submit/submit", "pick/pick", "confirm/pin", "pin/pin", "slot/ia", "migrate/migrate", "not-needed/pin", "retire-candidate/retire",
     ]);
     expect(list[0]).toMatchObject({ by: "agent:director", model: "fixture-llm", tier: "high", basis: "planner", name: "essence-v1.md", skill: { path: "packages/director/actions/director.candidates/skill.md" } });
     expect(list[1]).toMatchObject({ by: "planner", model: "none", tier: "none", name: "essence-v2.md" });
     expect(list[2]).toMatchObject({ by: "agent:director", candidate: "essence-v1.md", basis: "agent", skill: { path: "packages/director/actions/pick.director/skill.md" } });
     expect(list[4]).toMatchObject({ by: "owner", candidate: "essence-v2.md", basis: "picked", skill: { path: "packages/producer/actions/pin.director/skill.md" } });
-    expect(list[7]).toMatchObject({ migration: "citations-to-slots", files: [{ name: "essence-v1.md", from: first.sha256, to: fileSha(join(dir, "candidates", "essence-v1.md")) }] });
+    expect(list[6]).toMatchObject({ migration: "citations-to-slots", files: [{ name: "essence-v1.md", from: first.sha256, to: fileSha(join(dir, "candidates", "essence-v1.md")) }] });
     // migrate is a plumb action with no skill: its events cite the installed action.json (R14.2).
-    expect(list[7]!.skill).toEqual({ path: "packages/producer/actions/migrate/action.json", sha256: fileSha(join(PRODUCER_ROOT, "actions", "migrate", "action.json")) });
-    expect(list[8]).toMatchObject({ reason: "covered elsewhere", records: [{ file: "slot.json", sha256: fileSha(join(dir, "slot.json")) }, { file: "pin.json", sha256: null }] });
-    expect(list[9]).toMatchObject({ name: "essence-v2.md", code: "superseded" });
+    expect(list[6]!.skill).toEqual({ path: "packages/producer/actions/migrate/action.json", sha256: fileSha(join(PRODUCER_ROOT, "actions", "migrate", "action.json")) });
+    expect(list[7]).toMatchObject({ reason: "covered elsewhere", records: [{ file: "slot.json", sha256: fileSha(join(dir, "slot.json")) }, { file: "pin.json", sha256: null }] });
+    expect(list[8]).toMatchObject({ name: "essence-v2.md", code: "superseded" });
     // Every record's last state is the bytes on disk, and every candidate's submit sha follows it (R14.1, R08.2).
     expect(lastRecordState(list, "slot.json")?.sha256).toBe(fileSha(join(dir, "slot.json")));
     expect(lastRecordState(list, "pin.json")?.sha256).toBeNull();

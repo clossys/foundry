@@ -72,11 +72,12 @@ export async function pinnedWriterRows(consumer: string): Promise<{ rows: Writer
     if (!viewPlacedAt(doc, entry.id, "writer", entry.position) || doc.kind !== "strings") {
       throw new Error(`Invalid Writer slot: ${entry.id}`);
     }
+    // The view: the copy as published, never its clossys header; the file bytes are what the slot's rules judge.
     const candidate = readCandidate(consumer, "writer", entry.id, entry.pin.candidate);
     if (candidate.sha256 !== entry.pin.sha256) throw new Error(`Writer candidate hash mismatch: ${entry.id}`);
     // Judged by its slot as stored (a candidate/1 header under slot/2, the int2 rules under slot/1), read through its view.
-    if (slotCandidateIssues(consumer, "writer", entry.id, candidate.name, candidate.bytes).length) throw new Error(`Invalid Writer candidate: ${entry.id}`);
-    const parsed = parseFrontmatter(candidate.view);
+    if (slotCandidateIssues(consumer, "writer", entry.id, candidate.name, candidate.raw).length) throw new Error(`Invalid Writer candidate: ${entry.id}`);
+    const parsed = parseFrontmatter(candidate.bytes);
     if (!parsed.ok) throw new Error(`Invalid Writer candidate envelope: ${entry.id}`);
     rows.push(...parser.parseWriterSlotBody(parsed.value.body, parsed.value.fields.locales));
     for (const locale of parsed.value.fields.locales as string[]) selectedLocales.add(locale);

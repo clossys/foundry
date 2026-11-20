@@ -14,12 +14,13 @@ import { checkSlotModel } from "../records/slot-check.js";
 // Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
 import "./main.js";
 import { runIaCli, runSeatCli } from "./owner.js";
+import { positionIa } from "../records/slot.js";
 
 const FIXTURE = fileURLToPath(new URL("../constitution/__fixtures__/standards/fixture-headline/", import.meta.url));
 const AT = "2026-11-14T12:00:00.000Z";
 const REF = "clossys/workspace#46 issuecomment-6881767482 (OWNER WORDS 2026-11-14 producer IA: workflows, not pipeline)";
 const DECISIONS = { schema: "clossys.owner-decisions/1", decisions: [{ id: "6881767482", ref: REF, date: "2026-11-14", scope: ["ia"], summary: "Producer IA regroup." }] };
-const PROCEDURE = ["--by", "owner", "--no-llm", "--procedure", "Compare each slot's candidates against its contract and pin one.", "--command", "clossys pin"];
+const PROCEDURE = ["--by", "owner", "--decided-by", "planner:U13-fixture", "--no-llm", "--procedure", "Compare each slot's candidates against its contract and pin one.", "--command", "clossys pin"];
 
 let workspace: string;
 let producer: string;
@@ -32,7 +33,8 @@ function placements(): Map<string, { l1: string; l2: string; order: number }> {
   const rows = iaDoc().nodes.flatMap(node => node.children.flatMap(child => child.slots.map(id => ({ id, l1: node.id, l2: child.id }))));
   return new Map(rows.map((row, order) => [row.id, { l1: row.l1, l2: row.l2, order }]));
 }
-const followsIa = () => { for (const [seat, at] of placements()) expect(seatAt(seat), seat).toMatchObject(at); };
+// A seat is a clossys.slot/2 (U13 one format): its ia is the slash path of its ia.json position.
+const followsIa = () => { for (const [seat, at] of placements()) expect(seatAt(seat), seat).toEqual(positionIa(seat, at)); };
 /** Every file under the workspace and its bytes: a refused or dry run must leave this unchanged. */
 function tree(dir = workspace): Record<string, string> {
   const files: Record<string, string> = {};
@@ -70,7 +72,8 @@ afterEach(() => rmSync(workspace, { recursive: true, force: true }));
 
 describe("clossys seat places a new seat; ia never does", () => {
   it("places seat.reissue with clossys seat reissue (its stage publish.assemble is not a step)", async () => {
-    expect(seatAt("seat.reissue")).toMatchObject({ l1: "publish", l2: "publish.assemble" });
+    const { l0, l1, l2 } = positionIa("seat.reissue", { l1: "publish", l2: "publish.assemble" });
+    expect(seatAt("seat.reissue")).toMatchObject({ l0, l1, l2 });
     expect((await seat("publish.assemble")).message).toMatch(/publish\.assemble is not a decide step/);
   });
 

@@ -13,6 +13,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { isAbsent } from "../errors.js";
 import { fileURLToPath } from "node:url";
 import { CANDIDATES_DIR, FOLDER_KIND, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, SLOT_AGENTS } from "../records/slot-model/types.js";
 import type { SlotAgent } from "../records/slot-model/types.js";
@@ -106,7 +107,7 @@ function matches(root: string, glob: string): string[] {
       if (!segment.includes("*")) { if (existsSync(join(root, base, segment))) next.push(base ? `${base}/${segment}` : segment); continue; }
       const dir = join(root, base);
       let names: string[] = [];
-      try { names = statSync(dir).isDirectory() ? readdirSync(dir) : []; } catch { names = []; }
+      try { names = statSync(dir).isDirectory() ? readdirSync(dir) : []; } catch (error) { if (!isAbsent(error)) throw error; }
       const pattern = globRegex(segment);
       for (const name of names.filter(name => !name.startsWith(".")).sort()) if (pattern.test(name)) next.push(base ? `${base}/${name}` : name);
     }
@@ -121,11 +122,11 @@ function iaSlots(root: string, agent: string): string[] {
 }
 
 /**
- * A model presence or listing through the one reader (records/slots.ts); a path the reader refuses
- * (an alias, a path outside the model) is absent here and the model check's finding (slot.check).
+ * A model presence or listing through the one reader (records/slots.ts): an absent path is not
+ * present and lists nothing; a path the reader refuses (an alias) or cannot read is thrown.
  */
-const present = (path: string): boolean => { try { return modelExists(path); } catch { return false; } };
-const listed = (path: string): string[] => { try { return listModelDir(path); } catch { return []; } };
+const present = (path: string): boolean => modelExists(path);
+const listed = (path: string): string[] => listModelDir(path);
 
 /**
  * Unpinned slots. A pinned slot is decided: a re-pin upstream re-addresses its citations (they name
@@ -231,15 +232,16 @@ export function skillFile(step: Step, packageRoot = PACKAGE_ROOT): string | null
 export function skillOf(step: Step, packageRoot = PACKAGE_ROOT): { path: string; file: string | null; sha256: string | null } {
   const file = skillFile(step, packageRoot);
   let digest: string | null = null;
-  try { digest = file ? sha(readFileSync(file)) : null; } catch { digest = null; }
+  try { digest = file ? sha(readFileSync(file)) : null; } catch (error) { if (!isAbsent(error)) throw error; }
   // The id is Foundry-relative; a consumer reads the installed package's file, so the packet carries both.
   return { path: step.command.skill ?? "", file: digest ? file : null, sha256: digest };
 }
 /** The skill's first prose line: the question the step answers. */
 export function skillLine(step: Step, packageRoot: string): string {
   const file = skillFile(step, packageRoot);
-  try { return (file ? readFileSync(file, "utf8") : "").split("\n").map(line => line.trim()).find(line => line && !line.startsWith("#") && !line.startsWith("-")) ?? step.summary; }
-  catch { return step.summary; }
+  let text = "";
+  try { text = file ? readFileSync(file, "utf8") : ""; } catch (error) { if (!isAbsent(error)) throw error; }
+  return text.split("\n").map(line => line.trim()).find(line => line && !line.startsWith("#") && !line.startsWith("-")) ?? step.summary;
 }
 
 const deciderOf = (step: Step, seat: SeatReport | undefined): string => {
@@ -249,8 +251,8 @@ const deciderOf = (step: Step, seat: SeatReport | undefined): string => {
 
 function slotDoc(root: string, item: string): { contract?: unknown; options?: number; varyOn?: string; kind?: string } | undefined {
   const [agent, slot] = [item.slice(0, item.indexOf("/")), item.slice(item.indexOf("/") + 1)];
-  try { return readJson(join(root, "clossys", "agents", agent, slot, "slot.json")) as { contract?: unknown; options?: number; varyOn?: string } | undefined; }
-  catch { return undefined; }
+  // readJson is undefined only when slot.json is absent; an unreadable or non-JSON slot.json is thrown.
+  return readJson(join(root, "clossys", "agents", agent, slot, "slot.json")) as { contract?: unknown; options?: number; varyOn?: string } | undefined;
 }
 export const candidatesOf = (root: string, item: string): string[] => {
   const dir = join(root, "clossys", "agents", ...item.split("/"), CANDIDATES_DIR);
@@ -258,8 +260,16 @@ export const candidatesOf = (root: string, item: string): string[] => {
 };
 const version = (name: string) => Number(/-v(\d+)\.[a-z]+$/.exec(name)?.[1] ?? 0);
 
+/**
+ * The decider every owner option's recording call names (one format, U13 r2): the queue entry holding the owner's
+ * answer, `owner:queue.<kind>#<id>`, filled by the answerer. A clossys.pin/2 owner decision (seat, pin, approve,
+ * confirm) is recorded as the owner's and cites that entry; the CLI never records an owner basis without it.
+ */
+export const QUEUE_ANSWER = "<queue-answer>";
 /** What the answerer fills for each placeholder an owner option's argv carries (the one table; `filled` refuses any other). */
 export const PLACEHOLDER_MEANING: Readonly<Record<string, string>> = {
+  // DRAFT copy (not owner-approved).
+  [QUEUE_ANSWER]: "the queue entry holding the owner's answer to this question (owner:queue.<kind>#<id>)",
   "<id>": "a record id for the answer (owner-<topic>-<date>)",
   "<answer.md>": "a file with the owner's words, verbatim",
   "<source>": "where the finding was observed (a URL or a document path)",
@@ -314,12 +324,12 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
     const by = owner ? "owner" : `agent:${target.agent}`;
     const source = /^pick\.(.+)$/.exec(item)?.[1];
     const sourceSeat = source ? context.seats[`${source}.candidates`] : undefined;
-    const seatArgs = (tier: string, model: string) => ["clossys", "seat", item, "--by", by, "--model", model, "--tier", tier, "--prompt-file", skill, "--procedure", procedure, "--command", command];
+    const seatArgs = (tier: string, model: string) => ["clossys", "seat", item, "--by", by, "--model", model, "--tier", tier, "--prompt-file", skill, "--procedure", procedure, "--command", command, "--decided-by", QUEUE_ANSWER];
     if (sourceSeat && sourceSeat.llm && sourceSeat.llm !== "open") add(`The llm that made ${source}'s options picks (${sourceSeat.llm.model}, ${sourceSeat.llm.tier}); you confirm in Studio.`, seatArgs(sourceSeat.llm.tier, sourceSeat.llm.model));
     else if (owner) add("You decide; a mid-tier llm drafts a recommendation from the step's skill first.", seatArgs("mid", "<model:mid>"));
     else add(`The ${target.agent} agent does it at mid tier with its skill; you review the result in Studio.`, seatArgs("mid", "<model:mid>"));
     add(owner ? "You decide; a high-tier llm drafts the recommendation." : `The ${target.agent} agent does it at high tier.`, seatArgs("high", "<model:high>"));
-    add("Human only, no llm: the seat stays listed open until an llm part is added.", ["clossys", "seat", item, "--by", by, "--no-llm", "--procedure", procedure, "--command", command]);
+    add("Human only, no llm: the seat stays listed open until an llm part is added.", ["clossys", "seat", item, "--by", by, "--no-llm", "--procedure", procedure, "--command", command, "--decided-by", QUEUE_ANSWER]);
   } else if (step.id === "ia" && !item.includes("/")) {
     add(`Adopt the Foundry IA for ${item}: its tree and every slot's contract, inputs and uses.`, ["clossys", "ia", item, "--adopt"]);
     add(`Start an empty IA for ${item} and place each slot yourself (clossys ia ${item}/<slot> --under <l1>/<l2>).`, ["clossys", "ia", item, "--start"]);
@@ -342,15 +352,15 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
   } else if (step.id === "writer.approve") {
     const names = candidatesOf(root, item).filter(name => name.endsWith(".md"));
     const keys = writerKeysUnapproved(root).get(item.slice("writer/".length)) ?? [];
-    for (const name of names.slice(-2).reverse()) add(`Approve ${name}${name === names.at(-1) ? ` (its ${keys.length} new key${keys.length === 1 ? "" : "s"}: ${keys.slice(0, 4).join(", ")}${keys.length > 4 ? ", ..." : ""})` : ""}.`, ["clossys", "approve", item, name]);
+    for (const name of names.slice(-2).reverse()) add(`Approve ${name}${name === names.at(-1) ? ` (its ${keys.length} new key${keys.length === 1 ? "" : "s"}: ${keys.slice(0, 4).join(", ")}${keys.length > 4 ? ", ..." : ""})` : ""}.`, ["clossys", "approve", item, name, "--by", QUEUE_ANSWER]);
     // Never a lone approve: the owner can always ask the Writer for another draft first.
     add("Ask the Writer for another draft before approving.", ["clossys", "options", item, "--more"]);
   } else if (step.id.startsWith("pin.")) {
     const names = candidatesOf(root, item);
-    for (const name of names.slice(-3).reverse()) add(`Pin ${name}.`, ["clossys", "pin", item, name, "--basis", "picked"]);
+    for (const name of names.slice(-3).reverse()) add(`Pin ${name}.`, ["clossys", "pin", item, name, "--basis", "picked", "--by", QUEUE_ANSWER]);
     // A slot adopted from the package IA with no candidate yet: the first answer asks for its options.
     if (!names.length) add(`Ask the ${item.slice(0, item.indexOf("/"))} agent for candidates first (the brief for fresh options).`, ["clossys", "options", item, "--more"]);
-    add("Not needed: the slot ships nothing.", ["clossys", "pin", item, "--not-needed", "--reason", "<why>"]);
+    add("Not needed: the slot ships nothing.", ["clossys", "pin", item, "--not-needed", "--reason", "<why>", "--by", QUEUE_ANSWER]);
   }
   options.splice(4);
   options.push({ id: "other", label: "Something else: answer in your own words.", recommended: false, argv: null, fill: {} });

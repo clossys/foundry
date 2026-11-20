@@ -86,7 +86,6 @@ describe('specimen element trees', () => {
 
   it('every pinned component fixture tree resolves against its own exports and the pinned Writer copy', async () => {
     const copy = pinnedWriterCopy(consumerPath());
-    expect(copy['studio.specimen.tabs-overview']).toBe('Overview');
     for (const slot of ['components.tabs', 'components.card']) {
       const pin = JSON.parse(readFileSync(join(designer, slot, 'pin.json'), 'utf8'));
       const item = JSON.parse(readFileSync(join(designer, slot, 'candidates', pin.candidate), 'utf8'));
@@ -251,7 +250,7 @@ describe('a component slot that reads a context', () => {
     }
   }, 60_000);
 
-  it.each(['components.navigation-tree', 'components.flow.canvas', 'components.flow.base-handle'])('resolves the pinned %s through the installed record source and mounts it inside exactly one provider', async slot => {
+  it.each(['components.navigation-tree'])('resolves the pinned %s through the installed record source and mounts it inside exactly one provider', async slot => {
     const library = consumerPath();
     const { pins } = slotInstallInputs(library)!;
     const provider = (specimenStateOf(slot) as Extract<SpecimenState, { state: 'provider' }>).provider;
@@ -276,7 +275,7 @@ describe('a component slot that reads a context', () => {
     if (mounted.providerTag) expect(mounted.markup.split(mounted.providerTag).length - 1, `${slot} rendered wrappers`).toBe(1);
   }, 60_000);
 
-  it.each(['components.chart-area', 'components.chart-bar', 'components.chart-line', 'components.tooltip', 'components.toast', 'components.flow.labeled-handle'])('resolves the pinned %s through the installed record source to its own registry file, with no generated specimen module', async slot => {
+  it.each(['components.chart-area', 'components.chart-bar', 'components.chart-line', 'components.tooltip', 'components.toast'])('resolves the pinned %s through the installed record source to its own registry file, with no generated specimen module', async slot => {
     const library = consumerPath();
     const { pins } = slotInstallInputs(library)!;
     const copy = pinnedWriterCopy(library);

@@ -10,10 +10,12 @@
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { buildCandidateHeader, candidatePath, parseCandidateName, readCandidateFile, serializeCandidate, writeCandidateFile } from "../records/candidate.js";
+import { buildCandidateHeader, candidatePath, parseCandidateName, readCandidateFile, serializeCandidate } from "../records/candidate.js";
 import { sha256Hex } from "../records/hash.js";
+import { actionContractPath } from "../records/ledger.js";
 import { cliActor, toIsoZ } from "../records/pin.js";
 import { resolveSlot } from "../records/resolve.js";
+import { writeCandidateBytes } from "../records/slot-write.js";
 import { canonical } from "../records/slot-model/layout.js";
 import type { CandidateHeader } from "../records/types.js";
 import { buildIssue, latestBuild, type BuildExport } from "./build.js";
@@ -137,6 +139,11 @@ export function writeManifest(root: string, publication: string, options: { now?
     source: content.previous ? { kind: "derived", ref: [rel(content.previous).replace("/candidates/", "/")] } : { kind: "original", ref: [] },
   });
   const file = candidatePath(root, "publisher", slotId, name);
-  const sha256 = writeCandidateFile(file, serializeCandidate(name, header, content));
+  // The one candidate writer (records/slot-write.ts): the file and its `submit {name, sha256}` event land under the slot
+  // lock, so R14.1 and the pin gate find the manifest's provenance like every other candidate's. The event cites the
+  // plumb action that runs the release (publisher.release), by Producer code.
+  const { sha256 } = writeCandidateBytes(join(root, "clossys"), "publisher", slotId, name, serializeCandidate(name, header, content), {
+    at, fields: { reason: `clossys release ${publication} --manifest: build ${build.id.slice(0, 12)}` },
+  }, { verb: "submit", by: "producer", skill: actionContractPath("producer", "publisher.release") });
   return { name, file, rel: rel(name), sha256, content, reused: false };
 }

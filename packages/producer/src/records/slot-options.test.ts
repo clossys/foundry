@@ -7,7 +7,6 @@ import { jsonBytes, serializeFrontmatter, slotPositions, validatePin, validateSl
 import { checkSlotOptions, slotOptions } from "./slot-options.js";
 import { readSlotEntry } from "./slots.js";
 import { writeCandidate, writePin, writeSlotOptions } from "./slot-write.js";
-import { certifySlots } from "../cli/__fixtures__/certified.js";
 import { runOptionsCli, runPickCli } from "../cli/options.js";
 
 const ID = "identity.brand.essence";
@@ -26,6 +25,8 @@ let root: string, dir: string;
 const brief = (vary?: Record<string, string>) => serializeFrontmatter({ slot: ID, source, feeds: [], functions: [], ...(vary ? { vary } : {}) }, body);
 const add = (name: string, bytes: string) => writeFileSync(join(dir, "candidates", name), bytes);
 const slotJson = () => JSON.parse(readFileSync(join(dir, "slot.json"), "utf8"));
+/** The class fields on this slot/1 fixture, written as bytes: the writer (writeSlotOptions) refuses slot/1 (U13 one format). */
+const setOptions = (fields: { options: number; varyOn: string }) => writeFileSync(join(dir, "slot.json"), jsonBytes({ ...slotJson(), ...fields }));
 
 beforeEach(() => {
   root = realpathSync(mkdtempSync(join(tmpdir(), "slot-options-")));
@@ -79,7 +80,7 @@ describe("checkSlotOptions", () => {
   });
 
   it("passes once slot.json carries the class and two tagged alternatives join the baseline", () => {
-    writeSlotOptions(consumer(), "director", ID, { options: 3, varyOn: "angle" });
+    setOptions({ options: 3, varyOn: "angle" });
     add("essence-ambitious-v1.md", brief({ angle: "ambitious" }));
     add("essence-human-v1.md", brief({ angle: "human" }));
     expect(codes()).toEqual([]);
@@ -90,7 +91,7 @@ describe("checkSlotOptions", () => {
   });
 
   it("refuses duplicate, foreign-axis and unlisted values", () => {
-    writeSlotOptions(consumer(), "director", ID, { options: 3, varyOn: "angle" });
+    setOptions({ options: 3, varyOn: "angle" });
     add("essence-human-v1.md", brief({ angle: "human" }));
     add("essence-human2-v1.md", brief({ angle: "human" }));
     add("essence-tone-v1.md", brief({ tone: "bold" }));
@@ -157,29 +158,21 @@ describe("clossys options and pick", () => {
     await expect(runOptionsCli([`director/${ID}`, "--redraft", "--more", "--root", root], root)).rejects.toThrow(/two briefs/);
   });
 
-  it("pick refuses an owner pick (basis picked) and leaves it unchanged", async () => {
-    add("essence-human-v1.md", brief({ angle: "human" }));
-    const before = readFileSync(join(dir, "pin.json"), "utf8");
-    const refused = await runPickCli([`director/${ID}`, "essence-human-v1", "--by", "agent:director", "--root", root], root);
-    expect(refused.exitCode).toBe(1);
-    expect(refused.message).toMatch(/already holds an owner pick/);
-    expect(readFileSync(join(dir, "pin.json"), "utf8")).toBe(before);
+  // One format (foundry-build-0048 U13): pick writes clossys.slot/2 and clossys.pin/2 only. On this clossys.slot/1
+  // fixture every pick, over any pin, refuses with the migrate message and leaves the pin as it was; the slot/2 pick
+  // (basis agent, refused over an owner pick) is proven in cli/one-format.test.ts.
+  it("pick refuses a clossys.slot/1 slot over any pin and leaves it unchanged", async () => {
+    const human = writeCandidate(consumer(), "director", ID, "essence-human", brief({ angle: "human" })).name;
+    for (const [decidedBy, basis] of [["owner", "picked"], ["owner:2026-11-03 pin-if-agree", "bulk"], ["planner:UNIT", "planner"], ["agent:director.other", "agent"]] as const) {
+      writePin(consumer(), "director", ID, "essence-v1.md", { decidedBy, basis, at: "2026-11-03T00:00:00Z" });
+      const before = readFileSync(join(dir, "pin.json"), "utf8");
+      const refused = await runPickCli([`director/${ID}`, human.replace(/\.md$/, ""), "--by", "agent:director", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
+      expect(refused.exitCode, basis).toBe(1);
+      expect(refused.message, basis).toMatch(/clossys\.slot\/1 slot; this verb writes clossys\.slot\/2 and clossys\.pin\/2 only: run clossys migrate slots --apply first/);
+      expect(readFileSync(join(dir, "pin.json"), "utf8"), basis).toBe(before);
+    }
     await expect(runPickCli([`director/${ID}`, "essence-human-v1", "--by", "owner", "--root", root], root)).rejects.toThrow(/agent:<seat>/);
   });
-
-  for (const [decidedBy, basis] of [["owner:2026-11-03 pin-if-agree", "bulk"], ["planner:UNIT", "planner"], ["agent:director.other", "agent"]] as const) {
-    it(`pick replaces a ${basis} pin with basis agent, shown as confirm`, async () => {
-      // The pick is guarded (R05.1, R05.2, R14.1): the alternative is submitted through the writer and the slot certified.
-      const human = writeCandidate(consumer(), "director", ID, "essence-human", brief({ angle: "human" })).name;
-      await certifySlots(root, "director", { [ID]: ["essence-v1.md", human] });
-      writePin(consumer(), "director", ID, "essence-v1.md", { decidedBy, basis, at: "2026-11-03T00:00:00Z" });
-      expect(slotOptions(consumer(), readSlotEntry(consumer(), "director", ID)!, TABLE).pinStatus).toBe("confirm");
-      const picked = await runPickCli([`director/${ID}`, human.replace(/\.md$/, ""), "--by", "agent:director", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
-      expect(picked.exitCode, picked.message).toBe(0);
-      expect(JSON.parse(readFileSync(join(dir, "pin.json"), "utf8"))).toMatchObject({ candidate: human, decidedBy: "agent:director", basis: "agent" });
-      expect(slotOptions(consumer(), readSlotEntry(consumer(), "director", ID)!, TABLE).pinStatus).toBe("confirm");
-    });
-  }
 
   it("writePin writes the basis it is given", () => {
     expect(writePin(consumer(), "director", ID, "essence-v1.md", { decidedBy: "owner", basis: "picked", at: "2026-11-04T00:00:00Z" })).toMatchObject({ basis: "picked" });

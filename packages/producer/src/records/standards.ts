@@ -76,7 +76,7 @@ export const CARD_STANDARDS: Readonly<Record<string, readonly string[]>> = Objec
     "copy.headline", "lexicon.claim-list", "lexicon.format-rule", "lexicon.term-list", "lexicon.voice-rule", "narrative", "passage", "pattern",
     "string",
   ],
-  publisher: ["page", "publication"],
+  publisher: ["page", "publication", "release"],
   producer: ["section.studio", "seat"],
 });
 

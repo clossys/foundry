@@ -22,6 +22,7 @@
 import { createHash } from "node:crypto";
 import { lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, unlinkSync, writeFileSync, type Stats } from "node:fs";
 import { join, relative, sep } from "node:path";
+import { isAbsent, parseJson } from "../errors.js";
 import { readSlotJson } from "../records/resolve.js";
 import { listSlots, readAgentFile, readCandidate } from "../records/slots.js";
 import { writerCopyPins } from "../records/writer-copy-slots.js";
@@ -42,7 +43,7 @@ export const LOCK_FILE = "compile.lock.json";
 export function writerCopyInputs(consumer: string): { path: string; bytes: string }[] {
   return writerCopyPins(consumer).map(({ entry, pin }) => {
     const candidate = readCandidate(consumer, "writer", entry.id, pin.candidate);
-    return { path: `agents/writer/${entry.id}/candidates/${candidate.name}`, bytes: candidate.bytes };
+    return { path: `agents/writer/${entry.id}/candidates/${candidate.name}`, bytes: candidate.raw }; // the lock hashes the file
   });
 }
 export const PUBLICATIONS_FILE = "publications.json";
@@ -75,18 +76,23 @@ export interface PublicationsCompile {
 const sha256 = (text: string): string => createHash("sha256").update(text).digest("hex");
 const posix = (path: string): string => path.split(sep).join("/");
 const json = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
-const lstat = (path: string): Stats | undefined => { try { return lstatSync(path); } catch { return undefined; } };
+/** The entry at `path`, or undefined when it is absent; any other lstat failure is thrown. */
+const lstat = (path: string): Stats | undefined => { try { return lstatSync(path); } catch (error) { if (isAbsent(error)) return undefined; throw error; } };
 
-/** The outputs the prior `<target>/compile.lock.json` records (path relative to target -> sha256); undefined without a readable lock. */
+/**
+ * The outputs the prior `<target>/compile.lock.json` records (path relative to target -> sha256); undefined without a
+ * lock or when the lock is not a compile lock (not JSON, another schema), which planClear refuses as compile.out-unowned.
+ * A lock that cannot be read is thrown.
+ */
 function priorOutputs(target: string): Map<string, string> | undefined {
   const file = join(target, LOCK_FILE);
   if (!lstat(file)?.isFile()) return undefined;
-  try {
-    const lock = JSON.parse(readFileSync(file, "utf8")) as { schema?: unknown; outputs?: unknown };
-    if (lock.schema !== COMPILE_LOCK_SCHEMA || !Array.isArray(lock.outputs)) return undefined;
-    const rows = (lock.outputs as { path?: unknown; sha256?: unknown }[]).filter(row => typeof row?.path === "string" && typeof row.sha256 === "string");
-    return new Map(rows.map(row => [row.path as string, row.sha256 as string]));
-  } catch { return undefined; }
+  const parsed = parseJson(readFileSync(file, "utf8"));
+  if (!parsed.ok) return undefined;
+  const lock = parsed.value as { schema?: unknown; outputs?: unknown } | null;
+  if (lock?.schema !== COMPILE_LOCK_SCHEMA || !Array.isArray(lock.outputs)) return undefined;
+  const rows = (lock.outputs as { path?: unknown; sha256?: unknown }[]).filter(row => typeof row?.path === "string" && typeof row.sha256 === "string");
+  return new Map(rows.map(row => [row.path as string, row.sha256 as string]));
 }
 
 /**

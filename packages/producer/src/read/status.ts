@@ -10,6 +10,7 @@
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
+import { isAbsent, parseJson } from "../errors.js";
 import { listCandidateNames, modelPresence, readCandidate, readIa, readPin, readSlot, slotCandidateIssues, viewPlacedAt } from "../records/slots.js";
 import type { AgentCensus as AgentCensusCounts, AgentId, StatusView } from "../records/types.js";
 import {
@@ -92,7 +93,7 @@ function censusRow(consumer: string, agent: SlotAgent, id: string, position: Slo
           const candidate = readCandidate(consumer, agent, id, pin.candidate);
           if (candidate.sha256 !== pin.sha256) row.pin = "hash-drift";
           else if (!doc) row.pin = "unvalidated-candidate";
-          else if (slotCandidateIssues(consumer, agent, id, candidate.name, candidate.bytes).length) row.pin = "invalid-candidate";
+          else if (slotCandidateIssues(consumer, agent, id, candidate.name, candidate.raw).length) row.pin = "invalid-candidate";
           else row.pin = "valid";
         } catch (error) {
           row.pin = (error as NodeJS.ErrnoException).code === "ENOENT" ? "missing-candidate" : "error";
@@ -125,10 +126,16 @@ export function agentCensus(consumer: string, agent: SlotAgent): AgentCensus {
 
 // ---------------------------------------------------------------- small file readers
 const isDir = (path: string) => { try { return statSync(path).isDirectory(); } catch { return false; } };
-const list = (path: string) => { try { return readdirSync(path).sort(); } catch { return []; } };
+/** A folder's sorted names; none when it is absent. Any other read failure is thrown. */
+const list = (path: string) => { try { return readdirSync(path).sort(); } catch (error) { if (isAbsent(error)) return []; throw error; } };
+/** A JSON object file; null when it is absent or not an object. A file that cannot be read or is not JSON is thrown, naming it. */
 function readJson(path: string): Record<string, unknown> | null {
-  try { const value = JSON.parse(readFileSync(path, "utf8")) as unknown; return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null; }
-  catch { return null; }
+  let text: string;
+  try { text = readFileSync(path, "utf8"); } catch (error) { if (isAbsent(error)) return null; throw error; }
+  const parsed = parseJson(text);
+  if (!parsed.ok) throw new Error(`${path}: not JSON (${parsed.message})`);
+  const value = parsed.value;
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
 }
 const str = (value: unknown): string | undefined => typeof value === "string" ? value : undefined;
 const max = (values: readonly (string | undefined)[]) => values.filter((v): v is string => !!v).sort().at(-1);
@@ -226,7 +233,8 @@ function producerSlots(consumer: string): { id: string; pin?: PinDoc; drift: boo
     if (!doc) return { id, drift: list(join(dir, id)).includes("pin.json"), candidates };
     const pin = { candidate: str(doc.candidate) ?? "", sha256: str(doc.sha256) ?? "", decidedBy: str(doc.decidedBy) ?? "", basis: (str(doc.basis) ?? "agent") as PinBasis, at: str(doc.at) ?? "" } as PinDoc;
     let bytes: Buffer | undefined;
-    try { bytes = readFileSync(join(dir, id, "candidates", pin.candidate)); } catch { /* missing candidate */ }
+    // A pin naming no candidate, or a missing candidate, is drift.
+    if (pin.candidate) try { bytes = readFileSync(join(dir, id, "candidates", pin.candidate)); } catch (error) { if (!isAbsent(error)) throw error; }
     return { id, pin, drift: !bytes || createHash("sha256").update(bytes).digest("hex") !== pin.sha256, candidates };
   });
 }

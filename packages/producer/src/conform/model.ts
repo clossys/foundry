@@ -432,7 +432,7 @@ function readMachinery(repo: string, consumer: string): Machinery {
     loops.set(loop, content ? { steps: Array.isArray(content.steps) ? content.steps.filter(object) : [] } : undefined);
   }
   const certifyDir = join(producer, "src/constitution/certify");
-  const certifiers = new Set(["element", "brief", "strings", "page", "publication", "seat"].filter(family => existsSync(join(certifyDir, `${family}.ts`))));
+  const certifiers = new Set(["element", "brief", "strings", "page", "publication", "release", "seat"].filter(family => existsSync(join(certifyDir, `${family}.ts`))));
   const contractSchemas = new Map<string, JsonSchema | undefined>();
   for (const family of ["brief", "element", "strings", "page", "publication", "seat"]) contractSchemas.set(family, json(join(producer, `pipeline/schemas/contract-${family}.schema.json`)) as JsonSchema | undefined);
   const criteria = new Set<string>();

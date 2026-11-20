@@ -159,22 +159,23 @@ describe("clossys init seats the admin workspace", () => {
     expect((check as unknown as { checks?: Record<string, unknown> }).checks?.[ADMIN_SEATED]).toBeUndefined();
   });
 
-  it("pins the expected-red state of clossys check on a fresh init (unmocked): exit 1 on 5 no-pin page rows only, inputs-undeclared 5", async () => {
+  it("pins the expected-red state of clossys check on a fresh init (unmocked): exit 1 on 6 no-pin rows only (5 pages, the publication), inputs-undeclared 5", async () => {
     const root = workspace();
     expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
     const check = await runCli(["check", "--root", root]);
     // foundry-build-0048 U20: init seeds every admin slot with its package default (admin-v1.json) and adopts and pins
-    // Publisher's five loops. The publication certifies on its fixture and pins; each page waits for its frame, sections
-    // and copy to be pinned upstream (a bare workspace pins none), so the default check is red on the five pages' pins
-    // alone: 11 Publisher slots (6 admin, 5 loops), each with a candidate, 6 pinned (5 loops, publication.admin).
+    // Publisher's five loops. Each page waits for its frame, sections and copy to be pinned upstream (a bare workspace
+    // pins none), and the publication waits for its pages: the guarded pin refuses it over unpinned upstream (R02.2,
+    // upstream is pinned before downstream). So the default check is red on the six admin pins alone: 11 Publisher
+    // slots (6 admin, 5 loops), each with a candidate, 5 pinned (the loops).
     expect(check.exitCode).toBe(1);
     expect(check.message).toContain(`${ADMIN_SEATED}: pass`);
     expect(check.message).toContain("loop.agent-standard: pass");
     expect(check.message).toContain("loop.connected: pass");
-    expect(check.message).toContain("Slot integrity found 5 findings across 11 slots.");
-    expect(check.message).toContain("publisher: 11 slots / 11 with candidate / 6 pinned; inputs-undeclared 5");
+    expect(check.message).toContain("Slot integrity found 6 findings across 11 slots.");
+    expect(check.message).toContain("publisher: 11 slots / 11 with candidate / 5 pinned; inputs-undeclared 5");
     const rows = check.message.split("\n").filter(line => /^  [a-z]+:[a-z0-9.-]+ \[/.test(line));
-    expect(rows).toEqual(PAGES.map(slot => `  publisher:${slot} [no-pin] No candidate is pinned.`));
+    expect(rows).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT].map(slot => `  publisher:${slot} [no-pin] No candidate is pinned.`));
   }, 120_000);
 
   it("is idempotent: a second run places nothing and raises nothing new", async () => {

@@ -31,6 +31,7 @@ import { readiness } from "../records/slots.js";
 import { refVerbatimSuite } from "../check/record-suites.js";
 import { runConstitution } from "../constitution/run.js";
 import { NO_HISTORY } from "../constitution/__fixtures__/workspace.js";
+import { pinUpstream } from "./__fixtures__/upstream.js";
 
 const AT = "2026-11-17T12:00:00Z";
 const temps: string[] = [];
@@ -912,6 +913,8 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     const createDone = await resumeRun(root, created.state!.runId, answering("create", [`${slot}/candidates/${added[0]}`]), { now: minute(2) });
     expect(createDone.message).not.toMatch(/refuses it|does not declare/);
     expect(createDone.state?.steps.find(step => step.id === "create")?.exit).toBe(0);
+    // The pick runs the pin guard (U13 B1): R02.2 needs the copy's dependency set pinned upstream first.
+    pinUpstream(join(root, "clossys"), "writer", slotId, AT);
 
     // The standard pick step's real verb (clossys pin <ref> <candidate> --by agent:writer), judged as the runner judges
     // it on resume (a run can reach pick only past rank's candidates.certified check, so the step is judged directly).

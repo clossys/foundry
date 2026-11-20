@@ -149,7 +149,8 @@ it("refuses native identity, evidence, port and canonical path mismatches before
   const badContent = structuredClone(input.preview.props) as any; badContent.content.header.hash = runtimeHash("different");
   await reject({ preview: { props: badContent } }, /content hash/);
   writeFileSync(slotFile(entry.dir), originalSlot.replace('"frames.site-shell"', '"frames.other"'));
-  await reject({}, /target slot identity/);
+  // The slot reader refuses an id that does not match its IA position before the materializer compares identity.
+  await reject({}, /does not match its IA position/);
   writeFileSync(slotFile(entry.dir), originalSlot);
   const external = realpathSync(mkdtempSync(join(tmpdir(), "catalog-outside-"))); roots.push(external);
   symlinkSync(external, candidatesDir(entry.dir), "dir");

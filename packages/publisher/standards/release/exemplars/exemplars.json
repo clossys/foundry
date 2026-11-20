@@ -1,0 +1,78 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "slsa-provenance",
+      "ref": "https://slsa.dev/spec/v1.0/provenance",
+      "source": "SLSA",
+      "license": "Community-Spec-1.0",
+      "description": "DRAFT: Build provenance: what was built, from which exact inputs, by which process.",
+      "why": {
+        "traceability": "DRAFT: Every input is listed with its digest.",
+        "reproducibility": "DRAFT: The build process and its parameters are recorded."
+      }
+    },
+    {
+      "id": "in-toto-attestation",
+      "ref": "https://github.com/in-toto/attestation/blob/main/spec/README.md",
+      "source": "in-toto",
+      "license": "Apache-2.0",
+      "description": "DRAFT: Attestations: a signed statement that names its subject by digest and what it claims about it.",
+      "why": {
+        "traceability": "DRAFT: The subject is named by its digest."
+      }
+    },
+    {
+      "id": "npm-package-lock",
+      "ref": "https://docs.npmjs.com/cli/configuring-npm/package-lock-json",
+      "source": "npm docs",
+      "license": "Artistic-2.0",
+      "description": "DRAFT: A lockfile: the exact resolved version and integrity hash of every dependency.",
+      "why": {
+        "traceability": "DRAFT: Every dependency carries its exact version and integrity hash.",
+        "reproducibility": "DRAFT: The same install can be made again from the lockfile."
+      }
+    },
+    {
+      "id": "cyclonedx-sbom",
+      "ref": "https://cyclonedx.org/specification/overview/",
+      "source": "CycloneDX",
+      "license": "Apache-2.0",
+      "description": "DRAFT: A bill of materials: every component a release contains, once, with its version and hash.",
+      "why": {
+        "traceability": "DRAFT: One entry per component, with its version."
+      }
+    },
+    {
+      "id": "semver",
+      "ref": "https://semver.org/",
+      "source": "Semantic Versioning",
+      "license": "CC-BY-3.0",
+      "description": "DRAFT: Version numbers that say what kind of change a release holds.",
+      "why": {
+        "change-clarity": "DRAFT: The version itself says what kind of change shipped."
+      }
+    },
+    {
+      "id": "keep-a-changelog",
+      "ref": "https://keepachangelog.com/en/1.1.0/",
+      "source": "Keep a Changelog",
+      "license": "MIT",
+      "description": "DRAFT: A changelog that lists only what changed in each release, grouped by kind of change.",
+      "why": {
+        "change-clarity": "DRAFT: Only the changes, release by release."
+      }
+    },
+    {
+      "id": "github-release-notes",
+      "ref": "https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes",
+      "source": "GitHub Docs",
+      "license": "CC-BY-4.0",
+      "description": "DRAFT: Generated release notes: the changes between this release and the previous one, computed from history.",
+      "why": {
+        "change-clarity": "DRAFT: The diff against the previous release is computed, not written by hand.",
+        "reproducibility": "DRAFT: Notes are derived from the recorded history."
+      }
+    }
+  ]
+}

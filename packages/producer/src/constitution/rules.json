@@ -120,6 +120,11 @@
         "guard": [
           "ia"
         ]
+      },
+      {
+        "id": "R01.16",
+        "status": "building",
+        "owner": "U33"
       }
     ]
   },

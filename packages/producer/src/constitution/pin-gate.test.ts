@@ -10,10 +10,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { resolvePage } from "@clossys/publisher/install";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
+
+// Every decision here runs the constitution guard over the whole fixture consumer (U13 r4: no guard=false), so a
+// test takes seconds, not the config's 5 s default budget.
+vi.setConfig({ testTimeout: 60_000 });
 import { danglingReason } from "../check/refs-dangling.js";
+import { ownerEntry } from "../cli/__fixtures__/owner-entry.js";
+import { pinUpstream } from "../cli/__fixtures__/upstream.js";
 import { runPinCli } from "../cli/pin.js";
-import { writeCandidate } from "../records/slot-write.js";
+import { skillPath } from "../records/ledger.js";
+import { appendSlotDocEvent, writeCandidate } from "../records/slot-write.js";
 import { buildCandidateHeader, serializeCandidate } from "../records/candidate.js";
 import { pinBlocker } from "../records/slots.js";
 import { verifyCheck } from "../loop/runner.js";
@@ -55,15 +62,14 @@ function world() {
   cpSync(FIXTURE, root, { recursive: true });
   const consumer = join(root, "clossys");
   const dir = join(consumer, "agents", "writer", SLOT);
+  // The pin guard runs (U13 r4, B1): R02.2 needs the copy's upstream pinned, R20.2 the Director slot it cites.
+  pinUpstream(consumer, "writer", SLOT, AT);
   return {
     root, consumer, dir,
     submit: (text: string) => writeCandidate(consumer, "writer", SLOT, "copy", text, { at: AT, provenance: { by: "agent:writer", model: "claude-opus-5-5", tier: "high" } }),
-    queueEntry(): void {
-      const file = join(consumer, "agents", "producer", "queue.pick", "entries", `${QUEUE_ID}.json`);
-      mkdirSync(join(file, ".."), { recursive: true });
-      writeFileSync(file, JSON.stringify({ id: QUEUE_ID, kind: "queue-entry" }));
-    },
-    pin: (candidate: string) => runPinCli([`writer/${SLOT}#copy`, candidate, "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", root], root, false),
+    /** The owner's typed queue.pick answer naming this candidate of this slot (U13 r4, B2): what an owner pin cites. */
+    answer: (about: string, candidate: string) => ownerEntry(consumer, { id: QUEUE_ID, about, answer: { candidate }, at: AT }),
+    pin: (candidate: string) => runPinCli([`writer/${SLOT}#copy`, candidate, "--by", ownerEntry(consumer, { id: QUEUE_ID, about: `writer/${SLOT}`, answer: { candidate }, at: AT }), "--at", AT, "--root", root], root),
   };
 }
 
@@ -72,7 +78,6 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     const w = world();
     const good = w.submit(GOOD);
     const bad = w.submit(BAD);
-    w.queueEntry();
     const result = await w.pin(good.name);
     expect(result.message).toMatch(/pinned copy-v1\.md/);
     expect(result.exitCode).toBe(0);
@@ -107,7 +112,6 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     const w = world();
     w.submit(GOOD);
     const bad = w.submit(BAD);
-    w.queueEntry();
     const result = await w.pin(bad.name);
     expect(result.exitCode).toBe(1);
     expect(result.message).toMatch(/copy-v2\.md has no passing verdict: \[limit\] en header\.heading is \d+ characters, past the copy contract's maxLength/);
@@ -118,7 +122,6 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     const w = world();
     const good = w.submit(GOOD);
     writeFileSync(join(w.dir, "candidates", "copy-v2.md"), GOOD);
-    w.queueEntry();
     const placed = await w.pin("copy-v2.md");
     expect(placed.exitCode).toBe(1);
     expect(placed.message).toMatch(/copy-v2\.md has no submit record .*placed by hand is never pinned/);
@@ -153,7 +156,6 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     const w = world();
     w.submit(BAD);
     submitBytes(w, "copy-v2.md", headered("copy-v2.md", GOOD));
-    w.queueEntry();
     const result = await w.pin("copy-v2.md");
     expect(result.message).toMatch(/pinned copy-v2\.md/);
     expect(result.exitCode).toBe(0);
@@ -165,7 +167,6 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     const w = world();
     w.submit(GOOD);
     submitBytes(w, "copy-v2.md", headered("copy-v2.md", BAD));
-    w.queueEntry();
     const result = await w.pin("copy-v2.md");
     expect(result.exitCode).toBe(1);
     expect(result.message).toMatch(/copy-v2\.md has no passing verdict: \[limit\] en header\.heading is \d+ characters, past the copy contract's maxLength/);
@@ -175,7 +176,6 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     const w = world();
     w.submit(BAD);
     submitBytes(w, "copy-v2.md", headered("copy-v2.md", GOOD, header => { header.createdAt = "yesterday"; header.slot = `writer/sections.other.copy`; }));
-    w.queueEntry();
     const result = await w.pin("copy-v2.md");
     expect(result.exitCode).toBe(1);
     expect(result.message).toMatch(/copy-v2\.md has no passing verdict: \[invalid\] clossys header: /);
@@ -193,7 +193,6 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     expect(bytes.endsWith(GOOD.slice(GOOD.indexOf("\n---\n") + 5))).toBe(true);
     // A body the copy rules refuse is refused before anything is written, header or not.
     expect(() => writeCandidate(w.consumer, "writer", SLOT, "copy", GOOD.replace(/^source: .*\n/m, ""), { at: AT, header: { createdBy } })).toThrow(/candidate refused/);
-    w.queueEntry();
     const result = await w.pin(good.name);
     expect(result.exitCode).toBe(0);
     expect(pinBlocker(w.consumer, "writer", SLOT)).toBeUndefined();
@@ -206,7 +205,6 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     const twice = once.replace(/\n---\n/, `\nsource: {"kind":"original","ref":[]}\n---\n`);
     expect(twice).not.toBe(once);
     submitBytes(w, "copy-v2.md", twice);
-    w.queueEntry();
     const result = await w.pin("copy-v2.md");
     expect(result.exitCode).toBe(1);
     expect(result.message).toMatch(/copy-v2\.md has no passing verdict: \[invalid\] clossys header: source is the clossys header's; the candidate carries a second one/);
@@ -252,6 +250,13 @@ describe("loop.create's exit, candidates.certified (computed by clossys run, nev
 });
 
 describe("the CHOOSE gate on a hero code candidate carrying an interactive backdrop (foundry-build-0048 A4)", () => {
+  /**
+   * The source heroCode's candidate carries under the real guard (U13 r4): it customizes the trusted tailark-oss hero
+   * block (the provenance rule: a section's code adopts or customizes a reference-manifest item; original is for
+   * consumer-asset slots only).
+   */
+  const HERO_SOURCE = { kind: "derived", ref: ["tailark-oss/mist-hero-section-1@8139698"], hash: "sha256:315ecac252ac891e44ae37f2c2d946312c78f3998fd7ed5d7279ab0f1582ce52", license: "MIT" };
+
   const HERO = "sections.hero";
   const backdrop = { component: "flickering-grid", params: { squareSize: 8, flickerChance: 0.2 } };
   /** The hero's own code candidate (original, MIT), with `meta.backdrop` riding on it when given. */
@@ -260,7 +265,7 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
     name: "hero",
     type: "registry:block",
     files: [{ path: "hero.tsx", type: "registry:block", content: "export function Hero() { return <section><h1>Hero</h1></section>; }\n" }],
-    meta: { slot: HERO, source: { kind: "original", ref: [], license: "MIT" }, ...(descriptor === undefined ? {} : { backdrop: descriptor }) },
+    meta: { slot: HERO, source: HERO_SOURCE, ...(descriptor === undefined ? {} : { backdrop: descriptor }) },
   });
   /** A temp consumer whose hero contract (synced from the package: a backdrop-placed slot and the interactive.backdrop row) gains a render fixture. */
   function heroWorld() {
@@ -274,11 +279,16 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
     doc.contract.props = [];
     doc.contract.fixture = { schema: "clossys.element-preview/1", fixtures: { file: "hero.tsx", export: "Hero", props: {} } };
     writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    // The world's contract edit is a recorded slot.json state (R14.1), and the hero's upstream is pinned (R02.2).
+    appendSlotDocEvent(w.consumer, "designer", HERO, { by: "planner", at: AT, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: "ia", note: "fixture render sample" } });
+    pinUpstream(w.consumer, "designer", HERO, AT);
     const submit = (item: unknown) => writeCandidate(w.consumer, "designer", HERO, "hero", item, { at: AT, provenance: { by: "agent:designer", model: "claude-opus-5-5", tier: "high" } });
     return {
       ...w, submit,
       gate: (name: string) => pinGate(w.root, w.consumer, "designer", HERO, name, AT),
-      pin: (candidate: string) => runPinCli([`designer/${HERO}`, candidate, "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root, false),
+      /** The owner's typed queue.pick answer naming this hero candidate (U13 r4, B2), which pin() cites. */
+      queueEntry: (candidate = "hero-v1.json"): string => w.answer(`designer/${HERO}`, candidate),
+      pin: (candidate: string) => runPinCli([`designer/${HERO}`, candidate, "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root),
     };
   }
 
@@ -327,7 +337,8 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
     expect(() => writeCandidate(w.consumer, "designer", CTA, "cta", cta, { at: AT, provenance: { by: "agent:designer", model: "claude-opus-5-5", tier: "high" } })).toThrow(NONE);
     mkdirSync(join(w.consumer, "agents", "designer", CTA, "candidates"), { recursive: true });
     writeFileSync(join(w.consumer, "agents", "designer", CTA, "candidates", "cta-v1.json"), `${JSON.stringify(cta, null, 2)}\n`);
-    w.queueEntry();
+    // The owner's typed answer names the slot and candidate pinned (U13 owner-decision predicate), so the refusal is the backdrop rule's.
+    w.answer(`designer/${CTA}`, "cta-v1.json");
     const result = await runPinCli([`designer/${CTA}`, "cta-v1.json", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root, false);
     expect(result.exitCode).toBe(1);
     expect(result.message).toMatch(NONE);
@@ -345,11 +356,10 @@ describe("the CHOOSE gate on a hero code candidate carrying an interactive backd
     expect(() => writeCandidate(w.consumer, "designer", CTA, "cta", cta, { at: AT, provenance: { by: "agent:designer", model: "claude-opus-5-5", tier: "high" } })).toThrow(PREVIEW);
     expect(() => w.submit(hero)).toThrow(PREVIEW);
     // Placed by hand (no submit), both are refused at the pin, naming the preview prop.
-    w.queueEntry();
     for (const [slot, name, item] of [[CTA, "cta-v1.json", cta], [HERO, "hero-v1.json", hero]] as const) {
       mkdirSync(join(w.consumer, "agents", "designer", slot, "candidates"), { recursive: true });
       writeFileSync(join(w.consumer, "agents", "designer", slot, "candidates", name), `${JSON.stringify(item, null, 2)}\n`);
-      const result = await runPinCli([`designer/${slot}`, name, "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root, false);
+      const result = await runPinCli([`designer/${slot}`, name, "--by", w.answer(`designer/${slot}`, name), "--at", AT, "--root", w.root], w.root);
       expect(result.exitCode, slot).toBe(1);
       expect(result.message, slot).toMatch(PREVIEW);
       expect(existsSync(join(w.consumer, "agents", "designer", slot, "pin.json")), slot).toBe(false);

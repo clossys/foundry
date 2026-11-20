@@ -32,6 +32,9 @@ export const KIND_FAMILY: Readonly<Record<string, string>> = {
   page: "page", layout: "page", chrome: "page", publication: "publication", release: "publication",
 };
 
+/** Each held kind's certifier (certify/<certifier>.ts), where it is not the kind's family: a release manifest has its own (K3). */
+export const KIND_CERTIFIER: Readonly<Record<string, string>> = { release: "release" };
+
 /** A rule check is enforced for an agent when its status is enforced, or its enforcedFor names the agent. */
 export function enforcedFor(model: ConformModel, id: string, agent: string): boolean {
   const rule = model.machinery.rules.get(id);
@@ -286,8 +289,8 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
   K3: (agent, model) => {
     const rows = ruleRow(model, "R05.1", agent.agent);
     for (const kind of agent.adapter?.kinds ?? []) {
-      const family = KIND_FAMILY[kind];
-      if (!family || !model.machinery.certifiers.has(family)) rows.push(`${kind}: no certifier`);
+      const certifier = KIND_CERTIFIER[kind] ?? KIND_FAMILY[kind];
+      if (!certifier || !model.machinery.certifiers.has(certifier)) rows.push(`${kind}: no certifier`);
     }
     return { rows, evidence: agent.adapter?.kinds.length ?? 0 };
   },

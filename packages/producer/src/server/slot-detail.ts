@@ -83,23 +83,24 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
   let writerCopy: Readonly<Record<string, string>> | undefined;
   const writer = () => writerCopy ??= pinnedWriterCopy(consumer);
   const candidates = entry.candidates.map(name => {
+    // The view: what the detail shows and renders, never the clossys header (its source is the header's).
     const candidate = readCandidate(consumer, agent, id, name);
     // Content and source come from the view (a headered candidate's source is its header's); the issues from the
     // candidate judged by its slot as stored (records/slots.ts slotCandidateIssues).
-    let content = candidate.view, source: unknown;
+    let content = candidate.bytes, source: unknown;
     if (name.endsWith(".md")) {
-      const parsed = parseFrontmatter(candidate.view);
+      const parsed = parseFrontmatter(candidate.bytes);
       if (parsed.ok) { content = parsed.value.body; source = parsed.value.fields.source; }
     } else {
       // Malformed JSON has no source; slotCandidateIssues below records it as an issue.
-      const parsed = parseJson(candidate.view);
+      const parsed = parseJson(candidate.bytes);
       if (parsed.ok) source = (parsed.value as { meta?: { source?: unknown } } | null)?.meta?.source;
     }
     const version = Number(CANDIDATE_NAME.exec(name)![2]);
-    const issues = slotCandidateIssues(consumer, agent, id, name, candidate.bytes).map(issueCopy);
+    const issues = slotCandidateIssues(consumer, agent, id, name, candidate.raw).map(issueCopy);
     const element = CANDIDATE_NAME.exec(name)![1]!;
     if (agent === "designer" && doc.kind === "element" && !issues.length) {
-      const item = JSON.parse(candidate.view);
+      const item = JSON.parse(candidate.bytes);
       if (item.name !== element || (item.meta?.element?.id !== undefined && item.meta.element.id !== element)
         || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== id)) issues.push(copyRef("studio.check-candidate-identity"));
     }

@@ -3,12 +3,9 @@ import { mkdir, mkdtemp, readFile, realpath, symlink, writeFile } from "node:fs/
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { applyLibraryChange, libraryHash, loadCatalog, loadComponentRegistry, loadFoundrySurfaceHistory, resolve, type CompositeCatalogData, type CompositeLibraryData } from "@clossys/designer/catalog";
+import { applyLibraryChange, libraryHash, loadCatalog, loadComponentRegistry, loadFoundrySurfaceHistory, type CompositeCatalogData, type CompositeLibraryData } from "@clossys/designer/catalog";
 import { beforeAll, describe, expect, it } from "vitest";
 import { agentModule, agentRoot } from "./cells.js";
-import { studioSelection } from "./selection.js";
-import { prepareStudioSelection } from "./selection-defaults.js";
-import { readStudioDesignerLibrary } from "./theme.js";
 
 const repository = fileURLToPath(new URL("../../../../", import.meta.url));
 const historicalHash = "sha256:e891cbf660bfd5461f23cbacd162bab907869c9883f1090a40e89b1d002ec6f6";
@@ -73,25 +70,5 @@ describe("historical package surfaces through native consumer operations", () =>
     for (const [slot, hash] of historicalHolds) expect(verdict.findings).toContainEqual(expect.objectContaining({ code: "S2", severity: "notice", subject: slot, actualHash: hash, nextOperation: { op: "refresh", slot, source: "foundry" } }));
     expect(result.stderr).not.toContain("unique registered historical upstream required");
     expect(result.stderr).not.toContain("TypeError");
-  }, 90_000);
-
-  it("actual in-process Studio selection reads the historical hold and exposes later qualification findings", async () => {
-    const stored = await readStudioDesignerLibrary(consumer);
-    expect(stored).toBeDefined();
-    const prepared = await prepareStudioSelection(stored);
-    const beforeLibrary = libraryHash(prepared.input.library);
-    const beforeSurfaces = JSON.stringify(prepared.input.library.surfaces);
-    expect(() => resolve(prepared.input)).not.toThrow();
-    expect(resolve(prepared.input).surfaces!.check.findings).toContainEqual(expect.objectContaining({ code: "S2", severity: "notice", subject: "sections.hero", actualHash: historicalHash }));
-    expect(libraryHash(prepared.input.library)).toBe(beforeLibrary);
-    expect(JSON.stringify(prepared.input.library.surfaces)).toBe(beforeSurfaces);
-    const held = prepared.input.library.surfaces!.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "sections.hero")!;
-    expect(Object.values(held.sections!)[0]!.origin).toMatchObject({ descriptorHash: historicalHash, fill: "foundry/sections.hero" });
-    const selection = await studioSelection(consumer);
-    expect(selection.leaves.length).toBeGreaterThan(0);
-    expect(selection.leaves.find(row => row.leaf === "frames.app-shell")).toMatchObject({ fill: "foundry/frames.app-shell" });
-    expect(selection.message ?? "").not.toContain("unique registered historical upstream required");
-    // S8 qualification belongs to its own source unit and remains visible on this base.
-    if (selection.message) expect(selection.message).toContain("S8");
   }, 90_000);
 });

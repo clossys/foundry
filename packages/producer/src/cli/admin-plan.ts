@@ -44,6 +44,12 @@ export interface AdminPage {
    * `frames.app-sidebar`; foundry-build-0048 U20), then its sections in order.
    */
   readonly uses: readonly string[];
+  /**
+   * Every slot the page's seeded record cites (constitution R07.1 reads a clossys.page/1 record's frame, sections and
+   * copy): its composition (`uses`), then the Writer copy slots its `copy` and section `bindings` name, in record order.
+   * An admin page's inputs and uses are the ones of these the workspace holds (adminRefs).
+   */
+  readonly cites: readonly string[];
   /** The used sections that are data-bound: their contract names the clossys records they read, read-only. */
   readonly dataBound: readonly string[];
   /** Each data-bound section's binding, as its Designer contract states it. */
@@ -143,6 +149,15 @@ export function adminPublicationRecord(pages: readonly string[]): Record<string,
   };
 }
 
+/** The slots a seeded clossys.page/1 record cites as copy: each `copy` value and each section binding's copy, less the record key (`#...`), in record order. */
+export function recordCopySlots(record: Readonly<Record<string, unknown>>): string[] {
+  const values = (copy: unknown): string[] => copy !== null && typeof copy === "object" && !Array.isArray(copy)
+    ? Object.values(copy as Record<string, unknown>).filter((value): value is string => typeof value === "string") : [];
+  const bindings = record.bindings !== null && typeof record.bindings === "object" && !Array.isArray(record.bindings) ? Object.values(record.bindings as Record<string, unknown>) : [];
+  const refs = [...values(record.copy), ...bindings.flatMap(binding => binding !== null && typeof binding === "object" ? values((binding as { copy?: unknown }).copy) : [])];
+  return [...new Set(refs.map(ref => ref.split("#")[0]!))];
+}
+
 /** The data-bound record section ids the installed Designer package declares (they bind no Writer copy on a page). */
 export const dataBoundSections = (root: string): ReadonlySet<string> => new Set(boundOf(readContracts(root)).keys());
 /** Each data-bound record section's binding (port, records, scope), as the installed Designer contracts state it (U20b: the bound install injects by it). */
@@ -170,13 +185,15 @@ export function adminPlan(root: string): AdminPlan {
     const sections = fill.sections.map(section => designerId(section.use));
     const route = String(slot.path);
     const dataBound = sections.filter(section => bound.has(section));
+    const uses = [...new Set([frame, ...chrome, ...sections])].filter(Boolean);
+    const record = adminPageRecord(id, route, frame, fill, new Set(dataBound));
     return {
       id, route, sample: route.replace(/<[a-z]+>/g, part => SAMPLE[part] ?? "sample"), layout,
-      uses: [...new Set([frame, ...chrome, ...sections])].filter(Boolean), dataBound, reads: dataBound.map(section => bound.get(section)!),
+      uses, cites: [...new Set([...uses, ...recordCopySlots(record)])], dataBound, reads: dataBound.map(section => bound.get(section)!),
       params: segmentsOf(route).flatMap(part => PARAM.exec(part)?.[1] ?? []),
       ...(typeof slot.collection === "string" ? { collection: slot.collection } : {}),
       reserved: reservedValues(route, paths),
-      record: adminPageRecord(id, route, frame, fill, new Set(dataBound)),
+      record,
     };
   });
   return { pages, publication: ADMIN_PUBLICATION_SLOT, root: starter.root, record: adminPublicationRecord(pages.map(page => page.id)) };
@@ -233,5 +250,5 @@ export function readAdminSlot(dir: string): SlotRead | undefined {
   try { return readSlotValue(JSON.parse(readModelText(file)), file); } catch { return undefined; }
 }
 
-/** The refs one admin slot cites (its inputs and its uses, the same list): the composition units the workspace holds, in plan order. */
+/** The refs one admin slot cites (its inputs and its uses, the same list): the cited slots (a page's `cites`) the workspace holds, in plan order. */
 export const adminRefs = (wanted: readonly string[], held: ReadonlySet<string>): string[] => wanted.filter(id => held.has(id));
