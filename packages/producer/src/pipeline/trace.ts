@@ -36,6 +36,11 @@ import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
+/**
+ * True when a filesystem error only says the path is not there (as ../errors.ts isAbsent). Inlined:
+ * this module loads standalone (trace-preload.js, the store tests run it with node directly).
+ */
+const isAbsent = (error: unknown): boolean => ["ENOENT", "ENOTDIR"].includes((error as NodeJS.ErrnoException | undefined)?.code ?? "");
 /** The CommonJS fs object: its properties are writable, and syncBuiltinESMExports copies them to node:fs's ES exports. */
 const fs = require("node:fs") as typeof import("node:fs");
 
@@ -123,7 +128,8 @@ function noteFileRead(target: unknown): void {
   const path = toPath(target);
   if (!path) return;
   let digest: string;
-  try { digest = sha(state.originals!.readFileSync!(path) as Buffer); } catch { return; }
+  // An absent source is the copy's own failure to report; any other read failure is thrown, never an unrecorded read.
+  try { digest = sha(state.originals!.readFileSync!(path) as Buffer); } catch (error) { if (isAbsent(error)) return; throw error; }
   for (const seen of state.active) if (!seen.reads.has(path)) seen.reads.set(path, digest);
 }
 function noteListing(target: unknown, names: unknown): void {
@@ -250,11 +256,14 @@ export function workspacePath(root: string, absolute: string): string | null {
   return dir ? `${posix}/` : posix;
 }
 
-/** One file's sha256 now, or a directory's listing sha (path ending in `/`); null when it is absent. */
+/**
+ * One file's sha256 now, or a directory's listing sha (path ending in `/`); null when it is absent
+ * (a file path that is now a directory has no file there). Any other read failure is thrown.
+ */
 export function currentSha(root: string, path: string): string | null {
   const absolute = join(root, ...path.split("/").filter(Boolean));
   try { return path.endsWith("/") ? listingSha(raw.list(absolute)) : sha(raw.read(absolute)); }
-  catch { return null; }
+  catch (error) { if (isAbsent(error) || (error as NodeJS.ErrnoException).code === "EISDIR") return null; throw error; }
 }
 
 const HOME = homedir();
@@ -295,33 +304,42 @@ export function invocationOf(argv: readonly string[], target?: string): string {
   return words.join(" ");
 }
 
+/** A file's bytes, or undefined when it is absent; any other read failure is thrown. */
+function readPresent(path: string): Buffer | undefined {
+  try { return raw.read(path); } catch (error) { if (isAbsent(error)) return undefined; throw error; }
+}
+/** The commit HEAD names, or null outside a git checkout or when HEAD names an unborn branch. */
 function gitHead(root: string): string | null {
-  try {
-    let gitDir = join(root, ".git");
-    const text = raw.read(gitDir).toString();
-    if (text.startsWith("gitdir:")) gitDir = resolve(root, text.slice(7).trim());
-    return headOf(gitDir);
-  } catch {
-    try { return headOf(join(root, ".git")); } catch { return null; }
-  }
+  const dotGit = join(root, ".git");
+  let directory: boolean;
+  try { directory = fs.statSync(dotGit).isDirectory(); } catch (error) { if (isAbsent(error)) return null; throw error; }
+  if (directory) return headOf(dotGit);
+  // A linked worktree or submodule: `.git` is a file naming the git directory.
+  const text = raw.read(dotGit).toString();
+  if (!text.startsWith("gitdir:")) throw new Error(`${dotGit}: not a gitdir file`);
+  return headOf(resolve(root, text.slice(7).trim()));
 }
 function headOf(gitDir: string): string | null {
-  const head = raw.read(join(gitDir, "HEAD")).toString().trim();
+  const head = readPresent(join(gitDir, "HEAD"))?.toString().trim();
+  if (head === undefined) return null;
   if (!head.startsWith("ref:")) return head;
   const ref = head.slice(4).trim();
-  const common = (() => { try { return resolve(gitDir, raw.read(join(gitDir, "commondir")).toString().trim()); } catch { return gitDir; } })();
-  for (const dir of [gitDir, common]) { try { return raw.read(join(dir, ref)).toString().trim(); } catch { /* next */ } }
-  try {
-    const packed = raw.read(join(common, "packed-refs")).toString();
-    return packed.split("\n").find(line => line.endsWith(` ${ref}`))?.split(" ")[0] ?? null;
-  } catch { return null; }
+  const commondir = readPresent(join(gitDir, "commondir"));
+  const common = commondir ? resolve(gitDir, commondir.toString().trim()) : gitDir;
+  for (const dir of [gitDir, common]) { const loose = readPresent(join(dir, ref)); if (loose) return loose.toString().trim(); }
+  const packed = readPresent(join(common, "packed-refs"));
+  return packed?.toString().split("\n").find(line => line.endsWith(` ${ref}`))?.split(" ")[0] ?? null;
 }
 let toolVersion: string | null | undefined;
+/** This package's `name@version`; null when its package.json is absent. A package.json that is not JSON is thrown. */
 function tool(): string | null {
   if (toolVersion !== undefined) return toolVersion;
-  try { const pkg = JSON.parse(raw.read(fileURLToPath(new URL("../../package.json", import.meta.url))).toString()) as { name?: string; version?: string }; toolVersion = `${pkg.name}@${pkg.version}`; }
-  catch { toolVersion = null; }
-  return toolVersion;
+  const file = fileURLToPath(new URL("../../package.json", import.meta.url));
+  const bytes = readPresent(file);
+  if (!bytes) return toolVersion = null;
+  let pkg: { name?: string; version?: string };
+  try { pkg = JSON.parse(bytes.toString()) as typeof pkg; } catch (error) { throw new Error(`${file}: not JSON (${error instanceof Error ? error.message : String(error)})`); }
+  return toolVersion = `${pkg.name}@${pkg.version}`;
 }
 
 export interface RunInput {
@@ -364,8 +382,9 @@ export const STORE_IGNORE_LINES: readonly string[] = [".clossys/runs/", ".clossy
  * STORE_IGNORE_LINES and no later negation re-includes anything under `.clossys/`.
  */
 export function storeIgnored(root: string): boolean {
-  let text: string;
-  try { text = raw.read(join(root, ".gitignore")).toString(); } catch { return false; }
+  const bytes = readPresent(join(root, ".gitignore"));
+  if (!bytes) return false;
+  const text = bytes.toString();
   let ignored = false;
   for (const line of text.split(/\r?\n/).map(each => each.trim())) {
     if (STORE_IGNORE_LINES.includes(line)) ignored = true;
@@ -383,7 +402,7 @@ export const STORE_SCAN_CHUNK = 1 << 20;
  */
 function* storeLines(file: string): Generator<Buffer> {
   let fd: number;
-  try { fd = fs.openSync(file, "r"); } catch { return; }
+  try { fd = fs.openSync(file, "r"); } catch (error) { if (isAbsent(error)) return; throw error; }
   try {
     const chunk = Buffer.alloc(STORE_SCAN_CHUNK);
     let pending: Buffer[] = [];
@@ -447,7 +466,9 @@ export function appendRecord(root: string, record: RunRecord): StoredRun | null 
     const invocation = invocationOfLine(store, lines, bytes);
     counts.set(invocation, (counts.get(invocation) ?? 0) + 1);
   }
-  try { const size = fs.statSync(file).size; if (size) { const fd = fs.openSync(file, "r"); try { const last = Buffer.alloc(1); fs.readSync(fd, last, 0, 1, size - 1); endsInNewline = last[0] === 10; } finally { fs.closeSync(fd); } } } catch { /* a new store */ }
+  let size = 0;
+  try { size = fs.statSync(file).size; } catch (error) { if (!isAbsent(error)) throw error; /* a new store */ }
+  if (size) { const fd = fs.openSync(file, "r"); try { const last = Buffer.alloc(1); fs.readSync(fd, last, 0, 1, size - 1); endsInNewline = last[0] === 10; } finally { fs.closeSync(fd); } }
   counts.set(record.invocation, (counts.get(record.invocation) ?? 0) + 1);
   const text = JSON.stringify(record);
   if (Math.max(...counts.values()) <= RUNS_KEPT) {
@@ -494,7 +515,7 @@ export function readStore(root: string, store: string): StoredRun[] {
 /** Every record in the workspace's store. */
 export function readRuns(root: string): StoredRun[] {
   let names: string[];
-  try { names = raw.list(join(root, ...RUNS_DIR.split("/"))); } catch { return []; }
+  try { names = raw.list(join(root, ...RUNS_DIR.split("/"))); } catch (error) { if (isAbsent(error)) return []; throw error; }
   return names.filter(name => name.endsWith(".jsonl")).sort().flatMap(name => readStore(root, `${RUNS_DIR}/${name}`));
 }
 
@@ -502,7 +523,7 @@ export function readRuns(root: string): StoredRun[] {
 export function readSink(file: string): Observation {
   const observation = newObservation();
   let text: string;
-  try { text = raw.read(file).toString(); } catch { return observation; }
+  try { text = raw.read(file).toString(); } catch (error) { if (isAbsent(error)) return observation; throw error; }
   for (const line of text.split("\n")) {
     if (!line.trim()) continue;
     const seen = JSON.parse(line) as { reads: [string, string][]; writes: string[] };

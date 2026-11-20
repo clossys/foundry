@@ -13,6 +13,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { isAbsent } from "../errors.js";
 import { fileURLToPath } from "node:url";
 import { CANDIDATES_DIR, FOLDER_KIND, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, SLOT_AGENTS } from "../records/slot-model/types.js";
 import type { SlotAgent } from "../records/slot-model/types.js";
@@ -106,7 +107,7 @@ function matches(root: string, glob: string): string[] {
       if (!segment.includes("*")) { if (existsSync(join(root, base, segment))) next.push(base ? `${base}/${segment}` : segment); continue; }
       const dir = join(root, base);
       let names: string[] = [];
-      try { names = statSync(dir).isDirectory() ? readdirSync(dir) : []; } catch { names = []; }
+      try { names = statSync(dir).isDirectory() ? readdirSync(dir) : []; } catch (error) { if (!isAbsent(error)) throw error; }
       const pattern = globRegex(segment);
       for (const name of names.filter(name => !name.startsWith(".")).sort()) if (pattern.test(name)) next.push(base ? `${base}/${name}` : name);
     }
@@ -121,11 +122,11 @@ function iaSlots(root: string, agent: string): string[] {
 }
 
 /**
- * A model presence or listing through the one reader (records/slots.ts); a path the reader refuses
- * (an alias, a path outside the model) is absent here and the model check's finding (slot.check).
+ * A model presence or listing through the one reader (records/slots.ts): an absent path is not
+ * present and lists nothing; a path the reader refuses (an alias) or cannot read is thrown.
  */
-const present = (path: string): boolean => { try { return modelExists(path); } catch { return false; } };
-const listed = (path: string): string[] => { try { return listModelDir(path); } catch { return []; } };
+const present = (path: string): boolean => modelExists(path);
+const listed = (path: string): string[] => listModelDir(path);
 
 /**
  * Unpinned slots. A pinned slot is decided: a re-pin upstream re-addresses its citations (they name
@@ -231,15 +232,16 @@ export function skillFile(step: Step, packageRoot = PACKAGE_ROOT): string | null
 export function skillOf(step: Step, packageRoot = PACKAGE_ROOT): { path: string; file: string | null; sha256: string | null } {
   const file = skillFile(step, packageRoot);
   let digest: string | null = null;
-  try { digest = file ? sha(readFileSync(file)) : null; } catch { digest = null; }
+  try { digest = file ? sha(readFileSync(file)) : null; } catch (error) { if (!isAbsent(error)) throw error; }
   // The id is Foundry-relative; a consumer reads the installed package's file, so the packet carries both.
   return { path: step.command.skill ?? "", file: digest ? file : null, sha256: digest };
 }
 /** The skill's first prose line: the question the step answers. */
 export function skillLine(step: Step, packageRoot: string): string {
   const file = skillFile(step, packageRoot);
-  try { return (file ? readFileSync(file, "utf8") : "").split("\n").map(line => line.trim()).find(line => line && !line.startsWith("#") && !line.startsWith("-")) ?? step.summary; }
-  catch { return step.summary; }
+  let text = "";
+  try { text = file ? readFileSync(file, "utf8") : ""; } catch (error) { if (!isAbsent(error)) throw error; }
+  return text.split("\n").map(line => line.trim()).find(line => line && !line.startsWith("#") && !line.startsWith("-")) ?? step.summary;
 }
 
 const deciderOf = (step: Step, seat: SeatReport | undefined): string => {
@@ -249,8 +251,8 @@ const deciderOf = (step: Step, seat: SeatReport | undefined): string => {
 
 function slotDoc(root: string, item: string): { contract?: unknown; options?: number; varyOn?: string; kind?: string } | undefined {
   const [agent, slot] = [item.slice(0, item.indexOf("/")), item.slice(item.indexOf("/") + 1)];
-  try { return readJson(join(root, "clossys", "agents", agent, slot, "slot.json")) as { contract?: unknown; options?: number; varyOn?: string } | undefined; }
-  catch { return undefined; }
+  // readJson is undefined only when slot.json is absent; an unreadable or non-JSON slot.json is thrown.
+  return readJson(join(root, "clossys", "agents", agent, slot, "slot.json")) as { contract?: unknown; options?: number; varyOn?: string } | undefined;
 }
 export const candidatesOf = (root: string, item: string): string[] => {
   const dir = join(root, "clossys", "agents", ...item.split("/"), CANDIDATES_DIR);
