@@ -25,6 +25,7 @@ import { join, posix } from "node:path";
 import { packagePath } from "../../package-path.js";
 import { ladderIssues, rungKind, type GenericRung } from "../../pipeline/candidate-ladder.js";
 import { ledgerEvents, standardFor, type Standard } from "../../records/standards.js";
+import { readCandidateText } from "../../records/slot-current.js";
 import { certifyEnv, slotDocOf } from "../certify/index.js";
 import { isAgentLoopRecord } from "../certify/loop.js";
 import { CERTIFY_INPUT_FIELDS } from "../certify/types.js";
@@ -113,23 +114,28 @@ export function provenanceOf(ctx: ConstitutionContext): Provenance {
 }
 
 /**
- * The sha256 of the seed named `<slot>/<candidate>` (or `<agent>:<slot>/<candidate>`), optionally
- * with the `@<sha256>` a reissue records (slot-constitution.md section 5, Reissue: `seed
- * <slot>/<old>@<sha>`, the old file retired). A live candidate gives its own bytes' sha (and must
- * still hold the recorded one); a retired one counts only when the seed slot's ledger has a
- * `retire-candidate` event for that name with the recorded sha. Else undefined: no such seed.
+ * The content digest (records/slot-current.ts contentDigest) of the seed named `<slot>/<candidate>` (or
+ * `<agent>:<slot>/<candidate>`), optionally with the `@<sha256>` a reissue records (slot-constitution.md section 5,
+ * Reissue: `seed <slot>/<old>@<sha>`, the old file retired). A live candidate gives its own digest (and its bytes must
+ * still hold the recorded sha). A retired one counts only when the seed slot's ledger has a `retire-candidate` event
+ * for that name with the recorded sha and the slot's `retired/` folder still holds those very bytes (their raw sha is
+ * the recorded one): their digest is the seed's. Else a reason: no such seed, or a retired seed whose bytes are gone.
  */
-function seedSha(ctx: ConstitutionContext, slot: SlotRecord, seed: string): string | undefined {
+function seedDigest(ctx: ConstitutionContext, slot: SlotRecord, seed: string): { digest: string } | { missing: string } {
+  const none = { missing: "names no candidate (<slot>/<candidate>, or a retired one with its recorded @<sha256>)" };
   const m = /^(?:([a-z]+):)?([^/\s]+)\/([^/\s@]+)(?:@([0-9a-f]{64}))?$/.exec(seed);
-  if (!m) return undefined;
+  if (!m) return none;
   const agent = m[1] ?? slot.agent;
   const seedSlot = ctx.agents.find(item => item.agent === agent)?.slots.get(m[2]!);
   const recorded = m[4];
   const live: CandidateRecord | undefined = seedSlot?.candidates.find(candidate => candidate.name === m[3]);
-  if (live) return recorded === undefined || recorded === live.sha256 ? live.sha256 : undefined;
-  if (recorded === undefined || !seedSlot) return undefined;
+  if (live) return recorded === undefined || recorded === live.sha256 ? { digest: live.contentDigest } : none;
+  if (recorded === undefined || !seedSlot) return none;
   const retired = ledgerEvents(seedSlot.ledger?.value).some(event => event.op === "retire-candidate" && event.name === m[3] && event.sha256 === recorded);
-  return retired ? recorded : undefined;
+  if (!retired) return none;
+  const bytes = seedSlot.retired.find(record => record.name === m[3] && record.error === undefined && record.sha256 === recorded);
+  if (!bytes) return { missing: `names a retired candidate whose bytes (sha256 ${recorded.slice(0, 12)}) are not in ${seedSlot.dir}/retired/` };
+  return { digest: readCandidateText(seedSlot.slot?.value, seedSlot.agent, seedSlot.id, bytes.name, bytes.text, bytes.path).contentDigest };
 }
 
 /** R03.2: adopted candidates are verbatim (every candidate, not only pins). */
@@ -154,9 +160,10 @@ export const r03_2: Check = ctx => {
         continue;
       }
       if (rung !== "adopt" || !text(submit!.seed)) continue;
-      const seed = seedSha(ctx, slot, submit!.seed);
-      if (!seed) rows.push(row("R03", "R03.2", slot, `adopts seed ${submit!.seed}, which names no candidate (<slot>/<candidate>, or a retired one with its recorded @<sha256>)`, candidate.path, candidate.name));
-      else if (seed !== candidate.sha256) rows.push(row("R03", "R03.2", slot, `adopts seed ${submit!.seed} but its bytes differ (sha256 ${candidate.sha256.slice(0, 12)} != ${seed.slice(0, 12)})`, candidate.path, candidate.name));
+      // Verbatim is the same content digest: every body byte, every field value and the source, not the per-file header provenance.
+      const seed = seedDigest(ctx, slot, submit!.seed);
+      if ("missing" in seed) rows.push(row("R03", "R03.2", slot, `adopts seed ${submit!.seed}, which ${seed.missing}`, candidate.path, candidate.name));
+      else if (seed.digest !== candidate.contentDigest) rows.push(row("R03", "R03.2", slot, `adopts seed ${submit!.seed} but its bytes differ (content sha256 ${candidate.contentDigest.slice(0, 12)} != ${seed.digest.slice(0, 12)})`, candidate.path, candidate.name));
     }
   }
   return rows;

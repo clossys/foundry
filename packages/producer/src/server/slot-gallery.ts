@@ -1,6 +1,6 @@
 /** IA-first Studio gallery data. Empty slots never depend on a candidate or a route. */
-import { hasAgentModel, hasPinFile as hasPinRecord, listSlots, readCandidate, readIa, readSlot, readSlotEntry, viewPlacedAt, type SlotEntry } from '../records/slots.js';
-import { type IaDoc, type NotNeeded, parseFrontmatter, validateCandidate, type SlotAgent, type SlotKind, type SlotStateRejection } from '../records/slot-model/index.js';
+import { hasAgentModel, hasPinFile as hasPinRecord, listSlots, readCandidate, readIa, readSlot, readSlotEntry, slotCandidateIssues, viewPlacedAt, type SlotEntry } from '../records/slots.js';
+import { type IaDoc, type NotNeeded, parseFrontmatter, type SlotAgent, type SlotKind, type SlotStateRejection } from '../records/slot-model/index.js';
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
 import { iaLabel, slotLabel, slotLabels } from '../records/slot-labels.js';
 import { copyRef, type CopyText } from './copy-ref.js';
@@ -66,10 +66,11 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
     if (agent === 'director') return undefined;
     throw error;
   }
-  if (validateCandidate(doc.kind, id, name, source.bytes).length) return undefined;
+  // Judged by its slot as stored (records/slots.ts slotCandidateIssues) and read through its view.
+  if (slotCandidateIssues(consumer, agent, id, name, source.bytes).length) return undefined;
   if (agent === 'director' && entry.pin?.candidate === name && source.sha256 !== entry.pin.sha256) return undefined;
   if (entry.pin?.candidate === name && source.sha256 !== entry.pin.sha256) throw new Error(`Candidate hash mismatch: ${id}`);
-  const parsed = parseFrontmatter(source.bytes);
+  const parsed = parseFrontmatter(source.view);
   if (!parsed.ok) throw new Error(`Invalid record candidate: ${id}`);
   if (agent === 'writer') {
     out.rows = parseWriterSlotBody(parsed.value.body, parsed.value.fields.locales as readonly string[]).map((row, index) => ({
@@ -168,21 +169,21 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
       kind = checkedSlot(consumer, agent, entry).kind;
       if (candidate) {
         const source = readCandidate(consumer, agent, id, candidate);
-        if (validateCandidate(kind, id, candidate, source.bytes).length || (entry.pin && source.sha256 !== entry.pin.sha256)) failing = true;
+        if (slotCandidateIssues(consumer, agent, id, candidate, source.bytes).length || (entry.pin && source.sha256 !== entry.pin.sha256)) failing = true;
         if (!failing && agent === 'writer') {
-          const parsed = parseFrontmatter(source.bytes);
+          const parsed = parseFrontmatter(source.view);
           if (!parsed.ok) failing = true;
           else parseWriterSlotBody(parsed.value.body, parsed.value.fields.locales as readonly string[]);
         }
         if (!failing && agent === 'designer') {
-          const item = JSON.parse(source.bytes);
+          const item = JSON.parse(source.view);
           const name = candidate.replace(/-v\d+\.json$/, '');
           if (item.name !== name || (item.meta?.element?.id !== undefined && item.meta.element.id !== name)
             || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== id)) failing = true;
         }
       }
       if (!failing && candidate && agent === 'designer' && entry.pin?.candidate === candidate) {
-        const item = JSON.parse(readCandidate(consumer, agent, id, candidate).bytes);
+        const item = JSON.parse(readCandidate(consumer, agent, id, candidate).view);
         if (typeof item.name === 'string') element = item.name;
       }
     } catch { failing = true; }

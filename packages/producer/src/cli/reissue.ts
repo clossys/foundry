@@ -200,7 +200,8 @@ export async function runReissueCli(argv: readonly string[], cwd: string, guard:
     const doc = readSlot(consumer, agent, id);
     const read = readCandidate(consumer, agent, id, old);
     const lock = readLock(dirname(resolve(consumer)));
-    const plan = planReissue(read.bytes, KIND_EXT[doc.kind] === "json", { agent, slot: id, uses: doc.uses, lock, index: slotIndex(consumer) });
+    // A Markdown candidate is planned on its view (a headered file's int2 document); writeReissue writes the header again.
+    const plan = planReissue(KIND_EXT[doc.kind] === "json" ? read.bytes : read.view, KIND_EXT[doc.kind] === "json", { agent, slot: id, uses: doc.uses, lock, index: slotIndex(consumer) });
     if (plan.issues.length) return refuse(`${target} ${old}: ${plan.issues.join("; ")}`);
     const events = (readLedger(entry.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
     const oldRung = events.filter(event => event.op === "submit" && (event.name === old || event.candidate === old)).at(-1)?.rung;

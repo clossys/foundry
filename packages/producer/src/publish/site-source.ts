@@ -9,8 +9,8 @@ import { agentModule } from "../read/cells.js";
 import { isAgentLoop } from "../loop/agent-loops.js";
 import { readPinnedPublication } from "./pinned-publication.js";
 import { writerDeclarationsText } from "./studio-defaults.js";
-import { hasPinFile, hasSlotModel, listSlots, readCandidate, readIa, readSlot, viewPlacedAt } from "../records/slots.js";
-import { parseFrontmatter, validateCandidate } from "../records/slot-model/index.js";
+import { hasPinFile, hasSlotModel, listSlots, readCandidate, readIa, readSlot, slotCandidateIssues, viewPlacedAt } from "../records/slots.js";
+import { parseFrontmatter } from "../records/slot-model/index.js";
 import type { PageCopyBinding, PublisherInput, WriterInput, WriterRecord, WriterSectionBinding } from "@clossys/publisher/build";
 
 const isRecord = (value: unknown): value is Record<string, any> => !!value && typeof value === "object" && !Array.isArray(value);
@@ -74,8 +74,9 @@ export async function pinnedWriterRows(consumer: string): Promise<{ rows: Writer
     }
     const candidate = readCandidate(consumer, "writer", entry.id, entry.pin.candidate);
     if (candidate.sha256 !== entry.pin.sha256) throw new Error(`Writer candidate hash mismatch: ${entry.id}`);
-    if (validateCandidate(doc.kind, entry.id, candidate.name, candidate.bytes).length) throw new Error(`Invalid Writer candidate: ${entry.id}`);
-    const parsed = parseFrontmatter(candidate.bytes);
+    // Judged by its slot as stored (a candidate/1 header under slot/2, the int2 rules under slot/1), read through its view.
+    if (slotCandidateIssues(consumer, "writer", entry.id, candidate.name, candidate.bytes).length) throw new Error(`Invalid Writer candidate: ${entry.id}`);
+    const parsed = parseFrontmatter(candidate.view);
     if (!parsed.ok) throw new Error(`Invalid Writer candidate envelope: ${entry.id}`);
     rows.push(...parser.parseWriterSlotBody(parsed.value.body, parsed.value.fields.locales));
     for (const locale of parsed.value.fields.locales as string[]) selectedLocales.add(locale);

@@ -20,6 +20,8 @@ export interface PinnedCandidate {
   readonly version: number;
   /** The pinned candidate's bytes. Its citations name slot ids, resolved through their pins when read (citations.ts). */
   readonly bytes: string;
+  /** What its content readers read (slots.ts Candidate.view): a headered candidate without its header, with its `source`. */
+  readonly view: string;
   /** The pinned sha256 of the candidate's bytes. */
   readonly sha256: string;
   /** Consumer-root-relative path, e.g. `clossys/agents/director/<id>/candidates/<name>`. */
@@ -52,24 +54,29 @@ export function readPinned(consumer: string, agent: SlotAgent): PinnedSet {
     let doc: SlotDoc;
     try { doc = readSlot(consumer, agent, entry.id); }
     catch (error) { issue(entry.id, "invalid-slot", error instanceof Error ? error.message : String(error)); continue; }
-    let bytes: string, sha256: string;
-    try { ({ bytes, sha256 } = readCandidate(consumer, agent, entry.id, entry.pin.candidate)); }
+    let bytes: string, view: string, sha256: string;
+    try { ({ bytes, view, sha256 } = readCandidate(consumer, agent, entry.id, entry.pin.candidate)); }
     catch { issue(entry.id, "missing-candidate", `${agent}/${entry.id}: pinned candidate ${entry.pin.candidate} is missing`); continue; }
     if (sha256 !== entry.pin.sha256) { issue(entry.id, "hash-drift", `${agent}/${entry.id}: ${entry.pin.candidate} bytes differ from the pinned sha256`); continue; }
     const invalid = slotCandidateIssues(consumer, agent, entry.id, entry.pin.candidate, bytes);
     if (invalid.length) { issue(entry.id, "invalid-candidate", `${agent}/${entry.id}: ${invalid[0]!.message}`); continue; }
     const name = entry.pin.candidate;
     const root = join(consumer, "..");
-    pinned.push({ id: entry.id, agent, doc, pin: entry.pin, name, version: candidateVersion(name), bytes, sha256,
+    pinned.push({ id: entry.id, agent, doc, pin: entry.pin, name, version: candidateVersion(name), bytes, view, sha256,
       path: relative(root, join(candidatesDir(entry.dir), name)).split(sep).join("/") });
   }
   return { agent, pinned, unpinned, issues };
 }
 
-/** A pinned Markdown candidate's frontmatter and body, with the body's first 1-based line. */
-export function candidateDocument(candidate: Pick<PinnedCandidate, "bytes" | "path">): { fields: Readonly<Record<string, unknown>>; body: string; firstLine: number } {
-  const parsed = parseFrontmatter(candidate.bytes);
+/**
+ * A pinned Markdown candidate's frontmatter and body, read from its view (a headered candidate's fields with the header's
+ * `source`), with the body's first 1-based line in the file as written.
+ */
+export function candidateDocument(candidate: Pick<PinnedCandidate, "bytes" | "view" | "path">): { fields: Readonly<Record<string, unknown>>; body: string; firstLine: number } {
+  const parsed = parseFrontmatter(candidate.view);
   if (!parsed.ok) throw new Error(`${candidate.path}: ${parsed.message}`);
-  const head = candidate.bytes.length - parsed.value.body.length;
-  return { fields: parsed.value.fields, body: parsed.value.body, firstLine: candidate.bytes.slice(0, head).split("\n").length };
+  const body = parsed.value.body;
+  // The view keeps the body byte for byte; its line in the file is counted on the bytes as written.
+  const file = candidate.bytes.endsWith(body) ? candidate.bytes : candidate.view;
+  return { fields: parsed.value.fields, body, firstLine: file.slice(0, file.length - body.length).split("\n").length };
 }

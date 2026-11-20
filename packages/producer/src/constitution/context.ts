@@ -10,6 +10,7 @@ import { sha256Hex } from "../records/hash.js";
 import { MIGRATIONS_FILE, validateMigrations, type MigrationsDoc } from "../records/migrations.js";
 import { agentDir, candidatesDir, designerIa, directorIa, MODEL_AGENTS, writerIa, type FoundryIa, type ModelAgent } from "../records/slot-model/index.js";
 import { isModelDir, isSlotFolderName, listModelDir, readModelBytes, withSlotReadScope } from "../records/slots.js";
+import { readCandidateText } from "../records/slot-current.js";
 import { skillFile } from "../records/ledger.js";
 import { loadActions } from "../pipeline/actions.js";
 import { readCandidateHistory } from "./git.js";
@@ -171,19 +172,26 @@ export function buildContext(root: string, consumer: string, options: ContextOpt
       const slotEntries = listModelDir(slotAbs).sort();
       const record = (file: string) => (slotEntries.includes(file) ? readJsonRecord(join(slotAbs, file), rel(join(slotAbs, file))) : undefined);
       const candDir = candidatesDir(slotAbs);
+      const slotJson = record("slot.json");
+      // One reader for every rule (records/slot-current.ts readCandidateText): the view as text and json, the bytes as raw.
       const candidates: CandidateRecord[] = listModelDir(candDir).sort().flatMap(candidate => {
         const abs = join(candDir, candidate);
         if (isModelDir(abs)) return [];
         const read = readText(abs);
-        const base = { name: candidate, path: rel(abs), text: read.text, sha256: read.bytes ? sha256Hex(read.bytes) : "" };
-        if (read.error !== undefined) return [{ ...base, readError: read.error }];
+        const path = rel(abs);
+        if (read.error !== undefined) return [{ name: candidate, path, text: read.text, raw: read.text, sha256: read.bytes ? sha256Hex(read.bytes) : "", contentDigest: "", headerIssues: [], readError: read.error }];
+        const doc = readCandidateText(slotJson?.value, agent, name, candidate, read.text, path);
+        const base = {
+          name: candidate, path, text: doc.view, raw: doc.raw, sha256: read.bytes ? sha256Hex(read.bytes) : "",
+          contentDigest: read.bytes ? doc.contentDigest : "", headerIssues: doc.headerIssues, ...(doc.header ? { header: doc.header } : {}),
+        };
         if (!candidate.endsWith(".json")) return [base];
-        try { return [{ ...base, json: JSON.parse(read.text) as unknown }]; }
+        try { return [{ ...base, json: JSON.parse(doc.view) as unknown }]; }
         catch (error) { return [{ ...base, jsonError: errorText(error) }]; }
       });
       slots.set(name, {
         agent, id: name, dir: rel(slotAbs), live: live.has(name), entries: slotEntries,
-        slot: record("slot.json"), pin: record("pin.json"), ledger: record("ledger.json"),
+        slot: slotJson, pin: record("pin.json"), ledger: record("ledger.json"),
         candidates, retired: slotEntries.includes("retired") ? readRetired(join(slotAbs, "retired")) : [],
       });
     }

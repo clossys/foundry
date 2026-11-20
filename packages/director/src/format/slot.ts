@@ -49,8 +49,24 @@ export function isSlotCandidatePath(id: string, path: string): boolean {
   return at >= 0 && (at === 0 || path[at - 1] === "/") && SLOT_CANDIDATE_NAME.test(path.slice(at + prefix.length));
 }
 
-/** Candidate frontmatter is one `key: <JSON value>` line per field between `---` lines. */
+/**
+ * Candidate frontmatter is one `key: <JSON value>` line per field between `---` lines. A clossys.candidate/1 candidate's
+ * `clossys` header line is read as Producer's candidate view reads it (packages/producer records/slot-current.ts
+ * candidateView): the header is dropped and its `source` is the candidate's `source`; a second `source` beside the
+ * header is refused, as the slot/2 readers refuse it.
+ */
 export function parseSlotCandidateDocument(bytes: string): { ok: true; value: { fields: Record<string, unknown>; body: string; firstLine: number } } | { ok: false; message: string } {
+  const parsed = parseFrontmatterLines(bytes);
+  if (!parsed.ok) return parsed;
+  const { clossys: header, ...fields } = parsed.value.fields;
+  if (!Object.hasOwn(parsed.value.fields, "clossys")) return parsed;
+  if (typeof header !== "object" || header === null || Array.isArray(header) || (header as Record<string, unknown>).schema !== "clossys.candidate/1") return { ok: false, message: "frontmatter clossys is not a clossys.candidate/1 header" };
+  if (Object.hasOwn(fields, "source")) return { ok: false, message: "source is the clossys header's; the candidate carries a second one" };
+  const source = (header as Record<string, unknown>).source;
+  return { ok: true, value: { ...parsed.value, fields: source === undefined ? fields : { ...fields, source } } };
+}
+
+function parseFrontmatterLines(bytes: string): { ok: true; value: { fields: Record<string, unknown>; body: string; firstLine: number } } | { ok: false; message: string } {
   if (!bytes.startsWith("---\n")) return { ok: false, message: "expected frontmatter opening ---" };
   const end = bytes.indexOf("\n---\n", 3);
   if (end < 0) return { ok: false, message: "expected frontmatter closing ---" };

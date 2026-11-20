@@ -163,7 +163,8 @@ export function candidateCitations(slot: SlotRecord, candidate: CandidateRecord,
     }
     if (Array.isArray(source.parts)) for (const part of source.parts) if (isObject(part) && typeof part.slot === "string") add(part.slot, "source.parts", part.slot);
   }
-  for (const cite of versionCites(candidate.text, homes)) add(cite.slot, "version cite", cite.text);
+  // A version cite anywhere in the file as written, the header's refs and rationale included.
+  for (const cite of versionCites(candidate.raw, homes)) add(cite.slot, "version cite", cite.text);
   const doc = candidate.json;
   if (isObject(doc) && (doc.schema === "clossys.page/1")) {
     if (typeof doc.frame === "string") add(doc.frame, "frame", doc.frame);

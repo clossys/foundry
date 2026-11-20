@@ -26,7 +26,7 @@ import type { ModelAgent, SlotAgent } from "../records/slot-model/types.js";
 import { candidatesDir, slotDir } from "../records/slot-model/layout.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { readCandidate, readLedger, readSlot, readSlotEntry } from "../records/slots.js";
-import { candidateView, headeredMarkdown, isCurrentSlot } from "../records/slot-current.js";
+import { headeredMarkdown, isCurrentSlot, readCandidateText } from "../records/slot-current.js";
 import type { Actor, AgentId, Tier } from "../records/types.js";
 import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
@@ -261,24 +261,27 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   const digest = sha(canonical);
   // U37: a clossys.slot/2 Markdown candidate (Director brief, Writer strings; HEADERED_KINDS) is written as a
   // clossys.candidate/1 file (the header the slot/2 readers require, created by this submission's agent, skill, model
-  // and tier); its identity with a held candidate is then judged on the candidate view (the document without its
-  // header), as well as on the bytes. A loop slot's candidate is not of these kinds.
+  // and tier). Its identity with a held candidate is judged on the bytes and on the content digest of the one candidate
+  // reader (records/slot-current.ts readCandidateText: the view and the header without its per-file provenance).
+  // A loop slot's candidate is not of these kinds.
   let rawSlot: unknown;
   try { rawSlot = JSON.parse(readFileSync(join(entry.dir, "slot.json"), "utf8")); } catch { rawSlot = undefined; }
   const createdBy: Actor = { actor: "agent", agent: agent as AgentId, skill: contractSkill, skillSha256: sha(skillBytes), model: flags.model!, tier: flags.tier! as Tier };
   const headered = isCurrentSlot(rawSlot) && (HEADERED_KINDS as readonly string[]).includes(family);
-  let viewDigest: string | undefined;
+  const probe = `${stem}-v1.${KIND_EXT[family]}`;
+  let probeBytes = canonical;
   if (headered) {
-    const probe = `${stem}-v1.${KIND_EXT[family]}`;
-    try { viewDigest = sha(candidateView(probe, headeredMarkdown(probe, canonical, { agent: agent as AgentId, slotId: slot, createdBy, createdAt: "2000-01-01T00:00:00Z" }))); }
+    try { probeBytes = headeredMarkdown(probe, canonical, { agent: agent as AgentId, slotId: slot, createdBy, createdAt: "2000-01-01T00:00:00Z" }); }
     catch (error) { return reject(error instanceof Error ? error.message : String(error)); }
   }
+  const contentDigest = readCandidateText(rawSlot, agent as ModelAgent, slot, probe, probeBytes).contentDigest;
   for (const name of entry.candidates) {
     let held: string | null = null;
     try { held = readCandidate(consumer, agent as SlotAgent, slot, name).sha256; } catch { held = null; }
-    let heldView: string | null = null;
-    if (viewDigest !== undefined) { try { heldView = sha(candidateView(name, readFileSync(join(candidatesDir(entry.dir), name), "utf8"))); } catch { heldView = null; } }
-    if (held === digest || (heldView !== null && heldView === viewDigest)) return reject(`${flags.submit} is byte-identical to ${target} candidate ${name}; submit a candidate that differs`);
+    if (held === digest) return reject(`${flags.submit} is byte-identical to ${target} candidate ${name}; submit a candidate that differs`);
+    let heldContent: string | null = null;
+    try { heldContent = readCandidateText(rawSlot, agent as ModelAgent, slot, name, readFileSync(join(candidatesDir(entry.dir), name), "utf8")).contentDigest; } catch { heldContent = null; }
+    if (heldContent === contentDigest) return reject(`${flags.submit} has the same content as ${target} candidate ${name} (it differs only in header provenance or JSON layout); submit a candidate that differs`);
   }
   // P2 (adapt, create) only after the slot's latest verdict is create, for the latest options packet's inputs:
   // a slot-state precondition, refused after the submission's own content checks.

@@ -14,8 +14,10 @@
  * by the target rules alone (`targetIssues`).
  */
 import { buildCandidateHeader, candidateHeaderIssues, parseCandidateName, serializeCandidate } from "./candidate.js";
+import { sha256Hex } from "./hash.js";
 import { parseYamlSubset, readRecordHeader } from "./schema.js";
 import { parseFrontmatter } from "./slot-model/frontmatter.js";
+import { canonical } from "./slot-model/layout.js";
 import { positionIa, sameJson, SLOT_SCHEMA, SLOT_V1_SCHEMA, validateSlot } from "./slot.js";
 import type { Actor, AgentId, CandidateHeader, Iso, Slot, SlotId, TargetSlotKind } from "./types.js";
 import { contractIssues, notNeededIssue, optionIssues, validateCandidate, validateSlotDoc, validateSource, type SlotModelIssue } from "./slot-model/validate.js";
@@ -179,16 +181,20 @@ export function candidateView(name: string, bytes: string): string {
  * Markdown candidate: a new clossys.candidate/1 header (status submitted, `createdBy` the submitting actor) with the
  * front matter `source` moved into it, every other front matter field kept beside it and the body byte for byte, as
  * `clossys migrate recut` would write it. `candidateView` of the result is the int2 document the kind rules judged.
- * Throws on a candidate that is not int2 Markdown with a `source`: nothing is guessed.
+ * Throws on a candidate that is not int2 Markdown with a `source`: nothing is guessed. `record` and `briefSha256` are the
+ * header's content fields a reissue carries from the file it supersedes.
  */
-export function headeredMarkdown(name: string, int2: string, input: { readonly agent: AgentId; readonly slotId: SlotId; readonly createdBy: Actor; readonly createdAt: Iso }): string {
+export function headeredMarkdown(name: string, int2: string, input: { readonly agent: AgentId; readonly slotId: SlotId; readonly createdBy: Actor; readonly createdAt: Iso; readonly record?: string; readonly briefSha256?: string }): string {
   if (!name.endsWith(".md")) throw new Error(`${name}: a clossys.candidate/1 header is written here for a Markdown candidate only`);
   const parsed = parseFrontmatter(int2);
   if (!parsed.ok) throw new Error(`${name}: its front matter cannot be read, so no header is written`);
   const { source, ...rest } = parsed.value.fields;
   if (Object.hasOwn(rest, "clossys")) throw new Error(`${name}: already carries a clossys front matter key`);
   if (source === undefined) throw new Error(`${name}: has no front matter source to move into the header`);
-  const header = buildCandidateHeader({ agent: input.agent, slotId: input.slotId, name, status: "submitted", createdBy: input.createdBy, createdAt: input.createdAt, source: source as CandidateHeader["source"] });
+  const header = buildCandidateHeader({
+    agent: input.agent, slotId: input.slotId, name, status: "submitted", createdBy: input.createdBy, createdAt: input.createdAt, source: source as CandidateHeader["source"],
+    ...(input.record !== undefined ? { record: input.record } : {}), ...(input.briefSha256 !== undefined ? { briefSha256: input.briefSha256 } : {}),
+  });
   return serializeCandidate(name, header, parsed.value.body, rest);
 }
 
@@ -218,6 +224,74 @@ export function candidateHeaderReadIssues(agent: ModelAgent, id: string, name: s
     ...candidateHeaderIssues(name, bytes, { agent: agent as AgentId, slotId: id as SlotId }).map(message => ({ code: "candidate-invalid" as const, path, message })),
     ...secondSource(name, bytes, path),
   ];
+}
+
+/** The kind families whose clossys.candidate/1 candidates are read through their view (loop, queue, ledger and seat are not). */
+const VIEWED_FAMILIES: ReadonlySet<unknown> = new Set<SlotKind>(["brief", "element", "strings", "page", "publication"]);
+/** Header fields that say who made a file, when and why: per-file provenance, never content (the content digest leaves them out). */
+export const HEADER_PROVENANCE = ["id", "slot", "agent", "status", "createdBy", "createdAt", "refs", "rationale"] as const;
+/**
+ * Header fields the content digest also leaves out: `schema` and `kind` are constants schemas/candidate.json fixes for
+ * every header (so they say only that a header is present, not what the candidate holds), and `source` is already in
+ * the view the digest reads. Every other header field (`record`, `briefSha256`, `updatedAt`) is digested.
+ */
+const HEADER_UNDIGESTED: ReadonlySet<string> = new Set<string>([...HEADER_PROVENANCE, "schema", "kind", "source"]);
+
+/** One candidate file as every reader reads it (foundry-build-0048 U37c): its bytes, its view, its header and its content digest. */
+export interface CandidateText {
+  /** The file's bytes, as written: what the raw sha256 (pins, the ledger, R08, R14) and the certify cache key read. */
+  readonly raw: string;
+  /** What the kind rules read: `candidateView` of a viewed candidate (see `viewsCandidate`), else the raw bytes. */
+  readonly view: string;
+  /** The clossys.candidate/1 header of a viewed candidate. */
+  readonly header?: Readonly<Record<string, unknown>>;
+  /** The header's issues where the file sits (`candidateHeaderReadIssues`); empty when no header is viewed. */
+  readonly headerIssues: readonly SlotModelIssue[];
+  /** `contentDigest` of the view and the header. */
+  readonly contentDigest: string;
+}
+
+/**
+ * True when the candidates of a slot.json value are read through their view: a clossys.slot/2 document whose kind is
+ * one of the viewed families (brief, element, strings, page, publication). A loop, queue or ledger slot keeps its raw
+ * bytes (certify/loop.ts reads the loop header itself), as does every clossys.slot/1 slot. The slot need not be valid:
+ * the rules still read an invalid slot's candidates with their source, and R01 reports the slot.
+ */
+export function viewsCandidate(slotValue: unknown): boolean {
+  return isCurrentSlot(slotValue) && VIEWED_FAMILIES.has(slotFamily((slotValue as Record<string, unknown>).kind));
+}
+
+/**
+ * The content identity of a candidate (R03.2 verbatim adopt, R06.6 identical content, `clossys next --submit`'s identity
+ * refusal): the sha256 of the canonical JSON of what the kind rules read plus the header's non-provenance fields.
+ * Markdown: every front matter field value of the view (with `source`, keys sorted) and the exact body bytes. JSON: the
+ * parsed view, keys sorted. The header's provenance (`HEADER_PROVENANCE`) is left out, so the same content under two
+ * headers, or under a header and as an int2 file, has one digest; every body byte and every field value counts. Bytes
+ * the format cannot parse (an SVG, broken JSON or front matter) are identified by the sha256 of the view itself.
+ */
+export function contentDigest(name: string, view: string, header?: Readonly<Record<string, unknown>>): string {
+  let content: Record<string, unknown> | undefined;
+  if (name.endsWith(".md")) {
+    const parsed = parseFrontmatter(view);
+    if (parsed.ok) content = { format: "md", fields: parsed.value.fields, body: parsed.value.body };
+  } else if (name.endsWith(".json")) {
+    try { content = { format: "json", json: JSON.parse(view) as unknown }; } catch { content = undefined; }
+  }
+  if (!content) return sha256Hex(view);
+  const residue = header ? Object.fromEntries(Object.entries(header).filter(([key]) => !HEADER_UNDIGESTED.has(key))) : {};
+  return sha256Hex(JSON.stringify(canonical({ digest: "clossys.content-digest/1", ...content, header: residue })));
+}
+
+/**
+ * The one candidate reader (foundry-build-0048 U37c): the constitution context, the certifier, the write guard, the
+ * slot readers, Studio, publish and `clossys next` read a candidate through this, so the header never hides `source`
+ * from a rule and its per-file provenance never changes a content identity. `slotValue` is the slot's parsed slot.json.
+ */
+export function readCandidateText(slotValue: unknown, agent: ModelAgent, id: string, name: string, bytes: string, path = name): CandidateText {
+  const header = viewsCandidate(slotValue) ? candidateHeaderOf(name, bytes) : undefined;
+  if (!header) return { raw: bytes, view: bytes, headerIssues: [], contentDigest: contentDigest(name, bytes) };
+  const view = candidateView(name, bytes);
+  return { raw: bytes, view, header, headerIssues: candidateHeaderReadIssues(agent, id, name, bytes, path), contentDigest: contentDigest(name, view, header) };
 }
 
 /** The extensions a target-format candidate of each kind family takes (the int2 rules hold the int2 extension). */

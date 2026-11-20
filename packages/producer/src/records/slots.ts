@@ -22,7 +22,7 @@ import {
   type IaDoc, type ModelAgent, type NotNeeded, type PinDoc, type SlotModelIssue, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
 import { isAbsent, parseJson } from "../errors.js";
-import { candidateIssues, isCurrentSlot, placedAt, readSlotValue } from "./slot-current.js";
+import { candidateIssues, isCurrentSlot, placedAt, readCandidateText, readSlotValue } from "./slot-current.js";
 /** A candidate as its kind rules read it (a clossys.candidate/1 file without its header, with the header source): Designer checks parse this, never the raw bytes. */
 export { candidateView, viewIssues, viewPlacedAt } from "./slot-current.js";
 import { notNeededIssue } from "./slot-model/validate.js";
@@ -39,7 +39,12 @@ export interface SlotEntry<A extends ModelAgent = SlotAgent> {
   /** The slot's state as the one loader decides it: pinned, not-needed, or rejected. */
   readonly state: SlotStateResult;
 }
-export interface Candidate { readonly name: string; readonly bytes: string; readonly sha256: string }
+/**
+ * A candidate file: `bytes` as written (what `sha256`, pins and the ledger name), and `view`, what its kind rules and every
+ * reader of its content read (records/slot-current.ts readCandidateText: a clossys.candidate/1 file under a viewed
+ * slot/2 slot without its header, with the header's `source`; any other file's bytes as they are).
+ */
+export interface Candidate { readonly name: string; readonly bytes: string; readonly view: string; readonly sha256: string }
 export interface PinEvent extends PinDoc { readonly commit: string }
 export type BlockReason = "inputs-undeclared" | "missing" | "unpinned" | "invalid-pin" | "missing-candidate" | "hash-drift" | "invalid-candidate" | "invalid-slot";
 export interface Readiness { readonly ready: boolean; readonly blockedBy: readonly { readonly slot: string; readonly reason: BlockReason }[] }
@@ -511,9 +516,13 @@ export function candidateStamp(consumer: string, agent: SlotAgent, id: string, n
 export function readCandidate(consumer: string, agent: ModelAgent, id: string, name: string): Candidate {
   return withSlotReadScope(() => {
     if (!CANDIDATE_NAME.test(name)) throw new Error(`invalid candidate name ${name}`);
-    const path = join(candidatesDir(locate(consumer, agent, id).dir), name);
+    const dir = locate(consumer, agent, id).dir;
+    const path = join(candidatesDir(dir), name);
     const bytes = readBytes(path);
-    return { name, bytes, sha256: fsTextSha(path, bytes) };
+    // The slot.json value decides the view; a missing or unreadable one views nothing (its own readers report it).
+    let slotValue: unknown;
+    try { slotValue = readJson(slotFile(dir)); } catch { slotValue = undefined; }
+    return { name, bytes, view: readCandidateText(slotValue, agent, id, name, bytes).view, sha256: fsTextSha(path, bytes) };
   });
 }
 
@@ -750,7 +759,7 @@ function inputBlocker(entry: SlotEntry): BlockReason | undefined {
     pins = pinRecords(value);
   } catch { return "invalid-pin"; }
   if (!pins.length) return "unpinned";
-  const candidates: Candidate[] = [];
+  const candidates: Omit<Candidate, "view">[] = [];
   for (const pin of pins) {
     try {
       const path = join(candidatesDir(entry.dir), pin.candidate);

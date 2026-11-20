@@ -21,7 +21,8 @@ import {
   type ModelAgent, type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
-import { candidateHeaderReadIssues, headeredMarkdown, isCurrentSlot, slotReadIssues } from "./slot-current.js";
+import { candidateHeaderOf, candidateHeaderReadIssues, headeredMarkdown, isCurrentSlot, slotReadIssues, viewsCandidate } from "./slot-current.js";
+import { cliActor } from "./pin.js";
 import { SlotFormatError, serializeSlot, validateSlot } from "./slot.js";
 import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
 import type { Actor, AgentId, Slot } from "./types.js";
@@ -896,9 +897,26 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
     const ext = KIND_EXT[doc.kind];
     const leaf = id.split(".").at(-1)!;
     const file = `${leaf}-v${nextVersion(current.dir, current.candidates)}.${ext}`;
-    const bytes = ext === "md" ? String(input.content) : jsonBytes(input.content);
-    const issues = validateCandidate(doc.kind, id, file, bytes);
+    const int2 = ext === "md" ? String(input.content) : jsonBytes(input.content);
+    const issues = validateCandidate(doc.kind, id, file, int2);
     if (issues.length) throw new Error(`reissue refused: ${issues.map(issue => issue.message).join("; ")}`);
+    // U37c: under a clossys.slot/2 slot a Markdown candidate is a clossys.candidate/1 file (the slot/2 readers refuse a
+    // headerless one): the judged int2 content gets a new header created by this verb, carrying the content fields
+    // (`record`, `briefSha256`) of the header it supersedes, so its content digest is the seed's.
+    let bytes = int2;
+    let rawSlot: unknown;
+    try { rawSlot = JSON.parse(readFileSync(slotFile(entry.dir), "utf8")); } catch { rawSlot = undefined; }
+    if (ext === "md" && viewsCandidate(rawSlot)) {
+      const was = candidateHeaderOf(input.old, old.bytes) ?? {};
+      try {
+        bytes = headeredMarkdown(file, int2, {
+          agent, slotId: id, createdBy: cliActor("clossys reissue"), createdAt: input.at,
+          ...(typeof was.record === "string" ? { record: was.record } : {}), ...(typeof was.briefSha256 === "string" ? { briefSha256: was.briefSha256 } : {}),
+        });
+      } catch (error) { throw new Error(`reissue refused: ${(error as Error).message}`); }
+      const headerIssues = candidateHeaderReadIssues(agent, id, file, bytes);
+      if (headerIssues.length) throw new Error(`reissue refused: ${headerIssues.map(issue => issue.message).join("; ")}`);
+    }
     const ledger = readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
     const events = (ledger?.events ?? []) as unknown as Record<string, unknown>[];
     const recorded = recordedSha(events, input.old);

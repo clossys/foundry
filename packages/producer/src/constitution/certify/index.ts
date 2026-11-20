@@ -25,7 +25,6 @@ import { CORE_CRITERIA } from "../criteria/core/index.js";
 import { canonicalJson, certifyKey, type CertifyKey } from "../criteria/core/verdict.js";
 import { candidateCitations, dependencySet, focusedLiveSlots, isObject, registryFiles, slotDoc, stringList } from "../checks/shared.js";
 import type { CandidateRecord, ConstitutionContext, SlotRecord } from "../types.js";
-import { candidateHeaderOf, candidateHeaderReadIssues, candidateView, isCurrentSlot } from "../../records/slot-current.js";
 import { cachePath, openCache, type CertifyCache } from "./cache.js";
 import { certifyBrief } from "./brief.js";
 import { certifyElement, hostRequire } from "./element.js";
@@ -51,22 +50,17 @@ export function slotDocOf(slot: SlotRecord): { doc: Record<string, unknown>; kin
 }
 
 /**
- * The candidate the kind rules read (foundry-build-0048 U37: one candidate format, the gate and the readers agree). A
- * clossys.candidate/1 file under a clossys.slot/2 slot of a known kind is judged first by its header (`header`: schema,
- * id, agent and slot naming where it sits, one source; records/slot-current.ts candidateHeaderReadIssues) and then by
- * every rule of its kind over its view (records/slot-current.ts candidateView: the candidate without its header, with
- * the header's `source` where the int2 rules read it). The view moves the source; it relaxes no body rule. Any other
- * candidate (no header, a slot/1 slot, an agent loop slot) is read as it is, as before.
+ * The candidate the kind rules read (foundry-build-0048 U37: one candidate format, the gate and the readers agree). The
+ * context reads every candidate through the one reader (records/slot-current.ts readCandidateText): a
+ * clossys.candidate/1 file under a clossys.slot/2 slot of a viewed kind arrives with its view as `text` and `json` (the
+ * candidate without its header, with the header's `source` where the int2 rules read it) and its header's issues
+ * (`headerIssues`: schema, id, agent and slot naming where it sits, one source). It is judged first by those, then by
+ * every rule of its kind over the view. The view moves the source; it relaxes no body rule. Any other candidate (no
+ * header, a slot/1 slot, an agent loop slot) is read as it is.
  */
 export function judgedCandidate(slot: SlotRecord, candidate: CandidateRecord): { readonly candidate: CandidateRecord; readonly header: readonly Reason[] } {
-  if (candidate.readError || !isCurrentSlot(slot.slot?.value) || !slotDocOf(slot).kind) return { candidate, header: [] };
-  if (!candidateHeaderOf(candidate.name, candidate.text)) return { candidate, header: [] };
-  const header = candidateHeaderReadIssues(slot.agent, slot.id, candidate.name, candidate.text, candidate.path).map(issue => reason("invalid", `clossys header: ${issue.message}`));
-  const text = candidateView(candidate.name, candidate.text);
-  if (!candidate.name.endsWith(".json")) return { candidate: { ...candidate, text }, header };
-  const { json: _raw, jsonError: _error, ...rest } = candidate;
-  try { return { candidate: { ...rest, text, json: JSON.parse(text) as unknown }, header }; }
-  catch (error) { return { candidate: { ...rest, text, jsonError: error instanceof Error ? error.message : String(error) }, header }; }
+  if (candidate.readError || !slotDocOf(slot).kind) return { candidate, header: [] };
+  return { candidate, header: candidate.headerIssues.map(issue => reason("invalid", `clossys header: ${issue.message}`)) };
 }
 
 /** Kind fit only (schema, fixture shape, kind certifier): what the dry run measures with no standard. */
@@ -285,7 +279,8 @@ export function certifyWorld(ctx: ConstitutionContext, options: CertifyWorldOpti
     for (const candidate of slot.candidates) {
       const input: CertifyInput = { slot, candidate };
       const pinSet = pinSetOf(input, env);
-      const key = certifyKey({ candidate: { name: candidate.name, bytes: candidate.text }, kind: kind ?? "unknown", standard: { id: standard?.id ?? "none", sha256: standard?.sha256 ?? "none", requirements: [] }, contract, pinSet });
+      // Keyed on the bytes as written: a header-only edit (a wrong id, a second source) is judged again, never served from cache.
+      const key = certifyKey({ candidate: { name: candidate.name, bytes: candidate.raw }, kind: kind ?? "unknown", standard: { id: standard?.id ?? "none", sha256: standard?.sha256 ?? "none", requirements: [] }, contract, pinSet });
       let certification = cache.get(key);
       if (!certification) { certification = certify(input, env, pinSet); cache.set(key, certification); }
       results.set(resultKey(slot.agent, slot.id, candidate.name), { slot, candidate, key, certification });

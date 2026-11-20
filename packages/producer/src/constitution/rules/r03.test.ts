@@ -82,10 +82,12 @@ describe("R03.2 adopt is verbatim, for every candidate", () => {
 
   it("resolves a reissue seed <slot>/<old>@<sha> through the retire-candidate event once the old file is retired", () => {
     // slot-constitution.md section 5 (Reissue): rung adopt, seed <slot>/<old>@<sha>, the old file retired.
-    const reissued = (bytes: string, events: (sha: string) => Record<string, unknown>[]) => broken(spec => {
+    // The retired file's bytes stay under the slot's retired/ folder, as `clossys retire` and `clossys reissue` leave them.
+    const reissued = (bytes: string, events: (sha: string) => Record<string, unknown>[], keep = true) => broken(spec => {
       const copy = hero(spec).candidates!["hero-v1.md"] as string;
       const sha = sha256Hex(copy);
       hero(spec).candidates = { "hero-v2.md": bytes };
+      if (keep) hero(spec).retired = { "hero-v1.md": copy };
       hero(spec).ledger = { events: [createVerdict(), submit("hero-v1.md", "create", { reason: "first copy" }), ...events(sha)] };
     });
     const copy = r03Spec().writer!["home.hero"]!.candidates!["hero-v1.md"] as string;
@@ -94,6 +96,8 @@ describe("R03.2 adopt is verbatim, for every candidate", () => {
     catches(r03_2, reissued(`${copy}edited\n`, sha => [submit("hero-v2.md", "adopt", { seed: `home.hero/hero-v1.md@${sha}` }), { op: "retire-candidate", name: "hero-v1.md", sha256: sha, code: "superseded" }]), /adopts seed home\.hero\/hero-v1\.md@[0-9a-f]{64} but its bytes differ/);
     catches(r03_2, reissued(copy, sha => [submit("hero-v2.md", "adopt", { seed: `home.hero/hero-v1.md@${sha}` })]), /names no candidate/);
     catches(r03_2, reissued(copy, sha => [submit("hero-v2.md", "adopt", { seed: `home.hero/hero-v1.md@${sha}` }), { op: "retire-candidate", name: "hero-v1.md", sha256: "0".repeat(64), code: "superseded" }]), /names no candidate/);
+    // A retire event alone proves no content: with the retired bytes gone, the adopt cannot be shown verbatim.
+    catches(r03_2, reissued(copy, sha => [submit("hero-v2.md", "adopt", { seed: `home.hero/hero-v1.md@${sha}` }), { op: "retire-candidate", name: "hero-v1.md", sha256: sha, code: "superseded" }], false), /names a retired candidate whose bytes \(sha256 [0-9a-f]{12}\) are not in .*home\.hero\/retired\//);
   });
 });
 
