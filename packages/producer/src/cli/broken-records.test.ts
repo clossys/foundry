@@ -11,7 +11,8 @@
  *   a sibling of no kind.
  * - `clossys approve`: a candidates folder that cannot be listed is not "no candidate".
  * - `clossys next --submit`: a held candidate that cannot be read refuses the submission; a root that cannot be
- *   resolved fails with the root error, never as the argv unchanged.
+ *   resolved fails with the root error, never as the argv unchanged; an unreadable --submit file or contract skill
+ *   refuses with its read error.
  * - The owner refusals of an unreadable input file carry the read or parse error.
  */
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -178,6 +179,16 @@ describe("clossys retire <candidate>: a pin.json that does not parse or validate
     expect(snapshot(dir)).toEqual(before);
   });
 
+  it("refuses on a schema-valid pin map that pins no record, naming the file and that its records are empty", async () => {
+    const { root, consumer } = copyOf(FIXTURE, "retire-candidate-empty-map");
+    const dir = join(consumer, "agents", "director", CORE_SLOT);
+    const { candidate: _candidate, sha256: _sha, decidedBy: _by, basis: _basis, at: _at, ...common } = pinOf(dir);
+    writeFileSync(join(dir, "pin.json"), JSON.stringify({ ...common, schema: "clossys.pin-map/1", kind: "pin-map", records: {} }));
+    const before = snapshot(dir);
+    expect(await retireCore(root)).toMatchObject({ exitCode: 1, message: `retire refused: clossys/agents/director/${CORE_SLOT}/pin.json is a pin map that pins no record (its records are empty), so director/${CORE_SLOT} reads as an invalid pin: repair or remove the pin first` });
+    expect(snapshot(dir)).toEqual(before);
+  });
+
   // Each parses but is no pin this store reads: the slot reader views no pin, so the retire must not read it as unpinned.
   for (const [label, broken] of [
     ["null", () => null],
@@ -286,6 +297,22 @@ describe("clossys next --submit: a broken candidate or root", { timeout: 300_000
       expect(again.exitCode).toBe(1);
       expect(again.message).toMatch(new RegExp(`^next --submit refused: designer/sections\\.hero candidate ${name.replace(".", "\\.")} cannot be read: .*EACCES`));
     } finally { chmodSync(held, 0o644); }
+    expect(snapshot(consumer)).toEqual(before);
+  });
+
+  it("refuses a --submit file that cannot be read, and a contract skill that cannot be read, each naming the cause", async () => {
+    const { root, consumer } = copyOf(FIXTURE, "submit-unreadable");
+    const before = snapshot(consumer);
+    const args = (file: string) => ["designer/sections.hero", "--submit", file, "--model", MODEL, "--tier", "mid", "--skill", DESIGNER_SKILL, "--basis", "agent", "--rung", "L1", "--seed", "shadcn-aria/hero", "--root", root];
+    const missing = join(root, "missing-hero.json");
+    const unread = await runNextSubmitCli(args(missing), root, undefined, undefined, { rules: [] });
+    expect(unread).toMatchObject({ exitCode: 1, message: expect.stringMatching(new RegExp(`^next --submit refused: cannot read ${missing.replace(/[.]/g, "\\.")}: .*ENOENT`)) });
+    // A package root that holds no Designer skill: the step's skill file is absent, and the refusal carries the read error.
+    const noPackage = realpathSync(mkdtempSync(join(tmpdir(), "broken-records-no-package-")));
+    roots.push(noPackage);
+    const noSkill = await runNextSubmitCli(args(json(root, "hero.json", hero("Hero"))), root, undefined, noPackage, { rules: [] });
+    expect(noSkill).toMatchObject({ exitCode: 1, message: expect.stringMatching(new RegExp(`^next --submit refused: designer\\.candidates's skill ${DESIGNER_SKILL.replace(/[.]/g, "\\.")} cannot be read: .*ENOENT`)) });
+    // The input files sit outside clossys/: the store is unchanged.
     expect(snapshot(consumer)).toEqual(before);
   });
 

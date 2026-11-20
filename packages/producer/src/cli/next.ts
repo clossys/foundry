@@ -231,7 +231,7 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   if (!contractSkill || flags.skill !== contractSkill) return reject(`--skill ${flags.skill} is not ${owning.id}'s skill (${contractSkill ?? "none"})`);
   const skillPath = skillFile(owning, packageRoot);
   let skillBytes: Buffer;
-  try { skillBytes = readFileSync(skillPath!); } catch { return reject(`${owning.id}'s skill ${contractSkill} is missing`); }
+  try { skillBytes = readFileSync(skillPath!); } catch (error) { return reject(`${owning.id}'s skill ${contractSkill} cannot be read: ${errorMessage(error)}`); }
   const root = rootOf(cwd, flags.root);
   const consumer = join(root, "clossys");
   const seat = readSeat(root, owning);
@@ -240,7 +240,7 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   if (!entry) return reject(`unknown slot ${target} (not in ${agent} ia.json)`);
   const file = resolve(cwd, flags.submit);
   let bytes: string;
-  try { bytes = readFileSync(file, "utf8"); } catch { return reject(`cannot read ${flags.submit}`); }
+  try { bytes = readFileSync(file, "utf8"); } catch (error) { return reject(`cannot read ${flags.submit}: ${errorMessage(error)}`); }
   const schema = owning.packet?.write[0]?.schema ?? owning.outputs[0]?.schema;
   if (!schema) return reject(`${owning.id} names no output schema`);
   // R08.1: a candidate's stem is its slot's leaf, whatever the submitted file is called.
@@ -250,7 +250,7 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   const schemaIssues = validateFile(schema, `clossys/agents/${agent}/${slot}/candidates/${stem}-v1.${ext}`, bytes, packageRoot);
   if (schemaIssues.length) return reject(`${flags.submit} fails schema ${schema}: ${schemaIssues.slice(0, 5).map(issue => `${issue.path} ${issue.message}`).join("; ")}`);
   let content: unknown = bytes;
-  if (ext === "json") { try { content = JSON.parse(bytes); } catch { return reject(`${flags.submit} is not JSON`); } }
+  if (ext === "json") { try { content = JSON.parse(bytes); } catch (error) { return reject(`${flags.submit} is not JSON: ${errorMessage(error)}`); } }
   // A candidate byte-identical to one the slot holds adds no option: refused before anything is written.
   // The bytes writeCandidate would write: the slot kind's extension decides the serialization.
   const family = readSlot(consumer, agent as SlotAgent, slot).kind;

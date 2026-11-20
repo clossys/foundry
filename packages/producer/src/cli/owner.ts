@@ -1310,6 +1310,8 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
     catch (error) { return refuse("retire", `${pinRel} cannot be read as JSON (${errorMessage(error)}); it may pin ${candidate}: repair the pin first`); }
     if (!entry.pin) {
       const issues = validatePin(pinValue, pinRel).map(issue => issue.message);
+      // A schema-valid pin map with no records pins nothing: the slot reads as an invalid pin, and the refusal says why.
+      if (!issues.length && !pinRecords(pinValue).length) return refuse("retire", `${pinRel} is a pin map that pins no record (its records are empty), so ${target} reads as an invalid pin: repair or remove the pin first`);
       return refuse("retire", `${pinRel} is not a valid pin (${issues.length ? issues.join("; ") : "a pin format this store no longer reads"}); it may pin ${candidate}: repair the pin first`);
     }
     const pinned = pinRecords(pinValue).map(record => resolveCandidate(entry.candidates, record.candidate) ?? record.candidate);
