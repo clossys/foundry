@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/components.logo",
-      "sha256": "50e1817364b3c387195adc255040c65da13b11b3d0c37a0f0e6510cf9ce89d35"
+      "sha256": "4f72f25352e2f96e4e457c126f8d70c3ccea85559348c502bb2f5a4e77c5c62c"
     }
   ],
   "candidate": "logo-v1.json",

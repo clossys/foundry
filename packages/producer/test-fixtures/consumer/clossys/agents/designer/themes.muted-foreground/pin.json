@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.muted-foreground",
-      "sha256": "625a3aa7d0f64d8796f39da396528d6446c5a47708a03e0d7fdc45149bd2394f"
+      "sha256": "5c5b655d7e29042391c7a5aa8195c9b657872b4822060e77bbf836d6c49c4d6d"
     }
   ],
   "candidate": "muted-foreground-v1.json",

@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-chevron-right",
-      "sha256": "adf85a41f786572b72e7f7c803d6f9b18f10ed63bfd40bbe44bdeedadcfa2307"
+      "sha256": "61b4971bf8984d0e34d48641bee209e27443e95ca2977fa8e475b0b42055c73b"
     }
   ],
   "candidate": "icon-chevron-right-v1.json",

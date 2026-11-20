@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/components.separator",
-      "sha256": "c01b39a1d0ec8655598890f40f98e2ec9bd6e9179c82a2c665776d634cb2e95c"
+      "sha256": "b58cab8de6bb1b6be9e610ae156ea400743a0f2623a623e634131bcfb9c65bbc"
     }
   ],
   "candidate": "separator-v1.json",

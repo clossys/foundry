@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-success",
-      "sha256": "295c42aa62f09f164ab212f555435d2b58dff77e2bfa007ad4f19a7a84c7b7fc"
+      "sha256": "88fbfa89b625292dc76b25675f6d581157e4b680b24dc8040ad1169e7f9e302b"
     }
   ],
   "candidate": "icon-success-v1.json",

@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.lockup",
-      "sha256": "3361d3c685275f8278e6c13afbfc066ae7d9ece2276b1c13daa0d8d0193aa24e"
+      "sha256": "de4ee63b0cc015a3b8461e60d4e91a69c46b878ad15c74b4493dee8e6bee58d7"
     }
   ],
   "candidate": "lockup-v1.json",

@@ -65,36 +65,58 @@
     },
     {
       "op": "verdict",
-      "at": "2026-11-19T00:00:00Z",
-      "by": "agent:director.verdict",
+      "at": "2026-11-19T12:00:00Z",
+      "by": "agent:director",
       "verb": "verdict",
       "skill": {
         "path": "packages/producer/actions/verdict/skill.md",
         "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
       },
-      "model": "fixture-model",
+      "model": "claude-opus-5-5",
       "tier": "mid",
       "verdict": "create",
       "create": true,
-      "reason": "fixture world: the brief standards are create-only and no package default fits a synthetic consumer",
+      "reason": "DRAFT fixture data: the slot holds no candidate and brief.profile is create-only, so no candidate answers its keys or draws its boundary.",
       "gaps": [
         {
-          "id": "decisive"
+          "id": "brief.keys"
+        },
+        {
+          "id": "brief.boundary"
         }
       ]
     },
     {
       "op": "craft:brief",
-      "at": "2026-11-19T00:00:00.000Z",
+      "at": "2026-11-20T01:29:15.217Z",
       "by": "agent:director.candidates",
       "verb": "submit",
       "skill": {
         "path": "packages/director/actions/director.candidates/skill.md",
         "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
       },
-      "model": "fixture-model",
+      "model": "claude-opus-5-5",
       "tier": "mid",
-      "goal": "fixture world: fill focus.segment.core to brief.profile",
+      "recipe": "create.structured",
+      "standard": "brief.profile",
+      "requirements": [
+        "brief.sections",
+        "brief.keys",
+        "brief.derived-upstream",
+        "brief.because-cited",
+        "brief.watch-trigger",
+        "brief.plain-direction",
+        "brief.boundary",
+        "brief.direction-values"
+      ],
+      "inputs": [
+        {
+          "finding": "finding:fixture-segment-draft",
+          "sha256": "6f096e16dc66a34626a653e5ebd1ca69dfe8ee89393d85a037e8eae92ffc8477"
+        }
+      ],
+      "tasteLog": 0,
+      "brief": "DRAFT fixture data for the test consumer: profile the first segment the fixture serves, from the one recorded fixture finding. Answer Who, Situation and Not in plain words, cite the finding in Because, and watch a numeric threshold per quarter. This is not owner research and must be replaced by real direction before any release.",
       "assembled": {
         "inputs": [],
         "contract": {
@@ -234,95 +256,140 @@
               }
             }
           ]
+        },
+        "recipe": {
+          "id": "create.structured",
+          "axes": [
+            "selection",
+            "cut",
+            "evidence"
+          ]
         }
       }
     },
     {
       "op": "craft:diverge",
-      "at": "2026-11-19T00:00:00.000Z",
+      "at": "2026-11-20T01:29:16.563Z",
       "by": "agent:director.candidates",
       "verb": "submit",
       "skill": {
         "path": "packages/director/actions/director.candidates/skill.md",
         "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
       },
-      "model": "fixture-model",
+      "model": "claude-opus-5-5",
       "tier": "mid",
+      "recipe": "create.structured",
       "directions": [
         {
-          "id": "d1",
-          "idea": "a plain reading of the slot contract",
+          "id": "solo-owner",
+          "idea": "DRAFT: serve the owner of a small service business who edits the site alone",
           "axes": {
-            "tone": "plain"
-          }
+            "selection": "owner-operator traits",
+            "cut": "not agencies or enterprise web teams",
+            "evidence": "the fixture finding's first group"
+          },
+          "traits": [
+            "finding:fixture-segment-draft"
+          ]
         },
         {
-          "id": "d2",
-          "idea": "a warm reading of the slot contract",
+          "id": "no-developer",
+          "idea": "DRAFT: serve small teams with no developer on call",
           "axes": {
-            "tone": "warm"
-          }
+            "selection": "team without technical staff",
+            "cut": "not teams with an in-house developer",
+            "evidence": "the fixture finding's situation line"
+          },
+          "traits": [
+            "finding:fixture-segment-draft"
+          ]
         },
         {
-          "id": "d3",
-          "idea": "a brisk reading of the slot contract",
+          "id": "own-site",
+          "idea": "DRAFT: serve businesses that already run their own website",
           "axes": {
-            "tone": "brisk"
-          }
+            "selection": "already runs a site",
+            "cut": "not businesses without any site yet",
+            "evidence": "the fixture finding's site ownership line"
+          },
+          "traits": [
+            "finding:fixture-segment-draft"
+          ]
         }
       ]
     },
     {
       "op": "craft:render",
-      "at": "2026-11-19T00:00:00.000Z",
+      "at": "2026-11-20T01:29:18.120Z",
       "by": "agent:director.candidates",
       "verb": "submit",
       "skill": {
         "path": "packages/director/actions/director.candidates/skill.md",
         "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
       },
-      "model": "fixture-model",
-      "tier": "mid"
+      "model": "claude-opus-5-5",
+      "tier": "mid",
+      "renders": [
+        {
+          "direction": "solo-owner",
+          "candidate": "core-v1.md",
+          "path": ".clossys/renders/director/focus.segment.core/render-1.md",
+          "sha256": "f277ff0152d236e05842e5444a9de3a7ce0534a02147e3a773cd7713673f4028"
+        },
+        {
+          "direction": "no-developer",
+          "candidate": "core-v2.md",
+          "path": ".clossys/renders/director/focus.segment.core/render-2.md",
+          "sha256": "69d1bc01a71f58be6df143b2dc2858be2ea527265a7d1e8d75ac69138744fa9b"
+        },
+        {
+          "direction": "own-site",
+          "candidate": "core-v3.md",
+          "path": ".clossys/renders/director/focus.segment.core/render-3.md",
+          "sha256": "545faa544cec15bb9284aa4fe357cce24601a500ffffa1bc61dda5d6dffeff69"
+        }
+      ],
+      "recipe": "create.structured"
     },
     {
       "op": "craft:critique",
-      "at": "2026-11-19T00:00:00Z",
+      "at": "2026-11-19T12:30:00Z",
       "by": "agent:director.critic",
       "verb": "critique",
       "skill": {
         "path": "packages/producer/actions/critic/skill.md",
         "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
       },
-      "model": "fixture-critic",
+      "model": "claude-opus-5-5",
       "tier": "mid",
       "critique": "critiques/core-v1.json",
-      "sha256": "e3f14eed7dcf6ec76253112f6705b0fe1920237376404c41850142a6607cef1a"
+      "sha256": "91bae2a51622cf7e63b6885ddc3561c38b4b3e7af5007dc704141c5f4033091f"
     },
     {
       "op": "submit",
-      "at": "2026-11-19T00:00:00.000Z",
-      "by": "agent:director.candidates",
+      "at": "2026-11-20T01:29:28.349Z",
+      "by": "planner",
       "verb": "submit",
       "skill": {
         "path": "packages/director/actions/director.candidates/skill.md",
         "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
       },
-      "model": "fixture-model",
+      "model": "claude-opus-5-5",
       "tier": "mid",
-      "basis": "agent",
+      "basis": "planner",
       "rung": "create",
-      "reason": "fixture world: the brief standards are create-only and no package default fits a synthetic consumer",
+      "reason": "DRAFT fixture data: create-only profile with no candidate (gaps brief.keys, brief.boundary); derives from the recorded fixture finding fixture-segment-draft",
       "ladder": {
         "rung": "create",
-        "reason": "fixture world: the brief standards are create-only and no package default fits a synthetic consumer"
+        "reason": "DRAFT fixture data: create-only profile with no candidate (gaps brief.keys, brief.boundary); derives from the recorded fixture finding fixture-segment-draft"
       },
       "name": "core-v1.md",
-      "sha256": "c39c1ec383f72fe5e7e6c5665e5e4d3fe86b1a12f5fb29304187f7b18b0b8db4"
+      "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd"
     },
     {
       "op": "pin",
-      "at": "2026-11-19T00:00:00Z",
-      "by": "planner:fixture-world",
+      "at": "2026-11-20T01:29:35.605Z",
+      "by": "planner:fixture-data",
       "verb": "pin",
       "skill": {
         "path": "packages/producer/actions/pin.director/skill.md",
@@ -331,13 +398,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "core-v1.md",
-      "sha256": "c39c1ec383f72fe5e7e6c5665e5e4d3fe86b1a12f5fb29304187f7b18b0b8db4",
-      "decidedBy": "planner:fixture-world",
+      "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd",
+      "decidedBy": "planner:fixture-data",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "8492f18ce1f92780bd430aea463fde4d533e97ccf7dee1d6891f15a09dd8fd26"
+          "sha256": "52309197772ffdac12726f1e4149412cc91790965a80e47711ebeb1ca2ff105d"
         }
       ]
     }

@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.image",
-      "sha256": "9bdec638f2996a4ccb3e5fcf9cf6c6649a0d888aa599cc2ced8f737c3fd935b9"
+      "sha256": "55aebc0c4fbb211064c3cd2afcec958590071417ba2410a22975ed85b8d15092"
     }
   ],
   "candidate": "image-v1.json",

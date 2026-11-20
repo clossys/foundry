@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.muted",
-      "sha256": "0ffb4e6143a195c66c59c57b5a1344c685ad1596fa7e25b1f95abd051870cd66"
+      "sha256": "e5670299718b91f70dbba0f9cb3f16fc455e5c30b1140614cab4ce7394cd60d3"
     }
   ],
   "candidate": "muted-v1.json",

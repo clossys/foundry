@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-legal",
-      "sha256": "54e9cd3fe232ea9c523968e961eac9209adde23172eebf5909c8fee2d0249bda"
+      "sha256": "1d58949d525b502ac8c44d0b85386dfcea31cc073e7c0151645a4f1b7416cdd9"
     }
   ],
   "candidate": "icon-legal-v1.json",

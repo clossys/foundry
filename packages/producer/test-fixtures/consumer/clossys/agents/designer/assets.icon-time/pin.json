@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-time",
-      "sha256": "71eb68ac67659ec5e4b52376db445cfcc67527ac5881edc27639b07f9f9773bd"
+      "sha256": "307e5741e809436191205ca2fcb5c35c9688924cc58208818e36dbf7bc611531"
     }
   ],
   "candidate": "icon-time-v1.json",

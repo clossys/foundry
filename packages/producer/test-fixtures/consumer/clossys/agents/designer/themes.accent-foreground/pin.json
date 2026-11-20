@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.accent-foreground",
-      "sha256": "b07687d3b34dab3b32b8c42fd99c17ae126cb99da7af6d8b1f9ff914ff06ae4b"
+      "sha256": "714ba44aa440c1aec589f7b854fea1bb0ff7423400eafa53fa5531e6cc2548f0"
     }
   ],
   "candidate": "accent-foreground-v1.json",

@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "director/focus.reach.channel",
-      "sha256": "b9396d883185130d5827ec0ff89bd7b753dcec79e3a872909da3e6efec24b3f9"
+      "sha256": "f3db59166a4543306784fc66b40224302b567eaff323d2115e7154e77486bb38"
     }
   ],
   "candidate": "channel-v1.md",

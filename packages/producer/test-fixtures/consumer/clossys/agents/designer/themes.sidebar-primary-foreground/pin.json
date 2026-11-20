@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.sidebar-primary-foreground",
-      "sha256": "cd64770387b8956707e25de97543608361d9c2aa39e5924e77bc9187b0310ebb"
+      "sha256": "828a57623312758f8c0c5fabc0c7fb2e9682313911c790fdd98df3b6f1cb5fdf"
     }
   ],
   "candidate": "sidebar-primary-foreground-v1.json",

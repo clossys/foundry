@@ -93,7 +93,7 @@
             "agent": "director",
             "slot": "focus.segment.core",
             "candidate": "core-v1.md",
-            "sha256": "c39c1ec383f72fe5e7e6c5665e5e4d3fe86b1a12f5fb29304187f7b18b0b8db4"
+            "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd"
           },
           {
             "agent": "director",
@@ -346,7 +346,7 @@
       "records": [
         {
           "file": "pin.json",
-          "sha256": "0a4cfe91eebc0b9ef93595305ceb9675cca7717f55aca1af696828548655c165"
+          "sha256": "a781554e121a1fa57800528e0dcf1db81ee982af86682d622d6e898be36abf32"
         }
       ]
     }

@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.foreground",
-      "sha256": "65304bcbde8ef5118b9b2c92bb5945cde1b9d055c1d4cf0a02ab40de414aaeaf"
+      "sha256": "98c137f927af41516c0fcac70e5e2b0668a6aa9a00d7219a0cccf584b3e0af7b"
     }
   ],
   "candidate": "foreground-v1.json",

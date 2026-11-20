@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/components.semantic-content",
-      "sha256": "587b589ea5218fff6f0b299e3368e07208199eb6313baac718bd419cc2a1f7c3"
+      "sha256": "59029063652926b0e1d6e22c07243deb12847a1ac87baa2fe7f844c7ac09b8ec"
     }
   ],
   "candidate": "semantic-content-v1.json",

@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.popover-foreground",
-      "sha256": "e6cf87ec5b6f911c54a0aa1e9f9f9af766b7eda887f9d5e64a035f462198a7e0"
+      "sha256": "052d98c96ccb22378b6faf046795838e67cf855f779c7d65cc4db2f9f08ef272"
     }
   ],
   "candidate": "popover-foreground-v1.json",

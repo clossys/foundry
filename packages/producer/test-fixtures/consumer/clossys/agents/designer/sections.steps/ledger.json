@@ -84,25 +84,6 @@
     {
       "op": "slot",
       "at": "2026-11-19T00:00:00Z",
-      "by": "agent:designer",
-      "verb": "retire",
-      "skill": {
-        "path": "packages/producer/actions/retire/skill.md",
-        "sha256": "a52f3873b4d4b217153a28d88cb3a21f8b5dc74ccdafb1920f0ac1626ac491ea"
-      },
-      "model": "none",
-      "tier": "none",
-      "reason": "renumbered after designer/components.link retired",
-      "records": [
-        {
-          "file": "slot.json",
-          "sha256": "c540913c8f107ec0aa06e1613634fb0cc7aaad5ba203229ae83bb44da85d48fa"
-        }
-      ]
-    },
-    {
-      "op": "slot",
-      "at": "2026-11-19T00:00:00Z",
       "by": "planner",
       "verb": "ia",
       "skill": {
@@ -112,6 +93,25 @@
       "model": "none",
       "tier": "none",
       "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "ee194ad93d0d5632ed00a4c830dcbdb2b47de0aef58cb795625511a781437c7d"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer",
+      "verb": "retire",
+      "skill": {
+        "path": "packages/producer/actions/retire/skill.md",
+        "sha256": "a52f3873b4d4b217153a28d88cb3a21f8b5dc74ccdafb1920f0ac1626ac491ea"
+      },
+      "model": "none",
+      "tier": "none",
+      "reason": "renumbered after designer/components.link retired",
       "records": [
         {
           "file": "slot.json",

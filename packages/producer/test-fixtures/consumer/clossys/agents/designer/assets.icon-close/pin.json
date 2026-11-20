@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-close",
-      "sha256": "a4c6cc2ac4c47b1789258f830eb416a454ca9e19947faba9377bd9ba9857eac5"
+      "sha256": "b8762e08598670941bacc67e2353340c4efdd4f289142b44762acfb97edba355"
     }
   ],
   "candidate": "icon-close-v1.json",

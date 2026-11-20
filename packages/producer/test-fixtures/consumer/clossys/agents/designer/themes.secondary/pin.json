@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.secondary",
-      "sha256": "52e9d0ad046d41370aadd1ee9c07ac17f206b306c1b05a6db2247171f1b1b103"
+      "sha256": "125e95170d94990abd5159ee8f801f5f74875a4195060388aa7cfb199f72dda7"
     }
   ],
   "candidate": "secondary-v1.json",

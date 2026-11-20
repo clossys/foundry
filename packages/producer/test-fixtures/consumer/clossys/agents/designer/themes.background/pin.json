@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.background",
-      "sha256": "6729286d9ef0558fcaac07f9ce193ec5287eb71496527d469c4b9b295ac9d230"
+      "sha256": "445ccf607199f44e2e1c8898c5d51b684393b18106e0a82603873a4f68af5ca9"
     }
   ],
   "candidate": "background-v1.json",

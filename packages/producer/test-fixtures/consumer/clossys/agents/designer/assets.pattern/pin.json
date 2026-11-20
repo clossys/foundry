@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.pattern",
-      "sha256": "d14d893f51867cdc471f27711b3b8b5d7813549aaa25ee8a520d612670770a1b"
+      "sha256": "b144ac067683eef392f8f3fe4b74ca6e4debfbdc23a115693ae72aebe14a62c5"
     }
   ],
   "candidate": "pattern-v1.json",

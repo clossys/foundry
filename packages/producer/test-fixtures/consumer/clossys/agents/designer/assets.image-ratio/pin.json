@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.image-ratio",
-      "sha256": "5be93f719efeadce35ec27da6a0345ea840977618911ce95fa8647494f566036"
+      "sha256": "44496e5582ad2d9c41c3f91a5d7b0d5458b66487067d2c2497181931ea80ab3b"
     }
   ],
   "candidate": "image-ratio-v1.json",

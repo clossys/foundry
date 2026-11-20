@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.destructive",
-      "sha256": "47693a4cd2ca447e69e56d6a5f702297ea3273cca9197772590b83e91e04ad93"
+      "sha256": "0ecdf2308bc1ad06c91f4b38ddcf20544b3b24133c8a4fd93ff53a642011acfa"
     }
   ],
   "candidate": "destructive-v1.json",

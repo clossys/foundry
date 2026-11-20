@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.border",
-      "sha256": "896a26b2df0c0aabb9d888ef4e756607ff4564480b73b21660fbd4a3358c4e34"
+      "sha256": "8b35526187485e8fe3aaf08c00ec3c6c41836a2ce9eb0103ba80d4e219b6d032"
     }
   ],
   "candidate": "border-v1.json",

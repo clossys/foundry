@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/components.avatar",
-      "sha256": "44c97d30d1e78009491083bd909d4e9c77cc30ac7efb1697b1d3b98f44a01406"
+      "sha256": "6cbb1f616766fbd2736251248a87db194d2030fd54cab87d9f089ac29046c699"
     }
   ],
   "candidate": "avatar-v1.json",

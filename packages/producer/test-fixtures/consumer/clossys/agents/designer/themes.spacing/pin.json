@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.spacing",
-      "sha256": "c84891049a230b0494f81d5fa51f924e18aa920290da95fb698888ee9d5d5ad6"
+      "sha256": "9690847c712dda4458782f879d831626091ddea40cc2253bb9dd743d83c87f47"
     }
   ],
   "candidate": "spacing-v1.json",

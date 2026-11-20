@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-locked",
-      "sha256": "dd16ad615ae9eda5713bb9f9b09ef17f4a0acb4a98a3853c15d80f0553100e1b"
+      "sha256": "115697a5a4954a0eb6477a7c7c96839a46acfce6937c00e96a876f31171de7f4"
     }
   ],
   "candidate": "icon-locked-v1.json",

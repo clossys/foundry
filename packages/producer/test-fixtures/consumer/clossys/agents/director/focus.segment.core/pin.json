@@ -9,19 +9,19 @@
     "cli": "clossys pin",
     "version": "0.1.0"
   },
-  "createdAt": "2026-11-19T00:00:00Z",
-  "updatedAt": "2026-11-19T00:00:00Z",
+  "createdAt": "2026-11-20T01:29:35.605Z",
+  "updatedAt": "2026-11-20T01:29:35.605Z",
   "refs": [
     {
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "director/focus.segment.core",
-      "sha256": "47ea72100f5d6230e8587b9d2e01f11fe785245e9e1c580b01362962ab51cc13"
+      "sha256": "c83ade81b0989b746ba138638deff759c6bfa62220fb9561045e0d1fa02f6ea1"
     }
   ],
   "candidate": "core-v1.md",
-  "sha256": "c39c1ec383f72fe5e7e6c5665e5e4d3fe86b1a12f5fb29304187f7b18b0b8db4",
-  "decidedBy": "planner:fixture-world",
+  "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd",
+  "decidedBy": "planner:fixture-data",
   "basis": "planner",
-  "at": "2026-11-19T00:00:00Z"
+  "at": "2026-11-20T01:29:35.605Z"
 }

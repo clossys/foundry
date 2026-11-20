@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-security",
-      "sha256": "da7820f77ab57211b24cb2b799eea8cad680ad26ce838b75b7aaad7e9d32f1e5"
+      "sha256": "b232844c27738b3cb35b44e6fa69d02a373e62405dc8d344aac12fa81d9c710a"
     }
   ],
   "candidate": "icon-security-v1.json",

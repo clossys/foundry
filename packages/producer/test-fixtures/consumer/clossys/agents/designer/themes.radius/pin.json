@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.radius",
-      "sha256": "d9ab729dd0f0336615d7138464cf777890699a67f63815a550737af0eb169631"
+      "sha256": "c0c786be88be0a7871d7952b3cc3af033973e7a23ec670149d687c7c9a4b9e4f"
     }
   ],
   "candidate": "radius-v1.json",

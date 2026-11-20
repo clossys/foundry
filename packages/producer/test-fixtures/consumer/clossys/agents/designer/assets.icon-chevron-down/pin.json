@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-chevron-down",
-      "sha256": "84f911eb335314c2b1202f8c14b7404a1941727652f9cb150f399e03fb2db5ae"
+      "sha256": "127a23d58472a22fb1a54618d380a6519d4ba416fb86d9e4117581bc770a3b8a"
     }
   ],
   "candidate": "icon-chevron-down-v1.json",

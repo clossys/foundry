@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.mark",
-      "sha256": "e9b435d21ac83ea8bdf97dccc9eb88afe8d050e011434b2e372eb1d70dd6529f"
+      "sha256": "6d7b8a06b4b6ab847ab71487ec08e179596dec45e2f1dae64faa498d1e9113a5"
     }
   ],
   "candidate": "mark-v1.json",

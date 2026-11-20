@@ -7,11 +7,13 @@
  * `clossys next --submit` (the guarded candidates verb) and `clossys pin` (the gate, its scorecard and the pin
  * ledger event). The content is synthetic fixture data, one generator per standard; it names no brand or client.
  *
- *   node scripts/seed-pinned-world.mjs [--out <dir>]   (default: rewrite test-fixtures/consumer)
+ *   node scripts/seed-pinned-world.mjs [--out <dir>]   (default: rewrite test-fixtures/consumer; any other --out
+ *   must be new, empty, or a tree this script wrote)
  *
- * The run is a pure function of the unpinned base: the committed fixture with every seeded record taken out
- * (candidates, critiques, pins, scorecards, renders and the ledger events the verbs above wrote). The clock is
- * fixed (AT), so a rerun writes the same bytes; pinned-world.test.ts reruns it and compares the trees.
+ * The run is a pure function of the unpinned base (BASE: this fixture as the integration line held it before any
+ * world was seeded, read from git history), taken as is: nothing is stripped, and every record and event the run
+ * adds is written by a verb. The clock is fixed (AT), so one pass writes the same bytes; pinned-world.test.ts seeds
+ * from BASE and compares the result with the committed tree.
  * BLOCKED lists the closure slots the run cannot fill (a refused shape, or a craft standard with no generator), with
  * why; the run leaves them (and their downstream) unpinned and prints them. Any other refusal stops the run (exit 1).
  */
@@ -43,33 +45,19 @@ export const TARGETS = ["designer/frames.site-shell", "designer/sections.hero", 
 
 // ---------------------------------------------------------------- base (the unpinned fixture)
 
-/** Ledger ops the seeding verbs write; the base keeps every other event (ia, migrate, slot). */
-const SEEDED_OPS = /^(?:verdict|options|submit|pin|pick|confirm|craft:.+)$/;
-const SEEDED_DIRS = new Set(["candidates", "critiques"]);
-const SEEDED_FILES = new Set(["pin.json"]);
-/** Consumer setup the run writes before its slots: the shadcn flavor and the lockfile of the packages its pins declare. */
-const SETUP_FILES = ["package-lock.json", "clossys/components.json"];
+/**
+ * The unpinned base: this fixture as the integration line held it before any world was seeded into it (git keeps
+ * that tree). The run starts from it as is, so nothing is stripped and no record is written but by a verb; a
+ * slot the base already pins keeps that pin.
+ */
+export const BASE = { commit: "e7d763226973eca9da900bef4a86aad32c738fc6", path: "packages/producer/test-fixtures/consumer" };
 
-/** The unpinned base of a fixture tree, in place: every seeded record and ledger event taken out. */
-export function stripSeeded(root) {
-  for (const name of [".clossys", ...SETUP_FILES]) if (existsSync(join(root, name))) rmSync(join(root, name), { recursive: true, force: true });
-  const agents = join(root, "clossys", "agents");
-  for (const agent of readdirSync(agents)) {
-    const dir = join(agents, agent);
-    if (!statSync(dir).isDirectory()) continue;
-    for (const slot of readdirSync(dir)) {
-      const slotDir = join(dir, slot);
-      if (slot === "_retired" || !statSync(slotDir).isDirectory()) continue;
-      for (const entry of readdirSync(slotDir)) {
-        if (SEEDED_DIRS.has(entry) || SEEDED_FILES.has(entry)) rmSync(join(slotDir, entry), { recursive: true, force: true });
-      }
-      const ledger = join(slotDir, "ledger.json");
-      if (!existsSync(ledger)) continue;
-      const doc = JSON.parse(readFileSync(ledger, "utf8"));
-      const events = (doc.events ?? []).filter(event => !SEEDED_OPS.test(String(event.op)));
-      if (events.length !== (doc.events ?? []).length) writeFileSync(ledger, `${JSON.stringify({ ...doc, events }, null, 2)}\n`);
-    }
-  }
+/** Writes the base tree into `dir` (which must be empty or new), read from git history. */
+export function extractBase(dir) {
+  mkdirSync(dir, { recursive: true });
+  if (readdirSync(dir).length) throw new Error(`${dir} is not empty; the base is extracted into an empty folder`);
+  const tar = execFileSync("git", ["-C", REPO, "archive", "--format=tar", BASE.commit, BASE.path], { maxBuffer: 1 << 30 });
+  execFileSync("tar", ["-x", "-C", dir, "--strip-components", String(BASE.path.split("/").length)], { input: tar });
 }
 
 // ---------------------------------------------------------------- the verbs
@@ -580,7 +568,7 @@ function candidateOf(root, consumer, agent, id, doc, standard) {
  * The slots the base retires, in order, each with the Designer slot that takes its place (`into`), or none:
  * - link: shadcn stock ships no Link; Button's link variant covers it.
  * - media-player and status-mark (owner 2026-11-20, "retire both"): no stock item in the consumer's engine ships
- *   either, so every consumer drops them; the Writer copy of the media player goes with it.
+ *   either, so this consumer drops them; the Writer copy of the media player goes with it.
  */
 const RETIRE = {
   "designer/components.link": { into: "components.button", reason: "duplicate: shadcn stock ships no Link component; the Button link variant covers it" },
@@ -753,15 +741,15 @@ export function treeFiles(dir, at = "") {
  * `out` (which must not hold a tree already) and removes it. `resume` continues a kept root in place, skipping
  * the slots it pinned already (a development aid; the committed fixture is always one whole run).
  */
-export async function seed({ from = FIXTURE, out, only, keep = false, resume } = {}) {
+export async function seed({ from, out, only, keep = false, resume } = {}) {
   await load();
   const root = resume ? realpathSync(resume) : realpathSync(mkdtempSync(join(tmpdir(), "pinned-world-")));
   const scratch = realpathSync(mkdtempSync(join(tmpdir(), "pinned-world-input-")));
   let done = false;
   try {
     if (!resume) {
-      cpSync(from, root, { recursive: true });
-      stripSeeded(root);
+      if (from) cpSync(from, root, { recursive: true });
+      else extractBase(root);
     }
     if (!existsSync(join(root, ".git"))) execFileSync("git", ["init", "-q"], { cwd: root });
     if (!existsSync(join(root, "clossys", "components.json"))) await setup(root);
@@ -771,7 +759,7 @@ export async function seed({ from = FIXTURE, out, only, keep = false, resume } =
     for (const ref of Object.keys(BLOCKED)) if (!all.includes(ref)) throw new Error(`BLOCKED names ${ref}, which the closure does not read`);
     const blocked = blockedIn(w.consumer, all);
     const order = all.filter(ref => !blocked.has(ref) && (!only || only.some(prefix => ref.startsWith(prefix))));
-    for (const ref of order) if (!resume || !pinned(w.consumer, ref)) await seedSlot(w, ref);
+    for (const ref of order) if (!pinned(w.consumer, ref)) await seedSlot(w, ref);
     rmSync(join(root, ".git"), { recursive: true, force: true });
     if (out) {
       mkdirSync(out, { recursive: true });
@@ -785,6 +773,9 @@ export async function seed({ from = FIXTURE, out, only, keep = false, resume } =
   }
 }
 
+/** The mark the CLI leaves in an --out tree it wrote (never in the fixture), so a rerun may replace that tree. */
+const MARK = ".seed-pinned-world";
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const arg = flag => { const at = process.argv.indexOf(flag); return at > 0 ? process.argv[at + 1] : undefined; };
   const only = arg("--only")?.split(",");
@@ -793,9 +784,13 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     // The pinned tree replaces `out` whole: written beside it first, so a refusal leaves `out` as it was.
     const next = `${out}.seeding`;
     if (existsSync(next)) throw new Error(`${relative(process.cwd(), next)} exists; a previous run stopped there (remove it)`);
+    // Only a tree the seeder wrote is replaced: the fixture, a folder holding the seeder's mark, or an empty one.
+    const ours = out === FIXTURE || existsSync(join(out, MARK));
+    if (existsSync(out) && readdirSync(out).length && !ours) throw new Error(`${out} is not empty and holds no ${MARK}; pass a new or empty --out`);
     const { order, blocked } = await seed({ out: next, only });
-    if (existsSync(out)) rmSync(out, { recursive: true, force: true });
+    if (existsSync(out) && readdirSync(out).length) rmSync(out, { recursive: true, force: true });
     cpSync(next, out, { recursive: true });
+    if (out !== FIXTURE) writeFileSync(join(out, MARK), "written by scripts/seed-pinned-world.mjs\n");
     rmSync(next, { recursive: true, force: true });
     for (const [ref, rule] of blocked) console.log(`seed-pinned-world: BLOCKED ${ref}: ${rule}`);
     console.log(`seed-pinned-world: ${order.length} slot(s) pinned, ${blocked.size} blocked, at ${AT} into ${relative(process.cwd(), out) || "."}`);

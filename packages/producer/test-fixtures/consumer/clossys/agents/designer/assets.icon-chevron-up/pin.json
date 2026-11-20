@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-chevron-up",
-      "sha256": "9197fc164b63c08f0f70bb67fec9485e7e7951f233e98e087c5aa0a5aaa21f34"
+      "sha256": "03676ec5467f41c695f1e2b4a8c20846d1df253a7ccdacea2ed2dd64de6e37d7"
     }
   ],
   "candidate": "icon-chevron-up-v1.json",

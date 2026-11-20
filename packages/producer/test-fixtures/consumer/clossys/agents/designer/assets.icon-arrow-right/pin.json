@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-arrow-right",
-      "sha256": "40fd2e10edc3c64c8a11f0acacf3764b5922d6c223dc9f1ee22fd5ed22542bd7"
+      "sha256": "207f32722084f4a5724750a0e507cb14a1b1c8a1c0aa0f3cac344ce6a431f9f3"
     }
   ],
   "candidate": "icon-arrow-right-v1.json",

@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-organization",
-      "sha256": "c55f615e6fc8247b2a7da0b2606453f49d00992ead5b80b17a5342816829b552"
+      "sha256": "de1d13361354d48f839051200a71feade0d8a02ff2149f7ca1d5f2c62f86de3e"
     }
   ],
   "candidate": "icon-organization-v1.json",

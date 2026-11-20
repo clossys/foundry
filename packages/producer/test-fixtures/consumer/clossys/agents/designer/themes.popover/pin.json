@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.popover",
-      "sha256": "9a43c2b884b0c3cba4f3f3501f09bddcd33c1c5aed2fd5a9651037c81f7cb664"
+      "sha256": "4031335b25d6de9eca5ab004a9987acc2633c6248539605c7b638cf86097ff2d"
     }
   ],
   "candidate": "popover-v1.json",

@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.font-heading",
-      "sha256": "7231a06f646783bd06e721e751405aa07b77f060ac541bffa7e1d65569207ef0"
+      "sha256": "5db1c93f4a37118c519907efbfd96871466ee70c5cfdb6cecdedfc9da69bcc80"
     }
   ],
   "candidate": "font-heading-v1.json",

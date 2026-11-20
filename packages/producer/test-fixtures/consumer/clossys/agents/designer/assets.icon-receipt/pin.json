@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-receipt",
-      "sha256": "c7657690a975a4c80ad9d2338f861d5d5704d08c7b8dd099722c8f3a643ac9da"
+      "sha256": "72a5516de5a67527577c8e99d9dee6f55f589c3d2e28a7b2846762021eaef96a"
     }
   ],
   "candidate": "icon-receipt-v1.json",

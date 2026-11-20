@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.primary",
-      "sha256": "6cda48f4919bfd7357fb37f5f79b36b5d8aff205afd750ad29263c2080e069ef"
+      "sha256": "b37674d3e84b207f99c2ff0bbf3ad2cb5a1c4f8abfbe9b2b0b40fa9d689fc5ca"
     }
   ],
   "candidate": "primary-v1.json",

@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/lexicon.reading-level",
-      "sha256": "6e74f6812759c92a02a86345f1b97e542eb037db72cf35fb58649d68c4615e5c"
+      "sha256": "d4f913eb71b0e67017a27e44c38fca4dcab6ef4ae1eadc3ee77b803861160627"
     }
   ],
   "candidate": "reading-level-v1.md",

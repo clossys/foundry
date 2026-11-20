@@ -77,7 +77,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "2962d9a2f813f263341d790a7d8a6d35899fdd381513b3a2a5756feba1293e78"
+          "sha256": "62831bb38e5c160a32577aaaee28c9a59deeaf1ec6247d323ed54fbbf2be3042"
         }
       ]
     },
@@ -93,25 +93,6 @@
       "model": "none",
       "tier": "none",
       "reason": "renumbered after designer/components.link retired",
-      "records": [
-        {
-          "file": "slot.json",
-          "sha256": "424ad90f43bcc4848be856b62179c66a47e6452886f001b18be51b7166649fea"
-        }
-      ]
-    },
-    {
-      "op": "slot",
-      "at": "2026-11-19T00:00:00Z",
-      "by": "planner",
-      "verb": "ia",
-      "skill": {
-        "path": "packages/producer/actions/ia/skill.md",
-        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
-      },
-      "model": "none",
-      "tier": "none",
-      "kind": "ia",
       "records": [
         {
           "file": "slot.json",

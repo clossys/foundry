@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/components.progress-bar",
-      "sha256": "5f3efe379bf77b1197b80cb1f300b183bb552bf7dcac40ce90eae9e14fa162cd"
+      "sha256": "c9aa8d15dde32b37c01a440eacc9fae086340e1813284ca0211fb7d87ba61461"
     }
   ],
   "candidate": "progress-bar-v1.json",

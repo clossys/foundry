@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.shadow",
-      "sha256": "f4e333cff1f612ba8900d98757a19633e5353f623708415f3c66a07cb193a1af"
+      "sha256": "203150dbc7f711bfab9c37c07cb128846c6f0a31fc865c50e1fa9d18deb0be88"
     }
   ],
   "candidate": "shadow-v1.json",

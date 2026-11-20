@@ -5,23 +5,49 @@
   "standard": "brief.profile",
   "scores": {
     "decisive": 4,
-    "evidence-weight": 4,
-    "tripwire-usefulness": 4,
+    "evidence-weight": 1,
+    "tripwire-usefulness": 3,
     "sharp-edges": 4
   },
+  "notes": "Blind critic (label B, DRAFT fixture brief): the sharpest segment; the owner editing alone between client jobs is a real behaviour and the exclusion is meaningful. 'Small service businesses' is still a size label. The Because line repeats the direction from the finding. The Watch has a real threshold and action, but a quarter is slow and nobody is named to act.",
+  "exemplars": [
+    {
+      "exemplar": "gov-uk-user-needs",
+      "comparison": "Like GOV.UK user needs, its Situation describes what the person does, but it traces the need to nothing beyond a restated finding."
+    }
+  ],
   "packet": {
+    "sha256": "b35f2cba7bc7d590ab46c8f3bc391e453f9a19448079a428df796cc8b7a89bbb",
     "manifest": [
       {
         "role": "taste",
-        "ref": "packages/director/standards/brief.profile/taste.md"
+        "ref": "packages/director/standards/brief.profile/taste.md",
+        "sha256": "20cec1f63d74b371a6a5538341159b949ac1ec8275f85851e7ec75926d72f544"
+      },
+      {
+        "role": "exemplar",
+        "ref": "packages/director/standards/brief.profile/exemplars/exemplars.json",
+        "sha256": "7e254452ab614230d5a2ab1f03f5806f93c40958874c25047c4cb68bcca8c0a0"
       },
       {
         "role": "contract",
-        "ref": "clossys/agents/director/focus.segment.core/slot.json#contract"
+        "ref": "clossys/agents/director/focus.segment.core/slot.json#contract",
+        "sha256": "bdb8eb0539b9048e030f07c535fe3f909944ec773c0a49166ec2b31f1e4e9355"
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/director/focus.segment.core/core-v1.png"
+        "ref": ".clossys/renders/director/focus.segment.core/render-3.md",
+        "sha256": "545faa544cec15bb9284aa4fe357cce24601a500ffffa1bc61dda5d6dffeff69"
+      },
+      {
+        "role": "render",
+        "ref": ".clossys/renders/director/focus.segment.core/render-1.md",
+        "sha256": "f277ff0152d236e05842e5444a9de3a7ce0534a02147e3a773cd7713673f4028"
+      },
+      {
+        "role": "render",
+        "ref": ".clossys/renders/director/focus.segment.core/render-2.md",
+        "sha256": "69d1bc01a71f58be6df143b2dc2858be2ea527265a7d1e8d75ac69138744fa9b"
       }
     ]
   }

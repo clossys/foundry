@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/assets.icon-danger",
-      "sha256": "7f87c32333e9746de6ed45db7595936f2c1f21efba6ae7b1c7034f0d3e61ba78"
+      "sha256": "5b8ff70093df86f27703abe6f1f916ee4c7a3fb47107aa38d1af8a58ccd65469"
     }
   ],
   "candidate": "icon-danger-v1.json",

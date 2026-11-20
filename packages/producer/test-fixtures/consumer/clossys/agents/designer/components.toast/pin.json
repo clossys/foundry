@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/components.toast",
-      "sha256": "5278ca389fc5c141697de6ac0d857b2fa97e5d50338348951cff3e3af25e9e92"
+      "sha256": "29768131089af0fa70dfb40738789c5c1b0f6cb5ff1dd7784fd110e0a397614a"
     }
   ],
   "candidate": "toast-v1.json",

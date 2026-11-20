@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/themes.ring",
-      "sha256": "85f0684fea641ce1075879c4f30294b381f03a96acd054ca8d5743ff02a81f47"
+      "sha256": "f11d849ee1d5b635d2bc46868d0924123bced173a5a2a2117bd10011f8ca6f85"
     }
   ],
   "candidate": "ring-v1.json",
