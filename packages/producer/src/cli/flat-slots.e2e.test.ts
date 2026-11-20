@@ -11,11 +11,13 @@
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { repoConsumer, runVerb } from "./__fixtures__/flat-consumer.js";
 
 const root = dirname(repoConsumer);
-const producer = join(root, "packages", "producer");
+// The scanned sources are this package's own, wherever the consumer under test lives.
+const producer = fileURLToPath(new URL("../..", import.meta.url));
 const VERBS: readonly (readonly string[])[] = [
   ["direct", "--check"], ["direct", "--brief"], ["direct"],
   ["design", "--check"], ["design", "--brief"], ["design"],
