@@ -13,7 +13,10 @@
  * - R01.4 an agent tree holds only ia.json, ledger.json, policy.json, live slot folders and
  *   tombstones (a folder holding only a ledger.json whose last event is retire-slot); a live slot
  *   folder holds only slot.json, pin.json, candidates/, ledger.json and retired/. The `retired/`
- *   record folders R10 still accepts until the ledger form (W2-B) are accepted here too.
+ *   record folders R10 still accepts until the ledger form (W2-B) are accepted here too. The one
+ *   other entry is the folder R15.7 requires: `critiques/`, the critique records `clossys critique`
+ *   writes (records/slot-write.ts writeCritique), as a folder in a live slot that is not an agent
+ *   loop version (R15.7 skips those). Anywhere else (a file, an agent loop slot) it is a row.
  * - R01.5 Designer, Director and Writer live slots are Foundry-placed leaves or listed extensions.
  * - R01.6 inside one agent, no two live slots share a contract (sha256 of canonical JSON, fixture left out).
  * - R01.7-R01.16 the IA checks (levels, axes, labels, nav parity, extension facet, fanout, empty groups) live in
@@ -26,6 +29,10 @@ import { CURRENT_AGENT_KINDS, isCurrentSlot, slotReadIssues } from "../../record
 import type { AgentRecord, ConstitutionContext, FoundryAgent, Row, RuleModule, SlotRecord } from "../types.js";
 import { R01_IA_CHECKS } from "../rules/r01-ia.js";
 import { allSlots, isObject, listed, liveSlots, row, slotDoc } from "./shared.js";
+import { join } from "node:path";
+import { isModelDir } from "../../records/slots.js";
+import { CRITIQUES_DIR } from "../../records/slot-write.js";
+import { isAgentLoopRecord } from "../certify/loop.js";
 
 const AGENT_FILES = new Set(["ia.json", "ledger.json", "policy.json"]);
 const SLOT_ENTRIES = new Set(["slot.json", "pin.json", "candidates", "ledger.json", "retired"]);
@@ -113,6 +120,15 @@ export function isTombstone(record: SlotRecord): boolean {
   return isObject(last) && last.op === "retire-slot";
 }
 
+/**
+ * Whether a live slot's `critiques` entry is the folder R15.7 requires (rules/r15.ts r15_7 reads
+ * `<slot>/critiques/<leaf>-v<n>.json` for every P2 candidate): a folder, in a slot that is not an
+ * agent loop version. The one R01.4 exception to the slot folder layout (foundry-build-0048 U39).
+ */
+function critiquesFolder(ctx: ConstitutionContext, record: SlotRecord): boolean {
+  return !isAgentLoopRecord(record) && isModelDir(join(ctx.root, record.dir, CRITIQUES_DIR));
+}
+
 /** R01.4 An agent tree holds only live slots, tombstones, ledger.json and policy.json (plus ia.json). */
 export function treeShape(ctx: ConstitutionContext): Row[] {
   const rows: Row[] = [];
@@ -133,7 +149,7 @@ export function treeShape(ctx: ConstitutionContext): Row[] {
         rows.push(row("R01", "R01.4", ref, why, record.dir));
         continue;
       }
-      const stray = record.entries.filter(entry => !SLOT_ENTRIES.has(entry));
+      const stray = record.entries.filter(entry => !SLOT_ENTRIES.has(entry) && !(entry === CRITIQUES_DIR && critiquesFolder(ctx, record)));
       if (stray.length) rows.push(row("R01", "R01.4", ref, `a live slot folder holds only slot.json, pin.json, candidates/, ledger.json and retired/; found ${listed(stray)}${stray.includes("seat.json") ? " (seat.json is retired)" : ""}`, record.dir));
     }
   }

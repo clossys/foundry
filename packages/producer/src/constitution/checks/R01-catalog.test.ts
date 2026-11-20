@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildContext } from "../context.js";
@@ -6,6 +6,15 @@ import type { ConstitutionContext } from "../types.js";
 import { SLOT_SCHEMA } from "../../records/slot.js";
 import { cleanSpec, contextOf, expectCatches, NO_FOUNDRY_LEAVES, NO_HISTORY, SAMPLE_SEAT, slotDoc, writeWorkspace, type Agent, type WorkspaceSpec } from "../__fixtures__/workspace.js";
 import { canonicalJson, contractDedupe, contractFixture, contractHash, foundryPlaced, iaValid, isTombstone, R01, slotContract, treeShape } from "./R01-catalog.js";
+import { r15_7 } from "../rules/r15.js";
+import { put, RECIPE_ID, STANDARD_ID, standardSpec, standardWorld } from "../rules/r15.world.js";
+
+/** Three directions that differ on every axis the fixture recipe names (rules/r15.test.ts DIRECTIONS). */
+const CRAFT_DIRECTIONS = [
+  { id: "a", axes: { tone: "warm", length: "short", structure: "claim" } },
+  { id: "b", axes: { tone: "dry", length: "medium", structure: "question" } },
+  { id: "c", axes: { tone: "bold", length: "long", structure: "contrast" } },
+];
 
 const clean = () => contextOf(cleanSpec());
 const broken = (edit: (spec: WorkspaceSpec) => void) => { const spec = cleanSpec(); edit(spec); return contextOf(spec); };
@@ -134,7 +143,7 @@ describe("R01.3 every contract carries a fixture of its kind's shape", () => {
     const text = reasons(rows).join("\n");
     expect(text).toMatch(/director:brand\.voice: contract\.fixture headings must be a non-empty list of strings \(brief\)/);
     expect(text).toMatch(/writer:home\.hero: contract\.fixture locales must be a non-empty list of strings \(strings\)/);
-    expect(text).toMatch(/designer:ui\.button: contract\.fixture props label are not declared in contract\.props \(element\)/);
+    expect(text).toMatch(/designer:ui\.button: contract\.fixture props label are not declared in contract\.props or contract\.fixtureProps \(element\)/);
     expect(text).toMatch(/producer:seat\.director: contract\.fixture seat is package data/);
   });
 
@@ -154,6 +163,62 @@ describe("R01.4 an agent tree holds only live slots, tombstones, ledger.json and
       "designer:ui.button: a live slot folder holds only slot.json, pin.json, candidates/, ledger.json and retired/; found notes.md",
       "producer:seat.director: a live slot folder holds only slot.json, pin.json, candidates/, ledger.json and retired/; found seat.json (seat.json is retired)",
     ]);
+  });
+
+  // foundry-build-0048 U39: R15.7 requires <slot>/critiques/<leaf>-v<n>.json for every P2 candidate (the folder
+  // `clossys critique` writes); R01.4 takes that one folder there, and nothing else.
+  it("takes critiques/ only where R15.7 requires it (a folder in a live slot); any other entry is still flagged", () => {
+    const ctx = editedTree(consumer => {
+      const hero = join(consumer, "agents", "writer", "home.hero");
+      mkdirSync(join(hero, "critiques"), { recursive: true });
+      writeFileSync(join(hero, "critiques", "hero-v1.json"), "{}\n");
+      // A stray beside a real critiques/ folder is still a row: the exception covers the critiques entry alone.
+      mkdirSync(join(hero, "drafts"), { recursive: true });
+      writeFileSync(join(hero, "drafts", "hero-v2.json"), "{}\n");
+      const button = join(consumer, "agents", "designer", "ui.button");
+      mkdirSync(join(button, "drafts"), { recursive: true });
+      writeFileSync(join(button, "drafts", "button-v1.json"), "{}\n");
+      writeFileSync(join(consumer, "agents", "director", "brand.voice", "critiques"), "a file, not the critique folder\n");
+    });
+    expect(reasons(treeShape(ctx))).toEqual([
+      "director:brand.voice: a live slot folder holds only slot.json, pin.json, candidates/, ledger.json and retired/; found critiques",
+      "designer:ui.button: a live slot folder holds only slot.json, pin.json, candidates/, ledger.json and retired/; found drafts",
+      "writer:home.hero: a live slot folder holds only slot.json, pin.json, candidates/, ledger.json and retired/; found drafts",
+    ]);
+  });
+
+  it("flags critiques/ in an agent loop slot, which R15.7 never reads", () => {
+    const ctx = editedTree(consumer => {
+      const hero = join(consumer, "agents", "writer", "home.hero");
+      const doc = JSON.parse(readFileSync(join(hero, "slot.json"), "utf8")) as Record<string, unknown>;
+      writeFileSync(join(hero, "slot.json"), `${JSON.stringify({ ...doc, kind: "loop" }, null, 2)}\n`);
+      mkdirSync(join(hero, "critiques"), { recursive: true });
+      writeFileSync(join(hero, "critiques", "hero-v1.json"), "{}\n");
+    });
+    expect(reasons(treeShape(ctx))).toEqual([
+      "writer:home.hero: a live slot folder holds only slot.json, pin.json, candidates/, ledger.json and retired/; found critiques",
+    ]);
+  });
+
+  // One location for a P2 candidate's critique record, read the same way by both rules: at <slot>/critiques/ both are
+  // silent; anywhere else R15.7 finds no record and R01.4 flags the stray entry.
+  it("R01.4 and R15.7 agree on the critique record's one location", () => {
+    const run = (critique: (hero: string) => void) => standardWorld(standardSpec(), (_root, consumer) => {
+      const hero = join(consumer, "agents", "writer", "home.hero");
+      const events = ["brief", "diverge", "render", "critique"].map(stage => ({ op: `craft:${stage}`, at: "2026-11-13T00:00:00Z", by: "agent:writer", recipe: RECIPE_ID, ...(stage === "diverge" ? { directions: CRAFT_DIRECTIONS } : {}) }));
+      put(join(hero, "ledger.json"), { schema: "clossys.ledger/1", events: [...events, { op: "submit", at: "2026-11-13T00:00:01Z", by: "agent:writer", name: "hero-v1.md", rung: "create" }] });
+      critique(hero);
+    }).ctx;
+    const record = { schema: "clossys.critique/1", slot: "home.hero", candidate: "hero-v1.md", standard: STANDARD_ID, scores: { clarity: 4 }, packet: { manifest: [] } };
+    const heroRows = (rows: readonly { agent: string; slot: string; reason: string }[]) => reasons(rows).filter(line => line.startsWith("writer:home.hero:"));
+
+    const placed = run(dir => put(join(dir, "critiques", "hero-v1.json"), record));
+    expect(heroRows(treeShape(placed))).toEqual([]);
+    expect(heroRows(r15_7(placed))).toEqual([]);
+
+    const misplaced = run(dir => put(join(dir, "critique", "hero-v1.json"), record));
+    expect(heroRows(treeShape(misplaced))).toEqual(["writer:home.hero: a live slot folder holds only slot.json, pin.json, candidates/, ledger.json and retired/; found critique"]);
+    expect(heroRows(r15_7(misplaced))).toEqual(["writer:home.hero: no critique record critiques/hero-v1.json"]);
   });
 
   it("flags a folder the IA does not place unless it is a tombstone, and the old requests/ queue", () => {
