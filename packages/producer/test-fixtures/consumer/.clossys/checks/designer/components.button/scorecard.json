@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/components.button",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "button-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "button-v1.json",
+      "sha256": "2a77dc920b74d1cd33942588faa903852773920628ce9e33e81f802d93c5050e",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "179873839b0b689a77ec3dde4ea27f415c441a16d9daefbbef7a951db77caecc"
+    }
+  ]
+}

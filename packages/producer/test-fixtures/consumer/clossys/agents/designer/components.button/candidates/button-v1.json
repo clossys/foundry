@@ -1,11 +1,11 @@
 {
   "clossys": {
     "schema": "clossys.candidate/1",
-    "id": "designer/components.link/link-v1.json",
+    "id": "designer/components.button/button-v1.json",
     "agent": "designer",
     "kind": "candidate",
     "status": "submitted",
-    "slot": "designer/components.link",
+    "slot": "designer/components.button",
     "createdBy": {
       "actor": "agent",
       "agent": "designer",
@@ -27,7 +27,7 @@
     "rationale": []
   },
   "content": {
-    "name": "link",
+    "name": "button",
     "type": "registry:ui",
     "dependencies": [
       "class-variance-authority@0.7.1",
@@ -42,14 +42,14 @@
       }
     ],
     "meta": {
-      "slot": "components.link",
+      "slot": "components.button",
       "refVerbatim": {
         "files": {
           "registry/aria-nova/ui/button.tsx": "registry/aria-nova/ui/button.tsx"
         }
       },
       "element": {
-        "slot": "components.link",
+        "slot": "components.button",
         "reason": "Realises director:identity.visual.style: stock shadcn-aria/button@4.23.0, adopted unmodified."
       }
     }

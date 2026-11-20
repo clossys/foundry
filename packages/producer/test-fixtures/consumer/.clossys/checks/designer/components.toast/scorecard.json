@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/components.toast",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "toast-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "toast-v1.json",
+      "sha256": "c9b05f955099e10856a2f56671b5ad8876ea1689c27609279a7a11443bd25496",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "20d1406ae2c7dbcf227f1487359f2eed35df1c0b8c4f444a9f030458d5575150"
+    }
+  ]
+}

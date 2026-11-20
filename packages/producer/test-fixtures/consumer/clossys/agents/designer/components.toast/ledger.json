@@ -99,6 +99,49 @@
           "sha256": "5d7afd5914421eeb768b0b8175507c1aa0cf43e893344fcb98dd10b6b5064176"
         }
       ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "basis": "agent",
+      "rung": "L1",
+      "seed": "shadcn-aria/sonner",
+      "ladder": {
+        "rung": "L1",
+        "seed": "shadcn-aria/sonner"
+      },
+      "name": "toast-v1.json",
+      "sha256": "c9b05f955099e10856a2f56671b5ad8876ea1689c27609279a7a11443bd25496"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "toast-v1.json",
+      "sha256": "c9b05f955099e10856a2f56671b5ad8876ea1689c27609279a7a11443bd25496",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "cfae25a3a53a0c196758a024c1d310c26d1f1cc7be5d1c35a9c1af0f042c0d2f"
+        }
+      ]
     }
   ]
 }

@@ -8,10 +8,11 @@
  *
  * Every write goes through a verb with the guard on, and every submission climbs a real rung: create after the slot's
  * create verdict and the craft stages (brief, diverge, render, critique; R15.7), or adopt of a candidate the slot
- * held. The fixture pins only director/focus.segment.core, and every fixture Writer slot reads unpinned lexicon slots,
- * so the shared world first builds a Writer chain through the verbs: Director identity.brand.essence (a root, derived
- * from a finding) and identity.verbal.voice are created and pinned, and `clossys ia` places writer/page.u37c.meta
- * reading only those two. Each slot is first shown to hold no finding of a submit-guarded check, so a refusal here is
+ * held. The fixture is the seeded pinned world (scripts/seed-pinned-world.mjs, made through the verbs and kept
+ * byte-current by records/pinned-world.test.ts): it pins Director identity.brand.essence and identity.verbal.voice, and
+ * the shared world places writer/page.u37c.meta with `clossys ia`, reading only those two. The Director case is
+ * execution.roadmap.release, which the seeded world leaves unpinned and which reads the pinned
+ * focus.lifecycle.acquisition. Each slot is first shown to hold no finding of a submit-guarded check, so a refusal here is
  * about the submitted file. The guard reads the candidate through the one candidate reader (records/slot-current.ts
  * readCandidateText): a source.ref the header carries is judged (R07.1, R06.4) as an int2 file's is, and an adopt is
  * verbatim when its content digest (the view and the header without its per-file provenance) equals the seed's, a
@@ -61,7 +62,7 @@ const RETIRE_ID = "20261117T1200Z-retire-meta-v1";
 const MODEL = "fixture-model";
 const PLANNER = "planner:next-submit-header";
 const roots: string[] = [];
-afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
+afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); }, 120_000);
 
 const stepOf = (agent: string) => STEPS.find(step => step.id === `${agent}.candidates`)!;
 const skillOf = (agent: string) => stepOf(agent).command.skill!;
@@ -86,15 +87,9 @@ ${keys.map(([key, value]) => `- ${key}: ${value}`).join("\n")}
 - ${watch}
 `;
 
-const ESSENCE = brief("identity.brand.essence", "finding:fixture-essence-draft",
-  [["Essence", "DRAFT fixture essence, your site handled between jobs"], ["Meaning", "DRAFT fixture meaning, owners publish changes in minutes"], ["Not", "DRAFT fixture boundary, never a full-service agency"]],
-  "The fixture finding names owners who edit their site alone between client work", "If fixture edit time rises above 10 minutes in any quarter, then revisit this essence brief.");
-const VOICE = brief("identity.verbal.voice", "director:identity.brand.essence",
-  [["Sound", "DRAFT fixture sound, calm and direct"], ["Do", "DRAFT fixture habit, short sentences that name the next step"], ["Never", "DRAFT fixture boundary, hype or exclamation marks"]],
-  "The essence promises a site handled between jobs, so the voice stays brief", "If fixture wording questions rise above 5 in any month, then revisit this voice brief.");
-const CHANNEL = brief("focus.reach.channel", "director:focus.segment.core",
-  [["Primary", "DRAFT fixture channel, referrals from current clients"], ["Secondary", "DRAFT fixture channel, local trade directories"], ["Not", "DRAFT fixture boundary, never paid social campaigns"]],
-  "The core segment edits its own site alone and hears of tools from peers", "If fixture referrals fall below 2 in any quarter, then revisit this channel brief.");
+const RELEASE = brief("execution.roadmap.release", "director:focus.lifecycle.acquisition",
+  [["Release", "DRAFT fixture release, the first public site"], ["Target date", "DRAFT fixture date, 2026-12-01"], ["Scope", "DRAFT fixture scope, the home page and the contact page"], ["Not in scope", "DRAFT fixture boundary, the pricing page waits"]],
+  "The acquisition brief starts with referrals, so the first release ships the pages a referral lands on", "If fixture referral visits fall below 20 in any month, then revisit this release brief.");
 
 /** The Writer slot the shared world places (`clossys ia`): it reads only the two Director slots the world pins. */
 const META = "page.u37c.meta";
@@ -145,8 +140,8 @@ const pinTarget = (c: Case) => `${c.agent}/${c.slot}${c.pin ?? ""}`;
 
 const CASES: readonly Case[] = [
   {
-    agent: "director", slot: "focus.reach.channel", bytes: CHANNEL, gap: "brief.keys", standard: "brief.list", taste: "decisive", name: "channel-v1.md",
-    source: { kind: "derived", ref: ["director:focus.segment.core"] },
+    agent: "director", slot: "execution.roadmap.release", bytes: RELEASE, gap: "brief.keys", standard: "brief.list", taste: "decisive", name: "release-v1.md",
+    source: { kind: "derived", ref: ["director:focus.lifecycle.acquisition"] },
   },
   { agent: "writer", slot: META, bytes: COPY, gap: "copy.entries", standard: "string", taste: "voice-fit", name: "meta-v1.md", source: COPY_SOURCE, pin: "#meta" },
 ];
@@ -214,8 +209,9 @@ beforeAll(async () => {
   cpSync(FIXTURE, base, { recursive: true });
   // The workspace root lockfile `clossys reissue` reads for exact dependencies (a Writer candidate declares none).
   writeFileSync(join(base, "package-lock.json"), jsonBytes({ name: "fixture", lockfileVersion: 3, packages: { "": { name: "fixture" } } }));
-  await createAndPin(base, { agent: "director", slot: "identity.brand.essence", bytes: ESSENCE, gap: "brief.keys", standard: "brief.statement", taste: "decisive", name: "essence-v1.md", source: undefined });
-  await createAndPin(base, { agent: "director", slot: "identity.verbal.voice", bytes: VOICE, gap: "brief.keys", standard: "brief.profile", taste: "decisive", name: "voice-v1.md", source: undefined });
+  // The seeded world pins the two Director slots the Writer slot reads, and leaves the Director case unpinned.
+  for (const slot of ["identity.brand.essence", "identity.verbal.voice"]) expect(existsSync(join(base, "clossys/agents/director", slot, "pin.json")), `the seeded fixture pins director/${slot}`).toBe(true);
+  expect(existsSync(join(base, "clossys/agents/director", CASES[0]!.slot, "pin.json")), `the seeded fixture leaves director/${CASES[0]!.slot} unpinned`).toBe(false);
   const deck = JSON.parse(readFileSync(join(base, "clossys/agents/writer/page.deck.meta/slot.json"), "utf8")) as { contract: Record<string, unknown> };
   const { unit: _unit, records: _records, ...contract } = deck.contract;
   await verb(base, "ia", `writer/${META}`, "--under", "copy.page-metadata/slides", "--kind", "strings", "--standard", "string",

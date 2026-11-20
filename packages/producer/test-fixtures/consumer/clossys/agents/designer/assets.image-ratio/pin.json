@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/assets.image-ratio/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/assets.image-ratio",
+      "sha256": "5be93f719efeadce35ec27da6a0345ea840977618911ce95fa8647494f566036"
+    }
+  ],
+  "candidate": "image-ratio-v1.json",
+  "sha256": "f4edc5f22f0b82ba748e5f1d749ba1f811c63d634745399268261797655a9592",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

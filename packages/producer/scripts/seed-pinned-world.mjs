@@ -16,6 +16,7 @@
  * leaves them (and their downstream) unpinned and prints them. Any other refusal stops the run (exit 1).
  */
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
@@ -409,6 +410,40 @@ function consumerAsset(id, doc, standard) {
   return { ext: "json", body: `${JSON.stringify(item, null, 2)}\n`, rung: "L4", reason: DESIGNER_CREATE };
 }
 
+/**
+ * The consumer-supplied component slots (provenance.json consumerAssets) whose contract declares no fixture: the
+ * consumer's own placeholder, and the minimal contract fixture (clossys.element-preview/1) that mounts it. The icon
+ * set is the lucide-react package, re-exported as an npm candidate (one named re-export).
+ */
+const CONSUMER_COMPONENTS = {
+  "components.icon": { file: "ui/icon.tsx", export: "Icon", source: () => npmSource("lucide-react"), content: 'export { ArrowRight as Icon } from "lucide-react";\n' },
+};
+/** An npm package source: `npm/<name>@<installed version>`, hashed over the installed package.json, with its licence. */
+function npmSource(name) {
+  const version = lockedVersion(name);
+  const manifestFile = join(REPO, "node_modules", name, "package.json");
+  const hash = `sha256:${createHash("sha256").update(readFileSync(manifestFile)).digest("hex")}`;
+  return { kind: "npm", ref: [`npm/${name}@${version}`], hash, license: JSON.parse(readFileSync(manifestFile, "utf8")).license };
+}
+/** The contract a consumer-supplied component slot takes: its own, with the minimal fixture that mounts the placeholder. */
+function consumerComponentContract(id, doc) {
+  const made = CONSUMER_COMPONENTS[id];
+  if (!made || doc.contract?.fixture || !consumerOwned(id)) return undefined;
+  return { ...doc.contract, fixture: { schema: "clossys.element-preview/1", fixtures: { file: made.file, export: made.export, props: {} } } };
+}
+/** A consumer-supplied component candidate: the consumer's own placeholder file, an original source. */
+function consumerComponent(root, id, doc, standard) {
+  const made = CONSUMER_COMPONENTS[id];
+  const files = [{ path: made.file, type: "registry:ui", content: made.content }];
+  const item = {
+    name: id.split(".").at(-1), type: "registry:ui",
+    dependencies: declare(root, `designer/${id}`, files),
+    files,
+    meta: { slot: id, source: made.source(), element: { slot: id, reason: designerReason(standard, doc, "the fixture consumer's own plain placeholder") } },
+  };
+  return { ext: "json", body: `${JSON.stringify(item, null, 2)}\n`, rung: "L4", reason: DESIGNER_CREATE };
+}
+
 // ---------------------------------------------------------------- consumer setup
 
 const REPO = resolve(PRODUCER, "..", "..");
@@ -488,6 +523,7 @@ function candidateOf(root, consumer, agent, id, doc, standard) {
     if (doc.standard.startsWith("token.")) return token(id, doc, standard);
     if (doc.standard === "asset.glyph") return glyph(id, doc, standard);
     if (doc.standard === "asset.logo-mark" || doc.standard === "asset.media-rule") return consumerAsset(id, doc, standard);
+    if (doc.standard === "component" && CONSUMER_COMPONENTS[id] && consumerOwned(id)) return consumerComponent(root, id, doc, standard);
     if (doc.standard === "component" && doc.contract?.fixture) return component(root, consumer, id, doc, standard);
   }
   if (agent === "director") return { ext: "md", body: brief(consumer, id, doc), rung: "create", reason: "fixture world: the brief standards are create-only and no package default fits a synthetic consumer" };
@@ -509,14 +545,12 @@ function candidateOf(root, consumer, agent, id, doc, standard) {
  * world is pinned everywhere else. A slot leaves this list when its standard or contract admits a candidate.
  */
 export const BLOCKED = {
-  "designer/components.dialog": "R05.1 [import] and R07.1: its normalized reference imports @/components/ui/button, which resolves to components.link (link ships the same stock button file as components.button) and slot.json uses does not list link",
+  "designer/components.dialog": "R05.1 [import] and R07.1: its normalized reference imports @/components/ui/button (components.button), which its slot.json uses does not list",
+  "designer/components.link": "R06.6 identical content: its contract fixture names the stock button file components.button ships; retire --slot is refused while 40 slot.json files list it in uses",
+  "designer/components.logo": "component source.ref: the standard admits registry, composition and npm sources only; the consumer's own placeholder is an original, and a composition must name its parts (source.schema parts)",
+  "designer/components.semantic-content": "component source.ref: the standard admits registry, composition and npm sources only; the consumer's own placeholder is an original, and the contract reads no slot a composition could name as a part",
   "designer/components.media-player": "ref-verbatim REF-FLAVOR: the contract fixture's reference diceui/media-player is new-york, the consumer flavor is aria-nova",
   "designer/components.status-mark": "ref-verbatim REF-FLAVOR: the contract fixture's reference diceui/status is new-york, the consumer flavor is aria-nova",
-  "designer/components.icon": "R05.1 [no-fixture]: no contract fixture (contract-fixture-gaps: no adopted reference); an npm re-export fails R03.2 (adopt rung needs a registry source) and R03.4",
-  "designer/components.logo": "R05.1 [no-fixture]: no contract fixture (contract-fixture-gaps: no adopted reference)",
-  "designer/components.semantic-content": "R05.1 [no-fixture]: no contract fixture (contract-fixture-gaps: no adopted reference); R03.2 admits an original source only in consumer-asset slots",
-  "designer/assets.image-ratio": "asset.media-rule: R03.2 admits an original source only in consumer-asset slots, and source.ref (registries: []) admits no registry reference",
-  "designer/assets.pattern": "asset.media-rule: R03.2 admits an original source only in consumer-asset slots, and source.ref (registries: []) admits no registry reference",
 };
 
 /** The closure slots the run leaves unpinned: BLOCKED and everything that reads one, with the blocking slot. */
@@ -538,7 +572,7 @@ const TIER = "mid";
 async function seedSlot(w, ref) {
   const [agent, id] = ref.split("/");
   let doc = readSlot(w.consumer, agent, id);
-  const contract = agent === "writer" ? lexiconContract(id, doc) : undefined;
+  const contract = agent === "writer" ? lexiconContract(id, doc) : agent === "designer" ? consumerComponentContract(id, doc) : undefined;
   const inputs = agent === "writer" ? copyInputs(doc) : undefined;
   if (contract || inputs) {
     await w.run(ref, "ia", ref, "--contract", w.file(`${id}.contract.json`, contract ?? doc.contract), ...(inputs ? ["--inputs", inputs.join(",")] : []), "--at", AT);

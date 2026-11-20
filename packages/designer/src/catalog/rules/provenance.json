@@ -7,12 +7,16 @@
     "why": "Brand marks and media the consumer owns; no registry ships them.",
     "slots": [
       "components.logo",
+      "components.icon",
+      "components.semantic-content",
       "assets.lockup",
       "assets.mark",
       "assets.favicon",
       "assets.app-icon",
       "assets.image",
-      "assets.video"
+      "assets.video",
+      "assets.image-ratio",
+      "assets.pattern"
     ]
   },
   "interactiveBackdrops": {

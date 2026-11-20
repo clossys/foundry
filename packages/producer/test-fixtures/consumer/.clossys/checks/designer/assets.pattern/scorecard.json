@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.pattern",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "pattern-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "pattern-v1.json",
+      "sha256": "c706a646d8ebf9cb95da5afc56f7a7b863c68ba4eca09611b4bfd4742601ada4",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "f05b88e175f7e2e7c1a562da034eea3d5942908e75e5b182508bceeb1511e6fa"
+    }
+  ]
+}

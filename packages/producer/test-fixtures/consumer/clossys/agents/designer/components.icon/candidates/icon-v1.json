@@ -1,0 +1,50 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/components.icon/icon-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/components.icon",
+    "createdBy": {
+      "actor": "agent",
+      "agent": "designer",
+      "skill": "packages/designer/actions/designer.candidates/skill.md",
+      "skillSha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930",
+      "model": "fixture-model",
+      "tier": "high"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "npm",
+      "ref": [
+        "npm/lucide-react@1.65.0"
+      ],
+      "hash": "sha256:85fc29ebdf4c182e5957e909ef259e01586765b818e5351955d1390881969768",
+      "license": "ISC"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "icon",
+    "type": "registry:ui",
+    "dependencies": [
+      "lucide-react@1.65.0"
+    ],
+    "files": [
+      {
+        "path": "ui/icon.tsx",
+        "type": "registry:ui",
+        "content": "export { ArrowRight as Icon } from \"lucide-react\";\n"
+      }
+    ],
+    "meta": {
+      "slot": "components.icon",
+      "element": {
+        "slot": "components.icon",
+        "reason": "Realises director:identity.visual.style: the fixture consumer's own plain placeholder."
+      }
+    }
+  }
+}

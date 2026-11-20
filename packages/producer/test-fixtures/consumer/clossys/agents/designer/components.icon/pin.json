@@ -1,6 +1,6 @@
 {
   "schema": "clossys.pin/2",
-  "id": "designer/components.link/pin",
+  "id": "designer/components.icon/pin",
   "agent": "designer",
   "kind": "pin",
   "status": "confirm",
@@ -15,12 +15,12 @@
     {
       "to": "producer/checks.scorecard",
       "rel": "cites",
-      "record": "designer/components.link",
-      "sha256": "482f51dc288ca68e83171b7e87e8872bea8f081983255b522dd971cb00f7d261"
+      "record": "designer/components.icon",
+      "sha256": "8367bda8a741e1495d56a2a2c7ac8673a696c96fb7c9603c25cd2d9dfee2c870"
     }
   ],
-  "candidate": "link-v1.json",
-  "sha256": "cf3be60b4b1cdc5eba00b8184441bedc1b0ac9568713c1b9bab87f21b62b4cd2",
+  "candidate": "icon-v1.json",
+  "sha256": "1afd1d99e34113f81b53f7fd95af55cad825f562d51a88ef13a64532e96d3419",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"
