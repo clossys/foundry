@@ -39,23 +39,24 @@ describe("Studio missing selection defaults", () => {
   }, 60_000); // two full default-fill prepares: 23.3 s measured under load 2026-11-06
 });
 
-it("ships all14 native specimen bundles with prepared receipts and preserves explicit surface selections", async () => {
+it("plans the stock shadcn@aria fill for the overlays whose trigger mount props are fixture-only", async () => {
+  const { leaves } = await defaultPrepare();
+  // K1 reads contract.props only; children/defaultOpen are contract.fixtureProps, so the stock content parts stay eligible.
+  for (const id of ["components.dialog", "components.popover", "components.tooltip"]) expect(leaves.find(row => row.leaf === id), id).toMatchObject({ source: "fallback", fill: `shadcn@aria/${id}` });
+}, 30_000);
+
+it("seats no retired native specimen", async () => {
+  // Designer's retired-leaf list is the oracle: every native specimen section it retires is no longer offered.
+  const retired = designerRetired(resolveAgent("designer").packageRoot);
   const prepared = await defaultPrepare();
-  expect(prepared.surfaceBundles).toHaveLength(14);
-  expect(prepared.input.catalog.surfaces!.materializations).toHaveLength(14);
-  const native = prepared.input.library.surfaces!.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot.startsWith("sections.specimen-"));
-  expect(native).toHaveLength(14);
-  for (const bundle of prepared.surfaceBundles) {
-    const selected = native.find(doc => doc.$extensions["com.clossys.fill"].slot === bundle.slot)!;
-    expect(Object.values(selected.sections!)[0]!.origin).toEqual(Object.values(bundle.document.sections!)[0]!.origin);
-    for (const file of bundle.files) expect(prepared.input.library.surfaces!.files).toContainEqual(file);
-  }
-  const before = libraryHash(prepared.input.library);
-  const explicit = await prepareStudioSelection({ catalog: prepared.input.catalog, library: prepared.input.library, activeIds: native.map(doc => doc.$extensions["com.clossys.fill"].slot), componentOptions: prepared.input.componentOptions });
-  expect(libraryHash(explicit.input.library)).toBe(before);
-  expect(explicit.surfaceBundles).toHaveLength(0);
-  expect(explicit.input.catalog.surfaces).toBe(prepared.input.catalog.surfaces);
-  for (const doc of native) expect(explicit.leaves.find(row => row.leaf === doc.$extensions["com.clossys.fill"].slot)?.source).toBe("consumer");
+  const specimenSlots = prepared.input.catalog.surfaces!.slots.map(slot => slot.id).filter(id => id.startsWith("sections.specimen-"));
+  const retiredSpecimens = specimenSlots.filter(id => retired.has(id));
+  expect(retiredSpecimens.length).toBeGreaterThan(0);
+  const seated = (id: string) => prepared.leaves.some(row => row.leaf === id) || prepared.input.library.surfaces!.fills.some(doc => doc.$extensions["com.clossys.fill"].slot === id);
+  expect(retiredSpecimens.filter(seated)).toEqual([]);
+  expect(prepared.surfaceBundles.map(bundle => bundle.slot).filter(slot => retired.has(slot))).toEqual([]);
+  // Live specimens (none retired) would still be seated; today every native specimen is retired.
+  expect(specimenSlots.filter(id => !retired.has(id)).filter(id => !seated(id))).toEqual([]);
 }, 30_000);
 
 // The no-argument default prepare is deterministic and its result is only read, so the three tests share one run.

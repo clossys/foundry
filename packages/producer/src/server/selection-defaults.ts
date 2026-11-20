@@ -3,6 +3,8 @@ import type { SurfaceDependency } from "@clossys/designer/catalog";
 import { applyLibraryChange, emittedTokenProperties, libraryHash, loadCatalog, loadComponentCompositionRules, loadComponentRegistry, planComponentDefaults, planSurfaceDefaults, resolve, DEFAULT_COMPONENT_PREFERENCE, DEFAULT_COMPONENT_PICKS, DEFAULT_COMPONENT_FALLBACK, type CompositeCatalogData, type CompositeEngineInput, type CompositeLibraryData, type LibraryData, type SurfaceSourceBundle } from "@clossys/designer/catalog";
 import { installedHeadlessLibrary, loadCatalogBundles, prepareCatalogSurfaceDefaults } from "@clossys/designer/catalog-bundles";
 import { agentModule } from "./cells.js";
+import { resolveAgent } from "../agents.js";
+import { designerRetired } from "../records/slot-model/foundry-ia.js";
 import type { StudioDesignerLibrary } from "./theme.js";
 import type { StudioSelectionLeaf } from "./selection.js";
 import { DESIGNER_SPECIMEN_REQUIRED_LEAVES } from "../specimen/designer-specimen-requirements.js";
@@ -60,7 +62,9 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sou
   const candidates = new Map<string, any>([...catalog.components.fills, ...surfaceCatalog.fills].map(fill => [meta(fill).id, fill]));
   const defaults = new Map<string, any>([...componentPlan.rows, ...surfacePlan.rows].flatMap(row => row.fill && candidates.has(row.fill) ? [[row.slot, candidates.get(row.fill)] as const] : []));
   // Native surface slots are the source of eligible specimen seats, not a second leaf list.
-  const specimenIds = surfaceCatalog.slots.flatMap(slot => /^sections\.specimen-[a-z][a-z0-9-]*$/.test(slot.id) ? [slot.id] : []);
+  // A retired specimen (Designer's retired-leaf list) is no longer offered, so it is never seated.
+  const retired = designerRetired(resolveAgent("designer").packageRoot);
+  const specimenIds = surfaceCatalog.slots.flatMap(slot => /^sections\.specimen-[a-z][a-z0-9-]*$/.test(slot.id) && !retired.has(slot.id) ? [slot.id] : []);
   const needed = new Set([...STUDIO_REQUIRED_LEAVES, ...await studioModuleRequirements(), ...specimenIds]);
   const visit = (leaf: string) => {
     const fill = own.get(leaf) ?? defaults.get(leaf); if (!fill) return;

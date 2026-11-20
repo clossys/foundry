@@ -1,11 +1,14 @@
 /** @vitest-environment node */
 import { beforeAll, expect, it } from "vitest";
 import { resolve } from "../catalog-core/api.js";
-import { emitSurfaces } from "../catalog-core/surface-emit.js";
+import { surfaceEntryOf } from "../catalog-core/surface-library.js";
+import { retiredLeafIds } from "../catalog-core/retired-leaves.js";
+import retiredLeaves from "../catalog/retired.json" with { type: "json" };
+import { SPECIMEN_SECTION_EXPORTS } from "../importers/specimen-sections.js";
 import { existsSync } from "node:fs";
 import { dirname, relative, resolve as pathResolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { INSTALLED_NATIVE_SPECIMEN_EVIDENCE, checkNativeSpecimenEvidence, installedNativeSpecimenEvidence, replayNativeSpecimenEvidence, specimenSurfaceEnvironment, type NativeSpecimenEvidence } from "./qualify-specimen-surfaces.js";
+import { INSTALLED_NATIVE_SPECIMEN_EVIDENCE, SEATED_NATIVE_SPECIMENS, checkNativeSpecimenEvidence, installedNativeSpecimenEvidence, replayNativeSpecimenEvidence, specimenSurfaceEnvironment, type NativeSpecimenEvidence } from "./qualify-specimen-surfaces.js";
 import type { CompositeEngineInput } from "../catalog-core/types.js";
 
 let input: CompositeEngineInput;
@@ -17,6 +20,7 @@ beforeAll(async () => {
 }, 30_000);
 const s8 = (engine: CompositeEngineInput) => resolve(engine).surfaces!.check.findings.filter(row => row.code === "S8" && row.severity === "error");
 const evidence = () => structuredClone(data);
+const retired = retiredLeafIds(retiredLeaves as unknown as Parameters<typeof retiredLeafIds>[0]);
 const packageRoot = pathResolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 it("replays the evidence the installed build carries, never a checked-in source copy", () => {
@@ -25,41 +29,32 @@ it("replays the evidence the installed build carries, never a checked-in source 
   expect(data.version).toBe(1);
 });
 
-it("replays all14 real compiler certificates while retaining the canonical source's separate S5 refusal", () => {
-  expect(input.surfaceOptions!.measurements).toHaveLength(14);
+it("seats, certifies and replays no retired native specimen", () => {
+  const live = SPECIMEN_SECTION_EXPORTS.map(row => row.id).filter(id => !retired.has(id)).sort();
+  expect(SPECIMEN_SECTION_EXPORTS.some(row => retired.has(row.id))).toBe(true);
+  expect([...SEATED_NATIVE_SPECIMENS]).toEqual(live);
+  expect(data.certificates.map(row => row.slot).sort()).toEqual(live);
+  expect(input.surfaceOptions!.measurements.filter(row => retired.has(row.slot))).toEqual([]);
   expect(input.surfaceOptions!.measurements.every(row => row.scope === "real" && row.command.exitCode === 0 && row.checks.types === "pass" && row.checks.closure === "pass")).toBe(true);
-  expect(s8(input)).toEqual([]);
-  const profile = resolve(input).surfaces!;
-  expect(profile.check.findings.some(row => row.code === "S5" && row.severity === "error")).toBe(true);
-  expect(() => emitSurfaces(profile, ["surface-index"])).toThrow("S8 source emission requires current complete evidence");
-});
-
-it.each(["missing", "stale", "incomplete"] as const)("unchanged S8 kills %s measurements and restored source remains complete", kind => {
-  const measurements = structuredClone(input.surfaceOptions!.measurements);
-  if (kind === "missing") measurements.shift();
-  if (kind === "stale") measurements[0]!.identity.descriptorHash = "sha256:" + "0".repeat(64);
-  if (kind === "incomplete") measurements[0]!.checks.types = "fail";
-  const mutated = { ...input, surfaceOptions: { ...input.surfaceOptions!, measurements } };
-  expect(s8(mutated).length).toBeGreaterThan(0);
-  expect(() => emitSurfaces(resolve(mutated).surfaces!, ["surface-index"])).toThrow("S8 source emission requires current complete evidence");
+  expect(Object.values(resolve(input).surfaces!.fills).filter(row => retired.has(surfaceEntryOf(row.document).slot))).toEqual([]);
   expect(s8(input)).toEqual([]);
 });
 
-it.each(["missing", "compiler", "command", "source", "incomplete"] as const)("source-built certificate %s mutant is refused", async kind => {
+it.each(["retired", "compiler", "command"] as const)("an evidence %s mutant beyond the seated inventory is refused", async kind => {
   const changed = evidence();
-  if (kind === "missing") changed.certificates = changed.certificates.slice(1);
-  if (kind === "compiler") changed.compiler.sourceHash = "sha256:" + "0".repeat(64);
-  if (kind === "command") changed.command.stdoutSha256 = "0".repeat(64);
-  if (kind === "source") changed.certificates[0]!.source.files[changed.certificates[0]!.source.entry] += "\n";
-  if (kind === "incomplete") changed.certificates[0]!.checks.closure = "fail";
+  const certificate = { slot: [...retired].find(id => id.startsWith("sections.specimen-"))!, source: { entry: "x.tsx", files: {}, dependencies: {} }, compiled: { entry: "x.js", files: {}, dependencies: {} }, checks: { types: "pass", closure: "pass" } } as unknown as NativeSpecimenEvidence["certificates"][number];
+  if (kind === "retired") changed.certificates = [...changed.certificates, certificate];
+  if (kind === "compiler" && !changed.certificates.length) changed.compiler = {} as NonNullable<NativeSpecimenEvidence["compiler"]>;
+  if (kind === "compiler" && changed.certificates.length) changed.compiler = { ...changed.compiler!, sourceHash: `sha256:${"0".repeat(64)}` as const };
+  if (kind === "command" && !changed.certificates.length) changed.command = {} as NonNullable<NativeSpecimenEvidence["command"]>;
+  if (kind === "command" && changed.certificates.length) changed.command = { ...changed.command!, stdoutSha256: "0".repeat(64) };
   await expect(checkNativeSpecimenEvidence(changed)).rejects.toThrow("Native specimen source evidence unavailable");
   await expect(checkNativeSpecimenEvidence(evidence())).resolves.toBeUndefined();
 });
 
-it("refuses a certificate's dependency artifact mismatch against the actual current selected closure", async () => {
-  const changed = evidence(), source = changed.certificates[0]!.source;
-  Object.values(source.dependencies)[0]!.artifact = "sha256:" + "0".repeat(64);
-  await expect(replayNativeSpecimenEvidence(input, changed)).rejects.toThrow("exact compiler source/dependency equivalence differs");
+it("replays only seated specimens: the current selection's measurements pass through unchanged", async () => {
+  const replayed = await replayNativeSpecimenEvidence(input, evidence());
+  expect(replayed.surfaceOptions!.measurements).toEqual(input.surfaceOptions!.measurements);
 });
 
 it("independently refuses an installed package artifact inventory mutant", async () => {
