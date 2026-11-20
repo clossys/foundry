@@ -35,6 +35,8 @@
     "skill",
     "pipeline",
     "loops",
+    "scripts/check-generated-derived.mjs",
+    "scripts/consumer-root.mjs",
     "!dist/**/__fixtures__/**",
     "!dist/**/__tests__/**",
     "!dist/**/__mocks__/**",

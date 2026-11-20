@@ -39,7 +39,7 @@
           "tier": "mid",
           "skill": "packages/writer/actions/writer.brief/skill.md"
         },
-        "cli": "clossys brief <ref> --tighten <path> <op> <value> --why <why>",
+        "cli": "clossys brief <ref> --tighten --path <path> --op <op> --value <value> --why <why> --by <by>",
         "reads": [
           "<slot>/slot.json",
           "<inputs>",

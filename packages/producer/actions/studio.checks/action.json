@@ -6,6 +6,10 @@
   "stage": "publish.check",
   "summary": "Studio render, routing, assembly and propagation checks.",
   "run": "clossys pipeline trace studio.checks -- npm run studio:check",
+  "chain": {
+    "skip": "Foundry's own Studio checks: they drive the Studio, which ships in no package; they run only from a Foundry checkout",
+    "onDemand": "--studio"
+  },
   "inputs": [
     {
       "glob": "pkg:studio/generated/studio-map.json",
