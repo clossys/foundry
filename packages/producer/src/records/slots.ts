@@ -22,9 +22,8 @@ import {
   type IaDoc, type ModelAgent, type NotNeeded, type PinDoc, type SlotModelIssue, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
 import { isAbsent, parseJson } from "../errors.js";
-import { candidateHeaderOf, candidateIssues, isCurrentSlot, placedAt, readSlotValue } from "./slot-current.js";
+import { candidateHeaderOf, candidateIssues, isCurrentSlot, placedAt, readCandidateText, readSlotValue } from "./slot-current.js";
 import { isConvertedStore, isPin1, isSlot1, oldFormatRefusal } from "./store-format.js";
-import { candidateCodec } from "./candidate-codec.js";
 /** A candidate as its kind rules read it (a clossys.candidate/1 file without its header, with the header source): Designer checks parse this, never the raw bytes. */
 export { candidateView, viewIssues, viewPlacedAt } from "./slot-current.js";
 import { notNeededIssue } from "./slot-model/validate.js";
@@ -530,39 +529,36 @@ export function candidateStamp(consumer: string, agent: SlotAgent, id: string, n
 }
 
 /**
- * Read one candidate (U13 r4, the one candidate codec): `bytes` is its view, the candidate without its
- * clossys.candidate/1 header (the header's source where the int2 rules read it; a Producer seat as its content);
- * `raw` is the file and `sha256` the file's. Bytes with no header are their own view. Readers that render, publish
+ * Read one candidate (U13 r4, the one candidate codec; U37c, the one candidate reader): `bytes` is its view as
+ * records/slot-current.ts readCandidateText reads it, the candidate without its clossys.candidate/1 header (the
+ * header's source where the int2 rules read it; a Producer seat as its content); `raw` is the file and `sha256` the
+ * file's. Bytes with no header, and the candidates of a loop, queue, ledger or clossys.slot/1 slot, are their own view. Readers that render, publish
  * or derive from a candidate parse `bytes`, so the header never reaches a page; the slot's candidate rules
  * (`slotCandidateIssues`), byte rewrites and compile-lock inputs take `raw`.
  */
 export function readCandidate(consumer: string, agent: ModelAgent, id: string, name: string): CandidateView {
   return withSlotReadScope(() => {
     if (!CANDIDATE_NAME.test(name)) throw new Error(`invalid candidate name ${name}`);
-    const path = join(candidatesDir(locate(consumer, agent, id).dir), name);
+    const dir = locate(consumer, agent, id).dir;
+    const path = join(candidatesDir(dir), name);
     const bytes = readBytes(path);
-    return candidateViewOf(agent, id, { name, bytes, sha256: fsTextSha(path, bytes) });
+    // The one candidate reader (records/slot-current.ts readCandidateText, U37c) reads it; the slot.json value decides
+    // the view, and a missing or unparsable one views nothing (its own readers report it). Any other read error is thrown.
+    let slotValue: unknown;
+    try { slotValue = readJson(slotFile(dir)); } catch (error) { if (!isAbsent(error) && !(error instanceof SyntaxError)) throw error; slotValue = undefined; }
+    const text = readCandidateText(slotValue, agent, id, name, bytes);
+    return { name, bytes: text.view, sha256: fsTextSha(path, bytes), raw: bytes, contentDigest: text.contentDigest, ...(text.header ? { header: text.header } : {}) };
   });
-}
-
-/** The view of candidate bytes read from `<agent>/<id>` (see readCandidate). */
-function candidateViewOf(agent: ModelAgent, id: string, read: Candidate): CandidateView {
-  let header: Readonly<Record<string, unknown>> | undefined;
-  try { header = candidateHeaderOf(read.name, read.bytes); } catch { header = undefined; }
-  if (!header) return { ...read, raw: read.bytes };
-  // A Producer loop candidate is self-headered JSON its own reader takes whole (loop/files.ts); a seat is its content.
-  if (agent === "producer" && !id.startsWith("seat.")) return { ...read, raw: read.bytes, header };
-  let parsed: ReturnType<typeof candidateCodec.parse>;
-  try { parsed = candidateCodec.parse(read.name, read.bytes); } catch { return { ...read, raw: read.bytes, header }; }
-  return { name: read.name, bytes: agent === "producer" ? parsed.content : parsed.view, sha256: read.sha256, raw: read.bytes, header };
 }
 
 /** A candidate as a reader that renders, publishes or judges it reads it (U13 r4, the one candidate codec). */
 export interface CandidateView extends Candidate {
   /** The file bytes, header included: what the slot's candidate rules (`slotCandidateIssues`) judge. */
   readonly raw: string;
-  /** The clossys.candidate/1 header, when the file carries one. */
+  /** The clossys.candidate/1 header of a viewed candidate (records/slot-current.ts readCandidateText). */
   readonly header?: Readonly<Record<string, unknown>>;
+  /** The content identity of the candidate (records/slot-current.ts contentDigest): its view and non-provenance header fields. */
+  readonly contentDigest: string;
 }
 
 function readPinAt(dir: string): PinDoc | null {
@@ -818,6 +814,19 @@ function inputBlocker(entry: SlotEntry): BlockReason | undefined {
   } catch { return "invalid-slot"; }
   for (const candidate of candidates) if (candidateIssues(read, entry.agent, entry.id, candidate.name, candidate.bytes).length) return "invalid-candidate";
   return undefined;
+}
+
+/**
+ * Why the readers (`readiness`, and through it `clossys direct` and `clossys status`) do not take a slot's pin as an
+ * intact pin, or undefined when they do: a valid pin over the current bytes of a candidate its slot accepts. A slot
+ * not in its agent's IA is `missing`. The pin file existing is not enough (foundry-build-0048 U37: conform's
+ * upstream-pinned probe counts only a pin this reader accepts).
+ */
+export function pinBlocker(consumer: string, agent: SlotAgent, id: string): BlockReason | undefined {
+  return withSlotReadScope(() => {
+    const entry = readSlotEntry(consumer, agent, id);
+    return entry ? inputBlocker(entry) : "missing";
+  });
 }
 
 /** A slot is ready when it declares inputs and every input has an intact pin. */

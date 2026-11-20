@@ -15,7 +15,8 @@ import { runNextCli } from "./next.js";
 
 export const CRAFT_USAGE = "Usage: clossys craft brief|diverge|render|critique|refine <agent>/<slot> --model <id> --tier low|mid|high --skill <path> [--file <json>] [--recipe <id>] [--root <dir>] [--json]\n"
   + "  brief assembles the slot's pinned inputs, contract and standard (requirements, taste anchors); refused with a fix when one is missing.\n"
-  + "  diverge takes 3-4 directions whose values differ pairwise on every axis (the brief's recipe axes); stages run in order.\n";
+  + "  diverge takes 3-4 directions whose values differ pairwise on every axis (the brief's recipe axes); stages run in order.\n"
+  + "  Every stage is refused under a plumb recipe (R15.7): its plumb action computes the candidate.\n";
 
 export async function runCraftCli(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS): Promise<CliResult> {
   const [stage, ...rest] = argv;

@@ -22,6 +22,9 @@ function publications(root: string): Record<string, { release?: unknown }> | und
   } catch { return undefined; }
 }
 
+/** The publication ids `publisher/ia.json` lists under `publications` (none when the file or the map is missing). */
+export const listedPublications = (root: string): string[] => Object.keys(publications(root) ?? {}).sort();
+
 /** The release slot id of a publication: the ia.json `release` entry, else `release.<pub>`. */
 export function releaseSlotId(root: string, publication: string): string {
   const named = publications(root)?.[publication]?.release;

@@ -26,6 +26,15 @@ export const ISO = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-
 
 /** packages/producer/ (src/records/ and dist/records/ both sit two levels below it). */
 const PRODUCER_PACKAGE = fileURLToPath(new URL("../..", import.meta.url));
+
+/**
+ * Candidate bytes refused as given (foundry-build-0048 U37c r2): the candidate serializer (`serializeCandidate`), the
+ * candidate codec (candidate-codec.ts `recutCandidateBytes`) or the submit serializer (slot-write.ts `submittedBytes`)
+ * cannot write them as a candidate file. It is a plain Error (its name stays "Error", so every message reads as
+ * before); a caller that only probes bytes, as `clossys next --submit`'s identity check does, treats this as the
+ * expected refusal and lets every other error (a fault, not a refusal) propagate.
+ */
+export class CandidateRefusal extends Error {}
 const schemaCache = new Map<string, JsonSchema>();
 
 /** A JSON Schema shipped in packages/producer/schemas/ (`candidate`, `pin`, `pin-map`, ...). */
@@ -160,18 +169,18 @@ export function buildCandidateHeader(input: NewCandidateHeader): CandidateHeader
  */
 export function serializeCandidate(name: CandidateName, header: CandidateHeader, content: unknown, front: Readonly<Record<string, unknown>> = {}): string {
   const parts = parseCandidateName(name);
-  if (!parts) throw new Error(`not a candidate file name: ${name}`);
-  if (parts.ext !== "md" && Object.keys(front).length) throw new Error(`${name}: only a Markdown candidate has front matter fields`);
+  if (!parts) throw new CandidateRefusal(`not a candidate file name: ${name}`);
+  if (parts.ext !== "md" && Object.keys(front).length) throw new CandidateRefusal(`${name}: only a Markdown candidate has front matter fields`);
   if (parts.ext === "json") return `${JSON.stringify({ clossys: header, content }, null, 2)}\n`;
-  if (typeof content !== "string") throw new Error(`${name}: ${parts.ext} content must be text`);
+  if (typeof content !== "string") throw new CandidateRefusal(`${name}: ${parts.ext} content must be text`);
   if (parts.ext === "md") {
-    if (Object.hasOwn(front, "clossys")) throw new Error(`${name}: a front matter field cannot be named clossys`);
+    if (Object.hasOwn(front, "clossys")) throw new CandidateRefusal(`${name}: a front matter field cannot be named clossys`);
     const lines = Object.entries(front).filter(([, value]) => value !== undefined).map(([key, value]) => `\n${key}: ${JSON.stringify(value)}`).join("");
     return `---\nclossys: ${JSON.stringify(header)}${lines}\n---\n${content}`;
   }
-  if (/<metadata[\s>]/.test(content)) throw new Error(`${name}: the SVG already has a <metadata> element`);
+  if (/<metadata[\s>]/.test(content)) throw new CandidateRefusal(`${name}: the SVG already has a <metadata> element`);
   const open = /<svg\b[^>]*>/.exec(content);
-  if (!open) throw new Error(`${name}: no <svg> element`);
+  if (!open) throw new CandidateRefusal(`${name}: no <svg> element`);
   const at = open.index + open[0].length;
   return `${content.slice(0, at)}\n  <metadata>${JSON.stringify({ clossys: header })}</metadata>${content.slice(at)}`;
 }

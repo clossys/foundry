@@ -1,6 +1,6 @@
 /** IA-first Studio gallery data. Empty slots never depend on a candidate or a route. */
 import { hasAgentModel, hasPinFile as hasPinRecord, listSlots, readCandidate, readIa, readSlot, readSlotEntry, slotCandidateIssues, viewPlacedAt, type SlotEntry } from '../records/slots.js';
-import { type IaDoc, type NotNeeded, parseFrontmatter, validateCandidate, type SlotAgent, type SlotKind, type SlotStateRejection } from '../records/slot-model/index.js';
+import { type IaDoc, type NotNeeded, parseFrontmatter, type SlotAgent, type SlotKind, type SlotStateRejection } from '../records/slot-model/index.js';
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
 import { iaLabel, slotLabel, slotLabels } from '../records/slot-labels.js';
 import { copyRef, type CopyText } from './copy-ref.js';
@@ -67,6 +67,7 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
     if (agent === 'director') return undefined;
     throw error;
   }
+  // Judged by its slot as stored (records/slots.ts slotCandidateIssues) and read through its view.
   if (slotCandidateIssues(consumer, agent, id, name, source.raw).length) return undefined;
   if (agent === 'director' && entry.pin?.candidate === name && source.sha256 !== entry.pin.sha256) return undefined;
   if (entry.pin?.candidate === name && source.sha256 !== entry.pin.sha256) throw new Error(`Candidate hash mismatch: ${id}`);

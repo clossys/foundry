@@ -1,6 +1,7 @@
 import { BLOCK_DISPLAY_TREE, blockPlacement } from "./display.js";
 import sectionHomes from "./maps/blocks-to-sections.json" with { type: "json" };
 import legalProseFill from "./fills/foundry/sections.legal-prose.json" with { type: "json" };
+import comparisonFill from "./fills/foundry/sections.comparison.json" with { type: "json" };
 import sectionSlots from "./slots/sections.json" with { type: "json" };
 import type {
   BlockContract,
@@ -26,12 +27,35 @@ if (legalProseMetadata.mode !== "implementation" || legalProseMetadata.slot !== 
   throw new Error("Legal prose requires its canonical section contract and own package implementation.");
 }
 
+const comparison = comparisonFill.sections.comparison;
+const libraryBoardSource = comparison.consumption.sourceFiles.find(file =>
+  file.path === "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx");
+if (comparison.slot !== "sections.comparison" || comparison.impl.export !== "Matrix" || !libraryBoardSource) {
+  throw new Error("The library board requires the comparison section's own Matrix implementation to consume it.");
+}
+
+/** The token and asset specimen renderers, one per canonical specimen section (retired with the Studio). */
+const SPECIMEN_SECTION_RENDERERS = [
+  ["sections.specimen-swatch", "SpecimenSwatch"],
+  ["sections.specimen-color-ramp", "SpecimenColorRamp"],
+  ["sections.specimen-type-ladder", "SpecimenTypeLadder"],
+  ["sections.specimen-spacing-ladder", "SpecimenSpacingLadder"],
+  ["sections.specimen-radius-ladder", "SpecimenRadiusLadder"],
+  ["sections.specimen-motion-player", "SpecimenMotionPlayer"],
+  ["sections.specimen-asset-grid", "SpecimenAssetGrid"],
+  ["sections.specimen-icon-grid", "SpecimenIconGrid"],
+] as const;
+for (const [slot] of SPECIMEN_SECTION_RENDERERS) {
+  if (sectionSlots.find(candidate => candidate.id === slot)?.contract.kind !== "section") throw new Error(`${slot} requires its canonical section contract.`);
+}
+
 /** Canonical sections exported by the blocks barrel without a legacy block address. */
-export const CANONICAL_SECTION_BLOCK_REGISTRATIONS = [{
-  id: legalProseMetadata.slot,
-  export: legalProse.impl.export,
-  source: legalProseSource.path.replace(/^packages\/designer\//, ""),
-}] as const;
+export const CANONICAL_SECTION_BLOCK_REGISTRATIONS: readonly { readonly id: string; readonly export: string; readonly source: string }[] = [
+  { id: legalProseMetadata.slot, export: legalProse.impl.export, source: legalProseSource.path.replace(/^packages\/designer\//, "") },
+  // The comparison section's library-board arrangement: Matrix renders it for `arrangement: "library-board"`.
+  { id: comparison.slot, export: "LibraryBoardSection", source: libraryBoardSource.path.replace(/^packages\/designer\//, "") },
+  ...SPECIMEN_SECTION_RENDERERS.map(([id, name]) => ({ id, export: name, source: "src/specimen/specimen-token-assets.tsx" })),
+];
 
 const pr = (number: number, state: "draft" | "ready"): WorkRef => ({ kind: "pull-request", number, state });
 
@@ -193,6 +217,10 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   // Organize / Collection
   built("Items", { id: "items.raw", label: "Items" }),
   built("StockItem", { id: "items.item", label: "Item" }),
+  built("ChunkHost", {
+    id: "items.chunk-host", label: "Chunk host",
+    notes: ["Mounts caller-supplied scroll chunks and same-size placeholders as they near the viewport."],
+  }),
   built("RecordCards", { id: "items.cards", label: "Card grid" }),
   exported("TaskList", { id: "items.task-list", label: "Task list" }),
 
@@ -319,6 +347,14 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
 
   // Navigate / Filtering
   exported("FilterBuilder", { id: "form.filter-builder", label: "Filter builder" }),
+  built("StockSelect", {
+    id: "form.stock-select", label: "Stock select",
+    notes: ["The stock Select inside the stock Field parts, used by the data blocks' controls."],
+  }),
+  built("StockCombobox", {
+    id: "form.stock-combobox", label: "Stock combobox",
+    notes: ["The stock Combobox inside the stock Field parts, used by the data blocks' controls."],
+  }),
 
   // Respond / States
   built("EmptyState", {
@@ -413,6 +449,13 @@ export const BLOCK_EXPORT_EXCLUSIONS: Readonly<Record<string, string>> = {
   clearSelection: MODEL_API,
   navigate: MODEL_API,
   minimapModel: MODEL_API,
+  assertLibraryBoardRecords: MODEL_API,
+  assertLibraryBoardCommand: MODEL_API,
+  LIBRARY_BOARD_CONFIG: "Matrix configuration constant selecting the library-board arrangement; data, not a component.",
+  useHeadingScrollSpy: HOOK,
+  HEADING_ROOT_MARGIN: "Scroll-spy intersection root margin; a constant, not a component.",
+  CHUNK_ROOT_MARGIN: "Chunk host intersection root margin; a constant, not a component.",
+  frameLinkNavigation: "Click handler that hands a plain link activation to the host's navigate callback; renders nothing.",
 };
 
 export const BLOCK_CATALOG = {

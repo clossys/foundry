@@ -130,7 +130,8 @@ describe("clossys retire <agent>/<slot> <candidate>", () => {
 
   it("refuses the candidate a present but invalid pin.json names", async () => {
     writeFileSync(join(agents, ID, "pin.json"), jsonBytes({ candidate: "example-v1.json", sha256: "not-a-hash" }));
-    expect(await retire(`designer/${ID}`, "example-v1")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/pinned candidate/) });
+    // The pin is named with its issues, never read as no pin: it may pin the candidate.
+    expect(await retire(`designer/${ID}`, "example-v1")).toMatchObject({ exitCode: 1, message: expect.stringMatching(new RegExp(`^retire refused: clossys/agents/designer/${ID.replace(/\./g, "\\.")}/pin\\.json is not a valid pin \\(.+\\); it may pin example-v1\\.json: repair the pin first$`)) });
     expect(existsSync(join(agents, ID, "candidates", "example-v1.json"))).toBe(true);
   });
 

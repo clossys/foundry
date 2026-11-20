@@ -30,6 +30,7 @@ interface Leaf {
   readonly disposition: ComponentDisposition;
   readonly notes?: readonly string[];
   readonly contract?: ComponentContract;
+  readonly anatomy?: readonly string[];
 }
 
 const review = { ownerReview: "not-yet-reviewed" } as const;
@@ -43,6 +44,19 @@ const onMain = (exportName: string, files: string[], leaf: Leaf): ComponentEntry
   files,
   status: "main",
   lifecycle: "draft",
+});
+
+/** Built and exported, but its canonical leaf is retired (retired.json): kept registered until its code is deleted. */
+const retired = (exportName: string, files: string[], leaf: Leaf): ComponentEntry => ({
+  ...onMain(exportName, files, leaf),
+  lifecycle: "deprecated",
+});
+
+/** Built as fixed props on another leaf's export; it has no export of its own. */
+const recipe = (of: ComponentId, files: string[], leaf: Leaf): ComponentEntry => ({
+  ...onMain("", files, leaf),
+  export: null,
+  recipeOf: of,
 });
 
 /** Built, but parked: no react-aria-components base, kept untouched and hidden. */
@@ -129,13 +143,13 @@ const BUTTON_CONTRACT: ComponentContract = {
 };
 
 // ---------------------------------------------------------------------------
-// Leaves: 79 (48 on the default branch, 9 of them parked charts; 14 in flight; 17 gaps)
+// Leaves: 93 (66 built: 63 on the default branch, 12 of them retired, plus 3 parked charts; 9 in flight; 18 gaps)
 // ---------------------------------------------------------------------------
 
 /** Component leaves, in display order. */
 export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   // Interaction / Actions
-  onMain("NativeAction", ["src/components/NativeAction.tsx", "src/components/button-classes.ts"], {
+  retired("NativeAction", ["src/components/NativeAction.tsx", "src/components/button-classes.ts"], {
     id: "act.native-action", label: "Native action", racBase: none("native-element", ["button"]), disposition: "keep",
     notes: ["Fixed primary/md/base appearance, native button semantics and explicit type. Local draft capability awaiting owner review; runtime qualification remains separate."],
   }),
@@ -147,7 +161,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     contract: BUTTON_CONTRACT,
     notes: ["The stock shadcn@aria button; an icon-end glyph is an Icon child with data-icon=inline-end."],
   }),
-  onMain("Button", ["src/components/preview-runtime/components/button/button.tsx"], {
+  recipe("act.button", ["src/components/preview-runtime/components/button/button.tsx"], {
     id: "act.icon-button",
     label: "Icon button",
     racBase: rac("Button"),
@@ -159,24 +173,32 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     label: "Menu",
     racBase: rac("Menu", "MenuItem", "MenuTrigger", "MenuSection", "Header", "Popover", "Separator"),
     disposition: "keep",
+    anatomy: ["InlineMenu"],
   }),
-  gap({
+  onMain("Toolbar", ["src/components/Toolbar.tsx"], {
     id: "act.toolbar",
     label: "Toolbar",
     racBase: rac("Toolbar"),
-    disposition: "build-now",
-    notes: ["Three existing blocks import the react-aria-components Toolbar directly. First in the build order."],
+    disposition: "keep",
   }),
-  gap({
+  onMain("Toggle", ["src/components/preview-runtime/components/toggle-button/toggle.tsx"], {
     id: "act.toggle-button",
     label: "Toggle button",
     racBase: rac("ToggleButton"),
-    disposition: "build-now",
-    notes: ["Only if a toolbar block needs a pressed state; that need is unverified. Sixth in the build order."],
+    disposition: "keep",
+    notes: ["The stock shadcn@aria Toggle."],
+  }),
+  onMain("ToggleGroup", ["src/components/ToggleGroup.ts", "src/components/toggle-group/toggle-group.tsx"], {
+    id: "components.toggle-group",
+    label: "Toggle group",
+    racBase: rac("ToggleButtonGroup", "ToggleButton"),
+    disposition: "keep",
+    anatomy: ["ToggleGroupItem"],
+    notes: ["The stock shadcn@aria ToggleGroup."],
   }),
 
   // Interaction / Navigation
-  onMain("Link", ["src/components/preview-runtime/components/button/button.tsx"], {
+  onMain("LinkButton", ["src/components/preview-runtime/components/button/button.tsx"], {
     id: "act.link",
     label: "Link",
     racBase: rac("Link"),
@@ -187,21 +209,27 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     label: "Breadcrumb",
     racBase: rac("Breadcrumbs", "Breadcrumb", "Link"),
     disposition: "keep",
+    anatomy: ["BreadcrumbList", "BreadcrumbItem", "BreadcrumbLink", "BreadcrumbPage", "BreadcrumbEllipsis"],
   }),
   onMain("Tabs", ["src/components/preview-runtime/components/tabs/tabs.tsx"], {
     id: "reveal.tabs",
     label: "Tabs",
     racBase: rac("Tabs", "TabList", "Tab", "TabPanel"),
     disposition: "keep",
+    anatomy: ["TabsList", "TabsTrigger", "TabsContent"],
   }),
-  gap({
+  onMain("NavigationTree", ["src/components/NavigationTree.ts"], {
     id: "act.navigation-tree",
     label: "Navigation tree",
     racBase: racFrom("1.21.0", "NavigationTree"),
-    disposition: "build-now",
-    notes: [
-      "The app navigation block is a custom tree today. Needs the react-aria-components floor raised. Fourth in the build order.",
-    ],
+    disposition: "keep",
+    anatomy: ["NavigationTreeItem", "NavigationTreeItemContent", "NavigationTreeSection", "NavigationTreeHeader"],
+  }),
+  retired("CanvasMap", ["src/components/CanvasMap.tsx"], {
+    id: "components.canvas-map", label: "Canvas map", racBase: none("hand-built"), disposition: "remove",
+  }),
+  retired("CanvasZoom", ["src/components/CanvasZoom.tsx"], {
+    id: "components.canvas-zoom", label: "Canvas zoom", racBase: none("hand-built"), disposition: "remove",
   }),
 
   // Interaction / Text entry
@@ -255,6 +283,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     label: "Radio group",
     racBase: rac("RadioGroup", "Radio", "Label", "Text", "FieldError"),
     disposition: "keep",
+    anatomy: ["RadioGroupItem"],
   }),
   building(issue(2351), {
     id: "enter.segmented-control",
@@ -267,12 +296,14 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     label: "Select",
     racBase: rac("Select", "SelectValue", "Button", "Popover", "ListBox", "ListBoxItem", "Label", "Text", "FieldError"),
     disposition: "keep",
+    anatomy: ["SelectTrigger", "SelectValue", "SelectContent", "SelectItem"],
   }),
   onMain("ComboBox", ["src/components/preview-runtime/components/combo-box/combobox.tsx"], {
     id: "enter.combo-box",
     label: "Combo box",
     racBase: rac("ComboBox", "Input", "Button", "Popover", "ListBox", "ListBoxItem", "Label", "Text", "FieldError"),
     disposition: "keep",
+    anatomy: ["ComboboxInput", "ComboboxContent", "ComboboxList", "ComboboxItem"],
     notes: ["Autocomplete stays internal."],
   }),
   building(issue(2352), {
@@ -282,19 +313,20 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     disposition: "finish",
     notes: ["Whether it ships as a standalone export is unverified."],
   }),
-  building(issue(2352), {
+  onMain("TagGroup", ["src/components/TagGroup.tsx"], {
     id: "enter.tag-field",
     label: "Tag field",
     racBase: rac("TagGroup", "TagList", "Tag"),
-    disposition: "finish",
+    disposition: "keep",
   }),
 
   // Interaction / Number and range
-  building(issue(2362), {
+  retired("NumberField", ["src/components/NumberField.tsx"], {
     id: "enter.number-field",
     label: "Number field",
     racBase: rac("NumberField"),
-    disposition: "finish",
+    disposition: "remove",
+    notes: ["Retired by the source ladder; the export is deleted once its remaining callers move off it."],
   }),
   onMain("Slider", ["src/components/preview-runtime/components/slider/slider.tsx"], {
     id: "enter.slider",
@@ -316,7 +348,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("TimeField"),
     disposition: "finish",
   }),
-  building(issue(2353), {
+  onMain("Calendar", ["src/components/preview-runtime/components/calendar/calendar.tsx"], {
     id: "enter.calendar",
     label: "Calendar",
     racBase: rac(
@@ -327,13 +359,13 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
       "CalendarGridBody",
       "CalendarCell",
     ),
-    disposition: "finish",
+    disposition: "keep",
   }),
-  building(issue(2353), {
+  onMain("RangeCalendar", ["src/components/preview-runtime/components/calendar/calendar.tsx"], {
     id: "enter.range-calendar",
     label: "Range calendar",
     racBase: rac("RangeCalendar"),
-    disposition: "finish",
+    disposition: "keep",
   }),
   building(issue(2353), {
     id: "enter.date-picker",
@@ -356,11 +388,11 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     disposition: "not-now",
     notes: [DEMAND],
   }),
-  gap({
+  onMain("ColorPicker", ["src/components/ColorPicker.tsx"], {
     id: "enter.color-picker",
     label: "Color picker",
-    racBase: rac("ColorPicker"),
-    disposition: "not-now",
+    racBase: rac("ColorPicker", "ColorArea", "ColorSlider", "ColorField"),
+    disposition: "keep",
   }),
   gap({
     id: "enter.color-area",
@@ -415,16 +447,17 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     label: "Field",
     racBase: none("hand-built"),
     disposition: "remove",
+    anatomy: ["FieldContent", "FieldDescription", "FieldError", "FieldGroup", "FieldLabel", "FieldLegend", "FieldSeparator", "FieldSet", "FieldTitle"],
     notes: [
       "Every field component built on react-aria-components already composes Label, Text and FieldError. Folds into those components at the next owner-signed minor.",
     ],
   }),
-  gap({
+  onMain("Form", ["src/components/Form.ts"], {
     id: "enter.form",
     label: "Form",
     racBase: rac("Form"),
-    disposition: "build-now",
-    notes: ["The form block wraps a native form today. Second in the build order."],
+    disposition: "keep",
+    notes: ["The react-aria-components Form, re-exported as is."],
   }),
 
   // Content / Data display
@@ -454,6 +487,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     label: "Table",
     racBase: rac("Table", "TableHeader", "TableBody", "Column", "Row", "Cell"),
     disposition: "keep",
+    anatomy: ["TableHeader", "TableHead", "TableBody", "TableRow", "TableCell", "TableFooter", "TableCaption"],
   }),
   onMain("GridList", ["src/components/GridList.tsx"], {
     id: "group.grid-list",
@@ -461,14 +495,11 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("GridList", "GridListItem", "GridListSection", "GridListHeader"),
     disposition: "keep",
   }),
-  gap({
+  onMain("Tree", ["src/components/Tree.tsx"], {
     id: "group.tree",
     label: "Tree",
-    racBase: rac("Tree", "TreeItem", "TreeItemContent", "TreeSection"),
-    disposition: "build-now",
-    notes: [
-      "The tree block is an org-chart list and the explorer block a custom model today. Third in the build order.",
-    ],
+    racBase: rac("Tree", "TreeItem", "TreeItemContent"),
+    disposition: "keep",
   }),
 
   // Content / Text
@@ -477,6 +508,16 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     label: "Text",
     racBase: rac("Text", "Heading", "Header"),
     disposition: "finish",
+  }),
+  onMain("SemanticContent", ["src/components/SemanticContent.tsx"], {
+    id: "components.semantic-content", label: "Semantic content", racBase: none("native-element"), disposition: "keep",
+  }),
+  onMain("RichText", ["src/components/RichText.tsx"], {
+    id: "components.rich-text", label: "Rich text", racBase: none("hand-built"), disposition: "keep",
+    notes: ["Renders a stored rich-text document through Tiptap (MIT)."],
+  }),
+  onMain("MediaPlayer", ["src/components/media-player/media-player.tsx"], {
+    id: "components.media-player", label: "Media player", racBase: none("hand-built", ["Button"]), disposition: "keep",
   }),
   gap({
     id: "depict.kbd",
@@ -492,6 +533,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     label: "Avatar",
     racBase: none("presentational"),
     disposition: "presentational-exception",
+    anatomy: ["AvatarImage", "AvatarFallback"],
     notes: [PRESENTATIONAL, "Used by the account menu, testimonial and chat blocks."],
   }),
   onMain("Icon", ["src/components/preview-runtime/components/icon/icon.tsx"], {
@@ -579,6 +621,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     label: "Banner",
     racBase: none("native-element", ["Button"]),
     disposition: "map-to-rac",
+    anatomy: ["AlertTitle", "AlertDescription", "AlertAction"],
     notes: ["The stock shadcn@aria Alert; a dismiss control is an AlertAction holding a react-aria-components Button."],
   }),
   onMain("StatusMark", ["src/components/StatusMark.tsx"], {
@@ -635,11 +678,13 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("Separator"),
     disposition: "keep",
   }),
-  onMain("Disclosure", ["src/components/preview-runtime/components/disclosure/accordion.tsx"], {
+  onMain("Accordion", ["src/components/preview-runtime/components/disclosure/accordion.tsx"], {
     id: "reveal.disclosure",
     label: "Disclosure",
     racBase: rac("Disclosure", "DisclosurePanel", "Button"),
     disposition: "keep",
+    anatomy: ["AccordionItem", "AccordionTrigger", "AccordionContent"],
+    notes: ["The stock shadcn@aria Accordion."],
   }),
   gap({
     id: "reveal.accordion",
@@ -672,18 +717,21 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     label: "Dialog",
     racBase: rac("Dialog", "DialogTrigger", "Modal", "ModalOverlay", "Heading"),
     disposition: "keep",
+    anatomy: ["DialogTrigger", "DialogClose", "DialogContent", "DialogHeader", "DialogFooter", "DialogTitle", "DialogDescription"],
   }),
   onMain("Popover", ["src/components/preview-runtime/components/popover/popover.tsx"], {
     id: "reveal.popover",
     label: "Popover",
     racBase: rac("Popover", "Dialog", "DialogTrigger"),
     disposition: "keep",
+    anatomy: ["PopoverTrigger", "PopoverHeader", "PopoverTitle", "PopoverDescription"],
   }),
   onMain("Tooltip", ["src/components/preview-runtime/components/tooltip/tooltip.tsx"], {
     id: "reveal.tooltip",
     label: "Tooltip",
     racBase: rac("Tooltip", "TooltipTrigger"),
     disposition: "keep",
+    anatomy: ["TooltipTrigger"],
   }),
   building(issue(2344), {
     id: "reveal.sheet",
@@ -699,6 +747,32 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     disposition: "not-now",
     notes: [DEMAND],
   }),
+
+  // Specimens (retired with the Studio; the Designer specimen surface still renders them)
+  retired("SpecimenSwatch", ["src/components/specimen/specimen-leaves.tsx"], {
+    id: "components.specimen-swatch", label: "Specimen swatch", racBase: none("hand-built"), disposition: "remove",
+  }),
+  retired("SpecimenLadder", ["src/components/specimen/specimen-leaves.tsx"], {
+    id: "components.specimen-ladder", label: "Specimen ladder", racBase: none("hand-built"), disposition: "remove",
+  }),
+  retired("SpecimenPlayer", ["src/components/specimen/specimen-leaves.tsx"], {
+    id: "components.specimen-player", label: "Specimen player", racBase: none("hand-built"), disposition: "remove",
+  }),
+  retired("SpecimenGrid", ["src/components/specimen/specimen-leaves.tsx"], {
+    id: "components.specimen-grid", label: "Specimen grid", racBase: none("hand-built"), disposition: "remove",
+  }),
+  retired("SpecimenMatrix", ["src/components/specimen/specimen-leaves.tsx"], {
+    id: "components.specimen-matrix", label: "Specimen matrix", racBase: none("hand-built"), disposition: "remove",
+  }),
+  retired("SpecimenViewport", ["src/components/specimen/specimen-leaves.tsx"], {
+    id: "components.specimen-viewport", label: "Specimen viewport", racBase: none("hand-built"), disposition: "remove",
+  }),
+  retired("SpecimenPassage", ["src/components/specimen/specimen-leaves.tsx"], {
+    id: "components.specimen-passage", label: "Specimen passage", racBase: none("hand-built"), disposition: "remove",
+  }),
+  retired("SpecimenCopyInContext", ["src/components/specimen/specimen-leaves.tsx"], {
+    id: "components.specimen-copy-in-context", label: "Specimen copy in context", racBase: none("hand-built"), disposition: "remove",
+  }),
 ];
 
 /**
@@ -712,6 +786,11 @@ export const COMPONENT_EXPORT_EXCLUSIONS: Readonly<Record<string, string>> = {
   COMPONENT_API_FACTS: "Guidance data for the admin; not a component.",
   COMPONENT_COMPARISON: "Guidance data for the admin; not a component.",
   ChartFrame: "Chart internals: parks with the chart set and is not a leaf.",
+  ALERT_TONE: "Tone-to-props map (variant, role, live region) for the stock Alert; data, not a component.",
+  BADGE_TONE: "Tone-to-props map (variant, status class) for the stock Badge; data, not a component.",
+  CARD_SURFACE: "Surface-to-class map for the Card; data, not a component.",
+  SKELETON_SHAPE: "Shape-to-class map for the Skeleton; data, not a component.",
+  INVERSE_CONTROL_INK: "Class string for control ink on an inverse ground; data, not a component.",
 };
 
 export const COMPONENT_CATALOG = {

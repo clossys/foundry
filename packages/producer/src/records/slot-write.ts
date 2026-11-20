@@ -12,6 +12,7 @@
  * byte state it leaves is the one the ledger already records.
  */
 import { oldSlotRefusal } from "./store-format.js";
+import { loadRecipes, plumbCraftRunIssue } from "./recipes.js";
 import { createHash, randomUUID } from "node:crypto";
 import { closeSync, constants, cpSync, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { hostname, tmpdir } from "node:os";
@@ -21,13 +22,13 @@ import {
   CANDIDATE_NAME, KIND_EXT, SEAT_AGENT, agentDir, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
   type ModelAgent, type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
-import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
+import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot, readSlotEntry } from "./slots.js";
 import { candidateHeaderOf, candidateIssues, isCurrentSlot, readSlotValue, slotReadIssues } from "./slot-current.js";
 import { recutCandidateBytes } from "./candidate-codec.js";
 import { SlotFormatError, serializeSlot, validateSlot } from "./slot.js";
 import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
-import type { AgentId, CandidateHeader, Iso, Slot } from "./types.js";
-import { buildCandidateHeader, candidateHeaderIssues, readCandidateFile, serializeCandidate } from "./candidate.js";
+import type { Actor, AgentId, CandidateHeader, Iso, Slot } from "./types.js";
+import { buildCandidateHeader, CandidateRefusal, candidateHeaderIssues, serializeCandidate } from "./candidate.js";
 import { cliActor, toIsoZ } from "./pin.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, expectedCandidateSha, skillFile, skillPath,
@@ -212,6 +213,16 @@ const slotLocked = <T>(dir: string, action: () => T): T => withDirLock(join(dir,
 function located(consumer: string, agent: ModelAgent, id: string) {
   const doc = readSlot(consumer, agent, id);
   const entry = listSlots(consumer, agent).find(row => row.id === id);
+  if (!entry) throw new Error(`${agent} slot ${id} is not in ia.json`);
+  return { doc, entry };
+}
+/**
+ * `located` for one slot only: reads this slot's folder and never a sibling's, so a candidate submit (`next --submit`,
+ * a release manifest) is not refused by a sibling slot the model reader cannot read; that sibling fails on its own read.
+ */
+function locatedOne(consumer: string, agent: ModelAgent, id: string) {
+  const doc = readSlot(consumer, agent, id);
+  const entry = readSlotEntry(consumer, agent, id);
   if (!entry) throw new Error(`${agent} slot ${id} is not in ia.json`);
   return { doc, entry };
 }
@@ -517,12 +528,7 @@ const CRAFT_PREFIX = /^(?:brief(?: diverge(?: render(?: critique(?: refine(?: re
 export const CRAFT_DIRECTIONS = { min: 3, max: 4 } as const;
 /** The craft stages of the slot's open P2 run: the `craft:*` events since its last submit. */
 export function openCraftStages(events: readonly Record<string, unknown>[]): CraftStage[] {
-  const stages: CraftStage[] = [];
-  for (const event of events) {
-    if (event.op === "submit") stages.length = 0;
-    else if (typeof event.op === "string" && event.op.startsWith("craft:")) stages.push(event.op.slice("craft:".length) as CraftStage);
-  }
-  return stages;
+  return openCraftEvents(events).map(event => String(event.op).slice("craft:".length) as CraftStage);
 }
 /** Why `stage` may not come next after `open`, or undefined. */
 export function craftOrderIssue(open: readonly CraftStage[], stage: CraftStage, fields: Readonly<Record<string, unknown>> = {}, context: { readonly axes?: readonly string[] } = {}): string | undefined {
@@ -562,6 +568,24 @@ function axesIssue(directions: readonly { readonly axes: Readonly<Record<string,
   }
   return undefined;
 }
+/** The open P2 run's craft events: the `craft:*` events since the slot's last submit. */
+export function openCraftEvents(events: readonly Record<string, unknown>[]): Record<string, unknown>[] {
+  const open: Record<string, unknown>[] = [];
+  for (const event of events) {
+    if (event.op === "submit") open.length = 0;
+    else if (typeof event.op === "string" && event.op.startsWith("craft:")) open.push(event);
+  }
+  return open;
+}
+/**
+ * R15.7 at write time: why a `craft:<stage>` event with `fields` may not join the open run because the run's
+ * recipe is plumb (records/recipes.ts plumbCraftRunIssue, the judge's own predicate), or undefined. The recipes
+ * are read from the workspace that holds `consumer` (its packages/, else the installed agent packages).
+ */
+export function plumbCraftRefusal(consumer: string, agent: string, events: readonly Record<string, unknown>[], stage: CraftStage, fields: Readonly<Record<string, unknown>> = {}): string | undefined {
+  const issue = plumbCraftRunIssue([...openCraftEvents(events), { ...fields, op: `craft:${stage}` }], loadRecipes(dirname(consumer)), agent);
+  return issue && `craft:${stage} refused: ${issue}; fix: run the recipe's clossys verbs and submit at rung plumb, recording no craft stage (R15.7)`;
+}
 /** The recipe axes the open run's brief recorded (`assembled.recipe.axes`), if any. */
 export function openBriefAxes(events: readonly Record<string, unknown>[]): readonly string[] | undefined {
   let axes: readonly string[] | undefined;
@@ -575,14 +599,16 @@ export function openBriefAxes(events: readonly Record<string, unknown>[]): reado
   return axes;
 }
 /**
- * Append one `craft:<stage>` event to the slot ledger under the slot lock, refusing a stage out of
- * order, a diverge outside 3-4 directions or one whose directions share an axis value. `fields` are the stage's own record (directions,
+ * Append one `craft:<stage>` event to the slot ledger under the slot lock, refusing any stage under a plumb
+ * recipe (R15.7, plumbCraftRefusal), a stage out of order, a diverge outside 3-4 directions or one whose directions share an axis value. `fields` are the stage's own record (directions,
  * recipe, renders); verb submit, by the seat, with the step's skill, model and tier.
  */
 export function appendCraftEvent(consumer: string, agent: ModelAgent, id: string, stage: CraftStage, fields: Readonly<Record<string, unknown>>, given: WriteProvenance & { readonly at?: string }): LedgerEvent {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
     const events = (readLedger(entry.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
+    const plumb = plumbCraftRefusal(consumer, agent, events, stage, fields);
+    if (plumb) throw new Error(plumb);
     const issue = craftOrderIssue(openCraftStages(events), stage, fields, { axes: openBriefAxes(events) });
     if (issue) throw new Error(issue);
     const { op: _op, at: _at, by: _by, verb: _verb, skill: _skill, model: _model, tier: _tier, records: _records, ...own } = fields as Record<string, unknown>;
@@ -619,6 +645,8 @@ export function writeCritique(consumer: string, agent: ModelAgent, id: string, r
     const issues = input.validate(record);
     if (issues.length) throw new Error(`critique refused: ${issues.slice(0, 5).join("; ")}`);
     const events = (readLedger(entry.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
+    const plumb = plumbCraftRefusal(consumer, agent, events, "critique");
+    if (plumb) throw new Error(plumb);
     const order = craftOrderIssue(openCraftStages(events), "critique");
     if (order) throw new Error(order);
     const leaf = id.split(".").at(-1)!;
@@ -643,11 +671,14 @@ export function writeCritique(consumer: string, agent: ModelAgent, id: string, r
  * The bytes `writeCandidate` writes (one format, U13 r4). A clossys.slot/1 slot takes the int2 bytes as they are,
  * judged by the int2 kind rules. A clossys.slot/2 slot takes a clossys.candidate/1 file only: int2 bytes are first
  * judged by the int2 kind rules as they are (a missing source is refused, never derived), then written through the
- * one candidate codec, the source moved into a header created by `clossys submit`; bytes that already carry a
+ * one candidate codec, the source moved into a header created by `clossys submit` (or by `createdBy`: `clossys next
+ * --submit` names the submitting agent, skill, model and tier, U37); bytes that already carry a
  * header must name this file and slot. The written bytes are then judged by the reader's rules (candidateIssues).
+ * Every refusal of the bytes is a CandidateRefusal (records/candidate.ts), the codec's and the serializer's included;
+ * any other error is a fault and is not one.
  */
-function submittedBytes(dir: string, agent: SlotAgent, id: string, kind: SlotDoc["kind"], file: string, given: string, at: string | undefined): string {
-  const refused = (issues: readonly { message: string }[] | readonly string[]) => new Error(`candidate refused: ${issues.map(issue => typeof issue === "string" ? issue : issue.message).join("; ")}`);
+export function submittedBytes(dir: string, agent: SlotAgent, id: string, kind: SlotDoc["kind"], file: string, given: string, at: string | undefined, createdBy?: Actor): string {
+  const refused = (issues: readonly { message: string }[] | readonly string[]) => new CandidateRefusal(`candidate refused: ${issues.map(issue => typeof issue === "string" ? issue : issue.message).join("; ")}`);
   let raw: unknown;
   try { raw = JSON.parse(readFileSync(slotFile(dir), "utf8")); } catch { raw = undefined; }
   const slotRead = isCurrentSlot(raw) ? readSlotValue(raw, slotFile(dir)) : undefined;
@@ -665,7 +696,7 @@ function submittedBytes(dir: string, agent: SlotAgent, id: string, kind: SlotDoc
     const int2 = validateCandidate(kind, id, file, given);
     if (int2.length) throw refused(int2);
     const createdAt = (toIsoZ(at ?? nowIso()) ?? at ?? nowIso()) as Iso;
-    bytes = recutCandidateBytes(file, given, { agent: agent as AgentId, slotId: id, at: createdAt, version: cliActor(SUBMIT_CLI).version, sourceRef: `agents/${agent}/${id}/candidates/${file}`, cli: SUBMIT_CLI });
+    bytes = recutCandidateBytes(file, given, { agent: agent as AgentId, slotId: id, at: createdAt, version: cliActor(SUBMIT_CLI).version, sourceRef: `agents/${agent}/${id}/candidates/${file}`, cli: SUBMIT_CLI, ...(createdBy ? { createdBy } : {}) });
   }
   const issues = candidateIssues(slotRead, agent, id, file, bytes);
   if (issues.length) throw refused(issues);
@@ -683,21 +714,25 @@ const SUBMIT_CLI = "clossys submit";
  * under the slot lock, so two writers never take one version and the ledger names every file; a
  * `verify` issue (or a refused event) removes the file again. `fields` are the submit's own record
  * (`next --submit`: its basis and ladder); `provenance` its verb, by, skill, model and tier.
+ * `header` (U37) names who a clossys.candidate/1 header this write creates names as `createdBy` (`submittedBytes`:
+ * on a clossys.slot/2 slot only); without it the header names `clossys submit`.
  */
 export function writeCandidate(consumer: string, agent: SlotAgent, id: string, name: string, content: unknown, options: {
   readonly canonical?: boolean; readonly provenance?: WriteProvenance; readonly at?: string;
   readonly fields?: Readonly<Record<string, unknown>>; readonly verify?: (file: string) => readonly string[];
   /** Run the write verb's constitution guard on the new file after its event lands; a finding undoes both. */
   readonly guard?: WriteGuard;
+  readonly header?: { readonly createdBy: Actor };
 } = {}): { name: string; sha256: string } {
   assertActor(dirname(consumer), options.provenance?.by ?? "planner", agent, "candidate", authorsOf(agent));
-  const { entry } = located(consumer, agent, id);
+  const { entry } = locatedOne(consumer, agent, id);
   if (options.canonical) canonicalDirectory(entry.dir);
   return slotLocked(entry.dir, () => {
-    const { doc, entry: current } = located(consumer, agent, id);
+    const { doc, entry: current } = locatedOne(consumer, agent, id);
     const ext = KIND_EXT[doc.kind];
     const file = `${name}-v${nextVersion(current.dir, current.candidates)}.${ext}`;
-    const bytes = submittedBytes(entry.dir, agent, id, doc.kind, file, ext === "md" ? String(content) : jsonBytes(content), options.at);
+    const at = options.at ?? nowIso();
+    const bytes = submittedBytes(entry.dir, agent, id, doc.kind, file, ext === "md" ? String(content) : jsonBytes(content), at, options.header?.createdBy);
     readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
     const directory = candidatesDir(entry.dir);
     if (options.canonical) canonicalDirectory(directory);
@@ -714,7 +749,7 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
       const sha256 = readCandidate(consumer, agent, id, file).sha256;
       const refused = options.verify?.(file) ?? [];
       if (refused.length) throw new Error(`candidate refused: ${file} fails the slot model check: ${refused.slice(0, 5).join("; ")}`);
-      appendEvent(entry.dir, "slot", ledgerEvent("submit", options.at ?? nowIso(), who, { ...options.fields, name: file, sha256 }));
+      appendEvent(entry.dir, "slot", ledgerEvent("submit", at, who, { ...options.fields, name: file, sha256 }));
       if (options.guard) {
         try { enforceGuard(consumer, guardVerb, options.guard, [{ agent, slot: id, candidate: file }]); }
         catch (error) { restoreFiles(ledger); throw error; }
@@ -732,7 +767,7 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
  */
 export function writeCandidateBytes(consumer: string, agent: SlotAgent, id: string, name: string, bytes: string, input: { readonly at: string; readonly fields?: Readonly<Record<string, unknown>> }, given?: WriteProvenance): { name: string; sha256: string } {
   if (!CANDIDATE_FILE.test(name)) throw new Error(`candidate refused: ${name} is not a candidate file name (<name>-v<n>.json)`);
-  const { entry } = located(consumer, agent, id);
+  const { entry } = locatedOne(consumer, agent, id);
   canonicalDirectory(entry.dir);
   return slotLocked(entry.dir, () => {
     readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
@@ -924,13 +959,16 @@ export function writeReissue(consumer: string, agent: ModelAgent, id: string, in
     try { raw = JSON.parse(readFileSync(slotFile(entry.dir), "utf8")); } catch { raw = undefined; }
     const slotRead = isCurrentSlot(raw) ? readSlotValue(raw, slotFile(entry.dir)) : undefined;
     if (!slotRead?.current) throw new Error(`reissue refused: ${agent}/${id} is not a clossys.slot/2 slot; this verb writes clossys.slot/2 and clossys.pin/2 only: run clossys migrate slots --apply first`);
-    const oldHeader = readCandidateFile(join(candidatesDir(entry.dir), input.old), { agent: agent as AgentId, slotId: id }).header ?? input.oldHeader as CandidateHeader | undefined;
+    // The old file's header as the one candidate reader (records/slots.ts readCandidate, U37c) read it above.
+    const oldHeader = (old.header as CandidateHeader | undefined) ?? input.oldHeader as CandidateHeader | undefined;
     if (!oldHeader) throw new Error(`reissue refused: ${input.old} has no clossys.candidate/1 header`);
     const header = buildCandidateHeader({
       agent: agent as AgentId, slotId: id, name: file, status: "submitted",
       createdBy: cliActor("clossys reissue"),
       createdAt: toIsoZ(input.at) ?? (input.at as Iso),
+      // The header's content fields (`record`, `briefSha256`) carry over, so the reissue's content digest is its seed's (R03.2, U37c).
       ...(oldHeader.record !== undefined ? { record: oldHeader.record } : {}),
+      ...(oldHeader.briefSha256 !== undefined ? { briefSha256: oldHeader.briefSha256 } : {}),
       refs: [...oldHeader.refs], source: oldHeader.source, rationale: [...oldHeader.rationale],
     });
     const bytes = serializeCandidate(file, header, ext === "md" ? String(input.content) : input.content, input.front ?? {});

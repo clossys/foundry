@@ -105,7 +105,8 @@ export function identicalBytes(ctx: ConstitutionContext): Row[] {
     group.push({ slot, where, candidate });
   };
   for (const slot of allSlots(ctx)) for (const candidate of slot.candidates) {
-    if (candidate.text.length) add(candidate.sha256, slot, candidate.path, candidate.name);
+    // The content identity, not the file sha: two headered files of one content differ only in per-file provenance.
+    if (candidate.raw.length) add(candidate.contentDigest, slot, candidate.path, candidate.name);
     for (const file of registryFiles(candidate)) if (file.content.length) add(sha256Hex(file.content), slot, `${candidate.path}#${file.path}`, candidate.name);
   }
   const rows: Row[] = [];
@@ -115,7 +116,7 @@ export function identicalBytes(ctx: ConstitutionContext): Row[] {
     for (const entry of group) {
       const key = `${entry.slot.agent}/${entry.slot.id}`;
       const others = [...new Set(group.filter(other => `${other.slot.agent}/${other.slot.id}` !== key).map(other => other.where))].sort();
-      rows.push(row("R06", "R06.6", entry.slot, `identical bytes (sha256 ${sha.slice(0, 12)}) also held by ${listed(others, 2)}`, entry.where, entry.candidate));
+      rows.push(row("R06", "R06.6", entry.slot, `identical content (sha256 ${sha.slice(0, 12)}) also held by ${listed(others, 2)}`, entry.where, entry.candidate));
     }
   }
   return rows;
@@ -140,7 +141,8 @@ export function crossSlotCandidateFiles(ctx: ConstitutionContext): Row[] {
   const fix = "name the slot id instead, so the reference resolves through that slot's pin";
   for (const slot of focusedSlots(ctx)) {
     for (const candidate of slot.candidates) {
-      const refs = foreignCandidateFiles(candidate.text, slot.id, known);
+      // Every byte as written, the header's refs and rationale included.
+      const refs = foreignCandidateFiles(candidate.raw, slot.id, known);
       if (refs.length) rows.push(row("R06", "R06.7", slot, `references another slot's candidate file: ${listed(refs, 3)}; ${fix}`, candidate.path, candidate.name));
     }
     const doc = slotDoc(slot);

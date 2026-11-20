@@ -8,7 +8,7 @@ import sectionHomes from "./maps/blocks-to-sections.json" with { type: "json" };
 
 /** Expected [L1, L2] group counts per catalog. */
 const GROUP_COUNTS: Record<(typeof CATALOGS)[number]["kind"], readonly [number, number]> = {
-  tokens: [6, 31],
+  tokens: [6, 32],
   assets: [3, 7],
   icons: [2, 11],
   components: [componentIA.nodes.length, componentIA.nodes.flatMap(group => group.children).length],

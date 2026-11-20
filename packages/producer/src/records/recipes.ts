@@ -212,3 +212,25 @@ export function produceIssues(recipe: Recipe, standards: readonly Standard[]): s
   }
   return issues;
 }
+
+/**
+ * The recipe one P2 run's craft events name (R15.7): the diverge's `recipe`, else the first event's
+ * that names one; the agent's own recipe of that id, else any agent's.
+ */
+export function craftRunRecipe(events: readonly Readonly<Record<string, unknown>>[], recipes: readonly Recipe[], agent: string): Recipe | undefined {
+  const diverge = events.find(event => event.op === "craft:diverge");
+  const recipeId = [...(diverge ? [diverge] : []), ...events].map(event => event.recipe).find((value): value is string => typeof value === "string");
+  if (recipeId === undefined) return undefined;
+  return recipes.find(item => item.id === recipeId && item.agent === agent) ?? recipes.find(item => item.id === recipeId);
+}
+
+/**
+ * The one plumb-rung craft rule (R15.7), shared by the judge (constitution/rules/r15.ts craftIssues)
+ * and the craft writers (records/slot-write.ts appendCraftEvent, writeCritique): a run's craft events
+ * under a plumb recipe are the fault, because its plumb action computes the candidate. The issue, or
+ * undefined. The writer passes the open run plus the event it is about to append.
+ */
+export function plumbCraftRunIssue(events: readonly Readonly<Record<string, unknown>>[], recipes: readonly Recipe[], agent: string): string | undefined {
+  const recipe = craftRunRecipe(events, recipes, agent);
+  return recipe?.doc?.rung === "plumb" && events.length ? `recipe ${recipe.id} is plumb: a plumb recipe records no craft events (its plumb action computes the candidate)` : undefined;
+}

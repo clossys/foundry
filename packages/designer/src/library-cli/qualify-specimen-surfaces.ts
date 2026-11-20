@@ -11,6 +11,8 @@ import { sha256 } from "../catalog-core/digest.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { SPECIMEN_SECTION_EXPORTS } from "../importers/specimen-sections.js";
 import { installedSurfaceDependency } from "./surface-installed-dependencies.js";
+import { retiredLeafIds } from "../catalog-core/retired-leaves.js";
+import retiredLeaves from "../catalog/retired.json" with { type: "json" };
 import type { CompositeEngineInput } from "../catalog-core/types.js";
 import type { SurfaceCommandReceipt, SurfaceDependency, SurfaceMeasurement, SurfacePackageEvidence } from "../catalog-core/surface-types.js";
 
@@ -18,8 +20,9 @@ export interface NativeSpecimenEvidence {
   version: 1;
   packages: readonly SurfacePackageEvidence[];
   dependencies: readonly SurfaceDependency[];
-  compiler: SurfaceMeasurement["compiler"];
-  command: SurfaceCommandReceipt;
+  /** Null only for an empty inventory: with no specimen seated there is no compiler program to vouch for. */
+  compiler: SurfaceMeasurement["compiler"] | null;
+  command: SurfaceCommandReceipt | null;
   certificates: readonly Pick<SurfaceMeasurement, "slot" | "source" | "compiled" | "checks">[];
 }
 const fail = (message: string): never => { throw new Error(`Native specimen source evidence unavailable: ${message}`); };
@@ -34,20 +37,30 @@ export function installedNativeSpecimenEvidence(): Promise<NativeSpecimenEvidenc
   return installedEvidence;
 }
 const native = SPECIMEN_SECTION_EXPORTS.map(row => row.id).sort();
+const retired = retiredLeafIds(retiredLeaves as unknown as Parameters<typeof retiredLeafIds>[0]);
+/** A retired specimen is no longer offered: it is never seated, certified or replayed. */
+export const SEATED_NATIVE_SPECIMENS: readonly string[] = native.filter(id => !retired.has(id));
 const same = (a: unknown, b: unknown) => stableStringify(a) === stableStringify(b);
 
-/** Verify the actual compiler command/logs, exact compiler source, inputs, declarations and emitted bytes. */
-export async function checkNativeSpecimenEvidence(evidence: NativeSpecimenEvidence): Promise<void> {
-  if (evidence.version !== 1 || !same(evidence.certificates.map(row => row.slot).sort(), native)) fail("complete unique native certificate inventory required");
-  if (runtimeSourceFindings(evidence.compiler).length) fail("compiler source identity differs");
-  const files = evidence.compiler.source.files;
+/** Verify the actual compiler command/logs, exact compiler source, inputs, declarations and emitted bytes.
+ * `seated` is the specimen inventory the evidence must cover exactly; production always uses SEATED_NATIVE_SPECIMENS. */
+export async function checkNativeSpecimenEvidence(evidence: NativeSpecimenEvidence, seated: readonly string[] = SEATED_NATIVE_SPECIMENS): Promise<void> {
+  if (evidence.version !== 1 || !same(evidence.certificates.map(row => row.slot).sort(), [...seated].sort())) fail("complete unique native certificate inventory required");
+  if (!evidence.certificates.length) {
+    if (evidence.compiler !== null || evidence.command !== null) fail("an empty certificate inventory carries no compiler invocation");
+    return;
+  }
+  if (!evidence.compiler || !evidence.command) fail("completed compiler invocation required");
+  const { compiler: compilerEvidence, command } = evidence as NativeSpecimenEvidence & { compiler: SurfaceMeasurement["compiler"]; command: SurfaceCommandReceipt };
+  if (runtimeSourceFindings(compilerEvidence).length) fail("compiler source identity differs");
+  const files = compilerEvidence.source.files;
   const compiler = await readFile(pathResolve(dirname(fileURLToPath(import.meta.url)), "../../dist/library-cli/surface-evidence-compiler.js"), "utf8");
-  if (files[evidence.compiler.source.entry] !== compiler) fail("installed compiler producer differs");
-  if (evidence.command.exitCode !== 0 || !same(evidence.command.argv, ["node", "dist/library-cli/surface-evidence-compiler.js"]) || evidence.command.stdoutSha256 !== sha256(files["compiler-stdout.json"] ?? "") || evidence.command.stderrSha256 !== sha256(files["compiler-stderr.txt"] ?? "")) fail("completed compiler command/log identity differs");
+  if (files[compilerEvidence.source.entry] !== compiler) fail("installed compiler producer differs");
+  if (command.exitCode !== 0 || !same(command.argv, ["node", "dist/library-cli/surface-evidence-compiler.js"]) || command.stdoutSha256 !== sha256(files["compiler-stdout.json"] ?? "") || command.stderrSha256 !== sha256(files["compiler-stderr.txt"] ?? "")) fail("completed compiler command/log identity differs");
   const result = JSON.parse(files["compiler-stdout.json"]!) as { outputs: Record<string, string>; manifest: { version: string; compilerSha256: string; options: Record<string, unknown>; inputs: { path: string; sha256: string }[] } };
   const manifest = JSON.parse(files["invocation-manifest.json"]!);
   const inputManifest = JSON.parse(files["input-manifest.json"]!) as { path: string; sha256: string }[];
-  if (!same(result.manifest, manifest) || manifest.options.strict !== true || manifest.options.noEmitOnError !== true || !manifest.inputs.length || evidence.compiler.source.dependencies.typescript?.version !== manifest.version || evidence.compiler.source.dependencies.typescript?.artifact !== `sha256:${manifest.compilerSha256}`) fail("compiler options/declaration input identity differs");
+  if (!same(result.manifest, manifest) || manifest.options.strict !== true || manifest.options.noEmitOnError !== true || !manifest.inputs.length || compilerEvidence.source.dependencies.typescript?.version !== manifest.version || compilerEvidence.source.dependencies.typescript?.artifact !== `sha256:${manifest.compilerSha256}`) fail("compiler options/declaration input identity differs");
   const source: Record<string, string> = {}, compiled: Record<string, string> = {};
   for (const certificate of evidence.certificates) {
     if (certificate.checks.types !== "pass" || certificate.checks.closure !== "pass") fail(`${certificate.slot}: incomplete compiler evidence`);
@@ -81,11 +94,11 @@ export async function specimenSurfaceEnvironment(input: CompositeEngineInput, su
 }
 
 /** Current identities are computed only for byte-identical compiler inputs; S2/S5/S8 remain authoritative. */
-export async function replayNativeSpecimenEvidence(input: CompositeEngineInput, evidence: NativeSpecimenEvidence): Promise<CompositeEngineInput> {
-  await checkNativeSpecimenEvidence(evidence);
+export async function replayNativeSpecimenEvidence(input: CompositeEngineInput, evidence: NativeSpecimenEvidence, seated: readonly string[] = SEATED_NATIVE_SPECIMENS): Promise<CompositeEngineInput> {
+  await checkNativeSpecimenEvidence(evidence, seated);
   const profile = resolve(input);
   const measurements: SurfaceMeasurement[] = [];
-  for (const row of Object.values(profile.surfaces?.fills ?? {}).filter(row => native.includes(surfaceEntryOf(row.document).slot as typeof native[number]))) {
+  for (const row of Object.values(profile.surfaces?.fills ?? {}).filter(row => seated.includes(surfaceEntryOf(row.document).slot))) {
     if (isSurfacePackageEntry(surfaceEntryOf(row.document))) fail("a native specimen must retain its source");
     const fill = surfaceOf(row.document), certificate = evidence.certificates.find(row => row.slot === fill.slot)!;
     const owned = input.library.surfaces!.files.filter(file => fill.outputSha256.some(pin => pin.path === file.path));
@@ -93,12 +106,12 @@ export async function replayNativeSpecimenEvidence(input: CompositeEngineInput, 
     if (bound.proof.findings.length) fail(`${fill.slot}: selected source closure differs`);
     const source = { entry: fill.impl.entry, files: Object.fromEntries([...owned.filter(file => file.path.match(/\.tsx?$/)), ...bound.componentFiles.filter(file => fill.bindings.length && file.path !== "component-index.ts")].map(file => [file.path, file.content])), dependencies: Object.fromEntries(bound.packages.map(pkg => [pkg.module, { version: pkg.version, artifact: `sha256:${pkg.artifactSha256}` }])) };
     if (!same(source, certificate.source) || !same(source.dependencies, certificate.compiled.dependencies)) fail(`${fill.slot}: exact compiler source/dependency equivalence differs; regenerate evidence for this selection`);
-    measurements.push({ version: 1, slot: fill.slot, scope: "real", identity: surfaceRuntimeIdentity(row), source: certificate.source, compiled: certificate.compiled, compiler: evidence.compiler, command: evidence.command, checks: certificate.checks, runtime: null });
+    measurements.push({ version: 1, slot: fill.slot, scope: "real", identity: surfaceRuntimeIdentity(row), source: certificate.source, compiled: certificate.compiled, compiler: evidence.compiler!, command: evidence.command!, checks: certificate.checks, runtime: null });
   }
-  const qualified = { ...input, surfaceOptions: { ...input.surfaceOptions!, measurements: [...input.surfaceOptions!.measurements.filter(row => !native.includes(row.slot as typeof native[number])), ...measurements] } };
+  const qualified = { ...input, surfaceOptions: { ...input.surfaceOptions!, measurements: [...input.surfaceOptions!.measurements.filter(row => !seated.includes(row.slot)), ...measurements] } };
   // Replay vouches only for the native specimens it measured. A held package pointer's S8 belongs to
   // its pinned release and stays an authoritative finding for the caller, not a replay failure.
-  const findings = resolve(qualified).surfaces!.check.findings.filter(row => row.code === "S8" && row.severity === "error" && native.includes(row.subject as typeof native[number]));
+  const findings = resolve(qualified).surfaces!.check.findings.filter(row => row.code === "S8" && row.severity === "error" && seated.includes(row.subject));
   if (findings.length) fail(JSON.stringify(findings));
   return qualified;
 }

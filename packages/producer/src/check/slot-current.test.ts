@@ -244,7 +244,15 @@ describe("a target-format candidate is judged by the target rules", () => {
 
   it("still judges an int2-shaped document in the same world by every rule of its kind", () => {
     const world = make();
-    expect(judge(world, "publisher/release.site", "site-v1.json", { schema: "clossys.publication/1", meta: { slot: "release.site" } }))
+    const int2 = { schema: "clossys.publication/1", meta: { slot: "release.site" } };
+    // A release slot holds the manifest, so a publication record there is refused as such (U39b fix r1) ...
+    expect(judge(world, "publisher/release.site", "site-v1.json", int2))
+      .toEqual(["candidate-invalid: publisher/release.site is a release slot: it holds the manifest clossys release <pub> --manifest writes, not a page or publication record"]);
+    // ... and on a publication slot the same document is still judged by every rule of the publication kind.
+    const name = "site-v1.json";
+    const header = buildCandidateHeader({ agent: "publisher", slotId: "publication.site", name, createdBy: cliActor("test"), createdAt: AT as never, source: { kind: "original", ref: [] } as never });
+    const publication = readSlotValue({ ...JSON.parse(world.read("clossys/agents/publisher/release.site/slot.json")), kind: "publication" })!;
+    expect(candidateIssues(publication, "publisher", "publication.site", name, serializeCandidate(name, header, int2)).map(issue => `${issue.code}: ${issue.message}`))
       .toEqual(expect.arrayContaining(["candidate-invalid: format is required", "candidate-invalid: entryOrder must be a list"]));
     expect(judge(world, "designer/sections.hero", "hero-v2.json", { name: "hero", type: "registry:block" })).toContain("candidate-invalid: files[] must carry path, type and inline content");
   });

@@ -19,7 +19,8 @@ export const COMPONENT_ALIASES: Readonly<Record<string, string>> = Object.freeze
   "enter.radio-group": "components.radio-group",
   "enter.select": "components.select",
   "enter.combo-box": "components.combo-box",
-  "enter.number-field": "components.number-field",
+  // Retired leaves with no successor (components.number-field, the removed chart leaves) keep no alias:
+  // their legacy addresses pass through unresolved instead of offering a leaf that has no code.
   "enter.slider": "components.slider",
   "enter.date-field": "components.date-field",
   "enter.calendar": "components.calendar",
@@ -39,13 +40,7 @@ export const COMPONENT_ALIASES: Readonly<Record<string, string>> = Object.freeze
   "depict.logomark": "components.logo",
   "depict.bar-chart": "components.chart-bar",
   "depict.line-chart": "components.chart-line",
-  "depict.sparkline": "components.chart-sparkline",
-  "depict.waterfall-chart": "components.chart-waterfall",
-  "depict.range-chart": "components.chart-range",
-  "depict.scatter-chart": "components.chart-scatter",
   "depict.area-chart": "components.chart-area",
-  "depict.heatmap": "components.chart-heatmap",
-  "depict.status-strip": "components.chart-status-strip",
   "inform.banner": "components.banner",
   "inform.status-mark": "components.status-mark",
   "inform.toast": "components.toast",

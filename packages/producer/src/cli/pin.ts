@@ -181,6 +181,15 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
   const slotId = hash < 0 ? target : target.slice(0, hash);
   const record = hash < 0 ? undefined : target.slice(hash + 1);
   if (hash >= 0 && !record) throw new CliUsageError(`pin target #<record> is empty\n${PIN_USAGE}`);
+  // The actor is judged before the format, as on the clossys.slot/1 path (Q9): a non-owner --confirm, or a seat on
+  // another agent's slot, is refused by the owner or seat rule before any usage refusal (--not-needed, --confirm,
+  // --reason, --ref) can answer for it.
+  if (flags.confirm && !CONFIRMED_BY.test(flags.by)) throw new CliUsageError(`--confirm is the owner's: --by must be owner:queue.<kind>#<id>, got ${flags.by}\n${PIN_USAGE}`);
+  if (flags.by.startsWith("agent:")) {
+    // The shared seat rule (records/seat-owner.ts), before the gate writes a scorecard: a registered seat, on its own slots.
+    const crossing = seatRefusal(flags.by, agent);
+    if (crossing !== undefined) return { exitCode: 1, message: `pin refused: ${crossing}` };
+  }
   if (flags.confirm) return runTargetConfirm(root, agent, slotId, record, candidateId, flags, guard);
   if (flags.notNeeded) return runTargetNotNeeded(root, agent, slotId, record, candidateId, flags, guard);
   if (flags.reason !== undefined || flags.ref !== undefined) {
@@ -195,9 +204,7 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
     if (flags.basis !== undefined && flags.basis !== "planner") throw new CliUsageError(`--by ${by} is a planner pin: its basis is planner\n${PIN_USAGE}`);
     basis = "planner";
   } else if (by.startsWith("agent:")) {
-    // The shared seat rule (records/seat-owner.ts), before the gate writes a scorecard: a registered seat, on its own slots.
-    const crossing = seatRefusal(by, agent);
-    if (crossing !== undefined) return { exitCode: 1, message: `pin refused: ${crossing}` };
+    // The seat rule ran above, before the format checks.
     if (flags.basis !== undefined && flags.basis !== "agent") throw new CliUsageError(`--by ${by} is an agent pin: its basis is agent\n${PIN_USAGE}`);
     basis = "agent";
   } else if (ownerAnswerRef(by)) {

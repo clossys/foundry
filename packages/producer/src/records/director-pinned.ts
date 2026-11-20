@@ -16,10 +16,10 @@ export interface PinnedDirector {
   readonly unreadable: readonly { slot: string; path: string; message: string }[];
 }
 
-/** One candidate parser for every reader: Director's own `slotCandidateCell` (format/slot.ts). */
+/** One candidate parser for every reader: Director's own `slotCandidateCell` (format/slot.ts), over the file as written (it reads a clossys header as the candidate view does, and counts body lines in the file). */
 async function toCell(candidate: PinnedCandidate): Promise<Cell> {
   const director = await agentModule("director", "index.js");
-  return director.slotCandidateCell({ id: candidate.id, version: candidate.version, updated: candidate.pin.at.slice(0, 10), path: candidate.path, bytes: candidate.bytes }) as Cell;
+  return director.slotCandidateCell({ id: candidate.id, version: candidate.version, updated: candidate.pin.at.slice(0, 10), path: candidate.path, bytes: candidate.raw }) as Cell;
 }
 
 /** The consumer's pinned Director set as cells. `consumer` is the `clossys/` folder. */

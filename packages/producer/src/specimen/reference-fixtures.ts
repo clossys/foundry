@@ -249,8 +249,11 @@ export function planReferenceFixtures(designerRoot: string, studioSlots: readonl
       if (!Array.isArray(contract.props)) { gaps.push({ slot: slot.id, layer, reason: "the contract declares no props list, so no typed fixture can be written" }); slot.contract = contract; continue; }
       const keep = richer(existing, result.fixture);
       const fixture = keep ? existing as ContractFixture : result.fixture;
-      const fixtureProps = Object.keys(fixture.fixtures.props);
-      contract.props = [...new Set([...(contract.props as string[]), ...result.props, ...fixtureProps])].sort();
+      // Mount-only props type the fixture but are never required of a candidate (K1 reads contract.props only).
+      const required = contract.props as string[];
+      const mountOnly = [...new Set([...result.props, ...Object.keys(fixture.fixtures.props)])].filter(key => !required.includes(key)).sort();
+      delete contract.fixtureProps;
+      if (mountOnly.length) contract.fixtureProps = mountOnly;
       contract.fixture = fixture;
       if (keep) kept++;
       fixtures++;
