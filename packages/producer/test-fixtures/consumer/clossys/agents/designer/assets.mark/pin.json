@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/assets.mark/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/assets.mark",
+      "sha256": "be7fc3367ff29c685c743ef53408959e33e0611bc9e743a41f5ede01a368fb78"
+    }
+  ],
+  "candidate": "mark-v1.json",
+  "sha256": "d422877c486edf89450831cef69c1cc8b14f56985529c46bdfadbb9e3db5f638",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

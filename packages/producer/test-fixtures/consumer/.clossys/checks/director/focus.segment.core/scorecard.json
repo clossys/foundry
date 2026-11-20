@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "director/focus.segment.core",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "core-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "core-v1.md",
+      "sha256": "261c0ea12bdc9716dec575b09af518b1dae6555a2045d3919d70ef57a946278a",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "db8fcf332a6166e93d15ddc4acade3da123a9d3303412a8bf0121c9305e02273"
+    }
+  ]
+}

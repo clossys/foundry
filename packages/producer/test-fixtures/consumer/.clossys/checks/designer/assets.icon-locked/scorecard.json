@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.icon-locked",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "icon-locked-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "icon-locked-v1.json",
+      "sha256": "0e1b54bb075c2cf3a3e93efc7dc596eb54b24d3ca70c2191b3621fdc1cbe5d26",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "6c8482de9efdac4ed14fe18f09ae337501e298014c18929997b4baa2a1c696e6"
+    }
+  ]
+}

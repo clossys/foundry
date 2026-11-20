@@ -1,0 +1,46 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/assets.lockup/lockup-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/assets.lockup",
+    "createdBy": {
+      "actor": "code",
+      "cli": "clossys submit",
+      "version": "0.1.0"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "original",
+      "ref": [],
+      "license": "CC0-1.0"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "lockup",
+    "type": "registry:file",
+    "files": [
+      {
+        "path": "assets/lockup-positive.svg",
+        "type": "registry:file",
+        "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 16\" role=\"img\" aria-label=\"Fixture Works\">\n  <rect x=\"1.5\" y=\"1.5\" width=\"13\" height=\"13\" rx=\"3.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\"/>\n  <path d=\"M5 8h6M18 4.5h12M18 8h9M18 11.5h11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\"/>\n</svg>\n"
+      },
+      {
+        "path": "assets/lockup-reversed.svg",
+        "type": "registry:file",
+        "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 16\" role=\"img\" aria-label=\"Fixture Works\">\n  <rect x=\"1.5\" y=\"1.5\" width=\"13\" height=\"13\" rx=\"3.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <path d=\"M5 8h6M18 4.5h12M18 8h9M18 11.5h11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n</svg>\n"
+      }
+    ],
+    "meta": {
+      "slot": "assets.lockup",
+      "element": {
+        "slot": "assets.lockup",
+        "reason": "Realises director:identity.brand.essence, director:identity.brand.personality, director:identity.naming.name, director:identity.visual.imagery: the fixture consumer's own plain artwork."
+      }
+    }
+  }
+}

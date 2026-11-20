@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/themes.muted",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "muted-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "muted-v1.json",
+      "sha256": "14a83e698cf72fe05ff69eafb173a96c36b916feb843ab07e401b4974038e90f",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "83fa1b0bfe1e3b553694f1f9384fd2ef8b60b2bab567a65eab998bce2b6871d4"
+    }
+  ]
+}

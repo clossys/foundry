@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/themes.radius",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "radius-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "radius-v1.json",
+      "sha256": "fa7f9151dd611d46a15a100e402df451ddec9afebf49e46c2ee0f5aa5e69bd28",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "f169a971574a846e30f97f3c617821e90ad605bae16ab86d36bfff2e87b38dcc"
+    }
+  ]
+}

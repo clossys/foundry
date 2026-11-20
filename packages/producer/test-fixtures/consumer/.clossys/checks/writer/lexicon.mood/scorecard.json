@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "writer/lexicon.mood",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "mood-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "mood-v1.md",
+      "sha256": "1a4bfde7aa8019afdb38fe653e62e149e6b1c43ff5f534bc29e2b47c0e1d77e2",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "22dd38cafee58f4c9c3666313cd2cf17e7b39afcf62c67adfe60073365c23635"
+    }
+  ]
+}

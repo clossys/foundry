@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/components.toggle-button/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/components.toggle-button",
+      "sha256": "b53e6cac8f9b34e1dd94d3f1c5d85353a91002e65893adcf0936a33a3eaafd91"
+    }
+  ],
+  "candidate": "toggle-button-v1.json",
+  "sha256": "ef2859c9a0514496294cd83f8f7762bbdd7facfa5b24f6b4f65b7182f282a4b2",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

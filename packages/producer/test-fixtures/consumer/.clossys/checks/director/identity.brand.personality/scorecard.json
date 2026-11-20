@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "director/identity.brand.personality",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "personality-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "personality-v1.md",
+      "sha256": "f85d6742ab148aa72f18205f3ff830389e643644bc732626776fe26337b2d3c2",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "5211e858ae768f07ca9f397af33a4afb2b2b15ee2024adfc1141631a9db7acdc"
+    }
+  ]
+}

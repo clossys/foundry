@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.critique/1",
+  "slot": "focus.segment.core",
+  "candidate": "core-v1.md",
+  "standard": "brief.profile",
+  "scores": {
+    "decisive": 4,
+    "evidence-weight": 4,
+    "tripwire-usefulness": 4,
+    "sharp-edges": 4
+  },
+  "packet": {
+    "manifest": [
+      {
+        "role": "taste",
+        "ref": "packages/director/standards/brief.profile/taste.md"
+      },
+      {
+        "role": "contract",
+        "ref": "clossys/agents/director/focus.segment.core/slot.json#contract"
+      },
+      {
+        "role": "render",
+        "ref": ".clossys/renders/director/focus.segment.core/core-v1.png"
+      }
+    ]
+  }
+}

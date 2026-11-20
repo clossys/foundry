@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "director/identity.brand.essence",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "essence-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "essence-v1.md",
+      "sha256": "ddc61558e45ee1dc8662e081d40409dd9438a37d0dc93464efa8e319119b02e5",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "8a816aada5156a6e5da2ad9cf9ae2f64cf3ff090cdedb7400a8292d879743671"
+    }
+  ]
+}

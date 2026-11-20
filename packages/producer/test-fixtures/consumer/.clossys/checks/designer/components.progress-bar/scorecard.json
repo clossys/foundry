@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/components.progress-bar",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "progress-bar-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "progress-bar-v1.json",
+      "sha256": "ccd6e17bebf46e56f268c6291583ab044b5c3e431318b16394b290cba1f308c0",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "059f96a58f27ce2341d6b9164a99a72a302abe82586006a9bf443f8f3e0dcea1"
+    }
+  ]
+}

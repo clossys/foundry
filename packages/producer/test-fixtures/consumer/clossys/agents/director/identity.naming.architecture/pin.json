@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "director/identity.naming.architecture/pin",
+  "agent": "director",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "director/identity.naming.architecture",
+      "sha256": "56f4ebc66cf30df01343f157fe7cc45e0c42376b1052bfb718a4351f4f8b2e1a"
+    }
+  ],
+  "candidate": "architecture-v1.md",
+  "sha256": "103bc33a1a5cea5061ff23ef9570142b4e896bfb661ea1cb8a1d36b4dd211ce3",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

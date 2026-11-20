@@ -1,0 +1,44 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/assets.icon-chevron-down/icon-chevron-down-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/assets.icon-chevron-down",
+    "createdBy": {
+      "actor": "code",
+      "cli": "clossys submit",
+      "version": "0.1.0"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/chevron-down@1.65.0"
+      ],
+      "hash": "sha256:cd4acf0e0fa126961c43306d62999c126ec02b6f7c8fd0a00e62b02458ba9136",
+      "license": "ISC"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "icon-chevron-down",
+    "type": "registry:file",
+    "files": [
+      {
+        "path": "assets/icon-chevron-down.svg",
+        "type": "registry:file",
+        "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"m6 9 6 6 6-6\" />\n</svg>\n"
+      }
+    ],
+    "meta": {
+      "slot": "assets.icon-chevron-down",
+      "element": {
+        "slot": "assets.icon-chevron-down",
+        "reason": "Realises director:identity.visual.imagery: the lucide/chevron-down@1.65.0 drawing, unchanged."
+      }
+    }
+  }
+}

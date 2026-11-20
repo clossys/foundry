@@ -42,6 +42,313 @@
           "sha256": "06719d6b1d2822919b3ff6dad24252cd6e5caefe46f961b422ac84e0a7b0f748"
         }
       ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
+      "gaps": [
+        {
+          "id": "restraint"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "goal": "fixture world: fill themes.background to token.color",
+      "assembled": {
+        "inputs": [
+          {
+            "agent": "director",
+            "slot": "advantage.proposition.promise",
+            "candidate": "promise-v1.md",
+            "sha256": "ce2fb24f2f9f4cd6b26f3c3266bc5eefe60608ec9f5eea8a2adc8722ab4a47df"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.category.definition",
+            "candidate": "definition-v1.md",
+            "sha256": "299e529dc57b12f65a7148a6816b8175b37da843210e8fab21749079a92b6f7f"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.segment.core",
+            "candidate": "core-v1.md",
+            "sha256": "261c0ea12bdc9716dec575b09af518b1dae6555a2045d3919d70ef57a946278a"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.essence",
+            "candidate": "essence-v1.md",
+            "sha256": "ddc61558e45ee1dc8662e081d40409dd9438a37d0dc93464efa8e319119b02e5"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.personality",
+            "candidate": "personality-v1.md",
+            "sha256": "f85d6742ab148aa72f18205f3ff830389e643644bc732626776fe26337b2d3c2"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.verbal.voice",
+            "candidate": "voice-v1.md",
+            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.imagery",
+            "candidate": "imagery-v1.md",
+            "sha256": "105804a683aa5b5ab19949b6d4d7bf0dac3319fdb14ba0a944b3f8600ae84cd8"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.style",
+            "candidate": "style-v1.md",
+            "sha256": "a37d3e74a657d00c4ac60fd92abe873d49bf9250c7834cea81b2eb5fc05ff425"
+          }
+        ],
+        "contract": {
+          "value": {
+            "$type": "color",
+            "emit": {
+              "default": "--background"
+            },
+            "kind": "token",
+            "members": {
+              "mode": "closed",
+              "names": [
+                "default"
+              ]
+            },
+            "modes": [
+              "light",
+              "dark"
+            ],
+            "tier": "role",
+            "requirements": [
+              {
+                "check": "derive.director"
+              },
+              {
+                "check": "token.dtcg"
+              },
+              {
+                "check": "source.ref"
+              }
+            ]
+          },
+          "sha256": "77edc67c7cfff9dc957988ef4d242b1d1d904b68225d7b59dc3ee55ef0674dfd"
+        },
+        "standard": {
+          "id": "token.color",
+          "sha256": "eb71efe92385d3ae3f85771b80805fc92f8ceaf545a5d6ecd75e32377b58db25",
+          "requirements": [
+            {
+              "check": "derive.director",
+              "params": {
+                "traits": [
+                  "identity.visual.style",
+                  "identity.brand.essence",
+                  "identity.brand.personality"
+                ]
+              }
+            },
+            {
+              "check": "token.dtcg",
+              "params": {
+                "type": "color",
+                "modes": [
+                  "light",
+                  "dark"
+                ],
+                "provenance": true
+              }
+            },
+            {
+              "check": "source.ref",
+              "params": {
+                "kinds": [
+                  "derived",
+                  "registry",
+                  "original"
+                ],
+                "registries": [
+                  "shadcn",
+                  "tailwindcss"
+                ],
+                "licenses": [
+                  "MIT"
+                ]
+              }
+            }
+          ],
+          "taste": [
+            {
+              "id": "restraint",
+              "anchors": {
+                "1": "Many hues compete; the palette reads as decoration.",
+                "2": "Colour used where weight or space would do.",
+                "3": "Neutral base with an accent, but the accent appears in too many roles.",
+                "4": "Colour only where it carries meaning; the neutral ramp does the work.",
+                "5": "Quiet and exact: colour is rare, so each use is read as a signal."
+              }
+            },
+            {
+              "id": "temperament",
+              "anchors": {
+                "1": "The value contradicts the pinned visual style.",
+                "2": "A stock reference value with no trace of the brand.",
+                "3": "Consistent with the style but interchangeable with any product.",
+                "4": "Recognisably this brand's temperature and saturation.",
+                "5": "The value could only belong to this brand and states its Director trait plainly."
+              }
+            },
+            {
+              "id": "mode-balance",
+              "anchors": {
+                "1": "Dark mode is an inverted afterthought.",
+                "2": "One mode loses hierarchy the other has.",
+                "3": "Both modes work but feel like two products.",
+                "4": "Both modes keep the same hierarchy and accent weight.",
+                "5": "Light and dark read as one system, tuned per mode rather than inverted."
+              }
+            },
+            {
+              "id": "accent-economy",
+              "anchors": {
+                "1": "The accent is reused for links, focus, charts and status alike.",
+                "2": "Accent and status colours collide.",
+                "3": "Roles are separated but the accent is loud.",
+                "4": "One accent, distinct status hues, calm charts.",
+                "5": "Every role has its own job and none borrows another's colour."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "tone": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "tone": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "tone": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "high"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "high",
+      "critique": "critiques/background-v1.json",
+      "sha256": "465a5ec7e4203b61c9802d1c4cfab505461141c49b7ea7313c29254c73a9ee65"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "basis": "agent",
+      "rung": "L4",
+      "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
+      "ladder": {
+        "rung": "L4",
+        "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream"
+      },
+      "name": "background-v1.json",
+      "sha256": "4e63f54c339a772ac05d39e542333f3d4a585e1b5d7e329df2df5c8f40ac0e99"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "background-v1.json",
+      "sha256": "4e63f54c339a772ac05d39e542333f3d4a585e1b5d7e329df2df5c8f40ac0e99",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "2ab4d2ecdd31dfc07e72ef0271018f5c58102ce74604786498936a8a71a69164"
+        }
+      ]
     }
   ]
 }

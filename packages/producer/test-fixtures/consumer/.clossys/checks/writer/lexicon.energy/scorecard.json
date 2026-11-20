@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "writer/lexicon.energy",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "energy-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "energy-v1.md",
+      "sha256": "c6fa52ad021763af4a6326867afbb5bdadbed22c3ada902f55162cd827ac261d",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "beb598b393ddcf13d6c57e127425a040aba580900f1b7355122bc1156f09b3ad"
+    }
+  ]
+}

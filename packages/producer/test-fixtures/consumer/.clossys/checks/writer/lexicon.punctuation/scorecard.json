@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "writer/lexicon.punctuation",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "punctuation-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "punctuation-v1.md",
+      "sha256": "3de0fd01e50a5390c28871f220155191412abee726298d91392718d61eec9470",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "ad0f91c9837063d66e11b06b8c30b7b8ea6e363b0652f9eb9d6eb3109d4c3342"
+    }
+  ]
+}

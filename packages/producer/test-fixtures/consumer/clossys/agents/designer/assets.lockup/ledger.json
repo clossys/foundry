@@ -61,6 +61,331 @@
           "sha256": "0875e31c6b1f93240fbe8217e65ee6530a445b63c09a25babfae461fc49de75d"
         }
       ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
+      "gaps": [
+        {
+          "id": "distinctiveness"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "goal": "fixture world: fill assets.lockup to asset.logo-mark",
+      "assembled": {
+        "inputs": [
+          {
+            "agent": "director",
+            "slot": "advantage.proposition.promise",
+            "candidate": "promise-v1.md",
+            "sha256": "ce2fb24f2f9f4cd6b26f3c3266bc5eefe60608ec9f5eea8a2adc8722ab4a47df"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.category.definition",
+            "candidate": "definition-v1.md",
+            "sha256": "299e529dc57b12f65a7148a6816b8175b37da843210e8fab21749079a92b6f7f"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.segment.core",
+            "candidate": "core-v1.md",
+            "sha256": "261c0ea12bdc9716dec575b09af518b1dae6555a2045d3919d70ef57a946278a"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.essence",
+            "candidate": "essence-v1.md",
+            "sha256": "ddc61558e45ee1dc8662e081d40409dd9438a37d0dc93464efa8e319119b02e5"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.personality",
+            "candidate": "personality-v1.md",
+            "sha256": "f85d6742ab148aa72f18205f3ff830389e643644bc732626776fe26337b2d3c2"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.verbal.voice",
+            "candidate": "voice-v1.md",
+            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.imagery",
+            "candidate": "imagery-v1.md",
+            "sha256": "105804a683aa5b5ab19949b6d4d7bf0dac3319fdb14ba0a944b3f8600ae84cd8"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.style",
+            "candidate": "style-v1.md",
+            "sha256": "a37d3e74a657d00c4ac60fd92abe873d49bf9250c7834cea81b2eb5fc05ff425"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.naming.name",
+            "candidate": "name-v1.md",
+            "sha256": "28814c7f6d483f6d3bd33e06fd9475b19a49a2fa5b2705a041320fc92e792ef9"
+          }
+        ],
+        "contract": {
+          "value": {
+            "kind": "asset",
+            "valueKind": "svg",
+            "members": {
+              "mode": "closed",
+              "names": [
+                "positive",
+                "reversed"
+              ]
+            },
+            "modes": [
+              "light"
+            ],
+            "copy": {
+              "sourceLocale": "en",
+              "fields": [
+                {
+                  "key": "alt",
+                  "kind": "plain",
+                  "role": "alt",
+                  "required": true,
+                  "maxLength": {
+                    "en": 140
+                  },
+                  "dir": "auto"
+                }
+              ]
+            },
+            "requirements": [
+              {
+                "check": "derive.director"
+              },
+              {
+                "check": "asset.svg-files"
+              },
+              {
+                "check": "source.ref"
+              }
+            ]
+          },
+          "sha256": "8b81386ec16fba475f14c583dc5f932079fa5d4d366e6eb26028b869af0c4658"
+        },
+        "standard": {
+          "id": "asset.logo-mark",
+          "sha256": "87900eba42bae422e23aec835e1e0edf9cd629670ece69bc9ed1d704f3ffefcf",
+          "requirements": [
+            {
+              "check": "derive.director",
+              "params": {
+                "traits": [
+                  "identity.brand.essence",
+                  "identity.brand.personality",
+                  "identity.naming.name"
+                ],
+                "required": [
+                  "identity.visual.imagery"
+                ]
+              }
+            },
+            {
+              "check": "asset.svg-files",
+              "params": {
+                "viewbox": {},
+                "modes": {},
+                "smallSize": {
+                  "size": 16,
+                  "minStrokePx": 1,
+                  "maxShapes": 12
+                }
+              }
+            },
+            {
+              "check": "source.ref",
+              "params": {
+                "kinds": [
+                  "original",
+                  "derived"
+                ],
+                "registries": [],
+                "licenses": [
+                  "MIT",
+                  "CC0-1.0"
+                ]
+              }
+            }
+          ],
+          "taste": [
+            {
+              "id": "distinctiveness",
+              "anchors": {
+                "1": "Generic; could be any company.",
+                "2": "Echoes a well-known mark.",
+                "3": "Distinct but forgettable.",
+                "4": "Memorable after one look.",
+                "5": "Ownable: recognisable from its silhouette alone."
+              }
+            },
+            {
+              "id": "reduction",
+              "anchors": {
+                "1": "Falls apart at favicon size.",
+                "2": "Needs a separate small version and has none.",
+                "3": "Survives small sizes with loss.",
+                "4": "Holds from 16px to billboard.",
+                "5": "Reduced to the fewest shapes that still carry the idea."
+              }
+            },
+            {
+              "id": "brand-fit",
+              "anchors": {
+                "1": "Contradicts the brand essence.",
+                "2": "Neutral to the brand.",
+                "3": "Fits the style but not the idea.",
+                "4": "Expresses the essence the reason cites.",
+                "5": "The mark and the brand idea are the same thing."
+              }
+            },
+            {
+              "id": "construction",
+              "anchors": {
+                "1": "Uneven curves and spacing.",
+                "2": "Mostly clean, visible flaws up close.",
+                "3": "Clean but unbalanced.",
+                "4": "Built on a clear grid with optical corrections.",
+                "5": "Every curve and gap is deliberate and the lockup spacing is a rule."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "tone": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "tone": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "tone": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "high"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "high",
+      "critique": "critiques/lockup-v1.json",
+      "sha256": "ccc07f978f4fc893b152bf93990dae2157a594f44916e30cb4a5a890759faac1"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "basis": "agent",
+      "rung": "L4",
+      "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
+      "ladder": {
+        "rung": "L4",
+        "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream"
+      },
+      "name": "lockup-v1.json",
+      "sha256": "faaf51b3114f88eae9e472365b9e5eca6f82391b39abe1cb1cb86b5a08d4ece7"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "lockup-v1.json",
+      "sha256": "faaf51b3114f88eae9e472365b9e5eca6f82391b39abe1cb1cb86b5a08d4ece7",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "5db7adb7eb842a59574324a9708b8a53ca9760438c8b41dbf35c3f3bdf47b548"
+        }
+      ]
     }
   ]
 }

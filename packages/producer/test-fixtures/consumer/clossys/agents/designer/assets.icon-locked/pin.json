@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/assets.icon-locked/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/assets.icon-locked",
+      "sha256": "9fcf41935319e181755b04ee4830db63c50d2c2700c55f2f47a6775f67f5925d"
+    }
+  ],
+  "candidate": "icon-locked-v1.json",
+  "sha256": "0e1b54bb075c2cf3a3e93efc7dc596eb54b24d3ca70c2191b3621fdc1cbe5d26",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

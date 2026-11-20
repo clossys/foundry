@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/assets.icon-chevron-up/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/assets.icon-chevron-up",
+      "sha256": "ec55a494b51b0e2295747359d67cc4c877fce9c40602cf3dd89b2d6c3f3abf44"
+    }
+  ],
+  "candidate": "icon-chevron-up-v1.json",
+  "sha256": "c2cfa0ad37fbb292b4627f055e1f3147c277983448c4e3a5c41804d48b3b1c5f",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "director/identity.brand.essence/pin",
+  "agent": "director",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "director/identity.brand.essence",
+      "sha256": "8a3cee0ae73dd95741bf9dfc2043bb1d3faa4b71c8e4e3272ccaf6a7b72b165d"
+    }
+  ],
+  "candidate": "essence-v1.md",
+  "sha256": "ddc61558e45ee1dc8662e081d40409dd9438a37d0dc93464efa8e319119b02e5",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

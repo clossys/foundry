@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/themes.foreground/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/themes.foreground",
+      "sha256": "0b9553e1f246890f498cd2606fed1e7e15952736b5806d638fe9cb5ca0cd8be9"
+    }
+  ],
+  "candidate": "foreground-v1.json",
+  "sha256": "c3da3fd9b8f755ca68743bf4f774d4e908ae5d2843a31b87d49da9af84dd637b",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

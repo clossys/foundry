@@ -1,0 +1,44 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/assets.icon-theme-system/icon-theme-system-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/assets.icon-theme-system",
+    "createdBy": {
+      "actor": "code",
+      "cli": "clossys submit",
+      "version": "0.1.0"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/monitor@1.65.0"
+      ],
+      "hash": "sha256:0195c460816f13f60c59625642c3e2f8e822d21eb4aa331ea41079163e1d96ec",
+      "license": "ISC"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "icon-theme-system",
+    "type": "registry:file",
+    "files": [
+      {
+        "path": "assets/icon-theme-system.svg",
+        "type": "registry:file",
+        "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <rect width=\"20\" height=\"14\" x=\"2\" y=\"3\" rx=\"2\" />\n  <line x1=\"8\" x2=\"16\" y1=\"21\" y2=\"21\" />\n  <line x1=\"12\" x2=\"12\" y1=\"17\" y2=\"21\" />\n</svg>\n"
+      }
+    ],
+    "meta": {
+      "slot": "assets.icon-theme-system",
+      "element": {
+        "slot": "assets.icon-theme-system",
+        "reason": "Realises director:identity.visual.imagery: the lucide/monitor@1.65.0 drawing, unchanged."
+      }
+    }
+  }
+}

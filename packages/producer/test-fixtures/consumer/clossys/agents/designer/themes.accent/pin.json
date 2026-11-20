@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/themes.accent/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/themes.accent",
+      "sha256": "8c4d97ce745e92e378db43154182ca63a49eff48b4157c23ac19f43e07e6b945"
+    }
+  ],
+  "candidate": "accent-v1.json",
+  "sha256": "24c561ef009b38eff9c7a8951fda0007e51f7cd814ebf28d0d05a3c4dd45bdd4",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

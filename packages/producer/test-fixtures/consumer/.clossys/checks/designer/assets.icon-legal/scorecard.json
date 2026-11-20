@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.icon-legal",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "icon-legal-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "icon-legal-v1.json",
+      "sha256": "aa9e18df6c60c676fc794fb9563854de6afdaaf0cf66690ef610dff5dde8032b",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "b9d5118fdddca6489175af4e235b7734c2e4d13a6b9e76f5fb4c6e93b69fa417"
+    }
+  ]
+}

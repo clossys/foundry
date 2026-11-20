@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.critique/1",
+  "slot": "page.home.meta",
+  "candidate": "meta-v1.md",
+  "standard": "string",
+  "scores": {
+    "voice-fit": 4,
+    "clarity": 4,
+    "economy": 4,
+    "task-fit": 4
+  },
+  "packet": {
+    "manifest": [
+      {
+        "role": "taste",
+        "ref": "packages/writer/standards/string/taste.md"
+      },
+      {
+        "role": "contract",
+        "ref": "clossys/agents/writer/page.home.meta/slot.json#contract"
+      },
+      {
+        "role": "render",
+        "ref": ".clossys/renders/writer/page.home.meta/meta-v1.png"
+      }
+    ]
+  }
+}

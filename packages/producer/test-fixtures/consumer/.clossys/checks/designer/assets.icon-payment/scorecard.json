@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.icon-payment",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "icon-payment-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "icon-payment-v1.json",
+      "sha256": "3bde2e4170654f6f1da10dcd11953f516d423865591024774da0ac6256b0e062",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "85f674599232e4bee2572e60433d0126185f22efcdb6631d5bb9a76d8bdbe27f"
+    }
+  ]
+}

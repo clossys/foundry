@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "director/advantage.proposition.promise",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "promise-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "promise-v1.md",
+      "sha256": "ce2fb24f2f9f4cd6b26f3c3266bc5eefe60608ec9f5eea8a2adc8722ab4a47df",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "cf2a3ff219f47b7efc1afbafb19f255192798bd60d5e84174a4e2018fe1ddf0e"
+    }
+  ]
+}

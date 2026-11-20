@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "director/aspiration.purpose.mission",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "mission-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "mission-v1.md",
+      "sha256": "6aa52c264672baf3fbb169703a916da0326f59b1968f9dd56823357d68ae7564",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "6cff50ef62ab612e6c8d11d81980eaab927bf3c88933b616f5fe30ea29b2ce32"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/assets.lockup/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/assets.lockup",
+      "sha256": "25744f490c38c160543bacdb635f8521a9bbdc9b5ade63e85ef73d8a75811229"
+    }
+  ],
+  "candidate": "lockup-v1.json",
+  "sha256": "faaf51b3114f88eae9e472365b9e5eca6f82391b39abe1cb1cb86b5a08d4ece7",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

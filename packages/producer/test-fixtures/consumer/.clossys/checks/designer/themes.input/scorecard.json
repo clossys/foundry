@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/themes.input",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "input-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "input-v1.json",
+      "sha256": "40a377deddd7c46d3efbad94fa40557f0102451cc5a081b711b1146cb1963099",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "4ce2d1accc0d577a2d892c8560322b4b0e90a1231f00a37105e00831d575ba4e"
+    }
+  ]
+}

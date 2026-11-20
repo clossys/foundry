@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/themes.destructive",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "destructive-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "destructive-v1.json",
+      "sha256": "baabbdcda3627a39470e50107db550198dde226147e2970de579a5a86f47a0b6",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "12696513cc93058970a07609ec06a5ae2df767d26fa90c9cde5346d097d17472"
+    }
+  ]
+}

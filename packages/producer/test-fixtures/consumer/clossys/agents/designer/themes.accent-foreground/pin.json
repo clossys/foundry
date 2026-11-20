@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/themes.accent-foreground/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/themes.accent-foreground",
+      "sha256": "e88b163ae34267ef0314d0d7bc0b8f9c62e4dadbcde25879bea537e191cdb849"
+    }
+  ],
+  "candidate": "accent-foreground-v1.json",
+  "sha256": "93889dcef5cb33d5ce6bab979244fb9536b1c36d4cfe2d0714c2442ff05ec3de",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

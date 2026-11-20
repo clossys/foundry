@@ -1,0 +1,44 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/assets.icon-arrow-right/icon-arrow-right-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/assets.icon-arrow-right",
+    "createdBy": {
+      "actor": "code",
+      "cli": "clossys submit",
+      "version": "0.1.0"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/arrow-right@1.65.0"
+      ],
+      "hash": "sha256:86a008288453770b6408cd9615f0c12f257fc78ccc819a038d95b9d9e54bc87e",
+      "license": "ISC"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "icon-arrow-right",
+    "type": "registry:file",
+    "files": [
+      {
+        "path": "assets/icon-arrow-right.svg",
+        "type": "registry:file",
+        "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M5 12h14\" />\n  <path d=\"m12 5 7 7-7 7\" />\n</svg>\n"
+      }
+    ],
+    "meta": {
+      "slot": "assets.icon-arrow-right",
+      "element": {
+        "slot": "assets.icon-arrow-right",
+        "reason": "Realises director:identity.visual.imagery: the lucide/arrow-right@1.65.0 drawing, unchanged."
+      }
+    }
+  }
+}

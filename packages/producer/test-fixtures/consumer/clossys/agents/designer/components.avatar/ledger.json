@@ -99,6 +99,49 @@
           "sha256": "1a0a6a30b06e90aaabad56f1c66122d71ef16851a13786cf470a5abf1be5c846"
         }
       ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "basis": "agent",
+      "rung": "L1",
+      "seed": "shadcn-aria/avatar",
+      "ladder": {
+        "rung": "L1",
+        "seed": "shadcn-aria/avatar"
+      },
+      "name": "avatar-v1.json",
+      "sha256": "b8f3f9f22e799b6e4a7d89e0645aef586ba98b06a532e050549d98cca46d583f"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "avatar-v1.json",
+      "sha256": "b8f3f9f22e799b6e4a7d89e0645aef586ba98b06a532e050549d98cca46d583f",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "e5e3aa51843b826c9854e07f4e70716e41d51f44a2fa344ad8151bbc896bbec3"
+        }
+      ]
     }
   ]
 }

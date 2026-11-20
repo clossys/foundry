@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/themes.accent-foreground",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "accent-foreground-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "accent-foreground-v1.json",
+      "sha256": "93889dcef5cb33d5ce6bab979244fb9536b1c36d4cfe2d0714c2442ff05ec3de",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "682599599a28eddeb62ef66de63d32fe41039ad4ed270e86eea70dd8c9d97d65"
+    }
+  ]
+}

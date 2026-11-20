@@ -1,0 +1,44 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/assets.icon-warning/icon-warning-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/assets.icon-warning",
+    "createdBy": {
+      "actor": "code",
+      "cli": "clossys submit",
+      "version": "0.1.0"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/triangle-alert@1.65.0"
+      ],
+      "hash": "sha256:469cec9e577b315aae754a1929d5e3b31bfb24f4b4125761c4cdb377eed587d2",
+      "license": "ISC"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "icon-warning",
+    "type": "registry:file",
+    "files": [
+      {
+        "path": "assets/icon-warning.svg",
+        "type": "registry:file",
+        "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\" />\n  <path d=\"M12 9v4\" />\n  <path d=\"M12 17h.01\" />\n</svg>\n"
+      }
+    ],
+    "meta": {
+      "slot": "assets.icon-warning",
+      "element": {
+        "slot": "assets.icon-warning",
+        "reason": "Realises director:identity.visual.imagery: the lucide/triangle-alert@1.65.0 drawing, unchanged."
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "writer/lexicon.reading-level/pin",
+  "agent": "writer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "writer/lexicon.reading-level",
+      "sha256": "64c1e19ecbb34c85fd7c3518bd2abb7e0f438c1fe9c361e75093edd552def7c9"
+    }
+  ],
+  "candidate": "reading-level-v1.md",
+  "sha256": "c6cc2b391ec30b33b2833ebcd38acb706670958c98f5b0c4b2f7b04bc89aacef",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

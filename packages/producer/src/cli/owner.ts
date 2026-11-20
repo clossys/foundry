@@ -639,7 +639,8 @@ export async function runIaCli(argv: readonly string[], cwd: string, _options: {
   // One format (U13): judged by the slot's own schema, never by what else the store holds. A new slot is created as
   // clossys.slot/2; an existing slot/1 (or any other schema) is refused, never rewritten in place.
   if (stored && !storedV2) return refuse("ia", oldSlotRefusal("ia", target).replace(/^ia refused: /, ""));
-  const existing = storedV2 ? currentView(storedV2) as unknown as Record<string, unknown> : stored;
+  // The view's option family is slot/2 data the slot/1 document does not hold: the write below carries it from the stored file.
+  const existing = storedV2 ? (({ family: _family, ...view }) => view)(currentView(storedV2) as unknown as Record<string, unknown>) : stored;
   const proposedKind = request?.proposal?.kind;
   if (proposedKind !== undefined && !(AGENT_KIND[agent] as readonly string[]).includes(proposedKind)) return refuse("ia", `--request ${request!.id} proposes kind ${proposedKind}, not a ${agent} slot kind (${AGENT_KIND[agent].join(", ")})`);
   const kind = (one(flags, "--kind") ?? proposedKind ?? (existing?.kind as string | undefined) ?? AGENT_KIND[agent][0]) as SlotKind;
@@ -777,6 +778,7 @@ function currentSlotWrite(root: string, doc: SlotV1, position: { l1: string; l2:
     refs: [...inputs, ...uses, ...stored.refs.filter(ref => ref.rel !== "input" && ref.rel !== "uses")],
     ...(made.options === undefined && stored.options !== undefined ? { options: stored.options } : {}),
     ...(made.varyOn === undefined && stored.varyOn !== undefined ? { varyOn: stored.varyOn } : {}),
+    ...(stored.family !== undefined ? { family: stored.family } : {}),
   };
   const issues = validateSlot(slot);
   if (issues.length) return { error: `the ${SLOT_V2_SCHEMA} file would be invalid: ${issues.slice(0, 5).map(issue => `${issue.path} ${issue.message}`).join("; ")}` };

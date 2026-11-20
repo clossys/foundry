@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/themes.font-heading",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "font-heading-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "font-heading-v1.json",
+      "sha256": "95f458542a454ba6e5a231311025c5a6780c32839cf485a987e510aa236295a6",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "9b0c5cce082714160237114cd1394161ac47a758a98f8b5915e1f3f6ca378497"
+    }
+  ]
+}

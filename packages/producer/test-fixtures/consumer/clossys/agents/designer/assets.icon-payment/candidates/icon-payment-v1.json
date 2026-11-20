@@ -1,0 +1,44 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/assets.icon-payment/icon-payment-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/assets.icon-payment",
+    "createdBy": {
+      "actor": "code",
+      "cli": "clossys submit",
+      "version": "0.1.0"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/credit-card@1.65.0"
+      ],
+      "hash": "sha256:40eeb0e0dcdd62ca4e0426f12b3ca9cd7349f88bd99d648cf0d65d3e530db925",
+      "license": "ISC"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "icon-payment",
+    "type": "registry:file",
+    "files": [
+      {
+        "path": "assets/icon-payment.svg",
+        "type": "registry:file",
+        "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <rect width=\"20\" height=\"14\" x=\"2\" y=\"5\" rx=\"2\" />\n  <line x1=\"2\" x2=\"22\" y1=\"10\" y2=\"10\" />\n  <path d=\"M6 14h2\" />\n</svg>\n"
+      }
+    ],
+    "meta": {
+      "slot": "assets.icon-payment",
+      "element": {
+        "slot": "assets.icon-payment",
+        "reason": "Realises director:identity.visual.imagery: the lucide/credit-card@1.65.0 drawing, unchanged."
+      }
+    }
+  }
+}

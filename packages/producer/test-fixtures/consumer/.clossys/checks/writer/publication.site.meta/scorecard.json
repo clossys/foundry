@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "writer/publication.site.meta",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "meta-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "meta-v1.md",
+      "sha256": "e102b128cc634a0f33bb5d5c47cbb25c1188be8a9e4e424a2392c2bef793540a",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "353de31e5bb891632f682fb3e1f4c12fc444fc49287423e66f3c0153793ee966"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/themes.spacing",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "spacing-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "spacing-v1.json",
+      "sha256": "59d1b37bd95f6baccc1cc456eefc41337025604e0cc006882907c66200fbff26",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "ab10b34f102292c22ce5c2621225fc9173c7a639ed88d442a95299585412f52c"
+    }
+  ]
+}

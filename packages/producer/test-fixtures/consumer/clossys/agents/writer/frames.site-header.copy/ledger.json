@@ -44,6 +44,430 @@
           "sha256": "b788e27842324a2f3200878d331b7698cf73fce1d4ed3305f45746fa6a8cdc84"
         }
       ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:writer.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream",
+      "gaps": [
+        {
+          "id": "voice-fit"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:writer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/writer/actions/writer.candidates/skill.md",
+        "sha256": "90cd8d0d345beda0c3e21fe7799e272b720d15a03b657d995cd925731d2158a5"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "goal": "fixture world: fill frames.site-header.copy to string",
+      "assembled": {
+        "inputs": [
+          {
+            "agent": "writer",
+            "slot": "lexicon.formality",
+            "candidate": "formality-v1.md",
+            "sha256": "31273042f82910bcb068f81400f5f7df2f66d7a7d1b1df9de97686a7270648e2"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.warmth",
+            "candidate": "warmth-v1.md",
+            "sha256": "f0d65420107f7bd324a2886d84d6d1a92fd583a8f826b7a45329e0c37e1a86b0"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.energy",
+            "candidate": "energy-v1.md",
+            "sha256": "c6fa52ad021763af4a6326867afbb5bdadbed22c3ada902f55162cd827ac261d"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.person",
+            "candidate": "person-v1.md",
+            "sha256": "30f05131c3cc4a2571c95147eb29f47858136dc58414519deeed9e36caca6943"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.mood",
+            "candidate": "mood-v1.md",
+            "sha256": "1a4bfde7aa8019afdb38fe653e62e149e6b1c43ff5f534bc29e2b47c0e1d77e2"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.sentence-length",
+            "candidate": "sentence-length-v1.md",
+            "sha256": "40a20eb900cb4f3ef21a3413e7dba16addeda825a84817254ca7647bece0f798"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.reading-level",
+            "candidate": "reading-level-v1.md",
+            "sha256": "c6cc2b391ec30b33b2833ebcd38acb706670958c98f5b0c4b2f7b04bc89aacef"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.capitalization",
+            "candidate": "capitalization-v1.md",
+            "sha256": "b0fc72d84aef431bac841613e75a48ee1610c28f14272be283f2b0acc6f1a699"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.punctuation",
+            "candidate": "punctuation-v1.md",
+            "sha256": "3de0fd01e50a5390c28871f220155191412abee726298d91392718d61eec9470"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.preferred-terms",
+            "candidate": "preferred-terms-v1.md",
+            "sha256": "31260ab81f0268d109c7effdf51bec396423f535fbc15add81a914f4172a70fb"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.avoid-terms",
+            "candidate": "avoid-terms-v1.md",
+            "sha256": "1dc2bccf90b7ffe45d6fdd00cf7d0d886507acb786d5e52e93488233aa7687f4"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.avoid-patterns",
+            "candidate": "avoid-patterns-v1.md",
+            "sha256": "9a024e1be93d40be989e973b1cb3652e739a314d847ee3fa6d0708f631ac0440"
+          },
+          {
+            "agent": "director",
+            "slot": "advantage.proposition.promise",
+            "candidate": "promise-v1.md",
+            "sha256": "ce2fb24f2f9f4cd6b26f3c3266bc5eefe60608ec9f5eea8a2adc8722ab4a47df"
+          },
+          {
+            "agent": "director",
+            "slot": "advantage.proposition.proof",
+            "candidate": "proof-v1.md",
+            "sha256": "534e1f8b883e57477c6b8a93cc682a00a6854900cbeb7ee52cf144a961173600"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.naming.name",
+            "candidate": "name-v1.md",
+            "sha256": "28814c7f6d483f6d3bd33e06fd9475b19a49a2fa5b2705a041320fc92e792ef9"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.naming.architecture",
+            "candidate": "architecture-v1.md",
+            "sha256": "103bc33a1a5cea5061ff23ef9570142b4e896bfb661ea1cb8a1d36b4dd211ce3"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.verbal.voice",
+            "candidate": "voice-v1.md",
+            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+          }
+        ],
+        "contract": {
+          "value": {
+            "unit": "designer/frames.site-header",
+            "copy": {
+              "sourceLocale": "en",
+              "fields": [
+                {
+                  "key": "skip.label",
+                  "kind": "plain",
+                  "role": "label",
+                  "required": true,
+                  "maxLength": {
+                    "en": 60
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "navigation.label",
+                  "kind": "plain",
+                  "role": "label",
+                  "required": true,
+                  "maxLength": {
+                    "en": 60
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "navigation.open",
+                  "kind": "plain",
+                  "role": "action",
+                  "required": true,
+                  "maxLength": {
+                    "en": 24
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "navigation.close",
+                  "kind": "plain",
+                  "role": "action",
+                  "required": true,
+                  "maxLength": {
+                    "en": 24
+                  },
+                  "dir": "auto"
+                }
+              ]
+            },
+            "fieldsSha256": "93b8bf1e0526232e44e71ba3052525f88240d90ba1144530a2fa41b4891534d3",
+            "candidate": "clossys.copy-candidate/1",
+            "requirements": [
+              {
+                "check": "copy.voice-derived"
+              },
+              {
+                "check": "copy.derived-upstream"
+              },
+              {
+                "check": "copy.entries"
+              },
+              {
+                "check": "copy.plain-values"
+              },
+              {
+                "check": "text.no-placeholder"
+              },
+              {
+                "check": "lexicon.clean"
+              },
+              {
+                "check": "copy.within-limits"
+              }
+            ],
+            "fixture": {
+              "keys": [
+                "skip.label",
+                "navigation.label",
+                "navigation.open",
+                "navigation.close"
+              ],
+              "locales": [
+                "en"
+              ]
+            }
+          },
+          "sha256": "8280fee64ecf705aa338905082f884d336188e6a0b0bb1a30f3e555c4358b683"
+        },
+        "standard": {
+          "id": "string",
+          "sha256": "fcf4b07759a543489708a743b3b1eca44ab73361d6a92c68b9a8158186bb6b65",
+          "requirements": [
+            {
+              "check": "copy.voice-derived",
+              "params": {}
+            },
+            {
+              "check": "copy.derived-upstream",
+              "params": {}
+            },
+            {
+              "check": "copy.entries",
+              "params": {}
+            },
+            {
+              "check": "copy.plain-values",
+              "params": {
+                "icu": true
+              }
+            },
+            {
+              "check": "text.no-placeholder",
+              "params": {}
+            },
+            {
+              "check": "lexicon.clean",
+              "params": {
+                "avoid": [
+                  "seamless",
+                  "seamlessly",
+                  "best-in-class",
+                  "best in class",
+                  "magic",
+                  "magical",
+                  "effortless",
+                  "effortlessly",
+                  "solutions",
+                  "solution"
+                ]
+              }
+            },
+            {
+              "check": "copy.within-limits",
+              "params": {
+                "contract": "$contract"
+              }
+            }
+          ],
+          "taste": [
+            {
+              "id": "voice-fit",
+              "anchors": {
+                "1": "Reads like generic marketing copy; nothing of the pinned voice.",
+                "2": "Follows the voice's vocabulary but not its rhythm or stance.",
+                "3": "Recognisably the pinned voice, with one off-tone line.",
+                "4": "On voice throughout; one phrase is flatter than the voice allows.",
+                "5": "Every line could only have come from the pinned voice, and the voice never gets in the way of the meaning."
+              }
+            },
+            {
+              "id": "clarity",
+              "anchors": {
+                "1": "A reader must reread to learn what is meant or what to do.",
+                "2": "Clear to an insider; jargon or internal names block a newcomer.",
+                "3": "Clear on one reading; one phrase has two readings.",
+                "4": "Clear on one reading; the order of ideas could be tighter.",
+                "5": "One reading, plain words, the most important thing first."
+              }
+            },
+            {
+              "id": "economy",
+              "anchors": {
+                "1": "Padded: filler, stacked qualifiers, repeated ideas.",
+                "2": "Wordy in most lines.",
+                "3": "Mostly tight; a few words could go.",
+                "4": "Tight; one line could lose a clause.",
+                "5": "Nothing to cut without losing meaning."
+              }
+            },
+            {
+              "id": "task-fit",
+              "anchors": {
+                "1": "Labels describe the system, not what the person is doing.",
+                "2": "Some labels name the task; others name internals.",
+                "3": "Task words throughout; one label is ambiguous out of context.",
+                "4": "Task words, unambiguous; one label is longer than needed.",
+                "5": "Each string says exactly what the person does or gets, in the fewest words that stay clear."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:writer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/writer/actions/writer.candidates/skill.md",
+        "sha256": "90cd8d0d345beda0c3e21fe7799e272b720d15a03b657d995cd925731d2158a5"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "tone": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "tone": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "tone": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:writer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/writer/actions/writer.candidates/skill.md",
+        "sha256": "90cd8d0d345beda0c3e21fe7799e272b720d15a03b657d995cd925731d2158a5"
+      },
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:writer.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "mid",
+      "critique": "critiques/copy-v1.json",
+      "sha256": "fd17f8762a8d16f1d6dcb9328237479e6222c347b764bce9d2ffd1eadbf26be5"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:writer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/writer/actions/writer.candidates/skill.md",
+        "sha256": "90cd8d0d345beda0c3e21fe7799e272b720d15a03b657d995cd925731d2158a5"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "basis": "agent",
+      "rung": "create",
+      "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream",
+      "ladder": {
+        "rung": "create",
+        "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
+      },
+      "name": "copy-v1.md",
+      "sha256": "ee9384cbfaa119964df1d5cd06374fa3ee5c116e3c6c823a5c757466421c7529"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.writer/skill.md",
+        "sha256": "f3954a64fffb29d6ed60e26fb83377e60dcd4a5f7565bb2dc23ece691524d2e4"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "copy-v1.md",
+      "sha256": "ee9384cbfaa119964df1d5cd06374fa3ee5c116e3c6c823a5c757466421c7529",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "record": "copy",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "908322dabf7709baee071f226b9ab05a446adbb3f95b4aaf027ad9d1dfff623a"
+        }
+      ]
     }
   ]
 }

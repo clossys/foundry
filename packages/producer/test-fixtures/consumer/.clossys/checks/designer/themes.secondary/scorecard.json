@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/themes.secondary",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "secondary-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "secondary-v1.json",
+      "sha256": "f3ab066cd61fb31dba6bd506a32bbd3fc57e20e0def85cd562d44efc8ca706da",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "2e6242bdd6b16bda117d68e8935ab19028793da41cde73c7e409b07510242523"
+    }
+  ]
+}

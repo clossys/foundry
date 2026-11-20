@@ -61,6 +61,312 @@
           "sha256": "8f52229a69660c215dc00d880d93e0cf60a0cfb4fbba83afebcc94076b40e5f2"
         }
       ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
+      "gaps": [
+        {
+          "id": "rhythm"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "goal": "fixture world: fill themes.shadow to token.scale",
+      "assembled": {
+        "inputs": [
+          {
+            "agent": "director",
+            "slot": "advantage.proposition.promise",
+            "candidate": "promise-v1.md",
+            "sha256": "ce2fb24f2f9f4cd6b26f3c3266bc5eefe60608ec9f5eea8a2adc8722ab4a47df"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.category.definition",
+            "candidate": "definition-v1.md",
+            "sha256": "299e529dc57b12f65a7148a6816b8175b37da843210e8fab21749079a92b6f7f"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.segment.core",
+            "candidate": "core-v1.md",
+            "sha256": "261c0ea12bdc9716dec575b09af518b1dae6555a2045d3919d70ef57a946278a"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.essence",
+            "candidate": "essence-v1.md",
+            "sha256": "ddc61558e45ee1dc8662e081d40409dd9438a37d0dc93464efa8e319119b02e5"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.personality",
+            "candidate": "personality-v1.md",
+            "sha256": "f85d6742ab148aa72f18205f3ff830389e643644bc732626776fe26337b2d3c2"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.verbal.voice",
+            "candidate": "voice-v1.md",
+            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.imagery",
+            "candidate": "imagery-v1.md",
+            "sha256": "105804a683aa5b5ab19949b6d4d7bf0dac3319fdb14ba0a944b3f8600ae84cd8"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.style",
+            "candidate": "style-v1.md",
+            "sha256": "a37d3e74a657d00c4ac60fd92abe873d49bf9250c7834cea81b2eb5fc05ff425"
+          }
+        ],
+        "contract": {
+          "value": {
+            "$type": "shadow",
+            "emit": {
+              "2xs": "--shadow-2xs",
+              "xs": "--shadow-xs",
+              "sm": "--shadow-sm",
+              "md": "--shadow-md",
+              "lg": "--shadow-lg",
+              "xl": "--shadow-xl",
+              "2xl": "--shadow-2xl"
+            },
+            "kind": "token",
+            "members": {
+              "mode": "closed",
+              "names": [
+                "2xs",
+                "xs",
+                "sm",
+                "md",
+                "lg",
+                "xl",
+                "2xl"
+              ]
+            },
+            "modes": [
+              "light"
+            ],
+            "tier": "scale",
+            "requirements": [
+              {
+                "check": "derive.director"
+              },
+              {
+                "check": "token.dtcg"
+              },
+              {
+                "check": "source.ref"
+              }
+            ]
+          },
+          "sha256": "34b90432285a79d428e9fef182ded3969a9929544481fff2215321e2974b8e6c"
+        },
+        "standard": {
+          "id": "token.scale",
+          "sha256": "81cd58395186d0166d6c2eddde09f47fcf349bad8e6fa59a960450518a40da5b",
+          "requirements": [
+            {
+              "check": "derive.director",
+              "params": {
+                "traits": [
+                  "identity.visual.style",
+                  "identity.brand.personality"
+                ]
+              }
+            },
+            {
+              "check": "token.dtcg",
+              "params": {
+                "modes": [
+                  "light"
+                ],
+                "provenance": true
+              }
+            },
+            {
+              "check": "source.ref",
+              "params": {
+                "kinds": [
+                  "derived",
+                  "registry",
+                  "original"
+                ],
+                "registries": [
+                  "shadcn",
+                  "tailwindcss",
+                  "magicui"
+                ],
+                "licenses": [
+                  "MIT"
+                ]
+              }
+            }
+          ],
+          "taste": [
+            {
+              "id": "rhythm",
+              "anchors": {
+                "1": "Steps look arbitrary.",
+                "2": "Steps too close or too far apart.",
+                "3": "Regular but mechanical.",
+                "4": "Steps feel even in use.",
+                "5": "The ramp gives every layout a steady beat."
+              }
+            },
+            {
+              "id": "density",
+              "anchors": {
+                "1": "The value fights the product's density.",
+                "2": "Too loose for an app or too tight for a page.",
+                "3": "Works in one surface only.",
+                "4": "Suits both app and site at their sizes.",
+                "5": "Density matches the brand: calm, never cramped."
+              }
+            },
+            {
+              "id": "coherence",
+              "anchors": {
+                "1": "Contradicts the other scale tokens.",
+                "2": "Matches some tokens, not others.",
+                "3": "Consistent but generic.",
+                "4": "Radius, shadow and motion agree on one temperament.",
+                "5": "Every scale token reads as one decision."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "tone": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "tone": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "tone": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "mid",
+      "critique": "critiques/shadow-v1.json",
+      "sha256": "417695d35e4bcdd22ea3c510f671ff795665f7e3571a51aff09096de9796be13"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "basis": "agent",
+      "rung": "L4",
+      "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
+      "ladder": {
+        "rung": "L4",
+        "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream"
+      },
+      "name": "shadow-v1.json",
+      "sha256": "561abddd3c027ba58d303097f5d291f66fc13d2848e28d344119bea0b98c4c24"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "shadow-v1.json",
+      "sha256": "561abddd3c027ba58d303097f5d291f66fc13d2848e28d344119bea0b98c4c24",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "baad218055cce10b835cb7ee5474190d2e149a1ac356ccee2135c6fe4b031178"
+        }
+      ]
     }
   ]
 }

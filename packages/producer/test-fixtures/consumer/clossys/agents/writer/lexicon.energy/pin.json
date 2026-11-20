@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "writer/lexicon.energy/pin",
+  "agent": "writer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "writer/lexicon.energy",
+      "sha256": "009ffa6f1aa2ca49a3a76a9246e7109236cbb58e8d741570b7e9a9239cca9df9"
+    }
+  ],
+  "candidate": "energy-v1.md",
+  "sha256": "c6fa52ad021763af4a6326867afbb5bdadbed22c3ada902f55162cd827ac261d",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

@@ -61,6 +61,302 @@
           "sha256": "3a4bc1e6ead66483d0f1bddaf1d353021762bb70e9e9da0cfdd82a96c8423b6e"
         }
       ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
+      "gaps": [
+        {
+          "id": "imagery-fit"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "goal": "fixture world: fill assets.video to asset.media-rule",
+      "assembled": {
+        "inputs": [
+          {
+            "agent": "director",
+            "slot": "advantage.proposition.promise",
+            "candidate": "promise-v1.md",
+            "sha256": "ce2fb24f2f9f4cd6b26f3c3266bc5eefe60608ec9f5eea8a2adc8722ab4a47df"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.category.definition",
+            "candidate": "definition-v1.md",
+            "sha256": "299e529dc57b12f65a7148a6816b8175b37da843210e8fab21749079a92b6f7f"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.segment.core",
+            "candidate": "core-v1.md",
+            "sha256": "261c0ea12bdc9716dec575b09af518b1dae6555a2045d3919d70ef57a946278a"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.essence",
+            "candidate": "essence-v1.md",
+            "sha256": "ddc61558e45ee1dc8662e081d40409dd9438a37d0dc93464efa8e319119b02e5"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.personality",
+            "candidate": "personality-v1.md",
+            "sha256": "f85d6742ab148aa72f18205f3ff830389e643644bc732626776fe26337b2d3c2"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.verbal.voice",
+            "candidate": "voice-v1.md",
+            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.imagery",
+            "candidate": "imagery-v1.md",
+            "sha256": "105804a683aa5b5ab19949b6d4d7bf0dac3319fdb14ba0a944b3f8600ae84cd8"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.style",
+            "candidate": "style-v1.md",
+            "sha256": "a37d3e74a657d00c4ac60fd92abe873d49bf9250c7834cea81b2eb5fc05ff425"
+          }
+        ],
+        "contract": {
+          "value": {
+            "kind": "asset",
+            "valueKind": "rules",
+            "members": {
+              "mode": "open",
+              "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+            },
+            "modes": [
+              "light"
+            ],
+            "copy": {
+              "sourceLocale": "en",
+              "fields": [
+                {
+                  "key": "title",
+                  "kind": "plain",
+                  "role": "heading",
+                  "required": true,
+                  "maxLength": {
+                    "en": 60
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "description",
+                  "kind": "plain",
+                  "role": "lead",
+                  "required": false,
+                  "maxLength": {
+                    "en": 200
+                  },
+                  "dir": "auto"
+                }
+              ]
+            },
+            "requirements": [
+              {
+                "check": "derive.director"
+              },
+              {
+                "check": "source.ref"
+              }
+            ]
+          },
+          "sha256": "5372b85c6a44878401126a5d86a7e90661b2cb9851e0b92e8b2fece6e3cf4420"
+        },
+        "standard": {
+          "id": "asset.media-rule",
+          "sha256": "ef2d2f76fc385dac0177a96705d0fcc59e0c92ff42e29bfe3652688327107fb0",
+          "requirements": [
+            {
+              "check": "derive.director",
+              "params": {
+                "required": [
+                  "identity.visual.imagery"
+                ]
+              }
+            },
+            {
+              "check": "source.ref",
+              "params": {
+                "kinds": [
+                  "original",
+                  "derived"
+                ],
+                "registries": [],
+                "licenses": [
+                  "MIT",
+                  "CC0-1.0"
+                ]
+              }
+            }
+          ],
+          "taste": [
+            {
+              "id": "imagery-fit",
+              "anchors": {
+                "1": "Rules allow imagery that contradicts the direction.",
+                "2": "Rules are silent on subject and tone.",
+                "3": "Fits the direction loosely.",
+                "4": "Subject, tone and treatment follow the direction.",
+                "5": "Any image the rule admits would look like this brand."
+              }
+            },
+            {
+              "id": "restraint",
+              "anchors": {
+                "1": "Rules invite decoration.",
+                "2": "Too many patterns or ratios.",
+                "3": "A reasonable set, one or two too many.",
+                "4": "Few ratios and patterns, each with a use.",
+                "5": "The smallest set that covers every page."
+              }
+            },
+            {
+              "id": "consistency",
+              "anchors": {
+                "1": "Rules conflict with each other.",
+                "2": "Gaps leave choices to chance.",
+                "3": "Consistent within one rule.",
+                "4": "All media rules agree.",
+                "5": "Media, ratios and patterns read as one system with the tokens."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "tone": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "tone": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "tone": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "mid",
+      "critique": "critiques/video-v1.json",
+      "sha256": "40181a2b60e35f12c3b0613cd49e88138c9d474db1b027cff73ee2b20195c837"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "basis": "agent",
+      "rung": "L4",
+      "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
+      "ladder": {
+        "rung": "L4",
+        "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream"
+      },
+      "name": "video-v1.json",
+      "sha256": "fc22bf0f0e08ae58a46b9698ed5363ff70b28cdec3d0aa0b6b704e86fa304d03"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "video-v1.json",
+      "sha256": "fc22bf0f0e08ae58a46b9698ed5363ff70b28cdec3d0aa0b6b704e86fa304d03",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "626d943930ce1a2db267d5f1675f0af9f5da7631398e688b3b0f8be6de1b3932"
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.icon-receipt",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "icon-receipt-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "icon-receipt-v1.json",
+      "sha256": "d79de55c8bf84b28067ee5b4cb7f20f2c3f0afe7f6f17e5120a626e0d0682e74",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "90dece69d54c597c3cc2be88b922e431798d0d30d036c32596e29fc6925acd01"
+    }
+  ]
+}

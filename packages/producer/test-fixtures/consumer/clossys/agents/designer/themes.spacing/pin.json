@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/themes.spacing/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/themes.spacing",
+      "sha256": "fb890e9ebbc7a964caa13de18e5b068472a1daa7ac4f6d4fd50498e76fd23317"
+    }
+  ],
+  "candidate": "spacing-v1.json",
+  "sha256": "59d1b37bd95f6baccc1cc456eefc41337025604e0cc006882907c66200fbff26",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

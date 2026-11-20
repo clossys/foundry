@@ -61,6 +61,300 @@
           "sha256": "bb30a63ed88836e183eb87a52f9755f779860a0ba9c4155a28e2d545a101a361"
         }
       ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
+      "gaps": [
+        {
+          "id": "stroke-harmony"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "goal": "fixture world: fill assets.icon-theme-system to asset.glyph",
+      "assembled": {
+        "inputs": [
+          {
+            "agent": "director",
+            "slot": "advantage.proposition.promise",
+            "candidate": "promise-v1.md",
+            "sha256": "ce2fb24f2f9f4cd6b26f3c3266bc5eefe60608ec9f5eea8a2adc8722ab4a47df"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.category.definition",
+            "candidate": "definition-v1.md",
+            "sha256": "299e529dc57b12f65a7148a6816b8175b37da843210e8fab21749079a92b6f7f"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.segment.core",
+            "candidate": "core-v1.md",
+            "sha256": "261c0ea12bdc9716dec575b09af518b1dae6555a2045d3919d70ef57a946278a"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.essence",
+            "candidate": "essence-v1.md",
+            "sha256": "ddc61558e45ee1dc8662e081d40409dd9438a37d0dc93464efa8e319119b02e5"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.personality",
+            "candidate": "personality-v1.md",
+            "sha256": "f85d6742ab148aa72f18205f3ff830389e643644bc732626776fe26337b2d3c2"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.verbal.voice",
+            "candidate": "voice-v1.md",
+            "sha256": "1f7919b09be03150decce8dd1a1bc2845159b1f35b7284f78bfcae38a7455355"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.imagery",
+            "candidate": "imagery-v1.md",
+            "sha256": "105804a683aa5b5ab19949b6d4d7bf0dac3319fdb14ba0a944b3f8600ae84cd8"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.style",
+            "candidate": "style-v1.md",
+            "sha256": "a37d3e74a657d00c4ac60fd92abe873d49bf9250c7834cea81b2eb5fc05ff425"
+          }
+        ],
+        "contract": {
+          "value": {
+            "kind": "asset",
+            "valueKind": "glyph",
+            "members": {
+              "mode": "closed",
+              "names": [
+                "default"
+              ]
+            },
+            "modes": [
+              "light"
+            ],
+            "grid": 24,
+            "requirements": [
+              {
+                "check": "derive.director"
+              },
+              {
+                "check": "asset.svg-files"
+              },
+              {
+                "check": "source.ref"
+              }
+            ]
+          },
+          "sha256": "c27a34cdbddf494d906073009cfb808a334a0f4f260862cd5cdf1819553cd94b"
+        },
+        "standard": {
+          "id": "asset.glyph",
+          "sha256": "1978396d718e819082febfc02eee8c6f7fd805040bb9ec0b0940d25dd93610f3",
+          "requirements": [
+            {
+              "check": "derive.director",
+              "params": {
+                "required": [
+                  "identity.visual.imagery"
+                ]
+              }
+            },
+            {
+              "check": "asset.svg-files",
+              "params": {
+                "viewbox": {
+                  "size": 24
+                },
+                "modes": {},
+                "smallSize": {
+                  "size": 16,
+                  "minStrokePx": 1,
+                  "maxShapes": 12
+                }
+              }
+            },
+            {
+              "check": "source.ref",
+              "params": {
+                "kinds": [
+                  "registry",
+                  "derived",
+                  "original"
+                ],
+                "registries": [
+                  "lucide"
+                ],
+                "licenses": [
+                  "ISC",
+                  "MIT"
+                ]
+              }
+            }
+          ],
+          "taste": [
+            {
+              "id": "stroke-harmony",
+              "anchors": {
+                "1": "Stroke weights and caps differ from the set.",
+                "2": "Mostly consistent with visible outliers.",
+                "3": "Consistent but heavy or thin for the UI type.",
+                "4": "Matches the set and the UI type weight.",
+                "5": "Indistinguishable in weight and finish from the rest of the set."
+              }
+            },
+            {
+              "id": "optical-balance",
+              "anchors": {
+                "1": "Visibly off-centre or oversized.",
+                "2": "Fills the grid unevenly.",
+                "3": "Centred but optically heavy.",
+                "4": "Optically centred and sized to its neighbours.",
+                "5": "Sits on the baseline beside text as if drawn for it."
+              }
+            },
+            {
+              "id": "small-legibility",
+              "anchors": {
+                "1": "Unreadable at 16px.",
+                "2": "Recognisable only in context.",
+                "3": "Readable at 16px with effort.",
+                "4": "Clear at 16px.",
+                "5": "Clear at 16px and its meaning is unmistakable."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "tone": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "tone": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "tone": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "mid",
+      "critique": "critiques/icon-theme-system-v1.json",
+      "sha256": "f468f1bc41e2c5802cd18fa073229638eb78c48b6ed3d0c4fec65703e261ae36"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "basis": "agent",
+      "rung": "L4",
+      "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
+      "ladder": {
+        "rung": "L4",
+        "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream"
+      },
+      "name": "icon-theme-system-v1.json",
+      "sha256": "65e96e1c20ee39035c5df55dc775089529c6f90092ffe2b9730251bf3e3f52d5"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "icon-theme-system-v1.json",
+      "sha256": "65e96e1c20ee39035c5df55dc775089529c6f90092ffe2b9730251bf3e3f52d5",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "ded4878ed7e5949cb504f0586d88ba9fb94e025ab07cd6a11aabdce52ad9ee1b"
+        }
+      ]
     }
   ]
 }

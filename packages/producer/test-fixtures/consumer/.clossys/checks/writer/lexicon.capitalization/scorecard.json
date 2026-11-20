@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "writer/lexicon.capitalization",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "capitalization-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "capitalization-v1.md",
+      "sha256": "b0fc72d84aef431bac841613e75a48ee1610c28f14272be283f2b0acc6f1a699",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "38a6bb007bdaf038008bf363b721592ccacc232e4fee8372b8d63b4f01d45b4e"
+    }
+  ]
+}

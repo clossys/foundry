@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.critique/1",
+  "slot": "assets.lockup",
+  "candidate": "lockup-v1.json",
+  "standard": "asset.logo-mark",
+  "scores": {
+    "distinctiveness": 4,
+    "reduction": 4,
+    "brand-fit": 4,
+    "construction": 4
+  },
+  "packet": {
+    "manifest": [
+      {
+        "role": "taste",
+        "ref": "packages/designer/standards/asset.logo-mark/taste.md"
+      },
+      {
+        "role": "contract",
+        "ref": "clossys/agents/designer/assets.lockup/slot.json#contract"
+      },
+      {
+        "role": "render",
+        "ref": ".clossys/renders/designer/assets.lockup/lockup-v1.png"
+      }
+    ]
+  }
+}

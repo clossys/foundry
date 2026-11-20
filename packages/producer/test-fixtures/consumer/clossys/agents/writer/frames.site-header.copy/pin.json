@@ -1,0 +1,31 @@
+{
+  "schema": "clossys.pin-map/1",
+  "id": "writer/frames.site-header.copy/pin",
+  "agent": "writer",
+  "kind": "pin-map",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "writer/frames.site-header.copy",
+      "sha256": "c650d5a32738a55d65cc92c2386f6ac270499305e27fa4329796c93a76f1e9e6"
+    }
+  ],
+  "records": {
+    "copy": {
+      "candidate": "copy-v1.md",
+      "sha256": "ee9384cbfaa119964df1d5cd06374fa3ee5c116e3c6c823a5c757466421c7529",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "at": "2026-11-19T00:00:00Z"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "director/focus.reach.geography/pin",
+  "agent": "director",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "director/focus.reach.geography",
+      "sha256": "c846b6d1d5ff8f5ed31daf070386f20eea319fded2340701b423a7bdf81ecbed"
+    }
+  ],
+  "candidate": "geography-v1.md",
+  "sha256": "9d799ddde97fb0e119e59d4b56dd03ce8093a9a13c4c0ec9ea2398526858ccfc",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

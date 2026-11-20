@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "writer/lexicon.person",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "person-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "person-v1.md",
+      "sha256": "30f05131c3cc4a2571c95147eb29f47858136dc58414519deeed9e36caca6943",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "0186abea5b2a3def824d01b97c495b98b9929b62191098fa849c2c338dd0b13d"
+    }
+  ]
+}

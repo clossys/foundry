@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "writer/lexicon.reading-level",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "reading-level-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "reading-level-v1.md",
+      "sha256": "c6cc2b391ec30b33b2833ebcd38acb706670958c98f5b0c4b2f7b04bc89aacef",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "4f9351a5d0446e9b279ee07864b3aebcacdea2823963c7c33b00f83cc0826324"
+    }
+  ]
+}

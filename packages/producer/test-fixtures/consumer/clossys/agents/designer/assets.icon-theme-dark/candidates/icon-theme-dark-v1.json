@@ -1,0 +1,44 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/assets.icon-theme-dark/icon-theme-dark-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/assets.icon-theme-dark",
+    "createdBy": {
+      "actor": "code",
+      "cli": "clossys submit",
+      "version": "0.1.0"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/moon@1.65.0"
+      ],
+      "hash": "sha256:d132a14fcf2d995e8b730d0f532fd54b0ed9c8e988d796c7e47d214cd1ba4910",
+      "license": "ISC"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "icon-theme-dark",
+    "type": "registry:file",
+    "files": [
+      {
+        "path": "assets/icon-theme-dark.svg",
+        "type": "registry:file",
+        "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />\n</svg>\n"
+      }
+    ],
+    "meta": {
+      "slot": "assets.icon-theme-dark",
+      "element": {
+        "slot": "assets.icon-theme-dark",
+        "reason": "Realises director:identity.visual.imagery: the lucide/moon@1.65.0 drawing, unchanged."
+      }
+    }
+  }
+}

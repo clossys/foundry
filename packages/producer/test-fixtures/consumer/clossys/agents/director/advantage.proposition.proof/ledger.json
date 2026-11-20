@@ -62,6 +62,289 @@
           "sha256": "c9f4919e47e84357739807d6c437c500868994156d702591e62d0f4d44fdc70d"
         }
       ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:director.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: the brief standards are create-only and no package default fits a synthetic consumer",
+      "gaps": [
+        {
+          "id": "decisive"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:director.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/director/actions/director.candidates/skill.md",
+        "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "goal": "fixture world: fill advantage.proposition.proof to brief.list",
+      "assembled": {
+        "inputs": [],
+        "contract": {
+          "value": {
+            "question": "What evidence backs the promise, what is still missing, and what must we never claim?",
+            "mustContain": [
+              {
+                "key": "Proof",
+                "hint": "evidence we hold today"
+              },
+              {
+                "key": "Gap",
+                "hint": "evidence still missing"
+              },
+              {
+                "key": "Never-claim",
+                "hint": "claims we must never make, quoted"
+              },
+              {
+                "key": "Metrics",
+                "hint": "metric claims we can back"
+              },
+              {
+                "key": "Comparisons",
+                "hint": "comparison claims we can back"
+              },
+              {
+                "key": "Compliance",
+                "hint": "compliance statements we can make"
+              }
+            ],
+            "fixture": {
+              "headings": [
+                "Direction",
+                "Because",
+                "Watch"
+              ]
+            },
+            "requirements": [
+              {
+                "check": "brief.sections"
+              },
+              {
+                "check": "brief.keys"
+              },
+              {
+                "check": "brief.derived-upstream"
+              },
+              {
+                "check": "brief.because-cited"
+              },
+              {
+                "check": "brief.watch-trigger"
+              },
+              {
+                "check": "brief.plain-direction"
+              },
+              {
+                "check": "brief.direction-values"
+              }
+            ]
+          },
+          "sha256": "38a31f72a326d77521be53de4897ef2944037ed17f17a78dce417e5ab48da5a1"
+        },
+        "standard": {
+          "id": "brief.list",
+          "sha256": "f569e3c89616d554ec14e1a33cfdc0296b2e94736fb7be2f969b29f593c71385",
+          "requirements": [
+            {
+              "check": "brief.sections",
+              "params": {}
+            },
+            {
+              "check": "brief.keys",
+              "params": {
+                "contract": "$contract"
+              }
+            },
+            {
+              "check": "brief.derived-upstream",
+              "params": {}
+            },
+            {
+              "check": "brief.because-cited",
+              "params": {}
+            },
+            {
+              "check": "brief.watch-trigger",
+              "params": {}
+            },
+            {
+              "check": "brief.plain-direction",
+              "params": {}
+            },
+            {
+              "check": "brief.direction-values",
+              "params": {
+                "maxWords": 45,
+                "maxSentences": 2
+              }
+            }
+          ],
+          "taste": [
+            {
+              "id": "decisive",
+              "anchors": {
+                "1": "Lists options or restates the question; a team could not act on it.",
+                "2": "Leans one way but hedges every answer with may, could or depending.",
+                "3": "Chooses, but one answer is vague enough to read two ways.",
+                "4": "Every answer is a choice a team could act on; one wording still softens it.",
+                "5": "Every answer is one plain choice a team could act on tomorrow, with nothing to reinterpret."
+              }
+            },
+            {
+              "id": "evidence-weight",
+              "anchors": {
+                "1": "The Because lines restate the direction or cite nothing that decides it.",
+                "2": "Reasons are generic (market trends, best practice) and would back any answer.",
+                "3": "Reasons are specific but one of them would not change the answer if it were false.",
+                "4": "Each reason is specific and decisive; the strongest is not first.",
+                "5": "The deciding reason leads, each line would flip the answer if false, and nothing is padding."
+              }
+            },
+            {
+              "id": "tripwire-usefulness",
+              "anchors": {
+                "1": "The watch is a wish (keep an eye on growth) with no threshold that matters.",
+                "2": "A threshold exists but crossing it would not change any decision.",
+                "3": "Threshold and action are real but the window is too long to catch a wrong call early.",
+                "4": "Threshold, window and action are real; the action is slightly vague about who acts.",
+                "5": "Crossing the line would plainly reverse or revisit this direction, early enough to matter."
+              }
+            },
+            {
+              "id": "ranked-focus",
+              "anchors": {
+                "1": "An unranked pile where every item looks equally important.",
+                "2": "Ranked, but the top item is not clearly the most important.",
+                "3": "The top item is right; the tail holds items that do not belong.",
+                "4": "Ranked well and short; two items overlap.",
+                "5": "Few items, distinct from each other, ranked so the first is the one to protect."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:director.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/director/actions/director.candidates/skill.md",
+        "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "tone": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "tone": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "tone": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:director.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/director/actions/director.candidates/skill.md",
+        "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
+      },
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:director.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "mid",
+      "critique": "critiques/proof-v1.json",
+      "sha256": "8efa51efdf2322126a5d1e3b5a7417fc5b4523eb304e90196ac0296ff2eb332e"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:director.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/director/actions/director.candidates/skill.md",
+        "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "basis": "agent",
+      "rung": "create",
+      "reason": "fixture world: the brief standards are create-only and no package default fits a synthetic consumer",
+      "ladder": {
+        "rung": "create",
+        "reason": "fixture world: the brief standards are create-only and no package default fits a synthetic consumer"
+      },
+      "name": "proof-v1.md",
+      "sha256": "534e1f8b883e57477c6b8a93cc682a00a6854900cbeb7ee52cf144a961173600"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.director/skill.md",
+        "sha256": "6cc66877d0b4c923d9adc797198f19a71d16b02212ce9690f8f35351c18208ab"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "proof-v1.md",
+      "sha256": "534e1f8b883e57477c6b8a93cc682a00a6854900cbeb7ee52cf144a961173600",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "615b8497a3c6a21f19ba00b12063e2f8f4eb64544f7297a67cf63adb3eb91f68"
+        }
+      ]
     }
   ]
 }

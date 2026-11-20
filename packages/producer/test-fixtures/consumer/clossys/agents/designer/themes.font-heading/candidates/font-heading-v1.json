@@ -1,0 +1,49 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/themes.font-heading/font-heading-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/themes.font-heading",
+    "createdBy": {
+      "actor": "code",
+      "cli": "clossys submit",
+      "version": "0.1.0"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "fontsource/inter-tight@5.3.0"
+      ],
+      "hash": "sha256:80d4fc0510f8d4c78877dd383ea2b33efdce109668036f02cc46b56bdd7f1ddf",
+      "license": "OFL-1.1"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "font-heading",
+    "type": "registry:theme",
+    "files": [
+      {
+        "path": "clossys/themes.font-heading.json",
+        "type": "registry:file",
+        "content": "{\n  \"themes\": {\n    \"font-heading\": {\n      \"default\": {\n        \"$type\": \"fontFamily\",\n        \"$value\": \"\\\"Inter Tight\\\", ui-sans-serif, system-ui, sans-serif\",\n        \"$extensions\": {\n          \"com.clossys.css\": {\n            \"raw\": \"\\\"Inter Tight\\\", ui-sans-serif, system-ui, sans-serif\"\n          },\n          \"com.clossys.provenance\": {\n            \"sourceLabel\": \"fontsource\",\n            \"sourceVariable\": \"--font-heading\"\n          }\n        }\n      }\n    }\n  }\n}\n"
+      }
+    ],
+    "cssVars": {
+      "light": {
+        "font-heading": "\"Inter Tight\", ui-sans-serif, system-ui, sans-serif"
+      }
+    },
+    "meta": {
+      "slot": "themes.font-heading",
+      "element": {
+        "slot": "themes.font-heading",
+        "reason": "Realises director:identity.visual.style, director:identity.brand.personality, director:identity.verbal.voice: the fontsource/inter-tight@5.3.0 value, kept as the fixture's base."
+      }
+    }
+  }
+}

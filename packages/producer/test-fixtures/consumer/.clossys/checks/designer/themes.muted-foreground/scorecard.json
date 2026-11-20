@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/themes.muted-foreground",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "muted-foreground-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "muted-foreground-v1.json",
+      "sha256": "e65d099bf7e3e15a26d324a93316102b310363f0e26feb7d07dc95a619f6285a",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "7a2090b598cca67755a1bb5f31834d2493aaa25e66a9fb7fac929b956867ca2e"
+    }
+  ]
+}

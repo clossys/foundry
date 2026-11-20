@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/assets.icon-chevron-right/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/assets.icon-chevron-right",
+      "sha256": "7fcfc36d23cb75c4dc51545e8ffbed81c7096b74a14fb42214950fcbea36c2ef"
+    }
+  ],
+  "candidate": "icon-chevron-right-v1.json",
+  "sha256": "f19f96b7e0da3fe8c9fab6db2377b42f2f8c1d93642bbc268ecf35616ac368c9",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/themes.popover",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "popover-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "popover-v1.json",
+      "sha256": "1c20bb834c576da229896cda9a107407de827a2d7ac0866fcb714d7ce735f84f",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "c7a5b2c5a67271ce9c69518b146e7c3e75eaeebdd0350cfa6a8a01893ab56683"
+    }
+  ]
+}

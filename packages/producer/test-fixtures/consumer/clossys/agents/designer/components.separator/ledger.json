@@ -99,6 +99,49 @@
           "sha256": "06a720adf75ad613796a0ead49f4cf908f407f1877f9d5dfa1b654985e0ca125"
         }
       ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "basis": "agent",
+      "rung": "L1",
+      "seed": "shadcn-aria/separator",
+      "ladder": {
+        "rung": "L1",
+        "seed": "shadcn-aria/separator"
+      },
+      "name": "separator-v1.json",
+      "sha256": "f9eb5cfdf939ca12264970fe18adf1785255cdb8e0c2b1b69390b8f60606c546"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "separator-v1.json",
+      "sha256": "f9eb5cfdf939ca12264970fe18adf1785255cdb8e0c2b1b69390b8f60606c546",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "be9351e605f19a543b4351fd12b4b4f702394d8e68d2d2cbc6d5067707416f9d"
+        }
+      ]
     }
   ]
 }

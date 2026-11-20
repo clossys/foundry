@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.icon-security",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "icon-security-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "icon-security-v1.json",
+      "sha256": "ce369bee9280d479fe1ac1e568772cac7c9dc025d2010e41ea9383c4b25b2260",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "fe6069132e78a4800f7a9001de851c7b5ec0722c9237face57d6e51814195a45"
+    }
+  ]
+}

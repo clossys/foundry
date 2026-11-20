@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/themes.muted-foreground/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/themes.muted-foreground",
+      "sha256": "a7af959008c079c6a68493e98d92a505ca4c36b7cc74e82bc1f5641d5d4c8f2e"
+    }
+  ],
+  "candidate": "muted-foreground-v1.json",
+  "sha256": "e65d099bf7e3e15a26d324a93316102b310363f0e26feb7d07dc95a619f6285a",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

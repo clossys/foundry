@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/themes.radius/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/themes.radius",
+      "sha256": "39ef4acd54323d6af188931f1a3f7de7f6d3b3d154ea64d82455e060e6613282"
+    }
+  ],
+  "candidate": "radius-v1.json",
+  "sha256": "fa7f9151dd611d46a15a100e402df451ddec9afebf49e46c2ee0f5aa5e69bd28",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "writer/sections.hero.copy",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "copy-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "copy-v1.md",
+      "sha256": "1207af771709b273d69356ad4cc45e8217bd289e0dd090c6c9bb270e953e28a7",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "84e0c506df1f5e380e2d166f8aef75a6e9279ed7ba3fbd40ec9b3043e7c03e63"
+    }
+  ]
+}

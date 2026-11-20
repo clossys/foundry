@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.icon-chevron-right",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "icon-chevron-right-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "icon-chevron-right-v1.json",
+      "sha256": "f19f96b7e0da3fe8c9fab6db2377b42f2f8c1d93642bbc268ecf35616ac368c9",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "267ae351b9331a28c09c32aad023bdde59e94efeed3e28873a18e04c889a0381"
+    }
+  ]
+}

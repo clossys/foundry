@@ -1,0 +1,49 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/themes.radius/radius-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/themes.radius",
+    "createdBy": {
+      "actor": "code",
+      "cli": "clossys submit",
+      "version": "0.1.0"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn/neutral@4.23.0"
+      ],
+      "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161",
+      "license": "MIT"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "radius",
+    "type": "registry:theme",
+    "files": [
+      {
+        "path": "clossys/themes.radius.json",
+        "type": "registry:file",
+        "content": "{\n  \"themes\": {\n    \"radius\": {\n      \"default\": {\n        \"$type\": \"dimension\",\n        \"$value\": \"0.625rem\",\n        \"$extensions\": {\n          \"com.clossys.css\": {\n            \"raw\": \"0.625rem\"\n          },\n          \"com.clossys.provenance\": {\n            \"sourceLabel\": \"shadcn\",\n            \"sourceVariable\": \"--radius\"\n          }\n        }\n      }\n    }\n  }\n}\n"
+      }
+    ],
+    "cssVars": {
+      "light": {
+        "radius": "0.625rem"
+      }
+    },
+    "meta": {
+      "slot": "themes.radius",
+      "element": {
+        "slot": "themes.radius",
+        "reason": "Realises director:identity.visual.style, director:identity.brand.personality: the shadcn/neutral@4.23.0 value, kept as the fixture's base."
+      }
+    }
+  }
+}

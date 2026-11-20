@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "director/focus.lifecycle.acquisition/pin",
+  "agent": "director",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "director/focus.lifecycle.acquisition",
+      "sha256": "e265ea90808acd194ebf0a1fc61c4f2f9e7d412a1cb5a057cfcd97f9e2464008"
+    }
+  ],
+  "candidate": "acquisition-v1.md",
+  "sha256": "edda31c4ae349f82a295621b9c2fa1ab67aeb5baed03180a5709481704e24701",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}
