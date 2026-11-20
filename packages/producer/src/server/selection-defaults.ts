@@ -66,6 +66,8 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sou
     const descriptor: any = Object.values(fill.components ?? fill.sections ?? fill.frames ?? {})[0];
     for (const dependency of [...descriptor?.composes ?? [], ...descriptor?.reads?.components ?? [], ...descriptor?.parts ?? []]) if (/^(components|sections|frames)\./.test(dependency) && !needed.has(dependency)) { needed.add(dependency); visit(dependency); }
   };
+  // The Studio runtime projects these seats itself (selection.ts studio-compat), so no surface import reaches them.
+  for (const leaf of STUDIO_RUNTIME_PROJECTIONS) needed.add(leaf);
   for (const leaf of [...needed]) visit(leaf);
   // Registered compositions require their planned inputs even without a direct candidate.
   for (const row of componentPlan.decisions) if (needed.has(row.slot) && "reads" in row) for (const leaf of row.reads) if (!needed.has(leaf)) { needed.add(leaf); visit(leaf); }
@@ -113,3 +115,6 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sou
   const qualified = report ? await studioEvidence('specimen-certificates', () => nativeEvidence.qualifySpecimenSurfaces(selected), () => selected, report) : await nativeEvidence.qualifySpecimenSurfaces(selected);
   return { input: qualified, leaves, surfaceBundles: preparedSurfaces.surfaceBundles };
 }
+
+/** Seats the Studio runtime entry projects through its own compat wrappers (dialog, tooltip); a surface scan never reaches them. */
+const STUDIO_RUNTIME_PROJECTIONS: readonly string[] = ["components.dialog", "components.tooltip"];

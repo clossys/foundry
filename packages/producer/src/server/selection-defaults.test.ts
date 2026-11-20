@@ -4,7 +4,7 @@ import { prepareStudioSelection } from "./selection-defaults.js";
 
 describe("Studio missing selection defaults", () => {
   it("uses Designer default preference and only the required dependency closure", async () => {
-    const { input, leaves } = await prepareStudioSelection();
+    const { input, leaves } = await defaultPrepare();
     const profile = resolve(input);
     const badge = Object.values(input.library.components.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "components.badge")!.components)[0]!;
     expect(badge.origin).toMatchObject({ kind: "adopted", source: "shadcn@aria" });
@@ -18,7 +18,7 @@ describe("Studio missing selection defaults", () => {
   }, 30_000); // one full default-fill prepare: 9.5 s measured under load 2026-11-06 (11.3 s profiled)
 
   it("preserves a consumer's explicit fill instead of replacing it with a preferred default", async () => {
-    const { input } = await prepareStudioSelection();
+    const { input } = await defaultPrepare();
     const library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "components", change: { op: "adopt", slot: "components.badge", source: "foundry" } }] }, { surfaceOptions: input.surfaceOptions });
     const before = libraryHash(library);
     const prepared = await prepareStudioSelection({ catalog: input.catalog, library, activeIds: ["components.badge"], componentOptions: input.componentOptions });
@@ -31,7 +31,7 @@ describe("Studio missing selection defaults", () => {
 });
 
 it("ships all14 native specimen bundles with prepared receipts and preserves explicit surface selections", async () => {
-  const prepared = await prepareStudioSelection();
+  const prepared = await defaultPrepare();
   expect(prepared.surfaceBundles).toHaveLength(14);
   expect(prepared.input.catalog.surfaces!.materializations).toHaveLength(14);
   const native = prepared.input.library.surfaces!.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot.startsWith("sections.specimen-"));
@@ -48,3 +48,7 @@ it("ships all14 native specimen bundles with prepared receipts and preserves exp
   expect(explicit.input.catalog.surfaces).toBe(prepared.input.catalog.surfaces);
   for (const doc of native) expect(explicit.leaves.find(row => row.leaf === doc.$extensions["com.clossys.fill"].slot)?.source).toBe("consumer");
 }, 30_000);
+
+// The no-argument default prepare is deterministic and its result is only read, so the three tests share one run.
+let shared: ReturnType<typeof prepareStudioSelection> | undefined;
+function defaultPrepare() { return shared ??= prepareStudioSelection(); }
