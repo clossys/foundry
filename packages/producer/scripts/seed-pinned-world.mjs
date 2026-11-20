@@ -540,6 +540,19 @@ function component(root, consumer, id, doc, standard) {
   return { ext: "json", body: `${JSON.stringify(item, null, 2)}\n`, rung: "L1", seed: `${row.registry}/${row.name}` };
 }
 
+/**
+ * The consumer's own frame and hero (planner ruling D3, 2026-11-20): Foundry authors no frame or site section, so
+ * the seeder reuses the scripted candidate files `clossys check --e2e` already ships (e2e/scenario.json craft.frame
+ * and craft.hero), byte for byte, at that scenario's rung, through the same craft verbs. Both slots are BLOCKED today
+ * with the contract gap the shipped file leaves; this generator fills a slot as soon as its BLOCKED entry goes.
+ */
+const SHIPPED_CRAFT = { "frames.site-shell": "site-shell.json", "sections.hero": "hero.json" };
+function shippedCraft(id) {
+  const step = JSON.parse(readFileSync(join(PRODUCER, "e2e", "scenario.json"), "utf8")).steps.find(each => each.craft?.ref === `designer/${id}`);
+  if (!step || step.craft.file !== SHIPPED_CRAFT[id]) throw new Error(`e2e/scenario.json crafts no designer/${id} from ${SHIPPED_CRAFT[id]}`);
+  return { ext: "json", body: readFileSync(join(PRODUCER, "e2e", step.craft.file), "utf8"), rung: step.craft.rung, reason: "fixture world: the consumer's own crafted element, the scripted candidate `clossys check --e2e` ships" };
+}
+
 /** The candidate a slot's standard takes, with its extension and the ladder rung it comes in on. */
 function candidateOf(root, consumer, agent, id, doc, standard) {
   if (agent === "designer") {
@@ -548,6 +561,7 @@ function candidateOf(root, consumer, agent, id, doc, standard) {
     if (doc.standard === "asset.logo-mark" || doc.standard === "asset.media-rule") return consumerAsset(id, doc, standard);
     if (doc.standard === "component" && CONSUMER_COMPONENTS[id] && consumerOwned(id)) return consumerComponent(root, id, doc, standard);
     if (doc.standard === "component" && doc.contract?.fixture) return component(root, consumer, id, doc, standard);
+    if (SHIPPED_CRAFT[id]) return shippedCraft(id);
   }
   if (agent === "director") return { ext: "md", body: brief(consumer, id, doc), rung: "create", reason: "fixture world: the brief standards are create-only and no package default fits a synthetic consumer" };
   if (agent === "writer") {
@@ -656,10 +670,10 @@ async function migrate(w) {
  * or contract admits a candidate and the seeder can make one.
  */
 export const BLOCKED = {
-  "designer/frames.site-footer": "no fixture generator: a frame candidate is craft work (a composition of pinned parts over the contract's landmarks, slots and members); the slot-mapped reference tailark-oss/mist-footer-1 is radix, so a verbatim adopt fails ref-verbatim REF-FLAVOR against aria-nova",
-  "designer/frames.site-header": "no fixture generator: a frame candidate is craft work (a composition of pinned parts over the contract's landmarks, slots and members); the slot-mapped reference tailark-oss/mist-hero-section-1-header is radix, so a verbatim adopt fails ref-verbatim REF-FLAVOR against aria-nova",
-  "designer/frames.site-shell": "no fixture generator: a frame candidate is craft work (a composition of pinned parts over the contract's landmarks, slots, members and skip target); its slot-mapped references are parts (a toaster, a skip link, a navigation menu), not a shell to adopt",
-  "designer/sections.hero": "no fixture generator: a section.site candidate is craft work (a composition of pinned parts over the contract's anatomy, slots and members); the slot-mapped tailark-oss hero references are radix, so a verbatim adopt fails ref-verbatim REF-FLAVOR against aria-nova",
+  "designer/frames.site-footer": "no candidate: Foundry authors no frame, and `clossys check --e2e` ships no scripted site-footer candidate to reuse (e2e/scenario.json crafts only frames.site-shell and sections.hero)",
+  "designer/frames.site-header": "no candidate: Foundry authors no frame, and `clossys check --e2e` ships no scripted site-header candidate to reuse (e2e/scenario.json crafts only frames.site-shell and sections.hero)",
+  "designer/frames.site-shell": "contract gap R05.1 [fixture]: the shipped e2e/site-shell.json ships only registry/frames/site-shell.tsx (export PlainFrame), but the contract fixture mounts mist/blocks/hero-section/one/header.tsx (export HeroHeader); its uses also read frames.site-header and frames.site-footer, which hold no candidate",
+  "designer/sections.hero": "contract gap R05.1 [fixture] (submit refused by the constitution guard): the shipped e2e/hero.json ships only registry/sections/hero.tsx (export SimpleHero), but the contract fixture mounts mist/blocks/hero-section/one/hero-section.tsx (export default)",
 };
 
 /** The closure slots the run leaves unpinned: BLOCKED and everything that reads one, with the blocking slot. */
