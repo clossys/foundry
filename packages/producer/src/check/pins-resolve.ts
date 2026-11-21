@@ -6,9 +6,11 @@
  * with no queue answer ref), a missing candidate, or a sha256 that does not match the candidate bytes.
  * Retired slots are skipped. Reads only `clossys/` and the installed packages.
  */
+import { lstatSync } from "node:fs";
 import { pinPath } from "../records/pin.js";
 import { readPinFile } from "../records/pin-map.js";
-import { isRecordSlot, listConsumerSlots, readSlotJson, resolveSlot, slotRecords, type Resolution } from "../records/resolve.js";
+import { consumerCandidates, isRecordSlot, listConsumerSlots, readSlotJson, resolveSlot, slotRecords, type Resolution } from "../records/resolve.js";
+import type { AgentId, SlotId } from "../records/types.js";
 
 export interface TargetFinding {
   readonly check: string;
@@ -31,11 +33,28 @@ export const runOf = (check: string, findings: readonly TargetFinding[]): Target
 const subjectOf = (resolution: Resolution): string =>
   `${resolution.agent}/${resolution.slotId}${resolution.record !== undefined ? `#${resolution.record}` : ""}`;
 
+/**
+ * Which slots `pins.resolve` judges. `all` (the default: `clossys check`, the release gates, the read models) judges
+ * every slot that is not retired. `held` is the T1 init prelude's scope (foundry-build-0048 FILL-PRELUDE D1): only a
+ * slot that holds a pin or a consumer candidate. A slot that holds neither is a loop.fill queue entry at init
+ * (loop/fill-queue.ts), never an init finding, and an unpinned slot the queue misses fails the init (fill.queued).
+ */
+export type PinsResolveScope = "all" | "held";
+
+/**
+ * Whether a consumer slot holds a pin.json (any entry at that path: a broken file, a pin/1 or a symbolic link counts,
+ * so pins.resolve still judges it) or at least one consumer candidate.
+ */
+export function holdsPinOrCandidate(root: string, agent: AgentId, slotId: SlotId): boolean {
+  return lstatSync(pinPath(root, agent, slotId), { throwIfNoEntry: false }) !== undefined || consumerCandidates(root, agent, slotId).length > 0;
+}
+
 /** Every resolution `pins.resolve` judges (exported for the read models). */
-export function resolveAll(root: string): Resolution[] {
+export function resolveAll(root: string, scope: PinsResolveScope = "all"): Resolution[] {
   const out: Resolution[] = [];
   for (const { agent, slotId } of listConsumerSlots(root)) {
     if (readSlotJson(root, agent, slotId)?.status === "retired") continue;
+    if (scope === "held" && !holdsPinOrCandidate(root, agent, slotId)) continue;
     const pin = readPinFile(pinPath(root, agent, slotId), { agent, slotId });
     if (!isRecordSlot(root, agent, slotId, pin)) { out.push(resolveSlot(root, agent, slotId)); continue; }
     const records = slotRecords(root, agent, slotId);
@@ -45,9 +64,9 @@ export function resolveAll(root: string): Resolution[] {
   return out;
 }
 
-export function checkPinsResolve(root: string): TargetCheckRun {
+export function checkPinsResolve(root: string, scope: PinsResolveScope = "all"): TargetCheckRun {
   const findings: TargetFinding[] = [];
-  for (const resolution of resolveAll(root)) {
+  for (const resolution of resolveAll(root, scope)) {
     const subject = subjectOf(resolution);
     if (resolution.state === "unresolved") {
       const detail = [...new Set([resolution.pinIssue, resolution.reason].filter((text): text is string => !!text))].join("; ");

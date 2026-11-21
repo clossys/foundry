@@ -46,7 +46,7 @@ import type { SlotAgent } from "../records/slot-model/index.js";
 import "../constitution/guard.js"; // registers the write guard's runner (the confirm and revert writes are guarded)
 import type { AgentId, Decider, DeciderVerb, Iso, LedgerEntry, LoopStep, LoopVersion, QueueEntry, Ref, Tier } from "../records/types.js";
 import { RUN_BY, RUN_CLI, entryName, producerVersion, raiseEntry, raiseFix, raisedOf, routeFindings, type Finding, type Raise, type Raised } from "./route.js";
-import { dependantsOf, fillNames, MissingSkillError, nextFillSlot, readSubject, refOf, skillFor, slotCandidates, slotVars, stepArgv, whenMatches, type SlotSubject } from "./slots.js";
+import { dependantsOf, fillNames, fillQueue, MissingSkillError, nextFillSlot, readSubject, refOf, skillFor, slotCandidates, slotVars, stepArgv, unpinnedLeaves, whenMatches, type SlotSubject } from "./slots.js";
 import {
   AGENT_PICK_VERB, CANDIDATES_CERTIFIED, CASCADE_CLEAN, REQUEST_CLOSED, REQUESTS_FILED, CANDIDATE_NAME, ENTRY_NAME, EXIT_CHECKS, LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, OWNER_PICK_RAISE, PUBLICATION_ID, RELEASE_READY, RUN_ID,
   SLOT_REF, TRIGGER_CODE, TRIGGER_KINDS, VERIFIED_CHECKS, ledgerOf, loopStem, type LoopName,
@@ -63,7 +63,7 @@ import { FIX_CHECKS } from "../queue/requester-check.js";
 import { handlerMismatch } from "../queue/routing.js";
 import { cascadeClean, runCascade } from "./cascade.js";
 import { CASCADE_REVERDICT } from "../constitution/cascade.js";
-import { inputsOf } from "../engine/chain.js";
+import { inputsOf, readEventLines } from "../engine/chain.js";
 import { commitEvent } from "../engine/log.js";
 
 export type Exit = 0 | 1 | 2;
@@ -144,6 +144,8 @@ export interface RunState {
   raised: string[];
   vars: Record<string, string>;
   findings: Finding[];
+  /** The T1 init's fill queue (FILL-PRELUDE D1): the `<agent>/<slot-id>` refs its run.queue events name, in chain order. */
+  queue?: string[];
   waiting?: Waiting;
   /** An owner entry about to be raised: saved before the raise, so a resume adopts the entry instead of raising it twice (B9). */
   pendingRaise?: { step: string; queue: string; at: Iso; then?: "retry" };
@@ -1677,8 +1679,14 @@ function writeLedger(ctx: Context, status: RunState["status"] & LedgerEntry["sta
 }
 
 /**
- * flows.md F1 (T1): `clossys ia sync`, then `clossys check`, then one ledger entry `<stamp>-fill-init` with
- * `outcome: "initialized"`. Not a loop version of its own: it is the one-time prelude of `loop.fill`.
+ * flows.md F1 (T1): `clossys ia sync`, then the fill queue, then `clossys check`, then one ledger entry
+ * `<stamp>-fill-init` with `outcome: "initialized"`. Not a loop version of its own: it is the one-time prelude of `loop.fill`.
+ *
+ * FILL-PRELUDE D1 (foundry-build-0048): an unpinned package leaf is a queue entry of loop.fill (flows.md F2), not an
+ * init finding. The queue step writes one `run.queue` event per leaf and holds the queue those events name against
+ * every unpinned leaf (fill.queued); pins.resolve judges only the slots that hold a pin or a candidate; and the check
+ * step's verb exit is judged from its findings, where a slot-integrity no-pin or no-candidate on a queued leaf is that
+ * leaf's queue entry. `clossys check --suites --strict` and `--slots --readiness` judge every slot, as before.
  */
 export async function runInit(root: string, hooks: RunHooks, options: RunOptions = {}): Promise<RunResult> {
   const now = options.now ?? (() => new Date());
@@ -1694,24 +1702,89 @@ export async function runInit(root: string, hooks: RunHooks, options: RunOptions
   const ctx: Context = { root, state, version: load.loaded.content, hooks, now };
   const prelude: { id: string; cli: string; checks: string[] }[] = [
     { id: "ia-sync", cli: "clossys ia sync", checks: ["ia.orphans", "records.computed-match"] },
+    { id: "queue", cli: "clossys run loop.fill", checks: [FILL_QUEUED] },
     { id: "check", cli: "clossys check", checks: ["pins.resolve"] },
   ];
   for (const step of prelude) {
-    const outcome = await hooks.code({ runId: state.runId, step: step.id, cli: step.cli, argv: stepArgv(step.cli, {}).argv.slice(1) });
+    const outcome = step.id === "queue" ? queueFill(ctx) : await hooks.code({ runId: state.runId, step: step.id, cli: step.cli, argv: stepArgv(step.cli, {}).argv.slice(1) });
     // Each check is judged from the files after the step, never copied from the step's exit (CONSISTENCY round 2):
     // a failed ia sync whose orphans pass records ia.orphans as passed, and an exit 0 over a failing check stops (B3).
     const judged = step.checks.map(check => ({ check, verdict: preludeCheck(ctx, check) }));
     for (const { check, verdict } of judged) state.checks[check] = verdict.ok ? "pass" : "fail";
     const failed = judged.filter(each => !each.verdict.ok).map(each => (each.verdict as { why: string }).why);
-    const exit: Exit = outcome.exit === 0 && failed.length ? 1 : outcome.exit;
+    const verb = step.id === "check" ? checkStepExit(ctx, outcome) : { exit: outcome.exit };
+    if (verb.why) failed.push(verb.why);
+    const exit: Exit = verb.exit === 0 && failed.length ? 1 : verb.exit;
     state.steps.push({ id: step.id, decider: { by: "code" }, cli: step.cli, exit, wrote: wroteOf(root, outcome.wrote) });
     if (exit !== 0) return writeLedger(ctx, "stopped", `init stopped at ${step.id} (exit ${exit})${failed.length ? `: ${failed.join("; ")}` : ""}`, exit);
   }
   return writeLedger(ctx, "done", "initialized", 0);
 }
 
-/** One prelude check of runInit, computed from the consumer's files: the tree checks by their own run, pins.resolve as B3 verifies it. */
+/** The init check that every unpinned leaf is a queue entry of loop.fill (FILL-PRELUDE D1). */
+export const FILL_QUEUED = "fill.queued";
+/** The engine event of one fill queue entry: subject the init run, input the leaf's slot.json. */
+export const RUN_QUEUE = "run.queue";
+
+/** The init's queue step (flows.md F2 step 1, by code): one run.queue event per slot loop.fill would fill, in chain order. */
+function queueFill(ctx: Context): CodeOutcome {
+  const { root, state } = ctx;
+  for (const subject of fillQueue(root)) logRun(root, RUN_QUEUE, state, [join(root, "clossys", "agents", subject.agent, subject.slotId, "slot.json")]);
+  state.queue = queuedRefs(root, state);
+  state.vars.queue = String(state.queue.length);
+  return { exit: 0 };
+}
+
+/** The `<agent>/<slot-id>` refs this run's run.queue events name, in log order: the queue as recorded, not as computed. */
+export function queuedRefs(root: string, state: Pick<RunState, "loop" | "runId">): string[] {
+  const subject = `loop:${state.loop}/${state.runId}`;
+  const out: string[] = [];
+  for (const line of readEventLines(root).lines) {
+    let event: { kind?: unknown; subject?: unknown; inputs?: { path?: unknown }[] };
+    try { event = JSON.parse(line) as typeof event; } catch { continue; }
+    if (event.kind !== RUN_QUEUE || event.subject !== subject) continue;
+    const match = /^clossys\/agents\/([a-z]+)\/([^/]+)\/slot\.json$/.exec(String(event.inputs?.[0]?.path ?? ""));
+    if (match && !out.includes(`${match[1]}/${match[2]}`)) out.push(`${match[1]}/${match[2]}`);
+  }
+  return out;
+}
+
+/** fill.queued: every unpinned leaf (slots.ts unpinnedLeaves, its own listing) is named by a run.queue event of this run. */
+export function judgeFillQueued(root: string, state: Pick<RunState, "loop" | "runId">): { ok: true } | { ok: false; why: string } {
+  const queued = new Set(queuedRefs(root, state));
+  const unqueued = unpinnedLeaves(root).filter(ref => !queued.has(ref));
+  return unqueued.length ? { ok: false, why: `${FILL_QUEUED}: ${unqueued.length} unpinned leaves are not queued: ${unqueued.slice(0, 5).join(", ")}${unqueued.length > 5 ? ` (+${unqueued.length - 5} more)` : ""}` } : { ok: true };
+}
+
+/** Slot-integrity rules of `clossys check` that an unpinned leaf raises by being unpinned: its queue entry, not an init finding. */
+const QUEUED_LEAF_RULES: readonly string[] = ["no-pin", "no-candidate"];
+
+/**
+ * The check step's exit, judged from the verb's findings (FILL-PRELUDE D1): an exit 1 whose every finding is a
+ * slot-integrity no-pin or no-candidate on a queued leaf passes; any other finding, a finding with no slot, an exit 1
+ * with no findings, or an exit 2 stays as the verb said. The verb's own exit is kept in the run's vars.
+ */
+function checkStepExit(ctx: Context, outcome: CodeOutcome): { exit: Exit; why?: string } {
+  if (outcome.exit !== 1 || !outcome.findings?.length) return { exit: outcome.exit };
+  const queued = new Set(ctx.state.queue ?? []);
+  const isQueuedLeaf = (finding: Finding): boolean => finding.check === SLOT_INTEGRITY && QUEUED_LEAF_RULES.includes(finding.detail.split(":")[0]!) && queued.has(finding.subject);
+  const other = outcome.findings.filter(finding => !isQueuedLeaf(finding));
+  ctx.state.vars["check-exit"] = "1";
+  ctx.state.vars["check-queued-findings"] = String(outcome.findings.length - other.length);
+  if (!other.length) return { exit: 0 };
+  return { exit: 1, why: `clossys check: ${other.slice(0, 5).map(finding => `${finding.check} ${finding.subject} ${finding.detail}`).join("; ")}${other.length > 5 ? ` (+${other.length - 5} more)` : ""}` };
+}
+
+/** The check name loop/cli.ts gives a `clossys check` slot-integrity finding (check/slot-resolve.ts). */
+export const SLOT_INTEGRITY = "slot.integrity";
+
+/** One prelude check of runInit, computed from the consumer's files: the tree checks by their own run, pins.resolve as B3 verifies it over the slots that hold a pin or a candidate, fill.queued from the run.queue events. */
 function preludeCheck(ctx: Context, name: string): { ok: true } | { ok: false; why: string } {
+  if (name === "pins.resolve") {
+    const findings = checkPinsResolve(ctx.root, "held").findings;
+    return findings.length ? { ok: false, why: `pins.resolve: ${findings.map(finding => `${finding.subject} ${finding.detail}`).join("; ")}` } : { ok: true };
+  }
+  if (name === FILL_QUEUED) return judgeFillQueued(ctx.root, ctx.state);
   const tree = name === IA_ORPHANS ? runIaOrphans(ctx.root) : name === RECORDS_COMPUTED_MATCH ? runRecordsComputedMatch(ctx.root) : undefined;
   if (!tree) return verifyCheck(ctx, name);
   return tree.status === "fail" ? { ok: false, why: `${name}: ${tree.findings.slice(0, 3).map(row => `${row.subject} ${row.detail}`).join("; ")}${tree.findings.length > 3 ? ` (+${tree.findings.length - 3} more)` : ""}` } : { ok: true };
@@ -1719,13 +1792,20 @@ function preludeCheck(ctx: Context, name: string): { ok: true } | { ok: false; w
 
 /**
  * flows.md F2 repeat: `loop.fill` for the next slot still on a package default (chain order), again and again, until
- * none is left or a run waits or stops. A slot filled once in this call is not filled again in it.
+ * none is left or a run waits or stops. A slot filled once in this call is not filled again in it. Given the init's
+ * `queue`, it works that queue in its order, passing over an entry that is pinned (or no longer fillable) by now.
  */
-export async function fillAll(root: string, hooks: RunHooks, options: RunOptions & { readonly limit?: number } = {}): Promise<RunResult[]> {
+export async function fillAll(root: string, hooks: RunHooks, options: RunOptions & { readonly limit?: number; readonly queue?: readonly string[] } = {}): Promise<RunResult[]> {
   const results: RunResult[] = [];
   const done = new Set<string>();
+  const next = (): SlotSubject | undefined => {
+    if (!options.queue) return nextFillSlot(root, done);
+    const fillable = new Map(fillQueue(root).map(subject => [refOf(subject), subject] as const));
+    for (const ref of options.queue) if (!done.has(ref) && fillable.has(ref)) return fillable.get(ref);
+    return undefined;
+  };
   for (let n = 0; n < (options.limit ?? 1000); n++) {
-    const subject = nextFillSlot(root, done);
+    const subject = next();
     if (!subject) break;
     done.add(refOf(subject));
     const result = await startRun(root, { loop: "loop.fill", slot: refOf(subject) }, hooks, options);
