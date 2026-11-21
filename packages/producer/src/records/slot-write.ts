@@ -12,6 +12,7 @@
  * byte state it leaves is the one the ledger already records.
  */
 import { oldSlotRefusal } from "./store-format.js";
+import { CRITIQUES_DIR } from "./critique-record.js";
 import { loadRecipes, plumbCraftRunIssue } from "./recipes.js";
 import { createHash, randomUUID } from "node:crypto";
 import { closeSync, constants, cpSync, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
@@ -652,8 +653,8 @@ const AUTHORS = { also: ["owner", "planner"] } as const;
  * the `clossys next` seat of the step that crafts seat slots), which is the Producer's seat for its seat slots.
  */
 const authorsOf = (agent: string): { readonly also: readonly string[] } => (agent === SEAT_AGENT ? { also: [...AUTHORS.also, "agent:seats"] } : AUTHORS);
-/** A slot's critique records (`critiques/<leaf>-v<n>.json`, section 5b stage 4). */
-export const CRITIQUES_DIR = "critiques";
+/** A slot's critique records (`critiques/<leaf>-v<n>.json`, section 5b stage 4): records/critique-record.ts. */
+export { CRITIQUES_DIR };
 /**
  * Write a critique record for the candidate the open P2 run will submit (`<leaf>-v<next>.json`
  * unless `candidate` names one) and append its `craft:critique` event (verb critique), refused

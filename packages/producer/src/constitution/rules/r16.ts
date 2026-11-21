@@ -12,6 +12,7 @@ import { dirname, join, relative, sep } from "node:path";
 import { loadSchema, validateValue } from "../../pipeline/schema.js";
 import { listModelDir, readModelText } from "../../records/slots.js";
 import { STANDARD_AUTHORS } from "../../records/standards.js";
+import { manifestIssues } from "../../records/critique-record.js";
 import { CERTIFY_KEY_FIELDS } from "../criteria/core/verdict.js";
 import { isObject, liveSlotRecords } from "../checks/shared.js";
 import type { Check, Row, RuleModule, SlotRecord } from "../types.js";
@@ -72,24 +73,8 @@ export const r16_1: Check = ctx => {
   return rows;
 };
 
-/** The roles a critique packet may list and what each ref may be (R16.2). */
-/** Maker files a packet never lists: a recipe, its craft notes or generator, a ledger, direction notes, briefs or prompts. */
-const MAKER = /(?:^|\/)(?:recipes\/|craft\.md$|generate\.mjs$|ledger\.json$|directions?(?:\/|\.|$)|notes?(?:\/|\.|$)|prompts?(?:\/|\.|$)|brief\.md$)/i;
-/** The issues of one critique record's manifest for a slot of `agent` judged by `standard`. */
-export function manifestIssues(doc: { standard: string; packet: { manifest: readonly { role: string; ref: string }[] } }, agent: string, slotDir: string): string[] {
-  const issues: string[] = [];
-  const base = `packages/${agent}/standards/${doc.standard}/`;
-  const roles = new Set(doc.packet.manifest.map(item => item.role));
-  for (const role of ["taste", "render"]) if (!roles.has(role)) issues.push(`packet manifest lists no ${role}`);
-  for (const item of doc.packet.manifest) {
-    const ref = item.ref;
-    if (MAKER.test(ref)) { issues.push(`packet manifest lists ${ref}: never a recipe file, direction notes or the maker`); continue; }
-    if (item.role === "taste" && ref !== `${base}taste.md`) issues.push(`taste ref ${ref} is not ${base}taste.md`);
-    if (item.role === "exemplar" && !ref.startsWith(`${base}exemplars/`) && !/^https?:\/\//.test(ref)) issues.push(`exemplar ref ${ref} is not under ${base}exemplars/ or a link`);
-    if (item.role === "contract" && ref !== `${slotDir}/slot.json` && ref !== `${slotDir}/slot.json#contract`) issues.push(`contract ref ${ref} is not ${slotDir}/slot.json#contract`);
-  }
-  return issues;
-}
+/** The roles a critique packet may list and what each ref may be (R16.2): the critique writer's own manifest rule. */
+export { manifestIssues };
 
 /** R16.2: every critique record is valid and its packet manifest lists only the standard, the contract and the render. */
 export const r16_2: Check = ctx => {

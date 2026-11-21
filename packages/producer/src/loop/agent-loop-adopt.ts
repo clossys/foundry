@@ -33,6 +33,26 @@ import { loopStem } from "./names.js";
 /** The candidate file an adopted loop slot holds: the package candidate's own name. */
 export const adoptedLoopCandidate = (loop: AgentLoopName): string => `${loopStem(loop)}-v1.json`;
 
+/** The base an adopted loop slot declares: its agent package's loop candidate, `loops/<loop>/<stem>-v1.json`. */
+export const adoptedLoopBasePath = (loop: AgentLoopName): string => `${AGENT_LOOPS_DIR}/${loop}/${adoptedLoopCandidate(loop)}`;
+
+/**
+ * The slot.json `clossys loop` writes for `agent`'s `loop` (computed, never stored elsewhere): from the agent package's
+ * `version`, the bytes of its loop candidate at `adoptedLoopBasePath` and the loop's IA position. The adopt verb
+ * writes it and the strict checks recompute it from the slot's declared base (check/declared-base.ts).
+ */
+export function adoptedLoopSlot(agent: LoopAgent, loop: AgentLoopName, input: { readonly version: string; readonly packageBytes: string | Buffer; readonly position: Parameters<typeof positionIa>[1]; readonly at: string }): Slot {
+  return {
+    schema: "clossys.slot/2", id: loop, agent, kind: LOOP_KIND, status: "starter",
+    ia: positionIa(loop, input.position),
+    createdBy: cliActor("clossys loop"), createdAt: input.at, refs: [],
+    base: { package: `@clossys/${agent}`, version: input.version, path: adoptedLoopBasePath(loop), sha256: sha(input.packageBytes) },
+    standard: LOOP_STANDARD,
+    brief: { purpose: `${agent}'s own ${loop}: Producer's standard ${loop} with ${agent}'s own steps, skills and tiers.`, mustDo: [], inputs: [], acceptance: [] },
+    contract: { loop, extends: `producer/${loop}`, requirements: [] }, tighten: [], family: { options: 1, varyOn: null, values: [] },
+  } as unknown as Slot;
+}
+
 export interface AdoptResult {
   /** True when this call wrote the loops (false: the consumer already held all of them). */
   readonly adopted: boolean;
@@ -87,15 +107,7 @@ export function adoptAgentLoops(root: string, agent: LoopAgent, input: { readonl
   const slots = AGENT_LOOPS.filter(loop => !modelExists(slotFile(slotDir(consumer, agent, loop)))).map(loop => {
     const packageFile = agentPackageLoopFile(agent, loop);
     const packageBytes = readFileSync(packageFile, "utf8");
-    const slot = {
-      schema: "clossys.slot/2", id: loop, agent, kind: LOOP_KIND, status: "starter",
-      ia: positionIa(loop, positions.get(loop)),
-      createdBy: cliActor("clossys loop"), createdAt: input.at, refs: [],
-      base: { package: `@clossys/${agent}`, version, path: `${AGENT_LOOPS_DIR}/${loop}/${adoptedLoopCandidate(loop)}`, sha256: sha(packageBytes) },
-      standard: LOOP_STANDARD,
-      brief: { purpose: `${agent}'s own ${loop}: Producer's standard ${loop} with ${agent}'s own steps, skills and tiers.`, mustDo: [], inputs: [], acceptance: [] },
-      contract: { loop, extends: `producer/${loop}`, requirements: [] }, tighten: [], family: { options: 1, varyOn: null, values: [] },
-    } as unknown as Slot;
+    const slot = adoptedLoopSlot(agent, loop, { version, packageBytes, position: positions.get(loop), at: input.at });
     const issues = validateSlot(slot);
     if (issues.length) throw new Error(`${agent}/${loop}: the adopted slot.json is invalid: ${issues.map(issue => `${issue.path} ${issue.message}`).join("; ")}`);
     return { loop, dir: slotDir(consumer, agent, loop), bytes: serializeSlot(slot), candidate: consumerCandidateBytes(agent, loop, packageBytes) };
