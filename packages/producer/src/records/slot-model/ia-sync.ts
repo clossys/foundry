@@ -29,8 +29,8 @@ import { deriveRefs, feedsIndex } from "./derive.js";
 import { designerIa, directorIa, producerIa, slotPositions, writerIa, type FoundryIa, type FoundrySlot } from "./foundry-ia.js";
 import { iaPath, jsonBytes, slotDir, slotFile } from "./layout.js";
 import { resolveIaSource, WORKSPACE_OWNED_SOURCE } from "./ia-source.js";
-import { FOUNDRY_IA_AGENTS, SLOT_AGENTS, SLOT_SCHEMA, type IaDoc, type IaLeafGroup, type IaNode, type SlotAgent, type SlotPosition } from "./types.js";
-import { modelExists, readModelText } from "../slots.js";
+import { FOUNDRY_IA_AGENTS, SLOT_AGENTS, SLOT_SCHEMA, seatStepOf, type IaDoc, type IaLeafGroup, type IaNode, type SlotAgent, type SlotPosition } from "./types.js";
+import { isModelDir, listModelDir, modelExists, readModelText } from "../slots.js";
 import { isCurrentSlot, refIds, slotFamily } from "../slot-current.js";
 import { positionIa, serializeSlot } from "../slot.js";
 import type { AgentId, Iso, Ref, Slot } from "../types.js";
@@ -53,9 +53,26 @@ const CREATED_BY_SYNC: ReadonlySet<SyncAgent> = new Set(["producer"]);
 
 export const SYNC_KINDS = [
   "undeclared-leaf", "unadopted-leaf", "redefined", "source", "layers", "axes", "node", "group", "order", "contract", "kind", "behaviour", "position", "slot-missing",
+  "seat-pending",
 ] as const;
 export type SyncKind = typeof SYNC_KINDS[number];
 export interface SyncFinding { readonly agent: SyncAgent; readonly kind: SyncKind; readonly slot?: string; readonly detail: string }
+
+/**
+ * The finding kinds that are listed but fail neither `ia sync` nor `ia sync --check` (foundry-build-0048 CONSISTENCY
+ * C1): `seat-pending` is a package seat placed in producer ia.json whose slot folder holds nothing yet, a decide step
+ * that waits on a seat decision (`clossys seat <step>`), not a record that is missing. A seat folder that holds any
+ * record (a pin, a candidate, a ledger) but no slot.json is `slot-missing` and fails both paths.
+ */
+export const PENDING_SYNC_KINDS: ReadonlySet<SyncKind> = new Set(["seat-pending"]);
+export const failsSync = (finding: Pick<SyncFinding, "kind">): boolean => !PENDING_SYNC_KINDS.has(finding.kind);
+/** The remedy a seat-pending finding names: the seat verb, as its usage states it (owner.ts SEAT_USAGE). */
+export const seatRemedy = (step: string): string =>
+  `clossys seat ${step} --by <who> (--model <id> --tier low|mid|high --prompt-file <path> | --llm-from <step> | --no-llm) --decided-by owner:queue.<kind>#<id>|planner[:<ref>]`;
+
+/** Whether a slot folder holds any record file at any depth: empty folders (a refused verb's leftover) hold none. */
+const holdsRecord = (dir: string): boolean =>
+  listModelDir(dir).some(name => { const path = `${dir}/${name}`; return isModelDir(path) ? holdsRecord(path) : modelExists(path); });
 
 type Doc = Record<string, unknown>;
 const readDoc = (path: string): Doc => JSON.parse(readModelText(path)) as Doc;
@@ -354,9 +371,16 @@ export function syncDrift(consumerDir: string, agent: SyncAgent, state: SyncStat
   // slot.json: the package's kind and contract, and the position the target IA gives.
   for (const [id, position] of positions) {
     const file = slotFile(slotDir(consumerDir, agent, id));
-    if (!modelExists(file)) { if (placed.has(id)) add("slot-missing", `${id} is placed but has no slot.json`, id); continue; }
-    const doc = readDoc(file);
     const slot = pkg.slots.get(id);
+    if (!modelExists(file)) {
+      if (!placed.has(id)) continue;
+      // A package seat whose folder holds nothing waits on its seat decision; a folder with any record lost its slot.json.
+      const step = agent === "producer" && slot?.kind === "seat" ? seatStepOf(id) : undefined;
+      if (step !== undefined && !holdsRecord(slotDir(consumerDir, agent, id))) add("seat-pending", `${id} waits on a seat decision: ${seatRemedy(step)}`, id);
+      else add("slot-missing", `${id} is placed but has no slot.json`, id);
+      continue;
+    }
+    const doc = readDoc(file);
     const current = isCurrent(doc);
     if (slot) {
       // A slot/2 kind is judged by its family (and the package's own slot/2 kind when it names one).
@@ -464,4 +488,25 @@ export function workspaceSourceRepairs(consumer: string): { agent: SlotAgent; de
     out.push({ agent, path, detail: `source ${JSON.stringify(doc.source)} does not resolve (${resolution.reason}); a workspace-owned IA is ${JSON.stringify(WORKSPACE_OWNED_SOURCE)}`, bytes: jsonBytes({ ...doc, source: WORKSPACE_OWNED_SOURCE }) });
   }
   return out;
+}
+
+/** The one verdict `ia sync` and `ia sync --check` give (CONSISTENCY C1): every finding, and the ones that fail. */
+export interface SyncVerdict {
+  readonly findings: readonly SyncFinding[];
+  readonly repairs: readonly { agent: SlotAgent; detail: string; path: string; bytes: string }[];
+  /** The findings that fail (every kind but PENDING_SYNC_KINDS); a workspace source repair always fails. */
+  readonly failing: readonly SyncFinding[];
+  readonly pending: readonly SyncFinding[];
+  readonly exitCode: 0 | 1;
+}
+/**
+ * The one finding function both `ia sync` paths call: the drift of each agent (syncDrift), the workspace source repairs
+ * when every agent is synced, and one exit code. `--check` reports it as read; the write reports it after its writes.
+ */
+export function syncVerdict(consumerDir: string, agents: readonly SyncAgent[], workspace: boolean): SyncVerdict {
+  const findings = agents.flatMap(agent => syncDrift(consumerDir, agent));
+  const repairs = workspace ? workspaceSourceRepairs(consumerDir) : [];
+  const failing = findings.filter(failsSync);
+  const pending = findings.filter(finding => !failsSync(finding));
+  return { findings, repairs, failing, pending, exitCode: failing.length || repairs.length ? 1 : 0 };
 }

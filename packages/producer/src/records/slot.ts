@@ -390,7 +390,11 @@ export function slotSchemaOf(file: string): string | undefined {
 // ---------------------------------------------------------------------------
 
 export interface TreeFinding { subject: string; detail: string }
-export interface TreeCheckResult { check: string; status: "pass" | "fail"; findings: TreeFinding[] }
+/**
+ * A tree check's verdict: `findings` fail it; `pending` (ia.orphans `publication-pending`, CONSISTENCY C2) are listed
+ * and never fail it, and every reader of `findings` keeps reading failures only.
+ */
+export interface TreeCheckResult { check: string; status: "pass" | "fail"; findings: TreeFinding[]; pending?: TreeFinding[] }
 export interface TreeCheck { id: string; run(root: string): TreeCheckResult }
 
 export const treeResult = (check: string, findings: TreeFinding[]): TreeCheckResult => ({ check, status: findings.length ? "fail" : "pass", findings });

@@ -16,10 +16,20 @@
  *             placement. A seat folder producer/ia.json does not place is still an orphan.
  *
  * A folder with no readable `slot.json` is still a slot folder: it is reached only through the edges of others.
+ *
+ * publication-pending (foundry-build-0048 CONSISTENCY C2) = an unreached folder that the same edges reach from a
+ * publication the installed Publisher package declares but the consumer has not seated. Declared: a publication its
+ * IA (`src/catalog/ia/directory.json`) assigns pages to, and whose package starter (`starters/<id>/publication.json`)
+ * lists exactly those pages; its roots are every slot its starter's own default files name (frame, chrome, sections,
+ * copy, meta). Seated: a publication either root form above names. A pending folder is listed (`pending`) and does not
+ * fail the check; every other unreached folder stays an orphan. A starter whose files cannot be read declares nothing:
+ * its folders stay orphans (no fallback).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { SEATABLE_STARTERS } from "../cli/starter-plan.js";
 import { placedIds } from "../constitution/context.js";
+import { packagePath } from "../package-path.js";
 import { releaseSlotId } from "../release/paths.js";
 import { SLOT_SCHEMA, consumerSlotFolders, readSlot, slotSchemaOf, treeResult, type TreeCheck, type TreeCheckResult, type TreeFinding } from "../records/slot.js";
 import { slotReadIssues } from "../records/slot-current.js";
@@ -51,22 +61,71 @@ function liveSlot(root: string, id: string): boolean {
  * The publication roots of the consumer: `publisher/<slot-id>` for every page, chrome and release slot a
  * `publications` entry names, and every placed, live `publisher/publication.<pub>` slot with its release slot.
  */
-export function publicationRoots(root: string): { roots: string[]; findings: TreeFinding[] } {
+export function publicationRoots(root: string): { roots: string[]; findings: TreeFinding[]; seated: Set<string> } {
   const file = join(root, "clossys", "agents", "publisher", "ia.json");
-  if (!existsSync(file)) return { roots: [], findings: [{ subject: "publisher/ia.json", detail: "missing: no publication roots" }] };
+  const seated = new Set<string>();
+  if (!existsSync(file)) return { roots: [], findings: [{ subject: "publisher/ia.json", detail: "missing: no publication roots" }], seated };
   let doc: { publications?: Record<string, { pages?: unknown; chrome?: unknown; release?: unknown }>; nodes?: unknown };
-  try { doc = JSON.parse(readFileSync(file, "utf8")); } catch (error) { return { roots: [], findings: [{ subject: "publisher/ia.json", detail: `not JSON: ${(error as Error).message}` }] }; }
+  try { doc = JSON.parse(readFileSync(file, "utf8")); } catch (error) { return { roots: [], findings: [{ subject: "publisher/ia.json", detail: `not JSON: ${(error as Error).message}` }], seated }; }
   const roots: string[] = [];
-  for (const publication of Object.values(doc.publications ?? {})) {
+  for (const [name, publication] of Object.entries(doc.publications ?? {})) {
+    seated.add(name);
     const ids = [...asStrings(publication.pages), ...asStrings(publication.chrome), ...asStrings(publication.release)];
     for (const id of ids) roots.push(`publisher/${id}`);
   }
   for (const id of placedIds(doc)) {
     const publication = PUBLICATION_SLOT.exec(id)?.[1];
     if (publication === undefined || !liveSlot(root, id)) continue;
+    seated.add(publication);
     for (const slot of [id, releaseSlotId(root, publication)]) if (!roots.includes(`publisher/${slot}`)) roots.push(`publisher/${slot}`);
   }
-  return { roots, findings: [] };
+  return { roots, findings: [], seated };
+}
+
+const readJson = (file: string): unknown => {
+  if (!existsSync(file)) return undefined;
+  try { return JSON.parse(readFileSync(file, "utf8")); } catch { return undefined; }
+};
+
+/**
+ * The publications the installed Publisher package declares, each with the slots its starter's default files name:
+ * a publication the package IA assigns pages to, whose starter lists exactly those pages and whose every listed
+ * default file reads. A publication that fails any part is left out (its folders are judged without it).
+ */
+export function declaredPublications(root: string): Map<string, string[]> {
+  const publisher = (rel: string) => packagePath(root, `packages/publisher/${rel}`);
+  const out = new Map<string, string[]>();
+  const directory = readJson(publisher("src/catalog/ia/directory.json")) as { slots?: Record<string, { kind?: unknown; publication?: unknown }> } | undefined;
+  const pagesOf = new Map<string, string[]>();
+  for (const [id, slot] of Object.entries(directory?.slots ?? {})) {
+    if (slot?.kind !== "page" || typeof slot.publication !== "string") continue;
+    pagesOf.set(slot.publication, [...(pagesOf.get(slot.publication) ?? []), id]);
+  }
+  for (const [publication, pages] of pagesOf) {
+    const starter = readJson(publisher(`starters/${publication}/publication.json`)) as { id?: unknown; pages?: unknown; layouts?: unknown; chrome?: unknown; defaults?: unknown } | undefined;
+    if (!starter || starter.id !== publication) continue;
+    const listed = asStrings(starter.pages);
+    if (listed.length !== pages.length || !pages.every(page => listed.includes(page))) continue;
+    const defaults = asStrings(starter.defaults);
+    const docs = defaults.map(rel => readJson(publisher(`defaults/${rel}`)));
+    if (!defaults.length || docs.some(doc => doc === undefined)) continue;
+    const slots = new Set<string>([...listed, ...asStrings(starter.layouts), ...asStrings(starter.chrome)].map(id => `publisher/${id}`));
+    for (const doc of docs) for (const slot of slotRefsIn((doc as { content?: unknown }).content)) slots.add(slot);
+    out.set(publication, [...slots]);
+  }
+  return out;
+}
+
+/** Every `<agent>/<slot-id>` string, value or key, in a JSON value. */
+function slotRefsIn(value: unknown): string[] {
+  const out: string[] = [];
+  const walk = (item: unknown): void => {
+    if (typeof item === "string") { const slot = slotOf(item); if (slot) out.push(slot); }
+    else if (Array.isArray(item)) item.forEach(walk);
+    else if (item && typeof item === "object") for (const [key, inner] of Object.entries(item)) { walk(key); walk(inner); }
+  };
+  walk(value);
+  return out;
 }
 
 function asStrings(value: unknown): string[] {
@@ -85,14 +144,9 @@ function candidateEdges(dir: string): string[] {
   let doc: unknown;
   try { doc = JSON.parse(readFileSync(file, "utf8")); } catch { return []; }
   const out: string[] = [];
-  const walk = (value: unknown): void => {
-    if (typeof value === "string") { const slot = slotOf(value); if (slot) out.push(slot); }
-    else if (Array.isArray(value)) value.forEach(walk);
-    else if (value && typeof value === "object") for (const [key, item] of Object.entries(value)) { walk(key); walk(item); }
-  };
   const header = (doc as { clossys?: { refs?: Ref[] } }).clossys;
   for (const ref of header?.refs ?? []) if (WALKED.has(ref.rel)) { const slot = slotOf(ref.to); if (slot) out.push(slot); }
-  walk((doc as { content?: unknown }).content);
+  out.push(...slotRefsIn((doc as { content?: unknown }).content));
   return out;
 }
 
@@ -105,7 +159,7 @@ function placedSeats(root: string): Set<string> {
 
 export function runIaOrphans(root: string): TreeCheckResult {
   const folders = consumerSlotFolders(root);
-  const { roots, findings } = publicationRoots(root);
+  const { roots, findings, seated } = publicationRoots(root);
   const seats = placedSeats(root);
   const forward = new Map<string, string[]>();
   const backward = new Map<string, string[]>();
@@ -124,21 +178,38 @@ export function runIaOrphans(root: string): TreeCheckResult {
     }
     forward.set(key, edges);
   }
-  const reached = new Set<string>();
-  const queue = [...roots];
-  while (queue.length) {
-    const next = queue.pop()!;
-    if (reached.has(next)) continue;
-    reached.add(next);
-    queue.push(...(forward.get(next) ?? []), ...(backward.get(next) ?? []));
+  const walk = (from: readonly string[], skip: ReadonlySet<string>): Set<string> => {
+    const seen = new Set<string>();
+    const queue = [...from];
+    while (queue.length) {
+      const next = queue.pop()!;
+      if (seen.has(next) || skip.has(next)) continue;
+      seen.add(next);
+      queue.push(...(forward.get(next) ?? []), ...(backward.get(next) ?? []));
+    }
+    return seen;
+  };
+  const reached = walk(roots, new Set());
+  // Folders a declared, unseated publication reaches through the same edges, by publication (CONSISTENCY C2).
+  const waiting = new Map<string, string[]>();
+  for (const [publication, slots] of declaredPublications(root)) {
+    if (seated.has(publication)) continue;
+    for (const key of walk(slots, reached)) waiting.set(key, [...(waiting.get(key) ?? []), publication]);
   }
+  const pending: TreeFinding[] = [];
   for (const folder of folders) {
     const key = `${folder.agent}/${folder.id}`;
     if (reached.has(key) || (folder.agent === "producer" && (folder.id.startsWith("loop.") || seats.has(folder.id)))) continue;
     const seat = folder.agent === "producer" && seatStepOf(folder.id) !== undefined;
+    const publications = seat ? undefined : waiting.get(key);
+    if (publications) { pending.push({ subject: key, detail: `publication-pending: ${publications.map(pendingRemedy).join("; ")}` }); continue; }
     findings.push({ subject: key, detail: seat ? "seat slot folder producer/ia.json does not place" : folder.hasSlot ? "no consumedBy path ends at a publication in publisher/ia.json" : "slot folder with no slot.json, and nothing reachable places it" });
   }
-  return treeResult(IA_ORPHANS, findings);
+  return { ...treeResult(IA_ORPHANS, findings), ...(pending.length ? { pending } : {}) };
 }
+
+/** What a pending folder waits on: the declared publication and the verb that seats it, where one does. */
+const pendingRemedy = (publication: string): string =>
+  `waits on publication ${publication}, declared by the Publisher package and not seated${SEATABLE_STARTERS.includes(publication) ? ` (clossys init --starters ${publication})` : " (no verb seats it yet)"}`;
 
 export const iaOrphans: TreeCheck = { id: IA_ORPHANS, run: runIaOrphans };

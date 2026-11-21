@@ -36,7 +36,7 @@ import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, 
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { feedsIndex } from "../records/slot-model/derive.js";
 import { PRODUCER_IA_SOURCE } from "../records/slot-model/pipeline-seats.js";
-import { adoptedCurrentSlots, driftCounts, knownSlots, SYNC_AGENTS, syncDrift, syncPlan, syncState, workspaceSourceRepairs, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
+import { adoptedCurrentSlots, driftCounts, knownSlots, SYNC_AGENTS, syncPlan, syncState, syncVerdict, type SyncAgent, type SyncVerdict } from "../records/slot-model/ia-sync.js";
 import { pinRecords, validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
 import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, retireAnswerUses, retireBinding, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writeSeatDecision } from "../records/slot-write.js";
@@ -473,21 +473,28 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
   if (only !== undefined && !(SYNC_AGENTS as readonly string[]).includes(only)) throw new CliUsageError(`ia sync --agent takes one of ${SYNC_AGENTS.join(", ")}, got ${only}\n${IA_USAGE}`);
   const agents = (only === undefined ? SYNC_AGENTS : [only]) as SyncAgent[];
   const root = rootOf(cwd, flags), consumer = join(root, "clossys");
-  const findings: SyncFinding[] = [];
-  for (const agent of agents) findings.push(...syncDrift(consumer, agent));
-  // A workspace-owned IA (the Publisher's) is not synced, but a dead source on it is repointed.
-  const repairs = only === undefined ? workspaceSourceRepairs(consumer) : [];
-  const counts = Object.fromEntries(agents.map(agent => [agent, driftCounts(findings.filter(finding => finding.agent === agent))]));
-  const summary = [...agents.map(agent => {
-    const entries = Object.entries(counts[agent]!);
-    return `${agent}: ${entries.length ? entries.map(([kind, n]) => `${n} ${kind}`).join(", ") : "in sync"}`;
-  }), ...repairs.map(repair => `${repair.agent}: 1 source (workspace-owned)`)];
+  // One finding function and one exit code for both paths (CONSISTENCY C1): a seat that waits on its decision is
+  // listed as seat-pending and fails neither; every other finding fails --check, and fails the write while it remains.
+  const before = syncVerdict(consumer, agents, only === undefined);
+  const { findings, repairs } = before;
+  const report = (verdict: SyncVerdict) => {
+    const counts = Object.fromEntries(agents.map(agent => [agent, driftCounts(verdict.findings.filter(finding => finding.agent === agent))]));
+    const summary = [...agents.map(agent => {
+      const entries = Object.entries(counts[agent]!);
+      return `${agent}: ${entries.length ? entries.map(([kind, n]) => `${n} ${kind}`).join(", ") : "in sync"}`;
+    }), ...verdict.repairs.map(repair => `${repair.agent}: 1 source (workspace-owned)`)];
+    const ordered = [...verdict.failing, ...verdict.pending];
+    const listed = [...ordered.map(finding => `  ${finding.agent} ${finding.kind}: ${finding.detail}`), ...verdict.repairs.map(repair => `  ${repair.agent} source: ${repair.detail}`)].slice(0, 60);
+    const drift = verdict.failing.length + verdict.repairs.length;
+    const head = `${drift ? `${drift} drift finding${drift === 1 ? "" : "s"}` : "in sync with the package IA"}${verdict.pending.length ? `; ${verdict.pending.length} seat${verdict.pending.length === 1 ? "" : "s"} pending (listed, not failing)` : ""}`;
+    return { counts, drift, head, lines: [...summary.map(line => `  ${line}`), ...listed, ...(ordered.length > 60 ? [`  ... and ${ordered.length - 60} more`] : [])] };
+  };
   if (flags.bare.has("--check")) {
-    const listed = [...findings.map(finding => `  ${finding.agent} ${finding.kind}: ${finding.detail}`), ...repairs.map(repair => `  ${repair.agent} source: ${repair.detail}`)].slice(0, 60);
-    const drift = findings.length + repairs.length;
+    const shown = report(before);
     return {
-      exitCode: drift ? 1 : 0, root, check: true, output: { drift, counts, findings, workspaceSources: repairs.map(({ agent, detail }) => ({ agent, detail })) },
-      message: [`ia sync --check: ${drift ? `${drift} drift finding${drift === 1 ? "" : "s"}` : "in sync with the package IA"}`, ...summary.map(line => `  ${line}`), ...listed, ...(findings.length > 60 ? [`  ... and ${findings.length - 60} more`] : [])].join("\n"),
+      exitCode: before.exitCode, root, check: true,
+      output: { drift: shown.drift, counts: shown.counts, findings, pending: before.pending.length, workspaceSources: repairs.map(({ agent, detail }) => ({ agent, detail })) },
+      message: [`ia sync --check: ${shown.head}`, ...shown.lines].join("\n"),
     };
   }
   // The write: per agent, the sync plan (ia.json and the changed slot.json files); an undeclared leaf refuses the whole sync.
@@ -517,8 +524,23 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
     writes.push([repair.path, repair.bytes]);
     lines.push(`${repair.agent}: 1 file, source repointed to the workspace-owned IA`);
   }
-  if (!writes.length) return { exitCode: 0, root, message: ["ia sync: in sync with the package IA; nothing written", ...summary.map(line => `  ${line}`)].join("\n") };
-  return commitIa(consumer, root, writes, flags.bare.has("--dry"), `sync ${agents.join(", ")} from the package IA (${findings.length + repairs.length} drift finding${findings.length + repairs.length === 1 ? "" : "s"})`, lines, undefined, { at });
+  const dry = flags.bare.has("--dry");
+  if (!writes.length) {
+    const shown = report(before);
+    return { exitCode: before.exitCode, root, message: [`ia sync: nothing written; ${shown.head}`, ...shown.lines].join("\n") };
+  }
+  const result = commitIa(consumer, root, writes, dry, `sync ${agents.join(", ")} from the package IA (${before.failing.length + repairs.length} drift finding${before.failing.length + repairs.length === 1 ? "" : "s"})`, lines, undefined, { at });
+  if (result.exitCode !== 0) return result;
+  if (dry) {
+    // Nothing is written: the findings no planned file repairs are the ones the write would leave.
+    const planned = new Set(writes.map(([path]) => path));
+    const left = before.failing.filter(finding => !planned.has(finding.slot === undefined ? iaPath(consumer, finding.agent) : slotFile(slotDir(consumer, finding.agent, finding.slot))));
+    if (!left.length) return result;
+    return { ...result, exitCode: 1, message: [result.message, `  ${left.length} drift finding${left.length === 1 ? "" : "s"} the write would not repair:`, ...left.slice(0, 60).map(finding => `  ${finding.agent} ${finding.kind}: ${finding.detail}`)].join("\n") };
+  }
+  const after = syncVerdict(consumer, agents, only === undefined);
+  const shown = report(after);
+  return { ...result, exitCode: after.exitCode, message: [result.message, `  after the write: ${shown.head}`, ...shown.lines].join("\n") };
 }
 
 /**
