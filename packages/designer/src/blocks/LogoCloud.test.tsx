@@ -234,14 +234,16 @@ describe("LogoCloud measured in Chromium", () => {
   const script = `
     window.clicks = [];
     addEventListener("click", event => { event.preventDefault(); clicks.push(event.target.closest("a")?.getAttribute("href") ?? null); }, true);
+    // Transitions (the fallback default duration) are jumped to their end state, so each probe reads the settled style.
+    window.settle = () => document.getAnimations().forEach(animation => animation.finish());
     window.gray = element => { const match = getComputedStyle(element).filter.match(/grayscale\\(([\\d.]+)\\)/); return match ? Number(match[1]) : 0; };
     window.centre = (selector, index, dy = 0) => { const box = document.querySelectorAll(selector)[index].getBoundingClientRect(); return [box.left + box.width / 2, box.top + box.height / 2 + dy]; };
     window.snap = id => [...document.querySelectorAll("#" + id + " li")].map(item => {
       const link = item.querySelector("a"); const mark = item.querySelector("[aria-hidden]"); const box = link?.getBoundingClientRect();
       return { w: box?.width ?? null, h: box?.height ?? null, gray: gray(link ?? mark), markGray: gray(mark) };
     });
-    window.all = () => ({ hoverMedia: matchMedia("(hover: hover)").matches, mono: snap("mono"), original: snap("original"), plain: snap("plain"), roomy: snap("roomy") });
-    window.focused = () => { const active = document.activeElement; const section = active.closest("section"); const items = section ? [...section.querySelectorAll("a")] : [];
+    window.all = () => (settle(), { hoverMedia: matchMedia("(hover: hover)").matches, mono: snap("mono"), original: snap("original"), plain: snap("plain"), roomy: snap("roomy") });
+    window.focused = () => { settle(); const active = document.activeElement; const section = active.closest("section"); const items = section ? [...section.querySelectorAll("a")] : [];
       return { section: section?.id ?? null, index: items.indexOf(active), focusVisible: active.matches(":focus-visible"), outline: getComputedStyle(active).outlineStyle + " " + getComputedStyle(active).outlineWidth, mono: snap("mono") }; };
   `;
   const page = `<!doctype html><meta charset="utf-8"><style>${css}body{margin:0}</style>${renderToStaticMarkup(<>
