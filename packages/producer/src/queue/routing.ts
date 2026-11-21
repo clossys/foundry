@@ -11,14 +11,21 @@
  * - match `agent`: the target names a content agent; match `any`: always.
  * - to `handler`: the target agent's declared `requests.handling.<handling>` (conform.json); `owner-packet`: an MC
  *   packet to the owner on the matching owner step's queue, its options authored by the owning agent's declared skill;
- *   `scope`: the target agent's loop.scope skill; `decider`: a decision kind keeps its own assignee; `owner-clarify`:
- *   a queue.clarify to the owner (escalate `package` when the target is package code).
+ *   `decider`: a decision kind keeps its own assignee; `owner-clarify`: a queue.clarify to the owner (escalate
+ *   `package` when the target is package code).
+ *
+ * Every handler answers what it is routed (foundry-build-0048 LOOP-STEPS): a handler row routes only the kind it
+ * handles, and the handler's loop must answer that kind (loop/names.ts loopAnswers: loop.slot a slot entry, a slot loop
+ * a change or fix). A declared handler whose loop does not is refused with a HandlerMismatchError, never routed to.
+ * There is no `scope` destination: loop.scope files needs and answers no entry, so a slot need in an agent's tree goes
+ * to the agent's slot handler (loop.slot), home or not.
  *
  * The route records the row id and the table's sha256, so `rederive` re-runs the same function and compares.
  */
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { loopAnswers } from "../loop/names.js";
 import { whenMatches, type SlotSubject } from "../loop/slots.js";
 import { PRODUCER_ROOT } from "../records/ledger.js";
 import { listSlots } from "../records/slots.js";
@@ -32,7 +39,7 @@ export type WorkKind = (typeof WORK_KINDS)[number];
 const MATCHES = ["live", "owner-class", "home", "agent", "any"] as const;
 /** The kinds an owner class reserves: a change or a new slot in the class is the owner's (a fix goes to its handler). */
 const OWNER_KINDS = ["change", "slot"] as const;
-const DESTINATIONS = ["handler", "owner-packet", "scope", "decider", "owner-clarify"] as const;
+const DESTINATIONS = ["handler", "owner-packet", "decider", "owner-clarify"] as const;
 const ROUTED_AGENTS = ["director", "designer", "writer", "publisher"] as const;
 export type RoutedAgent = (typeof ROUTED_AGENTS)[number];
 const isRoutedAgent = (value: string): value is RoutedAgent => (ROUTED_AGENTS as readonly string[]).includes(value);
@@ -72,6 +79,8 @@ export function routingIssues(table: unknown): string[] {
     if (!(DESTINATIONS as readonly unknown[]).includes(row.to)) out.push(`${at}.to must be one of ${DESTINATIONS.join(", ")}`);
     if ((row.to === "handler") !== (row.handling !== undefined)) out.push(`${at}: a handler row names handling (and only a handler row)`);
     if (row.handling !== undefined && !(WORK_KINDS as readonly unknown[]).includes(row.handling)) out.push(`${at}.handling must be one of ${WORK_KINDS.join(", ")}`);
+    // A handler answers the kind it handles only, so a handler row routes exactly that kind (LOOP-STEPS).
+    else if (row.to === "handler" && !(Array.isArray(row.kinds) && row.kinds.length === 1 && row.kinds[0] === row.handling)) out.push(`${at}: a handler row routes only the kind it handles (kinds ["${String(row.handling)}"]), or its handler would get an entry it does not answer`);
   });
   const catchAll = (row: unknown) => typeof row === "object" && row !== null && (row as RoutingRow).kinds === "*" && (row as RoutingRow).match === "any";
   const catchAlls = doc.rows.map((row, index) => catchAll(row) ? index : -1).filter(index => index >= 0);
@@ -100,6 +109,26 @@ export function readRoutingTable(text: string = routingText()): { table: Routing
 
 export class RoutingError extends Error {
   constructor(message: string) { super(message); this.name = "RoutingError"; }
+}
+
+/**
+ * A route to a handler whose loop does not answer the entry's kind (LOOP-STEPS): a declaration naming such a handler, or
+ * a run of a loop on an entry routed to another handler. Nothing is routed to it, and no run answers the entry under it.
+ */
+export class HandlerMismatchError extends RoutingError {
+  constructor(message: string) { super(message); this.name = "HandlerMismatchError"; }
+}
+
+/**
+ * Why a run of `loop` may not answer an entry of `kind` routed by `route`; undefined when it may: the loop answers the
+ * kind (loopAnswers), and the entry's recorded route names a handler and that handler's loop is `loop`. An entry routed
+ * to the owner, or to another loop, is never answered by this one ("Never answer an entry routed elsewhere").
+ */
+export function handlerMismatch(loop: string, kind: string, route: Pick<EntryRoute, "row" | "assignee" | "handler"> | undefined): string | undefined {
+  if (!loopAnswers(loop, kind)) return `${loop} does not answer a kind ${kind} entry`;
+  if (!route?.handler) return `the entry is routed ${route ? `${route.row} -> ${route.assignee}` : "nowhere"}, to no handler; ${loop} answers only an entry routed to it`;
+  if (route.handler.loop !== loop) return `the entry is routed ${route.row} -> ${route.assignee} to ${route.handler.loop} (${route.handler.skill}), not ${loop}`;
+  return undefined;
 }
 
 // ------------------------------------------------------------------------------------------------ owner classes
@@ -252,6 +281,7 @@ export function routeEntry(facts: RoutingFacts, entry: Routable, options: { read
     if (row.to === "handler") {
       const handler = declared?.requests?.handling?.[row.handling!];
       if (!handler) continue;
+      if (!loopAnswers(handler.loop, entry.kind)) throw new HandlerMismatchError(`${agent} declares requests.handling.${row.handling} -> ${handler.loop} (${handler.skill}), which does not answer a kind ${entry.kind} entry: routing.json row ${row.id} cannot route ${entry.kind} ${entry.target} to it`);
       return { ...base, assignee: agent as RoutedAgent, handler: { skill: handler.skill, loop: handler.loop } };
     }
     if (row.to === "owner-packet") {
@@ -259,11 +289,6 @@ export function routeEntry(facts: RoutingFacts, entry: Routable, options: { read
       const kind = entry.kind === "fix" || entry.kind === "change" || entry.kind === "slot" ? entry.kind : undefined;
       const skill = kind ? declared?.requests?.handling?.[kind]?.skill : undefined;
       return { ...base, assignee: "owner", packet: { queue: owned.queue, step: `${owned.loop}/${owned.version}#${owned.step}`, ...(skill ? { skill } : {}) } };
-    }
-    if (row.to === "scope") {
-      const skill = declared?.skills?.scope;
-      if (!skill) continue;
-      return { ...base, assignee: agent as RoutedAgent, handler: { skill, loop: "loop.scope" } };
     }
     if (row.to === "decider") return { ...base, assignee: entry.assignee };
     return { ...base, assignee: "owner", packet: { queue: "queue.clarify" }, ...(agent === "producer" ? { escalate: "package" as const } : {}) };

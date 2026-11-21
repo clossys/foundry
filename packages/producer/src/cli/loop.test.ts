@@ -278,7 +278,11 @@ describe("loop.connected on a consumer (mutation-proven)", () => {
   }, LONG);
 });
 
-/** The fixture with one open loop.slot request owned by `agent` (raised by writer's article copy, which cites it). */
+/**
+ * The fixture with one open loop.slot request owned by `agent` (raised by writer's article copy, which cites it). An
+ * owner-reserved need (a Director slot, row owner.class) is the owner's until the owner hands it off; loop.slot answers
+ * only an entry routed to it (foundry-build-0048 LOOP-STEPS), so the owner's handoff answer routes it there first.
+ */
 async function withRequest(root: string, need: string): Promise<string> {
   const requester = join(root, "clossys", "agents", "writer", "sections.article.copy", "slot.json");
   const doc = readJson(requester);
@@ -286,7 +290,12 @@ async function withRequest(root: string, need: string): Promise<string> {
   writeFileSync(requester, `${JSON.stringify(doc, null, 2)}\n`);
   const raised = await runCli(["request", "--target", need, "--from", "writer/sections.article.copy", "--why", "the article cites it", "--at", AT, "--by", "writer", "--root", root], root);
   expect(raised.exitCode, raised.message).toBe(0);
-  return (raised.output as { id: string }).id;
+  const id = (raised.output as { id: string }).id;
+  if (readJson(join(root, "clossys", "agents", "producer", "queue.slot", "entries", `${id}.json`)).assignee === "owner") {
+    const handed = await runCli(["request", id, "--answer", "handoff", "--via", "cli", "--quote", "hand it to its agent", "--at", AT, "--root", root], root);
+    expect(handed.exitCode, handed.message).toBe(0);
+  }
+  return id;
 }
 /** A slot of the agent's own (not a loop slot), as the verb plans on. */
 const firstSlot = (root: string, agent: string) => readdirSync(join(root, "clossys", "agents", agent)).sort().find(id => !id.startsWith("loop.") && statSync(join(root, "clossys", "agents", agent, id, "slot.json"), { throwIfNoEntry: false }))!;
