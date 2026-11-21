@@ -19,7 +19,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -46,18 +46,48 @@ export const TARGETS = ["designer/frames.site-shell", "designer/sections.hero", 
 // ---------------------------------------------------------------- base (the unpinned fixture)
 
 /**
- * The unpinned base: this fixture as the integration line held it before any world was seeded into it (git keeps
- * that tree). The run starts from it as is, so nothing is stripped and no record is written but by a verb; a
- * slot the base already pins keeps that pin.
+ * The one file that names the unpinned base (BASE_FILE: `{ commit, path }`). The seeder and pinned-world.test.ts
+ * both read it, so when the integration line moves the unpinned fixture, only this file changes.
  */
-export const BASE = { commit: "e7d763226973eca9da900bef4a86aad32c738fc6", path: "packages/producer/test-fixtures/consumer" };
+export const BASE_FILE = join(here, "seed-pinned-world.base.json");
 
-/** Writes the base tree into `dir` (which must be empty or new), read from git history. */
-export function extractBase(dir) {
+/**
+ * The unpinned base: this fixture as the integration line held it before any world was seeded into it (git keeps
+ * that tree), as BASE_FILE names it. The run starts from it as is, so nothing is stripped and no record is written
+ * but by a verb; a slot the base already pins keeps that pin.
+ */
+export const BASE = readBase();
+
+/** BASE_FILE's `{ commit, path }`; refused unless the commit is a full sha and the path a repository path. */
+function readBase() {
+  const value = JSON.parse(readFileSync(BASE_FILE, "utf8"));
+  if (typeof value?.commit !== "string" || !/^[0-9a-f]{40}$/.test(value.commit)) throw new Error(`${BASE_FILE}: commit must be a full 40-character sha`);
+  if (typeof value.path !== "string" || !value.path || value.path.startsWith("/")) throw new Error(`${BASE_FILE}: path must be a repository-relative path`);
+  return Object.freeze({ commit: value.commit, path: value.path });
+}
+
+/**
+ * Refuses unless `commit` is an ancestor of `repo`'s HEAD: a base the checked-out line does not contain is a stale
+ * or foreign BASE_FILE, never a tree to seed from.
+ */
+export function assertBaseAncestor(repo, commit) {
+  try {
+    execFileSync("git", ["-C", repo, "merge-base", "--is-ancestor", commit, "HEAD"], { stdio: "ignore" });
+  } catch {
+    throw new Error(`the unpinned base ${commit} (${relative(repo, BASE_FILE) || BASE_FILE}) is not an ancestor of HEAD in ${repo}; point the base file at the unpinned fixture this line holds`);
+  }
+}
+
+/**
+ * Writes the base tree into `dir` (which must be empty or new), read from `repo`'s git history at `base` (default:
+ * this repository and BASE); refused unless the base commit is an ancestor of HEAD.
+ */
+export function extractBase(dir, { repo = REPO, base = BASE } = {}) {
   mkdirSync(dir, { recursive: true });
   if (readdirSync(dir).length) throw new Error(`${dir} is not empty; the base is extracted into an empty folder`);
-  const tar = execFileSync("git", ["-C", REPO, "archive", "--format=tar", BASE.commit, BASE.path], { maxBuffer: 1 << 30 });
-  execFileSync("tar", ["-x", "-C", dir, "--strip-components", String(BASE.path.split("/").length)], { input: tar });
+  assertBaseAncestor(repo, base.commit);
+  const tar = execFileSync("git", ["-C", repo, "archive", "--format=tar", base.commit, base.path], { maxBuffer: 1 << 30 });
+  execFileSync("tar", ["-x", "-C", dir, "--strip-components", String(base.path.split("/").length)], { input: tar });
 }
 
 // ---------------------------------------------------------------- the verbs
@@ -457,7 +487,7 @@ function consumerComponent(root, id, doc, standard) {
 
 // ---------------------------------------------------------------- consumer setup
 
-const REPO = resolve(PRODUCER, "..", "..");
+export const REPO = resolve(PRODUCER, "..", "..");
 let repoLock;
 /** The repository lockfile's installed version of a package (what the certifier's host require resolves). */
 function lockedVersion(name) {
@@ -736,22 +766,31 @@ export function treeFiles(dir, at = "") {
   });
 }
 
+/** The mark the seeder leaves in a tree it wrote (never in the fixture), so a rerun or a resume may replace it. */
+export const MARK = ".seed-pinned-world";
+const MARK_TEXT = "written by scripts/seed-pinned-world.mjs\n";
+const marked = dir => existsSync(join(dir, MARK));
+
 /**
  * Seeds the unpinned base of `from` in a temporary root and returns the pinned tree there (`keep`) or copies it to
- * `out` (which must not hold a tree already) and removes it. `resume` continues a kept root in place, skipping
- * the slots it pinned already (a development aid; the committed fixture is always one whole run).
+ * `out` (which must not hold a tree already) and removes it. The root holds the seeder's mark; `out` never does.
+ * `resume` continues a kept root in place, skipping the slots it pinned already (a development aid; the committed
+ * fixture is always one whole run): it is refused unless the root holds the mark, and a `.git` it holds is kept.
  */
 export async function seed({ from, out, only, keep = false, resume } = {}) {
+  if (resume && !marked(resume)) throw new Error(`${resume} holds no ${MARK}; resume continues only a root the seeder kept`);
   await load();
   const root = resume ? realpathSync(resume) : realpathSync(mkdtempSync(join(tmpdir(), "pinned-world-")));
   const scratch = realpathSync(mkdtempSync(join(tmpdir(), "pinned-world-input-")));
   let done = false;
+  let ownGit = false;
   try {
     if (!resume) {
       if (from) cpSync(from, root, { recursive: true });
       else extractBase(root);
+      writeFileSync(join(root, MARK), MARK_TEXT);
     }
-    if (!existsSync(join(root, ".git"))) execFileSync("git", ["init", "-q"], { cwd: root });
+    if (!existsSync(join(root, ".git"))) { execFileSync("git", ["init", "-q"], { cwd: root }); ownGit = true; }
     if (!existsSync(join(root, "clossys", "components.json"))) await setup(root);
     const w = world(root, scratch);
     await migrate(w);
@@ -760,10 +799,11 @@ export async function seed({ from, out, only, keep = false, resume } = {}) {
     const blocked = blockedIn(w.consumer, all);
     const order = all.filter(ref => !blocked.has(ref) && (!only || only.some(prefix => ref.startsWith(prefix))));
     for (const ref of order) if (!pinned(w.consumer, ref)) await seedSlot(w, ref);
-    rmSync(join(root, ".git"), { recursive: true, force: true });
+    // Only the repository this run made goes; a resumed root's own .git stays.
+    if (ownGit) rmSync(join(root, ".git"), { recursive: true, force: true });
     if (out) {
       mkdirSync(out, { recursive: true });
-      cpSync(root, out, { recursive: true });
+      cpSync(root, out, { recursive: true, filter: source => source !== join(root, MARK) });
     }
     done = true;
     return { root: keep || !out ? root : undefined, order, blocked };
@@ -773,29 +813,47 @@ export async function seed({ from, out, only, keep = false, resume } = {}) {
   }
 }
 
-/** The mark the CLI leaves in an --out tree it wrote (never in the fixture), so a rerun may replace that tree. */
-const MARK = ".seed-pinned-world";
+/**
+ * Refuses unless the seeder may replace `out`: it is new, an empty folder, the fixture, or a folder holding the
+ * mark. A plain file, or a folder of anything else, is never replaced.
+ */
+export function assertReplaceable(out) {
+  if (!existsSync(out)) return;
+  if (!lstatSync(out).isDirectory()) throw new Error(`${out} is not a folder; pass a new or empty --out`);
+  if (readdirSync(out).length && out !== FIXTURE && !marked(out)) throw new Error(`${out} is not empty and holds no ${MARK}; pass a new or empty --out`);
+}
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const arg = flag => { const at = process.argv.indexOf(flag); return at > 0 ? process.argv[at + 1] : undefined; };
+/**
+ * Replaces `out` with the pinned tree written at `next`, then removes `next`. The mark is checked again right
+ * before the delete: a seeding pass is long, and `out` may have changed since the run began.
+ */
+export function replaceOut(out, next) {
+  assertReplaceable(out);
+  if (existsSync(out) && readdirSync(out).length) rmSync(out, { recursive: true, force: true });
+  cpSync(next, out, { recursive: true });
+  if (out !== FIXTURE) writeFileSync(join(out, MARK), MARK_TEXT);
+  rmSync(next, { recursive: true, force: true });
+}
+
+/** The CLI: seeds into `--out` (default the fixture) and returns the exit code. */
+export async function main(argv) {
+  const arg = flag => { const at = argv.indexOf(flag); return at >= 0 ? argv[at + 1] : undefined; };
   const only = arg("--only")?.split(",");
   const out = resolve(arg("--out") ?? FIXTURE);
   try {
     // The pinned tree replaces `out` whole: written beside it first, so a refusal leaves `out` as it was.
     const next = `${out}.seeding`;
-    if (existsSync(next)) throw new Error(`${relative(process.cwd(), next)} exists; a previous run stopped there (remove it)`);
-    // Only a tree the seeder wrote is replaced: the fixture, a folder holding the seeder's mark, or an empty one.
-    const ours = out === FIXTURE || existsSync(join(out, MARK));
-    if (existsSync(out) && readdirSync(out).length && !ours) throw new Error(`${out} is not empty and holds no ${MARK}; pass a new or empty --out`);
+    if (existsSync(next)) throw new Error(`${relative(process.cwd(), next) || next} exists; a previous run stopped there (remove it)`);
+    assertReplaceable(out);
     const { order, blocked } = await seed({ out: next, only });
-    if (existsSync(out) && readdirSync(out).length) rmSync(out, { recursive: true, force: true });
-    cpSync(next, out, { recursive: true });
-    if (out !== FIXTURE) writeFileSync(join(out, MARK), "written by scripts/seed-pinned-world.mjs\n");
-    rmSync(next, { recursive: true, force: true });
+    replaceOut(out, next);
     for (const [ref, rule] of blocked) console.log(`seed-pinned-world: BLOCKED ${ref}: ${rule}`);
     console.log(`seed-pinned-world: ${order.length} slot(s) pinned, ${blocked.size} blocked, at ${AT} into ${relative(process.cwd(), out) || "."}`);
+    return 0;
   } catch (error) {
-    if (error instanceof Refused) { console.error(`seed-pinned-world: BLOCKED ${error.message}`); process.exit(1); }
-    throw error;
+    console.error(`seed-pinned-world: ${error instanceof Refused ? "BLOCKED " : ""}${error instanceof Error ? error.message : String(error)}`);
+    return 1;
   }
 }
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = await main(process.argv.slice(2));
