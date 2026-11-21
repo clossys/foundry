@@ -10,6 +10,10 @@
  *             candidate (header `refs` plus every `<agent>/<slot-id>` string, value or key, in a JSON candidate's content;
  *             a release manifest names its pins as keys)
  * backward  = a slot whose `consumedBy` ref names a reached slot is reached
+ * runner    = an agent `loop.*` slot whose own `consumedBy` ref names a Producer loop (`producer/<loop>`) is reached,
+ *             and the walk stops there: an agent loop slot is terminal (no forward edge, no backward edge walked from
+ *             it), so a slot name written inside a loop version (a step condition, an owner-pick rule) is never
+ *             consumption (foundry-build-0048 CONSISTENCY fix r1)
  * orphans   = every slot folder minus reached minus Producer `loop.*` slots (exempt by design) minus the Producer seat
  *             slots `seat.<step>` placed in producer/ia.json: a seat seats a decide step of the pipeline, no publication
  *             consumes it, and `clossys seat` writes it with no refs (records/seat-slot.ts), so its tie to the IA is its
@@ -23,7 +27,8 @@
  * lists exactly those pages; its roots are every slot its starter's own default files name (frame, chrome, sections,
  * copy, meta). Seated: a publication either root form above names. A pending folder is listed (`pending`) and does not
  * fail the check; every other unreached folder stays an orphan. A starter whose files cannot be read declares nothing:
- * its folders stay orphans (no fallback).
+ * its folders stay orphans (no fallback). A package IA that cannot be read refuses (PublisherDataError): the check fails
+ * naming it, never judging against an empty declared set.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -35,6 +40,7 @@ import { releaseSlotId } from "../release/paths.js";
 import { SLOT_SCHEMA, consumerSlotFolders, readSlot, slotSchemaOf, treeResult, type TreeCheck, type TreeCheckResult, type TreeFinding } from "../records/slot.js";
 import { slotReadIssues } from "../records/slot-current.js";
 import { seatStepOf } from "../records/slot-model/types.js";
+import { isAgentLoop, isLoopAgent } from "../loop/agent-loops-ia.js";
 import type { Ref, Slot } from "../records/types.js";
 
 export const IA_ORPHANS = "ia.orphans";
@@ -91,12 +97,24 @@ const readJson = (file: string): unknown => {
 /**
  * The publications the installed Publisher package declares, each with the slots its starter's default files name:
  * a publication the package IA assigns pages to, whose starter lists exactly those pages and whose every listed
- * default file reads. A publication that fails any part is left out (its folders are judged without it).
+ * default file reads. A publication that fails any part is left out (its folders are judged without it). The package
+ * IA itself (`src/catalog/ia/directory.json`) missing or unreadable throws PublisherDataError: there is no declaration
+ * to judge by, so callers refuse rather than act on an empty list. Only a root with its own `packages/` folder that
+ * holds no `packages/publisher/` declares no publication (it carries no Publisher package).
  */
 export function declaredPublications(root: string): Map<string, string[]> {
   const publisher = (rel: string) => packagePath(root, `packages/publisher/${rel}`);
   const out = new Map<string, string[]>();
-  const directory = readJson(publisher("src/catalog/ia/directory.json")) as { slots?: Record<string, { kind?: unknown; publication?: unknown }> } | undefined;
+  // The package IA is the declaration itself: missing or unreadable, nothing can be judged, so it refuses (never an
+  // empty list). The one root that declares none is a world carrying its own packages/ folder with no Publisher
+  // package in it at all (a Foundry-shaped test world without @clossys/publisher, DECIDED D11); a consumer root always
+  // reads the installed package, and an uninstalled one refuses.
+  const directoryFile = publisher("src/catalog/ia/directory.json");
+  const directory = readJson(directoryFile) as { slots?: Record<string, { kind?: unknown; publication?: unknown }> } | undefined;
+  if (!directory || typeof directory !== "object" || !directory.slots || typeof directory.slots !== "object") {
+    if (existsSync(join(root, "packages")) && !existsSync(packagePath(root, "packages/publisher"))) return out;
+    throw new PublisherDataError(directoryFile);
+  }
   const pagesOf = new Map<string, string[]>();
   for (const [id, slot] of Object.entries(directory?.slots ?? {})) {
     if (slot?.kind !== "page" || typeof slot.publication !== "string") continue;
@@ -115,6 +133,16 @@ export function declaredPublications(root: string): Map<string, string[]> {
     out.set(publication, [...slots]);
   }
   return out;
+}
+
+/** The installed Publisher package's IA (`src/catalog/ia/directory.json`) is missing or unreadable: publications cannot be judged. */
+export class PublisherDataError extends Error {
+  readonly file: string;
+  constructor(file: string) {
+    super(`the Publisher package IA is missing or unreadable (${file}): declared publications cannot be judged; reinstall @clossys/publisher`);
+    this.name = "PublisherDataError";
+    this.file = file;
+  }
 }
 
 /** Every `<agent>/<slot-id>` string, value or key, in a JSON value. */
@@ -165,14 +193,17 @@ export function consumerGraph(root: string, folders: ReturnType<typeof consumerS
   const backward = new Map<string, string[]>();
   for (const folder of folders) {
     const key = `${folder.agent}/${folder.id}`;
-    const edges = candidateEdges(folder.dir);
+    // An agent loop slot is terminal: its loop versions name the slots their steps act on and consume none, so it has
+    // no forward edge; its own consumedBy edge (to the Producer loop it extends) is still recorded.
+    const terminal = isAgentLoopKey(key);
+    const edges = terminal ? [] : candidateEdges(folder.dir);
     if (folder.hasSlot && slotSchemaOf(folder.file) === SLOT_SCHEMA) {
       let slot: Slot | undefined;
       try { slot = readSlot(folder.file); } catch { slot = undefined; }
       for (const ref of [...(slot?.refs ?? []), ...(slot?.brief.inputs ?? [])]) {
         const target = slotOf(ref.to);
         if (!target) continue;
-        if (WALKED.has(ref.rel)) edges.push(target);
+        if (WALKED.has(ref.rel)) { if (!terminal) edges.push(target); }
         else if (ref.rel === "consumedBy") backward.set(target, [...(backward.get(target) ?? []), key]);
       }
     }
@@ -181,7 +212,16 @@ export function consumerGraph(root: string, folders: ReturnType<typeof consumerS
   return { forward, backward };
 }
 
-/** Every key the graph reaches from `from`, through forward edges and consumedBy edges read backward, never entering `skip`. */
+/** An agent's own loop slot (`<agent>/loop.<name>`, never a Producer one): the walk reaches it and stops there. */
+export const isAgentLoopKey = (key: string): boolean => {
+  const slash = key.indexOf("/");
+  return slash > 0 && isLoopAgent(key.slice(0, slash)) && isAgentLoop(key.slice(slash + 1));
+};
+
+/**
+ * Every key the graph reaches from `from`, through forward edges and consumedBy edges read backward, never entering
+ * `skip`. An agent loop slot is reached but not walked from (terminal).
+ */
 export function walkGraph(graph: ConsumerGraph, from: readonly string[], skip: ReadonlySet<string> = new Set()): Set<string> {
   const seen = new Set<string>();
   const queue = [...from];
@@ -189,6 +229,7 @@ export function walkGraph(graph: ConsumerGraph, from: readonly string[], skip: R
     const next = queue.pop()!;
     if (seen.has(next) || skip.has(next)) continue;
     seen.add(next);
+    if (isAgentLoopKey(next)) continue;
     queue.push(...(graph.forward.get(next) ?? []), ...(graph.backward.get(next) ?? []));
   }
   return seen;
@@ -196,15 +237,26 @@ export function walkGraph(graph: ConsumerGraph, from: readonly string[], skip: R
 
 /**
  * The loop runner as a consumer (foundry-build-0048 CONSISTENCY D5 option 3): the Producer loops it runs,
- * `producer/<loop>` for every loop name. A slot is consumed by the runner only through its own recorded
- * `consumedBy` edge to one of them (an agent loop slot names the Producer loop it extends); nothing is exempt.
+ * `producer/<loop>` for every loop name. The runner consumes an agent `loop.*` slot only through that slot's own
+ * recorded `consumedBy` edge to one of them (an agent loop slot names the Producer loop it extends), and nothing
+ * further: no other slot is consumed by the runner, and nothing is exempt (CONSISTENCY fix r1).
  */
 export const RUNNER_ROOTS: readonly string[] = LOOP_NAMES.map(loop => `producer/${loop}`);
 
-/** The slot keys a seated publication or the loop runner reaches in the consumer (the walk ia.orphans judges by). */
+/** The agent loop slots the runner consumes: each one whose own consumedBy edge names a Producer loop. Terminal. */
+export function runnerReach(graph: ConsumerGraph): Set<string> {
+  return new Set(RUNNER_ROOTS.flatMap(runner => (graph.backward.get(runner) ?? []).filter(isAgentLoopKey)));
+}
+
+/**
+ * The slot keys a seated publication reaches in the consumer, plus the agent loop slots the runner consumes (the walk
+ * ia.orphans judges by). The runner's slots are added as they are, never walked from.
+ */
 export function publicationReach(root: string, graph: ConsumerGraph = consumerGraph(root)): { reached: Set<string>; findings: TreeFinding[]; seated: Set<string> } {
   const { roots, findings, seated } = publicationRoots(root);
-  return { reached: walkGraph(graph, [...roots, ...RUNNER_ROOTS]), findings, seated };
+  const reached = walkGraph(graph, roots);
+  for (const key of runnerReach(graph)) reached.add(key);
+  return { reached, findings, seated };
 }
 
 export function runIaOrphans(root: string): TreeCheckResult {
@@ -215,7 +267,14 @@ export function runIaOrphans(root: string): TreeCheckResult {
   const walk = (from: readonly string[], skip: ReadonlySet<string>) => walkGraph(graph, from, skip);
   // Folders a declared, unseated publication reaches through the same edges, by publication (CONSISTENCY C2).
   const waiting = new Map<string, string[]>();
-  for (const [publication, slots] of declaredPublications(root)) {
+  let declared: Map<string, string[]>;
+  try { declared = declaredPublications(root); } catch (error) {
+    // Unreadable Publisher package data fails the check by name; no folder is judged pending against nothing.
+    if (!(error instanceof PublisherDataError)) throw error;
+    findings.push({ subject: "@clossys/publisher", detail: error.message });
+    declared = new Map();
+  }
+  for (const [publication, slots] of declared) {
     if (seated.has(publication)) continue;
     for (const key of walk(slots, reached)) waiting.set(key, [...(waiting.get(key) ?? []), publication]);
   }

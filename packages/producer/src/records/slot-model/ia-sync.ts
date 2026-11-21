@@ -75,7 +75,7 @@ export const unconsumedRemedy = (agent: string): string => `clossys ia ${agent} 
 export const failsSync = (finding: Pick<SyncFinding, "kind">): boolean => !PENDING_SYNC_KINDS.has(finding.kind);
 /** The remedy a seat-pending finding names: the seat verb, as its usage states it (owner.ts SEAT_USAGE). */
 export const seatRemedy = (step: string): string =>
-  `clossys seat ${step} --by <who> (--model <id> --tier low|mid|high --prompt-file <path> | --llm-from <step> | --no-llm) --decided-by owner:queue.<kind>#<id>|planner[:<ref>]`;
+  `clossys seat ${step} --by <who> ((--model <id> --tier low|mid|high | --llm-from <step>) --prompt-file <path> | --no-llm) --decided-by owner:queue.<kind>#<id>|planner[:<ref>]`;
 
 /** Whether a slot folder holds any record file at any depth: empty folders (a refused verb's leftover) hold none. */
 export const holdsRecord = (dir: string): boolean =>

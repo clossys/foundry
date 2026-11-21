@@ -176,6 +176,9 @@ export function releaseWorld(options: { locales?: { required?: string[]; from?: 
   for (const agent of ["director", "designer", "writer", "publisher", "producer"]) put(`packages/${agent}/package.json`, JSON.stringify({ name: `@clossys/${agent}`, version: "0.0.0" }));
   // The real package standards: the certifier judges every world candidate on them.
   for (const agent of ["director", "designer", "writer", "publisher"]) cpSync(join(PRODUCER_ROOT, "..", agent, "standards"), join(root, "packages", agent, "standards"), { recursive: true });
+  // The Publisher package IA (ia-orphans.ts refuses unreadable Publisher data): the world declares its one publication
+  // in its consumer IA below, so the package declares none.
+  put("packages/publisher/src/catalog/ia/directory.json", `${JSON.stringify({ slots: {} })}\n`);
   for (const agent of ["director", "designer", "writer"]) put(`clossys/agents/${agent}/ia.json`, `${JSON.stringify(iaDoc(agent), null, 2)}\n`);
   put("clossys/agents/publisher/ia.json", `${JSON.stringify({
     ...iaDoc("publisher", options.releaseSlot === false ? new Set(["publisher/release.site"]) : undefined),

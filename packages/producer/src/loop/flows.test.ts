@@ -64,6 +64,8 @@ function world(refs: readonly string[]) {
     put(`packages/${agent}/package.json`, JSON.stringify({ name: `@clossys/${agent}`, version: "0.0.0" }));
     for (const skill of SKILLS(agent)) put(skill, "# placeholder skill\n");
   }
+  // The Publisher package carries its package IA (ia-orphans.ts refuses unreadable Publisher data): none declared.
+  put("packages/publisher/src/catalog/ia/directory.json", `${JSON.stringify({ slots: {} })}\n`);
   const slotFile = (ref: string): string => join(root, "clossys", "agents", ref, "slot.json");
   const api = {
     root,
