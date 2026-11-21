@@ -77,7 +77,7 @@ export function faqColumns<Item>(items: readonly Item[], layout: FaqLayout): rea
 export function faqLists(columns: readonly ReactNode[], layout: FaqLayout, border: string): ReactNode {
   if (layout !== "two-column") return <Accordion allowsMultipleExpanded className={cx(FAQ_ROW_CLASSES.list, border)}>{columns[0]}</Accordion>;
   return (
-    <SemanticContent as="div" data-faq-columns="" className={FAQ_LAYOUT_CLASSES.columns}>
+    <SemanticContent as="div" data-question-columns="" className={FAQ_LAYOUT_CLASSES.columns}>
       {columns.map((rows, index) => <Accordion allowsMultipleExpanded key={index} className={cx(index === 0 ? FAQ_ROW_CLASSES.list : FAQ_LAYOUT_CLASSES.followingColumn, border)}>{rows}</Accordion>)}
     </SemanticContent>
   );

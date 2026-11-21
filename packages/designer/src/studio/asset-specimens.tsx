@@ -42,14 +42,14 @@ const FAVICON = specimenDataset.assets.favicon;
 const ICON_SIZES: readonly IconSize[] = ["sm", "md", "lg"];
 
 /** A plate in a fixed-polarity ground, outlined so the ground that matches the page still reads as a plate. */
-function Ground({ ground, children, className, ...rest }: { ground: SpecimenGround; children: ReactNode; className?: string; "data-layer"?: string; "data-asset-specimen"?: string; "data-app-icon"?: string }): ReactElement {
+function Ground({ ground, children, className, ...rest }: { ground: SpecimenGround; children: ReactNode; className?: string; "data-layer"?: string; "data-asset-specimen"?: string; "data-asset-app-icon"?: string }): ReactElement {
   return <div {...rest} data-ground={ground} className={`flex w-max max-w-full flex-wrap items-center gap-sm rounded-panel border border-line-panel p-sm ${GROUND_CLASSES[ground]} ${className ?? ""}`}>{children}</div>;
 }
 
 /** The maskable safe zone drawn over its artwork: a dashed circle in the secondary ink, in a box that fills the mark it sits on. */
 function SafeZone(): ReactElement {
   const half = APP_ICON.viewBox / 2;
-  return <svg data-safe-zone="" aria-hidden="true" focusable="false" viewBox={`0 0 ${APP_ICON.viewBox} ${APP_ICON.viewBox}`} className="pointer-events-none absolute inset-0 h-full w-full text-ink-secondary">
+  return <svg data-asset-safe-zone="" aria-hidden="true" focusable="false" viewBox={`0 0 ${APP_ICON.viewBox} ${APP_ICON.viewBox}`} className="pointer-events-none absolute inset-0 h-full w-full text-ink-secondary">
     <circle cx={half} cy={half} r={half * APP_ICON.safeZoneShare} fill="none" stroke="currentColor" strokeWidth={1} strokeDasharray={APP_ICON.dash} vectorEffect="non-scaling-stroke" />
   </svg>;
 }
@@ -63,7 +63,7 @@ export function SvgSpecimen({ id, slot, svg }: { id: string; slot: string; svg: 
     </Ground>)}
     <SemanticContent as="span" className={CAPTION}>{[FAVICON.sizes.join(", "), FAVICON.unit].join(" ")}</SemanticContent>
   </div>;
-  if (slot === "assets.app-icon") return <Ground ground="light" data-layer="assets" data-asset-specimen="app-icon" data-app-icon={role} className="max-w-full overflow-auto">
+  if (slot === "assets.app-icon") return <Ground ground="light" data-layer="assets" data-asset-specimen="app-icon" data-asset-app-icon={role} className="max-w-full overflow-auto">
     {APP_ICON.sizes.map(side => <span key={side} className="relative flex shrink-0">
       <img src={src} alt="" width={side} height={side} title={[id, side, FAVICON.unit].join(" ")} />
       {role === "maskable" ? <SafeZone /> : null}

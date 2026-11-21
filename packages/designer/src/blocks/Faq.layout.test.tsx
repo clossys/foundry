@@ -22,7 +22,7 @@ describe.each([
 
   it("two-column splits the questions into two hairlined columns, first column first", () => {
     const { container } = render(<Block heading="FAQ" items={ITEMS} ground="inverse" layout="two-column" />);
-    const columns = container.querySelector("[data-faq-columns]") as HTMLElement;
+    const columns = container.querySelector("[data-question-columns]") as HTMLElement;
     expect(columns).not.toBeNull();
     expect(columns).toHaveClass("grid", "grid-cols-1", "tablet:grid-cols-2");
     const lists = Array.from(columns.children) as HTMLElement[];
@@ -41,6 +41,6 @@ describe.each([
     const list = renderToStaticMarkup(<Block items={ITEMS} layout="list" />);
     const twoColumn = renderToStaticMarkup(<Block items={ITEMS} layout="two-column" />);
     expect(twoColumn).not.toBe(list);
-    expect(list).not.toContain("data-faq-columns");
+    expect(list).not.toContain("data-question-columns");
   });
 });

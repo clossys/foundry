@@ -253,8 +253,8 @@ function initialDataSnapshot() {
   const main = document.getElementById('studio-main') ?? document;
   return {
     loading: !!main.querySelector('[aria-label="Loading page"]'),
-    agents: [...main.querySelectorAll('[data-home-agent]')].map(card => ({
-      agent: card.getAttribute('data-home-agent'), state: card.getAttribute('data-census-state'),
+    agents: [...main.querySelectorAll('[data-studio-home-agent]')].map(card => ({
+      agent: card.getAttribute('data-studio-home-agent'), state: card.getAttribute('data-census-state'),
       total: card.querySelector('[data-slot="card-title"]')?.textContent.trim(),
       totalLabel: card.querySelector('[data-slot="card-title"]')?.getAttribute('aria-label'),
       candidates: card.querySelector('[data-slot="badge"]')?.textContent.trim(),

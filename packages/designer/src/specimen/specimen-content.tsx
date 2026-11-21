@@ -145,7 +145,7 @@ function copyNode(props: SpecimenLeafProps, item: SpecimenItem, value: CopyInCon
     if (!navigationPartsAvailable(selected)) return failure(props, "sections.specimen-copy-in-context", "Native navigation parts are unavailable.");
     specimen = <NavigationTree {...{ [DS_ATTR.leaf]: "components.navigation-tree" }} aria-label={value.context}><NavigationTreeItem id={item.id} textValue={value.text}><NavigationTreeItemContent>{value.text}</NavigationTreeItemContent></NavigationTreeItem></NavigationTree>;
   }
-  return <SemanticContent as="div" lang={value.locale} dir={value.dir} data-copy-role={value.role} data-copy-context={value.context}>{specimen}</SemanticContent>;
+  return <SemanticContent as="div" lang={value.locale} dir={value.dir} data-specimen-copy-role={value.role} data-specimen-copy-context={value.context}>{specimen}</SemanticContent>;
 }
 export function SpecimenCopyInContext(props: SpecimenLeafProps): ReactNode {
   const id = "sections.specimen-copy-in-context", needs = contentSpecimenNeeds(id, props);

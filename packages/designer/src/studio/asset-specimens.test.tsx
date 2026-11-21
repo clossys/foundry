@@ -98,12 +98,12 @@ describe("app-icon specimen", () => {
         expect(image.getAttribute("src")).toBe(uri);
         expect(image.hasAttribute("style")).toBe(false);
       }
-      expect(specimen.querySelectorAll("[data-safe-zone]")).toHaveLength(role === "maskable" ? 2 : 0);
+      expect(specimen.querySelectorAll("[data-asset-safe-zone]")).toHaveLength(role === "maskable" ? 2 : 0);
     }
   });
   it("overlays the maskable icon's safe zone: a circle at 80 percent of the side, the ratio the identity badge keeps its symbol inside", () => {
     const specimen = show("assets.app-icon", "maskable");
-    const zone = specimen.querySelector<SVGElement>("[data-safe-zone]");
+    const zone = specimen.querySelector<SVGElement>("[data-asset-safe-zone]");
     expect(zone).not.toBeNull();
     expect(zone!.getAttribute("aria-hidden")).toBe("true");
     const box = zone!.getAttribute("viewBox")!.split(" ").map(Number);
@@ -122,7 +122,7 @@ describe("app-icon specimen", () => {
   it("draws no safe zone on the standard icon, whose rounded plate the platform does not mask", () => {
     const specimen = show("assets.app-icon", "standard");
     expect(specimen.getAttribute("data-asset-specimen")).toBe("app-icon");
-    expect(specimen.querySelector("[data-safe-zone]")).toBeNull();
+    expect(specimen.querySelector("[data-asset-safe-zone]")).toBeNull();
     // A4-DE-PREVIEW draws both existing emitted app-icon sizes, not one logo-sized surrogate.
     expect(specimen.querySelectorAll("img")).toHaveLength(2);
   });

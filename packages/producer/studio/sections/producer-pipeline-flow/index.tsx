@@ -135,7 +135,7 @@ function StepNode({ id, data, selected }: NodeProps<Node<StepNodeData, 'step'>>)
   const { updateNode } = useReactFlow();
   return <NodeStatusIndicator status={STATUS_INDICATOR[data.facts.status]}>
     <BaseNode>
-      <Item size="sm" variant={data.active ? 'muted' : 'default'} data-seat-active={data.active ? '' : undefined}>
+      <Item size="sm" variant={data.active ? 'muted' : 'default'} data-studio-seat-active={data.active ? '' : undefined}>
         <ItemContent>
           <ItemTitle>{data.label}</ItemTitle>
         </ItemContent>

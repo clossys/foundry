@@ -83,7 +83,7 @@ describe("PROC-5 pure page rules", () => {
   it("uses visible observations rather than hidden text or provenance attributes", () => {
     const snapshot = Object.assign(baseline(), {
       hiddenText: "NEED: hidden [fact:pending] TODO-OWNER entry.primary",
-      attributes: { "data-cell-id": "entry.primary", "data-proc-5": "FAIL" },
+      attributes: { "data-provenance-cell-id": "entry.primary", "data-proc-5": "FAIL" },
     });
     expect(rules(snapshot)).toEqual([]);
   });

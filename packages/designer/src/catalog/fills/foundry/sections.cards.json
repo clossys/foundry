@@ -64,7 +64,7 @@
           },
           {
             "path": "packages/designer/src/blocks/RecordCards.tsx",
-            "sha256": "1f54c2f3430e2a7747e7855e778e42b836cc9007dbb33c55c2bcacc77591cea3"
+            "sha256": "1de8bfeaf2f27d5ff96fe9d2ef7650147a23b46140909e57f8809d92bde1ae28"
           },
           {
             "path": "packages/designer/src/catalog-assets/media.ts",

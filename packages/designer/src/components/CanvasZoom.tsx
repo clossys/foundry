@@ -30,6 +30,6 @@ export function CanvasZoom({ value, min, max, onChange, onFit, labels, formatVal
     <Button size="sm" variant="ghost" className="icon-control-sm rounded-control p-0" aria-label={labels.in} data-studio-control="zoom-in" isDisabled={value >= max} onPress={() => onChange(Math.min(max, value * 1.2))}><Icon glyph={Plus} decorative size="sm" /></Button>
     <Button size="sm" variant="ghost" data-studio-control="zoom-fit" onPress={onFit}>{labels.fit}</Button>
     {/* The readout already says 100% there; the reset keeps its place (no layout shift) but is hidden and inert. */}
-    <SemanticContent as="span" data-zoom-reset="" inert={atReset} className={atReset ? "invisible" : undefined}><Button size="sm" variant="ghost" data-studio-control="zoom-reset" onPress={() => onChange(1)}>{resetLabel}</Button></SemanticContent>
+    <SemanticContent as="span" data-studio-zoom-reset="" inert={atReset} className={atReset ? "invisible" : undefined}><Button size="sm" variant="ghost" data-studio-control="zoom-reset" onPress={() => onChange(1)}>{resetLabel}</Button></SemanticContent>
   </Toolbar>;
 }

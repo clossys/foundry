@@ -28,22 +28,22 @@ it('vf13: edit and view leaf labels share one treatment: mono id, regular weight
   const human = { ...prepared.records, rows: { ...prepared.records.rows, items: prepared.records.rows.items.map(row => ({ ...row, label: 'Button' })) } };
   const edit = render(<LibraryBoardSection records={human} previews={prepared.previews} labels={labels} onCommand={vi.fn()} />);
   const header = edit.container.querySelector('[role="rowheader"]')!;
-  const editLabel = header.querySelector('[data-leaf-label]')!;
+  const editLabel = header.querySelector('[data-library-leaf-label]')!;
   expect(editLabel).not.toBeNull();
   expect(editLabel.className).toContain('font-normal');
   expect(within(header as HTMLElement).getByText('Button')).toBeInTheDocument();
-  expect(header.querySelector('[data-leaf-id]')!.className).toContain('font-mono');
-  expect(header.querySelector('[data-leaf-id]')!.textContent).toBe('components.button');
+  expect(header.querySelector('[data-library-leaf-id]')!.className).toContain('font-mono');
+  expect(header.querySelector('[data-library-leaf-id]')!.textContent).toBe('components.button');
   edit.unmount();
   const view = render(<LibraryBoardSection records={{ ...human, controls: { ...human.controls, mode: 'view' } }} previews={prepared.previews} labels={labels} onCommand={vi.fn()} />);
-  const viewLabel = view.container.querySelector('[data-leaf-label]')!;
+  const viewLabel = view.container.querySelector('[data-library-leaf-label]')!;
   expect(viewLabel.outerHTML).toBe(editLabel.outerHTML);
 });
 
 it('vf13: a leaf whose label is its id renders the id once, mono', () => {
   const { container } = render(<LeafLabel id="components.button" label="components.button" />);
-  expect(container.querySelectorAll('[data-leaf-id]')).toHaveLength(1);
+  expect(container.querySelectorAll('[data-library-leaf-id]')).toHaveLength(1);
   expect(container.textContent).toBe('components.button');
-  expect(container.querySelector('[data-leaf-id]')!.className).toContain('font-mono');
+  expect(container.querySelector('[data-library-leaf-id]')!.className).toContain('font-mono');
 });
 // DESIGNER-RO: the studio CandidateChoice pending-line pin was deleted with CandidateChoice (inventory row 4).

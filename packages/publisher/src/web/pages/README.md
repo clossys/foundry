@@ -62,8 +62,8 @@ this helper does not promote drafts or manufacture approval.
 
 `copyPreview` on the returned page registry is derived from the resolved Writer
 provenance: `{ target: "preview", draft: boolean }`. Keep
-`data-copy-target="preview"` and, when `draft` is true,
-`data-copy-status="draft"` on the consumer's existing frame root. A resolved
+`data-writer-copy-target="preview"` and, when `draft` is true,
+`data-writer-copy-status="draft"` on the consumer's existing frame root. A resolved
 preview is not a production approval or a publication clearance.
 
 English ICU uses Writer's formatter. The two genuine Arabic literal records

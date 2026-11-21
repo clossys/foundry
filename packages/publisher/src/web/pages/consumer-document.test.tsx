@@ -31,6 +31,6 @@ it("removes the public three-page authority while keeping the native data route 
   expect(native).not.toHaveProperty("createDesignerPageRecords"); expect(native).not.toHaveProperty("createWriterPageRecords"); expect(native).not.toHaveProperty("createPublisherPageRecords");
   expect(native.createConsumerPageRegistry).toBeTypeOf("function");
   const copy = adminCopyFixture(); const title = copy("strings.admin.page.writer"); const preview = copy.previewState();
-  const html = renderToStaticMarkup(<main data-copy-target={preview.target} data-copy-status={preview.draft ? "draft" : "resolved"}>{title}</main>);
-  expect(html).toContain('data-copy-target="preview"'); expect(html).toContain('data-copy-status="draft"');
+  const html = renderToStaticMarkup(<main data-writer-copy-target={preview.target} data-writer-copy-status={preview.draft ? "draft" : "resolved"}>{title}</main>);
+  expect(html).toContain('data-writer-copy-target="preview"'); expect(html).toContain('data-writer-copy-status="draft"');
 });

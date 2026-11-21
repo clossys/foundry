@@ -12,8 +12,8 @@ function input(members:string[],value:unknown=art):SectionRenderInput {
 }
 it('wires actual cell art and full-bleed/scrim members through the registered runtime renderer',()=>{
  const {container}=render(<>{renderHeroSection(input(['layout.full-bleed','backdrop.scrim.strong','ground.inverse']))}</>);
- expect(container.querySelector('[data-hero-backdrop] img')).toHaveAttribute('src','/art/runtime.webp');
- expect(container.querySelectorAll('[data-hero-scrim="strong"]')).toHaveLength(5);
+ expect(container.querySelector('[data-backdrop-still] img')).toHaveAttribute('src','/art/runtime.webp');
+ expect(container.querySelectorAll('[data-backdrop-scrim="strong"]')).toHaveLength(5);
  expect(container.querySelector('section')).toHaveClass('w-full','bg-surface-inverse');
 });
 it('refuses an invalid runtime art source rather than silently ignoring its slot',()=>{

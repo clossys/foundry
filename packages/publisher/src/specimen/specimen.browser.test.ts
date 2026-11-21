@@ -87,7 +87,7 @@ describe.skipIf(!chrome)("specimen in Chrome", () => {
   it("renders a text element at its limits with zero console errors", async () => {
     const capture = await captureSpecimen(specimenUrl(base, { element: "hero-copy", theme: "neutral:dark", width: 768 }), {
       width: 768, height: 600,
-      probe: `[...document.querySelectorAll(".specimen-copy")].map(row => ({ key: row.dataset.copyKey, lines: Number(row.dataset.lines || 0), over: row.dataset.over || null }))`,
+      probe: `[...document.querySelectorAll(".specimen-copy")].map(row => ({ key: row.dataset.specimenCopyKey, lines: Number(row.dataset.lines || 0), over: row.dataset.over || null }))`,
     });
     expect(capture.consoleErrors).toEqual([]);
     const rows = capture.probe as { key: string; lines: number; over: string | null }[];

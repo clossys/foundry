@@ -32,14 +32,14 @@ const ProseTableKit = TableKit.extend({
 /** React Aria has no rich-text engine. This leaf alone uses MIT Tiptap 3. */
 const Callout = Node.create({
   name: "callout", group: "block", content: "block+",
-  parseHTML: () => [{ tag: "aside[data-rich-text-callout]" }],
-  renderHTML: () => ["aside", { "data-rich-text-callout": "", class: RICH_TEXT_CALLOUT, style: "border-inline-start-width:var(--ui-border-hairline);border-inline-start-style:solid" }, 0],
+  parseHTML: () => [{ tag: "aside[data-document-callout]" }],
+  renderHTML: () => ["aside", { "data-document-callout": "", class: RICH_TEXT_CALLOUT, style: "border-inline-start-width:var(--ui-border-hairline);border-inline-start-style:solid" }, 0],
   addNodeView: () => ReactNodeViewRenderer(RichTextCalloutView),
 });
 const Badge = Mark.create({
   name: "badge",
-  parseHTML: () => [{ tag: "span[data-rich-text-badge]" }],
-  renderHTML: () => ["span", { "data-rich-text-badge": "" }, 0],
+  parseHTML: () => [{ tag: "span[data-document-badge]" }],
+  renderHTML: () => ["span", { "data-document-badge": "" }, 0],
   addMarkView: () => ReactMarkViewRenderer(RichTextBadgeView),
 });
 
