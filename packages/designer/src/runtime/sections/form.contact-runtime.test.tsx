@@ -53,7 +53,7 @@ describe("registered contact form runtime", () => {
     expect(contactFormSpecimenIdentity.specimenLeaf).toBe("sections.specimen-section-viewports");
     expect(binding.descriptorHash).toBe(descriptorHash);
     const { container } = render(<>{binding.render({ width: 375, state: "default" })}</>);
-    expect(container.querySelector("form")).toHaveAttribute("data-ds-leaf", "sections.form");
+    expect(container.querySelector("form")).toHaveAttribute("data-provenance-leaf", "sections.form");
     expect(screen.getByRole("textbox", { name: "Email field" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Message field" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Submit action" }));

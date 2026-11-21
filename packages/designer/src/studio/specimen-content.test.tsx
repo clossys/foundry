@@ -154,9 +154,9 @@ it.each([1, 3, 15])("renders %i Writer strings in their actual native role compo
   if (count > 1) expect(view.container.querySelector("[lang='ar'][dir='rtl'] [data-readonly='true']")).toBeTruthy();
   if (count > 2) expect(screen.getAllByRole("button", { name: /Produced cta/ }).length).toBeGreaterThan(0);
   if (count > 5) {
-    expect(view.container.querySelector("[data-ds-leaf='components.navigation-tree']")).toBeTruthy();
-    expect(view.container.querySelector("[data-copy-role='error'] [data-ds-leaf='sections.empty-state']")).toBeTruthy();
-    expect(view.container.querySelector("[data-copy-role='empty'] [data-ds-leaf='sections.empty-state']")).toBeTruthy();
+    expect(view.container.querySelector("[data-provenance-leaf='components.navigation-tree']")).toBeTruthy();
+    expect(view.container.querySelector("[data-copy-role='error'] [data-provenance-leaf='sections.empty-state']")).toBeTruthy();
+    expect(view.container.querySelector("[data-copy-role='empty'] [data-provenance-leaf='sections.empty-state']")).toBeTruthy();
   }
   if (count === 1) expect(view.container.querySelector("table,[role='grid'],button")).toBeNull();
   view.rerender(<SpecimenCopyInContext {...props} />);

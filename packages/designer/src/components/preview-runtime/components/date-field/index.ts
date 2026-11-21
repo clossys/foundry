@@ -1,6 +1,6 @@
 import { createElement, forwardRef, type ComponentType } from "react";
 import { DateField as Impl0 } from "../../../index.js";
-const stamp = {"data-ds-layer":"components","data-ds-leaf":"components.date-field","data-ds-fill":"foundry/components.date-field"} as const;
+const stamp = {"data-provenance-layer":"components","data-provenance-leaf":"components.date-field","data-provenance-fill":"foundry/components.date-field"} as const;
 const reactKeys = new Set(["$$typeof", "render", "type", "compare", "displayName", "propTypes", "defaultProps", "contextType", "contextTypes", "childContextTypes", "getDefaultProps", "getDerivedStateFromProps", "getDerivedStateFromError", "mixins", "length", "name", "prototype", "arguments", "caller"]);
 function statics(impl: unknown): Record<string, unknown> {
   const hoisted: Record<string, unknown> = {};

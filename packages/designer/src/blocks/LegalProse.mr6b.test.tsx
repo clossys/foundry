@@ -32,7 +32,7 @@ it("renders the authored revision as machine-readable time and keeps rich prose 
   expect(screen.getByRole("heading", { level: 2, name: "Sample privacy" })).toBeInTheDocument();
   expect(container.querySelector("time")).toHaveAttribute("dateTime", "2026-01-15");
   expect(container.querySelector("time")).toHaveTextContent("15 January 2026");
-  expect(container.querySelector('[data-ds-leaf="sections.legal-prose"]')).toHaveAttribute("data-ds-fill", "foundry/sections.legal-prose");
+  expect(container.querySelector('[data-provenance-leaf="sections.legal-prose"]')).toHaveAttribute("data-provenance-fill", "foundry/sections.legal-prose");
   expect(container.querySelector("article strong")).toHaveTextContent("authored emphasis");
   expect(container.querySelectorAll("li")).toHaveLength(1);
 });

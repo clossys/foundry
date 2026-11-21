@@ -20,7 +20,7 @@ describe("ArticleBody toc region", () => {
     const { container } = render(<ArticleBody toc={toc} className="host">{body}</ArticleBody>);
     const root = container.firstElementChild as HTMLElement;
     expect(root.tagName).toBe("ARTICLE");
-    expect(root).toHaveAttribute("data-ds-leaf", "sections.article");
+    expect(root).toHaveAttribute("data-provenance-leaf", "sections.article");
     expect(root).toHaveClass("grid", "grid-cols-1", "desktop:grid-cols-4", "host");
     expect(root.className).not.toContain("[&_a]");
     const [region, prose] = Array.from(root.children) as HTMLElement[];

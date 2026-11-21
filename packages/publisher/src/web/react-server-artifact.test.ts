@@ -299,7 +299,7 @@ describe("packed frame release", () => {
     expect(menuIcon).toContain(' aria-hidden="true"');
     expect(menuButton).not.toMatch(/>\s*[^<\s]/);
     expect(html).toContain('class="flex min-h-dvh flex-col"');
-    expect(html).toMatch(/data-ds-leaf="sections.hero"[^>]*class="[^"]*flex-1/);
+    expect(html).toMatch(/data-provenance-leaf="sections.hero"[^>]*class="[^"]*flex-1/);
     expect(html).not.toContain("min-height:100dvh");
     expect(normal.viewportHtml).toContain("min-h-dvh");
   });

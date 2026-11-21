@@ -113,7 +113,7 @@ describe("Timeline selected component composition", () => {
     const input = runtimeInput();
     render(selected(renderTimeline(input)));
     const list = await screen.findByRole("list", { name: timelineSample["aria-label"] });
-    expect(list).toHaveAttribute("data-ds-leaf", "sections.timeline");
+    expect(list).toHaveAttribute("data-provenance-leaf", "sections.timeline");
     expect(within(list).getAllByRole("heading").map(heading => heading.textContent)).toEqual(timelineSample.events.map(event => event.heading));
     expect(() => renderTimeline({ ...input, sectionHost: { timelineLabel: "" } })).toThrow(/resolved copy/);
     expect(renderTimeline({ ...input, sectionHost: undefined }).props["aria-label"]).toBeUndefined();

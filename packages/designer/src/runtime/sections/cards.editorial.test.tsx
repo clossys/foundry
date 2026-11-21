@@ -89,7 +89,7 @@ describe("registered editorial Cards specimen", () => {
     expect(screen.getByRole("link", { name: records[0]!.title })).toHaveAttribute("href", "/journal/durable");
     expect(screen.getByText("Alex")).toBeVisible(); expect(screen.getByText("29 October 2026")).toBeVisible();
     expect(document.querySelector("[data-slot=card-content]")).not.toBeNull();
-    expect(document.querySelector("[data-ds-leaf='sections.cards']")).not.toBeNull();
+    expect(document.querySelector("[data-provenance-leaf='sections.cards']")).not.toBeNull();
     expect(document.querySelector("[data-slot=badge]")).not.toBeNull();
   });
   it("keeps the Studio's own registered sample editorial and uses featured layout", async () => {

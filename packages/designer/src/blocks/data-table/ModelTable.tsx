@@ -12,7 +12,7 @@ import { PivotGrid } from "./PivotGrid.js";
 import { pathLabel, sortViewRows } from "./presentation.js";
 import { ViewOptions } from "./ViewOptions.js";
 import { editView, parseDataTableViewModel, type DataTableViewModel, type DataTableViewModelV1 } from "./view-model.js";
-import { dsPassThrough } from "../../catalog-core/provenance-attrs.js";
+import { DS_ATTR, dsPassThrough } from "../../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Button = componentLeaf<import("../../runtime/component-leaf.js").ButtonLeaf>("components.button");
@@ -20,6 +20,8 @@ const Icon = componentLeaf<typeof import("../../components/preview-runtime/compo
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 type DisplayRow<Row> = { kind: "leaf"; key: string; row: Row } | { kind: "group"; key: string; group: TableGroup<Row>; open: boolean };
+/** The inner grid never carries the section's stamp: the outer root does. */
+const NO_STAMP = { [DS_ATTR.layer]: undefined, [DS_ATTR.leaf]: undefined, [DS_ATTR.fill]: undefined } as const;
 const leafKey = (key: Key) => "leaf:" + JSON.stringify([typeof key, key]);
 export function ModelTable<Row>({
   /** @default the host's Writer text for `DATA_TABLE_COPY_REFS.groupToggleMessage`, read only when a toggle renders */
@@ -82,10 +84,10 @@ export function ModelTable<Row>({
     } }));
     const keys = new Map(props.rows.map(row => [leafKey(props.rowKey(row)), props.rowKey(row)]));
     const selectedKeys = typeof props.selectedKeys === "string" ? props.selectedKeys : props.selectedKeys ? new Set([...props.selectedKeys].map(leafKey)) : undefined;
-    grid = <FlatGrid {...props} {...props.messages} {...sortProps} data-ds-layer={undefined} data-ds-leaf={undefined} data-ds-fill={undefined} className={undefined} style={undefined} toolbar={undefined} footer={undefined} columns={groupedColumns} rows={display} rowKey={item => item.key} density={model.density}
+    grid = <FlatGrid {...props} {...props.messages} {...sortProps} {...NO_STAMP} className={undefined} style={undefined} toolbar={undefined} footer={undefined} columns={groupedColumns} rows={display} rowKey={item => item.key} density={model.density}
       disabledKeys={display.filter(item => item.kind === "group").map(item => item.key)} selectedKeys={selectedKeys}
       onSelectionChange={next => props.onSelectionChange?.(next === "all" ? "all" : new Set([...next].flatMap(key => keys.has(String(key)) ? [keys.get(String(key))!] : [])))} />;
-  } else grid = <FlatGrid {...props} {...props.messages} {...sortProps} data-ds-layer={undefined} data-ds-leaf={undefined} data-ds-fill={undefined} className={undefined} style={undefined} toolbar={undefined} footer={undefined} rows={sorted} columns={columns} density={model.density} />;
+  } else grid = <FlatGrid {...props} {...props.messages} {...sortProps} {...NO_STAMP} className={undefined} style={undefined} toolbar={undefined} footer={undefined} rows={sorted} columns={columns} density={model.density} />;
   return <SemanticContent as="div" {...dsPassThrough(props)} className={cx("flex min-w-0 max-w-full flex-col gap-md", props.className)} style={props.style}>
     {toolbar ? <SemanticContent as="div" data-table-toolbar="" className="flex flex-wrap items-end justify-between gap-md">{toolbar}</SemanticContent> : null}
     <ViewOptions {...props.messages} messages={props.messages} model={model} change={onModelChange} facets={filtered.facets} labels={labels} />

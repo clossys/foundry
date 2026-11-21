@@ -159,13 +159,16 @@ describe("real package-surface library golden", () => {
     // Re-captured by foundry-build-0048 CONTAM-U12 (marquee fills read var(--duration, 40s)), computed from the built dist
     // at base (equal to the prior pins) and at head: values and composite move, components and surfaces unchanged;
     // composite ba2ad4d2 -> 6ea08ccc, values 717688cc7f83e4bf -> 149d271dd68aea6f, whole f0e9ee37 -> 77d3a047.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:6ea08ccc3fd92224ecf367c0855c6fce7a17d2d09b49141640f2ee4d00249562"`);
+    // Re-pinned by foundry-build-0048 CONTAM-U2 (hand-edited from the failing run, no `-u`): the stamps move to
+    // data-provenance-*, so the measured fill surfaces re-hash provenance-attrs.ts and site-shell now measures its import.
+    // Values and components unchanged: composite 6ea08ccc -> b8d538d3, surface 45dd4f1f -> 97a5b09d, whole 77d3a047 -> e797a9e3.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:b8d538d3eba9c7c5ae86e254c9018c934f80190762541501d06f40b099cd49b4"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:149d271dd68aea6f"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
     expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:ef9a46557ea2aa79b1db4b19f2578dc33d1cde7c13f5f806b80a537f755a3734"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:45dd4f1f96c66cdfb4f7061d5247627200e6d8de6b30417a336e4969b4bb85cb"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"77d3a0474f35c104055a07468f6a09824e8fca8a0a33868791542f5cf9a30c3f"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:97a5b09ddab2702d7fefd2242b841fe1ef0f38a03bbb88c2e3f44be63c03c1ff"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"e797a9e3602ed40d40e865bbba077788559de85af20fdabaa0183a2f69bd757b"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

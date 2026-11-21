@@ -35,8 +35,8 @@ describe("AuthFrame", () => {
 
   it("server-renders its registered frame provenance around host-owned content", () => {
     const html = renderToStaticMarkup(<AuthFrame skipLabel="Skip"><section>Unavailable</section></AuthFrame>);
-    expect(html).toContain('data-ds-leaf="frames.auth-shell"');
-    expect(html).toContain('data-ds-fill="foundry/frames.auth-shell"');
+    expect(html).toContain('data-provenance-leaf="frames.auth-shell"');
+    expect(html).toContain('data-provenance-fill="foundry/frames.auth-shell"');
     expect(html).toContain('<main id="main-content" tabindex="-1"');
     expect(html).toContain("Unavailable");
   });

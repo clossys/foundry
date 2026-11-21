@@ -24,8 +24,8 @@ describe("private boundary-message section", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Sign-in is unavailable" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Contact support" })).toHaveAttribute("href", "/help");
     expect(screen.getByText("Reference: session paused.")).toHaveAttribute("dir", "auto");
-    expect(container.querySelector('[data-ds-leaf="sections.boundary-message"]')).toHaveAttribute("data-boundary-kind", kind);
-    expect(container.querySelector('[data-ds-leaf="sections.empty-state"]')).not.toBeNull();
+    expect(container.querySelector('[data-provenance-leaf="sections.boundary-message"]')).toHaveAttribute("data-boundary-kind", kind);
+    expect(container.querySelector('[data-provenance-leaf="sections.empty-state"]')).not.toBeNull();
     expect(container.querySelector("main,header,footer,html,body")).toBeNull();
     expect(container.querySelector("form")).toBeNull();
   });

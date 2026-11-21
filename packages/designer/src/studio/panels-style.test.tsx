@@ -37,5 +37,5 @@ it("wraps long data values and uses mono for hashes", () => {
 });
 it("uses the registered EmptyState for an empty tree and zero search results", () => {
   const view = render(<><ExplorerTree copy={studioTestCopy} labels={labels} placements={[]} onNavigate={()=>{}}/><ExplorerTree copy={studioTestCopy} labels={labels} placements={testPlacements} query="no-leaf-matches-this-query" onNavigate={()=>{}}/></>);
-  expect(view.container.querySelectorAll('[data-ds-leaf="sections.empty-state"]')).toHaveLength(2);
+  expect(view.container.querySelectorAll('[data-provenance-leaf="sections.empty-state"]')).toHaveLength(2);
 });

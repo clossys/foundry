@@ -93,7 +93,7 @@ describe.each(configs)("Writer sign-in copy binding: %s", config => {
     expect(screen.getByRole("button", { name: fieldValue(values, "providers[].label") as string })).toBeDisabled();
     expect(screen.getByRole("button", { name: fieldValue(values, "actions.submit") as string })).toBeDisabled();
     expect(formAlert()).toHaveTextContent(fieldValue(values, "error.message") as string);
-    expect(container.querySelectorAll('[data-ds-leaf="sections.sign-in-form"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[data-provenance-leaf="sections.sign-in-form"]').length).toBeGreaterThan(0);
     expect(container.querySelector("a")).toBeNull();
   });
 
@@ -114,7 +114,7 @@ describe.each(configs)("Writer sign-in copy binding: %s", config => {
     expect(screen.getByTestId("document-locale")).toHaveAttribute("dir", "rtl");
     expect(screen.getByTestId("locale-witness")).toHaveAttribute("data-direction", "rtl");
     expect(screen.getByTestId("locale-witness")).toHaveAttribute("data-locale", "ar");
-    const shell = container.querySelector('[data-ds-leaf="frames.auth-shell"]');
+    const shell = container.querySelector('[data-provenance-leaf="frames.auth-shell"]');
     expect(shell).not.toBeNull();
     expect(shell).toHaveAttribute("lang", "ar");
     expect(shell).toHaveAttribute("dir", "rtl");

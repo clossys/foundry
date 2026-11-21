@@ -45,6 +45,6 @@ describe("A270 registered logo-cloud specimen", () => {
     if (!("render" in preview)) throw new Error(preview.reason);
     const { container } = render(<ConsumerComponentProvider value={selection()}><Suspense fallback={null}>{preview.render()}</Suspense></ConsumerComponentProvider>);
     for (const name of specimenDataset.sections.logoCloud.names) expect(await screen.findByText(name, { selector: '[data-slot="item-title"]' })).toBeInTheDocument();
-    expect(container.querySelector('[data-ds-leaf="sections.logo-cloud"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-provenance-leaf="sections.logo-cloud"]')).toBeInTheDocument();
   });
 });

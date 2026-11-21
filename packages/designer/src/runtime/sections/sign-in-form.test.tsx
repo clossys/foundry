@@ -42,7 +42,7 @@ describe("private sign-in Section", () => {
     expect(screen.getByRole("button", { name: "Continue with work SSO" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Sign in" })).toBeDisabled();
     expect(screen.queryByText(/sign up|invite|reset|forgot|create account/i)).toBeNull();
-    expect(container.querySelectorAll('[data-ds-leaf="sections.sign-in-form"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[data-provenance-leaf="sections.sign-in-form"]').length).toBeGreaterThan(0);
     expect(container.querySelector("a")).toBeNull();
   });
 

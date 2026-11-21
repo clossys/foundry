@@ -28,7 +28,7 @@ describe("private own-account summary composition", () => {
     expect(container.querySelectorAll("dt")).toHaveLength(3);
     expect(container.querySelectorAll("dd")).toHaveLength(3);
     expect(screen.getByRole("link", { name: "Manage preferences" })).toHaveAttribute("href", "/account/preferences");
-    expect(container.querySelector("section")).toHaveAttribute("data-ds-leaf", "sections.account-summary");
+    expect(container.querySelector("section")).toHaveAttribute("data-provenance-leaf", "sections.account-summary");
     expect(container.querySelector("section")).toHaveAttribute("data-designer-requires-section-frame");
     expect(container.querySelector("form,input,button")).toBeNull();
   });

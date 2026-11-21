@@ -20,7 +20,7 @@ describe("NoticeList", () => {
     expect(region).toHaveAttribute("id", "notices");
     expect(region).toHaveAttribute("dir", "rtl");
     expect(region).toHaveAttribute("data-host", "notices");
-    expect(region).toHaveAttribute("data-ds-leaf", "sections.notices");
+    expect(region).toHaveAttribute("data-provenance-leaf", "sections.notices");
     expect(region).toHaveStyle({ marginTop: "9px" });
     expect(region).toHaveClass("gap-lg");
     expect(within(region).getAllByRole("listitem")).toHaveLength(2);

@@ -32,7 +32,7 @@ describe("Publisher status adapters on Designer document frame", () => {
     const doc = parse(html);
     expect(doc.documentElement.lang).toBe(lang);
     expect(doc.documentElement.dir).toBe(dir);
-    expect(doc.documentElement.getAttribute("data-ds-leaf")).toBe("frames.document");
+    expect(doc.documentElement.getAttribute("data-provenance-leaf")).toBe("frames.document");
     expect(doc.querySelector("title")?.textContent).toBe(formatPageTitle(documentTitle));
     expect(doc.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe("noindex, nofollow");
     expect(doc.querySelectorAll("script")).toHaveLength(0);

@@ -5,6 +5,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 import { componentSpecimenPreview, type ComponentSpecimenMember } from "./component-specimens.js";
 import { SpecimenLayoutSection, specimenComponent, type SpecimenAxis, type SpecimenBreakpointReference, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafProps } from "./specimen-layouts.js";
 import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
+import { DS_ATTR } from "../catalog-core/provenance-attrs.js";
 
 const Badge = componentLeaf<typeof import("../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const Content = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
@@ -75,7 +76,7 @@ function ComponentItem({ item, context, need, renderParts }: { item: SpecimenIte
   if ("reason" in semantic) return need(semantic);
   const renderComponentState = renderParts?.["sections.specimen-variant-matrix"]?.renderComponentState;
   if (!renderComponentState) return need({ leaf: value.leaf, reason: "The selected specimen section has no declared component-state render part." });
-  return <><Badge data-ds-leaf="components.badge">{bound.source}</Badge>{renderComponentState({ Content, context, leaf: value.leaf, members: value.members, state: value.state, props, interactive: value.state === "default", unavailable: reason => need({ leaf: value.leaf, reason }) })}</>;
+  return <><Badge {...{ [DS_ATTR.leaf]: "components.badge" }}>{bound.source}</Badge>{renderComponentState({ Content, context, leaf: value.leaf, members: value.members, state: value.state, props, interactive: value.state === "default", unavailable: reason => need({ leaf: value.leaf, reason }) })}</>;
 
 }
 

@@ -20,7 +20,7 @@ type MutableContext = { -readonly [Key in keyof DesignerSpecimenContext]: Design
 function context(): MutableContext {
   return { profile: { consumer: values.consumer, selectionHash: values.selectionHash, values: structuredClone(values), components: structuredClone(componentData) } as CompositeResolved, modules: { "@clossys/designer/components": components, ...defaultSourceModules } };
 }
-const need = ({ leaf, reason }: { leaf: string; reason: string }) => <components.SemanticContent as="p" data-ds-leaf="components.semantic-content" role="status">NEED {leaf}: {reason}</components.SemanticContent>;
+const need = ({ leaf, reason }: { leaf: string; reason: string }) => <components.SemanticContent as="p" data-provenance-leaf="components.semantic-content" role="status">NEED {leaf}: {reason}</components.SemanticContent>;
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 it("applies resolved colors and both contrast pairs inside selected consumer chrome, with no source text", () => {
@@ -35,7 +35,7 @@ it("applies resolved colors and both contrast pairs inside selected consumer chr
   expect(screen.getByRole("img", { name: "themes.primary.default dark" })).toHaveStyle({ background: member.css.dark });
   expect(container.querySelector("[data-contrast-pair='themes.foreground.default']")).toBeTruthy();
   expect(container.querySelectorAll("[data-consumer-chrome='selected']").length).toBeGreaterThan(4);
-  for (const node of container.querySelectorAll("*")) expect(node.closest("[data-ds-leaf]")).toBeTruthy();
+  for (const node of container.querySelectorAll("*")) expect(node.closest("[data-provenance-leaf]")).toBeTruthy();
   expect(container.textContent).not.toMatch(/originKinds:|confirmed:|\$extensions|## Fill|```/);
   expect(container.querySelector("textarea,[contenteditable='true']")).toBeNull();
 });
@@ -64,7 +64,7 @@ it("shows actual SVG and icon artwork on both grounds", () => {
   logo.unmount();
   const glyph = render(<DesignerSpecimen leaf="assets.icon-close" context={selected} need={need} />);
   expect(glyph.container.querySelectorAll("svg")).toHaveLength(2);
-  expect(glyph.container.querySelector("[data-ds-leaf='components.icon']")).toBeTruthy();
+  expect(glyph.container.querySelector("[data-provenance-leaf='components.icon']")).toBeTruthy();
 });
 
 it("renders the selected live component variants and real disabled/invalid fixtures", () => {
@@ -122,15 +122,15 @@ it("renders native selected section/frame fixtures in actual desktop/mobile view
   const mobile = result.container.querySelector<HTMLIFrameElement>("iframe[width='375']")!;
   fireEvent.load(mobile);
   expect(mobile.contentDocument!.body.textContent).toMatch(/\S/);
-  expect(mobile.contentDocument!.body.querySelector("[data-ds-leaf='sections.content']")).toBeTruthy();
+  expect(mobile.contentDocument!.body.querySelector("[data-provenance-leaf='sections.content']")).toBeTruthy();
   expect(mobile).toHaveAttribute("sandbox", "allow-same-origin");
-  expect(result.container.querySelector("[data-ds-leaf='sections.content']")).toBeTruthy();
+  expect(result.container.querySelector("[data-provenance-leaf='sections.content']")).toBeTruthy();
   result.unmount();
   const frame = render(<DesignerSpecimen leaf="frames.auth-shell" context={selected} need={need} />);
   const desktop = frame.container.querySelector<HTMLIFrameElement>("iframe[width='1280']")!;
   expect(desktop).toBeTruthy();
   fireEvent.load(desktop);
-  expect(desktop.contentDocument!.body.querySelector("[data-ds-leaf='frames.auth-shell']")).toBeTruthy();
+  expect(desktop.contentDocument!.body.querySelector("[data-provenance-leaf='frames.auth-shell']")).toBeTruthy();
   frame.unmount();
   selected.surfaces = { "sections.content": { descriptorHash: "stale", render: () => "wrong source" } };
   render(<DesignerSpecimen leaf="sections.content" context={selected} need={need} />);

@@ -49,7 +49,7 @@ it("renders actual section content after resolving the client reference", async 
   const { container } = render(<ConsumerComponentProvider value={fixtureConsumerComponents()}><Suspense fallback={<span>Loading</span>}>{surfaceRuntimeRenderers[leaf]!.render(input)}</Suspense></ConsumerComponentProvider>);
   expect(await screen.findByRole("img", { name: "Example mark" })).toBeInTheDocument();
   expect(container.querySelector("img")).toHaveAttribute("src", asset.src);
-  expect(container.querySelector("section")).toHaveAttribute("data-ds-leaf", leaf);
+  expect(container.querySelector("section")).toHaveAttribute("data-provenance-leaf", leaf);
 });
 
 it("refuses to serialize a live consumer module index across a server reference", () => {

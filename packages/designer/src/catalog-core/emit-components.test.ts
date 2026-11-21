@@ -311,7 +311,7 @@ function loadIndex(content: string, kit: Record<string, unknown>): Record<string
   return exports;
 }
 describe("provenance stamping wrapper (D1, D2)", () => {
-  it.each([["identity", true], ["dispatch", false]] as const)("%s index stamps data-ds-*, forwards ref and keeps Select.Item", (_label, identity) => {
+  it.each([["identity", true], ["dispatch", false]] as const)("%s index stamps data-provenance-*, forwards ref and keeps Select.Item", (_label, identity) => {
     const files = emitComponents(selectProfile(identity), ["component-index"]);
     const index = files.find(file => file.path === "components/select/index.ts")!.content;
     expect(index).toContain(identity ? "const target = Impl0 satisfies" : "const targets = { Impl0 } satisfies");
@@ -324,7 +324,7 @@ describe("provenance stamping wrapper (D1, D2)", () => {
     expect(Select.Item).toBe(Item);
     const ref = { current: null };
     const html = renderToStaticMarkup(createElement(Select, { ref, ...(identity ? {} : { variant: "primary" }) }, createElement(Select.Item, null, "One")));
-    for (const attr of ['data-ds-layer="components"', 'data-ds-leaf="components.select"', 'data-ds-fill="test-kit/components.select"']) expect(html).toContain(attr);
+    for (const attr of ['data-provenance-layer="components"', 'data-provenance-leaf="components.select"', 'data-provenance-fill="test-kit/components.select"']) expect(html).toContain(attr);
     expect(html).toMatch(/^<ul [^>]*><li role="option">One<\/li><\/ul>$/);
     expect(refs).toContain(ref);
     expect(Select.render({}, ref).props.ref).toBe(ref);
@@ -360,10 +360,10 @@ describe("bare-root member axes named after a real prop (2b P1)", () => {
     const index = files.find(file => file.path === "components/date-field/index.ts")!.content;
     expect(index).not.toContain('"value": {');
     const seen: Record<string, unknown>[] = [];
-    const Impl = forwardRef<HTMLDivElement, Record<string, unknown>>(function Impl(props, ref) { seen.push(props); return createElement("div", { ref, "data-ds-leaf": props["data-ds-leaf"] }, String(props.value)); });
+    const Impl = forwardRef<HTMLDivElement, Record<string, unknown>>(function Impl(props, ref) { seen.push(props); return createElement("div", { ref, "data-provenance-leaf": props["data-provenance-leaf"] }, String(props.value)); });
     const { DateField } = loadIndex(index, { DateField: Impl }) as { DateField: React.ComponentType<Record<string, unknown>> };
     const value = new CalendarDate(2026, 10, 26);
-    expect(renderToStaticMarkup(createElement(DateField, { label: "Due", value, state: "invalid" }))).toBe('<div data-ds-leaf="components.date-field">2026-10-26</div>');
+    expect(renderToStaticMarkup(createElement(DateField, { label: "Due", value, state: "invalid" }))).toBe('<div data-provenance-leaf="components.date-field">2026-10-26</div>');
     expect(seen[0]!.value).toBe(value);
     expect(seen[0]!.isInvalid).toBe(true);
     expect(seen[0]).not.toHaveProperty("state");

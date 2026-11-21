@@ -74,7 +74,7 @@ it('the actual compiled provider supplies the selected semantic leaf to a native
   const profile = resolve(input);
   expect(Object.keys(profile.components.components)).toEqual(['components.semantic-content']);
   expect(nativeHtml).toContain('Native provider content');
-  expect(nativeHtml).toContain('data-ds-leaf="sections.content"');
+  expect(nativeHtml).toContain('data-provenance-leaf="sections.content"');
   expect(() => renderToStaticMarkup(createElement(executable.Content, null, 'Missing provider'))).toThrow(/NEED component selection/);
 });
 

@@ -1,7 +1,7 @@
 import { createElement, forwardRef, type ComponentType } from "react";
 import { Button as Impl0 } from "./button.js";
 export { LinkButton } from "./button.js";
-const stamp = {"data-ds-layer":"components","data-ds-leaf":"components.button","data-ds-fill":"shadcn@aria/components.button"} as const;
+const stamp = {"data-provenance-layer":"components","data-provenance-leaf":"components.button","data-provenance-fill":"shadcn@aria/components.button"} as const;
 const reactKeys = new Set(["$$typeof", "render", "type", "compare", "displayName", "propTypes", "defaultProps", "contextType", "contextTypes", "childContextTypes", "getDefaultProps", "getDerivedStateFromProps", "getDerivedStateFromError", "mixins", "length", "name", "prototype", "arguments", "caller"]);
 function statics(impl: unknown): Record<string, unknown> {
   const hoisted: Record<string, unknown> = {};

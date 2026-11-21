@@ -8,11 +8,12 @@ import { SiteNavDisclosure } from "./NavDisclosure.boundary.client.js";
 import { SiteSkipLink } from "./SkipLink.boundary.client.js";
 import { resolveShell } from "./internal/resolveShell.js";
 import { SITE_MAIN_ID } from "./types.js";
+import { DS_ATTR } from "../../catalog-core/provenance-attrs.js";
 import type { SiteFrameProps } from "./types.js";
 
 /** The frames.site-shell provenance stamp: this export is the foundry fill's package pointer. */
-// The frames.site-shell provenance stamp (Designer dsAttrs shape), written literally: SiteFrame keeps its server-only import boundary.
-const FRAME_STAMP = { "data-ds-layer": "frames", "data-ds-leaf": "frames.site-shell", "data-ds-fill": "foundry/frames.site-shell" } as const;
+// The frames.site-shell provenance stamp (Designer dsAttrs shape); the names come from the pure, server-safe provenance module.
+const FRAME_STAMP = { [DS_ATTR.layer]: "frames", [DS_ATTR.leaf]: "frames.site-shell", [DS_ATTR.fill]: "foundry/frames.site-shell" } as const;
 
 // The menu toggle's inverse ink, so the ghost mobile action beside it reads on the same plate.
 const MOBILE_ACTION_INVERSE = INVERSE_CONTROL_INK;

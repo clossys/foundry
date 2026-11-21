@@ -1,7 +1,7 @@
 import { createElement, forwardRef, type ComponentType } from "react";
 import { Calendar as Impl0 } from "./calendar.js";
 import { RangeCalendar as Impl1 } from "./calendar.js";
-const stamp = {"data-ds-layer":"components","data-ds-leaf":"components.calendar","data-ds-fill":"shadcn@aria/components.calendar"} as const;
+const stamp = {"data-provenance-layer":"components","data-provenance-leaf":"components.calendar","data-provenance-fill":"shadcn@aria/components.calendar"} as const;
 const reactKeys = new Set(["$$typeof", "render", "type", "compare", "displayName", "propTypes", "defaultProps", "contextType", "contextTypes", "childContextTypes", "getDefaultProps", "getDerivedStateFromProps", "getDerivedStateFromError", "mixins", "length", "name", "prototype", "arguments", "caller"]);
 function statics(impl: unknown): Record<string, unknown> {
   const hoisted: Record<string, unknown> = {};

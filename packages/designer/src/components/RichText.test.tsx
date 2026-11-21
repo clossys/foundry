@@ -22,7 +22,7 @@ describe("RichText document specimens", () => {
     expect(html).toContain('data-slot="rich-text-code"');
     expect(html).toContain("const ready = true");
     expect(html).not.toMatch(/contenteditable|role="textbox"|<button|<textarea|<input/i);
-    expect(html).toContain('data-ds-leaf="components.rich-text"');
+    expect(html).toContain('data-provenance-leaf="components.rich-text"');
   });
 
   it("renders JSON callouts and badges with the same schema and keeps every element in its leaf", () => {
@@ -30,7 +30,7 @@ describe("RichText document specimens", () => {
     const { container } = render(<RichText value={value} readOnly aria-label="Strategy passage" />);
     expect(container.querySelector('[data-slot="rich-text-callout"]')).toHaveTextContent("Draft");
     expect(container.querySelector('[data-slot="rich-text-badge"]')).toHaveTextContent("Draft");
-    for (const element of container.querySelectorAll("*")) expect(element.closest("[data-ds-leaf]")).not.toBeNull();
+    for (const element of container.querySelectorAll("*")) expect(element.closest("[data-provenance-leaf]")).not.toBeNull();
     expect(screen.queryByRole("textbox")).toBeNull();
   });
 

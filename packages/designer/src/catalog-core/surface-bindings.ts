@@ -103,7 +103,7 @@ const rendersSelected = (profile: CompositeResolved, slot: string, module: strin
  * surface is listed for each external value import of a selected component's public name: only the consumer
  * component-index carries the selected fill and its provenance stamp, so a direct import never reaches a
  * re-selection. That is the import the `bind-selected-components@1` rule re-binds. An unselected component is
- * S4's finding, not WL7's. The rendered `data-ds-fill` half of WL7 is a DOM check (provenance-scan).
+ * S4's finding, not WL7's. The rendered `data-provenance-fill` half of WL7 is a DOM check (provenance-scan).
  */
 export function surfaceSwapFindings(input: CompositeEngineInput, profile: CompositeResolved): WiringFinding[] {
     const findings: WiringFinding[] = [];

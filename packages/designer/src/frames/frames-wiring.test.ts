@@ -129,7 +129,7 @@ describe("frame SSR keeps its landmarks and skip-link", () => {
     ];
     for (const [leaf, html, root] of roots) {
       expect(root.exec(html)?.[0], leaf).toContain(stamp(leaf));
-      expect(html.match(/data-ds-layer="frames"/g), leaf).toHaveLength(1);
+      expect(html.match(/data-provenance-layer="frames"/g), leaf).toHaveLength(1);
     }
   });
 });

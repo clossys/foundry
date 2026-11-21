@@ -51,7 +51,7 @@ describe("draft site Writer records", () => {
         code: { value: fields.code }, retry: { value: { label: fields["retry.label"] } }, report: { value: { label: fields["report.label"] } },
       },
     } as Parameters<typeof renderErrorState>[0]));
-    expect(html).toContain('data-ds-leaf="sections.error-state"');
+    expect(html).toContain('data-provenance-leaf="sections.error-state"');
     for (const text of Object.values(fields)) expect(html).toContain(text);
   });
 

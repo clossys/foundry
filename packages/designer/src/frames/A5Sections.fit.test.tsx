@@ -92,7 +92,7 @@ it("F3 F4 F5 F7 F9 fits section gutters and compact stats at 390 and 200-percent
         await send("Emulation.setDeviceMetricsOverride", { width, height: 1000, deviceScaleFactor: width === 320 ? 2 : 1, mobile: false }); await settle();
         const measured = await evaluate(`(() => {
           const main=document.querySelector('main'),m=main.getBoundingClientRect();
-          const roots=['sections.stats','sections.notices','sections.resource-list'].map(id=>document.querySelector('[data-ds-leaf="'+id+'"]'));
+          const roots=['sections.stats','sections.notices','sections.resource-list'].map(id=>document.querySelector('[data-provenance-leaf="'+id+'"]'));
           const statRects=[...roots[0].children].map(e=>e.getBoundingClientRect());
           const statBounds={left:Math.min(...statRects.map(r=>r.left)),right:Math.max(...statRects.map(r=>r.right))};
           const children=[statBounds,roots[1].querySelector('[role=status]').getBoundingClientRect(),roots[2].querySelector('[role=grid]').getBoundingClientRect()];

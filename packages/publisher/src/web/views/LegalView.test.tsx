@@ -775,7 +775,7 @@ function skeleton(html: string): { root: string; children: Array<{ open: string;
   expect(html).toMatch(/^<section\b[^>]*><div [^>]*>/);
   const rootTag = /^<section\b[^>]*>/.exec(html)![0];
   expect(rootTag).toContain('data-designer-section-frame=""');
-  expect(rootTag).toContain('data-ds-leaf="sections.band"');
+  expect(rootTag).toContain('data-provenance-leaf="sections.band"');
   expect(html).toMatch(/<\/div><\/section>$/);
   const SLOT_DEPTH = 2;
   const tag = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*?(\/?)>/g;

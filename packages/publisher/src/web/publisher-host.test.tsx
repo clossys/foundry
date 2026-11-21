@@ -58,7 +58,7 @@ describe("Publisher host", () => {
       <ContentRoutePage input={input} />
       <NoticeList label="Notices" notices={[{ id: "notice", title: "Notice", message: "Body" }]} onDismiss={() => undefined} />
     </ContentRouteHost>);
-    expect(html).toContain('data-ds-leaf="frames.auth-shell"'); expect(html).toContain('data-ds-leaf="sections.empty-state"');
+    expect(html).toContain('data-provenance-leaf="frames.auth-shell"'); expect(html).toContain('data-provenance-leaf="sections.empty-state"');
     expect(html).toContain("Sign in to continue");
     expect(html).toContain(`aria-label="${DISMISS}"`);
   });

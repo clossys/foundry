@@ -144,7 +144,7 @@ describe("Publisher page host", () => {
     await writeFile(join(dir, draft.host!.file), draft.host!.module);
     await writeFile(join(dir, "selection.ts"), designerSelectionModule());
     const html = await render(dir, draft.module!);
-    expect(html).toContain('data-ds-leaf="frames.site-shell"');
+    expect(html).toContain('data-provenance-leaf="frames.site-shell"');
     expect(html).toContain('id="publisher-main-content"');
     expect(instanceHeadings(html)).toEqual([copy["home.hero.heading"], copy["home.proof.heading"], copy["home.close.heading"]]);
     // The same page with the host stripped is the defect this unit fixes.
@@ -216,6 +216,6 @@ it.skipIf(!nextBin || process.env.FOUNDRY_SKIP_NEXT_BUILD === "1")("installs a f
   const result = await new Promise<{ code: number; stdout: string; stderr: string }>(done => execFile(process.execPath, [nextBin!, "build"], { cwd: dir, timeout: 300_000, env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" } }, (error, stdout, stderr) => done({ code: error ? 1 : 0, stdout, stderr })));
   expect(result, JSON.stringify(result).slice(-4000)).toMatchObject({ code: 0 });
   const html = await readFile(join(dir, ".next/server/app/index.html"), "utf8");
-  expect(html).toContain('data-ds-leaf="frames.site-shell"');
+  expect(html).toContain('data-provenance-leaf="frames.site-shell"');
   expect(instanceHeadings(html)).toEqual([copy["home.hero.heading"], copy["home.proof.heading"], copy["home.close.heading"]]);
 }, 360_000);

@@ -40,6 +40,6 @@ describe("Content section runtime and Studio contribution", () => {
     expect(contentSectionStudioContribution.entryId).toBe(contract?.id);
     const { container } = mount(<ContentSectionSpecimen />);
     await screen.findByRole("heading", { name: "One place for every project" });
-    expect(container.querySelector('[data-ds-leaf="sections.content"] aside [data-slot="card-content"]')).not.toBeNull();
+    expect(container.querySelector('[data-provenance-leaf="sections.content"] aside [data-slot="card-content"]')).not.toBeNull();
   });
 });

@@ -13,6 +13,7 @@ import { specimenDataset } from "./specimen-dataset.js";
 import { PreviewOutcomeContext, type PreviewFailureReason } from "./preview-outcome.js";
 import { packageSurfacePreview } from "./planned-surface-previews.js";
 import type { SpecimenPagePreviewPort } from "./specimen-content-ports.js";
+import { DS_ATTR } from "../catalog-core/provenance-attrs.js";
 
 /** A source surface is executable only through a host binding to its exact resolved descriptor. */
 export interface DesignerSurfaceSpecimen {
@@ -71,11 +72,11 @@ export function DesignerSpecimen({ leaf, context, need }: DesignerSpecimenProps)
   const semantic = binding(context, "components.semantic-content");
   if (isNeed(semantic)) return need(semantic);
   const Content = semantic.Component;
-  const inside = (children: ReactNode) => <Content as="section" data-ds-leaf="components.semantic-content" data-designer-specimen={leaf} className="flex flex-col gap-md">{children}</Content>;
+  const inside = (children: ReactNode) => <Content as="section" {...{ [DS_ATTR.leaf]: "components.semantic-content" }} data-designer-specimen={leaf} className="flex flex-col gap-md">{children}</Content>;
   if (leaf.startsWith("themes.") || leaf.startsWith("assets.")) {
     const members = Object.entries(context.profile.values.members).filter(([, member]) => member.slot === leaf);
     if (!members.length) return need({ leaf, reason: "not-chosen: no resolved consumer members" });
-    return inside(<Content as="div" data-ds-leaf={leaf} className="flex flex-wrap gap-md">{members.map(([id, member]) => <Content key={id} as="section" className="flex flex-col gap-sm">
+    return inside(<Content as="div" {...{ [DS_ATTR.leaf]: leaf }} className="flex flex-wrap gap-md">{members.map(([id, member]) => <Content key={id} as="section" className="flex flex-col gap-sm">
       <Content as="h3">{id.slice(leaf.length + 1)}</Content>
       {leaf.startsWith("assets.") ? <AssetMember id={id} member={member} context={context} need={need} semantic={semantic} /> : <TokenMember id={id} member={member} values={context.profile.values} context={context} need={need} semantic={semantic} />}
     </Content>)}</Content>);
@@ -87,8 +88,8 @@ export function DesignerSpecimen({ leaf, context, need }: DesignerSpecimenProps)
     const badge = binding(context, "components.badge");
     if (isNeed(badge)) return need(badge);
     const Badge = badge.Component;
-    return inside(<Content as="div" data-ds-leaf={leaf} className="flex flex-col gap-md">
-      <Badge data-ds-leaf="components.badge">{selected.binding.source}</Badge>
+    return inside(<Content as="div" {...{ [DS_ATTR.leaf]: leaf }} className="flex flex-col gap-md">
+      <Badge {...{ [DS_ATTR.leaf]: "components.badge" }}>{selected.binding.source}</Badge>
       {(["default", "hover", "focus", "disabled", "invalid"] as const).map(state => <Content as="section" key={state} className="flex flex-col gap-sm" data-specimen-state={state}>
         <Content as="h3">{state}</Content>
         {state === "hover" || state === "focus" ? <Content as="p">{state === "hover" ? "Hover the live specimen to inspect its hover state." : "Focus the live specimen with the keyboard to inspect its focus state."}</Content> : null}
@@ -107,7 +108,7 @@ export function DesignerSpecimen({ leaf, context, need }: DesignerSpecimenProps)
     const registered = bound ? undefined : packageSurfacePreview(selected.document);
     if (!bound && (!registered || "reason" in registered)) return need({ leaf, reason: registered && "reason" in registered ? registered.reason : "The selected surface has no runtime specimen binding." });
     const widths = leaf.startsWith("frames.") ? [1280] : [1280, 375];
-    return inside(<Content as="div" data-ds-leaf={leaf} className="flex flex-col gap-md">{widths.map(width => <Content as="section" key={width} className="overflow-auto" data-specimen-viewport={width}>
+    return inside(<Content as="div" {...{ [DS_ATTR.leaf]: leaf }} className="flex flex-col gap-md">{widths.map(width => <Content as="section" key={width} className="overflow-auto" data-specimen-viewport={width}>
       <Content as="h3">{width === 375 ? "Mobile" : "Desktop"}</Content>
       <SpecimenViewport semantic={semantic} leaf={leaf} width={width}>{bound ? bound.render({ width, state: "default" }) : registered && "render" in registered ? registered.render() : null}</SpecimenViewport>
     </Content>)}</Content>);
@@ -131,7 +132,7 @@ function SpecimenViewport({ semantic, leaf, width, children }: { semantic: Compo
   };
   return <Content as="div" style={{ inlineSize: width, zoom: width === 1280 ? 0.5 : 1 }}>
     <iframe title={`${leaf} ${width}px specimen`} width={width} height={720} sandbox="allow-same-origin" srcDoc="<!doctype html><html><head></head><body></body></html>" onLoad={event => loaded(event.currentTarget)} style={{ border: 0, display: "block" }} />
-    {body ? createPortal(<Content as="div" data-ds-leaf="components.semantic-content" data-designer-specimen-frame={leaf}>{children}</Content>, body) : null}
+    {body ? createPortal(<Content as="div" {...{ [DS_ATTR.leaf]: "components.semantic-content" }} data-designer-specimen-frame={leaf}>{children}</Content>, body) : null}
   </Content>;
 }
 
@@ -202,7 +203,7 @@ function MotionMember({ semantic, button, duration, easing, id }: { semantic: Co
   };
   return <Content as="div" className="flex flex-col gap-sm" data-motion-specimen={id}>
     <Content as="div" ref={target} role="img" aria-label={id} className="size-lg bg-primary" />
-    <Button data-ds-leaf="components.button" onPress={play}>Play motion</Button>
+    <Button {...{ [DS_ATTR.leaf]: "components.button" }} onPress={play}>Play motion</Button>
     {reduced ? <Content as="p" role="status">Reduced motion is enabled.</Content> : null}
   </Content>;
 }
@@ -214,7 +215,7 @@ function AssetMember({ id, member, context, need, semantic }: MemberProps): Reac
       const icon = binding(context, "components.icon");
       if (isNeed(icon)) return need(icon);
       try { inspectGlyph(member.value.light); } catch { return need({ leaf: member.slot, reason: `Invalid glyph: ${id}` }); }
-      return createElement(icon.Component, { glyph: member.value.light, decorative: false, label: id, "data-ds-leaf": "components.icon" });
+      return createElement(icon.Component, { glyph: member.value.light, decorative: false, label: id, [DS_ATTR.leaf]: "components.icon" });
     }
     if (member.$type === "svg" && typeof member.value.light === "string") {
       try { inspectSvg(member.value.light, id === "assets.favicon.vector" ? { favicon: true } : undefined); } catch { return need({ leaf: member.slot, reason: `Invalid artwork: ${id}` }); }

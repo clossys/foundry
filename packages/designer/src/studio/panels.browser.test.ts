@@ -69,7 +69,7 @@ window.measure=()=>{const failures=[];for(const panel of document.querySelectorA
       expect(await evaluate("innerWidth")).toBe(width);
       expect(await evaluate("window.measure()"), `overflow at ${width}`).toEqual([]);
       expect(await evaluate("[...document.querySelectorAll('[data-tree-label]')].every(n=>getComputedStyle(n).textOverflow==='ellipsis'&&n.scrollWidth>n.clientWidth)")).toBe(true);
-      expect(await evaluate("document.querySelectorAll('[data-panel=zero] [data-ds-leaf=\"sections.empty-state\"]').length")).toBe(1);
+      expect(await evaluate("document.querySelectorAll('[data-panel=zero] [data-provenance-leaf=\"sections.empty-state\"]').length")).toBe(1);
       expect(await evaluate("getComputedStyle(document.querySelector('[data-studio-data-kind=hash]')).fontFamily")).toMatch(/mono/i);
       await evaluate("document.querySelectorAll('[data-tree-label]').forEach(n=>n.classList.remove('truncate'))");
       // Hyphenated labels may wrap without overflowing after mutation; the row must still ellipsize.

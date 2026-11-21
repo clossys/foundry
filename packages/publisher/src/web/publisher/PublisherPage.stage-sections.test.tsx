@@ -28,7 +28,7 @@ function unregisteredCopy(root: Element) {
   while (walker.nextNode()) {
     const node = walker.currentNode;
     if (!node.textContent?.trim()) continue;
-    const leaf = node.parentElement?.closest("[data-ds-leaf]")?.getAttribute("data-ds-leaf");
+    const leaf = node.parentElement?.closest("[data-provenance-leaf]")?.getAttribute("data-provenance-leaf");
     if (!leaf?.startsWith("sections.") || !sections.has(leaf)) failures.push(node.textContent);
   }
   return failures;
@@ -72,8 +72,8 @@ it("renders only registered section copy on the empty and populated stage, with 
   empty.unmount();
   const page = mount({ planStore: await acceptedExampleStore() });
   const stage = page.container.querySelector("[data-publisher-stage]")!;
-  expect(stage.querySelector('[data-ds-leaf="sections.stats"]')).not.toBeNull();
-  expect(stage.querySelector('[data-ds-leaf="sections.resource-list"]')).not.toBeNull();
+  expect(stage.querySelector('[data-provenance-leaf="sections.stats"]')).not.toBeNull();
+  expect(stage.querySelector('[data-provenance-leaf="sections.resource-list"]')).not.toBeNull();
   expect(unregisteredCopy(stage)).toEqual([]); expect(boldNodes(stage)).toEqual([]);
 });
 it("opens selected item details only in the frame inspector, then restores focus on close", async () => {
@@ -86,7 +86,7 @@ it("opens selected item details only in the frame inspector, then restores focus
   expect(stage.contains(detail)).toBe(false);
   expect(detail).toHaveFocus();
   expect(unregisteredCopy(detail)).toEqual([]);
-  expect(detail.querySelector('[data-ds-leaf="sections.data-table"]')).not.toBeNull();
+  expect(detail.querySelector('[data-provenance-leaf="sections.data-table"]')).not.toBeNull();
   fireEvent.click(within(detail).getByRole("button", { name: "Close item details" }));
   expect(screen.queryByRole("region", { name: "Home" })).toBeNull();
   expect(open).toHaveFocus();
@@ -95,10 +95,10 @@ it("rejects an unregistered wrapper and a raw item identity (mutation controls)"
   const page = mount({ planStore: await acceptedExampleStore() });
   const stage = page.container.querySelector("[data-publisher-stage]")!;
   expect(unregisteredCopy(stage)).toEqual([]);
-  const wrapper = document.createElement("section"); wrapper.dataset.dsLeaf = "sections.unregistered"; wrapper.textContent = "[[mutated]]"; stage.append(wrapper);
+  const wrapper = document.createElement("section"); wrapper.dataset.provenanceLeaf = "sections.unregistered"; wrapper.textContent = "[[mutated]]"; stage.append(wrapper);
   expect(unregisteredCopy(stage)).toEqual(["[[mutated]]"]);
   wrapper.remove();
-  const first = stage.querySelector('[data-ds-leaf="sections.resource-list"]')!;
+  const first = stage.querySelector('[data-provenance-leaf="sections.resource-list"]')!;
   const mutant = document.createElement("span"); mutant.textContent = "app.raw-secret-item"; first.append(mutant);
   expect(rawValues(stage, ["app.raw-secret-item"])).toContain("app.raw-secret-item");
 });

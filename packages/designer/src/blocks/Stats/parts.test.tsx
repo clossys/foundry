@@ -29,7 +29,7 @@ describe("Stats opt-in count", () => {
     const html = await nativeStatsMarkup(selection, <StatGroup aria-label="ExampleCo figures" items={items} motion="count" />);
     expect(html).toContain("2,481");
     expect(html).not.toMatch(/>0<|sr-only|aria-hidden/);
-    expect(html).toMatch(/<section[^>]+data-ds-leaf="sections.stats"/);
+    expect(html).toMatch(/<section[^>]+data-provenance-leaf="sections.stats"/);
   });
   it("stays static by default without a viewport observer", async () => {
     render(nativeStatsTree(selection, <StatGroup items={items} />));

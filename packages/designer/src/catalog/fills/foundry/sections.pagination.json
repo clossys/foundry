@@ -72,7 +72,7 @@
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
-            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+            "sha256": "d7e9c7483ea34e420632b86cca6d50a5eded29e05b41f77a74cc1140e2f68b4f"
           },
           {
             "path": "packages/designer/src/components/Banner.copy-context.tsx",

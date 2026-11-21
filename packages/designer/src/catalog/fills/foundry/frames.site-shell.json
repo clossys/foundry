@@ -64,6 +64,10 @@
             "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
           },
           {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "d7e9c7483ea34e420632b86cca6d50a5eded29e05b41f77a74cc1140e2f68b4f"
+          },
+          {
             "path": "packages/designer/src/components/button-classes.ts",
             "sha256": "cb78cb551dbe87b71eaaa8e8766026f13580da668fd4cc87b597fea2e951d887"
           },
@@ -85,7 +89,7 @@
           },
           {
             "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-            "sha256": "7a2914c7113a3f20295f7adb727ba7778ef4b49c117c93e25854b4aed93b5199"
+            "sha256": "52a5f4965a602dd5b50b7e5b1a43c16133efbf0d7bfc58548785039ed5147692"
           },
           {
             "path": "packages/designer/src/frames/site-frame/types.ts",

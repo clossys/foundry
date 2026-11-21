@@ -118,22 +118,22 @@ async function draw(input: CompositeEngineInput, changeOutput: (files: Composite
   const css = files.filter(file => file.path.endsWith(".css")).map(file => file.contents).join("\n");
   const html = renderToStaticMarkup(createElement("html", null, createElement("head", null, createElement("style", { "data-selected-library": profile.selectionHash }, css)), createElement("body", null, node)));
   const document = new JSDOM(html).window.document;
-  const frame = document.querySelector(`[data-ds-leaf="${FRAME}"]`)!;
+  const frame = document.querySelector(`[data-provenance-leaf="${FRAME}"]`)!;
   expect(frame, "selected Frame must render").not.toBeNull();
   const frameEntry = surfaceEntryOf(profile.surfaces!.fills[FRAME]!.document);
   if (!isSurfacePackageEntry(frameEntry)) throw new Error("Selected Frame is no longer a package pointer");
-  expect(frame.getAttribute("data-ds-fill")).toBe(frameEntry.origin!.fill);
+  expect(frame.getAttribute("data-provenance-fill")).toBe(frameEntry.origin!.fill);
   expect(frame.querySelectorAll("main")).toHaveLength(1);
-  const section = frame.querySelector(`main [data-ds-leaf="${SECTION}"]`)!;
+  const section = frame.querySelector(`main [data-provenance-leaf="${SECTION}"]`)!;
   expect(section, "selected Section must reach the Frame main slot").not.toBeNull();
   expect(section.querySelector("h2")!.textContent).toBe(app.heading);
   expect(section.querySelector("img")!.getAttribute("src")).toBe(markUrl);
-  const button = section.querySelector('[data-ds-leaf="components.button"]')!;
+  const button = section.querySelector('[data-provenance-leaf="components.button"]')!;
   expect(button, "selected component must reach the Section action slot").not.toBeNull();
   expect(button.textContent).toBe(app.body);
   // Strict stock-first (D3): the selected button is the stock shadcn@aria fill.
-  expect(button.getAttribute("data-ds-fill")).toBe("shadcn@aria/components.button");
-  const icon = button.querySelector('[data-ds-leaf="components.icon"]')!;
+  expect(button.getAttribute("data-provenance-fill")).toBe("shadcn@aria/components.button");
+  const icon = button.querySelector('[data-provenance-leaf="components.icon"]')!;
   expect(icon, "selected asset adapter must render within the selected component").not.toBeNull();
   const glyph = Object.values(profile.values.members).find(member => member.slot === GLYPH)!;
   for (const [tag, attributes] of glyph.value.light as [string, Record<string, string>][]) {
@@ -185,7 +185,7 @@ describe("selected library → Tokens → Assets → Components → Sections →
     const input = structuredClone(selected);
     input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "values", change: { op: "author", slot: GLYPH, tokens: { default: { $type: "glyph", $value: [["path", { d: "M3 4h17v15H3z" }]] } } } }] }, { componentOptions: input.componentOptions, surfaceOptions: input.surfaceOptions! });
     const updated = await draw(input);
-    expect(updated.document.querySelector('main [data-ds-leaf="components.icon"] path')!.getAttribute("d")).toBe("M3 4h17v15H3z");
+    expect(updated.document.querySelector('main [data-provenance-leaf="components.icon"] path')!.getAttribute("d")).toBe("M3 4h17v15H3z");
   });
 
   it("propagates a consumer token change through derived artwork to the actual rendered page", async () => {

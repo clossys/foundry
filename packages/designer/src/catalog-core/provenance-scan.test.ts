@@ -36,7 +36,7 @@ const binding: UsageBindingLike = { frame: { leaf: "frames.site" }, frameSlots: 
 interface Variant { readonly button?: ComponentType<{ children?: ReactNode }>; readonly stray?: boolean; readonly omitFaq?: boolean; readonly heroFill?: string }
 function render({ button: Action = Button, stray = false, omitFaq = false, heroFill }: Variant = {}): string {
   return renderToStaticMarkup(h("div", { ...page, className: "page" },
-    h("section", { ...hero, ...(heroFill ? { "data-ds-fill": heroFill } : {}), className: "hero" }, h("h1", null, "Welcome"), h(Action, null, "Start")),
+    h("section", { ...hero, ...(heroFill ? { "data-provenance-fill": heroFill } : {}), className: "hero" }, h("h1", null, "Welcome"), h(Action, null, "Start")),
     stray ? h(Action, null, "Stray") : null,
     omitFaq ? null : h("section", { ...faq, className: "faq" }, h("p", null, "Question")),
   ));
@@ -55,7 +55,7 @@ describe("provenance-scan over SSR fixtures (D3: WL1, WL5, WL6, WL7)", () => {
     const html = render();
     // Against the emitter-independent reference graph first: an emitter that stops stamping fails here with WL5 and WL7.
     expect(scan(html).findings).toEqual([]);
-    expect(html).toContain('data-ds-leaf="components.button"');
+    expect(html).toContain('data-provenance-leaf="components.button"');
     const first = scanProvenance({ html, route, selection });
     expect(first.findings).toEqual([]);
     expect(first.observations.map(row => [row.from, row.to, row.kind])).toEqual([
@@ -64,7 +64,7 @@ describe("provenance-scan over SSR fixtures (D3: WL1, WL5, WL6, WL7)", () => {
       ["sections.hero", "components.button", "composes"],
     ]);
     expect(first.observations.every(row => row.route === "home")).toBe(true);
-    expect(first.observations.find(row => row.to === "components.button")!.selector).toBe('[data-ds-leaf="pages.home"] [data-ds-leaf="sections.hero"] [data-ds-leaf="components.button"]');
+    expect(first.observations.find(row => row.to === "components.button")!.selector).toBe('[data-provenance-leaf="pages.home"] [data-provenance-leaf="sections.hero"] [data-provenance-leaf="components.button"]');
     expect(graph.edges.find(edge => edge.from === "sections.hero" && edge.to === "components.button")!.evidence).toEqual(["runtime"]);
     expect(render({ button: Reference })).toBe(html);
   });
@@ -78,7 +78,7 @@ describe("provenance-scan over SSR fixtures (D3: WL1, WL5, WL6, WL7)", () => {
   it("mutation: render a button outside a section and WL1 fires", () => {
     const findings = scan(render({ stray: true })).findings;
     expect(findings.filter(finding => finding.code === "WL1")).toEqual([
-      { code: "WL1", severity: "error", subject: "pages.home", message: "<button> renders outside any Section or Frame", selector: '[data-ds-leaf="pages.home"] [data-ds-leaf="components.button"]' },
+      { code: "WL1", severity: "error", subject: "pages.home", message: "<button> renders outside any Section or Frame", selector: '[data-provenance-leaf="pages.home"] [data-provenance-leaf="components.button"]' },
     ]);
     // The stray placement is also an edge the graph never declared.
     expect(findings.map(finding => finding.code)).toContain("WL5");
@@ -91,7 +91,7 @@ describe("provenance-scan over SSR fixtures (D3: WL1, WL5, WL6, WL7)", () => {
     expect(scan(render(), { route: { id: "home", binding: extra } }).findings.map(finding => [finding.code, finding.subject])).toEqual([["WL6", "sections.faq"]]);
   });
   it("WL7: a rendered fill other than the selection, and a package-pointer surface bound to another fill", () => {
-    expect(scan(render({ heroFill: "other/sections.hero" })).findings).toEqual([{ code: "WL7", severity: "error", subject: "sections.hero", message: "renders other/sections.hero, selection is foundry/sections.hero", selector: '[data-ds-leaf="pages.home"] [data-ds-leaf="sections.hero"]' }]);
+    expect(scan(render({ heroFill: "other/sections.hero" })).findings).toEqual([{ code: "WL7", severity: "error", subject: "sections.hero", message: "renders other/sections.hero, selection is foundry/sections.hero", selector: '[data-provenance-leaf="pages.home"] [data-provenance-leaf="sections.hero"]' }]);
     expect(scan(render(), { surfaces: [{ leaf: "sections.hero", components: { "components.button": "other/components.button" } }] }).findings).toEqual([{ code: "WL7", severity: "error", subject: "sections.hero", message: "binds components.button to other/components.button, selection is test-kit/components.button" }]);
     expect(scan(render(), { surfaces: [{ leaf: "sections.hero", components: { "components.button": "test-kit/components.button" } }] }).findings).toEqual([]);
   });
@@ -104,9 +104,9 @@ describe("provenance-scan over SSR fixtures (D3: WL1, WL5, WL6, WL7)", () => {
     expect(scan(render({ heroFill: "other/sections.hero" }), { selection: adopted, fillOrigins: { "acme/sections.hero": "foundry/sections.hero" } }).findings.filter(finding => finding.code === "WL7")).toHaveLength(1);
   });
   it("WL5: missing page root, malformed stamps, rendered leaves without a node and unselected graph endpoints", () => {
-    const bare = render().replace(/^<div data-ds-layer="pages" data-ds-leaf="pages.home" data-ds-fill="acme\/pages.home"/, "<div");
+    const bare = render().replace(/^<div data-provenance-layer="pages" data-provenance-leaf="pages.home" data-provenance-fill="acme\/pages.home"/, "<div");
     expect(scan(bare).findings.map(finding => [finding.code, finding.subject, finding.message])).toContainEqual(["WL5", "pages.home", "page root stamp is missing; the whole document is scanned as the page"]);
-    expect(codes(render().replace('data-ds-layer="sections" data-ds-leaf="sections.faq"', 'data-ds-layer="sections" data-ds-leaf="components.faq"'))).toContain("WL5");
+    expect(codes(render().replace('data-provenance-layer="sections" data-provenance-leaf="sections.faq"', 'data-provenance-layer="sections" data-provenance-leaf="components.faq"'))).toContain("WL5");
     const sparse = buildUsageGraph({ inventory, selection, pages: [{ routeId: "home", binding }] });
     expect(scan(render(), { graph: sparse }).findings.map(finding => [finding.code, finding.message])).toEqual([["WL5", "rendered composes edge sections.hero -> components.button is not in the usage graph"]]);
     const partial = Object.fromEntries(Object.entries(selection).filter(([leaf]) => leaf !== "sections.faq"));
@@ -121,18 +121,18 @@ describe("provenance-scan over SSR fixtures (D3: WL1, WL5, WL6, WL7)", () => {
     const framedGraph = buildUsageGraph({ inventory, selection, pages: [{ routeId: "home", binding }], runtime: scanProvenance({ html: good, route, selection }).observations });
     expect(scanProvenance({ html: good, route, selection, graph: framedGraph }).findings).toEqual([]);
     const loose = framed([h("div", { key: "loose", className: "card" }, "Loose"), h("section", { ...hero, key: "hero", className: "hero" }, h(Button, null, "Start")), h("section", { ...faq, key: "faq", className: "faq" }, "Q")]);
-    expect(scanProvenance({ html: loose, route, selection, graph: framedGraph }).findings).toEqual([{ code: "WL1", severity: "error", subject: "frames.site", message: "<div> in the frame content slot has no Section ancestor", selector: '[data-ds-leaf="pages.home"] [data-ds-leaf="frames.site"] div' }]);
+    expect(scanProvenance({ html: loose, route, selection, graph: framedGraph }).findings).toEqual([{ code: "WL1", severity: "error", subject: "frames.site", message: "<div> in the frame content slot has no Section ancestor", selector: '[data-provenance-leaf="pages.home"] [data-provenance-leaf="frames.site"] div' }]);
   });
   it("a Section rendered inside a selected Section is part of the outer fill, not its own placement", () => {
     const header = dsAttrs("sections", "sections.section-header", "foundry/sections.section-header");
     const html = render().replace("<h1>Welcome</h1>", renderToStaticMarkup(h("div", { ...header, className: "header" }, h("h1", null, "Welcome"))));
-    expect(html).toContain('data-ds-leaf="sections.section-header"');
+    expect(html).toContain('data-provenance-leaf="sections.section-header"');
     // Not selected, not declared, not in the graph: still no WL5, WL6 or WL7, and the button stays attributed to the hero.
     expect(scan(html).findings).toEqual([]);
     expect(scanProvenance({ html, route, selection }).observations.map(row => [row.from, row.to])).toEqual([["pages.home", "sections.faq"], ["pages.home", "sections.hero"], ["sections.hero", "components.button"]]);
   });
   it("is a pure markup reader: comments, raw text and attribute look-alikes are not stamps", () => {
-    const noise = '<!-- <div data-ds-layer="sections" data-ds-leaf="sections.x"> --><script>"<button class=x>"</script><style>.a>b{}</style>';
+    const noise = '<!-- <div data-provenance-layer="sections" data-provenance-leaf="sections.x"> --><script>"<button class=x>"</script><style>.a>b{}</style>';
     expect(scan(render().replace("<h1>", `${noise}<h1 title="a &gt; b">`)).findings).toEqual([]);
     expect(Object.keys(PROVENANCE_FINDING_CODES)).toEqual(["WL1", "WL5", "WL6", "WL7"]);
   });

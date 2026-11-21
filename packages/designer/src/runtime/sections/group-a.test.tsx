@@ -111,9 +111,9 @@ describe("group-a Section runtime renderers", () => {
     const html = rendered(leaf);
     expect(wiring(leaf, html), "WL1/WL5/WL6/WL7 provenance findings").toEqual([]);
     const container = mounted(html), view = within(container);
-    const root = container.querySelector(`[data-ds-leaf="sections.${leaf}"]`);
+    const root = container.querySelector(`[data-provenance-leaf="sections.${leaf}"]`);
     expect(root, "stamped Section root").not.toBeNull();
-    expect(root!.getAttribute("data-ds-fill")).toBe(`foundry/sections.${leaf}`);
+    expect(root!.getAttribute("data-provenance-fill")).toBe(`foundry/sections.${leaf}`);
     expect(container.querySelector("main")!.firstElementChild).toBe(root);
     ROLES[leaf](view, container);
   });

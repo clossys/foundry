@@ -18,7 +18,7 @@ describe("sections.stats selected runtime and Studio contribution", () => {
     expect(container.querySelectorAll('[data-slot="card"]')).toHaveLength(4);
     expect(container.querySelectorAll('[data-slot="card-content"]')).toHaveLength(4);
     expect(screen.getByText("2,481")).toBeVisible();
-    expect(container.querySelector('section[data-ds-leaf="sections.stats"]')).toBeTruthy();
+    expect(container.querySelector('section[data-provenance-leaf="sections.stats"]')).toBeTruthy();
   });
   it("honors row selection and caller copy rather than specimen copy", async () => {
     const value = input([{ id: "one", label: "Writer customers", value: 91, delta: "+2", trend: "up" }]);

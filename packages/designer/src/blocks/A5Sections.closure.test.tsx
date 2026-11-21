@@ -18,14 +18,14 @@ afterEach(() => vi.unstubAllGlobals());
 
 it("F3 applies one content gutter binding across stats, notices and records", () => {
   const { container } = render(copy(sections));
-  const roots = [...container.querySelectorAll<HTMLElement>("[data-ds-leaf]")].filter(node => ["sections.stats", "sections.notices", "sections.resource-list"].includes(node.dataset.dsLeaf!));
+  const roots = [...container.querySelectorAll<HTMLElement>("[data-provenance-leaf]")].filter(node => ["sections.stats", "sections.notices", "sections.resource-list"].includes(node.dataset.provenanceLeaf!));
   expect(roots).toHaveLength(3);
   for (const root of roots) expect(root.style.paddingInline).toBe("var(--spacing-lg)");
 });
 
 it("F9 expresses the shared gutter logically in RTL", () => {
   const { container } = render(<div dir="rtl">{copy(sections)}</div>);
-  for (const root of container.querySelectorAll<HTMLElement>("[data-ds-leaf]")) {
+  for (const root of container.querySelectorAll<HTMLElement>("[data-provenance-leaf]")) {
     expect(root.style.paddingInline).toBe("var(--spacing-lg)");
     expect(root.style.paddingLeft).toBe("");
     expect(root.style.paddingRight).toBe("");

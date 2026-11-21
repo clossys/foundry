@@ -99,7 +99,7 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/ModelTable.tsx",
-            "sha256": "427ce186b9dfa602785340cdc31950783b303aebf64ff75ae367fee7f895efb5"
+            "sha256": "2f2615c518cffd637cee619db93a83075c2ff31ba5168ab145880f7f3ef616b6"
           },
           {
             "path": "packages/designer/src/blocks/data-table/PivotGrid.tsx",
@@ -139,7 +139,7 @@
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
-            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+            "sha256": "d7e9c7483ea34e420632b86cca6d50a5eded29e05b41f77a74cc1140e2f68b4f"
           },
           {
             "path": "packages/designer/src/components/Banner.copy-context.tsx",

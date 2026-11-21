@@ -7,6 +7,7 @@ import type { SpecimenPublishedPage } from "./specimen-content-ports.js";
 import type { SpecimenTokenHostParts } from "./specimen-token-host-part-types.js";
 import { componentSpecimenPreview, type ComponentSpecimenBinding, type ComponentSpecimenComponent } from "./component-specimens.js";
 import { componentLeaf, type GridListLeaf } from "../runtime/component-leaf.js";
+import { DS_ATTR } from "../catalog-core/provenance-attrs.js";
 
 const Content = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const List = componentLeaf<GridListLeaf>("components.grid-list");
@@ -180,11 +181,11 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
   const mobile = useMobile();
   const semantic = specimenComponent(context, "components.semantic-content");
   if ("reason" in semantic) return need(semantic);
-  const fail = (reason: string) => <Content as="div" data-ds-leaf={id} data-ds-specimen-need="true">{need({ leaf: id, reason })}</Content>;
+  const fail = (reason: string) => <Content as="div" {...{ [DS_ATTR.leaf]: id }} data-ds-specimen-need="true">{need({ leaf: id, reason })}</Content>;
   if (!items.length) return fail("A specimen requires at least one cell-authored item.");
   if (new Set(items.map(item => item.id)).size !== items.length) return fail("Specimen item ids must be unique.");
-  const itemNode = (item: SpecimenItem) => <Content as="div" key={item.id} data-ds-leaf={id} data-ds-specimen-section={id} data-ds-specimen-item={item.id} data-ds-specimen-coordinates={JSON.stringify(item.coordinates ?? {})} className="min-w-0 max-w-full">{renderItem(item)}</Content>;
-  const region = (children: ReactNode) => <Content as="section" data-ds-leaf={id} data-ds-specimen-region={id} data-ds-specimen-section={id} data-ds-specimen-layout={items.length === 1 ? "single" : layout} className="flex min-w-0 w-full flex-col gap-md">{children}</Content>;
+  const itemNode = (item: SpecimenItem) => <Content as="div" key={item.id} {...{ [DS_ATTR.leaf]: id }} data-ds-specimen-section={id} data-ds-specimen-item={item.id} data-ds-specimen-coordinates={JSON.stringify(item.coordinates ?? {})} className="min-w-0 max-w-full">{renderItem(item)}</Content>;
+  const region = (children: ReactNode) => <Content as="section" {...{ [DS_ATTR.leaf]: id }} data-ds-specimen-region={id} data-ds-specimen-section={id} data-ds-specimen-layout={items.length === 1 ? "single" : layout} className="flex min-w-0 w-full flex-col gap-md">{children}</Content>;
   // A singleton is the specimen itself: no collection, headings or disclosure.
   if (items.length === 1) return region(itemNode(items[0]!));
   if (layout === "single") return fail("A single-layout specimen cannot accept multiple items.");
@@ -194,7 +195,7 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
   const listItem = (item: Pick<SpecimenItem, "id" | "label">, children: ReactNode) => list.source === "shadcn@aria"
     ? <GridListItem key={item.id} id={item.id} textValue={item.label} className="min-w-0 flex-col items-start">{children}</GridListItem>
     : <ListItem key={item.id} id={item.id} textValue={item.label} className="min-w-0 flex-col items-start">{children}</ListItem>;
-  const listOf = (entries: readonly SpecimenItem[], grid = false) => <List data-ds-leaf="components.grid-list" aria-label={label} layout={grid ? "grid" : "list"} selectionMode="none">
+  const listOf = (entries: readonly SpecimenItem[], grid = false) => <List {...{ [DS_ATTR.leaf]: "components.grid-list" }} aria-label={label} layout={grid ? "grid" : "list"} selectionMode="none">
     {entries.map(item => listItem(item, <><Content as="h4">{item.label}</Content>{itemNode(item)}</>))}
   </List>;
   const axes = props.axes ?? [];
@@ -218,9 +219,9 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
         const rows = row.values.filter(value => grouped.some(item => item.coordinates![row.id] === value.id));
         const groupLabel = stack.map(axis => `${axis.label}: ${axis.values.find(value => value.id === grouped[0]!.coordinates![axis.id])!.label}`).join(" · ");
         const lookup = (rowId: string, colId: string) => grouped.find(item => item.coordinates![row.id] === rowId && item.coordinates![column.id] === colId);
-        const body = mobile ? <List data-ds-leaf="components.grid-list" aria-label={groupLabel || label} layout="list" selectionMode="none">{rows.map(value => listItem(value, <>
+        const body = mobile ? <List {...{ [DS_ATTR.leaf]: "components.grid-list" }} aria-label={groupLabel || label} layout="list" selectionMode="none">{rows.map(value => listItem(value, <>
           <Content as="h4">{row.label}: {value.label}</Content>{column.values.map(col => { const item = lookup(value.id, col.id); return item ? <Content as="section" key={col.id} className="flex min-w-0 flex-col gap-sm"><Content as="h5">{column.label}: {col.label}</Content>{itemNode(item)}</Content> : null; })}
-        </>))}</List> : <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>
+        </>))}</List> : <Table {...{ [DS_ATTR.leaf]: "components.table" }} aria-label={groupLabel || label}>
           <TableHeader><TableHead isRowHeader>{row.label}</TableHead>{column.values.map(col => <TableHead key={col.id}>{col.label}</TableHead>)}</TableHeader>
           <TableBody>{rows.map(value => <TableRow id={value.id} key={value.id}><TableCell textValue={value.label}>{value.label}</TableCell>{column.values.map(col => { const item = lookup(value.id, col.id); return <TableCell key={col.id} textValue={item?.label ?? col.label}>{item ? itemNode(item) : null}</TableCell>; })}</TableRow>)}</TableBody>
         </Table>;
@@ -233,5 +234,5 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
   if ("reason" in disclosure) return fail(disclosure.reason);
   const Item = disclosure.exports.AccordionItem, Trigger = disclosure.exports.AccordionTrigger, Panel = disclosure.exports.AccordionContent;
   if (!component(Item) || !component(Trigger) || !component(Panel)) return fail("The selected accordion has no native item, trigger and content API.");
-  return region(<>{draw(first)}<Accordion data-ds-leaf="components.disclosure"><AccordionItem id={`${id}-all`}><AccordionTrigger>{labels.showAllVariants(items.length)}</AccordionTrigger><AccordionContent>{draw(rest)}</AccordionContent></AccordionItem></Accordion></>);
+  return region(<>{draw(first)}<Accordion {...{ [DS_ATTR.leaf]: "components.disclosure" }}><AccordionItem id={`${id}-all`}><AccordionTrigger>{labels.showAllVariants(items.length)}</AccordionTrigger><AccordionContent>{draw(rest)}</AccordionContent></AccordionItem></Accordion></>);
 }

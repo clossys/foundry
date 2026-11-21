@@ -77,7 +77,7 @@ test("a propMap adapter that only renders its target table is its targets' ident
 });
 test("a stamp adapter that only creates its target is the target's identity; a stamped copy is a duplicate", () => {
   const { root, write } = fixture();
-  const adapter = (target, name) => `import { createElement, forwardRef, type ComponentType } from "react";\nimport { ${name} as Impl0 } from "./${target}.js";\nconst stamp = { "data-ds-leaf": "components.example" } as const;\nconst target = Impl0 satisfies (props: never) => unknown;\nconst Stamped = forwardRef<unknown, Record<string, unknown>>(function Control(props, ref) { return createElement(target as unknown as ComponentType<Record<string, unknown>>, { ...props, ...stamp, ref }); });\nexport const Control = Object.assign(Stamped, {}) as unknown as typeof Impl0;\n`;
+  const adapter = (target, name) => `import { createElement, forwardRef, type ComponentType } from "react";\nimport { ${name} as Impl0 } from "./${target}.js";\nconst stamp = { "data-provenance-leaf": "components.example" } as const;\nconst target = Impl0 satisfies (props: never) => unknown;\nconst Stamped = forwardRef<unknown, Record<string, unknown>>(function Control(props, ref) { return createElement(target as unknown as ComponentType<Record<string, unknown>>, { ...props, ...stamp, ref }); });\nexport const Control = Object.assign(Stamped, {}) as unknown as typeof Impl0;\n`;
   write("packages/designer/src/stamped.ts", adapter("components", "Control"));
   const report = checkOneLeafSource(root, ["components"]);
   assert.equal(report.ok, true, JSON.stringify(report.violations));

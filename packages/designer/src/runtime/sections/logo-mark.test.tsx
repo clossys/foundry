@@ -65,9 +65,9 @@ describe("sections.logo-mark", () => {
 
   it("emits the selected logo-mark section and fill provenance", () => {
     const html = renderToStaticMarkup(<main {...dsAttrs("pages", "pages.logo-mark-test", "foundry/pages.logo-mark-test")}>{logoMarkRenderer.render(input())}</main>);
-    expect(html).toContain('data-ds-leaf="sections.logo-mark"');
-    expect(html).toContain('data-ds-fill="foundry/sections.logo-mark"');
-    expect(html).not.toContain('data-ds-leaf="sections.logo-hero"');
+    expect(html).toContain('data-provenance-leaf="sections.logo-mark"');
+    expect(html).toContain('data-provenance-fill="foundry/sections.logo-mark"');
+    expect(html).not.toContain('data-provenance-leaf="sections.logo-hero"');
     expect(scanProvenance({ html,
       route: { id: "logo-mark-test", binding: { frame: { leaf: "frames.app-shell" }, frameSlots: {}, sections: { main: [{ leaf, fill: "foundry/sections.logo-mark" }] } } },
       selection: { [leaf]: "foundry/sections.logo-mark" },

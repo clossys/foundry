@@ -83,10 +83,10 @@ function draw(sectionLeaves: readonly string[], overrides: Parameters<typeof ass
   const node = prepared.assembly.render(prepared.assembly.snapshot.cells[0]!);
   const html = renderToStaticMarkup(<div {...dsAttrs("pages", "pages.wave-one", "consumer/pages.wave-one")}>{node}</div>);
   const document = new JSDOM(html).window.document;
-  const frame = document.querySelector(`[data-ds-leaf="${FRAME}"]`)!;
+  const frame = document.querySelector(`[data-provenance-leaf="${FRAME}"]`)!;
   expect(frame, "the package-owned AuthFrame must render").not.toBeNull();
   expect(frame.hasAttribute("data-frame-root")).toBe(true);
-  expect(frame.getAttribute("data-ds-fill")).toBe(fixture.plan.origins[fixture.input.binding.frame.fill]);
+  expect(frame.getAttribute("data-provenance-fill")).toBe(fixture.plan.origins[fixture.input.binding.frame.fill]);
   expect(frame.querySelectorAll("main")).toHaveLength(1);
   const main = frame.querySelector("main")!;
   expect(main.getAttribute("tabindex")).toBe("-1");
@@ -94,13 +94,13 @@ function draw(sectionLeaves: readonly string[], overrides: Parameters<typeof ass
   expect(skip, "the skip link must target AuthFrame's actual main").not.toBeNull();
   expect(skip.textContent).toBe(specimenDataset.frames.app.skipLabel);
   expect(frame.querySelector("header,footer,nav")).toBeNull();
-  const stamped = [...document.querySelectorAll("[data-ds-leaf][data-ds-fill]")];
-  const selection = Object.fromEntries(stamped.map(node => [node.getAttribute("data-ds-leaf")!, node.getAttribute("data-ds-fill")!]));
+  const stamped = [...document.querySelectorAll("[data-provenance-leaf][data-provenance-fill]")];
+  const selection = Object.fromEntries(stamped.map(node => [node.getAttribute("data-provenance-leaf")!, node.getAttribute("data-provenance-fill")!]));
   for (const fill of fixture.plan.manifest.fills) selection[fill.leaf] = fill.fill;
   const provenance = scanProvenance({ html, route: { id: "wave-one", binding: fixture.input.binding }, selection, fillOrigins: fixture.plan.origins });
   expect(provenance.findings).toEqual([]);
   for (const leaf of sectionLeaves) {
-    expect(main.querySelector(`[data-ds-leaf="${leaf}"]`), `${leaf} must reach AuthFrame's main slot`).not.toBeNull();
+    expect(main.querySelector(`[data-provenance-leaf="${leaf}"]`), `${leaf} must reach AuthFrame's main slot`).not.toBeNull();
     expect(provenance.observations.map(row => `${row.from} -> ${row.to}`)).toContain(`${FRAME} -> ${leaf}`);
   }
   return { ...fixture, document, frame, main, html, snapshot: prepared.assembly.snapshot };
@@ -127,7 +127,7 @@ describe("wave-one installed package → consumer library → runtime assembly �
       header: { heading: "Access your library", description: "Continue with your library credentials." },
       credentials: { identifierLabel: "Library account", passwordLabel: "Library password" },
     } });
-    const section = main.querySelector(`[data-ds-leaf="${SIGN_IN}"]`)!;
+    const section = main.querySelector(`[data-provenance-leaf="${SIGN_IN}"]`)!;
     expect(section.querySelector("h1,h2")!.textContent).toBe("Access your library");
     expect(section.textContent).toContain("Continue with your library credentials.");
     const form = section.querySelector("form")!;
@@ -142,14 +142,14 @@ describe("wave-one installed package → consumer library → runtime assembly �
 
   it("renders a logo-only opening Section from registered consumer artwork with zero visible copy", () => {
     const { main, markSrc, artwork, input, snapshot } = draw([LOGO]);
-    const section = main.querySelector(`[data-ds-leaf="${LOGO}"]`)!;
+    const section = main.querySelector(`[data-provenance-leaf="${LOGO}"]`)!;
     expect(section.querySelectorAll("img")).toHaveLength(1);
     expect(section.querySelector("img")!.getAttribute("src")).toBe(markSrc);
     expect(section.querySelector("img")!.getAttribute("alt")).toBe("");
     expect(section.textContent).toBe("");
     expect(section.querySelector("h1,h2,h3,p,a,button")).toBeNull();
     expect(section.hasAttribute("data-designer-section-frame")).toBe(true);
-    expect(main.querySelector('[data-ds-leaf="sections.logo-hero"]')).toBeNull();
+    expect(main.querySelector('[data-provenance-leaf="sections.logo-hero"]')).toBeNull();
     expect(input.ports.manifest.assetClosure).toEqual({ complete: true, ids: ["assets.mark"] });
     expect(new TextDecoder().decode(new Uint8Array(input.assets[0]!.bytes))).toBe(artwork);
     expect((snapshot.data as { assets: unknown }).assets).toEqual(input.assets);
@@ -163,10 +163,10 @@ describe("wave-one installed package → consumer library → runtime assembly �
 
   it("composes a standalone authored error through the same AuthFrame and provenance oracle", () => {
     const { main } = draw([ERROR]);
-    const section = main.querySelector(`[data-ds-leaf="${ERROR}"]`)!;
+    const section = main.querySelector(`[data-provenance-leaf="${ERROR}"]`)!;
     expect(section.querySelector("h2")!.textContent).toBe(specimenDataset.sections.errorState.title);
     expect(section.querySelector("h1")).toBeNull();
-    expect(section.querySelector('[data-ds-leaf="sections.section-header"]')!.textContent).toContain(specimenDataset.sections.errorState.code);
+    expect(section.querySelector('[data-provenance-leaf="sections.section-header"]')!.textContent).toContain(specimenDataset.sections.errorState.code);
     expect(section.textContent).toContain(specimenDataset.sections.errorState.title);
     expect(section.querySelector(`a[href="${specimenDataset.sections.errorState.report.href}"]`)!.textContent).toBe(specimenDataset.sections.errorState.report.label);
   });

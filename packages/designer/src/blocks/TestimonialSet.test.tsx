@@ -65,7 +65,7 @@ describe("TestimonialSet", () => {
     expect(figure.querySelector("figcaption strong")).toHaveTextContent("Alex Example");
     expect(figure.querySelector("figcaption [aria-hidden=true]")?.firstElementChild).toBe(screen.getByTestId("authored-portrait"));
     expect(container.querySelectorAll('li > [data-slot="card"]')).toHaveLength(1);
-    expect(list).toHaveAttribute("data-ds-leaf", "sections.testimonials");
+    expect(list).toHaveAttribute("data-provenance-leaf", "sections.testimonials");
     expect(card).not.toHaveAttribute("variant"); expect(card).not.toHaveAttribute("ground");
   });
 

@@ -1,16 +1,16 @@
 /**
- * DOM provenance stamps (D1). The only source of the `data-ds-*` attribute names and values: the
+ * DOM provenance stamps (D1). The only source of the `data-provenance-*` attribute names and values: the
  * component emitter embeds its result, section roots and the publisher page root spread it, and
  * provenance-scan reads the same names back. Pure and dependency-free, so any layer may import it.
  */
 export type DsLayer = "components" | "sections" | "frames" | "pages";
 export const DS_LAYERS: readonly DsLayer[] = Object.freeze(["components", "sections", "frames", "pages"]);
 /** Attribute names, namespaced away from `data-slot` (shadcn@aria), `data-part`/`data-surface` (Foundry) and `data-layer` (specimens). */
-export const DS_ATTR = Object.freeze({ layer: "data-ds-layer", leaf: "data-ds-leaf", fill: "data-ds-fill" } as const);
+export const DS_ATTR = Object.freeze({ layer: "data-provenance-layer", leaf: "data-provenance-leaf", fill: "data-provenance-fill" } as const);
 export interface DsAttrs {
-  readonly "data-ds-layer": DsLayer;
-  readonly "data-ds-leaf": string;
-  readonly "data-ds-fill": string;
+  readonly [DS_ATTR.layer]: DsLayer;
+  readonly [DS_ATTR.leaf]: string;
+  readonly [DS_ATTR.fill]: string;
 }
 /** `components.button`; a page leaf is `pages.<route or instance id>`. */
 const LEAF = /^(components|sections|frames)\.[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -29,8 +29,9 @@ export function dsAttrs(layer: DsLayer, leaf: string, fill: string): DsAttrs {
  * Rendered markup with every provenance stamp removed: for byte comparisons against markup captured
  * before stamping. Stamp values are attribute-safe by construction, so a quoted value never spans a quote.
  */
+const STAMP_ATTRIBUTE = new RegExp(` (?:${Object.values(DS_ATTR).join("|")})="[^"]*"`, "g");
 export function withoutDsAttrs(html: string): string {
-  return html.replace(/ data-ds-(?:layer|leaf|fill)="[^"]*"/g, "");
+  return html.replace(STAMP_ATTRIBUTE, "");
 }
 /**
  * The stamp a composing section passed through props, for a delegate root that forwards no other

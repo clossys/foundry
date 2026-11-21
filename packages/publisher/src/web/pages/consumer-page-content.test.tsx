@@ -176,15 +176,15 @@ it("binds exact list/item Publisher identities to authentic native frame and con
       const frameHtml=renderToStaticMarkup(<ShellCopyProvider resolver={shellCopy}>{full.assembly.render(runtime.cell)}</ShellCopyProvider>);
       expect(frameHtml).toContain('data-application-frame=""');
       expect(frameHtml).toContain(f.copy(f.config.title));
-      expect(frameHtml).toContain('data-ds-leaf="sections.section-header"');
+      expect(frameHtml).toContain('data-provenance-leaf="sections.section-header"');
       expect(frameHtml).not.toContain('data-application-frame-region="page-module"');
       expect(shellProvenance.length).toBeGreaterThan(0);
       expect(shellProvenance.every(value=>value.status==="draft"&&value.activation==="none")).toBe(true);
       expect(resolveAdminCopyRef(shellProvenance[0]!.ref)).toBeUndefined();
     }
     const html=renderToStaticMarkup(<>{result.renderRegions!(runtime.cell).chunks?.flatMap(chunk=>chunk.content??[])}</>);
-    expect(html).toContain(f.copy(f.config.title));expect(html).toContain('data-ds-leaf="sections.section-header"');
-    if(item)expect(html).toContain('data-ds-leaf="sections.data-table"');else expect(html).toContain("text-center");
+    expect(html).toContain(f.copy(f.config.title));expect(html).toContain('data-provenance-leaf="sections.section-header"');
+    if(item)expect(html).toContain('data-provenance-leaf="sections.data-table"');else expect(html).toContain("text-center");
     const frame=f.planned.manifest.fills.find(fill=>fill.leaf==="frames.app-shell")!;
     expect(frame.renderer.source.files[frame.renderer.source.entry]).toContain('surfaceRuntimeRenderers["frames.app-shell"].render');
     expect(runtime.assembly.ports.renderers[frame.renderer.id]).toBe(surfaceRuntimeRenderers["frames.app-shell"]!.render);

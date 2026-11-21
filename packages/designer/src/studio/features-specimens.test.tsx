@@ -23,7 +23,7 @@ describe("selected Features specimens", () => {
     const view = render(<ConsumerComponentProvider value={selection}><Suspense><FeaturesSpecimen layout={layout} /></Suspense></ConsumerComponentProvider>);
     expect(await screen.findByRole("heading", { name: featuresSpecimenContent.header.heading })).toBeVisible();
     expect(view.container.querySelector('[data-slot="card"]')).toHaveClass("group/card");
-    expect(view.container.querySelector('[data-ds-leaf="sections.features"]')).toHaveAttribute("data-ds-fill", "foundry/sections.features");
+    expect(view.container.querySelector('[data-provenance-leaf="sections.features"]')).toHaveAttribute("data-provenance-fill", "foundry/sections.features");
     for (const item of featuresSpecimenContent.items) expect(isImageResource(item.figure.resource)).toBe(true);
     for (const member of input.selection.members) expect(featuresInputs.members).toContain(member);
     if (layout === "tabs") {

@@ -55,7 +55,7 @@ describe("slide twins on the slide medium", () => {
     const preview = surfaceRuntimePreview(entryOf(entry.replacedBy), { members, sectionHost: copyPortsFor(entry.replacedBy) });
     if (!("render" in preview)) throw new Error(`${entry.replacedBy} on the slide medium refused: ${preview.reason}`);
     const { container } = render(<ShellCopyProvider resolver={shellCopyFixtureResolver}>{preview.render()}</ShellCopyProvider>);
-    expect(container.innerHTML).toContain(`data-ds-leaf="${entry.replacedBy}"`);
+    expect(container.innerHTML).toContain(`data-provenance-leaf="${entry.replacedBy}"`);
     expect(container.textContent!.trim().length).toBeGreaterThan(0);
   });
 });

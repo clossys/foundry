@@ -1,5 +1,5 @@
 /**
- * Provenance scan (D3): a pure reader of server-rendered HTML. It reads the `data-ds-*` stamps that
+ * Provenance scan (D3): a pure reader of server-rendered HTML. It reads the `data-provenance-*` stamps that
  * provenance-attrs alone writes, reports wiring findings for one route and returns the runtime
  * observations a usage graph accepts as `runtime` input. No DOM, no network and no React: the input
  * is the markup string, the route's binding, the selection and (optionally) the route's usage graph.
