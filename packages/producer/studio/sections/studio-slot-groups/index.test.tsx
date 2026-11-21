@@ -20,7 +20,7 @@ describe('slot-groups gallery (R2F-03b)', () => {
     const rows = [...document.querySelectorAll('[data-slot="field-group"] > [data-slot="field"]')];
     expect(rows.map(row => row.getAttribute('data-orientation'))).toEqual(['responsive', 'responsive']);
     expect(rows.map(row => [...row.children].map(cell => cell.getAttribute('data-slot')))).toEqual([['field-content', 'field-content'], ['field-content', 'field-content']]);
-    expect(rows.map(row => [...row.querySelectorAll('[data-slot-card]')].map(node => node.getAttribute('data-slot-card')))).toEqual([['a', 'b'], ['c']]);
+    expect(rows.map(row => [...row.querySelectorAll('[data-studio-slot-card]')].map(node => node.getAttribute('data-studio-slot-card')))).toEqual([['a', 'b'], ['c']]);
     expect(rows[1]!.lastElementChild!.getAttribute('aria-hidden')).toBe('true');
     expect(rows[1]!.lastElementChild!.children).toHaveLength(0);
   });
@@ -51,7 +51,7 @@ describe('slot-groups gallery (R2F-03b)', () => {
     const document = render({ empty: 'none', groups: [{ id: 'g', label: 'Group', cards: [cited, card('plain', { name: 'plain', kind: 'record', empty: EMPTY, citation: null })] }] });
     const lines = [...document.querySelectorAll('[data-citation]')];
     expect(lines.map(node => [node.getAttribute('data-citation'), node.textContent])).toEqual([['check:slot-pins', 'check:slot-pins · Passed']]);
-    expect(lines[0]!.closest('[data-slot-card]')!.getAttribute('data-slot-card')).toBe('cited');
+    expect(lines[0]!.closest('[data-studio-slot-card]')!.getAttribute('data-studio-slot-card')).toBe('cited');
   });
 
   it('never sets a long decision line (Not needed: <reason>) in a single-line badge, so it cannot widen the card', () => {

@@ -56,7 +56,7 @@
           },
           {
             "path": "packages/designer/src/blocks/TestimonialSet.tsx",
-            "sha256": "0871bc178ba56c93ffccd768f85c40e39df3b245990725c599ec5705cc90f789"
+            "sha256": "67b0073898ee5d100ca9bd9585d075105c785252c5e071bd2bbb8be2a4991918"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

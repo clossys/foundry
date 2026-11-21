@@ -38,7 +38,7 @@ export const adoptedLoopBasePath = (loop: AgentLoopName): string => `${AGENT_LOO
 
 /**
  * The loop runner's consumer edge on an agent loop slot (foundry-build-0048 CONSISTENCY D5 option 3): the slot is
- * consumed by the Producer loop it extends, named by that loop's package version
+ * used by the Producer loop it extends, named by that loop's package version
  * (`producer/<loop>/package:<stem>-v1.json`). It is a recorded edge, not an exemption: ia.orphans walks it backward
  * from the runner's roots (check/ia-orphans.ts RUNNER_ROOTS), and a slot without it is an orphan.
  */

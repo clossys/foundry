@@ -48,7 +48,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/internal/section-content-gutter.ts",
-            "sha256": "330c44a01a51488d6781d166ea8f2ca1a6d5e4ad4f39c2a68b73b9a2cd1337e2"
+            "sha256": "877e84e277cbf9c8c8f62c543e10d87f04c879c0042340a04527b5cda1585a39"
           },
           {
             "path": "packages/designer/src/blocks/internal/trend.ts",

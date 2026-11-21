@@ -17,21 +17,21 @@ describe("Hero backdrop kind specimen", () => {
     const { container } = render(<MarketingComponentProvider><Suspense><HeroSpecimen backdrop={backdrop} /></Suspense></MarketingComponentProvider>);
     await screen.findByRole("heading", { name: HERO_SPECIMEN_COPY["header.heading"] });
     const section = container.querySelector("section")!;
-    expect(section).toHaveAttribute("data-hero-backdrop-kind", kind);
+    expect(section).toHaveAttribute("data-backdrop-kind", kind);
     if (kind === "none") {
-      expect(section.querySelector("[data-hero-backdrop]")).toBeNull();
+      expect(section.querySelector("[data-backdrop-still]")).toBeNull();
       expect(screen.queryByRole("status")).toBeNull();
     } else if (kind === "image") {
-      expect(section.querySelector("[data-hero-backdrop] svg path")).toHaveAttribute("fill", "var(--color-action)");
+      expect(section.querySelector("[data-backdrop-still] svg path")).toHaveAttribute("fill", "var(--color-action)");
       expect(screen.queryByRole("status")).toBeNull();
     } else if (kind === "video") {
-      expect(section.querySelector("[data-hero-backdrop] svg path")).toHaveAttribute("fill", "var(--color-action)");
+      expect(section.querySelector("[data-backdrop-still] svg path")).toHaveAttribute("fill", "var(--color-action)");
       expect(section.querySelector("video")).toBeNull();
       expect(section.querySelector("[data-media-passive]")).toBeNull();
       expect(screen.getByRole("status")).toHaveTextContent(HERO_BACKDROP_SPECIMENS[2].backdrop.missingVideoMessage);
     } else {
-      expect(section.querySelector("[data-hero-live-backdrop]")).not.toBeNull();
-      expect(section.querySelector("[data-hero-live-backdrop]")!.getAttribute("style")).toContain("linear-gradient(var(--color-line-strong)");
+      expect(section.querySelector("[data-backdrop-live]")).not.toBeNull();
+      expect(section.querySelector("[data-backdrop-live]")!.getAttribute("style")).toContain("linear-gradient(var(--color-line-strong)");
       expect(screen.queryByRole("status")).toBeNull();
     }
   });
@@ -43,7 +43,7 @@ describe("Hero backdrop kind specimen", () => {
       await screen.findByRole("heading", { name: HERO_SPECIMEN_COPY["header.heading"] });
       expect(screen.getByRole("status")).toHaveTextContent(HERO_BACKDROP_SPECIMENS[2].backdrop.missingVideoMessage);
       expect(container.querySelector("video,source")).toBeNull();
-      expect(container.querySelector("[data-hero-backdrop] svg path")).not.toBeNull();
+      expect(container.querySelector("[data-backdrop-still] svg path")).not.toBeNull();
       expect(play).not.toHaveBeenCalled();
       expect(screen.getByRole("status").textContent).not.toMatch(/NEED|components\.|renderer/i);
       expect(JSON.stringify(HERO_BACKDROP_SPECIMENS[2].backdrop)).not.toContain("/specimens/");

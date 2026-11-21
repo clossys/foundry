@@ -46,7 +46,7 @@ const LAYOUT_CLASSES: Record<RecordCardsLayout, string> = {
 export function RecordCards({ records, config, locale, layout = "grid", headingLevel = 3, className, ...rest }: RecordCardsProps) {
   const heading = headingLevel === 2 ? "h2" : headingLevel === 4 ? "h4" : "h3";
   for (const record of records) if (record.image !== undefined && !isImageResource(record.image)) throw new TypeError("RecordCards requires a valid image resource");
-  return <SemanticContent as="ul" {...SECTION_STAMP} {...rest} role="list" data-card-config={config} data-layout={layout}
+  return <SemanticContent as="ul" {...SECTION_STAMP} {...rest} role="list" data-record-cards-config={config} data-layout={layout}
     className={cx(config === "post-featured" ? LAYOUT_CLASSES.list : LAYOUT_CLASSES[layout], className)}>
     {records.map(record => <SemanticContent as="li" key={record.id} className="flex min-w-0">
       <Card className="flex w-full flex-col gap-sm">

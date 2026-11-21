@@ -59,7 +59,7 @@ export const boardAnchor = (id: string): string => `designer-board-${id.replace(
 
 /** A board row's leaf id: the edit matrix marks its rows; a view row names its leaf in the shared leaf label. */
 export function boardRowLeaf(row: HTMLElement): string | undefined {
-  return row.dataset.studioRow ?? row.querySelector<HTMLElement>("[data-leaf-id]")?.textContent ?? undefined;
+  return row.dataset.studioRow ?? row.querySelector<HTMLElement>("[data-library-leaf-id]")?.textContent ?? undefined;
 }
 /**
  * One canvas board: the registered `sections.comparison@library-board` Section and nothing drawn around it.

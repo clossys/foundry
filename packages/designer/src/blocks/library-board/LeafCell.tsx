@@ -37,8 +37,8 @@ export interface LeafCellProps extends Omit<HTMLAttributes<HTMLDivElement>, 'chi
 export function LeafCell({ preview, status, actions, previewState, className, ...rest }: LeafCellProps) {
   return <Card {...rest} data-candidate-cell="" data-preview-state={previewState} data-ground={LEAF_CELL_FILL} className={['flex w-max items-center gap-md overflow-visible p-sm', className].filter(Boolean).join(' ')}>
     {preview}
-    <SemanticContent as="div" data-cell-status="" hidden={status == null} className={status == null ? undefined : 'text-ink-muted'}>{status}</SemanticContent>
-    <SemanticContent as="div" data-cell-actions="" hidden={actions == null} className={actions == null ? undefined : 'flex items-center gap-sm'}>{actions}</SemanticContent>
+    <SemanticContent as="div" data-candidate-cell-status="" hidden={status == null} className={status == null ? undefined : 'text-ink-muted'}>{status}</SemanticContent>
+    <SemanticContent as="div" data-candidate-cell-actions="" hidden={actions == null} className={actions == null ? undefined : 'flex items-center gap-sm'}>{actions}</SemanticContent>
   </Card>;
 }
 
@@ -73,8 +73,8 @@ export const BOARD_SURFACE_CLASS = 'flex h-max w-max shrink-0 flex-col gap-sm ro
  */
 export function LeafLabel({ id, label }: { readonly id: string; readonly label: ReactNode }) {
   const human = label !== id && label != null && label !== '' ? label : undefined;
-  return <SemanticContent as="span" data-leaf-label="" className="flex min-w-0 flex-col text-start font-normal">
+  return <SemanticContent as="span" data-library-leaf-label="" className="flex min-w-0 flex-col text-start font-normal">
     {human !== undefined ? <SemanticContent as="span" className="break-words text-ink-primary">{human}</SemanticContent> : null}
-    <SemanticContent as="span" data-leaf-id="" data-studio-data-value="" data-studio-data-kind="identifier" className={human !== undefined ? 'break-words font-mono tabular-nums text-caption text-ink-secondary' : 'break-words font-mono tabular-nums text-ink-primary'}>{id}</SemanticContent>
+    <SemanticContent as="span" data-library-leaf-id="" data-studio-data-value="" data-studio-data-kind="identifier" className={human !== undefined ? 'break-words font-mono tabular-nums text-caption text-ink-secondary' : 'break-words font-mono tabular-nums text-ink-primary'}>{id}</SemanticContent>
   </SemanticContent>;
 }

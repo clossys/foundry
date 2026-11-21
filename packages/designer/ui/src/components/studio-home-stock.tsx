@@ -20,7 +20,7 @@ export function HomeStockCensusCard(props: {
   candidates: React.ReactNode; candidatesLabel: string; pinnedLabel: string; icon: React.ReactNode; detail: string;
 }) {
   return (
-    <Card data-home-agent={props.id} data-census-state={props.state}>
+    <Card data-studio-home-agent={props.id} data-census-state={props.state}>
       <CardHeader>
         <CardDescription>{props.label}</CardDescription>
         <CardTitle aria-label={props.totalLabel}>{props.total}</CardTitle>

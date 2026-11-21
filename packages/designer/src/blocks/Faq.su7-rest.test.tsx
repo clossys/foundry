@@ -73,7 +73,7 @@ describe("selected FAQ disclosure section", () => {
     await screen.findAllByRole("button", { name: "First question" });
     const ids = Array.from(container.querySelectorAll("[id]")).map(element => element.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(container.querySelector("[data-faq-columns]")).not.toBeNull();
+    expect(container.querySelector("[data-question-columns]")).not.toBeNull();
   });
 
   it("renders the registered Studio FAQ specimen through its native caller data", async () => {

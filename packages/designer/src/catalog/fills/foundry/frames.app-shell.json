@@ -100,7 +100,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/AccountMenu.tsx",
-            "sha256": "37fe8f2a3d82326f5a028b1e5745dfcb1ee1c8825508ae7f3ebc0ee6f9f2db9d"
+            "sha256": "89e8595e4d47cbb0635dd6da34a080efe03fb4aa55c5e94dd38184c449950e7d"
           },
           {
             "path": "packages/designer/src/blocks/canvas/models.ts",
@@ -248,7 +248,7 @@
           },
           {
             "path": "packages/designer/src/shell/Toaster.tsx",
-            "sha256": "2076bd6428ce6b8c948a56fad5353586ea17f7568babc9ce0affa8994d22b31a"
+            "sha256": "5b9b4a0b332905876f9e956c6abd1b5aab0324c3ee3009865a1a7ffddf4eaab7"
           },
           {
             "path": "packages/designer/src/theme/internal/theme-core.ts",

@@ -177,7 +177,7 @@ function TokenMember({ id, member, values, context, need, semantic }: MemberProp
   else if (member.$type === "dimension" && /spacing|size|width|breakpoint/.test(member.slot)) return <><Content as="div" role="img" aria-label={id} className="block h-sm max-w-full bg-primary" style={{ inlineSize: css }} /><Content as="span">{css}</Content></>;
   else if (member.$type === "shadow") return <Content as="div" className="size-3xl bg-surface-raised" style={{ boxShadow: css }} aria-label={id} />;
   if (!style) return need({ leaf: member.slot, reason: `No value-applied specimen for ${id}.` });
-  return <Content as="p" data-type-sample={id} style={style}>{specimenDataset.tokens.sampleText}</Content>;
+  return <Content as="p" data-specimen-type-sample={id} style={style}>{specimenDataset.tokens.sampleText}</Content>;
 }
 
 /** Web Animations uses the selected values. Reduced motion never starts an animation. */

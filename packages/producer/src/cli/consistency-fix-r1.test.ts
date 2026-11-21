@@ -82,7 +82,7 @@ describe("the runner walk stops at the agent loop slot (fix r1, B1)", () => {
     expect(readFileSync(choose, "utf8")).toContain(`designer/${leaf}`);
     expect(runIaOrphans(root).findings.map(finding => finding.subject)).toEqual([`designer/${leaf}`]);
     expect(consumedLeaves(root).has(`designer/${leaf}`)).toBe(false);
-    // The loop slot itself is still consumed by its runner.
+    // Its runner still consumes the loop slot itself.
     expect(runIaOrphans(root).findings.some(finding => /\/loop\./.test(finding.subject))).toBe(false);
   }, 240_000);
 

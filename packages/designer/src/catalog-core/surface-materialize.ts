@@ -23,7 +23,7 @@ export async function materializeSurfaceSourceFill(input: SurfaceMaterialization
     const registry = input.catalog.surfaces;
     if (!registry)
         surfaceFault("S2 surface registry missing");
-    // Package-pointer candidates copy no bytes and are adopted by applySurfaceOperation, never materialized.
+    // Package-pointer candidates copy no bytes and are taken up by applySurfaceOperation, never materialized.
     const candidates = registry.fills.filter(doc => { const fill = surfaceEntryOf(doc); return !isSurfacePackageEntry(fill) && fill.slot === input.slot && fill.source === input.source; });
     if (candidates.length !== 1)
         surfaceFault("S2 unique upstream candidate required");

@@ -54,7 +54,7 @@ export interface ToasterProps {
    */
   toasterId?: string;
   /**
-   * `viewport` fixes the stack to the window (or frame stage) corner; `container` draws it in place
+   * `viewport` fixes the toasts to the window (or frame stage) corner; `container` draws them in place
    * inside whatever element mounts the Toaster.
    * @default "viewport"
    */
@@ -90,7 +90,7 @@ export interface ToasterProps {
  *
  * Drawn through the stock shadcn Sonner Toaster (`components/partners/shadcn/sonner.tsx`, MIT)
  * over sonner itself (MIT). Sonner supplies the store, stacking, swipe and
- * close dismissal, the auto-dismiss timer and its pause while the stack is
+ * close dismissal, the auto-dismiss timer and its pause while the toasts are
  * hovered, and the `section` landmark, labelled by `aria-label`, whose
  * `aria-live="polite"` region announces each toast. F6 moves focus to the
  * stack (`hotkey`), as the react-aria-components region did before. Sonner

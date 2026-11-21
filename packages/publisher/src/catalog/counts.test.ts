@@ -197,7 +197,7 @@ describe("starter publications and package defaults", () => {
     }
   });
 
-  it("every starter slot is consumed by a starter (starter.consumed-only)", () => {
+  it("every starter slot is used by a starter (starter.consumed-only)", () => {
     const consumed = new Set(STARTER_IDS.flatMap(id => { const s = loadStarter(id); return [...s.pages, ...s.layouts, ...s.chrome, s.release]; }));
     expect(starterLeaves().filter(id => !consumed.has(id))).toEqual([]);
   });

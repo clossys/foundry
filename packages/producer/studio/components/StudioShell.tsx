@@ -270,7 +270,7 @@ export function StudioShell({ frame: Frame, navigation, commands, breadcrumbs, c
   const pageCommands: ShellCommand[] = popovers.map(spec => {
     const Icon = studioIcon(spec.icon);
     return {
-      id: `popover:${spec.id}`, label: spec.label, icon: <Icon />, 'data-page-command': `popover:${spec.id}`,
+      id: `popover:${spec.id}`, label: spec.label, icon: <Icon />, 'data-studio-page-command': `popover:${spec.id}`,
       ...(spec.shortcut ? { shortcut: spec.shortcut } : {}),
       // The menu returns focus to the page as it closes; the popover opens after that.
       onAction: () => { setSearchOpen(false); setTimeout(() => show(spec.id), 0); },

@@ -16,7 +16,7 @@ const sh = (cwd: string, ...args: string[]) => execFileSync("git", args, { cwd, 
 
 /** A small repository: a tested module, a rule-count probe, a generated fixture and a receipt command. */
 const BASE: Record<string, string> = {
-  "package.json": `${JSON.stringify({ name: "fixture-repo", version: "1.0.0", private: true })}\n`,
+  "package.json": `${JSON.stringify({ name: "fixture-checkout", version: "1.0.0", private: true })}\n`,
   "src/math.mjs": "export function isAdult(age) {\n  return age >= 18;\n}\n",
   "src/math.test.mjs": [
     "import { test } from \"node:test\";",
@@ -229,7 +229,7 @@ describe("clossys review: arguments", () => {
 describe("clossys review: leak scan (the merge base's scanner, unchanged, on the head tree)", () => {
   // A stand-in scanner: fails, printing the secret detail, when the tree it runs in has a non-empty leaks.txt.
   const SCAN = "import { existsSync, readFileSync } from \"node:fs\";\nconst text = existsSync(\"leaks.txt\") ? readFileSync(\"leaks.txt\", \"utf8\").trim() : \"\";\nif (text) { console.error(`leak: ${text}`); process.exit(1); }\nconsole.log(\"clean\");\n";
-  const withScript = (script: string) => `${JSON.stringify({ name: "fixture-repo", version: "1.0.0", private: true, scripts: { "check:safety": script } })}\n`;
+  const withScript = (script: string) => `${JSON.stringify({ name: "fixture-checkout", version: "1.0.0", private: true, scripts: { "check:safety": script } })}\n`;
   const SCANNED = { "package.json": withScript("node scan.mjs ."), "scan.mjs": SCAN };
   const scanned = (head: Record<string, string | null>, base: Record<string, string | null> = SCANNED) => {
     const [repo, b, h] = fixture(head, base);

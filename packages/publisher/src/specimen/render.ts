@@ -58,9 +58,9 @@ function renderText(record: SpecimenRecord): string {
     const overChars = copy.maxChars !== undefined && chars > copy.maxChars;
     const limits = [`${chars}${copy.maxChars ? `/${copy.maxChars}` : ""} chars`, ...(copy.maxLines ? [`<span data-specimen-lines>?</span>/${copy.maxLines} lines`] : [])];
     const attrs = [
-      `data-copy-key="${escapeHtml(key)}"`, `data-role="${role}"`, `data-chars="${chars}"`,
-      ...(copy.maxChars ? [`data-max-chars="${copy.maxChars}"`] : []),
-      ...(copy.maxLines ? [`data-max-lines="${copy.maxLines}" style="--specimen-max-lines:${copy.maxLines}"`] : []),
+      `data-specimen-copy-key="${escapeHtml(key)}"`, `data-role="${role}"`, `data-chars="${chars}"`,
+      ...(copy.maxChars ? [`data-specimen-max-chars="${copy.maxChars}"`] : []),
+      ...(copy.maxLines ? [`data-specimen-max-lines="${copy.maxLines}" style="--specimen-max-lines:${copy.maxLines}"`] : []),
       ...(overChars ? ['data-over="chars"'] : []),
     ].join(" ");
     return `<div class="specimen-copy" ${attrs}><p class="specimen-copy-text">${escapeHtml(copy.text)}</p><p class="specimen-copy-meta">${escapeHtml(key)} · ${role} · ${limits.join(" · ")}</p></div>`;
@@ -69,7 +69,7 @@ function renderText(record: SpecimenRecord): string {
 }
 
 /** Counts rendered lines against each copy's line limit (layout is only known in the browser). */
-const TEXT_FIT_SCRIPT = `(()=>{const fit=()=>{for(const row of document.querySelectorAll(".specimen-copy[data-max-lines]")){const text=row.querySelector(".specimen-copy-text");const style=getComputedStyle(text);const line=parseFloat(style.lineHeight)||parseFloat(style.fontSize)*1.2;const clamp=text.style.webkitLineClamp;text.style.webkitLineClamp="unset";text.style.display="block";const lines=Math.max(1,Math.round(text.scrollHeight/line));text.style.removeProperty("display");text.style.webkitLineClamp=clamp;const max=Number(row.dataset.maxLines);row.dataset.lines=String(lines);const out=row.querySelector("[data-specimen-lines]");if(out)out.textContent=String(lines);if(lines>max)row.dataset.over=row.dataset.over?row.dataset.over+" lines":"lines";}};document.fonts&&document.fonts.ready?document.fonts.ready.then(fit):fit();})();`;
+const TEXT_FIT_SCRIPT = `(()=>{const fit=()=>{for(const row of document.querySelectorAll(".specimen-copy[data-specimen-max-lines]")){const text=row.querySelector(".specimen-copy-text");const style=getComputedStyle(text);const line=parseFloat(style.lineHeight)||parseFloat(style.fontSize)*1.2;const clamp=text.style.webkitLineClamp;text.style.webkitLineClamp="unset";text.style.display="block";const lines=Math.max(1,Math.round(text.scrollHeight/line));text.style.removeProperty("display");text.style.webkitLineClamp=clamp;const max=Number(row.dataset.specimenMaxLines);row.dataset.lines=String(lines);const out=row.querySelector("[data-specimen-lines]");if(out)out.textContent=String(lines);if(lines>max)row.dataset.over=row.dataset.over?row.dataset.over+" lines":"lines";}};document.fonts&&document.fonts.ready?document.fonts.ready.then(fit):fit();})();`;
 
 function wrap(container: string, body: string): string {
   if (container === "canvas") return `<div class="specimen-canvas">${body}</div>`;

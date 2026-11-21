@@ -27,8 +27,8 @@ describe('Home stock data binding', () => {
   it('retains the full agent order, supplied heading, purposes, icons and independent states', () => {
     const { container } = render(<HomeSection home={home()} />);
     expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Supplied agents');
-    const cards = [...container.querySelectorAll('[data-home-agent]')];
-    expect(cards.map(card => card.getAttribute('data-home-agent'))).toEqual(['alpha', 'beta', 'gamma', 'delta']);
+    const cards = [...container.querySelectorAll('[data-studio-home-agent]')];
+    expect(cards.map(card => card.getAttribute('data-studio-home-agent'))).toEqual(['alpha', 'beta', 'gamma', 'delta']);
     expect(cards.map(card => card.getAttribute('data-census-state'))).toEqual(['ready', 'loading', 'error', 'missing']);
     expect(cards.map(card => card.querySelector('[data-slot="card-title"]')?.textContent?.trim())).toEqual(['70', '—', '—', '—']);
     expect(cards[0]!.textContent).toContain('8 pinned slots');

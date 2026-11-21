@@ -99,7 +99,7 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
-            "sha256": "6209446c574599c589df0de1f71e9270eb595f092c9726a742643777bf99a5d8"
+            "sha256": "d93077dfbd62f82586a1dfa4a1fc40afd22dbc13541d36b5b8cfb285790092c1"
           },
           {
             "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
@@ -119,7 +119,7 @@
           },
           {
             "path": "packages/designer/src/blocks/matrix/choices.tsx",
-            "sha256": "f8cc1527f91db1a08910348838ba2da11e43865e878dd66fd4cce9af9b4c5ade"
+            "sha256": "61ef53e142ac570e3eba061649825cd4a1a0fb46f4f63284c908054c8d125a01"
           },
           {
             "path": "packages/designer/src/blocks/matrix/grid.tsx",

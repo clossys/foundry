@@ -56,7 +56,7 @@ function bindingFixture(envelope: Envelope, resolve: (id: string) => string, lit
   return renderToStaticMarkup(createElement(SemanticContent, { as: "section" },
     ...envelope.bindings.map(binding => createElement(SemanticContent, { as: "p", key: binding.cellId,
       "data-binding": binding.cellId }, resolve(binding.recordId))),
-    createElement(SemanticContent, { as: "code", "data-copy-value": "technical" }, "components.button"),
+    createElement(SemanticContent, { as: "code", "data-member-copy-value": "technical" }, "components.button"),
     literal === undefined ? null : createElement(SemanticContent, { as: "p" }, literal)));
 }
 function unwrapped(markup: string): string[] {
@@ -66,7 +66,7 @@ function unwrapped(markup: string): string[] {
   const failures: string[] = [];
   while (walker.nextNode()) {
     const node = walker.currentNode, value = node.textContent?.trim() ?? "";
-    if (node.parentElement?.closest('[data-copy-value="technical"]')) continue;
+    if (node.parentElement?.closest('[data-member-copy-value="technical"]')) continue;
     if (value && !/^\[\[st\.[0123456789abcdefghjkmnpqrstvwxyz]{10}\]\]$/.test(value)) failures.push(value);
   }
   return failures;

@@ -179,7 +179,7 @@ describe("component default fills", () => {
     expect(adopted.components.fills.map(doc => componentOf(doc).slot).sort()).toEqual(plan.decisions.map(row => row.slot).sort());
     const seen = new Set<string>();
     for (const row of plan.decisions) {
-      // A registered composition (date-picker) or derive rule (icon) is adopted by rule and reads its inputs directly; a fill reads its own graph.
+      // A registered composition (date-picker) or derive rule (icon) is taken up by rule and reads its inputs directly; a fill reads its own graph.
       const reads = row.kind === "compose" || row.kind === "derive" ? row.reads : (() => {
         const fill = componentOf(input.catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].id === (row as { fill: string }).fill)!);
         return [...fill.composes, ...fill.reads.components];

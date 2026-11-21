@@ -29,7 +29,7 @@ it("labels the channels of oklch(97% 0 none) and keeps the exact string", () => 
  const view = render(<CompactPreview candidate={{ ...candidate, members: [entry] }} labels={labels} />);
  const value = view.container.querySelector<HTMLElement>("[data-member-value]")!;
  expect([...value.querySelectorAll("[data-channel]")].map(channel => `${channel.getAttribute("data-channel")}=${channel.querySelector("[data-channel-value]")?.textContent}`)).toEqual(["L=97%", "C=0", "H=none"]);
- expect(value.dataset.copyValue).toBe("oklch(97% 0 none)");
+ expect(value.dataset.memberCopyValue).toBe("oklch(97% 0 none)");
 });
 
 // ---- C21-4 token leaf specimens, exercised through the real Studio cell ----
