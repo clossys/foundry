@@ -291,7 +291,7 @@ it("motion accepts a token read only with a time fallback; a non-time fallback i
   };
   expect(verdict("marquee var(--duration, 40s) linear infinite")).toEqual([]);
   expect(verdict("marquee var(--duration, 250ms) linear infinite")).toEqual([]);
-  for (const refused of ["marquee var(--duration, red) linear infinite", "marquee var(--duration, var(--x)) linear infinite", "marquee var(--duration, 40px) linear infinite", "marquee var(--duration, 40s, 2s) linear infinite"]) {
+  for (const refused of ["marquee var(--duration, red) linear infinite", "marquee var(--duration, var(--x, 1s)) linear infinite", "marquee var(--duration, 40px) linear infinite", "marquee var(--duration, 40s, 2s) linear infinite"]) {
     expect(verdict(refused).length, refused).toBeGreaterThan(0);
   }
 });
