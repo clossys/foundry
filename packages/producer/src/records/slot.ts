@@ -13,6 +13,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { dirname, join } from "node:path";
 import { PRODUCER_ROOT, packagePath } from "../package-path.js";
 import { sha256Hex } from "./hash.js";
+import { isNonSlotEntry } from "./slot-model/layout.js";
 import { validateAgainst, type JsonSchema, type SchemaIssue } from "./schema.js";
 import type { AgentId, Brief, Iso, Ref, Slot, Tighten, TightenOp } from "./types.js";
 
@@ -352,8 +353,12 @@ export function computedDiff(actual: Slot, base: BaseSlot): string[] {
 
 export interface ConsumerSlotFolder { agent: AgentId; id: string; dir: string; file: string; hasSlot: boolean }
 
-/** Entries of `clossys/agents/<agent>/` that are not slot folders: the IA, views, Producer queues and ledgers. */
-const NOT_A_SLOT = /^(ia\.json|ledger\.json|views|queue\..+|ledger\..+)$/;
+/**
+ * Entries of `clossys/agents/<agent>/` that are not slot folders: the IA, views, Producer queues and ledgers, the
+ * agent-level `retired/` records folder, and the non-slot `_` folders (`_retired/<slot>`, where `clossys retire --slot`
+ * moves a slot, and `_evidence`), as records/slots.ts isSlotFolderName and the constitution context skip them.
+ */
+const NOT_A_SLOT = /^(ia\.json|ledger\.json|views|retired|queue\..+|ledger\..+)$/;
 
 /** Every slot folder under `<root>/clossys/agents/*`, sorted by agent then id. */
 export function consumerSlotFolders(root: string): ConsumerSlotFolder[] {
@@ -362,7 +367,7 @@ export function consumerSlotFolders(root: string): ConsumerSlotFolder[] {
     const dir = join(root, "clossys", "agents", agent);
     if (!existsSync(dir)) continue;
     for (const id of readdirSync(dir).sort()) {
-      if (NOT_A_SLOT.test(id) || (agent === "producer" && /^(queue|ledger)\./.test(id))) continue;
+      if (NOT_A_SLOT.test(id) || isNonSlotEntry(id) || (agent === "producer" && /^(queue|ledger)\./.test(id))) continue;
       const slotDir = join(dir, id);
       if (!statSync(slotDir).isDirectory()) continue;
       const file = join(slotDir, "slot.json");
