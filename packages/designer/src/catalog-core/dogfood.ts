@@ -67,8 +67,8 @@ const knownSlot = (symbol: string): string | undefined => symbolSlots.get(symbol
 // dogfood.test.ts (a repository-only test that does not ship). Export presence
 // still requires an existing registered leaf.
 const serverExports = new Map<string, ReadonlySet<string>>([
-  [`${DOGFOOD_PACKAGE_NAME}/components/server`, new Set(["Badge", "Alert", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "Logomark"])],
-  [`${DOGFOOD_PACKAGE_NAME}/blocks/server`, new Set(["SECTION_GROUND_CLASSES", "ArticleBody", "DetailView", "EmptyState", "FeatureGrid", "Matrix", "Specimen", "SpecimenPanel", "OrderedStepSequence", "StatusList", "EventItem", "TaskList", "Faq", "FieldGroup", "Hero", "ContentSection", "SectionIntro", "MediaFigure", "MarketingChapter", "PageHeader", "PricingTable", "SectionHeader", "SectionFrame", "UsageMeter", "Stat", "Testimonial", "TableOfContents", "TestimonialSet", "LogoCloud", "PeopleGrid", "RecordLedger", "AnatomyCallouts", "Scene", "StockItem", "Tree", "Items", "Lockup"])],
+  [`${DOGFOOD_PACKAGE_NAME}/components/server`, new Set(["Badge", "Alert", "Card", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "Logomark", "SemanticContent", "NativeAction"])],
+  [`${DOGFOOD_PACKAGE_NAME}/blocks/server`, new Set(["SECTION_GROUND_CLASSES", "ArticleBody", "DetailView", "EmptyState", "FeatureGrid", "Matrix", "Specimen", "SpecimenPanel", "OrderedStepSequence", "StatusList", "EventItem", "TaskList", "Faq", "Hero", "ContentSection", "SectionIntro", "MediaFigure", "MarketingChapter", "PageHeader", "PricingTable", "SectionHeader", "SectionFrame", "UsageMeter", "Stat", "Testimonial", "TableOfContents", "TestimonialSet", "LogoCloud", "PeopleGrid", "RecordLedger", "AnatomyCallouts", "Scene", "StockItem", "Tree", "Items", "Lockup", "ErrorState", "StatGroup", "CallToAction", "LogoHero"])],
 ]);
 const serverBlockSlots = new Map(BLOCK_ENTRIES.flatMap(entry => entry.export ? [[entry.export, entry.id] as const] : []));
 function registeredServerSlot(module: string, symbol: string): string | undefined {

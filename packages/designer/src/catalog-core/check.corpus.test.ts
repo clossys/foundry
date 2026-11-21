@@ -61,7 +61,8 @@ it("checks file evidence, contrast in both modes and all fixed binding rules", (
   s.requires = ["example#rule"]; value.catalog.standards = [{ id: "example", title: "Example", version: "1", url: "https://example.org", clauses: [{ id: "rule", title: "Rule" }] }];
   metadata(value).conforms = ["example#rule"]; metadata(value).evidence = [{ clause: "example#rule", path: "missing.test.ts" }];
   expect(check({ ...value, fileExists: () => false }).findings.filter(f => f.rule !== "binding").map(f => f.message)).toEqual(["standards: foundry/themes.sample evidence for example#rule not found at missing.test.ts"]);
-  const binding = check(value).findings.filter(f => f.rule === "binding"); expect(binding.length).toBe(217);
+  // The fixture binds no theme variable, so every shipped one is unbound: the 49 emits of the 42 shadcn themes leaves (736153e72).
+  const binding = check(value).findings.filter(f => f.rule === "binding"); expect(binding.length).toBe(49);
 });
 
 it("measures contrast using each mode's actual selected values", () => {

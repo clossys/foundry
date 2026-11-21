@@ -10,7 +10,8 @@ describe("standalone component resolution", () => {
     const resolve = (fills = input.catalog.fills) => resolveComponents({ catalog: { ...input.catalog, fills }, library, values: { tokens: input.check.tokens, assets: input.check.assets }, evidence: { ...input.check, observations: {} } });
     const result = resolve();
     expect(result.components["components.button"]!.impl).toEqual(input.candidate.impl);
-    expect(result.check.ok).toBe(false); expect(result.check.findings.some(finding => /unavailable/.test(finding.message))).toBe(true);
+    // An unobserved fill is runtime-pending (38deed92e): the missing observations are reported as notices, not refusals.
+    expect(result.check.ok).toBe(true); expect(result.check.findings.some(finding => finding.severity === "notice" && /unavailable/.test(finding.message))).toBe(true);
     expect(resolve([])).toEqual(result);
     library.fills[0]!.components.button!.propMap["size.md"] = "Button.size=lg";
     expect(() => resolve()).toThrow(/hand-edit/);

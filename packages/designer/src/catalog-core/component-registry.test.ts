@@ -84,7 +84,8 @@ describe("component build IA registry", () => {
   const declaredProps: Record<string, readonly string[]> = {
     "semantic-content": ["as"],
     "rich-text": ["value", "readOnly", "onChange", "className", "id", "dir", "aria-label", "aria-labelledby"],
-    "media-player": ["video", "poster", "passage", "captions", "muted", "autoplay", "loop", "controls", "className", "decorative"],
+    // foundry-build-0048 U27 (1586dff32) rewrote the media-player props list in sorted order with its reference fixture.
+    "media-player": ["autoplay", "captions", "className", "controls", "decorative", "loop", "muted", "passage", "poster", "video"],
     // planner:C5-DREC (owner LAD-3): the canvas leaves declare their typed props.
     "canvas-zoom": ["value", "min", "max", "onChange", "onFit", "labels", "formatValue"],
     "canvas-map": ["label", "items", "bounds", "viewport", "viewSize", "onViewportChange"],

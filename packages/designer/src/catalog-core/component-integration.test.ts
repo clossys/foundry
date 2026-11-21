@@ -190,8 +190,10 @@ describe("SYNTHETIC components through the public composite facade", () => {
     await componentBrowserClosure();
     // The independent rail inventory proof checks the complete new join.
     const added = new Set(["assets.icon-panel-left", ...["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `components.${leaf}`)]);
-    expect(client.loadCatalog().slots.filter(slot => !added.has(slot.id))).toHaveLength(98);
-    expect(client.loadBuildCatalog().slots.filter(slot => !added.has(slot.id))).toHaveLength(210);
+    // The runtime catalog holds the 42 themes and 49 assets leaves (components resolve through the component registry);
+    // the build catalog holds the 252 owner-signed build slots (build-ia-integration.test.ts).
+    expect(client.loadCatalog().slots.filter(slot => !added.has(slot.id))).toHaveLength(90);
+    expect(client.loadBuildCatalog().slots.filter(slot => !added.has(slot.id))).toHaveLength(244);
   });
 });
 
