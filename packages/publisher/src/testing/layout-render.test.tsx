@@ -45,7 +45,7 @@ beforeAll(async () => {
   }
   css = `${(await compile("@tailwind utilities;")).build([...candidates])}
     :root{--spacing-lg:16px;--spacing-md:12px;--spacing-xl:24px;--ui-width-wide-max:960px;--ui-width-content-max:720px;--ui-width-prose-max:640px;--ui-width-form-max:480px;--ui-layout-aside-w:220px}
-    *,::before,::after{box-sizing:border-box}html,body{margin:0}h1,h2,p{margin:0}[data-lk12-fill]{min-height:64px;overflow-wrap:anywhere}`;
+    *,::before,::after{box-sizing:border-box}html,body{margin:0}h1,h2,p{margin:0}[data-layout-fill]{min-height:64px;overflow-wrap:anywhere}`;
 });
 
 function fixture(leafId: keyof typeof names = "split", configId = "split.default", members?: Record<string, string>) {
@@ -98,8 +98,8 @@ describe("LK12 actual Chromium layout assembly", () => {
   }, 60000);
 
   it.each([
-    ["overflow", "[data-lk12-fill]{min-width:1800px}"],
-    ["hidden overflow", "body{overflow-x:hidden}[data-lk12-fill]{min-width:1800px}"],
+    ["overflow", "[data-layout-fill]{min-width:1800px}"],
+    ["hidden overflow", "body{overflow-x:hidden}[data-layout-fill]{min-width:1800px}"],
     ["order", "[data-layout-slot=start]{order:3}"],
     ["reverse", "[data-layout=\"split\"]>div:last-child{flex-direction:row-reverse!important}"],
     ["dense", "[data-layout=\"split\"]{grid-auto-flow:row dense}"],
@@ -155,17 +155,17 @@ describe("LK12 actual Chromium layout assembly", () => {
     expect(missing.layoutStatus).toBe("pending");
     expect(missing.measurements).toEqual([]);
     // A real CSS mutation hides one measurement at only one required edge.
-    const incomplete = await run(fixture(), { css: css + "@media(width:732px){[data-lk12-fill]{display:none}}" });
+    const incomplete = await run(fixture(), { css: css + "@media(width:732px){[data-layout-fill]{display:none}}" });
     expect(incomplete.layoutStatus).toBe("pending");
     expect(incomplete.requiredWidths).toEqual([320, 730, 731, 732]);
     expect(incomplete.findings).toContain("732: incomplete viewport or fill measurements");
-    const invisible = await run(fixture(), { css: css + "@media(width:732px){[data-lk12-fill]{opacity:0}}" });
+    const invisible = await run(fixture(), { css: css + "@media(width:732px){[data-layout-fill]{opacity:0}}" });
     expect(invisible.layoutStatus).toBe("pending");
     expect(invisible.findings).toContain("732: incomplete viewport or fill measurements");
   }, 60000);
 
   it("requires one nonzero measurement for every bound fill and no additional markers", async () => {
-    const result = await run(fixture(), { renderSection: () => <div data-lk12-fill="foreign">Foreign marker</div> });
+    const result = await run(fixture(), { renderSection: () => <div data-layout-fill="foreign">Foreign marker</div> });
     expect(result.layoutStatus).toBe("pending");
     expect(result.findings.every(item => item.includes("incomplete"))).toBe(true);
     const empty = fixture();
@@ -180,7 +180,7 @@ describe("LK12 actual Chromium layout assembly", () => {
       f.binding.layout.config = "missing";
       f.binding.layout.members = { collapse: "end-first" };
       (f.options.breakpointValues as Record<string, number>)["tokens.breakpoint.tablet"] = 900;
-      (f.options as { css: string; exportName: string }).css += "[data-lk12-fill]{min-width:1800px}";
+      (f.options as { css: string; exportName: string }).css += "[data-layout-fill]{min-width:1800px}";
       (f.options as { exportName: string }).exportName = "Missing";
       f.registries.layouts.length = 0;
       return <p>{path}</p>;

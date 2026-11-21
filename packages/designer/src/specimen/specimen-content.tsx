@@ -74,7 +74,7 @@ export function pageViewportCases(page: { readonly id: string; readonly label: s
 function failure(props: SpecimenLeafProps, id: string, reason: string): ReactNode {
   const semantic = specimenComponent(props.context, "components.semantic-content");
   if ("reason" in semantic) return props.need(semantic);
-  return <SemanticContent as="div" {...{ [DS_ATTR.leaf]: id }} data-ds-specimen-need="true">{props.need({ leaf: id, reason })}</SemanticContent>;
+  return <SemanticContent as="div" {...{ [DS_ATTR.leaf]: id }} data-specimen-need="true">{props.need({ leaf: id, reason })}</SemanticContent>;
 }
 function componentNeeds(props: SpecimenLeafProps, ids: readonly string[]): DesignerSpecimenNeed[] {
   return ids.flatMap(id => { const result = specimenComponent(props.context, id); return "reason" in result ? [result] : []; });

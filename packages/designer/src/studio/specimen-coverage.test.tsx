@@ -18,8 +18,8 @@ const items: SpecimenItem[] = ["primary", "secondary"].flatMap(variant => ["defa
 const cell: SpecimenCoverageCell = { agent: "designer", id: "button", kind: "component", layer: "components", items, axes };
 const leaf: SpecimenLeafDefinition = {
   id: "sections.specimen-variant-matrix", layout: "matrix", span: "full", compatible: [{ kind: "component", layer: "components" }],
-  render: props => <components.SemanticContent as="div" data-provenance-leaf="components.semantic-content" data-ds-specimen-region="" data-ds-specimen-section="sections.specimen-variant-matrix">
-    {props.items.map(item => <components.SemanticContent as="div" key={item.id} data-ds-specimen-item={item.id}><components.Button isDisabled={(item.value as { state: string }).state === "disabled"}>Continue</components.Button></components.SemanticContent>)}
+  render: props => <components.SemanticContent as="div" data-provenance-leaf="components.semantic-content" data-specimen-region="" data-specimen-section="sections.specimen-variant-matrix">
+    {props.items.map(item => <components.SemanticContent as="div" key={item.id} data-specimen-item={item.id}><components.Button isDisabled={(item.value as { state: string }).state === "disabled"}>Continue</components.Button></components.SemanticContent>)}
   </components.SemanticContent>,
 };
 const source: RegisteredSpecimenCases = { items, axes };
@@ -86,7 +86,7 @@ it("accepts one item on every intrinsic layout without artificial axes", () => {
 
 it("requires expanded or full link-out DOM proof of collapsed cases", () => {
   const view = mounted();
-  const last = view.container.querySelector<HTMLElement>(`[data-ds-specimen-item='${items.at(-1)!.id}']`)!;
+  const last = view.container.querySelector<HTMLElement>(`[data-specimen-item='${items.at(-1)!.id}']`)!;
   last.hidden = true;
   const row = collectSpecimenDomEvidence({ cell, root: view.container, surface: "row" });
   expect(check(leaf, [row]).agents.find(summary => summary.agent === "designer")?.renderedCases).toBe(3);
@@ -98,7 +98,7 @@ it("requires expanded or full link-out DOM proof of collapsed cases", () => {
 it("rejects raw front-matter, file text, nested NEED, fallback, excerpt and pending output", () => {
   for (const text of ["---\nstatus: active\n---\nFile body", "originKinds: configured", "NEED missing selected implementation", "pending", "text fallback", "excerpt", "placeholder"]) {
     const view = mounted();
-    view.container.querySelector("[data-ds-specimen-item]")!.append(text);
+    view.container.querySelector("[data-specimen-item]")!.append(text);
     const evidence = collectSpecimenDomEvidence({ cell, root: view.container, surface: "expanded" });
     expect(evidence.issues.length).toBeGreaterThan(0);
     expect(check(leaf, [evidence]).agents.find(summary => summary.agent === "designer")?.renderedCases).toBe(0);
@@ -106,7 +106,7 @@ it("rejects raw front-matter, file text, nested NEED, fallback, excerpt and pend
   }
   const sourceText = "export const configuration = selectedImplementation;";
   const view = mounted();
-  view.container.querySelector("[data-ds-specimen-item]")!.append(sourceText);
+  view.container.querySelector("[data-specimen-item]")!.append(sourceText);
   expect(collectSpecimenDomEvidence({ cell: { ...cell, sourceText }, root: view.container, surface: "expanded" }).issues).toContain("raw-source-in-specimen");
 });
 
@@ -126,7 +126,7 @@ it("collects actual native Designer selection DOM and rejects a nested runtime N
   const values = resolve({ catalog, library: completedCatalogLibrary(catalog, { id: "coverage-fixture", kind: "consumer", author: "consumer", license: "MIT" }, "2026-10-29") });
   const context = { profile: { consumer: values.consumer, selectionHash: values.selectionHash, values, components: structuredClone(componentData) } as CompositeResolved, modules: { "@clossys/designer/components": components, ...defaultSourceModules } };
   const single = [{ id: "actual", label: "Actual", value: { leaf: "components.button" } }];
-  const actual: SpecimenLeafDefinition = { ...leaf, render: props => <components.SemanticContent as="div" data-provenance-leaf="components.semantic-content" data-ds-specimen-region="" data-ds-specimen-section={leaf.id} data-ds-specimen-item={props.items[0]!.id}><DesignerSpecimen leaf="components.button" context={context} need={({ reason }) => <components.SemanticContent as="p">NEED {reason}</components.SemanticContent>} /></components.SemanticContent> };
+  const actual: SpecimenLeafDefinition = { ...leaf, render: props => <components.SemanticContent as="div" data-provenance-leaf="components.semantic-content" data-specimen-region="" data-specimen-section={leaf.id} data-specimen-item={props.items[0]!.id}><DesignerSpecimen leaf="components.button" context={context} need={({ reason }) => <components.SemanticContent as="p">NEED {reason}</components.SemanticContent>} /></components.SemanticContent> };
   const singleCell = { ...cell, items: single, axes: undefined };
   const view = mounted(single, undefined, actual);
   expect(view.container.querySelector("[data-component-specimen]")).toBeTruthy();
@@ -143,7 +143,7 @@ it("collects actual native Designer selection DOM and rejects a nested runtime N
 it("takes four agent inputs, rejects wrong-agent leaves and refuses blank Publisher metadata as live proof", () => {
   const pageItems = [{ id: "page", label: "Page", value: { route: "/" } }];
   const publisher = { ...cell, agent: "publisher" as const, kind: "page", layer: "publication", items: pageItems, axes: undefined };
-  const pageLeaf: SpecimenLeafDefinition = { id: "sections.specimen-page-viewports", layout: "matrix", span: "full", compatible: [{ kind: "page" }], render: () => <components.SemanticContent as="div" data-provenance-leaf="components.semantic-content" data-ds-specimen-region="" data-ds-specimen-section="sections.specimen-page-viewports" data-ds-specimen-item="page"><iframe title="Page" src="about:blank" sandbox="" /></components.SemanticContent> };
+  const pageLeaf: SpecimenLeafDefinition = { id: "sections.specimen-page-viewports", layout: "matrix", span: "full", compatible: [{ kind: "page" }], render: () => <components.SemanticContent as="div" data-provenance-leaf="components.semantic-content" data-specimen-region="" data-specimen-section="sections.specimen-page-viewports" data-specimen-item="page"><iframe title="Page" src="about:blank" sandbox="" /></components.SemanticContent> };
   const view = mounted(pageItems, undefined, pageLeaf);
   const proof = collectSpecimenDomEvidence({ cell: publisher, root: view.container, surface: "linkout" });
   expect(proof.cases[0]?.livePage).toBe(false);

@@ -117,7 +117,7 @@ function collisionFixture() {
   write("src/blocks/ResourceList.tsx", 'import { EmptyState } from "./EmptyState.js"; export function ResourceList() { return <EmptyState/>; }');
   const native = 'import { dsAttrs } from "../catalog-core/provenance-attrs.js"; const SECTION_STAMP = dsAttrs("sections", "sections.empty-state", "foundry/sections.empty-state"); export function EmptyState() { return <div {...SECTION_STAMP}/>; }';
   write("src/blocks/EmptyState.tsx", native);
-  write("src/catalog-core/provenance-attrs.ts", 'export function dsAttrs(layer, slot, fill) { return { "data-ds-slot": slot }; }');
+  write("src/catalog-core/provenance-attrs.ts", 'export function dsAttrs(layer, slot, fill) { return { "data-provenance-leaf": slot }; }');
   write("src/runtime/component-leaf.tsx", "export function componentLeaf(leaf, part) { return leaf; }");
   write("styles/theme.css", ""); write("styles/theme-keys.css", "");
   const row = () => measureFoundrySurfaces(root, buildSurfaceConsumption).measurements["sections.resource-list"].consumption;

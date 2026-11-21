@@ -202,7 +202,7 @@ function contentIssues(region: Element, sourceText?: string, visitedFrames = new
   if (!region.ownerDocument.documentElement.contains(region)) issues.add("unmounted-specimen");
   if (!text.trim() && !region.querySelector("svg,img,canvas,video,audio,iframe,input,textarea,[role='img']")) issues.add("empty-specimen");
   if (sourceLeak(text, sourceText)) issues.add("raw-source-in-specimen");
-  if (/\bNEED\b/.test(text) || /(?:^|\n)\s*pending\s*(?:\n|$)|\b(?:text[- ]fallback|excerpt|placeholder)\b/i.test(text) || region.matches("[data-ds-specimen-need]") || region.querySelector("[data-ds-specimen-need],[data-preview-pending],[data-runtime-pending]")) issues.add("unresolved-specimen");
+  if (/\bNEED\b/.test(text) || /(?:^|\n)\s*pending\s*(?:\n|$)|\b(?:text[- ]fallback|excerpt|placeholder)\b/i.test(text) || region.matches("[data-specimen-need]") || region.querySelector("[data-specimen-need],[data-preview-pending],[data-runtime-pending]")) issues.add("unresolved-specimen");
   if (region.querySelector("[contenteditable='true'],textarea:not([readonly])")) issues.add("editable-specimen");
   for (const element of [region, ...region.querySelectorAll("*")]) if (!element.closest(`[${DS_ATTR.leaf}]`)) issues.add("outside-native-leaf");
   // Portalled surface content lives in a viewport document; the outer iframe alone is never rendered proof.
@@ -241,14 +241,14 @@ export function collectSpecimenDomEvidence(input: {
   readonly root: Element;
   readonly surface: SpecimenDomEvidence["surface"];
 }): SpecimenDomEvidence {
-  const regions = [...(input.root.matches("[data-ds-specimen-region]") ? [input.root] : []), ...input.root.querySelectorAll("[data-ds-specimen-region]")];
+  const regions = [...(input.root.matches("[data-specimen-region]") ? [input.root] : []), ...input.root.querySelectorAll("[data-specimen-region]")];
   const issues = new Set<string>();
   if (!regions.length) issues.add("missing-specimen-region");
   for (const region of regions) for (const issue of contentIssues(region, input.cell.sourceText)) if (issue !== "hidden-specimen") issues.add(issue);
-  const nodes = regions.flatMap(region => [...(region.matches("[data-ds-specimen-item]") ? [region] : []), ...region.querySelectorAll("[data-ds-specimen-item]")]);
+  const nodes = regions.flatMap(region => [...(region.matches("[data-specimen-item]") ? [region] : []), ...region.querySelectorAll("[data-specimen-item]")]);
   const cases = [...new Set(nodes)].map(node => ({
-    section: node.closest("[data-ds-specimen-section]")?.getAttribute("data-ds-specimen-section") ?? "",
-    item: node.getAttribute("data-ds-specimen-item") ?? "",
+    section: node.closest("[data-specimen-section]")?.getAttribute("data-specimen-section") ?? "",
+    item: node.getAttribute("data-specimen-item") ?? "",
     issues: contentIssues(node, input.cell.sourceText),
     livePage: livePage(node),
   }));

@@ -33,9 +33,9 @@ const sections = {
 it.each(Object.entries(sections))("draws %s as its %s section with dataset items, never a NEED", (leaf, section) => {
   const html = renderToStaticMarkup(<>{defaultComponentPreviews.preview(leaf, profile)}</>);
   const document = new DOMParser().parseFromString(html, "text/html");
-  expect(document.querySelector(`[data-ds-specimen-section="${section}"]`), leaf).not.toBeNull();
-  expect(document.querySelectorAll("[data-ds-specimen-item]").length, leaf).toBeGreaterThan(0);
-  expect(document.querySelector("[data-specimen-unavailable], [data-specimen-error], [data-ds-specimen-need]"), leaf).toBeNull();
+  expect(document.querySelector(`[data-specimen-section="${section}"]`), leaf).not.toBeNull();
+  expect(document.querySelectorAll("[data-specimen-item]").length, leaf).toBeGreaterThan(0);
+  expect(document.querySelector("[data-specimen-unavailable], [data-specimen-error], [data-specimen-need]"), leaf).toBeNull();
 });
 
 it("draws the section viewports with the selected Foundry surface at each breakpoint", () => {

@@ -181,11 +181,11 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
   const mobile = useMobile();
   const semantic = specimenComponent(context, "components.semantic-content");
   if ("reason" in semantic) return need(semantic);
-  const fail = (reason: string) => <Content as="div" {...{ [DS_ATTR.leaf]: id }} data-ds-specimen-need="true">{need({ leaf: id, reason })}</Content>;
+  const fail = (reason: string) => <Content as="div" {...{ [DS_ATTR.leaf]: id }} data-specimen-need="true">{need({ leaf: id, reason })}</Content>;
   if (!items.length) return fail("A specimen requires at least one cell-authored item.");
   if (new Set(items.map(item => item.id)).size !== items.length) return fail("Specimen item ids must be unique.");
-  const itemNode = (item: SpecimenItem) => <Content as="div" key={item.id} {...{ [DS_ATTR.leaf]: id }} data-ds-specimen-section={id} data-ds-specimen-item={item.id} data-ds-specimen-coordinates={JSON.stringify(item.coordinates ?? {})} className="min-w-0 max-w-full">{renderItem(item)}</Content>;
-  const region = (children: ReactNode) => <Content as="section" {...{ [DS_ATTR.leaf]: id }} data-ds-specimen-region={id} data-ds-specimen-section={id} data-ds-specimen-layout={items.length === 1 ? "single" : layout} className="flex min-w-0 w-full flex-col gap-md">{children}</Content>;
+  const itemNode = (item: SpecimenItem) => <Content as="div" key={item.id} {...{ [DS_ATTR.leaf]: id }} data-specimen-section={id} data-specimen-item={item.id} data-specimen-coordinates={JSON.stringify(item.coordinates ?? {})} className="min-w-0 max-w-full">{renderItem(item)}</Content>;
+  const region = (children: ReactNode) => <Content as="section" {...{ [DS_ATTR.leaf]: id }} data-specimen-region={id} data-specimen-section={id} data-specimen-layout={items.length === 1 ? "single" : layout} className="flex min-w-0 w-full flex-col gap-md">{children}</Content>;
   // A singleton is the specimen itself: no collection, headings or disclosure.
   if (items.length === 1) return region(itemNode(items[0]!));
   if (layout === "single") return fail("A single-layout specimen cannot accept multiple items.");

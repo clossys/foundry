@@ -43,7 +43,7 @@ it("measures the complete actual native spacing registry and its expanded leaf D
   const props = { ...expected, context, expanded: true, need: ({ reason }: { reason: string }) => <components.SemanticContent as="p">NEED {reason}</components.SemanticContent>, labels: { showAllVariants: (count: number) => `Show all ${count}` } };
   const selection = { profile: context.profile, selectionHash: context.profile.components.selectionHash, modules: context.modules, descriptors: Object.fromEntries(Object.entries(context.profile.components.components).map(([id, chosen]) => [id, componentDescriptorHash(chosen.descriptor)])) };
   const view = render(<ConsumerComponentProvider value={selection}><Suspense>{leaf.render(props)}</Suspense></ConsumerComponentProvider>);
-  await waitFor(() => expect(view.container.querySelectorAll("[data-ds-specimen-item]")).toHaveLength(expected.items.length));
+  await waitFor(() => expect(view.container.querySelectorAll("[data-specimen-item]")).toHaveLength(expected.items.length));
   const evidence = collectSpecimenDomEvidence({ cell, root: view.container, surface: "linkout" });
   const report = validateSpecimenCoverage({ cells: [cell], registry: studioSpecimenLeaves, registeredCases: () => expected, leafProps: () => props, evidence: [evidence] });
   const designer = report.agents.find(agent => agent.agent === "designer")!;
