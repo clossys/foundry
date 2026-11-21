@@ -226,6 +226,14 @@
               }
             }
           ]
+        },
+        "recipe": {
+          "id": "create.element",
+          "axes": [
+            "structure",
+            "density",
+            "emphasis"
+          ]
         }
       }
     },
@@ -245,21 +253,27 @@
           "id": "d1",
           "idea": "a plain reading of the slot contract",
           "axes": {
-            "tone": "plain"
+            "structure": "plain",
+            "density": "plain",
+            "emphasis": "plain"
           }
         },
         {
           "id": "d2",
           "idea": "a warm reading of the slot contract",
           "axes": {
-            "tone": "warm"
+            "structure": "warm",
+            "density": "warm",
+            "emphasis": "warm"
           }
         },
         {
           "id": "d3",
           "idea": "a brisk reading of the slot contract",
           "axes": {
-            "tone": "brisk"
+            "structure": "brisk",
+            "density": "brisk",
+            "emphasis": "brisk"
           }
         }
       ]

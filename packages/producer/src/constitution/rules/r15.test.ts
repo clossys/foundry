@@ -119,6 +119,11 @@ describe("R15.5 recipes", () => {
     catches(r15_5, ctxOf(root => put(join(recipeDir(root), "rubric.md"), "# rubric\n")), /rubric\.md is a rubric file/);
     catches(r15_5, ctxOf(editRecipe(doc => { doc.rubric = { clarity: 5 }; })), /recipe\.json/);
   });
+  it("catches a standard with two producing recipes: code chooses the run's recipe, so it must be unique", () => {
+    const twin: Edit = root => cpSync(recipeDir(root), join(root, "packages", "writer", "recipes", "twin-craft"), { recursive: true });
+    const renamed: Edit = root => { twin(root, ""); const path = join(root, "packages", "writer", "recipes", "twin-craft", "recipe.json"); const doc = json(path); doc.id = "twin-craft"; put(path, doc); };
+    catches(r15_5, ctxOf(renamed), /recipes (fixture-headline-craft, twin-craft|twin-craft, fixture-headline-craft) all produce for fixture-headline; a standard has exactly one producing recipe/);
+  });
   it("catches a recipe producing for an unknown standard and one without craft.md", () => {
     catches(r15_5, ctxOf(editRecipe(doc => { doc.produces = [STANDARD_ID, "ghost"]; })), /produces ghost, which is not a writer standard/);
     catches(r15_5, ctxOf(root => rmSync(join(recipeDir(root), "craft.md"))), /no craft\.md/);
@@ -203,10 +208,10 @@ const DIRECTIONS = [
   { id: "b", axes: { tone: "dry", length: "medium", structure: "question" } },
   { id: "c", axes: { tone: "bold", length: "long", structure: "contrast" } },
 ];
-function craftRun(stages: string[], directions: unknown[] = DIRECTIONS, critique = true): Edit {
+function craftRun(stages: string[], directions: unknown[] = DIRECTIONS, critique = true, recipeOf: (stage: string) => string = () => RECIPE_ID): Edit {
   return (_root, consumer) => {
     const dir = join(consumer, "agents", "writer", "home.hero");
-    const events = stages.map(stage => ({ op: `craft:${stage}`, at: "2026-11-13T00:00:00Z", by: "agent:writer", recipe: RECIPE_ID, ...(stage === "diverge" ? { directions } : {}) }));
+    const events = stages.map(stage => ({ op: `craft:${stage}`, at: "2026-11-13T00:00:00Z", by: "agent:writer", recipe: recipeOf(stage), ...(stage === "diverge" ? { directions } : {}) }));
     put(join(dir, "ledger.json"), { schema: "clossys.ledger/1", events: [...events, { op: "submit", at: "2026-11-13T00:00:01Z", by: "agent:writer", name: "hero-v1.md", rung: "create" }] });
     if (critique) put(join(dir, "critiques", "hero-v1.json"), { schema: "clossys.critique/1", slot: "home.hero", candidate: "hero-v1.md", standard: STANDARD_ID, scores: { clarity: 4 }, packet: { manifest: [] } });
   };
@@ -224,6 +229,13 @@ describe("R15.7 craft process ran", () => {
   it("catches stages out of order and a third refine round", () => {
     catches(r15_7, ctxOf(craftRun(["brief", "render", "diverge", "critique"])), /are not brief, diverge, render, critique/);
     catches(r15_7, ctxOf(craftRun([...FULL, "refine", "refine", "refine"])), /at most 2 refine rounds/);
+  });
+  it("code chooses the run's recipe: a diverge naming another (here one producing nothing), an unknown one, or a brief/diverge mismatch is a row", () => {
+    const other: Edit = root => { const dir = join(root, "packages", "writer", "recipes", "other"); cpSync(recipeDir(root), dir, { recursive: true }); const doc = json(join(dir, "recipe.json")); doc.id = "other"; doc.produces = []; put(join(dir, "recipe.json"), doc); };
+    const both = (...edits: Edit[]): Edit => (root, consumer) => { for (const edit of edits) edit(root, consumer); };
+    catches(r15_7, ctxOf(both(other, craftRun(FULL, DIRECTIONS, true, stage => stage === "diverge" ? "other" : RECIPE_ID))), /craft:diverge names recipe other, which is not a valid recipe under packages\/writer\/recipes\//);
+    catches(r15_7, ctxOf(craftRun(FULL, DIRECTIONS, true, stage => stage === "diverge" ? "create.nope" : RECIPE_ID)), /craft:diverge names recipe create\.nope, which is not a valid recipe under packages\/writer\/recipes\//);
+    catches(r15_7, ctxOf(both(other, craftRun(FULL, DIRECTIONS, true, stage => stage === "brief" ? "other" : RECIPE_ID))), /one run is one recipe/);
   });
   it("catches fewer than 3 directions and cosmetic variants on an axis", () => {
     catches(r15_7, ctxOf(craftRun(FULL, DIRECTIONS.slice(0, 2))), /2 directions; 3 to 4 required/);

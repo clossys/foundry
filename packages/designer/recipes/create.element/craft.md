@@ -1,22 +1,19 @@
 # create.element
 
-Creates one frame, app section, adaptive section or media rule slot when the slot's verdict is `create`. Frames and sections compose pinned parts; media rules are a rules value.
+Creates one media rule slot (`asset.media-rule`) when the slot's verdict is `create`: a rules value over the contract's rules members. Frames are crafted by `create.frame` and app and adaptive sections by `create.app-section`; code chooses a run's recipe as the one recipe producing for the slot's standard, so this recipe never crafts them.
 
-- Produces: `frame`, `section.app`, `section.adaptive`, `asset.media-rule` (rung `create`, Designer rung L4).
+- Produces: `asset.media-rule` (rung `create`, Designer rung L4).
 - Tier: mid. Axes: `structure`, `density`, `emphasis`.
-- Base reference: pinned components and sections (frames, sections); for `asset.media-rule`, the contract's rules members. Frames and sections use tokens only and name parts by slot id (`compose.layers`, `tokens.only`).
-- Director derivation: `identity.visual.style` bounds every direction; `asset.media-rule` derives from `identity.visual.imagery` (required: live previews of real candidates, no stock photos, original assets only for consumer items). Cited in `meta.element.reason` (R20).
+- Base reference: the contract's rules members.
+- Director derivation: `identity.visual.style` bounds every direction; the media rule derives from `identity.visual.imagery` (required: live previews of real candidates, no stock photos, original assets only for consumer items). Cited in `meta.element.reason` (R20).
 - Judge: the standard and its certifier, which import nothing from this folder (R16.1). This recipe
   carries no rubric; the standard's requirements and taste are the only measure (R15.5).
 
-## Axes per standard
+## Axes
 
-| Standard | `structure` | `density` | `emphasis` |
-| --- | --- | --- | --- |
-| `frame` | navigation and region layout | chrome weight | what orients the user first |
-| `section.app` | list, table, form or detail layout | rows per view | the primary action |
-| `section.adaptive` | how it reflows between site and app | compact or relaxed | what stays first in both |
-| `asset.media-rule` | ratio and crop rule | how often media appears | what the media shows |
+- `structure`: the ratio and crop rule.
+- `density`: how often media appears.
+- `emphasis`: what the media shows.
 
 ## Stages (slot-constitution 5b, fixed order)
 
@@ -26,7 +23,7 @@ sha, contract sha, dependency pin-set hash), so a re-run with unchanged inputs c
 checks its own output before it is recorded; a non-zero exit is fixed at that stage, never carried
 forward. The same error twice is `BLOCKED`. Never run a full suite from a recipe.
 
-`<slot>` is one slot of `frame`, `section.app`, `section.adaptive`, `asset.media-rule`; `<tier>` is `mid`; `<model>` is the serving model id of the run.
+`<slot>` is one slot of `asset.media-rule`; `<tier>` is `mid`; `<model>` is the serving model id of the run.
 
 ### 0. Preconditions (deterministic)
 
@@ -34,7 +31,7 @@ forward. The same error twice is `BLOCKED`. Never run a full suite from a recipe
    `create` for that packet's inputs (P2). `clossys next --stage` refuses itself otherwise, so read the
    refusal and stop: the recipe never records a verdict.
 2. Read `clossys/agents/designer/<slot>/slot.json`: `standard`, `contract`, `inputs`, `uses`. The
-   standard must be one this recipe produces for (`frame`, `section.app`, `section.adaptive`, `asset.media-rule`).
+   standard must be one this recipe produces for (`asset.media-rule`).
 
 ### 1. brief (model)
 
@@ -70,8 +67,7 @@ Write `directions.json`: 3 directions (4 at most), each one line, each a distinc
   "traits": ["<Director slot id realised>"], "keeps": [{"ref": "<base value kept>", "because": "director:<trait> ..."}]}]}
 ```
 
-- `asset.media-rule` directions list `identity.visual.imagery` in `traits`.
-- Frame and section directions name composed part slots by slot id only.
+- Directions list `identity.visual.imagery` in `traits`.
 - `meta.element.reason` cites each realised trait as `director:<slot id>` (no version suffix); a kept
   base value is `default:<ref>` beside the citation that justifies it.
 
@@ -84,8 +80,8 @@ clossys next designer/<slot> --stage diverge --file directions.json --recipe cre
 
 ### 3. render (deterministic)
 
-Write the candidate in the contract's shape (registry item with `meta.source.parts` for frames and
-sections, the rules value for media rules). Nothing is generated; the preflight checks it mechanically.
+Write the candidate in the contract's shape (the rules value). Nothing is generated; the preflight checks
+it mechanically.
 
 For each direction's draft candidate:
 

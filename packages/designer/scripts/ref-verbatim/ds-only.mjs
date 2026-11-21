@@ -93,3 +93,53 @@ export function dsOnlyEvents(text, fileName, { kind = "section", blockMarkup = n
   visit(source);
   return events;
 }
+
+/** The implicit ARIA landmark role of a raw element (HTML-AAM), or undefined: what a contract landmark's role is met by. */
+export const IMPLICIT_LANDMARK_ROLES = Object.freeze({ header: "banner", footer: "contentinfo", nav: "navigation", main: "main", aside: "complementary", form: "form", search: "search", section: "region" });
+
+/** The attributes whose literal value is copy a reader sees or hears (text alternatives, labels, hints). */
+export const COPY_ATTRIBUTES = new Set(["alt", "title", "label", "placeholder", "aria-label", "aria-description", "aria-placeholder", "aria-roledescription", "aria-valuetext"]);
+
+/** Copy is text with a letter or a digit; a bare separator glyph (`·`, `/`, `—`) is punctuation, not copy. */
+const IS_COPY = /[\p{L}\p{N}]/u;
+
+/**
+ * The structure of one composition source file, for the composition rule's contract checks:
+ * - `elements`: each raw (lowercase) JSX element, `{ tag, role }`, `role` its literal `role` attribute or else the
+ *   tag's implicit landmark role (IMPLICIT_LANDMARK_ROLES);
+ * - `copy`: each literal text a reader meets, `{ text, where }`: non-blank JSX text, a string or template literal
+ *   placed as a JSX child, and a literal COPY_ATTRIBUTES value (`where` names the attribute). A composition reads
+ *   copy only by Writer slot keys, so each one is a finding.
+ */
+export function compositionStructure(text, fileName) {
+  const ts = loadTypeScript();
+  const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, scriptKind(ts, fileName));
+  const elements = [];
+  const copy = [];
+  const literal = (node) => node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined;
+  const visit = (node) => {
+    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
+      const tag = node.tagName.getText(source);
+      for (const attribute of node.attributes.properties) {
+        if (!ts.isJsxAttribute(attribute)) continue;
+        const name = attribute.name.getText(source);
+        const init = attribute.initializer;
+        const value = literal(init) ?? (init && ts.isJsxExpression(init) ? literal(init.expression) : undefined);
+        if (COPY_ATTRIBUTES.has(name) && value !== undefined && IS_COPY.test(value)) copy.push({ text: value.trim(), where: `${tag} ${name}` });
+      }
+      if (/^[a-z]/.test(tag)) {
+        const roleAttribute = node.attributes.properties.find((attribute) => ts.isJsxAttribute(attribute) && attribute.name.getText(source) === "role");
+        const role = roleAttribute && ts.isJsxAttribute(roleAttribute) ? literal(roleAttribute.initializer) : undefined;
+        elements.push({ tag, role: role ?? IMPLICIT_LANDMARK_ROLES[tag] });
+      }
+    }
+    if (ts.isJsxText(node) && IS_COPY.test(node.text)) copy.push({ text: node.text.trim(), where: "text" });
+    if (ts.isJsxExpression(node) && (ts.isJsxElement(node.parent) || ts.isJsxFragment(node.parent))) {
+      const value = literal(node.expression);
+      if (value !== undefined && IS_COPY.test(value)) copy.push({ text: value.trim(), where: "text" });
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return { elements, copy };
+}

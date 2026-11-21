@@ -5,10 +5,13 @@
  * inspector). A frame is a Designer slot whose id starts with `frames.` or whose contract kind is
  * `frame`. Two findings:
  * - a pinned region slot that no frame lists in slot.json `uses` (the region is never composed);
- * - a frame's pinned candidate that inlines a copy of a region's component files: a registry file
- *   whose basename or bytes equal a component file of the region's pinned candidate. A region's
+ * - a frame candidate, pinned or a draft, that inlines a copy of a region's component files: a registry
+ *   file whose basename or bytes equal a component file of the region's pinned candidate. A region's
  *   component files are its `files[]` entries with no install `target` (that is a demo page) and
- *   that are not the licence; the frame must compose the slot instead.
+ *   that are not the licence; the frame must compose the slot instead. A draft is judged too, so the
+ *   submit guard refuses an inlining draft before it is written (the row names the draft).
+ * A composed frame's contract landmarks and contract.root are the ref-verbatim composition rule's
+ * (REF-COMP-LANDMARK, REF-COMP-ROOT in packages/designer/scripts/check-ref-verbatim.mjs).
  */
 import type { CandidateRecord, ConstitutionContext, Row, SlotRecord } from "../types.js";
 import { isObject, listed, liveSlotRecords, registryFiles, row, slotDoc, stringList } from "../checks/shared.js";
@@ -51,9 +54,7 @@ export function frameRegions(ctx: ConstitutionContext): Row[] {
     const consumers = frames.filter(frame => frame.id !== region.id && stringList(slotDoc(frame)?.uses).includes(region.id));
     if (!consumers.length) rows.push(row("R07", "R07.6", region, "pinned region slot is in no frame's uses (no frame composes it)", region.slot?.path ?? region.dir));
   }
-  for (const frame of frames) {
-    const candidate = pinnedCandidate(frame);
-    if (!candidate) continue;
+  for (const frame of frames) for (const candidate of frame.candidates) {
     const files = registryFiles(candidate);
     for (const region of regions) {
       if (region.id === frame.id) continue;

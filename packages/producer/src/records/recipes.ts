@@ -29,6 +29,20 @@ export interface RecipeDoc {
   readonly generator?: string;
   /** The plumb action that computes the candidates (rung plumb only). */
   readonly action?: string;
+  /**
+   * The deterministic checks a candidate this recipe crafts must pass: each a check the submit guard runs
+   * (a rules.json check whose `guard` lists submit, or the ref-verbatim gate). Checked in code below.
+   */
+  readonly checks?: readonly string[];
+  /** The source kinds (`meta.source.kind`) a candidate this recipe crafts may carry; `next --submit` refuses any other. */
+  readonly sources?: readonly string[];
+  /**
+   * The part classes a composition this recipe crafts may place (`meta.source.parts`): `component` (a pinned stock
+   * component, registry or npm lineage), `frame` and `section` (a pinned composition frame or section that itself
+   * passes the composition rule). The Designer ref-verbatim gate enforces the classes per composing standard
+   * (check-ref-verbatim.mjs compositionPartClasses); recipes.test.mjs pins the two equal.
+   */
+  readonly parts?: readonly string[];
 }
 
 /** The plumb action a plumb recipe names, as its action.json declares it. */
@@ -117,6 +131,62 @@ export function generatorIssues(source: string): string[] {
   return NONDETERMINISM.filter(([pattern]) => pattern.test(source)).map(([, what]) => `generator ${what}`);
 }
 
+/** The Designer ref-verbatim gate's id as a recipe names it (constitution/fix.ts REF_VERBATIM_ID: recipes.test.ts pins the two equal). */
+export const REF_VERBATIM_CHECK = "ref-verbatim";
+/**
+ * The source kinds the ref-verbatim gate judges at every rung (constitution/guard.ts refVerbatimOf): composition
+ * lineage (each part stock, each import a declared part) and registry lineage (byte-exact adoption).
+ */
+export const REF_VERBATIM_SOURCES: readonly string[] = Object.freeze(["composition", "registry"]);
+
+let submitGuarded: ReadonlySet<string> | undefined;
+/**
+ * The checks the submit guard runs on every submitted candidate: each rules.json check whose `guard` lists
+ * submit, plus the ref-verbatim gate. rules.json is read as data (as constitution/registry.ts reads it), so this
+ * module imports no judge (R16.1).
+ */
+export function submitGuardedChecks(): ReadonlySet<string> {
+  if (!submitGuarded) {
+    const rules = JSON.parse(readFileSync(new URL("../../src/constitution/rules.json", import.meta.url), "utf8")) as { checks?: { id?: unknown; guard?: unknown }[] }[];
+    const ids = rules.flatMap(rule => rule.checks ?? []).filter(check => Array.isArray(check.guard) && check.guard.includes("submit")).map(check => String(check.id));
+    submitGuarded = new Set([REF_VERBATIM_CHECK, ...ids]);
+  }
+  return submitGuarded;
+}
+
+/**
+ * The issues of a recipe's `checks` and `sources`: every named check is one the submit guard runs (a recipe never
+ * names a check that does not run), none twice; a recipe naming the ref-verbatim gate limits `sources` to kinds the
+ * gate judges at every rung (REF_VERBATIM_SOURCES), so its candidates cannot step outside the gate.
+ */
+export function checksIssues(doc: RecipeDoc, guarded: ReadonlySet<string> = submitGuardedChecks()): string[] {
+  const issues: string[] = [];
+  const twice = (list: readonly string[]) => list.filter((item, index) => list.indexOf(item) !== index);
+  for (const id of new Set(twice(doc.checks ?? []))) issues.push(`checks names ${id} twice`);
+  for (const id of new Set(twice(doc.sources ?? []))) issues.push(`sources names ${id} twice`);
+  for (const id of new Set(twice(doc.parts ?? []))) issues.push(`parts names ${id} twice`);
+  if (doc.parts && !doc.sources?.includes("composition")) issues.push("parts names the part classes of a composition, but sources does not list composition");
+  if (doc.parts && !doc.parts.includes("component")) issues.push("parts does not list component: every composition places pinned stock components");
+  for (const id of doc.checks ?? []) if (!guarded.has(id)) issues.push(`checks names ${id}, which the submit guard does not run (a rules.json check guarded on submit, or ${REF_VERBATIM_CHECK})`);
+  if (doc.checks?.includes(REF_VERBATIM_CHECK)) {
+    if (!doc.sources) issues.push(`checks names ${REF_VERBATIM_CHECK} with no sources: list the source kinds (${REF_VERBATIM_SOURCES.join(", ")}) the gate judges at every rung`);
+    else for (const kind of doc.sources) if (!REF_VERBATIM_SOURCES.includes(kind)) issues.push(`sources names ${kind}, which ${REF_VERBATIM_CHECK} does not judge at every rung (${REF_VERBATIM_SOURCES.join(", ")})`);
+  }
+  return issues;
+}
+
+/**
+ * Why `next --submit` refuses a candidate whose source kind is `kind` as the output of a craft run under `recipe`: the
+ * kind is not one of the recipe's `sources`. `kind` is the candidate view's (records/slot-current.ts viewSourceKind),
+ * the one field the write guard's ref-verbatim gate reads too. Undefined when the recipe lists no sources or the kind is listed.
+ */
+export function recipeSourceIssue(recipe: Recipe, kind: string | undefined): string | undefined {
+  const sources = recipe.doc?.sources;
+  if (!sources) return undefined;
+  if (kind !== undefined && sources.includes(kind)) return undefined;
+  return `recipe ${recipe.id} crafts ${sources.join(" or ")} candidates; this one's meta.source.kind is ${kind ?? "(none)"}`;
+}
+
 /** Reads one recipe folder. */
 export function readRecipe(root: string, agent: ModelAgent, id: string): Recipe {
   const dir = join("packages", agent, "recipes", id).split("\\").join("/");
@@ -162,6 +232,7 @@ export function readRecipe(root: string, agent: ModelAgent, id: string): Recipe 
     }
     if (files["craft.md"]) issues.push(...plumbCraftIssues(readFileSync(join(abs, "craft.md"), "utf8")));
   } else if (doc?.action) issues.push(`action ${doc.action} is for a plumb recipe; a ${doc.rung} recipe is crafted and names no action`);
+  if (doc) issues.push(...checksIssues(doc));
   let generatorText: string | undefined;
   if (doc?.generator) {
     if (!files[doc.generator]) issues.push(`generator ${doc.generator} is not a file in the recipe folder`);
@@ -214,14 +285,68 @@ export function produceIssues(recipe: Recipe, standards: readonly Standard[]): s
 }
 
 /**
- * The recipe one P2 run's craft events name (R15.7): the diverge's `recipe`, else the first event's
- * that names one; the agent's own recipe of that id, else any agent's.
+ * The one recipe that produces for `<agent>/<standardId>` (R15.5): code chooses a craft run's recipe from the recipe
+ * files, never from what a craft event names. The issue when no valid recipe, or more than one, produces for it.
  */
-export function craftRunRecipe(events: readonly Readonly<Record<string, unknown>>[], recipes: readonly Recipe[], agent: string): Recipe | undefined {
+export function standardRecipe(recipes: readonly Recipe[], agent: string, standardId: string): { recipe: Recipe } | { issue: string } {
+  const found = recipesFor(recipes, { agent: agent as Standard["agent"], id: standardId });
+  if (found.length === 1) return { recipe: found[0]! };
+  if (!found.length) return { issue: `no valid recipe under packages/${agent}/recipes/ produces for ${standardId}` };
+  return { issue: `recipes ${found.map(recipe => recipe.id).join(", ")} all produce for ${standardId}; a standard has exactly one producing recipe` };
+}
+
+/** The recipe ids one run's craft events name: each event's `recipe`, and the brief's assembled `recipe.id`. */
+function namedRecipes(events: readonly Readonly<Record<string, unknown>>[]): { op: string; id: string }[] {
+  const named: { op: string; id: string }[] = [];
+  for (const event of events) {
+    const op = String(event.op);
+    if (typeof event.recipe === "string") named.push({ op, id: event.recipe });
+    const assembled = isRecord(event.assembled) && isRecord(event.assembled.recipe) ? event.assembled.recipe : undefined;
+    if (assembled && typeof assembled.id === "string") named.push({ op: `${op} (assembled)`, id: assembled.id });
+  }
+  return named;
+}
+
+/**
+ * The recipe of one P2 run (R15.7). With the slot's `standardId` (production: the judge, the craft writers and
+ * `next --submit` pass it, "" when the slot names none) it is the standard's one producing recipe (standardRecipe),
+ * whatever the events name; without it (a bare events list) the diverge's `recipe`, else the first named one.
+ */
+export function craftRunRecipe(events: readonly Readonly<Record<string, unknown>>[], recipes: readonly Recipe[], agent: string, standardId?: string): Recipe | undefined {
+  if (standardId !== undefined) {
+    if (!standardId) return undefined;
+    const chosen = standardRecipe(recipes, agent, standardId);
+    return "recipe" in chosen ? chosen.recipe : undefined;
+  }
   const diverge = events.find(event => event.op === "craft:diverge");
   const recipeId = [...(diverge ? [diverge] : []), ...events].map(event => event.recipe).find((value): value is string => typeof value === "string");
   if (recipeId === undefined) return undefined;
   return recipes.find(item => item.id === recipeId && item.agent === agent) ?? recipes.find(item => item.id === recipeId);
+}
+
+/**
+ * Why one run's craft events disagree with the recipe code chooses for the slot's standard (R15.5, R15.7): the slot
+ * names no standard, the standard has no one producing recipe, an event names a recipe that does not exist or does
+ * not produce the standard, or the events name two recipes (a brief and a diverge of different recipes). An event
+ * need not name its recipe; one that does names the chosen one. Empty for no events.
+ */
+export function craftRunRecipeIssues(events: readonly Readonly<Record<string, unknown>>[], recipes: readonly Recipe[], agent: string, standardId: string): string[] {
+  if (!events.length) return [];
+  const issues: string[] = [];
+  const named = namedRecipes(events);
+  const ids = [...new Set(named.map(item => item.id))];
+  if (ids.length > 1) issues.push(`the run's craft events name recipes ${named.map(item => `${item.id} (${item.op})`).join(", ")}; one run is one recipe`);
+  for (const id of ids) {
+    const recipe = recipes.find(item => item.agent === agent && item.id === id);
+    const where = named.filter(item => item.id === id).map(item => item.op).join(", ");
+    if (!recipe?.doc) issues.push(`${where} names recipe ${id}, which is not a valid recipe under packages/${agent}/recipes/`);
+    else if (standardId && !recipe.doc.produces.includes(standardId)) issues.push(`${where} names recipe ${id}, which does not produce for ${standardId}`);
+  }
+  if (!standardId) { issues.push(`${agent} slot names no standard, so no recipe is chosen for its craft run`); return issues; }
+  const chosen = standardRecipe(recipes, agent, standardId);
+  if ("issue" in chosen) issues.push(chosen.issue);
+  else for (const id of ids) if (id !== chosen.recipe.id && !issues.some(issue => issue.includes(`recipe ${id},`))) issues.push(`the run names recipe ${id}, but ${chosen.recipe.id} is the one recipe producing for ${standardId}`);
+  return issues;
 }
 
 /**
@@ -230,7 +355,7 @@ export function craftRunRecipe(events: readonly Readonly<Record<string, unknown>
  * under a plumb recipe are the fault, because its plumb action computes the candidate. The issue, or
  * undefined. The writer passes the open run plus the event it is about to append.
  */
-export function plumbCraftRunIssue(events: readonly Readonly<Record<string, unknown>>[], recipes: readonly Recipe[], agent: string): string | undefined {
-  const recipe = craftRunRecipe(events, recipes, agent);
+export function plumbCraftRunIssue(events: readonly Readonly<Record<string, unknown>>[], recipes: readonly Recipe[], agent: string, standardId?: string): string | undefined {
+  const recipe = craftRunRecipe(events, recipes, agent, standardId);
   return recipe?.doc?.rung === "plumb" && events.length ? `recipe ${recipe.id} is plumb: a plumb recipe records no craft events (its plumb action computes the candidate)` : undefined;
 }

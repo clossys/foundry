@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://clossys.com/schemas/producer/recipe.schema.json",
   "title": "Recipe (packages/<agent>/recipes/<id>/recipe.json)",
-  "description": "The maker of candidates for the standards it produces for (R15.5). A recipe has no rubric: the closed key set refuses one. generator names an optional deterministic tool file in the recipe folder (generate.mjs). axes are the direction axes the diverge stage keeps pairwise distinct (R15.7). rung plumb marks a deterministic recipe: its candidates are computed by the plumb action it names (action, an action.json id of kind plumb whose standards list each standard the recipe produces for), its craft.md runs clossys verbs only, with no model stage, it has no axes and no generator, and it records no craft events. action is required with rung plumb and refused otherwise; these pairings are checked in code (src/records/recipes.ts), since the validator reads no if/then. Read by src/records/recipes.ts.",
+  "description": "The maker of candidates for the standards it produces for (R15.5). A recipe has no rubric: the closed key set refuses one. generator names an optional deterministic tool file in the recipe folder (generate.mjs). axes are the direction axes the diverge stage keeps pairwise distinct (R15.7). rung plumb marks a deterministic recipe: its candidates are computed by the plumb action it names (action, an action.json id of kind plumb whose standards list each standard the recipe produces for), its craft.md runs clossys verbs only, with no model stage, it has no axes and no generator, and it records no craft events. checks names the deterministic checks a candidate the recipe crafts must pass, each one the submit guard runs (a rules.json check guarded on submit, or the Designer ref-verbatim gate); sources names the source kinds its candidates may carry, which next --submit enforces for a craft run under the recipe, and a recipe naming ref-verbatim lists only kinds that gate judges at every rung (composition, registry). parts names the part classes a composition the recipe crafts may place (component: a pinned stock component; frame, section: a pinned composition frame or section that itself passes the composition rule), with sources listing composition; the Designer ref-verbatim gate enforces the classes per composing standard. Code chooses a craft run's recipe: the one recipe that produces for the slot's standard. action is required with rung plumb and refused otherwise; these pairings are checked in code (src/records/recipes.ts), since the validator reads no if/then. Read by src/records/recipes.ts.",
   "type": "object",
   "required": [
     "schema",
@@ -50,6 +50,38 @@
     "action": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^(R[0-9]{2}\\.[0-9]+(-[a-z0-9-]+)?|ref-verbatim)$"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "registry",
+          "derived",
+          "original",
+          "composition",
+          "npm"
+        ]
+      }
+    },
+    "parts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "component",
+          "frame",
+          "section"
+        ]
+      }
     }
   }
 }

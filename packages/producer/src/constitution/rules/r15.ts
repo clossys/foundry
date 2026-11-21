@@ -8,7 +8,7 @@
  */
 import { join } from "node:path";
 import { loadSchema, validateValue } from "../../pipeline/schema.js";
-import { craftRunRecipe, loadRecipes, plumbCraftRunIssue, produceIssues, recipesFor, type Recipe } from "../../records/recipes.js";
+import { craftRunRecipe, craftRunRecipeIssues, loadRecipes, plumbCraftRunIssue, produceIssues, recipesFor, type Recipe } from "../../records/recipes.js";
 import type { ModelAgent } from "../../records/slot-model/index.js";
 import { modelExists, readModelText } from "../../records/slots.js";
 import {
@@ -108,7 +108,12 @@ export const r15_4: Check = ctx => {
 export const r15_5: Check = ctx => {
   const world = standardsWorld(ctx);
   const rows: Row[] = [];
-  for (const standard of world.standards) if (!recipesFor(world.recipes, standard).length) rows.push(folderRow("R15.5", standard, "standards", `no valid recipe under packages/${standard.agent}/recipes/ produces for ${standard.id}`));
+  for (const standard of world.standards) {
+    const producing = recipesFor(world.recipes, standard);
+    if (!producing.length) rows.push(folderRow("R15.5", standard, "standards", `no valid recipe under packages/${standard.agent}/recipes/ produces for ${standard.id}`));
+    // Code chooses a craft run's recipe from the standard (records/recipes.ts standardRecipe): two producing recipes leave it unchosen.
+    else if (producing.length > 1) rows.push(folderRow("R15.5", standard, "standards", `recipes ${producing.map(recipe => recipe.id).join(", ")} all produce for ${standard.id}; a standard has exactly one producing recipe`));
+  }
   for (const recipe of world.recipes) {
     for (const issue of recipe.issues) rows.push(folderRow("R15.5", recipe, "recipes", issue));
     for (const issue of produceIssues(recipe, world.standards)) if (!issue.startsWith("adopt recipe")) rows.push(folderRow("R15.5", recipe, "recipes", issue));
@@ -126,15 +131,20 @@ const CRAFT = /^craft:(brief|diverge|render|critique|refine)$/;
 /** Section 5b order: brief, diverge, render, critique, then at most 2 refine rounds (each re-rendered and re-checked). */
 const CRAFT_ORDER = /^brief diverge render critique(?: refine(?: render)?(?: critique)?){0,2}$/;
 
-/** The issues of one P2 run's craft events (between two submits): order, directions and their axes. */
-export function craftIssues(events: readonly Record<string, unknown>[], recipes: readonly Recipe[], agent: string): string[] {
-  const issues: string[] = [];
+/**
+ * The issues of one P2 run's craft events (between two submits): the run's recipe, order, directions and their axes.
+ * With the slot's `standardId` ("" when it names none; r15_7 passes it) code chooses the recipe (the standard's one
+ * producing recipe) and an event naming another, an unknown one or one not producing the standard is a row
+ * (records/recipes.ts craftRunRecipeIssues, the predicate the craft writers refuse by).
+ */
+export function craftIssues(events: readonly Record<string, unknown>[], recipes: readonly Recipe[], agent: string, standardId?: string): string[] {
+  const issues: string[] = standardId === undefined ? [] : craftRunRecipeIssues(events, recipes, agent, standardId);
   const diverge = events.find(event => event.op === "craft:diverge");
-  const recipe = craftRunRecipe(events, recipes, agent);
+  const recipe = craftRunRecipe(events, recipes, agent, standardId);
   // A plumb recipe's candidate is computed by its plumb action: any craft event under it is the fault, not the stage order.
   // The same predicate refuses the event at write time (records/slot-write.ts appendCraftEvent).
-  const plumb = plumbCraftRunIssue(events, recipes, agent);
-  if (plumb) return [plumb];
+  const plumb = plumbCraftRunIssue(events, recipes, agent, standardId);
+  if (plumb) return [...issues, plumb];
   const stages = events.map(event => String(event.op).slice("craft:".length));
   if (!CRAFT_ORDER.test(stages.join(" "))) issues.push(`craft events ${stages.join(", ") || "(none)"} are not brief, diverge, render, critique, then at most 2 refine rounds`);
   if (!diverge) return issues;
@@ -174,7 +184,7 @@ export const r15_7: Check = ctx => {
       const name = typeof event.name === "string" ? event.name : undefined;
       const p2 = event.rung === "adapt" || event.rung === "create" || since.length > 0;
       if (p2 && name) {
-        for (const issue of craftIssues(since, world.recipes, slot.agent)) rows.push(slotRow("R15.7", slot, issue, slot.ledger?.path ?? `${slot.dir}/ledger.json`, name));
+        for (const issue of craftIssues(since, world.recipes, slot.agent, slotFields(slot)?.standard ?? "")) rows.push(slotRow("R15.7", slot, issue, slot.ledger?.path ?? `${slot.dir}/ledger.json`, name));
         const critique = join(ctx.root, slot.dir, "critiques", critiqueName(name));
         if (!modelExists(critique)) rows.push(slotRow("R15.7", slot, `no critique record critiques/${critiqueName(name)}`, `${slot.dir}/critiques/${critiqueName(name)}`, name));
       }

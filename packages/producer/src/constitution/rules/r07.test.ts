@@ -14,14 +14,14 @@ const region = { name: "app-sidebar", type: "registry:block", files: [
 ] };
 const shell = (files: { path: string; content: string }[]) => ({ name: "shell", type: "registry:block", files: [{ path: "LICENCE.md", content: "MIT\n" }, { path: "page.tsx", content: "x\n" }, ...files] });
 
-function spec(opts: { uses?: string[]; shellFiles?: { path: string; content: string }[] } = {}): WorkspaceSpec {
+function spec(opts: { uses?: string[]; shellFiles?: { path: string; content: string }[]; draftFiles?: { path: string; content: string }[] } = {}): WorkspaceSpec {
   const base = cleanSpec();
   return {
     ...base,
     designer: {
       ...base.designer,
       "frames.app-sidebar": { slot: { ...slotDoc("designer", "frames.app-sidebar"), ia: { l0: "frames", l1: "frames.regions" }, contract: { kind: "frame" } }, candidates: { "app-sidebar-v1.json": region } },
-      "frames.app-shell": { slot: { ...slotDoc("designer", "frames.app-shell", { uses: opts.uses ?? ["frames.app-sidebar"] }), ia: { l0: "frames", l1: "frames.page-shells" }, contract: { kind: "frame" } }, candidates: { "app-shell-v1.json": shell(opts.shellFiles ?? [{ path: "shell.tsx", content: "import { AppSidebar } from \"@/components/app-sidebar\";\n" }]) } },
+      "frames.app-shell": { slot: { ...slotDoc("designer", "frames.app-shell", { uses: opts.uses ?? ["frames.app-sidebar"] }), ia: { l0: "frames", l1: "frames.page-shells" }, contract: { kind: "frame" } }, candidates: { "app-shell-v1.json": shell(opts.shellFiles ?? [{ path: "shell.tsx", content: "import { AppSidebar } from \"@/components/app-sidebar\";\n" }]), ...(opts.draftFiles ? { "app-shell-v2.json": shell(opts.draftFiles) } : {}) } },
     },
   };
 }
@@ -36,6 +36,15 @@ describe("R07.6 frame regions", () => {
     const rows = expectCatches(frameRegions, contextOf(spec()), contextOf(spec({ shellFiles: [{ path: "app-sidebar.tsx", content: "edited copy\n" }, { path: "rail.tsx", content: SIDEBAR }] })));
     expect(rows.map(r => [r.check, r.slot, r.candidate])).toEqual([["R07.6", "frames.app-shell", "app-shell-v1.json"]]);
     expect(rows[0]!.reason).toMatch(/inlines a copy of region frames\.app-sidebar \(2 files: app-sidebar\.tsx, rail\.tsx\)/);
+  });
+});
+
+describe("R07.6 judges a frame's drafts, so the submit guard refuses an inlining draft", () => {
+  it("failing-first: an unpinned draft inlining a region's files is a row naming the draft (mutation: pinned-only misses it)", () => {
+    const clean = contextOf(spec({ draftFiles: [{ path: "shell.tsx", content: "export const Shell = 2;\n" }] }));
+    const rows = expectCatches(frameRegions, clean, contextOf(spec({ draftFiles: [{ path: "nav-main.tsx", content: "edited\n" }] })));
+    expect(rows.map(r => [r.check, r.slot, r.candidate])).toEqual([["R07.6", "frames.app-shell", "app-shell-v2.json"]]);
+    expect(rows[0]!.reason).toMatch(/inlines a copy of region frames\.app-sidebar \(1 file: nav-main\.tsx\)/);
   });
 });
 
