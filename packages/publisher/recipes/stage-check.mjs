@@ -25,6 +25,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { FINDING_REF, checkBriefWith, checkDivergeWith, checkDraftWith, excerpt, isRecord, issue, pinOf, runStageCli, strings } from "./stage-core.mjs";
+export { STAGES } from "./stage-core.mjs";
 
 const AGENT = "publisher";
 

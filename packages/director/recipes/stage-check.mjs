@@ -25,6 +25,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { FINDING_REF, SLOT_ID, checkBriefWith, checkDivergeWith, checkDraftWith, excerpt, findingOf, frontmatter, isRecord, issue, jsonField, pinOf, runStageCli, sentences, strings, words } from "./stage-core.mjs";
+export { STAGES } from "./stage-core.mjs";
 
 const AGENT = "director";
 

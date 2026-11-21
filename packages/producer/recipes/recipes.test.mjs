@@ -5,7 +5,7 @@
  * file of another agent), the draft check agrees with the judge, and no judge imports
  * a recipe (R16.1).
  *
- *   node --test packages/publisher/recipes/recipes.test.mjs
+ *   node --test recipes.test.mjs
  *
  * It reads the producer's built modules (packages/producer/dist): build the producer first.
  */

@@ -25,6 +25,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { FINDING_REF, checkBriefWith, checkDivergeWith, checkDraftWith, excerpt, findingOf, frontmatter, isRecord, issue, jsonField, pinOf, runStageCli, strings, words } from "./stage-core.mjs";
+export { STAGES } from "./stage-core.mjs";
 
 const AGENT = "writer";
 /** The Director slot every Writer candidate derives from. */

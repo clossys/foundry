@@ -291,15 +291,18 @@ export function readDraft(path) {
   return { name: path, text, json };
 }
 
-/** The CLI: brief | diverge | draft, exit 0 clean, 1 with one line per issue, 2 on a usage error. */
+/** The stages this stage check judges, in craft order: the CLI accepts exactly these, and `clossys recipe` reads them. */
+export const STAGES = Object.freeze(["brief", "diverge", "draft"]);
+
+/** The CLI: one of STAGES, exit 0 clean, 1 with one line per issue, 2 on a usage error. */
 export function runStageCli(agent, api, argv, cwd) {
-  const usage = `Usage: node packages/${agent}/recipes/stage-check.mjs brief|diverge|draft <slot> <file> [--root <dir>]\n`;
+  const usage = `Usage: clossys recipe check <recipe-id> ${STAGES.join("|")} <slot> <file> [--root <dir>]\n`;
   const args = [...argv];
   let root = cwd;
   const at = args.indexOf("--root");
   if (at >= 0) { root = resolve(cwd, args[at + 1] ?? ""); args.splice(at, 2); }
   const [stage, slot, path] = args;
-  if (!["brief", "diverge", "draft"].includes(stage) || !slot || !path) return { code: 2, text: usage };
+  if (!STAGES.includes(stage) || !slot || !path) return { code: 2, text: usage };
   if (stage === "draft") {
     let draft;
     try { draft = readDraft(resolve(cwd, path)); } catch (error) { return { code: 2, text: `stage-check: cannot read ${path}: ${error.message}\n` }; }

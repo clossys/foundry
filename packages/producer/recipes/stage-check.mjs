@@ -25,6 +25,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { PACKAGES, checkBriefWith, checkDivergeWith, checkDraftWith, isRecord, issue, readJson, runStageCli, words } from "./stage-core.mjs";
+export { STAGES } from "./stage-core.mjs";
 
 const AGENT = "producer";
 

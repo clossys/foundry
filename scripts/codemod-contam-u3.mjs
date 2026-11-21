@@ -6,6 +6,8 @@
  * rewritten to the clossys verb that finds the recipe's tool by recipe id (packages/producer/src/cli/recipe.ts):
  *
  *   node packages/<agent>/recipes/stage-check.mjs <stage> ...    -> clossys recipe check <recipe-id> <stage> ...
+ *   node packages/${agent}/recipes/stage-check.mjs ...           -> clossys recipe check <recipe-id> ...   (in the
+ *                                                                   agent's shared stage-check.mjs or stage-core.mjs)
  *   node packages/<agent>/recipes/<id>/<generator> ...           -> clossys recipe generate <id> ...
  *   node --test packages/<agent>/recipes/recipes.test.mjs        -> node --test <path relative to the citing file>
  *
@@ -17,7 +19,9 @@
  * Every rewrite is checked before anything is written: the cited file must exist, the recipe folder must hold a
  * recipe.json, and the generator must be the one it declares. Any failure names the path and the run writes
  * nothing (exit 1). An own-package `packages/<agent>/` path that no rule covers is also a failure, so nothing is
- * left behind silently. Another package's path is not a self-path and is left as it is. `--skill packages/<agent>/...` arguments are skill ids, not paths (CONTAM-U3 D5), and
+ * left behind silently. A templated command line (`node packages/${...}/...`) can name any package, so it is
+ * rewritten only where it is the agent's own shared stage check (recipes/stage-check.mjs or recipes/stage-core.mjs,
+ * with this package's stage check present); anywhere else it is a failure naming the file. Another package's path is not a self-path and is left as it is. `--skill packages/<agent>/...` arguments are skill ids, not paths (CONTAM-U3 D5), and
  * are never touched.
  *
  *   node scripts/codemod-contam-u3.mjs          rewrite in place, print each rewrite
@@ -35,6 +39,8 @@ const TEXT = /\.(md|mjs|js|ts|json|txt)$/;
 
 const STAGE_CHECK = /\bnode packages\/([a-z][a-z0-9-]*)\/recipes\/stage-check\.mjs(?=\s)/g;
 const GENERATOR = /\bnode packages\/([a-z][a-z0-9-]*)\/recipes\/([^/\s`'"]+)\/([^/\s`'"]+\.mjs)(?=\s)/g;
+const TEMPLATE_STAGE_CHECK = /\bnode packages\/\$\{[A-Za-z_$][\w$.]*\}\/recipes\/stage-check\.mjs(?=\s)/g;
+const SHARED_STAGE_FILES = ["recipes/stage-check.mjs", "recipes/stage-core.mjs"];
 const TEST_RUN = /\bnode --test packages\/([a-z][a-z0-9-]*)\/recipes\/recipes\.test\.mjs\b/g;
 const SKILL_ARG = /--skill(?:=|[ \t]+)$/;
 
@@ -91,6 +97,14 @@ export function rewriteText(repo, pkg, rel, text) {
       rewrites.push(`${at}: node ${cited} -> ${to}`);
       return to;
     });
+    next = next.replace(TEMPLATE_STAGE_CHECK, whole => {
+      const cited = whole.slice("node ".length);
+      if (!SHARED_STAGE_FILES.includes(rel)) { failures.push(`${at}: ${cited} is a templated command line outside the agent's shared stage check, so there is no recipe tool to name`); return whole; }
+      if (!existsSync(join(pkgRoot, "recipes", "stage-check.mjs"))) { failures.push(`${at}: ${cited} stands for packages/${pkg}/recipes/stage-check.mjs, which does not exist`); return whole; }
+      const to = "clossys recipe check <recipe-id>";
+      rewrites.push(`${at}: node ${cited} -> ${to}`);
+      return to;
+    });
     next = next.replace(TEST_RUN, (whole, agent) => {
       const cited = `packages/${agent}/recipes/recipes.test.mjs`;
       if (agent !== pkg) return whole; // another package's path: not this package's self-path, left as it is
@@ -105,6 +119,10 @@ export function rewriteText(repo, pkg, rel, text) {
     for (const m of next.matchAll(new RegExp(`\\bnode (?:--test )?packages/${pkg}/\\S*`, "g"))) {
       if (SKILL_ARG.test(next.slice(0, m.index))) continue;
       failures.push(`${at}: ${m[0].slice(m[0].indexOf("packages/"))} is an own-package command line no rule rewrites`);
+    }
+    // A templated package path names no package until it runs, so no templated command line may be left either.
+    for (const m of next.matchAll(/\bnode (?:--test )?packages\/\$\{[^}]*\}\S*/g)) {
+      failures.push(`${at}: ${m[0].slice(m[0].indexOf("packages/"))} is a templated command line no rule rewrites`);
     }
     return next;
   });

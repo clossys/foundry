@@ -193,7 +193,10 @@ export function checkDiverge(root, slot, file) {
   return out;
 }
 
-const USAGE = "Usage: clossys recipe check <recipe-id> brief|diverge <slot> <file.json> [--root <dir>]\n";
+/** The stages this stage check judges: the CLI accepts exactly these, and `clossys recipe` reads them. */
+export const STAGES = Object.freeze(["brief", "diverge"]);
+
+const USAGE = `Usage: clossys recipe check <recipe-id> ${STAGES.join("|")} <slot> <file.json> [--root <dir>]\n`;
 
 export function main(argv, cwd = process.cwd()) {
   const args = [...argv];
@@ -201,7 +204,7 @@ export function main(argv, cwd = process.cwd()) {
   const at = args.indexOf("--root");
   if (at >= 0) { root = resolve(cwd, args[at + 1] ?? ""); args.splice(at, 2); }
   const [stage, slot, path] = args;
-  if (!["brief", "diverge"].includes(stage) || !slot || !path) return { code: 2, text: USAGE };
+  if (!STAGES.includes(stage) || !slot || !path) return { code: 2, text: USAGE };
   let file;
   try { file = readJson(resolve(cwd, path)); } catch (error) { return { code: 2, text: `stage-check: cannot read ${path} as JSON: ${error.message}\n` }; }
   const found = stage === "brief" ? checkBrief(root, slot, file) : checkDiverge(root, slot, file);
