@@ -131,7 +131,7 @@ export function PublisherInstancesView({ instances, library, registries, compile
   </section>)}</>;
   return <section aria-labelledby={`${id}-title`} className="grid min-w-0 gap-lg text-ink-primary">
     <SectionHeader id={`${id}-title`} title={presentation === "item" ? "Item inspector" : "Instances"} description={<>Library: {library.id} · read-only<br />Frames and Sections render only through the registered-route runtime; responsive render checks LK12 pending.</>} />
-    <div className={presentation === "item" ? "grid min-w-0 gap-lg desktop:grid-cols-2" : "grid min-w-0 gap-lg desktop:grid-cols-[var(--ui-layout-sidebar-w)_minmax(0,1fr)_var(--ui-layout-aside-w)]"}>
+    <div className={presentation === "item" ? "grid min-w-0 gap-lg desktop:grid-cols-2" : "grid min-w-0 gap-lg desktop:grid-cols-[var(--ui-layout-sidebar-w,256px)_minmax(0,1fr)_var(--ui-layout-aside-w,320px)]"}>
       {presentation === "standalone" && <Panel><nav aria-label="Instances by pack and surface" className="grid content-start gap-lg">
         {packs.map(pack => <section key={pack.packId} aria-label={packLabels?.[pack.packId] ?? pack.packId} className="grid gap-md">
           <SectionHeader level={4} title={<>{packLabels?.[pack.packId] ?? pack.packId} · {pack.members.length}</>} />{renderList(pack.members)}

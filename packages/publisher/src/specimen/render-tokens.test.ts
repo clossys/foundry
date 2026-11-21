@@ -88,7 +88,7 @@ describe("asset specimens (media)", () => {
     expect(html).toContain(`src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg).replace(/'/g, "&#39;")}"`);
   });
 
-  it("draws glyphs inline, images, video posters, ratios and patterns", () => {
+  it("draws glyphs inline, images, video posters, ratios and patterns", async () => {
     const image = "data:image/svg+xml;base64,PHN2Zy8+";
     const html = page(libraryRecord("assets.mixed", "mixed", "registry:item", "assets", { name: "mixed", type: "registry:item", files: [tokens("mixed", {
       glyph: { $type: "glyph", $value: [["path", { d: "M5 12h14", key: "k", onload: "x" }], ["circle", { cx: "12", cy: "12", r: "4" }]] },
@@ -104,7 +104,11 @@ describe("asset specimens (media)", () => {
     expect(html).toContain('alt="video poster"');
     expect(html).not.toContain("data:video");
     expect(html).toContain("21:9");
-    expect(html).toContain("--specimen-ink:var(--color-line-strong, var(--border))");
+    // CONTAM-U7: the default ink's fallback is the declared global value of --border, read by the reader.
+    const { loadReader } = await import(/* @vite-ignore */ "../../scripts/align-specimen-fallbacks.mjs" as string);
+    const reader = await loadReader();
+    const border = reader.globalDeclaredFallback(reader.sources, reader.outputCss)("--border");
+    expect(html).toContain(`--specimen-ink:var(--color-line-strong, var(--border, ${border}))`);
   });
 
   it("reports an asset with nothing to draw instead of a blank", () => {

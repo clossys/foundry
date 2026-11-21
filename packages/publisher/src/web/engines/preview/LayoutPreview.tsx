@@ -11,8 +11,8 @@ import { planFlowStage } from "../../../core/flow-stage.js";
 import type { BreakpointValues } from "../../../core/flow-stage.js";
 
 const SHAPES: Record<LayoutSlot["previewShape"], string> = {
-  bar: "h-[var(--spacing-xl)]", panel: "h-[var(--ui-layout-aside-w)]",
-  rail: "h-[var(--ui-layout-aside-w)]", tile: "h-[var(--ui-layout-aside-w)]",
+  bar: "h-[var(--spacing-xl,24px)]", panel: "h-[var(--ui-layout-aside-w,320px)]",
+  rail: "h-[var(--ui-layout-aside-w,320px)]", tile: "h-[var(--ui-layout-aside-w,320px)]",
 };
 export interface LayoutPreviewProps {
   readonly leaf: EngineKey;

@@ -14,7 +14,12 @@
  * - a quoted custom-property object key, `"--x": value`, the shape of a React
  *   `style={{ "--x": ... }}` object or an override object spread onto one; or
  * - `.setProperty("--x", ...)`, or `.setProperty(NAME, ...)` where `NAME` is
- *   a `const NAME = "--x"` declared once in the package sources.
+ *   a `const NAME = "--x"` declared once in the package sources; or
+ * - a declaration inside an HTML `style="..."` (or `style='...'`) attribute
+ *   written in a string or template literal, `style="--x:${v};--y:1"`, the
+ *   shape of markup a package renders as HTML text (CONTAM-U7). Template
+ *   `${...}` interpolations inside the attribute are skipped, quotes in them
+ *   included.
  *
  * Whether a variable also has a declared value is not decided here: a
  * declared value always wins in `addDeclaredFallbacks`.
@@ -32,6 +37,39 @@ const SET_PROPERTY_LITERAL_RE = new RegExp(`\\.setProperty\\(\\s*(["'\`])(${NAME
 const SET_PROPERTY_IDENT_RE = /\.setProperty\(\s*([A-Za-z_$][\w$]*)\s*,/g;
 const CONST_NAME_RE = new RegExp(`\\bconst\\s+([A-Za-z_$][\\w$]*)\\s*(?::\\s*[^=;]+)?=\\s*(["'\`])(${NAME})\\2`, "g");
 
+const STYLE_ATTR_RE = /\bstyle=(["'])/g;
+const STYLE_DECL_RE = new RegExp(`(?:^|;)\\s*(${NAME})\\s*:`, "g");
+
+/** The custom properties declared in each HTML `style="..."` attribute of `source`, `${...}` interpolations skipped. */
+function styleAttributeSetters(source: string, into: Set<string>): void {
+  for (const m of source.matchAll(STYLE_ATTR_RE)) {
+    const quote = m[1] as string;
+    let value = "";
+    let closed = false;
+    for (let i = (m.index as number) + m[0].length; i < source.length; i++) {
+      const ch = source[i] as string;
+      if (ch === "$" && source[i + 1] === "{") {
+        let depth = 1;
+        for (i += 2; i < source.length && depth > 0; i++) {
+          if (source[i] === "{") depth++;
+          else if (source[i] === "}") depth--;
+        }
+        i--;
+        value += " ";
+        continue;
+      }
+      if (ch === quote) {
+        closed = true;
+        break;
+      }
+      if (ch === "\n") break;
+      value += ch;
+    }
+    if (!closed) continue;
+    for (const d of value.matchAll(STYLE_DECL_RE)) into.add(d[1] as string);
+  }
+}
+
 /** What one source file contributes: names it sets directly, identifiers it passes to `setProperty`, and its `const NAME = "--x"` declarations. */
 export interface RuntimeSetterScan {
   names: Set<string>;
@@ -47,6 +85,7 @@ export function scanRuntimeSetters(text: string, into: RuntimeSetterScan = { nam
   const source = text.replace(COMMENT_RE, "$1");
   for (const m of source.matchAll(OBJECT_KEY_RE)) into.names.add(m[2] as string);
   for (const m of source.matchAll(SET_PROPERTY_LITERAL_RE)) into.names.add(m[2] as string);
+  styleAttributeSetters(source, into.names);
   for (const m of source.matchAll(SET_PROPERTY_IDENT_RE)) into.setPropertyIdentifiers.add(m[1] as string);
   for (const m of source.matchAll(CONST_NAME_RE)) {
     const values = into.constNames.get(m[1] as string) ?? new Set<string>();

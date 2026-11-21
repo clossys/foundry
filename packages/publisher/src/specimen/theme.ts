@@ -31,22 +31,22 @@ export function themeCss(theme: SpecimenTheme | undefined): string {
 /** The shadcn theme mapping: Tailwind color and radius utilities read the shadcn variables. */
 export const SHADCN_THEME_INLINE = `@custom-variant dark (&:is(.dark *));
 @theme inline {
-  --color-background: var(--background); --color-foreground: var(--foreground);
-  --color-card: var(--card); --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover); --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary); --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary); --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted); --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent); --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive); --color-border: var(--border); --color-input: var(--input); --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1); --color-chart-2: var(--chart-2); --color-chart-3: var(--chart-3); --color-chart-4: var(--chart-4); --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar); --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary); --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent); --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border); --color-sidebar-ring: var(--sidebar-ring);
-  --radius-sm: calc(var(--radius) - 4px); --radius-md: calc(var(--radius) - 2px); --radius-lg: var(--radius); --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background, oklch(1 0 0)); --color-foreground: var(--foreground, oklch(0.145 0 0));
+  --color-card: var(--card, oklch(1 0 0)); --color-card-foreground: var(--card-foreground, oklch(0.145 0 0));
+  --color-popover: var(--popover, oklch(1 0 0)); --color-popover-foreground: var(--popover-foreground, oklch(0.145 0 0));
+  --color-primary: var(--primary, oklch(0.205 0 0)); --color-primary-foreground: var(--primary-foreground, oklch(0.985 0 0));
+  --color-secondary: var(--secondary, oklch(0.97 0 0)); --color-secondary-foreground: var(--secondary-foreground, oklch(0.205 0 0));
+  --color-muted: var(--muted, oklch(0.97 0 0)); --color-muted-foreground: var(--muted-foreground, oklch(0.556 0 0));
+  --color-accent: var(--accent, oklch(0.97 0 0)); --color-accent-foreground: var(--accent-foreground, oklch(0.205 0 0));
+  --color-destructive: var(--destructive, oklch(0.577 0.245 27.325)); --color-border: var(--border, oklch(0.922 0 0)); --color-input: var(--input, oklch(0.922 0 0)); --color-ring: var(--ring, oklch(0.708 0 0));
+  --color-chart-1: var(--chart-1, oklch(0.87 0 0)); --color-chart-2: var(--chart-2, oklch(0.556 0 0)); --color-chart-3: var(--chart-3, oklch(0.439 0 0)); --color-chart-4: var(--chart-4, oklch(0.371 0 0)); --color-chart-5: var(--chart-5, oklch(0.269 0 0));
+  --color-sidebar: var(--sidebar, oklch(0.985 0 0)); --color-sidebar-foreground: var(--sidebar-foreground, oklch(0.145 0 0));
+  --color-sidebar-primary: var(--sidebar-primary, oklch(0.205 0 0)); --color-sidebar-primary-foreground: var(--sidebar-primary-foreground, oklch(0.985 0 0));
+  --color-sidebar-accent: var(--sidebar-accent, oklch(0.97 0 0)); --color-sidebar-accent-foreground: var(--sidebar-accent-foreground, oklch(0.205 0 0));
+  --color-sidebar-border: var(--sidebar-border, oklch(0.922 0 0)); --color-sidebar-ring: var(--sidebar-ring, oklch(0.708 0 0));
+  --radius-sm: calc(var(--radius, 0.625rem) - 4px); --radius-md: calc(var(--radius, 0.625rem) - 2px); --radius-lg: var(--radius, 0.625rem); --radius-xl: calc(var(--radius, 0.625rem) + 4px);
 }
 @layer base {
-  *, ::after, ::before, ::backdrop { border-color: var(--border, currentColor); }
-  body { background-color: var(--background); color: var(--foreground); font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif); }
+  *, ::after, ::before, ::backdrop { border-color: var(--border, oklch(0.922 0 0)); }
+  body { background-color: var(--background, oklch(1 0 0)); color: var(--foreground, oklch(0.145 0 0)); font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'); }
 }`;

@@ -54,7 +54,7 @@ export function PublisherCompositionsView({ library, breakpointValues, designerH
       <p>Library: {library.id}</p>
       <p>Read-only layout contracts. Previews contain slot placeholders only.</p>
     </div>
-    <div className="grid min-w-0 gap-lg desktop:grid-cols-[var(--ui-layout-sidebar-w)_minmax(0,1fr)_var(--ui-layout-aside-w)]">
+    <div className="grid min-w-0 gap-lg desktop:grid-cols-[var(--ui-layout-sidebar-w,256px)_minmax(0,1fr)_var(--ui-layout-aside-w,320px)]">
       <Card className={CARD_SURFACE.outline}><nav aria-label="Composition arrangements">
         <ul aria-label="Page layouts" className="grid gap-sm">
           {LAYOUT_ENGINES.filter(item => allowedLayoutIds === undefined || offered.some(leaf => leaf.engine === item.engine)).map(item => {

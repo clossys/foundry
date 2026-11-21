@@ -50,7 +50,7 @@ export function PublisherFormatsView({ formats, ia = FORMAT_IA, instances, libra
   return <section aria-labelledby={`${id}-title`} className="grid min-w-0 gap-lg text-ink-primary">
     <SectionHeader id={`${id}-title`} title="Formats" actions={fixtureLibrary ? <Badge {...BADGE_TONE.warning}>fixture library</Badge> : undefined}
       description="Generation configuration · medium, family, format. Layouts are the allowed compositions within a format." />
-    <div className="grid min-w-0 gap-lg desktop:grid-cols-[var(--ui-layout-sidebar-w)_minmax(0,1fr)]">
+    <div className="grid min-w-0 gap-lg desktop:grid-cols-[var(--ui-layout-sidebar-w,256px)_minmax(0,1fr)]">
       <Card className={CARD_SURFACE.outline}><nav aria-label="Formats by medium and family">
         <Tree aria-label="Formats by medium and family" selectionMode="single" defaultExpandedKeys={ia.nodes.flatMap(medium => [medium.id, ...medium.children.map(family => family.id)])} selectedKeys={selected ? [selected.id] : []} onSelectionChange={keys => {
           if (keys === "all") return;
