@@ -30,7 +30,8 @@ import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scanCompiledCssSources, scanUtilitiesSources } from "./scan-sources.js";
-import { generateCompiledCss } from "./generate.js";
+import { compiledCssDeclaredSources, generateCompiledCss } from "./generate.js";
+import { globalDeclaredFallback } from "./declared-fallbacks.js";
 import { checkCompiledCssFreshness } from "./check.js";
 import { generateUtilitiesCss } from "./utilities.js";
 import { renderThemeKeys, type ThemesTokenSlot } from "./shadcn-theme-keys.js";
@@ -40,7 +41,9 @@ function derivedThemeKeys(packageRoot: string): { path: string; current: string;
   const path = resolve(packageRoot, "styles", "theme-keys.css");
   const current = readFileSync(path, "utf8");
   const themes = JSON.parse(readFileSync(resolve(packageRoot, "src", "catalog", "slots", "themes.json"), "utf8")) as ThemesTokenSlot[];
-  return { path, current, expected: renderThemeKeys(themes, current) };
+  // The keys' fallbacks are the package default theme's values, read by the same reader the compiled output uses.
+  const fallbackOf = globalDeclaredFallback(compiledCssDeclaredSources(resolve(packageRoot, "styles")), "");
+  return { path, current, expected: renderThemeKeys(themes, current, fallbackOf) };
 }
 
 const USAGE = `Usage: ui-compiled-css-check [--write] [--package-root <path>]

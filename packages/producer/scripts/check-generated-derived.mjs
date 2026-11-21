@@ -430,7 +430,8 @@ const XY_FROM_THEMES = [
 /**
  * React Flow's theme variables from the pinned tokens: each themes.* slot must be pinned and read
  * by the pinned components.flow.canvas contract; its shadcn variable is the one its pinned
- * candidate emits (cssVars.light).
+ * candidate emits (cssVars.light), read with the pinned light value as its fallback (CONTAM-U6 U13),
+ * so the read never falls back to an undeclared value. A pin with no light value is a finding.
  */
 export function deriveFlowTheme(clossysRoot) {
   const findings = [];
@@ -446,7 +447,9 @@ export function deriveFlowTheme(clossysRoot) {
     const pin = pinned(clossysRoot, 'designer', slot);
     const vars = Object.keys(pin?.item?.cssVars?.light ?? {});
     if (!pin || vars.length !== 1) { findings.push({ rule: 'R-PIPELINE-CANVAS', file, detail: `${slot} is not pinned with one shadcn variable` }); continue; }
-    rows.push({ name, value: format(`var(--${vars[0]})`), source: `${slot} ${pin.candidate}` });
+    const pinnedValue = String(pin.item.cssVars.light[vars[0]] ?? '').trim();
+    if (!pinnedValue) { findings.push({ rule: 'R-PIPELINE-CANVAS', file, detail: `${slot} pins --${vars[0]} with no light value to fall back to` }); continue; }
+    rows.push({ name, value: format(`var(--${vars[0]}, ${pinnedValue})`), source: `${slot} ${pin.candidate}` });
   }
   return { rows, findings };
 }

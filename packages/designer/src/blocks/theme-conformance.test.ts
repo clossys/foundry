@@ -13,8 +13,13 @@ import { CANONICAL_SECTION_BLOCK_REGISTRATIONS } from "../catalog/blocks.js";
 import { BLOCK_THEME_CONFORMANCE, NON_BLOCK_THEME_EXPORTS, type BlockThemeRegistration } from "./theme-conformance.js";
 import { marketingComponentSelection } from "../specimen/marketing-component-selection.js";
 import { STOCK_COLOR_BY_PROPERTY, STOCK_COLOR_KEYS, THEME_CONTRAST_PAIRS, shippedThemeCss } from "../catalog-core/theme-vocabulary.js";
+import { globalDeclaredFallback } from "../compiled-css/declared-fallbacks.js";
+import { compiledCssDeclaredSources } from "../compiled-css/generate.js";
 
 const packageRoot = resolve(import.meta.dirname, "../..");
+// The generated stock key reads its themes variable with the declared value as fallback (CONTAM-U6).
+const stockFallback = globalDeclaredFallback(compiledCssDeclaredSources(resolve(packageRoot, "styles")), "");
+const stockKeyValue = (property: string): string => `var(${property}, ${stockFallback(property)})`;
 const blocksRoot = resolve(packageRoot, "src/blocks");
 const COLOR_PROPERTY = /^(?:color|background|backgroundColor|border(?:Block|Inline)?(?:Start|End|Top|Right|Bottom|Left)?Color|outlineColor|textDecorationColor|textEmphasisColor|caretColor|accentColor|fill|stroke)$/;
 const COLOR_SHORTHAND = /^(?:border(?:Block|Inline)?(?:Start|End|Top|Right|Bottom|Left)?|outline|boxShadow|textShadow|textDecoration|textEmphasis)$/;
@@ -82,7 +87,7 @@ function colorUtility(candidate: string): { token?: string; invalid?: string } {
   if (!match) return {};
   const [, prefix, suffix] = match as unknown as [string, string, string];
   const property = `--color-${suffix}`;
-  // Stock wins: a generated shadcn key (`--color-primary: var(--primary)`) paints the themes variable.
+  // Stock wins: a generated shadcn key (`--color-primary: var(--primary, <declared>)`) paints the themes variable.
   const stock = STOCK_COLOR_KEYS.get(property);
   if (stock) return { token: stock.property };
   if (TOKENS[property]) return { token: property };
@@ -422,7 +427,7 @@ function conformanceFindings(input: ConformanceInputs): string[] {
       const stock = STOCK_COLOR_BY_PROPERTY.get(property);
       if ((!TOKENS[property] && !stock) || !light.get(property)?.trim()) findings.push(`${entry.exportName}: missing light token ${property}`);
       // A stock utility must read its themes variable through the generated key; a Foundry one through its own fallback key.
-      if (stock ? themeKeys.get(stock.key)?.trim() !== `var(${property})` : !themeKeys.get(property)?.includes(`var(${property},`)) findings.push(`${entry.exportName}: missing live utility token ${property}`);
+      if (stock ? themeKeys.get(stock.key)?.trim() !== stockKeyValue(property) : !themeKeys.get(property)?.includes(`var(${property},`)) findings.push(`${entry.exportName}: missing live utility token ${property}`);
       for (const theme of themes) {
         const resolved = resolveTokenValue(property, theme.registry);
         if (!resolved.value || resolved.cycle || resolved.missingProperty) findings.push(`${entry.exportName}: unresolved ${theme.label} token ${property}`);
@@ -774,7 +779,7 @@ describe("stock shadcn colour vocabulary", () => {
   ])("resolves %s through its generated themes key to %s, stock winning over a Foundry name", (candidate, property) => {
     expect(colorUtility(candidate)).toEqual({ token: property });
     const key = STOCK_COLOR_BY_PROPERTY.get(property)!.key;
-    expect(parseDeclarationsForSelector(realInputs().themeKeys, "@theme inline").get(key)).toBe(`var(${property})`);
+    expect(parseDeclarationsForSelector(realInputs().themeKeys, "@theme inline").get(key)).toBe(stockKeyValue(property));
   });
 
   it("keeps Foundry tokens, variable shorthands and unknown names on their existing rules", () => {
@@ -791,14 +796,14 @@ describe("stock shadcn colour vocabulary", () => {
 
   it("refuses a stock utility whose generated key is removed [mutant: drop --color-primary]", () => {
     const input = realInputs();
-    expect(input.themeKeys).toContain("--color-primary: var(--primary);");
-    input.themeKeys = input.themeKeys.replace("--color-primary: var(--primary);", "");
+    expect(input.themeKeys).toContain(`--color-primary: ${stockKeyValue("--primary")};`);
+    input.themeKeys = input.themeKeys.replace(`--color-primary: ${stockKeyValue("--primary")};`, "");
     expect(conformanceFindings(input)).toContain(`${STOCK_BLOCK}: missing live utility token --primary`);
   });
 
   it("refuses a stock utility retargeted to a Foundry variable [mutant: --color-primary reads --color-action]", () => {
     const input = realInputs();
-    input.themeKeys = input.themeKeys.replace("--color-primary: var(--primary);", "--color-primary: var(--color-action);");
+    input.themeKeys = input.themeKeys.replace(`--color-primary: ${stockKeyValue("--primary")};`, `--color-primary: var(--color-action, ${stockFallback("--color-action")});`);
     expect(conformanceFindings(input)).toContain(`${STOCK_BLOCK}: missing live utility token --primary`);
   });
 

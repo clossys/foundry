@@ -1,5 +1,5 @@
 /**
- * The stock shadcn `--color-<leaf>: var(--<leaf>)` utility keys, emitted from the
+ * The stock shadcn `--color-<leaf>: var(--<leaf>, <declared>)` utility keys, emitted from the
  * themes layer (`src/catalog/slots/themes.json`) into a generated region of
  * `styles/theme-keys.css`'s `@theme inline` block. One key per themes colour token,
  * named after the token's own emitted variable, so `bg-background`, `border-border`,
@@ -47,7 +47,11 @@ export function handAuthoredThemeKeys(css: string): Set<string> {
   return new Set([...body.matchAll(/^\s*(--[a-zA-Z0-9-]+)\s*:/gm)].map(match => match[1]!));
 }
 
-export function shadcnColorKeys(themes: readonly ThemesTokenSlot[], themeKeysCss: string): ShadcnColorKeys {
+/**
+ * `fallbackOf` gives the declared value a key's read falls back to (`globalDeclaredFallback` in
+ * `declared-fallbacks.ts`), so every generated key reads `var(--<leaf>, <declared>)`, never bare.
+ */
+export function shadcnColorKeys(themes: readonly ThemesTokenSlot[], themeKeysCss: string, fallbackOf: (variable: string) => string): ShadcnColorKeys {
   const claimed = handAuthoredThemeKeys(themeKeysCss);
   const keys = new Map<string, string>();
   const collisions: string[] = [];
@@ -57,7 +61,7 @@ export function shadcnColorKeys(themes: readonly ThemesTokenSlot[], themeKeysCss
     if (!target || !/^--[a-z][a-z0-9-]*$/.test(target)) throw new Error(`${token.id}: a themes colour token emits no single default variable`);
     const key = `--color-${target.slice(2)}`;
     if (claimed.has(key)) { collisions.push(key); continue; }
-    keys.set(key, `${key}: var(${target});`);
+    keys.set(key, `${key}: var(${target}, ${fallbackOf(target)});`);
   }
   return {
     declarations: [...keys.keys()].sort().map(key => keys.get(key)!),
@@ -66,8 +70,8 @@ export function shadcnColorKeys(themes: readonly ThemesTokenSlot[], themeKeysCss
 }
 
 /** `styles/theme-keys.css` with its generated region replaced (or inserted first in the `@theme inline` block). */
-export function renderThemeKeys(themes: readonly ThemesTokenSlot[], themeKeysCss: string): string {
-  const { declarations } = shadcnColorKeys(themes, themeKeysCss);
+export function renderThemeKeys(themes: readonly ThemesTokenSlot[], themeKeysCss: string, fallbackOf: (variable: string) => string): string {
+  const { declarations } = shadcnColorKeys(themes, themeKeysCss, fallbackOf);
   const block = [SHADCN_KEYS_BEGIN, ...declarations.map(line => `  ${line}`), `  ${SHADCN_KEYS_END}`].join("\n");
   const at = region(themeKeysCss);
   if (at) {
