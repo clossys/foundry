@@ -36,7 +36,7 @@
       "default": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "marquee-vertical var(--duration) linear infinite"
+            "raw": "marquee-vertical var(--duration, 40s) linear infinite"
           },
           "com.clossys.origin": {
             "adoptedAt": "2026-10-27",
@@ -44,12 +44,12 @@
             "kind": "adopted",
             "license": "MIT",
             "member": "themes.animate-marquee-vertical.default",
-            "sha256": "c38bcd6c14c96841a9971d2976b6cc1e6ba53c6198cf24ef01e529c52f4abf0d",
+            "sha256": "8b03dbf5f9d8ba621bf20928ecbe8f6c52284f1a4e05332e1c3754b9e2932815",
             "source": "foundry"
           }
         },
         "$type": "duration",
-        "$value": "marquee-vertical var(--duration) linear infinite"
+        "$value": "marquee-vertical var(--duration, 40s) linear infinite"
       }
     }
   }

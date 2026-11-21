@@ -36,7 +36,7 @@
       "default": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "marquee var(--duration) infinite linear"
+            "raw": "marquee var(--duration, 40s) infinite linear"
           },
           "com.clossys.origin": {
             "adoptedAt": "2026-10-27",
@@ -44,12 +44,12 @@
             "kind": "adopted",
             "license": "MIT",
             "member": "themes.animate-marquee.default",
-            "sha256": "6e3fff38b16b6939c86964fb85825d6fc47f087251b446de9bb4346ee4d30994",
+            "sha256": "35a223a81697a910adeb031de03ce9e92c9b48eedd3dded158cec2365b7c5c7e",
             "source": "foundry"
           }
         },
         "$type": "duration",
-        "$value": "marquee var(--duration) infinite linear"
+        "$value": "marquee var(--duration, 40s) infinite linear"
       },
       "duration": {
         "$extensions": {

@@ -114,10 +114,13 @@ describe("stableStringify and libraryHash golden", () => {
     // example fnv1a64:1c49785731fe8224 -> facb9bcf5f390a59; completed fnv1a64:f8280f8901b7ec38 -> f5ab9f8a4be36a76, sha256 077cbbdc -> 33ffb43c.
     // Re-captured by R2F-06 integration (`vitest run -u`): the merged catalog carries GATES-RED's declared composes and
     // contracts as well; completed f5ab9f8a4be36a76 -> 1a9b7c0a42800e14 (GATES-RED's own value), sha256 33ffb43c -> f0296341.
+    // Re-captured by foundry-build-0048 CONTAM-U12 (marquee fills read var(--duration, 40s), revision animate-marquee-v3):
+    // values computed from the built dist at base (equal to the pins below before this change) and at head, never by
+    // `vitest -u` or by hand; completed 1a9b7c0a42800e14 -> 88be437e41d465e4, sha256 f0296341 -> efc817c8.
     expect(libraryHash(EXAMPLE_LIBRARY)).toMatchInlineSnapshot(`"fnv1a64:facb9bcf5f390a59"`);
     const completed = completedCatalogLibrary(loadCatalog(), { id: "golden-consumer", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-26");
-    expect(libraryHash(completed)).toMatchInlineSnapshot(`"fnv1a64:1a9b7c0a42800e14"`);
-    expect(nodeSha256(stableStringify(completed))).toMatchInlineSnapshot(`"f029634196b374689ec7fafa75264c52a4b865d0db0552065703637ee4b0216d"`);
+    expect(libraryHash(completed)).toMatchInlineSnapshot(`"fnv1a64:88be437e41d465e4"`);
+    expect(nodeSha256(stableStringify(completed))).toMatchInlineSnapshot(`"efc817c89adc8436200b91dcc39995ba17f7f91b5e9389cdd10706a18fdcaaf9"`);
     expect(libraryHash(completed)).toBe(referenceLibraryHash(completed));
     expect(resolve({ catalog: loadCatalog(), library: completed }).selectionHash).toBe(libraryHash(completed));
   }, 120_000);
@@ -153,13 +156,16 @@ describe("real package-surface library golden", () => {
     //    records them; composite 6e7cfb28 -> ba2ad4d2. Values unchanged.
     // Captured at head (both steps together): component d0dfe6b0 -> ef9a4655, surface f5388d9a -> 45dd4f1f, whole
     // 04daad96 -> f0e9ee37; the split of these portions between the two steps was not measured.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:ba2ad4d262c5d29ba1604eab8a937d59d719bebce545a429e0c63a0efbf3e568"`);
+    // Re-captured by foundry-build-0048 CONTAM-U12 (marquee fills read var(--duration, 40s)), computed from the built dist
+    // at base (equal to the prior pins) and at head: values and composite move, components and surfaces unchanged;
+    // composite ba2ad4d2 -> 6ea08ccc, values 717688cc7f83e4bf -> 149d271dd68aea6f, whole f0e9ee37 -> 77d3a047.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:6ea08ccc3fd92224ecf367c0855c6fce7a17d2d09b49141640f2ee4d00249562"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
-    expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:717688cc7f83e4bf"`);
+    expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:149d271dd68aea6f"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
     expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:ef9a46557ea2aa79b1db4b19f2578dc33d1cde7c13f5f806b80a537f755a3734"`);
     expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:45dd4f1f96c66cdfb4f7061d5247627200e6d8de6b30417a336e4969b4bb85cb"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"f0e9ee379d03f527ced3db824af8ffb71801cd9210011bf75b8f11da230d75c8"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"77d3a0474f35c104055a07468f6a09824e8fca8a0a33868791542f5cf9a30c3f"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

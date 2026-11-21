@@ -33,11 +33,11 @@
       "default": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "marquee-vertical var(--duration) linear infinite"
+            "raw": "marquee-vertical var(--duration, 40s) linear infinite"
           }
         },
         "$type": "duration",
-        "$value": "marquee-vertical var(--duration) linear infinite"
+        "$value": "marquee-vertical var(--duration, 40s) linear infinite"
       }
     }
   }
