@@ -151,6 +151,14 @@ export function emitterInterpolatedReads(text: string): InterpolatedRead[] {
 /** A Tailwind arbitrary value holding a `var(` read: `[...]` with no whitespace or quote inside. */
 const ARBITRARY_VAR_RE = /\[([^\]\s"'`]*var\(--[^\]\s"'`]*)\]/g;
 
+/** The `[start, end)` span of every Tailwind arbitrary value in `text` that holds a `var(` read. */
+export function arbitraryValueSpans(text: string): [number, number][] {
+  return [...text.matchAll(ARBITRARY_VAR_RE)].map((m) => [m.index as number, (m.index as number) + m[0].length]);
+}
+
+/** A CSS value spelled in Tailwind arbitrary-value form: no space after a comma, other spaces as `_`. */
+export const tailwindValue = (value: string): string => value.replace(/,\s+/g, ",").replace(/\s+/g, "_");
+
 /** Joins pieces the reader aligns in one pass; no read crosses it, and no source holds it. */
 const PIECE_SEPARATOR = "\u0001";
 
@@ -195,7 +203,7 @@ export function alignEmitterText(text: string, sources: DeclaredSources, outputC
   return parts.map((p) => {
     if (p.kind === "kept") return p.text;
     if (p.kind === "static") return statics[s++] as string;
-    return `[${(arbitraries[a++] as string).replace(/,\s+/g, ",").replace(/\s+/g, "_")}]`;
+    return `[${tailwindValue(arbitraries[a++] as string)}]`;
   }).join("");
 }
 

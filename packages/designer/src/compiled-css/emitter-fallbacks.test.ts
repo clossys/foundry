@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { TOKENS } from "../tokens/tokens.js";
 import { compiledCssDeclaredSources } from "./generate.js";
 import { UndeclaredTokenFallbackError, classifyFallbackReads, globalDeclaredTokenValues, type DeclaredSources } from "./declared-fallbacks.js";
-import { alignEmitterText, emitterComputedFallbacks, emitterFiles, emitterInterpolatedReads, emitterReads } from "./emitter-fallbacks.js";
+import { alignEmitterText, arbitraryValueSpans, emitterComputedFallbacks, emitterFiles, emitterInterpolatedReads, emitterReads, tailwindValue } from "./emitter-fallbacks.js";
 
 /**
  * CONTAM-U9 and D5-2C: every `var(--x)` Designer's block, specimen, token-preview and component
@@ -24,7 +24,16 @@ const emitters = emitterFiles(packageRoot).map((file) => {
   return { file, text, own, reads: emitterReads(text, sources, own), computed: emitterComputedFallbacks(text, sources, own) };
 });
 const lineOf = (text: string, offset: number): number => text.slice(0, offset).split("\n").length;
-const all = emitters.flatMap((e) => e.reads.map((read) => ({ ...read, at: `${e.file}:${lineOf(e.text, read.offset)} ${read.name}`, computed: e.computed.some((c) => c.start === read.offset) })));
+const all = emitters.flatMap((e) => {
+  const arbitrary = arbitraryValueSpans(e.text);
+  return e.reads.map((read) => ({
+    ...read,
+    at: `${e.file}:${lineOf(e.text, read.offset)} ${read.name}`,
+    computed: e.computed.some((c) => c.start === read.offset),
+    // Inside a Tailwind arbitrary value the aligner spells the declared value in Tailwind form.
+    declared: read.expected !== undefined && arbitrary.some(([start, end]) => read.offset >= start && read.offset < end) ? tailwindValue(read.expected) : read.expected,
+  }));
+});
 
 describe("Designer emitter fallbacks equal their declared values (CONTAM-U9)", () => {
   it("scans the block, specimen, token-preview and component emitters", () => {
@@ -74,7 +83,7 @@ describe("Designer emitter fallbacks equal their declared values (CONTAM-U9)", (
   it("gives every read of a global token, and every --tw-* read, its declared value as fallback", () => {
     const judged = all.filter((read) => !read.computed && (read.kind === "global" || read.kind === "tw-property"));
     expect(judged.length).toBeGreaterThan(0);
-    expect(judged.filter((read) => read.fallback !== read.expected).map((read) => `${read.at}: ${read.fallback} != ${read.expected}`)).toEqual([]);
+    expect(judged.filter((read) => read.fallback !== read.declared).map((read) => `${read.at}: ${read.fallback} != ${read.declared}`)).toEqual([]);
   });
 
   it("reads a computed fallback from the token registry, and the registry value equals the declared value", () => {
@@ -120,6 +129,13 @@ describe("the emitter aligner", () => {
   it("writes declared values into style strings, and spells arbitrary values in Tailwind form", () => {
     expect(alignEmitterText(`const s = { pad: "calc(var(--b, 0px) * 2)", gap: "var(--a, 9px)" }; const k = "min-w-[var(--c,0px)] p-sm";`, fixture, ""))
       .toBe(`const s = { pad: "calc(var(--b, var(--a, 4px)) * 2)", gap: "var(--a, 4px)" }; const k = "min-w-[var(--c,1px_2px)] p-sm";`);
+  });
+
+  it("finds the arbitrary values the aligner spells in Tailwind form", () => {
+    const text = `const k = "min-w-[var(--c,1px_2px)] p-sm"; const s = { gap: "var(--a, 4px)" };`;
+    expect(arbitraryValueSpans(text).map(([start, end]) => text.slice(start, end))).toEqual(["[var(--c,1px_2px)]"]);
+    expect(tailwindValue("oklch(0.8761 0 0)")).toBe("oklch(0.8761_0_0)");
+    expect(tailwindValue("var(--color-action, #0A0A0A)")).toBe("var(--color-action,#0A0A0A)");
   });
 
   it("gives a bare runtime-only read unset", () => {
