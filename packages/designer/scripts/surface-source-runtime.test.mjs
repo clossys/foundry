@@ -20,16 +20,16 @@ test('SYNTHETIC static and dynamic same-specifier edges preserve installed bytes
   await mkdir(path.join(dependency, 'dist'), { recursive: true });
   await mkdir(path.join(probe, 'src'), { recursive: true });
   await mkdir(path.join(root, 'node_modules/@clossys'), { recursive: true });
-  await writeFile(path.join(dependency, 'package.json'), JSON.stringify({ name: '@clossys/fixture', type: 'module', exports: { '.': { import: './dist/index.js' } } }));
-  await writeFile(path.join(probe, 'package.json'), JSON.stringify({ name: '@clossys/probe', type: 'module' }));
-  await symlink(dependency, path.join(root, 'node_modules/@clossys/fixture'), 'dir');
+  await writeFile(path.join(dependency, 'package.json'), JSON.stringify({ name: '@clossys/starter', type: 'module', exports: { '.': { import: './dist/index.js' } } }));
+  await writeFile(path.join(probe, 'package.json'), JSON.stringify({ name: '@clossys/launcher', type: 'module' }));
+  await symlink(dependency, path.join(root, 'node_modules/@clossys/starter'), 'dir');
   const distribution = 'export const value = await Promise.resolve("installed-distribution");\n';
   await writeFile(path.join(dependency, 'dist/index.js'), distribution);
   await writeFile(path.join(dependency, 'src/index.ts'), 'export const value: string = await Promise.resolve("source-one");\n');
   await writeFile(path.join(probe, 'src/index.ts'), [
-    'import { value } from "@clossys/fixture";',
-    'export const installed = await import("@clossys/fixture");',
-    'export const address = import.meta.resolve("@clossys/fixture");',
+    'import { value } from "@clossys/starter";',
+    'export const installed = await import("@clossys/starter");',
+    'export const address = import.meta.resolve("@clossys/starter");',
     'export function sourceClosure() { return value; }',
   ].join('\n'));
   const first = await runSourceEsm(root, load => load('packages/probe/src/index.ts'));

@@ -326,9 +326,9 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
     const sourceSeat = source ? context.seats[`${source}.candidates`] : undefined;
     const seatArgs = (tier: string, model: string) => ["clossys", "seat", item, "--by", by, "--model", model, "--tier", tier, "--prompt-file", skill, "--procedure", procedure, "--command", command, "--decided-by", QUEUE_ANSWER];
     if (sourceSeat && sourceSeat.llm && sourceSeat.llm !== "open") add(`The llm that made ${source}'s options picks (${sourceSeat.llm.model}, ${sourceSeat.llm.tier}); you confirm in Studio.`, seatArgs(sourceSeat.llm.tier, sourceSeat.llm.model));
-    else if (owner) add("You decide; a mid-tier llm drafts a recommendation from the step's skill first.", seatArgs("mid", "<model:mid>"));
+    else if (owner) add("You decide; an llm at mid tier drafts a recommendation from the step's skill first.", seatArgs("mid", "<model:mid>"));
     else add(`The ${target.agent} agent does it at mid tier with its skill; you review the result in Studio.`, seatArgs("mid", "<model:mid>"));
-    add(owner ? "You decide; a high-tier llm drafts the recommendation." : `The ${target.agent} agent does it at high tier.`, seatArgs("high", "<model:high>"));
+    add(owner ? "You decide; an llm at high tier drafts the recommendation." : `The ${target.agent} agent does it at high tier.`, seatArgs("high", "<model:high>"));
     add("Human only, no llm: the seat stays listed open until an llm part is added.", ["clossys", "seat", item, "--by", by, "--no-llm", "--procedure", procedure, "--command", command, "--decided-by", QUEUE_ANSWER]);
   } else if (step.id === "ia" && !item.includes("/")) {
     add(`Adopt the Foundry IA for ${item}: its tree and every slot's contract, inputs and uses.`, ["clossys", "ia", item, "--adopt"]);

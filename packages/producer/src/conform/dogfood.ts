@@ -281,7 +281,7 @@ export function probeEmptyL2(repo: string, consumer: string, agents: readonly st
 
 /**
  * Resolves each agent's first standard's taste.md the way critique-packet does, from a consumer root with
- * no packages/ folder (a temp folder outside the monorepo, real path). Red (true) when any resolves under
+ * no packages/ folder (a temp folder outside this repository, real path). Red (true) when any resolves under
  * that consumer root or to no file: a consumer cannot build the packet.
  */
 export function probeCritiquePath(model: ConformModel): boolean {

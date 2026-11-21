@@ -130,7 +130,7 @@ describe("agent loop slots: the runner's consumedBy edge (D5 option 3) and the i
     return JSON.parse(readFileSync(join(ledgerDir(root, "loop.fill"), added[0]!), "utf8")) as LedgerEntry;
   };
 
-  it("each loop slot is consumed by its runner; without the edge it is an orphan again, and init restores it", async () => {
+  it("each loop slot is used by its runner; without the edge it is an orphan again, and init restores it", async () => {
     const root = tempDir("d5-runner-");
     const at = ["--root", root];
     expect((await runCli(["config", "--init", ...at], root)).exitCode).toBe(0);

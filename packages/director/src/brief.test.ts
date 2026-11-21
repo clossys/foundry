@@ -158,7 +158,7 @@ describe("brief contracts", () => {
   });
   it("discovers installed scoped packages and root-local contracts without importing packages", () => {
     const { root, project } = fixture();
-    put(project, "node_modules/@clossys/fixture-role/strategy-brief.json", JSON.stringify(contract));
+    put(project, "node_modules/@clossys/advisor/strategy-brief.json", JSON.stringify(contract));
     put(root, "contracts/local.json", JSON.stringify({ ...contract, id: "fixture.local" }));
     const found = discoverBriefContracts(root, reader);
     expect(found.issues).toEqual([]);
@@ -167,7 +167,7 @@ describe("brief contracts", () => {
   });
   it("reports invalid contracts and conflicting ids rather than picking an arbitrary source", () => {
     const { root, project } = fixture();
-    put(project, "node_modules/@clossys/fixture-role/strategy-brief.json", JSON.stringify(contract));
+    put(project, "node_modules/@clossys/advisor/strategy-brief.json", JSON.stringify(contract));
     put(root, "contracts/duplicate.json", JSON.stringify({ ...contract, requires: [] }));
     put(root, "contracts/broken.json", "{broken");
     const found = discoverBriefContracts(root, reader);

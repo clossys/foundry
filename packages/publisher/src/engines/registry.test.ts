@@ -54,7 +54,7 @@ describe("page layout registry", () => {
     expect(getEffectiveLayoutContract(original).memberValues).toEqual({});
     expect(getEffectiveLayoutContract(original, "stack.focus").slots.find(slot => slot.id === "body")?.max).toBe(1);
   });
-  it("admits consumed band/header Sections only in the stack body, retaining native registration and part restrictions", () => {
+  it("admits consumed band/header Sections only in a stack's body, retaining native registration and part restrictions", () => {
     const stack = getEffectiveLayoutContract("stack", "stack.workspace"), body = stack.slots.find(slot => slot.id === "body")!;
     expect(body.accepts).toEqual(expect.arrayContaining(["sections.band", "sections.section-header"]));
     expect(body).toMatchObject({ min: 1, max: 24 });

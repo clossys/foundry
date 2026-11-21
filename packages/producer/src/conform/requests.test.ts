@@ -34,7 +34,7 @@ function consumer(): string {
 /** A scratch repo of symlinks to the real packages, with the routing table or one adapter replaced. */
 function repo(change: { routing?: (doc: { rows: Record<string, unknown>[] }) => void; adapter?: { agent: string; edit: (doc: Record<string, any>) => void } } = {}): string {
   if (!change.routing && !change.adapter) return REPO;
-  const root = scratch("requests-repo-");
+  const root = scratch("requests-checkout-");
   mkdirSync(join(root, "packages"), { recursive: true });
   for (const agent of ["director", "designer", "writer", "publisher"]) {
     if (change.adapter?.agent !== agent) { symlinkSync(join(REPO, "packages", agent), join(root, "packages", agent)); continue; }

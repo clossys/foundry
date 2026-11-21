@@ -264,14 +264,14 @@ describe("R15.8 owner taste log", () => {
     pick(root, consumer);
     put(join(consumer, "agents", "writer", "taste", STANDARD_ID, "taste-log.json"), { schema: "clossys.taste-log/1", standard: STANDARD_ID, entries });
   };
-  it("catches an owner pick on a high-tier standard's slot with no taste-log entry", () => {
+  it("catches an owner pick on a high tier standard's slot with no taste-log entry", () => {
     catches(r15_8, ctxOf(pick), /owner pick of hero-v1\.md has no taste-log entry/);
   });
   it("accepts the pick once logged with its rejects; a partial entry still fails", () => {
     expect(r15_8(ctxOf(logged([{ at: "2026-11-13T00:00:00Z", slot: "home.hero", chosen: "hero-v1.md", rejected: ["hero-v2.md"], reason: "clearer" }])))).toEqual([]);
     catches(r15_8, ctxOf(logged([{ at: "2026-11-13T00:00:00Z", slot: "home.hero", chosen: "hero-v1.md", rejected: [] }])), /has no taste-log entry/);
   });
-  it("ignores mid-tier standards and non-owner picks", () => {
+  it("ignores mid tier standards and non-owner picks", () => {
     expect(r15_8(ctxOf((root, consumer) => { pick(root, consumer); editRequirements(doc => { doc.craftTier = "mid"; })(root, consumer); }))).toEqual([]);
     expect(r15_8(ctxOf((_root, consumer) => put(join(consumer, "agents", "writer", "home.hero", "ledger.json"), { events: [{ op: "pick", by: "planner", candidate: "hero-v1.md" }] })))).toEqual([]);
   });
