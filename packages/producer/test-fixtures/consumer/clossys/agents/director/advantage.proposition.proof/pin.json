@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "director/advantage.proposition.proof/pin",
+  "agent": "director",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "director/advantage.proposition.proof",
+      "sha256": "c8ee0c7a37e4e841a1dfffa9eb115fa8ca624de543acf2617d5330b330b530b8"
+    }
+  ],
+  "candidate": "proof-v1.md",
+  "sha256": "bfdeb99fc2f544308af50b0ce8ba09976e42578f89dd50b15732166c06bf865d",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

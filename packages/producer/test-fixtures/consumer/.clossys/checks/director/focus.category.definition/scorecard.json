@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "director/focus.category.definition",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "definition-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "definition-v1.md",
+      "sha256": "aa13638b9ad5aca20634e0a602faf41b3b7a432032861c019608b0ae81b7a8bb",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "a406d76bf64135dd9d6800644525c30737cd75734e560c671e0ccf64fe37e72d"
+    }
+  ]
+}

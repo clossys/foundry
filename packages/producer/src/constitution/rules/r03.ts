@@ -12,7 +12,8 @@
  * - R03.3 one certifier: `certify()` takes only slot, candidate and contract, and no certifier
  *   source reads a source kind, a rung or a seed (structural).
  * - R03.4 under an `adopt-first` standard, an adopt or adapt keeps every mapped seed file
- *   byte-exact (`meta.refVerbatim.files`); an adapt only adds files.
+ *   byte-exact (`meta.refVerbatim.files`) to the normalized reference (the seed as the consumer's
+ *   components.json installs it, the text ref-verbatim compares with); an adapt only adds files.
  * - R03.5 under an `adopt-first` standard, a create follows a `create` verdict with a gap whose
  *   `class` is in the standard's `createGaps`, and imports no raw headless primitive.
  *
@@ -21,7 +22,8 @@
  * [{id, class}]}`.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, posix } from "node:path";
+import { dirname, join, posix } from "node:path";
+import { normalizedSeedFile } from "@clossys/designer/ref-verbatim";
 import { packagePath } from "../../package-path.js";
 import { ladderIssues, rungKind, type GenericRung } from "../../pipeline/candidate-ladder.js";
 import { ledgerEvents, standardFor, type Standard } from "../../records/standards.js";
@@ -190,7 +192,7 @@ export const r03_3: Check = ctx => {
   return rows;
 };
 
-/** R03.4: under an adopt-first standard, adopt and adapt keep the seed's files byte-exact. */
+/** R03.4: under an adopt-first standard, adopt and adapt keep the seed's files byte-exact to the normalized reference. */
 export const r03_4: Check = ctx => {
   const rows: Row[] = [];
   const env = certifyEnv(ctx);
@@ -205,7 +207,10 @@ export const r03_4: Check = ctx => {
       if (!adopted) continue;
       const provenance = provenanceOf(ctx);
       if (provenance.error) { rows.push(row("R03", "R03.4", slot, provenance.error, candidate.path, candidate.name)); continue; }
-      for (const finding of verbatimFindings(`${slot.id}/${candidate.name}`, candidate.json, provenance.manifest!)) rows.push(row("R03", "R03.4", slot, `${standard.id} is adopt-first: ${finding}`, candidate.path, candidate.name));
+      const manifest = provenance.manifest!;
+      const referencesDir = dirname(packagePath(ctx.root, REFERENCE_MANIFEST_PATH));
+      const normalized = (ref: string, path: string) => normalizedSeedFile(ctx.consumer, ref, path, { manifest, referencesDir });
+      for (const finding of verbatimFindings(`${slot.id}/${candidate.name}`, candidate.json, manifest, normalized)) rows.push(row("R03", "R03.4", slot, `${standard.id} is adopt-first: ${finding}`, candidate.path, candidate.name));
     }
   }
   return rows;

@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "writer/lexicon.preferred-terms/pin",
+  "agent": "writer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "writer/lexicon.preferred-terms",
+      "sha256": "db7f332406303cb0d9dfb1d6af09709cd92eb6fb45412d228c80dbc7f10c1c98"
+    }
+  ],
+  "candidate": "preferred-terms-v1.md",
+  "sha256": "58794a3e65d3e215969aa5388520304db8a4c144365e40ebf200bbc0401f83c4",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

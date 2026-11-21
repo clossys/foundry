@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/themes.sidebar-accent-foreground/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/themes.sidebar-accent-foreground",
+      "sha256": "d15961b5cc5747f6fd3540be9cf8385dc5b4031505c9fd9339e6edb75f9bec33"
+    }
+  ],
+  "candidate": "sidebar-accent-foreground-v1.json",
+  "sha256": "befff83a4c11d86242526750cffebee00e244e635166e83716a19d0ab7b88b82",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

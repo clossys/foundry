@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.critique/1",
+  "slot": "assets.icon-grid-view",
+  "candidate": "icon-grid-view-v1.json",
+  "standard": "asset.glyph",
+  "scores": {
+    "stroke-harmony": 4,
+    "optical-balance": 4,
+    "small-legibility": 4
+  },
+  "packet": {
+    "manifest": [
+      {
+        "role": "taste",
+        "ref": "packages/designer/standards/asset.glyph/taste.md"
+      },
+      {
+        "role": "contract",
+        "ref": "clossys/agents/designer/assets.icon-grid-view/slot.json#contract"
+      },
+      {
+        "role": "render",
+        "ref": ".clossys/renders/designer/assets.icon-grid-view/icon-grid-view-v1.png"
+      }
+    ]
+  }
+}

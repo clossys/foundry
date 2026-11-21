@@ -1,0 +1,45 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/components.semantic-content/semantic-content-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/components.semantic-content",
+    "createdBy": {
+      "actor": "agent",
+      "agent": "designer",
+      "skill": "packages/designer/actions/designer.candidates/skill.md",
+      "skillSha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930",
+      "model": "fixture-model",
+      "tier": "high"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "original",
+      "ref": [],
+      "license": "MIT"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "semantic-content",
+    "type": "registry:ui",
+    "dependencies": [],
+    "files": [
+      {
+        "path": "ui/semantic-content.tsx",
+        "type": "registry:ui",
+        "content": "import type { ElementType, HTMLAttributes } from \"react\";\n\nexport function SemanticContent({ as: Tag = \"div\", ...props }: HTMLAttributes<HTMLElement> & { as?: ElementType }) {\n  return <Tag {...props} />;\n}\n"
+      }
+    ],
+    "meta": {
+      "slot": "components.semantic-content",
+      "element": {
+        "slot": "components.semantic-content",
+        "reason": "Realises director:identity.visual.style: the fixture consumer's own plain placeholder."
+      }
+    }
+  }
+}

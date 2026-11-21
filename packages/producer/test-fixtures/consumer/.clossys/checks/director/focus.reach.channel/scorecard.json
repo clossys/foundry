@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "director/focus.reach.channel",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "channel-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "channel-v1.md",
+      "sha256": "fab91184c603e441ce03ebd02bb93fa8fbbfecc6bd975a7e4767d706e8219d01",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "0bd6cee973cf96556756297a5f651f239d37f5f2d25cc3df89b6b3ee840e7e41"
+    }
+  ]
+}

@@ -134,6 +134,9 @@ export declare function refVerbatimReport(
   readonly stale: readonly string[];
 };
 
+/** The vendored seed file `path` of manifest item `ref` normalized for the consumer at `root` (the reference this gate compares with). Throws when it cannot be read. */
+export declare function normalizedSeedFile(root: string, ref: string, path: string, options?: RefVerbatimOptions): string;
+
 export type AdaptationKind = "import-paths" | "token-mapping" | "data-binding" | "data-fit" | "slot-bound-copy" | "slot-bound-identity";
 export declare const ADAPTATION_KINDS: readonly AdaptationKind[];
 export declare function adaptationHash(hunk: RefVerbatimHunk, reference: string, candidate: string): string;

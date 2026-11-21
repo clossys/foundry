@@ -972,6 +972,26 @@ export function byteExactAdoption(slot, candidate) {
   return undefined;
 }
 
+/**
+ * The seed file `path` of the vendored manifest item `ref` (`<registry>/<name>@<version>`) as the
+ * consumer at `root` installs it: the vendored bytes (which must hold their manifest sha256) normalized
+ * for the consumer's components.json, the reference this gate compares with. Producer R03.4 compares an
+ * adopt's mapped files with it. Throws when the item, the file or components.json is missing.
+ */
+export function normalizedSeedFile(root, ref, path, options = {}) {
+  const opts = defaults(options);
+  const item = (opts.manifest.items ?? []).find((row) => `${row.registry}/${row.name}@${row.version}` === ref);
+  const listed = (item?.files ?? []).find((file) => file.path === path);
+  if (!item || !listed) throw new Error(`${ref} does not list ${path} in references/manifest.json`);
+  const file = join(opts.referencesDir, item.dir, path);
+  if (!existsSync(file)) throw new Error(`${ref}: ${path} is missing from the vendored tree`);
+  const raw = readFileSync(file);
+  if (sha256(raw) !== listed.sha256) throw new Error(`${ref}: ${path} does not hold its manifest sha256`);
+  const components = loadComponents(root, opts.components);
+  if (!components) throw new Error("no components.json for this consumer (style, iconLibrary and aliases are required)");
+  return normalizeReference(raw.toString("utf8"), path, configFromComponents(components.value));
+}
+
 function checkLineageItem(root, slot, candidate, options = {}) {
   const opts = defaults(options);
   const refs = candidate.meta?.source?.ref ?? [];

@@ -2,11 +2,12 @@
  * The R03 test world: a Designer slot whose candidate adopts a reference-manifest item verbatim
  * (rung L1, byte-exact seed file), a Designer slot whose candidate is created under the slot's
  * adopt-first standard after a `create` verdict, and a Writer slot whose second candidate adopts the
- * first. The Designer provenance rule and reference manifest are written where R03 reads them.
- * Test support only.
+ * first. The Designer provenance rule and reference manifest are written where R03 reads them, the
+ * seed file is vendored under the manifest item's folder and the consumer has a components.json, so
+ * R03.4 compares with the normalized reference. Test support only.
  */
 import { cpSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { elementItem, LABEL, writerText } from "../certify/certify.world.js";
 import { sha256 } from "../certify/source.js";
@@ -21,12 +22,22 @@ export const ADOPT_FIRST = "component";
 export const SEED_PATH = "registry/ui/button.tsx";
 export const SEED_REF = "shadcn/button@1.0.0";
 export const SEED_HASH = "sha256:seed";
+export const SEED_DIR = "shadcn/button@1.0.0";
+/** The consumer's shadcn config: R03.4 normalizes the seed file for it. */
+export const COMPONENTS = { style: "aria-nova", rsc: false, tsx: true, iconLibrary: "lucide", aliases: { components: "@/components", utils: "@/lib/utils", ui: "@/components/ui", lib: "@/lib", hooks: "@/hooks" } };
 export type Edit = (root: string, consumer: string) => void;
 
 export const MANIFEST = {
   registries: { shadcn: { url: "https://ui.shadcn.com" } },
-  items: [{ registry: "shadcn", name: "button", version: "1.0.0", hash: SEED_HASH, type: "registry:ui", files: [{ path: SEED_PATH, sha256: sha256(LABEL) }] }],
+  items: [{ registry: "shadcn", name: "button", version: "1.0.0", dir: SEED_DIR, hash: SEED_HASH, type: "registry:ui", files: [{ path: SEED_PATH, sha256: sha256(LABEL) }] }],
 };
+
+/** Vendor `text` as the seed file (its manifest sha256 updated) and write the consumer's components.json. */
+export function vendorSeed(root: string, consumer: string, text = LABEL): void {
+  put(join(root, REFERENCE_MANIFEST_PATH), { ...MANIFEST, items: MANIFEST.items.map(item => ({ ...item, files: [{ path: SEED_PATH, sha256: sha256(text) }] })) });
+  put(join(dirname(join(root, REFERENCE_MANIFEST_PATH)), SEED_DIR, SEED_PATH), text);
+  put(join(consumer, "components.json"), COMPONENTS);
+}
 export const RULE = { consumerAssets: { slots: ["assets.*"] }, classes: [{ slots: "ui.*", sourceTypes: ["registry:ui"] }] };
 
 /** The adopted Designer candidate: verbatim lineage and a byte-exact mapped seed file. */
@@ -64,7 +75,7 @@ export function r03Spec(): WorkspaceSpec {
 export function r03World(spec: WorkspaceSpec = r03Spec(), edit?: Edit): ConstitutionContext {
   const { root, consumer } = writeWorkspace(spec);
   put(join(root, PROVENANCE_RULE_PATH), RULE);
-  put(join(root, REFERENCE_MANIFEST_PATH), MANIFEST);
+  vendorSeed(root, consumer);
   const standard = join(root, "packages", "designer", "standards", ADOPT_FIRST);
   cpSync(join(FIXTURES, "standards", "fixture-headline"), standard, { recursive: true });
   put(join(standard, "requirements.json"), { schema: "clossys.standard/1", id: ADOPT_FIRST, kinds: ["element"], mode: "adopt-first", craftTier: "mid", seeds: [], createGaps: ["missing-behavior", "a11y-failure", "foundry-signature"], requirements: [] });

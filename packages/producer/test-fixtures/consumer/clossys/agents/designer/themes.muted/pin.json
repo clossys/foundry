@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/themes.muted/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/themes.muted",
+      "sha256": "e5670299718b91f70dbba0f9cb3f16fc455e5c30b1140614cab4ce7394cd60d3"
+    }
+  ],
+  "candidate": "muted-v1.json",
+  "sha256": "aa79e59f9b23bf4c347c3a9ce0e9970431084ec5852cd41b8c4a1e54ed34a6ae",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

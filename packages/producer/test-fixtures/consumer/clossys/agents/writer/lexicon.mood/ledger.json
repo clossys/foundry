@@ -43,6 +43,261 @@
           "sha256": "3a95a7c7f5c004cbaec8e55c66349cf1234f4d0068ab9b14d50a7b4fba82d353"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "367d739a9cb21c5b5e2de23442795c602f848b120ec9c3871b1c9da87169a119"
+        }
+      ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:writer.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream",
+      "gaps": [
+        {
+          "id": "voice-fit"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:writer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/writer/actions/writer.candidates/skill.md",
+        "sha256": "90cd8d0d345beda0c3e21fe7799e272b720d15a03b657d995cd925731d2158a5"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "goal": "fixture world: fill lexicon.mood to lexicon.voice-rule",
+      "assembled": {
+        "inputs": [
+          {
+            "agent": "director",
+            "slot": "identity.verbal.voice",
+            "candidate": "voice-v1.md",
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
+          }
+        ],
+        "contract": {
+          "value": {
+            "shape": "voice.mood",
+            "value": "per field role: imperative, declarative or question",
+            "check": "deterministic",
+            "defaults": "defaults/lexicon.mood/",
+            "requirements": [
+              {
+                "check": "copy.voice-derived"
+              },
+              {
+                "check": "copy.derived-upstream"
+              },
+              {
+                "check": "copy.entries"
+              },
+              {
+                "check": "lexicon.record"
+              }
+            ],
+            "fixture": {
+              "keys": [
+                "mood"
+              ],
+              "locales": [
+                "en"
+              ]
+            }
+          },
+          "sha256": "ce2767848ed169d4663eabf3349fe6d994be91c1b6eb51c9ef283fd9d0789dd7"
+        },
+        "standard": {
+          "id": "lexicon.voice-rule",
+          "sha256": "3a43d7cd4c7635e35752a521fb0b039eaed8fd55dc5c0df7a9b0d59a84f6c082",
+          "requirements": [
+            {
+              "check": "copy.voice-derived",
+              "params": {}
+            },
+            {
+              "check": "copy.derived-upstream",
+              "params": {}
+            },
+            {
+              "check": "copy.entries",
+              "params": {}
+            },
+            {
+              "check": "lexicon.record",
+              "params": {
+                "kinds": [
+                  "voice-rule"
+                ]
+              }
+            }
+          ],
+          "taste": [
+            {
+              "id": "voice-fit",
+              "anchors": {
+                "1": "Reads like generic marketing copy; nothing of the pinned voice.",
+                "2": "Follows the voice's vocabulary but not its rhythm or stance.",
+                "3": "Recognisably the pinned voice, with one off-tone line.",
+                "4": "On voice throughout; one phrase is flatter than the voice allows.",
+                "5": "Every line could only have come from the pinned voice, and the voice never gets in the way of the meaning."
+              }
+            },
+            {
+              "id": "clarity",
+              "anchors": {
+                "1": "A reader must reread to learn what is meant or what to do.",
+                "2": "Clear to an insider; jargon or internal names block a newcomer.",
+                "3": "Clear on one reading; one phrase has two readings.",
+                "4": "Clear on one reading; the order of ideas could be tighter.",
+                "5": "One reading, plain words, the most important thing first."
+              }
+            },
+            {
+              "id": "rule-usefulness",
+              "anchors": {
+                "1": "Adjectives (friendly, bold) with no instruction.",
+                "2": "Instructions without do and do-not examples.",
+                "3": "Do and do-not examples; one rule is unenforceable.",
+                "4": "Usable rules with examples; two rules overlap.",
+                "5": "Each rule changes how a sentence is written and its examples make the difference obvious."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:writer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/writer/actions/writer.candidates/skill.md",
+        "sha256": "90cd8d0d345beda0c3e21fe7799e272b720d15a03b657d995cd925731d2158a5"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "tone": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "tone": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "tone": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:writer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/writer/actions/writer.candidates/skill.md",
+        "sha256": "90cd8d0d345beda0c3e21fe7799e272b720d15a03b657d995cd925731d2158a5"
+      },
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:writer.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "mid",
+      "critique": "critiques/mood-v1.json",
+      "sha256": "7d4f486e110414b7b96adcde46f17f6fbd1637759078c5b7de6cbad64b206162"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:writer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/writer/actions/writer.candidates/skill.md",
+        "sha256": "90cd8d0d345beda0c3e21fe7799e272b720d15a03b657d995cd925731d2158a5"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "basis": "agent",
+      "rung": "create",
+      "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream",
+      "ladder": {
+        "rung": "create",
+        "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
+      },
+      "name": "mood-v1.md",
+      "sha256": "eaed3f30521151c3116577fb03e6da1022f9532e52655fc8d8d233faab036e1c"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.writer/skill.md",
+        "sha256": "f3954a64fffb29d6ed60e26fb83377e60dcd4a5f7565bb2dc23ece691524d2e4"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "mood-v1.md",
+      "sha256": "eaed3f30521151c3116577fb03e6da1022f9532e52655fc8d8d233faab036e1c",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "487dc17a9cc6d69e75851d5ee253cab780c3721cf47d1e889bb5fdea95304578"
+        }
+      ]
     }
   ]
 }

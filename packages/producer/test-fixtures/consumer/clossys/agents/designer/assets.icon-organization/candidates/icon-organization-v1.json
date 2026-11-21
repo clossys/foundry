@@ -1,0 +1,47 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/assets.icon-organization/icon-organization-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/assets.icon-organization",
+    "createdBy": {
+      "actor": "agent",
+      "agent": "designer",
+      "skill": "packages/designer/actions/designer.candidates/skill.md",
+      "skillSha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930",
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/building-2@1.65.0"
+      ],
+      "hash": "sha256:52a23b75ebd10e6297270c94775f0e7bf650f77faf3a22028e57ede20a5921db",
+      "license": "ISC"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "icon-organization",
+    "type": "registry:file",
+    "files": [
+      {
+        "path": "assets/icon-organization.svg",
+        "type": "registry:file",
+        "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M10 12h4\" />\n  <path d=\"M10 8h4\" />\n  <path d=\"M14 21v-3a2 2 0 0 0-4 0v3\" />\n  <path d=\"M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2\" />\n  <path d=\"M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16\" />\n</svg>\n"
+      }
+    ],
+    "meta": {
+      "slot": "assets.icon-organization",
+      "element": {
+        "slot": "assets.icon-organization",
+        "reason": "Realises director:identity.visual.imagery: the lucide/building-2@1.65.0 drawing, unchanged."
+      }
+    }
+  }
+}

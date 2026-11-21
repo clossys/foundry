@@ -1,0 +1,47 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/assets.icon-danger/icon-danger-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/assets.icon-danger",
+    "createdBy": {
+      "actor": "agent",
+      "agent": "designer",
+      "skill": "packages/designer/actions/designer.candidates/skill.md",
+      "skillSha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930",
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/circle-x@1.65.0"
+      ],
+      "hash": "sha256:dbb24d07e9cc14264ea8a3a0e50b4cda2deeeab96683924f272e728b029e89a6",
+      "license": "ISC"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "icon-danger",
+    "type": "registry:file",
+    "files": [
+      {
+        "path": "assets/icon-danger.svg",
+        "type": "registry:file",
+        "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <circle cx=\"12\" cy=\"12\" r=\"10\" />\n  <path d=\"m15 9-6 6\" />\n  <path d=\"m9 9 6 6\" />\n</svg>\n"
+      }
+    ],
+    "meta": {
+      "slot": "assets.icon-danger",
+      "element": {
+        "slot": "assets.icon-danger",
+        "reason": "Realises director:identity.visual.imagery: the lucide/circle-x@1.65.0 drawing, unchanged."
+      }
+    }
+  }
+}

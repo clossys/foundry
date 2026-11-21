@@ -78,13 +78,15 @@ const endsWithKey = (key: string, suffix: string) => key === suffix || key.endsW
 const numberOf = (value: unknown) => typeof value === "number" ? value : undefined;
 /**
  * The limits a slot contract states (`params.contract`, bound by a standard with "$contract"): a passage's
+ * or a copy contract's (`candidate: clossys.copy-candidate/1`, the shape Writer derives for a unit's copy)
  * per-field English maxLength by its last key segment (the tightest when two fields share one), a pattern's
  * per-part maxChars and maxWords, and a string's own maxChars and maxWords as the fallback.
  */
 function contractLimits(contract: unknown): { limits: Limit[]; fallback: Limit } {
   if (!isRecord(contract)) return { limits: [], fallback: {} };
   const limits = new Map<string, Limit>();
-  if (contract.kind === "passage" && isRecord(contract.copy) && Array.isArray(contract.copy.fields)) {
+  const fielded = contract.kind === "passage" || contract.candidate === "clossys.copy-candidate/1";
+  if (fielded && isRecord(contract.copy) && Array.isArray(contract.copy.fields)) {
     for (const field of contract.copy.fields.filter(isRecord)) {
       const max = isRecord(field.maxLength) ? numberOf(field.maxLength.en) : undefined;
       if (max === undefined || typeof field.key !== "string") continue;

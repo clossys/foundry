@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.icon-danger",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "icon-danger-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "icon-danger-v1.json",
+      "sha256": "7bb36380831e105bb6923ec3d10aa765c9077857ab14cecf253600b915fa8dce",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "1b5e11df77648422fc79fb333235bfbc79c3faa73b445f49a4ead1c4613ada2d"
+    }
+  ]
+}

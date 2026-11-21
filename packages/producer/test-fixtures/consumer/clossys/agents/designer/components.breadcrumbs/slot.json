@@ -8,7 +8,7 @@
     "l0": "components",
     "l1": "components/components",
     "l2": "components/components/components-navigation",
-    "order": 122
+    "order": 121
   },
   "createdBy": {
     "actor": "code",
@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -71,7 +71,7 @@
       "rel": "input"
     },
     {
-      "to": "designer/components.link",
+      "to": "designer/components.button",
       "rel": "uses"
     }
   ],
@@ -170,7 +170,7 @@
       ]
     },
     "composes": [
-      "components.link"
+      "components.button"
     ],
     "apg": "breadcrumb",
     "copy": {

@@ -1,0 +1,47 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/assets.icon-integration/icon-integration-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/assets.icon-integration",
+    "createdBy": {
+      "actor": "agent",
+      "agent": "designer",
+      "skill": "packages/designer/actions/designer.candidates/skill.md",
+      "skillSha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930",
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/plug@1.65.0"
+      ],
+      "hash": "sha256:00fc466fe6ff2b75bcb003ac4c9abe6dd53a7fdf0f038b72d6426d319eb07b8f",
+      "license": "ISC"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "icon-integration",
+    "type": "registry:file",
+    "files": [
+      {
+        "path": "assets/icon-integration.svg",
+        "type": "registry:file",
+        "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M12 22v-5\" />\n  <path d=\"M15 8V2\" />\n  <path d=\"M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z\" />\n  <path d=\"M9 8V2\" />\n</svg>\n"
+      }
+    ],
+    "meta": {
+      "slot": "assets.icon-integration",
+      "element": {
+        "slot": "assets.icon-integration",
+        "reason": "Realises director:identity.visual.imagery: the lucide/plug@1.65.0 drawing, unchanged."
+      }
+    }
+  }
+}

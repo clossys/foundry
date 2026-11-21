@@ -1,0 +1,47 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/assets.icon-package/icon-package-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/assets.icon-package",
+    "createdBy": {
+      "actor": "agent",
+      "agent": "designer",
+      "skill": "packages/designer/actions/designer.candidates/skill.md",
+      "skillSha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930",
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/package@1.65.0"
+      ],
+      "hash": "sha256:6bf8339daf23a267fe5993bca91c9c3a5e7ea086472c2d5211730e468c3fa57d",
+      "license": "ISC"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "icon-package",
+    "type": "registry:file",
+    "files": [
+      {
+        "path": "assets/icon-package.svg",
+        "type": "registry:file",
+        "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z\" />\n  <path d=\"M12 22V12\" />\n  <polyline points=\"3.29 7 12 12 20.71 7\" />\n  <path d=\"m7.5 4.27 9 5.15\" />\n</svg>\n"
+      }
+    ],
+    "meta": {
+      "slot": "assets.icon-package",
+      "element": {
+        "slot": "assets.icon-package",
+        "reason": "Realises director:identity.visual.imagery: the lucide/package@1.65.0 drawing, unchanged."
+      }
+    }
+  }
+}

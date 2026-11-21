@@ -65,50 +65,34 @@ const DIRECTOR_SKILL = STEPS.find(step => step.id === "director.candidates")!.co
 const CRAFT = ["--model", MODEL, "--tier", "mid", "--skill", DIRECTOR_SKILL];
 const CHANNEL_SLOT = "focus.reach.channel";
 const CORE_SLOT = "focus.segment.core";
-const CHANNEL = `---
-slot: "${CHANNEL_SLOT}"
-source: {"kind":"derived","ref":["director:${CORE_SLOT}"]}
-feeds: []
-functions: []
-note: "DRAFT fixture data for the test consumer; not owner research."
----
-## Direction
-- Primary: DRAFT fixture channel, referrals from current clients
-- Secondary: DRAFT fixture channel, local trade directories
-- Not: DRAFT fixture boundary, never paid social campaigns
-
-## Because
-- The core segment edits its own site alone and hears of tools from peers (director:${CORE_SLOT}).
-
-## Watch
-- If fixture referrals fall below 2 in any quarter, then revisit this channel brief.
-`;
 
 /**
- * The fixture pins director/focus.segment.core only. The shared world creates and pins director/focus.reach.channel,
- * which takes focus.segment.core as an input, through the verbs with the write guard on: the create verdict, the craft
- * stages, the critique, `clossys next --submit` and `clossys pin`.
+ * The pinned world: the repository fixture consumer is seeded through the verbs (scripts/seed-pinned-world.mjs, kept
+ * byte-current by records/pinned-world.test.ts), and pins director/focus.reach.channel, which takes
+ * focus.segment.core as an input. Each case copies it.
  */
 let pinnedWorld = "";
-beforeAll(async () => {
+beforeAll(() => {
   const { root } = copyOf(FIXTURE, "pinned-base");
   pinnedWorld = root;
-  const target = `director/${CHANNEL_SLOT}`;
-  await verb(root, "verdict", target, "--record", json(root, "verdict.json", { schema: "clossys.verdict/1", slot: CHANNEL_SLOT, create: true, reason: "fixture: no held candidate answers the brief", gaps: [{ id: "brief.keys" }] }), "--model", MODEL, "--tier", "high", "--by", "agent:director.verdict", "--at", AT);
-  await verb(root, "next", target, "--stage", "brief", ...CRAFT, "--file", json(root, "brief.json", { goal: "fixture" }));
-  await verb(root, "next", target, "--stage", "diverge", ...CRAFT, "--file", json(root, "diverge.json", ["plain", "warm", "bold"].map((tone, i) => ({ id: `d${i + 1}`, idea: `a ${tone} take`, axes: { tone } }))));
-  await verb(root, "next", target, "--stage", "render", ...CRAFT);
-  json(root, "render.png", "fixture render");
-  const manifest = [
-    { role: "taste", ref: "packages/director/standards/brief.list/taste.md" },
-    { role: "contract", ref: `clossys/agents/director/${CHANNEL_SLOT}/slot.json#contract` },
-    { role: "render", ref: "render.png" },
-  ];
-  await verb(root, "critique", target, "--record", json(root, "critique.json", { schema: "clossys.critique/1", slot: CHANNEL_SLOT, candidate: "channel-v1.md", standard: "brief.list", scores: { decisive: 4 }, packet: { manifest } }), "--model", "fixture-critic", "--tier", "mid", "--at", AT);
-  const submitted = await runNextSubmitCli([target, "--submit", json(root, "channel.md", CHANNEL), ...CRAFT, "--basis", "agent", "--rung", "create", "--reason", "fixture: the create verdict found no seed that fits", "--root", root], root);
-  expect(submitted.exitCode, submitted.message).toBe(0);
-  await verb(root, "pin", target, "channel-v1.md", "--by", "planner:broken-records", "--at", AT);
+  expect(existsSync(join(root, "clossys", "agents", "director", CHANNEL_SLOT, "pin.json")), `the seeded fixture pins director/${CHANNEL_SLOT}`).toBe(true);
 }, 600_000);
+
+/** The pinned slots (every agent) whose slot.json takes `ref` as an input: those the dependents guard must name. */
+function pinnedInputsOf(consumer: string, ref: string): string[] {
+  const out: string[] = [];
+  for (const agent of readdirSync(join(consumer, "agents")).sort()) {
+    const dir = join(consumer, "agents", agent);
+    if (!statSync(dir).isDirectory()) continue;
+    for (const slot of readdirSync(dir).sort()) {
+      const slotDir = join(dir, slot);
+      if (slot.startsWith("_") || !existsSync(join(slotDir, "slot.json")) || !existsSync(join(slotDir, "pin.json"))) continue;
+      const doc = JSON.parse(readFileSync(join(slotDir, "slot.json"), "utf8")) as { refs?: { to: string; rel: string }[] };
+      if ((doc.refs ?? []).some(row => row.to === ref && row.rel === "input")) out.push(`${agent}/${slot}`);
+    }
+  }
+  return out.sort();
+}
 
 const retireSlot = (root: string, slot: string) => runRetireCli([`director/${slot}`, "--slot", "--by", "agent:director", "--reason", "superseded: by a test", "--at", AT, "--root", root], root);
 
@@ -117,7 +101,12 @@ describe("clossys retire --slot: the dependents guard on a broken pinned slot", 
     const { root, consumer } = copyOf(pinnedWorld, "pinned");
     const before = snapshot(join(consumer, "agents", "director"));
     const result = await retireSlot(root, CORE_SLOT);
-    expect(result).toMatchObject({ exitCode: 1, message: `retire refused: pinned slots take director/${CORE_SLOT} as an input: director/${CHANNEL_SLOT}; repin or change their inputs first` });
+    expect(result.exitCode).toBe(1);
+    const named = new RegExp(`^retire refused: pinned slots take director/${CORE_SLOT.replace(/\./g, "\\.")} as an input: (.+); repin or change their inputs first$`).exec(result.message)?.[1];
+    expect(named, result.message).toBeDefined();
+    // Every pinned slot of the seeded world that takes the target as an input is named, once, and no other.
+    expect(named!.split(", ").sort()).toEqual(pinnedInputsOf(consumer, `director/${CORE_SLOT}`));
+    expect(named!.split(", ")).toContain(`director/${CHANNEL_SLOT}`);
     expect(snapshot(join(consumer, "agents", "director"))).toEqual(before);
   });
 

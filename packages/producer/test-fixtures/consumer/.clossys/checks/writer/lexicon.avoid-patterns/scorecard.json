@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "writer/lexicon.avoid-patterns",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "avoid-patterns-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "avoid-patterns-v1.md",
+      "sha256": "2d96ce800a7572fb3e02df3a0c8feb903c5fac2942c9b73c54922665b45f389f",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "196d78a2633d100c90e3a2f1310dc388be4b1ef26e39e99ad26596273d48d829"
+    }
+  ]
+}

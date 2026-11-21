@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.icon-chevron-up",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "icon-chevron-up-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "icon-chevron-up-v1.json",
+      "sha256": "89e68c03e7075cfc4bc061c5719f31d378e227467e8b5011f2bce5d6162d4265",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "8fcfc48b426ad06e1d7c789f7f74d3b5e295979e9f1adc206343af51da248a77"
+    }
+  ]
+}

@@ -120,9 +120,7 @@
         {
           "id": "text-and-media",
           "label": "Text and media",
-          "slots": [
-            "components.media-player.copy"
-          ]
+          "slots": []
         },
         {
           "id": "overlays",
@@ -1300,6 +1298,14 @@
       "by": "migration:recut",
       "reason": "not-needed: recut, @clossys/writer retired.json retires it",
       "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "writer/components.media-player.copy",
+      "sha256": "82d9e7b9f25d7f0d9736330f4c0d06ff48b5ca72d317f5561351bc35254b6179",
+      "by": "agent:writer",
+      "reason": "not-needed: the copy of designer/components.media-player, which retires",
+      "at": "2026-11-19T00:00:00Z"
     }
   ]
 }

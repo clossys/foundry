@@ -1,0 +1,47 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/assets.icon-folder/icon-folder-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/assets.icon-folder",
+    "createdBy": {
+      "actor": "agent",
+      "agent": "designer",
+      "skill": "packages/designer/actions/designer.candidates/skill.md",
+      "skillSha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930",
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/folder@1.65.0"
+      ],
+      "hash": "sha256:eb5cd5fb4db93126cb3ff85c4528a109006e43f0186686b4370089a1aba6bf1e",
+      "license": "ISC"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "icon-folder",
+    "type": "registry:file",
+    "files": [
+      {
+        "path": "assets/icon-folder.svg",
+        "type": "registry:file",
+        "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z\" />\n</svg>\n"
+      }
+    ],
+    "meta": {
+      "slot": "assets.icon-folder",
+      "element": {
+        "slot": "assets.icon-folder",
+        "reason": "Realises director:identity.visual.imagery: the lucide/folder@1.65.0 drawing, unchanged."
+      }
+    }
+  }
+}

@@ -19,7 +19,8 @@
         "kinds": [
           "registry",
           "composition",
-          "npm"
+          "npm",
+          "original"
         ],
         "registries": [
           "shadcn-aria",

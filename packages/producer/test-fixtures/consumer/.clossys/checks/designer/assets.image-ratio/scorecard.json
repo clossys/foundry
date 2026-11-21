@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.image-ratio",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "image-ratio-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "image-ratio-v1.json",
+      "sha256": "f4edc5f22f0b82ba748e5f1d749ba1f811c63d634745399268261797655a9592",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "f78f1e26b9f7b735beabdf4b8c5cdb66382e6c2cd5259ecd049ef117f9c74390"
+    }
+  ]
+}

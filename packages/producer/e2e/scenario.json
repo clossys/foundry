@@ -326,6 +326,24 @@
     "--selection",
     "{scenario}/component-selection.js"
   ],
+  "after": [
+    {
+      "id": "release.manifest",
+      "run": [
+        "release",
+        "site",
+        "--manifest"
+      ]
+    },
+    {
+      "id": "release.gates",
+      "run": [
+        "release",
+        "site",
+        "--gates"
+      ]
+    }
+  ],
   "render": {
     "install-home/site/home": [
       "<main data-frame=\"plain\">",

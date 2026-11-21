@@ -8,7 +8,7 @@
     "l0": "frames",
     "l1": "frames/frames",
     "l2": "frames/frames/frames-shells",
-    "order": 203
+    "order": 200
   },
   "createdBy": {
     "actor": "code",
@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -75,7 +75,7 @@
       "rel": "input"
     },
     {
-      "to": "designer/components.link",
+      "to": "designer/components.button",
       "rel": "uses"
     },
     {
@@ -216,7 +216,7 @@
     },
     "composes": [
       "components.semantic-content",
-      "components.link"
+      "components.button"
     ],
     "skipTarget": "main-content",
     "props": [
