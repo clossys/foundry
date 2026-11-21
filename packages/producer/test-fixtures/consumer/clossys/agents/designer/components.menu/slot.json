@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -270,8 +270,20 @@
       "schema": "clossys.element-preview/1",
       "fixtures": {
         "file": "registry/aria-nova/ui/dropdown-menu.tsx",
-        "export": "DropdownMenu",
-        "props": {}
+        "export": "DropdownMenuTrigger",
+        "props": {
+          "defaultOpen": true,
+          "children": [
+            {
+              "$component": "react-aria-components.Button",
+              "children": "Open"
+            },
+            {
+              "$component": "DropdownMenu",
+              "children": "Content"
+            }
+          ]
+        }
       }
     },
     "requirements": [
@@ -284,6 +296,10 @@
       {
         "check": "composes.allowed"
       }
+    ],
+    "fixtureProps": [
+      "children",
+      "defaultOpen"
     ]
   },
   "tighten": [],

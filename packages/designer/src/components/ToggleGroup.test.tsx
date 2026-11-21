@@ -10,7 +10,8 @@ import { Toggle } from "./preview-runtime/components/toggle-button/toggle.js";
 import { toggleExecutableSource } from "../importers/toggle-executable-profile.js";
 import { rewriteShadcnAria } from "../importers/rewrite.js";
 import { normalizeSelectedSource } from "../importers/normalize-selected-source.js";
-import { generateCompiledCss } from "../compiled-css/generate.js";
+import { compiledCssDeclaredSources, generateCompiledCss } from "../compiled-css/generate.js";
+import { addDeclaredFallbacks } from "../compiled-css/declared-fallbacks.js";
 
 const sourceRoot = resolve(import.meta.dirname, "..");
 const fixtureRoot = resolve(sourceRoot, "importers/__fixtures__/shadcn-aria");
@@ -114,6 +115,6 @@ describe("adopted shadcn@aria ToggleGroup", () => {
     expect(css.css).toContain('data-orientation="vertical"');
     expect(css.css).toContain('data-orientation="horizontal"');
     expect(css.css).toContain("flex-direction: column");
-    expect(css.css).toContain("border-top-left-radius: var(--radius-control)");
+    expect(css.css).toContain(addDeclaredFallbacks("border-top-left-radius: var(--radius-control)", compiledCssDeclaredSources(resolve(sourceRoot, "../styles"))));
   });
 });

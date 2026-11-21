@@ -633,6 +633,28 @@ function withoutRetired(value) {
   return value.replace(/\((components\.[a-z0-9.-]+)\)/g, (match, id) => { const into = retiredAs(id); return typeof into === "string" ? `(${into})` : match; });
 }
 
+/**
+ * Component contracts whose base fixture mounts nothing a stock candidate can render, each repinned to its stock
+ * shadcn-aria item (FRAME-CONTRACTS P3, planner 2026-11-20). Each entry replaces the contract's fixture and its
+ * fixture-only props:
+ * - components.menu: the stock menu renders nothing while closed, so the fixture opens it with the item's own
+ *   trigger, as the package fixture does (REFERENCE_FIXTURE_RULES.overlays).
+ * - components.resize-handle: the base names no fixture; stock shadcn-aria/resizable ships the handle, which renders
+ *   inside its own panel group, between two panels.
+ */
+const REPIN = {
+  "components.menu": {
+    fixtureProps: ["children", "defaultOpen"],
+    fixture: { schema: "clossys.element-preview/1", fixtures: { file: "registry/aria-nova/ui/dropdown-menu.tsx", export: "DropdownMenuTrigger", props: { defaultOpen: true, children: [{ $component: "react-aria-components.Button", children: "Open" }, { $component: "DropdownMenu", children: "Content" }] } } },
+  },
+  "components.resize-handle": {
+    fixtureProps: ["children"],
+    fixture: { schema: "clossys.element-preview/1", fixtures: { file: "registry/aria-nova/ui/resizable.tsx", export: "ResizablePanelGroup", props: { children: [{ $component: "ResizablePanel", children: "DRAFT panel" }, { $component: "ResizableHandle", props: { withHandle: true } }, { $component: "ResizablePanel", children: "DRAFT panel" }] } } },
+  },
+};
+/** The contract with its REPIN fixture, or as it is. */
+const repinned = (id, contract) => REPIN[id] ? { ...contract, ...REPIN[id] } : contract;
+
 /** The Designer slots with a slot.json, and their documents. */
 function designerSlots(consumer) {
   const dir = join(consumer, "agents", "designer");
@@ -661,6 +683,7 @@ function importedSlots(consumer, slots, id, doc) {
  *    then each retired slot leaves the IA, in RETIRE order.
  * 2. A component's `uses` lists every slot its stock source imports (R05.1 [import]: an import from a slot that
  *    `uses` does not list is refused).
+ * 3. A REPIN slot's contract mounts the stock fixture REPIN names.
  */
 async function migrate(w) {
   let slots = designerSlots(w.consumer);
@@ -668,7 +691,7 @@ async function migrate(w) {
     if (retiredAs(id) !== undefined) continue;
     const uses = [...new Set((doc.uses ?? []).map(use => retiredAs(use) ?? use).filter(use => use !== DROP))];
     for (const use of importedSlots(w.consumer, slots, id, doc)) if (!uses.includes(use)) uses.push(use);
-    const contract = withoutRetired(doc.contract);
+    const contract = repinned(id, withoutRetired(doc.contract));
     const sameUses = uses.length === (doc.uses ?? []).length && uses.every((use, index) => use === doc.uses[index]);
     if (sameUses && JSON.stringify(contract) === JSON.stringify(doc.contract)) continue;
     const ref = `designer/${id}`;

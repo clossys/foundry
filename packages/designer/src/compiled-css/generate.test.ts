@@ -1,8 +1,11 @@
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { generateCompiledCss } from "./generate.js";
+import { declaredTokenValues } from "./declared-fallbacks.js";
+import { compiledCssDeclaredSources, generateCompiledCss } from "./generate.js";
 
 const stylesDir = resolve(import.meta.dirname, "..", "..", "styles");
+/** The live `--primary` read with its declared fallback, the value read from the package default theme by code. */
+const primaryRead = `var(--primary, ${declaredTokenValues(compiledCssDeclaredSources(stylesDir), "").get("--primary")})`;
 
 describe("generateCompiledCss's #182 tailwindcss peer-version guard", () => {
   afterEach(() => {
@@ -61,7 +64,7 @@ describe("generateCompiledCss", () => {
       candidates: ["bg-primary", "text-ink-on-accent", "rounded-control", "px-md", "hover:bg-accent-hover"],
     });
     expect(result.css).toContain(".bg-primary {");
-    expect(result.css).toContain("background-color: var(--primary);");
+    expect(result.css).toContain(`background-color: ${primaryRead};`);
     expect(result.css).toContain(".rounded-control {");
     expect(result.css).toContain("hover\\:bg-accent-hover");
     expect(result.classCount).toBeGreaterThan(0);
@@ -97,8 +100,8 @@ describe("generateCompiledCss", () => {
     const result = await generateCompiledCss({ stylesDir, candidates: ["max-w-40", "bg-primary"] });
     expect(result.css).toContain("max-width: calc(var(--spacing, 0.25rem) * 40);");
     expect(result.css).not.toMatch(/var\(\s*--spacing\s*\)/);
-    // Live keys stay live: only literal-valued reflections gain a fallback.
-    expect(result.css).toMatch(/background-color:\s*var\(--primary\);/);
+    // Live keys stay live: a live key keeps its var() read, with its declared value as the fallback.
+    expect(result.css).toContain(`background-color: ${primaryRead};`);
   });
 
   it("never re-declares tokens.css's own content (no dev-mode badge, no sentinel)", async () => {
@@ -128,7 +131,7 @@ describe("generateCompiledCss", () => {
     // The declaration must read the theme variable live (the generated shadcn
     // key, valued by the selected theme) — never a bare literal that could
     // never respond to a later theme or brand override.
-    expect(result.css).toMatch(/background-color:\s*var\(--primary\);/);
+    expect(result.css).toContain(`background-color: ${primaryRead};`);
     expect(result.css).not.toMatch(/background-color:\s*oklch\(/);
   });
 });
