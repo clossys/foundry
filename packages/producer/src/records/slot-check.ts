@@ -11,7 +11,7 @@
  * it (the int2 verbs that still write slot/1 until their cutover) a slot/1 file is judged by the slot/1 rules
  * and a slot/2 file by the current ones.
  */
-import { join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { validateAgainst } from "../constitution/schema.js";
 import { sha256Hex } from "./hash.js";
 import {
@@ -20,6 +20,8 @@ import {
   type IaDoc, type PinDoc, type SlotAgent, type SlotModelIssue,
 } from "./slot-model/index.js";
 import { LEDGER_FILE } from "./ledger.js";
+import { CRITIQUES_DIR, critiqueFileName, critiqueRecordIssues } from "./critique-record.js";
+import { isLoopAgent } from "../loop/agent-loops-ia.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readiness, slotIndex, type Readiness } from "./slots.js";
 import { isConvertedStore, isPin1, oldFormatRefusal } from "./store-format.js";
 import { CURRENT_AGENT_KINDS, OLD_SLOT_FORMAT, candidateIssues, isOldSlot, placedAt, readSlotValue, slotReadIssues, type SlotRead } from "./slot-current.js";
@@ -74,6 +76,32 @@ function checkRetired(dir: string, rel: string, id: string, live: readonly strin
   }
   return issues;
 }
+
+// ---------------- critique records ----------------
+/**
+ * The `critiques/` folder of slot `id` of `agent`, as `clossys critique` writes it (records/critique-record.ts): every
+ * entry is a regular `<leaf>-v<n>.json` file whose record passes the writer's own validation (critique.schema.json,
+ * this slot, the packet manifest against `slotDir`) and is named for the candidate it critiques. Anything else (a
+ * folder, an alias, another file) is an unexpected entry; a malformed record is critique-invalid.
+ */
+function checkCritiques(dir: string, rel: string, agent: SlotAgent, id: string, slotDir: string): SlotModelIssue[] {
+  const issues: SlotModelIssue[] = [];
+  for (const name of list(dir)) {
+    const path = `${rel}/${name}`;
+    if (!CANDIDATE_NAME.test(name) || !name.endsWith(".json")) { issues.push({ code: "orphan", path, message: `unexpected entry in critiques folder of ${id}` }); continue; }
+    let text: string;
+    try { text = readModelText(join(dir, name)); } catch { issues.push({ code: "orphan", path, message: `unexpected entry in critiques folder of ${id}: not a regular file` }); continue; }
+    let value: unknown;
+    try { value = JSON.parse(text); } catch { issues.push({ code: "critique-invalid", path, message: "critique record is not a readable JSON file" }); continue; }
+    const found = critiqueRecordIssues(value, { slot: id, agent, slotDir });
+    const candidate = found.length ? undefined : (value as { candidate: string }).candidate;
+    if (candidate !== undefined && name !== critiqueFileName(candidate)) found.push(`critique file ${name} is not named for candidate ${candidate}`);
+    if (found.length) issues.push({ code: "critique-invalid", path, message: `critique record invalid: ${found.slice(0, 3).join("; ")}` });
+  }
+  return issues;
+}
+/** An agent loop slot (a content agent's `loop` kind slot) holds no critiques: R01.4 admits the folder only elsewhere. */
+const holdsCritiques = (agent: SlotAgent, read: SlotRead | undefined): boolean => !(read && (read.current?.kind ?? read.doc.kind) === "loop" && isLoopAgent(agent));
 
 // ---------------- check ----------------
 export interface SlotModelCheckOptions {
@@ -144,6 +172,7 @@ export function checkSlotModel(consumer: string, options: SlotModelCheckOptions 
       }
       for (const name of list(dir)) {
         if (name === RETIRED_DIR && isDir(join(dir, name))) { issues.push(...checkRetired(join(dir, name), `${rel}/${name}`, id, names)); continue; }
+        if (name === CRITIQUES_DIR && isDir(join(dir, name)) && holdsCritiques(agent, read)) { issues.push(...checkCritiques(join(dir, name), `${rel}/${name}`, agent, id, relative(dirname(consumer), dir).split("\\").join("/"))); continue; }
         if (![SLOT_FILE, PIN_FILE, CANDIDATES_DIR, LEDGER_FILE].includes(name) && !/^pin.*\.json$/.test(name)) issues.push({ code: "orphan", path: `${rel}/${name}`, message: `unexpected entry in slot folder ${id}` });
       }
     }

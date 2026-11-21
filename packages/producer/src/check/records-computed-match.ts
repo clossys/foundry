@@ -7,8 +7,9 @@
  * `consumedBy` refs are not computed from the base and are not compared. A consumer-added slot (`base: null`)
  * has no base to compute from: only its format is checked.
  */
-import { SLOT_SCHEMA, SLOT_V1_SCHEMA, computedDiff, consumerSlotFolders, readBaseSlot, readSlot, slotSchemaOf, treeResult, type TreeCheck, type TreeCheckResult, type TreeFinding } from "../records/slot.js";
+import { SLOT_SCHEMA, SLOT_V1_SCHEMA, computedDiff, consumerSlotFolders, readSlot, slotSchemaOf, treeResult, type TreeCheck, type TreeCheckResult, type TreeFinding } from "../records/slot.js";
 import type { Slot } from "../records/types.js";
+import { resolveSlotBase } from "./declared-base.js";
 
 export const RECORDS_COMPUTED_MATCH = "records.computed-match";
 
@@ -25,7 +26,7 @@ export function runRecordsComputedMatch(root: string): TreeCheckResult {
     if (slot.id !== folder.id || slot.agent !== folder.agent) { findings.push({ subject, detail: `slot.json names ${slot.agent}/${slot.id}, not its folder` }); continue; }
     if (slot.base === null) continue;
     let base;
-    try { base = readBaseSlot(root, slot.agent, slot.id); } catch (error) { findings.push({ subject, detail: (error as Error).message }); continue; }
+    try { base = resolveSlotBase(root, slot); } catch (error) { findings.push({ subject, detail: (error as Error).message }); continue; }
     if (!base) { findings.push({ subject, detail: `base ${slot.base.package}/${slot.base.path} is not installed; nothing to compute from` }); continue; }
     const fields = computedDiff(slot, base);
     if (fields.length) findings.push({ subject, detail: `computed field(s) ${fields.join(", ")} differ from what clossys ia sync writes` });
