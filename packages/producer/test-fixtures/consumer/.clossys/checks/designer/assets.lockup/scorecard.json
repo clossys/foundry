@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.lockup",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "lockup-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "lockup-v1.json",
+      "sha256": "357ba7e24feb38396aec2ef0471b3dc858de5aa46157502b2a0852961f21e4ee",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "faab693b06a648fab985519cc83bca4b8339a5ea968d95cf1b42ffe0bafab5f4"
+    }
+  ]
+}

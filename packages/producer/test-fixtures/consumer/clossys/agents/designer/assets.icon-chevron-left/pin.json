@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/assets.icon-chevron-left/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/assets.icon-chevron-left",
+      "sha256": "15b51be51fabcd405ec07a657448e191da5ab9a2d96c34b5e169247b7220f02d"
+    }
+  ],
+  "candidate": "icon-chevron-left-v1.json",
+  "sha256": "8a11af01039aa64ff6396da5c84784113914781a5802abfb763d5c23317f5d88",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

@@ -44,6 +44,516 @@
           "sha256": "d1b883e2b579f211991294d22ee7b9c41557ee71af3aa381df7b411eb029714a"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:writer",
+      "verb": "retire",
+      "skill": {
+        "path": "packages/producer/actions/retire/skill.md",
+        "sha256": "a52f3873b4d4b217153a28d88cb3a21f8b5dc74ccdafb1920f0ac1626ac491ea"
+      },
+      "model": "none",
+      "tier": "none",
+      "reason": "renumbered after writer/components.media-player.copy retired",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "dad9daf6cf9222ca766bac67f539e11044a1d5520e362170abe018ebcdefe0ee"
+        }
+      ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:writer.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream",
+      "gaps": [
+        {
+          "id": "voice-fit"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:writer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/writer/actions/writer.candidates/skill.md",
+        "sha256": "90cd8d0d345beda0c3e21fe7799e272b720d15a03b657d995cd925731d2158a5"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "goal": "fixture world: fill sections.hero.copy to copy.headline",
+      "assembled": {
+        "inputs": [
+          {
+            "agent": "writer",
+            "slot": "lexicon.formality",
+            "candidate": "formality-v1.md",
+            "sha256": "1e914c401254ec89e3ec9aac78259376c592eeeefd52a6cd70590a97942d257b"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.warmth",
+            "candidate": "warmth-v1.md",
+            "sha256": "7cf5a6b4fea3b362d78d22343f2e18f0b9c29efef211a07d31825cf00cacf4f6"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.energy",
+            "candidate": "energy-v1.md",
+            "sha256": "8addd1c3bfb8b37a8feae159976eef83b5392f5e77cbe4a45d160a8598095774"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.person",
+            "candidate": "person-v1.md",
+            "sha256": "52d4db42e48e75823e85404bf70a4c7a300771a2ebdbcf505c0b567cd33b5ebf"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.mood",
+            "candidate": "mood-v1.md",
+            "sha256": "eaed3f30521151c3116577fb03e6da1022f9532e52655fc8d8d233faab036e1c"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.sentence-length",
+            "candidate": "sentence-length-v1.md",
+            "sha256": "9650fb2707e43400e3759bf4ebf8550f54eb36368dccab90ad98d99754d5f813"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.reading-level",
+            "candidate": "reading-level-v1.md",
+            "sha256": "c723ce163dd81b55ca4cca6418bcf741140e369dd73d628e6e7320393bfa2d77"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.capitalization",
+            "candidate": "capitalization-v1.md",
+            "sha256": "217237eea7b514f5b2a9fb9d14f076fa535f05f9de553764ae35d5d1e196effa"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.punctuation",
+            "candidate": "punctuation-v1.md",
+            "sha256": "5e63443d82de11cb8da09b80d13c294716ce7c4180d5ee5c5342836f364f93f6"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.preferred-terms",
+            "candidate": "preferred-terms-v1.md",
+            "sha256": "58794a3e65d3e215969aa5388520304db8a4c144365e40ebf200bbc0401f83c4"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.avoid-terms",
+            "candidate": "avoid-terms-v1.md",
+            "sha256": "7cee3d4012e7b7b00384d679161c204b63e16ddbadcf22f7ee9e5969b501761b"
+          },
+          {
+            "agent": "writer",
+            "slot": "lexicon.avoid-patterns",
+            "candidate": "avoid-patterns-v1.md",
+            "sha256": "2d96ce800a7572fb3e02df3a0c8feb903c5fac2942c9b73c54922665b45f389f"
+          },
+          {
+            "agent": "director",
+            "slot": "advantage.proposition.promise",
+            "candidate": "promise-v1.md",
+            "sha256": "393f344d3ea6400bf21d12cfb20f0e01e9403dd56a8a5119090f22a268a0dd28"
+          },
+          {
+            "agent": "director",
+            "slot": "advantage.proposition.proof",
+            "candidate": "proof-v1.md",
+            "sha256": "bfdeb99fc2f544308af50b0ce8ba09976e42578f89dd50b15732166c06bf865d"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.naming.name",
+            "candidate": "name-v1.md",
+            "sha256": "aa5e2e5d1b992271f3cd6441d7bdad9145d9b08d646658d40cc95ab8d270fe8d"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.lifecycle.acquisition",
+            "candidate": "acquisition-v1.md",
+            "sha256": "008ee7d913ee2ba6ff9eadb6d71051aa8a8dfde66c77bca8c106f407493706e2"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.segment.core",
+            "candidate": "core-v1.md",
+            "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.essence",
+            "candidate": "essence-v1.md",
+            "sha256": "0e6faca610a7112af6b84833dab579d4d456dd05a9eec4b32407416442d65263"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.verbal.voice",
+            "candidate": "voice-v1.md",
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
+          }
+        ],
+        "contract": {
+          "value": {
+            "unit": "designer/sections.hero",
+            "copy": {
+              "sourceLocale": "en",
+              "fields": [
+                {
+                  "key": "header.heading",
+                  "kind": "plain",
+                  "role": "heading",
+                  "required": true,
+                  "maxLength": {
+                    "en": 60
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "header.eyebrow",
+                  "kind": "plain",
+                  "role": "eyebrow",
+                  "required": false,
+                  "maxLength": {
+                    "en": 48
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "header.description",
+                  "kind": "plain",
+                  "role": "lead",
+                  "required": false,
+                  "maxLength": {
+                    "en": 200
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "actions.primary.label",
+                  "kind": "plain",
+                  "role": "action",
+                  "required": false,
+                  "maxLength": {
+                    "en": 24
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "actions.secondary.label",
+                  "kind": "plain",
+                  "role": "action",
+                  "required": false,
+                  "maxLength": {
+                    "en": 24
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "media.title",
+                  "kind": "plain",
+                  "role": "heading",
+                  "required": false,
+                  "maxLength": {
+                    "en": 60
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "media.series[].name",
+                  "kind": "plain",
+                  "role": "label",
+                  "required": false,
+                  "maxLength": {
+                    "en": 160
+                  },
+                  "dir": "auto"
+                }
+              ]
+            },
+            "fieldsSha256": "13e712bcac9f0a5e1b37eba254b8c29ac0d413e0d39b82b08acfe59450ba529e",
+            "candidate": "clossys.copy-candidate/1",
+            "requirements": [
+              {
+                "check": "copy.voice-derived"
+              },
+              {
+                "check": "copy.derived-upstream"
+              },
+              {
+                "check": "copy.entries"
+              },
+              {
+                "check": "copy.plain-values"
+              },
+              {
+                "check": "text.no-placeholder"
+              },
+              {
+                "check": "lexicon.clean"
+              },
+              {
+                "check": "copy.within-limits"
+              },
+              {
+                "check": "pattern.parts"
+              },
+              {
+                "check": "copy.sentence-case"
+              }
+            ],
+            "fixture": {
+              "keys": [
+                "header.heading"
+              ],
+              "locales": [
+                "en"
+              ]
+            }
+          },
+          "sha256": "cfc22ec0fd0b65f4a2f0b5c11849e4e39c94ad28cc4ebda0231f2def66841bd6"
+        },
+        "standard": {
+          "id": "copy.headline",
+          "sha256": "0d2333e6e3b07ab00a5dbe8bbf3d96c6d164cd4e8c9687cfe5c2c9ce64146933",
+          "requirements": [
+            {
+              "check": "copy.voice-derived",
+              "params": {}
+            },
+            {
+              "check": "copy.derived-upstream",
+              "params": {}
+            },
+            {
+              "check": "copy.entries",
+              "params": {}
+            },
+            {
+              "check": "copy.plain-values",
+              "params": {
+                "icu": true
+              }
+            },
+            {
+              "check": "text.no-placeholder",
+              "params": {}
+            },
+            {
+              "check": "lexicon.clean",
+              "params": {
+                "avoid": [
+                  "seamless",
+                  "seamlessly",
+                  "best-in-class",
+                  "best in class",
+                  "magic",
+                  "magical",
+                  "effortless",
+                  "effortlessly",
+                  "solutions",
+                  "solution"
+                ]
+              }
+            },
+            {
+              "check": "copy.within-limits",
+              "params": {
+                "maxChars": 160,
+                "contract": "$contract"
+              }
+            },
+            {
+              "check": "pattern.parts",
+              "params": {
+                "contract": "$contract"
+              }
+            },
+            {
+              "check": "copy.sentence-case",
+              "params": {
+                "proper": [
+                  "Clossys",
+                  "Studio",
+                  "Foundry",
+                  "Director",
+                  "Designer",
+                  "Writer",
+                  "Publisher",
+                  "Producer"
+                ]
+              }
+            }
+          ],
+          "taste": [
+            {
+              "id": "voice-fit",
+              "anchors": {
+                "1": "Reads like generic marketing copy; nothing of the pinned voice.",
+                "2": "Follows the voice's vocabulary but not its rhythm or stance.",
+                "3": "Recognisably the pinned voice, with one off-tone line.",
+                "4": "On voice throughout; one phrase is flatter than the voice allows.",
+                "5": "Every line could only have come from the pinned voice, and the voice never gets in the way of the meaning."
+              }
+            },
+            {
+              "id": "clarity",
+              "anchors": {
+                "1": "A reader must reread to learn what is meant or what to do.",
+                "2": "Clear to an insider; jargon or internal names block a newcomer.",
+                "3": "Clear on one reading; one phrase has two readings.",
+                "4": "Clear on one reading; the order of ideas could be tighter.",
+                "5": "One reading, plain words, the most important thing first."
+              }
+            },
+            {
+              "id": "economy",
+              "anchors": {
+                "1": "Padded: filler, stacked qualifiers, repeated ideas.",
+                "2": "Wordy in most lines.",
+                "3": "Mostly tight; a few words could go.",
+                "4": "Tight; one line could lose a clause.",
+                "5": "Nothing to cut without losing meaning."
+              }
+            },
+            {
+              "id": "specific-promise",
+              "anchors": {
+                "1": "A slogan that fits any product.",
+                "2": "Names the category but not the benefit.",
+                "3": "A real benefit, stated loosely.",
+                "4": "A specific benefit; the support line repeats it.",
+                "5": "A specific, true promise in few words, and a support line that adds the proof."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:writer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/writer/actions/writer.candidates/skill.md",
+        "sha256": "90cd8d0d345beda0c3e21fe7799e272b720d15a03b657d995cd925731d2158a5"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "tone": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "tone": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "tone": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:writer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/writer/actions/writer.candidates/skill.md",
+        "sha256": "90cd8d0d345beda0c3e21fe7799e272b720d15a03b657d995cd925731d2158a5"
+      },
+      "model": "fixture-model",
+      "tier": "high"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:writer.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "high",
+      "critique": "critiques/copy-v1.json",
+      "sha256": "c046f2e327afcd43b36e7b3e1065dee5a27a5b21dcf19f6d32a531aee1f278fa"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:writer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/writer/actions/writer.candidates/skill.md",
+        "sha256": "90cd8d0d345beda0c3e21fe7799e272b720d15a03b657d995cd925731d2158a5"
+      },
+      "model": "fixture-model",
+      "tier": "high",
+      "basis": "agent",
+      "rung": "create",
+      "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream",
+      "ladder": {
+        "rung": "create",
+        "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
+      },
+      "name": "copy-v1.md",
+      "sha256": "e8cea605122fedd47e0c91a464f3f41bfa49e27f7a5c005d700833ab3fbb382f"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.writer/skill.md",
+        "sha256": "f3954a64fffb29d6ed60e26fb83377e60dcd4a5f7565bb2dc23ece691524d2e4"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "copy-v1.md",
+      "sha256": "e8cea605122fedd47e0c91a464f3f41bfa49e27f7a5c005d700833ab3fbb382f",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "record": "copy",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "2d7e1024e3a084340754dd48cb1b2d3047197f3240b666ac8a6bbcd8fc63a4fa"
+        }
+      ]
     }
   ]
 }

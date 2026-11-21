@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/themes.popover-foreground/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/themes.popover-foreground",
+      "sha256": "052d98c96ccb22378b6faf046795838e67cf855f779c7d65cc4db2f9f08ef272"
+    }
+  ],
+  "candidate": "popover-foreground-v1.json",
+  "sha256": "6a5745d73d60e7f3f7de0d83c68238bab119b1be9081c7dcf03ac864e2692b30",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

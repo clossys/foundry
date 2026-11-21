@@ -61,6 +61,300 @@
           "sha256": "8e07e0401b8e165e3d79c90aa153ef0b1b8242b1ec8392d5d46b23c5f68e79e6"
         }
       ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
+      "gaps": [
+        {
+          "id": "rhythm"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "goal": "fixture world: fill themes.spacing to token.scale",
+      "assembled": {
+        "inputs": [
+          {
+            "agent": "director",
+            "slot": "advantage.proposition.promise",
+            "candidate": "promise-v1.md",
+            "sha256": "393f344d3ea6400bf21d12cfb20f0e01e9403dd56a8a5119090f22a268a0dd28"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.category.definition",
+            "candidate": "definition-v1.md",
+            "sha256": "aa13638b9ad5aca20634e0a602faf41b3b7a432032861c019608b0ae81b7a8bb"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.segment.core",
+            "candidate": "core-v1.md",
+            "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.essence",
+            "candidate": "essence-v1.md",
+            "sha256": "0e6faca610a7112af6b84833dab579d4d456dd05a9eec4b32407416442d65263"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.personality",
+            "candidate": "personality-v1.md",
+            "sha256": "556cf36aaa83bd42033ed609d7f53da3cfbd9f7aa718515af5eac98ffea93b4a"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.verbal.voice",
+            "candidate": "voice-v1.md",
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.imagery",
+            "candidate": "imagery-v1.md",
+            "sha256": "b57079616787be16449d74b7afaf67dddb820db5f78c1a4b17a65998ad435c20"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.style",
+            "candidate": "style-v1.md",
+            "sha256": "7d0992da68a3022b4b95339cc6e876a5a085d79a1ba59ebc6d67d101990c96ed"
+          }
+        ],
+        "contract": {
+          "value": {
+            "$type": "dimension",
+            "emit": {
+              "default": "--spacing"
+            },
+            "kind": "token",
+            "members": {
+              "mode": "closed",
+              "names": [
+                "default"
+              ]
+            },
+            "modes": [
+              "light"
+            ],
+            "tier": "scale",
+            "requirements": [
+              {
+                "check": "derive.director"
+              },
+              {
+                "check": "token.dtcg"
+              },
+              {
+                "check": "source.ref"
+              }
+            ]
+          },
+          "sha256": "cd7cda4e8ad48bfda3c0cd92a61a03cd19a8742519b75562c9f677b8d56dba43"
+        },
+        "standard": {
+          "id": "token.scale",
+          "sha256": "81cd58395186d0166d6c2eddde09f47fcf349bad8e6fa59a960450518a40da5b",
+          "requirements": [
+            {
+              "check": "derive.director",
+              "params": {
+                "traits": [
+                  "identity.visual.style",
+                  "identity.brand.personality"
+                ]
+              }
+            },
+            {
+              "check": "token.dtcg",
+              "params": {
+                "modes": [
+                  "light"
+                ],
+                "provenance": true
+              }
+            },
+            {
+              "check": "source.ref",
+              "params": {
+                "kinds": [
+                  "derived",
+                  "registry",
+                  "original"
+                ],
+                "registries": [
+                  "shadcn",
+                  "tailwindcss",
+                  "magicui"
+                ],
+                "licenses": [
+                  "MIT"
+                ]
+              }
+            }
+          ],
+          "taste": [
+            {
+              "id": "rhythm",
+              "anchors": {
+                "1": "Steps look arbitrary.",
+                "2": "Steps too close or too far apart.",
+                "3": "Regular but mechanical.",
+                "4": "Steps feel even in use.",
+                "5": "The ramp gives every layout a steady beat."
+              }
+            },
+            {
+              "id": "density",
+              "anchors": {
+                "1": "The value fights the product's density.",
+                "2": "Too loose for an app or too tight for a page.",
+                "3": "Works in one surface only.",
+                "4": "Suits both app and site at their sizes.",
+                "5": "Density matches the brand: calm, never cramped."
+              }
+            },
+            {
+              "id": "coherence",
+              "anchors": {
+                "1": "Contradicts the other scale tokens.",
+                "2": "Matches some tokens, not others.",
+                "3": "Consistent but generic.",
+                "4": "Radius, shadow and motion agree on one temperament.",
+                "5": "Every scale token reads as one decision."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "tone": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "tone": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "tone": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "mid",
+      "critique": "critiques/spacing-v1.json",
+      "sha256": "0bc9cec63a460439e2873d57260e019e0cd317833547779b1ea327e1a4591da0"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "basis": "agent",
+      "rung": "L4",
+      "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
+      "ladder": {
+        "rung": "L4",
+        "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream"
+      },
+      "name": "spacing-v1.json",
+      "sha256": "a5aba621c5fe45e0796c659e09e30cb319a8e71fc1a0704d8003a36ebfe1857e"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "spacing-v1.json",
+      "sha256": "a5aba621c5fe45e0796c659e09e30cb319a8e71fc1a0704d8003a36ebfe1857e",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "51b7ca82f91f83a0d7af5e472b1a39674a51b346c9a07cfaaff47927fe5e7c28"
+        }
+      ]
     }
   ]
 }

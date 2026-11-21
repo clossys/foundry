@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.critique/1",
+  "slot": "identity.verbal.voice",
+  "candidate": "voice-v1.md",
+  "standard": "brief.profile",
+  "scores": {
+    "decisive": 4,
+    "evidence-weight": 4,
+    "tripwire-usefulness": 4,
+    "sharp-edges": 4
+  },
+  "packet": {
+    "manifest": [
+      {
+        "role": "taste",
+        "ref": "packages/director/standards/brief.profile/taste.md"
+      },
+      {
+        "role": "contract",
+        "ref": "clossys/agents/director/identity.verbal.voice/slot.json#contract"
+      },
+      {
+        "role": "render",
+        "ref": ".clossys/renders/director/identity.verbal.voice/voice-v1.png"
+      }
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "director/identity.visual.imagery",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "imagery-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "imagery-v1.md",
+      "sha256": "b57079616787be16449d74b7afaf67dddb820db5f78c1a4b17a65998ad435c20",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "64c5d98227aaa2191a34ee085626f851c80bd4557664bce51322a3ffc7083a1d"
+    }
+  ]
+}

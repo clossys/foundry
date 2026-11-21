@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/themes.foreground",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "foreground-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "foreground-v1.json",
+      "sha256": "b4614ced442d5e4822da8c74c4395eaabab460902d9e5151db6d84a2a6627927",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "4211477b307d61c04b9197d74bc65cd21bb476940bfdff5958c95821f15b6ea3"
+    }
+  ]
+}

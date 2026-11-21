@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/themes.ring",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "ring-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "ring-v1.json",
+      "sha256": "9d41cc14f6f60e0d2cd5a81e6891cecb365ff3081ff8972d9270fd2fa462ad44",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "e76899228c3d2f1fc4f3576a8a9734131f61cd1bd82e901061887a5467c9ff14"
+    }
+  ]
+}

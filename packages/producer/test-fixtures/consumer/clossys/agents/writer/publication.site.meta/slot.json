@@ -8,7 +8,7 @@
     "l0": "copy",
     "l1": "copy/page-metadata",
     "l2": "copy/page-metadata/site",
-    "order": 74
+    "order": 73
   },
   "createdBy": {
     "actor": "code",
@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
   "refs": [
     {
       "to": "writer/lexicon.formality",
@@ -68,23 +68,19 @@
     },
     {
       "to": "director/advantage.proposition.promise",
-      "rel": "input",
-      "key": "Promise"
+      "rel": "input"
     },
     {
       "to": "director/advantage.proposition.proof",
-      "rel": "input",
-      "key": "Proof"
-    },
-    {
-      "to": "director/advantage.proposition.proof",
-      "rel": "input",
-      "key": "Never-claim"
+      "rel": "input"
     },
     {
       "to": "director/identity.naming.name",
-      "rel": "input",
-      "key": "Name"
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
     }
   ],
   "base": null,
@@ -143,23 +139,19 @@
       },
       {
         "to": "director/advantage.proposition.promise",
-        "rel": "input",
-        "key": "Promise"
+        "rel": "input"
       },
       {
         "to": "director/advantage.proposition.proof",
-        "rel": "input",
-        "key": "Proof"
-      },
-      {
-        "to": "director/advantage.proposition.proof",
-        "rel": "input",
-        "key": "Never-claim"
+        "rel": "input"
       },
       {
         "to": "director/identity.naming.name",
-        "rel": "input",
-        "key": "Name"
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
       }
     ],
     "acceptance": []

@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.icon-chevron-down",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "icon-chevron-down-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "icon-chevron-down-v1.json",
+      "sha256": "196083314dcec5380dba4834f05d95d3de2683507ed349a5e865e051c9215222",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "6bfb90212c80523136ce036038fe6f25fa58df4dc5700dee0880b9d773e9b82a"
+    }
+  ]
+}

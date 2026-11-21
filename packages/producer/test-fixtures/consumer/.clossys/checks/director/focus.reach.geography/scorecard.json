@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "director/focus.reach.geography",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "geography-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "geography-v1.md",
+      "sha256": "c0a56cae9e82b110d3fbd893219892cfba8ee8a1215803104e79e8fd4ef09491",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "44b84d76c37d7788b73d1ed33aaaad2efad3238077fb067612d0844f9a9bd09b"
+    }
+  ]
+}

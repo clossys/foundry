@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "writer/lexicon.person/pin",
+  "agent": "writer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "writer/lexicon.person",
+      "sha256": "ffceaf2de223d5cb42b3edaeabdacd141d56da8c81c7d7677114b37193b205f3"
+    }
+  ],
+  "candidate": "person-v1.md",
+  "sha256": "52d4db42e48e75823e85404bf70a4c7a300771a2ebdbcf505c0b567cd33b5ebf",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

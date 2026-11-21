@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "writer/lexicon.sentence-length",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "sentence-length-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "sentence-length-v1.md",
+      "sha256": "9650fb2707e43400e3759bf4ebf8550f54eb36368dccab90ad98d99754d5f813",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "7f53a992fc4eadc4d5370fc5950e1f1ed5917f6375cf319f381f584deb8b8e91"
+    }
+  ]
+}

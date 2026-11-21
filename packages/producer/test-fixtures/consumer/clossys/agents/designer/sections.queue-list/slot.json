@@ -8,7 +8,7 @@
     "l0": "sections",
     "l1": "sections/sections",
     "l2": "sections/sections/sections-records",
-    "order": 189
+    "order": 186
   },
   "createdBy": {
     "actor": "code",
@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-18T09:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -94,7 +95,7 @@
       "rel": "uses"
     },
     {
-      "to": "designer/components.link",
+      "to": "designer/components.button",
       "rel": "uses"
     },
     {
@@ -202,7 +203,7 @@
       "names": []
     },
     "allowedComposes": [
-      "components.link",
+      "components.button",
       "components.badge",
       "components.semantic-content"
     ],

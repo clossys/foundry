@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/assets.icon-home/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/assets.icon-home",
+      "sha256": "0fd032b0f4530c9653e7e3f319611be8f63df39b16700dce378e7ed4fa62dc00"
+    }
+  ],
+  "candidate": "icon-home-v1.json",
+  "sha256": "7649b6399e3d2c679098deb82c7685ab5173b8ed395a776d8900a3de1c5fb958",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

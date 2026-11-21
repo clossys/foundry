@@ -1,0 +1,55 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/themes.muted/muted-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/themes.muted",
+    "createdBy": {
+      "actor": "agent",
+      "agent": "designer",
+      "skill": "packages/designer/actions/designer.candidates/skill.md",
+      "skillSha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930",
+      "model": "fixture-model",
+      "tier": "high"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn/neutral@4.23.0"
+      ],
+      "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161",
+      "license": "MIT"
+    },
+    "rationale": []
+  },
+  "content": {
+    "name": "muted",
+    "type": "registry:theme",
+    "files": [
+      {
+        "path": "clossys/themes.muted.json",
+        "type": "registry:file",
+        "content": "{\n  \"themes\": {\n    \"muted\": {\n      \"default\": {\n        \"$type\": \"color\",\n        \"$value\": \"oklch(0.97 0 0)\",\n        \"$extensions\": {\n          \"com.clossys.css\": {\n            \"raw\": \"oklch(0.97 0 0)\"\n          },\n          \"com.clossys.modes\": {\n            \"dark\": \"oklch(0.269 0 0)\"\n          },\n          \"com.clossys.provenance\": {\n            \"sourceLabel\": \"shadcn\",\n            \"sourceVariable\": \"--muted\"\n          }\n        }\n      }\n    }\n  }\n}\n"
+      }
+    ],
+    "cssVars": {
+      "light": {
+        "muted": "oklch(0.97 0 0)"
+      },
+      "dark": {
+        "muted": "oklch(0.269 0 0)"
+      }
+    },
+    "meta": {
+      "slot": "themes.muted",
+      "element": {
+        "slot": "themes.muted",
+        "reason": "Realises director:identity.visual.style, director:identity.brand.essence, director:identity.brand.personality: the shadcn/neutral@4.23.0 value, kept as the fixture's base."
+      }
+    }
+  }
+}

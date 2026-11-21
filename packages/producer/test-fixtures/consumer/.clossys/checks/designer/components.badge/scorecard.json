@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/components.badge",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "badge-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "badge-v1.json",
+      "sha256": "95a5fb6c27522f14abbbd5f193e47bfcd853e49b33771d91a8f5cb500f2ae2f8",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "c87a4e5e24769e1d63732a3c98667312549e0405521cc913e46743fcaf25c966"
+    }
+  ]
+}

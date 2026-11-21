@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.critique/1",
+  "slot": "themes.font-heading",
+  "candidate": "font-heading-v1.json",
+  "standard": "token.typeface",
+  "scores": {
+    "voice-fit": 4,
+    "legibility": 4,
+    "scale-rhythm": 4,
+    "pairing": 4
+  },
+  "packet": {
+    "manifest": [
+      {
+        "role": "taste",
+        "ref": "packages/designer/standards/token.typeface/taste.md"
+      },
+      {
+        "role": "contract",
+        "ref": "clossys/agents/designer/themes.font-heading/slot.json#contract"
+      },
+      {
+        "role": "render",
+        "ref": ".clossys/renders/designer/themes.font-heading/font-heading-v1.png"
+      }
+    ]
+  }
+}

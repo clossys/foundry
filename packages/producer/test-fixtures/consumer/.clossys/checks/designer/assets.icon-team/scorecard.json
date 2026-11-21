@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/assets.icon-team",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "icon-team-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "icon-team-v1.json",
+      "sha256": "46d860b5770479c9f115b5432e9c5359e3680c8d86769ef4d16a6fb060f3bc82",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "00f4bfbc7e6de449225692f1bf5e8f593d6ed050c7b386d2a86b60506052ef25"
+    }
+  ]
+}

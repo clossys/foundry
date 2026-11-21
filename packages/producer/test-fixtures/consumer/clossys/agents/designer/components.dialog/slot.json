@@ -8,7 +8,7 @@
     "l0": "components",
     "l1": "components/components",
     "l2": "components/components/components-overlays",
-    "order": 147
+    "order": 144
   },
   "createdBy": {
     "actor": "code",
@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -85,6 +85,10 @@
     {
       "to": "designer/themes.spacing",
       "rel": "input"
+    },
+    {
+      "to": "designer/components.button",
+      "rel": "uses"
     }
   ],
   "base": null,

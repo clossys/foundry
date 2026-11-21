@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "director/identity.naming.architecture",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "architecture-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "architecture-v1.md",
+      "sha256": "c7fad03c582751f8aa712d10a74b75c543834d99c143646fb86b7bf0535b1e2d",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "7bcba4e86c05a2e6b32376a96e38c38a5a0acfd6f6420b217e95ecdb00c1f4ea"
+    }
+  ]
+}
