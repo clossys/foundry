@@ -5,10 +5,14 @@ import { describe, expect, it } from "vitest";
 import ts from "typescript";
 import { importShadcnAriaComponents, SHADCN_COMPONENT_ITEMS } from "./shadcn-aria-components.js";
 import { rewriteShadcnAria } from "./rewrite.js";
-import { generateCompiledCss } from "../compiled-css/generate.js";
+import { compiledCssDeclaredSources, generateCompiledCss } from "../compiled-css/generate.js";
+import { addDeclaredFallbacks } from "../compiled-css/declared-fallbacks.js";
 import type { ShadcnComponentInput } from "./shadcn-aria-components.js";
 import { dialogExecutableSource } from "./dialog-executable-profile.js";
 import { menuExecutableSource } from "./menu-executable-profile.js";
+
+/** `css` as the generator writes it: every bare token read carries its declared fallback. */
+const declaredRead = (css: string) => addDeclaredFallbacks(css, compiledCssDeclaredSources(resolve(import.meta.dirname, "../../styles")));
 
 /** Parse generated CSS rule boundaries, retaining nested selector/media conditions. */
 function timingRules(css: string): { chain: string[]; declarations: string }[] {
@@ -56,15 +60,15 @@ function expectExplicitTiming(css: string, candidates: readonly string[], durati
       expect(matching.length, candidate).toBeGreaterThan(0);
       const binding = matching.filter(rule => rule.declarations.includes(`${override}:`));
       expect(binding, candidate).toHaveLength(1);
-      expect(binding[0]!.declarations).toContain(`${override}: var(${member});`);
-      expect(binding[0]!.declarations).toContain(`${property}: var(${member});`);
+      expect(binding[0]!.declarations).toContain(declaredRead(`${override}: var(${member});`));
+      expect(binding[0]!.declarations).toContain(declaredRead(`${property}: var(${member});`));
       if (candidate.startsWith("hover:")) {
         expect(binding[0]!.chain).toContain(selector);
         expect(binding[0]!.chain.some(part => /^@media\s*\(hover:\s*hover\)$/.test(part))).toBe(true);
       } else expect(binding[0]!.chain.some(part => /(?<!\\):hover$/.test(part))).toBe(false);
       for (const rule of matching) {
-        expect(rule.declarations).not.toContain("var(--ui-duration-default)");
-        expect(rule.declarations).not.toContain("var(--ease-default)");
+        expect(rule.declarations).not.toContain("var(--ui-duration-default");
+        expect(rule.declarations).not.toContain("var(--ease-default");
       }
     }
   }
@@ -237,10 +241,10 @@ describe("shadcn-aria-rewrite@1", () => {
     const candidates = result.files[0]!.content.match(/"([^"]+)"/)![1]!.split(/\s+/);
     const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, "../../styles"), candidates });
     expect(css).toContain("outline-style: solid");
-    expect(css).toContain("outline-width: var(--ui-border-focus)");
-    expect(css).toContain("outline-color: var(--color-status-danger)");
-    expect(css).toContain("height: var(--ui-control-switch-thumb)");
-    expect(css).toContain("width: var(--spacing-xl)");
+    expect(css).toContain(declaredRead("outline-width: var(--ui-border-focus)"));
+    expect(css).toContain(declaredRead("outline-color: var(--color-status-danger)"));
+    expect(css).toContain(declaredRead("height: var(--ui-control-switch-thumb)"));
+    expect(css).toContain(declaredRead("width: var(--spacing-xl)"));
   });
   it("binds only known shadows and lifecycle motion, retaining React Aria selectors", () => {
     const result = rewrite('const value = "shadow-md data-entering:animate-in data-entering:fade-in-0 data-entering:zoom-in-95 data-exiting:animate-out data-exiting:fade-out-0 duration-100"');
@@ -259,11 +263,11 @@ describe("shadcn-aria-rewrite@1", () => {
     const result = rewrite('const value = "focus-visible:ring-3 focus-visible:ring-ring/50 shadow-md data-entering:animate-in data-exiting:animate-out data-entering:fade-in-0 data-entering:zoom-in-95 bg-primary"');
     const candidates = result.files[0]!.content.match(/"([^"]+)"/)![1]!.split(/\s+/);
     const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, "../../styles"), candidates });
-    expect(css).toContain("outline-width: var(--ui-border-focus)");
-    expect(css).toContain("outline-offset: var(--ui-focus-offset)");
-    expect(css).toContain("outline-color: var(--color-focus-ring)");
-    expect(css).toContain("var(--ui-elevation-floating)");
-    expect(css).toContain("background-color: var(--color-action)");
+    expect(css).toContain(declaredRead("outline-width: var(--ui-border-focus)"));
+    expect(css).toContain(declaredRead("outline-offset: var(--ui-focus-offset)"));
+    expect(css).toContain(declaredRead("outline-color: var(--color-focus-ring)"));
+    expect(css).toContain(declaredRead("var(--ui-elevation-floating)"));
+    expect(css).toContain(declaredRead("background-color: var(--color-action)"));
     expect(css).toContain("animation: library-transition var(--ui-duration-fast, 120ms) var(--ease-enter");
     expect(css).toContain("animation: library-transition var(--ui-duration-fast, 120ms) var(--ease-exit");
     expect(css).toContain("@keyframes library-transition");
@@ -347,7 +351,7 @@ describe("shadcn-aria-rewrite@1", () => {
     const result = rewrite('const value = "opacity-50 font-medium transition-colors border-t"');
     const candidates = result.files[0]!.content.match(/"([^"]+)"/)![1]!.split(/\s+/);
     const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, '../../styles'), candidates });
-    for (const declaration of ['opacity: var(--ui-alpha-disabled)', 'font-weight: var(--font-weight-medium)', 'transition-duration: var(--ui-duration-default)', 'transition-timing-function: var(--ease-default)', 'border-top-width: var(--ui-border-hairline)']) expect(css).toContain(declaration);
+    for (const declaration of ['opacity: var(--ui-alpha-disabled)', 'font-weight: var(--font-weight-medium)', 'transition-duration: var(--ui-duration-default)', 'transition-timing-function: var(--ease-default)', 'border-top-width: var(--ui-border-hairline)']) expect(css).toContain(declaredRead(declaration));
   });
 
   it('honours explicit transition timing before and after structural utilities and inside styles', async () => {
@@ -359,8 +363,8 @@ describe("shadcn-aria-rewrite@1", () => {
       expect(result.issues).toEqual([]);
       const candidates = result.files[0]!.content.match(/"([^"]+)"/)![1]!.split(/\s+/);
       const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, '../../styles'), candidates });
-      expect(css).toContain('transition-duration: var(--ui-duration-fast)');
-      expect(css).toContain('transition-timing-function: var(--ease-accelerate)');
+      expect(css).toContain(declaredRead('transition-duration: var(--ui-duration-fast)'));
+      expect(css).toContain(declaredRead('transition-timing-function: var(--ease-accelerate)'));
       expectExplicitTiming(css, candidates, '--ui-duration-fast', '--ease-accelerate');
     }
   });
@@ -369,8 +373,8 @@ describe("shadcn-aria-rewrite@1", () => {
     const result = rewrite('const value = "transition-colors duration-80 ease-out"');
     const candidates = result.files[0]!.content.match(/"([^"]+)"/)![1]!.split(/\s+/);
     const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, '../../styles'), candidates });
-    expect(css).toContain('transition-duration: var(--ui-duration-instant)');
-    expect(css).toContain('transition-timing-function: var(--ease-decelerate)');
+    expect(css).toContain(declaredRead('transition-duration: var(--ui-duration-instant)'));
+    expect(css).toContain(declaredRead('transition-timing-function: var(--ease-decelerate)'));
     expectExplicitTiming(css, candidates, '--ui-duration-instant', '--ease-decelerate');
     expect(result.issues).toEqual([]);
   });
@@ -399,7 +403,7 @@ describe("shadcn-aria-rewrite@1", () => {
     const variant = rewrite('const value = "dark:hover:font-sans"');
     expect(variant.files[0]!.content).toContain("dark:hover:font-(family-name:--font-body)");
     const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, "../../styles"), candidates: ["dark:hover:font-(family-name:--font-body)"] });
-    expect(css).toContain("font-family: var(--font-body)");
+    expect(css).toContain(declaredRead("font-family: var(--font-body)"));
     expect(rewrite('const value = "font-unapproved"').issues).toContainEqual(expect.objectContaining({ code: "K4", value: "font-unapproved" }));
   });
 
@@ -409,7 +413,7 @@ describe("shadcn-aria-rewrite@1", () => {
     expect(result.files[0]!.content).toContain("data-entering:library-enter!");
     expect(result.issues).toEqual([]);
     const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, "../../styles"), candidates: ["hover:text-(--color-ink-primary)!"] });
-    expect(css).toContain("color: var(--color-ink-primary) !important");
+    expect(css).toContain(declaredRead("color: var(--color-ink-primary) !important"));
     expect(rewrite('const value = "font-unapproved!"').issues).toContainEqual(expect.objectContaining({ code: "K4", value: "font-unapproved!" }));
   });
   it("treats arbitrary three-pixel focus syntax identically and preserves decorative negatives", () => {
@@ -446,7 +450,7 @@ describe("shadcn-aria-rewrite@1", () => {
     expect(separator.issues).toEqual([]);
     expect(rewrite('const value = "rounded-[5px] min-w-[97px] border-unbound"').issues).toHaveLength(3);
     const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, "../../styles"), candidates: ["border-collapse", "max-w-[calc(100%-var(--spacing-2xl))]", "rounded-(--radius-default)", "min-w-(--spacing-5xl)"] });
-    for (const declaration of ["border-collapse: collapse", "max-width: calc(100% - var(--spacing-2xl))", "border-radius: var(--radius-default)", "min-width: var(--spacing-5xl)"]) expect(css).toContain(declaration);
+    for (const declaration of ["border-collapse: collapse", "max-width: calc(100% - var(--spacing-2xl))", "border-radius: var(--radius-default)", "min-width: var(--spacing-5xl)"]) expect(css).toContain(declaredRead(declaration));
   });
   it("preserves decorative ring semantics without a deleted width read", async () => {
     const avatar = rewriteShadcnAria({item:"avatar",leaf:"avatar",files:[{path:"avatar.tsx",content:'const value="ring-1 hover:ring-2 ring-3"'}],styles:"",leafByItem:{}});
@@ -457,7 +461,7 @@ describe("shadcn-aria-rewrite@1", () => {
     expect(menu.files[0]!.content).toContain("ring-(length:--ui-border-hairline)");
     expect(menu.issues).toEqual([]);
     const {css} = await generateCompiledCss({stylesDir:resolve(import.meta.dirname,"../../styles"),candidates:["ring-(length:--ui-border-hairline)"]});
-    expect(css).toContain("var(--ui-border-hairline)");
+    expect(css).toContain(declaredRead("var(--ui-border-hairline)"));
     expect(css).toContain("--tw-ring-shadow");
   });
   it("binds Card spacing aliases while preserving the small conditional override and inherited consumers", () => {

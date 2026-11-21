@@ -1,28 +1,34 @@
 /**
- * `clossys init [--root <dir>] [--at <iso>] [--json]`: prepares a consumer workspace for chat agents. It adds the
+ * `clossys init [--starters <id,...>] [--root <dir>] [--at <iso>] [--json]`: prepares a consumer workspace for chat agents. It adds the
  * agent-neutral views pointer to the consumer's `AGENTS.md` (system.md 14.9), once, and seats the admin workspace
  * publication, a fixed Publisher responsibility in every consumer (init-admin.ts); a second run changes nothing.
  * With `--publication <id>` it does the same first (the admin workspace is built at init for every consumer, owner A1),
  * then records that publication's install outputs (`init-outputs.ts`).
- * Expanding opt-in starters (`--starters`: websites, docs, slides) is separate later work.
+ * With `--starters <id,...>` it does the same first, then seats each opt-in starter publication and its pages from the
+ * Publisher package's own starter and page archetypes (`init-starters.ts`; today `site`).
  */
 import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { ensureAgentsPointer } from "../views/agents-pointer.js";
 import { CliUsageError } from "./args.js";
 import { seatAdmin } from "./init-admin.js";
+import { seatStarter, type StarterSeat, starterLines } from "./init-starters.js";
 import { adoptInitLoops } from "./init-loops.js";
 import { INIT_OUTPUTS_USAGE, runInitOutputsCli } from "./init-outputs.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
+import { SEATABLE_STARTERS } from "./starter-plan.js";
 
-export const INIT_USAGE = "Usage: clossys init [--root <dir>] [--at <iso>] [--json]\n"
+export const INIT_USAGE = "Usage: clossys init [--starters <id,...>] [--root <dir>] [--at <iso>] [--json]\n"
   + "  adds the views pointer block to the workspace AGENTS.md (created when missing) unless it is already there:\n"
   + "  run clossys views list, follow clossys views show <id>, answer only through clossys answer.\n"
   + "  seats the admin workspace (Publisher admin pages and publication.admin in the admin tab) through clossys ia,\n"
   + "  and raises one Designer slot request for each frame or section those pages compose that no workspace slot holds\n"
   + "  (the data-bound admin sections among them), then adopts and pins the five loops of every agent the workspace\n"
   + "  places (Publisher always) through the pin gate; --at stamps those writes.\n"
+  + `  --starters (${SEATABLE_STARTERS.join(", ")}) then seats that opt-in publication and its routed pages from the Publisher package's\n`
+  + "  starter and page archetypes through clossys ia, raises one slot request for each Designer or Writer slot they cite that no\n"
+  + "  workspace slot holds, and writes no candidate or pin; a page with no archetype refuses (PageArchetypeError).\n"
   + INIT_OUTPUTS_USAGE;
 
 const isoAt = (value: string | undefined): string => {
@@ -42,10 +48,21 @@ export async function runInitCli(argv: readonly string[], cwd: string): Promise<
     return runInitOutputsCli(rest, cwd, workspace => initWorkspace(workspace, at, cwd, "init --publication refused"));
   }
   let root: string | undefined, at: string | undefined;
+  const starters: string[] = [];
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     if (arg === "--help") return { exitCode: 0, message: INIT_USAGE };
     if (arg === "--json") continue;
+    if (arg === "--starters") {
+      const value = argv[++index];
+      if (value === undefined || value.startsWith("--")) throw new CliUsageError(`--starters requires a value\n${INIT_USAGE}`);
+      for (const id of value.split(",").map(part => part.trim())) {
+        if (id === "admin") throw new CliUsageError(`--starters admin: the admin workspace is seated by every clossys init\n${INIT_USAGE}`);
+        if (!SEATABLE_STARTERS.includes(id)) throw new CliUsageError(`--starters ${id}: init seats the starters ${SEATABLE_STARTERS.join(", ")}\n${INIT_USAGE}`);
+        if (!starters.includes(id)) starters.push(id);
+      }
+      continue;
+    }
     if (arg === "--root") {
       const value = argv[++index];
       if (value === undefined || value.startsWith("--")) throw new CliUsageError(`--root requires a value\n${INIT_USAGE}`);
@@ -58,7 +75,19 @@ export async function runInitCli(argv: readonly string[], cwd: string): Promise<
     }
     throw new CliUsageError(`Unknown argument: ${arg}\n${INIT_USAGE}`);
   }
-  return initWorkspace(discoverRoot(resolve(cwd, root ?? ".")), at, cwd);
+  const workspace = discoverRoot(resolve(cwd, root ?? "."));
+  const stamp = at ?? new Date().toISOString();
+  const init = await initWorkspace(workspace, stamp, cwd);
+  if (!starters.length || init.exitCode !== 0) return init;
+  const seats: StarterSeat[] = [], lines: string[] = [];
+  for (const starter of starters) {
+    const { result, seat } = await seatStarter(realpathSync(workspace), starter, stamp);
+    seats.push(seat);
+    const output = { ...(init.output as Record<string, unknown>), starters: seats };
+    if (result) return { ...result, output: { ...output, ...(result.output as Record<string, unknown>) }, message: [init.message, result.message].join("\n") };
+    lines.push(...starterLines(seat));
+  }
+  return { ...init, output: { ...(init.output as Record<string, unknown>), starters: seats }, message: [init.message, ...lines].join("\n") };
 }
 
 /**

@@ -32,6 +32,25 @@
   --available-height: 100dvh;
 }
 
+/* React Aria runtime defaults. React Aria sets these inline on the element
+ * that reads them once it measures; before that (and with no component
+ * mounted) each one takes the value the component itself computes with no
+ * measurement, or the reading property's CSS initial value, so computed
+ * style never changes:
+ * - `--trigger-width`: unset until the trigger is measured
+ *   (react-aria-components 1.21.1 dist/private/Popover.mjs:151 and :171),
+ *   so `width` falls back to its initial value, `auto`.
+ * - `--trigger-anchor-point`: unset with no anchor (Popover.mjs:169), so
+ *   `transform-origin` falls back to its initial value, `50% 50% 0`.
+ * - `--disclosure-panel-height`: `auto` for an expanded panel with no
+ *   measurement (react-aria 3.52.1 dist/private/disclosure/useDisclosure.mjs:56),
+ *   which is also the initial value of `height`. */
+:root {
+  --disclosure-panel-height: auto;
+  --trigger-anchor-point: 50% 50% 0;
+  --trigger-width: auto;
+}
+
 @theme inline {
   /* BEGIN GENERATED shadcn colour keys: emitted from src/catalog/slots/themes.json by src/compiled-css/shadcn-theme-keys.ts (npm run generate:compiled-css). Do not edit. */
   --color-accent: var(--accent);
