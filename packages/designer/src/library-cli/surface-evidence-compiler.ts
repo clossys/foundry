@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { installedSurfaceDependency } from "./surface-installed-dependencies.js";
+import { installedSurfaceDependency, type InstalledDistributions } from "./surface-installed-dependencies.js";
 
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
 const require = createRequire(import.meta.url);
@@ -41,6 +41,8 @@ if (request.modules) {
   const program = ts.createProgram(roots, { ...options, rootDir: undefined, noEmit: true }, host);
   const checker = program.getTypeChecker();
   const packages = [], dependencies = [];
+  // This invocation is one prepare: each installed package root is hashed once for all its subpaths.
+  const distributions: InstalledDistributions = new Map();
   for (const [index, module] of request.modules.entries()) {
     const scoped = module.startsWith("@"), name = module.split("/").slice(0, scoped ? 2 : 1).join("/");
     const entry = fileURLToPath(import.meta.resolve(module));
@@ -54,7 +56,7 @@ if (request.modules) {
     const source = program.getSourceFile(roots[index]!)!;
     const symbol = checker.getSymbolAtLocation(source);
     if (!symbol) throw new Error(`Native surface dependency type exports unavailable: ${module}`);
-    const installed = await installedSurfaceDependency(module);
+    const installed = await installedSurfaceDependency(module, distributions);
     const values = installed.values;
     const types = checker.getExportsOfModule(symbol).map(symbol => symbol.name).filter(name => !values.includes(name)).sort();
     // The installed manifest, runtime entry and the actual declaration inputs authenticate this inventory.

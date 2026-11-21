@@ -10,7 +10,7 @@ import { runtimeHash, runtimeSourceFindings } from "../catalog-core/runtime-port
 import { sha256 } from "../catalog-core/digest.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { SPECIMEN_SECTION_EXPORTS } from "../importers/specimen-sections.js";
-import { installedSurfaceDependency } from "./surface-installed-dependencies.js";
+import { installedSurfaceDependencies } from "./surface-installed-dependencies.js";
 import { retiredLeafIds } from "../catalog-core/retired-leaves.js";
 import retiredLeaves from "../catalog/retired.json" with { type: "json" };
 import type { CompositeEngineInput } from "../catalog-core/types.js";
@@ -82,7 +82,7 @@ export async function checkNativeSpecimenEvidence(evidence: NativeSpecimenEviden
 export async function specimenSurfaceEnvironment(input: CompositeEngineInput, supplied?: NativeSpecimenEvidence) {
   const evidence = supplied ?? await installedNativeSpecimenEvidence();
   await checkNativeSpecimenEvidence(evidence);
-  const installed = await Promise.all(evidence.packages.map(row => installedSurfaceDependency(row.module)));
+  const installed = await installedSurfaceDependencies(evidence.packages.map(row => row.module));
   if (new Set(evidence.packages.map(row => row.module)).size !== evidence.packages.length || !same(installed.map(row => row.dependency), evidence.dependencies)) fail("dependency inventory differs");
   for (const [index, row] of evidence.packages.entries()) {
     const actual = installed[index]!;
