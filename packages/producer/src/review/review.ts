@@ -4,14 +4,15 @@
  * `MECHANICAL: PASS|FAIL <head-sha> <tree-sha>` and the findings list. A model reviewer reads that report plus the
  * doc truth and the packet's scope, and re-runs nothing.
  */
-import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { changedFiles, forbiddenFindings, headHunks, packageOf } from "./changes.js";
-import { FOUNDRY_CONFIG, jsonOf, type ReviewConfig } from "./config.js";
-import { addWorktree, git, run, scratch, type Worktree } from "./exec.js";
-import { buildSet, coveringTests, SOURCE_FILE, TEST_FILE, testCommand } from "./graph.js";
+import { FOUNDRY_CONFIG, type GeneratedFixture, type ReviewConfig } from "./config.js";
+import { addWorktree, exitText, git, run, scratch, type RunResult, type Worktree } from "./exec.js";
+import { buildSet, coveringTests, isSource, testCommand } from "./graph.js";
 import { applyMutant, COMPILE_ERROR, fileMutants, MUTANT_CAP, selectMutants } from "./mutate.js";
-import { compareReceipt, readReceipt, receiptFileFor } from "./receipt.js";
+import { compareReceipt, parsePacket, readReceipt, receiptFileFor } from "./receipt.js";
 import type { Finding, MutantResult, ReviewReport, StepResult, StepStatus } from "./types.js";
 
 export const REVIEW_SCHEMA = "clossys.review/1";
@@ -20,15 +21,15 @@ export const REVIEW_SCHEMA = "clossys.review/1";
 export const REVIEW_STEPS: readonly { readonly step: string; readonly finding: string; readonly fails: string }[] = [
   { step: "changed", finding: "-", fails: "never: the files and packages of git diff --name-status base...head" },
   { step: "forbidden", finding: "forbidden.*", fails: "any forbidden path below" },
-  { step: "leak-scan", finding: "leak-scan", fails: "the repository's public-safety check reports a failure kind more often at the head than at the merge base (details are never stored or printed)" },
+  { step: "leak-scan", finding: "leak-scan", fails: "the merge base's public-safety script, run unchanged against the head tree, exits non-zero, or the merge base has no such script (its output is never stored or printed)" },
   { step: "install", finding: "install", fails: "the install in the head tree (and the base tree, for the counts) exits non-zero" },
-  { step: "build", finding: "build", fails: "a build of a changed package or its prerequisite exits non-zero; each package builds once, dependencies first" },
-  { step: "types", finding: "types", fails: "tsc --noEmit -p <package> exits non-zero for a changed workspace package with a tsconfig.json" },
-  { step: "tests", finding: "tests", fails: "a touched test file, or a test importing a changed module, exits non-zero run on its own" },
-  { step: "counts", finding: "count.increase / count.probe", fails: "a probe finds more of a rule at head than at the merge base, or cannot run at head" },
-  { step: "fixtures", finding: "fixture.drift / fixture.generate", fails: "the head generator, run on the base copy of a generated fixture, writes anything diff -r finds in the head's committed copy" },
+  { step: "build", finding: "build", fails: "a build of a changed package, a probe or fixture package, or a prerequisite exits non-zero; each package builds once, dependencies first" },
+  { step: "types", finding: "types", fails: "the typecheck of a changed workspace package with a tsconfig.json exits non-zero" },
+  { step: "tests", finding: "tests / test.uncovered", fails: "a covering test file exits non-zero run on its own, or a changed source file has no covering test" },
+  { step: "counts", finding: "count.increase / count.probe", fails: "a probe finds more of a rule at head than at the merge base, or cannot run in either tree" },
+  { step: "fixtures", finding: "fixture.*", fails: "a registered generator is not at the head; or, for a fixture whose inputs changed, the head generator fails or writes anything diff -r finds against the head's committed copy" },
   { step: "e2e", finding: "e2e", fails: "clossys check --e2e exits non-zero when the producer, designer, writer or publisher package changed" },
-  { step: "receipt", finding: "receipt.*", fails: "with --packet: the receipt is missing, names another head, was taken dirty, or a re-run differs in exit code or output tail" },
+  { step: "receipt", finding: "receipt.*", fails: "with --packet: any receipt finding below" },
   { step: "mutation", finding: "mutation.survived (note)", fails: "never: each mutant is reported killed, survived, invalid (does not compile) or uncovered" },
 ];
 
@@ -44,29 +45,26 @@ export interface ReviewOptions {
   readonly log?: (line: string) => void;
 }
 
+/** Arguments the review refuses before it runs anything (the CLI reports them as usage errors). */
+export class ReviewArgumentError extends Error {}
+
 const npmBuild = (name: string) => ["npm", "run", "build", `--workspace=${name}`];
 const lastLine = (output: string) => output.trim().split("\n").slice(-1)[0]?.slice(0, 200) ?? "";
 /** The last few lines that are not npm's own wrapper lines: the failing tool's message. */
 const tailLines = (output: string, count = 4) => output.trim().split("\n").filter(line => line.trim() && !/^npm (error|ERR!)/.test(line)).slice(-count).map(line => line.slice(0, 200)).join(" | ") || lastLine(output);
-
-/** A public-safety JSON report as counts per file and kind; never its details. Null when the output is not one. */
-export function leakKeys(stdout: string): Map<string, number> | null {
-  let doc: Record<string, unknown>;
-  try { doc = jsonOf(stdout); } catch { return null; }
-  if (!Array.isArray(doc.failures)) return null;
-  const out = new Map<string, number>();
-  for (const item of doc.failures as { rel?: unknown; kind?: unknown }[]) { const key = `${String(item.rel)}\u0000${String(item.kind)}`; out.set(key, (out.get(key) ?? 0) + 1); }
-  return out;
-}
+/** A failed run as a finding detail: exit code (and timeout), then the tool's last lines. */
+const failed = (result: RunResult, lines = 4) => `${exitText(result)}: ${tailLines(result.output, lines)}`;
 
 export function runReview(options: ReviewOptions): ReviewReport {
   const config = options.config ?? FOUNDRY_CONFIG;
   const log = options.log ?? (() => {});
   const repo = options.repo;
+  if (options.receipt && !options.packet) throw new ReviewArgumentError("--receipt needs --packet: a receipt is held to its packet's own Validation list");
   const base = git(repo, ["rev-parse", "--verify", `${options.base}^{commit}`]);
   const head = git(repo, ["rev-parse", "--verify", `${options.head}^{commit}`]);
   const tree = git(repo, ["rev-parse", `${head}^{tree}`]);
   const mergeBase = git(repo, ["merge-base", base, head]);
+  if (mergeBase === head && head !== base) throw new ReviewArgumentError(`head ${head.slice(0, 9)} is an ancestor of base ${base.slice(0, 9)}, so base...head is empty: are <base> and <head> swapped?`);
   const changes = changedFiles(repo, base, head);
   const files = changes.map(change => change.path);
   const steps: StepResult[] = [], findings: Finding[] = [], mutants: MutantResult[] = [];
@@ -92,29 +90,23 @@ export function runReview(options: ReviewOptions): ReviewReport {
       packages = [...new Set(files.map(file => packageOf(at, file)))].sort();
       step("changed", "pass", `${files.length} file(s), ${packages.length} package(s)`);
       step("forbidden", forbidden.length ? "fail" : "pass", `${forbidden.length} finding(s)`);
-      if (config.leakScan) leakScan(config.leakScan, at, baseAt, config.timeoutMs, step, fail, findings);
+      if (config.leakScan) leakScan(config.leakScan.npmScript, at, baseAt(), config.timeoutMs, step, fail);
       else step("leak-scan", "skip", "no leak scan configured");
       const installed = install(config, at, "head", step, fail);
       const counting = config.counts.length > 0 && changes.length > 0;
-      const built = installed && build(at, [...packages, ...(counting ? config.probePackages : [])], step, fail, config.timeoutMs);
-      types(at, packages, step, fail, config.timeoutMs);
-      const covering = coveringTests(at, files, file => packageOf(at, file));
-      const red = tests(at, covering.all, step, fail, config.timeoutMs);
+      const due = config.fixtures.filter(item => files.some(file => file.startsWith(`${item.fixture}/`) || item.triggers.some(prefix => file.startsWith(prefix))));
+      const built = installed && build(at, [...packages, ...(counting ? config.probePackages : []), ...due.flatMap(item => item.needs)], step, fail, config.timeoutMs);
+      types(at, packages, config, step, fail);
+      const covering = coveringTests(at, changes, file => packageOf(at, file));
+      const red = tests(at, covering.all, covering.uncovered, step, fail, config.timeoutMs);
       if (counting && built) countDeltas(repo, mergeBase, at, baseAt, config, counts, step, fail);
       else step("counts", "skip", counting ? "the head build failed" : "no probes or no changes");
-      fixtures(repo, mergeBase, at, files, config, step, fail, findings);
+      fixtures(repo, mergeBase, head, at, due, config, step, fail);
       const e2e = config.e2e && packages.some(pkg => config.e2e!.packages.includes(pkg));
-      if (e2e) { const result = run(config.e2e!.argv, at, { timeoutMs: config.timeoutMs }); step("e2e", result.exit ? "fail" : "pass", `exit ${result.exit}`, result.ms); if (result.exit) fail("e2e", config.e2e!.argv.join(" "), lastLine(result.output)); }
+      if (e2e) { const result = run(config.e2e!.argv, at, { timeoutMs: config.timeoutMs }); step("e2e", result.exit ? "fail" : "pass", exitText(result), result.ms); if (result.exit) fail("e2e", config.e2e!.argv.join(" "), failed(result, 1)); }
       else step("e2e", "skip", "no e2e package changed");
-      if (options.packet) {
-        const file = receiptFileFor(options.packet, options.receipt);
-        if (!file) { fail("receipt.missing", options.packet, "no receipt.json for the packet; run clossys receipt --packet"); step("receipt", "fail", "missing"); }
-        else {
-          const found = compareReceipt(readReceipt(file), head, at, config.timeoutMs);
-          findings.push(...found);
-          step("receipt", found.length ? "fail" : "pass", `${found.length} mismatch(es)`);
-        }
-      } else step("receipt", "skip", "no --packet");
+      if (options.packet) receipt(resolve(options.packet), options.receipt, head, at, config.timeoutMs, step, fail, findings);
+      else step("receipt", "skip", "no --packet");
       mutation(repo, mergeBase, head, at, files, covering.bySource, red, options.seed ?? "0", options.cap ?? MUTANT_CAP, config.timeoutMs, mutants, step, findings);
     }
   } finally {
@@ -127,43 +119,35 @@ export function runReview(options: ReviewOptions): ReviewReport {
 type StepFn = (name: string, status: StepStatus, detail: string, ms?: number) => void;
 type FailFn = (id: string, subject: string, detail: string) => void;
 
+/** Characters that would make a package.json script line more than one plain command. */
+const SHELL_SYNTAX = /[|&;<>()$`\\"'*?]/;
+
 /**
- * The public-safety check, unchanged, in the head tree and the merge base's tree before either installs anything.
- * Only each failure's file and kind are kept, as counts; a kind that grows at the head fails, failures the base already
- * had are a note. The reported subject is the kind alone and nothing of the check's output is printed. Output that is
- * not the check's JSON report falls back to its exit code.
+ * The merge base's public-safety script (its root package.json script `name`, `node <script> <args>`), unchanged,
+ * run with the head tree as its working directory before anything installs there: the head cannot rewire or replace
+ * the scanner it is judged by. Only the exit code is kept; nothing of its output is stored or printed.
  */
-function leakScan(argv: readonly string[], at: string, baseAt: () => string, timeoutMs: number, step: StepFn, fail: FailFn, findings: Finding[]): void {
-  const command = argv.join(" ");
-  const head = run(argv, at, { timeoutMs });
-  const after = leakKeys(head.stdout);
-  if (!after) {
-    step("leak-scan", head.exit ? "fail" : "pass", `exit ${head.exit}; no JSON report`, head.ms);
-    if (head.exit) fail("leak-scan", command, `exit ${head.exit}; output withheld, run it in the checkout`);
+function leakScan(name: string, at: string, baseDir: string, timeoutMs: number, step: StepFn, fail: FailFn): void {
+  let line: unknown;
+  try { line = (JSON.parse(readFileSync(join(baseDir, "package.json"), "utf8")) as { scripts?: Record<string, unknown> }).scripts?.[name]; } catch { line = undefined; }
+  const words = typeof line === "string" ? line.trim().split(/\s+/) : [];
+  const script = words[1] ?? "";
+  if (words[0] !== "node" || !script || SHELL_SYNTAX.test(String(line)) || !existsSync(join(baseDir, script))) {
+    const why = typeof line !== "string" ? `the merge base's package.json has no "${name}" script` : `the merge base's "${name}" script is not one \`node <script> <args>\` command whose script it holds`;
+    step("leak-scan", "fail", why);
+    fail("leak-scan", name, `${why}; refusing to judge the head without it`);
     return;
   }
-  if (!after.size) { step("leak-scan", head.exit ? "fail" : "pass", `exit ${head.exit}, 0 failure(s)`, head.ms); if (head.exit) fail("leak-scan", command, `exit ${head.exit} with no failure listed; output withheld`); return; }
-  const base = run(argv, baseAt(), { timeoutMs });
-  const before = leakKeys(base.stdout);
-  const grown = new Map<string, number>();
-  let preexisting = 0;
-  for (const [key, count] of after) {
-    const had = Math.min(count, before?.get(key) ?? 0);
-    preexisting += had;
-    const kind = key.slice(key.indexOf("\u0000") + 1);
-    if (count > had) grown.set(kind, (grown.get(kind) ?? 0) + count - had);
-  }
-  for (const [kind, count] of [...grown].sort()) fail("leak-scan", kind, `${count} new failure(s) of this kind at the head${before ? "" : " (the base gave no JSON report)"}; details withheld, run ${command} in the checkout`);
-  if (preexisting) findings.push({ id: "leak-scan.preexisting", level: "note", subject: command, detail: `${preexisting} failure(s) the merge base already has; not this change's` });
-  const total = [...grown.values()].reduce((sum, count) => sum + count, 0);
-  step("leak-scan", total ? "fail" : "pass", `${total} new, ${preexisting} pre-existing`, head.ms + base.ms);
+  const result = run(["node", join(baseDir, script), ...words.slice(2)], at, { timeoutMs });
+  step("leak-scan", result.exit ? "fail" : "pass", `the merge base's ${name} on the head tree: ${exitText(result)}`, result.ms);
+  if (result.exit) fail("leak-scan", name, `${exitText(result)}; output withheld, run npm run ${name} in the checkout`);
 }
 
 function install(config: ReviewConfig, at: string, label: string, step: StepFn, fail: FailFn): boolean {
   if (!config.install) { if (label === "head") step("install", "skip", "no install configured"); return true; }
   const result = run(config.install, at, { timeoutMs: config.timeoutMs });
-  if (label === "head" || result.exit) step("install", result.exit ? "fail" : "pass", `${label}: exit ${result.exit}`, result.ms);
-  if (result.exit) fail("install", `${label}: ${config.install.join(" ")}`, lastLine(result.output));
+  if (label === "head" || result.exit) step("install", result.exit ? "fail" : "pass", `${label}: ${exitText(result)}`, result.ms);
+  if (result.exit) fail("install", `${label}: ${config.install.join(" ")}`, failed(result, 1));
   return result.exit === 0;
 }
 
@@ -183,37 +167,39 @@ function build(at: string, targets: readonly string[], step: StepFn, fail: FailF
     }
     const result = run(npmBuild(workspace.name), at, { timeoutMs });
     ms += result.ms;
-    if (result.exit) { ok = false; fail("build", `${label}: ${workspace.name}`, tailLines(result.output)); }
+    if (result.exit) { ok = false; fail("build", `${label}: ${workspace.name}`, failed(result)); }
   }
   const names = order.map(item => item.name + (copied.includes(item.name) ? " (dist from head, unchanged)" : prerequisites.has(item.dir) ? " (prerequisite)" : ""));
   step("build", ok ? "pass" : "fail", `${label}: ${names.join(", ") || "nothing to build"}`, ms);
   return ok;
 }
 
-function types(at: string, packages: readonly string[], step: StepFn, fail: FailFn, timeoutMs: number): void {
+function types(at: string, packages: readonly string[], config: ReviewConfig, step: StepFn, fail: FailFn): void {
   const checked: string[] = [];
   let ms = 0, ok = true;
   for (const pkg of packages) {
     if (pkg === "." || !existsSync(join(at, pkg, "tsconfig.json"))) continue;
-    const result = run(["npx", "tsc", "--noEmit", "-p", pkg], at, { timeoutMs });
+    const result = run(config.typecheck.map(arg => arg.replace("{pkg}", pkg)), at, { timeoutMs: config.timeoutMs });
     ms += result.ms;
     checked.push(pkg);
-    if (result.exit) { ok = false; fail("types", pkg, lastLine(result.output)); }
+    if (result.exit) { ok = false; fail("types", pkg, failed(result, 2)); }
   }
   step("types", checked.length ? (ok ? "pass" : "fail") : "skip", checked.join(", ") || "no changed package has a tsconfig.json", ms);
 }
 
-/** Each test file on its own; returns the red ones. */
-function tests(at: string, files: readonly string[], step: StepFn, fail: FailFn, timeoutMs: number): Set<string> {
+/** Each covering test file on its own, and a finding for each changed source no test covers; returns the red tests. */
+function tests(at: string, files: readonly string[], uncovered: readonly string[], step: StepFn, fail: FailFn, timeoutMs: number): Set<string> {
   const red = new Set<string>();
   let ms = 0;
   for (const file of files) {
     const command = testCommand(at, packageOf(at, file), file);
     const result = run(command.argv, command.cwd, { timeoutMs });
     ms += result.ms;
-    if (result.exit) { red.add(file); fail("tests", file, `exit ${result.exit}: ${lastLine(result.output)}`); }
+    if (result.exit) { red.add(file); fail("tests", file, failed(result, 1)); }
   }
-  step("tests", files.length ? (red.size ? "fail" : "pass") : "skip", `${files.length - red.size}/${files.length} file(s) green`, ms);
+  for (const source of uncovered) fail("test.uncovered", source, "changed, and no test file reaches it through the import graph");
+  const status = red.size || uncovered.length ? "fail" : files.length ? "pass" : "skip";
+  step("tests", status, `${files.length - red.size}/${files.length} file(s) green, ${uncovered.length} changed source(s) uncovered`, ms);
   return red;
 }
 
@@ -222,7 +208,7 @@ function probe(config: ReviewConfig, at: string): Map<string, Record<string, num
   for (const item of config.counts) {
     const result = run(item.argv, at, { timeoutMs: config.timeoutMs });
     try { out.set(item.id, item.parse(result.stdout)); }
-    catch (error) { out.set(item.id, `exit ${result.exit}: ${(error as Error).message}; ${lastLine(result.output)}`); }
+    catch (error) { out.set(item.id, `${exitText(result)}: ${(error as Error).message}; ${lastLine(result.output)}`); }
   }
   return out;
 }
@@ -236,53 +222,94 @@ function countDeltas(repo: string, mergeBase: string, at: string, baseAt: () => 
   const baseReady = install(config, baseTree.dir, "base", step, fail) && build(baseTree.dir, config.probePackages, step, (id, subject, detail) => fail("count.probe", subject, `base ${id}: ${detail}`), config.timeoutMs, "base", reuse);
   const before = baseReady ? probe(config, baseTree.dir) : new Map<string, string>(config.counts.map(item => [item.id, "base tree did not build"]));
   const after = probe(config, at);
-  let increases = 0;
+  let increases = 0, broken = 0;
   for (const item of config.counts) {
     const b = before.get(item.id), h = after.get(item.id);
-    if (typeof h === "string") { fail("count.probe", item.id, `head: ${h}`); continue; }
-    if (typeof b === "string") fail("count.probe", item.id, `base: ${b}`);
+    if (typeof h === "string") { broken++; fail("count.probe", item.id, `head: ${h}`); continue; }
+    if (typeof b === "string") { broken++; fail("count.probe", item.id, `base: ${b}`); }
     for (const rule of [...new Set([...Object.keys(typeof b === "object" ? b : {}), ...Object.keys(h!)])].sort()) {
       const baseCount = typeof b === "object" ? b[rule] ?? 0 : null, headCount = h![rule] ?? 0;
       counts[`${item.id}:${rule}`] = { base: baseCount, head: headCount };
       if (baseCount !== null && headCount > baseCount) { increases++; fail("count.increase", `${item.id}:${rule}`, `${baseCount} -> ${headCount}`); }
     }
   }
-  step("counts", increases || [...after.values()].some(value => typeof value === "string") || !baseReady ? "fail" : "pass", `${Object.keys(counts).length} rule count(s), ${increases} increase(s)`, Date.now() - started);
+  step("counts", increases || broken || !baseReady ? "fail" : "pass", `${Object.keys(counts).length} rule count(s), ${increases} increase(s), ${broken} probe(s) that did not run`, Date.now() - started);
 }
 
-function fixtures(repo: string, mergeBase: string, at: string, files: readonly string[], config: ReviewConfig, step: StepFn, fail: FailFn, findings: Finding[]): void {
+/** git archive of rev's path, extracted under into without a shell; the error text, or null when both exit 0. */
+function extract(repo: string, rev: string, path: string, into: string): string | null {
+  mkdirSync(into, { recursive: true });
+  const tar = spawnSync("git", ["-C", repo, "archive", "--format=tar", rev, "--", path], { maxBuffer: 1 << 30 });
+  if (tar.status !== 0) return `git archive ${rev.slice(0, 9)} -- ${path}: exit ${tar.status ?? "signal"}: ${String(tar.stderr ?? "").trim().split("\n").slice(-1)[0] ?? ""}`;
+  const untar = spawnSync("tar", ["-x", "-C", into], { input: tar.stdout, maxBuffer: 1 << 20 });
+  if (untar.status !== 0) return `tar -x: exit ${untar.status ?? "signal"}: ${String(untar.stderr ?? "").trim().split("\n").slice(-1)[0] ?? ""}`;
+  return null;
+}
+
+/**
+ * Every registered generator must be at the head. Each due fixture (its inputs changed): the base's committed copy
+ * is put where an in-place generator would read it, the head's generator writes into a temp folder, the head tree's
+ * copy is restored, and diff -r compares the output with the head's committed copy (extracted from git).
+ */
+function fixtures(repo: string, mergeBase: string, head: string, at: string, due: readonly GeneratedFixture[], config: ReviewConfig, step: StepFn, fail: FailFn): void {
   const started = Date.now();
-  const due = config.fixtures.filter(item => files.some(file => file.startsWith(`${item.fixture}/`) || item.triggers.some(prefix => file.startsWith(prefix))));
-  if (!due.length) { step("fixtures", "skip", "no generated fixture's inputs changed"); return; }
-  const done: string[] = [];
   let ok = true;
-  for (const item of due) {
-    if (!existsSync(join(at, item.generator))) { findings.push({ id: "fixture.skipped", level: "note", subject: item.id, detail: `${item.generator} is not at the head` }); continue; }
-    const out = join(scratch("clossys-review-fixture-"), "out");
-    const committed = join(at, item.fixture);
+  const present = (item: GeneratedFixture) => {
+    if (existsSync(join(at, item.generator))) return true;
+    const had = run(["git", "cat-file", "-e", `${mergeBase}:${item.generator}`], repo).exit === 0;
+    fail("fixture.generator-missing", item.id, `${item.generator} is registered but not at the head${had ? "; the merge base has it, so this change deleted it" : ""}`);
+    ok = false;
+    return false;
+  };
+  const ready = config.fixtures.filter(present).filter(item => due.includes(item));
+  const done: string[] = [];
+  for (const item of ready) {
+    const work = scratch("clossys-review-fixture-");
+    const out = join(work, "out"), committed = join(work, "committed");
+    const inTree = join(at, item.fixture);
     try {
-      // The generator reads the fixture where it lives: put the base copy there, run, then restore the head's copy.
-      rmSync(committed, { recursive: true, force: true });
-      const hasBase = run(["git", "cat-file", "-e", `${mergeBase}:${item.fixture}`], repo).exit === 0;
-      if (hasBase) run(`git -C '${repo}' archive --format=tar ${mergeBase} -- '${item.fixture}' | tar -x -C '${at}'`, at);
-      else git(at, ["checkout", "HEAD", "--", item.fixture]);
-      const result = run(["node", item.generator.slice(item.cwd === "." ? 0 : item.cwd.length + 1), ...item.args.map(arg => arg.replace("{out}", out))], join(at, item.cwd), { timeoutMs: config.timeoutMs });
-      rmSync(committed, { recursive: true, force: true });
+      let staged: string | null = null;
+      if (run(["git", "cat-file", "-e", `${mergeBase}:${item.fixture}`], repo).exit === 0) {
+        rmSync(inTree, { recursive: true, force: true });
+        staged = extract(repo, mergeBase, item.fixture, at);
+      }
+      const result = staged ? undefined : run(["node", item.generator.slice(item.cwd === "." ? 0 : item.cwd.length + 1), ...item.args.map(arg => arg.replace("{out}", out))], join(at, item.cwd), { timeoutMs: config.timeoutMs });
+      rmSync(inTree, { recursive: true, force: true });
       git(at, ["checkout", "HEAD", "--", item.fixture]);
-      if (result.exit) { ok = false; fail("fixture.generate", item.id, `exit ${result.exit}: ${result.output.trim().split("\n").slice(-1)[0] ?? ""}`); continue; }
-      const diff = run(["diff", "-r", out, committed], at);
-      if (diff.exit) { ok = false; fail("fixture.drift", item.fixture, diff.output.split("\n").slice(0, 12).join("\n").split(out).join("<regenerated>").split(at).join("<head>")); }
+      if (staged) { ok = false; fail("fixture.extract", item.id, `base copy: ${staged}`); continue; }
+      if (result!.exit) { ok = false; fail("fixture.generate", item.id, failed(result!, 1)); continue; }
+      for (const mark of item.outputMarks) rmSync(join(out, mark), { force: true });
+      const copied = extract(repo, head, item.fixture, committed);
+      if (copied) { ok = false; fail("fixture.extract", item.id, `head copy: ${copied}`); continue; }
+      const diff = run(["diff", "-r", out, join(committed, item.fixture)], at);
+      if (diff.exit) { ok = false; fail("fixture.drift", item.fixture, diff.output.split("\n").slice(0, 12).join("\n").split(out).join("<regenerated>").split(join(committed, item.fixture)).join("<head>")); }
       done.push(item.id);
     } finally {
-      rmSync(join(out, ".."), { recursive: true, force: true });
+      rmSync(work, { recursive: true, force: true });
     }
   }
-  step("fixtures", ok ? (done.length ? "pass" : "skip") : "fail", done.length ? `regenerated ${done.join(", ")}` : "generator not at the head", Date.now() - started);
+  const detail = [done.length ? `regenerated ${done.join(", ")}` : "", due.length ? "" : "no generated fixture's inputs changed"].filter(Boolean).join("; ");
+  step("fixtures", ok ? (done.length ? "pass" : "skip") : "fail", detail || "nothing regenerated", Date.now() - started);
+}
+
+/** The packet's commands parsed again, its receipt held to them and re-run at the head. */
+function receipt(packet: string, explicit: string | undefined, head: string, at: string, timeoutMs: number, step: StepFn, fail: FailFn, findings: Finding[]): void {
+  let expected;
+  try { expected = parsePacket(readFileSync(packet, "utf8"), packet); }
+  catch (error) { fail("receipt.packet", packet, `cannot parse the packet: ${(error as Error).message}`); step("receipt", "fail", "packet unreadable"); return; }
+  const file = receiptFileFor(packet, explicit);
+  if (!file) { fail("receipt.missing", packet, `no receipt.json${explicit ? ` at ${explicit}` : " for the packet"}; run clossys receipt --packet`); step("receipt", "fail", "missing"); return; }
+  let recorded;
+  try { recorded = readReceipt(file); }
+  catch (error) { fail("receipt.missing", file, (error as Error).message); step("receipt", "fail", "unreadable"); return; }
+  const found = compareReceipt(recorded, expected, head, at, timeoutMs);
+  findings.push(...found);
+  step("receipt", found.length ? "fail" : "pass", `${expected.commands.length} packet command(s), ${found.length} finding(s)`);
 }
 
 function mutation(repo: string, mergeBase: string, head: string, at: string, files: readonly string[], bySource: Map<string, string[]>, red: Set<string>, seed: string, cap: number, timeoutMs: number, out: MutantResult[], step: StepFn, findings: Finding[]): void {
   const started = Date.now();
-  const candidates = files.filter(file => SOURCE_FILE.test(file) && !TEST_FILE.test(file) && existsSync(join(at, file)))
+  const candidates = files.filter(file => isSource(file) && existsSync(join(at, file)))
     .flatMap(file => fileMutants(file, readFileSync(join(at, file), "utf8"), headHunks(repo, mergeBase, head, file)));
   const chosen = selectMutants(candidates, seed, cap);
   for (const mutant of chosen) {

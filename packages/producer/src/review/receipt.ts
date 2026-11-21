@@ -1,10 +1,11 @@
 /**
  * `clossys receipt --packet <unit.md>`: the packet's Validation list becomes a commands file, each command runs in the
  * checkout, and receipt.json plus receipt.md record what ran (command, exit code, duration, the sha256 of the
- * normalized output tail) at which head. `clossys review --packet` re-runs the receipt at the head and fails on any
- * mismatch. An executor's receipt is this output, never a hand-written claim.
+ * normalized output tail) at which head. `clossys review --packet` parses the packet again, holds the receipt to that
+ * command list and its expected exit codes, re-runs it at the head and fails on any difference. An executor's receipt
+ * is this output, never a hand-written claim.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { git, run, tailSha } from "./exec.js";
 import type { Finding } from "./types.js";
@@ -19,9 +20,10 @@ export const CLOSSYS_CLI = "node packages/producer/dist/cli/index.js";
 /** Verbs a receipt never runs: they would run the receipt (or a review of it) again. */
 export const SELF_VERBS = ["review", "receipt"] as const;
 
-export interface Command { readonly id: string; readonly run: string; readonly from: string }
+/** expect: the exit code the packet expects, 0 unless the list item says `exits N` right after the span. */
+export interface Command { readonly id: string; readonly run: string; readonly from: string; readonly expect: number }
 export interface CommandsFile { readonly schema: typeof COMMANDS_SCHEMA; readonly packet: string; readonly commands: readonly Command[]; readonly skipped: readonly { readonly text: string; readonly reason: string }[] }
-export interface ReceiptEntry { readonly id: string; readonly run: string; readonly exit: number; readonly ms: number; readonly tailSha256: string }
+export interface ReceiptEntry { readonly id: string; readonly run: string; readonly expect: number; readonly exit: number; readonly ms: number; readonly tailSha256: string }
 export interface Receipt { readonly schema: typeof RECEIPT_SCHEMA; readonly packet: string; readonly head: string; readonly tree: string; readonly dirty: boolean; readonly at: string; readonly commands: readonly ReceiptEntry[]; readonly skipped: CommandsFile["skipped"] }
 
 /** The Validation section's list items: from a `Validation` heading to the next heading of the same or a higher level. */
@@ -58,6 +60,9 @@ export function commandOf(span: string): { run: string } | { reason: string } {
   return { run: words.join(" ") };
 }
 
+/** The text right after a command's span that names another expected exit code: `exits 1`, `must exit 2`, `(exit 1)`. */
+export const EXPECT_EXIT = /^\W{0,2}\s*(?:must\s+|should\s+)?exits?(?:\s+code)?\s+(\d+)\b/i;
+
 /** The commands file of a packet's markdown. */
 export function parsePacket(markdown: string, packet: string): CommandsFile {
   const commands: Command[] = [], skipped: { text: string; reason: string }[] = [];
@@ -65,7 +70,11 @@ export function parsePacket(markdown: string, packet: string): CommandsFile {
     for (const match of item.matchAll(/`([^`]+)`/g)) {
       const parsed = commandOf(match[1]!);
       if ("reason" in parsed) { if (parsed.reason !== "not a command") skipped.push({ text: match[1]!, reason: parsed.reason }); continue; }
-      if (!commands.some(command => command.run === parsed.run)) commands.push({ id: `c${commands.length + 1}`, run: parsed.run, from: match[1]! });
+      const after = item.slice(match.index! + match[0].length).split("`")[0]!;
+      const expect = Number(EXPECT_EXIT.exec(after)?.[1] ?? 0);
+      const same = commands.find(command => command.run === parsed.run);
+      if (same && same.expect !== expect) throw new Error(`${packet}: \`${parsed.run}\` is listed expecting exit ${same.expect} and exit ${expect}`);
+      if (!same) commands.push({ id: `c${commands.length + 1}`, run: parsed.run, from: match[1]!, expect });
     }
   }
   return { schema: COMMANDS_SCHEMA, packet, commands, skipped };
@@ -74,9 +83,9 @@ export function parsePacket(markdown: string, packet: string): CommandsFile {
 /** Where a packet's receipt lives unless --out says otherwise: `<packet dir>/<packet name>.receipt/`. */
 export const receiptDir = (packet: string) => join(dirname(packet), `${basename(packet, ".md")}.receipt`);
 
-export function runCommand(command: Pick<Command, "id" | "run">, root: string, timeoutMs?: number): ReceiptEntry {
+export function runCommand(command: Pick<Command, "id" | "run" | "expect">, root: string, timeoutMs?: number): ReceiptEntry {
   const result = run(command.run, root, timeoutMs ? { timeoutMs } : {});
-  return { id: command.id, run: command.run, exit: result.exit, ms: result.ms, tailSha256: tailSha(result.output, [root]) };
+  return { id: command.id, run: command.run, expect: command.expect, exit: result.exit, ms: result.ms, tailSha256: tailSha(result.output, [root]) };
 }
 
 export function receiptMarkdown(receipt: Receipt): string {
@@ -84,8 +93,8 @@ export function receiptMarkdown(receipt: Receipt): string {
     `# Receipt: ${basename(receipt.packet)}`, "",
     `- Head: ${receipt.head} (tree ${receipt.tree})${receipt.dirty ? ", DIRTY: taken on uncommitted changes" : ""}`,
     `- Taken: ${receipt.at} by \`clossys receipt\`; output tails are sha256 of the normalized last lines (docs/review.md)`, "",
-    "| # | Command | Exit | ms | Tail sha256 |", "|---|---|---|---|---|",
-    ...receipt.commands.map(entry => `| ${entry.id} | \`${entry.run.replace(/\|/g, "\\|")}\` | ${entry.exit} | ${entry.ms} | ${entry.tailSha256.slice(0, 16)} |`),
+    "| # | Command | Expect | Exit | ms | Tail sha256 |", "|---|---|---|---|---|---|",
+    ...receipt.commands.map(entry => `| ${entry.id} | \`${entry.run.replace(/\|/g, "\\|")}\` | ${entry.expect} | ${entry.exit}${entry.exit === entry.expect ? "" : " (UNEXPECTED)"} | ${entry.ms} | ${entry.tailSha256.slice(0, 16)} |`),
     ...(receipt.skipped.length ? ["", "Skipped:", ...receipt.skipped.map(item => `- \`${item.text}\`: ${item.reason}`)] : []), "",
   ].join("\n");
 }
@@ -112,15 +121,43 @@ export function readReceipt(file: string): Receipt {
   return receipt;
 }
 
-/** Re-run every receipt command in tree (a checkout of head) and compare: any difference is a fail finding. */
-export function compareReceipt(receipt: Receipt, head: string, tree: string, timeoutMs?: number): Finding[] {
+const samePath = (a: string, b: string) => { const real = (path: string) => { try { return realpathSync(path); } catch { return resolve(path); } }; return real(a) === real(b); };
+
+/** The receipt findings, by id and when each fails (docs/review.md). */
+export const RECEIPT_FINDINGS: readonly { readonly id: string; readonly fails: string }[] = [
+  { id: "receipt.missing", fails: "there is no receipt.json for the packet" },
+  { id: "receipt.packet", fails: "receipt.json names another packet file than --packet" },
+  { id: "receipt.head", fails: "receipt.json was taken at another head" },
+  { id: "receipt.dirty", fails: "receipt.json was taken on uncommitted changes" },
+  { id: "receipt.command-missing", fails: "a command the packet's Validation list gives (parsed again at review time) is not in receipt.json" },
+  { id: "receipt.command-extra", fails: "receipt.json holds a command the packet does not give" },
+  { id: "receipt.exit", fails: "a recorded exit code is not the one the packet expects (0 unless the item says `exits N`)" },
+  { id: "receipt.mismatch", fails: "a re-run at the head differs from the recorded exit code or output tail" },
+];
+
+/**
+ * Hold receipt to the packet's own command list (expected, parsed again from packet now), then re-run every packet
+ * command it recorded in tree (a checkout of head) and compare: any difference is a fail finding.
+ */
+export function compareReceipt(receipt: Receipt, expected: CommandsFile, head: string, tree: string, timeoutMs?: number): Finding[] {
   const findings: Finding[] = [];
-  if (receipt.head !== head) findings.push({ id: "receipt.head", level: "fail", subject: "receipt.json", detail: `taken at ${receipt.head}, reviewing ${head}` });
-  if (receipt.dirty) findings.push({ id: "receipt.dirty", level: "fail", subject: "receipt.json", detail: "taken on uncommitted changes" });
+  const fail = (id: string, subject: string, detail: string) => findings.push({ id, level: "fail", subject, detail });
+  if (typeof receipt.packet !== "string" || !samePath(receipt.packet, expected.packet)) fail("receipt.packet", "receipt.json", `taken for ${String(receipt.packet)}, reviewing ${expected.packet}`);
+  if (receipt.head !== head) fail("receipt.head", "receipt.json", `taken at ${receipt.head}, reviewing ${head}`);
+  if (receipt.dirty !== false) fail("receipt.dirty", "receipt.json", "taken on uncommitted changes");
+  const recorded = new Map<string, ReceiptEntry>();
   for (const entry of receipt.commands) {
-    const again = runCommand(entry, tree, timeoutMs);
-    if (again.exit !== entry.exit) findings.push({ id: "receipt.mismatch", level: "fail", subject: entry.run, detail: `exit ${entry.exit} recorded, ${again.exit} at the head` });
-    else if (again.tailSha256 !== entry.tailSha256) findings.push({ id: "receipt.mismatch", level: "fail", subject: entry.run, detail: `output tail ${entry.tailSha256.slice(0, 12)} recorded, ${again.tailSha256.slice(0, 12)} at the head` });
+    if (!expected.commands.some(command => command.run === entry.run)) fail("receipt.command-extra", entry.run, `${entry.id} is not in the packet's Validation list`);
+    else if (recorded.has(entry.run)) fail("receipt.command-extra", entry.run, `${entry.id} repeats a recorded command`);
+    else recorded.set(entry.run, entry);
+  }
+  for (const command of expected.commands) {
+    const entry = recorded.get(command.run);
+    if (!entry) { fail("receipt.command-missing", command.run, `${command.id} of the packet is not in receipt.json`); continue; }
+    if (entry.exit !== command.expect) fail("receipt.exit", command.run, `exit ${entry.exit} recorded, the packet expects ${command.expect}`);
+    const again = runCommand(command, tree, timeoutMs);
+    if (again.exit !== entry.exit) fail("receipt.mismatch", command.run, `exit ${entry.exit} recorded, ${again.exit} at the head`);
+    else if (again.tailSha256 !== entry.tailSha256) fail("receipt.mismatch", command.run, `output tail ${String(entry.tailSha256).slice(0, 12)} recorded, ${again.tailSha256.slice(0, 12)} at the head`);
   }
   return findings;
 }

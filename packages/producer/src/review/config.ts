@@ -16,8 +16,12 @@ export interface GeneratedFixture {
   readonly id: string;
   /** The committed copy (tree-relative). */
   readonly fixture: string;
-  /** The generator script (tree-relative); a head without it skips the fixture with a note. */
+  /** The generator script (tree-relative); a head without it is a fixture.generator-missing FAIL. */
   readonly generator: string;
+  /** Package dirs the generator needs built (it imports their dist/); they join the build step when the fixture is due. */
+  readonly needs: readonly string[];
+  /** Files the generator writes only into an --out folder, never into the fixture (removed before the diff). */
+  readonly outputMarks: readonly string[];
   /** argv after `node <generator>`; {out} is the temp output folder. */
   readonly args: readonly string[];
   /** The generator's cwd (tree-relative). */
@@ -35,8 +39,13 @@ export interface ReviewConfig {
   readonly fixtures: readonly GeneratedFixture[];
   /** `clossys check --e2e` (tree-relative argv) when one of packages changed. */
   readonly e2e: { readonly packages: readonly string[]; readonly argv: readonly string[] } | null;
-  /** The repository's own public-safety check: argv; its output is never stored or printed. */
-  readonly leakScan: readonly string[] | null;
+  /** argv that type-checks one package ({pkg}: its dir), run in the tree root. */
+  readonly typecheck: readonly string[];
+  /**
+   * The repository's public-safety check, by its root package.json script name. The review runs the merge base's
+   * script, unchanged, against the head tree; only its exit code is kept, its output is never stored or printed.
+   */
+  readonly leakScan: { readonly npmScript: string } | null;
   /** Per-command timeout. */
   readonly timeoutMs: number;
 }
@@ -85,10 +94,11 @@ export const FOUNDRY_CONFIG: ReviewConfig = {
   ],
   fixtures: [{
     id: "producer-consumer", fixture: FIXTURE_CONSUMER, generator: "packages/producer/scripts/seed-pinned-world.mjs",
-    args: ["--out", "{out}"], cwd: "packages/producer", triggers: ["packages/producer/", "packages/designer/", "packages/writer/", "packages/publisher/", "packages/director/"],
+    args: ["--out", "{out}"], cwd: "packages/producer", needs: ["packages/producer"], outputMarks: [".seed-pinned-world"], triggers: ["packages/producer/", "packages/designer/", "packages/writer/", "packages/publisher/", "packages/director/"],
   }],
   e2e: { packages: ["packages/producer", "packages/designer", "packages/writer", "packages/publisher"], argv: ["node", CLI, "check", "--e2e", "--json"] },
-  leakScan: ["npm", "run", "-s", "check:safety", "--", "--json"],
+  typecheck: ["npx", "tsc", "--noEmit", "-p", "{pkg}"],
+  leakScan: { npmScript: "check:safety" },
   // A cold publisher build (tsc plus its client-boundary scan) can take longer than ten minutes on a loaded machine.
   timeoutMs: 1_800_000,
 };

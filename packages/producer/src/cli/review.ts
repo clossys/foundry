@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path";
 import { git } from "../review/exec.js";
 import { REVIEW_DOC, reviewDoc } from "../review/doc.js";
 import { receiptDir, takeReceipt } from "../review/receipt.js";
-import { formatReview, runReview } from "../review/review.js";
+import { formatReview, ReviewArgumentError, runReview } from "../review/review.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 
@@ -18,7 +18,7 @@ export const REVIEW_USAGE = "Usage: clossys review <base> <head> [--packet <unit
 
 export const RECEIPT_USAGE = "Usage: clossys receipt --packet <unit.md> [--out <dir>] [--root <repo>] [--json]\n"
   + "  Runs the packet's Validation commands in the checkout and writes commands.json, receipt.json and receipt.md\n"
-  + "  (default <packet dir>/<packet name>.receipt/). Exit 1 when a command exits non-zero.";
+  + "  (default <packet dir>/<packet name>.receipt/). Exit 1 when a command's exit code is not the one the packet expects.";
 
 const repoRoot = (start: string) => { try { return git(start, ["rev-parse", "--show-toplevel"]); } catch { return start; } };
 
@@ -52,13 +52,20 @@ export async function runReviewCli(argv: readonly string[], cwd: string): Promis
       : { exitCode: 1, root, message: `review: ${REVIEW_DOC} differs from the code; run clossys review --write-doc` };
   }
   if (positional.length !== 2) throw new CliUsageError(`review needs <base> and <head>\n${REVIEW_USAGE}`);
-  const report = runReview({
+  if (given.has("--receipt") && !given.has("--packet")) throw new CliUsageError(`--receipt needs --packet <unit.md>\n${REVIEW_USAGE}`);
+  let report;
+  try {
+    report = runReview({
     repo: root, base: positional[0]!, head: positional[1]!,
     ...(given.has("--packet") ? { packet: resolve(cwd, given.get("--packet")!) } : {}),
     ...(given.has("--receipt") ? { receipt: resolve(cwd, given.get("--receipt")!) } : {}),
     ...(given.has("--seed") ? { seed: given.get("--seed")! } : {}),
     log: line => process.stderr.write(`${line}\n`),
-  });
+    });
+  } catch (error) {
+    if (error instanceof ReviewArgumentError) throw new CliUsageError(`${error.message}\n${REVIEW_USAGE}`);
+    throw error;
+  }
   return { exitCode: report.verdict === "PASS" ? 0 : 1, root, message: formatReview(report), ...(set.has("--json") ? { output: report } : {}) };
 }
 
@@ -71,10 +78,10 @@ export async function runReceiptCli(argv: readonly string[], cwd: string): Promi
   const root = given.has("--root") ? resolve(cwd, given.get("--root")!) : repoRoot(cwd);
   const out = given.has("--out") ? resolve(cwd, given.get("--out")!) : receiptDir(packet);
   const receipt = takeReceipt(packet, root, out);
-  const red = receipt.commands.filter(entry => entry.exit !== 0);
+  const red = receipt.commands.filter(entry => entry.exit !== entry.expect);
   const message = [
-    `receipt: ${receipt.commands.length} command(s) at ${receipt.head}${receipt.dirty ? " (DIRTY)" : ""}, ${red.length} non-zero; wrote ${out}/receipt.json`,
-    ...receipt.commands.map(entry => `  ${entry.id} exit ${entry.exit} ${entry.run}`),
+    `receipt: ${receipt.commands.length} command(s) at ${receipt.head}${receipt.dirty ? " (DIRTY)" : ""}, ${red.length} not the expected exit; wrote ${out}/receipt.json`,
+    ...receipt.commands.map(entry => `  ${entry.id} exit ${entry.exit}${entry.exit !== entry.expect ? ` (expected ${entry.expect})` : ""} ${entry.run}`),
   ].join("\n");
   return { exitCode: red.length ? 1 : 0, root, message, ...(set.has("--json") ? { output: receipt } : {}) };
 }

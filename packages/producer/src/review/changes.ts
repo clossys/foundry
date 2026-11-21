@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 import { git } from "./exec.js";
 import type { Finding } from "./types.js";
 
-export interface Change { readonly status: string; readonly path: string; readonly from?: string; readonly added: number; readonly deleted: number }
+export interface Change { readonly status: string; readonly path: string; readonly from?: string; readonly added: number; readonly deleted: number; readonly binary?: boolean }
 
 /** `git diff --name-status` plus `--numstat` of base...head (merge base to head), renames resolved. */
 export function changedFiles(repo: string, base: string, head: string): Change[] {
@@ -20,7 +20,7 @@ export function changedFiles(repo: string, base: string, head: string): Change[]
     if (!match) continue;
     // A rename's numstat names no path inline: the next two fields are from and to.
     const path = match[3] ? match[3] : (i += 2, nums[i]!);
-    numstat.set(path, [match[1] === "-" ? 0 : Number(match[1]), match[2] === "-" ? 0 : Number(match[2])]);
+    numstat.set(path, [match[1] === "-" ? -1 : Number(match[1]), match[2] === "-" ? -1 : Number(match[2])]);
   }
   const changes: Change[] = [];
   for (let i = 0; i < status.length; i++) {
@@ -28,7 +28,9 @@ export function changedFiles(repo: string, base: string, head: string): Change[]
     const from = /^[RC]/.test(code) ? status[++i] : undefined;
     const path = status[++i]!;
     const [added, deleted] = numstat.get(path) ?? [0, 0];
-    changes.push({ status: code[0]!, path, ...(from ? { from } : {}), added, deleted });
+    // A binary file's numstat is "-": no line counts, so any change to it counts as an addition.
+    const binary = added < 0;
+    changes.push({ status: code[0]!, path, ...(from ? { from } : {}), added: Math.max(added, 0), deleted: Math.max(deleted, 0), ...(binary ? { binary } : {}) });
   }
   return changes.sort((a, b) => a.path.localeCompare(b.path));
 }
@@ -54,12 +56,25 @@ export function headHunks(repo: string, base: string, head: string, file: string
   return ranges;
 }
 
+const CHANGELOG = (path: string) => /(^|\/)CHANGELOG(\.[a-z]+)?$/i.test(path) || /^\.changeset\/(?!README\.md$)[^/]+\.md$/.test(path);
+const RELEASE_CATALOG = (path: string) => /(^|\/)release-catalog\.json$/.test(path);
+const RETIRED_LEAVES = (path: string) => /(^|\/)retired-leaves\.ts$/.test(path);
+/** A file that loosens a check by listing what it lets through: a baseline, allowlist, exemption list or ceiling. */
+const LOOSENING = (path: string) => /(baseline|allow-?list)[^/]*$/i.test(path) || /^governance\/known-[^/]+\.json$/.test(path)
+  || /(exemption|ceiling)[^/]*\.(?:json|jsonc|ya?ml|txt|csv|tsv)$/i.test(path);
+/** Either side of a change: the path, and the path a rename or copy came from. */
+const either = (change: Change, test: (path: string) => boolean) => test(change.path) || (change.from !== undefined && test(change.from));
+
 /** Forbidden-path rules: id, what it matches, why. Doc text is generated from this table. */
 export const FORBIDDEN_RULES: readonly { readonly id: string; readonly matches: string; readonly test: (change: Change) => boolean }[] = [
-  { id: "forbidden.changelog", matches: "any CHANGELOG file, or a .changeset/*.md entry (bump freeze)", test: change => /(^|\/)CHANGELOG(\.[a-z]+)?$/i.test(change.path) || /^\.changeset\/(?!README\.md$)[^/]+\.md$/.test(change.path) },
-  { id: "forbidden.release-catalog", matches: "any release-catalog.json", test: change => /(^|\/)release-catalog\.json$/.test(change.path) },
-  { id: "forbidden.retired-leaves", matches: "any retired-leaves.ts", test: change => /(^|\/)retired-leaves\.ts$/.test(change.path) || /(^|\/)retired-leaves\.ts$/.test(change.from ?? "") },
-  { id: "forbidden.baseline", matches: "an added line in a file named *baseline* or *allowlist*/*allow-list*, or in governance/known-*.json", test: change => change.added > 0 && change.status !== "D" && (/(baseline|allow-?list)[^/]*$/i.test(change.path) || /^governance\/known-[^/]+\.json$/.test(change.path)) },
+  { id: "forbidden.changelog", matches: "any CHANGELOG file or .changeset/*.md entry, as either side of a change (a rename away included; bump freeze)", test: change => either(change, CHANGELOG) },
+  { id: "forbidden.release-catalog", matches: "any release-catalog.json, as either side of a change (a rename away included)", test: change => either(change, RELEASE_CATALOG) },
+  { id: "forbidden.retired-leaves", matches: "any retired-leaves.ts, as either side of a change", test: change => either(change, RETIRED_LEAVES) },
+  {
+    id: "forbidden.baseline",
+    matches: "an addition to a file named *baseline* or *allowlist*/*allow-list*, a governance/known-*.json, or a data file (json, yaml, txt, csv) named *exemption* or *ceiling*: an added line, any change to a binary one, or a rename or copy into such a name",
+    test: change => change.status !== "D" && LOOSENING(change.path) && (change.added > 0 || change.binary === true || (change.from !== undefined && !LOOSENING(change.from))),
+  },
 ];
 
 const VERSION_RULE = "forbidden.version";

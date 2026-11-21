@@ -1,11 +1,12 @@
+import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { describe, expect, it, onTestFinished } from "vitest";
-import { forbiddenFindings, FORBIDDEN_RULES, type Change } from "./changes.js";
+import { forbiddenFindings, FORBIDDEN_RULES, packageOf, type Change } from "./changes.js";
 import { FOUNDRY_CONFIG } from "./config.js";
 import { REVIEW_DOC, reviewDoc } from "./doc.js";
-import { normalizeOutput, scratch, tailSha } from "./exec.js";
-import { buildSet } from "./graph.js";
+import { exitText, normalizeOutput, scratch, tailSha } from "./exec.js";
+import { buildSet, coveringTests } from "./graph.js";
 import { applyMutant, lineMutants, mask, selectMutants, type Mutant } from "./mutate.js";
 import { CLOSSYS_CLI, commandOf, parsePacket, validationItems } from "./receipt.js";
 
@@ -61,10 +62,24 @@ describe("receipt commands", () => {
     expect(commandOf("npm")).toEqual({ reason: "not a command" });
   });
 
-  it("digests output tails with roots, temp folders and digits normalized", () => {
-    expect(normalizeOutput("\u001b[32mok\u001b[0m 12ms in /work/tree/a\r\n", ["/work/tree"])).toBe("ok 0ms in <root>/a\n");
+  it("digests output tails with roots, temp folders, times and sizes normalized, and every count kept", () => {
+    expect(normalizeOutput("\u001b[32mok\u001b[0m 12ms in /work/tree/a\r\n", ["/work/tree"])).toBe("ok <duration> in <root>/a\n");
+    expect(normalizeOutput("at 2026-11-20T10:01:02.5Z, 10:01:02, 1.5 s, 13Gi free, 47%, 3 failed, 12 passed")).toBe("at <date>, <clock>, <duration>, <size> free, <percent>, 3 failed, 12 passed");
     expect(tailSha("passed in 31ms\n", [])).toBe(tailSha("passed in 7ms\n\n", []));
+    expect(tailSha("/dev/disk 228Gi 13Gi 15Gi 47%\n", [])).toBe(tailSha("/dev/disk 228Gi 12Gi 16Gi 44%\n", []));
     expect(tailSha("1 failed\n", [])).not.toBe(tailSha("passed\n", []));
+    expect(tailSha("Tests 3 failed | 9 passed\n", [])).not.toBe(tailSha("Tests 0 failed | 12 passed\n", []));
+  });
+
+  it("reads the exit code a packet line expects, 0 unless it says otherwise", () => {
+    const md = "## Validation\n- `node a.mjs` exits 1 (red by design).\n- `node b.mjs` must exit 2\n- `node c.mjs` (exit code 3)\n- `node d.mjs` is green; it never exits 1\n- `node e.mjs`\n";
+    expect(parsePacket(md, "U.md").commands.map(command => [command.run, command.expect])).toEqual([["node a.mjs", 1], ["node b.mjs", 2], ["node c.mjs", 3], ["node d.mjs", 0], ["node e.mjs", 0]]);
+    expect(() => parsePacket("## Validation\n- `node a.mjs` exits 1\n- `node a.mjs`\n", "U.md")).toThrow(/expecting exit 1 and exit 0/);
+  });
+
+  it("states the exit code and a timeout in a failed run", () => {
+    expect(exitText({ exit: 2, ms: 10, timedOut: false })).toBe("exit 2");
+    expect(exitText({ exit: 1, ms: 600_000, timedOut: true })).toBe("exit 1 (timed out after 600s)");
   });
 });
 
@@ -85,6 +100,36 @@ describe("build set", () => {
     expect(order.map(workspace => workspace.name)).toEqual(["base", "ui", "pages", "app", "tool"]);
     expect([...prerequisites].sort()).toEqual(["packages/base", "packages/pages", "packages/tool", "packages/types", "packages/ui"]);
     expect(buildSet(tree, ["packages/base"]).order.map(workspace => workspace.name)).toEqual(["base"]);
+  });
+});
+
+describe("covering tests", () => {
+  it("follow the import graph transitively, across packages by workspace name, and report changed sources no test reaches", () => {
+    const tree = scratch("review-cover-");
+    onTestFinished(() => rmSync(tree, { recursive: true, force: true }));
+    const files: Record<string, string> = {
+      "package.json": JSON.stringify({ name: "ws", workspaces: ["packages/*"] }),
+      "packages/lib/package.json": JSON.stringify({ name: "lib", exports: { ".": "./dist/index.js", "./b": { import: "./dist/b.js" } } }),
+      "packages/lib/src/a.ts": "export const a = 1;\n",
+      "packages/lib/src/b.ts": "import { a } from \"./a.js\";\nexport const b = a + 1;\n",
+      "packages/lib/src/b.test.ts": "import { b } from \"./b.js\";\n",
+      "packages/lib/src/c.ts": "export const c = 3;\n",
+      "packages/lib/src/types.d.ts": "export type T = 1;\n",
+      "packages/lib/src/gone.test.ts": "import { gone } from \"./gone.js\";\n",
+      "packages/app/package.json": JSON.stringify({ name: "app", dependencies: { lib: "*" } }),
+      "packages/app/src/view.ts": "export { b } from \"lib/b\";\n",
+      "packages/app/src/view.test.ts": "import { b } from \"./view.js\";\n",
+    };
+    for (const [path, text] of Object.entries(files)) { mkdirSync(dirname(join(tree, path)), { recursive: true }); writeFileSync(join(tree, path), text); }
+    execFileSync("git", ["init", "--quiet"], { cwd: tree });
+    execFileSync("git", ["add", "-A"], { cwd: tree });
+    const covering = coveringTests(tree, [
+      { path: "packages/lib/src/a.ts", status: "M" }, { path: "packages/lib/src/c.ts", status: "A" },
+      { path: "packages/lib/src/types.d.ts", status: "M" }, { path: "packages/lib/src/gone.ts", status: "D" },
+    ], file => packageOf(tree, file));
+    expect(covering.all).toEqual(["packages/app/src/view.test.ts", "packages/lib/src/b.test.ts", "packages/lib/src/gone.test.ts"]);
+    expect(covering.uncovered).toEqual(["packages/lib/src/c.ts"]);
+    expect(covering.bySource.get("packages/lib/src/a.ts")).toEqual(["packages/lib/src/b.test.ts"]);
   });
 });
 
@@ -110,6 +155,15 @@ describe("forbidden paths", () => {
     expect(ids([change("src/leaves/retired-leaves-moved.ts", { status: "R", from: "src/leaves/retired-leaves.ts" })])).toEqual(["forbidden.retired-leaves"]);
     expect(ids([change("scripts/lint-baseline.json"), change("governance/known-gaps.json"), change("scripts/allowlist.txt", { added: 0, deleted: 3 })])).toEqual(["forbidden.baseline", "forbidden.baseline"]);
     expect(FORBIDDEN_RULES.map(rule => rule.id)).toEqual(["forbidden.changelog", "forbidden.release-catalog", "forbidden.retired-leaves", "forbidden.baseline"]);
+  });
+
+  it("matches exemption and ceiling lists, binary baselines and renames away of a changelog or release catalog", () => {
+    expect(ids([change("governance/opaque-content-exemptions.json"), change("scripts/check-orphan-checks.exemptions.json"), change("scripts/size-ceilings.yaml")])).toEqual(["forbidden.baseline", "forbidden.baseline", "forbidden.baseline"]);
+    expect(ids([change("packages/x/baseline.png", { added: 0, binary: true })])).toEqual(["forbidden.baseline"]);
+    expect(ids([change("scripts/rules.json", { status: "R", from: "scripts/old.json", added: 0 }), change("scripts/new-allowlist.json", { status: "R", from: "scripts/old.json", added: 0 })])).toEqual(["forbidden.baseline"]);
+    expect(ids([change("docs/old-notes.md", { status: "R", from: "packages/x/CHANGELOG.md", added: 0 }), change("governance/catalog.json", { status: "R", from: "governance/release-catalog.json", added: 0 })])).toEqual(["forbidden.changelog", "forbidden.release-catalog"]);
+    // Not lists: a component named for exemptions, a removed baseline line, a deleted baseline.
+    expect(ids([change("packages/x/src/AssetExemptions.tsx"), change("scripts/lint-baseline.json", { added: 0, deleted: 2 }), change("scripts/x-allowlist.json", { status: "D", added: 0 })])).toEqual([]);
   });
 });
 

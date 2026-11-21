@@ -1,23 +1,30 @@
 /**
  * What the review builds and which tests it runs. The build set is the changed packages plus the first-party packages
  * they need built first in a fresh tree (manifest edges and a package's test-dist-closure.json), in dependency order.
- * The test set is every touched test file plus every test file in a changed package that imports a changed module
- * (the static import graph, one level: `import`, `export ... from`, `import()` and `require()` of a relative path).
+ * The test set is every touched test file plus every test file that reaches a changed module through the static
+ * import graph, transitively and across packages (`import`, `export ... from`, `import()` and `require()` of a
+ * relative path or of a workspace package by name).
  */
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, posix, relative } from "node:path";
 
 export interface Workspace { readonly dir: string; readonly name: string; readonly manifest: Manifest }
-interface Manifest { name?: string; workspaces?: string[] | { packages?: string[] }; scripts?: Record<string, string>; [field: string]: unknown }
+export interface Manifest { name?: string; workspaces?: string[] | { packages?: string[] }; scripts?: Record<string, string>; [field: string]: unknown }
 
 const DEPENDENCY_FIELDS = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"] as const;
 export const TEST_FILE = /\.test\.(?:ts|tsx|mts|cts|mjs|cjs|js)$/;
 export const SOURCE_FILE = /\.(?:ts|tsx|mts|cts|mjs|cjs|js)$/;
+/** Type declarations: no runtime code, so no test or mutant covers them (tsc does). */
+export const DECLARATION_FILE = /\.d\.(?:ts|mts|cts)$/;
+/** A changed file the tests and mutation steps treat as code. */
+export const isSource = (file: string) => SOURCE_FILE.test(file) && !TEST_FILE.test(file) && !DECLARATION_FILE.test(file);
 
 const readJson = (file: string): Manifest => JSON.parse(readFileSync(file, "utf8")) as Manifest;
 
 /** The root manifest's workspaces (`dir/*` or literal dirs), sorted by dir. */
 export function listWorkspaces(tree: string): Workspace[] {
+  if (!existsSync(join(tree, "package.json"))) return [];
   const root = readJson(join(tree, "package.json"));
   const patterns = Array.isArray(root.workspaces) ? root.workspaces : root.workspaces?.packages ?? [];
   const dirs = new Set<string>();
@@ -89,53 +96,120 @@ export function testCommand(tree: string, pkg: string, file: string): { cwd: str
   return { cwd, argv: vitest ? ["npx", "vitest", "run", rel] : [process.execPath, "--test", rel] };
 }
 
-const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\brequire\s*\(\s*)["'](\.{1,2}\/[^"']+)["']/g;
+const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\brequire\s*\(\s*)["']([^"'\s]+)["']/g;
+const STEMS = (target: string) => {
+  const stem = target.replace(/\.(?:js|mjs|cjs|jsx)$/, "");
+  return [target, `${stem}.ts`, `${stem}.tsx`, `${stem}.mts`, `${stem}.cts`, `${target}.ts`, `${target}.tsx`, `${target}.js`, `${target}.mjs`, `${target}/index.ts`, `${target}/index.tsx`, `${target}/index.js`, `${target}/index.mjs`];
+};
+/** A path into build output also names its source: `<pkg>/dist/a/b.js` is `<pkg>/src/a/b.ts` (the tsc rootDir layout). */
+const sourceOf = (target: string) => /(^|\/)dist\//.test(target) ? [target, target.replace(/(^|\/)dist\//, "$1src/")] : [target];
 
-/** The repo-relative files a source file imports by relative path (`.js` resolved to the `.ts` beside it). */
-export function relativeImports(tree: string, file: string): string[] {
-  let text: string;
-  try { text = readFileSync(join(tree, file), "utf8"); } catch { return []; }
-  const out = new Set<string>();
-  for (const match of text.matchAll(SPECIFIER)) {
-    const target = posix.normalize(posix.join(posix.dirname(file), match[1]!));
-    const stem = target.replace(/\.(?:js|mjs|cjs|jsx)$/, "");
-    for (const candidate of [target, `${stem}.ts`, `${stem}.tsx`, `${stem}.mts`, `${stem}.cts`, `${target}.ts`, `${target}/index.ts`, `${target}/index.js`]) {
-      if (existsSync(join(tree, candidate)) && statSync(join(tree, candidate)).isFile()) { out.add(candidate); break; }
+/** The export target of a workspace package for a subpath ("." or "./x"): conditions resolve import, default, require. */
+export function exportTarget(manifest: Manifest, subpath: string): string | undefined {
+  const pick = (entry: unknown): string | undefined => {
+    if (typeof entry === "string") return entry;
+    if (Array.isArray(entry)) return entry.map(pick).find(Boolean);
+    if (entry && typeof entry === "object") {
+      const conditions = entry as Record<string, unknown>;
+      for (const key of ["import", "node", "default", "require"]) { const found = pick(conditions[key]); if (found) return found; }
+    }
+    return undefined;
+  };
+  const exports = manifest.exports as unknown;
+  if (exports === undefined) return subpath === "." ? (typeof manifest.main === "string" ? manifest.main : "./index.js") : subpath;
+  if (typeof exports === "string" || Array.isArray(exports)) return subpath === "." ? pick(exports) : undefined;
+  const map = exports as Record<string, unknown>;
+  if (!Object.keys(map).some(key => key.startsWith("."))) return subpath === "." ? pick(map) : undefined;
+  if (subpath in map) return pick(map[subpath]);
+  for (const [key, entry] of Object.entries(map)) {
+    const star = key.indexOf("*");
+    if (star < 0 || !subpath.startsWith(key.slice(0, star)) || !subpath.endsWith(key.slice(star + 1))) continue;
+    const middle = subpath.slice(star, subpath.length - (key.length - star - 1));
+    return pick(entry)?.replace("*", middle);
+  }
+  return undefined;
+}
+
+/** The import graph of a tree's tracked code: who imports each file, and the package nodes of unresolved package imports. */
+export interface ImportGraph {
+  /** file -> the files that import it; `<pkg dir>/*` -> the files importing that package by a subpath no file resolves. */
+  readonly importers: Map<string, Set<string>>;
+  readonly files: readonly string[];
+}
+
+/**
+ * The import graph of tree's tracked source files. extra: files that are gone at the head (deleted or renamed away)
+ * but are still graph nodes, so an importer left pointing at one is found.
+ */
+export function importGraph(tree: string, extra: readonly string[] = []): ImportGraph {
+  const listed = spawnSync("git", ["ls-files", "-z"], { cwd: tree, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+  if (listed.status !== 0) throw new Error(`git ls-files: ${String(listed.stderr).trim()}`);
+  const files = listed.stdout.split("\0").filter(file => file && SOURCE_FILE.test(file));
+  const known = new Set([...files, ...extra]);
+  const workspaces = listWorkspaces(tree).sort((a, b) => b.name.length - a.name.length);
+  const importers = new Map<string, Set<string>>();
+  const edge = (target: string, from: string) => { if (target === from) return; let set = importers.get(target); if (!set) importers.set(target, set = new Set()); set.add(from); };
+  const resolveIn = (target: string) => { for (const path of sourceOf(target)) for (const candidate of STEMS(path)) if (known.has(candidate)) return candidate; return undefined; };
+  for (const file of files) {
+    let text: string;
+    try { text = readFileSync(join(tree, file), "utf8"); } catch { continue; }
+    for (const match of text.matchAll(SPECIFIER)) {
+      const spec = match[1]!;
+      if (spec.startsWith("./") || spec.startsWith("../")) {
+        const found = resolveIn(posix.normalize(posix.join(posix.dirname(file), spec)));
+        if (found) edge(found, file);
+        continue;
+      }
+      const workspace = workspaces.find(item => spec === item.name || spec.startsWith(`${item.name}/`));
+      if (!workspace) continue;
+      const target = exportTarget(workspace.manifest, spec === workspace.name ? "." : `.${spec.slice(workspace.name.length)}`);
+      const found = target === undefined ? undefined : resolveIn(posix.normalize(posix.join(workspace.dir, target)));
+      edge(found ?? `${workspace.dir}/*`, file);
     }
   }
-  return [...out];
+  return { importers, files };
 }
 
-/** Every test file under dir (repo-relative), skipping dependencies and build output. */
-export function testFiles(tree: string, dir: string): string[] {
-  const out: string[] = [];
-  const walk = (rel: string) => {
-    for (const entry of readdirSync(join(tree, rel), { withFileTypes: true })) {
-      if (entry.name === "node_modules" || entry.name === "dist" || entry.name.startsWith(".")) continue;
-      const path = rel === "." ? entry.name : `${rel}/${entry.name}`;
-      if (entry.isDirectory()) { if (!(rel === "." && entry.name === "packages")) walk(path); }
-      else if (TEST_FILE.test(entry.name)) out.push(path);
-    }
-  };
-  if (existsSync(join(tree, dir))) walk(dir);
-  return out.sort();
+export interface Covering {
+  /** Every test to run: the touched tests and every test reaching a changed or deleted source, sorted. */
+  readonly all: string[];
+  /** For each changed source at the head: the tests in its own package that reach it, nearest first (mutation runs these). */
+  readonly bySource: Map<string, string[]>;
+  /** Changed sources at the head that no test reaches, in any package. */
+  readonly uncovered: string[];
 }
 
-/** The tests covering each changed source file: touched tests plus direct importers in the same package. */
-export function coveringTests(tree: string, changed: readonly string[], packageOf: (file: string) => string): { all: string[]; bySource: Map<string, string[]> } {
-  const all = new Set(changed.filter(file => TEST_FILE.test(file) && existsSync(join(tree, file))));
+/**
+ * The tests covering a change: touched tests, plus every test that reaches a changed source (or a deleted one, through
+ * an importer still pointing at it) through the import graph, transitively and across packages. A test reaching a
+ * package by a subpath no file resolves counts as reaching every source of that package.
+ */
+export function coveringTests(tree: string, changes: readonly { readonly path: string; readonly status: string; readonly from?: string }[], packageOf: (file: string) => string): Covering {
+  const gone = [...new Set(changes.flatMap(change => [...(change.status === "D" ? [change.path] : []), ...(change.from && change.status === "R" ? [change.from] : [])]))].filter(isSource);
+  const graph = importGraph(tree, gone);
+  const all = new Set(changes.map(change => change.path).filter(file => TEST_FILE.test(file) && existsSync(join(tree, file))));
   const bySource = new Map<string, string[]>();
-  const sources = changed.filter(file => SOURCE_FILE.test(file) && !TEST_FILE.test(file) && existsSync(join(tree, file)));
-  const imports = new Map<string, string[]>();
-  for (const pkg of new Set(sources.map(packageOf))) for (const test of testFiles(tree, pkg)) imports.set(test, relativeImports(tree, test));
-  for (const source of sources) {
-    const tests = [...imports].filter(([test, targets]) => packageOf(test) === packageOf(source) && targets.includes(source)).map(([test]) => test);
+  const uncovered: string[] = [];
+  const reach = (start: string) => {
+    const depth = new Map<string, number>([[start, 0], [`${packageOf(start)}/*`, 0]]);
+    const queue = [start, `${packageOf(start)}/*`];
+    for (let index = 0; index < queue.length; index++) {
+      const node = queue[index]!;
+      for (const from of graph.importers.get(node) ?? []) if (!depth.has(from)) { depth.set(from, depth.get(node)! + 1); queue.push(from); }
+    }
+    return [...depth].filter(([file]) => TEST_FILE.test(file) && file !== start).sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]));
+  };
+  for (const source of gone) for (const [test] of reach(source)) all.add(test);
+  for (const change of changes) {
+    const source = change.path;
+    if (change.status === "D" || !isSource(source) || !existsSync(join(tree, source))) continue;
+    const tests = reach(source);
     // A touched test beside the source (foo.ts / foo.test.ts) covers it even when it reaches it indirectly.
     const sibling = source.replace(SOURCE_FILE, match => `.test${match}`);
-    if (all.has(sibling) && !tests.includes(sibling)) tests.push(sibling);
-    bySource.set(source, tests.sort());
-    for (const test of tests) all.add(test);
+    if (all.has(sibling) && !tests.some(([test]) => test === sibling)) tests.unshift([sibling, 0]);
+    for (const [test] of tests) all.add(test);
+    if (!tests.length) uncovered.push(source);
+    bySource.set(source, tests.filter(([test]) => packageOf(test) === packageOf(source)).map(([test]) => test));
   }
-  return { all: [...all].sort(), bySource };
+  return { all: [...all].sort(), bySource, uncovered: uncovered.sort() };
 }
-
