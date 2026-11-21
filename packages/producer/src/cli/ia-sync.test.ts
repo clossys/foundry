@@ -56,7 +56,9 @@ describe("ia sync (write)", () => {
     const sync = await runIaCli(["sync", "--root", root], root);
     expect(sync.exitCode, sync.message).toBe(0);
     expect(sync.message).toContain(`adopted ${dropped}`);
-    for (const agent of SYNC_AGENTS) expect(syncDrift(consumerOf(root), agent), agent).toEqual([]);
+    // The fixture is a full (pre-D5) adopt: its package leaves no publication reaches are listed as unconsumed-leaf, a
+    // pending finding (ia.orphans fails them; the adopt re-run removes them). Nothing else is listed.
+    for (const agent of SYNC_AGENTS) expect(syncDrift(consumerOf(root), agent).filter(finding => finding.kind !== "unconsumed-leaf"), agent).toEqual([]);
     expect(existsSync(join(root, "clossys", "agents", "writer", dropped, "slot.json"))).toBe(true);
     const after = readJson(iaFile(root, "writer"));
     expect(after.extensions).toContain(extension);

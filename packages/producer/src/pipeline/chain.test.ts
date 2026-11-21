@@ -18,6 +18,7 @@ import { readStandard } from "../records/standards.js";
 import { seededContract } from "../migrate/contracts.js";
 import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
 import { designerIa, directorIa, writerIa } from "../records/slot-model/foundry-ia.js";
+import { consumedLeaves } from "../records/slot-model/consumed.js";
 import { appendRecord, buildRecord, readStore, STEP_ENV, storeFile } from "./trace.js";
 import { consumerPath } from "../consumer-root.js";
 
@@ -458,10 +459,15 @@ describe("clossys next", { timeout: 60_000 }, () => {
     expect(owned.find(packet => packet.step === "evidence")!.ask!.agent).toBe("director");
     // A slot with no candidate is its agent's to draft: no owner question asks it, and every agent's questions hold the rules.
     const pins = gapsOf(root).gaps.filter(gap => gap.code.startsWith("open.pin.") || gap.code === "open.writer.approve");
-    // One open pin per placed slot: the live leaves of each Foundry IA. Designer's count is its tree minus retired.json,
-    // since a fresh adopt skips retired leaves the way `clossys migrate recut` does.
-    const live = directorIa().slots.size + designerIa().slots.size + writerIa().slots.size;
+    // One open pin per placed slot: the consumed leaves of each Foundry IA (CONSISTENCY D5 option 1: a fresh adopt
+    // places only the package leaves a declared or seated publication reaches, records/slot-model/consumed.ts).
+    // Designer's tree is already minus retired.json, since a fresh adopt skips retired leaves as `clossys migrate recut` does.
+    const consumed = consumedLeaves(root);
+    const live = consumed.size;
+    expect(live).toBeGreaterThan(0);
+    expect(live).toBeLessThan(directorIa().slots.size + designerIa().slots.size + writerIa().slots.size);
     expect(placedIds.size).toBe(live);
+    for (const [id, agent] of placedIds) expect(consumed.has(`${agent}/${id}`), `${agent}/${id}`).toBe(true);
     expect(pins.length).toBeGreaterThanOrEqual(live);
     for (const gap of pins) expect(gap.decider, gap.item).toBe("agent");
     expect(gapsOf(root, { agent: "director" }).notes.filter(note => note.startsWith("no designer request")).join("\n")).toContain("not drafted either");

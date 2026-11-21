@@ -114,10 +114,13 @@ describe("stableStringify and libraryHash golden", () => {
     // example fnv1a64:1c49785731fe8224 -> facb9bcf5f390a59; completed fnv1a64:f8280f8901b7ec38 -> f5ab9f8a4be36a76, sha256 077cbbdc -> 33ffb43c.
     // Re-captured by R2F-06 integration (`vitest run -u`): the merged catalog carries GATES-RED's declared composes and
     // contracts as well; completed f5ab9f8a4be36a76 -> 1a9b7c0a42800e14 (GATES-RED's own value), sha256 33ffb43c -> f0296341.
+    // Re-captured by foundry-build-0048 CONTAM-U12 (marquee fills read var(--duration, 40s), revision animate-marquee-v3):
+    // values computed from the built dist at base (equal to the pins below before this change) and at head, never by
+    // `vitest -u` or by hand; completed 1a9b7c0a42800e14 -> 88be437e41d465e4, sha256 f0296341 -> efc817c8.
     expect(libraryHash(EXAMPLE_LIBRARY)).toMatchInlineSnapshot(`"fnv1a64:facb9bcf5f390a59"`);
     const completed = completedCatalogLibrary(loadCatalog(), { id: "golden-consumer", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-26");
-    expect(libraryHash(completed)).toMatchInlineSnapshot(`"fnv1a64:1a9b7c0a42800e14"`);
-    expect(nodeSha256(stableStringify(completed))).toMatchInlineSnapshot(`"f029634196b374689ec7fafa75264c52a4b865d0db0552065703637ee4b0216d"`);
+    expect(libraryHash(completed)).toMatchInlineSnapshot(`"fnv1a64:88be437e41d465e4"`);
+    expect(nodeSha256(stableStringify(completed))).toMatchInlineSnapshot(`"efc817c89adc8436200b91dcc39995ba17f7f91b5e9389cdd10706a18fdcaaf9"`);
     expect(libraryHash(completed)).toBe(referenceLibraryHash(completed));
     expect(resolve({ catalog: loadCatalog(), library: completed }).selectionHash).toBe(libraryHash(completed));
   }, 120_000);
@@ -153,16 +156,19 @@ describe("real package-surface library golden", () => {
     //    records them; composite 6e7cfb28 -> ba2ad4d2. Values unchanged.
     // Captured at head (both steps together): component d0dfe6b0 -> ef9a4655, surface f5388d9a -> 45dd4f1f, whole
     // 04daad96 -> f0e9ee37; the split of these portions between the two steps was not measured.
-    // Re-pinned by foundry-build-0048 CONTAM-U2 (hand-edited, no `-u`): the stamps move to data-provenance-*, so the
-    // measured fill surfaces re-hash provenance-attrs.ts and site-shell now measures its import. Values and components
-    // unchanged: composite ba2ad4d2 -> a81bdfa9, surface 45dd4f1f -> 97a5b09d, whole f0e9ee37 -> a28cdcba.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:a81bdfa97dacbfc641b3f9524d5cd328bf0891c7241f55f1b8b5901cf525cb91"`);
+    // Re-captured by foundry-build-0048 CONTAM-U12 (marquee fills read var(--duration, 40s)), computed from the built dist
+    // at base (equal to the prior pins) and at head: values and composite move, components and surfaces unchanged;
+    // composite ba2ad4d2 -> 6ea08ccc, values 717688cc7f83e4bf -> 149d271dd68aea6f, whole f0e9ee37 -> 77d3a047.
+    // Re-pinned by foundry-build-0048 CONTAM-U2 (hand-edited from the failing run, no `-u`): the stamps move to
+    // data-provenance-*, so the measured fill surfaces re-hash provenance-attrs.ts and site-shell now measures its import.
+    // Values and components unchanged: composite 6ea08ccc -> b8d538d3, surface 45dd4f1f -> 97a5b09d, whole 77d3a047 -> e797a9e3.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:b8d538d3eba9c7c5ae86e254c9018c934f80190762541501d06f40b099cd49b4"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
-    expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:717688cc7f83e4bf"`);
+    expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:149d271dd68aea6f"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
     expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:ef9a46557ea2aa79b1db4b19f2578dc33d1cde7c13f5f806b80a537f755a3734"`);
     expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:97a5b09ddab2702d7fefd2242b841fe1ef0f38a03bbb88c2e3f44be63c03c1ff"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"a28cdcbad62e6c1c326ed74e7ae2b42d7e001686e9c4db76fdcb1570e1ea6075"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"e797a9e3602ed40d40e865bbba077788559de85af20fdabaa0183a2f69bd757b"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

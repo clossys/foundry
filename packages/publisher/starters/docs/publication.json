@@ -33,6 +33,7 @@
     "page.docs-index/starter-v1.json",
     "page.guide/starter-v1.json",
     "page.article/starter-v1.json",
-    "page.changelog/starter-v1.json"
+    "page.changelog/starter-v1.json",
+    "publication.docs/starter-v1.json"
   ]
 }

@@ -47,6 +47,7 @@
     "page.privacy/starter-v1.json",
     "page.not-found/starter-v1.json",
     "page.error/starter-v1.json",
-    "layout.site-page/standard-v1.json"
+    "layout.site-page/standard-v1.json",
+    "publication.site/starter-v1.json"
   ]
 }

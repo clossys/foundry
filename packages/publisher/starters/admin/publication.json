@@ -33,6 +33,7 @@
     "page.admin-gallery/starter-v1.json",
     "page.admin-slot/starter-v1.json",
     "page.admin-requests/starter-v1.json",
-    "page.admin-questions/starter-v1.json"
+    "page.admin-questions/starter-v1.json",
+    "publication.admin/starter-v1.json"
   ]
 }

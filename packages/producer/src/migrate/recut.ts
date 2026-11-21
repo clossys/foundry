@@ -25,9 +25,10 @@
  *    (an `ia sync` finding of the result) and gets no slot.json; the rest of the plan still applies.
  * 5. Then slot-1-to-2, pin-1-to-2 and `ia sync` run over the result.
  * 6. Tree. An agent whose package defines its slots (the `slots` rows of src/catalog/ia/<group>.json: the Writer
- *    Voice, Prose and Copy trees, foundry-build-0048 U2) takes its package tree whole: the slot-model `ia sync`
- *    (records/slot-model/ia-sync.ts) writes its ia.json as the package tree (extensions, `changes` and `retired`
- *    kept), a `clossys.slot/2` folder for every placed slot (`clossys migrate recut` the creator), and the
+ *    Voice, Prose and Copy trees, foundry-build-0048 U2) takes its package tree as `ia sync` scopes it: the slot-model
+ *    `ia sync` (records/slot-model/ia-sync.ts) writes its ia.json as the package tree cut to the leaves a publication
+ *    consumes plus the ones already placed (consumed.ts; extensions, `changes` and `retired` kept), a `clossys.slot/2`
+ *    folder for every placed slot (`clossys migrate recut` the creator), and the
  *    package kind, contract, refs, standard and slash-path ia into every slot.json it already had. So every
  *    placed slot has its folder, and no L2 of the old skeleton is left empty.
  *
@@ -546,7 +547,10 @@ export function recutPending(plan: RecutPlan): number {
 
 export interface FollowUp { slot1To2: number; slot1To2Findings: string[]; pins: number; pinRefused: string[]; iaSync: number; iaSyncFindings: string[] }
 
-/** The agents whose package defines its slots (src/catalog/ia/*.json `slots` rows): step 6 places their package tree whole. */
+/**
+ * The agents whose package defines its slots (src/catalog/ia/*.json `slots` rows): step 6 syncs their tree, placing the
+ * package leaves a publication consumes plus the ones the consumer already places (syncState, CONSISTENCY D5 option 1).
+ */
 export function treeAgents(dir: string): SyncAgent[] {
   return (["director", "designer", "writer"] as const).filter(agent => slotDefinitions(dir, agent).size > 0);
 }
