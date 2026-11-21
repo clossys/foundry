@@ -990,6 +990,27 @@
       "note": "Every write to a workspace's .clossys/** or to a slot record goes through the Producer engine API (packages/producer/docs/engine.md), so it leaves an event in .clossys/events.jsonl: clossys check --side-door statically scans the producer, designer, writer, publisher and director src, bin and scripts plus the repository scripts and fails on any write, write wrapper, script record-writer call or unpaired slot-model primitive outside the engine surface. No allowlist and no baseline. The fixture is a package source file that appends to the event log by hand."
     },
     {
+      "id": "R-REVIEW-MECHANICAL",
+      "owner_words": {
+        "quote": "why are we working in such ineffective inefficient ways to just burn tokens for vibes? what else need to be mechanical that isn't already in code?",
+        "date": "2026-11-20"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:review-doc"
+      ],
+      "fixture": "scripts/rules/fixtures/R-REVIEW-MECHANICAL",
+      "fixture_runs": [
+        {
+          "check": ".#check:review-doc",
+          "cwd": ".",
+          "run": "node packages/producer/dist/cli/index.js review --check-doc --root {fixture}",
+          "expect": "packages/producer/docs/review\\.md differs from the code"
+        }
+      ],
+      "note": "Every review step a reviewer used to re-run by hand runs from code: clossys review <base> <head> builds, typechecks, tests, mutates the changed hunks, compares rule counts, regenerates generated fixtures, runs the e2e and the leak scan, fails forbidden paths and re-runs the executor's receipt (clossys receipt --packet) in a temporary worktree of head, and ends with MECHANICAL: PASS|FAIL <head-sha> <tree-sha>. packages/producer/docs/review.md is generated from that code; the check fails when it differs. The fixture is a stale copy of the doc."
+    },
+    {
       "id": "R-PIN-PROPAGATION",
       "owner_words": {
         "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
