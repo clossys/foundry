@@ -62,7 +62,7 @@ describe(RECORDS_COMPUTED_MATCH, () => {
     const hero = ws.file("designer", "sections.hero");
     writeFileSync(hero, readFileSync(hero, "utf8").slice(0, 40));
     const details = Object.fromEntries(runRecordsComputedMatch(ws.root).findings.map(finding => [finding.subject, finding.detail]));
-    expect(details[`writer/${LEXICON}`]).toMatch(/clossys migrate slot-1-to-2/);
+    expect(details[`writer/${LEXICON}`]).toBe("clossys.slot/1: run clossys migrate slots --apply");
     expect(details["writer/narratives.legal-document"]).toMatch(/not its folder/);
     expect(details["designer/themes.primary"]).toMatch(/not installed/);
     expect(details["designer/sections.hero"]).toMatch(/schema is missing/);

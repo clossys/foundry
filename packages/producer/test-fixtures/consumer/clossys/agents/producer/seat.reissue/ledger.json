@@ -19,6 +19,26 @@
           "sha256": "40dda7b7653da1d60a97c63207e9d19dd2c9acf811cb856bb94cc642dd851cd0"
         }
       ]
+    },
+    {
+      "op": "migrate",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "code:clossys migrate slots",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "slots",
+      "files": [],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "9b7214d75d30a623016633d4e884dd4217d8054ceb13eb1246625866e74f6734"
+        }
+      ]
     }
   ]
 }

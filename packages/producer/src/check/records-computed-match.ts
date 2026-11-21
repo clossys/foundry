@@ -2,7 +2,7 @@
  * `records.computed-match` (system.md 9): a field the CLI computes equals what `clossys ia sync` would write.
  *
  * Reads every consumer slot folder. Fails on a `slot.json` that is not a valid `clossys.slot/2` (a slot/1 file
- * names `clossys migrate slot-1-to-2`), and, for a package slot, on any computed field (records/slot.ts
+ * names `clossys migrate slots --apply`), and, for a package slot, on any computed field (records/slot.ts
  * COMPUTED_FIELDS) that differs from its installed base. `tighten`, `status`, `ia.order`, the CLI stamps and
  * `consumedBy` refs are not computed from the base and are not compared. A consumer-added slot (`base: null`)
  * has no base to compute from: only its format is checked.
@@ -19,7 +19,7 @@ export function runRecordsComputedMatch(root: string): TreeCheckResult {
     if (!folder.hasSlot) continue;
     const subject = `${folder.agent}/${folder.id}`;
     const schema = slotSchemaOf(folder.file);
-    if (schema === SLOT_V1_SCHEMA) { findings.push({ subject, detail: `${SLOT_V1_SCHEMA}: run clossys migrate slot-1-to-2` }); continue; }
+    if (schema === SLOT_V1_SCHEMA) { findings.push({ subject, detail: `${SLOT_V1_SCHEMA}: run clossys migrate slots --apply` }); continue; }
     if (schema !== SLOT_SCHEMA) { findings.push({ subject, detail: `slot.json schema is ${schema ?? "missing"}, expected ${SLOT_SCHEMA}` }); continue; }
     let slot: Slot;
     try { slot = readSlot(folder.file); } catch (error) { findings.push({ subject, detail: (error as Error).message }); continue; }

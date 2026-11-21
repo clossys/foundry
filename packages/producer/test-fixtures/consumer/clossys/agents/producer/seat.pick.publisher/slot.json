@@ -1,20 +1,35 @@
 {
-  "schema": "clossys.slot/1",
+  "schema": "clossys.slot/2",
   "id": "seat.pick.publisher",
   "agent": "producer",
+  "kind": "seat",
+  "status": "starter",
   "ia": {
-    "l1": "publish",
-    "l2": "publish.pin",
+    "l0": "seat",
+    "l1": "seat/publish",
+    "l2": "seat/publish/pin",
     "order": 19
   },
-  "kind": "seat",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slots",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "refs": [],
+  "base": null,
+  "standard": "seat",
+  "brief": {
+    "purpose": "Seat the pick.publisher decide step: who decides it, with which llm and which human procedure.",
+    "mustDo": [],
+    "inputs": [],
+    "acceptance": []
+  },
   "contract": {
     "step": "pick.publisher",
     "fixture": {
       "step": "pick.publisher"
     }
   },
-  "inputs": [],
-  "uses": [],
-  "standard": "seat"
+  "tighten": []
 }
