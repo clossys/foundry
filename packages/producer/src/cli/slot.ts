@@ -16,7 +16,7 @@ function summary(view: SlotView): string {
   lines.push(`  candidates: ${view.candidates.length}`);
   for (const candidate of view.candidates) lines.push(`    ${candidate.name}  ${candidate.check.status}${candidate.check.failed.length ? ` (${candidate.check.failed.join(", ")})` : ""}${candidate.briefCurrent ? "" : "  brief changed"}`);
   lines.push(view.pin.length ? `  pin: ${view.pin.map(pin => `${pin.record ? `${pin.record} ` : ""}${pin.candidate} [${pin.state}]`).join("; ")}` : "  pin: none");
-  lines.push(`  consumed by: ${view.consumedBy.length ? view.consumedBy.join(", ") : "none"}`);
+  lines.push(`  used by: ${view.consumedBy.length ? view.consumedBy.join(", ") : "none"}`);
   if (view.queue.length) lines.push(`  open queue: ${view.queue.join(", ")}`);
   if (view.ledger.length) lines.push(`  ledger: ${view.ledger.join(", ")}`);
   return lines.join("\n");
