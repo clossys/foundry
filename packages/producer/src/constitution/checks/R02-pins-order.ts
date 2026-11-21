@@ -1,7 +1,9 @@
 /**
  * R02 Pins and order, over every pin of every agent tree:
  * - R02.1 a pin's `basis` is in PIN_BASES and its `decidedBy` matches DECIDED_BY with the migration
- *   forms (`migrated`, `migration[:<ref>]`) removed: a pin names a real decider;
+ *   forms (`migrated`, `migration[:<ref>]`) removed: a pin names a real decider. Basis `scorecard` (decidedBy
+ *   `code:scorecard`) is code's pin of the scorecard's single top row on a slot with no owner-pick or confirm step
+ *   (loop/code-pin.ts, refused at the pin);
  * - R02.2 upstream before downstream: every slot in a live slot's dependency set (`inputs` ∪ `uses`)
  *   is live and has an intact pin (valid, its candidate present, the candidate's bytes matching the
  *   pinned sha256; a Writer pin map when every record is), the same test the slot reader's readiness
@@ -16,7 +18,8 @@
  */
 import { DECIDED_BY, PIN_BASES } from "../../records/slot-model/index.js";
 import { DECISION_OPS, ledgerEventsOf } from "../../records/ledger.js";
-import { pinMapIssues } from "../../records/pin.js";
+import { CODE_SCORECARD, pinMapIssues } from "../../records/pin.js";
+import { ownerStepRefusal } from "../../loop/code-pin.js";
 import type { ConstitutionContext, Row, RuleModule, SlotRecord } from "../types.js";
 import { allSlots, dependencySet, isObject, listed, liveSlotRecords, row } from "./shared.js";
 
@@ -46,7 +49,13 @@ export function pinBasis(ctx: ConstitutionContext): Row[] {
       if (!(PIN_BASES as readonly unknown[]).includes(pin.basis)) issues.push(`${at}basis ${JSON.stringify(pin.basis)} is not one of ${PIN_BASES.join(", ")}`);
       const decidedBy = pin.decidedBy;
       if (typeof decidedBy !== "string" || !DECIDED_BY.test(decidedBy)) issues.push(`${at}decidedBy ${JSON.stringify(decidedBy)} does not match DECIDED_BY`);
-      else if (MIGRATION_DECIDED.test(decidedBy)) issues.push(`${at}decidedBy ${decidedBy} is a migration form; a pin names its decider (owner, planner or agent:<seat>)`);
+      else if (MIGRATION_DECIDED.test(decidedBy)) issues.push(`${at}decidedBy ${decidedBy} is a migration form; a pin names its decider (owner, planner, agent:<seat> or code:scorecard)`);
+      // Code's pin: basis scorecard and decidedBy code:scorecard go together, on a whole slot with no owner step.
+      if ((pin.basis === "scorecard") !== (decidedBy === CODE_SCORECARD)) issues.push(`${at}basis ${JSON.stringify(pin.basis)} with decidedBy ${JSON.stringify(decidedBy)}: basis scorecard is decided by ${CODE_SCORECARD} only, and ${CODE_SCORECARD} decides basis scorecard only`);
+      else if (pin.basis === "scorecard") {
+        const owner = key !== undefined ? `${slot.agent}/${slot.id} is a pin-map slot; code pins whole slots only` : ownerStepRefusal(ctx.root, slot.agent, slot.id);
+        if (owner !== undefined) issues.push(`${at}a code pin (basis scorecard) where code may not pin: ${owner}`);
+      }
     }
     if (issues.length) rows.push(row("R02", "R02.1", slot, issues.join("; "), slot.pin.path));
   }

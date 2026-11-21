@@ -145,9 +145,7 @@ describe("Producer over the repo and its fixture (U9)", () => {
     const rows = (id: string) => producer.cells.find(cell => cell.id === id)!.rows;
     expect(rows("P1")).toEqual(["producer IA queue: queue.change is not placed"]);
     expect(rows("P3")).toEqual(["queue.change: no loop fills it (no owner step raises it, no failure routes to it, no step writes it)"]);
-    // DET-STEPS: the settle code steps (triage x3, match, accept) exit only 0 or 2 (could not run), and P4 as written lists every step without onFail.
-    expect(rows("P4")).toHaveLength(31);
-    expect(rows("P4")).toEqual(expect.arrayContaining(["loop.fill: step triage has no failure route: a failed run stops and lands in no queue", "loop.refine: step triage has no failure route: a failed run stops and lands in no queue", "loop.create: step triage has no failure route: a failed run stops and lands in no queue", "loop.slot: step match has no failure route: a failed run stops and lands in no queue", "loop.cascade: step accept has no failure route: a failed run stops and lands in no queue"]));
+    expect(rows("P4")).toHaveLength(26);
     expect(rows("P4")).toEqual(expect.arrayContaining(["loop.fill: step create has no failure route: a failed run stops and lands in no queue", "loop.audit: step route has no failure route: a failed run stops and lands in no queue"]));
     // U8 (Q10): the run takes a queue.change back (--from), so only P1 and P3 still name the change queue.
     expect(rows("P5")).toEqual([]);

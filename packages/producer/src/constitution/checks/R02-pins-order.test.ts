@@ -26,11 +26,25 @@ describe("R02.1 pin basis and decidedBy", () => {
       spec.designer!["ui.button"]!.pin = { ...validPin("button-v1.json", "x"), decidedBy: "somebody" };
     }));
     expect(reasons(rows)).toEqual([
-      "brand.voice: basis \"vibes\" is not one of picked, bulk, planner, agent",
-      "home.hero: decidedBy migrated is a migration form; a pin names its decider (owner, planner or agent:<seat>)",
-      "seat.director: decidedBy migration:citations-to-slots is a migration form; a pin names its decider (owner, planner or agent:<seat>)",
+      "brand.voice: basis \"vibes\" is not one of picked, bulk, planner, agent, scorecard",
+      "home.hero: decidedBy migrated is a migration form; a pin names its decider (owner, planner, agent:<seat> or code:scorecard)",
+      "seat.director: decidedBy migration:citations-to-slots is a migration form; a pin names its decider (owner, planner, agent:<seat> or code:scorecard)",
       "ui.button: decidedBy \"somebody\" does not match DECIDED_BY",
     ]);
+  });
+});
+
+describe("R02.1 code pins (basis scorecard, decidedBy code:scorecard; DET-STEPS round 2)", () => {
+  it("flags basis scorecard decided by anyone but code, code:scorecard with another basis, and a code pin on an owner-pick slot", () => {
+    const rows = expectCatches(pinBasis, clean(), broken(spec => {
+      spec.director!["brand.voice"]!.pin = { ...validPin("voice-v1.md", VOICE), decidedBy: "code:scorecard", basis: "scorecard" };
+      spec.writer!["home.hero"]!.pin = { ...validPin("hero-v1.md", "---\nsource:\n  kind: authored\n---\nWelcome.\n"), decidedBy: "agent:writer", basis: "scorecard" };
+      spec.designer!["ui.button"]!.pin = { ...validPin("button-v1.json", "x"), decidedBy: "code:scorecard", basis: "agent" };
+    }));
+    const text = reasons(rows).join("\n");
+    expect(text).toMatch(/^brand\.voice: a code pin \(basis scorecard\) where code may not pin: /m);
+    expect(text).toMatch(/^home\.hero: basis "scorecard" with decidedBy "agent:writer": basis scorecard is decided by code:scorecard only/m);
+    expect(text).toMatch(/^ui\.button: basis "agent" with decidedBy "code:scorecard"/m);
   });
 });
 

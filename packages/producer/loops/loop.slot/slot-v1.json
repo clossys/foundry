@@ -55,7 +55,11 @@
           "producer/queue.slot/entries/<request>.json",
           ".clossys/runs/loops/*.settle/*"
         ],
-        "checks": []
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
       },
       {
         "id": "decide-director",

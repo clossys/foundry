@@ -26,6 +26,9 @@ import type { GuardSession } from "../constitution/guard.js";
 import { pinGate, writeScorecard } from "../constitution/pin-gate.js";
 import { clearReverdict, reverdictPath, scorecardPath } from "../constitution/cascade.js";
 import { seatRefusal } from "../records/seat-owner.js";
+import { CODE_SCORECARD } from "../records/pin.js";
+import { codeSlotRefusals, scorecardTopRefusal } from "../loop/code-pin.js";
+import { isLoopName } from "../loop/names.js";
 import { ownerDecisionRefusal } from "../records/owner-answer.js";
 import { certifiedStandardRef, currentStandardOf, isAgentLoop, isLoopAgent } from "../loop/agent-loops.js";
 import { CliUsageError } from "./args.js";
@@ -36,7 +39,8 @@ export const PIN_USAGE = "Usage: clossys pin <agent>/<slot> <candidate-id> [--by
   + "       clossys pin <agent>/<slot> --not-needed --reason <text> [--by <who>] [--at <iso>] [--root <dir>] [--json]\n"
   + "       clossys pin <agent>/<slot> <candidate-id> --confirm --ref <ledger ref> [--by owner[:<ref>]] [--at <iso>] [--root <dir>] [--json]\n"
   + "  <candidate-id> is a file in the slot's candidates/ (`hero-v2.json`) or that name without its extension (`hero-v2`).\n"
-  + "  --by: owner[:<ref>] (default owner), planner[:<ref>], migration[:<ref>], or migrated.\n"
+  + "  --by: owner[:<ref>] (default owner), planner[:<ref>], migration[:<ref>], migrated, or code:scorecard (basis\n"
+  + "        scorecard: code pins the scorecard's single top row, never on an owner-pick or confirm slot).\n"
   + "  --basis: how the pin was decided. --by planner[:<ref>] is always planner; any other --by needs an explicit\n"
   + "           --basis: picked (the owner chose this candidate) or bulk (a blanket owner approval), or planner.\n"
   + "  --confirm: the owner confirms the slot's agent pick of <candidate-id>; the pin keeps basis agent and its\n"
@@ -159,8 +163,8 @@ export function isOldTargetSlot(root: string, agent: string, slotId: string): bo
  * The gated slot/2 pin as another verb takes it (pick, approve): the same deciders, queue-answer binding, CHOOSE
  * gate, scorecard and slot lock as `clossys pin`, writing clossys.pin/2 (or one pin-map record) only.
  */
-export function pinTargetSlot(root: string, agent: string, target: string, candidate: string, input: { readonly by: string; readonly basis?: string; readonly at?: string }): CliResult {
-  return runTargetPin(root, agent, target, candidate, { positional: [], by: input.by, ...(input.basis !== undefined ? { basis: input.basis } : {}), ...(input.at !== undefined ? { at: input.at } : {}), notNeeded: false, confirm: false, help: false }, true);
+export function pinTargetSlot(root: string, agent: string, target: string, candidate: string, input: { readonly by: string; readonly basis?: string; readonly at?: string; readonly guard?: WriteGuard }): CliResult {
+  return runTargetPin(root, agent, target, candidate, { positional: [], by: input.by, ...(input.basis !== undefined ? { basis: input.basis } : {}), ...(input.at !== undefined ? { at: input.at } : {}), notNeeded: false, confirm: false, help: false }, input.guard ?? true);
 }
 
 /** True when `<root>/clossys/agents/<agent>/<slot-id>/slot.json` is a target `clossys.slot/2` slot. */
@@ -207,6 +211,10 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
     // The seat rule ran above, before the format checks.
     if (flags.basis !== undefined && flags.basis !== "agent") throw new CliUsageError(`--by ${by} is an agent pin: its basis is agent\n${PIN_USAGE}`);
     basis = "agent";
+  } else if (by === CODE_SCORECARD) {
+    // Code's own pin (clossys settle pick): the scorecard's single top row on a slot with no owner step (loop/code-pin.ts).
+    if (flags.basis !== undefined && flags.basis !== "scorecard") throw new CliUsageError(`--by ${by} is a code pin: its basis is scorecard\n${PIN_USAGE}`);
+    basis = "scorecard";
   } else if (ownerAnswerRef(by)) {
     if (flags.basis !== undefined && flags.basis !== "picked" && flags.basis !== "bulk") throw new CliUsageError(`--by ${by} is an owner pin: --basis picked or bulk\n${PIN_USAGE}`);
     basis = (flags.basis ?? "picked") as PinRecord["basis"];
@@ -242,8 +250,17 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
       if (loopStandard !== undefined && !loopStandard.ok) return { exitCode: 1, message: `pin refused: ${agent}/${slotId}: producer/${slotId} cannot be read: ${loopStandard.reason}` };
       // The gate's read seeds the pin guard's session: the guard re-reads only this slot's folder (U29c, guard.ts GuardSession).
       const session: GuardSession = {};
+      // A code pin (loop/code-pin.ts) is refused first on a slot that is not code's: a release or loop slot, a pin-map
+      // record, an owner-pick or confirm step, a held owner or planner decision.
+      if (basis === "scorecard") {
+        const refusals = releasePin || isLoopName(slotId) ? [`${agent}/${slotId} is a ${releasePin ? "release" : "loop"} slot; code pins content slots only`] : codeSlotRefusals(root, agent as AgentId, slotId, record);
+        if (refusals.length) return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate} is not code's to pin:\n${refusals.map(line => `  ${line}`).join("\n")}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals } };
+      }
       const gate = pinGate(root, join(root, "clossys"), agent, slotId, candidate, toIsoZ(at)!, { ...(releasePin ? { verdict: "release.ready" as const } : {}), session });
       if (gate.refusals.length) return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate}:\n${gate.refusals.map(line => `  ${line}`).join("\n")}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals: gate.refusals, scorecard: gate.scorecard } };
+      // The gate passed the pick; code pins it only as the scorecard's single top row (a tie is the agent's pick).
+      const tie = basis === "scorecard" ? scorecardTopRefusal(gate.scorecard, candidate) : undefined;
+      if (tie !== undefined) return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate} is not code's to pin:\n  ${tie}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals: [tie], scorecard: gate.scorecard } };
       let doc!: ReturnType<typeof writeTargetPin>;
       // One guarded decision write (U13 r4, B1): the scorecard, the pin, the cleared re-verdict and the `pick` or `pin`
       // ledger event (as R02.3 reads it) land together, then the rules.json guard for pick (an agent seat) or pin runs;

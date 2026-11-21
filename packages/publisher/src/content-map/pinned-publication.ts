@@ -183,7 +183,7 @@ function legacyPin(pin: JsonObject, pinPath: string) {
 function recordFields(pin: JsonObject, pinPath: string) {
   if (typeof pin.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(pin.sha256)
     || typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/.test(pin.decidedBy)
-    || !["picked", "bulk", "planner", "agent"].includes(pin.basis as string)
+    || !["picked", "bulk", "planner", "agent", "scorecard"].includes(pin.basis as string)
     || (pin.basis === "agent") !== pin.decidedBy.startsWith("agent:")
     || !iso(pin.at)) fail(pinPath, "Invalid pin");
 }

@@ -32,7 +32,7 @@ import { checkPinsResolve, resolveAll } from "../check/pins-resolve.js";
 import { answerQueueEntry } from "../queue/answer.js";
 import { entryStamp, findQueueEntry, listQueueEntryFiles, readQueueEntry, slugOf } from "../queue/entry.js";
 import { sha256Hex } from "../records/hash.js";
-import { OWNER_BASES, buildPin, pinIssues, pinPath, writePinDoc } from "../records/pin.js";
+import { CODE_SCORECARD, OWNER_BASES, buildPin, pinIssues, pinPath, writePinDoc } from "../records/pin.js";
 import { mergeRefs, readPinFile } from "../records/pin-map.js";
 import { isRecordSlot, resolveSlot, slotRecords, type Resolution } from "../records/resolve.js";
 import { validateAgainst } from "../records/schema.js";
@@ -51,7 +51,9 @@ import { loadLoopVersion, type LoadedLoop } from "./version.js";
 import { agentWriteClass, currentStandardOf, isAgentLoop, isLoopAgent, pathPattern, patternsMeet, standardOwnWrites, type LoopAgent } from "./agent-loops.js";
 import { judgeSnapshot, keepSnapshot, keptSnapshot, snapshotKey, treeSnapshot, type AgentSnapshot, type TreeFiles } from "./agent-snapshot.js";
 import { checkReleaseReady } from "../release/ready.js";
-import { certifiedOptions } from "../constitution/pin-gate.js";
+import { certifiedOptions, pinGate } from "../constitution/pin-gate.js";
+import { codeSlotRefusals, scorecardTopRefusal } from "./code-pin.js";
+import { pinTargetSlot } from "../cli/pin.js";
 import { closeWork, decideRequest, exactReuseOf, freshRaiseIssues, isContentAgent, readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, workQueue, type SlotRequest } from "../records/request.js";
 import { FIX_CHECKS } from "../queue/requester-check.js";
 import { cascadeClean, runCascade } from "./cascade.js";
@@ -601,9 +603,13 @@ export function verifyCheck(ctx: { readonly root: string; readonly state: RunSta
   return { ok: false, why: `${name} is not a check clossys run computes` };
 }
 
-/** B1: an agent pick step does not run for a slot an owner `queue.pick` step of this version picks. */
+/**
+ * B1: an agent pick step does not run for a slot an owner `queue.pick` step of this version picks, and neither does
+ * the code step that would settle it (`clossys settle pick`): the owner's pick is never code's to score.
+ */
 function ownerPicks(version: LoopVersion, step: LoopStep, subject: SlotSubject | undefined): boolean {
-  if (step.decider.by !== "agent" || step.decider.verb !== AGENT_PICK_VERB) return false;
+  const scores = step.decider.by === "code" && SETTLE_CLI.exec(step.cli)?.[1] === "pick";
+  if (!scores && (step.decider.by !== "agent" || step.decider.verb !== AGENT_PICK_VERB)) return false;
   return version.steps.some(other => other.decider.by === "human" && other.decider.raise === OWNER_PICK_RAISE && whenMatches(other.when, subject));
 }
 
@@ -790,10 +796,14 @@ function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefi
  *   the owner reads only failures.
  * - `brief <ref>` (loop.create, loop.fill, loop.refine, before refine-brief): the trigger names one record and no rule
  *   (T1, T2, T4, T6, T7, T8); only a slot-wide trigger (T3 tighten-brief, T5 owner-feedback) reaches the agent.
+ * - `pick <ref>` (loop.choose, loop.fill, loop.refine, before pick; round 2, planner D5 Pick = A): the pin gate's
+ *   scorecard has a single top row on a slot with no owner-pick or confirm step and no owner or planner pin
+ *   (loop/code-pin.ts); code pins it through the pin gate (`clossys pin --by code:scorecard`, basis scorecard). A tie,
+ *   an owner step, a held human decision or a writer pin map reaches the agent pick; a refused pin defers to it.
  */
-export const SETTLE_RULES = { reuse: "decide", impact: "check", brief: "refine-brief" } as const satisfies Record<string, DeciderVerb>;
+export const SETTLE_RULES = { reuse: "decide", impact: "check", brief: "refine-brief", pick: "pick" } as const satisfies Record<string, DeciderVerb>;
 export type SettleRule = keyof typeof SETTLE_RULES;
-const SETTLE_CLI = /^clossys settle (reuse|impact|brief)(?:\s|$)/;
+const SETTLE_CLI = /^clossys settle (reuse|impact|brief|pick)(?:\s|$)/;
 /** The triggers that may carry a rule for the whole slot (the brief): the owner's words, or a tighten-brief run. */
 export const SLOT_WIDE_TRIGGERS: readonly string[] = ["T3", "T5"];
 export const settlePath = (root: string, runId: string, step: string): string => join(runsDir(root), `${runId}.settle`, `${step}.json`);
@@ -807,7 +817,11 @@ export interface SettleRecord {
   readonly rule: SettleRule;
   readonly round: number;
   readonly at: Iso;
-  readonly outcome: "settled" | "agent";
+  /**
+   * settled: code answered and the agent steps in `settles` are skipped; agent: the rule does not hold, so they run;
+   * deferred: the rule could not decide (a refusal or an error, named in `why`), so they run as if no settle step were there.
+   */
+  readonly outcome: "settled" | "agent" | "deferred";
   readonly settles: readonly string[];
   readonly why: string;
   readonly answer?: string;
@@ -841,31 +855,76 @@ function settleBrief(ctx: Context, subject: SlotSubject | undefined): SettleVerd
   return { settled: true, why: `trigger ${code} (${kind}) names one record and no rule: the brief stays as it is`, answer: "no tightening", cites };
 }
 
+function settlePick(ctx: Context, subject: SlotSubject | undefined): SettleVerdict {
+  if (!subject) return { refused: `the run has no slot` };
+  const { root } = ctx;
+  const { agent, slotId } = subject;
+  const slotFile = `clossys/agents/${refOf(subject)}/slot.json`;
+  const pinFile = `clossys/agents/${refOf(subject)}/pin.json`;
+  const scorecardFile = `.clossys/checks/${refOf(subject)}/scorecard.json`;
+  const notCode = codeSlotRefusals(root, agent, slotId);
+  if (notCode.length) return { settled: false, why: `${notCode.join("; ")}; the pick is not code's`, cites: [slotFile, pinFile] };
+  // The ranking the pin gate gives now (no pick yet): the same scorecard `clossys pin` judges and writes.
+  const at = iso(ctx.now());
+  const ranked = pinGate(root, join(root, "clossys"), agent, slotId, "", at).scorecard;
+  const top = ranked.candidates.find(row => row.submitted && row.certified);
+  const tie = top === undefined ? "the scorecard has no submitted, certified row" : scorecardTopRefusal(ranked, top.candidate);
+  if (top === undefined || tie !== undefined) return { settled: false, why: `${tie}; the agent picks`, cites: [slotFile, `clossys/agents/${refOf(subject)}/ledger.json`] };
+  // Code pins through the one pin path: the gate judges the pick again under the slot lock, then the code-pin rules.
+  const pinned = pinTargetSlot(root, agent, slotId, top.candidate, { by: CODE_SCORECARD, at, ...(ctx.hooks.guard !== undefined ? { guard: ctx.hooks.guard } : {}) });
+  if (pinned.exitCode !== 0) return { refused: pinned.message };
+  return {
+    settled: true, why: `${top.candidate} is the scorecard's single top row (submitted, certified, ahead of every other row) and ${refOf(subject)} has no owner-pick or confirm step: code pins it`,
+    answer: `pin ${top.candidate}`, cites: [slotFile, pinFile, scorecardFile], wrote: [pinFile, `clossys/agents/${refOf(subject)}/ledger.json`, scorecardFile],
+  };
+}
+
+const SETTLE_JUDGES: Record<SettleRule, (ctx: Context, subject: SlotSubject | undefined) => SettleVerdict> = {
+  reuse: ctx => settleReuse(ctx),
+  impact: settleImpact,
+  brief: settleBrief,
+  pick: settlePick,
+};
+
 /** A `clossys settle <rule>` code step: judges its rule, records the settle and logs a run.settle engine event. */
 function settleStep(ctx: Context, step: LoopStep, subject: SlotSubject | undefined): BuiltIn | undefined {
   const match = SETTLE_CLI.exec(step.cli);
   if (!match) return undefined;
   const { root, state } = ctx;
   const rule = match[1] as SettleRule;
-  const verdict = rule === "reuse" ? settleReuse(ctx) : rule === "impact" ? settleImpact(ctx, subject) : settleBrief(ctx, subject);
-  if ("refused" in verdict) return { exit: 2, wrote: [], why: verdict.refused };
+  // The failure route: a rule that refuses or throws decides nothing; the agent step it precedes runs, and the
+  // deferral is recorded like any settle. Only a settle record that cannot be written fails the step (its onFail).
+  let verdict: SettleVerdict;
+  try { verdict = SETTLE_JUDGES[rule](ctx, subject); }
+  catch (error) { verdict = { refused: error instanceof Error ? error.message : String(error) }; }
+  const judged = "refused" in verdict ? undefined : verdict;
+  const deferred = "refused" in verdict ? verdict.refused : undefined;
+  const settledBy = judged?.settled === true;
   const later = ctx.version.steps.slice(ctx.version.steps.indexOf(step) + 1);
-  const settles = verdict.settled ? later.filter(each => each.decider.by === "agent" && each.decider.verb === SETTLE_RULES[rule]).map(each => each.id) : [];
+  const settles = settledBy ? later.filter(each => each.decider.by === "agent" && each.decider.verb === SETTLE_RULES[rule]).map(each => each.id) : [];
   const settled = state.settled ?? {};
   for (const [id, by] of Object.entries(settled)) if (by === step.id) delete settled[id];
   for (const id of settles) settled[id] = step.id;
   state.settled = settled;
-  const cites = inputsOf(root, verdict.cites.map(path => join(root, path)));
-  const record: SettleRecord = {
-    schema: "clossys.settle/1", loop: state.loop, runId: state.runId, step: step.id, rule, round: state.round, at: iso(ctx.now()),
-    outcome: verdict.settled ? "settled" : "agent", settles, why: verdict.why, ...(verdict.answer !== undefined ? { answer: verdict.answer } : {}), cites,
-  };
-  const file = settlePath(root, state.runId, step.id);
-  mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`);
-  const wrote = [...(verdict.wrote ?? []), relative(root, file).split(sep).join("/")];
-  logRun(root, "run.settle", state, wrote.map(path => join(root, path)));
-  return { exit: 0, wrote };
+  try {
+    const cites = inputsOf(root, (judged?.cites ?? []).map(path => join(root, path)));
+    const record: SettleRecord = {
+      schema: "clossys.settle/1", loop: state.loop, runId: state.runId, step: step.id, rule, round: state.round, at: iso(ctx.now()),
+      outcome: judged === undefined ? "deferred" : settledBy ? "settled" : "agent", settles,
+      why: judged === undefined ? `code could not decide (${deferred}); the agent step decides` : judged.why,
+      ...(judged?.answer !== undefined ? { answer: judged.answer } : {}), cites,
+    };
+    const file = settlePath(root, state.runId, step.id);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`);
+    const wrote = [...(judged?.wrote ?? []), relative(root, file).split(sep).join("/")];
+    logRun(root, "run.settle", state, wrote.map(path => join(root, path)));
+    return { exit: 0, wrote };
+  } catch (error) {
+    // Nothing settled without its record: the agent steps stay unsettled and the step's onFail route runs.
+    for (const id of settles) delete settled[id];
+    return { exit: 1, wrote: [], why: `the settle record could not be written: ${error instanceof Error ? error.message : String(error)}` };
+  }
 }
 
 /**
@@ -1062,6 +1121,8 @@ function subjectRef(ctx: Context, subject: SlotSubject | undefined): string | un
 /** The owner's queue.clarify about the run's subject. */
 function raiseOf(ctx: Context, subject: SlotSubject | undefined, ask: string): Raise | undefined {
   const to = subjectRef(ctx, subject);
+  // A request run (loop.slot) has no slot yet: its clarify is about the request entry itself.
+  if (!to && ctx.state.request) return { queue: "queue.clarify", subject: { to: "producer/queue.slot" as Ref["to"], record: ctx.state.request, rel: "input" }, decider: "owner", ask, slug: ctx.state.request };
   if (!to) return undefined;
   return { queue: "queue.clarify", subject: { to: to as Ref["to"], rel: "input" }, decider: "owner", ask, slug: to.split("/")[1]! };
 }

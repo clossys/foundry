@@ -11,8 +11,9 @@
  *                      format/pin.ts pinIssues, mirrored here): keys {candidate, sha256, decidedBy,
  *                      basis, at, confirmed} only (no recited: citations name slot ids and resolve
  *                      through the cited pin), a candidate file name, a lowercase sha256, decidedBy
- *                      owner|planner|migration[:<ref>] | agent:<seat> | migrated, basis picked | bulk |
- *                      planner | agent (agent exactly with decidedBy agent:<seat>), ISO at, and
+ *                      owner|planner|migration[:<ref>] | agent:<seat> | code:scorecard | migrated, basis picked |
+ *                      bulk | planner | agent | scorecard (agent exactly with decidedBy agent:<seat>, scorecard
+ *                      exactly with decidedBy code:scorecard), ISO at, and
  *                      confirmed {by owner, ref <ledger comment>, at} only on an agent pick
  *   pin-candidate      the pinned candidate file does not exist
  *   pin-hash           sha256 in pin.json differs from the candidate file's bytes
@@ -36,7 +37,7 @@ import { consumerPath } from '../packages/producer/scripts/consumer-root.mjs';
 const PIN_KEYS = ['candidate', 'sha256', 'decidedBy', 'basis', 'at', 'confirmed'];
 const CONFIRMED_KEYS = ['by', 'ref', 'at'];
 const PIN_CANDIDATE_NAME = /^([a-z0-9][a-z0-9.-]*)-v([1-9][0-9]*)\.(md|json)$/;
-const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/;
+const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|code:scorecard|migrated)$/;
 const CONFIRMED_BY = /^owner(?::\S.*)?$/;
 const OWNER_WORDS_REF = /^(?:[\w.-]+\/[\w.-]+#\d+ issuecomment-\d+|https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/issues\/\d+#issuecomment-\d+)(?: \([^()]*\))?$/;
 const OWNER_WORDS_REF_FORM = '<org>/<repo>#<issue> issuecomment-<id> or https://github.com/<org>/<repo>/issues/<issue>#issuecomment-<id>';
@@ -59,9 +60,10 @@ export function pinShapeIssues(pin) {
   for (const key of Object.keys(pin)) if (!PIN_KEYS.includes(key)) issues.push(`unknown key ${key}`);
   if (typeof pin.candidate !== 'string' || !PIN_CANDIDATE_NAME.test(pin.candidate)) issues.push('candidate must be a candidate file name');
   if (typeof pin.sha256 !== 'string' || !SHA256.test(pin.sha256)) issues.push('sha256 must be 64 lowercase hex');
-  if (typeof pin.decidedBy !== 'string' || !DECIDED_BY.test(pin.decidedBy)) issues.push('decidedBy must be owner[:<ref>], planner[:<ref>], migration[:<ref>], agent:<seat> or migrated');
+  if (typeof pin.decidedBy !== 'string' || !DECIDED_BY.test(pin.decidedBy)) issues.push('decidedBy must be owner[:<ref>], planner[:<ref>], migration[:<ref>], agent:<seat>, code:scorecard or migrated');
   if (!PIN_BASES.includes(pin.basis)) issues.push(`basis must be one of ${PIN_BASES.join(', ')}`);
   if ((pin.basis === 'agent') !== (typeof pin.decidedBy === 'string' && pin.decidedBy.startsWith('agent:'))) issues.push('basis agent and decidedBy agent:<seat> go together (clossys pick)');
+  if ((pin.basis === 'scorecard') !== (pin.decidedBy === 'code:scorecard')) issues.push('basis scorecard and decidedBy code:scorecard go together (clossys settle pick)');
   if (!isoTime(pin.at)) issues.push('at must be an ISO timestamp');
   if (pin.confirmed !== undefined) {
     const confirmed = pin.confirmed;

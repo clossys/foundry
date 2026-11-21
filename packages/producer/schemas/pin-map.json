@@ -268,14 +268,15 @@
         },
         "decidedBy": {
           "type": "string",
-          "pattern": "^(owner(:.+)?|planner(:.+)?|agent:(director|designer|writer|publisher|producer)|migrated)$"
+          "pattern": "^(owner(:.+)?|planner(:.+)?|agent:(director|designer|writer|publisher|producer)|code:scorecard|migrated)$"
         },
         "basis": {
           "enum": [
             "picked",
             "bulk",
             "planner",
-            "agent"
+            "agent",
+            "scorecard"
           ]
         },
         "at": {

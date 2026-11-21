@@ -42,7 +42,11 @@
         "writes": [
           ".clossys/runs/loops/*.settle/*"
         ],
-        "checks": []
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
       },
       {
         "id": "refine-brief",
