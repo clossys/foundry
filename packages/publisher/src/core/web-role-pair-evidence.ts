@@ -26,8 +26,8 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const revision = "f4b44d6b77ea0ee1a7fc8cb3714f2ae67fcfab7d";
-const measuredAt = "2026-11-10";
+const revision = "2a0977c33eea8e08dfb0c52ce37636d97a764a4b";
+const measuredAt = "2026-11-21";
 const frame: InstanceBlockBinding["frameBlockRef"] = {
   blockId: "site-frame", role: "frame", medium: "web",
   adapter: { owner: "@clossys/designer", subpath: "frames", export: "SiteFrame", config: {} },
@@ -48,15 +48,15 @@ export const WEB_ROLE_PAIR_BINDINGS: readonly InstanceBlockBinding[] = freeze(ca
 })));
 const known = WEB_ROLE_PAIR_BINDINGS.flatMap(binding => [binding.frameBlockRef, binding.viewBlockRef]);
 const sources = {
-  "src/web/index.ts": "sha256:714cc84da8d3ec69a905265260e3a7b8cd4ee89eb9b79348be7a1ff2cc009337",
+  "src/web/index.ts": "sha256:0c6508d9aab61f941da1f978cc99f0e6fd6bcdd0979b22c3c4548dacb9640984",
   "src/web/frame/index.ts": "sha256:433ec11ad4135d0c9a827921d751e5fdde03fcf75b248a86e5e92d1207e9b9d8",
-  "src/web/server.ts": "sha256:9e2c36529f517b133eb15f44e71b18e5607b3c6ee977edfe14188d5cb987b868",
+  "src/web/server.ts": "sha256:e1c4bfc5d6b2f6b140ad0bef2a33185b6b4e90e56fca7ef56e5f8ce8ccab7de3",
   "../designer/src/frames/site-frame/site-frame-contract.ts": "sha256:fd321d28a676e7a2f7cf09c7e6b9ac97ad99f9a85c8580ecddc066fd80d5c0ae",
   "../designer/src/frames/site-frame/NavLinks.tsx": "sha256:4b615f5ea8dddcdfc34b9f60c4d7a540a71c32ad884b814730754eb5d3c63c84",
   "../designer/src/frames/site-frame/NavDisclosure.client.tsx": "sha256:e62dd1650d0b9a4964bc72f6ce48ee7c1a41b07c6b1656c4c43ab57d7241e311",
   "../designer/src/frames/site-frame/NavDisclosure.server.tsx": "sha256:a2cf034a0b97106380b19f4898635283bf77e0a1fc398347ecd5e4e853ed8347",
   "../designer/src/frames/site-frame/NavDisclosure.boundary.client.tsx": "sha256:32e1550ce3d62a04d33874e677b5b32e32684d1561ceb994c6020cc57930c05a",
-  "../designer/src/frames/site-frame/SiteFrame.tsx": "sha256:7a2914c7113a3f20295f7adb727ba7778ef4b49c117c93e25854b4aed93b5199",
+  "../designer/src/frames/site-frame/SiteFrame.tsx": "sha256:52a5f4965a602dd5b50b7e5b1a43c16133efbf0d7bfc58548785039ed5147692",
   "../designer/src/frames/site-frame/types.ts": "sha256:9cf9ac3d145713b6efd520fa92c2fee7729788ed11cfc45990a84feb3c61a32c",
   "../designer/src/frames/site-frame/SkipLink.client.tsx": "sha256:4cd4ff41cd290b09f10d6c1079f7fe3ad788c25722c9d023bb740b659148aa01",
   "../designer/src/frames/site-frame/internal/resolveShell.ts": "sha256:7137b3a273852efc0b29dabd2f7db250e2e1550bde682018f1046ce21c905624",
@@ -79,8 +79,8 @@ const sources = {
   "../designer/src/frames/site-frame/landing/core/sectioned-view.ts": "sha256:3b74fcbd43a72bd8a5cfb9c2283d37a72d1881837ba9d98c77a886566463dddc",
   "../designer/src/frames/site-frame/landing/core/status-list-catalog.ts": "sha256:4ccbf551c74b16104476d703aa0e94060699ebf77dc836622df388cd04177896",
   "../designer/src/frames/site-frame/landing/core/types.ts": "sha256:9308206e5a674e77619c194036879591aaa784403feb12923cdb4bf7616cd38a",
-  "../designer/src/frames/site-frame/landing/internal/assets.ts": "sha256:54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8",
-  "../designer/src/frames/site-frame/landing/internal/errors.ts": "sha256:19a0d6e258427849321149d4fb3cefe1d4122f8cbb82c224ba3349859783eaa4",
+  "../designer/src/frames/site-frame/landing/internal/assets.ts": "sha256:8925ec8f35ec62362c0200fbed13489a053ca19c3e67d7ed4eebe7c6c4940a36",
+  "../designer/src/frames/site-frame/landing/internal/errors.ts": "sha256:3993912d4d9b5dbdca8c9a38ef882cb6ab26669908964cfe67c0fd83e47cbb7d",
   "../designer/src/frames/site-frame/landing/internal/href.ts": "sha256:36c0690b4f606166f36ae1dd7a042674977126be921223e058d3df7346c096cc",
   "../designer/src/frames/site-frame/landing/internal/prose-text.ts": "sha256:2b608bac5f11fdfdf991ca27f89dc96a57a917066a81248c46d4ae0c98c71d85",
   "../designer/src/frames/site-frame/landing/web/types.ts": "sha256:bac4afa406c522c5ea14f663a90471130601006e625cd3479634c459d5f7aa47",
