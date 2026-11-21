@@ -24,6 +24,11 @@
  *   - the line is forbidden scope: references/**, vendored components (src/components/partners/**), changelogs,
  *     or a generated region (between BEGIN GENERATED and END GENERATED markers), which changes only by its
  *     generator.
+ * Frozen residue, reported by name and not counted (`--check` exits 0 on it alone): a finding whose file code shows
+ * is frozen, which no unit edits (CONTAM-U4 D5, ruling b):
+ *   - a vendored component: a path the package's THIRD-PARTY-NOTICES.md, its record of vendored components, names
+ *     as vendored ("`<dir>/` vendors ..." or "`<file>` is the stock ..."); a directory entry covers its files;
+ *   - a changelog under docs/changelogs/, the packed package copies included (the bump freeze).
  * Findings the CONTAM groups give other units (a package's own `packages/<pkg>/` spelling, consumer-tree and
  * fixture paths) are skipped, not counted.
  *
@@ -43,6 +48,20 @@ const CHECK = "scripts/check-contamination-classes.mjs";
 const NAMES = ["Bouncer", "Controller", "Designer", "Director", "Launcher", "Producer", "Publisher", "Writer"];
 const FORBIDDEN = [/^references\//, /^src\/components\/partners\//, /(^|\/)changelogs?\//i, /(^|\/)CHANGELOG/i];
 const QUALIFIER = " (not shipped)";
+const NOTICES = "THIRD-PARTY-NOTICES.md";
+const CHANGELOG = /(^|\/)docs\/changelogs\/[^/]+$/;
+
+/** The vendored paths a THIRD-PARTY-NOTICES.md records: a backticked path followed by "vendors" or "is the stock". */
+export function vendoredFromNotices(text) {
+  return [...text.matchAll(/`([\w.@/-]+)`\s+(?:vendors|is\s+the\s+stock)\b/g)].map(m => m[1]);
+}
+
+/** Why a package-relative file is frozen, or undefined: a recorded vendored component, or a docs/changelogs/ file. */
+export function frozenReason(file, vendored) {
+  if (CHANGELOG.test(file)) return "changelog under docs/changelogs/";
+  const hit = vendored.find(entry => entry.endsWith("/") ? file.startsWith(entry) : file === entry);
+  return hit ? `vendored component (${NOTICES}: \`${hit}\`)` : undefined;
+}
 
 /** The cited path and the resolver's nearest file of one CLASS 1 finding (undefined `where` for ROT). */
 export function parseDetail(detail) {
@@ -195,15 +214,26 @@ async function pass(repo, { check }) {
     try { names[dir] = JSON.parse(readFileSync(join(repo, "packages", dir, "package.json"), "utf8")).name; } catch { /* not a package */ }
   }
   const reports = await Promise.all(PACKAGES.map(pkg => scan(repo, pkg)));
-  const notes = [], refusals = [], changes = [];
+  const notes = [], refusals = [], changes = [], frozen = [];
   let deferred = 0;
   PACKAGES.forEach((pkg, i) => {
     const report = reports[i];
+    const noticesPath = join(repo, "packages", pkg, NOTICES);
+    const vendored = existsSync(noticesPath) ? vendoredFromNotices(readFileSync(noticesPath, "utf8")) : [];
     if (report.indeterminate?.length) refusals.push(`packages/${pkg}: ${report.indeterminate.length} indeterminate result(s); nothing is decided`);
     const byFile = new Map();
     for (const finding of report.findings) if (finding.class === 1) (byFile.get(finding.file) ?? byFile.set(finding.file, []).get(finding.file)).push(finding);
     for (const [file, findings] of [...byFile].sort()) {
       const path = join(repo, "packages", pkg, file);
+      const reason = frozenReason(file, vendored);
+      if (reason) {
+        for (const finding of findings) {
+          const parsed = parseDetail(finding.detail);
+          const group = groupOf(pkg, parsed);
+          if (group !== "G13" && group !== "G14") frozen.push(`packages/${pkg}/${file}:${finding.line}: ${parsed.cited} (${group}; frozen: ${reason})`);
+        }
+        continue;
+      }
       if (!existsSync(path)) {
         for (const finding of findings) {
           const group = groupOf(pkg, parseDetail(finding.detail));
@@ -218,7 +248,18 @@ async function pass(repo, { check }) {
     }
   });
   if (!check) for (const [path, text] of changes) writeFileSync(path, text);
-  return { notes, refusals, changes: changes.length, deferred };
+  return { notes, refusals, changes: changes.length, deferred, frozen };
+}
+
+/** The exit code and report of a run from its last pass: frozen residue is listed, never counted. */
+export function outcome(last, notes, { check }) {
+  const refused = last.refusals.length ? `\n${last.refusals.length} refused (fix by hand):\n${last.refusals.join("\n")}` : "";
+  const frozen = last.frozen?.length ? `\n${last.frozen.length} frozen residue (reported, not counted):\n${last.frozen.join("\n")}` : "";
+  if (check) {
+    const pending = last.notes.length + last.deferred;
+    return { code: pending || last.refusals.length ? 1 : 0, text: `codemod-contam-u4 --check: ${pending} rewrite(s) pending${notes.length ? `\n${notes.join("\n")}` : ""}${refused}${frozen}\n` };
+  }
+  return { code: last.refusals.length || last.changes ? 1 : 0, text: `codemod-contam-u4: ${notes.length} rewrite(s)${notes.length ? `\n${notes.join("\n")}` : ""}${refused}${frozen}\n` };
 }
 
 export async function run(repo, { check = false } = {}) {
@@ -229,12 +270,7 @@ export async function run(repo, { check = false } = {}) {
     notes.push(...last.notes);
     if (check || (last.changes === 0 && last.deferred === 0)) break;
   }
-  const refused = last.refusals.length ? `\n${last.refusals.length} refused (fix by hand):\n${last.refusals.join("\n")}` : "";
-  if (check) {
-    const pending = last.notes.length + last.deferred;
-    return { code: pending || last.refusals.length ? 1 : 0, text: `codemod-contam-u4 --check: ${pending} rewrite(s) pending${notes.length ? `\n${notes.join("\n")}` : ""}${refused}\n` };
-  }
-  return { code: last.refusals.length || last.changes ? 1 : 0, text: `codemod-contam-u4: ${notes.length} rewrite(s)${notes.length ? `\n${notes.join("\n")}` : ""}${refused}\n` };
+  return outcome(last, notes, { check });
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

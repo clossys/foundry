@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { collapse, groupOf, parseDetail, planFinding, rewriteFile } from "./codemod-contam-u4.mjs";
+import { collapse, frozenReason, groupOf, outcome, parseDetail, planFinding, rewriteFile, vendoredFromNotices } from "./codemod-contam-u4.mjs";
 
 const unreachable = (cited, where) => `cites "${cited}" — the nearest real file is "${where}", which is NOT in this package's published file set`;
 const rot = cited => `cites "${cited}" — no such path in this package or the repository`;
@@ -79,4 +79,38 @@ test("skips the groups other units own and applies two findings on a line one pa
   const once = rewriteFile("producer", "src/a.ts", text, findings, { tracked, names });
   assert.equal(once.deferred, 1);
   assert.equal(once.text, " * docs/a.md (not shipped) and docs/b.md\n");
+});
+
+const NOTICES = [
+  "`src/components/partners/magicui/` vendors the Magic UI registry items",
+  "`sonner` 2.0.8 is the Toaster engine. `src/components/partners/shadcn/sonner.tsx` is the stock",
+  "shadcn/ui Sonner item; the engine under the Kibo UI Video Player item (`src/components/partners/kibo-ui/video-player.tsx`), under",
+].join("\n");
+
+test("frozen files come from the notices record and docs/changelogs/, nothing else", () => {
+  const vendored = vendoredFromNotices(NOTICES);
+  assert.deepEqual(vendored, ["src/components/partners/magicui/", "src/components/partners/shadcn/sonner.tsx"]);
+  assert.match(frozenReason("src/components/partners/magicui/particles.tsx", vendored), /vendored component/);
+  assert.match(frozenReason("src/components/partners/shadcn/sonner.tsx", vendored), /vendored component/);
+  assert.match(frozenReason("docs/changelogs/producer.md", vendored), /changelog/);
+  assert.equal(frozenReason("src/components/partners/kibo-ui/video-player.tsx", vendored), undefined);
+  assert.equal(frozenReason("src/components/partners/shadcn/button.tsx", vendored), undefined);
+  assert.equal(frozenReason("src/records/pin.ts", vendored), undefined);
+  assert.equal(frozenReason("docs/changelogs/old/producer.md", vendored), undefined);
+});
+
+test("--check: a G16 line in a non-frozen file still fails; frozen residue alone passes and is named", () => {
+  const vendored = vendoredFromNotices(NOTICES);
+  const file = "src/a.ts";
+  assert.equal(frozenReason(file, vendored), undefined);
+  const result = rewriteFile("producer", file, " * see docs/engine.md for the log\n", [{ line: 1, detail: unreachable("docs/engine.md", "docs/engine.md") }], { tracked, names });
+  const failing = outcome({ notes: result.notes, deferred: result.deferred, refusals: result.refusals, changes: 1, frozen: [] }, [], { check: true });
+  assert.equal(failing.code, 1);
+  assert.match(failing.text, /1 rewrite\(s\) pending/);
+  const frozen = ["packages/producer/docs/changelogs/producer.md:5: ../contracts/x.md (G16; frozen: changelog under docs/changelogs/)"];
+  const passing = outcome({ notes: [], deferred: 0, refusals: [], changes: 0, frozen }, [], { check: true });
+  assert.equal(passing.code, 0);
+  assert.match(passing.text, /1 frozen residue[^]*producer\.md:5/);
+  const refused = outcome({ notes: [], deferred: 0, refusals: ["packages/designer/src/a.ts:1: x/gone.md is ROT"], changes: 0, frozen }, [], { check: true });
+  assert.equal(refused.code, 1);
 });
