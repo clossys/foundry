@@ -95,7 +95,7 @@ export function candidateMeta(candidate: CandidateRecord): Record<string, unknow
 }
 
 /** `files[]` of a registry-item candidate (path, type, target, content), skipping malformed entries. */
-export function registryFiles(candidate: CandidateRecord): { path: string; type?: string; target?: string; content: string }[] {
+export function registryFiles(candidate: Pick<CandidateRecord, "json">): { path: string; type?: string; target?: string; content: string }[] {
   const files = isObject(candidate.json) ? candidate.json.files : undefined;
   if (!Array.isArray(files)) return [];
   return files.flatMap(file => {

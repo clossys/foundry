@@ -40,7 +40,7 @@ export function proposedContract(slot: SlotRecord, env: CertifyEnv): { contract:
     case "element": {
       const meta = json && isObject(json.meta) ? json.meta : undefined;
       const preview = meta && isObject(meta.preview) ? meta.preview : undefined;
-      if (!preview) return { contract, source: elementCheck(slot, pinned) === "none" ? "not-needed" : "none" };
+      if (!preview) return { contract, source: elementCheck(slot, pinned, contract) === "none" ? "not-needed" : "none" };
       const { copy: _snapshot, ...fixture } = preview;
       const props = isObject(fixture.fixtures) && isObject(fixture.fixtures.props) ? Object.keys(fixture.fixtures.props) : [];
       return { contract: { ...contract, ...(Array.isArray(contract.props) ? {} : { props }), fixture }, source: "pinned" };
