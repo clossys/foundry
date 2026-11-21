@@ -97,6 +97,50 @@ export function emitterComputedFallbacks(text: string, sources: DeclaredSources,
   return out;
 }
 
+/** A read whose variable name is computed by code, which the reader cannot name or judge. */
+export interface InterpolatedRead {
+  /** Character offset of `var(` in the source. */
+  offset: number;
+  /** The read's source text up to its fallback comma or closing parenthesis. */
+  text: string;
+  /** Whether the read writes a fallback (a `,` follows the name). */
+  hasFallback: boolean;
+}
+
+/** A name joined with `+`: `"var(" + name + ")"` or `"var(" + name + ", " + value + ")"`. */
+const JOINED_NAME_RE = /^["'`]\s*\+\s*[^;\n]*?\+\s*["'`]\s*([,)])/;
+
+/**
+ * Every emitted read in `text` (reads in `//` line comments left out) whose name is computed by
+ * code: a template interpolation (`var(${name})`) or a string joined with `+`. The reader sees
+ * only literal `--x` names, so these are listed here; each must write a fallback, as
+ * `var(${name}, ${TOKENS[name]!.value})` does.
+ */
+export function emitterInterpolatedReads(text: string): InterpolatedRead[] {
+  const comments = lineCommentSpans(text);
+  const out: InterpolatedRead[] = [];
+  for (let i = text.indexOf("var("); i >= 0; i = text.indexOf("var(", i + 4)) {
+    if (inSpan(i, comments)) continue;
+    let j = i + 4;
+    while (j < text.length && /\s/.test(text[j] as string)) j++;
+    if (text.startsWith("${", j)) {
+      let depth = 0;
+      let k = j + 1;
+      for (; k < text.length; k++) {
+        if (text[k] === "{") depth++;
+        else if (text[k] === "}" && --depth === 0) break;
+      }
+      k++;
+      while (k < text.length && /\s/.test(text[k] as string)) k++;
+      out.push({ offset: i, text: text.slice(i, k + 1), hasFallback: text[k] === "," });
+      continue;
+    }
+    const joined = JOINED_NAME_RE.exec(text.slice(j));
+    if (joined) out.push({ offset: i, text: text.slice(i, j + joined[0].length), hasFallback: joined[1] === "," });
+  }
+  return out;
+}
+
 /** A Tailwind arbitrary value holding a `var(` read: `[...]` with no whitespace or quote inside. */
 const ARBITRARY_VAR_RE = /\[([^\]\s"'`]*var\(--[^\]\s"'`]*)\]/g;
 

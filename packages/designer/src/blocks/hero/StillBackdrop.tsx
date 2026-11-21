@@ -22,6 +22,15 @@ const BACKDROP_GROUNDS: Readonly<Record<string, string>> = {
   "surface-inverse-raised": "bg-surface-inverse-raised",
 };
 
+/**
+ * A paint read of a color token the art declares (the art contract admits only registered color
+ * tokens), with that token's registry value as fallback, so the art still paints with no theme
+ * loaded. The emitter fallback test pins each registry value to its declared value.
+ */
+function colorReference(token: string): string {
+  return `var(${token}, ${TOKENS[token]!.value})`;
+}
+
 /** Inert, checked static artwork; no motion source or alternate network resource exists. */
 export function StillBackdrop({ art, scrim = "light" }: { art: StillBackdropArt; scrim?: HeroBackdropScrim }) {
   const policy = stillBackdropPolicy(art, scrim);
@@ -34,7 +43,7 @@ export function StillBackdrop({ art, scrim = "light" }: { art: StillBackdropArt;
     <SemanticContent as="div" data-hero-backdrop="" aria-hidden="true" className={`absolute inset-0 ${ground}`} style={{ pointerEvents }}>
       {art.source.format === "svg" ? (
         <svg viewBox={`0 0 ${art.width} ${art.height}`} width={art.width} height={art.height} preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false" className="h-full w-full" style={{ pointerEvents }}>
-          {art.source.paths.map((path, index) => <path key={index} d={path.d} fill={`var(${path.fillToken})`} stroke={path.strokeToken ? `var(${path.strokeToken})` : "none"} strokeWidth={path.strokeWidth} style={{ pointerEvents }} />)}
+          {art.source.paths.map((path, index) => <path key={index} d={path.d} fill={colorReference(path.fillToken)} stroke={path.strokeToken ? colorReference(path.strokeToken) : "none"} strokeWidth={path.strokeWidth} style={{ pointerEvents }} />)}
         </svg>
       ) : (
         <img src={art.source.src} alt="" width={art.width} height={art.height} loading="lazy" decoding="async" draggable={false} className="h-full w-full object-cover" style={{ pointerEvents }} />

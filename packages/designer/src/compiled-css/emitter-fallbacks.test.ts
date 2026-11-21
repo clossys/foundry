@@ -4,8 +4,8 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { TOKENS } from "../tokens/tokens.js";
 import { compiledCssDeclaredSources } from "./generate.js";
-import { UndeclaredTokenFallbackError, globalDeclaredTokenValues, type DeclaredSources } from "./declared-fallbacks.js";
-import { alignEmitterText, emitterComputedFallbacks, emitterFiles, emitterReads } from "./emitter-fallbacks.js";
+import { UndeclaredTokenFallbackError, classifyFallbackReads, globalDeclaredTokenValues, type DeclaredSources } from "./declared-fallbacks.js";
+import { alignEmitterText, emitterComputedFallbacks, emitterFiles, emitterInterpolatedReads, emitterReads } from "./emitter-fallbacks.js";
 
 /**
  * CONTAM-U9: every `var(--x)` Designer's block, specimen and token-preview emitters write carries a
@@ -34,6 +34,21 @@ describe("Designer emitter fallbacks equal their declared values (CONTAM-U9)", (
   it("has no bare read", () => {
     expect(all.length).toBeGreaterThan(0);
     expect(all.filter((read) => read.fallback === null).map((read) => read.at)).toEqual([]);
+  });
+
+  it("has no bare read whose name is computed by code", () => {
+    const interpolated = emitters.flatMap((e) => emitterInterpolatedReads(e.text).map((read) => ({ ...read, at: `${e.file}:${lineOf(e.text, read.offset)} ${read.text}` })));
+    expect(interpolated.length).toBeGreaterThan(0);
+    expect(interpolated.filter((read) => !read.hasFallback).map((read) => read.at)).toEqual([]);
+  });
+
+  it("pins every --color-* registry value to its declared value, for reads whose name is computed by code", () => {
+    // StillBackdrop paints art with `var(${token}, ${TOKENS[token]!.value})`; consumer art may name any registered --color-* key.
+    const keys = Object.keys(TOKENS).filter((key) => key.startsWith("--color-"));
+    expect(keys.length).toBeGreaterThan(0);
+    const reads = classifyFallbackReads(keys.map((key) => `var(${key})`).join("\n"), sources, compiled);
+    expect(reads.map((read) => read.name)).toEqual(keys);
+    expect(reads.filter((read) => read.kind !== "global" || TOKENS[read.name]!.value !== read.expected).map((read) => `${read.name} (${read.kind}): ${TOKENS[read.name]!.value} != ${read.expected}`)).toEqual([]);
   });
 
   it("gives every read of a global token, and every --tw-* read, its declared value as fallback", () => {
@@ -96,6 +111,23 @@ describe("the emitter aligner", () => {
     expect(alignEmitterText(text, fixture, "")).toBe(text);
     expect(emitterComputedFallbacks(text, fixture, "").map((c) => [c.read.name, c.registryKey, text.slice(c.start, c.end)]))
       .toEqual([["--a", "--a", 'var(--a, ${TOKENS["--a"]!.value})'], ["--a", "--a", 'var(--a, " + TOKENS["--a"]!.value + ")']]);
+  });
+
+  it("lists reads whose name is computed by code, and whether each writes a fallback", () => {
+    const text = [
+      "const a = `var(${t})`;",
+      "const b = `var(${TOKENS[t]!.name}, ${TOKENS[t]!.value})`;",
+      'const c = "var(" + t + ")";',
+      'const d = "var(" + t + ", " + v + ")";',
+      "const e = `var(--a, 4px)`;",
+      "  // reads `var(${t})`",
+    ].join("\n");
+    expect(emitterInterpolatedReads(text).map((read) => [read.text, read.hasFallback])).toEqual([
+      ["var(${t})", false],
+      ["var(${TOKENS[t]!.name},", true],
+      ['var(" + t + ")', false],
+      ['var(" + t + ",', true],
+    ]);
   });
 
   it("refuses a bare read with no declaration and no setter, naming it", () => {
