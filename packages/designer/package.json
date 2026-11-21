@@ -95,8 +95,8 @@
       "import": "./dist/theme/server.js"
     },
     "./build/theme": {
-      "types": "./dist/build/theme/index.d.ts",
-      "import": "./dist/build/theme/index.js"
+      "types": "./dist/builder/theme/index.d.ts",
+      "import": "./dist/builder/theme/index.js"
     },
     "./gate": {
       "types": "./dist/gate-index.d.ts",
