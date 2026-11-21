@@ -192,6 +192,14 @@
               }
             }
           ]
+        },
+        "recipe": {
+          "id": "create.lexicon",
+          "axes": [
+            "strictness",
+            "coverage",
+            "example"
+          ]
         }
       }
     },
@@ -211,21 +219,27 @@
           "id": "d1",
           "idea": "a plain reading of the slot contract",
           "axes": {
-            "tone": "plain"
+            "strictness": "plain",
+            "coverage": "plain",
+            "example": "plain"
           }
         },
         {
           "id": "d2",
           "idea": "a warm reading of the slot contract",
           "axes": {
-            "tone": "warm"
+            "strictness": "warm",
+            "coverage": "warm",
+            "example": "warm"
           }
         },
         {
           "id": "d3",
           "idea": "a brisk reading of the slot contract",
           "axes": {
-            "tone": "brisk"
+            "strictness": "brisk",
+            "coverage": "brisk",
+            "example": "brisk"
           }
         }
       ]

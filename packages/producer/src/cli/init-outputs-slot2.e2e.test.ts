@@ -71,7 +71,10 @@ async function store() {
     const at = (name: string, value: unknown) => file(`${slot}.${name}.json`, value);
     const craft = ["--model", "fixture-model", "--tier", "mid", "--skill", SKILL];
     await run("next", `publisher/${slot}`, "--stage", "brief", ...craft, "--file", at("brief", { goal: "fixture: one route" }));
-    await run("next", `publisher/${slot}`, "--stage", "diverge", ...craft, "--file", at("diverge", ["flat", "nested", "hub"].map((shape, index) => ({ id: `d${index + 1}`, idea: `a ${shape} route tree`, axes: { shape } }))));
+    // Code chose the run's recipe at brief (its assembled recipe): every direction takes a distinct value on each of its axes.
+    const briefed = (readJson(agent("publisher", slot, "ledger.json")) as { events: { op: string; assembled?: { recipe?: { axes?: string[] } } }[] }).events.filter(event => event.op === "craft:brief").at(-1);
+    const axes = briefed?.assembled?.recipe?.axes ?? [];
+    await run("next", `publisher/${slot}`, "--stage", "diverge", ...craft, "--file", at("diverge", ["flat", "nested", "hub"].map((shape, index) => ({ id: `d${index + 1}`, idea: `a ${shape} route tree`, axes: { shape, ...Object.fromEntries(axes.map(axis => [axis, `${axis}-${shape}`])) } }))));
     await run("next", `publisher/${slot}`, "--stage", "render", ...craft);
     writeFileSync(join(root, "render.png"), "fixture render");
     const manifest = [{ role: "taste", ref: "packages/publisher/standards/publication/taste.md" }, { role: "contract", ref: `clossys/agents/publisher/${slot}/slot.json#contract` }, { role: "render", ref: "render.png" }];

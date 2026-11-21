@@ -3,7 +3,7 @@
  * typed by the maker (foundry-feedback-0018): the slot's pinned inputs (its Director slots, and for
  * a Publisher slot its Designer and Writer slots) with each pin's candidate and sha, the slot
  * contract with its sha, the standard the slot is certified against (id, sha, requirement checks,
- * taste criteria and their anchors), and the recipe's axes when one is named.
+ * taste criteria and their anchors), and the recipe code chooses for the standard (its one producing recipe) with its axes.
  *
  * Every mistake it can see is refused here, at stage 1, with a one-line fix, instead of at the
  * submit guard after four stages of work: an input that is not pinned (R20 would find nothing to
@@ -16,7 +16,7 @@ import { jsonBytes } from "../records/slot-model/layout.js";
 import type { SlotAgent } from "../records/slot-model/types.js";
 import { readiness, readPin, readSlot, slotIndex } from "../records/slots.js";
 import { loadStandards, standardFor } from "../records/standards.js";
-import { loadRecipes } from "../records/recipes.js";
+import { loadRecipes, standardRecipe } from "../records/recipes.js";
 
 export interface BriefInput { readonly agent: string; readonly slot: string; readonly candidate: string; readonly sha256: string }
 export interface AssembledBrief {
@@ -27,7 +27,7 @@ export interface AssembledBrief {
     readonly requirements: readonly { readonly check: string; readonly params: unknown }[];
     readonly taste: readonly { readonly id: string; readonly anchors: Readonly<Record<string, string>> }[];
   };
-  readonly recipe?: { readonly id: string; readonly axes: readonly string[] };
+  readonly recipe: { readonly id: string; readonly axes: readonly string[] };
 }
 
 const sha = (bytes: string | Buffer) => createHash("sha256").update(bytes).digest("hex");
@@ -58,13 +58,18 @@ export function assembleBrief(root: string, consumer: string, agent: SlotAgent, 
   const standard = standardFor(loadStandards(root), agent, standardId);
   if (!standard) return { refusal: `standard ${standardId} does not exist under packages/${agent}/standards/ (R05.1); fix: create it with clossys standard, or name an existing one in slot.json` };
   if (!standard.doc || standard.issues.length) return { refusal: `standard ${standardId} is not well-formed${standard.issues.length ? `: ${standard.issues[0]}` : ""} (R15.2); fix: repair it with clossys standard` };
-  let recipe: AssembledBrief["recipe"];
+  // Code chooses the run's recipe: the one recipe producing for the standard (records/recipes.ts standardRecipe). A
+  // --recipe naming any other (an unknown id, one not producing the standard) is refused, never recorded.
+  const recipes = loadRecipes(root);
   if (recipeId !== undefined) {
-    const found = loadRecipes(root).find(each => each.agent === agent && each.id === recipeId);
+    const found = recipes.find(each => each.agent === agent && each.id === recipeId);
     if (!found?.doc) return { refusal: `recipe ${recipeId} does not exist (or is not well-formed) under packages/${agent}/recipes/; fix: name an existing recipe that produces ${standardId}` };
     if (!found.doc.produces.includes(standardId)) return { refusal: `recipe ${recipeId} produces ${found.doc.produces.join(", ") || "nothing"}, not ${standardId} (R15.5); fix: name a recipe whose produces lists ${standardId}` };
-    recipe = { id: recipeId, axes: [...found.doc.axes] };
   }
+  const chosen = standardRecipe(recipes, agent, standardId);
+  if ("issue" in chosen) return { refusal: `${chosen.issue} (R15.5); fix: give the standard exactly one producing recipe under packages/${agent}/recipes/, then brief` };
+  if (recipeId !== undefined && recipeId !== chosen.recipe.id) return { refusal: `recipe ${recipeId} is not the recipe code chooses for ${standardId} (${chosen.recipe.id}, its one producing recipe) (R15.5); fix: omit --recipe or name ${chosen.recipe.id}` };
+  const recipe: AssembledBrief["recipe"] = { id: chosen.recipe.id, axes: [...(chosen.recipe.doc?.axes ?? [])] };
   const contract = doc.contract ?? {};
   return {
     brief: {
@@ -75,7 +80,7 @@ export function assembleBrief(root: string, consumer: string, agent: SlotAgent, 
         requirements: standard.doc.requirements.map(each => ({ check: each.check, params: each.params ?? {} })),
         taste: (standard.taste?.criteria ?? []).map(each => ({ id: each.id, anchors: Object.fromEntries(Object.entries(each.anchors)) as Record<string, string> })),
       },
-      ...(recipe ? { recipe } : {}),
+      recipe,
     },
   };
 }

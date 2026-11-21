@@ -162,12 +162,20 @@ function json(root: string, name: string, value: unknown) {
   return path;
 }
 
+/** The axes of the recipe the open run's brief assembled (the recipe code chooses for the slot's standard). */
+function briefAxes(dir: string): string[] {
+  const events = (JSON.parse(readFileSync(join(dir, "ledger.json"), "utf8")) as { events: { op: string; assembled?: { recipe?: { axes?: string[] } } }[] }).events;
+  return events.filter(event => event.op === "craft:brief").at(-1)?.assembled?.recipe?.axes ?? [];
+}
+
 /** P1 then the P2 craft path through the verbs: the create verdict, brief, diverge, render and a critique of `c.name`. */
 async function craft(root: string, c: Case) {
   const target = `${c.agent}/${c.slot}`;
   await verb(root, "verdict", target, "--record", json(root, `verdict-${c.slot}.json`, { schema: "clossys.verdict/1", slot: c.slot, create: true, reason: "fixture: no held candidate answers the brief", gaps: [{ id: c.gap }] }), "--model", MODEL, "--tier", "high", "--by", `agent:${c.agent}.verdict`, "--at", AT);
   await verb(root, "next", target, "--stage", "brief", ...CRAFT(c.agent), "--file", json(root, `brief-${c.slot}.json`, { goal: "fixture" }));
-  await verb(root, "next", target, "--stage", "diverge", ...CRAFT(c.agent), "--file", json(root, `diverge-${c.slot}.json`, ["plain", "warm", "bold"].map((tone, i) => ({ id: `d${i + 1}`, idea: `a ${tone} take`, axes: { tone } }))));
+  // Code chose the run's recipe at brief (its assembled recipe): every direction takes a distinct value on each of its axes.
+  const axes = briefAxes(join(root, "clossys", "agents", c.agent, c.slot));
+  await verb(root, "next", target, "--stage", "diverge", ...CRAFT(c.agent), "--file", json(root, `diverge-${c.slot}.json`, ["plain", "warm", "bold"].map((tone, i) => ({ id: `d${i + 1}`, idea: `a ${tone} take`, axes: { tone, ...Object.fromEntries(axes.map(axis => [axis, `${axis}-${tone}`])) } }))));
   await verb(root, "next", target, "--stage", "render", ...CRAFT(c.agent));
   json(root, `render-${c.slot}.png`, "fixture render");
   const manifest = [

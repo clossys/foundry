@@ -19,5 +19,8 @@
   ],
   "sources": [
     "composition"
+  ],
+  "parts": [
+    "component"
   ]
 }

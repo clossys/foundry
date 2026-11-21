@@ -19,5 +19,10 @@
   ],
   "sources": [
     "composition"
+  ],
+  "parts": [
+    "component",
+    "frame",
+    "section"
   ]
 }

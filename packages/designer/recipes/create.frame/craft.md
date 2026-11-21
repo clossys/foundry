@@ -7,10 +7,15 @@ Creates one frame slot (site or app chrome: header, footer, shell, bars) by comp
   `sections.hero` are `section.site` and use `create.marketing-section`.
 - Tier: mid. Axes: `navigation`, `chrome`, `emphasis`.
 - Source: `composition` only (`recipe.json` `sources`; `clossys next --submit` refuses any other kind for a run under this recipe).
+  Parts: stock components, and pinned frames and sections (`recipe.json` `parts`; frames.site-shell places
+  its header, footer and consent section).
+- Chosen by code: the one recipe producing for `frame`; `clossys next --stage brief` records it, and a run
+  naming any other recipe is refused (R15.5).
 - Checks: `R05.1`, `R06.1`, `R07.1`, `R07.6`, `ref-verbatim` (`recipe.json` `checks`; each one the submit guard runs, see Checks).
-- Base reference: the pinned stock components the slot uses (registry or npm lineage). The frame
-  places those parts only (`compose.layers`), uses tokens only (`tokens.only`) and reads copy only by
-  Writer slot keys.
+- Base reference: the pinned parts the slot uses: stock components (registry or npm lineage), and
+  pinned frames and sections of composition lineage. The frame places those parts only
+  (`compose.layers`), uses tokens only (`tokens.only`) and reads copy only by Writer slot keys
+  (`REF-COMP-COPY`).
 - Director derivation: `identity.visual.style` bounds every direction; `identity.brand.personality`
   sets the voice of the arrangement. Cited in `meta.element.reason` as `director:<slot id>` (R20).
 - Judge: the standard and its certifier, which import nothing from this folder (R16.1). This recipe
@@ -25,21 +30,30 @@ Creates one frame slot (site or app chrome: header, footer, shell, bars) by comp
 ## Composition
 
 The candidate is a shadcn registry item whose `meta.source` is
-`{"kind": "composition", "ref": [], "license": "MIT", "parts": [{"slot": "<component slot id>", "files": ["<its pin's vendored paths>"]}]}`.
+`{"kind": "composition", "ref": [], "license": "MIT", "parts": [{"slot": "<part slot id>", "files": ["<its pin's vendored paths>"]}]}`.
 
-- Every part is a pinned stock component: registry lineage adopted verbatim, or an npm re-export.
-  `files` lists exactly the vendored reference paths that part's pin maps.
+- Every component part is a pinned stock component: registry lineage adopted verbatim, or an npm
+  re-export. `files` lists exactly the vendored reference paths that part's pin maps.
+- A frame or section part (`frames.*`, `sections.*`) is pinned with composition lineage and passes the
+  composition rule itself, never through a cycle. `files` lists exactly its pin's code files, and the
+  frame places it by an `@/` import of one of them (its install `target`, else its path, without the
+  extension).
 - Every UI import is `@clossys/designer-ui` (named imports) or the `@/components/ui/<name>` alias, and
   resolves to a declared part's file. No other package, no relative file outside the candidate, no
   dynamic import.
 - No raw element carries `className` or `style`: layout and look come from the parts and their
   props. A hand-written primitive is not a part.
+- No literal copy: every string a reader meets (JSX text, a literal child, a literal `alt`, `title`,
+  `label`, `placeholder` or `aria-*` label) is read by its Writer slot key from the props, never
+  written in the code (`REF-COMP-COPY`). A bare separator glyph is not copy.
+- The slot's contract holds: `contract.root` is an element of the candidate (`REF-COMP-ROOT`), and each
+  `contract.landmarks` entry is a declared part its contract slot accepts or an element of the
+  landmark's role, by its tag's implicit role or a literal `role` (`REF-COMP-LANDMARK`).
 - The slot's `uses` equals the declared parts. If it does not, change `uses` with
   `clossys ia designer/<slot> --contract <contract.json> --uses <part,...>`; never edit slot.json.
 - The candidate ships the file the contract fixture mounts (`contract.fixture.fixtures.file`) with
   the export it names, and renders with the fixture's props.
-- Each contract landmark and region is a placed part or the root element the contract names
-  (`contract.root`); a region is composed, never inlined (`R07.6`).
+- A region is composed, never inlined (`R07.6`, judged on every frame candidate, the draft at submit included).
 
 ## Checks
 
@@ -50,10 +64,14 @@ one, so a draft that fails one is refused, never written:
   props, and every requirement of the standard (`compose.layers`, `source.ref`, `tokens.only`).
 - `R06.1`: every `dependencies` entry is `<name>@<x.y.z>` and in the consumer's package-lock.
 - `R07.1`: every slot the candidate cites (its parts, its `@/` imports) is in the slot's `inputs` or `uses`.
-- `R07.6`: frame regions are composed from their slots, never inlined.
-- `ref-verbatim`: the composition rule: each part stock and verbatim (`REF-COMP-PART`), each import a
-  declared part's file identical to its pin (`REF-COMP-IMPORT`), each part used (`REF-COMP-UNUSED`),
-  `uses` equal to the parts (`REF-COMP-USES`), no styled raw markup (`REF-COMP-MARKUP`).
+- `R07.6`: frame regions are composed from their slots, never inlined; every frame candidate is judged,
+  so a draft inlining a region is refused at submit.
+- `ref-verbatim`: the composition rule: each part of a class the frame places and stock or a passing
+  composition (`REF-COMP-PART`), each import a declared part's file identical to its pin
+  (`REF-COMP-IMPORT`), each part used (`REF-COMP-UNUSED`), `uses` equal to the parts (`REF-COMP-USES`),
+  no styled raw markup (`REF-COMP-MARKUP`), no literal copy (`REF-COMP-COPY`), `contract.root` rendered
+  (`REF-COMP-ROOT`) and each contract landmark a part it accepts or an element of its role
+  (`REF-COMP-LANDMARK`).
 
 ## Stages (slot-constitution 5b, fixed order)
 

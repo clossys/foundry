@@ -380,6 +380,14 @@
               }
             }
           ]
+        },
+        "recipe": {
+          "id": "create.copy",
+          "axes": [
+            "angle",
+            "register",
+            "structure"
+          ]
         }
       }
     },
@@ -399,21 +407,27 @@
           "id": "d1",
           "idea": "a plain reading of the slot contract",
           "axes": {
-            "tone": "plain"
+            "angle": "plain",
+            "register": "plain",
+            "structure": "plain"
           }
         },
         {
           "id": "d2",
           "idea": "a warm reading of the slot contract",
           "axes": {
-            "tone": "warm"
+            "angle": "warm",
+            "register": "warm",
+            "structure": "warm"
           }
         },
         {
           "id": "d3",
           "idea": "a brisk reading of the slot contract",
           "axes": {
-            "tone": "brisk"
+            "angle": "brisk",
+            "register": "brisk",
+            "structure": "brisk"
           }
         }
       ]

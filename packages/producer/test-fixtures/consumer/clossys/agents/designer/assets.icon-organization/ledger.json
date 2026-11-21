@@ -255,6 +255,14 @@
               }
             }
           ]
+        },
+        "recipe": {
+          "id": "create.glyph",
+          "axes": [
+            "metaphor",
+            "construction",
+            "weight"
+          ]
         }
       }
     },
@@ -274,21 +282,27 @@
           "id": "d1",
           "idea": "a plain reading of the slot contract",
           "axes": {
-            "tone": "plain"
+            "metaphor": "plain",
+            "construction": "plain",
+            "weight": "plain"
           }
         },
         {
           "id": "d2",
           "idea": "a warm reading of the slot contract",
           "axes": {
-            "tone": "warm"
+            "metaphor": "warm",
+            "construction": "warm",
+            "weight": "warm"
           }
         },
         {
           "id": "d3",
           "idea": "a brisk reading of the slot contract",
           "axes": {
-            "tone": "brisk"
+            "metaphor": "brisk",
+            "construction": "brisk",
+            "weight": "brisk"
           }
         }
       ]

@@ -28,6 +28,7 @@ import { registeredRules, type RegisteredRule } from "./registry.js";
 import { submitOf } from "./rules/r03.js";
 import { slotDoc } from "./checks/shared.js";
 import { registerGuardRunner } from "../records/slot-write.js";
+import { sourceKindOf } from "../records/source-kind.js";
 import type { Check, ConstitutionContext, Row, RuleId } from "./types.js";
 
 /** The verbs a rules.json `guard` list may name: the ledger verb table plus `reject` (section 6). */
@@ -121,8 +122,8 @@ export function refVerbatimOf(ctx: ConstitutionContext, target: GuardTarget): { 
   if (adopt) return { label: "adopt", why: adopt };
   if (target.agent !== "designer" || !target.candidate?.endsWith(".json")) return undefined;
   const candidate = ctx.agents.find(agent => agent.agent === "designer")?.slots.get(target.slot)?.candidates.find(each => each.name === target.candidate);
-  const source = (candidate?.json as { meta?: { source?: { kind?: unknown } } } | undefined)?.meta?.source;
-  return source?.kind === "composition" ? { label: "composition", why: "composition lineage" } : undefined;
+  // The one kind reader (records/source-kind.ts sourceKindOf over the candidate's view): next --submit's recipe check reads the same field.
+  return sourceKindOf(candidate?.json) === "composition" ? { label: "composition", why: "composition lineage" } : undefined;
 }
 
 /** The ref-verbatim rows of the gated targets (adopts and compositions): the Designer gate's strict findings, one row each. */

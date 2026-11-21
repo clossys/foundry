@@ -66,7 +66,8 @@ const stage = (name: string, file?: unknown, ...more: string[]) => {
 };
 const craft = (name: string, ...more: string[]) => runCraftCli([name, `designer/${ID}`, "--model", "fixture-model", "--tier", "high", "--skill", skill, ...more], workspace);
 const lastEvent = () => (JSON.parse(readFileSync(join(slotDir, "ledger.json"), "utf8")) as { events: Record<string, unknown>[] }).events.at(-1)!;
-const directions = (n: number) => Array.from({ length: n }, (_, index) => ({ id: `d${index + 1}`, axes: { density: index } }));
+/** n directions distinct on density and on every axis of the recipe code chooses for the slot's standard (fixture-headline-craft). */
+const directions = (n: number) => Array.from({ length: n }, (_, index) => ({ id: `d${index + 1}`, axes: { density: index, tone: `tone-${index}`, length: index + 1, structure: `structure-${index}` } }));
 
 describe("P2 precondition on next --submit", () => {
   it("lets adopt through with no verdict and refuses adapt and create until the latest verdict is create", async () => {
@@ -107,8 +108,8 @@ describe("next --stage", () => {
     // R15.7 at write time: identical axis values are cosmetic variants, and every direction names every axis.
     const same = directions(3).map(direction => ({ ...direction, axes: { ...direction.axes, tone: "quiet" } }));
     expect((await stage("diverge", same)).message).toMatch(/directions 1 and 2 share tone "quiet"; fix: .*cosmetic variant \(R15\.7\)/);
-    expect((await stage("diverge", directions(3).map(direction => ({ ...direction, axes: { density: 1 } })))).message).toMatch(/directions 1 and 2 share density 1;/);
-    const partial = directions(3).map((direction, index) => index ? direction : { ...direction, axes: { ...direction.axes, tone: "loud" } });
+    expect((await stage("diverge", directions(3).map(direction => ({ ...direction, axes: { ...direction.axes, length: 1 } })))).message).toMatch(/directions 1 and 2 share length 1;/);
+    const partial = directions(3).map((direction, index) => index === 1 ? { ...direction, axes: { density: direction.axes.density, length: direction.axes.length, structure: direction.axes.structure } } : direction);
     expect((await stage("diverge", partial)).message).toMatch(/direction 2 has no value on axis tone; fix: .*\(R15\.7\)/);
     const blank = directions(3).map((direction, index) => ({ ...direction, axes: { ...direction.axes, tone: index === 1 ? "" : `t${index}` } }));
     expect((await stage("diverge", blank)).message).toMatch(/direction 2 has no value on axis tone; fix: /);
@@ -169,11 +170,13 @@ describe("craft diverge: pairwise-distinct axes, checked at once", () => {
   it("refuses two directions sharing a value on an axis, and a direction missing an axis", async () => {
     ledger(event("verdict", { verdict: "create" }));
     expect((await stage("brief")).exitCode).toBe(0);
-    const shared = [direction("d1", { density: 1, tone: "warm" }), direction("d2", { density: 2, tone: "cool" }), direction("d3", { density: 3, tone: "warm" })];
+    // The recipe code chooses (fixture-headline-craft) names tone, length and structure; density is an extra axis.
+    const rest = (index: number) => ({ length: index, structure: `s${index}` });
+    const shared = [direction("d1", { density: 1, tone: "warm", ...rest(1) }), direction("d2", { density: 2, tone: "cool", ...rest(2) }), direction("d3", { density: 3, tone: "warm", ...rest(3) })];
     expect((await stage("diverge", shared)).message).toMatch(/directions 1 and 3 share tone "warm"; fix: make every direction's value distinct on every axis/);
-    const missing = [direction("d1", { density: 1, tone: "warm" }), direction("d2", { density: 2 }), direction("d3", { density: 3, tone: "dry" })];
+    const missing = [direction("d1", { density: 1, tone: "warm", ...rest(1) }), direction("d2", { density: 2, ...rest(2) }), direction("d3", { density: 3, tone: "dry", ...rest(3) })];
     expect((await stage("diverge", missing)).message).toMatch(/direction 2 has no value on axis tone; fix: /);
-    expect((await stage("diverge", [direction("d1", { density: 1, tone: "warm" }), direction("d2", { density: 2, tone: "cool" }), direction("d3", { density: 3, tone: "dry" })])).exitCode).toBe(0);
+    expect((await stage("diverge", [direction("d1", { density: 1, tone: "warm", ...rest(1) }), direction("d2", { density: 2, tone: "cool", ...rest(2) }), direction("d3", { density: 3, tone: "dry", ...rest(3) })])).exitCode).toBe(0);
   });
 
   it("holds every direction to the brief's recipe axes", async () => {
@@ -191,6 +194,12 @@ describe("craft under a plumb recipe: the writer refuses what R15.7 rejects (one
   const plumbRecipe = () => {
     const path = join(workspace, "packages", "designer", "recipes", RECIPE, "recipe.json");
     writeFileSync(path, jsonBytes({ ...(JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>), rung: "plumb", axes: [], action: "fixture.plumb" }));
+    // A valid plumb recipe (its deterministic clossys stages and the plumb action producing for the standard): an
+    // invalid one produces nothing, so code would choose no recipe for fixture-headline at all.
+    writeFileSync(join(path, "..", "craft.md"), "# fixture plumb\n\n### 1. build (deterministic)\n\n```sh\nclossys release fixture --build\n```\n");
+    const action = join(workspace, "packages", "producer", "actions", "fixture.plumb", "action.json");
+    mkdirSync(join(action, ".."), { recursive: true });
+    writeFileSync(action, jsonBytes({ schema: "clossys.action/1", id: "fixture.plumb", kind: "plumb", standards: [`designer/${STANDARD}`] }));
   };
   const PLUMB = (stage: string) => new RegExp(`craft:${stage} refused: recipe ${RECIPE} is plumb: a plumb recipe records no craft events \\(its plumb action computes the candidate\\); fix: .*\\(R15\\.7\\)`);
 

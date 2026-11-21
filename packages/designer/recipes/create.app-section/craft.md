@@ -5,6 +5,9 @@ Creates one app or adaptive section slot by composing installed stock components
 - Produces: `section.app`, `section.adaptive` (rung `create`, Designer rung L4).
 - Tier: mid. Axes: `layout`, `density`, `emphasis`.
 - Source: `composition` only (`recipe.json` `sources`; `clossys next --submit` refuses any other kind for a run under this recipe).
+  Parts: stock components only (`recipe.json` `parts`; the composition rule refuses a frame or section part).
+- Chosen by code: the one recipe producing for `section.app` and `section.adaptive`; `clossys next --stage brief`
+  records it, and a run naming any other recipe is refused (R15.5).
 - Checks: `R05.1`, `R06.1`, `R07.1`, `ref-verbatim` (`recipe.json` `checks`; each one the submit guard runs, see Checks).
 - Base reference: the pinned stock components the slot uses (registry or npm lineage). The section
   places those parts only (`compose.layers`), uses tokens only (`tokens.only`) and reads copy only by
@@ -25,13 +28,19 @@ Creates one app or adaptive section slot by composing installed stock components
 The candidate is a shadcn registry item whose `meta.source` is
 `{"kind": "composition", "ref": [], "license": "MIT", "parts": [{"slot": "<component slot id>", "files": ["<its pin's vendored paths>"]}]}`.
 
-- Every part is a pinned stock component: registry lineage adopted verbatim, or an npm re-export.
+- Every part is a pinned stock component (a `components.*` slot): registry lineage adopted verbatim, or an npm re-export.
   `files` lists exactly the vendored reference paths that part's pin maps.
 - Every UI import is `@clossys/designer-ui` (named imports) or the `@/components/ui/<name>` alias, and
   resolves to a declared part's file. No other package, no relative file outside the candidate, no
   dynamic import.
 - No raw element carries `className` or `style`: layout and look come from the parts and their
   props. A hand-written primitive is not a part.
+- No literal copy: every string a reader meets (JSX text, a literal child, a literal `alt`, `title`,
+  `label`, `placeholder` or `aria-*` label) is read by its Writer slot key from the props, never
+  written in the code (`REF-COMP-COPY`). A bare separator glyph is not copy.
+- The slot's contract holds: `contract.root` is an element of the candidate (`REF-COMP-ROOT`), and each
+  `contract.landmarks` entry is a declared part its contract slot accepts or an element of the
+  landmark's role, by its tag's implicit role or a literal `role` (`REF-COMP-LANDMARK`).
 - The slot's `uses` equals the declared parts. If it does not, change `uses` with
   `clossys ia designer/<slot> --contract <contract.json> --uses <part,...>`; never edit slot.json.
 - The candidate ships the file the contract fixture mounts (`contract.fixture.fixtures.file`) with
@@ -48,7 +57,8 @@ one, so a draft that fails one is refused, never written:
 - `R07.1`: every slot the candidate cites (its parts, its `@/` imports) is in the slot's `inputs` or `uses`.
 - `ref-verbatim`: the composition rule: each part stock and verbatim (`REF-COMP-PART`), each import a
   declared part's file identical to its pin (`REF-COMP-IMPORT`), each part used (`REF-COMP-UNUSED`),
-  `uses` equal to the parts (`REF-COMP-USES`), no styled raw markup (`REF-COMP-MARKUP`).
+  `uses` equal to the parts (`REF-COMP-USES`), no styled raw markup (`REF-COMP-MARKUP`), no literal copy
+  (`REF-COMP-COPY`), the contract root and landmarks rendered (`REF-COMP-ROOT`, `REF-COMP-LANDMARK`).
 
 ## Stages (slot-constitution 5b, fixed order)
 

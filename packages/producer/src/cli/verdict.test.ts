@@ -46,6 +46,8 @@ function pinnedDirectorInput(id: string): void {
   writeFileSync(join(slotDir, "slot.json"), jsonBytes({ ...doc, inputs: [id] }));
 }
 const standard = (agent: string, id: string) => cpSync(join(PACKAGES, agent, "standards", id), join(workspace, "packages", agent, "standards", id), { recursive: true });
+/** The standard's one producing recipe: code chooses the run's recipe from the workspace's recipe files (R15.5). */
+const recipe = (agent: string, id: string) => cpSync(join(PACKAGES, agent, "recipes", id), join(workspace, "packages", agent, "recipes", id), { recursive: true });
 
 beforeEach(() => {
   workspace = realpathSync(mkdtempSync(join(tmpdir(), "clossys-verdict-")));
@@ -56,6 +58,7 @@ beforeEach(() => {
   writeFileSync(join(slotDir, "candidates", "button-v1.json"), CANDIDATE);
   // component is adopt-first with createGaps missing-behavior, a11y-failure, foundry-signature; taste ids fidelity, composition, polish.
   standard("designer", "component");
+  recipe("designer", "create.component");
 });
 afterEach(() => rmSync(workspace, { recursive: true, force: true }));
 
@@ -143,6 +146,7 @@ describe("a Producer seat slot through P1 and P2", () => {
     seatDir = slot("producer", ia, SEAT_ID, { kind: "seat", standard: "seat", contract: { step: "owner.decisions", fixture: { step: "owner.decisions" } } });
     // seat is a craft standard: requirements seat.assigned, seat.prompt-owner; taste right-owner, tier-fit, procedure-clarity.
     standard("producer", "seat");
+    recipe("producer", "seat.configure");
     mkdirSync(join(workspace, "renders"), { recursive: true });
     for (const name of ["one", "two", "three"]) writeFileSync(join(workspace, "renders", `${name}.png`), `render ${name}`);
   });
@@ -162,7 +166,7 @@ describe("a Producer seat slot through P1 and P2", () => {
     const created = await seatRecord({ create: true, reason: "fixture: no seat yet", gaps: [{ id: "seat.assigned" }, { id: "right-owner" }] });
     expect(created.exitCode, created.message).toBe(0);
     expect((await stage("brief", { goal: "a seat for owner decisions" })).exitCode).toBe(0);
-    const directions = ["agent", "owner", "split"].map((by, index) => ({ id: `d${index + 1}`, idea: by, axes: { holder: by } }));
+    const directions = ["agent", "owner", "split"].map((by, index) => ({ id: `d${index + 1}`, idea: by, axes: { holder: by, tier: `tier-${by}`, hand: `hand-${by}` } }));
     expect((await stage("diverge", directions)).exitCode).toBe(0);
     expect((await stage("render")).exitCode).toBe(0);
 

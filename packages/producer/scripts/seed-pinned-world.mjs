@@ -27,6 +27,14 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { normalizedSeedFile } from "@clossys/designer/ref-verbatim";
 
+/** The recipe axes the slot's last craft:brief recorded (`assembled.recipe.axes`): the axes its diverge directions vary. */
+function briefAxes(ledger) {
+  const brief = JSON.parse(readFileSync(ledger, "utf8")).events.filter(event => event.op === "craft:brief").at(-1);
+  const axes = brief?.assembled?.recipe?.axes;
+  if (!Array.isArray(axes) || !axes.length) throw new Error(`${ledger}: the craft:brief records no recipe axes`);
+  return axes;
+}
+
 /** The seed clock: every record the verbs write in this run carries it. */
 export const AT = "2026-11-19T00:00:00Z";
 const RealDate = Date;
@@ -770,8 +778,11 @@ async function seedSlot(w, ref) {
     if (standard.doc.mode === "craft") {
       const craft = ["--model", MODEL, "--tier", tier, "--skill", skill];
       await w.run(ref, "next", ref, "--stage", "brief", ...craft, "--file", w.file(`${id}.brief.json`, { goal: `fixture world: fill ${id} to ${doc.standard}` }));
+      // Code chooses the run's recipe (the standard's one producing recipe, R15.5); the brief records its axes, and
+      // each direction takes one value on every one of them.
+      const axes = briefAxes(join(w.consumer, "agents", agent, id, "ledger.json"));
       await w.run(ref, "next", ref, "--stage", "diverge", ...craft, "--file", w.file(`${id}.diverge.json`,
-        ["plain", "warm", "brisk"].map((tone, index) => ({ id: `d${index + 1}`, idea: `a ${tone} reading of the slot contract`, axes: { tone } }))));
+        ["plain", "warm", "brisk"].map((tone, index) => ({ id: `d${index + 1}`, idea: `a ${tone} reading of the slot contract`, axes: Object.fromEntries(axes.map(axis => [axis, tone])) }))));
       await w.run(ref, "next", ref, "--stage", "render", ...craft);
       const manifest = [
         { role: "taste", ref: `packages/${agent}/standards/${doc.standard}/taste.md` },

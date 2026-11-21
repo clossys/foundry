@@ -27,10 +27,10 @@ import { candidatesDir, slotDir } from "../records/slot-model/layout.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { readCandidate, readLedger, readSlot, readSlotEntry } from "../records/slots.js";
 import { CandidateRefusal } from "../records/candidate.js";
-import { readCandidateText } from "../records/slot-current.js";
+import { readCandidateText, submissionSources, viewSourceKind } from "../records/slot-current.js";
 import type { Actor, AgentId, Tier } from "../records/types.js";
 import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, openCraftEvents, submittedBytes, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
-import { craftRunRecipe, loadRecipes, recipeSourceIssue } from "../records/recipes.js";
+import { craftRunRecipe, craftRunRecipeIssues, loadRecipes, recipeSourceIssue } from "../records/recipes.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { nextPacket, openItems, openPackets, skillFile } from "../pipeline/chain.js";
 import type { Packet } from "../pipeline/chain.js";
@@ -252,6 +252,9 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   if (schemaIssues.length) return reject(`${flags.submit} fails schema ${schema}: ${schemaIssues.slice(0, 5).map(issue => `${issue.path} ${issue.message}`).join("; ")}`);
   let content: unknown = bytes;
   if (ext === "json") { try { content = JSON.parse(bytes); } catch (error) { return reject(`${flags.submit} is not JSON: ${errorMessage(error)}`); } }
+  // One source per candidate: a header kind and a body kind that disagree would let one reader judge a kind the guard never sees.
+  const sources = submissionSources(content);
+  if (new Set(sources.map(each => each.kind ?? "(none)")).size > 1) return reject(`source-kind-mismatch: ${sources.map(each => `${each.at} kind ${each.kind ?? "(none)"}`).join(", ")} disagree; fix: carry one source, the clossys header's (or meta.source of a body with no header)`);
   // A candidate byte-identical to one the slot holds adds no option: refused before anything is written.
   // The bytes writeCandidate would write: the slot kind's extension decides the serialization.
   const family = readSlot(consumer, agent as SlotAgent, slot).kind;
@@ -275,7 +278,8 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
     if (!(error instanceof CandidateRefusal)) throw error;
     probeBytes = canonical;
   }
-  const contentDigest = readCandidateText(rawSlot, agent as ModelAgent, slot, probe, probeBytes).contentDigest;
+  const probeRead = readCandidateText(rawSlot, agent as ModelAgent, slot, probe, probeBytes);
+  const contentDigest = probeRead.contentDigest;
   for (const name of entry.candidates) {
     // A held candidate that cannot be read is a broken record: its identity with the submission is unknown, so the
     // submission is refused with the cause, never judged against it as if it were absent.
@@ -289,8 +293,10 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   // a slot-state precondition, refused after the submission's own content checks.
   const p2 = p2Refusal(entry.dir, agent, ladder!);
   if (p2) return reject(p2);
-  // The open craft run's recipe decides the source kinds its candidate may carry (recipe.json sources).
-  const recipeRefused = craftRecipeRefusal(root, entry.dir, agent, content);
+  // The recipe code chooses for the slot's standard decides the source kinds a P2 candidate may carry (recipe.json
+  // sources), judged on the kind of the view the guard reads (the probe's view, the bytes writeCandidate writes).
+  const p2Rung = ["adapt", "create"].includes(String(rungKind(agent, ladder!.rung)));
+  const recipeRefused = craftRecipeRefusal(root, entry.dir, agent, String(readSlot(consumer, agent as SlotAgent, slot).standard ?? ""), viewSourceKind(probe, probeRead.view), p2Rung);
   if (recipeRefused) return reject(recipeRefused);
   // The guard is absolute (section 4): the writer runs every constitution check whose rules.json
   // guard lists submit on the tree with the new file and its event in place, and refuses on any
@@ -326,15 +332,21 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
 type LedgerRow = Record<string, unknown>;
 
 /**
- * Why a submission closing the slot's open craft run is refused by that run's recipe (records/recipes.ts
- * recipeSourceIssue: its source kind is not one of the recipe's `sources`), or undefined. No open run, or a run
- * whose recipe lists no sources, refuses nothing here; the guard's checks still run.
+ * Why a P2 submission (an adapt or create rung, or one closing an open craft run) is refused by its recipe, or
+ * undefined. Code chooses the recipe (records/recipes.ts standardRecipe: the one recipe producing for the slot's
+ * `standardId`), never the events: an open run whose events name another recipe, an unknown one or one not producing
+ * the standard is refused (craftRunRecipeIssues); then the candidate's source `kind` (the view's, viewSourceKind) must
+ * be one of that recipe's `sources` (recipeSourceIssue). A P2 rung with no open run on a slot whose standard has no
+ * one recipe refuses nothing here: R15.5 reports the standard.
  */
-export function craftRecipeRefusal(root: string, slotDir: string, agent: string, candidate: unknown): string | undefined {
+export function craftRecipeRefusal(root: string, slotDir: string, agent: string, standardId: string, kind: string | undefined, p2Rung = false): string | undefined {
   const open = openCraftEvents((readLedger(slotDir, "slot")?.events ?? []) as unknown as LedgerRow[]);
-  if (!open.length) return undefined;
-  const recipe = craftRunRecipe(open, loadRecipes(root), agent);
-  const issue = recipe && recipeSourceIssue(recipe, candidate);
+  if (!open.length && !p2Rung) return undefined;
+  const recipes = loadRecipes(root);
+  const runIssues = craftRunRecipeIssues(open, recipes, agent, standardId);
+  if (runIssues.length) return `craft-recipe: ${runIssues.join("; ")}; fix: craft the run under the recipe that produces for the slot's standard (clossys next --stage brief records it), naming no other`;
+  const recipe = craftRunRecipe(open, recipes, agent, standardId);
+  const issue = recipe && recipeSourceIssue(recipe, kind);
   return issue && `${issue}; fix: submit a ${recipe!.doc!.sources!.join(" or ")} candidate (meta.source.kind) that the recipe's checks (${(recipe!.doc!.checks ?? []).join(", ") || "none named"}) judge`;
 }
 
