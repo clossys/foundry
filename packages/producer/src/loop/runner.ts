@@ -687,7 +687,15 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
         // Every change the step made: a removal, an unreported write, or a ledger change that is not its own append.
         const reported = new Set((wrote ?? []).map(file => snapshotKey(root, wroteFile(root, file))));
         const current = isAgentLoop(state.loop) ? currentStandardOf(root, state.loop) : undefined;
-        const judged = judgeSnapshot(root, before, treeSnapshot(root, state.runId), reported, step, agent, state.subject, current?.ok ? current.standard : undefined, state.runId, texts);
+        // LOOP-STEPS: an upstream request a create step raised is judged by the request verb's own rebuilt entry
+        // (stepRaises), never by the write allowlist; the log's request.create must name exactly an accepted one.
+        const raises = decider.verb === "create-candidates" ? stepRaises(root, state, agent, wrote, before) : undefined;
+        if (raises?.issues.length) {
+          delete state.waiting;
+          recordStep(ctx, step, ledgerDecider, cli, 1, wrote, vars);
+          return stop(ctx, `step ${step.id} raised ${raises.issues.join("; ")}; ${state.version.ref} refuses it`, 1);
+        }
+        const judged = judgeSnapshot(root, before, treeSnapshot(root, state.runId), reported, step, agent, state.subject, current?.ok ? current.standard : undefined, state.runId, texts, new Set(raises?.keys ?? []));
         if (judged.issues.length) {
           delete state.waiting;
           recordStep(ctx, step, ledgerDecider, cli, 1, wrote, vars);
@@ -696,15 +704,8 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
         // The slot ledger is judged by its append rule above, never by the write allowlist.
         const appended = new Set(judged.appended);
         judgedWrote = wrote?.filter(file => !appended.has(snapshotKey(root, wroteFile(root, file))));
-        // LOOP-STEPS: an upstream request a create step raised is judged by the request verb's own rebuilt entry
-        // (stepRaises), never by the write allowlist; any other queue entry still goes to it and is refused.
-        if (decider.verb === "create-candidates") {
-          const raises = stepRaises(root, state, agent, judgedWrote, before);
-          if (raises.issues.length) {
-            delete state.waiting;
-            recordStep(ctx, step, ledgerDecider, cli, 1, wrote, vars);
-            return stop(ctx, `step ${step.id} raised ${raises.issues.join("; ")}; ${state.version.ref} refuses it`, 1);
-          }
+        // The accepted raises leave the write allowlist; any other queue entry still goes to it and is refused.
+        if (raises) {
           const keys = new Set(raises.keys);
           judgedWrote = judgedWrote?.filter(file => !keys.has(snapshotKey(root, wroteFile(root, file))));
           raisedHere = raises.names;

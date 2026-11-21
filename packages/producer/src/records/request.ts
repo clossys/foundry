@@ -346,7 +346,7 @@ export function writeRequest(consumer: string, request: SlotRequest): string {
   return file;
 }
 /** Who made a request's last change: its last event's `by`, else who raised it. */
-const requestActor = (request: SlotRequest) => actorLine(request.events.at(-1)?.by, actorLine(request.createdBy, `code:request`));
+export const requestActor = (request: SlotRequest): string => actorLine(request.events.at(-1)?.by, actorLine(request.createdBy, `code:request`));
 
 /**
  * Creates a new entry exclusively: the draft's id, else `-2`..`-9`, whichever is free. The bytes go to a temp file that

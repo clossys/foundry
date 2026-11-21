@@ -9,7 +9,7 @@
  *    parks the run on that entry and runs the step again once it closes; a raise that is not the verb's own entry is refused.
  * 3. consumer-slot-request-route-handler-mismatch: loop.slot answers only an entry routed to it (HandlerMismatchError).
  */
-import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -141,6 +141,69 @@ describe("an agent decide step runs its skill's --check then --decide (consumer-
     expect(refused.message).toMatch(new RegExp(`its sha256 of clossys/agents/producer/queue\\.slot/entries/${id}\\.json is not the file's bytes when it was written`));
   });
 
+  // Fix round 1 F2 (B-P1, B-P2): each earlier event naming the entry carries a state the step left, once and in order.
+  it("refuses a forged earlier write that names a state no write of the step left at that point (B-P1)", async () => {
+    const { w, id, runId, entry } = await decideWaiting();
+    const before = w.read(entry);
+    expect((await w.cli("request", id, "--check")).exitCode).toBe(0);
+    // The after bytes, learned by running --decide on a copy of this world (inside the test's own tmp dirs).
+    const clone = realpathSync(mkdtempSync(join(tmpdir(), "loop-steps-clone-")));
+    roots.push(clone);
+    cpSync(w.root, clone, { recursive: true });
+    expect((await runCli(["request", id, "--decide", "reuse", "--slot", "writer/narratives.guide", "--by", "writer", "--root", clone], clone)).exitCode).toBe(0);
+    const after = JSON.parse(readFileSync(join(clone, "clossys", "agents", entry), "utf8"));
+    // Every after value with the events cut after `checked`: a mix entryStepStates gives, never on disk.
+    const mix = { ...after, events: after.events.slice(0, before.events.length + 1) };
+    const { logEvent } = await import("../engine/log.js");
+    logEvent(w.root, { actor: "producer", kind: "request.write", subject: `request:${id}`, inputs: [{ path: `clossys/agents/${entry}`, sha256: sha256Hex(Buffer.from(`${JSON.stringify(mix, null, 2)}\n`, "utf8")) }] } as never);
+    expect((await w.cli("request", id, "--decide", "reuse", "--slot", "writer/narratives.guide", "--by", "writer", "--at", after.events.at(-1).at)).exitCode).toBe(0);
+    expect(readFileSync(w.file(entry), "utf8")).toBe(readFileSync(join(clone, "clossys", "agents", entry), "utf8"));
+    const refused = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", entry);
+    expect(refused.exitCode, refused.message).toBe(1);
+    expect(refused.message).toMatch(new RegExp(`names clossys/agents/producer/queue\\.slot/entries/${id}\\.json with ${before.events.length + 1} events after a write that left ${before.events.length + 1}: each write of the entry appends its own event, once and in order`));
+    expect(w.read(entry).status).toBe("open");
+  });
+
+  it("refuses a replayed write of the entry, and a write of it under another entry's subject (B-P2)", async () => {
+    for (const forge of ["replay", "subject"] as const) {
+      const { w, id, runId, entry } = await decideWaiting();
+      expect((await w.cli("request", id, "--check")).exitCode).toBe(0);
+      const { recordEvent } = await import("../engine/log.js");
+      if (forge === "replay") recordEvent([w.file(entry)], { actor: "producer", kind: "request.write", subject: `request:${id}` });
+      else recordEvent([w.file(entry)], { actor: "writer", kind: "request.write", subject: "request:some-other-request" });
+      expect((await w.cli("request", id, "--decide", "reuse", "--slot", "writer/narratives.guide", "--by", "writer")).exitCode).toBe(0);
+      const refused = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", entry);
+      expect(refused.exitCode, refused.message).toBe(1);
+      expect(refused.message).toMatch(forge === "replay"
+        ? new RegExp(`names clossys/agents/producer/queue\\.slot/entries/${id}\\.json with (\\d+) events after a write that left \\1: each write`)
+        : new RegExp(`names subject request:some-other-request, not request:${id}, the entry it writes`));
+      expect(w.read(entry).status).toBe("open");
+    }
+  });
+
+  // Fix round 1 F3 (A-P1): a hand edit of the step's own entry, logged as one forged verb write, is refused.
+  it("refuses a hand-appended event on the entry logged as one forged verb write (A-P1)", async () => {
+    for (const op of ["answered", "checked"] as const) {
+      const { w, id, runId, entry } = await decideWaiting();
+      expect((await w.cli("request", id, "--check")).exitCode).toBe(0);
+      expect((await w.cli("request", id, "--decide", "reuse", "--slot", "writer/narratives.guide", "--by", "writer")).exitCode).toBe(0);
+      const doc = w.read(entry);
+      const at = doc.events.at(-1).at;
+      doc.events.push(op === "answered"
+        ? { id: `${id}#${doc.events.length + 1}`, at, op, by: "owner", via: "cli", quote: "close it" }
+        : { id: `${id}#${doc.events.length + 1}`, at, op, by: "owner", detail: "looked again" });
+      writeFileSync(w.file(entry), `${JSON.stringify(doc, null, 2)}\n`);
+      const { recordEvent } = await import("../engine/log.js");
+      recordEvent([w.file(entry)], { actor: "producer", kind: "request.write", subject: `request:${id}` });
+      const refused = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", entry);
+      expect(refused.exitCode, refused.message).toBe(1);
+      expect(refused.message).toMatch(op === "answered"
+        ? new RegExp(`names a state of clossys/agents/producer/queue\\.slot/entries/${id}\\.json the request writer never writes`)
+        : new RegExp(`is by producer, but the request writer names owner for the state of clossys/agents/producer/queue\\.slot/entries/${id}\\.json it carries`));
+      expect(w.read(entry).status).toBe("open");
+    }
+  });
+
   it("stops a run whose kept entry bytes do not hash to the snapshot's mark (fail closed)", async () => {
     const { w, runId, entry } = await decideWaiting();
     const file = join(w.root, ".clossys", "runs", "loops", `${runId}.json`);
@@ -236,9 +299,77 @@ describe("a create step raises the upstream change its skill tells it to (consum
       }
       const refused = await w.run("loop.create", "--resume", "--run", runId, "--step-exit", "2", "--model", MODEL, "--wrote", entry);
       expect(refused.exitCode, refused.message).toBe(1);
-      expect(refused.message).toMatch(forge === "edit" ? /its sha256 of clossys\/agents\/producer\/queue\.change\/entries\/\S+ is not the file's bytes after the step/ : new RegExp(`step create raised producer/queue\\.change/entries/${id}\\.json: not the entry clossys request raises for designer \\(${id}\\): events differs`));
+      expect(refused.message).toMatch(new RegExp(`step create raised producer/queue\\.change/entries/${id}\\.json: not the entry clossys request raises for designer \\(${id}\\): ${forge === "edit" ? "\\w+" : "events"} differs`));
       expect(readRunState(w.root, runId)!.status).toBe("stopped");
     }
+  });
+
+  // Fix round 1 F1 (A-P2, B-P3, A-P3, B-P4): a request.create in a create step is the verb's own log of a raise.
+  it("refuses a forged request.create over a file the agent wrote by hand, with no raise (A-P2, B-P3)", async () => {
+    const { w, runId } = await createWaiting();
+    mkdirSync(w.file(`${SLOT}/candidates`), { recursive: true });
+    const candidate = `${SLOT}/candidates/forged.md`;
+    writeFileSync(w.file(candidate), "# hand written\n");
+    const { recordEvent } = await import("../engine/log.js");
+    recordEvent([w.file(candidate)], { actor: "producer", kind: "request.create", subject: "request:20261101T0000Z-slot-not-real" });
+    const refused = await w.run("loop.create", "--resume", "--run", runId, "--step-exit", "2", "--model", MODEL, "--wrote", candidate);
+    expect(refused.exitCode, refused.message).toBe(1);
+    expect(refused.message).toMatch(/event seq \d+ \(request\.create request:20261101T0000Z-slot-not-real\): a request event names exactly one input, the queue entry it writes/);
+    expect(readRunState(w.root, runId)!.status).toBe("stopped");
+  });
+
+  it("refuses an extra request.create over a real raise, under another subject or by another actor (A-P3, B-P4)", async () => {
+    for (const [actor, subject] of [["code:clossys request", "request:someone-elses"], ["code:clossys pin", "request:not-this-one"]] as const) {
+      const { w, runId } = await createWaiting();
+      const id = await raise(w);
+      const entry = `producer/queue.change/entries/${id}.json`;
+      const { recordEvent } = await import("../engine/log.js");
+      recordEvent([w.file(entry)], { actor, kind: "request.create", subject });
+      const refused = await w.run("loop.create", "--resume", "--run", runId, "--step-exit", "2", "--model", MODEL, "--wrote", entry);
+      expect(refused.exitCode, refused.message).toBe(1);
+      // The verb's own request.create is no longer the last event naming the entry: the step logged a write it never made.
+      expect(refused.message).toMatch(new RegExp(`\\(request\\.create request:${id}\\): its sha256 of clossys/agents/producer/queue\\.change/entries/${id}\\.json is not the entry's bytes after the step`));
+      expect(readRunState(w.root, runId)!.status).toBe("stopped");
+    }
+  });
+
+  it("refuses a raise logged by no request.create of the verb: none, another actor's, or another subject's", async () => {
+    for (const forge of ["none", "actor", "subject"] as const) {
+      const { w, runId } = await createWaiting();
+      const log = join(w.root, ".clossys", "events.jsonl"), index = join(w.root, ".clossys", "index.json");
+      const [logBefore, indexBefore] = [readFileSync(log), readFileSync(index)];
+      const id = await raise(w);
+      const entry = `producer/queue.change/entries/${id}.json`;
+      // The verb's own event is taken out of the log (and the index put back with it); a forged one may stand in for it.
+      writeFileSync(log, logBefore);
+      writeFileSync(index, indexBefore);
+      const { recordEvent } = await import("../engine/log.js");
+      if (forge === "actor") recordEvent([w.file(entry)], { actor: "code:clossys request", kind: "request.create", subject: `request:${id}` });
+      if (forge === "subject") recordEvent([w.file(entry)], { actor: "producer", kind: "request.create", subject: "request:someone-elses" });
+      const refused = await w.run("loop.create", "--resume", "--run", runId, "--step-exit", "2", "--model", MODEL, "--wrote", entry);
+      expect(refused.exitCode, refused.message).toBe(1);
+      expect(refused.message).toMatch(new RegExp({
+        none: `producer/queue\\.change/entries/${id}\\.json was raised in step create with no request\\.create event of the request verb`,
+        actor: `is by code:clossys request, not producer, the code the request verb runs when it raises`,
+        subject: `names subject request:someone-elses, not request:${id}, the entry it writes`,
+      }[forge]));
+      expect(readRunState(w.root, runId)!.status).toBe("stopped");
+    }
+  });
+
+  // Fix round 1 N1: the skill's "or a slot need" raise parks the run as the change raise does.
+  it("parks the run on a slot need the create step raises", async () => {
+    const w = await world([SLOT, "designer/frames.nowhere-shell"]);
+    const start = await w.run("loop.create", "--slot", SLOT);
+    const runId = waitingRun(start.message);
+    expect((await w.run("loop.create", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL)).message).toMatch(/step create waits for agent:designer/);
+    const raised = await w.cli("request", "--target", "designer/frames.nowhere-shell", "--from", SLOT, "--why", "the icon sits in a shell no slot holds", "--by", "designer");
+    expect(raised.exitCode, raised.message).toBe(0);
+    const id = (raised.output as { id: string }).id;
+    const parked = await w.run("loop.create", "--resume", "--run", runId, "--step-exit", "2", "--model", MODEL, "--wrote", `producer/queue.slot/entries/${id}.json`);
+    expect(parked.exitCode, parked.message).toBe(0);
+    expect(parked.message).toMatch(new RegExp(`step create raised queue\\.slot#${id} and waits until it closes`));
+    expect(readRunState(w.root, runId)).toMatchObject({ status: "waiting", waiting: { step: "create", on: "entry", entry: `queue.slot#${id}`, then: "retry" } });
   });
 
   it("refuses an unreported raise, and a raise from another slot than the run's", async () => {
