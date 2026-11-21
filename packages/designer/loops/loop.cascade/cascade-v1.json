@@ -49,6 +49,22 @@
         }
       },
       {
+        "id": "accept",
+        "does": "code accepts the cascade when the reverdict passed and cascade.clean holds now (every dependant's re-verdict passes): the impact step is settled and kept in a settle record; only a failure reaches the owner of the slot",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys settle impact <ref>",
+        "reads": [
+          "<slot>/pin.json",
+          ".clossys/checks/"
+        ],
+        "writes": [
+          ".clossys/runs/loops/*.settle/*"
+        ],
+        "checks": []
+      },
+      {
         "id": "impact",
         "does": "DRAFT: the owner of the repinned slot reads what its repin changed and the re-verdicts of its dependants, and notes the impact in its own check scratch; it pins nothing and writes no other agent's tree",
         "decider": {

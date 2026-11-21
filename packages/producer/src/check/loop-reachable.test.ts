@@ -111,7 +111,7 @@ describe(LOOP_REACHABLE, () => {
   it("kills an unknown agent, a non-owner human, a bad onFail, a reused step id and a trigger the loop does not answer", () => {
     const issuesOf = (change: (content: Content) => void): string => { const content = packaged("loop.fill"); change(content); return loopReachableIssues("loop.fill", content).join("\n"); };
     expect(issuesOf(c => { step(c, "create").decider.agent = "stranger"; })).toMatch(/create.*stranger|decider/);
-    expect(issuesOf(c => { step(c, "confirm").decider.who = "planner"; })).toMatch(/steps\[5\]\.decider must match exactly one alternative/);
+    expect(issuesOf(c => { step(c, "confirm").decider.who = "planner"; })).toMatch(/steps\[6\]\.decider must match exactly one alternative/);
     expect(issuesOf(c => { step(c, "check").onFail.then = "loop.ship"; })).toMatch(/onFail|then/);
     expect(issuesOf(c => { c.steps.push({ ...step(c, "cascade") }); })).toMatch(/step id cascade is used twice/);
     expect(issuesOf(c => { c.trigger = ["T1", "T8"]; })).toMatch(/trigger T8 does not start loop\.fill/);

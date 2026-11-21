@@ -27,8 +27,26 @@
     ],
     "steps": [
       {
+        "id": "demand",
+        "does": "file a queue.slot entry for every consumer slot input or uses edge that names no slot (the demand diff, a set difference in code that runs before any agent step); an edge no agent can hold fails",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys request --scan",
+        "reads": [
+          "*/*/slot.json",
+          "producer/queue.slot/entries/*"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/*"
+        ],
+        "checks": [
+          "requests.filed"
+        ]
+      },
+      {
         "id": "scope-designer",
-        "does": "the Designer files every need its tree does not hold (a page input or an owner ask with no slot) and reports suspicious splits with their leaf ids; it moves no leaf",
+        "does": "the Designer files only the needs the demand diff cannot see (a page input or an owner ask with no slot; every slot edge with no slot is filed by code first) and reports suspicious splits with their leaf ids; it moves no leaf",
         "decider": {
           "by": "agent",
           "agent": "designer",
@@ -46,24 +64,6 @@
           "producer/queue.slot/entries/*"
         ],
         "checks": []
-      },
-      {
-        "id": "demand",
-        "does": "file a queue.slot entry for every consumer slot input or uses edge that names no slot (the demand diff); an edge no agent can hold fails",
-        "decider": {
-          "by": "code"
-        },
-        "cli": "clossys request --scan",
-        "reads": [
-          "*/*/slot.json",
-          "producer/queue.slot/entries/*"
-        ],
-        "writes": [
-          "producer/queue.slot/entries/*"
-        ],
-        "checks": [
-          "requests.filed"
-        ]
       }
     ],
     "exit": "every slotless need of the consumer tree is filed as a queue.slot entry; each entry starts its own loop.slot run",

@@ -24,7 +24,7 @@ import { sha256Hex } from "../records/hash.js";
 import { writeSlot } from "../records/slot.js";
 import { writeCandidate } from "../records/slot-write.js";
 import type { AgentId, LedgerEntry, QueueEntry, Slot, SlotRequest } from "../records/types.js";
-import { readRequest } from "../records/request.js";
+import { decideRequest, exactReuseOf, readRequest } from "../records/request.js";
 import { readPackageLoop } from "./files.js";
 import { raiseEntry } from "./route.js";
 import { cliHooks } from "./cli.js";
@@ -241,9 +241,9 @@ describe("F2 starter fill: loop.fill (T2)", () => {
       "designer/themes.background done; pinned placeholder-v1.json",
     ]);
     expect(ledger.map(stepLine)).toEqual([
-      ["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "owner-pick:human:0", "cascade:code:0"],
-      ["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "cascade:code:0"],
-      ["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"],
+      ["triage:code:0", "create:agent/stub-model:0", "check:code:0", "owner-pick:human:0", "cascade:code:0"],
+      ["triage:code:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "cascade:code:0"],
+      ["triage:code:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"],
     ]);
     for (const entry of ledger) expect(entry).toMatchObject({ status: "done", loopVersion: "fill-v1.json", trigger: { kind: "starter-fill" } });
     // The agent steps name the skill path (system.md 14.1), the tier and the serving model; the version names no model.
@@ -260,7 +260,7 @@ describe("F2 starter fill: loop.fill (T2)", () => {
     const now = clock();
     const once = await startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, stub(w.root, { checkExits: [1] }), { now });
     expect(once.state!.status).toBe("done");
-    expect(stepLine(w.ledger("loop.fill")[0]!)).toEqual(["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:1", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "cascade:code:0"]);
+    expect(stepLine(w.ledger("loop.fill")[0]!)).toEqual(["triage:code:0", "create:agent/stub-model:0", "check:code:1", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "cascade:code:0"]);
     // The round's kind fix (queue-entry/2, with its cause) is closed fixed by its assignee once pins.resolve passes.
     const fix = once.state!.raised.find(name => name.startsWith("queue.fix#"))!;
     expect(w.work(fix)).toMatchObject({ kind: "fix", target: "designer/components.button", assignee: "designer", check: "pins.resolve", cause: expect.stringMatching(/^loop\.fill run .+ step check round 1$/), status: "closed", outcome: "fixed", result: "designer/components.button" });
@@ -287,7 +287,7 @@ describe("F3 tighten brief (T3) and F7 upstream cascade (T7)", () => {
     expect(done.state!.status).toBe("done");
     const refine = w.ledger("loop.refine")[0]!;
     expect(refine).toMatchObject({ trigger: { kind: "tighten-brief" }, loopVersion: "refine-v1.json" });
-    expect(stepLine(refine)).toEqual(["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
+    expect(stepLine(refine)).toEqual(["triage:code:0", "refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
     // G7: a code step's wrote carries the written file's real sha256 (formerly null for a non-candidate).
     expect(refine.steps.at(-1)!.wrote).toEqual([{ file: "designer/components.button/slot.json", sha256: fileSha(join(w.root, "clossys", "agents", "designer", "components.button", "slot.json")) }]);
     expect(w.readSlot("designer/components.button").status).toBe("needs-refresh");
@@ -322,7 +322,7 @@ describe("F4 add L3 (T4)", () => {
     expect(result.state!.status).toBe("done");
     const ledger = w.ledger("loop.fill")[0]!;
     expect(ledger.trigger).toEqual({ kind: "add-l3", ref: { to: "producer/queue.fix", record: entry.id, rel: "raisedBy" } });
-    expect(stepLine(ledger)).toEqual(["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "cascade:code:0"]);
+    expect(stepLine(ledger)).toEqual(["triage:code:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "cascade:code:0"]);
     expect(w.entry(`queue.fix#${entry.id}`)).toMatchObject({ status: "answered" });
     expect(ledger.refs).toContainEqual({ to: "producer/queue.fix", record: entry.id, rel: "answers" });
   });
@@ -343,7 +343,7 @@ describe("F5 owner feedback (T5)", () => {
     await resumeRun(w.root, run.state!.runId, hooks, { now });
     const ledger = w.ledger("loop.refine")[0]!;
     expect(ledger).toMatchObject({ status: "done", trigger: { kind: "owner-feedback", ref: { to: "producer/queue.change", record: change.id, rel: "raisedBy" } } });
-    expect(stepLine(ledger)).toEqual(["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
+    expect(stepLine(ledger)).toEqual(["triage:code:0", "refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
     // refine-brief got the entry so the agent reads the owner's words.
     expect(hooks.calls[0]).toEqual({ step: "refine-brief", kind: "agent" });
     const closed = w.work(`queue.change#${change.id}`);
@@ -492,9 +492,10 @@ describe("resume", () => {
     expect(first.packet).toMatchObject({ step: "create", agent: "designer", verb: "create-candidates", tier: "mid" });
     const second = await resumeRun(w.root, first.state!.runId, hooks, { now });
     expect(second.state!.status).toBe("done");
-    expect(hooks.calls.filter(call => call.step === "refine-brief")).toHaveLength(1);
+    // T2 names no rule: the triage code step settles refine-brief, which never reaches the agent (DET-STEPS 5).
+    expect(hooks.calls.filter(call => call.step === "refine-brief")).toHaveLength(0);
     expect(hooks.calls.filter(call => call.step === "create")).toEqual([{ step: "create", kind: "agent", wait: true }, { step: "create", kind: "agent" }]);
-    expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id)).toEqual(["refine-brief", "create", "check", "pick", "cascade"]);
+    expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id)).toEqual(["triage", "create", "check", "pick", "cascade"]);
     // A finished run does not resume.
     expect((await resumeRun(w.root, first.state!.runId, hooks, { now })).exitCode).toBe(2);
   });
@@ -518,7 +519,7 @@ describe("resume", () => {
     const run = await startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, stub(w.root), { now });
     expect(run.state!.version).toMatchObject({ source: "pin", candidate: "fill-v2.json", ref: "producer/loop.fill/fill-v2.json" });
     expect(w.ledger("loop.fill")[0]!.loopVersion).toBe("fill-v2.json");
-    expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id)).toEqual(["create", "check", "pick", "cascade"]);
+    expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id)).toEqual(["triage", "create", "check", "pick", "cascade"]);
 
     const broken = world(["designer/components.button"]);
     pinConsumerLoop(broken.root, "loop.fill", content => ({ ...content, steps: content.steps.filter(step => step.id !== "pick") }));
@@ -531,14 +532,15 @@ describe("resume", () => {
 describe("clossys run loop.<name> (cli/run.ts loop mode)", () => {
   it("prints the agent packet, waits, and resumes with the step exit and serving model", async () => {
     const w = world(["designer/components.button"]);
-    const start = await runRunCli(["loop.fill", "--slot", "designer/components.button", "--root", w.root], w.root);
+    // loop.refine on a slot is T3 (tighten-brief), a slot-wide trigger: triage leaves refine-brief to the agent.
+    const start = await runRunCli(["loop.refine", "--slot", "designer/components.button", "--root", w.root], w.root);
     expect(start.exitCode).toBe(0);
     expect(start.message).toMatch(/step refine-brief waits for agent:designer \(refine-brief, mid\)/);
     expect(start.message).toMatch(/skill packages\/designer\/actions\/designer\.brief\/skill\.md/);
-    const refused = await runRunCli(["loop.fill", "--resume", "--step-exit", "0", "--root", w.root], w.root);
+    const refused = await runRunCli(["loop.refine", "--resume", "--step-exit", "0", "--root", w.root], w.root);
     expect(refused.exitCode).toBe(2);
     expect(refused.message).toMatch(/name the model/);
-    const next = await runRunCli(["loop.fill", "--resume", "--step-exit", "0", "--model", MODEL, "--root", w.root], w.root);
+    const next = await runRunCli(["loop.refine", "--resume", "--step-exit", "0", "--model", MODEL, "--root", w.root], w.root);
     expect(next.exitCode).toBe(0);
     expect(next.message).toMatch(/step create waits for agent:designer/);
   });
@@ -567,8 +569,8 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
       expect(pinText(w.root, ref), ref).toBeNull();
       ownerAnswer(w.root, run.entry!, "placeholder-v1.json", now);
       expect((await resumeRun(w.root, run.state!.runId, hooks, { now })).state!.status, ref).toBe("done");
-      expect(hooks.calls.map(call => call.step), ref).toEqual(["refine-brief", "create", "check", "owner-pick"]);
-      expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id), ref).toEqual(["refine-brief", "create", "check", "owner-pick", "cascade"]);
+      expect(hooks.calls.map(call => call.step), ref).toEqual(["create", "check", "owner-pick"]);
+      expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id), ref).toEqual(["triage", "create", "check", "owner-pick", "cascade"]);
       expect(pinText(w.root, ref), ref).toMatch(new RegExp(`"decidedBy": "owner:${run.entry!.replace(/[.#]/g, "\\$&")}"`));
     }
   });
@@ -783,7 +785,7 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     const again = await resumeRun(w.root, run.state!.runId, hooks, { now });
     expect(again.exitCode).toBe(0);
     expect(again.state).toMatchObject({ status: "done" });
-    expect(again.state!.steps.map(step => step.id)).toEqual(["refine-brief", "create", "check", "pick"]);
+    expect(again.state!.steps.map(step => step.id)).toEqual(["triage", "create", "check", "pick"]);
     expect(hooks.calls).toHaveLength(calls);
     expect(pinText(w.root, "designer/themes.background")).toBe(pin);
     expect(readdirSync(ledgerDir(w.root, "loop.fill"))).toHaveLength(1);
@@ -799,17 +801,17 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     ownerAnswer(w.root, run.entry!, "approve", now);
     expect((await resumeRun(w.root, run.state!.runId, hooks, { now })).state!.status).toBe("done");
     const ledger = w.ledger("loop.fill")[0]!;
-    expect(stepLine(ledger)).toEqual(["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
+    expect(stepLine(ledger)).toEqual(["triage:code:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
     expect(ledger.decisions).toEqual([{ entry: run.entry, answer: "approve" }]);
   });
 
   it("B9: --resume --step must name the step the run waits on", async () => {
     const w = world(["designer/components.button"]);
-    await runRunCli(["loop.fill", "--slot", "designer/components.button", "--root", w.root], w.root);
-    const wrong = await runRunCli(["loop.fill", "--resume", "--step", "create", "--step-exit", "0", "--model", MODEL, "--root", w.root], w.root);
+    await runRunCli(["loop.refine", "--slot", "designer/components.button", "--root", w.root], w.root);
+    const wrong = await runRunCli(["loop.refine", "--resume", "--step", "create", "--step-exit", "0", "--model", MODEL, "--root", w.root], w.root);
     expect(wrong.exitCode).toBe(2);
     expect(wrong.message).toMatch(/waits on step refine-brief, not create/);
-    const right = await runRunCli(["loop.fill", "--resume", "--step", "refine-brief", "--step-exit", "0", "--model", MODEL, "--root", w.root], w.root);
+    const right = await runRunCli(["loop.refine", "--resume", "--step", "refine-brief", "--step-exit", "0", "--model", MODEL, "--root", w.root], w.root);
     expect(right.exitCode).toBe(0);
     expect(right.message).toMatch(/step create waits for agent:designer/);
   });
@@ -856,11 +858,11 @@ ${action}
     return { root, submit, run };
   }
   async function toCreate(w: ReturnType<typeof fixture>): Promise<string> {
+    // A --slot run names no rule (T2): the triage code step settles refine-brief and the run waits on create.
     const start = await w.run("--slot", `writer/${SLOT}`);
-    expect(start.message).toMatch(/step refine-brief waits for agent:writer/);
-    const runId = /run (\S+): step refine-brief/.exec(start.message ?? "")![1]!;
-    expect((await w.run("--resume", "--run", runId, "--step-exit", "0", "--model", MODEL)).message).toMatch(/step create waits for agent:writer/);
-    return runId;
+    expect(start.message).toMatch(/step create waits for agent:writer/);
+    expect(start.message).not.toMatch(/refine-brief waits/);
+    return /run (\S+): step create/.exec(start.message ?? "")![1]!;
   }
   const entry = (root: string, runId: string) => JSON.parse(readFileSync(join(root, "clossys", "agents", "producer", "ledger.create", "entries", `${runId}.json`), "utf8")) as LedgerEntry & { steps: { id: string; exit: number; cli: string; wrote: { file: string; sha256: string | null }[] }[]; checks: Record<string, string> };
 
@@ -928,7 +930,8 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     const id = (raised.output as { id: string }).id;
     expect(w.read(`producer/queue.slot/entries/${id}.json`)).toMatchObject({ schema: "clossys.queue-entry/2", kind: "slot", from: REQUESTER, assignee: "writer", target: "writer/narratives.faq", status: "open", opened: `${id}#1` });
     const start = await w.run("loop.slot", "--request", id);
-    // The overlap step ran for real; only the target's agent decides (the other decide steps are skipped by when.owner).
+    // The overlap step ran for real; the match step found no placed slot of that id, so the need reaches the agent; only
+    // the target's agent decides (the other decide steps are skipped by when.owner).
     expect(start.message).toMatch(/step decide-writer waits for agent:writer \(decide, mid\)/);
     expect(start.message).toMatch(/skill packages\/writer\/actions\/writer\.slot\/skill\.md/);
     const runId = waitingRun(start.message);
@@ -956,7 +959,7 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     const placed = w.read("writer/narratives.faq/ledger.json").events.find((event: { op: string }) => event.op === "slot");
     expect(placed).toMatchObject({ by: "owner", decision: "create", overlaps: [], request: id });
     const ledger = JSON.parse(readFileSync(join(w.root, "clossys", "agents", "producer", "ledger.slot", "entries", `${runId}.json`), "utf8")) as LedgerEntry;
-    expect(ledger.steps.map(step => `${step.id}:${step.exit}`)).toEqual(["overlap:0", "decide-writer:0", "sign:0", "place:0"]);
+    expect(ledger.steps.map(step => `${step.id}:${step.exit}`)).toEqual(["overlap:0", "match:0", "decide-writer:0", "sign:0", "place:0"]);
     expect(ledger.checks).toEqual({ "answer.quote-required": "pass", "request.closed": "pass" });
   });
 
@@ -998,7 +1001,7 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     expect(readFileSync(join(w.root, "clossys", "agents", "writer", "narratives.guide", "ledger.json"), "utf8")).toBe(reused);
     expect(existsSync(join(w.root, "clossys", "agents", "writer", "narratives.how-to"))).toBe(false);
     const ledger = JSON.parse(readFileSync(join(w.root, "clossys", "agents", "producer", "ledger.slot", "entries", `${runId}.json`), "utf8")) as LedgerEntry;
-    expect(ledger.steps.map(step => `${step.id}:${step.exit}`)).toEqual(["overlap:0", "decide-writer:0", "link:0"]);
+    expect(ledger.steps.map(step => `${step.id}:${step.exit}`)).toEqual(["overlap:0", "match:0", "decide-writer:0", "link:0"]);
     expect(ledger.checks).toEqual({ "request.closed": "pass" });
   });
 
@@ -1028,6 +1031,8 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     // Mutation: a page input names a slot no agent holds.
     cite(w, "writer/sections.signup-faq.copy");
     const start = await w.run("loop.scope");
+    // The demand diff is a set difference in code and runs before any agent step (DET-STEPS 1): the need is filed first.
+    expect(readdirSync(join(w.root, "clossys", "agents", "producer", "queue.slot", "entries"))).toHaveLength(1);
     expect(start.message).toMatch(/step scope-director waits for agent:director \(decide, mid\)/);
     let runId = waitingRun(start.message);
     let last = start;
@@ -1041,14 +1046,17 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     expect(requests).toHaveLength(1);
     expect(w.read(`producer/queue.slot/entries/${requests[0]}`)).toMatchObject({ kind: "slot", source: "scope", from: REQUESTER, assignee: "writer", target: "writer/sections.signup-faq.copy", status: "open" });
     const ledger = JSON.parse(readFileSync(join(w.root, "clossys", "agents", "producer", "ledger.scope", "entries", `${runId}.json`), "utf8")) as LedgerEntry;
-    expect(ledger.steps.at(-1)).toMatchObject({ id: "demand", cli: "clossys request --scan", exit: 0 });
+    expect(ledger.steps[0]).toMatchObject({ id: "demand", cli: "clossys request --scan", exit: 0 });
     expect(ledger.checks["requests.filed"]).toBe("pass");
-    // A second need with no owner (no agent holds its first id segment) is never dropped: the demand step fails red.
+    // A second need with no owner (no agent holds its first id segment) is never dropped: the demand step fails red,
+    // before any agent step runs.
     cite(w, "nowhere.unheld-slot");
-    runId = waitingRun((await w.run("loop.scope")).message);
-    for (let step = 0; step < 4; step++) last = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
+    last = await w.run("loop.scope");
     expect(last.message).not.toMatch(/: done:/);
+    expect(last.message).not.toMatch(/scope-director waits/);
+    runId = waitingRun(last.message);
     const red = JSON.parse(readFileSync(join(w.root, "clossys", "agents", "producer", "ledger.scope", "entries", `${runId}.json`), "utf8")) as LedgerEntry;
+    expect(red.steps.map(step => step.id)).toEqual(["demand"]);
     expect(red.steps.at(-1)).toMatchObject({ id: "demand", exit: 1 });
     expect(red.checks["requests.filed"]).toBe("fail");
   });
@@ -1071,32 +1079,42 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
   };
 
   for (const scoped of [[], ["--agent", "designer"]] as const) {
-    it(`lets a standard loop.scope step file its own request and report it with --wrote (${scoped.length ? "--agent designer" : "no --agent"})`, async () => {
+    it(`files a cited need in code before the standard loop.scope agent steps; the agent's raise of it writes nothing (${scoped.length ? "--agent designer" : "no --agent"})`, async () => {
       const w = fixture();
       citeIn(w, DIRECTOR_SLOT, "director/narratives.origin");
       const start = await w.run("loop.scope", ...scoped);
       expect(start.message).toMatch(/step scope-director waits for agent:director \(decide, mid\)/);
       const runId = waitingRun(start.message);
-      // The director's step raises from the director's own slot, as director.scope/skill.md says.
-      const id = await raiseFrom(w, DIRECTOR_SLOT, "director/narratives.origin", "director");
-      const next = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `producer/queue.slot/entries/${id}.json`);
+      // DET-STEPS 1: the demand step (code) filed the need from the citing slot before the director's step.
+      const filed = readdirSync(join(w.root, "clossys", "agents", "producer", "queue.slot", "entries"));
+      expect(filed).toHaveLength(1);
+      const id = filed[0]!.replace(/\.json$/, "");
+      expect(w.read(`producer/queue.slot/entries/${id}.json`)).toMatchObject({ kind: "slot", source: "scope", from: DIRECTOR_SLOT, target: "director/narratives.origin", status: "open" });
+      const text = readFileSync(join(w.root, "clossys", "agents", "producer", "queue.slot", "entries", `${id}.json`), "utf8");
+      // The director's raise, as director.scope/skill.md once had it, finds the open entry: no second entry, no write.
+      expect(await raiseFrom(w, DIRECTOR_SLOT, "director/narratives.origin", "director")).toBe(id);
+      const next = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
       expect(next.exitCode, next.message).toBe(0);
       expect(next.message).toMatch(/step scope-designer waits for agent:designer/);
-      expect(w.read(`producer/queue.slot/entries/${id}.json`)).toMatchObject({ kind: "slot", from: DIRECTOR_SLOT, target: "director/narratives.origin", status: "open" });
+      expect(readFileSync(join(w.root, "clossys", "agents", "producer", "queue.slot", "entries", `${id}.json`), "utf8")).toBe(text);
       let last = next;
       for (let step = 0; step < 3; step++) last = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
       expect(last.message).toMatch(/done: loop\.scope done/);
       const ledger = JSON.parse(readFileSync(join(w.root, "clossys", "agents", "producer", "ledger.scope", "entries", `${runId}.json`), "utf8")) as LedgerEntry;
-      expect(ledger.steps.find(step => step.id === "scope-director")).toMatchObject({ exit: 0, wrote: [{ file: `producer/queue.slot/entries/${id}.json` }] });
+      expect(ledger.steps[0]).toMatchObject({ id: "demand", exit: 0 });
+      const director = ledger.steps.find(step => step.id === "scope-director")!;
+      expect(director.exit).toBe(0);
+      expect(director.wrote ?? []).toEqual([]);
     });
 
-    it(`refuses a standard loop.scope step that files a request under another agent's name (${scoped.length ? "--agent designer" : "no --agent"})`, async () => {
+    it(`refuses a standard loop.scope step that reports a request under another agent's name (${scoped.length ? "--agent designer" : "no --agent"})`, async () => {
       const w = fixture();
       citeIn(w, DESIGNER_SLOT, "director/proof.case-study");
       const start = await w.run("loop.scope", ...scoped);
       expect(start.message).toMatch(/step scope-director waits for agent:director/);
       const runId = waitingRun(start.message);
-      // The director's step raises as the designer, from the designer's slot: a write the director may not make.
+      // The director's step raises as the designer, from the designer's slot (the entry the demand step filed in code),
+      // and reports it: a write the director may not make.
       const id = await raiseFrom(w, DESIGNER_SLOT, "director/proof.case-study", "designer");
       const refused = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `producer/queue.slot/entries/${id}.json`);
       expect(refused.exitCode, refused.message).toBe(1);
@@ -1104,4 +1122,138 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
       expect(refused.message).not.toMatch(/scope-designer waits/);
     });
   }
+});
+
+/** The engine log events of one run (`.clossys/events.jsonl`), by kind. */
+const runEvents = (root: string, loop: LoopName, runId: string, kind: string) => {
+  const file = join(root, ".clossys", "events.jsonl");
+  if (!existsSync(file)) return [];
+  return readFileSync(file, "utf8").trim().split("\n").map(line => JSON.parse(line) as { kind: string; subject: string; actor: string; inputs?: { path: string; sha256: string | null }[] })
+    .filter(event => event.kind === kind && event.subject === `loop:${loop}/${runId}`);
+};
+const settleRecord = (root: string, runId: string, step: string) => JSON.parse(readFileSync(join(runsDir(root), `${runId}.settle`, `${step}.json`), "utf8")) as Record<string, unknown>;
+
+describe("DET-STEPS: a fixed-rule code step settles the agent step after it; only what is left reaches the agent", () => {
+  it("refine-brief: a T2 run (one record, no rule) is settled by triage: no refine-brief packet, a settle record and a run.settle event", async () => {
+    const w = world(["designer/components.button"]);
+    const now = clock();
+    const hooks = stub(w.root);
+    const run = await startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, hooks, { now });
+    expect(run.state!.status, run.message).toBe("done");
+    expect(run.state!.trigger.code).toBe("T2");
+    expect(hooks.calls.filter(call => call.step === "refine-brief")).toEqual([]);
+    expect(run.state!.settled).toEqual({ "refine-brief": "triage" });
+    expect(stepLine(w.ledger("loop.fill")[0]!)[0]).toBe("triage:code:0");
+    expect(settleRecord(w.root, run.state!.runId, "triage")).toMatchObject({ schema: "clossys.settle/1", rule: "brief", outcome: "settled", settles: ["refine-brief"], answer: "no tightening", why: expect.stringMatching(/^trigger T2 .* names one record and no rule/) });
+    const events = runEvents(w.root, "loop.fill", run.state!.runId, "run.settle");
+    expect(events).toEqual([expect.objectContaining({ actor: "code:clossys run" })]);
+    expect((events[0]!.inputs ?? []).map(input => input.path)).toContain(`.clossys/runs/loops/${run.state!.runId}.settle/triage.json`);
+  });
+
+  it("refine-brief: a T3 run (tighten-brief, slot-wide) is not settled: triage records outcome agent and the agent gets the packet", async () => {
+    const w = world(["designer/components.button"]);
+    const now = clock();
+    const hooks = stub(w.root, { waitOnce: ["refine-brief"] });
+    const run = await startRun(w.root, { loop: "loop.refine", slot: "designer/components.button" }, hooks, { now });
+    expect(run.state!.trigger.code).toBe("T3");
+    expect(run.state!.waiting).toEqual({ step: "refine-brief", on: "agent" });
+    expect(run.packet).toMatchObject({ step: "refine-brief", agent: "designer", verb: "refine-brief" });
+    expect(run.state!.settled ?? {}).toEqual({});
+    expect(settleRecord(w.root, run.state!.runId, "triage")).toMatchObject({ rule: "brief", outcome: "agent", settles: [], why: expect.stringMatching(/^trigger T3 .* may carry a rule for the whole slot/) });
+    expect(runEvents(w.root, "loop.refine", run.state!.runId, "run.settle")).toHaveLength(1);
+  });
+
+  it("cascade check: a clean reverdict is accepted by code: the impact step never runs, a settle record and a run.settle event", async () => {
+    const w = world(["designer/components.button"]);
+    mkdirSync(join(w.root, "packages", "designer", "actions", "designer.cascade"), { recursive: true });
+    writeFileSync(join(w.root, "packages", "designer", "actions", "designer.cascade", "skill.md"), "# placeholder skill\n");
+    const now = clock();
+    const hooks = stub(w.root);
+    expect((await startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, hooks, { now })).state!.status).toBe("done");
+    const run = await startRun(w.root, { loop: "loop.cascade", slot: "designer/components.button" }, hooks, { now });
+    expect(run.state!.status, run.message).toBe("done");
+    expect(run.state!.settled).toEqual({ impact: "accept" });
+    expect(hooks.calls.filter(call => call.step === "impact")).toEqual([]);
+    expect(stepLine(w.ledger("loop.cascade")[0]!)).toEqual(["reverdict:code:0", "accept:code:0"]);
+    expect(settleRecord(w.root, run.state!.runId, "accept")).toMatchObject({ rule: "impact", outcome: "settled", settles: ["impact"], answer: "accept" });
+    expect(runEvents(w.root, "loop.cascade", run.state!.runId, "run.settle")).toHaveLength(1);
+  });
+});
+
+describe("DET-STEPS: loop.slot's match step answers an exact need in code; a near match reaches the assignee (operator CLI)", { timeout: 120_000 }, () => {
+  const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
+  const REQUESTER = "writer/sections.article.copy";
+  async function fixture() {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "loop-settle-")));
+    roots.push(root);
+    cpSync(FIXTURE, root, { recursive: true });
+    const cli = (...argv: string[]) => runCli([...argv, "--root", root], root);
+    const run = (loop: LoopName, ...argv: string[]) => runRunCli([loop, ...argv, "--root", root], root);
+    const read = (file: string) => JSON.parse(readFileSync(join(root, "clossys", "agents", file), "utf8"));
+    // The stored fixture index is not the rebuild of its log (a base red, receipt-loopsteps DECIDED D1): rebuild the copy's through the verb.
+    const rebuilt = await cli("index", "--rebuild");
+    expect(rebuilt.exitCode, rebuilt.message).toBe(0);
+    return { root, cli, run, read };
+  }
+  async function raise(w: Awaited<ReturnType<typeof fixture>>, need: string): Promise<string> {
+    const file = join(w.root, "clossys", "agents", REQUESTER, "slot.json");
+    const doc = JSON.parse(readFileSync(file, "utf8"));
+    doc.refs.push({ to: need, rel: "input" });
+    writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    const raised = await w.cli("request", "--target", need, "--from", REQUESTER, "--why", "the article section links it", "--by", "writer");
+    expect(raised.exitCode, raised.message).toBe(0);
+    return (raised.output as { id: string }).id;
+  }
+
+  it("an exact match (the need's leaf id is placed since the raise) is decided reuse by code: no decide packet, the link closes, a run.settle event", async () => {
+    const w = await fixture();
+    const id = await raise(w, "writer/narratives.faq");
+    writeFileSync(join(w.root, "contract.json"), JSON.stringify({ requirements: [{ check: "text.nonempty" }] }));
+    const placed = await w.cli("ia", "writer/narratives.faq", "--under", "prose.reference/help", "--kind", "strings", "--contract", join(w.root, "contract.json"));
+    expect(placed.exitCode, placed.message).toBe(0);
+    const start = await w.run("loop.slot", "--request", id);
+    expect(start.message).not.toMatch(/waits for agent/);
+    expect(start.message).toMatch(/done: loop\.slot done/);
+    expect(start.exitCode).toBe(0);
+    const runId = /run (\S+):/.exec(start.message ?? "")![1]!;
+    const request = w.read(`producer/queue.slot/entries/${id}.json`);
+    expect(request).toMatchObject({ status: "closed", decision: "reuse", link: "writer/narratives.faq" });
+    expect(request.events.find((event: { by?: string; op?: string }) => event.by === "producer")).toBeDefined();
+    const ledger = JSON.parse(readFileSync(join(w.root, "clossys", "agents", "producer", "ledger.slot", "entries", `${runId}.json`), "utf8")) as LedgerEntry;
+    expect(ledger.steps.map(step => `${step.id}:${step.decider.by}:${step.exit}`)).toEqual(["overlap:code:0", "match:code:0", "link:code:0"]);
+    expect(settleRecord(w.root, runId, "match")).toMatchObject({ rule: "reuse", outcome: "settled", answer: "reuse writer/narratives.faq" });
+    expect(runEvents(w.root, "loop.slot", runId, "run.settle")).toHaveLength(1);
+    expect(existsSync(join(w.root, "clossys", "agents", "producer", "queue.approve", "entries"))).toBe(false);
+  });
+
+  it("a need with no exact placed slot reaches the assignee's decide step; match records outcome agent", async () => {
+    const w = await fixture();
+    const id = await raise(w, "writer/narratives.faq");
+    const start = await w.run("loop.slot", "--request", id);
+    expect(start.message).toMatch(/step decide-writer waits for agent:writer \(decide, mid\)/);
+    const runId = /run (\S+):/.exec(start.message ?? "")![1]!;
+    expect(settleRecord(w.root, runId, "match")).toMatchObject({ rule: "reuse", outcome: "agent", settles: [] });
+    expect(runEvents(w.root, "loop.slot", runId, "run.settle")).toHaveLength(1);
+    expect(w.read(`producer/queue.slot/entries/${id}.json`).decision).toBeUndefined();
+  });
+
+  it("code (the producer seat) may decide only the exact reuse: a near-match reuse or a create by producer is refused, nothing written", async () => {
+    const w = await fixture();
+    const id = await raise(w, "writer/narratives.faq");
+    const file = join(w.root, "clossys", "agents", "producer", "queue.slot", "entries", `${id}.json`);
+    const before = readFileSync(file, "utf8");
+    const at = "2026-11-20T09:00:00Z";
+    // writer/narratives.guide is a near match (one L2), never code's to answer.
+    expect(() => decideRequest(join(w.root, "clossys"), id, { decision: "reuse", slot: "writer/narratives.guide", by: "producer", at })).toThrow(/code answers only an exact match/);
+    expect(() => decideRequest(join(w.root, "clossys"), id, { decision: "reuse", slot: "writer/narratives.faq", by: "producer", at })).toThrow(/code answers only an exact match/);
+    expect(readFileSync(file, "utf8")).toBe(before);
+    // Placed now: the exact reuse is code's; a reuse of another slot still is not.
+    writeFileSync(join(w.root, "contract.json"), JSON.stringify({ requirements: [{ check: "text.nonempty" }] }));
+    expect((await w.cli("ia", "writer/narratives.faq", "--under", "prose.reference/help", "--kind", "strings", "--contract", join(w.root, "contract.json"))).exitCode).toBe(0);
+    expect(() => decideRequest(join(w.root, "clossys"), id, { decision: "reuse", slot: "writer/narratives.guide", by: "producer", at })).toThrow(/code answers only an exact match/);
+    expect(readFileSync(file, "utf8")).toBe(before);
+    expect(exactReuseOf(join(w.root, "clossys"), readRequest(join(w.root, "clossys"), id))).toBe("writer/narratives.faq");
+    decideRequest(join(w.root, "clossys"), id, { decision: "reuse", slot: "writer/narratives.faq", by: "producer", at });
+    expect(readRequest(join(w.root, "clossys"), id)).toMatchObject({ decision: "reuse" });
+  });
 });

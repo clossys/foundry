@@ -3,6 +3,7 @@
 Answer one slot entry assigned to the Writer (loop.slot, the decide step): a requester names a slot the Writer tree does not hold; decide reuse or create.
 
 - Read the entry first: `clossys request <id> --json` (from, target, why, rel) and its overlap check (`clossys request <id> --check` lists the Writer slots the need may already be).
+- An exact match (the need names a placed Writer slot by its leaf id) is answered reuse by code before this step (the match step); only a need with no exact match reaches you, so judge the near matches the overlap check lists.
 - Reuse when a placed Writer slot already serves the need, even under another name: `clossys request <id> --decide reuse --slot writer/<slot>`.
 - Reuse names a placed slot of the Writer only; a slot of another agent is the requester's to cite, never a reuse.
 - Create only when no placed slot serves it. Propose one leaf under the L2 whose splitting rule it belongs to, with a kind the Writer holds, the leaf's inputs and a full contract of its kind (requirements naming registered criteria): `clossys request <id> --decide create --propose <slot id> --under <l1>/<l2> --kind <kind> --inputs <ref,...> --contract <file>`.

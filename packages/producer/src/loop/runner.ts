@@ -4,7 +4,8 @@
  * One step at a time, in the order of the version that runs (the consumer pin, else package v1; version.ts):
  *
  * - a step whose `when` does not match the slot is skipped and left out of the ledger;
- * - a code step runs through `hooks.code` (the CLI runs the verb); two are built in: `clossys check --route` routes the
+ * - a code step runs through `hooks.code` (the CLI runs the verb); three are built in: `clossys settle <rule>` settles
+ *   the fixed-rule part of the agent steps after it (foundry-build-0048 DET-STEPS, see settleStep), `clossys check --route` routes the
  *   previous step's findings (route.ts) and `clossys check <dependants>` runs the cascade (cascade.ts): every pin
  *   whose pinSet a repin changed is judged again by the one certifier, a failure marks its slot `needs-refresh` and is
  *   a kind fix (clossys.queue-entry/2, with its cause) for the slot's owner (CHOOSE or CREATE), to a fixed point within
@@ -51,7 +52,7 @@ import { agentWriteClass, currentStandardOf, isAgentLoop, isLoopAgent, pathPatte
 import { judgeSnapshot, keepSnapshot, keptSnapshot, snapshotKey, treeSnapshot, type AgentSnapshot, type TreeFiles } from "./agent-snapshot.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { certifiedOptions } from "../constitution/pin-gate.js";
-import { closeWork, freshRaiseIssues, isContentAgent, readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, workQueue, type SlotRequest } from "../records/request.js";
+import { closeWork, decideRequest, exactReuseOf, freshRaiseIssues, isContentAgent, readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, workQueue, type SlotRequest } from "../records/request.js";
 import { FIX_CHECKS } from "../queue/requester-check.js";
 import { cascadeClean, runCascade } from "./cascade.js";
 import { CASCADE_REVERDICT } from "../constitution/cascade.js";
@@ -146,6 +147,11 @@ export interface RunState {
   agentSnapshot?: AgentSnapshot;
   /** Step checks the verb did not run (B7); named in the outcome. */
   notRun?: string[];
+  /**
+   * foundry-build-0048 DET-STEPS: the agent steps a `clossys settle` code step settled, each with the settle step's id;
+   * an agent step named here is skipped (no packet), and its settle record is `.clossys/runs/loops/<runId>.settle/<step>.json`.
+   */
+  settled?: Record<string, string>;
   outcome?: string;
   ledger?: string;
 }
@@ -622,6 +628,8 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     const request = requestOf(ctx);
     if (!held && !whenMatches(step.when, subject, { owner: requestOwner(request), decision: request?.decision })) { state.cursor++; continue; }
     if (!held && ownerPicks(version, step, subject)) { state.cursor++; continue; }
+    // DET-STEPS: an agent step a settle code step settled by its fixed rule runs no agent (the settle record says why).
+    if (!held && step.decider.by === "agent" && state.settled?.[step.id] !== undefined) { state.cursor++; continue; }
     const vars = varsOf(ctx, subject);
     const filled = stepArgv(step.cli, vars);
     const decider = step.decider;
@@ -633,7 +641,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     }
 
     let exit: Exit; let wrote: readonly string[] | undefined; let findings: readonly Finding[] = []; let raisedByStep = false; let ledgerDecider: Decider; let cli = filled.text;
-    let ran: readonly string[] | undefined;
+    let ran: readonly string[] | undefined; let couldNot: string | undefined;
     if (decider.by === "agent") {
       const agent = stepAgentOf(root, state, step);
       if (!agent) return stop(ctx, `step ${step.id} names ${OWNER_OF_SLOT}, but ${state.loop} runs for no slot`, 2);
@@ -699,6 +707,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
         findings = builtIn.findings ?? [];
         for (const entry of builtIn.raised ?? []) state.raised.push(entryName(entry));
         raisedByStep = !!builtIn.raised?.length;
+        couldNot = builtIn.why;
       }
       else if (filled.unfilled.length) { exit = 2; wrote = []; }
       else {
@@ -715,6 +724,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     }
     const recorded = recordStep(ctx, step, ledgerDecider, cli, exit, wrote, vars, ran);
     state.findings = [...findings];
+    if (recorded.exit === 2 && couldNot) return stop(ctx, `step ${step.id} could not run: ${couldNot}`, 2);
     if (recorded.why && !step.onFail) return stop(ctx, `step ${step.id} failed: ${recorded.why}`, 1);
     const result = await afterStep(ctx, step, recorded.exit, findings, subject, raisedByStep);
     if (result) return result;
@@ -734,10 +744,12 @@ function manifestOf(root: string, publication: string, wrote: readonly string[] 
   return undefined;
 }
 
-/** The two code steps the runner runs itself. */
-type BuiltIn = { exit: Exit; wrote: string[]; findings?: readonly Finding[]; raised?: readonly Raised[] };
+/** The code steps the runner runs itself. */
+type BuiltIn = { exit: Exit; wrote: string[]; findings?: readonly Finding[]; raised?: readonly Raised[]; why?: string };
 function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefined): BuiltIn | undefined {
   const { root, state } = ctx;
+  const settle = settleStep(ctx, step, subject);
+  if (settle) return settle;
   if (step.cli === "clossys check --route") {
     const raised = routeFindings(root, state.findings, iso(ctx.now()), state.loop, `found by ${state.loop} run ${state.runId}`);
     for (const entry of raised) state.raised.push(entryName(entry));
@@ -765,6 +777,95 @@ function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefi
     return { exit: failed ? 1 : 0, wrote, ...(gate ? { findings: cascade.findings } : {}), raised };
   }
   return undefined;
+}
+
+/**
+ * foundry-build-0048 DET-STEPS: the settle rules. Each one is a fixed rule over the files; when it holds, code answers
+ * and every later agent step of the rule's verb is settled (skipped, no packet); when it does not, they run as before.
+ *
+ * - `reuse <request>` (loop.slot, before the decide steps): the need names a leaf id the assignee has placed; code
+ *   decides `reuse <assignee>/<need>` as the producer seat (records/request.ts exactReuseOf). A near match (a part, a
+ *   whole, a similar name) reaches the agent.
+ * - `impact <ref>` (loop.cascade, before impact): the reverdict passed and the cascade is clean now; code accepts it and
+ *   the owner reads only failures.
+ * - `brief <ref>` (loop.create, loop.fill, loop.refine, before refine-brief): the trigger names one record and no rule
+ *   (T1, T2, T4, T6, T7, T8); only a slot-wide trigger (T3 tighten-brief, T5 owner-feedback) reaches the agent.
+ */
+export const SETTLE_RULES = { reuse: "decide", impact: "check", brief: "refine-brief" } as const satisfies Record<string, DeciderVerb>;
+export type SettleRule = keyof typeof SETTLE_RULES;
+const SETTLE_CLI = /^clossys settle (reuse|impact|brief)(?:\s|$)/;
+/** The triggers that may carry a rule for the whole slot (the brief): the owner's words, or a tighten-brief run. */
+export const SLOT_WIDE_TRIGGERS: readonly string[] = ["T3", "T5"];
+export const settlePath = (root: string, runId: string, step: string): string => join(runsDir(root), `${runId}.settle`, `${step}.json`);
+
+/** One settle record: what the rule judged, from which files (by sha256), and the agent steps it settled. */
+export interface SettleRecord {
+  readonly schema: "clossys.settle/1";
+  readonly loop: LoopName;
+  readonly runId: string;
+  readonly step: string;
+  readonly rule: SettleRule;
+  readonly round: number;
+  readonly at: Iso;
+  readonly outcome: "settled" | "agent";
+  readonly settles: readonly string[];
+  readonly why: string;
+  readonly answer?: string;
+  readonly cites: readonly { readonly path: string; readonly sha256: string | null }[];
+}
+type SettleVerdict = { readonly settled: boolean; readonly why: string; readonly answer?: string; readonly cites: readonly string[]; readonly wrote?: readonly string[] } | { readonly refused: string };
+
+function settleReuse(ctx: Context): SettleVerdict {
+  const request = requestOf(ctx);
+  if (!request) return { refused: `the run has no request` };
+  const file = `clossys/agents/producer/queue.slot/entries/${request.id}.json`;
+  const exact = exactReuseOf(join(ctx.root, "clossys"), request);
+  if (exact === undefined) return { settled: false, why: `${request.target} names no placed slot of its assignee exactly${request.overlaps?.length ? ` (near matches: ${request.overlaps.map(item => item.slot).join(", ")})` : ""}; the assignee decides`, cites: [file] };
+  try { decideRequest(join(ctx.root, "clossys"), request.id, { decision: "reuse", slot: exact, by: "producer", at: iso(ctx.now()) }); }
+  catch (error) { if (error instanceof RequestError) return { refused: error.message }; throw error; }
+  return { settled: true, why: `${request.target} is the placed slot ${exact}: an exact match is a reuse`, answer: `reuse ${exact}`, cites: [file, `clossys/agents/${exact}/slot.json`], wrote: [file] };
+}
+function settleImpact(ctx: Context, subject: SlotSubject | undefined): SettleVerdict {
+  if (!subject) return { refused: `the run has no slot` };
+  const pin = `clossys/agents/${refOf(subject)}/pin.json`;
+  if (ctx.state.checks[CASCADE_CLEAN] !== "pass") return { settled: false, why: `the reverdict did not pass ${CASCADE_CLEAN} in this run; the owner reads the failures`, cites: [pin] };
+  const clean = verifyCheck(ctx, CASCADE_CLEAN);
+  if (!clean.ok) return { settled: false, why: `${clean.why}; the owner reads the failures`, cites: [pin] };
+  return { settled: true, why: `every dependant of ${refOf(subject)} passed its re-verdict and ${CASCADE_CLEAN} holds now: code accepts the cascade`, answer: "accept", cites: [pin] };
+}
+function settleBrief(ctx: Context, subject: SlotSubject | undefined): SettleVerdict {
+  if (!subject) return { refused: `the run has no slot` };
+  const { code, kind } = ctx.state.trigger;
+  const cites = [`clossys/agents/${refOf(subject)}/slot.json`];
+  if (SLOT_WIDE_TRIGGERS.includes(code)) return { settled: false, why: `trigger ${code} (${kind}) may carry a rule for the whole slot; the owner of the slot reads it`, cites };
+  return { settled: true, why: `trigger ${code} (${kind}) names one record and no rule: the brief stays as it is`, answer: "no tightening", cites };
+}
+
+/** A `clossys settle <rule>` code step: judges its rule, records the settle and logs a run.settle engine event. */
+function settleStep(ctx: Context, step: LoopStep, subject: SlotSubject | undefined): BuiltIn | undefined {
+  const match = SETTLE_CLI.exec(step.cli);
+  if (!match) return undefined;
+  const { root, state } = ctx;
+  const rule = match[1] as SettleRule;
+  const verdict = rule === "reuse" ? settleReuse(ctx) : rule === "impact" ? settleImpact(ctx, subject) : settleBrief(ctx, subject);
+  if ("refused" in verdict) return { exit: 2, wrote: [], why: verdict.refused };
+  const later = ctx.version.steps.slice(ctx.version.steps.indexOf(step) + 1);
+  const settles = verdict.settled ? later.filter(each => each.decider.by === "agent" && each.decider.verb === SETTLE_RULES[rule]).map(each => each.id) : [];
+  const settled = state.settled ?? {};
+  for (const [id, by] of Object.entries(settled)) if (by === step.id) delete settled[id];
+  for (const id of settles) settled[id] = step.id;
+  state.settled = settled;
+  const cites = inputsOf(root, verdict.cites.map(path => join(root, path)));
+  const record: SettleRecord = {
+    schema: "clossys.settle/1", loop: state.loop, runId: state.runId, step: step.id, rule, round: state.round, at: iso(ctx.now()),
+    outcome: verdict.settled ? "settled" : "agent", settles, why: verdict.why, ...(verdict.answer !== undefined ? { answer: verdict.answer } : {}), cites,
+  };
+  const file = settlePath(root, state.runId, step.id);
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`);
+  const wrote = [...(verdict.wrote ?? []), relative(root, file).split(sep).join("/")];
+  logRun(root, "run.settle", state, wrote.map(path => join(root, path)));
+  return { exit: 0, wrote };
 }
 
 /**

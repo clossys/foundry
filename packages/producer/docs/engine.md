@@ -132,7 +132,7 @@ Each wired writer keeps its on-disk record and adds one event per write.
 | `request.create / request.write` | `packages/producer/src/records/request.ts` | request:<id> |
 | `queue.create / queue.replace` | `packages/producer/src/queue/entry.ts` | <queue>/<entry id>: every queue entry write, the chat answer path included |
 | `library.version` | `packages/producer/src/records/library.ts` | library:<slot>/<element>/v<n> |
-| `run.state / run.record / pin.revert` | `packages/producer/src/loop/runner.ts` | loop:<loop>/<run id>: run state, the run's ledger record, a reverted pin |
+| `run.state / run.record / run.settle / pin.revert` | `packages/producer/src/loop/runner.ts` | loop:<loop>/<run id>: run state, the run's ledger record, a settle record (a fixed-rule code step that settled or passed on an agent step), a reverted pin |
 
 ## Derived index
 

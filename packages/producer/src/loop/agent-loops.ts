@@ -122,8 +122,8 @@ export const pathAgent = (path: string): string | undefined => AGENT_PATH.exec(p
 /** A path that leaves the tree it is written against: absolute, or through a `..` segment. */
 export const escapesTree = (path: string): boolean => path.startsWith("/") || path.split(/[\\/]/).includes("..");
 
-/** The cli of a Producer built-in code step: routing findings, the cascade, the strict tree checks, the IA sync. */
-const BUILT_IN_CLI = /^clossys check --route\b|<dependants>|^clossys check --strict\b|^clossys ia sync\b/;
+/** The cli of a Producer built-in code step: routing findings, the cascade, the strict tree checks, the IA sync, a settle rule (DET-STEPS). */
+const BUILT_IN_CLI = /^clossys check --route\b|<dependants>|^clossys check --strict\b|^clossys ia sync\b|^clossys settle\b/;
 /** A cli that pins, retires or answers an owner entry: only the standard's own step may carry it, as the standard has it. */
 const PIN_CLI = /\bclossys (?:pin|pick|verdict|approve|answer|retire|owner-decision)\b/;
 /** A cli as the cli rules judge it: trimmed, every run of whitespace (a tab, a double space) one space. */
@@ -273,7 +273,7 @@ export function loopExtensionIssues(agent: LoopAgent, loop: AgentLoopName, conte
     // The standard's own step of this id, when it is this agent's: what it may carry as the standard has it.
     const own = standard.steps.find(each => each.id === step.id && namesAgent(each, agent));
     const cli = typeof step.cli === "string" ? cliWords(step.cli) : "";
-    if (BUILT_IN_CLI.test(cli)) issues.push(`${ref}: step ${step.id} runs ${cli}, a Producer code step; an agent step never routes, cascades, syncs or judges the tree`);
+    if (BUILT_IN_CLI.test(cli)) issues.push(`${ref}: step ${step.id} runs ${cli}, a Producer code step; an agent step never routes, cascades, syncs, settles or judges the tree`);
     if (PIN_CLI.test(cli) && (own === undefined || cliWords(own.cli) !== cli)) issues.push(`${ref}: step ${step.id} runs ${cli}; only the standard's own step pins or answers, as the standard has it (the owner's choose gate)`);
     for (const path of Array.isArray(step.writes) ? step.writes : []) {
       const issue = agentStepWriteIssue(agent, ref, step, path, standard);
