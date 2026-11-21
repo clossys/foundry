@@ -32,12 +32,14 @@ import { checkPinsResolve, resolveAll } from "../check/pins-resolve.js";
 import { answerQueueEntry } from "../queue/answer.js";
 import { entryStamp, findQueueEntry, listQueueEntryFiles, readQueueEntry, slugOf } from "../queue/entry.js";
 import { sha256Hex } from "../records/hash.js";
-import { CODE_SCORECARD, OWNER_BASES, buildPin, pinIssues, pinPath, writePinDoc } from "../records/pin.js";
+import { CODE_SCORECARD, OWNER_BASES, buildPin, cliActor, pinIssues, pinPath, writePinDoc } from "../records/pin.js";
 import { mergeRefs, readPinFile } from "../records/pin-map.js";
 import { isRecordSlot, resolveSlot, slotRecords, type Resolution } from "../records/resolve.js";
+import { readSlotEntry } from "../records/slots.js";
 import { validateAgainst } from "../records/schema.js";
 import { recordSchema, writeSlot } from "../records/slot.js";
-import { SLOT_LOCK, withDirLock, writeTargetConfirm, writeTargetDecision, type WriteGuard } from "../records/slot-write.js";
+import { SLOT_LOCK, withDirLock, writeCandidate, writeTargetConfirm, writeTargetDecision, type WriteGuard } from "../records/slot-write.js";
+import { CODE_ADOPT, CODE_ADOPT_CLI, CODE_ADOPT_RUNG, REFERENCE_MANIFEST, codeAdoptSlotRefusal, stockItemOf } from "../records/code-adopt.js";
 import type { SlotAgent } from "../records/slot-model/index.js";
 import "../constitution/guard.js"; // registers the write guard's runner (the confirm and revert writes are guarded)
 import type { AgentId, Decider, DeciderVerb, Iso, LedgerEntry, LoopStep, LoopVersion, QueueEntry, Ref, Tier } from "../records/types.js";
@@ -152,6 +154,7 @@ export interface RunState {
   /**
    * foundry-build-0048 DET-STEPS: the agent steps a `clossys settle` code step settled, each with the settle step's id;
    * an agent step named here is skipped (no packet), and its settle record is `.clossys/runs/loops/<runId>.settle/<step>.json`.
+   * A retry back to a settled create step (a code adopt that failed its check) clears it: the agent creates.
    */
   settled?: Record<string, string>;
   outcome?: string;
@@ -796,14 +799,20 @@ function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefi
  *   the owner reads only failures.
  * - `brief <ref>` (loop.create, loop.fill, loop.refine, before refine-brief): the trigger names one record and no rule
  *   (T1, T2, T4, T6, T7, T8); only a slot-wide trigger (T3 tighten-brief, T5 owner-feedback) reaches the agent.
+ * - `adopt <ref>` (loop.create, loop.fill, loop.refine, before create; round 2, planner D5 Adopt = A): the slot adopts
+ *   byte-exact (a Designer components slot under an adopt-first standard, not a consumer asset, one option), holds no
+ *   candidate, and a stock item ships its contract fixture with every import locked (records/code-adopt.ts); code
+ *   submits that item unmodified at rung L1 (`--by code:adopt`), and the submit guard and the run's certify or check
+ *   step judge it like any candidate. With no stock item the agent creates; a refused submit defers to it, and a failed
+ *   certify sends the run back to the agent's create step (the retry clears the settle).
  * - `pick <ref>` (loop.choose, loop.fill, loop.refine, before pick; round 2, planner D5 Pick = A): the pin gate's
  *   scorecard has a single top row on a slot with no owner-pick or confirm step and no owner or planner pin
  *   (loop/code-pin.ts); code pins it through the pin gate (`clossys pin --by code:scorecard`, basis scorecard). A tie,
  *   an owner step, a held human decision or a writer pin map reaches the agent pick; a refused pin defers to it.
  */
-export const SETTLE_RULES = { reuse: "decide", impact: "check", brief: "refine-brief", pick: "pick" } as const satisfies Record<string, DeciderVerb>;
+export const SETTLE_RULES = { reuse: "decide", impact: "check", brief: "refine-brief", adopt: "create-candidates", pick: "pick" } as const satisfies Record<string, DeciderVerb>;
 export type SettleRule = keyof typeof SETTLE_RULES;
-const SETTLE_CLI = /^clossys settle (reuse|impact|brief|pick)(?:\s|$)/;
+const SETTLE_CLI = /^clossys settle (reuse|impact|brief|adopt|pick)(?:\s|$)/;
 /** The triggers that may carry a rule for the whole slot (the brief): the owner's words, or a tighten-brief run. */
 export const SLOT_WIDE_TRIGGERS: readonly string[] = ["T3", "T5"];
 export const settlePath = (root: string, runId: string, step: string): string => join(runsDir(root), `${runId}.settle`, `${step}.json`);
@@ -879,10 +888,41 @@ function settlePick(ctx: Context, subject: SlotSubject | undefined): SettleVerdi
   };
 }
 
+/** The skill a code adopt's submit event cites: the step it settles (the Designer's candidates step). */
+const CODE_ADOPT_SKILL = "packages/designer/actions/designer.candidates/skill.md";
+
+function settleAdopt(ctx: Context, subject: SlotSubject | undefined): SettleVerdict {
+  if (!subject) return { refused: `the run has no slot` };
+  const { root } = ctx;
+  const { agent, slotId } = subject;
+  const slotFile = `clossys/agents/${refOf(subject)}/slot.json`;
+  const ledgerFile = `clossys/agents/${refOf(subject)}/ledger.json`;
+  const notCode = codeAdoptSlotRefusal(root, agent, slotId);
+  if (notCode !== undefined) return { settled: false, why: `${notCode}; the agent creates`, cites: [slotFile] };
+  const held = readSlotEntry(join(root, "clossys"), agent, slotId)?.candidates ?? [];
+  if (held.length) return { settled: false, why: `${refOf(subject)} holds ${held.join(", ")}; code adopts only into a slot with no candidate, so the agent creates`, cites: [slotFile, ledgerFile] };
+  const found = stockItemOf(root, slotId);
+  if ("none" in found) return { settled: false, why: `${found.none}; the agent creates`, cites: [slotFile, REFERENCE_MANIFEST] };
+  const { stock } = found;
+  // The one candidate writer: the code:adopt rule (records/code-adopt.ts), then the submit guard, as for any candidate.
+  const written = writeCandidate(join(root, "clossys"), "designer", slotId, stock.item.name, stock.item, {
+    canonical: true, at: iso(ctx.now()),
+    provenance: { verb: "submit", by: CODE_ADOPT, skill: CODE_ADOPT_SKILL },
+    fields: { basis: "code", rung: CODE_ADOPT_RUNG, seed: stock.seed, ladder: { rung: CODE_ADOPT_RUNG, seed: stock.seed } },
+    guard: ctx.hooks.guard ?? true,
+    header: { createdBy: cliActor(CODE_ADOPT_CLI) },
+  });
+  return {
+    settled: true, why: `${stock.ref} ships ${refOf(subject)}'s contract fixture and the slot adopts byte-exact: code submits it unmodified at rung ${CODE_ADOPT_RUNG}, and certify judges it`,
+    answer: `adopt ${stock.ref}`, cites: [slotFile, REFERENCE_MANIFEST], wrote: [`clossys/agents/${refOf(subject)}/candidates/${written.name}`, ledgerFile],
+  };
+}
+
 const SETTLE_JUDGES: Record<SettleRule, (ctx: Context, subject: SlotSubject | undefined) => SettleVerdict> = {
   reuse: ctx => settleReuse(ctx),
   impact: settleImpact,
   brief: settleBrief,
+  adopt: settleAdopt,
   pick: settlePick,
 };
 
@@ -1108,6 +1148,9 @@ async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: rea
     const earlier = version.steps[index]!;
     if (earlier.decider.by === "agent" && earlier.decider.verb === "create-candidates") { back = index; break; }
   }
+  // A create step code settled (a code adopt) failed its check: the retry is the agent's create, never code's again.
+  const retried = version.steps[back]!;
+  if (back !== state.cursor && state.settled?.[retried.id] !== undefined) delete state.settled[retried.id];
   state.cursor = back;
   saveState(root, state);
   return null;

@@ -9,6 +9,8 @@
  * - R03.2 adopt is verbatim, for every candidate, not only pins: a Designer registry item's lineage
  *   passes the provenance rule against the reference manifest (certify/source.ts, the logic the
  *   Designer's check-provenance.mjs calls); another agent's adopt equals its seed candidate's bytes.
+ *   A candidate submitted by code:adopt is the stock item of a byte-exact adopt slot, at rung L1
+ *   with its seed (records/code-adopt.ts); any other is a row.
  * - R03.3 one certifier: `certify()` takes only slot, candidate and contract, and no certifier
  *   source reads a source kind, a rung or a seed (structural).
  * - R03.4 under an `adopt-first` standard, an adopt or adapt keeps every mapped seed file
@@ -24,6 +26,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
 import { normalizedSeedFile } from "@clossys/designer/ref-verbatim";
+import { CODE_ADOPT, codeAdoptSubmitRefusal } from "../../records/code-adopt.js";
 import { packagePath } from "../../package-path.js";
 import { ladderIssues, rungKind, type GenericRung } from "../../pipeline/candidate-ladder.js";
 import { ledgerEvents, standardFor, type Standard } from "../../records/standards.js";
@@ -148,6 +151,11 @@ export const r03_2: Check = ctx => {
       const { submit } = submitOf(slot, candidate.name);
       const rung = rungOf(slot, submit);
       const label = `${slot.id}/${candidate.name}`;
+      // DET-STEPS Adopt A: code authors only the stock item of a byte-exact adopt slot (records/code-adopt.ts).
+      if (submit?.by === CODE_ADOPT) {
+        const refused = codeAdoptSubmitRefusal(ctx.root, slot.agent, slot.id, submit);
+        if (typeof refused === "string") rows.push(row("R03", "R03.2", slot, `submitted by ${CODE_ADOPT} where code may not author: ${refused}`, ledgerPath(slot), candidate.name));
+      }
       // A Designer element's registry lineage; an agent loop candidate is a loop version, judged by certifyLoop.
       if (slot.agent === "designer" && !isAgentLoopRecord(slot)) {
         const item = candidate.name.endsWith(".json") ? candidate.json as Parameters<typeof candidateLineage>[1] : undefined;

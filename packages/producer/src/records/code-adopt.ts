@@ -1,0 +1,175 @@
+/**
+ * When code may author a candidate (DET-STEPS round 2, planner D5 "Adopt = A"): `code:adopt` installs the
+ * source-ladder stock item byte-exact into a slot whose contract adopts byte-exact, and the normal certify gate
+ * (the submit guard, then the run's certify or check step) judges it like any candidate. Every other candidate is the
+ * agent seat's to create.
+ *
+ * A byte-exact adopt slot (codeAdoptSlotRefusal) is a Designer slot of the components layer (ref-verbatim
+ * byteExactAdoption: components are adopted, never crafted) whose standard is `adopt-first`, that is not a consumer
+ * asset (Designer provenance.json consumerAssets: the consumer's own original) and whose family offers one option.
+ * Its stock item (stockItemOf) is the reference-manifest row of registry shadcn-aria or diceui that ships the slot's
+ * contract fixture file; code installs only into a slot that holds no live candidate, and only when every package the
+ * item imports is in the consumer's lockfile (code never edits the lockfile). With no stock item, a held candidate or
+ * an unlocked import, the agent creates.
+ *
+ * The writer (records/slot-write.ts writeCandidate) accepts `--by code:adopt` only when codeAdoptRefusal finds
+ * nothing: the slot rule, then the item is the stock item exactly (registry lineage, rung L1 with its seed, every
+ * file byte-exact to the normalized reference). R03.2 flags any submit by code:adopt that fails the same rule.
+ */
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { byteExactAdoption, normalizedSeedFile } from "@clossys/designer/ref-verbatim";
+import { packagePath } from "../package-path.js";
+import { readSlot } from "./slots.js";
+import { readStandard } from "./standards.js";
+
+/** Who authors a code-adopted candidate (its submit event's `by`). */
+export const CODE_ADOPT = "code:adopt";
+/** The command a code-adopted candidate's header names as its creator. */
+export const CODE_ADOPT_CLI = "clossys settle adopt";
+/** The ladder rung a code adopt submits: the Designer's L1, stock adopted unmodified. */
+export const CODE_ADOPT_RUNG = "L1";
+/** The registries whose stock items code installs (the seeder's and the source ladder's stock rung). */
+export const STOCK_REGISTRIES: readonly string[] = ["shadcn-aria", "diceui"];
+export const REFERENCE_MANIFEST = "packages/designer/references/manifest.json";
+export const PROVENANCE_RULE = "packages/designer/src/catalog/rules/provenance.json";
+
+interface ManifestFile { readonly path: string; readonly sha256?: string }
+export interface ManifestRow {
+  readonly registry: string; readonly name: string; readonly version: string; readonly type: string; readonly dir: string;
+  readonly hash: string; readonly license: string; readonly files: readonly ManifestFile[]; readonly slots?: readonly string[];
+}
+export interface StockItem {
+  readonly row: ManifestRow;
+  readonly ref: string;
+  readonly seed: string;
+  readonly item: { readonly name: string; readonly type: string; readonly dependencies: readonly string[]; readonly files: readonly { path: string; type: string; content: string }[]; readonly meta: Record<string, unknown> };
+}
+
+const refIdOf = (row: ManifestRow): string => `${row.registry}/${row.name}@${row.version}`;
+const readJson = (file: string): unknown => JSON.parse(readFileSync(file, "utf8")) as unknown;
+const manifestOf = (root: string): { items: ManifestRow[] } => readJson(packagePath(root, REFERENCE_MANIFEST)) as { items: ManifestRow[] };
+const referencesDirOf = (root: string): string => dirname(packagePath(root, REFERENCE_MANIFEST));
+
+/** Why `designer/<slotId>` is not a byte-exact adopt slot code may author into, or undefined when it is one. */
+export function codeAdoptSlotRefusal(root: string, agent: string, slotId: string): string | undefined {
+  const at = `${agent}/${slotId}`;
+  if (agent !== "designer") return `${at} is not a byte-exact adopt slot: only a Designer components slot adopts byte-exact`;
+  if (byteExactAdoption(slotId, undefined) === undefined) return `${at} is not a byte-exact adopt slot: it is not of the components layer, so its candidates may be crafted`;
+  let doc: ReturnType<typeof readSlot>;
+  try { doc = readSlot(join(root, "clossys"), "designer", slotId); }
+  catch (error) { return `${at} is not a byte-exact adopt slot: its slot.json cannot be read (${error instanceof Error ? error.message : String(error)})`; }
+  if (doc.standard === undefined) return `${at} is not a byte-exact adopt slot: it names no standard`;
+  const standard = readStandard(root, "designer", doc.standard);
+  if (standard.doc?.mode !== "adopt-first") return `${at} is not a byte-exact adopt slot: its standard ${doc.standard} is not adopt-first`;
+  let consumerAssets: readonly string[];
+  try { consumerAssets = ((readJson(packagePath(root, PROVENANCE_RULE)) as { consumerAssets?: { slots?: string[] } }).consumerAssets?.slots) ?? []; }
+  catch (error) { return `${at} is not a byte-exact adopt slot: ${PROVENANCE_RULE} cannot be read (${error instanceof Error ? error.message : String(error)})`; }
+  if (consumerAssets.includes(slotId)) return `${at} is not a byte-exact adopt slot: it is a consumer asset (the consumer's own original, no registry ships it)`;
+  const options = doc.family?.options ?? 1;
+  if (options !== 1) return `${at} is not a byte-exact adopt slot: its family offers ${options} options, and code installs one stock item`;
+  return undefined;
+}
+
+const HOST = new Set(["react", "react-dom"]);
+/** The npm packages a file imports (bare specifiers, by package name), the host's React aside (the seeder's rule). */
+export function importedPackages(text: string): string[] {
+  const names = new Set<string>();
+  for (const match of text.matchAll(/\b(?:import|export)\s+(?:type\s+)?(?:[^'"`;]*?\sfrom\s+)?["']([^"']+)["']/g)) {
+    const spec = match[1]!;
+    if (spec.startsWith(".") || spec.startsWith("/") || spec.startsWith("@/")) continue;
+    const name = spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0]!;
+    if (!HOST.has(name)) names.add(name);
+  }
+  return [...names].sort();
+}
+
+/** The reason an adopted item gives (the seeder's designerReason): the Director traits the slot reads that it realises. */
+function reasonOf(root: string, doc: ReturnType<typeof readSlot>, what: string): string {
+  const standard = doc.standard === undefined ? undefined : readStandard(root, "designer", doc.standard);
+  const params = ((standard?.doc?.requirements ?? []) as readonly { check?: string; params?: { traits?: string[]; required?: string[] } }[]).find(item => item.check === "derive.director")?.params ?? {};
+  const inputs = new Set(doc.inputs ?? []);
+  const cited = [...new Set([...(params.traits ?? []).filter(id => inputs.has(id)), ...(params.required ?? [])])];
+  if (!cited.length && inputs.has("identity.visual.style")) cited.push("identity.visual.style");
+  if (!cited.length) return `${what[0]!.toUpperCase()}${what.slice(1)}.`;
+  return `Realises ${cited.map(id => `director:${id}`).join(", ")}: ${what}.`;
+}
+
+/**
+ * The stock item code installs into `designer/<slotId>`, or why there is none (the agent creates): the manifest row of
+ * a stock registry that ships the contract fixture file (the row that maps the slot, else the one named after the
+ * file, else the first), its .tsx files normalized to the consumer's components.json, its imports at the consumer's
+ * locked versions.
+ */
+export function stockItemOf(root: string, slotId: string): { readonly stock: StockItem } | { readonly none: string } {
+  const at = `designer/${slotId}`;
+  const doc = readSlot(join(root, "clossys"), "designer", slotId);
+  const file = ((doc.contract as { fixture?: { fixtures?: { file?: unknown } } }).fixture?.fixtures?.file);
+  if (typeof file !== "string") return { none: `${at} has no contract fixture file, so no stock item ships it` };
+  const manifest = manifestOf(root);
+  const rows = manifest.items.filter(row => STOCK_REGISTRIES.includes(row.registry) && row.files.some(each => each.path === file));
+  const row = rows.find(each => (each.slots ?? []).includes(slotId)) ?? rows.find(each => each.name === file.split("/").at(-1)!.replace(/\.tsx$/, "")) ?? rows[0];
+  if (!row) return { none: `no ${STOCK_REGISTRIES.join(" or ")} stock item ships ${at}'s contract fixture ${file}` };
+  const ref = refIdOf(row);
+  const consumer = join(root, "clossys");
+  const files = row.files.filter(each => each.path.endsWith(".tsx")).map(each => ({
+    path: each.path, type: row.type, content: normalizedSeedFile(consumer, ref, each.path, { manifest, referencesDir: referencesDirOf(root) }),
+  }));
+  const lockFile = join(root, "package-lock.json");
+  const locked = existsSync(lockFile) ? ((readJson(lockFile) as { packages?: Record<string, { version?: string }> }).packages ?? {}) : {};
+  const imports = [...new Set(files.flatMap(each => importedPackages(each.content)))].sort();
+  const unlocked = imports.filter(name => typeof locked[`node_modules/${name}`]?.version !== "string");
+  if (unlocked.length) return { none: `${ref} imports ${unlocked.join(", ")}, which the consumer lockfile does not hold; code never edits the lockfile` };
+  const item = {
+    name: slotId.split(".").at(-1)!,
+    type: row.type,
+    dependencies: imports.map(name => `${name}@${locked[`node_modules/${name}`]!.version!}`),
+    files,
+    meta: {
+      slot: slotId,
+      source: { kind: "registry", ref: [ref], hash: row.hash, license: row.license },
+      refVerbatim: { files: Object.fromEntries(files.map(each => [each.path, each.path])) },
+      element: { slot: slotId, reason: reasonOf(root, doc, `stock ${ref}, adopted unmodified by code`) },
+    },
+  };
+  return { stock: { row, ref, seed: `${row.registry}/${row.name}`, item } };
+}
+
+/**
+ * Why a submit by code:adopt with the submit's `fields` (its ledger record) into `<agent>/<slotId>` is refused: the
+ * slot is not a byte-exact adopt slot, it has no stock item, or the submit is not rung L1 with that item's seed. Else
+ * the stock item. R03.2 judges every code:adopt submit event by it (R03.4 judges the files byte-exact).
+ */
+export function codeAdoptSubmitRefusal(root: string, agent: string, slotId: string, fields: Readonly<Record<string, unknown>> | undefined): string | { readonly stock: StockItem } {
+  const slot = codeAdoptSlotRefusal(root, agent, slotId);
+  if (slot !== undefined) return slot;
+  let found: ReturnType<typeof stockItemOf>;
+  try { found = stockItemOf(root, slotId); }
+  catch (error) { return `${agent}/${slotId}'s stock item cannot be read: ${error instanceof Error ? error.message : String(error)}`; }
+  if ("none" in found) return `${found.none}; code adopts only a stock item`;
+  if (fields?.rung !== CODE_ADOPT_RUNG || fields.seed !== found.stock.seed) return `a code adopt submits rung ${CODE_ADOPT_RUNG} with seed ${found.stock.seed}, not rung ${String(fields?.rung)} seed ${String(fields?.seed)}`;
+  return found;
+}
+
+/**
+ * Why a submit by code:adopt of `content` (with the submit's `fields`) into `<agent>/<slotId>` is refused, or
+ * undefined: the slot is a byte-exact adopt slot, and the item is that slot's stock item exactly (rung L1 and its seed,
+ * registry lineage citing the row, every file mapped and byte-exact to the normalized reference).
+ */
+export function codeAdoptRefusal(root: string, agent: string, slotId: string, content: unknown, fields: Readonly<Record<string, unknown>> | undefined): string | undefined {
+  const submit = codeAdoptSubmitRefusal(root, agent, slotId, fields);
+  if (typeof submit === "string") return submit;
+  const { stock } = submit;
+  const item = content as { meta?: { source?: { kind?: unknown; ref?: unknown }; refVerbatim?: { files?: Record<string, unknown> } }; files?: { path?: unknown; content?: unknown }[] } | undefined;
+  const source = item?.meta?.source;
+  if (source?.kind !== "registry" || JSON.stringify(source.ref) !== JSON.stringify([stock.ref])) return `a code adopt carries registry lineage citing ${stock.ref} only`;
+  const given = item?.files ?? [];
+  const mapped = item?.meta?.refVerbatim?.files ?? {};
+  if (given.length !== stock.item.files.length) return `a code adopt ships the stock item's ${stock.item.files.length} file(s), not ${given.length}`;
+  for (const expected of stock.item.files) {
+    const file = given.find(each => each.path === expected.path);
+    if (!file || mapped[expected.path] !== expected.path) return `a code adopt ships and maps ${expected.path} from ${stock.ref}`;
+    if (file.content !== expected.content) return `a code adopt's ${expected.path} is not byte-exact to ${stock.ref}'s normalized reference`;
+  }
+  return undefined;
+}

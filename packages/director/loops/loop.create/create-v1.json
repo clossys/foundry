@@ -75,6 +75,29 @@
         }
       },
       {
+        "id": "adopt",
+        "does": "code reads the slot's contract: a Designer components slot under an adopt-first standard (not a consumer asset, one option) that holds no candidate, whose contract fixture a shadcn-aria or diceui stock item ships with every import locked, gets that item unmodified at rung L1 (submitted by code:adopt through the candidate guard) and settles create with a settle record; certify judges it like any candidate, and every other slot, a refused submit or a failed certify reaches the agent's create",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys settle adopt <ref>",
+        "reads": [
+          "<slot>/slot.json",
+          "<slot>/candidates/*",
+          "<slot>/ledger.json"
+        ],
+        "writes": [
+          "<slot>/candidates/*",
+          "<slot>/ledger.json",
+          ".clossys/runs/loops/*.settle/*"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
         "id": "create",
         "does": "write the slot's family of candidates against the current brief and contract: family.options distinct candidates (one when the family offers one), differing on family.varyOn across family.values, each meeting contract.requirements and contract.fixture, each submitted through the candidates verb so its ledger holds a submit record",
         "decider": {

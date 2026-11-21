@@ -241,16 +241,16 @@ describe("F2 starter fill: loop.fill (T2)", () => {
       "designer/themes.background done; pinned placeholder-v1.json",
     ]);
     expect(ledger.map(stepLine)).toEqual([
-      ["triage:code:0", "create:agent/stub-model:0", "check:code:0", "owner-pick:human:0", "cascade:code:0"],
-      ["triage:code:0", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "cascade:code:0"],
-      ["triage:code:0", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"],
+      ["triage:code:0", "adopt:code:0", "create:agent/stub-model:0", "check:code:0", "owner-pick:human:0", "cascade:code:0"],
+      ["triage:code:0", "adopt:code:0", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "cascade:code:0"],
+      ["triage:code:0", "adopt:code:0", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"],
     ]);
     for (const entry of ledger) expect(entry).toMatchObject({ status: "done", loopVersion: "fill-v1.json", trigger: { kind: "starter-fill" } });
     // The agent steps name the skill path (system.md 14.1), the tier and the serving model; the version names no model.
-    expect(ledger[1]!.steps[1]!.decider).toEqual({ by: "agent", agent: "designer", verb: "create-candidates", tier: "mid", model: MODEL, skill: "packages/designer/actions/designer.candidates/skill.md" });
+    expect(ledger[1]!.steps[2]!.decider).toEqual({ by: "agent", agent: "designer", verb: "create-candidates", tier: "mid", model: MODEL, skill: "packages/designer/actions/designer.candidates/skill.md" });
     expect(ledger[0]!.decisions).toEqual([{ entry: pick, answer: "placeholder-v1.json" }]);
     expect(ledger[0]!.refs).toContainEqual({ to: "producer/queue.pick", record: pick.split("#")[1], rel: "answers" });
-    expect(ledger[1]!.steps[1]!.wrote).toEqual([{ file: "designer/components.button/candidates/placeholder-v1.json", sha256: expect.stringMatching(/[0-9a-f]{64}$/) }]);
+    expect(ledger[1]!.steps[2]!.wrote).toEqual([{ file: "designer/components.button/candidates/placeholder-v1.json", sha256: expect.stringMatching(/[0-9a-f]{64}$/) }]);
     // The owner's pick reached the pin through `clossys pin ... --by owner:queue.pick#<id>`.
     expect(hooks.code_.find(call => call.argv[0] === "pin")!.cli).toBe(`clossys pin director/context.market.size placeholder-v1.json --by owner:${pick}`);
   });
@@ -260,7 +260,7 @@ describe("F2 starter fill: loop.fill (T2)", () => {
     const now = clock();
     const once = await startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, stub(w.root, { checkExits: [1] }), { now });
     expect(once.state!.status).toBe("done");
-    expect(stepLine(w.ledger("loop.fill")[0]!)).toEqual(["triage:code:0", "create:agent/stub-model:0", "check:code:1", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "cascade:code:0"]);
+    expect(stepLine(w.ledger("loop.fill")[0]!)).toEqual(["triage:code:0", "adopt:code:0", "create:agent/stub-model:0", "check:code:1", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "cascade:code:0"]);
     // The round's kind fix (queue-entry/2, with its cause) is closed fixed by its assignee once pins.resolve passes.
     const fix = once.state!.raised.find(name => name.startsWith("queue.fix#"))!;
     expect(w.work(fix)).toMatchObject({ kind: "fix", target: "designer/components.button", assignee: "designer", check: "pins.resolve", cause: expect.stringMatching(/^loop\.fill run .+ step check round 1$/), status: "closed", outcome: "fixed", result: "designer/components.button" });
@@ -287,7 +287,7 @@ describe("F3 tighten brief (T3) and F7 upstream cascade (T7)", () => {
     expect(done.state!.status).toBe("done");
     const refine = w.ledger("loop.refine")[0]!;
     expect(refine).toMatchObject({ trigger: { kind: "tighten-brief" }, loopVersion: "refine-v1.json" });
-    expect(stepLine(refine)).toEqual(["triage:code:0", "refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
+    expect(stepLine(refine)).toEqual(["triage:code:0", "refine-brief:agent/stub-model:0", "adopt:code:0", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
     // G7: a code step's wrote carries the written file's real sha256 (formerly null for a non-candidate).
     expect(refine.steps.at(-1)!.wrote).toEqual([{ file: "designer/components.button/slot.json", sha256: fileSha(join(w.root, "clossys", "agents", "designer", "components.button", "slot.json")) }]);
     expect(w.readSlot("designer/components.button").status).toBe("needs-refresh");
@@ -322,7 +322,7 @@ describe("F4 add L3 (T4)", () => {
     expect(result.state!.status).toBe("done");
     const ledger = w.ledger("loop.fill")[0]!;
     expect(ledger.trigger).toEqual({ kind: "add-l3", ref: { to: "producer/queue.fix", record: entry.id, rel: "raisedBy" } });
-    expect(stepLine(ledger)).toEqual(["triage:code:0", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "cascade:code:0"]);
+    expect(stepLine(ledger)).toEqual(["triage:code:0", "adopt:code:0", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "cascade:code:0"]);
     expect(w.entry(`queue.fix#${entry.id}`)).toMatchObject({ status: "answered" });
     expect(ledger.refs).toContainEqual({ to: "producer/queue.fix", record: entry.id, rel: "answers" });
   });
@@ -343,7 +343,7 @@ describe("F5 owner feedback (T5)", () => {
     await resumeRun(w.root, run.state!.runId, hooks, { now });
     const ledger = w.ledger("loop.refine")[0]!;
     expect(ledger).toMatchObject({ status: "done", trigger: { kind: "owner-feedback", ref: { to: "producer/queue.change", record: change.id, rel: "raisedBy" } } });
-    expect(stepLine(ledger)).toEqual(["triage:code:0", "refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
+    expect(stepLine(ledger)).toEqual(["triage:code:0", "refine-brief:agent/stub-model:0", "adopt:code:0", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
     // refine-brief got the entry so the agent reads the owner's words.
     expect(hooks.calls[0]).toEqual({ step: "refine-brief", kind: "agent" });
     const closed = w.work(`queue.change#${change.id}`);
@@ -495,7 +495,7 @@ describe("resume", () => {
     // T2 names no rule: the triage code step settles refine-brief, which never reaches the agent (DET-STEPS 5).
     expect(hooks.calls.filter(call => call.step === "refine-brief")).toHaveLength(0);
     expect(hooks.calls.filter(call => call.step === "create")).toEqual([{ step: "create", kind: "agent", wait: true }, { step: "create", kind: "agent" }]);
-    expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id)).toEqual(["triage", "create", "check", "score", "pick", "cascade"]);
+    expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id)).toEqual(["triage", "adopt", "create", "check", "score", "pick", "cascade"]);
     // A finished run does not resume.
     expect((await resumeRun(w.root, first.state!.runId, hooks, { now })).exitCode).toBe(2);
   });
@@ -519,7 +519,7 @@ describe("resume", () => {
     const run = await startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, stub(w.root), { now });
     expect(run.state!.version).toMatchObject({ source: "pin", candidate: "fill-v2.json", ref: "producer/loop.fill/fill-v2.json" });
     expect(w.ledger("loop.fill")[0]!.loopVersion).toBe("fill-v2.json");
-    expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id)).toEqual(["triage", "create", "check", "score", "pick", "cascade"]);
+    expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id)).toEqual(["triage", "adopt", "create", "check", "score", "pick", "cascade"]);
 
     const broken = world(["designer/components.button"]);
     pinConsumerLoop(broken.root, "loop.fill", content => ({ ...content, steps: content.steps.filter(step => step.id !== "pick") }));
@@ -570,7 +570,7 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
       ownerAnswer(w.root, run.entry!, "placeholder-v1.json", now);
       expect((await resumeRun(w.root, run.state!.runId, hooks, { now })).state!.status, ref).toBe("done");
       expect(hooks.calls.map(call => call.step), ref).toEqual(["create", "check", "owner-pick"]);
-      expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id), ref).toEqual(["triage", "create", "check", "owner-pick", "cascade"]);
+      expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id), ref).toEqual(["triage", "adopt", "create", "check", "owner-pick", "cascade"]);
       expect(pinText(w.root, ref), ref).toMatch(new RegExp(`"decidedBy": "owner:${run.entry!.replace(/[.#]/g, "\\$&")}"`));
     }
   });
@@ -785,7 +785,7 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     const again = await resumeRun(w.root, run.state!.runId, hooks, { now });
     expect(again.exitCode).toBe(0);
     expect(again.state).toMatchObject({ status: "done" });
-    expect(again.state!.steps.map(step => step.id)).toEqual(["triage", "create", "check", "score", "pick"]);
+    expect(again.state!.steps.map(step => step.id)).toEqual(["triage", "adopt", "create", "check", "score", "pick"]);
     expect(hooks.calls).toHaveLength(calls);
     expect(pinText(w.root, "designer/themes.background")).toBe(pin);
     expect(readdirSync(ledgerDir(w.root, "loop.fill"))).toHaveLength(1);
@@ -801,7 +801,7 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     ownerAnswer(w.root, run.entry!, "approve", now);
     expect((await resumeRun(w.root, run.state!.runId, hooks, { now })).state!.status).toBe("done");
     const ledger = w.ledger("loop.fill")[0]!;
-    expect(stepLine(ledger)).toEqual(["triage:code:0", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
+    expect(stepLine(ledger)).toEqual(["triage:code:0", "adopt:code:0", "create:agent/stub-model:0", "check:code:0", "score:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
     expect(ledger.decisions).toEqual([{ entry: run.entry, answer: "approve" }]);
   });
 
@@ -1145,11 +1145,14 @@ describe("DET-STEPS: a fixed-rule code step settles the agent step after it; onl
     expect(run.state!.settled).toEqual({ "refine-brief": "triage" });
     expect(stepLine(w.ledger("loop.fill")[0]!)[0]).toBe("triage:code:0");
     expect(settleRecord(w.root, run.state!.runId, "triage")).toMatchObject({ schema: "clossys.settle/1", rule: "brief", outcome: "settled", settles: ["refine-brief"], answer: "no tightening", why: expect.stringMatching(/^trigger T2 .* names one record and no rule/) });
-    // Two run.settle events: triage's, then score's (DET-STEPS round 2; the stub's candidate is not certified, so the agent picks).
+    // Three run.settle events: triage's, adopt's, then score's (DET-STEPS round 2; this world's button ships no stock
+    // item code may install, so the agent creates, and the stub's candidate is not certified, so the agent picks).
     const events = runEvents(w.root, "loop.fill", run.state!.runId, "run.settle");
-    expect(events).toEqual([expect.objectContaining({ actor: "code:clossys run" }), expect.objectContaining({ actor: "code:clossys run" })]);
+    expect(events).toEqual([0, 1, 2].map(() => expect.objectContaining({ actor: "code:clossys run" })));
     expect((events[0]!.inputs ?? []).map(input => input.path)).toContain(`.clossys/runs/loops/${run.state!.runId}.settle/triage.json`);
-    expect((events[1]!.inputs ?? []).map(input => input.path)).toContain(`.clossys/runs/loops/${run.state!.runId}.settle/score.json`);
+    expect((events[1]!.inputs ?? []).map(input => input.path)).toContain(`.clossys/runs/loops/${run.state!.runId}.settle/adopt.json`);
+    expect((events[2]!.inputs ?? []).map(input => input.path)).toContain(`.clossys/runs/loops/${run.state!.runId}.settle/score.json`);
+    expect(settleRecord(w.root, run.state!.runId, "adopt")).toMatchObject({ schema: "clossys.settle/1", rule: "adopt", outcome: "agent", settles: [], why: expect.stringMatching(/the agent creates$/) });
     expect(settleRecord(w.root, run.state!.runId, "score")).toMatchObject({ schema: "clossys.settle/1", rule: "pick", outcome: "agent", settles: [] });
   });
 
