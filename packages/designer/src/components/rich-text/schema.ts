@@ -33,7 +33,7 @@ const ProseTableKit = TableKit.extend({
 const Callout = Node.create({
   name: "callout", group: "block", content: "block+",
   parseHTML: () => [{ tag: "aside[data-document-callout]" }],
-  renderHTML: () => ["aside", { "data-document-callout": "", class: RICH_TEXT_CALLOUT, style: "border-inline-start-width:var(--ui-border-hairline);border-inline-start-style:solid" }, 0],
+  renderHTML: () => ["aside", { "data-document-callout": "", class: RICH_TEXT_CALLOUT, style: "border-inline-start-width:var(--ui-border-hairline, 1px);border-inline-start-style:solid" }, 0],
   addNodeView: () => ReactNodeViewRenderer(RichTextCalloutView),
 });
 const Badge = Mark.create({
@@ -49,7 +49,7 @@ export const richTextExtensions = [ProseStarterKit.configure({
   bulletList: { HTMLAttributes: { class: RICH_TEXT_BULLETS } },
   orderedList: { HTMLAttributes: { class: RICH_TEXT_ORDERED } },
   listItem: { HTMLAttributes: { class: RICH_TEXT_ITEM } },
-  blockquote: { HTMLAttributes: { class: RICH_TEXT_QUOTE, style: "border-inline-start-width:var(--ui-border-hairline);border-inline-start-style:solid" } },
+  blockquote: { HTMLAttributes: { class: RICH_TEXT_QUOTE, style: "border-inline-start-width:var(--ui-border-hairline, 1px);border-inline-start-style:solid" } },
   codeBlock: { HTMLAttributes: { class: RICH_TEXT_PRE } },
   code: { HTMLAttributes: { class: RICH_TEXT_CODE } },
   horizontalRule: { HTMLAttributes: { class: RICH_TEXT_RULE } },

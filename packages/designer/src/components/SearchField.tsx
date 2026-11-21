@@ -100,7 +100,7 @@ export function SearchField({
             />
             {!isEmpty ? (
               <AriaButton className={cx(iconButtonClassName({ size: "sm", shape: "square" }), "absolute end-sm")}
-                style={state => ({ ...controlSizeStyle("sm"), inlineSize: "var(--ui-control-h-sm)", ...controlStateStyle(state) })}>
+                style={state => ({ ...controlSizeStyle("sm"), inlineSize: "var(--ui-control-h-sm, 28px)", ...controlStateStyle(state) })}>
                 <Icon glyph={closeGlyph} decorative size="sm" />
               </AriaButton>
             ) : null}

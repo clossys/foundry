@@ -19,8 +19,8 @@ const toggleVariants = cva(
       },
       size: {
         default: "h-(--ui-control-h-md) min-w-(--spacing-2xl) px-(--spacing-md) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm)",
-        sm: "h-(--ui-control-h-sm) min-w-[var(--spacing-2xl)] rounded-(--radius-control) px-(--spacing-md) text-(length:--text-caption) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm) [&_svg:not([class*='size-'])]:size-(--ui-control-switch-thumb)",
-        lg: "h-(--ui-control-h-lg) min-w-[var(--spacing-2xl)] px-(--spacing-md) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm)",
+        sm: "h-(--ui-control-h-sm) min-w-[var(--spacing-2xl,32px)] rounded-(--radius-control) px-(--spacing-md) text-(length:--text-caption) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm) [&_svg:not([class*='size-'])]:size-(--ui-control-switch-thumb)",
+        lg: "h-(--ui-control-h-lg) min-w-[var(--spacing-2xl,32px)] px-(--spacing-md) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm)",
       },
     },
     defaultVariants: {

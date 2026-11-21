@@ -1,8 +1,10 @@
 /**
  * Fallbacks for the `var(--x)` reads Designer's own CSS emitters write (CONTAM-U9): the blocks
- * (`src/blocks/**`), the specimens (`src/specimen/**`) and the token previews
- * (`src/tokens/preview/**`). Each is a TS/TSX source whose strings become CSS: inline style
- * values, `<style>` text and Tailwind class strings.
+ * (`src/blocks/**`), the specimens (`src/specimen/**`), the token previews
+ * (`src/tokens/preview/**`) and the components (`src/components/**`, D5-2C), hand-written and
+ * partner sources alike. Each is a TS/TSX source whose strings become CSS: inline style values,
+ * `<style>` text and Tailwind class strings. The component preview runtime
+ * (`src/components/preview-runtime/**`) is not walked: its generator writes it.
  *
  * No value is typed here. Each comes from the declared-fallback reader the generated stylesheet
  * uses (`declared-fallbacks.ts`), over the same declared sources (`compiledCssDeclaredSources`):
@@ -33,20 +35,25 @@ import { extname, join, relative, sep } from "node:path";
 import { addDeclaredFallbacks, alignDeclaredFallbacks, classifyFallbackReads, type DeclaredSources, type FallbackRead } from "./declared-fallbacks.js";
 
 /** The emitter directories, relative to the package root. */
-export const EMITTER_DIRS = ["src/blocks", "src/specimen", "src/tokens/preview"] as const;
+export const EMITTER_DIRS = ["src/blocks", "src/specimen", "src/tokens/preview", "src/components"] as const;
+
+/** Generated output under `EMITTER_DIRS`, relative to the package root: `scripts/generate-default-component-preview.mjs` writes it. */
+export const GENERATED_DIRS = ["src/components/preview-runtime"] as const;
 
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx"]);
 const SKIP_FILE_RE = /\.(test|spec|check)\.(ts|tsx)$|\.d\.ts$/;
 
-/** Every emitter source under `EMITTER_DIRS`, as a sorted package-relative path with `/` separators. Tests and declaration files are not emitters. */
+/** Every emitter source under `EMITTER_DIRS` and outside `GENERATED_DIRS`, as a sorted package-relative path with `/` separators. Tests and declaration files are not emitters. */
 export function emitterFiles(packageRoot: string): string[] {
   const out: string[] = [];
+  const generated = new Set(GENERATED_DIRS.map((dir) => join(packageRoot, dir)));
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir).sort()) {
       const full = join(dir, entry);
       const stat = statSync(full);
-      if (stat.isDirectory()) walk(full);
-      else if (stat.isFile() && SOURCE_EXTENSIONS.has(extname(entry)) && !SKIP_FILE_RE.test(entry)) out.push(relative(packageRoot, full).split(sep).join("/"));
+      if (stat.isDirectory()) {
+        if (!generated.has(full)) walk(full);
+      } else if (stat.isFile() && SOURCE_EXTENSIONS.has(extname(entry)) && !SKIP_FILE_RE.test(entry)) out.push(relative(packageRoot, full).split(sep).join("/"));
     }
   };
   for (const dir of EMITTER_DIRS) walk(join(packageRoot, dir));

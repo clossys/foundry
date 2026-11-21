@@ -17,5 +17,5 @@ export const RICH_TEXT_PRE = "my-lg overflow-x-auto rounded-control bg-surface-s
 export const RICH_TEXT_CODE = "font-mono text-code-block text-ink-primary rounded-control bg-surface-sunken";
 export const RICH_TEXT_CALLOUT = "my-lg border-line-base bg-surface-sunken px-lg py-md";
 export const RICH_TEXT_RULE = "my-xl border-line-base";
-export const RICH_TEXT_QUOTE_STYLE = { borderInlineStartWidth: "var(--ui-border-hairline)", borderInlineStartStyle: "solid" } as const;
-export const RICH_TEXT_RULE_STYLE = { borderBlockStartWidth: "var(--ui-border-hairline)", borderBlockStartStyle: "solid" } as const;
+export const RICH_TEXT_QUOTE_STYLE = { borderInlineStartWidth: "var(--ui-border-hairline, 1px)", borderInlineStartStyle: "solid" } as const;
+export const RICH_TEXT_RULE_STYLE = { borderBlockStartWidth: "var(--ui-border-hairline, 1px)", borderBlockStartStyle: "solid" } as const;

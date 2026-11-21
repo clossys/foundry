@@ -21,6 +21,6 @@ export const NativeAction = forwardRef<HTMLButtonElement, NativeActionProps>(fun
   }
   if (typeof children === "function" || typeof className === "function" || typeof style === "function") throw new TypeError("NativeAction does not accept render functions");
   return <button {...props} type={type} ref={ref}
-    className={cx(buttonClassName("primary", "md", "base"), "active:bg-action-pressed focus-visible:[outline:var(--ui-border-focus,2px)_solid_var(--color-focus-ring)] focus-visible:[outline-offset:var(--ui-focus-offset,2px)] disabled:opacity-[var(--ui-alpha-disabled,0.5)]", className)}
+    className={cx(buttonClassName("primary", "md", "base"), "active:bg-action-pressed focus-visible:[outline:var(--ui-border-focus,2px)_solid_var(--color-focus-ring,var(--color-action,#0A0A0A))] focus-visible:[outline-offset:var(--ui-focus-offset,2px)] disabled:opacity-[var(--ui-alpha-disabled,0.5)]", className)}
     style={style}>{children}</button>;
 });

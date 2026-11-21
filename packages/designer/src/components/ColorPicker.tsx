@@ -10,7 +10,7 @@ const SizeContext = createContext<ControlSize>("md");
 const height = (size: ControlSize) => controlHeight(size);
 /** Root is a context provider, matching RAC; it does not invent a DOM ref. */
 function Root({ size = "md", ...props }: ColorPickerProps) { return <SizeContext.Provider value={size}><AriaColorPicker {...props} /></SizeContext.Provider>; }
-function Thumb() { return <ColorThumb className="border border-line-base rounded-full forced-colors:outline" style={state => ({ width: "var(--ui-control-mark)", height: "var(--ui-control-mark)", boxShadow: state.isFocusVisible ? UI_RING_FOCUS : undefined })} />; }
+function Thumb() { return <ColorThumb className="border border-line-base rounded-full forced-colors:outline" style={state => ({ width: "var(--ui-control-mark, 16px)", height: "var(--ui-control-mark, 16px)", boxShadow: state.isFocusVisible ? UI_RING_FOCUS : undefined })} />; }
 const Area = forwardRef<HTMLDivElement, ColorAreaProps>(function Area({ children, style, ...props }, ref) {
   const size = useContext(SizeContext);
   return <ColorArea {...props} ref={ref} style={state => ({ inlineSize: `calc(${height(size)} * 4)`, blockSize: `calc(${height(size)} * 4)`, opacity: state.isDisabled ? UI_ALPHA_DISABLED : undefined, ...(typeof style === "function" ? style(state) : style) })}>{children ?? <Thumb />}</ColorArea>;
@@ -41,7 +41,7 @@ const Field = forwardRef<HTMLDivElement, Omit<ColorFieldProps, "children"> & { l
 });
 const SwatchPicker = forwardRef<HTMLDivElement, ColorSwatchPickerProps>(function SwatchPicker({ className, ...props }, ref) { return <ColorSwatchPicker {...props} ref={ref} className={state => cx("flex flex-wrap gap-sm", typeof className === "function" ? className(state) : className)} />; });
 const Swatch = forwardRef<HTMLDivElement, ColorSwatchPickerItemProps>(function Swatch({ children, style, ...props }, ref) {
-  return <ColorSwatchPickerItem {...props} ref={ref} style={state => ({ minInlineSize: "var(--ui-layout-tap-target)", minBlockSize: "var(--ui-layout-tap-target)", boxShadow: state.isFocusVisible ? UI_RING_FOCUS : undefined, ...(typeof style === "function" ? style(state) : style) })}>{children ?? <ColorSwatch style={{ inlineSize: "var(--ui-layout-tap-target)", blockSize: "var(--ui-layout-tap-target)" }} />}</ColorSwatchPickerItem>;
+  return <ColorSwatchPickerItem {...props} ref={ref} style={state => ({ minInlineSize: "var(--ui-layout-tap-target, 44px)", minBlockSize: "var(--ui-layout-tap-target, 44px)", boxShadow: state.isFocusVisible ? UI_RING_FOCUS : undefined, ...(typeof style === "function" ? style(state) : style) })}>{children ?? <ColorSwatch style={{ inlineSize: "var(--ui-layout-tap-target, 44px)", blockSize: "var(--ui-layout-tap-target, 44px)" }} />}</ColorSwatchPickerItem>;
 });
 /** Inspectable compound controls. Craft qualification is required before catalog adoption. */
 export const ColorPicker = Object.assign(Root, { Area, Wheel, Slider, Field, SwatchPicker, Swatch });

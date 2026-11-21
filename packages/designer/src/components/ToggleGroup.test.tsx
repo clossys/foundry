@@ -67,7 +67,7 @@ describe("adopted shadcn@aria ToggleGroup", () => {
     expect(option.current).toBe(screen.getByRole("radio", { name: "Dark (1)" }));
     expect(group.current).toHaveClass("host-system");
     expect(group.current).toHaveStyle({ color: "rgb(255, 0, 0)" });
-    expect(group.current!.style.getPropertyValue("--gap")).toBe("calc(var(--spacing-xs) * 2)");
+    expect(group.current!.style.getPropertyValue("--gap")).toBe("calc(var(--spacing-xs, 4px) * 2)");
     await user.click(option.current!);
     expect(option.current).toBeChecked();
     expect(option.current).toHaveClass("host-selected");

@@ -185,7 +185,7 @@ export function iconButtonClassName({ size = "md", shape = "square", ground = "b
 }
 
 /** The control-height token of each size, as literal reads so every var() names its property. */
-const CONTROL_HEIGHT = { sm: "var(--ui-control-h-sm)", md: "var(--ui-control-h-md)", lg: "var(--ui-control-h-lg)" } as const satisfies Record<ButtonSize, string>;
+const CONTROL_HEIGHT = { sm: "var(--ui-control-h-sm, 28px)", md: "var(--ui-control-h-md, 32px)", lg: "var(--ui-control-h-lg, 36px)" } as const satisfies Record<ButtonSize, string>;
 
 /** The control-height token read for one size. */
 export function controlHeight(size: ButtonSize = "md"): string {
@@ -198,7 +198,7 @@ export function controlSizeStyle(size: ButtonSize = "md"): CSSProperties {
 }
 
 /** The two state-layer alpha tokens, as literal reads. */
-const STATE_ALPHA = { pressed: "var(--ui-state-pressed-alpha)", hover: "var(--ui-state-hover-alpha)" } as const;
+const STATE_ALPHA = { pressed: "var(--ui-state-pressed-alpha, 0.14)", hover: "var(--ui-state-hover-alpha, 0.08)" } as const;
 
 /**
  * A state layer paints over the existing fill, including a selected fill. The
@@ -214,9 +214,9 @@ export function controlStateStyle(
   const layer = `color-mix(in srgb, currentColor calc(${alpha} * 100%), transparent)`;
   return {
     backgroundImage: !state.isDisabled && alpha ? `linear-gradient(${layer}, ${layer})` : undefined,
-    color: state.isDisabled ? "var(--color-ink-muted)" : undefined,
-    backgroundColor: state.isDisabled ? "var(--color-control-tonal)" : undefined,
-    borderColor: state.isDisabled ? "var(--color-line-base)" : undefined,
+    color: state.isDisabled ? "var(--color-ink-muted, oklch(0.54 0 0))" : undefined,
+    backgroundColor: state.isDisabled ? "var(--color-control-tonal, oklch(0.2178 0 0 / 0.08))" : undefined,
+    borderColor: state.isDisabled ? "var(--color-line-base, oklch(0.8761 0 0))" : undefined,
     opacity: state.isDisabled && dimDisabled ? UI_ALPHA_DISABLED : undefined,
     outline: state.isFocusVisible ? (ground === "inverse" ? UI_OUTLINE_FOCUS_INVERSE : UI_OUTLINE_FOCUS) : undefined,
     outlineOffset: state.isFocusVisible ? UI_FOCUS_OFFSET : undefined,

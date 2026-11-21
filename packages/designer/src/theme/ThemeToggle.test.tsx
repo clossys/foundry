@@ -118,7 +118,7 @@ describe("ThemeToggle", () => {
     expect(group).toHaveAttribute("data-variant", "outline");
     expect(group).toHaveAttribute("data-size", "sm");
     expect(group).toHaveStyle({ marginInlineStart: "12px" });
-    expect(group.style.getPropertyValue("--gap")).toBe("calc(var(--spacing-xs) * 2)");
+    expect(group.style.getPropertyValue("--gap")).toBe("calc(var(--spacing-xs, 4px) * 2)");
     for (const radio of screen.getAllByRole("radio")) expect(radio).toBeDisabled();
     await user.click(screen.getByRole("radio", { name: "Dark" }));
     expect(screen.getByRole("radio", { name: "System" })).toBeChecked();

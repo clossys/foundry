@@ -6,7 +6,8 @@
 // default "system"); the lucide-react icons are the same Lucide glyphs drawn through
 // this package's stock Icon (Lucide's octagon-x and loader glyphs are not vendored, so
 // error uses circle-x and loading keeps sonner's own spinner); a caller's `style` merges
-// over the stock variables instead of replacing them.
+// over the stock variables instead of replacing them; each stock variable read carries its
+// declared value as fallback (written by the emitter-fallback aligner).
 import type { CSSProperties } from "react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
@@ -42,10 +43,10 @@ const Toaster = ({ style, ...props }: ToasterProps) => {
       }}
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          "--normal-bg": "var(--popover, oklch(1 0 0))",
+          "--normal-text": "var(--popover-foreground, oklch(0.145 0 0))",
+          "--normal-border": "var(--border, oklch(0.922 0 0))",
+          "--border-radius": "var(--radius, 0.625rem)",
           ...style,
         } as CSSProperties
       }

@@ -8,8 +8,8 @@ import { UndeclaredTokenFallbackError, classifyFallbackReads, globalDeclaredToke
 import { alignEmitterText, emitterComputedFallbacks, emitterFiles, emitterInterpolatedReads, emitterReads } from "./emitter-fallbacks.js";
 
 /**
- * CONTAM-U9: every `var(--x)` Designer's block, specimen and token-preview emitters write carries a
- * fallback. Where `--x` has a global declared value (`:root` or theme level; for `--tw-*`, its
+ * CONTAM-U9 and D5-2C: every `var(--x)` Designer's block, specimen, token-preview and component
+ * emitters write carries a fallback (the generated component preview runtime is not walked). Where `--x` has a global declared value (`:root` or theme level; for `--tw-*`, its
  * `@property` initial value) the fallback equals that value, expanded (CONTAM-U6 B). A read of a
  * runtime-only variable carries `unset`. A fallback computed by code reads the token registry,
  * whose value must equal the declared value. Values come from the reader `compiled.css` uses.
@@ -27,8 +27,28 @@ const lineOf = (text: string, offset: number): number => text.slice(0, offset).s
 const all = emitters.flatMap((e) => e.reads.map((read) => ({ ...read, at: `${e.file}:${lineOf(e.text, read.offset)} ${read.name}`, computed: e.computed.some((c) => c.start === read.offset) })));
 
 describe("Designer emitter fallbacks equal their declared values (CONTAM-U9)", () => {
-  it("scans the block, specimen and token-preview emitters", () => {
-    for (const dir of ["src/blocks/", "src/specimen/", "src/tokens/preview/"]) expect(emitters.some((e) => e.file.startsWith(dir) && e.reads.length > 0), dir).toBe(true);
+  it("scans the block, specimen, token-preview and component emitters", () => {
+    for (const dir of ["src/blocks/", "src/specimen/", "src/tokens/preview/", "src/components/"]) expect(emitters.some((e) => e.file.startsWith(dir) && e.reads.length > 0), dir).toBe(true);
+  });
+
+  it("scans the hand-written and partner component sources, and not the generated preview runtime (D5-2C)", () => {
+    const components = [
+      "src/components/ColorPicker.tsx",
+      "src/components/NativeAction.tsx",
+      "src/components/NumberField.tsx",
+      "src/components/SearchField.tsx",
+      "src/components/Tree.tsx",
+      "src/components/button-classes.ts",
+      "src/components/partners/kibo-ui/video-player.tsx",
+      "src/components/partners/shadcn/sonner.tsx",
+      "src/components/rich-text/schema.ts",
+      "src/components/rich-text/styles.ts",
+      "src/components/scroll-area/scroll-area.tsx",
+      "src/components/toggle-button/toggle.tsx",
+      "src/components/toggle-group/toggle-group.tsx",
+    ];
+    for (const file of components) expect(emitters.find((e) => e.file === file)?.reads.length ?? 0, file).toBeGreaterThan(0);
+    expect(emitters.filter((e) => e.file.startsWith("src/components/preview-runtime/")).map((e) => e.file)).toEqual([]);
   });
 
   it("has no bare read", () => {

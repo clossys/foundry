@@ -11,16 +11,17 @@
  * gets a legible, if unbranded, result — a focus ring, a disabled state,
  * a raised card — instead of `var()` silently resolving to nothing.
  */
+import { TOKENS } from "../../tokens/tokens.js";
 
 /** Focus-visible ring. Applied only when `isFocusVisible` is true. */
-export const UI_RING_FOCUS = "var(--ui-ring-focus, 0 0 0 2px var(--primary, oklch(0.4748 0 0)))";
+export const UI_RING_FOCUS = "var(--ui-ring-focus, 0 0 0 2px var(--color-action, #0A0A0A))";
 
 /**
  * The control focus outline (Button, Link, and every icon-only control inside a composite part): a
  * solid outline on the focus-ring token, offset by the focus-offset token. A solid outline survives
  * forced-colours mode, which a box-shadow ring does not.
  */
-export const UI_OUTLINE_FOCUS = "var(--ui-border-focus, 2px) solid var(--color-focus-ring, var(--primary, oklch(0.4748 0 0)))";
+export const UI_OUTLINE_FOCUS = "var(--ui-border-focus, 2px) solid var(--color-focus-ring, var(--color-action, #0A0A0A))";
 /** The same outline on an inverse ground. */
 export const UI_OUTLINE_FOCUS_INVERSE = "var(--ui-border-focus, 2px) solid var(--color-focus-ring-on-inverse, var(--color-ink-on-inverse, oklch(0.9702 0 0)))";
 /** Offset of the control focus outline. */
@@ -100,16 +101,17 @@ export const UI_BORDER_RULE = "var(--ui-border-rule, 2px)";
 /**
  * Panel edge width (`--ui-border-panel`): the edge of `Card`'s `outline`
  * variant and so of every product panel built on it. A brand lever that
- * defaults to the hairline, so the fallback composes the hairline read.
+ * defaults to the hairline; the fallback is the registry value, which
+ * composes the hairline read.
  */
-export const UI_BORDER_PANEL = `var(--ui-border-panel, ${UI_BORDER_HAIRLINE})`;
+export const UI_BORDER_PANEL = `var(--ui-border-panel, ${TOKENS["--ui-border-panel"]!.value})`;
 
 /**
  * Panel lift (`--ui-elevation-panel`): the shadow under a product panel
- * (`SpecimenPanel`). A brand lever that defaults to the floating elevation,
- * so the fallback composes the floating read.
+ * (`SpecimenPanel`). A brand lever that defaults to the floating elevation;
+ * the fallback is the registry value, which composes the floating read.
  */
-export const UI_ELEVATION_PANEL = `var(--ui-elevation-panel, ${UI_ELEVATION_FLOATING})`;
+export const UI_ELEVATION_PANEL = `var(--ui-elevation-panel, ${TOKENS["--ui-elevation-panel"]!.value})`;
 
 /** The notice measure: inline-size cap of a compact, bounded notice such as `Banner density="compact"`. */
 export const UI_WIDTH_NOTICE_MAX = "var(--ui-width-notice-max, 24rem)";
