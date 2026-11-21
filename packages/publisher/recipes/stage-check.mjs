@@ -4,9 +4,9 @@
  * recorded (slot-constitution.md section 5b; foundry-feedback-0015, -0018). Every recipe under
  * packages/publisher/recipes/ calls it.
  *
- *   node packages/publisher/recipes/stage-check.mjs brief   <slot> <brief.json>      [--root <dir>]
- *   node packages/publisher/recipes/stage-check.mjs diverge <slot> <directions.json> [--root <dir>]
- *   node packages/publisher/recipes/stage-check.mjs draft   <slot> <draft.json>      [--root <dir>]
+ *   clossys recipe check <recipe-id> brief   <slot> <brief.json>      [--root <dir>]
+ *   clossys recipe check <recipe-id> diverge <slot> <directions.json> [--root <dir>]
+ *   clossys recipe check <recipe-id> draft   <slot> <draft.json>      [--root <dir>]
  *
  * Publisher assembles and never writes or designs. brief and diverge: the shared rules of
  * stage-core.mjs, plus: a page briefs from its pinned Designer frame, and every page direction names

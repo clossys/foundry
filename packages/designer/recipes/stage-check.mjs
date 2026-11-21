@@ -4,8 +4,8 @@
  * (slot-constitution.md section 5b; foundry-feedback-0018: problems surface at the stage, not at the
  * final Done-when). Every recipe under packages/designer/recipes/ calls it.
  *
- *   node packages/designer/recipes/stage-check.mjs brief   <slot> <brief.json>      [--root <dir>]
- *   node packages/designer/recipes/stage-check.mjs diverge <slot> <directions.json> [--root <dir>]
+ *   clossys recipe check <recipe-id> brief   <slot> <brief.json>      [--root <dir>]
+ *   clossys recipe check <recipe-id> diverge <slot> <directions.json> [--root <dir>]
  *
  * brief:   the brief names the slot's standard and a recipe that produces for it, lists every
  *          requirement id of that standard, and lists every pinned upstream input (the slot's
@@ -193,7 +193,7 @@ export function checkDiverge(root, slot, file) {
   return out;
 }
 
-const USAGE = "Usage: node packages/designer/recipes/stage-check.mjs brief|diverge <slot> <file.json> [--root <dir>]\n";
+const USAGE = "Usage: clossys recipe check <recipe-id> brief|diverge <slot> <file.json> [--root <dir>]\n";
 
 export function main(argv, cwd = process.cwd()) {
   const args = [...argv];

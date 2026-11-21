@@ -4,9 +4,9 @@
  * recorded (slot-constitution.md section 5b; foundry-feedback-0015, -0018). Every recipe under
  * packages/director/recipes/ calls it.
  *
- *   node packages/director/recipes/stage-check.mjs brief   <slot> <brief.json>      [--root <dir>]
- *   node packages/director/recipes/stage-check.mjs diverge <slot> <directions.json> [--root <dir>]
- *   node packages/director/recipes/stage-check.mjs draft   <slot> <draft.md>        [--root <dir>]
+ *   clossys recipe check <recipe-id> brief   <slot> <brief.json>      [--root <dir>]
+ *   clossys recipe check <recipe-id> diverge <slot> <directions.json> [--root <dir>]
+ *   clossys recipe check <recipe-id> draft   <slot> <draft.md>        [--root <dir>]
  *
  * brief and diverge: the shared rules of stage-core.mjs, plus: a brief derives from Director pins
  * and recorded findings only, so every input and every direction's traits are Director slots or

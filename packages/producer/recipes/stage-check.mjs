@@ -4,9 +4,9 @@
  * recorded (slot-constitution.md section 5b; foundry-feedback-0015, -0018). Every recipe under
  * packages/producer/recipes/ calls it.
  *
- *   node packages/producer/recipes/stage-check.mjs brief   <slot> <brief.json>      [--root <dir>]
- *   node packages/producer/recipes/stage-check.mjs diverge <slot> <directions.json> [--root <dir>]
- *   node packages/producer/recipes/stage-check.mjs draft   <slot> <draft.json>      [--root <dir>]
+ *   clossys recipe check <recipe-id> brief   <slot> <brief.json>      [--root <dir>]
+ *   clossys recipe check <recipe-id> diverge <slot> <directions.json> [--root <dir>]
+ *   clossys recipe check <recipe-id> draft   <slot> <draft.json>      [--root <dir>]
  *
  * brief and diverge: the shared rules of stage-core.mjs, plus: the brief names the contract's step,
  * and every direction is a feasible seat (a holder of owner, planner or agent:<agent>; a hand of llm,

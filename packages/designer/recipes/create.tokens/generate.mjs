@@ -5,7 +5,7 @@
  * decides the values and the Director reason in the diverge stage; this tool only plumbs them, so a
  * draft has one shape whatever direction it came from.
  *
- *   node packages/designer/recipes/create.tokens/generate.mjs <spec.json> [--root <dir>] > draft.json
+ *   clossys recipe generate create.tokens <spec.json> [--root <dir>] > draft.json
  *
  * Deterministic (R15.5): the same spec and slot contract give identical bytes. It reads two files
  * and writes stdout; no clock (createdAt comes from the spec), no network, no randomness.

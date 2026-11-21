@@ -1400,6 +1400,56 @@ const PUBLIC_FORMAT_FILENAMES = new Set([
   "SKILL.md", // the Agent Skills package format
 ]);
 
+// SKILL IDS ARE IDS, NOT CITATIONS (CONTAM-U3 D5).
+//
+// `clossys next ... --skill packages/<agent>/actions/<step>/skill.md` names a
+// skill by its package-relative id. The producer requires exactly that
+// spelling (`owningAgent` in packages/producer/src/records/candidate.ts
+// refuses anything else) and resolves it with `packagePath`
+// (packages/producer/src/package-path.ts): in a consumer root, which has no
+// `packages/` folder, `packages/<name>/<rest>` is `<rest>` inside the
+// installed `@clossys/<name>`. So this argument form is never judged as a
+// path from the citing file. It is judged the way packagePath reads it: it
+// passes only when `<name>` is a package packagePath maps and `<rest>` is a
+// file that package ships, and it fails with the id otherwise.
+//
+// Exactly one syntactic form: a path citation written as the value of
+// `--skill` (`--skill <id>` or `--skill=<id>`). The same path written anywhere
+// else, in prose or as a `node packages/...` command, is a citation and is
+// judged as one.
+//
+// The packages packagePath maps: Producer itself and AGENT_PACKAGES
+// (packages/producer/src/agents.ts). packages/producer/src/package-path.test.ts
+// pins this list to those two sources, so the two cannot drift apart.
+const SKILL_ID_PACKAGES = ["producer", "director", "designer", "writer", "publisher"];
+const SKILL_ID_ARG_RE = /(?:^|[\s`'"(])--skill(?:=|[ \t]+)$/;
+const SKILL_ID_RE = /^packages\/([a-z][a-z0-9-]*)\/(.+)$/;
+
+// Null when the id resolves to a shipped file; else { indeterminate?, detail }.
+function skillIdIssue(id) {
+  const m = SKILL_ID_RE.exec(id);
+  if (!m) return { detail: `passes --skill "${id}", which is not a package-relative skill id (packages/<agent>/<path>)` };
+  const [, name, rest] = m;
+  if (!SKILL_ID_PACKAGES.includes(name)) {
+    return { detail: `passes --skill "${id}", but packagePath maps no installed package for "packages/${name}" (it maps ${SKILL_ID_PACKAGES.join(", ")}), so a consumer root resolves this id to nothing` };
+  }
+  const pkgRoot = join(repoRoot, "packages", name);
+  if (!existsSync(join(pkgRoot, "package.json"))) {
+    return { detail: `passes --skill "${id}", but this repository has no package at "packages/${name}", so no installed package carries the skill` };
+  }
+  if (!existsSync(join(pkgRoot, ...rest.split("/")))) {
+    return { detail: `passes --skill "${id}", which packagePath resolves to "${rest}" in the installed "packages/${name}" package, and no such file exists` };
+  }
+  const shipped = shippedFileSet(pkgRoot);
+  if (!shipped.set) {
+    return { indeterminate: true, detail: `passes --skill "${id}", whose file exists in "packages/${name}" — but this run could not read that package's published file set (\`npm pack --dry-run\` failed), so whether the installed package carries it is undecided` };
+  }
+  if (!shipped.set.has(rest)) {
+    return { detail: `passes --skill "${id}": "${rest}" exists in "packages/${name}" but is NOT in its published file set, so the installed package packagePath resolves this id to has no such file` };
+  }
+  return null;
+}
+
 function checkClass1(file, lines, ext) {
   const prose = proseLines(lines, ext);
   const blocks = blockRangesFor(prose);
@@ -1443,13 +1493,24 @@ function checkClass1(file, lines, ext) {
 
   prose.forEach((text, i) => {
     const matches = [];
-    for (const m of text.matchAll(PATH_CITATION_RE)) matches.push(m[0]);
+    const skillIds = [];
+    for (const m of text.matchAll(PATH_CITATION_RE)) {
+      // The value of a `--skill` argument is a skill id (SKILL IDS above).
+      if (SKILL_ID_ARG_RE.test(text.slice(0, m.index))) skillIds.push(m[0]);
+      else matches.push(m[0]);
+    }
+    for (const id of skillIds) {
+      const issue = skillIdIssue(id);
+      if (!issue) continue;
+      if (issue.indeterminate) reportIndeterminate(1, file, i + 1, lines[i] ?? text, `${issue.detail}.${judgedAs}`);
+      else report(1, "high", file, i + 1, lines[i] ?? text, `${issue.detail}. Correct the id to a skill file the package ships.${judgedAs}`);
+    }
     for (const re of [SHOUTY_MD_RE, BARE_TEST_FILE_RE]) {
       for (const m of text.matchAll(re)) {
         // A bare filename that's just the tail of a path match already
         // collected above (`packages/KIT-CONVENTIONS.md` also contains
         // `KIT-CONVENTIONS.md`) is the same citation, not a second one.
-        if (matches.some((p) => p === m[0] || p.endsWith("/" + m[0]))) continue;
+        if ([...matches, ...skillIds].some((p) => p === m[0] || p.endsWith("/" + m[0]))) continue;
         matches.push(m[0]);
       }
     }

@@ -4,7 +4,7 @@
  * create.tokens generator is deterministic and its output meets the standard's own criteria, the
  * stage checks fail on the faults they exist for, and no judge imports a recipe (R16.1).
  *
- *   node --test packages/designer/recipes/recipes.test.mjs
+ *   node --test recipes.test.mjs
  *
  * It reads the producer's built modules (packages/producer/dist): build the producer first.
  */
@@ -165,17 +165,18 @@ describe("craft.md runs the fixed 5b stages with a check at each", () => {
       assert.deepEqual([...at].sort((a, b) => a - b), at, `${id} stages are in order`);
       assert.equal((text.match(/^### \d\. .*\(model/gm) ?? []).length, 3, `${id} marks exactly three model nodes`);
       const section = n => text.slice(at[n], at[n + 1] ?? text.length);
-      assert.match(section(1), /stage-check\.mjs brief <slot> brief\.json\n.*--stage brief /, `${id} checks the brief before recording it`);
-      assert.match(section(2), /stage-check\.mjs diverge <slot> directions\.json\n.*--stage diverge /, `${id} checks the axes before recording diverge`);
+      assert.match(section(1), new RegExp(`clossys recipe check ${id.replace(".", "\\.")} brief <slot> brief\\.json\\n.*--stage brief `), `${id} checks the brief before recording it`);
+      assert.match(section(2), new RegExp(`clossys recipe check ${id.replace(".", "\\.")} diverge <slot> directions\\.json\\n.*--stage diverge `), `${id} checks the axes before recording diverge`);
       const render = section(3);
       assert.ok(render.indexOf("clossys render <slot> --draft <direction file>") >= 0 && render.indexOf("clossys check --constitution --slot designer/<slot>") > render.indexOf("clossys render <slot> --draft <direction file>"), `${id} preflights after each render`);
       assert.match(section(4), /clossys critique-packet designer\/<slot> --standard <standard>/);
       assert.match(section(4), /clossys critique designer\/<slot> --record critique\.json/);
-      assert.match(section(5), /stage-check\.mjs diverge <slot> directions\.json/, `${id} re-checks a refine against the other directions`);
+      assert.match(section(5), new RegExp(`clossys recipe check ${id.replace(".", "\\.")} diverge <slot> directions\\.json`), `${id} re-checks a refine against the other directions`);
       const submit = section(6);
       assert.ok(submit.indexOf("clossys check --constitution --slot designer/<slot>") >= 0 && submit.indexOf("--submit") > submit.indexOf("clossys check --constitution --slot designer/<slot>"), `${id} preflights before submit`);
       for (const stage of ["brief", "diverge", "render", "critique", "refine"]) assert.match(text, new RegExp(`--stage ${stage} [^\\n]*--recipe ${id.replace(".", "\\.")} `), `${id} records craft:${stage} under its id`);
       assert.doesNotMatch(text, /\.\.\/|packages\/producer\/src/, `${id} names no judge source`);
+      assert.doesNotMatch(text, /\bnode (?:--test )?packages\//, `${id} runs its tools by recipe id, not by a repository path`);
     });
   }
 });

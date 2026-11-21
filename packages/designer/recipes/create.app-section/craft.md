@@ -101,7 +101,7 @@ Before any direction exists, write `brief.json`:
 Check, then record:
 
 ```sh
-node packages/designer/recipes/stage-check.mjs brief <slot> brief.json
+clossys recipe check create.app-section brief <slot> brief.json
 clossys next designer/<slot> --stage brief --file brief.json --recipe create.app-section --model <model> --tier <tier> --skill packages/designer/actions/designer.candidates/skill.md
 ```
 
@@ -122,7 +122,7 @@ Write `directions.json`: 3 directions (4 at most), each one line, each a distinc
 Check the axes are pairwise distinct (and every rule above) before anything renders, then record:
 
 ```sh
-node packages/designer/recipes/stage-check.mjs diverge <slot> directions.json
+clossys recipe check create.app-section diverge <slot> directions.json
 clossys next designer/<slot> --stage diverge --file directions.json --recipe create.app-section --model <model> --tier <tier> --skill packages/designer/actions/designer.candidates/skill.md
 ```
 
@@ -167,7 +167,7 @@ clossys next designer/<slot> --stage critique --file critique.json --recipe crea
 Choose the direction the critique scored highest (a deterministic read of the recorded scores). A
 refine round re-enters the diverge node for that one direction: it changes only that direction's values,
 only on the axes the critique named, and writes them back into `directions.json`;
-`node packages/designer/recipes/stage-check.mjs diverge <slot> directions.json` must still pass, so a refine never collapses into another
+`clossys recipe check create.app-section diverge <slot> directions.json` must still pass, so a refine never collapses into another
 direction. Then repeat render (with its preflight) and critique:
 
 ```sh

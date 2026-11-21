@@ -749,3 +749,89 @@ test("check-contamination-classes: missing-token fallbacks remain enforced by CL
     assert.deepEqual(JSON.parse(result.out).findings, []);
   });
 });
+
+// CONTAM-U3 D5: the value of a `--skill` argument is a package-relative skill
+// id (`packages/<agent>/<path>`), which the producer resolves with
+// packagePath to `<path>` inside the installed package. CLASS 1 judges
+// exactly that argument form the same way: it passes only when the package is
+// one packagePath maps and the file exists and ships; it fails naming the id
+// otherwise. The same path anywhere else is still a citation.
+test("check-contamination-classes: --skill ids are judged through packagePath (CONTAM-U3 D5)", async (t) => {
+  const work = mkdtempSync(join(tmpdir(), "contam-skill-ids-"));
+  t.after(() => rmSync(work, { recursive: true, force: true }));
+
+  function write(path, text) {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, text);
+  }
+
+  // designer ships recipes/ and actions/ but not internal/; producer ships
+  // skill/; launcher is a package packagePath does not map.
+  function fixture(name, craft) {
+    const repo = join(work, name);
+    const manifest = (pkg, files) => JSON.stringify({ name: `fixture-${pkg}`, version: "1.0.0", files }, null, 2) + "\n";
+    const designer = join(repo, "packages", "designer");
+    write(join(designer, "package.json"), manifest("designer", ["recipes", "actions"]));
+    write(join(designer, "actions", "designer.candidates", "skill.md"), "# candidates\n");
+    write(join(designer, "internal", "skill.md"), "# internal\n");
+    write(join(designer, "recipes", "stage-check.mjs"), "export {};\n");
+    write(join(designer, "recipes", "create.x", "craft.md"), craft);
+    write(join(repo, "packages", "producer", "package.json"), manifest("producer", ["skill"]));
+    write(join(repo, "packages", "producer", "skill", "SKILL.md"), "# producer\n");
+    write(join(repo, "packages", "launcher", "package.json"), manifest("launcher", ["skill.md"]));
+    write(join(repo, "packages", "launcher", "skill.md"), "# launcher\n");
+    execFileSync("git", ["-C", repo, "init", "-q"]);
+    execFileSync("git", ["-C", repo, "add", "-A"]);
+    execFileSync("git", ["-C", repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "fixture"]);
+    return designer;
+  }
+
+  async function scan(dir) {
+    const r = await run([dir, "--class", "1", "--json"]);
+    let report;
+    try {
+      report = JSON.parse(r.out);
+    } catch {
+      assert.fail(`--json output did not parse (exit ${r.code}): ${r.out}`);
+    }
+    return { ...r, report };
+  }
+
+  await t.test("an id the package ships passes, in both argument spellings and across packages", async () => {
+    const r = await scan(fixture("ships", [
+      "clossys next designer/<slot> --submit c.json --skill packages/designer/actions/designer.candidates/skill.md --rung r",
+      "clossys next designer/<slot> --skill=packages/designer/actions/designer.candidates/skill.md",
+      "clossys next producer/<slot> --skill packages/producer/skill/SKILL.md",
+      "",
+    ].join("\n")));
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.deepEqual(r.report.findings, []);
+  });
+
+  const failing = [
+    ["a missing file", "packages/designer/actions/missing/skill.md", /resolves to "actions\/missing\/skill\.md" in the installed "packages\/designer" package, and no such file exists/],
+    ["a file the package does not ship", "packages/designer/internal/skill.md", /"internal\/skill\.md" exists in "packages\/designer" but is NOT in its published file set/],
+    ["a package packagePath does not map", "packages/launcher/skill.md", /packagePath maps no installed package for "packages\/launcher"/],
+  ];
+  for (const [label, id, detail] of failing) {
+    await t.test(`an id naming ${label} fails with the id`, async () => {
+      const r = await scan(fixture(label.replace(/\W+/g, "-"), `clossys next designer/<slot> --skill ${id} --rung r\n`));
+      assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+      assert.equal(r.report.findings.length, 1, r.out);
+      assert.equal(r.report.findings[0].file, "recipes/create.x/craft.md");
+      assert.ok(r.report.findings[0].detail.includes(`passes --skill "${id}"`), r.out);
+      assert.match(r.report.findings[0].detail, detail);
+    });
+  }
+
+  await t.test("the same path outside a --skill argument is still a citation", async () => {
+    const r = await scan(fixture("prose", [
+      "Read packages/designer/actions/designer.candidates/skill.md first.",
+      "node packages/designer/recipes/stage-check.mjs brief <slot> brief.json",
+      "",
+    ].join("\n")));
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const cited = r.report.findings.map((f) => [f.line, f.detail.match(/cites "([^"]+)"/)?.[1]]);
+    assert.deepEqual(cited, [[1, "packages/designer/actions/designer.candidates/skill.md"], [2, "packages/designer/recipes/stage-check.mjs"]], r.out);
+  });
+});

@@ -5,7 +5,7 @@
  * window, an uncited Because, a non-Director source, a long or code-marked Direction), the draft check
  * agrees with the judge, and no judge imports a recipe (R16.1).
  *
- *   node --test packages/director/recipes/recipes.test.mjs
+ *   node --test recipes.test.mjs
  *
  * It reads the producer's built modules (packages/producer/dist): build the producer first.
  */
@@ -105,19 +105,20 @@ describe("craft.md runs the fixed 5b stages with a check at each", () => {
       assert.deepEqual([...at].sort((a, b) => a - b), at, `${id} stages are in order`);
       assert.equal((text.match(/^### \d\. .*\(model/gm) ?? []).length, 3, `${id} marks exactly three model nodes`);
       const section = n => text.slice(at[n], at[n + 1] ?? text.length);
-      assert.match(section(1), new RegExp(`stage-check\\.mjs brief <slot> brief\\.json\\nclossys next ${AGENT}/<slot> --stage brief `), `${id} checks the brief before recording it`);
-      assert.match(section(2), new RegExp(`stage-check\\.mjs diverge <slot> directions\\.json\\nclossys next ${AGENT}/<slot> --stage diverge `), `${id} checks the axes before recording diverge`);
+      assert.match(section(1), new RegExp(`clossys recipe check ${id.replace(".", "\\.")} brief <slot> brief\\.json\\nclossys next ${AGENT}/<slot> --stage brief `), `${id} checks the brief before recording it`);
+      assert.match(section(2), new RegExp(`clossys recipe check ${id.replace(".", "\\.")} diverge <slot> directions\\.json\\nclossys next ${AGENT}/<slot> --stage diverge `), `${id} checks the axes before recording diverge`);
       const render = section(3);
-      const draft = render.indexOf(`stage-check.mjs draft <slot> <draft>`), rendered = render.indexOf("clossys render <slot> --draft <direction file>"), slotCheck = render.indexOf(`clossys check --constitution --slot ${AGENT}/<slot>`);
+      const draft = render.indexOf(`clossys recipe check ${id} draft <slot> <draft>`), rendered = render.indexOf("clossys render <slot> --draft <direction file>"), slotCheck = render.indexOf(`clossys check --constitution --slot ${AGENT}/<slot>`);
       assert.ok(draft >= 0 && rendered > draft && slotCheck > rendered, `${id} checks the draft, renders, then preflights`);
       assert.match(section(4), new RegExp(`clossys critique-packet ${AGENT}/<slot> --standard <standard>`));
       assert.match(section(4), new RegExp(`clossys critique ${AGENT}/<slot> --record critique\\.json`));
-      assert.match(section(5), /stage-check\.mjs diverge <slot> directions\.json/, `${id} re-checks a refine against the other directions`);
+      assert.match(section(5), new RegExp(`clossys recipe check ${id.replace(".", "\\.")} diverge <slot> directions\\.json`), `${id} re-checks a refine against the other directions`);
       const submit = section(6);
-      const submitDraft = submit.indexOf("stage-check.mjs draft <slot> <draft>"), submitCheck = submit.indexOf(`clossys check --constitution --slot ${AGENT}/<slot>`);
+      const submitDraft = submit.indexOf(`clossys recipe check ${id} draft <slot> <draft>`), submitCheck = submit.indexOf(`clossys check --constitution --slot ${AGENT}/<slot>`);
       assert.ok(submitDraft >= 0 && submitCheck > submitDraft && submit.indexOf("--submit") > submitCheck, `${id} checks the draft and preflights before submit`);
       for (const stage of ["brief", "diverge", "render", "critique", "refine"]) assert.match(text, new RegExp(`--stage ${stage} [^\\n]*--recipe ${id.replace(".", "\\.")} `), `${id} records craft:${stage} under its id`);
       assert.doesNotMatch(text, /\.\.\/|packages\/producer\/src/, `${id} names no judge source`);
+      assert.doesNotMatch(text, /\bnode (?:--test )?packages\//, `${id} runs its tools by recipe id, not by a repository path`);
     });
   }
 });

@@ -142,6 +142,8 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     // The conformance report (foundry-build-0048) reads only; report-only, no gate runs it.
     if (head === "conform") return await (await import("../cli/conform.js")).runConformCli(argv.slice(1), cwd);
     if (head === "slot") return await (await import("../cli/slot.js")).runSlotCli(argv.slice(1), cwd);
+    // A recipe's own mechanical tools by recipe id (CONTAM-U3 D5): its agent's stage check, or its declared generator.
+    if (head === "recipe") return await (await import("../cli/recipe.js")).runRecipeCli(argv.slice(1), cwd);
     // The engine index (engine.md "Index"): compared with a rebuild, or rebuilt from the event log plus the records.
     if (head === "index") return await (await import("../cli/index-verb.js")).runIndexCli(argv.slice(1), cwd);
     // The mechanical review and the executor's receipt (docs/review.md): every re-runnable review step, from code.
