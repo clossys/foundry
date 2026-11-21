@@ -26,9 +26,18 @@
  * bare read of its own. Wherever the theme is loaded, `--x` is in scope and
  * the fallback is never used, so computed style does not change.
  *
- * A bare read of a name no source declares is refused: generation throws
- * `UndeclaredTokenFallbackError` naming every such token. There is no fallback
- * chain and no invented default.
+ * Two kinds of read have no declared value and are written `var(--x, unset)`,
+ * which computes the same as a read of an unset variable today:
+ *
+ * - a runtime-only variable: one the package's own sources set inline
+ *   (`style={{ "--x": ... }}`, `setProperty("--x", ...)`; found by code in
+ *   `runtime-setters.ts`) and no source declares;
+ * - `--tw` in the feature query Tailwind's `supports-*` variant generates,
+ *   `@supports (<property>: var(--tw))`, when no input stylesheet wrote it.
+ *
+ * Any other bare read of a name no source declares is refused: generation
+ * throws `UndeclaredTokenFallbackError` naming every such token. There is no
+ * fallback chain and no invented default.
  */
 
 export interface CustomPropertyDeclaration {
@@ -43,7 +52,7 @@ export class UndeclaredTokenFallbackError extends Error {
   readonly tokens: readonly string[];
   constructor(tokens: readonly string[]) {
     super(
-      `generateCompiledCss: ${tokens.length} token(s) are read with a bare var() but have no declared source in styles/tokens.css, styles/theme.css (with theme-keys.css), the package default theme, the generated output or Tailwind's default theme, so no fallback can be emitted: ${tokens.join(", ")}. Declare each token in a source, or stop reading it.`,
+      `generateCompiledCss: ${tokens.length} token(s) are read with a bare var() but have no declared source in styles/tokens.css, styles/theme.css (with theme-keys.css), the package default theme, the generated output or Tailwind's default theme, and no inline setter in the package sources, so no fallback can be emitted: ${tokens.join(", ")}. Declare each token in a source, or stop reading it.`,
     );
     this.name = "UndeclaredTokenFallbackError";
     this.tokens = tokens;
@@ -187,7 +196,15 @@ export interface DeclaredSources {
   defaultThemeCss: string;
   /** Tailwind's own default theme stylesheet, read from the installed tailwindcss package. */
   tailwindThemeCss: string;
+  /** Custom properties the package sources set inline (`runtimeSetVariables`); a bare read of one with no declared value falls back to `unset`. */
+  runtimeSetVariables: ReadonlySet<string>;
 }
+
+/** The feature query Tailwind's `supports-*` variant generates for a bare property name. */
+const TAILWIND_SUPPORTS_RE = /@supports\s*\(\s*([a-z-]+)\s*:\s*var\(\s*--tw\s*\)\s*\)/g;
+
+/** Runtime-only fallback: computes the same as a read of an unset variable. */
+const RUNTIME_ONLY_FALLBACK = "unset";
 
 /** The declared value of each token, by source precedence: tokens.css, theme.css, the package default theme, the output, Tailwind's default theme. */
 export function declaredTokenValues(sources: DeclaredSources, outputCss: string): Map<string, string> {
@@ -213,12 +230,17 @@ export function declaredTokenValues(sources: DeclaredSources, outputCss: string)
  */
 export function addDeclaredFallbacks(css: string, sources: DeclaredSources): string {
   const declared = declaredTokenValues(sources, css);
+  const authored = stripCssComments(`${sources.tokensCss}\n${sources.themeCss}`);
   const resolved = new Map<string, string | undefined>();
   const undeclared = new Set<string>();
 
   const resolve = (name: string, visiting: Set<string>): string | undefined => {
     if (resolved.has(name)) return resolved.get(name);
     const raw = declared.get(name);
+    if (raw === undefined && sources.runtimeSetVariables.has(name)) {
+      resolved.set(name, RUNTIME_ONLY_FALLBACK);
+      return RUNTIME_ONLY_FALLBACK;
+    }
     if (raw === undefined || visiting.has(name)) {
       undeclared.add(name);
       return undefined;
@@ -239,7 +261,12 @@ export function addDeclaredFallbacks(css: string, sources: DeclaredSources): str
     return result;
   };
 
-  const out = css.replace(BARE_VAR_RE, (whole, name: string) => {
+  // Tailwind's own `@supports (<property>: var(--tw))`, never an authored one.
+  const withQueries = declared.has("--tw")
+    ? css
+    : css.replace(TAILWIND_SUPPORTS_RE, (whole, property: string) =>
+        authored.includes(whole) ? whole : `@supports (${property}: var(--tw, ${RUNTIME_ONLY_FALLBACK}))`);
+  const out = withQueries.replace(BARE_VAR_RE, (whole, name: string) => {
     const value = resolve(name, new Set());
     return value === undefined ? whole : `var(${name}, ${value})`;
   });

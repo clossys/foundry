@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { compiledCssDeclaredSources, generateCompiledCss } from "./generate.js";
 import { scanCompiledCssSources } from "./scan-sources.js";
+import { runtimeSetNames, runtimeSetVariables, scanRuntimeSetters } from "./runtime-setters.js";
 import {
   addDeclaredFallbacks,
   collectCustomPropertyDeclarations,
@@ -45,8 +46,8 @@ const defaultThemeCss = `
 const tailwindThemeCss = `
 @theme default { --text-sm: 0.875rem; --spacing: 99rem; --primary: red; }
 `;
-const sources = { tokensCss, themeCss, defaultThemeCss, tailwindThemeCss };
-const bareSources = { tokensCss: "", themeCss: "", defaultThemeCss: "", tailwindThemeCss: "" };
+const sources = { tokensCss, themeCss, defaultThemeCss, tailwindThemeCss, runtimeSetVariables: new Set<string>() };
+const bareSources = { tokensCss: "", themeCss: "", defaultThemeCss: "", tailwindThemeCss: "", runtimeSetVariables: new Set<string>() };
 
 describe("collectCustomPropertyDeclarations", () => {
   it("keeps each declaration's enclosing preludes and never splits inside url() or a string", () => {
@@ -112,6 +113,55 @@ describe("addDeclaredFallbacks", () => {
     const css = `.a { color: ${bare("--x")}; }`;
     expect(() => addDeclaredFallbacks(css, { ...bareSources, tokensCss: `:root { --x: ${bare("--nowhere")}; }` })).toThrow(/--nowhere/);
   });
+
+  it("writes unset for a runtime-only variable: set inline by the package sources and declared nowhere", () => {
+    const css = `.a { inline-size: ${bare("--panel-w")}; --tw-x: ${bare("--panel-w")}; }`;
+    const runtime = { ...sources, runtimeSetVariables: new Set(["--panel-w"]) };
+    expect(addDeclaredFallbacks(css, runtime)).toBe(".a { inline-size: var(--panel-w, unset); --tw-x: var(--panel-w, unset); }");
+  });
+
+  it("keeps the declared value for a variable that is both set inline and declared", () => {
+    const css = `.a { padding: ${bare("--spacing-sm")}; }`;
+    expect(addDeclaredFallbacks(css, { ...sources, runtimeSetVariables: new Set(["--spacing-sm"]) })).toBe(".a { padding: var(--spacing-sm, 8px); }");
+  });
+
+  it("refuses a new bare variable with no inline setter and no declaration, naming it [mutant: drop one setter]", () => {
+    const css = `.a { inline-size: ${bare("--panel-w")}; block-size: ${bare("--brand-new")}; }`;
+    const runtime = { ...sources, runtimeSetVariables: new Set(["--panel-w"]) };
+    expect(() => addDeclaredFallbacks(css, runtime)).toThrow(UndeclaredTokenFallbackError);
+    expect(() => addDeclaredFallbacks(css, runtime)).toThrow(/: --brand-new\. /);
+  });
+
+  it("writes unset for --tw only in the feature query Tailwind's supports variant generates", () => {
+    const query = `@supports (backdrop-filter: ${bare("--tw")}) { .b { color: red; } }`;
+    expect(addDeclaredFallbacks(query, sources)).toBe("@supports (backdrop-filter: var(--tw, unset)) { .b { color: red; } }");
+    expect(() => addDeclaredFallbacks(`.b { color: ${bare("--tw")}; }`, sources)).toThrow(/: --tw\. /);
+    expect(() => addDeclaredFallbacks(query, { ...sources, themeCss: `${themeCss}\n${query}` })).toThrow(/: --tw\. /);
+  });
+});
+
+describe("runtime setters", () => {
+  it("finds style-object keys and setProperty calls, through a const name, and ignores comments", () => {
+    const scan = scanRuntimeSetters(`
+      const PANEL = "--panel-w";
+      // style={{ "--in-line-comment": 1 }}
+      /* "--in-block-comment": 1 */
+      export const A = () => <div style={{ "--gap": gap, '--ratio': r } as CSSProperties} />;
+      el.style.setProperty("--clearance", h);
+      el.style.setProperty(PANEL, w);
+      el.style.setProperty(UNKNOWN, w);
+      const label = "--not-a-key";
+    `);
+    expect([...runtimeSetNames(scan)].sort()).toEqual(["--clearance", "--gap", "--panel-w", "--ratio"]);
+  });
+
+  it("reads this package's own sources: every variable the stylesheets set only at run time", () => {
+    const names = runtimeSetVariables(resolve(import.meta.dirname, "..", ".."));
+    for (const name of ["--frame-panel-w", "--gap", "--plate-x", "--plate-y", "--plate-z", "--studio-pattern-image", "--studio-pattern-size", "--studio-ruler-bar", "--studio-specimen-value", "--studio-swatch"]) {
+      expect(names.has(name), name).toBe(true);
+    }
+    expect(names.has("--tw")).toBe(false);
+  });
 });
 
 describe("styles/compiled.css carries declared fallbacks", () => {
@@ -153,7 +203,12 @@ describe("styles/compiled.css carries declared fallbacks", () => {
     const scan = scanCompiledCssSources(packageRoot);
     const raw = (await generateCompiledCss({ stylesDir, candidates: scan.candidates, declaredFallbacks: false })).css;
     const committed = read("compiled.css");
-    const declared = declaredTokenValues(compiledCssDeclaredSources(stylesDir), raw);
+    const declaredSources = compiledCssDeclaredSources(stylesDir);
+    const declared = declaredTokenValues(declaredSources, raw);
+    /** The fallback a bare read must carry: the declared value, else `unset` for a runtime-only variable or Tailwind's `--tw` feature query. */
+    const expectedFallback = (name: string, index: number) =>
+      declared.get(name) ??
+      (declaredSources.runtimeSetVariables.has(name) || (name === "--tw" && /@supports \([a-z-]+: $/.test(raw.slice(index - 40, index))) ? "unset" : undefined);
     const problems: string[] = [];
     let rawAt = 0;
     let delta = 0;
@@ -169,7 +224,7 @@ describe("styles/compiled.css carries declared fallbacks", () => {
         break;
       }
       const written = varAt(committed, at);
-      const value = declared.get(name);
+      const value = expectedFallback(name, m.index);
       if (value === undefined || collapseFallbacks(written.fallback ?? "") !== collapseFallbacks(value)) problems.push(`${name}: ${written.fallback} != ${value}`);
       delta += written.text.length - m[0].length;
       rawAt = m.index + m[0].length;

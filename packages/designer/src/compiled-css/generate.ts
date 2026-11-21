@@ -123,6 +123,7 @@ import { resolveInstalledPeerVersion } from "../internal/resolve-installed-peer-
 import { TAILWINDCSS_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
 import { defaultThemeCss } from "../builder/theme/css.js";
 import { addDeclaredFallbacks, type DeclaredSources } from "./declared-fallbacks.js";
+import { runtimeSetVariables } from "./runtime-setters.js";
 
 export interface GenerateCompiledCssOptions {
   /** This package's own `styles/` directory (holds `theme.css`, which this module reads and re-derives from — never hand-copied). */
@@ -287,7 +288,13 @@ function buildEntryCss(stylesDir: string): { entryCss: string; sources: Declared
 
   return {
     entryCss: `@import "tailwindcss/theme" theme(reference);\n${themeBlockOnly}\n@import "tailwindcss/utilities" layer(foundry-ui-compiled);\n`,
-    sources: { tokensCss, themeCss: themeBlockOnly, defaultThemeCss: defaultThemeCss(), tailwindThemeCss },
+    sources: {
+      tokensCss,
+      themeCss: themeBlockOnly,
+      defaultThemeCss: defaultThemeCss(),
+      tailwindThemeCss,
+      runtimeSetVariables: runtimeSetVariables(dirname(resolvePath(stylesDir))),
+    },
   };
 }
 
