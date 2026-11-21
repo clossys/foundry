@@ -19,7 +19,7 @@ function workspace(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "writer-wording-")));
   dirs.push(root);
   cpSync(FOUNDRY, join(root, "clossys"), { recursive: true, filter: source => !source.endsWith(SEAT_POLICY_FILE.split("/").at(-1)!) });
-  writeFileSync(join(root, ".gitignore"), "node_modules/\n/.clossys/runs/\n");
+  writeFileSync(join(root, ".gitignore"), "node_modules/\n/clossys/.state/runs/\n");
   return root;
 }
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });

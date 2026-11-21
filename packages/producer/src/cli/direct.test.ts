@@ -34,13 +34,15 @@ describe("clossys direct over the flat slot model", () => {
   }, 60_000);
 
   it("records a check run only into a consumer that ignores the run store, and writes nothing else", () => {
-    writeFileSync(join(root, ".gitignore"), "/.clossys/runs/\n");
+    writeFileSync(join(root, ".gitignore"), "/clossys/.state/runs/\n");
     const before = snapshot(root);
     runVerb(["direct", "--check"], root);
     const after = snapshot(root) as { path: string }[];
     const added = after.filter(item => !(before as { path: string }[]).some(entry => entry.path === item.path)).map(item => item.path);
-    expect(added).toEqual([".clossys", ".clossys/runs", ".clossys/runs/director.check.jsonl"]);
-    expect(after.filter(item => !item.path.startsWith(".clossys"))).toEqual(before);
+    expect(added).toEqual(["clossys/.state", "clossys/.state/runs", "clossys/.state/runs/director.check.jsonl"]);
+    // Creating clossys/.state/ touches only the clossys/ folder's own mtime; every other entry, and every hash, stands.
+    const outsideState = (items: { path: string; mtimeMs?: number }[]) => items.filter(item => !item.path.startsWith("clossys/.state")).map(item => (item.path === "clossys" ? { path: item.path } : item));
+    expect(outsideState(after)).toEqual(outsideState(before as { path: string }[]));
   }, 60_000);
 
   it("reports a pinned candidate whose bytes drifted from its pin as a finding", () => {

@@ -303,7 +303,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/architecture-v1.json",
-      "sha256": "a481f979f43779a5b91c9634c9bc56eae3ecff92dcba0180de586d198c50630a"
+      "sha256": "95c864417e373ab7b93a50e8901482ec3378073e9cda04c3004218f2aa773ce3"
     },
     {
       "op": "submit",

@@ -23,7 +23,7 @@ export const PIPELINE_USAGE = "Usage: clossys pipeline status [--json] [--root <
   + "check exits 1 when a status the pipeline page shows cites no run record, a Studio section contract shows a status with no citation field,\n"
   + "  or an owner option of clossys next --owner, run on a scratch copy of the records, exits non-zero, changes no record or leaves the gaps unchanged (owner.wiring).\n"
   + "graph prints the declared step graph {nodes, edges, untyped, layout, seats, roster, options, status} with the consumer's seats; --out writes the package definition, with the package seat defaults and no live status (pipeline/graph.json).\n"
-  + "trace runs a command (a script step or a check) with its file reads and writes observed and appends its run record to .clossys/runs.";
+  + "trace runs a command (a script step or a check) with its file reads and writes observed and appends its run record to clossys/.state/runs.";
 
 type Command = "status" | "graph" | "wiring" | "check";
 export interface PipelineArgs { readonly command?: Command; readonly json: boolean; readonly root?: string; readonly out?: string; readonly help: boolean }

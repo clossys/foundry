@@ -4,7 +4,7 @@
  * A consumer that places the Studio publication (`publication.studio`) compiles the Studio as before: the files
  * packages/producer/decision-inputs.json lists (IA, slot.json, pins, pinned candidates), the Studio page projection,
  * the Publisher-installed route files and compile.lock.json. Every other consumer compiles its own publications
- * (publish/compile-publications.ts) into `.clossys/generated/`, and the Studio is skipped. Both locks carry the sha256
+ * (publish/compile-publications.ts) into `clossys/.state/generated/`, and the Studio is skipped. Both locks carry the sha256
  * of every input and output, plus `pinSetHash`, the pin-set hash of the live pins it was built from (R12.1 compares it).
  * Exit 1 is a compile finding (no publication placed, or a pinned publication that does not project).
  * Deterministic and offline: no model, no agent binary, no network (R-COMPILE-PURE).
@@ -21,7 +21,7 @@ import { discoverRoot } from "./root.js";
 
 export const COMPILE_USAGE = "Usage: clossys compile [--root <dir>] [--out <dir>] [--json]\n"
   + "  Compile from decision files only (deterministic, offline): the consumer's own publication.<id> slots into\n"
-  + "  .clossys/generated/ (publications/<id>.json, publications.json, compile.lock.json); the Studio only when the\n"
+  + "  clossys/.state/generated/ (publications/<id>.json, publications.json, compile.lock.json); the Studio only when the\n"
   + "  consumer places publication.studio. Exit 1 on a compile finding.\n"
   + "  --root  consumer root holding clossys/ (default: discovered from the working directory)\n"
   + "  --out   write the compile output here instead (Studio: generated/, app/ and compile.lock.json)";

@@ -6,7 +6,7 @@
  *   clossys options <agent>/<slot> --check [--root <dir>] [--json]
  *       certifies every candidate of the slot (the pin gate's verdict: submit record and certify) and judges the
  *       submitted, certified ones by the options rules: exit 0 when the slot holds the options its family owes
- *       (loop.create's certify and loop.choose's rank step), 1 naming why; writes .clossys/checks/<agent>/<slot>/certify.json.
+ *       (loop.create's certify and loop.choose's rank step), 1 naming why; writes clossys/.state/checks/<agent>/<slot>/certify.json.
  *   clossys options <agent>/<slot> [--more | --redraft] [--root <dir>] [--json]
  *       lists the slot's candidates with their variation and pin status; --more prints the
  *       generation brief for 2-3 fresh candidates that keep the reference's sources (variety);
@@ -17,6 +17,7 @@
  *       a judge seat picks one candidate: pin.json with basis "agent", shown as "confirm"
  *       in Studio until the owner pins with `clossys pin`.
  */
+import { statePath } from "../engine/state-dir.js";
 import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { CERTIFY_REPORT_SCHEMA, certifiedOptions } from "../constitution/pin-gate.js";
@@ -39,7 +40,7 @@ export const OPTIONS_USAGE = "Usage: clossys options [<agent>/<slot> [--more | -
   + "  lists a slot's candidates by variation; --more prints the brief for 2-3 fresh candidates on the reference's sources,\n"
   + "  --redraft the brief for one re-drafted candidate that may cite new evidence (the owning agent submits each with clossys next --submit).\n"
   + "  <agent>/<slot> --check certifies every candidate and exits 1 unless the submitted, certified ones hold the options\n"
-  + "  the slot's family owes (loop.create's certify step); it writes .clossys/checks/<agent>/<slot>/certify.json.\n"
+  + "  the slot's family owes (loop.create's certify step); it writes clossys/.state/checks/<agent>/<slot>/certify.json.\n"
   + "  --classes writes slot.json options/varyOn from the committed option-class mapping; --check only reports drift.";
 export const PICK_USAGE = "Usage: clossys pick <agent>/<slot> <candidate-id> --by agent:<seat> [--at <iso timestamp>] [--root <dir>] [--json]\n"
   + "  a judge seat picks one candidate (pin basis agent); Studio shows it as confirm until the owner pins. An agent's seat\n"
@@ -160,7 +161,7 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
     const at = new Date().toISOString();
     const judged = certifiedOptions(root, consumer, agent, id, at);
     const report = { schema: CERTIFY_REPORT_SCHEMA, slot: `${agent}/${id}`, at, ok: judged.ok, distinct: judged.distinct, options: judged.options, why: judged.why, candidates: judged.scorecard.candidates };
-    const dir = join(root, ".clossys", "checks", agent, id);
+    const dir = statePath(root, "checks", agent, id);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "certify.json"), `${JSON.stringify(report, null, 2)}\n`);
     const rows = judged.scorecard.candidates.map(row => `  ${row.submitted && row.certified ? "pass" : "fail"} ${row.candidate}${row.submitted ? "" : " (no matching submit record)"}${row.reasons.length ? `: ${row.reasons.map(reason => `[${reason.code}] ${reason.message}`).join("; ")}` : ""}`);

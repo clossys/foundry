@@ -7,6 +7,7 @@
  * The output is records/types.ts `StatusView` and validates against schemas/status.json; the
  * folded int2 `gaps` and `options` verbs (14.5) and per-slot rows come only under `--detail`.
  */
+import { statePath } from "../engine/state-dir.js";
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
@@ -140,9 +141,9 @@ function readJson(path: string): Record<string, unknown> | null {
 const str = (value: unknown): string | undefined => typeof value === "string" ? value : undefined;
 const max = (values: readonly (string | undefined)[]) => values.filter((v): v is string => !!v).sort().at(-1);
 
-/** Check result of one candidate (`.clossys/checks/<agent>/<slot>/<candidate>.json`, system.md 6.4). */
+/** Check result of one candidate (`clossys/.state/checks/<agent>/<slot>/<candidate>.json`, system.md 6.4). */
 function checkResult(root: string, agent: SlotAgent, id: string, candidate: string) {
-  const doc = readJson(join(root, ".clossys", "checks", agent, id, `${candidate}.json`));
+  const doc = readJson(statePath(root, "checks", agent, id, `${candidate}.json`));
   return doc ? { status: str(doc.status), subjectSha256: str(doc.subjectSha256) } : null;
 }
 

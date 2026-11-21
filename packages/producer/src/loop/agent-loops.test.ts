@@ -21,7 +21,7 @@ const standard = (loop: AgentLoopName) => {
   return read.standard;
 };
 /** The refusal of a write only Producer writes (U9a fix round 3). */
-const producerOnly = (ref: string, step: string, path: string, agent: string) => `${ref}: step ${step} writes ${path}, which only Producer writes; an agent step writes only new candidates, its .clossys/checks/${agent}/<slot>/scratch/ and new producer/queue.slot entries`;
+const producerOnly = (ref: string, step: string, path: string, agent: string) => `${ref}: step ${step} writes ${path}, which only Producer writes; an agent step writes only new candidates, its clossys/.state/checks/${agent}/<slot>/scratch/ and new producer/queue.slot entries`;
 /** The package set with one agent loop replaced. */
 const withVersion = (set: LoopSet, agent: LoopAgent, loop: AgentLoopName, content: unknown): LoopSet => {
   const versions = new Map([...set.versions].map(([name, loops]) => [name, new Map(loops)] as const));
@@ -85,7 +85,7 @@ describe("loopExtensionIssues", () => {
     const create = version.steps.find(step => step.id === "create")!;
     if (create.decider.by === "agent") create.decider.tier = "high";
     create.reads = [...create.reads, "designer/ia.json"];
-    version.steps.splice(2, 0, { id: "self-review", does: "review the family before certification", decider: { by: "agent", agent: "designer", verb: "review", tier: "mid", skill: "packages/designer/actions/designer.candidates/skill.md" }, cli: "clossys next", reads: ["<slot>/candidates/*"], writes: [".clossys/checks/<agent>/<slot-id>/scratch/review.json"], checks: [] });
+    version.steps.splice(2, 0, { id: "self-review", does: "review the family before certification", decider: { by: "agent", agent: "designer", verb: "review", tier: "mid", skill: "packages/designer/actions/designer.candidates/skill.md" }, cli: "clossys next", reads: ["<slot>/candidates/*"], writes: ["clossys/.state/checks/<agent>/<slot-id>/scratch/review.json"], checks: [] });
     expect(loopExtensionIssues("designer", "loop.create", version, standard("loop.create"))).toEqual([]);
   });
 });
@@ -180,7 +180,7 @@ describe("agent write roots: a glob or placeholder that can reach another agent'
   const added = (agent: LoopAgent, extra: Partial<LoopVersion["steps"][number]>) => ({
     id: "extra", does: "an added step", decider: { by: "agent" as const, agent, verb: "review" as const, tier: "low" as const }, cli: "clossys next", reads: [], writes: [], checks: [], ...extra,
   });
-  const REACHING = ["*/*/slot.json", "<dependant>/slot.json", "<requester>/notes.md", "clossys/agents/*/hero/slot.json", "*/", "<inputs>", ".clossys/checks/writer/x/scorecard.json", ".clossys/checks/*/x/scorecard.json", ".clossys/other/x.json", "producer/queue.*/entries/x.json", "producer/pins/x.json", "notes/x.md"];
+  const REACHING = ["*/*/slot.json", "<dependant>/slot.json", "<requester>/notes.md", "clossys/agents/*/hero/slot.json", "*/", "<inputs>", "clossys/.state/checks/writer/x/scorecard.json", "clossys/.state/checks/*/x/scorecard.json", "clossys/.state/other/x.json", "producer/queue.*/entries/x.json", "producer/pins/x.json", "notes/x.md"];
   it("refuses, at load and at the pin gate, a declared write that could land outside the agent's own roots", () => {
     for (const path of REACHING) {
       const version = pkg("designer", "loop.create");
@@ -189,7 +189,7 @@ describe("agent write roots: a glob or placeholder that can reach another agent'
     }
   });
   it("loop.connected (d) judges an agent write by the same roots", () => {
-    for (const path of ["*/*/slot.json", "<dependant>/slot.json", ".clossys/checks/writer/x/scorecard.json"]) {
+    for (const path of ["*/*/slot.json", "<dependant>/slot.json", "clossys/.state/checks/writer/x/scorecard.json"]) {
       const create = pkg("designer", "loop.create");
       create.steps.find(step => step.id === "create")!.writes.push(path);
       expect(loopConnectedIssues(withVersion(packageLoopSet(), "designer", "loop.create", create)), path).toContain(producerOnly("designer/loop.create", "create", path, "designer"));
@@ -218,34 +218,34 @@ describe("agent write allowlist (U9a fix round 3)", () => {
     for (const path of ["producer/queue.approve/entries/<entry>.json", "producer/queue.pick/entries/*", "producer/queue.clarify/entries/x.json", "producer/queue.fix/entries/x.json"]) refused(path);
   });
   it("T2: refuses Producer's verdict files in the agent's own check folder", () => {
-    for (const path of [".clossys/checks/<agent>/<slot-id>/cascade.json", ".clossys/checks/<agent>/<slot-id>/certify.json", ".clossys/checks/<agent>/<slot-id>/scorecard.json", ".clossys/checks/<agent>/<slot-id>/<candidate>.json", ".clossys/checks/designer/x/extra.json", ".clossys/checks/<agent>/<slot-id>/other/x.json"]) refused(path);
+    for (const path of ["clossys/.state/checks/<agent>/<slot-id>/cascade.json", "clossys/.state/checks/<agent>/<slot-id>/certify.json", "clossys/.state/checks/<agent>/<slot-id>/scorecard.json", "clossys/.state/checks/<agent>/<slot-id>/<candidate>.json", "clossys/.state/checks/designer/x/extra.json", "clossys/.state/checks/<agent>/<slot-id>/other/x.json"]) refused(path);
   });
   it("T3 (B3): refuses Producer's records in the agent's own tree (slot record, pin, ledgers, retired, critiques, IA, loop pins)", () => {
     for (const path of ["<slot>/slot.json", "<slot>/pin.json", "<slot>/ledger.json", "<slot>/retired/x.json", "<slot>/critiques/x.json", "<slot>/notes.md", "designer/ia.json", "designer/ledger.json", "designer/loop.choose/pin.json", "<slot>/", "<slot>/*", "<slot>/candidates/", "<slot>/candidates/sub/x.json"]) refused(path);
   });
   it("T4: keeps new candidates, the agent's check scratch and new slot requests", () => {
-    for (const path of ["<slot>/candidates/<name>-v<n>.json", "designer/hero/candidates/x-v2.md", ".clossys/checks/<agent>/<slot-id>/scratch/notes.json", "producer/queue.slot/entries/<request>.json"]) {
+    for (const path of ["<slot>/candidates/<name>-v<n>.json", "designer/hero/candidates/x-v2.md", "clossys/.state/checks/<agent>/<slot-id>/scratch/notes.json", "producer/queue.slot/entries/<request>.json"]) {
       const version = pkg("designer", "loop.create");
       version.steps.push(added("designer", { id: "own", writes: [path] }));
       expect(issues("designer", "loop.create", version), path).toEqual([]);
     }
     expect(agentWriteClass(pathPattern("<slot>/candidates/<name>-v<n>.json", "designer")!, "designer")).toBe("candidate");
-    expect(agentWriteClass(pathPattern(".clossys/checks/<agent>/<slot-id>/scratch/notes.json", "designer")!, "designer")).toBe("check-scratch");
+    expect(agentWriteClass(pathPattern("clossys/.state/checks/<agent>/<slot-id>/scratch/notes.json", "designer")!, "designer")).toBe("check-scratch");
     expect(agentWriteClass(pathPattern("producer/queue.slot/entries/<request>.json", "designer")!, "designer")).toBe("queue-slot");
     expect(agentWriteClass(pathPattern("writer/hero/candidates/x-v2.md", "designer")!, "designer")).toBeUndefined();
   });
   it("T5: the standard's own step keeps exactly the writes its standard declares, and no more", () => {
     expect(issues("director", "loop.choose", pkg("director", "loop.choose"))).toEqual([]);
     const cascade = pkg("director", "loop.choose");
-    cascade.steps.find(step => step.id === "pick")!.writes.push(".clossys/checks/<agent>/<slot-id>/cascade.json");
-    expect(issues("director", "loop.choose", cascade)).toEqual([producerOnly("director/loop.choose", "pick", ".clossys/checks/<agent>/<slot-id>/cascade.json", "director")]);
+    cascade.steps.find(step => step.id === "pick")!.writes.push("clossys/.state/checks/<agent>/<slot-id>/cascade.json");
+    expect(issues("director", "loop.choose", cascade)).toEqual([producerOnly("director/loop.choose", "pick", "clossys/.state/checks/<agent>/<slot-id>/cascade.json", "director")]);
     const brief = pkg("director", "loop.create");
     brief.steps.find(step => step.id === "refine-brief")!.writes.push("<slot>/pin.json");
     expect(issues("director", "loop.create", brief)).toEqual([producerOnly("director/loop.create", "refine-brief", "<slot>/pin.json", "director")]);
   });
   it("T6: loop.connected (d) refuses the same writes, and the package set stays connected", () => {
     expect(loopConnectedIssues(packageLoopSet())).toEqual([]);
-    for (const path of [".clossys/checks/designer/<slot-id>/cascade.json", "producer/queue.approve/entries/x.json"]) {
+    for (const path of ["clossys/.state/checks/designer/<slot-id>/cascade.json", "producer/queue.approve/entries/x.json"]) {
       const create = pkg("designer", "loop.create");
       create.steps.find(step => step.id === "create")!.writes.push(path);
       expect(loopConnectedIssues(withVersion(packageLoopSet(), "designer", "loop.create", create)), path).toContain(producerOnly("designer/loop.create", "create", path, "designer"));
@@ -365,11 +365,11 @@ describe("loop.connected", () => {
   it("matches paths segment-wise: a star is one segment, a double star (directory prefix, every slot's pin) spans", () => {
     expect(pathPattern("<slot>/pin.json", "designer")).toEqual(["designer", "*", "pin.json"]);
     expect(pathPattern("clossys/agents/*/pin.json", "*")).toEqual(["**", "pin.json"]);
-    expect(pathPattern(".clossys/checks/", "*")).toEqual([".clossys", "checks", "**"]);
+    expect(pathPattern("clossys/.state/checks/", "*")).toEqual(["clossys", ".state", "checks", "**"]);
     expect(pathPattern("<dependant>/slot.json", "writer")).toEqual(["*", "*", "slot.json"]);
     expect(pathPattern("<inputs>", "designer")).toBeUndefined();
     expect(patternsMeet(["**", "pin.json"], ["designer", "*", "pin.json"])).toBe(true);
-    expect(patternsMeet([".clossys", "checks", "**"], [".clossys", "checks", "designer", "*", "scorecard.json"])).toBe(true);
+    expect(patternsMeet(["clossys", ".state", "checks", "**"], ["clossys", ".state", "checks", "designer", "*", "scorecard.json"])).toBe(true);
     expect(patternsMeet(["designer", "*", "notes.md"], ["*", "*", "slot.json"])).toBe(false);
     expect(patternsMeet(["*", "*", "candidates", "*"], ["writer", "*", "notes.md"])).toBe(false);
     expect(patternsMeet(["publisher", "release.*", "candidates", "*-v*.json"], ["publisher", "release.site", "candidates", "site-v2.json"])).toBe(true);

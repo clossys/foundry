@@ -4,10 +4,11 @@
  *
  * - A new entry is created exclusively (`wx`): an existing file is never overwritten, a colliding id takes the next
  *   free `-2` .. `-9` suffix.
- * - An existing entry changes only under its lock (`.clossys/locks/queue/<queue>/<id>.lock`, created exclusively; a
+ * - An existing entry changes only under its lock (`clossys/.state/locks/queue/<queue>/<id>.lock`, created exclusively; a
  *   held lock refuses, it is never broken automatically) and only by a temp-file write plus rename, so a reader sees
  *   the old bytes or the new bytes, never a torn file.
  */
+import { statePath } from "../engine/state-dir.js";
 import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { QueueEntry, QueueName } from "../records/types.js";
@@ -142,7 +143,7 @@ export function replaceQueueEntry(file: string, entry: QueueEntry): void {
 /** Who made an entry's last change: its last event's `by`, else who created it. */
 const entryActor = (entry: QueueEntry) => actorLine(entry.events.at(-1)?.by, actorLine(entry.createdBy, "code:queue"));
 
-export const queueLockPath = (root: string, queue: QueueName, id: string): string => join(root, ".clossys", "locks", "queue", queue, `${id}.lock`);
+export const queueLockPath = (root: string, queue: QueueName, id: string): string => statePath(root, "locks", "queue", queue, `${id}.lock`);
 
 export class EntryLockedError extends Error {
   // A plain field, not a parameter property: records/slot-write.ts reaches this module through the actor guard

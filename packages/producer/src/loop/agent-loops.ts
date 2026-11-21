@@ -16,6 +16,7 @@
  * Pure tables and judges: the loader (version.ts), the certifier (constitution/certify/loop.ts), `loop.agent-standard`
  * and `loop.connected` read them.
  */
+import { STATE_SEGMENTS, stateRel } from "../engine/state-dir.js";
 import { existsSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
 import { resolveAgent } from "../agents.js";
@@ -138,7 +139,7 @@ const literal = (segment: string | undefined): boolean => segment !== undefined 
  * other file in the tree is Producer's (its pins, slot records, ledgers, IA, verdicts, owner queues, runs and locks):
  *
  * - `candidate`: a new candidate of one of its own slots, `<agent>/<slot>/candidates/<file>`;
- * - `check-scratch`: its own check scratch, `.clossys/checks/<agent>/<slot>/scratch/...`, which no Producer verb reads;
+ * - `check-scratch`: its own check scratch, `clossys/.state/checks/<agent>/<slot>/scratch/...`, which no Producer verb reads;
  * - `queue-slot`: a slot request entry, `producer/queue.slot/entries/<id>.json` (the runner also requires a new one it raised).
  *
  * Undefined for everything else.
@@ -148,7 +149,8 @@ export function agentWriteClass(pattern: readonly string[], agent: LoopAgent): A
   const slotSegment = (segment: string | undefined) => segment === "*" || (literal(segment) && !segment!.startsWith("_") && !segment!.startsWith("."));
   const file = (segment: string | undefined) => segment !== undefined && segment !== "" && segment !== "**" && !segment.startsWith(".");
   if (p.length === 4 && p[0] === agent && slotSegment(p[1]) && p[2] === "candidates" && file(p[3])) return "candidate";
-  if (p.length >= 6 && p[0] === ".clossys" && p[1] === "checks" && p[2] === agent && (p[3] === "*" || literal(p[3])) && p[4] === "scratch") return "check-scratch";
+  const s = STATE_SEGMENTS.length, inState = STATE_SEGMENTS.every((segment, index) => p[index] === segment);
+  if (p.length >= s + 5 && inState && p[s] === "checks" && p[s + 1] === agent && (p[s + 2] === "*" || literal(p[s + 2])) && p[s + 3] === "scratch") return "check-scratch";
   if (p.length === 4 && p[0] === "producer" && p[1] === "queue.slot" && p[2] === "entries" && file(p[3])) return "queue-slot";
   return undefined;
 }
@@ -194,7 +196,7 @@ export function agentStepWriteIssue(agent: LoopAgent, ref: string, step: Pick<Lo
   if (standardOwnWrites(standard, step, agent).includes(path)) return undefined;
   const pattern = pathPattern(posix.normalize(path), agent);
   if (pattern !== undefined && agentWriteClass(pattern, agent) !== undefined) return undefined;
-  return `${ref}: step ${step.id} writes ${path}, which only Producer writes; an agent step writes only new candidates, its .clossys/checks/${agent}/<slot>/scratch/ and new producer/queue.slot entries`;
+  return `${ref}: step ${step.id} writes ${path}, which only Producer writes; an agent step writes only new candidates, its ${stateRel("checks", agent)}/<slot>/scratch/ and new producer/queue.slot entries`;
 }
 
 /**
@@ -433,7 +435,7 @@ const isAgentStep = (step: LoopStep): boolean => step.decider?.by === "agent";
  */
 const QUEUE_WRITE = /^producer\/queue\.slot\/entries(?:\/|$)/;
 
-/** The agent tree a pattern's first segment names: an agent id, `*` (any agent's), or undefined (no agent tree, e.g. `.clossys/`). */
+/** The agent tree a pattern's first segment names: an agent id, `*` (any agent's), or undefined (no agent tree, e.g. `clossys/.state/`). */
 const treeOf = (pattern: readonly string[]): string | undefined => {
   const first = pattern[0]!;
   return first === "*" || first === "**" || ["director", "designer", "writer", "publisher", "producer"].includes(first) ? first : undefined;

@@ -338,7 +338,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/sidebar-foreground-v1.json",
-      "sha256": "605d8004c3751787cb104c2fcfbedc6158e51f3d05012add938157a8870e264c"
+      "sha256": "979651759b254da077a0a84f83546e27e3fd1a15c4e6a1fc9bfe40a43e8d62ad"
     },
     {
       "op": "submit",

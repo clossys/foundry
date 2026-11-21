@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/writer/frames.site-header.copy/copy-v1.png"
+        "ref": "clossys/.state/renders/writer/frames.site-header.copy/copy-v1.png"
       }
     ]
   }

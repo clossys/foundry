@@ -338,7 +338,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/ring-v1.json",
-      "sha256": "511cd4c4625d28fc407d93170195304e4e4ba66afe2dd5f392bba24c3a9ca96a"
+      "sha256": "e9fbd2fcfc74f98aa8d848090709340683821a374324289025d3bbe82a6ddd25"
     },
     {
       "op": "submit",

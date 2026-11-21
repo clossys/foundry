@@ -7,13 +7,14 @@
  *
  * Store: `clossys/agents/producer/queue.slot/entries/<id>.json`, one file per entry. A new entry is created exclusively
  * (a temp file hard-linked to its name, so a taken id is never overwritten); a change is written whole through a temp
- * file and a rename. Every write runs under a lock at `.clossys/locks/queue/queue.slot/<key>.lock` (the queue/entry.ts
+ * file and a rename. Every write runs under a lock at `clossys/.state/locks/queue/queue.slot/<key>.lock` (the queue/entry.ts
  * pattern: an exclusive create, removed after; a held lock is waited on briefly, then refuses): a raise under its
  * target's lock (so parallel raises of one need from one requester file one entry), a change under its entry's. The clossys.queue-entry/1 queues (queue/entry.ts QUEUE_NAMES) do not list queue.slot, so their
  * readers and writers are unchanged. The entry's `events` are its own ledger (ids `<entry id>#<n>`; `opened` and
  * `closed` name the raising and closing events). The slot model itself is read through records/slots.ts and written
  * through records/slot-write.ts only.
  */
+import { statePath } from "../engine/state-dir.js";
 import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
@@ -376,8 +377,8 @@ function createRequest(consumer: string, draft: SlotRequest): SlotRequest {
   throw new RequestError(`slot entry ${draft.id}: the id and its suffixes -2..-9 are all taken; nothing was written`);
 }
 
-/** The lock a request write holds: `.clossys/locks/queue/queue.slot/<key>.lock` beside the consumer's `clossys/`. */
-export const requestLockPath = (consumer: string, key: string): string => join(dirname(consumer), ".clossys", "locks", "queue", SLOT_QUEUE, `${key}.lock`);
+/** The lock a request write holds: `clossys/.state/locks/queue/queue.slot/<key>.lock` of the consumer's workspace. */
+export const requestLockPath = (consumer: string, key: string): string => statePath(dirname(consumer), "locks", "queue", SLOT_QUEUE, `${key}.lock`);
 const LOCK_WAIT_MS = 5000;
 const pause = new Int32Array(new SharedArrayBuffer(4));
 

@@ -2,7 +2,7 @@
  * `clossys director check archetype`: the one writer of the archetype record. With a name it records
  * the owner's archetype choice as `<consumer>/evidence/director/director-archetype.md`; without one it
  * prints the recorded archetype. The clossys CLI traces each `director check` run as step
- * `director.store`, so a write leaves its run record in `.clossys/runs`. Exit 0 done, 2 could not run.
+ * `director.store`, so a write leaves its run record in `clossys/.state/runs`. Exit 0 done, 2 could not run.
  */
 import { ARCHETYPE_DECIDER, ARCHETYPE_RECORD_ID, archetypeNames, archetypeRecord, recordedArchetype } from "../archetype.js";
 import { loadCatalog } from "../catalog.js";

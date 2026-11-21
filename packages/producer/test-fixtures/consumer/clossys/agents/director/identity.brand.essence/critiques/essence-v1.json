@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/director/identity.brand.essence/essence-v1.png"
+        "ref": "clossys/.state/renders/director/identity.brand.essence/essence-v1.png"
       }
     ]
   }

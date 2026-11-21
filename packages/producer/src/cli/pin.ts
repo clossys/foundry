@@ -49,7 +49,7 @@ export const PIN_USAGE = "Usage: clossys pin <agent>/<slot> <candidate-id> [--by
   + "  pick) about the pinned candidate, pin.json or slot.json: an uncertified candidate (R05), an unresolved citation\n"
   + "  (R07.1) or a region no frame composes (R07.6) is never pinned.\n"
   + "  A clossys.slot/2 pin also needs the candidate's submit record (its sha256 the bytes now; a file placed by hand\n"
-  + "  is refused) and a passing verdict (certify); it writes the ranked .clossys/checks/<agent>/<slot>/scorecard.json\n"
+  + "  is refused) and a passing verdict (certify); it writes the ranked clossys/.state/checks/<agent>/<slot>/scorecard.json\n"
   + "  and cites it in the pin's refs (producer/checks.scorecard).";
 export const DECISIONS_USAGE = "Usage: clossys decisions [--root <dir>] [--json]\n"
   + "  every slot as pinned | not-needed | open, with counts";

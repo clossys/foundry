@@ -28,6 +28,16 @@ describe("engine.side-door (engine/side-door.ts)", () => {
     expect(found()).toEqual(["packages/writer/src/leak.mjs:3 write appendFileSync"]);
   });
 
+  it("fires on a write to the state folder (clossys/.state, the consumer layout's stateDir) outside the engine API", () => {
+    put("packages/writer/src/state-leak.mjs", [
+      "import { appendFileSync, writeFileSync } from \"node:fs\";",
+      "import { join } from \"node:path\";",
+      "export const a = root => appendFileSync(join(root, \"clossys/.state\", \"events.jsonl\"), \"{}\\n\");",
+      "export const b = root => writeFileSync(root + \"/clossys/.state/index.json\", \"{}\");",
+    ].join("\n"));
+    expect(found()).toEqual(["packages/writer/src/state-leak.mjs:3 write appendFileSync", "packages/writer/src/state-leak.mjs:4 write writeFileSync"]);
+  });
+
   it("fires on a slot-record write through a path helper, a derived local and a write wrapper", () => {
     put("packages/designer/src/wrap.ts", [
       "import { writeFileSync } from \"node:fs\";",
@@ -353,8 +363,8 @@ describe("engine.side-door (engine/side-door.ts)", () => {
   });
 
   it("matches engine path strings", () => {
-    for (const text of [".clossys/events.jsonl", "x/.clossys", "agents/designer/hero/pin.json", "clossys/agents/writer", "candidates/a.md", "ledger.json"]) expect(isEnginePathString(text), text).toBe(true);
-    for (const text of ["dist/out.json", "clossys-site", "report.md", ".clossysrc"]) expect(isEnginePathString(text), text).toBe(false);
+    for (const text of ["clossys/.state", "clossys/.state/events.jsonl", "x/clossys/.state/runs", ".clossys/events.jsonl", "x/.clossys", "agents/designer/hero/pin.json", "clossys/agents/writer", "candidates/a.md", "ledger.json"]) expect(isEnginePathString(text), text).toBe(true);
+    for (const text of ["dist/out.json", "clossys-site", "report.md", ".clossysrc", "clossys/.stateful"]) expect(isEnginePathString(text), text).toBe(false);
   });
 
   it("runs as clossys check --side-door: exit 1 with one line per finding, exit 0 on a clean tree", async () => {

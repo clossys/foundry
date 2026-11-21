@@ -35,7 +35,7 @@
           "clossys/agents/"
         ],
         "writes": [
-          ".clossys/checks/"
+          "clossys/.state/checks/"
         ],
         "checks": [
           "constitution.strict",
@@ -51,7 +51,7 @@
         },
         "cli": "clossys check --route",
         "reads": [
-          ".clossys/checks/"
+          "clossys/.state/checks/"
         ],
         "writes": [
           "producer/queue.fix/entries/",

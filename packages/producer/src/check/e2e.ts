@@ -29,6 +29,7 @@
  * the Writer strings pin, and the gate must go red by name).
  * Exit 0 green, 1 a finding (its cause code, the verb, its exit and stderr tail), 2 it could not run.
  */
+import { statePath, stateRel } from "../engine/state-dir.js";
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
@@ -282,12 +283,12 @@ export function childEnv(registry: string, base: NodeJS.ProcessEnv = process.env
   return { ...env, REGISTRY_URL: registry, NO_COLOR: "1", FORCE_COLOR: "0" };
 }
 
-/** The publication's latest build: `.clossys/builds/latest-<pub>.json` names it, its stamp lists the build path. */
+/** The publication's latest build: `clossys/.state/builds/latest-<pub>.json` names it, its stamp lists the build path. */
 function latest(consumer: string, publication: string): { id: string; dir: string } | undefined {
   try {
-    const pointer = JSON.parse(readFileSync(join(consumer, ".clossys", "builds", `latest-${publication}.json`), "utf8")) as { id?: unknown };
+    const pointer = JSON.parse(readFileSync(statePath(consumer, "builds", `latest-${publication}.json`), "utf8")) as { id?: unknown };
     if (typeof pointer.id !== "string") return undefined;
-    return { id: pointer.id, dir: join(consumer, ".clossys", "builds", pointer.id.slice(0, 8)) };
+    return { id: pointer.id, dir: statePath(consumer, "builds", pointer.id.slice(0, 8)) };
   } catch { return undefined; }
 }
 
@@ -411,7 +412,7 @@ export async function runE2e(options: E2eOptions = {}): Promise<{ exitCode: 0 | 
     await runScenario(scenario, shipped, consumer, clossys, { say, findings, built: row => { build = row; } });
     const built = build as E2eReport["build"];
     const first = latest(consumer, scenario.publication);
-    if (!built || !first) stop("e2e.render", scenario.publication, `release --build wrote no .clossys/builds/latest-${scenario.publication}.json`);
+    if (!built || !first) stop("e2e.render", scenario.publication, `release --build wrote no ${stateRel("builds", `latest-${scenario.publication}.json`)}`);
     const origin = consumer;
     const leaks = portableFindings(first!.dir, [origin, work]);
     if (leaks.length) { findings.push(...leaks); stop(leaks[0]!.cause, leaks[0]!.subject, leaks[0]!.detail); }
@@ -467,7 +468,7 @@ export async function runScenario(scenario: Scenario, shipped: string, consumer:
   const buildArgv = scenario.build.map(arg => fill(arg, shipped, scenario));
   await clossys("build", buildArgv);
   const first = latest(consumer, scenario.publication);
-  if (!first) stop("e2e.render", scenario.publication, `release --build wrote no .clossys/builds/latest-${scenario.publication}.json`);
+  if (!first) stop("e2e.render", scenario.publication, `release --build wrote no ${stateRel("builds", `latest-${scenario.publication}.json`)}`);
   const build = { publication: scenario.publication, id: first!.id, routes: Object.keys(scenario.render) };
   io.built(build);
   const render = renderFindings(first!.dir, scenario.render);

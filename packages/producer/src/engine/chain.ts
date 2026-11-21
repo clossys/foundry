@@ -1,5 +1,5 @@
 /**
- * The event chain: `<root>/.clossys/events.jsonl`, one JSON event per line, hash-chained (each line's `prev` is the
+ * The event chain: `<root>/clossys/.state/events.jsonl` (STATE_DIR, the consumer-layout contract's stateDir), one JSON event per line, hash-chained (each line's `prev` is the
  * sha256 of the line before it, each line's `id` the sha256 of its own canonical fields). This module holds the
  * paths, hashing and reading of the log and `verifyChain()`, which names every gap, edit or reorder. The one writer is
  * engine/log.ts `appendEvent()`.
@@ -13,13 +13,14 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { STATE_DIR, stateRel } from "./state-dir.js";
 import { GENESIS, eventIssues, type EngineEvent, type EventInput } from "./types.js";
 
-/** The engine's files under a workspace root, workspace-relative. */
-export const ENGINE_DIR = ".clossys";
-export const EVENTS_FILE = ".clossys/events.jsonl";
-export const LOCK_FILE = ".clossys/engine.lock";
-export const INDEX_FILE = ".clossys/index.json";
+/** The engine's files under a workspace root, workspace-relative: all under the contract's state folder. */
+export const ENGINE_DIR = STATE_DIR;
+export const EVENTS_FILE = stateRel("events.jsonl");
+export const LOCK_FILE = stateRel("engine.lock");
+export const INDEX_FILE = stateRel("index.json");
 /** The consumer folder name a workspace root holds. */
 export const CONSUMER_DIR = "clossys";
 /** The agent trees whose records log events (records/slot-model MODEL_AGENTS). */
@@ -134,7 +135,7 @@ export const CHAIN_ISSUES: readonly (readonly [ChainIssueCode, string])[] = [
 ];
 
 /**
- * Verify the chain of `<root>/.clossys/events.jsonl` (or the given lines): every line an event, its id the hash of
+ * Verify the chain of `<root>/clossys/.state/events.jsonl` (or the given lines): every line an event, its id the hash of
  * its canonical fields, its seq one more than the line before, its prev the hash of the line before. Removing lines
  * from the end leaves a valid shorter chain; the index head (engine/derived.ts) is what notices that.
  */

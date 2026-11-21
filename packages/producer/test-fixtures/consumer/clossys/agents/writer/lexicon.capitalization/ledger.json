@@ -274,7 +274,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/capitalization-v1.json",
-      "sha256": "8f0ab9bfcc5eb99d370efed26981e400124ff2d47aa9f65d7115ba5368a13a65"
+      "sha256": "32cff3ca93d930628727c53a50ef21ebd615da4725af60c567fdeca99983c33a"
     },
     {
       "op": "submit",

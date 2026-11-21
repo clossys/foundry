@@ -20,7 +20,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/writer/lexicon.sentence-length/sentence-length-v1.png"
+        "ref": "clossys/.state/renders/writer/lexicon.sentence-length/sentence-length-v1.png"
       }
     ]
   }

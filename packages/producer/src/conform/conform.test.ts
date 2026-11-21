@@ -38,7 +38,7 @@ function ownLoops(): Record<string, any>[] {
     const read = readAgentPackageLoop("director", loop);
     if (!read.ok) throw new Error(read.reason);
     const content = structuredClone(read.content) as Record<string, any>;
-    if (loop === "loop.cascade") content.steps.push({ id: "director-notes", does: "note the repinned briefs for the owner", decider: { by: "agent", agent: "director", verb: "check", tier: "low", skill: "packages/director/skills/director/SKILL.md" }, cli: "clossys next", reads: ["<slot>/slot.json"], writes: [".clossys/checks/director/<slot-id>/scratch/notes.json"], checks: [] });
+    if (loop === "loop.cascade") content.steps.push({ id: "director-notes", does: "note the repinned briefs for the owner", decider: { by: "agent", agent: "director", verb: "check", tier: "low", skill: "packages/director/skills/director/SKILL.md" }, cli: "clossys next", reads: ["<slot>/slot.json"], writes: ["clossys/.state/checks/director/<slot-id>/scratch/notes.json"], checks: [] });
     return { loop, declared: true, package: { ok: true, ref: `director/${loop}/package:v1`, content }, placed: true, pin: { ok: true, ref: `director/${loop}/${loop.slice(5)}-v1.json`, content: structuredClone(content) } };
   });
 }

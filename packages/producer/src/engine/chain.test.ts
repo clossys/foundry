@@ -94,7 +94,7 @@ describe("event chain (engine/chain.ts, engine/log.ts)", () => {
   });
 
   it("sorts inputs so a line's bytes do not depend on the caller's order", () => {
-    mkdirSync(join(root, ".clossys"), { recursive: true });
+    mkdirSync(join(root, "clossys/.state"), { recursive: true });
     const event = appendEvent(root, { ...draft(0), inputs: [{ path: "b.json", sha256: null }, { path: "a.json", sha256: null }] });
     expect(event.inputs.map(input => input.path)).toEqual(["a.json", "b.json"]);
   });

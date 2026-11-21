@@ -124,7 +124,7 @@ function recordPinVerdicts(root: string): void {
 
 /** Makes a slot's scorecard verdicts stale: each row's pinSet becomes zeros, so the pinned candidate is re-judged. */
 export function staleVerdicts(root: string, agent: string, slotId: string): void {
-  const file = join(root, ".clossys/checks", agent, slotId, "scorecard.json");
+  const file = join(root, "clossys/.state/checks", agent, slotId, "scorecard.json");
   const doc = JSON.parse(readFileSync(file, "utf8")) as { candidates: { pinSet: string }[] };
   writeFileSync(file, `${JSON.stringify({ ...doc, candidates: doc.candidates.map(row => ({ ...row, pinSet: "0".repeat(64) })) })}\n`);
 }

@@ -107,7 +107,7 @@ async function seated() {
 }
 
 const runOf = (message: string | undefined) => /run (\S+):/.exec(message ?? "")![1]!;
-const runState = (w: ReturnType<typeof world>, runId: string) => w.readJson(join(w.root, ".clossys", "runs", "loops", `${runId}.json`));
+const runState = (w: ReturnType<typeof world>, runId: string) => w.readJson(join(w.root, "clossys", ".state", "runs", "loops", `${runId}.json`));
 const cascadeLedger = (w: ReturnType<typeof world>, runId: string) => w.readJson(join(w.consumer, "agents", "producer", "ledger.cascade", "entries", `${runId}.json`));
 
 const r075 = (root: string) => staleRows(buildContext(root, join(root, "clossys"))).map(row => `${row.slot} ${row.reason}`);
@@ -119,7 +119,7 @@ describe("loop.cascade: a repin re-verdicts its dependants (R07.5)", () => {
     // Every pin is fresh: nothing for R07.5, nothing stale for release.
     expect(r075(w.root)).toEqual([]);
     expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("pass");
-    const scorecard = w.readJson(join(w.root, ".clossys", "checks", "publisher", "page.home", "scorecard.json"));
+    const scorecard = w.readJson(join(w.root, "clossys", ".state", "checks", "publisher", "page.home", "scorecard.json"));
     expect(scorecard.candidates[0]).toMatchObject({ candidate: "home-v1.json", certified: true, pinSet: expect.stringMatching(/^[0-9a-f]{64}$/) });
 
     // 2. The section is repinned to a slide-only candidate.
@@ -133,7 +133,7 @@ describe("loop.cascade: a repin re-verdicts its dependants (R07.5)", () => {
     expect(run.exitCode, run.message).toBe(1);
     expect(run.message).toMatch(/reverdict failed; raised queue\.fix#\S+page-home; loop\.choose runs from queue\.fix#/);
     expect(w.status("publisher", "page.home")).toBe("needs-refresh");
-    const reverdict = w.readJson(join(w.root, ".clossys", "checks", "publisher", "page.home", "cascade.json"));
+    const reverdict = w.readJson(join(w.root, "clossys", ".state", "checks", "publisher", "page.home", "cascade.json"));
     expect(reverdict).toMatchObject({ schema: "clossys.reverdict/1", slot: "publisher/page.home", cause: "designer/sections.hero" });
     expect(reverdict.verdicts).toEqual([expect.objectContaining({
       candidate: "home-v1.json", certified: false,
@@ -152,7 +152,7 @@ describe("loop.cascade: a repin re-verdicts its dependants (R07.5)", () => {
     expect(entries).toHaveLength(1);
     const entry = w.readJson(join(w.consumer, "agents", "producer", "ledger.cascade", "entries", entries[0]!));
     expect(entry).toMatchObject({ loop: "loop.cascade", loopVersion: "cascade-v1.json", status: "stopped", checks: { "cascade.clean": "fail" } });
-    expect(entry.steps[0].wrote.map((item: { file: string }) => item.file)).toEqual([".clossys/checks/publisher/page.home/cascade.json", "publisher/page.home/slot.json"]);
+    expect(entry.steps[0].wrote.map((item: { file: string }) => item.file)).toEqual(["clossys/.state/checks/publisher/page.home/cascade.json", "publisher/page.home/slot.json"]);
     // Flagged: R07.5 no longer reports it (the slot is marked), release still refuses it.
     expect(r075(w.root)).toEqual([]);
     const gates = staleGate(w.root);
@@ -167,7 +167,7 @@ describe("loop.cascade: a repin re-verdicts its dependants (R07.5)", () => {
     expect(again.message).not.toMatch(/waits for agent/);
     expect(runState(w, runOf(again.message))).toMatchObject({ status: "done", settled: { impact: "accept" } });
     expect(w.status("publisher", "page.home")).toBe("live");
-    expect(w.readJson(join(w.root, ".clossys", "checks", "publisher", "page.home", "cascade.json")).verdicts).toEqual([expect.objectContaining({ candidate: "home-v1.json", certified: true })]);
+    expect(w.readJson(join(w.root, "clossys", ".state", "checks", "publisher", "page.home", "cascade.json")).verdicts).toEqual([expect.objectContaining({ candidate: "home-v1.json", certified: true })]);
     expect(r075(w.root)).toEqual([]);
     expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("pass");
   }, 300_000);
@@ -191,13 +191,13 @@ describe("loop.cascade's accept step: code accepts a clean cascade, the owner re
     const steps = cascadeLedger(w, runId).steps as { id: string; exit: number; decider: { by: string } }[];
     expect(steps.map(step => `${step.id}:${step.decider.by}:${step.exit}`)).toEqual(["reverdict:code:0", "accept:code:0"]);
     // The settle record says what code judged and which agent step it settled.
-    const record = w.readJson(join(w.root, ".clossys", "runs", "loops", `${runId}.settle`, "accept.json"));
+    const record = w.readJson(join(w.root, "clossys", ".state", "runs", "loops", `${runId}.settle`, "accept.json"));
     expect(record).toMatchObject({ schema: "clossys.settle/1", loop: "loop.cascade", rule: "impact", outcome: "settled", settles: ["impact"], answer: "accept" });
     expect(record.why).toMatch(/every dependant of designer\/sections\.hero passed its re-verdict and cascade\.clean holds now/);
     // The split is on the engine log: one run.settle event by the runner for this run.
-    const events = readFileSync(join(w.root, ".clossys", "events.jsonl"), "utf8").trim().split("\n").map(line => JSON.parse(line) as { kind: string; subject: string; actor: string });
+    const events = readFileSync(join(w.root, "clossys", ".state", "events.jsonl"), "utf8").trim().split("\n").map(line => JSON.parse(line) as { kind: string; subject: string; actor: string });
     expect(events.filter(event => event.kind === "run.settle" && event.subject === `loop:loop.cascade/${runId}`)).toEqual([expect.objectContaining({ actor: "code:clossys run" })]);
-    expect(existsSync(join(w.root, ".clossys", "checks", "designer", "sections.hero", "scratch", "impact.md"))).toBe(false);
+    expect(existsSync(join(w.root, "clossys", ".state", "checks", "designer", "sections.hero", "scratch", "impact.md"))).toBe(false);
   }, 300_000);
 });
 
@@ -216,7 +216,7 @@ describe("the pin gate and the pin are one critical section (U6)", () => {
     expect(held.exitCode).toBe(1);
     expect(held.message).toMatch(/pin refused: Slot is unavailable or another decision write is in progress/);
     expect(existsSync(pinFile) ? readFileSync(pinFile, "utf8") : undefined).toBe(before);
-    expect(existsSync(join(w.root, ".clossys", "checks", "designer", "sections.hero", "scorecard.json"))).toBe(false);
+    expect(existsSync(join(w.root, "clossys", ".state", "checks", "designer", "sections.hero", "scorecard.json"))).toBe(false);
     rmSync(lock, { recursive: true, force: true });
     const free = await w.pin("designer/sections.hero", candidate);
     expect(free.exitCode, free.message).toBe(0);
@@ -232,12 +232,12 @@ describe("a legacy pin fails closed (U8)", () => {
     const pinFile = join(w.consumer, "agents", "publisher", "page.home", "pin.json");
     const pinned = w.readJson(pinFile) as { candidate: string; sha256: string };
     writeFileSync(pinFile, `${JSON.stringify({ candidate: pinned.candidate, sha256: pinned.sha256, decidedBy: "agent:publisher", basis: "agent", at: AT }, null, 2)}\n`);
-    rmSync(join(w.root, ".clossys", "checks", "publisher", "page.home"), { recursive: true, force: true });
+    rmSync(join(w.root, "clossys", ".state", "checks", "publisher", "page.home"), { recursive: true, force: true });
     // The migration `clossys migrate recut` runs: pin/1 to pin/2, and it records no verdict.
     const migrated = migratePins(w.root);
     expect(migrated.rows).toContainEqual({ slot: "publisher/page.home", outcome: "migrated" });
     expect(w.readJson(pinFile)).toMatchObject({ schema: "clossys.pin/2", candidate: pinned.candidate, sha256: pinned.sha256 });
-    expect(existsSync(join(w.root, ".clossys", "checks", "publisher", "page.home"))).toBe(false);
+    expect(existsSync(join(w.root, "clossys", ".state", "checks", "publisher", "page.home"))).toBe(false);
     const ctx = buildContext(w.root, w.consumer);
     expect(pinChecks(ctx, undefined, liveSlotRecords(ctx)).find(check => check.slot.agent === "publisher" && check.slot.id === "page.home")?.state).toBe("legacy");
 
@@ -251,13 +251,13 @@ describe("a legacy pin fails closed (U8)", () => {
 
     // Re-verdicted through the CHOOSE gate (the pin loop.choose ends on): the scorecard records the pinSet now.
     ok(await w.pin("publisher/page.home", pinned.candidate));
-    expect(w.readJson(join(w.root, ".clossys", "checks", "publisher", "page.home", "scorecard.json")).candidates[0]).toMatchObject({ candidate: pinned.candidate, certified: true, pinSet: expect.stringMatching(/^[0-9a-f]{64}$/) });
+    expect(w.readJson(join(w.root, "clossys", ".state", "checks", "publisher", "page.home", "scorecard.json")).candidates[0]).toMatchObject({ candidate: pinned.candidate, certified: true, pinSet: expect.stringMatching(/^[0-9a-f]{64}$/) });
     expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("pass");
   }, 300_000);
 
   it("a legacy pin given the real certifier's passing verdict on the pinSet now, written as loop.cascade writes one (reverdictOf, a clossys.reverdict/1), passes slots.stale", async () => {
     const { w } = await seated();
-    rmSync(join(w.root, ".clossys", "checks", "publisher", "page.home", "scorecard.json"), { force: true });
+    rmSync(join(w.root, "clossys", ".state", "checks", "publisher", "page.home", "scorecard.json"), { force: true });
     expect(staleGate(w.root).checks[SLOTS_STALE]).toBe("fail");
     const ctx = buildContext(w.root, w.consumer);
     const check = pinChecks(ctx, undefined, liveSlotRecords(ctx)).find(item => item.slot.agent === "publisher" && item.slot.id === "page.home")!;

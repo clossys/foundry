@@ -305,7 +305,7 @@ console.log(JSON.stringify({ id: result.request.id, created: result.created }));
       expect(requestIssues(readRequest(consumer, said[0]!.id))).toEqual([]);
     }
     expect(readdirSync(requestsDir(consumer)).filter(name => name.startsWith("."))).toEqual([]);
-    expect(readdirSync(join(root, ".clossys", "locks", "queue", "queue.slot"))).toEqual([]);
+    expect(readdirSync(join(root, "clossys", ".state", "locks", "queue", "queue.slot"))).toEqual([]);
   }, 120_000);
 
   it("requests.filed (loop.scope's gate) fails while a slotless need is unfiled and passes once it is filed", () => {

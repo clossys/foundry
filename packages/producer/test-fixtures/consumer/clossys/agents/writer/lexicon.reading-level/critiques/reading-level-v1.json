@@ -20,7 +20,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/writer/lexicon.reading-level/reading-level-v1.png"
+        "ref": "clossys/.state/renders/writer/lexicon.reading-level/reading-level-v1.png"
       }
     ]
   }

@@ -325,7 +325,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/icon-time-v1.json",
-      "sha256": "c41bd6889e4ffbc2db9960245261bf63cb548b46e3039cb1f1e036a2d86edeef"
+      "sha256": "d06b38deb98fdb7cd220c4c27dff2e77b0d5f0a23b596df0984a7cff25657f3a"
     },
     {
       "op": "submit",

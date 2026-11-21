@@ -338,7 +338,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/border-v1.json",
-      "sha256": "eda16db55adfa91c84a3240dbd4d3a88e4c82f630fa8f207f68f3d11e7427dcc"
+      "sha256": "bcd84f5e5f4c20850e0db8d7e59170b462f3c3eaa875abf02ae4278d77ae0155"
     },
     {
       "op": "submit",

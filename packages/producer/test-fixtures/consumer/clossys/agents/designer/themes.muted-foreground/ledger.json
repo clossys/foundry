@@ -338,7 +338,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/muted-foreground-v1.json",
-      "sha256": "27b06d6231860461391f7443ff94760776057476eebc866d7a661ae632de0bdc"
+      "sha256": "f06c0166b56912a48d28d2b5009d1158c0fbb1b656a2cfb770d18f69f05c8cf4"
     },
     {
       "op": "submit",

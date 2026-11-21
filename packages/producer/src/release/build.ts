@@ -1,12 +1,12 @@
 /**
  * `clossys release <pub> --build` (flows.md F8 step 2, N13): build the publication from the pins as they resolve now
- * into `.clossys/builds/<id first 8>/`. Producer resolves the pins and calls the build; the content packages never
+ * into `clossys/.state/builds/<id first 8>/`. Producer resolves the pins and calls the build; the content packages never
  * import Producer (system.md 14.2).
  *
  * The build id is the sha256 of the output itself: every file under the build folder as sorted
  * `[relative path, sha256]` rows. So a manifest's `build.id` is checked against the bytes on disk, never trusted.
- * A stamp `.clossys/builds/<id8>.json` records what the build read (publication, locales, the pin map) and
- * `.clossys/builds/latest-<pub>.json` names the publication's latest build. Nothing under `clossys/` is written.
+ * A stamp `clossys/.state/builds/<id8>.json` records what the build read (publication, locales, the pin map) and
+ * `clossys/.state/builds/latest-<pub>.json` names the publication's latest build. No record under `clossys/` is written.
  */
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
@@ -46,7 +46,7 @@ export interface BuildStamp {
   readonly schema: typeof BUILD_STAMP_SCHEMA;
   readonly publication: string;
   readonly id: string;
-  /** `.clossys/builds/<id8>/` */
+  /** `clossys/.state/builds/<id8>/` */
   readonly path: string;
   readonly routes: number;
   readonly locales: readonly string[];
@@ -124,7 +124,7 @@ export interface RunBuildOptions {
 }
 
 /**
- * Runs the builder into a fresh staging folder, names the output by its digest, moves it to `.clossys/builds/<id8>/`
+ * Runs the builder into a fresh staging folder, names the output by its digest, moves it to `clossys/.state/builds/<id8>/`
  * and writes the stamp and the latest pointer. Refuses when the pins change while the build runs. An identical
  * rebuild keeps the existing folder; a different output under the same 8-character prefix is refused.
  */

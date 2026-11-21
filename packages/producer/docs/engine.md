@@ -10,11 +10,11 @@ Paths are relative to the workspace root (the folder that holds `clossys/`).
 
 | Path | What |
 |---|---|
-| `.clossys/events.jsonl` | the event log: one JSON event per line, append-only, each line chained to the one before |
-| `.clossys/engine.lock` | the engine lock: created with O_EXCL, holds `{ pid, host, at, token }` of its writer |
-| `.clossys/index.json` | the derived index, rebuilt from the log plus the records |
+| `clossys/.state/events.jsonl` | the event log: one JSON event per line, append-only, each line chained to the one before |
+| `clossys/.state/engine.lock` | the engine lock: created with O_EXCL, holds `{ pid, host, at, token }` of its writer |
+| `clossys/.state/index.json` | the derived index, rebuilt from the log plus the records |
 
-Records under `clossys/agents/<director|designer|writer|publisher|producer>/` and `clossys/library/` log to the workspace that holds them; `.clossys` is never committed.
+Records under `clossys/agents/<director|designer|writer|publisher|producer>/` and `clossys/library/` log to the workspace that holds them. `clossys/.state` (the consumer-layout contract's `stateDir`) holds only machine files, beside the records in `clossys/`; a root `.clossys/` fails `clossys check --engine` and `clossys migrate state --apply` moves it in.
 
 ## Types
 
@@ -133,6 +133,7 @@ Each wired writer keeps its on-disk record and adds one event per write.
 | `queue.create / queue.replace` | `packages/producer/src/queue/entry.ts` | <queue>/<entry id>: every queue entry write, the chat answer path included |
 | `library.version` | `packages/producer/src/records/library.ts` | library:<slot>/<element>/v<n> |
 | `run.state / run.record / run.settle / pin.revert` | `packages/producer/src/loop/runner.ts` | loop:<loop>/<run id>: run state, the run's ledger record, a settle record (a fixed-rule code step that settled or passed on an agent step), a reverted pin |
+| `state.migrate` | `packages/producer/src/engine/migrate-state.ts` | state:<state dir>: a legacy root state folder moved into the state folder, its logged records named at both paths |
 | `run.queue` | `packages/producer/src/loop/runner.ts` | loop:loop.fill/<run id>: one fill queue entry of the T1 init, the leaf's slot.json its input (FILL-PRELUDE D1) |
 
 ## Derived index
@@ -151,16 +152,17 @@ The index is never the source of truth: `appendEvent` keeps it current, a rebuil
 
 | Verb | What |
 |---|---|
-| `clossys index --rebuild` | rewrite .clossys/index.json from the log plus the records, under the engine lock; exit 1 when the chain does not verify |
+| `clossys index --rebuild` | rewrite clossys/.state/index.json from the log plus the records, under the engine lock; exit 1 when the chain does not verify |
 | `clossys index` | compare the stored index with a rebuild (read-only); exit 1 when they differ |
-| `clossys check --engine` | verifyChain, index agreement and record drift on a consumer workspace; exit 1 on any issue |
+| `clossys check --engine` | verifyChain, index agreement, record drift and the consumer layout (no root .clossys/ beside clossys/.state/) on a consumer workspace; exit 1 on any issue |
+| `clossys migrate state [--apply\|--check]` | move a root .clossys/ into clossys/.state/ under the engine lock and log one state.migrate event; a dry run unless --apply; --check exits 1 while one exists |
 | `clossys check --side-door` | the engine.side-door scan of a checkout (packages/<producer\|designer\|writer\|publisher\|director>/{src,bin,scripts} and scripts/); exit 1 on any finding |
 
 ## Check engine.side-door
 
-Rule R-ENGINE-SIDE-DOOR. A static scan of `packages/<producer|designer|writer|publisher|director>/{src,bin,scripts} and scripts/` for writes to `.clossys/**` or to a slot record outside the engine API. It fails on every finding of the rules stated below. No allowlist and no baseline. Excluded: test files (`*.test.*`, `*.spec.*`), declaration files (`*.d.ts`) and folders named `node_modules`, `__fixtures__`, `__tests__`, `__golden__`, `fixtures` at any depth. Build output at a package root (`dist`, `build`) is outside the scanned folders; a `build` folder inside `src` is source and is scanned.
+Rule R-ENGINE-SIDE-DOOR. A static scan of `packages/<producer|designer|writer|publisher|director>/{src,bin,scripts} and scripts/` for writes to `clossys/.state/**` (or `.clossys/**`) or to a slot record outside the engine API. It fails on every finding of the rules stated below. No allowlist and no baseline. Excluded: test files (`*.test.*`, `*.spec.*`), declaration files (`*.d.ts`) and folders named `node_modules`, `__fixtures__`, `__tests__`, `__golden__`, `fixtures` at any depth. Build output at a package root (`dist`, `build`) is outside the scanned folders; a `build` folder inside `src` is source and is scanned.
 
-What each rule flags, and nothing more. The scan parses the files ending in `.mjs`, `.cjs`, `.js`, `.jsx`, `.ts`, `.tsx`, `.mts`, `.cts` with the TypeScript compiler and reads the shell and hook files (`.sh`, `.bash`, `.zsh`, and extensionless files that are executable or start with `#!`) line by line; no other file is read. `write` and `sink`: a write call (the write calls listed below, or an open with a write flag), or a call to a write wrapper, outside the engine API, whose path argument the scan resolves through taint to an engine or slot-record path: a path string, a slot-model path helper, or a name, return value or constant derived from one, within the file or through imports and re-exports. `exec`: a child-process call (`exec`, `execSync`, `execFile`, `execFileSync`, `spawn`, `spawnSync`, `fork`) of `child_process` bound by a named, renamed, default or namespace import, `import ... = require`, `require`, `createRequire` or `import()`, or a name bound to one of these, outside the engine API, where an argument names `.clossys` or a slot path literally, through the string fold, or through taint. `shell`: a line of one of those shell or hook files that names `.clossys` or a slot path. `script` and `unpaired`: as the table says. Any write not matched by these rules is not seen by this check.
+What each rule flags, and nothing more. The scan parses the files ending in `.mjs`, `.cjs`, `.js`, `.jsx`, `.ts`, `.tsx`, `.mts`, `.cts` with the TypeScript compiler and reads the shell and hook files (`.sh`, `.bash`, `.zsh`, and extensionless files that are executable or start with `#!`) line by line; no other file is read. `write` and `sink`: a write call (the write calls listed below, or an open with a write flag), or a call to a write wrapper, outside the engine API, whose path argument the scan resolves through taint to an engine or slot-record path: a path string, a slot-model path helper, or a name, return value or constant derived from one, within the file or through imports and re-exports. `exec`: a child-process call (`exec`, `execSync`, `execFile`, `execFileSync`, `spawn`, `spawnSync`, `fork`) of `child_process` bound by a named, renamed, default or namespace import, `import ... = require`, `require`, `createRequire` or `import()`, or a name bound to one of these, outside the engine API, where an argument names a state folder (`clossys/.state` or `.clossys`) or a slot path literally, through the string fold, or through taint. `shell`: a line of one of those shell or hook files that names a state folder or a slot path. `script` and `unpaired`: as the table says. Any write not matched by these rules is not seen by this check.
 
 | Finding | Means |
 |---|---|
@@ -168,8 +170,8 @@ What each rule flags, and nothing more. The scan parses the files ending in `.mj
 | `sink` | hands an engine or slot-record path to a write wrapper outside the engine API |
 | `script` | a script calls a record writer directly; run the clossys verb instead |
 | `unpaired` | uses a slot-model file primitive in a file that appends no ledger event, so no engine event names the write |
-| `exec` | runs a child process whose arguments name .clossys or a slot-record path; the command is not parsed, so its writes bypass the engine API |
-| `shell` | a shell or hook file names .clossys or a slot-record path; its writes bypass the engine API |
+| `exec` | runs a child process whose arguments name a state folder or a slot-record path; the command is not parsed, so its writes bypass the engine API |
+| `shell` | a shell or hook file names a state folder or a slot-record path; its writes bypass the engine API |
 
 Write calls: `writeFileSync`, `writeFile`, `appendFileSync`, `appendFile`, `unlinkSync`, `unlink`, `mkdirSync`, `mkdir`, `rmSync`, `rm`, `rmdirSync`, `rmdir`, `renameSync`, `rename`, `copyFileSync`, `copyFile`, `cpSync`, `cp`, `createWriteStream`, `symlinkSync`, `symlink`, `linkSync`, `link`, `truncateSync`, `truncate`, `utimesSync`, `utimes`, `chmodSync`, `chmod`, and an open with a write flag.
 

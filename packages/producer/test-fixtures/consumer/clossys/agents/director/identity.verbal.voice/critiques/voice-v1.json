@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/director/identity.verbal.voice/voice-v1.png"
+        "ref": "clossys/.state/renders/director/identity.verbal.voice/voice-v1.png"
       }
     ]
   }

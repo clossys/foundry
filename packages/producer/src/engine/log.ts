@@ -1,5 +1,5 @@
 /**
- * The one writer of `.clossys/events.jsonl` (engine/chain.ts holds the format and verifyChain). `appendEvent()`
+ * The one writer of `clossys/.state/events.jsonl` (engine/chain.ts holds the format and verifyChain). `appendEvent()`
  * validates a draft, takes the workspace's engine lock (engine/lock.ts), chains the event to the last line, appends it
  * as one line and keeps the derived index (engine/derived.ts), all under the lock. `recordEvent()` is the call a record
  * writer makes after it left its files; inside `deferEvents()` (every slot-record lock) it holds the event until the

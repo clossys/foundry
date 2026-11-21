@@ -53,13 +53,13 @@ async function ready(world: ReleaseWorld, now = clock()): Promise<{ manifest: st
 }
 
 describe("clossys release --build", () => {
-  it("builds into .clossys/builds/<id8>/ and names the build by the digest of its bytes", async () => {
+  it("builds into clossys/.state/builds/<id8>/ and names the build by the digest of its bytes", async () => {
     const world = make();
     const result = await release(world, "--build");
     expect(result.exitCode, result.message).toBe(0);
     const build = latestBuild(world.root, "site")!;
     expect(build.id).toMatch(/^[0-9a-f]{64}$/);
-    expect(build.path).toBe(`.clossys/builds/${build.id.slice(0, 8)}/`);
+    expect(build.path).toBe(`clossys/.state/builds/${build.id.slice(0, 8)}/`);
     expect(build.locales).toEqual(["en", "fr"]);
     expect(existsSync(join(world.root, build.path, "site", "index.html"))).toBe(true);
     expect(build.pins["writer/sections.hero.copy#home.hero"]).toMatch(/^home\.hero-v1\.md@[0-9a-f]{64}$/);
@@ -131,8 +131,8 @@ describe("clossys release --gates", () => {
     await release(world, "--manifest");
     const result = await release(world, "--gates");
     expect(result.exitCode, result.message).toBe(0);
-    expect(out(result).wrote).toEqual([".clossys/checks/publisher/release.site/site-v1.json.json"]);
-    const doc = JSON.parse(world.read(".clossys/checks/publisher/release.site/site-v1.json.json"));
+    expect(out(result).wrote).toEqual(["clossys/.state/checks/publisher/release.site/site-v1.json.json"]);
+    const doc = JSON.parse(world.read("clossys/.state/checks/publisher/release.site/site-v1.json.json"));
     expect(doc).toMatchObject({ schema: "clossys.check-result/1", subject: "publisher/release.site/site-v1.json", status: "pass", subjectSha256: latestManifest(world.root, "site")!.sha256 });
   });
 

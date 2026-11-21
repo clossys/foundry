@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/designer/themes.sidebar-accent-foreground/sidebar-accent-foreground-v1.png"
+        "ref": "clossys/.state/renders/designer/themes.sidebar-accent-foreground/sidebar-accent-foreground-v1.png"
       }
     ]
   }

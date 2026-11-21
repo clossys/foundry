@@ -574,7 +574,7 @@ export type ShadcnVar =
 
 export interface ThemeSource { slot: string; candidate: CandidateName; sha256: Sha256; sample: boolean }
 
-/** designer.md 9.8: .clossys/generated/designer/theme.json. */
+/** designer.md 9.8: clossys/.state/generated/designer/theme.json. */
 export interface ThemeProjection {
   schema: "clossys.theme/1";
   vars: Record<ThemeMode, Partial<Record<ShadcnVar | `--${string}`, string>>>;

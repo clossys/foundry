@@ -53,10 +53,10 @@ describe("the shipped scenario", () => {
 
   it("names only public verbs: no step writes a record path, points at a root or imports package code", () => {
     for (const step of scenario.steps) for (const arg of step.run ?? []) {
-      expect(arg, step.id).not.toMatch(/^--root$|clossys\/agents\/|\.clossys\/|node_modules|dist\//);
+      expect(arg, step.id).not.toMatch(/^--root$|clossys\/agents\/|clossys\/\.state\/|\.clossys\/|node_modules|dist\//);
     }
     for (const arg of scenario.build) expect(arg).not.toMatch(/^--root$|clossys\/agents\//);
-    for (const step of scenario.after ?? []) for (const arg of step.run ?? []) expect(arg, step.id).not.toMatch(/^--root$|clossys\/agents\/|\.clossys\/|node_modules|dist\//);
+    for (const step of scenario.after ?? []) for (const arg of step.run ?? []) expect(arg, step.id).not.toMatch(/^--root$|clossys\/agents\/|clossys\/\.state\/|\.clossys\/|node_modules|dist\//);
   });
 
   it("releases the built page: after the build and its repeat, the manifest is written and every release gate runs strict", () => {
@@ -105,7 +105,7 @@ describe("runScenario", () => {
     const clossys: Clossys = async (id, argv) => {
       ran.push([id, argv]);
       if (id === "build" || id === "build.repeat") {
-        const builds = join(consumer, ".clossys", "builds");
+        const builds = join(consumer, "clossys", ".state", "builds");
         mkdirSync(builds, { recursive: true });
         writeFileSync(join(builds, `latest-${scenario.publication}.json`), JSON.stringify({ id: "0123456789abcdef" }));
         for (const [route, strings] of Object.entries(scenario.render)) {
@@ -219,7 +219,7 @@ describe("install and render findings", () => {
   });
 
   it("names every build file holding an absolute path of the consumer, and passes one that holds none", () => {
-    const root = temp(), build = join(root, "consumer", ".clossys", "builds", "abc");
+    const root = temp(), build = join(root, "consumer", "clossys", ".state", "builds", "abc");
     mkdirSync(join(build, "site", "install-home", ".clossys"), { recursive: true });
     writeFileSync(join(build, "site", "install-home", "index.html"), "<title>Plain Studio home</title>");
     writeFileSync(join(build, "site", "install-home", "app.js"), 'import "../../node_modules/react/index.js";');
@@ -233,7 +233,7 @@ describe("install and render findings", () => {
   });
 
   it("names a build file holding the machine's home or temp path, a path that does not depend on where the consumer lives", () => {
-    const root = temp(), build = join(root, "consumer", ".clossys", "builds", "abc");
+    const root = temp(), build = join(root, "consumer", "clossys", ".state", "builds", "abc");
     mkdirSync(join(build, "site"), { recursive: true });
     const machine = { home: "/Users/someone", tmp: "/private/var/folders/xy/T" };
     writeFileSync(join(build, "site", "index.html"), "<title>Plain Studio home</title>");
@@ -249,7 +249,7 @@ describe("install and render findings", () => {
   });
 
   it("searches the unresolved temp folder and /tmp/ as well as the real temp folder", () => {
-    const root = temp(), build = join(root, "consumer", ".clossys", "builds", "abc"), real = join(root, "real-temp"), link = join(root, "link-temp");
+    const root = temp(), build = join(root, "consumer", "clossys", ".state", "builds", "abc"), real = join(root, "real-temp"), link = join(root, "link-temp");
     mkdirSync(join(build, "site"), { recursive: true });
     mkdirSync(real);
     symlinkSync(real, link);

@@ -303,7 +303,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/mission-v1.json",
-      "sha256": "3f774247e8c5e30e00813748d2aaaa730b273bb0485211ca3489ed7e57b083ee"
+      "sha256": "249b1ef07dd8cb9080ddd4658e24bafee79fcc73896c4a0b67917505fcfef054"
     },
     {
       "op": "submit",

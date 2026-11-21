@@ -37,7 +37,7 @@
           "<slot>/slot.json"
         ],
         "writes": [
-          ".clossys/runs/loops/*.settle/*"
+          "clossys/.state/runs/loops/*.settle/*"
         ],
         "checks": [],
         "onFail": {
@@ -86,7 +86,7 @@
         "writes": [
           "<slot>/candidates/*",
           "<slot>/ledger.json",
-          ".clossys/runs/loops/*.settle/*"
+          "clossys/.state/runs/loops/*.settle/*"
         ],
         "checks": [],
         "onFail": {
@@ -125,7 +125,7 @@
           "<slot>/candidates/*"
         ],
         "writes": [
-          ".clossys/checks/<agent>/<slot-id>/*"
+          "clossys/.state/checks/<agent>/<slot-id>/*"
         ],
         "checks": [
           "<slot standard>"
@@ -171,13 +171,13 @@
         "reads": [
           "<slot>/candidates/*",
           "<slot>/ledger.json",
-          ".clossys/checks/<agent>/<slot-id>/*",
+          "clossys/.state/checks/<agent>/<slot-id>/*",
           "<upstream>/*/pin.json"
         ],
         "writes": [
           "<slot>/pin.json",
-          ".clossys/checks/<agent>/<slot-id>/scorecard.json",
-          ".clossys/runs/loops/*.settle/*"
+          "clossys/.state/checks/<agent>/<slot-id>/scorecard.json",
+          "clossys/.state/runs/loops/*.settle/*"
         ],
         "checks": [],
         "onFail": {
@@ -197,7 +197,7 @@
         },
         "cli": "clossys pick <ref> <candidate> --by agent:<agent>",
         "reads": [
-          ".clossys/checks/<agent>/<slot-id>/*"
+          "clossys/.state/checks/<agent>/<slot-id>/*"
         ],
         "writes": [
           "<slot>/pin.json"

@@ -274,7 +274,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/warmth-v1.json",
-      "sha256": "5719e9c1254ff4036bc1ddf413dc14a963de80fa83b62a3734eed09deadb8834"
+      "sha256": "a7f87a9764f7b9ae9bd60d39e23b1e82985d4ca2a899b84ccad65df4e045d93d"
     },
     {
       "op": "submit",
