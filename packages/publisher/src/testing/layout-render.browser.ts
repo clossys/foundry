@@ -19,18 +19,18 @@ export interface LayoutMeasurement {
 
 function measure(): Omit<LayoutMeasurement, "width"> {
   const viewport = document.documentElement.clientWidth;
-  const fills = [...document.querySelectorAll<HTMLElement>("[data-lk12-fill]")].map(node => {
+  const fills = [...document.querySelectorAll<HTMLElement>("[data-layout-fill]")].map(node => {
     const { left, right, top, bottom, width, height } = node.getBoundingClientRect();
-    return { path: node.dataset.lk12Fill!, left, right, top, bottom, width, height, visible: node.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) };
+    return { path: node.dataset.layoutFill!, left, right, top, bottom, width, height, visible: node.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) };
   });
   const overflow: string[] = [], reorder: string[] = [];
   const containers: LayoutMeasurement["containers"] = [];
   for (const node of document.body.querySelectorAll<HTMLElement>("*")) {
     const box = node.getBoundingClientRect(), css = getComputedStyle(node);
     if (!box.width || !box.height || css.display === "none") continue;
-    const name = node.getAttribute("data-lk12-fill") ?? node.getAttribute("data-layout-slot") ?? node.tagName.toLowerCase();
+    const name = node.getAttribute("data-layout-fill") ?? node.getAttribute("data-layout-slot") ?? node.tagName.toLowerCase();
     if (box.left < -0.5 || box.right > viewport + 0.5 || node.scrollWidth > node.clientWidth + 1) overflow.push(name);
-    if (node.querySelector("[data-lk12-fill]")) containers.push({ tag: name, display: css.display, order: css.order, flexDirection: css.flexDirection, gridAutoFlow: css.gridAutoFlow, direction: css.direction, writingMode: css.writingMode });
+    if (node.querySelector("[data-layout-fill]")) containers.push({ tag: name, display: css.display, order: css.order, flexDirection: css.flexDirection, gridAutoFlow: css.gridAutoFlow, direction: css.direction, writingMode: css.writingMode });
     if (css.order !== "0" || css.flexDirection.endsWith("reverse") || css.gridAutoFlow.includes("dense") || css.direction !== "ltr" || css.writingMode !== "horizontal-tb") reorder.push(name);
     // Text can overflow a clipped box without increasing document scrollWidth.
     for (const child of node.childNodes) if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) {
@@ -42,11 +42,11 @@ function measure(): Omit<LayoutMeasurement, "width"> {
   // preserves column reading groups and handles unequal-height centered panels.
   const ambiguous: string[] = [];
   const readingOrder = (node: Element): string[] => {
-    if (node.hasAttribute("data-lk12-fill")) return [node.getAttribute("data-lk12-fill")!];
-    const children = [...node.children].filter(child => child.matches("[data-lk12-fill]") || child.querySelector("[data-lk12-fill]"));
+    if (node.hasAttribute("data-layout-fill")) return [node.getAttribute("data-layout-fill")!];
+    const children = [...node.children].filter(child => child.matches("[data-layout-fill]") || child.querySelector("[data-layout-fill]"));
     const css = getComputedStyle(node);
     const anchor = (child: Element) => {
-      const descendants = child.querySelectorAll("[data-lk12-fill]");
+      const descendants = child.querySelectorAll("[data-layout-fill]");
       return (descendants.length === 1 ? descendants[0]! : child).getBoundingClientRect();
     };
     for (let first = 0; first < children.length; first++) for (let second = first + 1; second < children.length; second++) {
@@ -62,7 +62,7 @@ function measure(): Omit<LayoutMeasurement, "width"> {
     return children.flatMap(readingOrder);
   };
   return { viewport: window.innerWidth, scrollWidth: document.documentElement.scrollWidth,
-    ready: document.body.dataset.lk12Ready === "true", fills, overflow: [...new Set(overflow)], reorder: [...new Set(reorder)], visualOrder: readingOrder(document.body), ambiguous, containers };
+    ready: document.body.dataset.layoutReady === "true", fills, overflow: [...new Set(overflow)], reorder: [...new Set(reorder)], visualOrder: readingOrder(document.body), ambiguous, containers };
 }
 
 /** A fresh profile and owned process; no persistent browser state or network resources. */

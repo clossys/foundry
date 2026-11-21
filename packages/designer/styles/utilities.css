@@ -634,7 +634,7 @@
 @source inline("data-consent-banner data-content-section-modules data-content-section-support");
 @source inline("data-designer-section-frame data-direction data-disabled:cursor-not-allowed");
 @source inline("data-disabled:opacity-(--ui-alpha-disabled) data-disabled:opacity-(--ui-alpha-disabled,50%)");
-@source inline("data-disabled:pointer-events-none data-document-badge data-document-callout data-ds-state-clone");
+@source inline("data-disabled:pointer-events-none data-document-badge data-document-callout");
 @source inline("data-empty:h-(--spacing-5xl) data-empty:p-0 data-empty:text-center data-entering:library-enter");
 @source inline("data-entering:library-fade data-entering:library-zoom data-entering:opacity-0 data-error-kind");
 @source inline("data-exiting:library-exit data-exiting:library-fade data-exiting:library-zoom data-exiting:opacity-0");
@@ -665,7 +665,7 @@
 @source inline("data-selected:ring-current data-selected:ring-inset data-selected:text-(--color-ink-on-action)");
 @source inline("data-selected:text-(--color-ink-primary) data-selected:text-ink-primary data-shape data-slot");
 @source inline("data-span data-specimen-override data-specimen-probe-states data-specimen-probe-unsupported");
-@source inline("data-specimen-unavailable data-theme data-theme> data-tone data-treatment");
+@source inline("data-specimen-state-clone data-specimen-unavailable data-theme data-theme> data-tone data-treatment");
 @source inline("data-unchecked:bg-(--color-line-strong) data-variant data-vertical:flex-col data-vertical:h-full");
 @source inline("data-vertical:min-h-[var(--spacing-6xl)] data-vertical:w-(--spacing-xs) data-vertical:w-auto");
 @source inline("data-vertical:w-full data. dataset dataset: date date-text date. dateText dateTime dates day days");

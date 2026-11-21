@@ -51,7 +51,7 @@ async function renderSelected(node: ReactNode, selected: DesignerSpecimenContext
   await act(async () => { view = render(<ConsumerComponentProvider value={value}><Suspense>{node}</Suspense></ConsumerComponentProvider>); });
   return view!;
 }
-const need: SpecimenLeafProps["need"] = ({ leaf, reason }) => <components.SemanticContent as="p" role="status" data-ds-specimen-need="true">NEED {leaf}: {reason}</components.SemanticContent>;
+const need: SpecimenLeafProps["need"] = ({ leaf, reason }) => <components.SemanticContent as="p" role="status" data-specimen-need="true">NEED {leaf}: {reason}</components.SemanticContent>;
 const labels = { showAllVariants: (count: number) => `Show all ${count}` };
 function tokenParts(selected: DesignerSpecimenContext): SpecimenTokenHostParts {
   return {
@@ -74,25 +74,25 @@ it.each(tokenAssetSpecimenLeaves.map((leaf, index) => ({ leaf, index })))("$leaf
     const props = { items: repeated(native, count), context: selected, need, labels, renderParts: tokenParts(selected) };
     expect(leaf.validate(props)).toEqual([]);
     const view = await renderSelected(leaf.render(props), selected);
-    expect(view.container.querySelector("[data-ds-specimen-need]")).toBeNull();
-    const rendered = [...view.container.querySelectorAll("[data-ds-specimen-item]")];
+    expect(view.container.querySelector("[data-specimen-need]")).toBeNull();
+    const rendered = [...view.container.querySelectorAll("[data-specimen-item]")];
     expect(rendered).toHaveLength(count);
     for (const item of rendered.slice(0, 12)) expect(item).toBeVisible();
     if (count === 15) for (const item of rendered.slice(12)) expect(item).not.toBeVisible();
     if (count === 1) {
       expect(view.container.querySelector("[data-provenance-leaf='components.grid-list'],h4,[data-provenance-leaf='components.disclosure']")).toBeNull();
-      expect(view.container.querySelector("[data-ds-specimen-layout='single']")).toBeTruthy();
+      expect(view.container.querySelector("[data-specimen-layout='single']")).toBeTruthy();
     }
     if (count === 15) {
       fireEvent.click(screen.getByRole("button", { name: "Show all 15" }));
-      expect(view.container.querySelectorAll("[data-ds-specimen-item]")).toHaveLength(15);
+      expect(view.container.querySelectorAll("[data-specimen-item]")).toHaveLength(15);
       for (const item of rendered) expect(item).toBeVisible();
     }
     expect(view.container.querySelector("textarea,[contenteditable='true']")).toBeNull();
     expect(view.container.textContent).not.toMatch(/\$extensions|originKinds:|```/);
     view.unmount();
     const full = await renderSelected(leaf.render({ ...props, expanded: true }), selected);
-    expect(full.container.querySelectorAll("[data-ds-specimen-item]")).toHaveLength(count);
+    expect(full.container.querySelectorAll("[data-specimen-item]")).toHaveLength(count);
     expect(screen.queryByRole("button", { name: `Show all ${count}` })).toBeNull();
     full.unmount();
   }
@@ -104,7 +104,7 @@ it.each(tokenAssetSpecimenLeaves)("$id rejects zero items and invalid member ide
   expect(leaf.validate(props)).toEqual([expect.objectContaining({ reason: expect.stringContaining("zero-items") })]);
   const empty = await renderSelected(leaf.render(props), selected);
   expect(screen.getByRole("status")).toHaveTextContent("zero-items");
-  expect(empty.container.querySelector("[data-ds-specimen-item]")).toBeNull();
+  expect(empty.container.querySelector("[data-specimen-item]")).toBeNull();
   empty.unmount();
   expect(leaf.validate({ ...props, items: [{ id: "invalid", label: "Invalid", value: { memberId: "themes.missing.value" } }] }).length).toBeGreaterThan(0);
 });
@@ -174,7 +174,7 @@ it.each([0, 1])("refuses missing registered swatch and contrast parts before ren
     expect(leaf.validate(props)).toEqual([expect.objectContaining({ reason: `The registered ${part} part is not wired.` })]);
     const view = await renderSelected(leaf.render(props), selected);
     expect(view.container.textContent).toContain(`The registered ${part} part is not wired.`);
-    expect(view.container.querySelector("[data-ds-specimen-item],[role='img'],[data-contrast-pair]")).toBeNull();
+    expect(view.container.querySelector("[data-specimen-item],[role='img'],[data-contrast-pair]")).toBeNull();
     view.unmount();
   }
 });
@@ -213,7 +213,7 @@ it.each([
     expect(leaf.validate(props)).toContainEqual(expect.objectContaining({ reason: expect.stringContaining(`required-token: ${token}`) }));
     const view = await renderSelected(leaf.render(props), invalid);
     expect(view.container.textContent).toContain(`required-token: ${token}`);
-    expect(view.container.querySelector("[data-ds-specimen-item],[data-asset-ground],[data-motion-specimen]")).toBeNull();
+    expect(view.container.querySelector("[data-specimen-item],[data-asset-ground],[data-motion-specimen]")).toBeNull();
     view.unmount();
   }
 });

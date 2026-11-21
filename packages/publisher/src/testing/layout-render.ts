@@ -116,9 +116,9 @@ async function bundleRenderer(source: LayoutRendererSource, exportName: string, 
       const Layout = renderer[${JSON.stringify(exportName)}];
       if (typeof Layout !== "function") throw new Error("Missing layout export");
       const slots = Object.fromEntries(Object.entries(input.slots).map(([slot, fills]) => [slot, fills.map(fill =>
-        createElement("div", { key: fill.path, "data-lk12-fill": fill.path, dangerouslySetInnerHTML: { __html: fill.html } }))]));
+        createElement("div", { key: fill.path, "data-layout-fill": fill.path, dangerouslySetInnerHTML: { __html: fill.html } }))]));
       flushSync(() => createRoot(document.getElementById("lk12-root")).render(createElement(Layout, { ...input.props, slots })));
-      document.body.dataset.lk12Ready = "true";
+      document.body.dataset.layoutReady = "true";
     };`;
   const output = await build({ entryPoints: [entry], bundle: true, write: false, platform: "browser", format: "iife", jsx: "automatic", logLevel: "silent", define: { "process.env.NODE_ENV": '"production"' }, plugins: [{ name: "closed-layout-source", setup(plugin: any) {
     plugin.onResolve({ filter: /.*/ }, (args: { path: string; namespace: string; importer: string }) => {

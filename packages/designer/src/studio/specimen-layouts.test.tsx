@@ -48,15 +48,15 @@ it.each(["ladder", "grid", "matrix"] as const)("%s renders one item with no coll
   const props = { id: "sections.specimen-variant-matrix" as const, layout, items: items(1), context: context(), need, labels };
   expect(specimenLayoutNeeds(props)).toEqual([]);
   const view = await renderSelected(<SpecimenLayoutSection {...props} label="Specimen" renderItem={draw} />, props.context);
-  expect(view.container.querySelectorAll("[data-ds-specimen-item]")).toHaveLength(1);
+  expect(view.container.querySelectorAll("[data-specimen-item]")).toHaveLength(1);
   expect(view.container.querySelector('table,[role="grid"],h3,h4,[data-provenance-leaf="components.disclosure"]')).toBeNull();
-  expect(view.container.querySelector("[data-ds-specimen-layout='single']")).toBeTruthy();
+  expect(view.container.querySelector("[data-specimen-layout='single']")).toBeTruthy();
 });
 
 it.each(["ladder", "grid"] as const)("%s owns first12, native in-place disclosure, and full expanded mode", async layout => {
   const props = { id: "sections.specimen-type-ladder" as const, layout, label: "Scale", items: items(15), context: context(), need, labels, renderItem: draw };
   const view = await renderSelected(<SpecimenLayoutSection {...props} />, props.context);
-  const all = [...view.container.querySelectorAll("[data-ds-specimen-item]")];
+  const all = [...view.container.querySelectorAll("[data-specimen-item]")];
   expect(all).toHaveLength(15);
   for (const item of all.slice(0, 12)) expect(item).toBeVisible();
   for (const item of all.slice(12)) expect(item).not.toBeVisible();
@@ -64,7 +64,7 @@ it.each(["ladder", "grid"] as const)("%s owns first12, native in-place disclosur
   for (const item of all) expect(item).toBeVisible();
   view.unmount();
   const full = await renderSelected(<SpecimenLayoutSection {...props} expanded />, props.context);
-  for (const item of full.container.querySelectorAll("[data-ds-specimen-item]")) expect(item).toBeVisible();
+  for (const item of full.container.querySelectorAll("[data-specimen-item]")) expect(item).toBeVisible();
   expect(screen.queryByRole("button", { name: /Show all/ })).toBeNull();
 });
 
@@ -72,7 +72,7 @@ it("preserves native list row order and arrow-key navigation", async () => {
   const selected = context(), user = userEvent.setup();
   await renderSelected(<SpecimenLayoutSection id="sections.specimen-type-ladder" label="Scale" layout="ladder" items={items(3)} context={selected} need={need} labels={labels} renderItem={draw} />, selected);
   const rows = screen.getAllByRole("row");
-  expect(rows.map(row => row.querySelector("[data-ds-specimen-item]")?.getAttribute("data-ds-specimen-item"))).toEqual(["0", "1", "2"]);
+  expect(rows.map(row => row.querySelector("[data-specimen-item]")?.getAttribute("data-specimen-item"))).toEqual(["0", "1", "2"]);
   rows[0]!.focus();
   await user.keyboard("{ArrowDown}");
   expect(rows[1]).toHaveFocus();
@@ -87,7 +87,7 @@ it("stacks labelled third-axis matrices and exposes one initial row block", asyn
   const selected = context();
   const view = await renderSelected(<SpecimenLayoutSection id="sections.specimen-variant-matrix" label="Variants" layout="matrix" {...matrix()} context={selected} need={need} labels={labels} renderItem={draw} />, selected);
   expect(screen.getAllByRole("columnheader", { name: "Live" }).length).toBeGreaterThan(0);
-  const all = [...view.container.querySelectorAll("[data-ds-specimen-item]")];
+  const all = [...view.container.querySelectorAll("[data-specimen-item]")];
   expect(all).toHaveLength(8);
   expect(all.filter(item => !(item.closest("[hidden]")))).toHaveLength(2);
   fireEvent.click(screen.getByRole("button", { name: "Show all 8 variants" }));
@@ -132,8 +132,8 @@ it.each(["hover", "focus-visible", "pressed"] as const)("captures a real native 
   }
   const onPress = vi.fn();
   const view = render(<NativeSpecimenStateClone Content={components.SemanticContent} state={state} unavailable={reason => <components.SemanticContent as="p" role="status">{reason}</components.SemanticContent>}><components.Button onPress={onPress}>Native action</components.Button></NativeSpecimenStateClone>);
-  await waitFor(() => expect(view.container.querySelector('[data-ds-specimen-capture="ready"]')).toBeTruthy());
-  const clone = view.container.querySelector("[data-ds-state-clone]")!;
+  await waitFor(() => expect(view.container.querySelector('[data-specimen-capture="ready"]')).toBeTruthy());
+  const clone = view.container.querySelector("[data-specimen-state-clone]")!;
   expect(clone).toHaveAttribute("inert");
   expect(clone.querySelector(`[data-${state === "hover" ? "hovered" : state === "pressed" ? "pressed" : "focus-visible"}]`)).toBeTruthy();
   fireEvent.click(clone.querySelector("button")!);
