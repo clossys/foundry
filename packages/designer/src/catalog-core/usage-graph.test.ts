@@ -141,8 +141,8 @@ describe("usage graph", () => {
   });
 
   it("merges runtime observations onto existing edges without inventing a new kind", () => {
-    const graph = buildUsageGraph({ ...fixture(), runtime: [{ from: "pages.home", to: "sections.form", kind: "renders", route: "home", selector: "[data-ds-leaf=\"sections.form\"]" }] });
-    expect(uses(graph, "pages.home").find(edge => edge.to === "sections.form")).toMatchObject({ evidence: ["declared", "runtime"], at: [{ route: "home", selector: "[data-ds-leaf=\"sections.form\"]" }, { route: "home", slot: "main" }] });
+    const graph = buildUsageGraph({ ...fixture(), runtime: [{ from: "pages.home", to: "sections.form", kind: "renders", route: "home", selector: "[data-provenance-leaf=\"sections.form\"]" }] });
+    expect(uses(graph, "pages.home").find(edge => edge.to === "sections.form")).toMatchObject({ evidence: ["declared", "runtime"], at: [{ route: "home", selector: "[data-provenance-leaf=\"sections.form\"]" }, { route: "home", slot: "main" }] });
   });
 });
 

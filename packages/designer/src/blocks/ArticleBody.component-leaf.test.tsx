@@ -59,7 +59,7 @@ it("renders the registered article specimen using the actual adopted shadcn Card
   expect(preview).toHaveProperty("render");
   if (!("render" in preview)) throw new Error(preview.reason);
   const { container } = render(<ConsumerComponentProvider value={selection}><Suspense fallback={null}>{preview.render()}</Suspense></ConsumerComponentProvider>);
-  expect(await screen.findByRole("article")).toHaveAttribute("data-ds-leaf", "sections.article");
+  expect(await screen.findByRole("article")).toHaveAttribute("data-provenance-leaf", "sections.article");
   expect(container.querySelector('[data-slot="card"]')).not.toBeNull();
   expect(screen.getByRole("navigation")).toHaveAccessibleName("On this page");
   const reference = container.querySelector('[data-footnote-reference]')!;

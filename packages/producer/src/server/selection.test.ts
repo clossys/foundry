@@ -38,12 +38,12 @@ describe("Studio selected runtime", () => {
       const firstPath = join(temporary, "first.mjs"); await writeFile(firstPath, firstCode);
       const firstRuntime = await import(pathToFileURL(firstPath).href);
       const firstBadge = ReactDOMServer.renderToStaticMarkup(React.createElement(firstRuntime.components.Badge, null, "Selected"));
-      expect(firstBadge).toContain('data-ds-fill="shadcn@aria/components.badge"');
+      expect(firstBadge).toContain('data-provenance-fill="shadcn@aria/components.badge"');
       expect(firstBadge).toContain('data-slot="badge"');
       expect(first.cssHash).toBe(themeHash(first.css!));
       expect(firstCode).not.toContain(temporary);
       const disclosure = ReactDOMServer.renderToStaticMarkup(React.createElement(firstRuntime.disclosure.Disclosure, { title: "Source", defaultExpanded: true }, "Cell source"));
-      expect(disclosure).toContain('data-ds-leaf="components.disclosure"');
+      expect(disclosure).toContain('data-provenance-leaf="components.disclosure"');
       expect(disclosure).toContain('data-slot="accordion-trigger"');
       const dialogTitle = ReactDOMServer.renderToStaticMarkup(React.createElement(firstRuntime.dialog.Dialog.Heading, null, "Find a page"));
       expect(dialogTitle).toContain('data-slot="dialog-title"');
@@ -66,7 +66,7 @@ describe("Studio selected runtime", () => {
       const secondPath = join(temporary, "second.mjs"); await writeFile(secondPath, secondCode);
       const secondRuntime = await import(pathToFileURL(secondPath).href);
       const secondBadge = ReactDOMServer.renderToStaticMarkup(React.createElement(secondRuntime.components.Badge, null, "Selected"));
-      expect(secondBadge).toContain('data-ds-fill="foundry/components.badge"');
+      expect(secondBadge).toContain('data-provenance-fill="foundry/components.badge"');
       // R2F-29 (0fe20ed5f): the foundry Badge fill is the stock shadcn@aria leaf, so it keeps the stock anatomy.
       expect(secondBadge).toContain('data-slot="badge"');
       expect(second.hash).not.toBe(first.hash);

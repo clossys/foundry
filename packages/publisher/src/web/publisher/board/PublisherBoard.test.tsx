@@ -57,9 +57,9 @@ describe("Publisher board real-store rendering", () => {
     expect(Array.from(document.querySelectorAll("h2, h3"), node => node.textContent)).toEqual([
       "Web experiences", "Public website", "Administration", "Authentication", "Written materials", "Documentation",
     ]);
-    expect(document.querySelectorAll('[data-ds-layer="sections"][data-ds-leaf="sections.page-header"][data-ds-fill="foundry/sections.page-header"]')).toHaveLength(1);
-    expect(document.querySelectorAll('[data-ds-leaf="sections.content"][data-ds-fill="foundry/sections.content"]')).toHaveLength(6);
-    expect(document.querySelectorAll('[data-ds-leaf="sections.data-table"][data-ds-fill="foundry/sections.data-table"]')).toHaveLength(4);
+    expect(document.querySelectorAll('[data-provenance-layer="sections"][data-provenance-leaf="sections.page-header"][data-provenance-fill="foundry/sections.page-header"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-provenance-leaf="sections.content"][data-provenance-fill="foundry/sections.content"]')).toHaveLength(6);
+    expect(document.querySelectorAll('[data-provenance-leaf="sections.data-table"][data-provenance-fill="foundry/sections.data-table"]')).toHaveLength(4);
     const canvas = document.querySelector('[data-canvas-surface][data-canvas-layout="flow"]');
     expect(canvas?.getAttribute("aria-label")).toBe("Publishing content canvas");
     expect(canvas?.querySelector("[data-canvas-world]")).not.toBeNull();
@@ -134,10 +134,10 @@ describe("Publisher board real-store rendering", () => {
     const model = buildPublisherBoard({ registry: loaded.registry, copy: boardWriterCopy(registry), locale: "en" });
     expect(model.ready).toBe(true); expect(model.lanes).toEqual([]);
     const { document } = render(model);
-    const empty = document.querySelector('[data-ds-layer="sections"][data-ds-leaf="sections.empty-state"][data-ds-fill="foundry/sections.empty-state"]');
+    const empty = document.querySelector('[data-provenance-layer="sections"][data-provenance-leaf="sections.empty-state"][data-provenance-fill="foundry/sections.empty-state"]');
     expect(empty?.textContent).toContain("No content slots yet");
     expect(document.querySelector('[data-canvas-surface][data-canvas-layout="flow"]')?.contains(empty)).toBe(true);
-    expect(document.querySelector('[data-ds-leaf="sections.data-table"], button, input')).toBeNull();
+    expect(document.querySelector('[data-provenance-leaf="sections.data-table"], button, input')).toBeNull();
   });
 });
 

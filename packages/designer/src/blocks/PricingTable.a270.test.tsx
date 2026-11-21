@@ -66,7 +66,7 @@ describe("A270 generic pricing specimen", () => {
   it("renders generic plans through selected shadcn Card sub-parts without price placeholders", async () => {
     const { container } = preview(STRUCTURED_BLOCK_SAMPLES.PricingTable!());
     await screen.findByRole("heading", { name: sample.heading });
-    expect(container.querySelector('[data-ds-leaf="sections.pricing"]')).not.toBeNull();
+    expect(container.querySelector('[data-provenance-leaf="sections.pricing"]')).not.toBeNull();
     expect(container.querySelectorAll('[data-slot="card"]')).toHaveLength(3);
     expect(container.querySelectorAll('[data-slot="card-header"]')).toHaveLength(3);
     expect(container.querySelectorAll('[data-slot="card-content"]')).toHaveLength(3);

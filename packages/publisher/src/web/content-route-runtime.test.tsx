@@ -22,8 +22,8 @@ describe("content route server rendering", () => {
     expect(route.status).toBe("ready"); expect(route.needs).toEqual([]); expect(route.node).toBeDefined();
     expect(route.candidate.id).toBe("sign-in"); expect(route.outputPath).toBe(outputPathFor(input.registry.slots[0]!));
     const html = markup(input);
-    expect(html).toContain('data-ds-leaf="frames.auth-shell"');
-    expect(html).toContain('data-ds-leaf="sections.empty-state"');
+    expect(html).toContain('data-provenance-leaf="frames.auth-shell"');
+    expect(html).toContain('data-provenance-leaf="sections.empty-state"');
     expect(html).toContain('href="#main-content"'); expect(html).toContain("Skip to sign-in content");
     expect(html).toContain('id="main-content"'); expect(html).toContain("Sign in to continue"); expect(html).toContain("Your account is ready.");
     expect(html).toContain("<title>Sign in | Example</title>");
@@ -108,7 +108,7 @@ describe("content route server rendering", () => {
     const base = content();
     const input = contentRouteFixture({ composition: { ...base.composition!, sections: [base.composition!.sections[0]!, { ...base.composition!.sections[0]!, key: "second" }] } });
     expect(prepareContentRoute(input).needs).toEqual([]);
-    expect(markup(input).match(/data-ds-leaf="sections.empty-state"/g)).toHaveLength(2);
+    expect(markup(input).match(/data-provenance-leaf="sections.empty-state"/g)).toHaveLength(2);
     const slot = { ...input.registry.slots[0]!, id: "sl_aaaaaaaaab" as const, aliases: [], route: "/sign-in-again", activeCandidateId: "other-page" };
     const second = { ...input, slotId: slot.id, registry: { ...input.registry, slots: [...input.registry.slots, slot], candidates: [...input.registry.candidates, contentRouteCandidate(base, "other-page", slot.id)] } };
     expect(prepareContentRoute(second).needs).toEqual([]); expect(markup(second)).toContain("Sign in to continue");

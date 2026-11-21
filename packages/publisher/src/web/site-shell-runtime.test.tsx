@@ -33,7 +33,7 @@ const render = (input: RuntimeRenderInput<ReactNode>) => renderToStaticMarkup(<>
 /** The page root a registered route draws around its Frame, so WL1 scans the page scope. */
 const page = (html: string) => `<div ${Object.entries(dsAttrs("pages", "pages.site", "foundry/pages.site")).map(([key, value]) => `${key}="${value}"`).join(" ")}>${html}</div>`;
 function scan(html: string) {
-  const stamps = [...html.matchAll(/data-ds-leaf="([^"]+)" data-ds-fill="([^"]+)"/g)];
+  const stamps = [...html.matchAll(/data-provenance-leaf="([^"]+)" data-provenance-fill="([^"]+)"/g)];
   const selection = Object.fromEntries(stamps.map(([, leaf, fill]) => [leaf!, fill!]));
   return scanProvenance({ html: page(html), route: { id: "site", binding: { frame: { leaf: LEAF }, frameSlots: {}, sections: { body: [{ leaf: "sections.content" }] } } as never }, selection });
 }
@@ -66,7 +66,7 @@ describe("frames.site-shell Designer runtime renderer", () => {
 
   it("draws the real SiteFrame from runtime content: landmarks, chrome stamps and the frames.site-shell root stamp", () => {
     const html = render(inputFor(sample(), { toasts: <div role="region" aria-label="Notifications" /> }));
-    expect(html).toMatch(/^(?:<link [^>]*\/>)*<div data-frame-root=""[^>]*data-ds-layer="frames" data-ds-leaf="frames.site-shell" data-ds-fill="foundry\/frames.site-shell"/);
+    expect(html).toMatch(/^(?:<link [^>]*\/>)*<div data-frame-root=""[^>]*data-provenance-layer="frames" data-provenance-leaf="frames.site-shell" data-provenance-fill="foundry\/frames.site-shell"/);
     expect(html.match(/<header\b/g)).toHaveLength(1);
     expect(html.match(/<main\b/g)).toHaveLength(1);
     expect(html.match(/<footer\b/g)).toHaveLength(1);
@@ -76,11 +76,11 @@ describe("frames.site-shell Designer runtime renderer", () => {
     expect(html).toMatch(/<nav[^>]*aria-label="Sections"/);
     for (const item of specimenDataset.navigation.items) expect(html).toContain(`href="${item.href}"`);
     expect(html).toContain(specimenDataset.assets.mark.name);
-    expect(html).toContain('data-ds-leaf="frames.site-header"');
-    expect(html).toContain('data-ds-leaf="frames.site-footer"');
+    expect(html).toContain('data-provenance-leaf="frames.site-header"');
+    expect(html).toContain('data-provenance-leaf="frames.site-footer"');
     expect(html).toContain('role="region" aria-label="Notifications"');
     expect(html.indexOf('aria-label="Notifications"')).toBeGreaterThan(html.indexOf("</footer>"));
-    expect(html.indexOf('data-ds-leaf="sections.content"')).toBeGreaterThan(html.indexOf("<main"));
+    expect(html.indexOf('data-provenance-leaf="sections.content"')).toBeGreaterThan(html.indexOf("<main"));
   });
 
   it("passes provenance: no WL1 chrome, and the site-shell composes the site header and footer", () => {
@@ -171,8 +171,8 @@ describe("frames.site-shell Designer runtime renderer", () => {
     it("the route's Stage-wrapped main renders through the callback the descriptor id names", () => {
       const callback = siteShellRuntimeCallbacks()[plan.manifest.fills.find(fill => fill.leaf === LEAF)!.renderer.id]!;
       const html = renderToStaticMarkup(<>{callback({ ...inputFor(sample()), slots: { main: [<section key="stage" {...dsAttrs("sections", "sections.content", "foundry/sections.content")} className="p-md" />] } })}</>);
-      expect(html).toContain('data-ds-leaf="frames.site-shell"');
-      expect(html).toMatch(/<main[^>]*><section data-ds-layer="sections"/);
+      expect(html).toContain('data-provenance-leaf="frames.site-shell"');
+      expect(html).toMatch(/<main[^>]*><section data-provenance-layer="sections"/);
     });
   });
 });

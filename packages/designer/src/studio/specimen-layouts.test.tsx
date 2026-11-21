@@ -49,7 +49,7 @@ it.each(["ladder", "grid", "matrix"] as const)("%s renders one item with no coll
   expect(specimenLayoutNeeds(props)).toEqual([]);
   const view = await renderSelected(<SpecimenLayoutSection {...props} label="Specimen" renderItem={draw} />, props.context);
   expect(view.container.querySelectorAll("[data-ds-specimen-item]")).toHaveLength(1);
-  expect(view.container.querySelector('table,[role="grid"],h3,h4,[data-ds-leaf="components.disclosure"]')).toBeNull();
+  expect(view.container.querySelector('table,[role="grid"],h3,h4,[data-provenance-leaf="components.disclosure"]')).toBeNull();
   expect(view.container.querySelector("[data-ds-specimen-layout='single']")).toBeTruthy();
 });
 

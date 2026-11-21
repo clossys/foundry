@@ -3,6 +3,7 @@
 import { useEffect, type HTMLAttributes } from "react";
 import { EditorContent, useEditor, type JSONContent } from "@tiptap/react";
 import { cx } from "./internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { richTextDocument, richTextExtensions, type RichTextValue } from "./rich-text/schema.js";
 import { renderRichTextNode } from "./rich-text/document.js";
 import { RICH_TEXT_CLASSES } from "./rich-text/styles.js";
@@ -30,13 +31,14 @@ function EditableRichText({ value, onChange, "aria-label": label, "aria-labelled
   return <EditorContent editor={editor} />;
 }
 
+const RICH_TEXT_STAMP = dsAttrs("components", "components.rich-text", "foundry/components.rich-text");
 /**
  * Shared document surface, with no toolbar or editing affordance in read-only
  * mode. The per-component Aria gap is intentional: React Aria has no rich-text
  * editor; only MIT Tiptap/ProseMirror packages supply its document engine.
  */
 export function RichText({ value, readOnly = true, onChange, className, ...rest }: RichTextProps) {
-  return <div {...rest} style={{ overflowWrap: "anywhere", ...rest.style }} data-ds-layer="components" data-ds-leaf="components.rich-text" data-ds-fill="foundry/components.rich-text" data-slot="rich-text" data-readonly={readOnly ? "true" : "false"} className={cx(RICH_TEXT_CLASSES, className)}>
+  return <div {...rest} style={{ overflowWrap: "anywhere", ...rest.style }} {...RICH_TEXT_STAMP} data-slot="rich-text" data-readonly={readOnly ? "true" : "false"} className={cx(RICH_TEXT_CLASSES, className)}>
     {readOnly ? renderRichTextNode(richTextDocument(value)) : <EditableRichText value={value} onChange={onChange} aria-label={rest["aria-label"]} aria-labelledby={rest["aria-labelledby"]} />}
   </div>;
 }

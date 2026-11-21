@@ -15,7 +15,7 @@ describe("MR-1 not-found state", () => {
       content:Object.fromEntries(Object.entries(content).map(([key,value])=>[key,{value}])),
     } as RuntimeRenderInput<ReactNode>;
     render(<>{errorMessageRenderer.render(input)}</>);
-    expect(screen.getByText("404").closest('[data-ds-leaf="sections.error-state"]')).toHaveAttribute("data-error-kind","not-found");
+    expect(screen.getByText("404").closest('[data-provenance-leaf="sections.error-state"]')).toHaveAttribute("data-error-kind","not-found");
     expect(screen.getByText("404").tagName).not.toBe("H1");
   });
 });

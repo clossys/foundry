@@ -81,9 +81,9 @@ describe("selected FAQ disclosure section", () => {
     const renderer = GROUP_A_SECTION_RENDERERS["sections.faq"]!;
     const { container } = render(host(renderer(input)));
     await screen.findByRole("button", { name: specimenDataset.sections.faq.items[0]!.question });
-    const root = container.querySelector('[data-ds-leaf="sections.faq"]');
+    const root = container.querySelector('[data-provenance-leaf="sections.faq"]');
     if (!(root instanceof HTMLElement)) throw new Error("Missing registered FAQ specimen");
-    expect(root).toHaveAttribute("data-ds-fill", "foundry/sections.faq");
+    expect(root).toHaveAttribute("data-provenance-fill", "foundry/sections.faq");
     for (const item of specimenDataset.sections.faq.items) {
       expect(await within(root).findByRole("button", { name: item.question })).toBeInTheDocument();
       expect(within(root).getByText(item.answer)).toBeInTheDocument();

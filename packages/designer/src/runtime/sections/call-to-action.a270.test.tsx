@@ -84,7 +84,7 @@ describe("registered CTA band on selected native component leaves", () => {
     expect(container.querySelector('[data-slot="card"]')).toBeTruthy();
     expect(screen.getByRole("link", { name: sample.primary.label })).toHaveAttribute("href", sample.primary.href);
     expect(screen.getByRole("link", { name: sample.secondary.label })).toHaveAttribute("href", sample.secondary.href);
-    expect(region).toHaveAttribute("data-ds-leaf", "sections.call-to-action");
+    expect(region).toHaveAttribute("data-provenance-leaf", "sections.call-to-action");
     await userEvent.tab();
     expect(screen.getByRole("link", { name: sample.primary.label })).toHaveFocus();
   });

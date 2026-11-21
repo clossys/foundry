@@ -46,7 +46,7 @@ describe("registered content SiteFrame", () => {
     expect(prepared.needs).toEqual([]);
     expect(prepared.status).toBe("ready");
     const html = await renderSelected(<ContentRoutePage input={input} />);
-    expect(html).toContain('data-ds-leaf="frames.site-shell"');
+    expect(html).toContain('data-provenance-leaf="frames.site-shell"');
     expect(html).toContain("Skip to content");
     expect(html).toContain("Example home");
     expect(html).toContain("Sign in to continue");

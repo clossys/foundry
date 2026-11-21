@@ -100,7 +100,7 @@ it("renders a real Publisher-emitted async route with its actual Designer page b
   await put(join(base, "src/content-loader.ts"), generated(loaders.contentRouteLoaderSource(input)));
   await put(join(base, "theme.css"), generated(":root { --preview-rendered: 1; }"));
   const rendered = (await renderNativePreview({ root: base, entry: route.source.file })).toString("utf8");
-  expect(rendered).toContain('data-ds-leaf="frames.auth-shell"'); expect(rendered).toContain('data-ds-leaf="sections.empty-state"');
+  expect(rendered).toContain('data-provenance-leaf="frames.auth-shell"'); expect(rendered).toContain('data-provenance-leaf="sections.empty-state"');
   expect(rendered).toContain("Sign in to continue"); expect(rendered).not.toContain("clossys-digest:");
   await launch(); const response = await get("/preview/example/pages/home.html");
   expect(response.status).toBe(200); expect(response.text).toContain("Sign in to continue");

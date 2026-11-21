@@ -7,6 +7,7 @@ import { richTextDocument } from "../components/rich-text/schema.js";
 import type { DesignerSpecimenNeed } from "./DesignerSpecimen.js";
 import type { ComponentSpecimenBinding, ComponentSpecimenComponent } from "./component-specimens.js";
 import { SpecimenLayoutSection, specimenComponent, specimenLayoutNeeds, type SpecimenAxis, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafProps } from "./specimen-layouts.js";
+import { DS_ATTR } from "../catalog-core/provenance-attrs.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const RichText = componentLeaf<typeof import("../components/RichText.js").RichText>("components.rich-text");
@@ -73,7 +74,7 @@ export function pageViewportCases(page: { readonly id: string; readonly label: s
 function failure(props: SpecimenLeafProps, id: string, reason: string): ReactNode {
   const semantic = specimenComponent(props.context, "components.semantic-content");
   if ("reason" in semantic) return props.need(semantic);
-  return <SemanticContent as="div" data-ds-leaf={id} data-ds-specimen-need="true">{props.need({ leaf: id, reason })}</SemanticContent>;
+  return <SemanticContent as="div" {...{ [DS_ATTR.leaf]: id }} data-ds-specimen-need="true">{props.need({ leaf: id, reason })}</SemanticContent>;
 }
 function componentNeeds(props: SpecimenLeafProps, ids: readonly string[]): DesignerSpecimenNeed[] {
   return ids.flatMap(id => { const result = specimenComponent(props.context, id); return "reason" in result ? [result] : []; });
@@ -142,7 +143,7 @@ function copyNode(props: SpecimenLeafProps, item: SpecimenItem, value: CopyInCon
     const selected = specimenComponent(props.context, "components.navigation-tree");
     if ("reason" in selected) return props.need(selected);
     if (!navigationPartsAvailable(selected)) return failure(props, "sections.specimen-copy-in-context", "Native navigation parts are unavailable.");
-    specimen = <NavigationTree data-ds-leaf="components.navigation-tree" aria-label={value.context}><NavigationTreeItem id={item.id} textValue={value.text}><NavigationTreeItemContent>{value.text}</NavigationTreeItemContent></NavigationTreeItem></NavigationTree>;
+    specimen = <NavigationTree {...{ [DS_ATTR.leaf]: "components.navigation-tree" }} aria-label={value.context}><NavigationTreeItem id={item.id} textValue={value.text}><NavigationTreeItemContent>{value.text}</NavigationTreeItemContent></NavigationTreeItem></NavigationTree>;
   }
   return <SemanticContent as="div" lang={value.locale} dir={value.dir} data-copy-role={value.role} data-copy-context={value.context}>{specimen}</SemanticContent>;
 }

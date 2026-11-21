@@ -1,6 +1,6 @@
 import { createElement, forwardRef, type ComponentType } from "react";
 import { Separator as Impl0 } from "./separator.js";
-const stamp = {"data-ds-layer":"components","data-ds-leaf":"components.separator","data-ds-fill":"shadcn@aria/components.separator"} as const;
+const stamp = {"data-provenance-layer":"components","data-provenance-leaf":"components.separator","data-provenance-fill":"shadcn@aria/components.separator"} as const;
 const reactKeys = new Set(["$$typeof", "render", "type", "compare", "displayName", "propTypes", "defaultProps", "contextType", "contextTypes", "childContextTypes", "getDefaultProps", "getDerivedStateFromProps", "getDerivedStateFromError", "mixins", "length", "name", "prototype", "arguments", "caller"]);
 function statics(impl: unknown): Record<string, unknown> {
   const hoisted: Record<string, unknown> = {};

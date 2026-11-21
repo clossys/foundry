@@ -161,7 +161,7 @@ const S = specimenDataset.sections;
 const ROLES: Record<GroupCLeaf, (root: HTMLElement) => void> = {
   cards: root => {
     // The stamped section list; each card's editorial metadata carries its own nested tag list (78237484a).
-    const list = root.querySelector<HTMLElement>('[data-ds-leaf="sections.cards"]')!;
+    const list = root.querySelector<HTMLElement>('[data-provenance-leaf="sections.cards"]')!;
     expect(list).toHaveAttribute("role", "list");
     const items = [...list.children] as HTMLElement[];
     expect(items.map(item => item.tagName)).toEqual(S.recordCards.records.map(() => "LI"));
@@ -268,16 +268,16 @@ describe("group-c Section runtime renderers", () => {
 
     it("renders real component roles from its fill with dataset content", () => {
       const { container } = render(<div>{renderLeaf(leaf, datasetInput(leaf))}</div>);
-      const root = container.querySelector(`[data-ds-leaf="sections.${leaf}"]`) as HTMLElement | null;
+      const root = container.querySelector(`[data-provenance-leaf="sections.${leaf}"]`) as HTMLElement | null;
       expect(root, "section stamp").not.toBeNull();
-      expect(root!.getAttribute("data-ds-fill")).toBe(`foundry/sections.${leaf}`);
+      expect(root!.getAttribute("data-provenance-fill")).toBe(`foundry/sections.${leaf}`);
       // Query from the wrapper so a block whose root is itself the landmark or list is matched too.
       ROLES[leaf](root!.parentElement!);
     });
 
     it("draws no chrome outside its section stamp (WL1) and renders only its assembly (WL10)", () => {
       const { html, findings } = provenanceOf(leaf, renderLeaf(leaf, datasetInput(leaf)));
-      expect(html).toContain(`data-ds-leaf="sections.${leaf}"`);
+      expect(html).toContain(`data-provenance-leaf="sections.${leaf}"`);
       expect(findings).toEqual([]);
       const { result, outside } = wiringOf(leaf);
       expect(outside).toEqual([]);
@@ -302,7 +302,7 @@ describe("group-c WL10 harness reads componentLeaf facades", () => {
 describe("group-c members, refusals and optional slots", () => {
   it("cards: layout.list reaches RecordCards", () => {
     const { container } = render(<div>{renderLeaf("cards", datasetInput("cards", ["layout.list"]))}</div>);
-    expect(container.querySelector('[data-ds-leaf="sections.cards"] ul, ul[data-ds-leaf="sections.cards"]')?.className).toContain("flex-col");
+    expect(container.querySelector('[data-provenance-leaf="sections.cards"] ul, ul[data-provenance-leaf="sections.cards"]')?.className).toContain("flex-col");
   });
 
   it("error-state: kind members reach ErrorState", () => {

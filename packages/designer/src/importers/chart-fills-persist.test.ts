@@ -61,12 +61,12 @@ describe("Foundry chart fills persist", () => {
     expect(Object.values(committed.components)[0]!.propMap).toEqual(descriptor.propMap);
     const leaf = persist(doc).find(file => file.path === `components/${descriptor.slot.slice(11)}/index.ts`)!;
     const name = descriptor.slot.slice(11).split("-").map(part => part[0]!.toUpperCase() + part.slice(1)).join("");
-    // Since e742c97f6 (DOM provenance) the identity adapter stamps data-ds-* and forwards to the bare root
+    // Since e742c97f6 (DOM provenance) the identity adapter stamps data-provenance-* and forwards to the bare root
     // export unchanged: one import, the provenance stamp, and the root's own type on the stamped export.
     const lines = leaf.content.split("\n");
     expect(lines[0]).toBe('import { createElement, forwardRef, type ComponentType } from "react";');
     expect(lines[1]).toBe(`import { ${descriptor.impl.export} as Impl0 } from "@clossys/designer/charts";`);
-    expect(lines[2]).toBe(`const stamp = ${JSON.stringify({ "data-ds-layer": "components", "data-ds-leaf": descriptor.slot, "data-ds-fill": fillId(doc) })} as const;`);
+    expect(lines[2]).toBe(`const stamp = ${JSON.stringify({ "data-provenance-layer": "components", "data-provenance-leaf": descriptor.slot, "data-provenance-fill": fillId(doc) })} as const;`);
     expect(leaf.content.match(/^import /gm)).toHaveLength(2);
     expect(leaf.content).toContain("const target = Impl0 satisfies ((props: never) => unknown) | (new (props: never) => unknown);");
     expect(leaf.content).toContain("  return createElement(target as unknown as ComponentType<Record<string, unknown>>, { ...props, ...stamp, ref });");

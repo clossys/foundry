@@ -185,8 +185,8 @@ describe("SiteFrame footer placement", () => {
     expect(html.match(/<footer\b/g)).toHaveLength(1);
     expect(html).toContain(`<main id="${SITE_MAIN_ID}" tabindex="-1"`);
     expect(html).toMatch(/<header[^>]*data-placement="overlay"/);
-    expect(html).toMatch(/<main[^>]*><section[^>]*data-ds-leaf="sections.hero"/);
-    expect(html).toMatch(/data-ds-leaf="sections.hero"[^>]*class="[^"]*flex-1/);
+    expect(html).toMatch(/<main[^>]*><section[^>]*data-provenance-leaf="sections.hero"/);
+    expect(html).toMatch(/data-provenance-leaf="sections.hero"[^>]*class="[^"]*flex-1/);
     expect(html).toMatch(/<div data-frame-root="" class="flex min-h-dvh flex-col relative"/);
     expect(html).toContain('<div data-frame-footer-overlay="" class="flex flex-col shrink-0 min-w-0 pointer-events-none z-[var(--ui-z-sticky)]"><footer');
     expect(html).toMatch(/<footer[^>]*bg-surface-inverse[^>]*publisher-frame-footer-overlay/);

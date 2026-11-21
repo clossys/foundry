@@ -169,11 +169,11 @@ describe('reader function catalog', () => {
         expect(show.querySelector('[data-catalog-rules]')?.textContent).toContain('final group may contain an owner instead');
         for (const page of byFile.values()) {
             const wrappers = [...page.querySelectorAll('[data-catalog-native], [data-config-native]')];
-            for (const node of page.querySelectorAll('[data-content-section], [data-ds-leaf="sections.hero"]')) {
+            for (const node of page.querySelectorAll('[data-content-section], [data-provenance-leaf="sections.hero"]')) {
                 expect(wrappers.filter(wrapper => wrapper.contains(node))).toHaveLength(1);
             }
             for (const wrapper of wrappers) {
-                const boundaries = [...wrapper.querySelectorAll('[data-content-section], [data-ds-leaf="sections.hero"]')];
+                const boundaries = [...wrapper.querySelectorAll('[data-content-section], [data-provenance-leaf="sections.hero"]')];
                 const top = boundaries.filter(node => !boundaries.some(parent => parent !== node && parent.contains(node)));
                 expect(top, wrapper.parentElement?.id).toHaveLength(wrapper.hasAttribute('data-catalog-composition') ? 6 : 1);
             }
@@ -322,8 +322,8 @@ describe('reader function catalog', () => {
                 expect(element, `native witness ${label}: ${selector}`).not.toBeNull();
                 return element!;
             };
-            if (label === 'Introduce' && wrapper.querySelector('[data-ds-leaf="sections.hero"]')) {
-                const intro = required('[data-ds-leaf="sections.hero"] [data-section-intro]');
+            if (label === 'Introduce' && wrapper.querySelector('[data-provenance-leaf="sections.hero"]')) {
+                const intro = required('[data-provenance-leaf="sections.hero"] [data-section-intro]');
                 return { role: 'hero', 'hero-size': intro.getAttribute('data-section-intro') === 'section' ? 'compact' : 'display' };
             }
             const section = required('[data-content-section]');

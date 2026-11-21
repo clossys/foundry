@@ -80,7 +80,7 @@ it.each(tokenAssetSpecimenLeaves.map((leaf, index) => ({ leaf, index })))("$leaf
     for (const item of rendered.slice(0, 12)) expect(item).toBeVisible();
     if (count === 15) for (const item of rendered.slice(12)) expect(item).not.toBeVisible();
     if (count === 1) {
-      expect(view.container.querySelector("[data-ds-leaf='components.grid-list'],h4,[data-ds-leaf='components.disclosure']")).toBeNull();
+      expect(view.container.querySelector("[data-provenance-leaf='components.grid-list'],h4,[data-provenance-leaf='components.disclosure']")).toBeNull();
       expect(view.container.querySelector("[data-ds-specimen-layout='single']")).toBeTruthy();
     }
     if (count === 15) {

@@ -34,7 +34,7 @@ describe("sections.media specimen runtime", () => {
     expect(screen.getByRole("img", { name: image.alt })).toHaveAttribute("src", image.src);
     expect(container.querySelector("picture")!.parentElement!.style.aspectRatio).toBe("1440 / 900");
     expect(within(screen.getByRole("list", { name: callouts.label })).getAllByRole("listitem")).toHaveLength(2);
-    expect(container.querySelector('[data-ds-leaf="sections.media"]')).toHaveAttribute("data-ds-fill", "foundry/sections.media");
+    expect(container.querySelector('[data-provenance-leaf="sections.media"]')).toHaveAttribute("data-provenance-fill", "foundry/sections.media");
   });
 
   it("maps the optional callouts slot and every chrome member to the existing public MediaFigure", () => {

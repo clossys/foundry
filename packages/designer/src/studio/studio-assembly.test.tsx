@@ -59,7 +59,7 @@ it("renders every value-layer canvas board as the registered library-board Secti
     expect(findings.filter(finding => finding.code === "WL1"), layer).toEqual([]);
     expect(findings.filter(finding => finding.code === "WL6"), layer).toEqual([]);
     // Every mounted board is exactly one outermost sections.comparison stamp.
-    expect(document.querySelectorAll('[data-studio-world] [data-ds-leaf="sections.comparison"]').length).toBe(declared.boards);
+    expect(document.querySelectorAll('[data-studio-world] [data-provenance-leaf="sections.comparison"]').length).toBe(declared.boards);
   }
 });
 

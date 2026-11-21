@@ -56,7 +56,7 @@ function renderForm(input: CompositeEngineInput): string {
   const { Form } = load(fillOf(input).impl.entry) as { Form: ComponentType };
   return renderToStaticMarkup(h("div", page, h("section", section, h(Form))));
 }
-const renderedFills = (html: string) => [...html.matchAll(/<button[^>]*data-ds-fill="([^"]*)"/g)].map(match => match[1]);
+const renderedFills = (html: string) => [...html.matchAll(/<button[^>]*data-provenance-fill="([^"]*)"/g)].map(match => match[1]);
 /** WL7 from the DOM scan of one render against a `components.button` selection. */
 const scanWl7 = (html: string, button: string) => scanProvenance({ html, route: { id: "home", binding: { frame: { leaf: "frames.site" }, frameSlots: {}, sections: { body: [{ leaf: SLOT }] } } }, selection: { "components.button": button, [SLOT]: `synthetic/${SLOT}` } }).findings.filter(row => row.code === "WL7");
 /**
@@ -112,8 +112,8 @@ describe("bind-selected-components@1 swap-through", () => {
     const after = closure(f.input);
     expect(after).toBeDefined();
     expect(after).not.toBe(before);
-    expect(after).toContain(`"data-ds-fill":"${selectedButton(f.input)}"`);
-    expect(before).not.toContain(`"data-ds-fill":"${selectedButton(f.input)}"`);
+    expect(after).toContain(`"data-provenance-fill":"${selectedButton(f.input)}"`);
+    expect(before).not.toContain(`"data-provenance-fill":"${selectedButton(f.input)}"`);
     expect(errorsOf(f.input)).toEqual(RESIDUAL);
     expect(wl7(f.input)).toEqual([]);
   });
@@ -138,7 +138,7 @@ describe("bind-selected-components@1 swap-through", () => {
     await expect(f.derive()).rejects.toThrow(/S6|surface input|unknown/);
   });
 
-  it("the rendered sections.form Button's data-ds-fill changes from the package fill to the Custom fill", async () => {
+  it("the rendered sections.form Button's data-provenance-fill changes from the package fill to the Custom fill", async () => {
     const { f } = await derived();
     const packageFill = selectedButton(f.input), before = renderForm(f.input);
     expect(renderedFills(before)).toEqual([packageFill]);

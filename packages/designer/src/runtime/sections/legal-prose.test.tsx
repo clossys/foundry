@@ -26,8 +26,8 @@ describe("legal prose runtime binding", () => {
     expect(screen.getByRole("heading", { level: 3, name: "Your information" })).toHaveAttribute("dir", "auto");
     expect(screen.getByText("Last revised")).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
-    expect(container.querySelector('[data-ds-leaf="sections.legal-prose"]')).toHaveAttribute("data-designer-requires-section-frame");
-    expect(container.querySelector("article")).toHaveAttribute("data-ds-leaf", "sections.article");
+    expect(container.querySelector('[data-provenance-leaf="sections.legal-prose"]')).toHaveAttribute("data-designer-requires-section-frame");
+    expect(container.querySelector("article")).toHaveAttribute("data-provenance-leaf", "sections.article");
   });
   it("renders an authored revision date as native time through the public block", () => {
     // The registered callback renders the same legal prose as the renderer (see runtime-registry.test.ts for the

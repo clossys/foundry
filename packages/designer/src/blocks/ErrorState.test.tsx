@@ -16,7 +16,7 @@ describe("ErrorState", () => {
       const region = screen.getByRole("region", { name: "Content unavailable" });
       expect(region.tagName).toBe("SECTION");
       expect(region).toHaveAttribute("data-error-kind", kind);
-      expect(region).toHaveAttribute("data-ds-leaf", "sections.error-state");
+      expect(region).toHaveAttribute("data-provenance-leaf", "sections.error-state");
       expect(within(region).getByRole("heading", { level: 2 })).toHaveTextContent("Content unavailable");
       expect(within(region).getByText("Try again later.").tagName).toBe("P");
       expect(within(region).getByText("404").tagName).toBe("P");

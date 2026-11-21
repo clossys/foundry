@@ -51,7 +51,7 @@ describe("canonical page locale at the shell root", () => {
       const { container } = render(<>{entry.render(input(entry, tag))}</>);
       expect(screen.getByTestId("locale-probe")).toHaveAttribute("data-locale", tag);
       expect(screen.getByTestId("locale-probe")).toHaveAttribute("data-direction", direction);
-      const root = container.querySelector(`[data-ds-leaf="${entry.leaf}"]`);
+      const root = container.querySelector(`[data-provenance-leaf="${entry.leaf}"]`);
       expect(root).toHaveAttribute("lang", tag);
       expect(root).toHaveAttribute("dir", direction);
       expect(container.querySelectorAll("main")).toHaveLength(1);

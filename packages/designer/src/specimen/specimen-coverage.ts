@@ -1,5 +1,6 @@
 import { specimenLayoutNeeds, type SpecimenAxis, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafProps } from "./specimen-layouts.js";
 import { SPECIMEN_KIND_MAP, resolveSpecimenLeafBinding, type SpecimenCellKind } from "./specimen-kind-map.js";
+import { DS_ATTR } from "../catalog-core/provenance-attrs.js";
 
 export type SpecimenAgent = "director" | "writer" | "designer" | "publisher";
 export interface SpecimenCoverageCell extends SpecimenCellKind {
@@ -203,7 +204,7 @@ function contentIssues(region: Element, sourceText?: string, visitedFrames = new
   if (sourceLeak(text, sourceText)) issues.add("raw-source-in-specimen");
   if (/\bNEED\b/.test(text) || /(?:^|\n)\s*pending\s*(?:\n|$)|\b(?:text[- ]fallback|excerpt|placeholder)\b/i.test(text) || region.matches("[data-ds-specimen-need]") || region.querySelector("[data-ds-specimen-need],[data-preview-pending],[data-runtime-pending]")) issues.add("unresolved-specimen");
   if (region.querySelector("[contenteditable='true'],textarea:not([readonly])")) issues.add("editable-specimen");
-  for (const element of [region, ...region.querySelectorAll("*")]) if (!element.closest("[data-ds-leaf]")) issues.add("outside-native-leaf");
+  for (const element of [region, ...region.querySelectorAll("*")]) if (!element.closest(`[${DS_ATTR.leaf}]`)) issues.add("outside-native-leaf");
   // Portalled surface content lives in a viewport document; the outer iframe alone is never rendered proof.
   for (const frame of region.querySelectorAll<HTMLIFrameElement>("iframe")) {
     if (visitedFrames.has(frame)) continue;

@@ -27,7 +27,7 @@ describe("logo-only public hero", () => {
     expect(container.querySelector("img")).toHaveAttribute("alt", "");
     expect(container.textContent).toBe("");
     expect(container.querySelector("h1,h2,p,a,button")).toBeNull();
-    expect(container.querySelector("section")).toHaveAttribute("data-ds-leaf", "sections.logo-hero");
+    expect(container.querySelector("section")).toHaveAttribute("data-provenance-leaf", "sections.logo-hero");
     expect(renderToStaticMarkup(<LogoHero mark={mark.src} name={mark.name} />)).toContain('aria-label=');
   });
   it("is a registered draft section with a block id, package fill and runtime renderer", () => {

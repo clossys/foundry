@@ -83,7 +83,7 @@ describe("group-a renderers pass the contract members and slots the blocks now t
     const sunken = rendered("band", ["ground.sunken", "measure.content"]);
     const transparent = rendered("band", ["ground.transparent", "measure.content"]);
     expect(transparent).not.toBe(sunken);
-    const band = mounted(transparent).querySelector('[data-ds-leaf="sections.band"]') as HTMLElement;
+    const band = mounted(transparent).querySelector('[data-provenance-leaf="sections.band"]') as HTMLElement;
     expect(band.className).not.toMatch(/\bbg-/);
     expect(band.className).not.toMatch(/\btext-ink-/);
     expect(sunken).toContain("bg-surface-sunken");
@@ -98,7 +98,7 @@ describe("group-a renderers pass the contract members and slots the blocks now t
     const region = container.querySelector("[data-article-toc]") as HTMLElement;
     expect(region).not.toBeNull();
     const nav = within(region).getByRole("navigation", { name: S.tableOfContents.label });
-    expect(nav.closest('[data-ds-leaf="sections.table-of-contents"]')).not.toBeNull();
+    expect(nav.closest('[data-provenance-leaf="sections.table-of-contents"]')).not.toBeNull();
     for (const item of S.tableOfContents.items) {
       expect(within(region).getByRole("link", { name: item.label })).toHaveAttribute("href", `#${item.id}`);
       expect(container.querySelector(`[data-article-body] #${item.id}`)?.textContent).toBe(item.label);

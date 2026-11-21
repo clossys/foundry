@@ -32,14 +32,14 @@ describe("sections.features member runtime", () => {
     const view = render(<MarketingComponentProvider><Suspense>{renderFeaturesSection(input({ items, header: { heading: "Capabilities" } }, `layout.${layout}`))}</Suspense></MarketingComponentProvider>);
     await screen.findByRole("heading", { name: "Capabilities" });
     expect(view.container.querySelector("[data-features-layout]")).toHaveAttribute("data-features-layout", layout);
-    expect(view.container.querySelector('[data-ds-leaf="sections.features"]')).toHaveAttribute("data-ds-fill", "foundry/sections.features");
+    expect(view.container.querySelector('[data-provenance-leaf="sections.features"]')).toHaveAttribute("data-provenance-fill", "foundry/sections.features");
     expect(view.container.querySelector('[data-slot="card"]')).toHaveClass("group/card");
     if (layout === "tabs") {
       expect(await screen.findByRole("tablist")).toHaveAccessibleName("Capabilities");
       expect(view.container.querySelector('[data-slot="tabs"]')).not.toBeNull();
     }
     expect(screen.getByRole("img", { name: resource.alt })).toHaveAttribute("src", resource.src);
-    expect(view.container.querySelector('[data-ds-leaf="sections.media"]')).not.toBeNull();
+    expect(view.container.querySelector('[data-provenance-leaf="sections.media"]')).not.toBeNull();
   });
   it("keeps generated members and Writer copy fields joined to the existing leaf", () => {
     const contract = sections.find(row => row.id === "sections.features")!.contract;

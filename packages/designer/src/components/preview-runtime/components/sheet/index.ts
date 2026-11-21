@@ -7,7 +7,7 @@ export { SheetFooter } from "./sheet.js";
 export { SheetHeader } from "./sheet.js";
 export { SheetTitle } from "./sheet.js";
 export { SheetTrigger } from "./sheet.js";
-const stamp = {"data-ds-layer":"components","data-ds-leaf":"components.sheet","data-ds-fill":"shadcn@aria/components.sheet"} as const;
+const stamp = {"data-provenance-layer":"components","data-provenance-leaf":"components.sheet","data-provenance-fill":"shadcn@aria/components.sheet"} as const;
 const reactKeys = new Set(["$$typeof", "render", "type", "compare", "displayName", "propTypes", "defaultProps", "contextType", "contextTypes", "childContextTypes", "getDefaultProps", "getDerivedStateFromProps", "getDerivedStateFromError", "mixins", "length", "name", "prototype", "arguments", "caller"]);
 function statics(impl: unknown): Record<string, unknown> {
   const hoisted: Record<string, unknown> = {};

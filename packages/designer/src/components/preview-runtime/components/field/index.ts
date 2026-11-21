@@ -12,7 +12,7 @@ export { FieldLegend } from "./field.js";
 export { FieldSeparator } from "./field.js";
 export { FieldSet } from "./field.js";
 export { FieldTitle } from "./field.js";
-const stamp = {"data-ds-layer":"components","data-ds-leaf":"components.field","data-ds-fill":"defaults-consumer/components.field"} as const;
+const stamp = {"data-provenance-layer":"components","data-provenance-leaf":"components.field","data-provenance-fill":"defaults-consumer/components.field"} as const;
 const reactKeys = new Set(["$$typeof", "render", "type", "compare", "displayName", "propTypes", "defaultProps", "contextType", "contextTypes", "childContextTypes", "getDefaultProps", "getDerivedStateFromProps", "getDerivedStateFromError", "mixins", "length", "name", "prototype", "arguments", "caller"]);
 function statics(impl: unknown): Record<string, unknown> {
   const hoisted: Record<string, unknown> = {};

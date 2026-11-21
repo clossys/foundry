@@ -52,8 +52,8 @@ it("compiles and executes the emitted async page inside the Publisher host again
     const runnerFile = join(consumer, "render-content-route.mjs");
     await writeFile(runnerFile, 'import { renderToStaticMarkup } from "react-dom/server";\nimport ContentPage from "./content-route.mjs";\nprocess.stdout.write(renderToStaticMarkup(await ContentPage()));\n');
     const { stdout: html } = await promisify(execFile)(process.execPath, [runnerFile], { cwd: consumer, encoding: "utf8", timeout: 20_000 });
-    expect(html).toContain('data-ds-leaf="frames.auth-shell"');
-    expect(html).toContain('data-ds-leaf="sections.empty-state"');
+    expect(html).toContain('data-provenance-leaf="frames.auth-shell"');
+    expect(html).toContain('data-provenance-leaf="sections.empty-state"');
     expect(html).toContain("<title>Sign in · Example</title>");
     expect(html).toContain("Sign in to continue"); expect(html).toContain("Skip to sign-in content");
   } finally {

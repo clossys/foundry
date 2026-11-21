@@ -57,7 +57,7 @@ it("renders one canonical SectionFill as native web and a real 16:9 SVG slide wi
   const web = prepared.render("web.page.responsive", cell), deck = prepared.render("deck.16x9", cell);
   const html = renderToStaticMarkup(createElement("div", null, ...web.sections.map(section => section.node)));
   expect(html).toContain("One shared construct"); expect(html).toContain("Web and deck retain");
-  expect(html).toContain("text-display-m"); expect(html).toContain("text-center"); expect(html).toContain("data-ds-leaf=\"sections.section-header\"");
+  expect(html).toContain("text-display-m"); expect(html).toContain("text-center"); expect(html).toContain("data-provenance-leaf=\"sections.section-header\"");
   expect(deck.deck.aspect).toBe("16:9"); expect(deck.deck.width).toBe(1920); expect(deck.deck.slides).toHaveLength(1);
   expect(deck.deck.slides[0]!.svg).toContain("One shared construct"); expect(deck.deck.slides[0]!.svg).toContain('text-anchor="middle"');
   expect(deck.deck.slides[0]!.svg).toContain('font-size="'); expect(deck.deck.warnings).toEqual([]);

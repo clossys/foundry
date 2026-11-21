@@ -52,8 +52,8 @@ describe("native site-shell after Landing retirement", () => {
     const output = html(heroNode());
     for (const tag of ["header", "main", "footer", "h1"]) expect(output.match(new RegExp(`<${tag}\\b`, "g"))).toHaveLength(1);
     expect(output).toContain("Native home");
-    expect(output).toContain('data-ds-leaf="frames.site-shell"');
-    expect(output).toMatch(/<main[^>]*><section[^>]*data-ds-leaf="sections.hero"[^>]*class="[^"]*flex-1/);
+    expect(output).toContain('data-provenance-leaf="frames.site-shell"');
+    expect(output).toMatch(/<main[^>]*><section[^>]*data-provenance-leaf="sections.hero"[^>]*class="[^"]*flex-1/);
     expect(output).toMatch(/data-frame-footer-overlay=""[^>]*class="[^"]*shrink-0/);
     expect(output).toContain('href="#publisher-main-content"');
     expect(output).not.toMatch(/data-landing-|height:100dvh/);
@@ -66,7 +66,7 @@ describe("native site-shell after Landing retirement", () => {
     function Wrapper() { invoked = true; return <Hero heading="Wrapped" />; }
     const native = heroNode();
     for (const body of [
-      <section data-ds-leaf="sections.hero"><h1>Spoofed</h1></section>,
+      <section data-provenance-leaf="sections.hero"><h1>Spoofed</h1></section>,
       <Wrapper />, <>{native}</>, [native, <Hero key="second" heading="Second" />],
     ]) expect(() => html(body)).toThrow(/shell\.footer\.placement/);
     expect(invoked).toBe(false);

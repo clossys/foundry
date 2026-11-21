@@ -16,7 +16,7 @@ describe("Content section selected native composition", () => {
     expect(await screen.findByText("ExampleCo")).toBeTruthy();
     expect(container.querySelector('aside [data-slot="card"] [data-slot="card-content"] dl dt')?.textContent).toBe("Scope");
     expect(container.querySelector("aside dl dd")?.textContent).toBe("ExampleCo");
-    expect(container.querySelectorAll('[data-ds-leaf="sections.content"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-provenance-leaf="sections.content"]')).toHaveLength(1);
     for (const copy of ["Caller body", "Caller footnote", "Caller source", "Caller takeaway"]) expect(screen.getByText(copy)).toBeTruthy();
   });
   it.each([undefined, []])("omits an absent or empty summary rail (%s)", async aside => {

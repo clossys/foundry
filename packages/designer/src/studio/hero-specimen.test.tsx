@@ -60,10 +60,10 @@ describe("Hero specimen through the real selected-component provider", () => {
     expect(secondary).toHaveAttribute("data-variant", "outline");
     expect(secondary).toHaveAttribute("href", "#example-guide");
     expect(screen.getByText(HERO_SPECIMEN_COPY["header.description"])).toBeInTheDocument();
-    const root = container.querySelector('[data-ds-leaf="sections.hero"]')!;
+    const root = container.querySelector('[data-provenance-leaf="sections.hero"]')!;
     expect(root.tagName).toBe("SECTION");
     expect(root.querySelectorAll("h1")).toHaveLength(1);
-    expect(root).toHaveAttribute("data-ds-fill", "foundry/sections.hero");
+    expect(root).toHaveAttribute("data-provenance-fill", "foundry/sections.hero");
     expect(root.classList.contains("tablet:grid-cols-2")).toBe(members.some(value => value === "layout.split"));
     expect(root.classList.contains("w-full")).toBe(members.some(value => value === "layout.full-bleed"));
     expect(root.classList.contains("bg-surface-inverse")).toBe(members.some(value => value === "ground.inverse"));

@@ -21,12 +21,12 @@ describe("private error-message section", () => {
   it("renders a public or admin 404 with one primary recovery link and no frame landmarks", () => {
     const { container } = render(<>{errorMessageRenderer.render(input())}</>);
     expect(screen.getByText("404")).toHaveAttribute("dir", "auto");
-    expect(screen.getByText("404").closest('[data-ds-leaf="sections.error-state"]')).toBeInTheDocument();
+    expect(screen.getByText("404").closest('[data-provenance-leaf="sections.error-state"]')).toBeInTheDocument();
     expect(screen.getByText("404").tagName).not.toBe("H1");
     expect(screen.getByRole("heading", { level: 2, name: "Page not found" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Go home" })).toHaveAttribute("href", "/");
-    expect(container.querySelector('[data-ds-leaf="sections.error-message"]')).toHaveAttribute("data-message-kind", "not-found");
-    expect(container.querySelector('[data-ds-leaf="sections.error-state"]')).toHaveAttribute("data-error-kind", "not-found");
+    expect(container.querySelector('[data-provenance-leaf="sections.error-message"]')).toHaveAttribute("data-message-kind", "not-found");
+    expect(container.querySelector('[data-provenance-leaf="sections.error-state"]')).toHaveAttribute("data-error-kind", "not-found");
     expect(container.querySelector("main,header,footer,html,body")).toBeNull();
   });
 
