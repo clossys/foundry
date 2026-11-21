@@ -629,8 +629,10 @@ export const selectionModule = (module: string, cwd = process.cwd()) => /\.(?:[c
  */
 export function documentTitle(page: TitledPageRecord, copy: Readonly<Record<string, string>>): { text?: string; finding?: InstallFinding } {
   if (typeof page.title !== "string" || !page.title) return { finding: { code: "unbound-copy-slot", severity: "info", detail: `${page.id}: the page names no Writer title key, so the document has no title` } };
-  if (!Object.hasOwn(copy, page.title)) return { finding: { code: "missing-copy-key", detail: `${page.id}: Writer has no key ${page.title} (for the page title)` } };
-  return { text: copy[page.title]! };
+  // A `<writer slot>#<key>` ref (a page record read from a file) binds the same key a page cell's ref does.
+  const key = page.title.includes("#") ? writerKeyOf(page.title, copy) : page.title;
+  if (!Object.hasOwn(copy, key)) return { finding: { code: "missing-copy-key", detail: `${page.id}: Writer has no key ${key} (for the page title)` } };
+  return { text: copy[key]! };
 }
 
 export async function publishInstall(options: PublishInstallOptions): Promise<PublishInstallResult> {

@@ -297,8 +297,18 @@ export function renderFindings(buildDir: string, render: Scenario["render"]): E2
 }
 
 /** This machine's own absolute directories a build must not hold either: the home folder (an npm cache, a checkout) and the real temp folder. */
-export function machineRoots(): { readonly home: string; readonly tmp: string } {
-  return { home: homedir(), tmp: realpathSync(tmpdir()) };
+export function machineRoots(): { readonly home: string; readonly tmp: readonly string[] } {
+  // The real temp folder, the unresolved one a tool may write as is (macOS: /var/folders/.. for /private/var/folders/..), and /tmp/.
+  return { home: homedir(), tmp: [realpathSync(tmpdir()), tmpdir(), "/tmp/"] };
+}
+
+/**
+ * The moved-consumer comparison: the consumer moved to `moved` must build the same digest it built at `origin`.
+ * A different digest, or no build at all, is a blocking e2e.portable finding; the same digest is none.
+ */
+export function movedFinding(publication: string, first: { readonly id: string }, third: { readonly id: string } | undefined, at: { readonly work: string; readonly origin: string; readonly moved: string }): E2eFinding | undefined {
+  if (third?.id === first.id) return undefined;
+  return finding("e2e.portable", publication, `the consumer moved to ${relative(at.work, at.moved)} builds ${third?.id.slice(0, 12) ?? "nothing"}, at ${relative(at.work, at.origin)} it built ${first.id.slice(0, 12)}`);
 }
 
 /**
@@ -306,14 +316,14 @@ export function machineRoots(): { readonly home: string; readonly tmp: string } 
  * machine's directories (`machine`: home, real temp) as bytes. A build is the same bytes wherever the consumer lives;
  * an absolute path in it leaks the machine's layout, and a consumer path makes the digest depend on where it is.
  */
-export function portableFindings(buildDir: string, roots: readonly string[], machine: { readonly home?: string; readonly tmp?: string } = machineRoots()): E2eFinding[] {
+export function portableFindings(buildDir: string, roots: readonly string[], machine: { readonly home?: string; readonly tmp?: string | readonly string[] } = machineRoots()): E2eFinding[] {
   const out: E2eFinding[] = [];
   // A root of "/" (or a relative one) would match every file; only absolute paths below the root are needles.
   const absolute = (path: string | undefined): path is string => typeof path === "string" && path.startsWith("/") && path.length > 1;
   const labelled = [
     ...roots.filter(absolute).map(root => ({ root, what: "the consumer's absolute path" })),
     ...(absolute(machine.home) ? [{ root: machine.home, what: "the machine's home path" }] : []),
-    ...(absolute(machine.tmp) ? [{ root: machine.tmp, what: "the machine's temp path" }] : []),
+    ...(typeof machine.tmp === "string" ? [machine.tmp] : machine.tmp ?? []).filter(absolute).map(root => ({ root, what: "the machine's temp path" })),
   ];
   const needles = labelled.filter((row, index) => labelled.findIndex(other => other.root === row.root) === index).map(row => ({ ...row, bytes: Buffer.from(row.root) }));
   const walk = (at: string): void => {
@@ -421,7 +431,8 @@ export async function runE2e(options: E2eOptions = {}): Promise<{ exitCode: 0 | 
       const movedLeaks = portableFindings(third.dir, [origin, moved, work]);
       if (movedLeaks.length) { findings.push(...movedLeaks); stop(movedLeaks[0]!.cause, movedLeaks[0]!.subject, movedLeaks[0]!.detail); }
     }
-    if (third?.id !== first!.id) stop("e2e.portable", scenario.publication, `the consumer moved to ${relative(work, moved)} builds ${third?.id.slice(0, 12) ?? "nothing"}, at ${relative(work, origin)} it built ${first!.id.slice(0, 12)}`);
+    const drift = movedFinding(scenario.publication, first!, third, { work, origin, moved });
+    if (drift) stop(drift.cause, drift.subject, drift.detail);
     say(`portable: no build file holds the consumer's path, and moved to ${relative(work, moved)} it builds the same digest ${first!.id.slice(0, 12)}`);
   } catch (error) {
     if (error instanceof E2eStop) {

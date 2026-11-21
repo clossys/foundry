@@ -74,6 +74,9 @@ describe("clossys publish --install --site", () => {
     for (const id of ["home", "about"]) expect(existsSync(join(result.substrate, "clossys", "pages", `${id}.tsx`))).toBe(true);
     expect(readFileSync(join(out, "site", "index.html"), "utf8")).toContain("Pages assembled from records");
     const about = readFileSync(join(out, "site", "about", "index.html"), "utf8");
+    // Each route's static document title is its content-map title's Writer text.
+    expect(readFileSync(join(out, "site", "index.html"), "utf8")).toContain("<title>About Example Studio</title>");
+    expect(about).toContain("<title>Read straight from the page cell</title>");
     expect(readFileSync(result.html["/"]!, "utf8")).toContain("Every word here comes from a Writer key.");
     for (const text of ["About Example Studio", "Read straight from the page cell"]) expect(about).toContain(text);
     expect(readFileSync(join(result.substrate, "main.tsx"), "utf8")).toContain("location.pathname");

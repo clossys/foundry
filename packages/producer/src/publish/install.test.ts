@@ -122,6 +122,11 @@ describe("documentTitle: the page's document title is its Writer title key's tex
   it("a title key Writer holds is its text, with no finding", () => {
     expect(documentTitle(page("home.title"), copy)).toEqual({ text: "Plain <Studio> & home" });
   });
+
+  it("a `<writer slot>#<key>` title ref (a record read from a file) resolves to its Writer key", () => {
+    expect(documentTitle(page("site.copy#home.title"), copy)).toEqual({ text: "Plain <Studio> & home" });
+    expect(documentTitle(page("site.copy#home.no.such.title"), copy)).toEqual({ finding: { code: "missing-copy-key", detail: "home: Writer has no key home.no.such.title (for the page title)" } });
+  });
 });
 
 describe("clossys publish --install: the document title", () => {
