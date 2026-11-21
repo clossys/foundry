@@ -83,17 +83,17 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 const passages = (count: number) => richPassageItems(Array.from({ length: count }, (_, index) => ({ id: `passage-${index}`, label: `Passage ${index}`, value: { passage: `## Complete passage ${index}\n\nOpening **emphasis**.\n\nFinal paragraph ${index}.` } })));
 it.each([1, 3, 15])("renders %i complete passages in the intrinsic ladder and expands all in a full tab", count => {
   const props = base(passages(count)), view = render(<SpecimenRichPassage {...props} />);
-  expect(visible(view.container, "[data-ds-specimen-item]")).toHaveLength(Math.min(count, 12));
+  expect(visible(view.container, "[data-specimen-item]")).toHaveLength(Math.min(count, 12));
   expect(visible(view.container, "[data-readonly='true']")).toHaveLength(Math.min(count, 12));
   expect(view.container.textContent).toContain("Final paragraph 0.");
   expect(view.container.querySelector("textarea,[contenteditable='true']")).toBeNull();
   if (count === 1) expect(view.container.querySelector("[role='grid'],table,button")).toBeNull();
   if (count > 12) {
     fireEvent.click(screen.getByRole("button", { name: `All ${count}` }));
-    expect(view.container.querySelectorAll("[data-ds-specimen-item]")).toHaveLength(count);
+    expect(view.container.querySelectorAll("[data-specimen-item]")).toHaveLength(count);
   }
   view.rerender(<SpecimenRichPassage {...props} expanded />);
-  expect(view.container.querySelectorAll("[data-ds-specimen-item]")).toHaveLength(count);
+  expect(view.container.querySelectorAll("[data-specimen-item]")).toHaveLength(count);
   expect(screen.queryByRole("button", { name: `All ${count}` })).toBeNull();
 });
 it("shows the complete passage in canvas and full tabs when caller clamp metadata is present", () => {
@@ -111,7 +111,7 @@ it("renders a full valid JSON document and refuses malformed document content", 
   const view = render(<SpecimenRichPassage {...props} />);
   expect(screen.getByText("Full JSON paragraph")).toBeVisible();
   view.rerender(<SpecimenRichPassage {...base([{ id: "bad", label: "Invalid", value: { passage: { type: "doc", content: [{ type: "not-a-node" }] } } }])} />);
-  expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
+  expect(view.container.querySelector("[data-specimen-need='true']")).toBeTruthy();
 });
 
 it("preserves headings, lists, links, escaped code and tables through the selected RichText API", () => {
@@ -149,7 +149,7 @@ const copyCases = (count: number) => {
 it.each([1, 3, 15])("renders %i Writer strings in their actual native role components", count => {
   const cases = copyCases(count), props = base(cases.items, cases.axes), view = render(<SpecimenCopyInContext {...props} expanded />);
   expect(view.container.querySelectorAll("[data-specimen-copy-role]")).toHaveLength(count);
-  expect(view.container.querySelectorAll("[data-ds-specimen-item]")).toHaveLength(count);
+  expect(view.container.querySelectorAll("[data-specimen-item]")).toHaveLength(count);
   expect(screen.getByRole("heading", { name: "Produced headline 0" })).toBeVisible();
   if (count > 1) expect(view.container.querySelector("[lang='ar'][dir='rtl'] [data-readonly='true']")).toBeTruthy();
   if (count > 2) expect(screen.getAllByRole("button", { name: /Produced cta/ }).length).toBeGreaterThan(0);
@@ -179,7 +179,7 @@ it("routes caller copy through the declared renderContent part and rejects stale
   view.rerender(<SpecimenCopyInContext {...props} context={{ ...selected, surfaces: { "sections.section-header": metadata } }} />);
   expect(screen.getByRole("heading", { name: "Produced headline 0" })).toBeVisible();
   view.rerender(<SpecimenCopyInContext {...props} context={{ ...selected, surfaces: { "sections.section-header": { ...bound, descriptorHash: "stale" } } }} />);
-  expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
+  expect(view.container.querySelector("[data-specimen-need='true']")).toBeTruthy();
   expect(screen.queryByRole("heading")).toBeNull();
   view.rerender(<SpecimenCopyInContext {...props} renderParts={{}} />);
   expect(screen.getByRole("status")).toHaveTextContent("The registered renderContent part is not wired.");
@@ -212,7 +212,7 @@ it.each([1, 2, 15])("dispatches %i page viewport cases through the declared nati
 it("fails missing emit, missing native engine, unsafe origin and URL-card-shaped input", () => {
   const cases = viewportCases(2), props = base(cases.items, cases.axes), view = render(<SpecimenPageViewports {...props} />);
   expect(view.container.querySelector("iframe")).toBeNull();
-  expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
+  expect(view.container.querySelector("[data-specimen-need='true']")).toBeTruthy();
   expect(contentSpecimenNeeds("sections.specimen-page-viewports", props)).not.toEqual([]);
   const native = nativePagePreview(), renderViewport = vi.fn(native.renderViewport), renderParts = { "sections.specimen-page-viewports": { renderViewport } };
   for (const origin of ["http://localhost:4300", "https://example.invalid", "http://127.0.0.1:4300/path", "http://127.0.0.1:999999"]) {
@@ -226,9 +226,9 @@ it("fails missing emit, missing native engine, unsafe origin and URL-card-shaped
   const notEmitted: DesignerSpecimenContext = { ...context, pagePreview: nativePagePreview(false) };
   view.rerender(<SpecimenPageViewports {...base(cases.items, cases.axes, notEmitted)} renderParts={renderParts} />);
   expect(renderViewport).not.toHaveBeenCalled();
-  expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
+  expect(view.container.querySelector("[data-specimen-need='true']")).toBeTruthy();
   view.rerender(<SpecimenPageViewports {...base([{ id: "url", label: "URL card", value: { url: "/preview/publication/pages/page.html" } }])} renderParts={renderParts} />);
-  expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
+  expect(view.container.querySelector("[data-specimen-need='true']")).toBeTruthy();
   view.rerender(<SpecimenPageViewports {...base(cases.items, cases.axes, { ...context, pagePreview: native })} renderParts={{}} />);
   expect(screen.getByRole("status")).toHaveTextContent("The registered renderViewport part is not wired.");
   expect(view.container.querySelector("iframe")).toBeNull();
@@ -236,8 +236,8 @@ it("fails missing emit, missing native engine, unsafe origin and URL-card-shaped
 it.each(contentSpecimenLeaves)("$id rejects zero items as failed coverage", leaf => {
   const props = base([]), view = render(<>{leaf.render(props)}</>);
   expect(leaf.validate?.(props).length).toBeGreaterThan(0);
-  expect(view.container.querySelector("[data-ds-specimen-need='true']")).toBeTruthy();
-  expect(view.container.querySelector("[data-ds-specimen-item]")).toBeNull();
+  expect(view.container.querySelector("[data-specimen-need='true']")).toBeTruthy();
+  expect(view.container.querySelector("[data-specimen-item]")).toBeNull();
 });
 it("never falls back when the consumer's selected rich-text module is absent", () => {
   const view = render(<SpecimenRichPassage {...base(passages(1), undefined, { ...context, modules: {} })} />);

@@ -96,9 +96,9 @@ export function NativeSpecimenStateClone({ Content, state, children, unavailable
         if (!staging.querySelector(`[${attribute[state]}]`)) throw new Error(`The selected fixture did not enter its native ${state} state.`);
         const copy = staging.cloneNode(true) as HTMLElement;
         copy.removeAttribute("aria-hidden"); copy.removeAttribute("class"); copy.removeAttribute("style");
-        copy.setAttribute("inert", ""); copy.setAttribute("data-ds-state-clone", cloneId);
+        copy.setAttribute("inert", ""); copy.setAttribute("data-specimen-state-clone", cloneId);
         const stylesheet = document.createElement("style");
-        stylesheet.textContent = capturedStateCss(document, `[data-ds-state-clone="${cloneId}"]`);
+        stylesheet.textContent = capturedStateCss(document, `[data-specimen-state-clone="${cloneId}"]`);
         copy.prepend(stylesheet); destination.replaceChildren(copy);
         if (alive) setResult("ready");
       } catch (error) { if (alive) setResult(error instanceof Error ? error.message : "Native state capture failed."); }
@@ -108,8 +108,8 @@ export function NativeSpecimenStateClone({ Content, state, children, unavailable
     }, 0);
     return () => { alive = false; clearTimeout(timer); cancelCommit?.(); output.current?.replaceChildren(); };
   }, [Content, state, children, cloneId]);
-  return <Content as="div" data-specimen-forced-state={state} data-ds-specimen-capture={result === "ready" ? "ready" : "unavailable"}>
+  return <Content as="div" data-specimen-forced-state={state} data-specimen-capture={result === "ready" ? "ready" : "unavailable"}>
     <Content as="div" ref={output} />
-    {result === "capturing" ? <><Content as="div" data-ds-specimen-need="true">{unavailable("Native state capture has not completed.")}</Content><Content as="div" ref={source} className="sr-only" aria-hidden="true">{children}</Content></> : result !== "ready" ? <Content as="div" data-ds-specimen-need="true">{unavailable(result)}</Content> : null}
+    {result === "capturing" ? <><Content as="div" data-specimen-need="true">{unavailable("Native state capture has not completed.")}</Content><Content as="div" ref={source} className="sr-only" aria-hidden="true">{children}</Content></> : result !== "ready" ? <Content as="div" data-specimen-need="true">{unavailable(result)}</Content> : null}
   </Content>;
 }

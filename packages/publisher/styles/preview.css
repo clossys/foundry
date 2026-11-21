@@ -2203,6 +2203,9 @@
   .min-w-\[var\(--spacing-2xl\)\] {
     min-width: var(--spacing-2xl, 32px);
   }
+  .min-w-\[var\(--spacing-2xl\,32px\)\] {
+    min-width: var(--spacing-2xl,32px);
+  }
   .min-w-\[var\(--spacing-6xl\)\] {
     min-width: var(--spacing-6xl, 128px);
   }
@@ -2430,6 +2433,9 @@
   }
   .\[scrollbar-color\:var\(--color-line-base\)_transparent\] {
     scrollbar-color: var(--color-line-base, oklch(0.8761 0 0)) transparent;
+  }
+  .\[scrollbar-color\:var\(--color-line-base\,oklch\(0\.8761_0_0\)\)_transparent\] {
+    scrollbar-color: var(--color-line-base,oklch(0.8761 0 0)) transparent;
   }
   .list-decimal {
     list-style-type: decimal;
@@ -5464,8 +5470,8 @@
     --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(0px + var(--tw-ring-offset-width, 0px)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
   }
-  .focus-visible\:\[outline\:var\(--ui-border-focus\,2px\)_solid_var\(--color-focus-ring\)\]:focus-visible {
-    outline: var(--ui-border-focus,2px) solid var(--color-focus-ring, var(--color-action, #0A0A0A));
+  .focus-visible\:\[outline\:var\(--ui-border-focus\,2px\)_solid_var\(--color-focus-ring\,var\(--color-action\,\#0A0A0A\)\)\]:focus-visible {
+    outline: var(--ui-border-focus,2px) solid var(--color-focus-ring,var(--color-action,#0A0A0A));
   }
   .focus-visible\:outline:focus-visible {
     outline-style: var(--tw-outline-style, solid);
