@@ -6,11 +6,14 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join, posix, resolve } from "node:path";
-import { adaptTheme, installedPath, recordStoreSource, SPECIMEN_SAMPLE_COPY_KEYS, specimenKindOf, type SpecimenAliasContext, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore, type SpecimenTheme } from "@clossys/publisher/specimen";
+import { adaptTheme, installedPath, recordStoreSource, SPECIMEN_SAMPLE_COPY_KEYS, type SpecimenAliasContext, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore, type SpecimenTheme } from "@clossys/publisher/specimen";
 import { listSlots, pinStamp, readCandidate, readSlot, readSlotEntry, slotCandidateIssues, viewIssues, viewPlacedAt, type SlotEntry } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate } from "../records/slot-model/index.js";
 import { contractFixtureIssues, contractFixtureOf, type ContractFixture } from "../records/slot-model/contract-fixture.js";
 import { RecordError } from "../records/validate.js";
+import { elementCheckOf, type ElementCheck } from "../constitution/certify/registry-types.js";
+import { certifyCode, type CodeEnv } from "../constitution/certify/element.js";
+import { pinKey } from "../constitution/certify/env.js";
 import { dependencyPart, fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues, treeDependencyParts } from "./specimen-tree.js";
 import { installedCode, itemSpecimenState, specimenStateOf, VISIBLE_STATE_CSS } from "./specimen-state.js";
 import { firstComponentSource } from "@clossys/publisher/build";
@@ -209,10 +212,16 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
       if (issues.length) throw new RecordError(`candidate ${slot}/${candidate.name}`, issues);
       const item = JSON.parse(read.bytes);
       if (item.name !== element || (item.meta?.element?.id !== undefined && item.meta.element.id !== element) || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== slot)) throw new Error(`candidate ${slot}/${candidate.name}: element identity differs from the candidate name or slot`);
+      const layer = entry.position.l0 ?? slot.split(".")[0]!;
+      // The specimen kind comes from the one registry-types table and the slot's class (P2), as the certifiers read it:
+      // a visual item mounts; a hook or lib item is code and never mounts (a data record its renderer shows as
+      // unavailable); any other item keeps its type for Publisher to map. A type with no row, or one this slot does not
+      // accept, is refused here too, so Studio and the specimen preflight never mount it.
+      const check = elementCheckOf(`${slot}/${candidate.name}`, item.type, layer, doc.contract);
       const fixture = withContractFixture(doc.contract, item, options.certify === true);
       const specimen = specimenInputs(root, `${slot}/${candidate.name}`, fixture.item, true, writer(root));
       const row: SpecimenElementVersion = {
-        id: `${slot}/${element}`, version: chosen, kind: item.type, layer: entry.position.l0 ?? slot.split(".")[0]!,
+        id: `${slot}/${element}`, version: chosen, kind: specimenKindFor(check, item.type), layer,
         files: [{ path: `${element}.json`, content: read.bytes }],
         preview: fixture.fromContract ? { ...specimen.preview, fixtureFrom: CONTRACT_FIXTURE_SOURCE } : specimen.preview, contentHash: read.sha256,
       };
@@ -221,6 +230,46 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
     },
   };
   return store;
+}
+
+/** The specimen record kind of an item whose check is `check`: the table decides mount or not, never the type alone. */
+function specimenKindFor(check: ElementCheck, type: unknown): string {
+  if (check === "render") return "visual";
+  if (check === "hook" || check === "lib") return "data";
+  return typeof type === "string" ? type : String(type);
+}
+
+/**
+ * The code check's view of one consumer root (element.ts `CodeEnv`): every live Designer slot's sha-matching pinned
+ * JSON candidate, the install paths those pins ship, and the pinned Writer copy, as the gate's CertifyEnv holds them.
+ * A drifted pin installs nothing, as in the gate. One build per root and pin fingerprint.
+ */
+let codeEnvCache: { key: string; env: CodeEnv } | undefined;
+function consumerCodeEnv(root: string, copy: Readonly<Record<string, string>>): CodeEnv {
+  const key = `${resolve(root)}\0${pinFingerprint([root])}\0${JSON.stringify(copy)}`;
+  if (codeEnvCache?.key === key) return codeEnvCache.env;
+  const pins = new Map<string, { candidate: { json: unknown } }>(), installers = new Map<string, string[]>();
+  for (const entry of listSlots(root, "designer")) {
+    const match = entry.pin && CANDIDATE_NAME.exec(entry.pin.candidate);
+    if (!match || match[3] !== "json") continue;
+    const read = readCandidate(root, "designer", entry.id, entry.pin!.candidate);
+    if (read.sha256 !== entry.pin!.sha256) continue;
+    let json: unknown;
+    try { json = JSON.parse(read.bytes); } catch { json = undefined; }
+    pins.set(pinKey("designer", entry.id), { candidate: { json } });
+    const files = json && typeof json === "object" && Array.isArray((json as { files?: unknown }).files) ? (json as { files: { path?: unknown; type?: unknown; target?: unknown }[] }).files : [];
+    for (const file of files) {
+      if (!file || typeof file.path !== "string") continue;
+      const path = installedPath({ path: file.path, ...(typeof file.type === "string" ? { type: file.type } : {}), ...(typeof file.target === "string" ? { target: file.target } : {}) });
+      if (!path) continue;
+      const list = installers.get(path) ?? [];
+      if (!list.includes(entry.id)) list.push(entry.id);
+      installers.set(path, list);
+    }
+  }
+  const env: CodeEnv = { root, pins, installers, copy: new Map(Object.entries(copy)) };
+  codeEnvCache = { key, env };
+  return env;
 }
 
 type CandidateItem = { type?: unknown; files?: { path?: unknown; type?: unknown; target?: unknown; content?: unknown }[]; meta?: { preview?: unknown; element?: { reads?: { copyKeys?: unknown } } } };
@@ -302,15 +351,19 @@ export function certifyCandidate(input: CertifyCandidateInput): CandidateCertifi
   let item: CandidateItem;
   try { item = JSON.parse(bytes) as CandidateItem; }
   catch { return { certified: false, reasons: ["the candidate is not JSON"], mounts: false }; }
-  let mounts: boolean;
-  try { mounts = specimenKindOf({ id: where, kind: item.type, layer: input.layer ?? slot.split(".")[0] }) === "visual"; }
+  // The check its registry type is held to in this slot (certify/registry-types.ts, the one table, and the slot's class
+  // from its contract and layer): a hook or lib item mounts no component but is held to the contract fixture and the
+  // gate's code check; a registry type with no row, or one the slot does not accept, fails closed before any check.
+  let check: ElementCheck;
+  try { check = elementCheckOf(where, item.type, input.layer ?? slot.split(".")[0], contract); }
   catch (error) { return { certified: false, reasons: [error instanceof Error ? error.message : String(error)], mounts: false }; }
+  const mounts = check === "render";
   const reasons: string[] = [];
   const build = (candidate: CandidateItem) => {
     try { specimenInputs(root, where, candidate, true, writerSource); }
     catch (error) { reasons.push(error instanceof Error ? error.message : String(error)); }
   };
-  if (!mounts) { build(item); return { certified: !reasons.length, reasons, mounts }; }
+  if (check === "none") { build(item); return { certified: !reasons.length, reasons, mounts }; }
   const declared = contract?.fixture;
   if (declared === undefined) return { certified: false, reasons: [`uncertified: slot ${slot} declares no contract fixture (slot.json contract.fixture)`], mounts };
   const invalid = contractFixtureIssues(contract ?? {});
@@ -328,6 +381,13 @@ export function certifyCandidate(input: CertifyCandidateInput): CandidateCertifi
   if (ownProps && typeof ownProps === "object" && !Array.isArray(ownProps)) {
     const extra = Object.keys(ownProps).filter(key => !Object.hasOwn(fixture.fixtures.props, key)).sort();
     if (extra.length) reasons.push(`the candidate needs props the contract fixture does not supply: ${extra.join(", ")}`);
+  }
+  // A hook or lib item is held to the gate's own code check (element.ts codeFit), over this consumer's pins.
+  if (check === "hook" || check === "lib") {
+    try {
+      const uses = readSlot(root, "designer", slot).uses;
+      reasons.push(...certifyCode({ slot, uses, item, contract: contract ?? {}, env: consumerCodeEnv(root, writerSource()), check }).map(found => found.message));
+    } catch (error) { reasons.push(`the code check cannot run: ${error instanceof Error ? error.message : String(error)}`); }
   }
   return { certified: !reasons.length, reasons, mounts };
 }
