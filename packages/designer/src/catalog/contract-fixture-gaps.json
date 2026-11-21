@@ -27,6 +27,7 @@
       "components.sheet",
       "components.tooltip",
       "components.dropdown-menu",
+      "components.menu",
       "components.toast"
     ],
     "open": {

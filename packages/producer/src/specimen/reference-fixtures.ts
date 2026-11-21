@@ -34,7 +34,7 @@ export const REFERENCE_FIXTURE_RULES = {
     themes: { determined: false, reason: "a token specimen mounts no component (the element certifier needs no fixture) and the contract declares no props to type one" },
     assets: { determined: false, reason: "an asset specimen mounts no component (the element certifier needs no fixture) and the contract declares no props to type one" },
   },
-  overlays: ["components.dialog", "components.popover", "components.sheet", "components.tooltip", "components.dropdown-menu", "components.toast"],
+  overlays: ["components.dialog", "components.popover", "components.sheet", "components.tooltip", "components.dropdown-menu", "components.menu", "components.toast"],
   open: { prop: "defaultOpen", trigger: "react-aria-components.Button", triggerText: "Open", contentText: "Content" },
 } as const;
 
