@@ -1859,12 +1859,28 @@
         "presentation.popup": "rac:Menu",
         "presentation.inline": "rac:Menu"
       },
+      "fixtureProps": [
+        "children",
+        "defaultOpen"
+      ],
       "fixture": {
         "schema": "clossys.element-preview/1",
         "fixtures": {
           "file": "registry/aria-nova/ui/dropdown-menu.tsx",
-          "export": "DropdownMenu",
-          "props": {}
+          "export": "DropdownMenuTrigger",
+          "props": {
+            "defaultOpen": true,
+            "children": [
+              {
+                "$component": "react-aria-components.Button",
+                "children": "Open"
+              },
+              {
+                "$component": "DropdownMenu",
+                "children": "Content"
+              }
+            ]
+          }
         }
       }
     },

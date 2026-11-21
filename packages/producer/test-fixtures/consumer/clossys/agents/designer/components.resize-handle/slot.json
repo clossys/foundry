@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -131,7 +131,35 @@
       {
         "check": "composes.allowed"
       }
-    ]
+    ],
+    "fixtureProps": [
+      "children"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/resizable.tsx",
+        "export": "ResizablePanelGroup",
+        "props": {
+          "children": [
+            {
+              "$component": "ResizablePanel",
+              "children": "DRAFT panel"
+            },
+            {
+              "$component": "ResizableHandle",
+              "props": {
+                "withHandle": true
+              }
+            },
+            {
+              "$component": "ResizablePanel",
+              "children": "DRAFT panel"
+            }
+          ]
+        }
+      }
+    }
   },
   "tighten": [],
   "family": {

@@ -5928,17 +5928,7 @@
     "purpose": "Media player component (root presentational), under Components / Text and media.",
     "inputs": [
       {
-        "name": "video",
-        "kind": "prop",
-        "required": false
-      },
-      {
-        "name": "poster",
-        "kind": "prop",
-        "required": false
-      },
-      {
-        "name": "passage",
+        "name": "autoplay",
         "kind": "prop",
         "required": false
       },
@@ -5948,17 +5938,7 @@
         "required": false
       },
       {
-        "name": "muted",
-        "kind": "prop",
-        "required": false
-      },
-      {
-        "name": "autoplay",
-        "kind": "prop",
-        "required": false
-      },
-      {
-        "name": "loop",
+        "name": "className",
         "kind": "prop",
         "required": false
       },
@@ -5968,12 +5948,32 @@
         "required": false
       },
       {
-        "name": "className",
+        "name": "decorative",
         "kind": "prop",
         "required": false
       },
       {
-        "name": "decorative",
+        "name": "loop",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "muted",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "passage",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "poster",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "video",
         "kind": "prop",
         "required": false
       },
