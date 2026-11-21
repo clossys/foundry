@@ -1,8 +1,8 @@
-// `clossys check --strict` on the committed pinned test world (foundry-build-0048 B1-STRICT). The seeder brings the
-// fixture to the store a real consumer holds: `clossys migrate slots --apply` (no slot/1 record is left, the Producer
-// seats included). The rows the seeder's verbs close pass here. The whole check does not exit 0 yet: the unit is BLOCKED on a planner
-// decision (frame and section candidates, the critiques folder, loop bases; see the B1-STRICT receipt), and the
-// exit-0 assertion lands with that decision. Nothing here is a baseline: every assertion is a row that passes.
+// `clossys check --strict` on the committed pinned test world (foundry-build-0048 B1-STRICT). The one row this unit
+// closes: the seeder runs `clossys migrate slots --apply`, so no Producer seat is left as clossys.slot/1 for
+// records.computed-match. The loop, ledger and ref-verbatim rows below already passed on the base fixture; they are
+// asserted so the regenerated fixture keeps them. The whole check does not exit 0 yet (see the B1-STRICT receipt);
+// the exit-0 assertion lands with the decisions it waits on. Nothing here is a baseline: every assertion is a row that passes.
 import { beforeAll, describe, expect, it } from "vitest";
 import { runCli } from "../cli/main.js";
 import { strictFindings } from "../loop/cli.js";

@@ -2,8 +2,9 @@
  * One format (foundry-build-0048 U13): every verb that wrote clossys.slot/1 or a pin/1 now writes clossys.slot/2,
  * clossys.pin/2 (or a Writer clossys.pin-map/1 record) and a headered clossys.candidate/1 only, and refuses a
  * clossys.slot/1 slot with the migrate message, writing nothing. Run for real on temp copies of
- * `test-fixtures/consumer` (a slot/2 store whose Producer seats are still slot/1: a mixed store) and of the
- * legacy tree (slot/1 slots and pin/1 pins).
+ * `test-fixtures/consumer` (a migrated slot/2 store; the seat test turns it back into a mixed store, an unconverted
+ * slot/2 store whose Producer seat is still the legacy tree's slot/1 seat) and of the legacy tree (slot/1 slots and
+ * pin/1 pins).
  */
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -34,6 +35,7 @@ import { bareEntry, ownerEntry, type OwnerEntryInput } from "./__fixtures__/owne
 import { pinUpstream } from "./__fixtures__/upstream.js";
 
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
+const LEGACY_TREE = fileURLToPath(new URL("../../test-fixtures/consumer-legacy-tree/", import.meta.url));
 const SLOT = "sections.hero.copy";
 const AT = "2026-11-18T10:00:00Z";
 const LATER = "2026-11-18T11:00:00Z";
@@ -428,6 +430,12 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
   it("seat: refuses a slot/1 seat; after migrate slots it writes a slot/2 seat, a headered candidate and a pin/2", async () => {
     const w = world();
     const seat = join(w.consumer, "agents", "producer", "seat.critic");
+    // A mixed store: the fixture's seat.critic replaced by the legacy tree's slot/1 seat, and no store-format marker
+    // (the store has not run `clossys migrate slots` yet).
+    rmSync(seat, { recursive: true });
+    cpSync(join(LEGACY_TREE, "clossys", "agents", "producer", "seat.critic"), seat, { recursive: true });
+    rmSync(storeFormatPath(w.consumer));
+    expect(json(join(seat, "slot.json")).schema).toBe("clossys.slot/1");
     // A human seat (seat.assigned: a procedure sentence and a clossys command), decided by the planner.
     const args = ["critic", "--by", "agent:producer", "--no-llm", "--procedure", "Read the draft and record one verdict on it.", "--command", "clossys verdict", "--decided-by", "planner:U13", "--at", AT, "--root", w.root];
     const untouched = tree(w.consumer);
