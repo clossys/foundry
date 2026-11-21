@@ -128,7 +128,7 @@ describe("consumed registered scroll-page capabilities", () => {
     function Chat() { useEffect(() => { mounts.chat++; return () => { unmounts.chat++; }; }, []); return <aside data-chat=""><input defaultValue="SYNTHETIC retained chat" /></aside>; }
     function Frame(props: RegisteredPublicationFrameProps) {
       useEffect(() => { mounts.frame++; return () => { unmounts.frame++; }; }, []);
-      return <section data-publication-frame="" data-route={props.snapshot.routeId} data-main-state={props.snapshot.state.main}><Chat /><NativeFrame {...props} /></section>;
+      return <section data-publication-frame="" data-route={props.snapshot.routeId} data-publication-main-state={props.snapshot.state.main}><Chat /><NativeFrame {...props} /></section>;
     }
     const f = regionFixture(2, Frame), second = structuredClone(f.route);
     Object.assign(second, { routeId: "second.page", path: "/agents/second" });
@@ -152,12 +152,12 @@ describe("consumed registered scroll-page capabilities", () => {
     const ports = f.publication.ports;
     refused = true;
     await act(async () => { root.render(element(second.routeId)); });
-    expect(frame?.getAttribute("data-main-state")).toBe("error");
+    expect(frame?.getAttribute("data-publication-main-state")).toBe("error");
     expect(container.firstElementChild).toBe(frame); expect(container.querySelector("[data-chat]")).toBe(chat);
     expect(mounts).toEqual({ frame: 1, chat: 1 }); expect(unmounts).toEqual({ frame: 0, chat: 0 });
     refused = false;
     await act(async () => { root.render(element(second.routeId)); });
-    expect(frame?.getAttribute("data-main-state")).toBe("ready");
+    expect(frame?.getAttribute("data-publication-main-state")).toBe("ready");
     expect(secondPage.frameState()).toBeUndefined();
     expect(container.firstElementChild).toBe(frame); expect(container.querySelector("[data-chat]")).toBe(chat);
     expect(container.querySelectorAll("[data-chat]")).toHaveLength(1); expect(container.querySelectorAll("main")).toHaveLength(1);
@@ -165,16 +165,16 @@ describe("consumed registered scroll-page capabilities", () => {
     expect(f.publication.ports).toBe(ports); expect(f.host.bind).toHaveBeenCalledTimes(1);
     let navigation!: Promise<void>;
     await act(async () => { navigation = secondPage.navigate("#second"); });
-    expect(frame?.getAttribute("data-main-state")).toBe("loading");
+    expect(frame?.getAttribute("data-publication-main-state")).toBe("loading");
     expect(container.firstElementChild).toBe(frame); expect(container.querySelector("main")).toBe(main); expect(container.querySelector("[data-chat]")).toBe(chat);
     expect(mounts).toEqual({ frame: 1, chat: 1 }); expect(unmounts).toEqual({ frame: 0, chat: 0 });
     await act(async () => { finishNavigation([]); await navigation; });
-    expect(frame?.getAttribute("data-main-state")).toBe("ready");
+    expect(frame?.getAttribute("data-publication-main-state")).toBe("ready");
     expect(container.firstElementChild).toBe(frame); expect(container.querySelector("main")).toBe(main); expect(container.querySelector("[data-chat]")).toBe(chat);
     await act(async () => { f.publication.setState({ main: "error", navigating: false }, f.page); });
-    expect(frame?.getAttribute("data-main-state")).toBe("ready");
+    expect(frame?.getAttribute("data-publication-main-state")).toBe("ready");
     await act(async () => { f.publication.setState({ main: "forbidden", navigating: false }, secondPage); });
-    expect(frame?.getAttribute("data-main-state")).toBe("forbidden");
+    expect(frame?.getAttribute("data-publication-main-state")).toBe("forbidden");
     expect(recoverable).not.toHaveBeenCalled(); expect(unmounts).toEqual({ frame: 0, chat: 0 });
     await act(async () => { root.unmount(); }); container.remove();
     expect(unmounts).toEqual({ frame: 1, chat: 1 });

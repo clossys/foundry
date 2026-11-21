@@ -191,7 +191,7 @@ function LayerFanSpecimen({ css, property }: { css: string; property?: string })
       // Each plate sits at its shipped rank and z value; only the member's own plate takes the value under review.
       return <span key={token.property} aria-hidden="true" data-layer-rank={rank} data-layer-property={token.property} data-current={current ? "" : undefined}
         {...specimenOverride("token-scale-context", {
-          "--plate-x": `calc(${rank} * var(--spacing-sm))`, "--plate-y": `calc(${rank} * var(--spacing-xs))`,
+          "--plate-x": `calc(${rank} * var(--spacing-sm, 8px))`, "--plate-y": `calc(${rank} * var(--spacing-xs, 4px))`,
           "--plate-z": current ? css : String(token.value),
         })}
         className={join(
@@ -330,9 +330,9 @@ export function TokenValueText({ css }: { css: string }): ReactElement {
   const chip = alias ? <span data-token-alias="" className="text-ink-muted">{alias}</span> : null;
   const channels = oklchChannels(text);
   // The exact source rides on the element only when the visible text differs from it.
-  if (!channels) return <code data-member-value="" data-copy-value={text === css && !alias ? undefined : css} title={text === css ? undefined : css} className="token-specimen-contain inline-flex flex-wrap gap-x-sm">{alias ? <span>{text}</span> : text}{chip}</code>;
+  if (!channels) return <code data-member-value="" data-member-copy-value={text === css && !alias ? undefined : css} title={text === css ? undefined : css} className="token-specimen-contain inline-flex flex-wrap gap-x-sm">{alias ? <span>{text}</span> : text}{chip}</code>;
   const entries: Array<[string, string]> = [["L", channels.l], ["C", channels.c], ["H", channels.h], ...(channels.alpha ? [["A", channels.alpha] as [string, string]] : [])];
-  return <code data-member-value="" data-copy-value={css} title={css} className="token-specimen-contain inline-flex flex-wrap gap-x-sm">
+  return <code data-member-value="" data-member-copy-value={css} title={css} className="token-specimen-contain inline-flex flex-wrap gap-x-sm">
     {entries.map(([channel, value]) => <span key={channel} data-channel={channel} className="inline-flex gap-xs whitespace-nowrap">
       <span className="text-ink-muted">{channel}</span><span data-channel-value="">{value}</span>
     </span>)}

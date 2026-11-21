@@ -44,7 +44,7 @@ export function everyStepWiring(graph) {
   const steps = graph.nodes ?? [];
   const checks = [...new Set(steps.flatMap((step) => step.checks ?? []))].sort();
   return {
-    schema: "clossys.pipeline-wiring/1", store: ".clossys/runs", edges: [], roster: [], seats: {}, undrawn: [],
+    schema: "clossys.pipeline-wiring/1", store: "clossys/.state/runs", edges: [], roster: [], seats: {}, undrawn: [],
     counts: { passed: 0, failed: 0, stale: 0, "never-run": steps.length, runs: 0 },
     layout: { constants: { nodeWidth: 240 }, lanes: [], stages: [], rounds: [] },
     nodes: [

@@ -70,7 +70,7 @@
           },
           {
             "path": "packages/designer/src/blocks/Hero.tsx",
-            "sha256": "da68db05eb49897b75d44e500e7d51cb7f38d47957d503db4a9902e16e2ca51f"
+            "sha256": "f70b4edc8fcf7f7c7fd8f7a6cead59014a6f6b282d897ea6c9cd4557eb3edad1"
           },
           {
             "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
@@ -82,7 +82,7 @@
           },
           {
             "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
-            "sha256": "7e4f970b58593caf96074a117298fd901901db942e38217c18b45e2789bafda5"
+            "sha256": "e68786b723cf5041968792b33fff5027ac992fac62add251881f3b5cb25e24ee"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -161,6 +161,18 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/blocks/backdrop/interactive-backdrop-boundary.tsx",
             "line": 4
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/Hero.tsx",
+            "line": 7
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
+            "line": 3
           },
           {
             "code": "DF2",

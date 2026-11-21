@@ -386,7 +386,7 @@ Each business has three files:
 - turn efficiency (core cells per user turn), file conventions.
 
 Running:
-- The simulated user is a mid-tier subagent and the judge is a high-tier fresh context.
+- The simulated user is a subagent at mid tier and the judge is a fresh context at high tier.
 - Runs use the operator's subscription session. Paid APIs are not allowed.
 - `director-check` scores file conventions, quality and completion objectively; the judge scores the conversational criteria.
 - Pass bar: every business at or above 18/24, with zero on neither confirm discipline nor contradiction handling.

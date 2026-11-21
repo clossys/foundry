@@ -40,7 +40,7 @@ function fixture() {
 /**
  * The fixture world with its engine index rebuilt through the verb (`clossys index --rebuild`). The committed fixture's
  * index still names the disk bytes of records the seeder retired (designer/components.link, components.media-player), so
- * every agent step on the raw copy is refused for `.clossys/index.json: is not the rebuild of the log`: a known base
+ * every agent step on the raw copy is refused for `clossys/.state/index.json: is not the rebuild of the log`: a known base
  * red (flows.test.ts 36/46 at base, receipt-b1strict-r2.md), not this unit's.
  */
 async function world(...cites: Array<[slot: string, need: string]>) {
@@ -103,7 +103,7 @@ describe("an agent decide step runs its skill's --check then --decide (consumer-
       else expect((await w.cli("request", id, "--decide", "reuse", "--slot", "writer/narratives.guide", "--by", "writer")).exitCode).toBe(0);
       const refused = await w.run("loop.slot", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", entry);
       expect(refused.exitCode, refused.message).toBe(1);
-      expect(refused.message).toMatch(new RegExp(`step decide-writer changed \\.clossys/events\\.jsonl event seq \\d+ \\(request\\.write request:${id}\\): is by ${argv.at(-1)}, not the step's agent agent:writer`));
+      expect(refused.message).toMatch(new RegExp(`step decide-writer changed clossys/\\.state/events\\.jsonl event seq \\d+ \\(request\\.write request:${id}\\): is by ${argv.at(-1)}, not the step's agent agent:writer`));
       expect(w.read(entry).status).toBe("open");
     });
   }
@@ -206,7 +206,7 @@ describe("an agent decide step runs its skill's --check then --decide (consumer-
 
   it("stops a run whose kept entry bytes do not hash to the snapshot's mark (fail closed)", async () => {
     const { w, runId, entry } = await decideWaiting();
-    const file = join(w.root, ".clossys", "runs", "loops", `${runId}.json`);
+    const file = join(w.root, "clossys", ".state", "runs", "loops", `${runId}.json`);
     const state = JSON.parse(readFileSync(file, "utf8"));
     state.agentSnapshot.texts[`clossys/agents/${entry}`] += " ";
     writeFileSync(file, `${JSON.stringify(state, null, 2)}\n`);
@@ -340,7 +340,7 @@ describe("a create step raises the upstream change its skill tells it to (consum
   it("refuses a raise logged by no request.create of the verb: none, another actor's, or another subject's", async () => {
     for (const forge of ["none", "actor", "subject"] as const) {
       const { w, runId } = await createWaiting();
-      const log = join(w.root, ".clossys", "events.jsonl"), index = join(w.root, ".clossys", "index.json");
+      const log = join(w.root, "clossys", ".state", "events.jsonl"), index = join(w.root, "clossys", ".state", "index.json");
       const [logBefore, indexBefore] = [readFileSync(log), readFileSync(index)];
       const id = await raise(w);
       const entry = `producer/queue.change/entries/${id}.json`;

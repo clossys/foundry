@@ -5,7 +5,7 @@
  * `<consumer>/evidence/director/<id>.md`. The verb, not the caller, lists `judged`: every cell the
  * judge id covers, at its pinned version now, so a verdict can never name a version that is not the
  * one the judge read. It refuses when a covered cell is unpinned, when a cell judgement's version is
- * not the pinned one or its run does not resolve in `.clossys/runs`, and when `--heard` does not name
+ * not the pinned one or its run does not resolve in `clossys/.state/runs`, and when `--heard` does not name
  * the owner's words routed to a judged cell (a verdict is recorded only after the owner has heard
  * the reading). A cited run record is copied verbatim to `<consumer>/evidence/director/runs/<step>.jsonl`
  * (once per run id), so the citation resolves in any checkout, not only where the gitignored local
@@ -26,7 +26,7 @@ export const JUDGE_USAGE = `Usage: clossys director check judge <C4 | C2:X<n> | 
 Records a judge's verdict as evidence/director/<id>.md (critic-storyline-<date>, critic-x<n>-<date> or
 judge-q<n>-<cell>-v<N>-<date>), with judged set to every covered cell at its pinned version. --heard names
 the owner's words (a source: user finding with an Informs: bullet naming a judged cell); a cell judgement
-also needs --run, a finished run in .clossys/runs; its run record is copied to evidence/director/runs/<step>.jsonl
+also needs --run, a finished run in clossys/.state/runs; its run record is copied to evidence/director/runs/<step>.jsonl
 so the citation travels with the repository. Each --reason is one bullet of the judge's reading.`;
 
 interface JudgeArgs { judge?: string; verdict?: string; heard?: string; run?: string; root?: string; reasons: string[]; json: boolean; help: boolean }
@@ -116,7 +116,7 @@ export function runJudgeCli(argv: string[], store: DirectorStore, print: (text: 
         if (!match) throw new Error("--run expects <step>#<16-hex run id>");
         const [, step, runId] = match;
         const record = runRecordLines(dirname(base), store.reader, step!, base).find(candidate => candidate.run === runId);
-        if (!record || (record.exit !== 0 && record.exit !== 1)) throw new Error(`--run ${args.run} is not a finished run in .clossys/runs`);
+        if (!record || (record.exit !== 0 && record.exit !== 1)) throw new Error(`--run ${args.run} is not a finished run in clossys/.state/runs`);
         const path = trackedRunFile(step!);
         const before = store.reader.read(base, path);
         if (!parseRunRecords(before ?? "", step!).some(candidate => candidate.run === runId)) {

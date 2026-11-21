@@ -310,7 +310,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/promise-v1.json",
-      "sha256": "bec66a673da8738d077204d063301fcb8bb11c53fe4ad70a5055827ab806dfb1"
+      "sha256": "f711b0b9564be8d2483ed8aa42c8881128cca26c4844a548a4e8b8d6ecd1221d"
     },
     {
       "op": "submit",

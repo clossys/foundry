@@ -16,7 +16,7 @@ import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { directoryRecordSource, recordStoreSource } from "../specimen/source.js";
 import { installedPath } from "../specimen/installed-path.js";
-import { bindPage, installAndBind, installPage, isBlocking, reconcileInstalled, resolvePage, substrateDependencies, type BoundPage, type ResolvedSlot, type InstallPageRecord, type InstallPins, type ShadcnRunner } from "./index.js";
+import { INSTALL_MANIFEST, INSTALL_STATE_DIR, bindPage, installAndBind, installPage, isBlocking, reconcileInstalled, resolvePage, substrateDependencies, type BoundPage, type ResolvedSlot, type InstallPageRecord, type InstallPins, type ShadcnRunner } from "./index.js";
 
 const fixtures = join(import.meta.dirname, "__fixtures__");
 const json = async (name: string) => JSON.parse(await readFile(join(fixtures, name), "utf8"));
@@ -55,7 +55,7 @@ async function render(bound: BoundPage, dir: string): Promise<string> {
     stdin: { contents: entry, resolveDir: dir, loader: "ts" }, bundle: true, write: false, format: "esm", platform: "node", jsx: "automatic",
     plugins: [{ name: "host-react", setup(build) { build.onResolve({ filter: /^react(\/.*)?$/ }, args => ({ path: react(args.path), external: true })); } }],
   });
-  const out = join(dir, ".clossys", "render.mjs");
+  const out = join(dir, INSTALL_STATE_DIR, "render.mjs");
   await writeFile(out, result.outputFiles[0]!.text);
   const modules = await import(pathToFileURL(out).href);
   const React = await import("react");
@@ -415,7 +415,7 @@ describe("a slot installed at another version", () => {
     expect(again.findings).toEqual([]);
     expect(existsSync(join(dir, "lib", "typography", "utils.js"))).toBe(true);
     expect(existsSync(join(dir, "lib", "utils.js"))).toBe(false);
-    const manifest = JSON.parse(await readFile(join(dir, ".clossys", "install.json"), "utf8"));
+    const manifest = JSON.parse(await readFile(join(dir, INSTALL_MANIFEST), "utf8"));
     expect(Object.keys(manifest.items["sections.article"].files)).toEqual(["lib/typography/utils.js"]);
   });
 
@@ -468,7 +468,7 @@ describe("a slot installed at another version", () => {
     // sections.document's pin is removed: nothing claims lib/utils.js any more.
     expect(await reconcileInstalled(dir, { "sections.article": v2["sections.article"]! })).toEqual([]);
     expect(existsSync(join(dir, "lib", "utils.js"))).toBe(false);
-    const manifest = JSON.parse(await readFile(join(dir, ".clossys", "install.json"), "utf8"));
+    const manifest = JSON.parse(await readFile(join(dir, INSTALL_MANIFEST), "utf8"));
     expect(manifest.items).toEqual({});
   });
 });

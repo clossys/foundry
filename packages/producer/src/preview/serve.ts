@@ -1,6 +1,6 @@
 /**
  * `clossys preview <publication>` (system.md 12.5): build a publication from resolved pins into
- * `.clossys/builds/preview-<inputsSha256 first 12>/` and serve it on one loopback port.
+ * `clossys/.state/builds/preview-<inputsSha256 first 12>/` and serve it on one loopback port.
  *
  * The consumer's `clossys/` is read, never written: the build stages a copy of it under the build
  * folder, and each `--with <agent>/<slot>/<candidate>` rewrites only the staged slot's pin. Pages
@@ -8,10 +8,11 @@
  * route serves the bytes Studio serves for `/preview/<publication>/pages/<page>.html`
  * (`servePreview`), so the two never disagree on routes or HTML.
  */
+import { STATE_DIR, statePath } from "../engine/state-dir.js";
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
-import { join, relative, resolve, sep } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import type { InstallFinding, PageHostSelection, ShadcnRunner } from "@clossys/publisher/install";
 import { publishInstall } from "../publish/install.js";
 import { viteRunner } from "../publish/install-site.js";
@@ -26,11 +27,13 @@ export const PREVIEW_PORT = 4600;
 /** Ports a preview never binds: the workspace's standing Studio and admin servers. */
 export const REFUSED_PORTS: readonly number[] = [4380, 4503];
 /** The folder every preview build is written under, relative to the workspace root. */
-export const PREVIEW_BUILDS = join(".clossys", "builds");
+export const PREVIEW_BUILDS = join(STATE_DIR, "builds");
 
 const IDENTITY = /^[a-z0-9][a-z0-9-]*$/;
 /** Generated or tool state inside clossys/ that is not a record input. */
 const SKIPPED = new Set(["node_modules", ".git", ".producer"]);
+/** The workspace state folder (STATE_DIR) sits inside `clossys/`: machine files, never records, and the builds themselves live there. */
+const stateOf = (consumer: string): string => statePath(dirname(resolve(consumer)));
 
 export interface PreviewOverride { readonly ref: string; readonly agent: SlotAgent; readonly slot: string; readonly candidate: string; readonly sha256: string }
 
@@ -47,7 +50,7 @@ export interface PreparedPreview {
   readonly publication: string;
   readonly buildId: string;
   readonly inputsSha256: string;
-  /** `<root>/.clossys/builds/<buildId>` */
+  /** `<root>/clossys/.state/builds/<buildId>` */
   readonly dir: string;
   /** The staged workspace root the build reads (`<dir>/root`, holding the staged `clossys/`). */
   readonly staged: string;
@@ -82,10 +85,11 @@ export function previewOverride(consumer: string, ref: string): PreviewOverride 
 /** Every record file under `clossys/`, as sorted [relative path, sha256] rows. */
 function recordFiles(consumer: string): [string, string][] {
   const rows: [string, string][] = [];
+  const state = stateOf(consumer);
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (SKIPPED.has(entry.name)) continue;
       const path = join(dir, entry.name);
+      if (SKIPPED.has(entry.name) || path === state) continue;
       if (entry.isSymbolicLink()) throw new Error(`preview: ${relative(consumer, path)} is a symbolic link; the slot model follows none`);
       if (entry.isDirectory()) walk(path);
       else if (entry.isFile()) rows.push([relative(consumer, path).split(sep).join("/"), createHash("sha256").update(readFileSync(path)).digest("hex")]);
@@ -118,7 +122,7 @@ function sampleRefs(consumer: string): string[] {
 
 /**
  * Resolves the inputs, writes the staged workspace (with each override's pin) and returns the
- * build's identity and route list. Writes only under `<root>/.clossys/builds/`.
+ * build's identity and route list. Writes only under `<root>/clossys/.state/builds/`.
  */
 export async function preparePreview(inputs: PreviewInputs): Promise<PreparedPreview> {
   const root = realpathSync(resolve(inputs.root));
@@ -140,8 +144,15 @@ export async function preparePreview(inputs: PreviewInputs): Promise<PreparedPre
   mkdirSync(staged, { recursive: true });
   mkdirSync(installs, { recursive: true });
   // Same inputs, same staged bytes: an existing build of this id is overwritten in place.
-  cpSync(consumer, join(staged, "clossys"), { recursive: true, force: true, filter: source => !SKIPPED.has(source.split(sep).pop()!) });
-  const stagedConsumer = join(staged, "clossys");
+  // The build folder lies inside the consumer's state folder, so the records are copied entry by entry, never the
+  // state folder itself (a copy of a folder into its own subfolder).
+  const stagedConsumer = join(staged, "clossys"), state = stateOf(consumer);
+  mkdirSync(stagedConsumer, { recursive: true });
+  for (const name of readdirSync(consumer)) {
+    const source = join(consumer, name);
+    if (SKIPPED.has(name) || resolve(source) === state) continue;
+    cpSync(source, join(stagedConsumer, name), { recursive: true, force: true, filter: path => !SKIPPED.has(path.split(sep).pop()!) });
+  }
   for (const row of overrides) {
     const entry = readSlotEntry(stagedConsumer, row.agent, row.slot)!;
     if (!entry.pin) throw new Error(`preview: --with ${row.ref}: ${row.agent}/${row.slot} has no pin to swap`);

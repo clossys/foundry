@@ -1,7 +1,7 @@
 /**
  * The engine model (packages/producer/docs/engine.md, generated from this module and its siblings): Run, Step,
  * Event, Attestation and Gate, each a plain JSON record with a runtime validator that returns its issues (empty when
- * valid). Every record write in a consumer workspace is one Event in `.clossys/events.jsonl` (engine/log.ts); Run,
+ * valid). Every record write in a consumer workspace is one Event in `clossys/.state/events.jsonl` (engine/log.ts); Run,
  * Step, Attestation and Gate are the shapes the loop runner, the checks and the gates report through the same log.
  *
  * Node runs this file with type stripping in child writers (engine/*.test.ts), so it holds no enum, namespace or
@@ -27,7 +27,7 @@ export interface EventInput {
 }
 
 /**
- * One line of `.clossys/events.jsonl`. `prev` is the sha256 of the previous line's bytes (GENESIS for the first),
+ * One line of `clossys/.state/events.jsonl`. `prev` is the sha256 of the previous line's bytes (GENESIS for the first),
  * `seq` counts lines from 0, and `id` is the sha256 of the line's canonical JSON without `id`, so an edit to any line,
  * the last one included, no longer hashes to its own id.
  */

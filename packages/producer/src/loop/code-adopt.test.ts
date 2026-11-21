@@ -43,7 +43,7 @@ function hooks(certify: (call: CodeCall, count: number) => number = () => 0): Ru
     code(call: CodeCall) { codeSteps.push(call.step); return { exit: call.step === "certify" ? certify(call, certified++) : 0 }; },
   };
 }
-const settleOf = (root: string, runId: string) => JSON.parse(readFileSync(join(root, ".clossys", "runs", "loops", `${runId}.settle`, "adopt.json"), "utf8"));
+const settleOf = (root: string, runId: string) => JSON.parse(readFileSync(join(root, "clossys", ".state", "runs", "loops", `${runId}.settle`, "adopt.json"), "utf8"));
 const clock = () => { let tick = 0; return () => new Date(Date.parse("2026-11-21T12:30:00Z") + 1000 * tick++); };
 const candidatesOf = (consumer: string, slotId: string): string[] => {
   const dir = join(consumer, "agents", "designer", slotId, "candidates");

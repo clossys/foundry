@@ -25,7 +25,7 @@ describe('Home slot census presentation', () => {
   it('displays the supplied census independently of renderer/map counts', () => {
     // Includes empty slots and older pins; collection semantics belong to the census reader.
     const document = render({ state: 'ready', total: 435, withCandidate: 32, pinned: 19 });
-    const card = document.querySelector('[data-home-agent]')!;
+    const card = document.querySelector('[data-studio-home-agent]')!;
     expect(card.getAttribute('data-census-state')).toBe('ready');
     expect(card.querySelector('[data-slot="card-title"]')!.textContent?.trim()).toBe('435');
     expect(card.querySelector('[data-slot="badge"]')!.getAttribute('aria-label')).toBe('32 slots with candidates');
@@ -35,14 +35,14 @@ describe('Home slot census presentation', () => {
   });
 
   it('keeps a true empty census distinct from an error', () => {
-    const card = render({ state: 'ready', total: 0, withCandidate: 0, pinned: 0 }).querySelector('[data-home-agent]')!;
+    const card = render({ state: 'ready', total: 0, withCandidate: 0, pinned: 0 }).querySelector('[data-studio-home-agent]')!;
     expect(card.querySelector('[data-slot="card-title"]')!.textContent?.trim()).toBe('0');
     expect(card.textContent).toContain('0 pinned slots');
     expect(card.textContent).not.toContain('Unavailable');
   });
 
   it('shows the supplied error without a zero or a loading placeholder', () => {
-    const card = render({ state: 'error', message: 'Slot census request failed' }).querySelector('[data-home-agent]')!;
+    const card = render({ state: 'error', message: 'Slot census request failed' }).querySelector('[data-studio-home-agent]')!;
     expect(card.getAttribute('data-census-state')).toBe('error');
     expect(card.textContent).toContain('Slot census request failed');
     expect(card.textContent).toContain('Unavailable');
@@ -51,8 +51,8 @@ describe('Home slot census presentation', () => {
   });
 
   it('distinguishes an in-flight census from a missing loader handoff', () => {
-    expect(render({ state: 'loading' }).querySelector('[data-home-agent]')!.textContent).toContain('Loading');
-    const missing = render().querySelector('[data-home-agent]')!;
+    expect(render({ state: 'loading' }).querySelector('[data-studio-home-agent]')!.textContent).toContain('Loading');
+    const missing = render().querySelector('[data-studio-home-agent]')!;
     expect(missing.getAttribute('data-census-state')).toBe('missing');
     expect(missing.textContent).toContain('Unavailable');
     expect(missing.textContent).not.toContain('Loading');

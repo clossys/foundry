@@ -111,7 +111,7 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/TableSurface.tsx",
-            "sha256": "b4806634d3950d6c2195edef9148e5001d0bd618b1cc3d3b0cb963d741a6106b"
+            "sha256": "2897f8d5be8f9b5cfd36c4cfa41e3853bafe2387aef6a60e7e9b482914297b93"
           },
           {
             "path": "packages/designer/src/blocks/data-table/view-model.ts",

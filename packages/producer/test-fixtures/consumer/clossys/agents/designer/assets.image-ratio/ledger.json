@@ -302,7 +302,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/image-ratio-v1.json",
-      "sha256": "9ade97910a1af8a0f75cc34e9bd023aba2b637ad03a17edb993f064d62b7caa1"
+      "sha256": "d9c22f6bdb682b089e543841ae8aa1915aa7c9e0828e34818b30c4ee44ee6fc8"
     },
     {
       "op": "submit",

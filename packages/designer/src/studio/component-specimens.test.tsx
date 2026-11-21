@@ -279,7 +279,7 @@ it("draws the shell Toaster's own toast in its cell from a cell queue, dismisses
   await vi.waitFor(() => expect(cell).toHaveAttribute("data-preview-state", "live"));
   const host = cell.querySelector<HTMLElement>(`[data-component-specimen="components.toast"] [data-specimen-contained-host="toast"]`)!;
   expect(host).not.toBeNull();
-  // In place: the stack is the Toaster's container placement inside the cell, never the fixed, portalled viewport.
+  // In place: the toast list is the Toaster's container placement inside the cell, never the fixed, portalled viewport.
   // Announced by the cell's own polite toast region.
   await within(host).findByText(title);
   const shown = host.querySelector<HTMLElement>('[aria-live="polite"]')!;

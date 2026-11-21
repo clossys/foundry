@@ -140,7 +140,7 @@ describe.each(FIXTURES)("on %s", (_name, FIXTURE, pinnedParity) => {
 
     it("reads check results: a failing check fails, a result for other bytes needs refresh", () => {
       const doc = pin(1);
-      const checks = join(root, ".clossys", "checks", "director", SLOT);
+      const checks = join(root, "clossys", ".state", "checks", "director", SLOT);
       mkdirSync(checks, { recursive: true });
       writeFileSync(join(checks, "moat-v1.md.json"), JSON.stringify({ status: "fail", subjectSha256: doc.sha256 }));
       expect(row(detailed(), `director/${SLOT}`)!.state).toBe("failing");

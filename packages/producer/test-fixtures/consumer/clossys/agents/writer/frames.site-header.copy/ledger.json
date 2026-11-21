@@ -456,7 +456,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/copy-v1.json",
-      "sha256": "fd17f8762a8d16f1d6dcb9328237479e6222c347b764bce9d2ffd1eadbf26be5"
+      "sha256": "6997c36a3582af44a5a835cbe5cd90b6e259e5660d8b2a4811cfd4c295d7d1d6"
     },
     {
       "op": "submit",

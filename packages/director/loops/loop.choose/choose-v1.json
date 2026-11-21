@@ -41,7 +41,7 @@
           "<slot>/ledger.json"
         ],
         "writes": [
-          ".clossys/checks/<agent>/<slot-id>/*"
+          "clossys/.state/checks/<agent>/<slot-id>/*"
         ],
         "checks": [
           "candidates.certified"
@@ -87,13 +87,13 @@
         "reads": [
           "<slot>/candidates/*",
           "<slot>/ledger.json",
-          ".clossys/checks/<agent>/<slot-id>/*",
+          "clossys/.state/checks/<agent>/<slot-id>/*",
           "<upstream>/*/pin.json"
         ],
         "writes": [
           "<slot>/pin.json",
-          ".clossys/checks/<agent>/<slot-id>/scorecard.json",
-          ".clossys/runs/loops/*.settle/*"
+          "clossys/.state/checks/<agent>/<slot-id>/scorecard.json",
+          "clossys/.state/runs/loops/*.settle/*"
         ],
         "checks": [],
         "onFail": {
@@ -115,11 +115,11 @@
         "reads": [
           "<slot>/candidates/*",
           "<slot>/ledger.json",
-          ".clossys/checks/<agent>/<slot-id>/*"
+          "clossys/.state/checks/<agent>/<slot-id>/*"
         ],
         "writes": [
           "<slot>/pin.json",
-          ".clossys/checks/<agent>/<slot-id>/scorecard.json"
+          "clossys/.state/checks/<agent>/<slot-id>/scorecard.json"
         ],
         "checks": [
           "pins.resolve"

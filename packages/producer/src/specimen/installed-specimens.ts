@@ -292,7 +292,7 @@ export interface PassOptions {
   readonly signal?: AbortSignal;
 }
 
-/** Lines of a failed `vite build` a finding keeps from each end: vite names the error first and the stack last. */
+/** Lines of a failed `vite build` a finding keeps from each end: vite names the error first and its stack last. */
 const FAILURE_HEAD = 20, FAILURE_TAIL = 5;
 /** A failed `vite build` as a finding: the head of its output (the error itself) and its tail, never only the last lines of a stack. */
 export function renderFailedFinding(key: string, code: number, output: string): InstallFinding {

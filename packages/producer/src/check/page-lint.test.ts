@@ -152,7 +152,7 @@ describe("PROC-5 real browser through the built CLI", () => {
 
   it("ignores hidden source disclosure, engine markers, and provenance attributes", async () => {
     html = document(`${baselineBody}
-      <section data-cell-id="tokens.color.accent"><p>Explore the examples.</p></section>
+      <section data-provenance-cell-id="tokens.color.accent"><p>Explore the examples.</p></section>
       <details><summary>Source disclosure</summary><pre>NEED: registered specimen tokens.color.accent [fact: pending] TODO-OWNER</pre></details>
       <details><summary>Source structure</summary><h2> </h2></details>
       <div hidden><h2>NEED: hidden engine heading</h2><p>tokens.color.accent [fact: pending] TODO-OWNER</p></div>

@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/director/focus.lifecycle.acquisition/acquisition-v1.png"
+        "ref": "clossys/.state/renders/director/focus.lifecycle.acquisition/acquisition-v1.png"
       }
     ]
   }

@@ -338,7 +338,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/sidebar-accent-foreground-v1.json",
-      "sha256": "dae46582a49beb1be5742c219fa226f6c7cb5a4e431dfe9fccb43e79759777b8"
+      "sha256": "3cba0a733c8a4736f1c7fff83f53c18da54df2d307b44c091a05385551d9bc1a"
     },
     {
       "op": "submit",

@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/designer/themes.muted/muted-v1.png"
+        "ref": "clossys/.state/renders/designer/themes.muted/muted-v1.png"
       }
     ]
   }

@@ -325,7 +325,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/icon-chevron-left-v1.json",
-      "sha256": "e5cf53c675986fffcfa9ea5f5d55ad041efb68c0f2de2ddd1f1e44ea6273c930"
+      "sha256": "e8d7dd31a88818371071eca05a5170e499686f044b0178196a40c6c6e753cc9c"
     },
     {
       "op": "submit",

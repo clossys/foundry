@@ -116,7 +116,7 @@ it("applies actual native color, typography, spacing and radius values without m
     const view = await renderSelected(tokenAssetSpecimenLeaves[index]!.render({ items: [item], context: selected, need, labels, renderParts: tokenParts(selected) }), selected);
     const id = typeof item.value === "object" && item.value && "memberId" in item.value && typeof item.value.memberId === "string" ? item.value.memberId : "";
     const value = selected.profile.values.members[id]!.css.light;
-    const target = view.container.querySelector<HTMLElement>(index === 2 ? "[data-type-sample]" : "[role='img']")!;
+    const target = view.container.querySelector<HTMLElement>(index === 2 ? "[data-specimen-type-sample]" : "[role='img']")!;
     if (index === 0) {
       expect(target.style.background).toBe(`var(${selected.profile.values.members[id]!.emit})`);
       expect(view.container.querySelector("[data-contrast-pair]")).toBeTruthy();

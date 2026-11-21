@@ -58,13 +58,13 @@ describe("G24: a slot decision is one locked write of whole files", () => {
     expect(() => repointThemeProbePin(consumer, themeId, original, "b")).toThrow(/another decision write is in progress/);
     expect(() => restoreThemeProbePin(consumer, themeId, original)).toThrow(/another decision write is in progress/);
     expect(readFileSync(join(themeDir, "pin.json"), "utf8")).toBe(original);
-    expect(existsSync(join(root, ".clossys", "events.jsonl")), "no event without its write").toBe(false);
+    expect(existsSync(join(root, "clossys", ".state", "events.jsonl")), "no event without its write").toBe(false);
     rmSync(join(themeDir, ".slot-write.lock"), { recursive: true });
     repointThemeProbePin(consumer, themeId, original, "b");
     expect(JSON.parse(readFileSync(join(themeDir, "pin.json"), "utf8"))).toMatchObject({ candidate: "primary-v1.json", sha256: sha256Hex("b") });
     expect(restoreThemeProbePin(consumer, themeId, original)).toBe(true);
     expect(existsSync(join(themeDir, ".slot-write.lock"))).toBe(false);
-    const kinds = readFileSync(join(root, ".clossys", "events.jsonl"), "utf8").trim().split("\n").map(line => (JSON.parse(line) as { kind: string }).kind);
+    const kinds = readFileSync(join(root, "clossys", ".state", "events.jsonl"), "utf8").trim().split("\n").map(line => (JSON.parse(line) as { kind: string }).kind);
     expect(kinds).toEqual(["pin.probe-repoint", "pin.probe-restore"]);
   });
 

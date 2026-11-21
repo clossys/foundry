@@ -319,7 +319,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/popover-foreground-v1.json",
-      "sha256": "c815973acb26b613ed67e73ff157cb1fb7cdfbc0f9530adbb505caf375133f41"
+      "sha256": "0acb0d335363656f801b6d0dd7800ec4b11b3e5cdde1dfb19249cc2ce162e9ae"
     },
     {
       "op": "submit",

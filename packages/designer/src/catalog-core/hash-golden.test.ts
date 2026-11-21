@@ -162,17 +162,21 @@ describe("real package-surface library golden", () => {
     // Re-pinned by foundry-build-0048 CONTAM-U2 (hand-edited from the failing run, no `-u`): the stamps move to
     // data-provenance-*, so the measured fill surfaces re-hash provenance-attrs.ts and site-shell now measures its import.
     // Values and components unchanged: composite 6ea08ccc -> b8d538d3, surface 45dd4f1f -> 97a5b09d, whole 77d3a047 -> e797a9e3.
-    // Re-pinned by foundry-build-0048 BASE-REDS-R3 (hand-edited from the failing run after a package build at head, no `-u`):
-    // generate-surface-consumption.mjs re-records surface-consumption.data.json and the frames.site-shell fill, and the
-    // regenerated catalog-bundles data moves the adopted surface records. Values and components unchanged:
-    // composite b8d538d3 -> 00f8ef0b, surface 97a5b09d -> ae420d94, whole e797a9e3 -> 9abaa531.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:00f8ef0b9cf37637b1390f5f18f57b78b2e306d8b1cde99d196a00160915afa8"`);
+    // Re-pinned by foundry-build-0048 CONTAM-U10 (hand-edited from the failing run, no `-u`): short-prefix attributes move to
+    // full-word names, so the measured hero, cards, faq, comparison, sectioned-document and site-shell fills re-hash their
+    // sources. Values and components unchanged: composite b8d538d3 -> 334b4cc8, surface 97a5b09d -> fb410dc3, whole e797a9e3 -> e3d36d35.
+    // Re-pinned by foundry-build-0048 BASE-REDS-R3 (hand-edited from the failing run, no `-u`) on the merge of int2 77f7543a8,
+    // after package builds of designer, director, writer, publisher and producer; generate-surface-consumption.mjs --check
+    // passes there. The CONTAM-U10 pins do not reproduce on that tree; the catalog-bundles data was probed and ruled out as
+    // the cause, which is not isolated. Values and components unchanged:
+    // composite 334b4cc8 -> 5c835c74, surface fb410dc3 -> 234b1f0a, whole e3d36d35 -> 7956f559.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:5c835c745231f0398cd926849ad8763ea3a08a9785a5d3fbaef0181722a82aa4"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:149d271dd68aea6f"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
     expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:ef9a46557ea2aa79b1db4b19f2578dc33d1cde7c13f5f806b80a537f755a3734"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:ae420d94895e0594174bc02105d3af0fe63e57ad0b4fb3d0fdd00f7a6ea07b40"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"9abaa53125c6dd22f73716879c31280f87cf0dbef57fdab55fcc5c6277f18558"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:234b1f0a987f95d038451cad00e622f455571a59f726e578b6eb47d475e710a0"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"7956f559b8f14a1f07db4cb9b4ff9bf0364101a675d0afd6479bc1a5dfbf0108"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

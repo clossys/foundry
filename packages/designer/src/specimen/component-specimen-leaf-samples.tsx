@@ -132,7 +132,7 @@ function sampleContext(host: ComponentSpecimenHost): DesignerSpecimenContext {
 /** A gap stays visible: the marker carries the reason, and the zero-unavailable checks see it. */
 const need = ({ leaf, reason }: DesignerSpecimenNeed): ReactNode => <span data-specimen-unavailable="needs-sample-content" data-specimen-need={leaf}>{reason}</span>;
 
-const viewportWidth = (width: number | string): number => width === "var(--breakpoint-mobile)" ? 375 : typeof width === "number" ? width : 1280;
+const viewportWidth = (width: number | string): number => width === "var(--breakpoint-mobile, 375px)" ? 375 : typeof width === "number" ? width : 1280;
 function viewportParts(context: DesignerSpecimenContext): SpecimenNativeViewportParts {
   return {
     renderSurface: ({ leaf, width, state }) => {

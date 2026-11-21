@@ -137,13 +137,13 @@ describe("trace", () => {
   });
   it("readStore throws a store it cannot open and keeps no runs for an absent one", () => {
     expect(readStore(root, storeFile("ia"))).toEqual([]);
-    mkdirSync(join(root, ".clossys", "runs"), { recursive: true });
+    mkdirSync(join(root, "clossys", ".state", "runs"), { recursive: true });
     writeFileSync(join(root, ...storeFile("ia").split("/")), "");
     lock(join(root, ...storeFile("ia").split("/")));
     expect(() => readStore(root, storeFile("ia"))).toThrow(expect.objectContaining({ code: "EACCES", syscall: "open" }));
   });
   it("appendRecord throws when the store cannot be stat'ed for other than absence", () => {
-    writeFileSync(join(root, ".gitignore"), "/.clossys/runs/\n");
+    writeFileSync(join(root, ".gitignore"), "/clossys/.state/runs/\n");
     const file = join(root, ...storeFile("ia").split("/"));
     const stat = fs.statSync;
     vi.spyOn(fs, "statSync").mockImplementation(((path: unknown, options?: unknown) => {
@@ -154,8 +154,8 @@ describe("trace", () => {
   });
   it("readRuns throws a runs folder it cannot list and keeps none for an absent one", () => {
     expect(readRuns(root)).toEqual([]);
-    mkdirSync(join(root, ".clossys", "runs"), { recursive: true });
-    lock(join(root, ".clossys", "runs"));
+    mkdirSync(join(root, "clossys", ".state", "runs"), { recursive: true });
+    lock(join(root, "clossys", ".state", "runs"));
     expect(() => readRuns(root)).toThrow(expect.objectContaining({ code: "EACCES" }));
   });
   it("readSink throws a sink it cannot read and keeps an empty observation for an absent one", () => {

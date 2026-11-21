@@ -8,7 +8,7 @@
  *          publication's own default with its Writer meta among them), whether or not the consumer seated it, plus
  *          every slot the consumer's own seated publications reach and the agent loop slots the runner consumes
  *          (ia-orphans publicationReach: a consumer extension or request-placed slot that cites a package leaf consumes
- *          it; an agent loop slot is terminal, so a slot a loop version names is not consumed by it). A Publisher package
+ *          it; an agent loop slot is terminal, so a loop version does not consume a slot it names). A Publisher package
  *          contract is not walked: a layout role's `kinds` are the sections a page may take, not the ones it takes, and
  *          ia.orphans walks no contract either, so an adopted leaf reached only through one would be an orphan
  * edges  = a package leaf's inputs and uses as the adopt verb derives them (ia-sync.ts packageBehaviour, read against

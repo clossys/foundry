@@ -115,7 +115,7 @@ describe("main — default ground root", () => {
   });
 
   it.each(["directory", "worktree-file"])("finds the default from nested cwd with a .git %s", marker => {
-    const repo = mkdtempSync(join(realpathSync(tmpdir()), "strategy-cli-repo-"));
+    const repo = mkdtempSync(join(realpathSync(tmpdir()), "strategy-cli-checkout-"));
     const original = process.cwd();
     const cwd = join(repo, "packages", "app");
     const root = join(repo, "clossys", "agents", "director");
@@ -134,7 +134,7 @@ describe("main — default ground root", () => {
   });
 
   it("keeps explicit --root and positional roots relative to nested cwd", () => {
-    const repo = mkdtempSync(join(realpathSync(tmpdir()), "strategy-cli-repo-"));
+    const repo = mkdtempSync(join(realpathSync(tmpdir()), "strategy-cli-checkout-"));
     const original = process.cwd();
     const cwd = join(repo, "packages", "app");
     const explicitRoot = join(cwd, "custom", "agents", "director");
@@ -152,7 +152,7 @@ describe("main — default ground root", () => {
   });
 
   it("uses the repository default for wont-claim from nested cwd", () => {
-    const repo = mkdtempSync(join(realpathSync(tmpdir()), "strategy-cli-repo-"));
+    const repo = mkdtempSync(join(realpathSync(tmpdir()), "strategy-cli-checkout-"));
     const original = process.cwd();
     const cwd = join(repo, "packages", "app");
     const root = join(repo, "clossys", "agents", "director");

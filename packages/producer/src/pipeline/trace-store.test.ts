@@ -1,5 +1,5 @@
 /**
- * The run store (`.clossys/runs/<step>.jsonl`) gains one record per distinct invocation, and each
+ * The run store (`clossys/.state/runs/<step>.jsonl`) gains one record per distinct invocation, and each
  * record lists every file its run read, so a store grows with every `clossys ia <slot>` call (3S-ND
  * saw a 305 MB ia.jsonl, and `ia` aborted out of heap after its write). appendRecord and readStore
  * scan it line by line: these tests pin the kept-per-invocation rule and bound the memory of one
@@ -14,10 +14,18 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { appendRecord, readStore, RUN_SCHEMA, RUNS_KEPT, storeFile, type RunRecord } from "./trace.js";
 
 const TRACE = fileURLToPath(new URL("./trace.ts", import.meta.url));
+/** Node runs trace.ts directly in the child: its `.js` specifiers (engine/state-dir.js) resolve to the `.ts` beside them. */
+const HOOK = `
+import { register } from "node:module";
+const hook = 'import { existsSync } from "node:fs"; import { fileURLToPath } from "node:url";' +
+  'export async function resolve(s, c, n) { if ((s.startsWith(".") || s.startsWith("/")) && s.endsWith(".js") && c.parentURL) {' +
+  ' const ts = new URL(s.slice(0, -3) + ".ts", c.parentURL); if (existsSync(fileURLToPath(ts))) return n(ts.href, c); } return n(s, c); }';
+register("data:text/javascript," + encodeURIComponent(hook), import.meta.url);
+`;
 let root: string;
 beforeEach(() => {
   root = realpathSync(mkdtempSync(join(realpathSync(tmpdir()), "clossys-store-")));
-  writeFileSync(join(root, ".gitignore"), "/.clossys/runs/\n");
+  writeFileSync(join(root, ".gitignore"), "/clossys/.state/runs/\n");
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
@@ -46,7 +54,7 @@ describe("run store", () => {
   });
 
   it("appends after a last line with no newline, skips blank lines and still refuses a malformed line", () => {
-    mkdirSync(join(root, ".clossys", "runs"), { recursive: true });
+    mkdirSync(join(root, "clossys", ".state", "runs"), { recursive: true });
     writeFileSync(storePath(), `${JSON.stringify(record("a", "r0"))}\n\n${JSON.stringify(record("b", "r1"))}`);
     expect(appendRecord(root, record("c", "r2"))!.line).toBe(4);
     expect(runsOf()).toEqual(["1:a:r0", "3:b:r1", "4:c:r2"]);
@@ -59,7 +67,7 @@ describe("run store", () => {
 
   it("appends to a store far larger than the heap: memory is one line, not the store", () => {
     // 120 records of about 0.65 MB, each a distinct invocation (one per slot), as `clossys ia` leaves them.
-    mkdirSync(join(root, ".clossys", "runs"), { recursive: true });
+    mkdirSync(join(root, "clossys", ".state", "runs"), { recursive: true });
     const fd = openSync(storePath(), "w");
     const template = JSON.stringify(record("INVOCATION", "RUN", 6000));
     for (let index = 0; index < 120; index++) writeSync(fd, `${template.replace("\"INVOCATION\"", JSON.stringify(`ia designer/slot-${index % 117} --contract c.json`)).replace("\"RUN\"", `"r${index}"`)}\n`);
@@ -67,7 +75,8 @@ describe("run store", () => {
     const size = statSync(storePath()).size;
     expect(size).toBeGreaterThan(64 * 1024 * 1024);
     // One new invocation (append) and one that goes over RUNS_KEPT (rewrite), under a 32 MB heap.
-    const script = `const t = await import(${JSON.stringify(TRACE)});
+    const script = `${HOOK}
+      const t = await import(${JSON.stringify(TRACE)});
       const make = (invocation, run) => ({ schema: t.RUN_SCHEMA, run, step: "ia", invocation, argv: [], start: "s", end: "e", exit: 0, head: null, tool: null, inputs: "0", reads: [], writes: [] });
       const first = t.appendRecord(${JSON.stringify(root)}, make("ia designer/new --contract c.json", "n1"));
       const second = t.appendRecord(${JSON.stringify(root)}, make("ia designer/slot-0 --contract c.json", "n2"));

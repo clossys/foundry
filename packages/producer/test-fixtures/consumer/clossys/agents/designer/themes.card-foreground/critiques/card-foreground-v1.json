@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/designer/themes.card-foreground/card-foreground-v1.png"
+        "ref": "clossys/.state/renders/designer/themes.card-foreground/card-foreground-v1.png"
       }
     ]
   }

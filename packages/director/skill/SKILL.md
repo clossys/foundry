@@ -300,7 +300,7 @@ again.
   produced it: run the judge through `npx clossys pipeline trace <step> -- …`
   (every `npx clossys director check …` run, such as `check check
   <cell-id>@<N>`, is already traced as `director.store`) and pass `--run
-  <step>#<run id>` from `.clossys/runs/<step>.jsonl`. The verb copies that run
+  <step>#<run id>` from `clossys/.state/runs/<step>.jsonl`. The verb copies that run
   record to `clossys/evidence/director/runs/<step>.jsonl`, which is committed
   with the verdict, so the citation resolves in any checkout. A cell verdict
   with no resolvable run is not counted and shows as `judgment-uncited` on

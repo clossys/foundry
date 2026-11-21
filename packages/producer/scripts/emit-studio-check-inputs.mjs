@@ -34,7 +34,7 @@ const boundary = module => /^(?:react(?:-dom)?(?:\/|$)|next(?:\/|$)|react-aria-c
 function inside(root, file) { const part = relative(root, file); return part === "" || part !== ".." && !part.startsWith(`..${sep}`) && !isAbsolute(part); }
 function consumerOutput(root, output) {
   const consumer = resolve(root);
-  const destination = resolve(consumer, output ?? ".clossys/check-inputs");
+  const destination = resolve(consumer, output ?? "clossys/.state/check-inputs");
   if (destination === consumer || !inside(consumer, destination)) throw new Error("Studio check output must be inside the consumer root");
   return { consumer, output: destination };
 }

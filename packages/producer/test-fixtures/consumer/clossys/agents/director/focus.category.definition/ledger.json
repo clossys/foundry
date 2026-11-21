@@ -303,7 +303,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/definition-v1.json",
-      "sha256": "de1d8768fed76119731d88dd1c2661bc82ade1824dfc8a82aba12994103504a8"
+      "sha256": "5ccd3b41f8e8616af890446c5c0cffcc82ffe3ce58abd481cc90be9afa54fd7d"
     },
     {
       "op": "submit",

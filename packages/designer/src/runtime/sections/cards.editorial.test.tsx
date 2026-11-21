@@ -96,7 +96,7 @@ describe("registered editorial Cards specimen", () => {
     const sample = surfaceRuntimeRenderers["sections.cards"]!.sample(specimenDataset);
     render(<ConsumerComponentProvider value={selection}>{renderCards(input(sample.records!, "post-featured"))}</ConsumerComponentProvider>);
     expect((await screen.findAllByText("Studio author"))[0]).toBeVisible();
-    expect(document.querySelector("[data-card-config=post-featured]")).toHaveClass("flex-col");
+    expect(document.querySelector("[data-record-cards-config=post-featured]")).toHaveClass("flex-col");
   });
   it("refuses unsupported configuration, missing Writer titles and malformed media", () => {
     expect(() => renderCards(input(records, "invented"))).toThrow(/unsupported editorial/);

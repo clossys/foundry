@@ -5,16 +5,17 @@
  * Designer element candidates render to PNG through the specimen harness (thumbnails.ts), cached
  * by (candidate sha256, dependency pin-set hash, theme, width): the int2 key, unchanged. Director,
  * Writer, Publisher and Producer candidates render as text specimens (HTML): no model, no pin, no
- * network. Every render is written under `.clossys/renders/<agent>/<slot-id>/<candidate>/` with
- * its `index.json`; a compare is written under `.clossys/renders/compare/<a>--<b>/` with one
+ * network. Every render is written under `clossys/.state/renders/<agent>/<slot-id>/<candidate>/` with
+ * its `index.json`; a compare is written under `clossys/.state/renders/compare/<a>--<b>/` with one
  * side-by-side `compare.html`.
  *
  * `--draft <file>` (Designer craft rung) renders an unsubmitted direction as the slot's next
  * candidate from a temporary copy of the consumer's records; the consumer's records are never
- * written, and the render lands under `.clossys/renders/`, never in the candidate folder.
+ * written, and the render lands under `clossys/.state/renders/`, never in the candidate folder.
  *
  * Until each agent's `src/specimens.ts` exists (after the landing bar), the specimen kinds live here.
  */
+import { STATE_DIR } from "../engine/state-dir.js";
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { copyFile, mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
@@ -37,7 +38,7 @@ export const DEFAULT_RENDER_WIDTHS = [480] as const;
 /** Bumped when what a cached render records changes. Part of the cache key: do not change. */
 export const RENDER_CACHE_VERSION = "clossys.render/1";
 /** Where every render is written, under the consumer root (system.md 12.4). */
-export const RENDERS_DIR = join(".clossys", "renders");
+export const RENDERS_DIR = join(STATE_DIR, "renders");
 
 // clossys.render/1 (system.md 12.4): the 0001 record type and schemas/render.json.
 export type { RenderIndex } from "../records/types.js";

@@ -31,8 +31,8 @@ it("does not repeat a resource title as its trailing action", () => {
 it("renders the existing Writer page heading and description", () => {
   const view = mount();
   const heading = within(view.container.querySelector("[data-publisher-stage]")! as HTMLElement).getByRole("heading", { level: 1, name: `[[${PUBLISHER_COPY_REFS.title.id}]]` });
-  expect(heading.querySelector('[data-copy-ref]')?.getAttribute("data-copy-ref")).toBe(PUBLISHER_COPY_REFS.title.id);
-  expect(view.container.querySelector('[data-copy-ref="st.2tw3ay17tc"]')?.textContent).toBe("[[st.2tw3ay17tc]]");
+  expect(heading.querySelector('[data-publisher-copy-ref]')?.getAttribute("data-publisher-copy-ref")).toBe(PUBLISHER_COPY_REFS.title.id);
+  expect(view.container.querySelector('[data-publisher-copy-ref="st.2tw3ay17tc"]')?.textContent).toBe("[[st.2tw3ay17tc]]");
 });
 it("hides channel navigation for one channel and retains it for multiple channels", () => {
   const view = mount();
@@ -61,7 +61,7 @@ it("stamps each resolved stage text node with the exact CopyRef identity", () =>
     const match = /^\[\[(st\.[^\]]+)\]\]$/.exec(text);
     if (!match) continue;
     count++;
-    expect(walker.currentNode.parentElement?.getAttribute("data-copy-ref")).toBe(match[1]);
+    expect(walker.currentNode.parentElement?.getAttribute("data-publisher-copy-ref")).toBe(match[1]);
   }
   expect(count).toBeGreaterThan(15);
 });

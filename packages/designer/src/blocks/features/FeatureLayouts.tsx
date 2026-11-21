@@ -51,11 +51,11 @@ export function ScrollFeatures({ items, ground }: Pick<Props, "items" | "ground"
     for (const step of steps.current.children) observer.observe(step);
     return () => observer.disconnect();
   }, [enhanced, items]);
-  const motion: CSSProperties | undefined = enhanced ? { animation: "reveal var(--ui-duration-deliberate) var(--ease-decelerate) both", animationTimeline: "view()", animationRange: "entry 0% cover 50%" } : undefined;
+  const motion: CSSProperties | undefined = enhanced ? { animation: "reveal var(--ui-duration-deliberate, 500ms) var(--ease-decelerate, cubic-bezier(0, 0, .2, 1)) both", animationTimeline: "view()", animationRange: "entry 0% cover 50%" } : undefined;
   return <><FeatureMotionStyles /><SemanticContent as="div" data-features-scroll={enhanced ? "enhanced" : "static"} className={enhanced ? "grid grid-cols-1 gap-xl tablet:grid-cols-2 tablet:items-start" : "flex flex-col"}>
-    {enhanced ? <SemanticContent as="div" data-feature-sticky="" className="min-w-0 tablet:sticky tablet:top-lg tablet:self-start" style={{ animation: "features-sticky var(--ui-duration-flash) linear both", animationTimeline: "view()" }}>{items[active]?.visual}</SemanticContent> : null}
+    {enhanced ? <SemanticContent as="div" data-feature-sticky="" className="min-w-0 tablet:sticky tablet:top-lg tablet:self-start" style={{ animation: "features-sticky var(--ui-duration-flash, 1200ms) linear both", animationTimeline: "view()" }}>{items[active]?.visual}</SemanticContent> : null}
     <SemanticContent as="ul" ref={steps} role="list" className="m-0 flex list-none flex-col gap-3xl p-0">
-      {items.map((item, index) => <SemanticContent as="li" key={item.id} data-feature-step={index} className="flex min-w-0 flex-col gap-xl" style={enhanced ? { paddingBlock: "var(--spacing-3xl)", minBlockSize: "calc(var(--spacing-3xl) * 4)" } : undefined}>
+      {items.map((item, index) => <SemanticContent as="li" key={item.id} data-feature-step={index} className="flex min-w-0 flex-col gap-xl" style={enhanced ? { paddingBlock: "var(--spacing-3xl, 48px)", minBlockSize: "calc(var(--spacing-3xl, 48px) * 4)" } : undefined}>
         {!enhanced ? <SemanticContent as="div" data-feature-figure="">{item.visual}</SemanticContent> : null}
         <SemanticContent as="div" data-feature-step-copy="" data-feature-motion={enhanced ? "" : undefined} data-designer-reveal={enhanced ? "" : undefined} style={motion}><FeatureCopy item={item} ground={ground} /></SemanticContent>
       </SemanticContent>)}

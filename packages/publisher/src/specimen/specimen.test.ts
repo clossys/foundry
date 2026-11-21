@@ -79,7 +79,7 @@ describe("rendering", () => {
   it("renders text at its limits and marks overflow", async () => {
     const page = await renderSpecimen({ source, builder: createSpecimenBuilder(), query: { element: "hero-copy" }, nonce: "n" });
     expect(page.status).toBe(200);
-    expect(page.html).toContain('data-copy-key="hero.title" data-role="display" data-chars="34" data-max-chars="48" data-max-lines="2"');
+    expect(page.html).toContain('data-specimen-copy-key="hero.title" data-role="display" data-chars="34" data-specimen-max-chars="48" data-specimen-max-lines="2"');
     expect(page.html).toContain('<script nonce="n">');
     expect(page.html).not.toContain("data-over");
   });

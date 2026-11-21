@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/writer/sections.hero.copy/copy-v1.png"
+        "ref": "clossys/.state/renders/writer/sections.hero.copy/copy-v1.png"
       }
     ]
   }

@@ -84,7 +84,7 @@ function tree(dir = workspace): Record<string, string> {
   const files: Record<string, string> = {};
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
-    if (name === ".clossys") continue;
+    if (name === "clossys/.state") continue;
     if (statSync(path).isDirectory()) Object.assign(files, tree(path));
     else files[relative(workspace, path)] = readFileSync(path, "utf8");
   }

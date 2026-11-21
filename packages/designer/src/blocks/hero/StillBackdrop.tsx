@@ -1,5 +1,6 @@
 import type { SemanticContent as SemanticContentComponent } from "../../components/SemanticContent.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
+import { TOKENS } from "../../tokens/tokens.js";
 import type { StillBackdropArt } from "../../backdrop/consumer-art.js";
 import { stillBackdropPolicy, type HeroBackdropScrim } from "../../backdrop/still-backdrop-policy.js";
 
@@ -21,6 +22,15 @@ const BACKDROP_GROUNDS: Readonly<Record<string, string>> = {
   "surface-inverse-raised": "bg-surface-inverse-raised",
 };
 
+/**
+ * A paint read of a color token the art declares (the art contract admits only registered color
+ * tokens), with that token's registry value as fallback, so the art still paints with no theme
+ * loaded. The emitter fallback test pins each registry value to its declared value.
+ */
+function colorReference(token: string): string {
+  return `var(${token}, ${TOKENS[token]!.value})`;
+}
+
 /** Inert, checked static artwork; no motion source or alternate network resource exists. */
 export function StillBackdrop({ art, scrim = "light" }: { art: StillBackdropArt; scrim?: HeroBackdropScrim }) {
   const policy = stillBackdropPolicy(art, scrim);
@@ -30,16 +40,16 @@ export function StillBackdrop({ art, scrim = "light" }: { art: StillBackdropArt;
   if (!ground) throw new TypeError("Hero still backdrop ground must be an opaque surface token");
   const pointerEvents = "none" as const;
   return (
-    <SemanticContent as="div" data-hero-backdrop="" aria-hidden="true" className={`absolute inset-0 ${ground}`} style={{ pointerEvents }}>
+    <SemanticContent as="div" data-backdrop-still="" aria-hidden="true" className={`absolute inset-0 ${ground}`} style={{ pointerEvents }}>
       {art.source.format === "svg" ? (
         <svg viewBox={`0 0 ${art.width} ${art.height}`} width={art.width} height={art.height} preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false" className="h-full w-full" style={{ pointerEvents }}>
-          {art.source.paths.map((path, index) => <path key={index} d={path.d} fill={`var(${path.fillToken})`} stroke={path.strokeToken ? `var(${path.strokeToken})` : "none"} strokeWidth={path.strokeWidth} style={{ pointerEvents }} />)}
+          {art.source.paths.map((path, index) => <path key={index} d={path.d} fill={colorReference(path.fillToken)} stroke={path.strokeToken ? colorReference(path.strokeToken) : "none"} strokeWidth={path.strokeWidth} style={{ pointerEvents }} />)}
         </svg>
       ) : (
         <img src={art.source.src} alt="" width={art.width} height={art.height} loading="lazy" decoding="async" draggable={false} className="h-full w-full object-cover" style={{ pointerEvents }} />
       )}
-      <SemanticContent as="div" data-hero-gradient="media-scrim" className="absolute inset-0" style={{ pointerEvents, backgroundImage: "linear-gradient(transparent, var(--color-overlay-scrim))" }} />
-      {Array.from({ length: policy.passes }, (_, index) => <SemanticContent as="div" key={index} data-hero-scrim={scrim} className="absolute inset-0 bg-overlay-scrim" style={{ pointerEvents }} />)}
+      <SemanticContent as="div" data-backdrop-gradient="media-scrim" className="absolute inset-0" style={{ pointerEvents, backgroundImage: `linear-gradient(transparent, var(--color-overlay-scrim, ${TOKENS["--color-overlay-scrim"]!.value}))` }} />
+      {Array.from({ length: policy.passes }, (_, index) => <SemanticContent as="div" key={index} data-backdrop-scrim={scrim} className="absolute inset-0 bg-overlay-scrim" style={{ pointerEvents }} />)}
     </SemanticContent>
   );
 }

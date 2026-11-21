@@ -88,7 +88,7 @@ function hooks(onCode?: (call: CodeCall) => void): RunHooks & { readonly agentSt
     code(call: CodeCall) { codeSteps.push(call.step); onCode?.(call); return { exit: 0 }; },
   };
 }
-const settleOf = (root: string, runId: string) => JSON.parse(readFileSync(join(root, ".clossys", "runs", "loops", `${runId}.settle`, "score.json"), "utf8"));
+const settleOf = (root: string, runId: string) => JSON.parse(readFileSync(join(root, "clossys", ".state", "runs", "loops", `${runId}.settle`, "score.json"), "utf8"));
 const clock = () => { let tick = 0; return () => new Date(Date.parse("2026-11-17T12:30:00Z") + 1000 * tick++); };
 
 describe("clossys pin --by code:scorecard: code pins the scorecard's single top row on a slot with no owner step", () => {
@@ -261,7 +261,7 @@ describe("loop.choose's score step (clossys settle pick): code settles the pick,
     const w = heroWorld();
     w.submit("Ship your site this week");
     // After rank, the slot's checks folder becomes a file: the gate still reads, the code pin's scorecard write fails.
-    const checks = join(w.root, ".clossys", "checks", "designer", HERO);
+    const checks = join(w.root, "clossys", ".state", "checks", "designer", HERO);
     const h = hooks(call => { if (call.step === "rank") { rmSync(checks, { recursive: true, force: true }); mkdirSync(join(checks, ".."), { recursive: true }); writeFileSync(checks, "not a folder\n"); } });
     const run = await startRun(w.root, { loop: "loop.choose", slot: `designer/${HERO}` }, h, { now: clock() });
     const settle = settleOf(w.root, run.state!.runId);

@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/designer/assets.lockup/lockup-v1.png"
+        "ref": "clossys/.state/renders/designer/assets.lockup/lockup-v1.png"
       }
     ]
   }

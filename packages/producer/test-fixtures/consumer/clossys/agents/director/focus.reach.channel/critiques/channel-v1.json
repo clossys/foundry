@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/director/focus.reach.channel/channel-v1.png"
+        "ref": "clossys/.state/renders/director/focus.reach.channel/channel-v1.png"
       }
     ]
   }

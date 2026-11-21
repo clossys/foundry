@@ -212,7 +212,7 @@ export function studioDesignerSlots(): readonly StudioDesignerSlot[] {
 export const WRITER_GROUPS = ["voice", "prose", "copy"] as const;
 
 /**
- * Writer: the Voice, Prose and Copy trees (foundry-build-0019 target trees, adopted by Producer in foundry-build-0048
+ * Writer: the Voice, Prose and Copy trees (foundry-build-0019 target trees, taken into Producer in foundry-build-0048
  * U2) in place of the retired five-layer store. Each group file is `{nodes: L1 > L2 > leaves, slots: [{id, kind,
  * mark, inputs, contract}], awaiting?}`; a leaf is a slot when the file defines a `slots` row for it, and an
  * `awaiting` leaf (a Designer unit with no copy fields yet) is not placed. The tree's slash ids become dotted node ids

@@ -20,7 +20,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/designer/assets.icon-chevron-up/icon-chevron-up-v1.png"
+        "ref": "clossys/.state/renders/designer/assets.icon-chevron-up/icon-chevron-up-v1.png"
       }
     ]
   }

@@ -1,6 +1,6 @@
 /**
  * owner.wiring (`clossys pipeline check`): every owner option `clossys next --owner` emits is a live answer.
- * Each option runs, call by call, on a scratch copy of the workspace records (`clossys/` and `.clossys/`, with
+ * Each option runs, call by call, on a scratch copy of the workspace records (`clossys/`, its state folder included, with
  * the agents' standards the write guard reads),
  * with every `fill` placeholder filled. It must:
  *   - exit 0 on every call;
@@ -40,7 +40,7 @@ export interface OwnerWiringResult { readonly options: number; readonly calls: n
  * folder) and the agents' standards the write guard certifies a pin against (R05, `packages/<agent>/standards/`).
  */
 const RULES_DIR = RULES_FILE.split("/").slice(0, -1).join("/");
-const COPIED = ["clossys", ".clossys", RULES_DIR, ...["producer", "director", "designer", "writer", "publisher"].map(agent => `packages/${agent}/standards`)] as const;
+const COPIED = ["clossys", RULES_DIR, ...["producer", "director", "designer", "writer", "publisher"].map(agent => `packages/${agent}/standards`)] as const;
 const SLOT_TARGET = /^(producer|director|designer|writer|publisher)\/([a-z0-9][a-z0-9.-]*)$/;
 
 /** A content digest of every file under a folder (empty when it does not exist). */

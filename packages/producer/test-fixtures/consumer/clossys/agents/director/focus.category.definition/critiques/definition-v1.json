@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/director/focus.category.definition/definition-v1.png"
+        "ref": "clossys/.state/renders/director/focus.category.definition/definition-v1.png"
       }
     ]
   }

@@ -20,14 +20,14 @@ describe("resolveIaSource", () => {
     const pkg = temp();
     mkdirSync(join(pkg, "src"));
     writeFileSync(join(pkg, "src", "ia.json"), "{}\n");
-    const resolver = (name: string) => { if (name !== "@clossys/fixture") throw new Error("not installed"); return pkg; };
-    expect(resolveIaSource("@clossys/fixture#src/ia.json", resolver)).toMatchObject({ ok: true });
+    const resolver = (name: string) => { if (name !== "@clossys/starter") throw new Error("not installed"); return pkg; };
+    expect(resolveIaSource("@clossys/starter#src/ia.json", resolver)).toMatchObject({ ok: true });
     for (const [source, reason] of [
-      ["@clossys/fixture#leaf-freeze:2026-10-28", /does not exist/],
+      ["@clossys/starter#leaf-freeze:2026-10-28", /does not exist/],
       ["consumer#agents/publisher/tree.json", /neither/],
-      ["@clossys/fixture#src/missing.json", /does not exist/],
-      ["@clossys/fixture#../outside.json", /leaves the package/],
-      ["@clossys/absent#src/ia.json", /not installed/],
+      ["@clossys/starter#src/missing.json", /does not exist/],
+      ["@clossys/starter#../outside.json", /leaves the package/],
+      ["@clossys/keeper#src/ia.json", /not installed/],
       [undefined, /not a string/],
     ] as const) expect(resolveIaSource(source, resolver), String(source)).toMatchObject({ ok: false, reason: expect.stringMatching(reason) });
   });

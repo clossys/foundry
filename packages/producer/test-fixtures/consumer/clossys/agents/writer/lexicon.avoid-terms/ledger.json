@@ -275,7 +275,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/avoid-terms-v1.json",
-      "sha256": "253dea3d44d3ff876c8a2540208a3fa9cfb3fbe217e0db5250b29c108c71564d"
+      "sha256": "bc71ed4e64c7ae7da3a0cf15afb2315b1142b7eb846f12534140625a202d5315"
     },
     {
       "op": "submit",

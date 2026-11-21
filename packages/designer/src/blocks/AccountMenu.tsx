@@ -67,7 +67,7 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
     {entry.label}
   </MenuItem>);
   const identity = (section: AccountMenuSection) => <SemanticContent as="span" className="flex min-w-0 flex-col gap-xs"
-    style={{ maxInlineSize: "min(var(--ui-layout-sidebar-w), calc(100vw - 2 * var(--spacing-2xl)))" }}>
+    style={{ maxInlineSize: "min(var(--ui-layout-sidebar-w, 256px), calc(100vw - 2 * var(--spacing-2xl, 32px)))" }}>
     <SemanticContent as="span" className="break-words whitespace-normal">{actor.name}</SemanticContent>
     {actor.secondaryText && <SemanticContent as="span" className="truncate">{actor.secondaryText}</SemanticContent>}
     {contextLabel && <SemanticContent as="span" className="truncate">{contextLabel}</SemanticContent>}

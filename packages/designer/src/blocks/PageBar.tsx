@@ -254,7 +254,7 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
       paddingInlineEnd: reserveEnd ? `calc(${PAGE_BAR_LAYOUT.tap} + ${PAGE_BAR_LAYOUT.gap})` : PAGE_BAR_LAYOUT.gap,
       backdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none", WebkitBackdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none",
       ...(headerPosition === "sticky" ? { zIndex: PAGE_BAR_LAYOUT.barLayer }
-        : headerPosition === "fixed" ? { zIndex: "var(--ui-z-shell)" } : {}) }}>
+        : headerPosition === "fixed" ? { zIndex: "var(--ui-z-shell, 20)" } : {}) }}>
     {embedded ? <>{start}<SemanticContent as="div" ref={body} className="flex min-w-0 flex-1 items-center gap-xs">{content}</SemanticContent>{end}</> : content}
   </header>;
 }

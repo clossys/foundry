@@ -24,9 +24,9 @@ const TABLE_LAYOUT = `
   [data-table-stack] table > tbody > tr { display: flex; min-inline-size: 0; flex-direction: column; }
   [data-table-stack] table > tbody > tr > :is(td, th) {
     display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-    gap: var(--spacing-md); min-inline-size: 0; overflow-wrap: anywhere;
+    gap: var(--spacing-md, 12px); min-inline-size: 0; overflow-wrap: anywhere;
   }
-  [data-table-stack] [data-column-label]::before { display: block; content: attr(data-column-label); color: var(--color-ink-muted); }
+  [data-table-stack] [data-column-label]::before { display: block; content: attr(data-column-label); color: var(--color-ink-muted, ${TOKENS["--color-ink-muted"]!.value}); }
 }
 `;
 

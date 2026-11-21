@@ -6,6 +6,7 @@ import { parseFinding, RUN_CITATION_PATTERN } from "./format/finding.js";
 import { RECORD_ID_PATTERN } from "./format/ref.js";
 import { parseSlotPin, slotCandidateCell, slotCandidateVersion, type SlotPin } from "./format/slot.js";
 import { validateTree } from "./format/tree.js";
+import { STATE_DIR } from "./state-dir.js";
 import { raiseWhyOf } from "./format/queue-note.js";
 import type { QueueRequest, StrategyModel, StrategyRootIssue, StrategyTree } from "./format/types.js";
 import { storeFault, type DirectorStoreReader } from "./store-io.js";
@@ -216,14 +217,14 @@ export function queueRequests(consumer: string, store: DirectorStoreReader): Que
   return requests.sort((a, b) => a.id.localeCompare(b.id));
 }
 
-/** The run store file of one step, as the clossys CLI names it: `check:pipeline` -> `.clossys/runs/check.pipeline.jsonl`. */
-export function runStoreFile(step: string): string { return `.clossys/runs/${step.replace(/[^a-z0-9.-]/gi, ".")}.jsonl`; }
+/** The run store file of one step, as the clossys CLI names it: `check:pipeline` -> `clossys/.state/runs/check.pipeline.jsonl` (STATE_DIR). */
+export function runStoreFile(step: string): string { return `${STATE_DIR}/runs/${step.replace(/[^a-z0-9.-]/gi, ".")}.jsonl`; }
 
 /**
  * The tracked copy of one step's cited run records, under the consumer folder:
  * `<consumer>/evidence/director/runs/<step>.jsonl`. `director check judge` copies the run record a
  * cell judgement cites here, verbatim, so the citation still resolves in a checkout that never ran it
- * (the local `.clossys/runs` store is gitignored).
+ * (the local `clossys/.state/runs` store is gitignored).
  */
 export function trackedRunFile(step: string): string { return `evidence/director/runs/${step.replace(/[^a-z0-9.-]/gi, ".")}.jsonl`; }
 
@@ -252,7 +253,7 @@ export function runRecordLines(repo: string, store: DirectorStoreReader, step: s
 
 /**
  * Resolves the run citations of the model's findings against the local run store under `repo`
- * (`<repo>/.clossys/runs/<step>.jsonl`, gitignored, one clossys.pipeline-run/1 record per line)
+ * (`<repo>/clossys/.state/runs/<step>.jsonl`, gitignored, one clossys.pipeline-run/1 record per line)
  * and the tracked copy under the consumer folder `base` (`evidence/director/runs/<step>.jsonl`).
  * Only records of the cited step with the cited run id resolve; absent stores resolve nothing.
  */

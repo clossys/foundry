@@ -3,7 +3,7 @@
  * The driver is `src/specimen/render.ts`; this module parses arguments and prints.
  *
  *   clossys render <agent>/<slot-id>[/<candidate>] [--compare <agent>/<slot-id>/<candidate>] [--json]
- *     renders every live candidate of the slot (or the one named) under `.clossys/renders/` and
+ *     renders every live candidate of the slot (or the one named) under `clossys/.state/renders/` and
  *     prints the `clossys.render/1` result (`--json`: the result alone, on stdout).
  *   clossys render <slot> <candidate> | <slot> --draft <file>
  *     the int2 Designer form: one element candidate (or an unsubmitted craft direction) rendered
@@ -32,7 +32,7 @@ export {
 export const RENDER_USAGE = "Usage: clossys render <agent>/<slot-id>[/<candidate>] [--compare <agent>/<slot-id>/<candidate>] [--root <dir>] [--theme <t>] [--width <px,px>] [--cache <dir>] [--json]\n"
   + "       clossys render <agent>/<slot-id> --draft <file> [--root <dir>] [--theme <t>] [--width <px,px>] [--cache <dir>] [--json]\n"
   + "       clossys render <slot> <candidate> | <slot> --draft <file>   (Designer element form)\n"
-  + "  renders candidates of any agent as specimens under .clossys/renders/ (Designer: images through the specimen harness,\n"
+  + "  renders candidates of any agent as specimens under clossys/.state/renders/ (Designer: images through the specimen harness,\n"
   + "  cached by (candidate sha256, dependency pin-set hash); other agents: text specimens) and prints the clossys.render/1\n"
   + "  result; --compare renders a second candidate beside it with one side-by-side compare.html; --draft renders a craft\n"
   + "  direction before submit (section 5b stage 3) as the slot's next candidate, from a temporary copy of the records";

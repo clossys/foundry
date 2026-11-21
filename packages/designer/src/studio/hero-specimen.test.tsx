@@ -69,10 +69,10 @@ describe("Hero specimen through the real selected-component provider", () => {
     expect(root.classList.contains("bg-surface-inverse")).toBe(members.some(value => value === "ground.inverse"));
     expect(heading.classList.contains("leading-heading")).toBe(member === "size.compact");
     expect(heading.classList.contains("leading-display")).toBe(member !== "size.compact");
-    const backdrop = root.querySelector('[data-hero-backdrop]')!;
+    const backdrop = root.querySelector('[data-backdrop-still]')!;
     expect(checkBackdropElement(backdrop)).toMatchObject({ ok: true });
     expect(backdrop.querySelector("path")).toHaveAttribute("fill", "var(--color-action)");
-    expect(root.querySelectorAll('[data-hero-scrim]')).toHaveLength(member === "backdrop.scrim.strong" ? 5 : 4);
+    expect(root.querySelectorAll('[data-backdrop-scrim]')).toHaveLength(member === "backdrop.scrim.strong" ? 5 : 4);
     expect(root.querySelector('img[title]')).toHaveAttribute("title", HERO_SPECIMEN_COPY["media.title"]);
   });
 });

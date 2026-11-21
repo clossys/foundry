@@ -7,6 +7,7 @@ import { CHAIN_ISSUES, ENGINE_DIR, EVENTS_FILE, INDEX_FILE, LOCK_FILE, RECORD_AG
 import { INDEX_FIELDS } from "./derived.js";
 import { ENGINE_LOCK_WAIT_MS, FOREIGN_LOCK_MS, OWNERLESS_LOCK_MS } from "./lock.js";
 import { ENGINE_SURFACE, surfaceFunctions, PAIRED_APPENDERS, PAIRED_WRITERS, SCRIPT_WRITERS, SIDE_DOOR_EXCLUDED, SIDE_DOOR_MESSAGES, SIDE_DOOR_READS, SIDE_DOOR_SCOPE, WRITE_CALLS } from "./side-door.js";
+import { LEGACY_STATE_DIR } from "./state-dir.js";
 import { ENGINE_TYPES, GENESIS } from "./types.js";
 
 export const ENGINE_DOC = "packages/producer/docs/engine.md";
@@ -22,6 +23,7 @@ export const EVENT_KINDS: readonly { readonly kind: string; readonly file: strin
   { kind: "queue.create / queue.replace", file: "packages/producer/src/queue/entry.ts", literal: "\"queue.create\"", subject: "<queue>/<entry id>: every queue entry write, the chat answer path included" },
   { kind: "library.version", file: "packages/producer/src/records/library.ts", literal: "\"library.version\"", subject: "library:<slot>/<element>/v<n>" },
   { kind: "run.state / run.record / run.settle / pin.revert", file: "packages/producer/src/loop/runner.ts", literal: "\"run.settle\"", subject: "loop:<loop>/<run id>: run state, the run's ledger record, a settle record (a fixed-rule code step that settled or passed on an agent step), a reverted pin" },
+  { kind: "state.migrate", file: "packages/producer/src/engine/migrate-state.ts", literal: "\"state.migrate\"", subject: "state:<state dir>: a legacy root state folder moved into the state folder, its logged records named at both paths" },
   { kind: "run.queue", file: "packages/producer/src/loop/runner.ts", literal: "\"run.queue\"", subject: "loop:loop.fill/<run id>: one fill queue entry of the T1 init, the leaf's slot.json its input (FILL-PRELUDE D1)" },
 ];
 
@@ -29,7 +31,8 @@ export const EVENT_KINDS: readonly { readonly kind: string; readonly file: strin
 export const ENGINE_VERBS: readonly (readonly [string, string])[] = [
   ["clossys index --rebuild", `rewrite ${INDEX_FILE} from the log plus the records, under the engine lock; exit 1 when the chain does not verify`],
   ["clossys index", "compare the stored index with a rebuild (read-only); exit 1 when they differ"],
-  ["clossys check --engine", "verifyChain, index agreement and record drift on a consumer workspace; exit 1 on any issue"],
+  ["clossys check --engine", `verifyChain, index agreement, record drift and the consumer layout (no root ${LEGACY_STATE_DIR}/ beside ${ENGINE_DIR}/) on a consumer workspace; exit 1 on any issue`],
+  ["clossys migrate state [--apply|--check]", `move a root ${LEGACY_STATE_DIR}/ into ${ENGINE_DIR}/ under the engine lock and log one state.migrate event; a dry run unless --apply; --check exits 1 while one exists`],
   ["clossys check --side-door", `the engine.side-door scan of a checkout (${SIDE_DOOR_SCOPE}); exit 1 on any finding`],
 ];
 
@@ -127,7 +130,7 @@ export function engineDoc(): string {
       [code(INDEX_FILE), "the derived index, rebuilt from the log plus the records"],
     ]),
     "",
-    `Records under ${code(`clossys/agents/<${RECORD_AGENTS.join("|")}>/`)} and ${code("clossys/library/")} log to the workspace that holds them; ${code(ENGINE_DIR)} is never committed.`,
+    `Records under ${code(`clossys/agents/<${RECORD_AGENTS.join("|")}>/`)} and ${code("clossys/library/")} log to the workspace that holds them. ${code(ENGINE_DIR)} (the consumer-layout contract's ${code("stateDir")}) holds only machine files, beside the records in ${code("clossys/")}; a root ${code(`${LEGACY_STATE_DIR}/`)} fails ${code("clossys check --engine")} and ${code("clossys migrate state --apply")} moves it in.`,
     "",
     "## Types",
     "",
@@ -183,7 +186,7 @@ export function engineDoc(): string {
     "",
     "## Check engine.side-door",
     "",
-    `Rule R-ENGINE-SIDE-DOOR. A static scan of ${code(SIDE_DOOR_SCOPE)} for writes to ${code(".clossys/**")} or to a slot record outside the engine API. It fails on every finding of the rules stated below. No allowlist and no baseline. Excluded: ${SIDE_DOOR_EXCLUDED}`,
+    `Rule R-ENGINE-SIDE-DOOR. A static scan of ${code(SIDE_DOOR_SCOPE)} for writes to ${code(`${ENGINE_DIR}/**`)} (or ${code(`${LEGACY_STATE_DIR}/**`)}) or to a slot record outside the engine API. It fails on every finding of the rules stated below. No allowlist and no baseline. Excluded: ${SIDE_DOOR_EXCLUDED}`,
     "",
     SIDE_DOOR_READS,
     "",

@@ -1,5 +1,5 @@
 /**
- * The derived index: `<root>/.clossys/index.json`, rebuilt from the event log plus the record files it names. It is
+ * The derived index: `<root>/clossys/.state/index.json`, rebuilt from the event log plus the record files it names. It is
  * never the source of truth: appendEvent keeps it current under the engine lock, `clossys index --rebuild` writes it
  * from scratch, and `clossys check --engine` fails when the stored index disagrees with a rebuild, or when a record's
  * bytes on disk differ from the sha256 its last event logged (the record was changed outside the engine).

@@ -338,7 +338,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/muted-v1.json",
-      "sha256": "972f1ca003b8d13f564a62ecc78bc76dae6afb834e63cc5a27cd9fc4e7e0d7f8"
+      "sha256": "6aa5257d70b47b23fdc98ace92bd817a043c6c437732eb29edcb250ce02db183"
     },
     {
       "op": "submit",

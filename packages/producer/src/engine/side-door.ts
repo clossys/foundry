@@ -1,10 +1,11 @@
 /**
- * Check `engine.side-door` (rule R-ENGINE-SIDE-DOOR): every write to a workspace's `.clossys/**` or to a slot record
- * goes through the engine API, so it leaves an event in `.clossys/events.jsonl`. A static scan of the shipped source
+ * Check `engine.side-door` (rule R-ENGINE-SIDE-DOOR): every write to a workspace's state folder (`clossys/.state/**`,
+ * STATE_DIR, or the legacy root `.clossys/**`) or to a slot record goes through the engine API, so it leaves an event
+ * in `clossys/.state/events.jsonl`. A static scan of the shipped source
  * and scripts of the content packages and the Producer (SIDE_DOOR_SCOPE), each file parsed with the TypeScript
  * compiler. A finding is one of:
  *   - write: a file-system write (WRITE_CALLS, or an open with a write flag) whose path argument is derived from
- *     engine vocabulary (a `.clossys` path string, a slot-model path string, a slot-model path helper, or a local
+ *     engine vocabulary (a state-folder path string, a slot-model path string, a slot-model path helper, or a local
  *     name, function return, exported helper or exported constant derived from one, through any import or
  *     re-export), outside ENGINE_SURFACE. A path built from pieces (`".clos" + "sys"`, a template, `join` or
  *     `resolve` segments, `[...].join("/")`, constants of this file or imported ones) is judged by its folded text;
@@ -15,16 +16,17 @@
  *     the clossys verb that judges its actor;
  *   - unpaired: a file that uses a slot-model file primitive (PAIRED_WRITERS) and appends no ledger event
  *     (PAIRED_APPENDERS), so no event names what it wrote;
- *   - exec: a child-process call (CHILD_CALLS) outside ENGINE_SURFACE whose arguments name `.clossys` or a slot path
+ *   - exec: a child-process call (CHILD_CALLS) outside ENGINE_SURFACE whose arguments name a state folder or a slot path
  *     (in their text, in a word of it, in their folded text, or through the taint of the write rule;
  *     a spawned shell or tool can write there unseen);
  *   - shell: a line of a shell or hook file in scope (SHELL_FILE, or an extensionless file that is executable or starts
- *     with `#!`) that names `.clossys` or a slot path (namesRecordPath).
+ *     with `#!`) that names a state folder or a slot path (namesRecordPath).
  * No allowlist and no baseline: every finding fails the check.
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import ts from "typescript";
+import { LEGACY_STATE_DIR, STATE_DIR } from "./state-dir.js";
 
 /**
  * A surface file whose writes are proved per call: a write is the engine's only inside a record transaction (a
@@ -76,23 +78,25 @@ export const HELPERS = Object.freeze(["agentsDir", "agentDir", "iaPath", "slotDi
 const MODEL_TREES = ["director", "designer", "writer", "publisher", "producer"];
 const AGENT_PATH = new RegExp(`(?:^|/)agents/(?:${MODEL_TREES.join("|")})(?:/|$)`);
 const MODEL_FILE = /(?:^|\/)(?:ia|slot|pin|seat|ledger)\.json$|(?:^|\/)candidates(?:\/|$)/;
-const ENGINE_PATH = /(?:^|\/)\.clossys(?:\/|$)/;
+/** A path naming the state folder (STATE_DIR) or the legacy root one (LEGACY_STATE_DIR), whole or inside. */
+const ENGINE_PATH = new RegExp(`(?:^|/)(?:${[STATE_DIR, LEGACY_STATE_DIR].map(dir => dir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(?:/|$)`);
 const PATH_CALLS = new Set(["join", "resolve", "dirname", "normalize", "relative", "basename", "String", "concat", "replace", "replaceAll", "slice", "trim", "toString", "fileURLToPath"]);
 const FS_MODULES = new Set(["fs", "node:fs", "fs/promises", "node:fs/promises"]);
 const CODE_EXTENSIONS = Object.freeze(["mjs", "cjs", "js", "jsx", "ts", "tsx", "mts", "cts"]);
 const CODE = new RegExp(`\\.(?:${CODE_EXTENSIONS.join("|")})$`);
 const CHILD_MODULES = new Set(["child_process", "node:child_process"]);
-/** Child-process functions: a command they run can write anywhere, so one that names `.clossys` is a finding. */
+/** Child-process functions: a command they run can write anywhere, so one that names a state folder is a finding. */
 export const CHILD_CALLS = Object.freeze(["exec", "execSync", "execFile", "execFileSync", "spawn", "spawnSync", "fork"]);
 /** Shell files read line by line (with extensionless executables and `#!` files). */
 const SHELL_EXTENSIONS = Object.freeze(["sh", "bash", "zsh"]);
 const SHELL_FILE = new RegExp(`\\.(?:${SHELL_EXTENSIONS.join("|")})$`);
-const ENGINE_NAME = ".clossys";
+/** The state folder names a command or shell line may carry anywhere in its text. */
+const ENGINE_NAMES = Object.freeze([STATE_DIR, LEGACY_STATE_DIR]);
 /** The words of a command or shell line: split on blanks, quotes and shell punctuation. */
 const WORDS = /[\s"'`=;|&<>(){}\[\],]+/;
-/** Whether a command or shell line names `.clossys` anywhere, or has a word that is an engine or slot-model path. */
+/** Whether a command or shell line names a state folder anywhere, or has a word that is an engine or slot-model path. */
 export function namesRecordPath(text: string): boolean {
-  return text.includes(ENGINE_NAME) || text.split(WORDS).some(word => word !== "" && isEnginePathString(word.replace(/^\$\{?[A-Za-z_]+\}?\//, "")));
+  return ENGINE_NAMES.some(name => text.includes(name)) || text.split(WORDS).some(word => word !== "" && isEnginePathString(word.replace(/^\$\{?[A-Za-z_]+\}?\//, "")));
 }
 /**
  * Folders skipped at any depth of the scanned folders: installed dependencies, fixtures and test-only trees. Build
@@ -102,15 +106,15 @@ export function namesRecordPath(text: string): boolean {
 export const SIDE_DOOR_SKIPPED_DIRS = Object.freeze(["node_modules", "__fixtures__", "__tests__", "__golden__", "fixtures"]);
 const SKIP_DIRS = new Set<string>(SIDE_DOOR_SKIPPED_DIRS);
 /** What the scan reads and what a static scan cannot see, as engine.md states it. */
-export const SIDE_DOOR_READS = `What each rule flags, and nothing more. The scan parses the files ending in ${CODE_EXTENSIONS.map(ext => `\`.${ext}\``).join(", ")} with the TypeScript compiler and reads the shell and hook files (${SHELL_EXTENSIONS.map(ext => `\`.${ext}\``).join(", ")}, and extensionless files that are executable or start with \`#!\`) line by line; no other file is read. \`write\` and \`sink\`: a write call (the write calls listed below, or an open with a write flag), or a call to a write wrapper, outside the engine API, whose path argument the scan resolves through taint to an engine or slot-record path: a path string, a slot-model path helper, or a name, return value or constant derived from one, within the file or through imports and re-exports. \`exec\`: a child-process call (${CHILD_CALLS.map(name => `\`${name}\``).join(", ")}) of \`child_process\` bound by a named, renamed, default or namespace import, \`import ... = require\`, \`require\`, \`createRequire\` or \`import()\`, or a name bound to one of these, outside the engine API, where an argument names \`.clossys\` or a slot path literally, through the string fold, or through taint. \`shell\`: a line of one of those shell or hook files that names \`.clossys\` or a slot path. \`script\` and \`unpaired\`: as the table says. Any write not matched by these rules is not seen by this check.`;
+export const SIDE_DOOR_READS = `What each rule flags, and nothing more. The scan parses the files ending in ${CODE_EXTENSIONS.map(ext => `\`.${ext}\``).join(", ")} with the TypeScript compiler and reads the shell and hook files (${SHELL_EXTENSIONS.map(ext => `\`.${ext}\``).join(", ")}, and extensionless files that are executable or start with \`#!\`) line by line; no other file is read. \`write\` and \`sink\`: a write call (the write calls listed below, or an open with a write flag), or a call to a write wrapper, outside the engine API, whose path argument the scan resolves through taint to an engine or slot-record path: a path string, a slot-model path helper, or a name, return value or constant derived from one, within the file or through imports and re-exports. \`exec\`: a child-process call (${CHILD_CALLS.map(name => `\`${name}\``).join(", ")}) of \`child_process\` bound by a named, renamed, default or namespace import, \`import ... = require\`, \`require\`, \`createRequire\` or \`import()\`, or a name bound to one of these, outside the engine API, where an argument names a state folder (\`${STATE_DIR}\` or \`${LEGACY_STATE_DIR}\`) or a slot path literally, through the string fold, or through taint. \`shell\`: a line of one of those shell or hook files that names a state folder or a slot path. \`script\` and \`unpaired\`: as the table says. Any write not matched by these rules is not seen by this check.`;
 /** What the scan leaves out, as engine.md states it. */
 export const SIDE_DOOR_EXCLUDED = `test files (\`*.test.*\`, \`*.spec.*\`), declaration files (\`*.d.ts\`) and folders named ${SIDE_DOOR_SKIPPED_DIRS.map(name => `\`${name}\``).join(", ")} at any depth. Build output at a package root (\`dist\`, \`build\`) is outside the scanned folders; a \`build\` folder inside \`src\` is source and is scanned.`;
 
 const TEST = /\.(?:test|spec)\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
 
-/** Whether a string names an engine path (`.clossys`) or a slot-model path (routes and URLs are not paths). */
+/** Whether a string names an engine path (a state folder) or a slot-model path (routes and URLs are not paths). */
 export function isEnginePathString(text: string): boolean {
-  if (text === ".clossys") return true;
+  if (ENGINE_NAMES.includes(text)) return true;
   if (text.includes("://") && !/^file:\/\//i.test(text)) return false;
   const path = text.replace(/^file:\/\//i, "").split(/[?#]/)[0]!;
   if (ENGINE_PATH.test(path)) return true;
@@ -151,7 +155,7 @@ function isProgram(path: string): boolean {
 export function sideDoorShellFiles(root: string): string[] {
   return scopeFiles(root, (name, path) => SHELL_FILE.test(name) || (!name.includes(".") && isProgram(path)));
 }
-/** Findings of the shell files: every line that names `.clossys`. */
+/** Findings of the shell files: every line that names a state folder or a slot path. */
 export function shellFindings(root: string, files = sideDoorShellFiles(root)): SideDoorFinding[] {
   const findings: SideDoorFinding[] = [];
   for (const file of files) {
@@ -545,7 +549,7 @@ function analyse(file: string, sf: ts.SourceFile, checker: ts.TypeChecker, vocab
     if (exempt(write.node) || !write.args.some(arg => reach(arg, tainted))) continue;
     findings.push({ file, line: lineOf(write.node), kind: "write", call: write.call, text: textOf(write.node) });
   }
-  // A child-process call whose arguments name `.clossys` or a slot path: in their source text or a word of it, in the
+  // A child-process call whose arguments name a state folder or a slot path: in their source text or a word of it, in the
   // folded text of an argument or of an element of an array argument (a split string, a template, a const of this
   // file or an imported constant), or (at the call below) through the taint of the write rule.
   const namesEngine = (arg: ts.Expression): boolean => {
@@ -793,8 +797,8 @@ export const SIDE_DOOR_MESSAGES: Readonly<Record<SideDoorFinding["kind"], string
   sink: "hands an engine or slot-record path to a write wrapper outside the engine API",
   script: "a script calls a record writer directly; run the clossys verb instead",
   unpaired: "uses a slot-model file primitive in a file that appends no ledger event, so no engine event names the write",
-  exec: "runs a child process whose arguments name .clossys or a slot-record path; the command is not parsed, so its writes bypass the engine API",
-  shell: "a shell or hook file names .clossys or a slot-record path; its writes bypass the engine API",
+  exec: "runs a child process whose arguments name a state folder or a slot-record path; the command is not parsed, so its writes bypass the engine API",
+  shell: "a shell or hook file names a state folder or a slot-record path; its writes bypass the engine API",
 };
 
 /** The check's report: one line per finding, `file:line kind call: message`. */

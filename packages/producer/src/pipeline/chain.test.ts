@@ -37,7 +37,7 @@ function workspace(): string {
   dirs.push(root);
   cpSync(FOUNDRY, join(root, "clossys"), { recursive: true });
   for (const path of GUARD_DATA) if (existsSync(join(PACKAGE_ROOT, "..", path))) cpSync(join(PACKAGE_ROOT, "..", path), join(root, "packages", path), { recursive: true });
-  writeFileSync(join(root, ".gitignore"), "node_modules/\n/.clossys/runs/\n");
+  writeFileSync(join(root, ".gitignore"), "node_modules/\n/clossys/.state/runs/\n");
   return root;
 }
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });

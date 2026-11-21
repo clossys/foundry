@@ -5,9 +5,9 @@
  * repin upstream changes that pinSet, and the verdict no longer holds until the candidate is judged again.
  *
  * Where a verdict is recorded:
- * - the pin's scorecard (`.clossys/checks/<agent>/<slot>/scorecard.json`, pin-gate.ts), whose row for the pinned
+ * - the pin's scorecard (`clossys/.state/checks/<agent>/<slot>/scorecard.json`, pin-gate.ts), whose row for the pinned
  *   candidate carries the pinSet the pin gate judged it on;
- * - a re-verdict (`.clossys/checks/<agent>/<slot>/cascade.json`, `clossys.reverdict/1`), which loop.cascade writes
+ * - a re-verdict (`clossys/.state/checks/<agent>/<slot>/cascade.json`, `clossys.reverdict/1`), which loop.cascade writes
  *   when it judges the pinned candidate again. It is read before the scorecard; a new pin clears it.
  *
  * Each pinned candidate is then
@@ -20,6 +20,7 @@
  * R07.5 reports every stale or failed pin on a slot not marked `needs-refresh`: either the cascade did not run
  * after a repin, or it ran and the slot was not flagged. Release refuses any `needs-refresh` slot (release/gates.ts).
  */
+import { refuseLegacyState, statePath } from "../engine/state-dir.js";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { certify, certifyEnv, pinSetOf, type CertifyEnv } from "./certify/index.js";
@@ -67,7 +68,7 @@ export interface PinCheck {
   readonly bytesChanged?: true;
 }
 
-const checksDir = (root: string, agent: string, slotId: string) => join(root, ".clossys", "checks", agent, slotId);
+const checksDir = (root: string, agent: string, slotId: string) => statePath(root, "checks", agent, slotId);
 export const reverdictPath = (root: string, agent: string, slotId: string) => join(checksDir(root, agent, slotId), "cascade.json");
 export const scorecardPath = (root: string, agent: string, slotId: string) => join(checksDir(root, agent, slotId), "scorecard.json");
 
@@ -82,6 +83,7 @@ export function readReverdict(root: string, agent: string, slotId: string): Reve
 }
 
 export function writeReverdict(root: string, agent: string, slotId: string, doc: Reverdict): string {
+  refuseLegacyState(root);
   mkdirSync(checksDir(root, agent, slotId), { recursive: true });
   const file = reverdictPath(root, agent, slotId);
   writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);

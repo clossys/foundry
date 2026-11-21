@@ -4,7 +4,7 @@ import { SectionRevealStyle } from "../../styles/section-reveal.js";
 export function FeatureMotionStyles() {
   return <><SectionRevealStyle /><style>{`
 @keyframes features-sticky {
-  from { transform: translateY(var(--spacing-sm)); }
+  from { transform: translateY(var(--spacing-sm, 8px)); }
   to { transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {

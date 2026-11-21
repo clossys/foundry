@@ -68,13 +68,13 @@ window.measure=()=>{const failures=[];for(const panel of document.querySelectorA
       await evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
       expect(await evaluate("innerWidth")).toBe(width);
       expect(await evaluate("window.measure()"), `overflow at ${width}`).toEqual([]);
-      expect(await evaluate("[...document.querySelectorAll('[data-tree-label]')].every(n=>getComputedStyle(n).textOverflow==='ellipsis'&&n.scrollWidth>n.clientWidth)")).toBe(true);
+      expect(await evaluate("[...document.querySelectorAll('[data-studio-tree-label]')].every(n=>getComputedStyle(n).textOverflow==='ellipsis'&&n.scrollWidth>n.clientWidth)")).toBe(true);
       expect(await evaluate("document.querySelectorAll('[data-panel=zero] [data-provenance-leaf=\"sections.empty-state\"]').length")).toBe(1);
       expect(await evaluate("getComputedStyle(document.querySelector('[data-studio-data-kind=hash]')).fontFamily")).toMatch(/mono/i);
-      await evaluate("document.querySelectorAll('[data-tree-label]').forEach(n=>n.classList.remove('truncate'))");
+      await evaluate("document.querySelectorAll('[data-studio-tree-label]').forEach(n=>n.classList.remove('truncate'))");
       // Hyphenated labels may wrap without overflowing after mutation; the row must still ellipsize.
-      expect(await evaluate("[...document.querySelectorAll('[data-tree-label]')].every(n=>getComputedStyle(n).textOverflow==='ellipsis'&&n.scrollWidth>n.clientWidth)"), "ellipsis-removal mutation must fail the row invariant").toBe(false);
-      await evaluate("document.querySelectorAll('[data-tree-label]').forEach(n=>n.classList.add('truncate'))");
+      expect(await evaluate("[...document.querySelectorAll('[data-studio-tree-label]')].every(n=>getComputedStyle(n).textOverflow==='ellipsis'&&n.scrollWidth>n.clientWidth)"), "ellipsis-removal mutation must fail the row invariant").toBe(false);
+      await evaluate("document.querySelectorAll('[data-studio-tree-label]').forEach(n=>n.classList.add('truncate'))");
     }
   } finally { child.kill(); await new Promise(resolve => child.once("exit", resolve)); rmSync(root, { recursive: true, force: true }); }
 }, 90000);

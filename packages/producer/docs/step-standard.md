@@ -29,7 +29,7 @@ root gate and runs after `check:pipeline`. Its header lists one failure rule per
 | `chain` | plumb, when `run` has a placeholder | What `clossys run` executes: the run with each `<placeholder>` filled (same verb, flags and order), or `{skip}` with why the chain never runs the step (a server, a caller-chosen target). Absent, the chain runs `run` itself. A decide action never names a chain. |
 | `inputs` / `outputs` | yes | Typed ports `{glob, schema}`. Every schema is a file under `pipeline/schemas/`. Globs are workspace-relative. `pkg:` is relative to this package, `arg:` is a path the caller passes, and `#field` names one field of the file (the port uses the file's schema). |
 | `pass` | yes | `{command, exit}`. This is the check that decides pass or fail, never "it ran". `command` is a `clossys` command, and `exit` is always `{pass:[0], fail:[1], error:[2]}`. |
-| `record` | yes | Always `clossys.pipeline-run/1`, W1b's run-record format. Rows go to `.clossys/runs/<step>.jsonl`. |
+| `record` | yes | Always `clossys.pipeline-run/1`, W1b's run-record format. Rows go to `clossys/.state/runs/<step>.jsonl`. |
 | `checks` | yes | Check ids from `src/pipeline/steps/checks.ts`. A traced pass's `check:<id>` must be one of them. |
 | `uses` | yes | Package bins (`bin:<name>`) and skill files (package-relative) that the step runs or reads. |
 | `decider` | decide only | `owner` or `agent`. An `owner` action is always owner-decided. |

@@ -1,5 +1,5 @@
 /**
- * The engine lock: one writer of a workspace's event log at a time. `.clossys/engine.lock` is created with O_EXCL
+ * The engine lock: one writer of a workspace's event log at a time. `clossys/.state/engine.lock` is created with O_EXCL
  * (`wx`) and holds its owner, `{ pid, host, at, token }`. A lock whose owner is gone is stale:
  *   - same host, owner pid no longer alive;
  *   - another host, held longer than FOREIGN_LOCK_MS (no event append takes minutes);

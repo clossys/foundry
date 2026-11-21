@@ -69,7 +69,7 @@ function expectRenderIndex(index: RenderIndex) {
   for (const row of index.specimens) {
     expect(typeof row.candidate).toBe("string");
     expect(typeof row.specimen).toBe("string");
-    expect(row.png ?? row.html).toMatch(/^\.clossys\/renders\//);
+    expect(row.png ?? row.html).toMatch(/^clossys\/\.state\/renders\//);
   }
 }
 
@@ -77,7 +77,7 @@ describe("clossys render <agent>/<slot>[/<candidate>]", () => {
   let root: string;
   beforeAll(async () => { root = await allAgentConsumer(); });
 
-  it("renders one candidate per agent under .clossys/renders and returns clossys.render/1", async () => {
+  it("renders one candidate per agent under clossys/.state/renders and returns clossys.render/1", async () => {
     const harness = fakeHarness(root);
     const refs = [
       "designer/components.card/sample-card-v1.json",
@@ -164,7 +164,7 @@ describe("clossys render <agent>/<slot>[/<candidate>]", () => {
     } finally { writeFileSync(path, original); }
   });
 
-  it("--draft renders under .clossys/renders and never writes the candidate folder", async () => {
+  it("--draft renders under clossys/.state/renders and never writes the candidate folder", async () => {
     const slotDir = join(root, "clossys", "agents", "designer", "components.card");
     const tree = () => readdirSync(slotDir, { recursive: true }).map(String).sort().map(path => [path, statSync(join(slotDir, path)).isFile() ? readFileSync(join(slotDir, path), "utf8") : "/"]);
     const before = tree();
@@ -209,8 +209,10 @@ describe("clossys render on the Tallyhouse fixture (system.md 14.7)", () => {
       expect(index.ref).toBe(ref);
       for (const row of index.specimens) expect(readFileSync(join(root, row.html!), "utf8")).toMatch(/^<!doctype html>/);
     }
-    const tree = (dir: string) => readdirSync(dir, { recursive: true }).map(String).sort();
-    expect(tree(join(root, "clossys"))).toEqual(tree(join(TALLYHOUSE, "clossys"))); // renders never write the records
+    // Renders are machine state under clossys/.state/renders/; the records beside it are never written.
+    const records = (dir: string) => readdirSync(dir, { recursive: true }).map(String).filter(path => path !== ".state" && !path.startsWith(".state/")).sort();
+    expect(records(join(root, "clossys"))).toEqual(records(join(TALLYHOUSE, "clossys")));
+    expect(readdirSync(join(root, "clossys", ".state", "renders")).sort()).toEqual(["director", "producer", "publisher", "writer"]);
   });
 });
 

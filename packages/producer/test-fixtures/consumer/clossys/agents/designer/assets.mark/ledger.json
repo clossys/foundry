@@ -357,7 +357,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/mark-v1.json",
-      "sha256": "7800d1b136ae4a5b3b54c0e51bbaa7bd9969c866fe04e94ce71ede282a0de843"
+      "sha256": "7353acd688446c60f19a55efd93b36b7623f231df469d0c5e5589b274b599641"
     },
     {
       "op": "submit",

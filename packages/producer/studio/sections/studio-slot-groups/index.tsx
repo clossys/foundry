@@ -105,7 +105,7 @@ export default function SlotGroupsSection({ groups, ...provenance }: { groups: S
       <FieldGroup>
         {rows(group.cards).map(row => <Field key={row[0]!.id} orientation="responsive">
           {row.map(card => <FieldContent key={card.id}>
-            <Card size="sm" data-slot-card={card.id}>
+            <Card size="sm" data-studio-slot-card={card.id}>
               <CardHeader>
                 <CardTitle>
                   <LinkButton href={card.href} variant="link" size="sm">{card.name}</LinkButton>

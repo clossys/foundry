@@ -1,10 +1,11 @@
 /**
  * `clossys release <pub> --build|--manifest|--gates|--ready` (flows.md F8, publisher.md 9.4.3). Local only: it builds
- * into `.clossys/builds/`, writes the release candidate and the gate results, and checks the ready-pin. It never
+ * into `clossys/.state/builds/`, writes the release candidate and the gate results, and checks the ready-pin. It never
  * deploys, publishes, pushes or bumps a version, and no flag skips a gate. The ready-pin itself is written by
  * `clossys pin publisher/release.<pub> <manifest> --by owner:queue.approve#<id>`, which refuses it unless
  * `release.ready` would pass.
  */
+import { STATE_DIR, refuseLegacyState } from "../engine/state-dir.js";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { discoverRoot } from "./root.js";
@@ -22,7 +23,7 @@ import { currentPins, pinDiff } from "../release/pins.js";
 import { checkReleaseReady, RELEASE_READY } from "../release/ready.js";
 
 export const RELEASE_USAGE = "Usage: clossys release <publication> --build|--manifest|--gates|--ready [--selection <module>[#export]] [--root <dir>] [--json]\n"
-  + "  --build     build the publication from the pins as they resolve now into .clossys/builds/<id>/\n"
+  + "  --build     build the publication from the pins as they resolve now into clossys/.state/builds/<id>/\n"
   + "  --selection (with --build) the consumer's component selection module every route mounts inside, as publish --install takes it\n"
   + "  --manifest  write the release candidate publisher/release.<pub>/candidates/<pub>-v<n>.json for the latest build\n"
   + "  --gates     run every release gate against the latest manifest; any failure exits 1 (no gate can be skipped)\n"
@@ -141,7 +142,7 @@ async function releaseCli(argv: readonly string[], cwd: string, options: Release
     const wrote: string[] = [];
     if (manifest?.sha256) {
       const slot = readReleaseSlot(root, publication);
-      const rel = join(".clossys", "checks", "publisher", releaseSlotId(root, publication), `${manifest.name}.json`);
+      const rel = join(STATE_DIR, "checks", "publisher", releaseSlotId(root, publication), `${manifest.name}.json`);
       const doc = {
         schema: "clossys.check-result/1",
         subject: `${slotRef}/${manifest.name}`,
@@ -156,6 +157,7 @@ async function releaseCli(argv: readonly string[], cwd: string, options: Release
           ...findings.map(row => ({ check: row.check ?? "release.gates", status: "fail" as const, detail: `${row.subject}: ${row.detail}` })),
         ],
       };
+      refuseLegacyState(root);
       mkdirSync(dirname(join(root, rel)), { recursive: true });
       writeFileSync(join(root, rel), `${JSON.stringify(doc, null, 2)}\n`);
       wrote.push(rel.split(/[\\/]/).join("/"));

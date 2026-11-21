@@ -269,7 +269,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/avoid-patterns-v1.json",
-      "sha256": "6651ac4af9124bd31cd6d9b4563bf83c1c2b1c6ea1dc9209a28e7e2203f035df"
+      "sha256": "b0c0bc53e27785b23628a160acd2a8d956771ea64c6c9a4fb83dde184834aee0"
     },
     {
       "op": "submit",

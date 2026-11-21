@@ -307,7 +307,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/geography-v1.json",
-      "sha256": "401ac8719ddc8a1c4201bbc377cb0d87ade36bb175f21ba7b642c4d2dc34be14"
+      "sha256": "10532c8522baec45de81c390d4c64e2eff94a01e0fccee02e84d8db79b208eb8"
     },
     {
       "op": "submit",

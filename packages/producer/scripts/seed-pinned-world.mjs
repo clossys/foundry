@@ -716,9 +716,12 @@ async function migrate(w) {
  * The store in one format, before anything else writes (foundry-build-0048 B1-STRICT): the base's Producer seats are
  * clossys.slot/1, which records.computed-match refuses. There is no `migrate slot-1-to-2` verb; `clossys migrate
  * slots --apply` runs that conversion for every slot folder, the seats included, and writes store-format.json. A
- * migrated store plans nothing, so a rerun writes the same bytes.
+ * migrated store plans nothing, so a rerun writes the same bytes. First `clossys migrate state --apply` moves the
+ * base's legacy root `.clossys/` (a scorecard and three renders) into `clossys/.state/`, the consumer layout's one state
+ * folder (ENGINE-ROOT); the base records that cite those files keep their text.
  */
 async function storeFormat(w) {
+  await w.run("producer", "migrate", "state", "--apply");
   await w.run("producer", "migrate", "slots", "--apply", "--at", AT);
 }
 
@@ -787,7 +790,7 @@ async function seedSlot(w, ref) {
       const manifest = [
         { role: "taste", ref: `packages/${agent}/standards/${doc.standard}/taste.md` },
         { role: "contract", ref: `clossys/agents/${agent}/${id}/slot.json#contract` },
-        { role: "render", ref: `.clossys/renders/${agent}/${id}/${leaf}-v1.png` },
+        { role: "render", ref: `clossys/.state/renders/${agent}/${id}/${leaf}-v1.png` },
       ];
       const scores = Object.fromEntries(standard.taste.criteria.map(item => [item.id, 4]));
       await w.run(ref, "critique", ref, "--record", w.file(`${id}.critique.json`, { schema: "clossys.critique/1", slot: id, candidate, standard: doc.standard, scores, packet: { manifest } }),

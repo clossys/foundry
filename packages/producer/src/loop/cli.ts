@@ -16,6 +16,7 @@
  * A human step raises its queue entry and waits; `--resume` after `clossys answer` goes on.
  * Exit 0: the run ended done or pinned-ready, or waits. 1: it stopped on a failure. 2: it could not run.
  */
+import { STATE_DIR } from "../engine/state-dir.js";
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { REFS_DANGLING, checkRefsDangling } from "../check/refs-dangling.js";
@@ -77,7 +78,7 @@ function parse(argv: readonly string[]): LoopFlags {
   }
   if (!flags.resume && (flags.run || flags.stepExit !== undefined || flags.model || flags.step || flags.wrote.length)) throw new LoopUsage("--run, --step-exit, --model, --step and --wrote go with --resume");
   if ((flags.step || flags.wrote.length) && flags.stepExit === undefined) throw new LoopUsage("--step and --wrote go with --step-exit");
-  // B8: the run id names a file under .clossys/runs/loops/, and --wrote files are read under clossys/agents/.
+  // B8: the run id names a file under clossys/.state/runs/loops/, and --wrote files are read under clossys/agents/ (or the state folder).
   if (flags.run !== undefined && !RUN_ID.test(flags.run)) throw new LoopUsage(`--run ${JSON.stringify(flags.run)} is not a run id (<yyyymmdd>T<hhmm>Z-<slug>)`);
   for (const file of flags.wrote) {
     if (!SAFE_WROTE.test(file) || file.split("/").some(part => part === ".." || part === ".")) throw new LoopUsage(`--wrote ${JSON.stringify(file)} is not a path inside clossys/agents/ (relative, no .. or .)`);
@@ -87,7 +88,7 @@ function parse(argv: readonly string[]): LoopFlags {
   return flags;
 }
 
-const SAFE_WROTE = /^(?:\.clossys\/)?[A-Za-z0-9_][A-Za-z0-9_.@+-]*(?:\/[A-Za-z0-9_.@+-]+)*$/;
+const SAFE_WROTE = new RegExp(`^(?:${STATE_DIR.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/)?[A-Za-z0-9_][A-Za-z0-9_.@+-]*(?:/[A-Za-z0-9_.@+-]+)*$`);
 
 /** The checks `clossys check --strict` runs inside a loop (B7): a step check outside this list is recorded as not run. */
 export const STRICT_RAN: readonly string[] = [...Object.keys(TREE_CHECKS), LOOP_REACHABLE, REFS_DANGLING];

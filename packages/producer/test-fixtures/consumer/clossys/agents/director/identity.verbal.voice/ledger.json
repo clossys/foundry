@@ -317,7 +317,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/voice-v1.json",
-      "sha256": "1e0c1b7d0470da42a0ec8080be2120d3cd72563748644859bce3fc07855b0f25"
+      "sha256": "147cf3c607d5752943fcb98e0a019a29f72fdd82311f43ea733d6a790a674eb0"
     },
     {
       "op": "submit",

@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/director/identity.naming.name/name-v1.png"
+        "ref": "clossys/.state/renders/director/identity.naming.name/name-v1.png"
       }
     ]
   }

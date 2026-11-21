@@ -325,7 +325,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/icon-chevron-up-v1.json",
-      "sha256": "c8e4356644903bd353a39f72f8d8591c64ef756ed0f49eac9e0eb33ba2fa8153"
+      "sha256": "ea4e36ba27cf3a9ccb6cfa35cf72c00ae5a7d6eb9da88aeddec5e95fd3903fd4"
     },
     {
       "op": "submit",

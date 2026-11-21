@@ -19,7 +19,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe("Hero checked still backdrop", () => {
   it("renders checked art behind its own message as an inert decorative layer", () => {
     const { container } = render(<Hero heading="Heading" description="Support" backdrop={art} composition="full-bleed" />);
-    const layer = container.querySelector('[data-hero-backdrop]')!;
+    const layer = container.querySelector('[data-backdrop-still]')!;
     expect(layer).not.toBeNull();
     expect(checkBackdropElement(layer)).toMatchObject({ ok: true });
     expect(layer.querySelector('img')).toHaveAttribute('src', art.source.src);
@@ -34,13 +34,13 @@ describe("Hero checked still backdrop", () => {
   it.each([false, true])("retains the same still resource when reduced motion is %s", reduced => {
     vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: reduced, addEventListener() {}, removeEventListener() {} })));
     const { container } = render(<Hero heading="Heading" backdrop={art} />);
-    expect(container.querySelector('[data-hero-backdrop] img')).toHaveAttribute('src', art.source.src);
+    expect(container.querySelector('[data-backdrop-still] img')).toHaveAttribute('src', art.source.src);
     expect(container.querySelector('video,canvas,iframe,source')).toBeNull();
   });
   it("paints the declared ground with its surface utility, never an inline colour, and refuses a non-surface ground", () => {
     for (const [token, utility] of [["--color-surface-base", "bg-surface-base"], ["--color-surface-inverse", "bg-surface-inverse"]] as const) {
       const { container, unmount } = render(<Hero heading="Heading" backdrop={{ ...art, backgroundToken: token }} />);
-      const layer = container.querySelector<HTMLElement>('[data-hero-backdrop]')!;
+      const layer = container.querySelector<HTMLElement>('[data-backdrop-still]')!;
       expect(layer).toHaveClass(utility);
       expect(layer.style.backgroundColor).toBe('');
       expect(layer.getAttribute('style') ?? '').not.toMatch(/--color-|background/);
@@ -55,7 +55,7 @@ describe("Hero checked still backdrop", () => {
   });
   it("the rendered element checker rejects loss of its actual aria, pointer or focus guarantees", () => {
     const { container } = render(<Hero heading="Heading" backdrop={art} />);
-    const layer = container.querySelector('[data-hero-backdrop]')!;
+    const layer = container.querySelector('[data-backdrop-still]')!;
     expect(layer).not.toBeNull();
     layer.removeAttribute('aria-hidden');
     expect(checkBackdropElement(layer).findings).toContainEqual(expect.objectContaining({rule:'element-aria-hidden'}));
@@ -84,9 +84,9 @@ describe('actual Hero scrim composition',()=>{
         expect(ink).toHaveClass('text-neutral-50');
         expect(ink.style.color).toBe('');
       }
-      const gradient=container.querySelector('[data-hero-gradient]') as HTMLElement;
-      expect(gradient.style.backgroundImage).toBe('linear-gradient(transparent, var(--color-overlay-scrim))');
-      const layers=[...container.querySelectorAll<HTMLElement>('[data-hero-scrim]')];
+      const gradient=container.querySelector('[data-backdrop-gradient]') as HTMLElement;
+      expect(gradient.style.backgroundImage).toBe('linear-gradient(transparent, var(--color-overlay-scrim, oklch(0 0 0 / 0.4)))');
+      const layers=[...container.querySelectorAll<HTMLElement>('[data-backdrop-scrim]')];
       expect(layers).toHaveLength(scrim==='light'?4:5);
       for(const layer of layers) { expect(layer).toHaveClass('bg-overlay-scrim'); expect(layer.style.backgroundColor).toBe(''); }
       for(const declarations of [rootTokens,darkTokens]) {
@@ -101,10 +101,11 @@ describe('actual Hero scrim composition',()=>{
     }
   });
   it('renders token-painted SVG as the same inert static resource',()=>{
-    const vector={...art,source:{format:'svg' as const,paths:[{d:'M0 0H1600V900H0Z',fillToken:'--color-action'}]}};
+    const vector={...art,source:{format:'svg' as const,paths:[{d:'M0 0H1600V900H0Z',fillToken:'--color-action',strokeToken:'--color-accent',strokeWidth:2}]}};
     const {container}=render(<Hero heading="Heading" backdrop={vector}/>);
-    expect(container.querySelector('[data-hero-backdrop] svg')).toHaveAttribute('focusable','false');
-    expect(container.querySelector('path')).toHaveAttribute('fill','var(--color-action)');
-    expect(checkBackdropElement(container.querySelector('[data-hero-backdrop]')!)).toMatchObject({ok:true});
+    expect(container.querySelector('[data-backdrop-still] svg')).toHaveAttribute('focusable','false');
+    expect(container.querySelector('path')).toHaveAttribute('fill','var(--color-action, #0A0A0A)');
+    expect(container.querySelector('path')).toHaveAttribute('stroke','var(--color-accent, oklch(0.4748 0 0))');
+    expect(checkBackdropElement(container.querySelector('[data-backdrop-still]')!)).toMatchObject({ok:true});
   });
 });

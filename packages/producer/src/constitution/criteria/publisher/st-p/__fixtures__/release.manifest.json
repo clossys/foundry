@@ -3,12 +3,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -54,12 +54,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": \"site-v1.json\", \"diff\": [{\"ref\": \"publisher/page.home\", \"from\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\", \"to\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}], \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher/release.site/site-v1.json\"]}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": \"site-v1.json\", \"diff\": [{\"ref\": \"publisher/page.home\", \"from\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\", \"to\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}], \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher/release.site/site-v1.json\"]}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -104,12 +104,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"fail\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"fail\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -156,12 +156,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -205,12 +205,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -257,12 +257,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"Site Two\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
+        "text": "{\"publication\": \"Site Two\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
         "json": {
           "publication": "Site Two",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -309,12 +309,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"not-a-digest\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"not-a-digest\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "not-a-digest",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -361,12 +361,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/elsewhere/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/elsewhere/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/elsewhere/",
+            "path": "clossys/.state/builds/elsewhere/",
             "routes": 1,
             "locales": [
               "en",
@@ -413,12 +413,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 0, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 0, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 0,
             "locales": [
               "en",
@@ -465,12 +465,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"en\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"en\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -517,12 +517,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -564,12 +564,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": \"site-v1.json\", \"diff\": [{\"ref\": \"publisher/page.home\", \"from\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\", \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher/release.site/site-v1.json\"]}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": \"site-v1.json\", \"diff\": [{\"ref\": \"publisher/page.home\", \"from\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\", \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher/release.site/site-v1.json\"]}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -613,12 +613,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": \"docs-v1.json\", \"diff\": [{\"ref\": \"publisher/page.home\", \"from\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\", \"to\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}], \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher/release.site/site-v1.json\"]}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": \"docs-v1.json\", \"diff\": [{\"ref\": \"publisher/page.home\", \"from\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\", \"to\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}], \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher/release.site/site-v1.json\"]}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -662,12 +662,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": \"site-v1.json\", \"diff\": [{\"ref\": \"publisher/page.home\", \"from\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\", \"to\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": \"site-v1.json\", \"diff\": [{\"ref\": \"publisher/page.home\", \"from\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\", \"to\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}], \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -709,12 +709,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": \"site-v1.json\", \"diff\": [{\"ref\": \"publisher/page.home\", \"from\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\", \"to\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}], \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher/page.home/site-v1.json\"]}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": \"site-v1.json\", \"diff\": [{\"ref\": \"publisher/page.home\", \"from\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\", \"to\": \"home-v2.json@efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\"}], \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher/page.home/site-v1.json\"]}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
@@ -758,12 +758,12 @@
     {
       "subject": {
         "kind": "publication",
-        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \".clossys/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher/release.site/site-v0.json\"]}}}",
+        "text": "{\"publication\": \"site\", \"build\": {\"id\": \"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\", \"path\": \"clossys/.state/builds/0f0f0f0f/\", \"routes\": 1, \"locales\": [\"en\", \"fr\"], \"exports\": [{\"kind\": \"react-static\", \"path\": \"site/\"}]}, \"pins\": {\"designer/frames.site-shell\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\", \"publisher/page.home\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}, \"checks\": {\"constitution.strict\": \"pass\", \"release.locales\": \"pass\"}, \"previous\": null, \"diff\": [{\"ref\": \"designer/frames.site-shell\", \"from\": null, \"to\": \"frame-v1.json@abababababababababababababababababababababababababababababababab\"}, {\"ref\": \"publisher/page.home\", \"from\": null, \"to\": \"home-v1.json@cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"}], \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher/release.site/site-v0.json\"]}}}",
         "json": {
           "publication": "site",
           "build": {
             "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
-            "path": ".clossys/builds/0f0f0f0f/",
+            "path": "clossys/.state/builds/0f0f0f0f/",
             "routes": 1,
             "locales": [
               "en",
