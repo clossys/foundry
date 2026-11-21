@@ -12,7 +12,7 @@ import { parseArgs } from "../cli/args.js";
 import { runReleaseCli } from "../cli/release.js";
 import type { BuildRequest, ReleaseBuilder } from "../release/build.js";
 import { releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
-import { E2E_CAUSES, E2E_CHECK, E2E_COHORT, childEnv, e2eDoc, installFindings, producerPackageRoot, readScenario, renderFindings, type ScenarioStep } from "./e2e.js";
+import { E2E_CAUSES, E2E_CHECK, E2E_COHORT, childEnv, e2eDoc, installFindings, producerPackageRoot, readScenario, renderFindings, runScenario, type Clossys, type ScenarioStep } from "./e2e.js";
 
 const PACKAGE = producerPackageRoot();
 const SHIPPED = join(PACKAGE, "e2e");
@@ -56,6 +56,15 @@ describe("the shipped scenario", () => {
       expect(arg, step.id).not.toMatch(/^--root$|clossys\/agents\/|\.clossys\/|node_modules|dist\//);
     }
     for (const arg of scenario.build) expect(arg).not.toMatch(/^--root$|clossys\/agents\//);
+    for (const step of scenario.after ?? []) for (const arg of step.run ?? []) expect(arg, step.id).not.toMatch(/^--root$|clossys\/agents\/|\.clossys\/|node_modules|dist\//);
+  });
+
+  it("releases the built page: after the build and its repeat, the manifest is written and every release gate runs strict", () => {
+    expect((scenario.after ?? []).map(step => [step.id, step.run])).toEqual([
+      ["release.manifest", ["release", scenario.publication, "--manifest"]],
+      ["release.gates", ["release", scenario.publication, "--gates"]],
+    ]);
+    for (const step of scenario.after ?? []) expect(step.expect ?? 0, step.id).toBe(0);
   });
 
   it("holds every file a craft step submits and every {scenario}/ file a step names", () => {
@@ -78,6 +87,38 @@ describe("the shipped scenario", () => {
   });
 });
 
+describe("runScenario", () => {
+  it("runs the shipped steps, the build and its repeat, then release.manifest and release.gates on that build", async () => {
+    const scenario = readScenario(SHIPPED);
+    const consumer = temp();
+    const ran: Array<[string, readonly string[]]> = [];
+    // A stand-in for the installed bin: every verb exits 0, a build writes the latest pointer and the routes it renders.
+    const clossys: Clossys = async (id, argv) => {
+      ran.push([id, argv]);
+      if (id === "build" || id === "build.repeat") {
+        const builds = join(consumer, ".clossys", "builds");
+        mkdirSync(builds, { recursive: true });
+        writeFileSync(join(builds, `latest-${scenario.publication}.json`), JSON.stringify({ id: "0123456789abcdef" }));
+        for (const [route, strings] of Object.entries(scenario.render)) {
+          mkdirSync(join(builds, "01234567", "site", route), { recursive: true });
+          writeFileSync(join(builds, "01234567", "site", route, "index.html"), strings.join("\n"));
+        }
+      }
+      return { code: 0, stdout: id.endsWith(".packet") ? JSON.stringify({ manifest: [] }) : "", stderr: "" };
+    };
+    let built: unknown;
+    await runScenario(scenario, SHIPPED, consumer, clossys, { say: () => undefined, findings: [], built: row => { built = row; } });
+    expect(built).toMatchObject({ publication: scenario.publication, id: "0123456789abcdef" });
+    expect(ran.slice(-4)).toEqual([
+      ["build", scenario.build.map(arg => arg.replaceAll("{scenario}", SHIPPED))],
+      ["build.repeat", scenario.build.map(arg => arg.replaceAll("{scenario}", SHIPPED))],
+      ["release.manifest", ["release", scenario.publication, "--manifest"]],
+      ["release.gates", ["release", scenario.publication, "--gates"]],
+    ]);
+    for (const step of scenario.steps.filter(step => step.run)) expect(ran.map(([id]) => id)).toContain(step.id);
+  });
+});
+
 describe("readScenario", () => {
   const write = (body: unknown): string => { const file = join(temp(), "scenario.json"); writeFileSync(file, JSON.stringify(body)); return file; };
 
@@ -89,6 +130,9 @@ describe("readScenario", () => {
     expect(unpinned.steps.length).toBe(shipped.steps.length);
     expect(unpinned.steps.find(step => step.id === "craft.strings")!.craft!.unpinned).toBe(true);
     expect(unpinned.steps.filter(step => step.craft?.unpinned).map(step => step.id)).toEqual(["craft.strings"]);
+    const ungated = readScenario(SHIPPED, write({ base: "shipped", without: ["release.gates"] }));
+    expect(ungated.steps).toEqual(shipped.steps);
+    expect(ungated.after!.map(step => step.id)).toEqual(["release.manifest"]);
   });
 
   it("refuses a step it does not hold, a run step's .pin, bad peers and a malformed scenario", () => {
@@ -100,6 +144,11 @@ describe("readScenario", () => {
     expect(() => readScenario(SHIPPED, write({ ...shipped, schema: "clossys.e2e-scenario/0" }))).toThrow(/schema is/);
     expect(() => readScenario(SHIPPED, write({ ...shipped, steps: [{ id: "x" }] }))).toThrow(/needs run or craft/);
     expect(() => readScenario(SHIPPED, write({ ...shipped, steps: [{ id: "x", run: ["config"] }, { id: "x", run: ["config"] }] }))).toThrow(/unique/);
+    expect(() => readScenario(SHIPPED, write({ ...shipped, after: [{ id: "config.init", run: ["config"] }] }))).toThrow(/unique/);
+    expect(() => readScenario(SHIPPED, write({ ...shipped, after: [{ id: "build", run: ["config"] }] }))).toThrow(/unique/);
+    expect(() => readScenario(SHIPPED, write({ ...shipped, after: { id: "x" } }))).toThrow(/after is a list/);
+    const craft = (shipped.steps as ScenarioStep[]).find(step => step.craft)!;
+    expect(() => readScenario(SHIPPED, write({ ...shipped, after: [{ ...craft, id: "after.craft" }] }))).toThrow(/after runs verbs only/);
   });
 
   it("the R-E2E-CONSUMER fixture drops exactly the Writer strings pin, an input the page's brief requires pinned", () => {
