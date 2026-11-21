@@ -27,9 +27,9 @@ import type { AgentId, LedgerEntry, QueueEntry, Slot, SlotRequest } from "../rec
 import { decideRequest, exactReuseOf, readRequest, requestLockPath } from "../records/request.js";
 import { readPackageLoop } from "./files.js";
 import { raiseEntry } from "./route.js";
-import { cliHooks } from "./cli.js";
+import { checkVerbFindings, cliHooks } from "./cli.js";
 import { MissingSkillError, skillFor, stepArgv } from "./slots.js";
-import { fillAll, ledgerDir, readRunState, resumeRun, runInit, runStatePath, runsDir, startRun, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks } from "./runner.js";
+import { fillAll, judgeFillQueued, ledgerDir, readRunState, resumeRun, runInit, runStatePath, runsDir, startRun, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks } from "./runner.js";
 import type { LoopName } from "./names.js";
 
 const MODEL = "stub-model";
@@ -207,8 +207,9 @@ describe("F1 init (T1)", () => {
     const [entry] = w.ledger("loop.fill");
     expect(entry!.id).toMatch(/^20261120T0800Z-fill-init$/);
     expect(entry).toMatchObject({ status: "done", outcome: "initialized", loop: "loop.fill", loopVersion: "fill-v1.json", trigger: { kind: "init" } });
-    expect(stepLine(entry!)).toEqual(["ia-sync:code:0", "check:code:0"]);
-    expect(entry!.checks).toEqual({ "ia.orphans": "pass", "records.computed-match": "pass", "pins.resolve": "pass" });
+    expect(stepLine(entry!)).toEqual(["ia-sync:code:0", "queue:code:0", "check:code:0"]);
+    expect(entry!.checks).toEqual({ "ia.orphans": "pass", "records.computed-match": "pass", "fill.queued": "pass", "pins.resolve": "pass" });
+    expect(result.state!.queue).toEqual([]);
   });
 
   it("stops the init at a failing ia sync, recording each check by its own run", async () => {
@@ -225,6 +226,105 @@ describe("F1 init (T1)", () => {
     const [entry] = w.ledger("loop.fill");
     expect(entry).toMatchObject({ status: "stopped", outcome: "init stopped at ia-sync (exit 1): ia.orphans: publisher/ia.json missing: no publication roots", checks: { "ia.orphans": "fail" } });
     expect(stepLine(entry!)).toEqual(["ia-sync:code:1"]);
+  });
+});
+
+describe("F1 init prelude: fill queue and pins.resolve scope (FILL-PRELUDE D1)", () => {
+  // A world whose prelude checks pass: one seated publication whose page each slot is consumedBy (ia.orphans reaches it).
+  const settledWith = (refs: readonly string[]) => {
+    const w = world([]);
+    for (const ref of refs) w.slot(ref, { refs: [{ to: "publisher/page.home", rel: "consumedBy" }] as Slot["refs"] });
+    mkdirSync(join(w.root, "clossys", "agents", "publisher"), { recursive: true });
+    writeFileSync(join(w.root, "clossys", "agents", "publisher", "ia.json"), `${JSON.stringify({ publications: { site: { pages: ["page.home"] } } })}\n`);
+    return w;
+  };
+  const candidate = (root: string, ref: string, name = "placeholder-v1.json"): void => {
+    const [agent, slotId] = ref.split("/") as [AgentId, string];
+    const createdBy = candidateCreatedBy(root, { actor: "agent", agent, skill: SKILLS(agent)[1]!, model: MODEL, tier: "mid" });
+    const header = buildCandidateHeader({ agent, slotId, name, createdBy, createdAt: "2026-11-20T07:30:00Z", source: { kind: "original", ref: [] } });
+    writeCandidateFile(candidatePath(root, agent, slotId, name), serializeCandidate(name, header, { placeholder: 1 }));
+  };
+  const queueEvents = (root: string, runId: string) => runEvents(root, "loop.fill", runId, "run.queue").map(event => event.inputs!.map(input => input.path));
+
+  it("prelude scope: pins.resolve passes over an unpinned slot that holds no pin and no candidate (no package default either)", async () => {
+    const w = settledWith(["designer/components.button"]);
+    const result = await runInit(w.root, stub(w.root), { now: clock() });
+    expect(result.exitCode).toBe(0);
+    const [entry] = w.ledger("loop.fill");
+    expect(entry).toMatchObject({ status: "done", outcome: "initialized" });
+    expect(entry!.checks).toMatchObject({ "pins.resolve": "pass", "fill.queued": "pass" });
+    expect(result.state!.queue).toEqual(["designer/components.button"]);
+  });
+
+  it("prelude scope: pins.resolve still judges a slot that holds a candidate and stops the init on it", async () => {
+    const w = settledWith(["designer/components.button", "designer/themes.background"]);
+    candidate(w.root, "designer/themes.background");
+    writeFileSync(pinPath(w.root, "designer", "themes.background"), "{ not a pin\n");
+    const result = await runInit(w.root, stub(w.root), { now: clock() });
+    expect(result.exitCode).toBe(1);
+    const [entry] = w.ledger("loop.fill");
+    expect(entry!.outcome).toMatch(/^init stopped at check \(exit 1\): pins\.resolve: designer\/themes\.background /);
+    expect(entry!.outcome).not.toContain("components.button");
+    expect(stepLine(entry!)).toEqual(["ia-sync:code:0", "queue:code:0", "check:code:1"]);
+  });
+
+  it("queue entries: every unpinned leaf is one run.queue event, in chain order; a pinned slot is not queued", async () => {
+    const w = settledWith(["designer/themes.background", "designer/components.button", "director/context.market.size", "designer/sections.features"]);
+    candidate(w.root, "designer/sections.features");
+    pinAs(w.root, { agent: "designer", slotId: "sections.features", candidate: "placeholder-v1.json", decidedBy: "agent:designer", basis: "agent", at: "2026-11-20T07:40:00Z", createdBy: cliActor("clossys pick") });
+    const result = await runInit(w.root, stub(w.root), { now: clock() });
+    expect(result.exitCode).toBe(0);
+    const queue = ["director/context.market.size", "designer/components.button", "designer/themes.background"];
+    expect(result.state!.queue).toEqual(queue);
+    expect(result.state!.vars.queue).toBe("3");
+    expect(queueEvents(w.root, result.state!.runId)).toEqual(queue.map(ref => [`clossys/agents/${ref}/slot.json`]));
+    expect(w.ledger("loop.fill")[0]!.checks).toMatchObject({ "fill.queued": "pass", "pins.resolve": "pass" });
+  });
+
+  it("queue entries: an unpinned leaf with no run.queue event of the run fails fill.queued, naming the leaf", async () => {
+    const w = settledWith(["designer/components.button", "director/context.market.size"]);
+    expect(judgeFillQueued(w.root, { loop: "loop.fill", runId: "20261120T0800Z-fill-init" })).toEqual({ ok: false, why: "fill.queued: 2 unpinned leaves are not queued: director/context.market.size, designer/components.button" });
+    const result = await runInit(w.root, stub(w.root), { now: clock() });
+    expect(result.exitCode).toBe(0);
+    expect(judgeFillQueued(w.root, result.state!)).toEqual({ ok: true });
+  });
+
+  it("queue entries: the check step's exit 1 passes only when every finding is a no-pin or no-candidate on a queued leaf", async () => {
+    const leaf = (subject: string, rule: string) => ({ check: "slot.integrity", subject, detail: `${rule}: placeholder` });
+    const run = async (findings: { check: string; subject: string; detail: string }[]) => {
+      const w = settledWith(["designer/components.button"]);
+      const result = await runInit(w.root, stub(w.root, { codeFor: call => call.step === "check" ? { exit: 1, findings } : undefined }), { now: clock() });
+      return { result, entry: w.ledger("loop.fill")[0]! };
+    };
+    const queued = await run([leaf("designer/components.button", "no-pin"), leaf("designer/components.button", "no-candidate")]);
+    expect(queued.result.exitCode).toBe(0);
+    expect(queued.result.state!.vars).toMatchObject({ "check-exit": "1", "check-queued-findings": "2" });
+    const notQueued = await run([leaf("designer/components.button", "no-pin"), leaf("designer/themes.background", "no-pin")]);
+    expect(notQueued.result.exitCode).toBe(1);
+    expect(notQueued.entry.outcome).toContain("clossys check: slot.integrity designer/themes.background no-pin: placeholder");
+    const otherRule = await run([leaf("designer/components.button", "hash-drift")]);
+    expect(otherRule.result.exitCode).toBe(1);
+    const otherCheck = await run([leaf("designer/components.button", "no-pin"), { check: "loop.reachable", subject: "check", detail: "fail" }]);
+    expect(otherCheck.result.exitCode).toBe(1);
+    const silent = await run([]);
+    expect(silent.result.exitCode).toBe(1);
+  });
+
+  it("queue entries: a plain clossys check's findings name each slot-integrity row, each failing check and a failing suite", () => {
+    const result = { exitCode: 1, message: "", slots: { exitCode: 1, findings: [{ rule: "no-pin", message: "m", path: "designer:components.button" }, { rule: "schema", message: "s" }] }, checks: { "loop.reachable": {} }, suites: { exitCode: 1 } } as unknown as CliResult;
+    expect(checkVerbFindings(result)).toEqual([
+      { check: "slot.integrity", subject: "designer/components.button", detail: "no-pin: m" },
+      { check: "slot.integrity", subject: "model", detail: "schema: s" },
+      { check: "loop.reachable", subject: "check", detail: "fail" },
+      { check: "suites", subject: "check", detail: "exit 1" },
+    ]);
+    expect(checkVerbFindings({ exitCode: 1, message: "", slots: { exitCode: 1, findings: [] } } as unknown as CliResult)).toEqual([{ check: "slot.integrity", subject: "model", detail: "exit 1 with no finding" }]);
+  });
+
+  it("queue entries: fillAll given the init's queue works it in the queue's order", async () => {
+    const w = settledWith(["designer/components.button", "director/context.market.size"]);
+    const results = await fillAll(w.root, stub(w.root), { now: clock(), queue: ["designer/components.button", "director/context.market.size"] });
+    expect(results[0]!.state!.subject).toEqual({ agent: "designer", slotId: "components.button" });
   });
 });
 

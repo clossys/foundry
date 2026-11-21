@@ -4,7 +4,7 @@
  */
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { resolveSlot } from "../records/resolve.js";
+import { listConsumerSlots, readSlotJson, resolveSlot } from "../records/resolve.js";
 import { packagePath } from "../package-path.js";
 import { readSlot, slotSchemaOf, SLOT_SCHEMA, consumerSlotFolders } from "../records/slot.js";
 import type { AgentId, LoopStep, Slot } from "../records/types.js";
@@ -41,13 +41,39 @@ export function chainOrderedSlots(root: string): SlotSubject[] {
   });
 }
 
+/** Whether loop.fill fills a slot (flows.md N3): neither retired nor parked, and not pinned (on a package default, or unresolved). */
+function fillable(root: string, subject: SlotSubject): boolean {
+  if (subject.slot.status === "retired" || subject.slot.status === "parked") return false;
+  return resolveSlot(root, subject.agent, subject.slotId).state !== "pinned";
+}
+
 /** flows.md N3: the next consumed slot still on a package default (or unresolved), in chain order. */
 export function nextFillSlot(root: string, skip: ReadonlySet<string> = new Set()): SlotSubject | undefined {
-  for (const subject of chainOrderedSlots(root)) {
-    if (skip.has(refOf(subject)) || subject.slot.status === "retired" || subject.slot.status === "parked") continue;
-    if (resolveSlot(root, subject.agent, subject.slotId).state !== "pinned") return subject;
+  return chainOrderedSlots(root).find(subject => !skip.has(refOf(subject)) && fillable(root, subject));
+}
+
+/**
+ * The fill queue the T1 init writes (flows.md F2 step 1 for every slot at once; foundry-build-0048 FILL-PRELUDE D1):
+ * each slot nextFillSlot would pick, in chain order. An unpinned leaf is a queue entry of loop.fill, not an init finding.
+ */
+export function fillQueue(root: string): SlotSubject[] {
+  return chainOrderedSlots(root).filter(subject => fillable(root, subject));
+}
+
+/**
+ * Every unpinned adopted leaf, read without the queue's own listing (records/resolve.ts listConsumerSlots, any slot.json
+ * schema): a content agent's slot that is neither retired nor parked and does not resolve to a pin. The init holds the
+ * queue it wrote against this list, so a leaf the queue left out (a slot/1 slot.json, an unreadable one) fails init.
+ */
+export function unpinnedLeaves(root: string): string[] {
+  const out: string[] = [];
+  for (const { agent, slotId } of listConsumerSlots(root)) {
+    if (agent === "producer") continue;
+    const status = readSlotJson(root, agent, slotId)?.status;
+    if (status === "retired" || status === "parked") continue;
+    if (resolveSlot(root, agent, slotId).state !== "pinned") out.push(refOf({ agent, slotId }));
   }
-  return undefined;
+  return out;
 }
 
 /** The next slot marked needs-refresh (flows.md F7), in chain order. */

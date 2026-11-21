@@ -25,7 +25,7 @@ import type { CliResult } from "../cli/main.js";
 import { discoverRoot } from "../cli/root.js";
 import { isLoopName, LOOP_NAMES, RUN_ID, type LoopName } from "./names.js";
 import type { Finding } from "./route.js";
-import { fillAll, readRunState, resumeRun, runInit, startRun, waitingRuns, wroteFile, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult } from "./runner.js";
+import { SLOT_INTEGRITY, fillAll, readRunState, resumeRun, runInit, startRun, waitingRuns, wroteFile, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult } from "./runner.js";
 
 export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|create|choose|scope|slot|release|audit|cascade> [--slot <agent>/<slot-id>] [--request <id>] [--from <entry>] [--publication <id>] [--agent <agent>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
   + "       clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--step <id>] [--wrote <file>]...] [--root <dir>] [--json]\n"
@@ -167,6 +167,10 @@ export function cliHooks(root: string, answer?: StepAnswer, run: (argv: readonly
     const argv = call.argv[0] === "clossys" ? call.argv.slice(1) : call.argv;
     try {
       const result = await run([...argv, "--root", root], root);
+      if (call.cli === "clossys check") {
+        const findings = checkVerbFindings(result);
+        return { exit: result.exitCode, detail: result.message, ...(findings.length ? { findings } : {}) };
+      }
       // A verb that reports what it wrote and found (clossys release) hands both on: the manifest step names the
       // manifest, a failing gate routes its findings (flows.md F8).
       const output = (typeof result.output === "object" && result.output !== null ? result.output : {}) as { wrote?: unknown; findings?: unknown };
@@ -177,6 +181,28 @@ export function cliHooks(root: string, answer?: StepAnswer, run: (argv: readonly
       return { exit: 2, detail: error instanceof Error ? error.message : String(error) };
     }
   }
+}
+
+/**
+ * The findings of a plain `clossys check` (cli/check.ts runCheck), one per reason its exit can be nonzero: each
+ * slot-integrity finding (check `slot.integrity`, subject `<agent>/<slot-id>`, detail `<rule>: <message>`), each failing
+ * check it names, and a failing reference suite. The T1 init judges its check step from these (runner.ts runInit).
+ */
+export function checkVerbFindings(result: CliResult): Finding[] {
+  const out = result as CliResult & {
+    slots?: { exitCode?: number; findings?: { rule?: unknown; message?: unknown; path?: unknown }[] };
+    checks?: Record<string, unknown>;
+    suites?: { exitCode?: unknown };
+  };
+  const findings: Finding[] = [];
+  for (const finding of out.slots?.findings ?? []) {
+    const path = typeof finding.path === "string" && /^[a-z]+:[^:/]+$/.test(finding.path) ? finding.path.replace(":", "/") : "model";
+    findings.push({ check: SLOT_INTEGRITY, subject: path, detail: `${String(finding.rule)}: ${String(finding.message)}` });
+  }
+  if ((out.slots?.exitCode ?? 0) !== 0 && !out.slots?.findings?.length) findings.push({ check: SLOT_INTEGRITY, subject: "model", detail: `exit ${out.slots!.exitCode} with no finding` });
+  for (const name of Object.keys(out.checks ?? {})) findings.push({ check: name, subject: "check", detail: "fail" });
+  if (out.suites && out.suites.exitCode !== 0) findings.push({ check: "suites", subject: "check", detail: `exit ${String(out.suites.exitCode)}` });
+  return findings;
 }
 
 async function defaultRun(argv: readonly string[], cwd: string): Promise<CliResult> {
@@ -231,7 +257,8 @@ export async function runLoopCli(argv: readonly string[], cwd: string, options: 
       if (flags.init) {
         const init = await runInit(root, hooks, runOptions);
         results.push(init);
-        if (init.exitCode === 0) results.push(...await fillAll(root, hooks, runOptions));
+        // The fill works the queue the init recorded (FILL-PRELUDE D1), in its order.
+        if (init.exitCode === 0) results.push(...await fillAll(root, hooks, { ...runOptions, ...(init.state?.queue ? { queue: init.state.queue } : {}) }));
       } else if (flags.loop === "loop.fill" && !flags.slot && !flags.from) {
         results.push(...await fillAll(root, hooks, runOptions));
         if (!results.length) return { exitCode: 0, root, message: "run: loop.fill has nothing to fill (no consumed slot is on a package default)" };
