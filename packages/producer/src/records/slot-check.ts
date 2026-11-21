@@ -39,7 +39,7 @@ const RETIRE_RECORD = /^(.+-v[1-9][0-9]*\.(?:md|json))\.json$/;
 
 /**
  * The `retired/` folder of slot `id`: every entry is a retired candidate file or its clossys.retire/1 record
- * (constitution schemas/retire.schema.json). A record names this slot and its own file name, its candidate's
+ * (constitution ../../pipeline/schemas/retire.schema.json). A record names this slot and its own file name, its candidate's
  * bytes sit beside it and match its sha256, and the candidate is gone from candidates/; a candidate file has
  * a record. Anything else (a folder, an alias, another file) is an unexpected entry.
  */

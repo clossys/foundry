@@ -23,7 +23,7 @@
  *
  * publication-pending (foundry-build-0048 CONSISTENCY C2) = an unreached folder that the same edges reach from a
  * publication the installed Publisher package declares but the consumer has not seated. Declared: a publication its
- * IA (`src/catalog/ia/directory.json`) assigns pages to, and whose package starter (`starters/<id>/publication.json`)
+ * IA (`@clossys/publisher`) assigns pages to, and whose package starter (`starters/<id>/publication.json`)
  * lists exactly those pages; its roots are every slot its starter's own default files name (frame, chrome, sections,
  * copy, meta). Seated: a publication either root form above names. A pending folder is listed (`pending`) and does not
  * fail the check; every other unreached folder stays an orphan. A starter whose files cannot be read declares nothing:
@@ -98,7 +98,7 @@ const readJson = (file: string): unknown => {
  * The publications the installed Publisher package declares, each with the slots its starter's default files name:
  * a publication the package IA assigns pages to, whose starter lists exactly those pages and whose every listed
  * default file reads. A publication that fails any part is left out (its folders are judged without it). The package
- * IA itself (`src/catalog/ia/directory.json`) missing or unreadable throws PublisherDataError: there is no declaration
+ * IA itself (`@clossys/publisher`) missing or unreadable throws PublisherDataError: there is no declaration
  * to judge by, so callers refuse rather than act on an empty list. Only a root with its own `packages/` folder that
  * holds no `packages/publisher/` declares no publication (it carries no Publisher package).
  */
@@ -135,7 +135,7 @@ export function declaredPublications(root: string): Map<string, string[]> {
   return out;
 }
 
-/** The installed Publisher package's IA (`src/catalog/ia/directory.json`) is missing or unreadable: publications cannot be judged. */
+/** The installed Publisher package's IA (`@clossys/publisher`) is missing or unreadable: publications cannot be judged. */
 export class PublisherDataError extends Error {
   readonly file: string;
   constructor(file: string) {

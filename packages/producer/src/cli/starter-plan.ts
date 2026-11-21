@@ -4,9 +4,9 @@
  * (`starters/<id>/publication.json`) and, per page, its page archetype. Read-only; init-starters.ts places it.
  *
  * A page archetype is the package's whole statement of one page, read by code, never authored in the consumer:
- * - the directory tree's page slot (`src/catalog/ia/directory.json`): its publication, its route (`path`) or its
+ * - the directory tree's page slot (`@clossys/publisher`): its publication, its route (`path`) or its
  *   status, its layout and, for a dynamic route, the collection it ranges over;
- * - the layout's composition (`src/catalog/ia/composition.json`): the Designer frame, and each chrome's Designer unit
+ * - the layout's composition (`@clossys/publisher`): the Designer frame, and each chrome's Designer unit
  *   and Writer copy;
  * - the package default (`defaults/<page>/starter-v1.json`): the ordered Designer sections, each section's Writer copy,
  *   and the page's Writer meta record.

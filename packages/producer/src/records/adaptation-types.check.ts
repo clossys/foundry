@@ -4,7 +4,7 @@
  * run compiles it (tsconfig excludes test files; vitest only transpiles them): every
  * `@ts-expect-error` below fails the build the day its guarded contract stops refusing. Never
  * imported by any entry; it has no runtime footprint. The accepted shapes are proven by
- * `adaptation-types.test.ts`, which compiles them through a real TypeScript program.
+ * `adaptation-types.test.ts` (not shipped), which compiles them through a real TypeScript program.
  */
 import type { ElementRecord } from "./types.js";
 

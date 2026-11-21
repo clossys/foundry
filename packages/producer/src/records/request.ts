@@ -1335,7 +1335,7 @@ export function checkRequest(consumer: string, id: string, input: { readonly by:
 // ------------------------------------------------------------------------------------------------ contract gate
 
 let criteriaIds: Set<string> | undefined;
-/** The registered criterion ids (criteria/core/index.json and criteria/<agent>/<group>/index.json). */
+/** The registered criterion ids (../constitution/criteria/core/index.json and criteria/<agent>/<group>/index.json). */
 export function registeredCriteria(): ReadonlySet<string> {
   if (criteriaIds) return criteriaIds;
   const ids = new Set<string>();

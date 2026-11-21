@@ -3,7 +3,7 @@
  * seat IA (one `seat.<step>` slot per decide step, under its round and stage, with the labels) and
  * each seat's package default (by, prompt file, default tier and the human procedure and command),
  * the model a tier placeholder `<model:tier>` the consumer's seat policy fills. It is generated from
- * the pipeline steps by scripts/generate-pipeline-seats.mjs; only the labels are authored.
+ * the pipeline steps by scripts/generate-pipeline-seats.mjs (not shipped); only the labels are authored.
  *
  * A consumer keeps its seat pins and seat-policy.json. Its producer ia.json and seat slot.json files
  * are `clossys ia sync` views of this file: a seat contract names its step only (`{step, fixture:

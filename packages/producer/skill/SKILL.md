@@ -101,7 +101,7 @@ Each rule is stated once, here or in the one place named, and the named check or
 - **Only wiring blocks.** A step fails red only on wiring: a missing, stale or invalid input,
   record or citation, or a check that cannot run. A wording or visual finding is a report: the step
   passes and lists it under its `reports` for the owning agent. A gate's mode (`block` or `report`)
-  and the reason live in the gate's own config (the Designer's `scripts/process-gates.json`); a
+  and the reason live in the gate's own config (`@clossys/designer`); a
   broken gate fails in every mode.
 - **Each step runs only its own check.** A step's contract (`actions/<id>/action.json`) names its
   inputs, outputs, command, `checks` and `pass`; `clossys run` runs a step's own command only when

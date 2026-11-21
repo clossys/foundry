@@ -8,7 +8,7 @@ import { RAC_PACKAGE, type ComponentCheckFill } from "../catalog-core/check-comp
  * - `range` is the descriptor's own direct react-aria-components dependency range (an exact pin becomes the
  *   caret range of that release line), or this package's declared peer range when the descriptor has none.
  * - `peer` is true only when the caller states that the descriptor's package declares react-aria-components
- *   as a peer dependency (this package's own `peerDependencies`, verified by `declared-peer-ranges.test.ts`).
+ *   as a peer dependency (this package's own `peerDependencies`, verified by `declared-peer-ranges.test.ts` (not shipped)).
  *   Source descriptors are copied into the consumer and resolve the consumer's own install, so they are never peers.
  */
 export function componentRacDeclaration(fill: { deps: ComponentCheckFill["deps"]; impl: { kind: string } }, options: { peer: boolean }): NonNullable<ComponentCheckFill["rac"]> {

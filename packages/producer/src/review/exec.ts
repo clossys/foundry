@@ -51,7 +51,7 @@ export function git(repo: string, args: readonly string[]): string {
 }
 
 /**
- * What normalizing replaces, in order (docs/review.md): only machine state and wall-clock readings. Every other
+ * What normalizing replaces, in order (docs/review.md (not shipped)): only machine state and wall-clock readings. Every other
  * number, a count of failed tests among them, is digested as printed.
  */
 export const NORMALIZED: readonly { readonly as: string; readonly pattern: RegExp; readonly what: string }[] = [

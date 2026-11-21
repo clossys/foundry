@@ -58,7 +58,7 @@ export interface DesignerPlacement {
   parked?: string[];
   retired: string[];
 }
-/** The Publisher directory, as far as Page metadata reads it (`publisher/src/catalog/ia/directory.json`). */
+/** The Publisher directory, as far as Page metadata reads it (`@clossys/publisher`). */
 export interface PublisherPage { kind: string; publication: string; parked?: boolean; records?: { meta?: string; [key: string]: unknown } }
 export interface PublisherDirectory {
   nodes: { id: string; label: string; parked?: boolean; children: { id: string; label: string; publication: string; parked?: boolean; leaves: string[] }[] }[];

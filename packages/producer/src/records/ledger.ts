@@ -36,7 +36,7 @@ export const AGENT_OPS = ["ia", "policy", "retire-slot"] as const;
 export const CRAFT_OP = /^craft:(brief|diverge|render|critique|refine)$/;
 /** Ops whose event is the slot's decision: R02.3 holds pin.json to the last of them. */
 export const DECISION_OPS: readonly string[] = ["pin", "pick", "verdict"];
-/** The retire codes (constitution R10, schemas/retire.schema.json). */
+/** The retire codes (constitution R10, ../../pipeline/schemas/retire.schema.json). */
 export const RETIRE_EVENT_CODES = ["uncertified", "superseded", "edited-in-place", "not-needed", "duplicate", "shared-split"] as const;
 /** The record files an event may carry the state of. */
 export const RECORD_FILES = ["pin.json", "slot.json", "ia.json", "policy.json"] as const;
@@ -46,7 +46,7 @@ export type RecordFile = (typeof RECORD_FILES)[number];
 export const SKILL_PATH = /^packages\/([a-z][a-z0-9-]*)\/actions\/([a-z0-9][a-z0-9.-]*)\/skill\.md$/;
 /**
  * `packages/<pkg>/actions/<step>/action.json`: a plumb action's contract. A plumb action carries no
- * skill (docs/step-standard.md), so its events cite the contract instead; R14.2 accepts that only
+ * skill (docs/step-standard.md (not shipped)), so its events cite the contract instead; R14.2 accepts that only
  * when the actions registry has the step as `plumb` (a decide action's events cite its skill.md).
  */
 export const ACTION_CONTRACT_PATH = /^packages\/([a-z][a-z0-9-]*)\/actions\/([a-z0-9][a-z0-9.-]*)\/action\.json$/;

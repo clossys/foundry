@@ -53,7 +53,7 @@ export function draftText(field: CopyField): string {
 
 /**
  * DRAFT copy that satisfies the generated `<Name>Copy` type: dotted keys nest, a `[]` part is an array of one
- * entry, every field (required or not) gets a placeholder. The same key rules as src/generated/props/generate.ts.
+ * entry, every field (required or not) gets a placeholder. The same key rules as @clossys/designer.
  */
 export function draftCopy(fields: readonly CopyField[]): Record<string, unknown> {
   const root: Record<string, unknown> = {};

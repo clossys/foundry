@@ -40,7 +40,7 @@ export interface RecipeDoc {
    * The part classes a composition this recipe crafts may place (`meta.source.parts`): `component` (a pinned stock
    * component, registry or npm lineage), `frame` and `section` (a pinned composition frame or section that itself
    * passes the composition rule). The Designer ref-verbatim gate enforces the classes per composing standard
-   * (check-ref-verbatim.mjs compositionPartClasses); recipes.test.mjs pins the two equal.
+   * (check-ref-verbatim.mjs compositionPartClasses); recipes.test.mjs (not shipped) pins the two equal.
    */
   readonly parts?: readonly string[];
 }
@@ -131,7 +131,7 @@ export function generatorIssues(source: string): string[] {
   return NONDETERMINISM.filter(([pattern]) => pattern.test(source)).map(([, what]) => `generator ${what}`);
 }
 
-/** The Designer ref-verbatim gate's id as a recipe names it (constitution/fix.ts REF_VERBATIM_ID: recipes.test.ts pins the two equal). */
+/** The Designer ref-verbatim gate's id as a recipe names it (constitution/fix.ts REF_VERBATIM_ID: recipes.test.ts (not shipped) pins the two equal). */
 export const REF_VERBATIM_CHECK = "ref-verbatim";
 /**
  * The source kinds the ref-verbatim gate judges at every rung (constitution/guard.ts refVerbatimOf): composition

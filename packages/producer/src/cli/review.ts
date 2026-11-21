@@ -1,5 +1,5 @@
 /**
- * `clossys review <base> <head>` and `clossys receipt --packet <unit.md>` (docs/review.md): the mechanical review of
+ * `clossys review <base> <head>` and `clossys receipt --packet <unit.md>` (docs/review.md (not shipped)): the mechanical review of
  * a diff and the executor's receipt, both run from code so no reviewer re-runs them by hand.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";

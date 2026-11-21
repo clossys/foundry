@@ -2,7 +2,7 @@
  * Measurable Voice shapes (writer.md 2 Voice; foundry-audit-0017) and the named-input rule (foundry-audit-0016).
  * Each Voice slot's value is a closed shape: an enum, a scale, a per-role number or a list. Categorical prose
  * ("Plain and conversational: ...") is not a value; it fails `voice.shape`. Word budgets per role derive from the
- * Designer character budgets (packages/designer/src/check/copy-fields-role.ts) at five characters a word, capped at
+ * Designer character budgets (@clossys/designer) at five characters a word, capped at
  * 40 words a sentence; a test pins both tables to the Designer's.
  */
 import { readFileSync, readdirSync } from "node:fs";

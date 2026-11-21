@@ -66,7 +66,7 @@ export function validateSlot(doc: unknown): SchemaIssue[] {
   return validateAgainst(recordSchema("slot.json"), doc);
 }
 
-// Fields declared, not parameter properties: Node's type stripping (records/ledger.test.ts runs slot-write.ts in a
+// Fields declared, not parameter properties: Node's type stripping (records/ledger.test.ts (not shipped) runs slot-write.ts in a
 // child process) loads this module and refuses parameter properties.
 export class SlotFormatError extends Error {
   readonly file: string;

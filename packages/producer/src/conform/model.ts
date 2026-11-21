@@ -436,7 +436,7 @@ function readMachinery(repo: string, consumer: string): Machinery {
   const contractSchemas = new Map<string, JsonSchema | undefined>();
   for (const family of ["brief", "element", "strings", "page", "publication", "seat"]) contractSchemas.set(family, json(join(producer, `pipeline/schemas/contract-${family}.schema.json`)) as JsonSchema | undefined);
   const criteria = new Set<string>();
-  // Core criteria sit at criteria/core/index.json, each agent's at criteria/<agent>/<group>/index.json.
+  // Core criteria sit at ../constitution/criteria/core/index.json, each agent's at criteria/<agent>/<group>/index.json.
   const criteriaRoot = join(producer, "src/constitution/criteria");
   const indexes = dirs(criteriaRoot).flatMap(dir => [join(criteriaRoot, dir), ...dirs(join(criteriaRoot, dir)).filter(sub => sub !== "__fixtures__").map(sub => join(criteriaRoot, dir, sub))]);
   for (const dir of indexes) {

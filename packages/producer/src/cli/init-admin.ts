@@ -1,7 +1,7 @@
 /**
  * The admin workspace `clossys init` seats in every consumer (foundry-build-0048 Amendment 2026-11-18b, A1): a fixed
  * Publisher responsibility, where websites, docs and slides stay opt-in publications. The plan is the Publisher
- * package's own `admin` starter (starters/admin/publication.json) and its tree contracts, read as installed; this
+ * package's own `admin` starter (@clossys/publisher) and its tree contracts, read as installed; this
  * module only places them, through `clossys ia` (the guarded IA writer), never by writing slot files itself.
  *
  * - The Publisher IA is started when the workspace has none (`clossys ia publisher --start`).

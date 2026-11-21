@@ -25,7 +25,7 @@ export const retiredSeatFile = (dir: string) => join(dir, RETIRED_SEAT_FILE);
 /** Agent-level files beside ia.json that a current reader owns (never slot folders, never orphans). */
 export const AGENT_FILES: Readonly<Record<SlotAgent, readonly string[]>> = {
   director: [], designer: [],
-  // Reader: producer/src/publish/site-source.ts readWriter (Writer key declarations).
+  // Reader: ../../publish/site-source.ts readWriter (Writer key declarations).
   writer: ["declarations.json"],
   publisher: [],
 };

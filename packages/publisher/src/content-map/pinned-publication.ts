@@ -1,5 +1,5 @@
 /** Pure projection of a pinned publication from slot records the one slot-model
- * reader supplies (Producer `records/slots.ts`). Publisher opens no files: the
+ * reader supplies (Producer `@clossys/producer`). Publisher opens no files: the
  * source hands it raw record text and the reader's sha256 of each candidate.
  * A pin is data, never serving approval. */
 import { checkContentMap } from "./check.js";
@@ -34,7 +34,7 @@ const SLOT_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;
 /** The slot's judge (`clossys ia --standard`): the slot-model STANDARD_ID, mirrored (publisher cannot import producer). */
 const STANDARD_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*$/;
 const CANDIDATE = /^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.json$/;
-/** A slot ref's target in `clossys.slot/2` (`<agent>/<slot id>`): Producer records/slot-current.ts SLOT_REF, mirrored. */
+/** A slot ref's target in `clossys.slot/2` (`<agent>/<slot id>`): Producer @clossys/producer SLOT_REF, mirrored. */
 const SLOT_REF = /^(director|designer|writer|publisher|producer)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
 const SLOT_V2_KEYS = ["schema", "id", "agent", "kind", "status", "ia", "createdBy", "createdAt", "updatedAt", "refs", "base", "standard", "brief", "contract", "tighten", "options", "varyOn"] as const;
 const SLOT_V2_REQUIRED = ["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "refs", "ia", "base", "standard", "brief", "contract", "tighten"] as const;
@@ -101,7 +101,7 @@ function candidate(value: JsonObject, kind: "page" | "publication", path: string
       || !object(value.copy) || Object.values(value.copy).some(ref => typeof ref !== "string" || !/^[^#\s]+#[^#\s]+$/.test(ref))) fail(path, "Invalid page contract");
   }
 }
-/** Producer records/slot.ts positionIa, mirrored: the slash-path ia a `clossys.slot/2` file writes for a placement. */
+/** Producer @clossys/producer positionIa, mirrored: the slash-path ia a `clossys.slot/2` file writes for a placement. */
 const iaSegment = (value: string): string => {
   const cleaned = value.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
   return /^[a-z]/.test(cleaned) ? cleaned : `x${cleaned || "slot"}`;
@@ -143,10 +143,10 @@ function legacySlot(slot: JsonObject, id: string, kind: "page" | "publication", 
   return { inputs: slot.inputs, uses: slot.uses };
 }
 const iso = (value: unknown): boolean => typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value) && !Number.isNaN(Date.parse(value));
-/** Producer schemas/pin.json (`clossys.pin/2`), mirrored: COMMON block plus the int2 record fields, no `recited`. */
+/** Producer @clossys/producer (`clossys.pin/2`), mirrored: COMMON block plus the int2 record fields, no `recited`. */
 const PIN_V2_KEYS = ["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "updatedAt", "refs", "candidate", "sha256", "decidedBy", "basis", "at", "confirmed"] as const;
 const PIN_V2_REQUIRED = ["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "refs", "candidate", "sha256", "decidedBy", "basis", "at"] as const;
-/** A `clossys.pin/2` Publisher pin.json for slot `id`: its COMMON block and confirmation (Producer records/pin.ts pinIssues, mirrored). */
+/** A `clossys.pin/2` Publisher pin.json for slot `id`: its COMMON block and confirmation (Producer @clossys/producer pinIssues, mirrored). */
 /** The code decider of a scorecard pin (`clossys settle pick`); it pairs only with basis scorecard. */
 const CODE_SCORECARD = "code:scorecard";
 /** The pin bases the owner confirms: an agent pick and a code (scorecard) pick. */

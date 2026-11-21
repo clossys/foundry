@@ -81,7 +81,7 @@ function pageFixtureRows(agent: AgentModel, slot: LiveSlot, dir: string, output:
 }
 /** A slot id literal in source: `"a.b"`-shaped quoted strings. */
 const ID_LITERAL = /["'`]([a-z][a-z0-9-]*\.[a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)?)["'`]/g;
-/** Above this name similarity two same-kind, same-input leaves overlap (`primary-foreground` vs `sidebar-primary-foreground` is 0.67: token siblings, not overlap). Pinned by conform.test.ts. */
+/** Above this name similarity two same-kind, same-input leaves overlap (`primary-foreground` vs `sidebar-primary-foreground` is 0.67: token siblings, not overlap). Pinned by conform.test.ts (not shipped). */
 export const OVERLAP_MIN = 0.7;
 /** Contract fields that name the one slot a leaf is for (Writer's old `passages.*` name their section by `sectionId`). */
 const SUBJECT_FIELDS = ["sectionId", "subject", "for"] as const;

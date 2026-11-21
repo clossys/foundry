@@ -2,11 +2,11 @@
  * `derive contract-fixtures --from-references` (foundry-build-0048 U27): the Designer package's
  * `contract.fixture` for every component slot, derived from that slot's adopted reference row and
  * never invented. The reference row is the slot contract's `references` (src/catalog/slot-contracts/
- * components.json, itself derived from references/manifest.json). The fixture names the file that
+ * components.json, itself derived from @clossys/designer). The fixture names the file that
  * reference ships in the Designer's selected shadcn style, and a component
  * that file exports. The style is the Designer's shadcn flavor (`@clossys/designer/shadcn-flavor`, which
- * also writes packages/designer/ui/components.json and the consumer's clossys/components.json); `ui/` is
- * its own workspace and is not in the packed Designer, so it is never read. Every slot this cannot determine is named in src/catalog/contract-fixture-gaps.json
+ * also writes @clossys/designer and the consumer's clossys/components.json); `ui/` is
+ * its own workspace and is not in the packed Designer, so it is never read. Every slot this cannot determine is named in @clossys/designer
  * with the reason, never given a fixture that passes vacuously.
  *
  * The same reference index backs the DF.CREATE probe: a live component fixture must name a file and an

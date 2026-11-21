@@ -1176,7 +1176,7 @@ export function writeSeatDecision(consumer: string, slotId: string, input: { rea
 }
 
 /**
- * The P0 propagation probe's only pin write (`studio/checks/p0-propagate.mjs`). The probe mutates a
+ * The P0 propagation probe's only pin write (`studio/checks/p0-propagate.mjs` (not shipped)). The probe mutates a
  * pinned Designer theme candidate for one build and must keep its pin selecting those bytes, so this
  * re-points the pin's `sha256` at `candidateText` and keeps every other field; `restoreThemeProbePin`
  * puts the original pin text back byte for byte. Only a Designer `themes.*` slot is accepted: every

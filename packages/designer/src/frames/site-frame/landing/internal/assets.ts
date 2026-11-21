@@ -1,6 +1,6 @@
 /**
- * The asset-resolution companion to `internal/tokens.ts`/`internal/
- * typography.ts` — the shared foundation every channel this package ships
+ * The asset-resolution companion to the token and typography internals of
+ * `@clossys/publisher` — the shared foundation every channel this package ships
  * (`./web`, `./email`, `./print`, `./image`, `./slides`) needs now that
  * `@clossys/publisher/core` 0.3.0 added `SlotBinding.assetId` and
  * `@clossys/publisher/media` exists to register what an `assetId` actually
@@ -82,11 +82,11 @@
  * into a renderer's `src`/`poster` HTML attribute (`./web`'s `<img>`/
  * `<source>`/`<video>`, and every non-web channel's own `<img>`/`<image>`
  * fallback). `isAllowedAssetUrl` below applies the same disciplined check
- * `../document/validate.ts` already established for `DocumentInline`
+ * `@clossys/publisher` already established for `DocumentInline`
  * "link" hrefs: parse with `new URL`, compare `.protocol` against a closed
  * allowlist, never a prefix/substring string match — reproduced locally
- * here (not imported) for the same reason `../document/validate.ts`
- * itself reproduces `packages/bouncer/src/redirect.ts`'s scheme check rather
+ * here (not imported) for the same reason `@clossys/publisher`
+ * itself reproduces `@clossys/bouncer`'s scheme check rather
  * than importing it: this package does not and should not depend on
  * `document`'s validator just for one shared helper, and each subpath's
  * own small, local copy is cheaper than a cross-subpath dependency for a
@@ -102,12 +102,12 @@
  * comment has always explicitly allowed, since v1 — a bundler-relative
  * import path (`"./hero.png"`, `"assets/hero.png"`) has no scheme to
  * check and is accepted unchanged, exactly as it always has been. This is
- * intentionally NOT the same acceptance rule `../document/validate.ts`
+ * intentionally NOT the same acceptance rule `@clossys/publisher`
  * uses for prose links (which rejects a path-relative href outright,
  * because a document can be mounted at more than one route) — an asset
  * `src` has no such "mounted at more than one route" ambiguity; it is
  * resolved once, by the consumer's own build, the same way it always has
- * been. What IS rejected, the same way `../document/validate.ts` rejects
+ * been. What IS rejected, the same way `@clossys/publisher` rejects
  * it: a `"//host/path"` PROTOCOL-RELATIVE value — it reads as same-site
  * and is not, resolving to whatever host follows the `//`, and unlike a
  * genuinely relative build path, it unambiguously LOOKS like an attempt at
@@ -208,7 +208,7 @@ function isNonWhitespaceString(value: unknown): value is string {
 // URL scheme checking — see this file's own top comment
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Closed allowlist for a `RenderAsset`'s `src`/`poster` values — see this file's own top comment for why this is narrower than `../document/validate.ts`'s own link allowlist. */
+/** Closed allowlist for a `RenderAsset`'s `src`/`poster` values — see this file's own top comment for why this is narrower than `@clossys/publisher`'s own link allowlist. */
 const ALLOWED_ASSET_URL_SCHEMES = ["https:", "http:"] as const;
 
 /**
@@ -255,7 +255,7 @@ function isRenderImageSource(value: unknown): value is RenderImageSource {
  * `width` of `0`, a blank `alt`, a `javascript:` `src`) is exactly as
  * fatal as a completely wrong-shaped value — there is no "close enough"
  * here, the same "never a plausible-looking wrong value" bar
- * `internal/tokens.ts` holds for color.
+ * `@clossys/publisher` holds for color.
  */
 export function isRenderImageAsset(value: unknown): value is RenderImageAsset {
   if (typeof value !== "object" || value === null) return false;

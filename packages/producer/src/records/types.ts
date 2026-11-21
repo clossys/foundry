@@ -258,7 +258,7 @@ export type ReferencePackage = {
 // ---------------------------------------------------------------------------
 // Target record formats (release2 ia-target: system.md 4, 6.5, 12; designer.md 9.8).
 // The JSON Schemas in packages/producer/schemas/ are the wire contract; these
-// hand-written types mirror them key for key (RECORD_KEYS, checked by schema.test.ts).
+// hand-written types mirror them key for key (RECORD_KEYS, checked by schema.test.ts (not shipped)).
 // The int2 types above are unchanged; where a target name collides with an int2
 // name the target type takes a suffix (CheckResultDoc).
 // ---------------------------------------------------------------------------
@@ -674,7 +674,7 @@ export interface SlotRequest {
 /** Exactly the keys of T: a missing or extra key fails the build. */
 const keysOf = <T>() => (keys: { [K in keyof Required<T>]: true }): readonly string[] => Object.keys(keys);
 
-/** Top-level keys of each target type, by schema id; schema.test.ts compares them to the schema `properties`. */
+/** Top-level keys of each target type, by schema id; schema.test.ts (not shipped) compares them to the schema `properties`. */
 export const RECORD_KEYS: Readonly<Record<string, readonly string[]>> = {
   "clossys.slot/2": keysOf<Slot>()({
     schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,

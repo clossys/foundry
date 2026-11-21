@@ -39,7 +39,7 @@ export interface LibrarySourceOptions {
   /**
    * Whether the record carries the generated specimen modules the host specimen mount renders
    * through: the slot's declared state (`specimen/state.tsx`, server/specimen-state.ts), the
-   * fixture tree's dependency parts (`specimen/parts.tsx`) and its input slots
+   * fixture tree's dependency parts (`@clossys/designer`) and its input slots
    * (`specimen/inputs.tsx`). The host mount renders the record as it is, so it carries them (the
    * default). An installed path (Studio's installed specimens, a real site install) installs the
    * item's own registry files only, which never include a generated module, so it passes false:
@@ -351,7 +351,7 @@ export function certifyCandidate(input: CertifyCandidateInput): CandidateCertifi
   let item: CandidateItem;
   try { item = JSON.parse(bytes) as CandidateItem; }
   catch { return { certified: false, reasons: ["the candidate is not JSON"], mounts: false }; }
-  // The check its registry type is held to in this slot (certify/registry-types.ts, the one table, and the slot's class
+  // The check its registry type is held to in this slot (../constitution/certify/registry-types.ts, the one table, and the slot's class
   // from its contract and layer): a hook or lib item mounts no component but is held to the contract fixture and the
   // gate's code check; a registry type with no row, or one the slot does not accept, fails closed before any check.
   let check: ElementCheck;

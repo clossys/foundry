@@ -1,4 +1,4 @@
-/** The Producer engine: one event log per workspace, its lock, its derived index and the checks over them (docs/engine.md). */
+/** The Producer engine: one event log per workspace, its lock, its derived index and the checks over them (docs/engine.md (not shipped)). */
 export * from "./types.js";
 export * from "./lock.js";
 export * from "./chain.js";

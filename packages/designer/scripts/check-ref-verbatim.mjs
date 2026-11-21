@@ -122,11 +122,11 @@ const treeHash = (files) =>
   )}`;
 
 /**
- * The seed lookup (`source.ref` → reference-manifest item) lives in Producer's certify/source.ts
+ * The seed lookup (`source.ref` → reference-manifest item) lives in @clossys/producer
  * (R03, slot-constitution.md W2-C), which every agent's adopt check shares. This module is a shipped
  * export (`@clossys/designer/ref-verbatim`) that must import without Producer, so source.ts is loaded
  * when Producer resolves and required only when a candidate is read;
- * sha256 and treeHash stay local and certify/source.test.ts pins them equal to source.ts's.
+ * sha256 and treeHash stay local and certify/source.test.ts (not shipped) pins them equal to source.ts's.
  */
 const SOURCE_ANCHOR = "@clossys/producer/records/slots";
 let producerSourceDir; let producerSourceMissing;

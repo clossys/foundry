@@ -2,7 +2,7 @@
  * R11 One resolver (slot-constitution.md R11; unit W2-D).
  *
  * R11.1 Only records/slots.ts reads the agent trees and only records/slot-write.ts writes them:
- * scripts/check-single-reader.mjs, its reader scan (`reader` findings) and its writer scan of the
+ * scripts/check-single-reader.mjs (not shipped), its reader scan (`reader` findings) and its writer scan of the
  * reader itself (`writer` findings).
  * R11.2 Only records/citations.ts `resolveCitation()` turns a citation into a candidate: the same
  * script's resolver scan (a citation parser imported anywhere else), plus every slot reference the

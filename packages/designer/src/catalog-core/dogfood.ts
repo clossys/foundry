@@ -306,7 +306,7 @@ function composeAt(file: string, node: Element, parsed: Parsed, input: DogfoodIn
     module === frame.module && symbol === frame.export ? appFrameFill.$extensions["com.clossys.fill"].slot :
       registeredServerSlot(module, symbol) ??
       // The client blocks barrel exports every registered block (checked against
-      // its real source in dogfood.test.ts); a block export resolves to its own
+      // its real source in dogfood.test.ts (not shipped)); a block export resolves to its own
       // block slot, as the server barrel's does, before the component vocabulary.
       (module === `${DOGFOOD_PACKAGE_NAME}/blocks` ? serverBlockSlots.get(symbol) : undefined) ??
       (["components", "icons", "charts", "blocks", "shell"].some(path => module === `${DOGFOOD_PACKAGE_NAME}/${path}`) ? knownSlot(symbol) : undefined);

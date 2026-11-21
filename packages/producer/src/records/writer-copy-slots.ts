@@ -14,7 +14,7 @@
  *
  * Every keyed copy reader takes this one rule: the pinned Writer copy (`writer-copy.ts`), the interview's key holders
  * (`pipeline/interview.ts`), the compile lock's Writer inputs (`publish/compile-publications.ts`) and Studio's copy
- * registry (`scripts/generate-studio-map.mjs`). Each slot's L0 comes from `nodeLayers`, as `listSlots` positions do.
+ * registry (`scripts/generate-studio-map.mjs` (not shipped)). Each slot's L0 comes from `nodeLayers`, as `listSlots` positions do.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";

@@ -1,7 +1,7 @@
 /**
  * The candidate selection ladder (owner 2026-11-11): every `<agent>.candidates` submission says which
  * rung it came from, the same light record the Designer's source ladder keeps per roster row
- * (packages/designer/scripts/check-source-ladder.mjs: rung, chosen, reason), so there is one ladder
+ * (@clossys/designer: rung, chosen, reason), so there is one ladder
  * idea, not two.
  *
  *   adopt   a seed fits as it is: stock shadcn, a trusted free registry, an existing candidate or template,

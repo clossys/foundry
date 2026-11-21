@@ -17,7 +17,7 @@ export const syncCriterion = (id: string): Criterion => {
   return fn;
 };
 
-/** The requirements verdict, synchronously; equal to `requirementsVerdict` for registered criteria (certify.test.ts). */
+/** The requirements verdict, synchronously; equal to `requirementsVerdict` for registered criteria (certify.test.ts (not shipped)). */
 export function requirementsVerdictSync(inputs: VerdictInputs, resolve: (id: string) => Criterion = syncCriterion): Verdict {
   const subject = subjectOf(inputs.candidate.name, inputs.candidate.bytes, inputs.kind);
   const results: RequirementResult[] = [];

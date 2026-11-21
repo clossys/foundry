@@ -5,7 +5,7 @@
  * 1. pack: `npm pack` each first-party package of the cohort from the directory this Producer runs from (a checkout's
  *    `packages/<name>`, or a consumer's `node_modules/@clossys/<name>`), or take the tarballs `--from <dir>` holds;
  * 2. install: a fresh empty temp directory gets `git init`, a package.json naming every tarball as a dependency and an
- *    override (docs/releasing/tarball-install.md) and `npm install`, then the third-party peers the scenario's pages
+ *    override (docs/releasing/tarball-install.md (not shipped)) and `npm install`, then the third-party peers the scenario's pages
  *    import (`peers`, which the cohort leaves to the consumer); the install must hold exactly one copy of each
  *    first-party package, resolved from its tarball, and `node_modules/.bin/clossys` must be the installed Producer;
  * 3. drive: the scenario shipped inside the installed package (`e2e/scenario.json`) runs, step by step, as child
@@ -38,7 +38,7 @@ import { fileURLToPath } from "node:url";
 
 export const E2E_CHECK = "consumer.e2e";
 export const E2E_SCENARIO_SCHEMA = "clossys.e2e-scenario/1";
-/** The first-party packages a consumer installs together (scripts/pack-cohort.mjs packs the same six). */
+/** The first-party packages a consumer installs together (scripts/pack-cohort.mjs (not shipped) packs the same six). */
 export const E2E_COHORT = ["producer", "director", "designer", "writer", "publisher", "controller"] as const;
 
 /** The rule this check enforces, one line: scripts/rules/registry.json R-E2E-CONSUMER carries it as its note. */
@@ -100,7 +100,7 @@ export interface Scenario {
   readonly render: Readonly<Record<string, readonly string[]>>;
   /**
    * Third-party packages the consumer installs itself after the cohort (`npm install name@version ...`): the peers its
-   * pages import, which the cohort leaves to the consumer (docs/releasing/tarball-install.md).
+   * pages import, which the cohort leaves to the consumer (docs/releasing/tarball-install.md (not shipped)).
    */
   readonly peers?: Readonly<Record<string, string>>;
 }

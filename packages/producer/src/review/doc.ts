@@ -1,5 +1,5 @@
 /**
- * docs/review.md, generated from the code that runs the review: the steps, the forbidden paths, the probes, the
+ * docs/review.md (not shipped), generated from the code that runs the review: the steps, the forbidden paths, the probes, the
  * fixtures, the mutation operators and the receipt formats. `clossys review --check-doc` fails when the committed file
  * differs (rule R-REVIEW-MECHANICAL); `clossys review --write-doc` rewrites it.
  */

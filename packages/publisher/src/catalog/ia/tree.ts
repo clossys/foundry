@@ -208,7 +208,7 @@ export function loadStarter(id: StarterId, root: string = PACKAGE_ROOT): Starter
 /** `withDefault`: slot ids with a Designer fill (`src/catalog/fills/<source>/<id>.json`) or a package default (`src/catalog/defaults/<id>/`). */
 export interface DesignerCatalog {
   placed: ReadonlySet<string>; retired: ReadonlySet<string>; live: ReadonlySet<string>; withDefault: ReadonlySet<string>;
-  /** Section ids whose registered contract (`slots/sections.json`) declares the `slide` medium; absent when not read. */
+  /** Section ids whose registered contract (`@clossys/designer`) declares the `slide` medium; absent when not read. */
   slideMedium?: ReadonlySet<string>;
 }
 
@@ -232,7 +232,7 @@ export function writerPackageDir(from: string = PACKAGE_ROOT): string {
   }
 }
 
-/** Writer's Copy L0 slot ids (`<unit>.copy`), read from its shipped `src/catalog/ia/copy.json`. */
+/** Writer's Copy L0 slot ids (`<unit>.copy`), read from its shipped `@clossys/writer`. */
 export function loadWriterCopySlots(dir: string = writerPackageDir()): ReadonlySet<string> {
   const leavesOf = (nodes: readonly TreeNode[]): string[] => nodes.flatMap(node => node.leaves ? [...node.leaves] : leavesOf(node.children ?? []));
   return new Set(leavesOf(readJson<{ nodes: TreeNode[] }>(join(dir, "src", "catalog", "ia", "copy.json")).nodes));
@@ -254,7 +254,7 @@ export function loadDesignerPackageDefaults(id: string, dir: string = designerPa
 }
 
 /**
- * A Designer frame contract, read from its registered slot record (`src/catalog/slots/frames.json`): root element, slide
+ * A Designer frame contract, read from its registered slot record (`@clossys/designer`): root element, slide
  * slots and the closed aspect member. The contract names the aspect only; the print page box is a release concern, so
  * the pixel canvas is the aspect at Publisher's print base width (`DECK_PRINT_WIDTH`).
  */
@@ -278,7 +278,7 @@ export function loadDesignerFrameContract(id: string, dir: string = designerPack
 
 /**
  * Designer's placed, retired and live slot ids, read from its shipped `src/catalog` tree (the live catalog), with the
- * families and in-place retirements of its additive IA extension (`ia/slides.json`) merged in, and the ids that ship a
+ * families and in-place retirements of its additive IA extension (`@clossys/designer`) merged in, and the ids that ship a
  * package default.
  */
 export function loadDesignerCatalog(dir: string = designerPackageDir()): DesignerCatalog {

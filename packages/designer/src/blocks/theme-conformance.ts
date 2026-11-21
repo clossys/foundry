@@ -31,7 +31,7 @@ const PLATED_READING = [...GROUNDED_READING, ...RAISED_READING, ...INVERSE_RAISE
 
 /** Exact exported component inventory; a new barrel export requires registration. */
 export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
-  /* The selected stock checkbox paints ink-on-action on action (no CONTRAST_PAIRS entry; action-color.test.ts owns that contrast), not ink-on-accent. */
+  /* The selected stock checkbox paints ink-on-action on action (no CONTRAST_PAIRS entry; action-color.test.ts (not shipped) owns that contrast), not ink-on-accent. */
   { exportName: "AccessMatrix", source: "src/blocks/AccessMatrix.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   /* R2F-33d2: the mapping select's label and error are the stock field parts, which own their paint. */
   { exportName: "ColumnMapper", source: "src/blocks/ColumnMapper.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised"] },

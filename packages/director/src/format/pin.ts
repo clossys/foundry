@@ -2,7 +2,7 @@
  * The one pin schema (planner R9): `pin.json` = {candidate, sha256, decidedBy, basis, at, confirmed?}.
  * Every pin reader checks it here or mirrors it exactly: the slot-model validator
  * (@clossys/producer validatePin), Director's parseSlotPin, and the no-build decision check
- * (scripts/check-decisions.mjs, whose pin-shape rule a conformance test holds to these verdicts).
+ * (scripts/check-decisions.mjs (not shipped), whose pin-shape rule a conformance test holds to these verdicts).
  * A pin records a decision only; what its candidate cites is a slot id, resolved through the cited
  * slot's own pin when it is read (format/citation.ts), so a pin carries no citation state.
  */
@@ -57,7 +57,7 @@ export function pinIssues(value: unknown): string[] {
 }
 
 /**
- * `clossys.pin/2` (@clossys/producer schemas/pin.json): the pin record above plus the COMMON block that
+ * `clossys.pin/2` (@clossys/producer): the pin record above plus the COMMON block that
  * `clossys pin` writes after a recut and the recut's pin/1 migration produces. Director has no dependency on
  * Producer, so the key list and value rules are mirrored here exactly. pin/1 (no `schema` key) is unchanged.
  */

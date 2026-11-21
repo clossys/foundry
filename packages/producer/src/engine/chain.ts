@@ -8,7 +8,7 @@
  * `<root>/clossys/agents/<agent>/` or `<root>/clossys/library/` belongs to that root's log; a file outside any
  * consumer folder named `clossys` belongs to no workspace and logs no event.
  *
- * Node runs this file with type stripping in child writers (engine/*.test.ts, records/ledger.test.ts).
+ * Node runs this file with type stripping in child writers (engine/*.test.ts, records/ledger.test.ts (not shipped)).
  */
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";

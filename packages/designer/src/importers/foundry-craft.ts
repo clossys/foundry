@@ -3,7 +3,7 @@ import recorded from "./foundry-craft.json" with { type: "json" };
 /**
  * K5 craft comparison for Foundry offers whose interaction craft was never compared with the benchmark.
  *
- * The record (`foundry-craft.json`) is measured, not authored: `foundry-craft.test.tsx` renders each
+ * The record (`foundry-craft.json`) is measured, not authored: `foundry-craft.test.tsx` (not shipped) renders each
  * candidate and the benchmark controls in the same harness, reads the focus-visible, disabled, target,
  * forced-colour, paint and spacing treatment each interactive part actually carries, and fails when the
  * committed record differs from a fresh measurement (`UPDATE_FOUNDRY_CRAFT=1` rewrites it). This module

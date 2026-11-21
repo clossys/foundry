@@ -1,7 +1,7 @@
 /**
  * Verbatim adoption for every agent (R03.2, R03.4): the provenance logic lifted from the Designer's
- * `scripts/check-provenance.mjs` (lineage of a candidate against the reference manifest and the
- * provenance rule) and the seed lookup and file hashes of `scripts/check-ref-verbatim.mjs`. Both
+ * `@clossys/designer` (lineage of a candidate against the reference manifest and the
+ * provenance rule) and the seed lookup and file hashes of `@clossys/designer`. Both
  * scripts now call this module (through `@clossys/producer`, resolved lazily as slot-pins.mjs does);
  * the R03 checks call it for all agents. Dependency-free (node:crypto only), so a plain Node script
  * can import the built file.
