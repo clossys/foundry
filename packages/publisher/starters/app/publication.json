@@ -41,6 +41,7 @@
     "page.app-home/starter-v1.json",
     "page.list/starter-v1.json",
     "page.settings/starter-v1.json",
-    "page.app-not-found/starter-v1.json"
+    "page.app-not-found/starter-v1.json",
+    "publication.app/starter-v1.json"
   ]
 }

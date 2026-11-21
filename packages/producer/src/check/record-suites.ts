@@ -16,6 +16,7 @@ import { writerText } from "@clossys/publisher/build";
 import { validateSlotContract } from "../records/validate.js";
 import { listSlots, readCandidate } from "../records/slots.js";
 import { parseFrontmatter } from "../records/slot-model/index.js";
+import { isAgentLoop } from "../loop/agent-loops-ia.js";
 
 export interface SuiteFinding { readonly severity: "error" | "warning" | "info"; readonly where: string; readonly code: string; readonly message: string }
 
@@ -24,6 +25,8 @@ export interface SuiteReport {
   readonly status: "ran" | "error";
   /** Pages, cells or contracts the suite looked at. */
   readonly checked: number;
+  /** Writer and Director: the content slots the agent IA places, pinned or not (its `loop.*` slots are not cells). */
+  readonly adopted?: number;
   readonly totals: Readonly<Record<SuiteFinding["severity"], number>>;
   readonly findings: readonly SuiteFinding[];
   readonly error?: string;
@@ -102,6 +105,10 @@ export async function archetypeSuite(root: string, strict: boolean): Promise<Sui
  * through the Writer's slot-body parser and checked against its slot's contract, with the pinned
  * Director voice. A pin that cannot be read is an INPUT error, never skipped.
  * Locale coverage and Director links run in `clossys write --check`.
+ *
+ * The agent's own loop slots (`loop.scope` ... `loop.cascade`, agent-loops-ia.ts) hold JSON loop versions, not markdown
+ * cells: `loop.agent-standard` validates them, so neither content suite reads them (CONSISTENCY C3). `adopted` counts
+ * the content slots the agent places.
  */
 export async function writerSuite(root: string): Promise<SuiteReport> {
   const checks = await agentModule("writer", "slot-contracts/checks.js");
@@ -110,7 +117,8 @@ export async function writerSuite(root: string): Promise<SuiteReport> {
   const findings: SuiteFinding[] = [];
   const slots: unknown[] = [];
   let unreadable = 0;
-  for (const entry of listSlots(consumer, "writer")) {
+  const entries = listSlots(consumer, "writer").filter(entry => !isAgentLoop(entry.id));
+  for (const entry of entries) {
     if (!entry.pin) continue;
     const path = `agents/writer/${entry.id}/candidates/${entry.pin.candidate}`;
     try {
@@ -130,14 +138,18 @@ export async function writerSuite(root: string): Promise<SuiteReport> {
   for (const finding of result.findings as { check: string; severity: SuiteFinding["severity"]; slot: string; path?: string; record?: string; locale?: string; key?: string; message: string }[]) {
     findings.push({ severity: finding.severity, code: finding.check, message: finding.message, where: `${finding.slot}${finding.record ? ` ${finding.record}` : finding.path ? ` ${finding.path}` : ""}${finding.locale ? ` [${finding.locale}]` : ""}${finding.key ? ` .${finding.key}` : ""}` });
   }
-  return report("writer-slots", slots.length + unreadable, findings);
+  return { ...report("writer-slots", slots.length + unreadable, findings), adopted: entries.length };
 }
 
 /** The Director's own contract checks over each pinned Director candidate. */
 export async function directorSuite(root: string): Promise<SuiteReport> {
   const checks = await agentModule("director", "slot-contracts/checks.js");
   const format = await agentModule("director", "slot-contracts/format.js");
-  const director = await readPinnedDirector(join(root, "clossys"));
+  const consumer = join(root, "clossys");
+  const pinned = await readPinnedDirector(consumer);
+  // The agent's loop slots are loop versions, not cells (writerSuite): loop.agent-standard validates them.
+  const director = { cells: pinned.cells.filter(cell => !isAgentLoop(cell.id)), unreadable: pinned.unreadable.filter(row => !isAgentLoop(row.slot)) };
+  const adopted = listSlots(consumer, "director").filter(entry => !isAgentLoop(entry.id)).length;
   const byId = new Map((format.loadDirectorContracts().slots as { id: string }[]).map(contract => [contract.id, contract]));
   const findings: SuiteFinding[] = director.unreadable.map(row => ({ severity: "error", code: "INPUT", message: row.message, where: `${row.slot} ${row.path}` }));
   for (const cell of director.cells) {
@@ -148,7 +160,7 @@ export async function directorSuite(root: string): Promise<SuiteReport> {
       findings.push({ severity: "error", code: finding.check, message: finding.message, where: `${finding.slot}${finding.path ? ` ${finding.path}` : ""}` });
     }
   }
-  return report("director-slots", director.cells.length + director.unreadable.length, findings);
+  return { ...report("director-slots", director.cells.length + director.unreadable.length, findings), adopted };
 }
 
 /** Writer and Director contracts, projected by their own packages, against the shared schema. */
@@ -204,7 +216,7 @@ export function recordSuitesSummary(result: RecordSuitesReport, limit = 20): str
   const lines = [`Record suites (${result.strict ? "strict" : "report only"}): ${result.root}`];
   for (const suite of result.suites) {
     if (suite.status === "error") { lines.push(`  ${LABEL[suite.suite]}: error: ${suite.error}`); continue; }
-    lines.push(`  ${LABEL[suite.suite]}: ${suite.checked} ${UNIT[suite.suite]}, errors=${suite.totals.error} warnings=${suite.totals.warning} info=${suite.totals.info}`);
+    lines.push(`  ${LABEL[suite.suite]}: ${suite.checked} ${UNIT[suite.suite]}${suite.adopted !== undefined ? ` pinned of ${suite.adopted} adopted` : ""}, errors=${suite.totals.error} warnings=${suite.totals.warning} info=${suite.totals.info}`);
     const shown = suite.suite === "archetypes" ? suite.findings : suite.findings.slice(0, limit);
     for (const finding of shown) lines.push(`    ${finding.severity} ${finding.where} [${finding.code}] ${finding.message}`);
     if (shown.length < suite.findings.length) lines.push(`    ... ${suite.findings.length - shown.length} more (--json for all)`);

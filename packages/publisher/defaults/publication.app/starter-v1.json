@@ -1,0 +1,26 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/publication.app/package:starter-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/publication.app",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-21T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "meta": {
+      "copy": "writer/publication.app.meta#app.meta"
+    }
+  }
+}

@@ -6,7 +6,8 @@
  *   lacks to run `clossys ia sync`: `clossys/clossys.config.ts` (copied from `test-fixtures/consumer`), and for each
  *   Tallyhouse slot/2 with a base, `packages/<agent>/package.json` (name, the base version) and the package base at
  *   `base.path`, derived from the consumer file by dropping what a consumer adds (`tighten`, `status`, stamps,
- *   `consumedBy` refs). Tallyhouse base shas are illustrative, so the copy starts out of sync.
+ *   `consumedBy` refs), and, when a Publisher package folder results, an empty Publisher package IA (no publication
+ *   declared). Tallyhouse base shas are illustrative, so the copy starts out of sync.
  * - `consumerCopy()`: a temp copy of `test-fixtures/consumer-legacy-tree` (470 slot/1 files: the fixture consumer as it was before `clossys migrate recut` moved `test-fixtures/consumer`).
  *
  * Tests mutate only these copies; the fixtures stay byte-identical.
@@ -82,6 +83,13 @@ export function tallyhouseWorld(): Workspace {
   for (const [agent, id] of slot2Ids(root)) {
     const slot = ws.read(agent, id);
     if (slot.base) ws.writeBase(packageBaseOf(slot), slot.base.version);
+  }
+  // A package folder for the Publisher needs its package IA (ia-orphans.ts refuses unreadable Publisher data): the
+  // copy declares no publication, as an empty IA.
+  const directory = join(root, "packages", "publisher", "src", "catalog", "ia", "directory.json");
+  if (existsSync(join(root, "packages", "publisher")) && !existsSync(directory)) {
+    mkdirSync(dirname(directory), { recursive: true });
+    writeFileSync(directory, `${JSON.stringify({ slots: {} }, null, 2)}\n`);
   }
   return ws;
 }

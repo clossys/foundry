@@ -129,8 +129,10 @@ export async function runIaSyncCli(argv: readonly string[], cwd: string): Promis
     ...plan.changes.map(change => `${change.action} ${change.agent}/${change.slot}`),
     ...plan.clarify.map(item => `clarify ${item.agent}/${item.slot} ${item.entry}: ${item.detail}`),
     ...plan.findings.map(finding => `finding: ${finding}`),
-    ...checks.map(result => `${result.check}: ${result.status}${result.findings.length ? ` (${result.findings.length})` : ""}`),
+    ...checks.map(result => `${result.check}: ${result.status}${result.findings.length ? ` (${result.findings.length})` : ""}${result.pending?.length ? `; ${result.pending.length} listed, not failing` : ""}`),
     ...failed.flatMap(result => result.findings.map(finding => `${result.check}: ${finding.subject}: ${finding.detail}`)),
+    // ia.orphans publication-pending (CONSISTENCY C2): listed, never failing.
+    ...checks.flatMap(result => (result.pending ?? []).map(finding => `${result.check}: ${finding.subject}: ${finding.detail}`)),
   ];
   const exitCode = plan.findings.length || failed.length || (check && plan.changes.length) ? 1 : 0;
   return {

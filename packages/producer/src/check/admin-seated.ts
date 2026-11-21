@@ -10,7 +10,8 @@
  *   in plan order; every other contract key equals the contract `clossys init` writes (admin-plan.ts adminContract),
  *   with no key extra or missing; the slot is clossys.slot/2, its standard is its kind, and it carries no tighten entry;
  * - each admin slot cites, as inputs and uses, every slot of its package plan the workspace holds (a page's composition
- *   and the Writer copy slots its seeded record cites, admin-plan.ts AdminPage.cites; a publication's pages): a held one
+ *   and the Writer copy slots its seeded record cites, admin-plan.ts AdminPage.cites; a publication's pages and the slots its
+ *   package default names, AdminPlan.publicationCites): a held one
  *   not cited is a finding, `clossys init` rewires it; and nothing outside that plan (an undeclared input);
  * - the plan itself holds (admin-plan.ts adminPlanFindings): each data-bound section reads under route parameters its
  *   page supplies, and no agent id is a value a static admin route reserves for `<agent>`; the admin publication is fixed,
@@ -143,7 +144,7 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
     if (outside.length) issues.push(`contract pages name ${outside.map(String).join(", ")} outside the package plan`);
     if (!absent.length && !outside.length && !same(pages, pageIds)) issues.push(`contract pages are not in package order (${pageIds.join(", ")})`);
     return issues;
-  }, pageIds, ["publication", "root", "pages"]);
+  }, plan.publicationCites, ["publication", "root", "pages"]);
   return { check: ADMIN_SEATED, status: findings.length ? "fail" : "pass", findings };
 }
 

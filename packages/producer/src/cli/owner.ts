@@ -10,7 +10,7 @@
  *   clossys ia <agent> --add|--rename|--merge|--drop|--reorder|--assign|--layers|--axes ... --owner-ref <ref> [--at <iso>] [--dry] [--root <dir>]  (IA_USAGE; cli/ia-regroup.ts)
  *   clossys evidence <id> --source <source> --observed <YYYY-MM-DD> --by <who> --body <file> [--finding] [--root <dir>]
  *   clossys config --init [--from <file>] [--root <dir>]
- *   clossys seat <step> --by <who> (--model <id> --tier low|mid|high --prompt-file <path> | --no-llm) [--procedure <text> --command <verb>] --decided-by owner:queue.<kind>#<id>|planner[:<ref>] [--root <dir>]
+ *   clossys seat <step> --by <who> ((--model <id> --tier low|mid|high | --llm-from <step>) --prompt-file <path> | --no-llm) [--procedure <text> --command <verb>] --decided-by owner:queue.<kind>#<id>|planner[:<ref>] [--root <dir>]
  *   clossys rule --init [--root <dir>]
  *   clossys rule <R-ID> --quote <text> --date <YYYY-MM-DD> --status enforced|unenforced|pending-wire [--check <id>]... [--fixture <path>] [--fixture-run <cmd>]... [--note <text>] [--replace] [--root <dir>]
  *   clossys approve writer/<slot> <candidate-id> [--by owner[:<ref>]] [--at <iso>] [--root <dir>]
@@ -36,7 +36,9 @@ import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, 
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { feedsIndex } from "../records/slot-model/derive.js";
 import { PRODUCER_IA_SOURCE } from "../records/slot-model/pipeline-seats.js";
-import { adoptedCurrentSlots, driftCounts, knownSlots, SYNC_AGENTS, syncDrift, syncPlan, syncState, workspaceSourceRepairs, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
+import { adoptedCurrentSlots, driftCounts, holdsRecord, knownSlots, SYNC_AGENTS, syncPlan, syncState, syncVerdict, type SyncAgent, type SyncVerdict } from "../records/slot-model/ia-sync.js";
+import { consumedIds, consumedLeaves, filterFoundryIa, filterIa } from "../records/slot-model/consumed.js";
+import { consumerGraph, PublisherDataError } from "../check/ia-orphans.js";
 import { pinRecords, validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
 import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, retireAnswerUses, retireBinding, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writeSeatDecision } from "../records/slot-write.js";
@@ -307,15 +309,21 @@ function startIa(agent: string, root: string, dry: boolean): CliResult {
     `ia: started an empty ${agent} IA (clossys/agents/${agent}/ia.json); place each slot with clossys ia ${agent}/<slot> --under <l1>/<l2> --contract <file>`);
 }
 
-/** `clossys ia <agent> --adopt`: the agent's Foundry IA and every slot.json, written only where the agent has no ia.json. */
+/**
+ * `clossys ia <agent> --adopt`: the agent's Foundry IA and every slot.json, written only where the agent has no ia.json.
+ * Only the package leaves a declared or seated publication reaches are placed (CONSISTENCY D5 option 1, consumed.ts):
+ * code decides which, and a skipped leaf stays adoptable through `clossys request`. Where the agent has an ia.json, the
+ * re-run takes the placed package leaves no publication reaches out of the tree (pruneUnconsumed).
+ */
 function adoptIa(agent: string, root: string, dry: boolean): CliResult {
   if (!(FOUNDRY_IA_AGENTS as readonly string[]).includes(agent)) throw new CliUsageError(`ia --adopt takes ${FOUNDRY_IA_AGENTS.join(", ")}; the Publisher IA is the workspace's own (ia publisher --start)\n${IA_USAGE}`);
   const read = FOUNDRY_IA[agent as keyof typeof FOUNDRY_IA], after = FOUNDRY_IA_AFTER[agent as keyof typeof FOUNDRY_IA];
   const consumer = join(root, "clossys"), iaFile = iaPath(consumer, agent as SlotAgent);
-  if (modelExists(iaFile)) return refuse("ia", `${agent} ia.json exists; change it slot by slot (--under, --remove)`);
+  if (modelExists(iaFile)) return pruneUnconsumed(agent as keyof typeof FOUNDRY_IA, consumer, root, iaFile, dry);
   const first = after.filter(up => !modelExists(iaPath(consumer, up)));
   if (first.length) return refuse("ia", `adopt the ${first.join(", ")} IA first: ${agent} slots read its slots`);
-  const foundry = read();
+  const whole = read();
+  const foundry = filterFoundryIa(whole, consumedIds(consumedLeaves(root), agent as keyof typeof FOUNDRY_IA));
   // Refs resolve against the slots this workspace places, plus the adopted ones; the Director's feeds become downstream inputs.
   const known = new Set(foundry.slots.keys());
   for (const other of SLOT_AGENTS) if (other !== agent && modelExists(iaPath(consumer, other))) {
@@ -340,12 +348,70 @@ function adoptIa(agent: string, root: string, dry: boolean): CliResult {
   // A declared ref that names no slot is a dangling edge: refuse it rather than leave it out of the read graph.
   if (dangling.length) return refuse("ia", `${agent}: ${dangling.length} declared refs name no slot (dangling edges): ${dangling.slice(0, 8).join(", ")}${dangling.length > 8 ? ", ..." : ""}`);
   const slots = writes.length - 1;
-  const result = commitIa(consumer, root, writes, dry, `adopt the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots)`, [],
-    `ia: adopted the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots with their contracts)`);
+  const skipped = whole.slots.size - foundry.slots.size;
+  const left = skipped ? `; ${skipped} package leaves no publication reaches stay in the package (clossys request adopts one)` : "";
+  const result = commitIa(consumer, root, writes, dry, `adopt the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots${left})`, [],
+    `ia: adopted the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots with their contracts${left})`);
   // The adoption writes clossys.slot/2 only: a store it leaves all current carries the marker (U13 r2).
   if (!dry && result.exitCode === 0) markCurrentStore(root, { at: new Date().toISOString(), version: cliActor("clossys ia").version, cli: "clossys ia --adopt" });
   return result;
 }
+/**
+ * Who the re-run's ledger events name (CONSISTENCY fix r1, DECIDED D10): code. Which leaves leave is computed
+ * (consumed.ts), not picked, so the decider is the verb itself, `code` as the runner records a code step, with the
+ * cli and version that ran it; no person or agent is named for a choice nobody made.
+ */
+const PRUNE_ACTOR = "code";
+/** The files of an adopted package leaf that carry no decision: its slot.json and its ledger. */
+const UNDECIDED_FILES = new Set(["slot.json", LEDGER_FILE]);
+/**
+ * The adopt verb's re-run (CONSISTENCY D5 option 1): every placed package leaf no declared or seated publication
+ * reaches (syncState unconsumed) leaves ia.json, with its slot.json and ledger, and the later slots renumber. Refused,
+ * naming them, while such a leaf holds any other record (a pin, a candidate, a retired candidate) or another slot
+ * refers to it. Nothing is retired: the leaf is package-verbatim and `clossys request` adopts it again.
+ */
+function pruneUnconsumed(agent: keyof typeof FOUNDRY_IA, consumer: string, root: string, iaFile: string, dry: boolean): CliResult {
+  const gone = syncState(consumer, agent).unconsumed;
+  if (!gone.length) return { exitCode: 0, root, message: `ia: ${agent} ia.json exists and places no package leaf that no publication reaches; nothing to remove (change it slot by slot: --under, --remove)` };
+  const decided = gone.filter(id => {
+    const dir = slotDir(consumer, agent, id);
+    return listModelDir(dir).some(name => !UNDECIDED_FILES.has(name) && (isModelDir(join(dir, name)) ? holdsRecord(join(dir, name)) : modelExists(join(dir, name))));
+  });
+  if (decided.length) return refuse("ia", `${agent}: ${decided.length} unconsumed package leaves hold records, so they stay until those are retired: ${decided.slice(0, 8).join(", ")}${decided.length > 8 ? ", ..." : ""}`);
+  const keys = new Set(gone.map(id => `${agent}/${id}`));
+  const users: string[] = [];
+  for (const [key, edges] of consumerGraph(root).forward) if (!keys.has(key)) for (const to of edges) if (keys.has(to)) users.push(`${key} -> ${to}`);
+  if (users.length) return refuse("ia", `${agent}: other slots refer to unconsumed package leaves; change them first: ${users.slice(0, 8).join(", ")}${users.length > 8 ? ", ..." : ""}`);
+  const ia = readModelJson(iaFile) as AgentIaFile;
+  const goneIds = new Set(gone);
+  const next = filterIa(ia as unknown as IaDoc, new Set(placedIdsOf(ia).filter(id => !goneIds.has(id)))) as unknown as AgentIaFile;
+  const issues = validateIa(next, iaFile);
+  if (issues.length) return refuse("ia", issues.map(issue => issue.message).join("; "));
+  const follow = followPositions(consumer, agent, ia as unknown as IaFile, next as unknown as IaFile);
+  if ("error" in follow) return refuse("ia", follow.error);
+  const removed = gone.flatMap(id => [...UNDECIDED_FILES].map(name => join(slotDir(consumer, agent, id), name)).filter(modelExists));
+  const rel = (path: string) => relative(root, path).split(sep).join("/");
+  const summary = `took ${gone.length} package leaves no publication reaches out of the ${agent} IA${renumbered(follow)}`;
+  if (dry) return { exitCode: 0, root, output: { dry: true, summary, removed: gone, writes: [iaFile, ...follow.writes.map(([file]) => file)].map(rel) }, message: [`ia --dry: ${summary}; wrote nothing`, ...gone.slice(0, 25).map(id => `  remove ${agent}/${id}`), ...(gone.length > 25 ? [`  ... and ${gone.length - 25} more`] : [])].join("\n") };
+  const at = new Date().toISOString();
+  const actor = cliActor("clossys ia --adopt");
+  const ledgers = [join(agentDir(consumer, agent), LEDGER_FILE), ...follow.writes.map(([file]) => join(dirname(file), LEDGER_FILE))];
+  const dirs = gone.map(id => slotDir(consumer, agent, id));
+  const kinds = new Map(follow.writes.map(([file, bytes]) => [file, slotWriteKind(readModelText(file), bytes)]));
+  const added = guarded(consumer, [iaFile, ...follow.writes.map(([file]) => file), ...ledgers, ...removed], () => {
+    replaceFile(iaFile, jsonBytes(next));
+    for (const [file, bytes] of follow.writes) {
+      replaceFile(file, bytes);
+      appendSlotDocEvent(consumer, agent, (JSON.parse(bytes) as { id: string }).id, { by: PRUNE_ACTOR, at, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: kinds.get(file)!, reason: "unconsumed package leaves left the IA", cli: actor.cli, version: actor.version } });
+    }
+    appendIaEvent(consumer, agent, { by: PRUNE_ACTOR, at, fields: { kind: IA_KIND, adopt: "prune-unconsumed", removed: gone, cli: actor.cli, version: actor.version } });
+    for (const file of removed) removeModelFile(file);
+    for (const dir of dirs) dropEmptyModelDir(dir);
+  });
+  if (added.length) return refuse("ia", `the slot model check fails after the removal: ${added.slice(0, 5).join("; ")}`);
+  return { exitCode: 0, root, output: { removed: gone }, message: [`ia: ${summary} (clossys request adopts one again)`, ...followLines(follow).map(line => `  ${line}`), ...gone.slice(0, 25).map(id => `  removed ${agent}/${id}`), ...(gone.length > 25 ? [`  ... and ${gone.length - 25} more`] : [])].join("\n") };
+}
+const placedIdsOf = (ia: AgentIaFile): string[] => ia.nodes.flatMap(node => node.children.flatMap(child => child.slots));
 const ids = (value: string | undefined) => value ? value.split(",").map(id => id.trim()).filter(Boolean) : [];
 type AgentIaFile = { extensions?: string[]; nodes: { id: string; label: string; children: { id: string; label: string; slots: string[] }[] }[] } & Record<string, unknown>;
 const isPlaced = (ia: AgentIaFile, slot: string) => ia.nodes.some(node => node.children.some(child => child.slots.includes(slot)));
@@ -473,21 +539,35 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
   if (only !== undefined && !(SYNC_AGENTS as readonly string[]).includes(only)) throw new CliUsageError(`ia sync --agent takes one of ${SYNC_AGENTS.join(", ")}, got ${only}\n${IA_USAGE}`);
   const agents = (only === undefined ? SYNC_AGENTS : [only]) as SyncAgent[];
   const root = rootOf(cwd, flags), consumer = join(root, "clossys");
-  const findings: SyncFinding[] = [];
-  for (const agent of agents) findings.push(...syncDrift(consumer, agent));
-  // A workspace-owned IA (the Publisher's) is not synced, but a dead source on it is repointed.
-  const repairs = only === undefined ? workspaceSourceRepairs(consumer) : [];
-  const counts = Object.fromEntries(agents.map(agent => [agent, driftCounts(findings.filter(finding => finding.agent === agent))]));
-  const summary = [...agents.map(agent => {
-    const entries = Object.entries(counts[agent]!);
-    return `${agent}: ${entries.length ? entries.map(([kind, n]) => `${n} ${kind}`).join(", ") : "in sync"}`;
-  }), ...repairs.map(repair => `${repair.agent}: 1 source (workspace-owned)`)];
+  // One finding function and one exit code for both paths (CONSISTENCY C1): a seat that waits on its decision is
+  // listed as seat-pending and fails neither; every other finding fails --check, and fails the write while it remains.
+  const before = syncVerdict(consumer, agents, only === undefined);
+  const { findings, repairs } = before;
+  const report = (verdict: SyncVerdict) => {
+    const counts = Object.fromEntries(agents.map(agent => [agent, driftCounts(verdict.findings.filter(finding => finding.agent === agent))]));
+    const summary = [...agents.map(agent => {
+      const entries = Object.entries(counts[agent]!);
+      return `${agent}: ${entries.length ? entries.map(([kind, n]) => `${n} ${kind}`).join(", ") : "in sync"}`;
+    }), ...verdict.repairs.map(repair => `${repair.agent}: 1 source (workspace-owned)`)];
+    const ordered = [...verdict.failing, ...verdict.pending];
+    const listed = [...ordered.map(finding => `  ${finding.agent} ${finding.kind}: ${finding.detail}`), ...verdict.repairs.map(repair => `  ${repair.agent} source: ${repair.detail}`)].slice(0, 60);
+    const drift = verdict.failing.length + verdict.repairs.length;
+    // Each pending kind is counted by its own name: an unconsumed leaf is not a seat (CONSISTENCY fix r1).
+    const seats = verdict.pending.filter(finding => finding.kind === "seat-pending").length;
+    const unconsumed = verdict.pending.filter(finding => finding.kind === "unconsumed-leaf").length;
+    const pendingHead = [
+      ...(seats ? [`${seats} seat${seats === 1 ? "" : "s"} pending`] : []),
+      ...(unconsumed ? [`${unconsumed} unconsumed package ${unconsumed === 1 ? "leaf" : "leaves"} (ia.orphans judges ${unconsumed === 1 ? "it" : "them"}; clossys ia <agent> --adopt takes ${unconsumed === 1 ? "it" : "them"} out)`] : []),
+    ];
+    const head = `${drift ? `${drift} drift finding${drift === 1 ? "" : "s"}` : "in sync with the package IA"}${pendingHead.length ? `; ${pendingHead.join(", ")} (listed, not failing)` : ""}`;
+    return { counts, drift, head, lines: [...summary.map(line => `  ${line}`), ...listed, ...(ordered.length > 60 ? [`  ... and ${ordered.length - 60} more`] : [])] };
+  };
   if (flags.bare.has("--check")) {
-    const listed = [...findings.map(finding => `  ${finding.agent} ${finding.kind}: ${finding.detail}`), ...repairs.map(repair => `  ${repair.agent} source: ${repair.detail}`)].slice(0, 60);
-    const drift = findings.length + repairs.length;
+    const shown = report(before);
     return {
-      exitCode: drift ? 1 : 0, root, check: true, output: { drift, counts, findings, workspaceSources: repairs.map(({ agent, detail }) => ({ agent, detail })) },
-      message: [`ia sync --check: ${drift ? `${drift} drift finding${drift === 1 ? "" : "s"}` : "in sync with the package IA"}`, ...summary.map(line => `  ${line}`), ...listed, ...(findings.length > 60 ? [`  ... and ${findings.length - 60} more`] : [])].join("\n"),
+      exitCode: before.exitCode, root, check: true,
+      output: { drift: shown.drift, counts: shown.counts, findings, pending: before.pending.length, workspaceSources: repairs.map(({ agent, detail }) => ({ agent, detail })) },
+      message: [`ia sync --check: ${shown.head}`, ...shown.lines].join("\n"),
     };
   }
   // The write: per agent, the sync plan (ia.json and the changed slot.json files); an undeclared leaf refuses the whole sync.
@@ -517,8 +597,23 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
     writes.push([repair.path, repair.bytes]);
     lines.push(`${repair.agent}: 1 file, source repointed to the workspace-owned IA`);
   }
-  if (!writes.length) return { exitCode: 0, root, message: ["ia sync: in sync with the package IA; nothing written", ...summary.map(line => `  ${line}`)].join("\n") };
-  return commitIa(consumer, root, writes, flags.bare.has("--dry"), `sync ${agents.join(", ")} from the package IA (${findings.length + repairs.length} drift finding${findings.length + repairs.length === 1 ? "" : "s"})`, lines, undefined, { at });
+  const dry = flags.bare.has("--dry");
+  if (!writes.length) {
+    const shown = report(before);
+    return { exitCode: before.exitCode, root, message: [`ia sync: nothing written; ${shown.head}`, ...shown.lines].join("\n") };
+  }
+  const result = commitIa(consumer, root, writes, dry, `sync ${agents.join(", ")} from the package IA (${before.failing.length + repairs.length} drift finding${before.failing.length + repairs.length === 1 ? "" : "s"})`, lines, undefined, { at });
+  if (result.exitCode !== 0) return result;
+  if (dry) {
+    // Nothing is written: the findings no planned file repairs are the ones the write would leave.
+    const planned = new Set(writes.map(([path]) => path));
+    const left = before.failing.filter(finding => !planned.has(finding.slot === undefined ? iaPath(consumer, finding.agent) : slotFile(slotDir(consumer, finding.agent, finding.slot))));
+    if (!left.length) return result;
+    return { ...result, exitCode: 1, message: [result.message, `  ${left.length} drift finding${left.length === 1 ? "" : "s"} the write would not repair:`, ...left.slice(0, 60).map(finding => `  ${finding.agent} ${finding.kind}: ${finding.detail}`)].join("\n") };
+  }
+  const after = syncVerdict(consumer, agents, only === undefined);
+  const shown = report(after);
+  return { ...result, exitCode: after.exitCode, message: [result.message, `  after the write: ${shown.head}`, ...shown.lines].join("\n") };
 }
 
 /**
@@ -526,7 +621,15 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
  * stored `clossys.slot/1` slot is refused, never rewritten. `current` is kept for its caller (init-admin.ts) and is
  * now the only behaviour.
  */
-export async function runIaCli(argv: readonly string[], cwd: string, _options: { readonly current?: boolean } = {}): Promise<CliResult> {
+export async function runIaCli(argv: readonly string[], cwd: string, options: { readonly current?: boolean } = {}): Promise<CliResult> {
+  // Which package leaves a publication consumes is read from the installed Publisher package: unreadable, the verb
+  // refuses by name rather than judging an empty set (CONSISTENCY fix r1).
+  try { return await runIa(argv, cwd, options); } catch (error) {
+    if (error instanceof PublisherDataError) return refuse("ia", error.message);
+    throw error;
+  }
+}
+async function runIa(argv: readonly string[], cwd: string, _options: { readonly current?: boolean }): Promise<CliResult> {
   const flags = parseIa(argv);
   if (flags.help) return { exitCode: 0, message: IA_USAGE };
   if (flags.positional[0] === "sync") return runIaSync(flags, cwd);

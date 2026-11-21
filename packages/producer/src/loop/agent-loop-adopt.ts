@@ -37,6 +37,18 @@ export const adoptedLoopCandidate = (loop: AgentLoopName): string => `${loopStem
 export const adoptedLoopBasePath = (loop: AgentLoopName): string => `${AGENT_LOOPS_DIR}/${loop}/${adoptedLoopCandidate(loop)}`;
 
 /**
+ * The loop runner's consumer edge on an agent loop slot (foundry-build-0048 CONSISTENCY D5 option 3): the slot is
+ * consumed by the Producer loop it extends, named by that loop's package version
+ * (`producer/<loop>/package:<stem>-v1.json`). It is a recorded edge, not an exemption: ia.orphans walks it backward
+ * from the runner's roots (check/ia-orphans.ts RUNNER_ROOTS), and a slot without it is an orphan.
+ */
+export const runnerEdge = (loop: AgentLoopName): { readonly to: string; readonly rel: "consumedBy" } =>
+  ({ to: `producer/${loop}/package:${adoptedLoopCandidate(loop)}`, rel: "consumedBy" });
+
+const hasRunnerEdge = (slot: Pick<Slot, "refs">, loop: AgentLoopName): boolean =>
+  (slot.refs ?? []).some(ref => ref.rel === "consumedBy" && ref.to === runnerEdge(loop).to);
+
+/**
  * The slot.json `clossys loop` writes for `agent`'s `loop` (computed, never stored elsewhere): from the agent package's
  * `version`, the bytes of its loop candidate at `adoptedLoopBasePath` and the loop's IA position. The adopt verb
  * writes it and the strict checks recompute it from the slot's declared base (check/declared-base.ts).
@@ -45,7 +57,7 @@ export function adoptedLoopSlot(agent: LoopAgent, loop: AgentLoopName, input: { 
   return {
     schema: "clossys.slot/2", id: loop, agent, kind: LOOP_KIND, status: "starter",
     ia: positionIa(loop, input.position),
-    createdBy: cliActor("clossys loop"), createdAt: input.at, refs: [],
+    createdBy: cliActor("clossys loop"), createdAt: input.at, refs: [runnerEdge(loop)],
     base: { package: `@clossys/${agent}`, version: input.version, path: adoptedLoopBasePath(loop), sha256: sha(input.packageBytes) },
     standard: LOOP_STANDARD,
     brief: { purpose: `${agent}'s own ${loop}: Producer's standard ${loop} with ${agent}'s own steps, skills and tiers.`, mustDo: [], inputs: [], acceptance: [] },
@@ -54,7 +66,7 @@ export function adoptedLoopSlot(agent: LoopAgent, loop: AgentLoopName, input: { 
 }
 
 export interface AdoptResult {
-  /** True when this call wrote the loops (false: the consumer already held all of them). */
+  /** True when this call wrote the loops (false: the consumer already held all of them, at most gaining the runner's edge). */
   readonly adopted: boolean;
   /** Files written, relative to the workspace root. */
   readonly wrote: readonly string[];
@@ -66,13 +78,24 @@ const sha = (bytes: string | Buffer) => createHash("sha256").update(bytes).diges
 const issueKeys = (consumer: string) => checkSlotModel(consumer).map(issue => `${issue.code} ${issue.path} ${issue.message}`);
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
-/** True when the consumer holds the agent's loops L1 and all five loop slots. */
+/** True when the consumer holds the agent's loops L1 and all five loop slots, each with the runner's edge. */
 export function holdsAdoptedLoops(root: string, agent: LoopAgent): boolean {
   const consumer = join(root, "clossys");
   const file = iaPath(consumer, agent);
   if (!modelExists(file)) return false;
   const ia = JSON.parse(readModelText(file)) as IaDoc;
-  return holdsAgentLoops(agent, ia) && AGENT_LOOPS.every(loop => modelExists(slotFile(slotDir(consumer, agent, loop))));
+  return holdsAgentLoops(agent, ia) && AGENT_LOOPS.every(loop => modelExists(slotFile(slotDir(consumer, agent, loop)))) && unedged(consumer, agent).length === 0;
+}
+
+/** The agent's held loop slots that do not yet record the runner's edge (adopted before CONSISTENCY D5). */
+function unedged(consumer: string, agent: LoopAgent): { readonly loop: AgentLoopName; readonly dir: string; readonly bytes: string }[] {
+  return AGENT_LOOPS.flatMap(loop => {
+    const dir = slotDir(consumer, agent, loop);
+    if (!modelExists(slotFile(dir))) return [];
+    const slot = JSON.parse(readModelText(slotFile(dir))) as Slot;
+    if (hasRunnerEdge(slot, loop)) return [];
+    return [{ loop, dir, bytes: serializeSlot({ ...slot, refs: [...(slot.refs ?? []), runnerEdge(loop)] } as Slot) }];
+  });
 }
 
 /** The agent's package loop candidate, as a seed id and a candidate source ref. */
@@ -99,7 +122,9 @@ export function adoptAgentLoops(root: string, agent: LoopAgent, input: { readonl
   const consumer = join(root, "clossys");
   const iaFile = iaPath(consumer, agent);
   if (!modelExists(iaFile)) return { adopted: false, wrote: [], refused: [`clossys/agents/${agent}/ia.json does not exist; run clossys init first`] };
-  const ia = withAgentLoopsIa(agent, JSON.parse(readModelText(iaFile)) as IaDoc);
+  const iaText = readModelText(iaFile);
+  const ia = withAgentLoopsIa(agent, JSON.parse(iaText) as IaDoc);
+  const iaChanged = jsonBytes(ia) !== iaText;
   const positions = slotPositions(agent, ia);
   const { packageRoot } = resolveAgent(agent);
   const version = (JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as { version: string }).version;
@@ -113,10 +138,13 @@ export function adoptAgentLoops(root: string, agent: LoopAgent, input: { readonl
     return { loop, dir: slotDir(consumer, agent, loop), bytes: serializeSlot(slot), candidate: consumerCandidateBytes(agent, loop, packageBytes) };
   });
 
+  const edges = unedged(consumer, agent);
+
   // Everything the write touches, as it was, so a refused write is undone byte for byte.
   const paths = [
     iaFile, join(dirname(iaFile), LEDGER_FILE),
     ...slots.flatMap(each => [slotFile(each.dir), join(each.dir, LEDGER_FILE), join(candidatesDir(each.dir), adoptedLoopCandidate(each.loop))]),
+    ...edges.flatMap(each => [slotFile(each.dir), join(each.dir, LEDGER_FILE)]),
   ];
   const before = paths.map(path => ({ path, bytes: modelExists(path) ? readModelBytes(path) : null }));
   const undo = () => {
@@ -125,17 +153,24 @@ export function adoptAgentLoops(root: string, agent: LoopAgent, input: { readonl
   };
   const known = new Set(issueKeys(consumer));
   try {
-    replaceModelFile(iaFile, jsonBytes(ia));
-    appendIaEvent(consumer, agent, { by, at: input.at, fields: { kind: "ia", decision: "adopt-loops" } });
+    if (iaChanged || slots.length) {
+      replaceModelFile(iaFile, jsonBytes(ia));
+      appendIaEvent(consumer, agent, { by, at: input.at, fields: { kind: "ia", decision: "adopt-loops" } });
+    }
     for (const each of slots) {
       replaceModelFile(slotFile(each.dir), each.bytes);
       appendSlotDocEvent(consumer, agent, each.loop, { by, at: input.at, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: "ia", decision: "create", overlaps: [] } });
       // The selection ladder (candidate-ladder.ts): the agent's package candidate adapted to this slot (its header names the consumer slot).
       writeCandidateBytes(consumer, agent, each.loop, adoptedLoopCandidate(each.loop), each.candidate, { at: input.at, fields: { rung: agent === "designer" ? "L3" : "adapt", seed: packageSeed(agent, each.loop), reason: `${agent}'s package ${each.loop} candidate, its header re-addressed to this consumer slot; content unchanged` } });
     }
+    // A loop slot adopted before the runner recorded its edge gains it here, in the same guarded write.
+    for (const each of edges) {
+      replaceModelFile(slotFile(each.dir), each.bytes);
+      appendSlotDocEvent(consumer, agent, each.loop, { by, at: input.at, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: "ia", decision: "runner-edge", overlaps: [] } });
+    }
   } catch (error) { undo(); throw error; }
   const added = issueKeys(consumer).filter(issue => !known.has(issue));
   if (added.length) { undo(); return { adopted: false, wrote: [], refused: added }; }
   const rel = (path: string) => relative(root, path).split(sep).join("/");
-  return { adopted: true, wrote: paths.filter(path => modelExists(path)).map(rel), refused: [] };
+  return { adopted: iaChanged || slots.length > 0, wrote: paths.filter(path => modelExists(path)).map(rel), refused: [] };
 }
