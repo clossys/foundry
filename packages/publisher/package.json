@@ -65,8 +65,8 @@
       "node": "./dist/install/index.js"
     },
     "./build": {
-      "types": "./dist/build/index.d.ts",
-      "node": "./dist/build/index.js"
+      "types": "./dist/builder/index.d.ts",
+      "node": "./dist/builder/index.js"
     },
     "./web/preview": {
       "types": "./dist/web/preview/index.d.ts",

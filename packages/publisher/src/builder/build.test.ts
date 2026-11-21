@@ -8,7 +8,7 @@
  * `__fixtures__/writer-input.json`; this package reads only that resolved input, never the slot records.
  * The rebuilt output must be byte-equal to the golden.
  *
- * Direction: no file in this package imports `@clossys/producer`, and `src/build/` imports only Node
+ * Direction: no file in this package imports `@clossys/producer`, and `src/builder/` imports only Node
  * built-ins and its own files.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -73,7 +73,7 @@ describe("publisher build", () => {
     expect(declared).toEqual([]);
   });
 
-  it("src/build imports only Node built-ins and its own files", () => {
+  it("src/builder imports only Node built-ins and its own files", () => {
     const outside = sourceFiles(here)
       .filter(path => !path.endsWith(".test.ts"))
       .flatMap(path => specifiers(readFileSync(path, "utf8")).filter(spec => !spec.startsWith("node:") && !spec.startsWith("./")).map(spec => `${relative(here, path)}: ${spec}`));
