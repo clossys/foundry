@@ -121,12 +121,15 @@ import { dirname, resolve as resolvePath } from "node:path";
 import { assertPeerVersion } from "../internal/peer-version.js";
 import { resolveInstalledPeerVersion } from "../internal/resolve-installed-peer-version.js";
 import { TAILWINDCSS_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
+import { addDeclaredFallbacks, type DeclaredSources } from "./declared-fallbacks.js";
 
 export interface GenerateCompiledCssOptions {
   /** This package's own `styles/` directory (holds `theme.css`, which this module reads and re-derives from — never hand-copied). */
   stylesDir: string;
   /** Candidate class tokens to compile — the output of `scanClassCandidates`. Harmless if it contains tokens that aren't real Tailwind utilities (see `class-scan.ts`'s header); they simply produce no output. */
   candidates: string[];
+  /** Rewrite each bare `var(--x)` to `var(--x, <declared value>)` (see `declared-fallbacks.ts`). Default true; false returns the output before that step, for the contract test only. */
+  declaredFallbacks?: boolean;
 }
 
 export interface GenerateCompiledCssResult {
@@ -229,7 +232,7 @@ function makeStylesheetLoader(stylesDir: string) {
  * LINE IS STRIPPED"), wrapped with a reference-mode default-theme import
  * and a layer-scoped utilities import.
  */
-function buildEntryCss(stylesDir: string): string {
+function buildEntryCss(stylesDir: string): { entryCss: string; sources: DeclaredSources } {
   const themeCssPath = resolvePath(stylesDir, "theme.css");
   let themeCssFull: string;
   try {
@@ -263,7 +266,18 @@ function buildEntryCss(stylesDir: string): string {
     );
   }
 
-  return `@import "tailwindcss/theme" theme(reference);\n${themeBlockOnly}\n@import "tailwindcss/utilities" layer(foundry-ui-compiled);\n`;
+  const tokensCssPath = resolvePath(stylesDir, "tokens.css");
+  let tokensCss: string;
+  try {
+    tokensCss = readFileSync(tokensCssPath, "utf8");
+  } catch (error) {
+    throw new Error(`generateCompiledCss: cannot read "${tokensCssPath}": ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  return {
+    entryCss: `@import "tailwindcss/theme" theme(reference);\n${themeBlockOnly}\n@import "tailwindcss/utilities" layer(foundry-ui-compiled);\n`,
+    sources: { tokensCss, themeCss: themeBlockOnly },
+  };
 }
 
 /**
@@ -405,7 +419,7 @@ export async function generateCompiledCss(options: GenerateCompiledCssOptions): 
     foundVersion: resolveInstalledPeerVersion("tailwindcss", import.meta.url),
   });
   const { compile } = await import("tailwindcss");
-  const entryCss = buildEntryCss(options.stylesDir);
+  const { entryCss, sources } = buildEntryCss(options.stylesDir);
   const loadStylesheet = makeStylesheetLoader(options.stylesDir);
 
   const compiled = await compile(entryCss, {
@@ -415,7 +429,8 @@ export async function generateCompiledCss(options: GenerateCompiledCssOptions): 
 
   const rawCss = compiled.build(options.candidates);
   const stripped = addFallbacksForStrippedThemeLiterals(stripThemeReflectionBlock(rawCss), rawCss);
-  const withFallbacks = addExplicitFallbacksForInternalProperties(stripped);
+  const withInternal = addExplicitFallbacksForInternalProperties(stripped);
+  const withFallbacks = options.declaredFallbacks === false ? withInternal : addDeclaredFallbacks(withInternal, sources);
   const finalCss = GENERATED_FILE_HEADER + BASE_LAYER_CSS + withFallbacks.trimStart();
 
   // Count distinct utility CLASS selectors actually emitted (not every
