@@ -13,7 +13,7 @@
  */
 import { oldSlotRefusal } from "./store-format.js";
 import { CRITIQUES_DIR } from "./critique-record.js";
-import { loadRecipes, plumbCraftRunIssue } from "./recipes.js";
+import { craftRunRecipeIssues, loadRecipes, plumbCraftRunIssue } from "./recipes.js";
 import { createHash, randomUUID } from "node:crypto";
 import { closeSync, constants, cpSync, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { hostname, tmpdir } from "node:os";
@@ -30,7 +30,8 @@ import { SlotFormatError, serializeSlot, validateSlot } from "./slot.js";
 import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
 import type { Actor, AgentId, CandidateHeader, Iso, Slot } from "./types.js";
 import { buildCandidateHeader, CandidateRefusal, candidateHeaderIssues, serializeCandidate } from "./candidate.js";
-import { cliActor, toIsoZ } from "./pin.js";
+import { cliActor, confirmableBasis, toIsoZ } from "./pin.js";
+import { CODE_ADOPT, codeAdoptRefusal } from "./code-adopt.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, expectedCandidateSha, skillFile, skillPath,
   type LedgerEvent, type LedgerRecordState, type LedgerSkill, type Provenance, type RecordFile, type Verb,
@@ -601,14 +602,25 @@ export function openCraftEvents(events: readonly Record<string, unknown>[]): Rec
   return open;
 }
 /**
- * R15.7 at write time: why a `craft:<stage>` event with `fields` may not join the open run because the run's
- * recipe is plumb (records/recipes.ts plumbCraftRunIssue, the judge's own predicate), or undefined. The recipes
- * are read from the workspace that holds `consumer` (its packages/, else the installed agent packages).
+ * R15.5 and R15.7 at write time: why a `craft:<stage>` event with `fields` may not join the open run, or undefined.
+ * With the slot's `standardId` ("" when it names none) code chooses the run's recipe (the standard's one producing
+ * recipe): an event naming another recipe, an unknown one or one not producing the standard is refused
+ * (records/recipes.ts craftRunRecipeIssues, the judge's own predicate). Then any stage under a plumb recipe is refused
+ * (plumbCraftRunIssue). The recipes are read from the workspace that holds `consumer` (its packages/, else the
+ * installed agent packages).
  */
-export function plumbCraftRefusal(consumer: string, agent: string, events: readonly Record<string, unknown>[], stage: CraftStage, fields: Readonly<Record<string, unknown>> = {}): string | undefined {
-  const issue = plumbCraftRunIssue([...openCraftEvents(events), { ...fields, op: `craft:${stage}` }], loadRecipes(dirname(consumer)), agent);
+export function plumbCraftRefusal(consumer: string, agent: string, events: readonly Record<string, unknown>[], stage: CraftStage, fields: Readonly<Record<string, unknown>> = {}, standardId?: string): string | undefined {
+  const run = [...openCraftEvents(events), { ...fields, op: `craft:${stage}` }];
+  const recipes = loadRecipes(dirname(consumer));
+  if (standardId !== undefined) {
+    const issues = craftRunRecipeIssues(run, recipes, agent, standardId);
+    if (issues.length) return `craft:${stage} refused: ${issues.join("; ")}; fix: craft under the recipe code chooses for the slot's standard, naming no other (R15.5)`;
+  }
+  const issue = plumbCraftRunIssue(run, recipes, agent, standardId);
   return issue && `craft:${stage} refused: ${issue}; fix: run the recipe's clossys verbs and submit at rung plumb, recording no craft stage (R15.7)`;
 }
+/** The standard a slot names (slot.json `standard`), "" when it names none: the input code chooses a craft run's recipe from. */
+const slotStandard = (doc: unknown): string => (isRecord(doc) && typeof doc.standard === "string" ? doc.standard : "");
 /** The recipe axes the open run's brief recorded (`assembled.recipe.axes`), if any. */
 export function openBriefAxes(events: readonly Record<string, unknown>[]): readonly string[] | undefined {
   let axes: readonly string[] | undefined;
@@ -627,16 +639,17 @@ export function openBriefAxes(events: readonly Record<string, unknown>[]): reado
  * recipe, renders); verb submit, by the seat, with the step's skill, model and tier.
  */
 export function appendCraftEvent(consumer: string, agent: ModelAgent, id: string, stage: CraftStage, fields: Readonly<Record<string, unknown>>, given: WriteProvenance & { readonly at?: string }): LedgerEvent {
-  const { entry } = located(consumer, agent, id);
+  const { doc, entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
+    // The actor is judged first (a foreign seat is a SeatRefusal whatever the stage's content), then the run's recipe.
+    const who = provenance({ verb: "submit", by: "planner", skill: agent === SEAT_AGENT ? skillPath("producer", "seats") : skillPath(agent, `${agent}.candidates`) }, given);
+    assertActor(dirname(consumer), who.by, agent, "craft", authorsOf(agent));
     const events = (readLedger(entry.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
-    const plumb = plumbCraftRefusal(consumer, agent, events, stage, fields);
+    const plumb = plumbCraftRefusal(consumer, agent, events, stage, fields, slotStandard(doc));
     if (plumb) throw new Error(plumb);
     const issue = craftOrderIssue(openCraftStages(events), stage, fields, { axes: openBriefAxes(events) });
     if (issue) throw new Error(issue);
     const { op: _op, at: _at, by: _by, verb: _verb, skill: _skill, model: _model, tier: _tier, records: _records, ...own } = fields as Record<string, unknown>;
-    const who = provenance({ verb: "submit", by: "planner", skill: agent === SEAT_AGENT ? skillPath("producer", "seats") : skillPath(agent, `${agent}.candidates`) }, given);
-    assertActor(dirname(consumer), who.by, agent, "craft", authorsOf(agent));
     const event = ledgerEvent(`craft:${stage}`, given.at ?? nowIso(), who, own);
     appendEvent(entry.dir, "slot", event);
     return event;
@@ -664,16 +677,17 @@ export function writeCritique(consumer: string, agent: ModelAgent, id: string, r
   assertActor(dirname(consumer), given.by ?? "planner", agent, "critique", authorsOf(agent));
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
-    const { entry: current } = located(consumer, agent, id);
+    const current = located(consumer, agent, id);
+    const { entry: currentEntry } = current;
     const issues = input.validate(record);
     if (issues.length) throw new Error(`critique refused: ${issues.slice(0, 5).join("; ")}`);
     const events = (readLedger(entry.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
-    const plumb = plumbCraftRefusal(consumer, agent, events, "critique");
+    const plumb = plumbCraftRefusal(consumer, agent, events, "critique", {}, slotStandard(current.doc));
     if (plumb) throw new Error(plumb);
     const order = craftOrderIssue(openCraftStages(events), "critique");
     if (order) throw new Error(order);
     const leaf = id.split(".").at(-1)!;
-    const name = input.candidate ? input.candidate.replace(/\.[^.]+$/, "") : `${leaf}-v${nextVersion(current.dir, current.candidates)}`;
+    const name = input.candidate ? input.candidate.replace(/\.[^.]+$/, "") : `${leaf}-v${nextVersion(currentEntry.dir, currentEntry.candidates)}`;
     if (!CANDIDATE_NAME.test(`${name}.json`)) throw new Error(`critique refused: ${name} is not a <leaf>-v<n> candidate name`);
     const directory = join(entry.dir, CRITIQUES_DIR);
     canonicalDirectory(directory);
@@ -747,7 +761,12 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
   readonly guard?: WriteGuard;
   readonly header?: { readonly createdBy: Actor };
 } = {}): { name: string; sha256: string } {
-  assertActor(dirname(consumer), options.provenance?.by ?? "planner", agent, "candidate", authorsOf(agent));
+  const by = options.provenance?.by ?? "planner";
+  // code:adopt authors only the stock item of a byte-exact adopt slot (records/code-adopt.ts); every other author is a seat.
+  if (by === CODE_ADOPT) {
+    const why = codeAdoptRefusal(dirname(consumer), agent, id, content, options.fields);
+    if (why !== undefined) throw new SeatRefusal(`candidate refused: --by ${CODE_ADOPT}: ${why}`);
+  } else assertActor(dirname(consumer), by, agent, "candidate", authorsOf(agent));
   const { entry } = locatedOne(consumer, agent, id);
   if (options.canonical) canonicalDirectory(entry.dir);
   return slotLocked(entry.dir, () => {
@@ -1060,8 +1079,8 @@ export function writeConfirm(consumer: string, agent: SlotAgent, id: string, can
     const current = JSON.parse(readFileSync(path, "utf8")) as PinDoc;
     const currentIssues = validatePin(current);
     if (currentIssues.length) throw new Error(`confirm refused: the current pin is invalid: ${currentIssues.map(issue => issue.message).join("; ")}`);
-    if (current.basis !== "agent") throw new Error(`confirm refused: ${agent}/${id} is pinned by ${current.decidedBy} (basis ${current.basis}), not an agent pick; the owner pins it with --basis picked`);
-    if (current.candidate !== candidate) throw new Error(`confirm refused: ${agent}/${id} is agent-picked at ${current.candidate}, not ${candidate}`);
+    if (!confirmableBasis(current.basis)) throw new Error(`confirm refused: ${agent}/${id} is pinned by ${current.decidedBy} (basis ${current.basis}), not an agent or code pick; the owner pins it with --basis picked`);
+    if (current.candidate !== candidate) throw new Error(`confirm refused: ${agent}/${id} is picked by ${current.decidedBy} at ${current.candidate}, not ${candidate}`);
     if (readCandidate(consumer, agent, id, candidate).sha256 !== current.sha256) throw new Error(`confirm refused: ${candidate} no longer matches the agent pick's sha256`);
     const pin: PinDoc = { candidate: current.candidate, sha256: current.sha256, decidedBy: current.decidedBy, basis: current.basis, at: current.at, confirmed: { by: input.by, ref: input.ref, at: input.at } };
     const issues = validatePin(pin);

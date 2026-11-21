@@ -43,10 +43,16 @@
   ],
   "recipes": [
     {
+      "dir": "recipes/create.app-section"
+    },
+    {
       "dir": "recipes/create.component"
     },
     {
       "dir": "recipes/create.element"
+    },
+    {
+      "dir": "recipes/create.frame"
     },
     {
       "dir": "recipes/create.glyph"

@@ -39,8 +39,8 @@ describe("agent package loop candidates", () => {
   it("names the agent on its own steps and drops the other agents' steps", () => {
     const create = pkg("designer", "loop.create");
     expect(create.steps.filter(step => step.decider.by === "agent").map(step => step.decider.by === "agent" && step.decider.agent)).toEqual(["designer", "designer"]);
-    expect(pkg("writer", "loop.scope").steps.map(step => step.id)).toEqual(["scope-writer", "demand"]);
-    expect(pkg("publisher", "loop.slot").steps.map(step => step.id)).toEqual(["overlap", "decide-publisher", "sign", "place", "link"]);
+    expect(pkg("writer", "loop.scope").steps.map(step => step.id)).toEqual(["demand", "scope-writer"]);
+    expect(pkg("publisher", "loop.slot").steps.map(step => step.id)).toEqual(["overlap", "match", "decide-publisher", "sign", "place", "link"]);
   });
 });
 
@@ -155,7 +155,7 @@ describe("loopExtensionIssues: the owner gate, route steps and write paths (U9a 
     for (const cli of ["clossys check --route", "clossys check <dependants>", "clossys check --strict", "clossys ia sync"]) {
       const version = pkg("writer", "loop.create");
       version.steps.splice(version.steps.findIndex(step => step.id === "create") + 1, 0, added("writer", { id: "hand-on", cli }));
-      expect(issues("writer", "loop.create", version), cli).toContain(`writer/loop.create: step hand-on runs ${cli}, a Producer code step; an agent step never routes, cascades, syncs or judges the tree`);
+      expect(issues("writer", "loop.create", version), cli).toContain(`writer/loop.create: step hand-on runs ${cli}, a Producer code step; an agent step never routes, cascades, syncs, settles or judges the tree`);
     }
   });
   it("refuses a route step after a step the standard does not route (a failed required step would pass on)", () => {

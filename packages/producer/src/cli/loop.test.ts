@@ -278,7 +278,11 @@ describe("loop.connected on a consumer (mutation-proven)", () => {
   }, LONG);
 });
 
-/** The fixture with one open loop.slot request owned by `agent` (raised by writer's article copy, which cites it). */
+/**
+ * The fixture with one open loop.slot request owned by `agent` (raised by writer's article copy, which cites it). An
+ * owner-reserved need (a Director slot, row owner.class) is the owner's until the owner hands it off; loop.slot answers
+ * only an entry routed to it (foundry-build-0048 LOOP-STEPS), so the owner's handoff answer routes it there first.
+ */
 async function withRequest(root: string, need: string): Promise<string> {
   const requester = join(root, "clossys", "agents", "writer", "sections.article.copy", "slot.json");
   const doc = readJson(requester);
@@ -286,7 +290,12 @@ async function withRequest(root: string, need: string): Promise<string> {
   writeFileSync(requester, `${JSON.stringify(doc, null, 2)}\n`);
   const raised = await runCli(["request", "--target", need, "--from", "writer/sections.article.copy", "--why", "the article cites it", "--at", AT, "--by", "writer", "--root", root], root);
   expect(raised.exitCode, raised.message).toBe(0);
-  return (raised.output as { id: string }).id;
+  const id = (raised.output as { id: string }).id;
+  if (readJson(join(root, "clossys", "agents", "producer", "queue.slot", "entries", `${id}.json`)).assignee === "owner") {
+    const handed = await runCli(["request", id, "--answer", "handoff", "--via", "cli", "--quote", "hand it to its agent", "--at", AT, "--root", root], root);
+    expect(handed.exitCode, handed.message).toBe(0);
+  }
+  return id;
 }
 /** A slot of the agent's own (not a loop slot), as the verb plans on. */
 const firstSlot = (root: string, agent: string) => readdirSync(join(root, "clossys", "agents", agent)).sort().find(id => !id.startsWith("loop.") && statSync(join(root, "clossys", "agents", agent, id, "slot.json"), { throwIfNoEntry: false }))!;
@@ -361,7 +370,8 @@ describe("the runner runs the owning agent's pin for all five loops (planRun / s
     const slot = `designer/${firstSlot(root, "designer")}`;
     // refine-brief declares <slot>/slot.json; writer's slot is another agent's tree.
     const stray: RunHooks = { agent: () => ({ exit: 0, model: "test-model", wrote: ["writer/sections.article.copy/slot.json"] }), code: () => ({ exit: 0, wrote: [] }) };
-    const run = await startRun(root, { loop: "loop.create", slot }, stray, { now: () => new Date(AT) });
+    // T3 (tighten-brief) is slot-wide: the triage code step leaves refine-brief to the agent (DET-STEPS 5).
+    const run = await startRun(root, { loop: "loop.create", slot, trigger: "T3" }, stray, { now: () => new Date(AT) });
     expect(run.state?.version.ref).toBe("designer/loop.create/create-v1.json");
     expect(run.exitCode).toBe(1);
     expect(run.message).toMatch(/step refine-brief wrote writer\/sections\.article\.copy\/slot\.json, which designer\/loop\.create\/create-v1\.json does not declare it writes/);
@@ -531,7 +541,8 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     const slotId = firstSlot(root, "designer");
     const slot = `designer/${slotId}`;
     const waitAt = async (n: number) => {
-      const run = await startRun(root, { loop: "loop.create", slot }, waitAll, { now: minute(n) });
+      // T3 is slot-wide, so refine-brief reaches the agent (a T2 run settles it in code: DET-STEPS 5).
+      const run = await startRun(root, { loop: "loop.create", slot, trigger: "T3" }, waitAll, { now: minute(n) });
       expect(run.packet?.step, run.message).toBe("refine-brief");
       return run.state!;
     };
@@ -596,7 +607,7 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
       [9, (doc: Record<string, any>) => { doc.agentSnapshot.files["../outside.json"] = `file:${"0".repeat(64)}:1`; doc.agentSnapshot.digest = snapshotDigest(doc.agentSnapshot.files); }],
       [11, (doc: Record<string, any>) => { const key = Object.keys(doc.agentSnapshot.files)[0]!; doc.agentSnapshot.files[key] = "gone"; doc.agentSnapshot.digest = snapshotDigest(doc.agentSnapshot.files); }],
     ] as const) {
-      const run = await startRun(root, { loop: "loop.create", slot }, waitAll, { now: minute(n) });
+      const run = await startRun(root, { loop: "loop.create", slot, trigger: "T3" }, waitAll, { now: minute(n) });
       expect(run.packet?.step, run.message).toBe("refine-brief");
       const file = runStatePath(root, run.state!.runId);
       const doc = readJson(file);

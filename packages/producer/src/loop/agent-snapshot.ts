@@ -21,6 +21,15 @@
  *   the runner's events for the run's own state file), the index only to a rebuild of the log (`engineLogIssue`,
  *   `engineIndexIssue`; engine.md "The one writer"). A removal of either is refused.
  *
+ * - a queue entry the step's own decide verbs write more than once (`clossys request <id> --check`, then `--decide`,
+ *   the order the agent's `<agent>.slot` skill gives; foundry-build-0048 LOOP-STEPS): the snapshot also keeps the bytes
+ *   of each queue entry the step names by its exact path in `writes` (`stepEntryTexts`), so an earlier event naming it
+ *   is judged against the states the entry may have passed through on the way from those bytes to its bytes now
+ *   (`entryStepStates`); a state no prefix of the after-events and mix of before and after values gives is refused, and
+ *   the events naming the entry must be the request verb's writes in order (`requestWriteIssue`: one per event count,
+ *   rising, subject `request:<id>`, the actor the writer names for that state; fix round 1). A create step's
+ *   request.create names only a raise the runner accepted (stepRaises), by `producer`, once.
+ *
  * The run's own state file, its lock and its temp file are left out: the runner writes them itself. So is the engine
  * lock's own state (ENGINE_LOCK_STATE): the engine's lock protocol writes it, and it is never a record.
  * A run waiting on an agent step whose snapshot is missing or does not hash to its digest stops (fail closed).
@@ -33,6 +42,7 @@ import { indexAgreement } from "../engine/derived.js";
 import { sha256Hex } from "../records/hash.js";
 import { LEDGER_FILE, LEDGER_SCHEMA, eventIssues } from "../records/ledger.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
+import { requestActor, requestIssues, type SlotRequest } from "../records/request.js";
 import type { DeciderVerb, LoopStep, LoopVersion } from "../records/types.js";
 import { isStandardAgentStep } from "./agent-loops.js";
 import { isLoopAgent } from "./agent-loops-ia.js";
@@ -40,8 +50,13 @@ import { RUN_CLI } from "./route.js";
 
 /** Root-relative posix path of every file under `clossys/` and `.clossys/` → what it is (`file:<sha256>:<links>`, `link:<target>`, `other:<mode>`). */
 export type TreeFiles = Record<string, string>;
-/** The snapshot an agent step's run state keeps while it waits on the agent. */
-export interface AgentSnapshot { readonly step: string; readonly files: TreeFiles; readonly digest: string }
+/** Snapshot key → the file's bytes (utf8) before the step: only the queue entries the step names exactly (`stepEntryTexts`). */
+export type TreeTexts = Record<string, string>;
+/**
+ * The snapshot an agent step's run state keeps while it waits on the agent. `texts` (LOOP-STEPS) are the before bytes of
+ * the queue entries the step names exactly; each is bound to `files` by its sha256 (`keptTexts`), so the digest covers it.
+ */
+export interface AgentSnapshot { readonly step: string; readonly files: TreeFiles; readonly digest: string; readonly texts?: TreeTexts }
 
 /** The trees an agent step's snapshot covers: every Producer record, queue, ledger, check and run lives under them. */
 export const SNAPSHOT_TREES = ["clossys", ".clossys"] as const;
@@ -85,7 +100,8 @@ export function treeSnapshot(root: string, runId: string): TreeFiles {
 export const snapshotDigest = (files: TreeFiles): string =>
   sha256Hex(JSON.stringify(Object.keys(files).sort().map(key => [key, files[key]])));
 
-export const keepSnapshot = (step: string, files: TreeFiles): AgentSnapshot => ({ step, files, digest: snapshotDigest(files) });
+export const keepSnapshot = (step: string, files: TreeFiles, texts?: TreeTexts): AgentSnapshot =>
+  ({ step, files, digest: snapshotDigest(files), ...(texts && Object.keys(texts).length ? { texts } : {}) });
 
 /** A kept snapshot for this step that is whole and hashes to its digest; undefined when it is missing or corrupt. */
 export function keptSnapshot(saved: unknown, step: string): TreeFiles | undefined {
@@ -95,6 +111,98 @@ export function keptSnapshot(saved: unknown, step: string): TreeFiles | undefine
   if (!Object.keys(files).every(key => SNAPSHOT_TREES.some(tree => key === tree || key.startsWith(`${tree}/`)))) return undefined;
   return snapshotDigest(files as TreeFiles) === saved.digest ? files as TreeFiles : undefined;
 }
+
+/**
+ * The kept before bytes of a whole snapshot (`keptSnapshot`'s `files`): none kept is `{}`; undefined when one is not a
+ * string, names a file the snapshot does not hold, or does not hash to that file's mark (corrupt: the run stops).
+ */
+export function keptTexts(saved: unknown, files: TreeFiles): TreeTexts | undefined {
+  if (!isObject(saved) || saved.texts === undefined) return {};
+  if (!isObject(saved.texts)) return undefined;
+  const texts = saved.texts;
+  for (const [key, text] of Object.entries(texts)) {
+    if (typeof text !== "string" || !Object.hasOwn(files, key) || markSha(files[key]) !== sha256Hex(Buffer.from(text, "utf8"))) return undefined;
+  }
+  return texts as TreeTexts;
+}
+
+/** A queue entry as a snapshot key (`clossys/agents/producer/queue.<queue>/entries/<id>.json`). */
+const QUEUE_ENTRY_KEY = /^clossys\/agents\/producer\/queue\.[a-z]+\/entries\/[^/*]+\.json$/;
+
+/**
+ * The bytes before the step of each queue entry in `keys` (the step's exact `writes`, as snapshot keys) that the
+ * snapshot `before` holds as a regular file whose bytes still hash to its mark; any other key is left out, so an
+ * earlier event naming it is judged by the after bytes alone (fail closed).
+ */
+export function stepEntryTexts(root: string, before: TreeFiles, keys: readonly string[]): TreeTexts {
+  const out: TreeTexts = {};
+  for (const key of keys) {
+    if (!QUEUE_ENTRY_KEY.test(key) || markSha(before[key]) === undefined) continue;
+    let bytes: Buffer;
+    try { bytes = readFileSync(join(root, ...key.split("/"))); } catch { continue; }
+    if (sha256Hex(bytes) === markSha(before[key])) out[key] = bytes.toString("utf8");
+  }
+  return out;
+}
+
+/** The most non-event keys an entry's states may differ in before and after a step (2^8 mixes): more is no state. */
+const ENTRY_STEP_KEYS = 8;
+/** The most writes in a step an entry's states are judged over (events appended between before and after). */
+const ENTRY_STEP_EVENTS = 8;
+
+/** A state a queue entry may have held between two writes of a step: its event count, which keys hold their after value, and the entry. */
+export interface EntryStepState { readonly cut: number; readonly mask: number; readonly doc: Record<string, unknown> }
+
+/**
+ * Every state a queue entry may pass through on its way from `before` to `after` in one step, by the sha256 of its
+ * bytes in the request writer's form (`JSON.stringify(entry, null, 2)` and a newline, records/request.ts writeRequest):
+ * its events are the after-events cut after any event the step appended but the last (`cut`, the event count), and
+ * each other key holds its before or its after value (or is absent where that side lacks it; `mask` has bit i set when
+ * the i-th key that differs holds its after value), in the before key order with keys new in after appended (a verb
+ * spreads the entry it read, then sets what it adds), or in the after order with keys after dropped appended.
+ * Empty unless both are entries (objects with an events list) whose before-events are a prefix of the after-events,
+ * and when they differ in more than ENTRY_STEP_KEYS keys or ENTRY_STEP_EVENTS events: a state is only ever a mix of
+ * what the entry held before the step and what it holds after, never a value neither has. Which of these states was on
+ * disk is bound by the order of the events naming the entry (`engineLogIssue`).
+ */
+export function entryStepStates(before: string, after: string): Map<string, EntryStepState> {
+  const out = new Map<string, EntryStepState>();
+  let was: unknown, now: unknown;
+  try { was = JSON.parse(before); now = JSON.parse(after); } catch { return out; }
+  if (!isObject(was) || !isObject(now) || !Array.isArray(was.events) || !Array.isArray(now.events)) return out;
+  const wasEvents = was.events, nowEvents = now.events;
+  if (wasEvents.length >= nowEvents.length || nowEvents.length - wasEvents.length > ENTRY_STEP_EVENTS) return out;
+  if (!wasEvents.every((event, index) => JSON.stringify(event) === JSON.stringify(nowEvents[index]))) return out;
+  const keys = [...new Set([...Object.keys(was), ...Object.keys(now)])].filter(key => key !== "events");
+  const differ = keys.filter(key => !Object.hasOwn(was as object, key) || !Object.hasOwn(now as object, key) || JSON.stringify((was as Record<string, unknown>)[key]) !== JSON.stringify((now as Record<string, unknown>)[key]));
+  if (differ.length > ENTRY_STEP_KEYS) return out;
+  const orders = [
+    [...Object.keys(was), ...Object.keys(now).filter(key => !Object.hasOwn(was as object, key))],
+    [...Object.keys(now), ...Object.keys(was).filter(key => !Object.hasOwn(now as object, key))],
+  ];
+  for (let cut = wasEvents.length + 1; cut < nowEvents.length; cut++) {
+    const events = nowEvents.slice(0, cut);
+    for (let mask = 0; mask < 1 << differ.length; mask++) {
+      const values = new Map<string, unknown>();
+      for (const key of keys) {
+        const index = differ.indexOf(key);
+        const side = index < 0 || mask & (1 << index) ? now as Record<string, unknown> : was as Record<string, unknown>;
+        if (Object.hasOwn(side, key)) values.set(key, side[key]);
+      }
+      values.set("events", events);
+      for (const order of orders) {
+        const doc: Record<string, unknown> = {};
+        for (const key of order) if (values.has(key)) doc[key] = values.get(key);
+        const sha = sha256Hex(Buffer.from(`${JSON.stringify(doc, null, 2)}\n`, "utf8"));
+        if (!out.has(sha)) out.set(sha, { cut, mask, doc });
+      }
+    }
+  }
+  return out;
+}
+
+/** The sha256 of every state `entryStepStates` gives. */
+export const entryStepShas = (before: string, after: string): Set<string> => new Set(entryStepStates(before, after).keys());
 
 /** A root-relative snapshot key as the ledger and the allowlist name it: `clossys/agents/` dropped. */
 export const displayPath = (key: string): string => key.startsWith("clossys/agents/") ? key.slice("clossys/agents/".length) : key;
@@ -171,12 +279,14 @@ export type AgentEventActor = "seat" | "verb";
 /**
  * The engine event kinds an agent step's own verb produces, by decider verb, with the actors each may name
  * (foundry-build-0048 ENG-0 fix round 1): a pick pins (`clossys pin`/`clossys pick`: the slot ledger's pin or pick
- * event, and the pin document it writes); a create submits (`clossys next --submit`: the slot ledger's submit event); a
- * decide files or answers a request (`clossys request`: the request record). refine-brief and check emit none.
+ * event, and the pin document it writes); a create submits (`clossys next --submit`: the slot ledger's submit event)
+ * and may raise the upstream request its skill tells it to (`clossys request --kind change ...`: the new request record,
+ * which the runner judges as exactly the verb's own entry, loop/runner.ts stepRaises, and whose one event
+ * `requestWriteIssue` binds to that entry; foundry-build-0048 LOOP-STEPS); a decide files or answers a request (`clossys request`: the request record). refine-brief and check emit none.
  */
 export const AGENT_STEP_EVENTS: Readonly<Partial<Record<DeciderVerb, Readonly<Record<string, AgentEventActor>>>>> = {
   pick: { "slot.pin": "seat", "slot.pick": "seat", "pin.write": "verb", "pin-map.write": "verb" },
-  "create-candidates": { "slot.submit": "seat" },
+  "create-candidates": { "slot.submit": "seat", "request.create": "verb" },
   decide: { "request.create": "verb", "request.write": "verb" },
 };
 
@@ -204,15 +314,16 @@ type ShaOf = (path: string) => string | null | undefined;
  *   (`AGENT_STEP_EVENTS`), its subject is the agent's own (`<agent>/...`, or a request the verb files), and it names at
  *   least one input, each a file this step changed (`changed`)
  *   whose sha256 is the file's bytes: the last event naming a file carries its bytes after the step, an earlier one the
- *   bytes it had then (for a ledger, a prefix of the after-ledger in the ledger writer's bytes; any other file is
- *   written once per step, so every event naming it carries its after bytes);
+ *   bytes it had then (for a ledger, a prefix of the after-ledger in the ledger writer's bytes; for a queue entry, the
+ *   request verb's own write of it, `requestWriteIssue`; any other file is written once per step, so every event
+ *   naming it carries its after bytes);
  * - a run event (`runId` given): actor `code:clossys run`, kind run.state, subject `loop:<loop>/<runId>`, one input,
  *   the run's own state file; the last carries the state file's bytes now.
  *
  * An event naming a file the step left as it was, an owner's or other actor's event, a kind the verb does not make, or
  * an input hash that is not the file's bytes is a claim no write of this step backs, and is refused.
  */
-export function engineLogIssue(root: string, beforeMark: string | undefined, afterMark: string | undefined, changed: ReadonlySet<string>, step: Pick<LoopStep, "id" | "decider">, agent: string, after: TreeFiles, runId?: string): string | undefined {
+export function engineLogIssue(root: string, beforeMark: string | undefined, afterMark: string | undefined, changed: ReadonlySet<string>, step: Pick<LoopStep, "id" | "decider">, agent: string, after: TreeFiles, runId?: string, texts: Readonly<TreeTexts> = {}, raised: ReadonlySet<string> = new Set()): string | undefined {
   const shown = EVENTS_FILE;
   const stepId = step.id;
   if (!/^file:[0-9a-f]{64}:1$/.test(afterMark ?? "")) return `${shown}: is not a regular file with one link`;
@@ -246,6 +357,7 @@ export function engineLogIssue(root: string, beforeMark: string | undefined, aft
   for (const [index, event] of appended.entries()) for (const input of event.inputs) lastNaming.set(input.path, index);
   const afterSha: ShaOf = path => markSha(after[path]) ?? (after[path] === undefined ? null : undefined);
   const stateSha = (): string | null => { try { return sha256Hex(readFileSync(join(root, ...own!.split("/")))); } catch { return null; } };
+  const writes: EntryWrites = { states: new Map(), created: new Set() };
   for (const [index, event] of appended.entries()) {
     const at = `${shown} event seq ${event.seq} (${event.kind} ${event.subject})`;
     const unbacked = event.inputs.find(input => !changed.has(input.path) && input.path !== own);
@@ -262,6 +374,11 @@ export function engineLogIssue(root: string, beforeMark: string | undefined, aft
     if (allowed === undefined) return `${at}: kind ${event.kind} is not one step ${stepId} (${verb ?? step.decider.by}) produces (${kinds.join(", ") || "none"})`;
     if (event.subject !== agent && !event.subject.startsWith(`${agent}/`) && !(event.kind.startsWith("request.") && event.subject.startsWith("request:"))) return `${at}: names subject ${event.subject}, not one of agent ${agent}'s`;
     if (!event.inputs.length) return `${at}: names no input`;
+    if (event.kind.startsWith("request.") || event.inputs.some(input => queueEntryId(input.path) !== undefined)) {
+      const why = requestWriteIssue(root, event, lastNaming.get(event.inputs[0]!.path) === index, afterSha, step, texts, raised, writes);
+      if (why !== undefined) return `${at}: ${why}`;
+      continue;
+    }
     for (const input of event.inputs) {
       const final = lastNaming.get(input.path) === index;
       const now = afterSha(input.path);
@@ -270,6 +387,73 @@ export function engineLogIssue(root: string, beforeMark: string | undefined, aft
       return `${at}: its sha256 of ${input.path} is not the file's bytes ${final ? "after the step" : "when it was written"}`;
     }
   }
+  const unlogged = [...raised].sort().find(key => !writes.created.has(key));
+  if (unlogged !== undefined) return `${shown}: ${displayPath(unlogged)} was raised in step ${stepId} with no request.create event of the request verb`;
+  return undefined;
+}
+
+/** The id of a queue entry from its snapshot key; undefined for any other file. */
+export const queueEntryId = (key: string): string | undefined => QUEUE_ENTRY_KEY.test(key) ? /\/entries\/([^/]+)\.json$/.exec(key)![1] : undefined;
+
+/** What the events of a step so far bound each queue entry to: the last earlier state named (`entryStepStates`), and the raises logged. */
+interface EntryWrites { readonly states: Map<string, { cut: number; mask: number }>; readonly created: Set<string> }
+
+/**
+ * Why an event that names a queue entry, or is of a request kind, is not the request verb's own write of the entry;
+ * undefined when it is (foundry-build-0048 LOOP-STEPS fix round 1). The request writer (records/request.ts
+ * writeRequest, createRequest) logs one event per write: a request.* kind, one input (the entry), subject
+ * `request:<the entry's id>`, the actor it names for the state it wrote (`requestActor`: the state's last event's
+ * `by`), and the sha256 of the bytes it wrote. So:
+ *
+ * - an event naming a queue entry is a request.* event with that one input and that subject, and a request.* event
+ *   names one queue entry;
+ * - in a create step, a request.create names only an entry the runner accepted as the step's raise (`raised`,
+ *   loop/runner.ts stepRaises), by `producer` (the code the request verb runs when it raises), as the last event naming
+ *   the entry (so once), with the entry's bytes after the step; a raise with no such event is refused;
+ * - the last event naming an entry carries its bytes after the step; an earlier one, only for an entry the step names
+ *   exactly (its before bytes kept in `texts`), carries a state `entryStepStates` gives whose event count is above the
+ *   count of the earlier state named before it (each write appends its own event, so each count is named once, in
+ *   order) and whose keys holding their after value include those of that earlier state (no write undoes another);
+ * - the state it carries is a valid entry (`requestIssues`: the writer never writes another), and its actor is the one
+ *   the writer names for that state.
+ *
+ * A replayed, reordered or re-subjected write, a write the verb names another actor for, and a request event over any
+ * other file are claims no write of the request verb backs, and are refused.
+ */
+function requestWriteIssue(root: string, event: { kind: string; actor: string; subject: string; inputs: readonly { path: string; sha256: string | null }[] }, final: boolean, afterSha: ShaOf, step: Pick<LoopStep, "id" | "decider">, texts: Readonly<TreeTexts>, raised: ReadonlySet<string>, writes: EntryWrites): string | undefined {
+  const entry = event.inputs.find(input => queueEntryId(input.path) !== undefined);
+  if (!event.kind.startsWith("request.")) return `names queue entry ${entry!.path}, which only the request verb writes (a request.* event)`;
+  if (event.inputs.length !== 1 || entry === undefined) return "a request event names exactly one input, the queue entry it writes";
+  const key = entry.path, id = queueEntryId(key)!;
+  if (event.subject !== `request:${id}`) return `names subject ${event.subject}, not request:${id}, the entry it writes`;
+  const nowSha = afterSha(key);
+  let nowText: string;
+  try { nowText = readFileSync(join(root, ...key.split("/")), "utf8"); } catch { return `${key} cannot be read`; }
+  if (nowSha == null || sha256Hex(nowText) !== nowSha) return `${key} changed while it was judged`;
+  if (step.decider.by === "agent" && step.decider.verb === "create-candidates" && event.kind === "request.create") {
+    if (!raised.has(key)) return `names ${key}, which is no raise of step ${step.id} the runner accepted (stepRaises)`;
+    if (event.actor !== "producer") return `is by ${event.actor}, not producer, the code the request verb runs when it raises`;
+    if (!final || entry.sha256 !== nowSha) return `its sha256 of ${key} is not the entry's bytes after the step`;
+    writes.created.add(key);
+  }
+  let doc: unknown;
+  if (final) {
+    if (entry.sha256 !== nowSha) return `its sha256 of ${key} is not the file's bytes after the step`;
+    try { doc = JSON.parse(nowText); } catch { return `${key} is not JSON`; }
+  } else {
+    const kept = Object.hasOwn(texts, key) ? texts[key] : undefined;
+    const state = kept === undefined || entry.sha256 === null ? undefined : entryStepStates(kept, nowText).get(entry.sha256);
+    if (!state) return `its sha256 of ${key} is not the file's bytes when it was written`;
+    const prev = writes.states.get(key);
+    if (prev && state.cut <= prev.cut) return `names ${key} with ${state.cut} events after a write that left ${prev.cut}: each write of the entry appends its own event, once and in order`;
+    if (prev && (state.mask & prev.mask) !== prev.mask) return `names a state of ${key} that undoes a value an earlier write in the step set`;
+    writes.states.set(key, { cut: state.cut, mask: state.mask });
+    doc = state.doc;
+  }
+  const invalid = requestIssues(doc);
+  if (invalid.length) return `names a state of ${key} the request writer never writes (${invalid[0]})`;
+  const actor = requestActor(doc as SlotRequest);
+  if (event.actor !== actor) return `is by ${event.actor}, but the request writer names ${actor} for the state of ${key} it carries`;
   return undefined;
 }
 
@@ -324,9 +508,11 @@ export interface SnapshotJudgement {
  * every changed or added file the step did not report (the own slot's ledger aside, judged by `ledgerAppendIssue`), and
  * every changed symlink or non-regular file. The engine's log and index are judged by `engineLogIssue` and
  * `engineIndexIssue`, never by `reported`. `standard` is the Producer loop the consumer runs now for the run's loop;
- * `runId` names the run whose own state file its run events may name.
+ * `runId` names the run whose own state file its run events may name; `texts` are the kept before bytes of the queue
+ * entries the step names exactly (`stepEntryTexts`); `raised` the snapshot keys of the entries the runner accepted as
+ * the step's raises (loop/runner.ts stepRaises), each of which the request verb's one request.create must name.
  */
-export function judgeSnapshot(root: string, before: TreeFiles, after: TreeFiles, reported: ReadonlySet<string>, step: Pick<LoopStep, "id" | "decider" | "cli">, agent: string, subject: { agent: string; slotId: string } | undefined, standard?: LoopVersion, runId?: string): SnapshotJudgement {
+export function judgeSnapshot(root: string, before: TreeFiles, after: TreeFiles, reported: ReadonlySet<string>, step: Pick<LoopStep, "id" | "decider" | "cli">, agent: string, subject: { agent: string; slotId: string } | undefined, standard?: LoopVersion, runId?: string, texts: Readonly<TreeTexts> = {}, raised: ReadonlySet<string> = new Set()): SnapshotJudgement {
   const issues: string[] = [], appended: string[] = [];
   const ledger = subject && subject.agent === agent ? ownLedgerKey(subject) : undefined;
   const cascade = subject && subject.agent === agent ? ownCascadeKey(subject) : undefined;
@@ -342,7 +528,7 @@ export function judgeSnapshot(root: string, before: TreeFiles, after: TreeFiles,
     }
     if (!now.startsWith("file:")) { issues.push(`${was === undefined ? "added" : "changed"} ${shown}, which is ${now.startsWith("link:") ? "a symlink" : "not a regular file"}`); continue; }
     if (key === EVENTS_FILE) {
-      const why = engineLogIssue(root, was, now, changed, step, agent, after, runId);
+      const why = engineLogIssue(root, was, now, changed, step, agent, after, runId, texts, raised);
       if (why !== undefined) issues.push(`changed ${why}`);
       continue;
     }
@@ -358,5 +544,6 @@ export function judgeSnapshot(root: string, before: TreeFiles, after: TreeFiles,
     }
     if (!reported.has(key)) issues.push(`${was === undefined ? "added" : "changed"} ${shown} without reporting it (--wrote)`);
   }
+  if (raised.size && before[EVENTS_FILE] === after[EVENTS_FILE]) issues.push(`raised ${[...raised].sort().map(displayPath).join(", ")} with no request.create event of the request verb (${EVENTS_FILE} unchanged)`);
   return { issues, appended };
 }

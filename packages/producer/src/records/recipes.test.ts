@@ -3,7 +3,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { generatorIssues, loadRecipes, plumbCraftIssues, produceIssues, readRecipe, recipesFor } from "./recipes.js";
+import { craftRunRecipe, craftRunRecipeIssues, generatorIssues, loadRecipes, plumbCraftIssues, produceIssues, readRecipe, recipeSourceIssue, recipesFor, standardRecipe, submitGuardedChecks } from "./recipes.js";
+import { sourceKindOf, submissionSources, viewSourceKind } from "./slot-current.js";
 import { loadStandards } from "./standards.js";
 
 const FIXTURES = fileURLToPath(new URL("../constitution/__fixtures__/", import.meta.url));
@@ -82,5 +83,73 @@ describe("records/recipes", () => {
       'craft.md stage "### 1. brief (model)" is not marked (deterministic)',
     ]);
     expect(plumbCraftIssues("### 1. run (deterministic)\n\n```sh\nnpm run build\n```\n")).toEqual(['craft.md runs "npm run build", not a clossys verb: a plumb recipe\'s stages are CLI verbs only']);
+  });
+  it("checks: a recipe names only checks the submit guard runs; ref-verbatim recipes craft judged kinds only (mutation)", () => {
+    const root = workspace();
+    expect(submitGuardedChecks().has("R05.1")).toBe(true);
+    expect(submitGuardedChecks().has("ref-verbatim")).toBe(true);
+    expect(submitGuardedChecks().has("R02.1")).toBe(false);
+    recipeJson(root, { ...BASE, checks: ["R05.1", "ref-verbatim"], sources: ["composition"] });
+    expect(readRecipe(root, "writer", "fixture-headline-craft").issues).toEqual([]);
+    recipeJson(root, { ...BASE, checks: ["R05.1", "R99.1"], sources: ["composition"] });
+    expect(readRecipe(root, "writer", "fixture-headline-craft").issues).toEqual(["checks names R99.1, which the submit guard does not run (a rules.json check guarded on submit, or ref-verbatim)"]);
+    recipeJson(root, { ...BASE, checks: ["ref-verbatim"], sources: ["original"] });
+    expect(readRecipe(root, "writer", "fixture-headline-craft").issues).toEqual(["sources names original, which ref-verbatim does not judge at every rung (composition, registry)"]);
+    recipeJson(root, { ...BASE, checks: ["R05.1", "ref-verbatim"], sources: ["composition"] });
+    const recipe = readRecipe(root, "writer", "fixture-headline-craft");
+    expect(recipeSourceIssue(recipe, "composition")).toBeUndefined();
+    expect(recipeSourceIssue(recipe, "original")).toBe("recipe fixture-headline-craft crafts composition candidates; this one's meta.source.kind is original");
+    expect(recipeSourceIssue(recipe, undefined)).toBe("recipe fixture-headline-craft crafts composition candidates; this one's meta.source.kind is (none)");
+    // parts: the part classes of a composition, only beside a composition source and always with component.
+    recipeJson(root, { ...BASE, checks: ["ref-verbatim"], sources: ["composition"], parts: ["component", "frame", "section"] });
+    expect(readRecipe(root, "writer", "fixture-headline-craft").issues).toEqual([]);
+    recipeJson(root, { ...BASE, sources: ["original"], parts: ["component"] });
+    expect(readRecipe(root, "writer", "fixture-headline-craft").issues).toEqual(["parts names the part classes of a composition, but sources does not list composition"]);
+    recipeJson(root, { ...BASE, checks: ["ref-verbatim"], sources: ["composition"], parts: ["frame"] });
+    expect(readRecipe(root, "writer", "fixture-headline-craft").issues).toEqual(["parts does not list component: every composition places pinned stock components"]);
+    recipeJson(root, { ...BASE, checks: ["ref-verbatim"], sources: ["composition"], parts: ["component", "page"] });
+    expect(readRecipe(root, "writer", "fixture-headline-craft").issues.join("\n")).toMatch(/parts/);
+  });
+
+  it("one kind reader: the view's meta.source.kind, which the guard reads; every source a submission carries is listed", () => {
+    expect(sourceKindOf({ meta: { source: { kind: "composition" } } })).toBe("composition");
+    expect(sourceKindOf({ clossys: { source: { kind: "composition" } }, content: {} })).toBeUndefined();
+    expect(viewSourceKind("x-v1.json", JSON.stringify({ meta: { source: { kind: "npm" } } }))).toBe("npm");
+    expect(viewSourceKind("x-v1.md", "---\nsource: {\"kind\":\"authored\"}\n---\nHi.\n")).toBe("authored");
+    expect(viewSourceKind("x-v1.json", "not json")).toBeUndefined();
+    const mixed = { clossys: { source: { kind: "npm" } }, content: { meta: {} }, meta: { source: { kind: "composition" } } };
+    expect(submissionSources(mixed)).toEqual([{ at: "clossys.source", kind: "npm" }, { at: "meta.source", kind: "composition" }]);
+    expect(submissionSources({ meta: { source: { kind: "composition" } } })).toEqual([{ at: "meta.source", kind: "composition" }]);
+    expect(submissionSources("text")).toEqual([]);
+  });
+
+  it("code chooses a run's recipe: the standard's one producing recipe; a run naming another, an unknown one or two is refused (mutation)", () => {
+    const root = workspace();
+    const recipes = loadRecipes(root);
+    const own = recipes[0]!;
+    expect(standardRecipe(recipes, "writer", "fixture-headline")).toEqual({ recipe: own });
+    expect(standardRecipe(recipes, "writer", "nope")).toEqual({ issue: "no valid recipe under packages/writer/recipes/ produces for nope" });
+    const twin = { ...own, id: "twin", doc: { ...own.doc!, id: "twin" } };
+    expect(standardRecipe([own, twin], "writer", "fixture-headline")).toEqual({ issue: "recipes fixture-headline-craft, twin all produce for fixture-headline; a standard has exactly one producing recipe" });
+    const other = { ...own, id: "other", doc: { ...own.doc!, id: "other", produces: ["other-standard"] } };
+    const all = [own, other];
+    const run = (brief?: string, diverge?: string) => [{ op: "craft:brief", ...(brief ? { recipe: brief } : {}) }, { op: "craft:diverge", ...(diverge ? { recipe: diverge } : {}) }];
+    // The diverge names nothing, or the chosen recipe: no issue, and the chosen recipe whatever the events name.
+    expect(craftRunRecipeIssues(run(), all, "writer", "fixture-headline")).toEqual([]);
+    expect(craftRunRecipeIssues(run("fixture-headline-craft", "fixture-headline-craft"), all, "writer", "fixture-headline")).toEqual([]);
+    expect(craftRunRecipe(run(undefined, "other"), all, "writer", "fixture-headline")).toBe(own);
+    // A diverge naming a recipe of another standard (the create.element probe).
+    expect(craftRunRecipeIssues(run(undefined, "other"), all, "writer", "fixture-headline")).toEqual(["craft:diverge names recipe other, which does not produce for fixture-headline"]);
+    // A made-up id.
+    expect(craftRunRecipeIssues(run(undefined, "create.nope"), all, "writer", "fixture-headline")).toEqual(["craft:diverge names recipe create.nope, which is not a valid recipe under packages/writer/recipes/"]);
+    // A brief and a diverge of different recipes.
+    expect(craftRunRecipeIssues(run("fixture-headline-craft", "other"), all, "writer", "fixture-headline")[0]).toBe("the run's craft events name recipes fixture-headline-craft (craft:brief), other (craft:diverge); one run is one recipe");
+    // The brief's assembled recipe counts as a name too.
+    expect(craftRunRecipeIssues([{ op: "craft:brief", assembled: { recipe: { id: "other" } } }], all, "writer", "fixture-headline")).toEqual(["craft:brief (assembled) names recipe other, which does not produce for fixture-headline"]);
+    // A slot with no standard, and a standard with two producing recipes, leave the run's recipe unchosen.
+    expect(craftRunRecipeIssues(run(), all, "writer", "")).toEqual(["writer slot names no standard, so no recipe is chosen for its craft run"]);
+    expect(craftRunRecipe(run(undefined, "fixture-headline-craft"), all, "writer", "")).toBeUndefined();
+    expect(craftRunRecipeIssues(run(), [own, twin], "writer", "fixture-headline")).toEqual(["recipes fixture-headline-craft, twin all produce for fixture-headline; a standard has exactly one producing recipe"]);
+    expect(craftRunRecipeIssues([], all, "writer", "fixture-headline")).toEqual([]);
   });
 });

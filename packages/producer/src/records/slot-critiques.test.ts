@@ -3,9 +3,10 @@
  * record the writer itself wrote is accepted, and only that; a malformed record or any other entry under the folder
  * still fails. The record here is written by the real verb (cli/critique.ts), never by hand.
  */
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import "../cli/main.js";
 import { runCritiqueCli } from "../cli/critique.js";
@@ -16,6 +17,7 @@ const ID = "components.button";
 const AT = "2026-11-14T12:00:00.000Z";
 const STANDARD = "element.bold";
 const REL = `agents/designer/${ID}/critiques`;
+const DESIGNER = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "designer");
 let workspace: string, consumer: string, slotDir: string;
 
 beforeEach(() => {
@@ -27,7 +29,9 @@ beforeEach(() => {
   mkdirSync(join(slotDir, "candidates"), { recursive: true });
   writeFileSync(join(consumer, "clossys.config.ts"), "export default {};\n");
   writeFileSync(join(agents, "ia.json"), jsonBytes(ia));
-  writeFileSync(join(slotDir, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id: ID, agent: "designer", ia: slotPositions("designer", ia).get(ID), kind: "element", contract: {}, inputs: [], uses: [] }));
+  writeFileSync(join(slotDir, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id: ID, agent: "designer", ia: slotPositions("designer", ia).get(ID), kind: "element", standard: "component", contract: {}, inputs: [], uses: [] }));
+  // The run is one recipe, the one code chooses for the slot's standard (R15.5): component and its create.component.
+  for (const path of ["standards/component", "recipes/create.component"]) cpSync(join(DESIGNER, path), join(workspace, "packages", "designer", path), { recursive: true });
   mkdirSync(join(workspace, "packages", "designer", "standards", STANDARD), { recursive: true });
   writeFileSync(join(workspace, "packages", "designer", "standards", STANDARD, "taste.md"), "# Taste\n");
   mkdirSync(join(workspace, "renders"), { recursive: true });

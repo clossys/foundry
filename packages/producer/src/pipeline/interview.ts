@@ -42,6 +42,7 @@
 import { join } from "node:path";
 import { blocks, checkCell, readStrategyRoot } from "@clossys/director";
 import type { Cell, StrategyModel } from "@clossys/director";
+import { confirmableBasis } from "../records/pin.js";
 import { listRequests, listWorkEntries, slotlessNeeds } from "../records/request.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
@@ -297,9 +298,11 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
       message: `${store}:${line} ${issue.detail}; submit a new candidate with its ladder record` });
   }
 
-  // An agent pick (basis agent) of the Designer, Writer or Publisher waits for the owner's confirmation, by policy.
-  for (const agent of POLICY_AGENTS) for (const entry of entries.get(agent) ?? []) if (entry.pin?.basis === "agent" && !entry.pin.confirmed)
-    gaps.push({ kind: "coverage", code: "agent-pick.unconfirmed", agent, item: `${agent}/${entry.id}`, step: `pin.${agent}`, decider: "owner", message: `${agent}/${entry.id}: agent pick ${entry.pin.candidate} waits for the owner's confirmation` });
+  // An agent pick (basis agent) or a code pick (basis scorecard, `clossys settle pick`) of the Designer, Writer or
+  // Publisher waits for the owner's confirmation, by policy: code takes over the mechanical choice, the owner keeps
+  // the confirmation (DET-STEPS fix r1 ruling), so a code pick raises the same gap with the same confirm remedy.
+  for (const agent of POLICY_AGENTS) for (const entry of entries.get(agent) ?? []) if (entry.pin && confirmableBasis(entry.pin.basis) && !entry.pin.confirmed)
+    gaps.push({ kind: "coverage", code: "agent-pick.unconfirmed", agent, item: `${agent}/${entry.id}`, step: `pin.${agent}`, decider: "owner", message: `${agent}/${entry.id}: ${entry.pin.basis === "scorecard" ? `code pick (${entry.pin.decidedBy})` : "agent pick"} ${entry.pin.candidate} waits for the owner's confirmation` });
 
   // requests: a downstream slot citing an upstream slot only its agent can settle.
   const cited = new Map<string, { to: SlotAgent; from: SlotAgent; cell: string; need: string[] }>();
@@ -739,7 +742,7 @@ function wordingQuestion(row: WordingRow): Built {
   const item = `writer/${row.slot}`, rewrite = row.rewrite!;
   const first = row.findings[0]!;
   const records = [...new Set(row.findings.map(finding => `${finding.record} [${finding.locale}]`))];
-  const keep = row.pin.basis === "agent" && !row.pin.confirmed
+  const keep = confirmableBasis(row.pin.basis) && !row.pin.confirmed
     ? ["clossys", "pin", item, row.pin.candidate, "--confirm", "--by", QUEUE_ANSWER]
     : ["clossys", "pin", item, row.pin.candidate, "--basis", "picked", "--by", QUEUE_ANSWER];
   const more = records.length > 1 ? ` (+${records.length - 1} more)` : "";

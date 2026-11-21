@@ -13,11 +13,14 @@ export const PIN_KEYS = ["candidate", "sha256", "decidedBy", "basis", "at", "con
 export const PIN_CONFIRMED_KEYS = ["by", "ref", "at"] as const;
 /** `<name>-v<n>.<md|json>`: any agent's candidate file name; n is the candidate version. */
 export const PIN_CANDIDATE_NAME = /^([a-z0-9][a-z0-9.-]*)-v([1-9][0-9]*)\.(md|json)$/;
-/** Who decided: owner, planner or migration (each optionally `:<ref>`), `agent:<seat>`, or `migrated`. */
-export const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/;
-/** How a pin was decided: an owner pick, a blanket owner approval, the planner, or a judge seat (`clossys pick`). */
-export const PIN_BASES = ["picked", "bulk", "planner", "agent"] as const;
-/** Who may confirm an agent pick: the owner only. */
+/** Who decided: owner, planner or migration (each optionally `:<ref>`), `agent:<seat>`, `code:scorecard` (code pins a single top scorecard row), or `migrated`. */
+export const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|code:scorecard|migrated)$/;
+/** How a pin was decided: an owner pick, a blanket owner approval, the planner, a judge seat (`clossys pick`), or code
+ * (`scorecard`: the pin gate's scorecard had one top row, decidedBy `code:scorecard`, never on an owner-pick or confirm slot). */
+export const PIN_BASES = ["picked", "bulk", "planner", "agent", "scorecard"] as const;
+/** The one code decider: `clossys settle pick` pins the scorecard's single top row (basis scorecard). */
+export const CODE_SCORECARD = "code:scorecard";
+/** Who may confirm an agent or code pick: the owner only. */
 export const CONFIRMED_BY = /^owner(?::\S.*)?$/;
 /** Where a confirmation's owner words are: one ledger comment, optionally followed by a note in parentheses. */
 export const OWNER_WORDS_REF = /^(?:[\w.-]+\/[\w.-]+#\d+ issuecomment-\d+|https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/issues\/\d+#issuecomment-\d+)(?: \([^()]*\))?$/;
@@ -34,13 +37,14 @@ export function pinIssues(value: unknown): string[] {
   for (const key of Object.keys(value)) if (!(PIN_KEYS as readonly string[]).includes(key)) issues.push(`unknown key ${key}`);
   if (typeof value.candidate !== "string" || !PIN_CANDIDATE_NAME.test(value.candidate)) issues.push("candidate must be a candidate file name");
   if (typeof value.sha256 !== "string" || !SHA256.test(value.sha256)) issues.push("sha256 must be 64 lowercase hex");
-  if (typeof value.decidedBy !== "string" || !DECIDED_BY.test(value.decidedBy)) issues.push("decidedBy must be owner[:<ref>], planner[:<ref>], migration[:<ref>], agent:<seat> or migrated");
+  if (typeof value.decidedBy !== "string" || !DECIDED_BY.test(value.decidedBy)) issues.push("decidedBy must be owner[:<ref>], planner[:<ref>], migration[:<ref>], agent:<seat>, code:scorecard or migrated");
   if (!(PIN_BASES as readonly unknown[]).includes(value.basis)) issues.push(`basis must be one of ${PIN_BASES.join(", ")}`);
   if ((value.basis === "agent") !== (typeof value.decidedBy === "string" && value.decidedBy.startsWith("agent:"))) issues.push("basis agent and decidedBy agent:<seat> go together (clossys pick)");
+  if ((value.basis === "scorecard") !== (value.decidedBy === CODE_SCORECARD)) issues.push("basis scorecard and decidedBy code:scorecard go together (clossys settle pick)");
   if (!iso(value.at)) issues.push("at must be an ISO timestamp");
   if (value.confirmed !== undefined) {
     const confirmed = value.confirmed;
-    if (value.basis !== "agent") issues.push("confirmed is only on an agent pick (basis agent); an owner pin is its own decision");
+    if (value.basis !== "agent" && value.basis !== "scorecard") issues.push("confirmed is only on an agent or code pick (basis agent or scorecard); an owner pin is its own decision");
     if (!object(confirmed)) issues.push("confirmed must be {by, ref, at}");
     else {
       for (const key of Object.keys(confirmed)) if (!(PIN_CONFIRMED_KEYS as readonly string[]).includes(key)) issues.push(`confirmed has unknown key ${key}`);
@@ -67,7 +71,7 @@ const AGENTS = ["director", "designer", "writer", "publisher", "producer"] as co
 const AGENT = `(?:${AGENTS.join("|")})`;
 const SLOT_ID = "[a-z][a-z0-9-]*(?:\\.[a-z0-9][a-z0-9-]*){1,3}";
 const PIN2_ID = new RegExp(`^${AGENT}/${SLOT_ID}/pin$`);
-const PIN2_DECIDED_BY = new RegExp(`^(?:owner(?::.+)?|planner(?::.+)?|agent:${AGENT}|migrated)$`);
+const PIN2_DECIDED_BY = new RegExp(`^(?:owner(?::.+)?|planner(?::.+)?|agent:${AGENT}|code:scorecard|migrated)$`);
 const ISO_Z = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?Z$/;
 const REF_TO = new RegExp(`^(?:facts|${AGENT}/${SLOT_ID}(?:/(?:package:)?[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\\.(?:md|json|svg))?)$`);
 const REF_KEYS = ["to", "key", "record", "sha256", "rel"] as const;

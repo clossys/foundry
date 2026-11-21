@@ -10,7 +10,9 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { runRequestCli } from "../cli/request.js";
 import { answerRequest, closeWork, legacyFixEntries, listRequests, raiseWork, readRequest, requestIssues } from "../records/request.js";
-import { consumerFacts, ownerClasses, ownerClassOf, readRoutingTable, rederive, routeEntry, RoutingError, routingIssues, routingText, type RoutingFacts } from "./routing.js";
+import { CONTENT_AGENTS } from "../records/request.js";
+import { loopAnswers } from "../loop/names.js";
+import { consumerFacts, ENTRY_KINDS, HandlerMismatchError, handlerMismatch, ownerClasses, ownerClassOf, readDeclarations, readRoutingTable, rederive, routeEntry, RoutingError, routingIssues, routingText, WORK_KINDS, type RoutingFacts } from "./routing.js";
 
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
 const AT = "2026-11-17T10:00:00Z";
@@ -119,11 +121,13 @@ describe("routeEntry", () => {
     expect(route(facts, "change", "writer/narratives.legal-document")).toMatchObject({ row: "owner.class", assignee: "owner", packet: { queue: "queue.pick" } });
   });
 
-  it("routes a live change and a homed slot need to the agent, a homeless slot need to its scope skill", () => {
+  it("routes a live change and a slot need in an agent's tree, homed or not, to the agent's handler that answers it", () => {
     const { facts } = world();
     expect(route(facts, "change", "writer/narratives.article")).toMatchObject({ row: "change.live", assignee: "writer", handler: { loop: "loop.create" } });
     expect(route(facts, "slot", "writer/narratives.faq")).toMatchObject({ row: "slot.home", assignee: "writer", handler: { loop: "loop.slot", skill: "packages/writer/actions/writer.slot/skill.md" } });
-    expect(route(facts, "slot", "publisher/page.home")).toMatchObject({ row: "slot.scope", assignee: "publisher", handler: { loop: "loop.scope" } });
+    // LOOP-STEPS (consumer-slot-request-route-handler-mismatch): a homeless slot need goes to loop.slot too, never to
+    // loop.scope, which files needs and answers no entry.
+    expect(route(facts, "slot", "publisher/page.home")).toMatchObject({ row: "slot.agent", assignee: "publisher", handler: { loop: "loop.slot", skill: "packages/publisher/actions/publisher.slot/skill.md" } });
   });
 
   it("keeps a decision kind with its decider", () => {
@@ -267,5 +271,68 @@ describe("clossys request --kind change|fix", () => {
     expect(refused.exitCode).toBe(1);
     expect(refused.message).toMatch(/declares no issuing edge/);
     await expect(runRequestCli(["--kind", "fix", "--subject", "designer/sections.hero", "--from", "owner", "--why", "x", "--check", "render.overflow", "--findings", "a", "--root", root], root)).rejects.toThrow(/--check, --findings and --cause/);
+  });
+});
+
+describe("every route answers its entry (foundry-build-0048 LOOP-STEPS)", () => {
+  const AGENTS = CONTENT_AGENTS;
+  it("gives every row of the table a destination that answers each kind it routes, for every content agent", () => {
+    const { table: read } = readRoutingTable();
+    for (const row of read.rows) {
+      const kinds = row.kinds === "*" ? ENTRY_KINDS : row.kinds;
+      for (const kind of kinds) {
+        if (row.to === "handler") {
+          // A handler row routes only the kind it handles, and every agent's declared handler for it answers it.
+          expect(kind, `${row.id} routes ${kind} to a ${row.handling} handler`).toBe(row.handling);
+          for (const agent of AGENTS) {
+            const handler = readDeclarations(agent)?.requests?.handling?.[row.handling!];
+            expect(handler, `${agent} declares requests.handling.${row.handling}`).toBeDefined();
+            expect(loopAnswers(handler!.loop, kind), `${row.id}: ${agent}'s ${row.handling} handler ${handler!.loop} answers a kind ${kind} entry`).toBe(true);
+          }
+        } else {
+          // Every other destination is a decider or the owner, never a loop that would answer nothing.
+          expect(["owner-packet", "decider", "owner-clarify"], `${row.id} -> ${row.to}`).toContain(row.to);
+        }
+      }
+    }
+  });
+
+  it("routes every work kind on every agent's tree to a handler that answers it, or to the owner", () => {
+    const { facts } = world();
+    const targets: Record<string, string> = { director: "director/identity.brand.essence", designer: "designer/sections.hero", writer: "writer/narratives.article", publisher: "publisher/page.home" };
+    for (const agent of AGENTS) for (const kind of WORK_KINDS) for (const target of [targets[agent]!, `${agent}/nohome.new-need`]) {
+      const routed = route(facts, kind, target);
+      if (routed.handler) expect(loopAnswers(routed.handler.loop, kind), `${kind} ${target} -> ${routed.row} ${routed.handler.loop}`).toBe(true);
+      else expect(routed.assignee, `${kind} ${target} -> ${routed.row}`).toBe("owner");
+    }
+  });
+
+  it("refuses a handler row that routes another kind than it handles, and the scope destination", () => {
+    const doc = table();
+    doc.rows = doc.rows.map(row => row.id === "slot.agent" ? { ...row, handling: "change" } : row);
+    expect(routingIssues(doc).join("; ")).toMatch(/a handler row routes only the kind it handles/);
+    const scope = table();
+    scope.rows = scope.rows.map(row => row.id === "slot.agent" ? { id: "slot.agent", kinds: ["slot"], match: "agent", to: "scope" } : row);
+    expect(routingIssues(scope).join("; ")).toMatch(/rows\[\d+\]\.to must be one of handler, owner-packet, decider, owner-clarify/);
+  });
+
+  it("refuses with a HandlerMismatchError a declared handler whose loop does not answer the kind", () => {
+    const { facts } = world();
+    const scoped: RoutingFacts = { ...facts, declarations: agent => {
+      const declared = facts.declarations(agent)!;
+      return { ...declared, requests: { ...declared.requests!, handling: { ...declared.requests!.handling, slot: { skill: `packages/${agent}/actions/${agent}.scope/skill.md`, loop: "loop.scope" } } } };
+    } };
+    expect(() => route(scoped, "slot", "publisher/page.home")).toThrow(HandlerMismatchError);
+    expect(() => route(scoped, "slot", "publisher/page.home")).toThrow(/does not answer a kind slot entry/);
+  });
+
+  it("names why a loop may not answer a routed entry", () => {
+    const { facts } = world();
+    const routed = route(facts, "slot", "publisher/page.home");
+    expect(handlerMismatch("loop.slot", "slot", routed)).toBeUndefined();
+    expect(handlerMismatch("loop.scope", "slot", routed)).toMatch(/loop.scope does not answer a kind slot entry/);
+    expect(handlerMismatch("loop.slot", "slot", { ...routed, handler: { skill: "packages/publisher/actions/publisher.scope/skill.md", loop: "loop.scope" } })).toMatch(/to loop.scope .*not loop.slot/);
+    expect(handlerMismatch("loop.slot", "slot", { row: "owner.class", assignee: "owner" })).toMatch(/to no handler/);
+    expect(handlerMismatch("loop.slot", "change", routed)).toMatch(/does not answer a kind change entry/);
   });
 });

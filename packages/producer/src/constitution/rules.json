@@ -130,7 +130,7 @@
   },
   {
     "id": "R02",
-    "statement": "Pins and order. Pins carry a closed basis and decidedBy, upstream is pinned before downstream, and each pin equals its last ledger pin event.",
+    "statement": "Pins and order. Pins carry a closed basis and decidedBy (code decides only basis scorecard, decidedBy code:scorecard: the scorecard's single top row on a slot with no owner-pick or confirm step), upstream is pinned before downstream, and each pin equals its last ledger pin event.",
     "scope": "all-records",
     "status": "enforced",
     "check": "src/constitution/checks/R02-pins-order.ts",
@@ -164,7 +164,7 @@
   },
   {
     "id": "R03",
-    "statement": "Adopt or create, one certification. Every candidate names its rung, adopted bytes are verbatim, and one certifier serves every rung.",
+    "statement": "Adopt or create, one certification. Every candidate names its rung, adopted bytes are verbatim, code authors only the stock item of a byte-exact adopt slot, and one certifier serves every rung.",
     "scope": "all-records",
     "status": "building",
     "owner": "W2-C",

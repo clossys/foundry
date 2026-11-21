@@ -19,7 +19,10 @@ describe("R09 one pin schema", () => {
     expect(pinIssues({ candidate: "button-v1.json" }).length).toBeGreaterThan(0);
     expect(pinIssues({ ...base, sha256: "abc" }).join("\n")).toMatch(/sha256/);
     expect(pinIssues({ ...base, basis: "agent" })).toContain("basis agent and decidedBy agent:<seat> go together");
-    expect(pinIssues({ ...base, confirmed: CONFIRMED })).toContain("confirmed is only on an agent pick (basis agent)");
+    expect(pinIssues({ ...base, confirmed: CONFIRMED })).toContain("confirmed is only on an agent or code pick (basis agent or scorecard)");
+    expect(pinIssues({ ...base, decidedBy: "code:scorecard", basis: "scorecard", confirmed: CONFIRMED })).toEqual([]);
+    expect(pinIssues({ ...base, decidedBy: "code:scorecard" })).toContain("basis scorecard and decidedBy code:scorecard go together");
+    expect(pinIssues({ ...base, basis: "scorecard" })).toContain("basis scorecard and decidedBy code:scorecard go together");
     expect(pinIssues({ ...base, at: "2026-13-45T99:99Z" })).toContain("at is not a real timestamp");
   });
 

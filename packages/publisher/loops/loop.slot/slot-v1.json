@@ -41,6 +41,27 @@
         "checks": []
       },
       {
+        "id": "match",
+        "does": "code answers the entry when its need names a placed slot of the assignee exactly (the same leaf id): reuse that slot, decided by the producer seat and kept in a settle record; a near match or no match goes on to the assignee's decide step",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys settle reuse <request>",
+        "reads": [
+          "producer/queue.slot/entries/<request>.json",
+          "<agent>/ia.json"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/<request>.json",
+          ".clossys/runs/loops/*.settle/*"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
         "id": "decide-publisher",
         "does": "the Publisher answers the entry: reuse a placed slot that serves the need, or propose one new leaf with a full contract under the L2 it belongs to",
         "decider": {

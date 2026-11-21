@@ -15,6 +15,7 @@
  */
 import { buildCandidateHeader, candidateHeaderIssues, parseCandidateName, serializeCandidate } from "./candidate.js";
 import { sha256Hex } from "./hash.js";
+import { sourceKindOf } from "./source-kind.js";
 import { parseYamlSubset, readRecordHeader } from "./schema.js";
 import { parseFrontmatter } from "./slot-model/frontmatter.js";
 import { canonical } from "./slot-model/layout.js";
@@ -216,6 +217,37 @@ export function headeredMarkdown(name: string, int2: string, input: { readonly a
     ...(input.record !== undefined ? { record: input.record } : {}), ...(input.briefSha256 !== undefined ? { briefSha256: input.briefSha256 } : {}),
   });
   return serializeCandidate(name, header, parsed.value.body, rest);
+}
+
+export { sourceKindOf };
+
+/**
+ * The source kind of a candidate's view (readCandidateText `view`): a JSON view's `meta.source.kind`, a Markdown view's
+ * front matter `source.kind`. The one reader of a candidate's kind: the write guard (through the context's parsed view)
+ * and `next --submit`'s recipe check read this same field.
+ */
+export function viewSourceKind(name: string, view: string): string | undefined {
+  if (name.endsWith(".json")) { try { return sourceKindOf(JSON.parse(view)); } catch { return undefined; } }
+  if (!name.endsWith(".md")) return undefined;
+  const parsed = parseFrontmatter(view);
+  const source = parsed.ok ? parsed.value.fields.source : undefined;
+  return object(source) && typeof source.kind === "string" ? source.kind : undefined;
+}
+
+/**
+ * Every place a submitted JSON candidate carries a source, with its kind: the `clossys.candidate/1` header's
+ * `clossys.source`, the body's `content.meta.source` and a top-level `meta.source` (beside a `content` wrapper or as
+ * the body itself). `next --submit` refuses a submission whose kinds disagree (source-kind-mismatch): a reader must
+ * never be able to pick one kind while the guard reads another.
+ */
+export function submissionSources(content: unknown): { readonly at: string; readonly kind: string | undefined }[] {
+  if (!object(content)) return [];
+  const out: { at: string; kind: string | undefined }[] = [];
+  const add = (at: string, source: unknown) => { if (source !== undefined) out.push({ at, kind: object(source) && typeof source.kind === "string" ? source.kind : undefined }); };
+  if (object(content.clossys)) add("clossys.source", content.clossys.source);
+  if (object(content.content) && object(content.content.meta)) add("content.meta.source", content.content.meta.source);
+  if (object(content.meta)) add("meta.source", content.meta.source);
+  return out;
 }
 
 /** A second source beside the header's: a candidate/1 file's JSON `meta.source` or Markdown front matter `source`. */

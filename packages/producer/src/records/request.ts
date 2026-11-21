@@ -24,7 +24,7 @@ import { consumerFacts, placedSlots, readDeclarations, routeEntry, RoutingError,
 import { FIX_CHECKS, fixCheck, requesterCheck, requesterPinSets, requesterSlots } from "../queue/requester-check.js";
 import { PRODUCER_ROOT, skillPath } from "./ledger.js";
 import { resolveOwnerRef } from "./owner-decisions.js";
-import { OWNER_QUEUE_ANSWER, pinPath } from "./pin.js";
+import { OWNER_QUEUE_ANSWER, confirmableBasis, pinPath } from "./pin.js";
 import { readPinFile } from "./pin-map.js";
 import { isRecordSlot } from "./resolve.js";
 import { validateAgainst } from "./schema.js";
@@ -346,7 +346,7 @@ export function writeRequest(consumer: string, request: SlotRequest): string {
   return file;
 }
 /** Who made a request's last change: its last event's `by`, else who raised it. */
-const requestActor = (request: SlotRequest) => actorLine(request.events.at(-1)?.by, actorLine(request.createdBy, `code:request`));
+export const requestActor = (request: SlotRequest): string => actorLine(request.events.at(-1)?.by, actorLine(request.createdBy, `code:request`));
 
 /**
  * Creates a new entry exclusively: the draft's id, else `-2`..`-9`, whichever is free. The bytes go to a temp file that
@@ -534,7 +534,8 @@ function ownerOptions(consumer: string, entry: { readonly kind: WorkKind; readon
   return out;
 }
 /**
- * The owner's confirmation of an agent pick (U13 r3): `confirm-<candidate>` per unconfirmed agent pick the target holds,
+ * The owner's confirmation of an agent or code pick (U13 r3; DET-STEPS fix r1): `confirm-<candidate>` per unconfirmed
+ * agent or code (basis scorecard) pick the target holds,
  * the pin/2 or each pin-map record (`pin <target>[#<record>] <candidate> --confirm`, which keeps the agent's pick and
  * records the owner's confirmation bound to this answer, then closes changed). DRAFT labels.
  */
@@ -543,7 +544,7 @@ function confirmOptions(consumer: string, slot: string): OwnerOption[] {
   if (!target) return [];
   const pin = readPinFile(pinPath(dirname(consumer), target.agent, target.need));
   const held: [string, PinRecord][] = pin.kind === "pin" ? [[slot, pin.doc]] : pin.kind === "pin-map" ? Object.entries(pin.doc.records).map(([key, record]) => [`${slot}#${key}`, record]) : [];
-  return held.filter(([, record]) => record.basis === "agent" && !record.confirmed)
+  return held.filter(([, record]) => confirmableBasis(record.basis) && !record.confirmed)
     .map(([to, record]) => ({ id: optionId("confirm", record.candidate), label: `Confirm ${record.decidedBy}'s pick ${record.candidate} on ${to}`, then: { verb: "pin" as const, args: [to, record.candidate, "--confirm"] } }));
 }
 /** The options Producer asks the owner on an agent's fix claim it cannot accept itself (DRAFT labels). */
@@ -596,6 +597,22 @@ export interface RaiseWorkInput {
  * own with these words (ownerWordsRefusal); otherwise the raise is refused, nothing written, so no word is dropped.
  */
 export function raiseWork(consumer: string, input: RaiseWorkInput, options: { readonly dry?: boolean; readonly facts?: RoutingFacts; readonly ownerWords?: boolean } = {}): { request: SlotRequest; created: boolean } {
+  workRaiseChecks(consumer, input, options.facts);
+  return withRequestLock(consumer, raiseLock(`${input.kind}-${input.target}`), () => {
+    const existing = listRequests(consumer, input.kind).map(read => read.request).find(request => request?.status === "open" && request.target === input.target && request.from === input.from);
+    if (existing) {
+      const refusal = options.ownerWords ? ownerWordsRefusal(existing, input.why) : undefined;
+      if (refusal) throw new RequestError(refusal);
+      return { request: existing, created: false };
+    }
+    const draft = workRequestDraft(consumer, input, options.facts);
+    if (options.dry) return { request: draft, created: true };
+    return { request: createRequest(consumer, draft), created: true };
+  });
+}
+
+/** raiseWork's own refusals on its input, before anything is read under the lock (throws RequestError). */
+function workRaiseChecks(consumer: string, input: RaiseWorkInput, facts?: RoutingFacts): void {
   const target = targetOf(input);
   if (!target) throw new RequestError(`a ${input.kind} entry names <agent>/<slot id>, got ${input.target}`);
   // Not a closure, so bare owner may act here; only close paths need an owner answer ref (U7 r3).
@@ -607,18 +624,16 @@ export function raiseWork(consumer: string, input: RaiseWorkInput, options: { re
     const agent = from[1] as ContentAgent;
     if (!isPlaced(consumer, agent, from[2]!)) throw new RequestError(`${input.from} is no placed slot`);
     if (isContentAgent(input.by) && input.by !== agent) throw new RequestError(`${input.by} raises for ${input.from}: a slot's own agent (${agent}) raises its requests`);
-    issuingRefusal(agent, target.agent, input.kind, options.facts);
+    issuingRefusal(agent, target.agent, input.kind, facts);
   } else if (isContentAgent(input.by)) throw new RequestError(`${input.by} raises as the owner: an agent raises for its own slot (--from <agent>/<slot>)`);
-  return withRequestLock(consumer, raiseLock(`${input.kind}-${input.target}`), () => {
-    const existing = listRequests(consumer, input.kind).map(read => read.request).find(request => request?.status === "open" && request.target === input.target && request.from === input.from);
-    if (existing) {
-      const refusal = options.ownerWords ? ownerWordsRefusal(existing, input.why) : undefined;
-      if (refusal) throw new RequestError(refusal);
-      return { request: existing, created: false };
-    }
+}
+
+/** The entry raiseWork creates for `input` (its own checks passed), under the draft id createRequest may suffix. */
+function workRequestDraft(consumer: string, input: RaiseWorkInput, facts?: RoutingFacts): SlotRequest {
+    const target = targetOf(input)!;
     const id = `${stampOf(input.at)}-${input.kind}-${target.need.replace(/\./g, "-")}`.slice(0, 80).replace(/-+$/, "");
-    const route = routeOf(consumer, { kind: input.kind, target: input.target, assignee: target.agent }, options.facts);
-    const choices = route.assignee === "owner" ? ownerOptions(consumer, { kind: input.kind, target: input.target, ...(input.want !== undefined ? { want: input.want } : {}) }, options.facts) : undefined;
+    const route = routeOf(consumer, { kind: input.kind, target: input.target, assignee: target.agent }, facts);
+    const choices = route.assignee === "owner" ? ownerOptions(consumer, { kind: input.kind, target: input.target, ...(input.want !== undefined ? { want: input.want } : {}) }, facts) : undefined;
     // The owner's own repin change on a slot routed to its agent, where the slot holds an unconfirmed agent pick: the
     // confirmation is the owner's alone, so Producer asks it at once (U13 r3, N3): the confirm options and keep-open
     // (the agent works the change), an asked event; the entry stays the agent's.
@@ -638,9 +653,44 @@ export function raiseWork(consumer: string, input: RaiseWorkInput, options: { re
         ...(asking ? [{ id: `${id}#3`, at: input.at, op: "asked" as const, by: "producer", detail: `${input.target} holds an unconfirmed agent pick: the owner confirms it (${confirms.map(option => option.id).join(", ")}) or keeps it open with ${route.assignee}` }] : []),
       ],
     };
-    if (options.dry) return { request: draft, created: true };
-    return { request: createRequest(consumer, draft), created: true };
-  });
+    return draft;
+}
+
+/**
+ * foundry-build-0048 LOOP-STEPS: why a kind change entry an agent's create step wrote is not the upstream request its
+ * `<agent>.candidates` skill tells it to raise (`clossys request --kind change --subject <agent>/<slot> --from
+ * <agent>/<slot> --want <want> --why <words>`), from the run's own slot `from`. The verb's own refusals run on the
+ * entry's fields (workRaiseChecks: a placed target, `from` a placed slot of this agent, the declared issuing edge), its
+ * draft is rebuilt from them (workRequestDraft) and must equal the entry exactly (its id from its createdAt, or
+ * createRequest's -2..-9 suffix; its raised event by the agent via cli and the routed event, route and owner options
+ * the router derives; its raisedBy ref; its code actor and version), and no other open entry may raise the same target
+ * from the same slot. A forged, rewritten or another seat's entry is refused. Empty when the entry is exactly the verb's.
+ */
+export function agentWorkRaiseIssues(consumer: string, doc: unknown, agent: ContentAgent, from: string, options: { readonly facts?: RoutingFacts } = {}): string[] {
+  const shape = requestIssues(doc, dirname(consumer));
+  if (shape.length) return shape;
+  const entry = doc as SlotRequest;
+  if (entry.kind !== "change") return [`${entry.id} is kind ${entry.kind}: a create step raises a change of another agent's slot (a fix is Producer's to raise)`];
+  if (entry.source !== "cli") return [`source ${entry.source}: an agent raises a change through clossys request (cli)`];
+  if (entry.from !== from) return [`from ${entry.from}: the step raises only from the run's own slot ${from}`];
+  const input: RaiseWorkInput = { kind: "change", target: entry.target, from: entry.from, why: entry.why, source: "cli", by: agent, at: entry.createdAt, ...(entry.want !== undefined ? { want: entry.want } : {}) };
+  let draft: SlotRequest;
+  try { workRaiseChecks(consumer, input, options.facts); draft = workRequestDraft(consumer, input, options.facts); } catch (error) {
+    if (error instanceof RequestError) return [error.message];
+    throw error;
+  }
+  const issues: string[] = [];
+  const suffix = entry.id.startsWith(draft.id) ? entry.id.slice(draft.id.length) : undefined;
+  if (suffix === undefined || !/^(?:-[2-9])?$/.test(suffix)) issues.push(`id ${entry.id}: clossys request names it ${draft.id} (or its -2..-9 suffix) from its createdAt and target`);
+  else {
+    const expected = addressed(draft, entry.id);
+    const keys = [...new Set([...Object.keys(expected), ...Object.keys(entry)])].sort()
+      .filter(key => canonical((expected as unknown as Record<string, unknown>)[key]) !== canonical((entry as unknown as Record<string, unknown>)[key]));
+    if (keys.length) issues.push(`not the entry clossys request raises for ${agent} (${entry.id}): ${keys.join(", ")} differ${keys.length === 1 ? "s" : ""}`);
+  }
+  const duplicate = listRequests(consumer, "change").map(read => read.request).find(other => other !== undefined && other.id !== entry.id && other.status === "open" && other.target === entry.target && other.from === entry.from);
+  if (duplicate) issues.push(`${duplicate.id} already raises ${entry.target} from ${entry.from}`);
+  return issues;
 }
 
 /**
@@ -1242,6 +1292,17 @@ export function overlapRefusal(leaf: string, overlaps: readonly Overlap[], how: 
 }
 
 /** The request check: the target agent's placed slots a need may already be (a prefix of it, or past the threshold). */
+/**
+ * foundry-build-0048 DET-STEPS: the slot an open, undecided request's need names exactly: `<assignee>/<need>` when the
+ * need is a leaf id the assignee has placed (since the request was raised), else undefined. A part, a whole or a similar
+ * name is a near match, and the assignee decides it. A need carries no contract, so no contract is matched (DECIDED D3).
+ */
+export function exactReuseOf(consumer: string, request: Pick<SlotRequest, "target" | "status" | "assignee" | "decision">): string | undefined {
+  const target = targetOf(request);
+  if (!target || request.status !== "open" || request.assignee === "owner" || request.decision !== undefined) return undefined;
+  return isPlaced(consumer, target.agent, target.need) ? `${target.agent}/${target.need}` : undefined;
+}
+
 export function needOverlaps(consumer: string, agent: ContentAgent, need: string): Overlap[] {
   const out: Overlap[] = [];
   for (const slot of ownerSlots(consumer, agent)) {
@@ -1346,7 +1407,14 @@ export function decideRequest(consumer: string, id: string, input: ({ readonly d
     if (request.status !== "open") throw new RequestError(`request ${id} is closed`);
     const target = targetOf(request)!;
     if (request.assignee === "owner") throw new RequestError(`request ${id} is assigned to the owner: the owner answers one of its options (clossys request ${id} --answer <option>; handoff sends it to ${target.agent}), nothing is decided by --by ${input.by}`);
-    if (input.by !== target.agent && input.by !== "owner") throw new RequestError(`request ${id} is decided by its assignee ${target.agent} (or the owner), not ${input.by}`);
+    // foundry-build-0048 DET-STEPS: code (the producer seat, loop.slot's match step) decides one thing only: a reuse of
+    // the placed slot the need names exactly (same leaf id). A near match is the assignee's judgment, never code's.
+    if (input.by === "producer") {
+      const exact = exactReuseOf(consumer, request);
+      if (input.decision !== "reuse" || exact === undefined || input.slot !== exact) {
+        throw new RequestError(`request ${id}: code answers only an exact match (a reuse of the placed slot ${target.agent}/${target.need} the need names); ${input.decision === "reuse" ? `reuse ${input.slot}` : "a create"} is ${target.agent}'s to decide`);
+      }
+    } else if (input.by !== target.agent && input.by !== "owner") throw new RequestError(`request ${id} is decided by its assignee ${target.agent} (or the owner), not ${input.by}`);
     const needs = request.overlaps ?? needOverlaps(consumer, target.agent, target.need);
     let next: SlotRequest;
     let detail: string;

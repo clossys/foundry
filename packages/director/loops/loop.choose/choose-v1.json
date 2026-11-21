@@ -78,6 +78,30 @@
         }
       },
       {
+        "id": "score",
+        "does": "code reads the pin gate's scorecard: when one submitted, certified candidate is strictly ahead of every other, on a slot with no owner-pick or confirm step and no owner or planner pin, code pins it through the pin gate (basis scorecard, decidedBy code:scorecard) and settles pick with a settle record; a tie, an owner step or a held human decision reaches the agent pick, and a refused pin defers to it",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys settle pick <ref>",
+        "reads": [
+          "<slot>/candidates/*",
+          "<slot>/ledger.json",
+          ".clossys/checks/<agent>/<slot-id>/*",
+          "<upstream>/*/pin.json"
+        ],
+        "writes": [
+          "<slot>/pin.json",
+          ".clossys/checks/<agent>/<slot-id>/scorecard.json",
+          ".clossys/runs/loops/*.settle/*"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
         "id": "pick",
         "does": "pin one submitted, certified candidate through the pin gate, which ranks every candidate in the slot's scorecard and refuses one with no submit record or no passing verdict; skipped for a slot the owner picks",
         "decider": {

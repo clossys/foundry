@@ -1,6 +1,7 @@
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/index.js";
 import "./main.js";
@@ -11,6 +12,7 @@ import { runCritiqueCli, runCritiquePacketCli, standardTastePath, type PacketIte
 const ID = "components.button";
 const AT = "2026-11-14T12:00:00.000Z";
 const STANDARD = "element.bold";
+const DESIGNER = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "designer");
 let workspace: string;
 let slotDir: string;
 
@@ -97,6 +99,13 @@ describe("clossys critique --record", () => {
     return runCritiqueCli([`designer/${ID}`, "--record", "critique.json", "--model", "fixture-critic", "--tier", "high", "--at", AT], workspace);
   };
   const allowed = [{ role: "taste", ref: `packages/designer/standards/${STANDARD}/taste.md` }, { role: "contract", ref: `clossys/agents/designer/${ID}/slot.json#contract` }, { role: "render", ref: "renders/one.png" }];
+  // A craft run is one recipe, the one code chooses for the slot's standard (R15.5): the slot names component,
+  // whose one producing recipe is create.component, both copied from the Designer package.
+  beforeEach(() => {
+    for (const path of ["standards/component", "recipes/create.component"]) cpSync(join(DESIGNER, path), join(workspace, "packages", "designer", path), { recursive: true });
+    const doc = JSON.parse(readFileSync(join(slotDir, "slot.json"), "utf8")) as Record<string, unknown>;
+    writeFileSync(join(slotDir, "slot.json"), jsonBytes({ ...doc, standard: "component" }));
+  });
   const craft = (...stages: string[]) => writeFileSync(join(slotDir, "ledger.json"), jsonBytes({ schema: "clossys.ledger/1", events: stages.map(stage => ({ op: `craft:${stage}`, at: AT, by: "agent:designer.candidates", verb: "submit", skill: { path: "packages/designer/actions/designer.candidates/skill.md", sha256: null }, model: "m", tier: "high" })) }));
 
   it("writes critiques/<leaf>-v<n>.json and its craft:critique event after render", async () => {

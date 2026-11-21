@@ -13,7 +13,7 @@ const sha = text => createHash("sha256").update(text).digest("hex");
  * Add or replace one Designer slot. `candidates` maps candidate file name to the registry item
  * (an object, written as JSON); `pin` names the pinned candidate (none = unpinned).
  */
-export function writeDesignerSlot(root, { id, candidates, pin, uses = [] }) {
+export function writeDesignerSlot(root, { id, candidates, pin, uses = [], doc = {} }) {
   const agent = join(root, "agents", "designer");
   const iaPath = join(agent, "ia.json");
   const ia = existsSync(iaPath) ? JSON.parse(readFileSync(iaPath, "utf8")) : { schema: "clossys.ia/1", source: "synthetic#test", extensions: [], nodes: [] };
@@ -25,7 +25,7 @@ export function writeDesignerSlot(root, { id, candidates, pin, uses = [] }) {
   writeFileSync(iaPath, JSON.stringify(ia, null, 2));
   const dir = join(agent, id);
   mkdirSync(join(dir, "candidates"), { recursive: true });
-  writeFileSync(join(dir, "slot.json"), JSON.stringify({ schema: "clossys.slot/1", id, agent: "designer", ia: {}, kind: "element", contract: {}, inputs: [], uses }));
+  writeFileSync(join(dir, "slot.json"), JSON.stringify({ schema: "clossys.slot/1", id, agent: "designer", ia: {}, kind: "element", contract: {}, inputs: [], uses, ...doc }));
   // IA order is global across nodes: place every slot again after the IA changed.
   let order = 0;
   for (const row of ia.nodes) for (const child of row.children) for (const slot of child.slots) {

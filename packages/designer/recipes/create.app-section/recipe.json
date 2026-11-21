@@ -1,0 +1,26 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.app-section",
+  "produces": [
+    "section.app",
+    "section.adaptive"
+  ],
+  "rung": "create",
+  "axes": [
+    "layout",
+    "density",
+    "emphasis"
+  ],
+  "checks": [
+    "R05.1",
+    "R06.1",
+    "R07.1",
+    "ref-verbatim"
+  ],
+  "sources": [
+    "composition"
+  ],
+  "parts": [
+    "component"
+  ]
+}

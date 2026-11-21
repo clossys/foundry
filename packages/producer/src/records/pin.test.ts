@@ -78,9 +78,11 @@ describe("clossys.pin/2 rules", () => {
     expect(pinRecordIssues(record({ decidedBy: "migrated", basis: "picked" }), [])).toEqual([]);
   });
 
-  it("allows confirmed only on an agent pick, after the pick", () => {
+  it("allows confirmed only on an agent or code pick, after the pick", () => {
     const confirmed = { by: "owner" as const, ref: "producer/queue.approve#x", at: "2026-11-14T13:00:00Z" };
     expect(pinRecordIssues(record({ decidedBy: "agent:designer", basis: "agent", confirmed }), [])).toEqual([]);
+    expect(pinRecordIssues(record({ decidedBy: "code:scorecard", basis: "scorecard", confirmed }), [{ to: "producer/checks.scorecard", rel: "cites" }])).toEqual([]);
+    expect(pinRecordIssues(record({ decidedBy: "owner", basis: "bulk", confirmed }), [answers]).join()).toMatch(/only for a basis agent or scorecard pick, not bulk/);
     expect(pinRecordIssues(record({ confirmed }), []).join()).toMatch(/only for a basis agent/);
     expect(pinRecordIssues(record({ decidedBy: "agent:designer", basis: "agent", confirmed: { ...confirmed, at: "2026-11-14T11:00:00Z" } }), []).join()).toMatch(/before the pick/);
   });

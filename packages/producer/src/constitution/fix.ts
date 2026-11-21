@@ -5,9 +5,9 @@
  */
 import { registeredRules, type RegisteredRule } from "./registry.js";
 
-/** The Designer ref-verbatim gate's id and fix (constitution/guard.ts runs it on adopts). */
+/** The Designer ref-verbatim gate's id and fix (constitution/guard.ts runs it on adopts and compositions). */
 export const REF_VERBATIM_ID = "ref-verbatim";
-export const REF_VERBATIM_FIX = "copy the vendored reference files unchanged, or submit at the adapt rung and record each adaptation in meta.refVerbatim";
+export const REF_VERBATIM_FIX = "copy the vendored reference files unchanged, or submit at the adapt rung and record each adaptation in meta.refVerbatim; a composition imports only its declared stock parts (through @clossys/designer-ui) and styles no raw markup";
 
 /** Every registered check's one-line fix, plus ref-verbatim's. */
 export function fixHints(rules: readonly RegisteredRule[] = registeredRules()): Map<string, string> {

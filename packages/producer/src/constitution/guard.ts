@@ -13,7 +13,8 @@
  * refusal line ends with the check's one-line fix (rules.json `fix`). Pure and mechanical: no model,
  * network, clock or randomness; R05 certification is cached by (candidate, standard, contract, pin set).
  *
- * For an adopt (a Designer candidate the ladder or its lineage says is byte-exact) the Designer's
+ * For an adopt (a Designer candidate the ladder or its lineage says is byte-exact) and for a
+ * composition at any rung (a crafted section or frame that places only stock parts) the Designer's
  * ref-verbatim gate (`@clossys/designer/ref-verbatim`) runs too, on submit, pin, pick and reissue.
  * It is the Designer's own check with its own codes, not a rules.json check, so its verb list and fix
  * line live here (REF_VERBATIM_GUARD).
@@ -27,6 +28,7 @@ import { registeredRules, type RegisteredRule } from "./registry.js";
 import { submitOf } from "./rules/r03.js";
 import { slotDoc } from "./checks/shared.js";
 import { registerGuardRunner } from "../records/slot-write.js";
+import { sourceKindOf } from "../records/source-kind.js";
 import type { Check, ConstitutionContext, Row, RuleId } from "./types.js";
 
 /** The verbs a rules.json `guard` list may name: the ledger verb table plus `reject` (section 6). */
@@ -110,12 +112,26 @@ export function adoptOf(ctx: ConstitutionContext, target: GuardTarget): string |
   return candidate.json === undefined ? undefined : byteExactAdoption(slot.id, candidate.json);
 }
 
-/** The ref-verbatim rows of the adopt targets: the Designer gate's strict findings, one row each. */
+/**
+ * Why the ref-verbatim gate judges a target Designer candidate, or undefined: an adopt (adoptOf), else composition
+ * lineage at any rung. A crafted composition (create.app-section, create.frame) is held to the gate's composition
+ * rule, so every part is stock, every import a declared part and no raw markup is styled, whatever its rung.
+ */
+export function refVerbatimOf(ctx: ConstitutionContext, target: GuardTarget): { readonly label: "adopt" | "composition"; readonly why: string } | undefined {
+  const adopt = adoptOf(ctx, target);
+  if (adopt) return { label: "adopt", why: adopt };
+  if (target.agent !== "designer" || !target.candidate?.endsWith(".json")) return undefined;
+  const candidate = ctx.agents.find(agent => agent.agent === "designer")?.slots.get(target.slot)?.candidates.find(each => each.name === target.candidate);
+  // The one kind reader (records/source-kind.ts sourceKindOf over the candidate's view): next --submit's recipe check reads the same field.
+  return sourceKindOf(candidate?.json) === "composition" ? { label: "composition", why: "composition lineage" } : undefined;
+}
+
+/** The ref-verbatim rows of the gated targets (adopts and compositions): the Designer gate's strict findings, one row each. */
 export function refVerbatimRows(ctx: ConstitutionContext, targets: readonly GuardTarget[]): Row[] {
   const rows: Row[] = [];
   for (const target of targets) {
-    const why = adoptOf(ctx, target);
-    if (!why) continue;
+    const gated = refVerbatimOf(ctx, target);
+    if (!gated) continue;
     const slot = ctx.agents.find(agent => agent.agent === "designer")!.slots.get(target.slot)!;
     const candidate = slot.candidates.find(each => each.name === target.candidate)!;
     const base = { rule: "R03" as RuleId, check: REF_VERBATIM_GUARD.id, agent: target.agent, slot: target.slot, candidate: candidate.name, path: candidate.path };
@@ -124,7 +140,7 @@ export function refVerbatimRows(ctx: ConstitutionContext, targets: readonly Guar
       const doc = slotDoc(slot) as { uses?: readonly string[] } | undefined;
       findings = checkRegistryItem(ctx.consumer, slot.id, candidate.json, { strict: true, ...(doc ? { slotDoc: doc } : {}) }).findings;
     } catch (error) { findings = [{ code: "REF-NO-SOURCE", detail: `ref-verbatim could not run: ${error instanceof Error ? error.message : String(error)}` }]; }
-    for (const finding of findings) rows.push({ ...base, reason: `${finding.code} ${finding.detail}${finding.file ? ` (${finding.file})` : ""} [adopt: ${why}]` });
+    for (const finding of findings) rows.push({ ...base, reason: `${finding.code} ${finding.detail}${finding.file ? ` (${finding.file})` : ""} [${gated.label}: ${gated.why}]` });
   }
   return rows;
 }

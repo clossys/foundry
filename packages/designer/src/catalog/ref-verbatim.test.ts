@@ -858,8 +858,8 @@ describe("finite data-fit and additional source parts", () => {
 describe("composition lineage (W6)", () => {
   const ui = (name: string) => read(`ui/src/components/ui/${name}.tsx`);
   const vendored = (name: string) => `registry/aria-nova/ui/${name}.tsx`;
-  const writeSlot = (root: string, id: string, item: unknown, uses: string[] = []) => {
-    writeDesignerSlot(root, { id, candidates: { "item-v1.json": item }, pin: "item-v1.json", uses });
+  const writeSlot = (root: string, id: string, item: unknown, uses: string[] = [], doc: Record<string, unknown> = {}) => {
+    writeDesignerSlot(root, { id, candidates: { "item-v1.json": item }, pin: "item-v1.json", uses, doc });
   };
   const stockItem = (name: string, patch: Record<string, unknown> = {}) => ({ name, type: "registry:ui", files: [{ path: `${name}.tsx`, content: ui(name) }], meta: {
     source: { kind: "registry", ref: [`shadcn-aria/${name}@4.23.0`] }, refVerbatim: { files: { [`${name}.tsx`]: vendored(name) } }, ...patch,
@@ -883,7 +883,7 @@ describe("composition lineage (W6)", () => {
     expect(refVerbatimReport(root).findings).toEqual([]);
   });
   it("fails an undeclared import, even of another pinned stock part", () => {
-    const text = SECTION.replace("Badge, Card, CardContent", "Badge, Button, Card, CardContent").replace("</CardContent>", "</CardContent>\n      <Button>Open</Button>");
+    const text = SECTION.replace("Badge, Card, CardContent", "Badge, Button, Card, CardContent").replace("</CardContent>", "</CardContent>\n      <Button />");
     expect(check(setup(), composed(text))).toEqual(["REF-COMP-IMPORT"]);
     expect(check(setup(), composed(SECTION.replace('from "@clossys/designer-ui"', 'from "@clossys/designer-ui"\nimport { cn } from "@/lib/utils"')))).toEqual(["REF-COMP-IMPORT"]);
   });
@@ -920,6 +920,65 @@ describe("composition lineage (W6)", () => {
   });
   it("checks slot.json uses against the declared parts", () => {
     expect(check(setup(), composed(SECTION), ["components.badge"])).toEqual(["REF-COMP-USES"]);
+  });
+
+  it("fails literal copy: a composition reads copy only by Writer slot keys (REF-COMP-COPY, mutation)", () => {
+    const literal = (from: string, to: string) => check(setup(), composed(SECTION.replace(from, to)));
+    expect(literal("<Card>", "<Card>\n      Your checks")).toEqual(["REF-COMP-COPY"]);
+    expect(literal("<Badge key={item}>{item}</Badge>", '<Badge key={item}>{"Passed"}</Badge>')).toEqual(["REF-COMP-COPY"]);
+    expect(literal("<Badge key={item}>{item}</Badge>", "<Badge key={item}>{`Passed`}</Badge>")).toEqual(["REF-COMP-COPY"]);
+    expect(literal("<Card>", '<Card aria-label="Checks">')).toEqual(["REF-COMP-COPY"]);
+    expect(literal("<Card>", '<Card>\n      <img alt="Logo" />')).toEqual(["REF-COMP-COPY"]);
+    // Copy by key, an expression or a bare separator glyph is not literal copy.
+    expect(literal("<Card>", "<Card aria-label={copy[\"checks.label\"]}>\n      {copy[\"checks.title\"]} ·")).toEqual([]);
+  });
+
+  // The slot contract: its root element and its landmarks (craft.md credits these to the composition rule).
+  const contracted = (root: string, contract: Record<string, unknown>, content: string, parts = [part("badge"), part("card")], id = "sections.checks") => {
+    writeSlot(root, id, composed(content, parts), parts.map(each => each.slot), { contract });
+    return codes(checkRegistryItem(root, id, composed(content, parts), { strict: true }).findings);
+  };
+  const HEADER = SECTION.replace("<Card>", "<header>\n      <Card>").replace("</Card>\n", "</Card>\n      <nav aria-label={label} />\n      </header>\n").replace("{ items }: { items: readonly string[] }", "{ items, label }: { items: readonly string[]; label: string }");
+  const LANDMARKS = { kind: "frame", root: "header", landmarks: [{ slot: "brand", role: "banner" }, { slot: "nav", role: "navigation" }, { slot: "status", role: "status" }], slots: [{ id: "brand", accepts: "components.logo" }, { id: "nav", accepts: "components.button" }, { id: "status", accepts: "components.badge" }] };
+  it("holds a composition to its contract: contract.root is an element, each landmark a part it accepts or an element of its role (mutation)", () => {
+    // banner: the root <header>; navigation: a <nav>; status: the declared part components.badge its slot accepts.
+    expect(contracted(setup(), LANDMARKS, HEADER, undefined, "frames.checks")).toEqual([]);
+    expect(contracted(setup(), { ...LANDMARKS, root: "footer" }, HEADER, undefined, "frames.checks")).toEqual(["REF-COMP-ROOT"]);
+    expect(contracted(setup(), LANDMARKS, HEADER.replace("<nav aria-label={label} />", "<div aria-label={label} />"), undefined, "frames.checks")).toEqual(["REF-COMP-LANDMARK"]);
+    expect(contracted(setup(), LANDMARKS, HEADER.replace("<nav aria-label={label} />", '<div role="navigation" aria-label={label} />'), undefined, "frames.checks")).toEqual([]);
+    const noBadge = { ...LANDMARKS, slots: LANDMARKS.slots.map(each => each.id === "status" ? { ...each, accepts: "components.table" } : each) };
+    expect(contracted(setup(), noBadge, HEADER, undefined, "frames.checks")).toEqual(["REF-COMP-LANDMARK"]);
+  });
+
+  it("lets a frame place pinned frames and sections of composition lineage, an app section only components (mutation)", () => {
+    const root = setup();
+    // A section and a frame, each a passing composition, pinned.
+    writeSlot(root, "sections.checks", composed(SECTION), ["components.badge", "components.card"]);
+    const header = { ...composed(SECTION.replace("Checks(", "Header(")), name: "header", files: [{ path: "header.tsx", target: "components/site-header.tsx", content: SECTION.replace("Checks(", "Header(") }] };
+    writeSlot(root, "frames.header", header, ["components.badge", "components.card"]);
+    const SHELL = 'import { Card } from "@clossys/designer-ui"\nimport { Checks } from "@/index"\nimport { Header } from "@/components/site-header"\n\nexport function Shell({ items }: { items: readonly string[] }) {\n  return (\n    <div>\n      <Header items={items} />\n      <Card><Checks items={items} /></Card>\n    </div>\n  )\n}\n';
+    const shellParts = [part("card"), { slot: "sections.checks", files: ["index.tsx"] }, { slot: "frames.header", files: ["header.tsx"] }];
+    const uses = shellParts.map(each => each.slot);
+    const shell = (parts = shellParts) => ({ ...composed(SHELL, parts), name: "shell" });
+    writeSlot(root, "frames.shell", shell(), uses);
+    expect(codes(checkRegistryItem(root, "frames.shell", shell(), { strict: true }).findings)).toEqual([]);
+    // The same parts in an app section: a section composition places components only.
+    writeSlot(root, "sections.shell", shell(), uses);
+    expect(codes(checkRegistryItem(root, "sections.shell", shell(), { strict: true }).findings)).toEqual(["REF-COMP-IMPORT", "REF-COMP-PART"]);
+    // A composed part that fails the rule itself, or names files other than its code files, is no part.
+    const broken = setup();
+    writeSlot(broken, "sections.checks", composed(SECTION.replace("<Card>", '<Card>\n      <div className="grid" />')), ["components.badge", "components.card"]);
+    writeSlot(broken, "frames.header", header, ["components.badge", "components.card"]);
+    writeSlot(broken, "frames.shell", shell(), uses);
+    expect(codes(checkRegistryItem(broken, "frames.shell", shell(), { strict: true }).findings)).toContain("REF-COMP-PART");
+    const wrongFiles = [part("card"), { slot: "sections.checks", files: ["other.tsx"] }, { slot: "frames.header", files: ["header.tsx"] }];
+    writeSlot(root, "frames.shell", shell(wrongFiles), uses);
+    expect(codes(checkRegistryItem(root, "frames.shell", shell(wrongFiles), { strict: true }).findings)).toContain("REF-COMP-PART");
+    // A frame composing itself through its parts is a cycle, never a pass.
+    const loop = setup();
+    const selfShell = { ...composed('import { Shell } from "@/loop"\n\nexport function Loop() {\n  return <Shell />\n}\n', [{ slot: "frames.loop", files: ["loop.tsx"] }]), name: "loop", files: [{ path: "loop.tsx", content: 'import { Loop } from "@/loop"\n\nexport function Shell() {\n  return <Loop />\n}\n' }] };
+    writeSlot(loop, "frames.loop", selfShell, ["frames.loop"]);
+    expect(codes(checkRegistryItem(loop, "frames.loop", selfShell, { strict: true }).findings)).toContain("REF-COMP-PART");
   });
 
   // npm parts: the package itself, as named re-exports of the version package-lock.json resolves.

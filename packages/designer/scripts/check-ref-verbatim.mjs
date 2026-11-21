@@ -37,7 +37,7 @@ export { ADAPTATION_KINDS, adaptationHash };
 import { loadTypeScript } from "./ref-verbatim/typescript.mjs";
 import { designerPins, designerSlotRecords } from "./slot-pins.mjs";
 import { diffSources, isEngineNeutral, tokenSwapAllowed } from "./ref-verbatim/diff.mjs";
-import { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, scriptKind } from "./ref-verbatim/ds-only.mjs";
+import { compositionStructure, DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, scriptKind } from "./ref-verbatim/ds-only.mjs";
 export { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, scriptKind };
 export { DESIGNER_SHADCN_FLAVOR, shadcnComponentsJson, shadcnComponentsJsonText } from "./ref-verbatim/flavor.mjs";
 
@@ -1494,6 +1494,46 @@ function stockPart(root, slot, record, options) {
   return { item, vendored: Object.values(files), codeFiles };
 }
 
+/**
+ * The part classes a composition of `standard` places: a frame places stock components and pinned frames and
+ * sections (frames.site-shell composes its header, footer and consent section); every other composition (an app
+ * section) places stock components only. A recipe's `parts` (create.frame, create.app-section) lists exactly these.
+ */
+export function compositionPartClasses(standard) {
+  return standard === "frame" ? ["component", "frame", "section"] : ["component"];
+}
+
+/** A slot's part class: a frame (frames.* or contract kind frame), a section (sections.*), else a component. */
+function partClass(id, record) {
+  if (id.startsWith("frames.") || record?.slotDoc?.contract?.kind === "frame") return "frame";
+  return id.startsWith("sections.") ? "section" : "component";
+}
+
+/** The standard a composing slot is held to: its slot.json `standard`, else `frame` for a frame slot (partClass). */
+function composerStandard(id, doc) {
+  if (typeof doc?.standard === "string") return doc.standard;
+  return partClass(id, { slotDoc: doc }) === "frame" ? "frame" : undefined;
+}
+
+/**
+ * A composed part (a pinned frame or section a frame places): pinned with composition lineage and passing the
+ * composition rule itself, never through a cycle. Its files are its own code files; an `@/` import of one of
+ * them (its install `target`, else its path, without the extension) places it.
+ */
+function composedPart(root, slot, record, options) {
+  const { error, item } = record ? record.pinned : { error: "is not a Designer slot in this consumer" };
+  if (error) return { error };
+  const composing = options.composing ?? new Set();
+  if (composing.has(slot)) return { error: "composes itself through its parts (a cycle)" };
+  const checked = checkComposition(root, slot, item, { ...options, slotDoc: undefined, composing: new Set([...composing, slot]) });
+  if (checked.status !== "pass") return { error: `fails ref-verbatim itself (${[...new Set(checked.findings.map(f => f.code))].join(", ")})` };
+  const codeFiles = (item.files ?? []).filter(file => isCode(file.path));
+  if (!codeFiles.length) return { error: "has no code to place" };
+  return { item, vendored: codeFiles.map(file => file.path), codeFiles, composed: true };
+}
+
+const importPath = file => (file.target ?? file.path).replace(/\.(tsx|ts|jsx|js|mjs|cjs)$/, "").replace(/\/index$/, "");
+
 const resolveModuleFile = base => {
   for (const path of [base, `${base}.tsx`, `${base}.ts`, join(base, "index.tsx"), join(base, "index.ts")]) {
     if (existsSync(path) && statSync(path).isFile()) return path;
@@ -1575,6 +1615,13 @@ function moduleExports(file, cache) {
  * - every declared part is imported (REF-COMP-UNUSED), and the slot's `uses`
  *   equal the declared parts (REF-COMP-USES);
  * - the ds-only markup rule (section form) holds: no styled raw element (REF-COMP-MARKUP);
+ * - each part is of a class the composing standard places (compositionPartClasses): stock components, and in a
+ *   frame also pinned frames and sections of composition lineage that pass this rule themselves (REF-COMP-PART);
+ * - no literal copy: JSX text, a literal JSX child or a literal label or text alternative is refused, since a
+ *   composition reads copy only by Writer slot keys (REF-COMP-COPY);
+ * - the slot's contract holds: `contract.root` is an element of the composition (REF-COMP-ROOT), and each
+ *   `contract.landmarks` entry is a declared part its contract slot accepts or an element of its role, the
+ *   tag's implicit role or a literal `role` (REF-COMP-LANDMARK);
  * - no lineage ref points into Foundry's package folders (REF-SELF-CITE).
  */
 function checkComposition(root, slot, candidate, options = {}) {
@@ -1608,13 +1655,20 @@ function checkComposition(root, slot, candidate, options = {}) {
   }
 
   const slotRecords = designerSlotRecords(root);
+  const doc = options.slotDoc ?? slotRecords.get(slot)?.slotDoc;
+  const standard = composerStandard(slot, doc);
+  const classes = compositionPartClasses(standard);
   const parts = Array.isArray(source.parts) ? source.parts : [];
   if (!parts.length) fail("REF-COMP-PART", "composition lineage needs parts: [{slot, files: [vendored reference paths]}]");
   const declared = new Map();
   for (const part of parts) {
     if (!part || typeof part.slot !== "string" || !Array.isArray(part.files) || !part.files.length || part.files.some(file => typeof file !== "string")) { fail("REF-COMP-PART", "each part must be {slot, files: [vendored reference paths]}"); continue; }
     if (declared.has(part.slot)) { fail("REF-COMP-PART", `${part.slot} is declared twice`); continue; }
-    const stock = stockPart(root, part.slot, slotRecords.get(part.slot), options);
+    const record = slotRecords.get(part.slot);
+    const cls = partClass(part.slot, record);
+    if (!classes.includes(cls)) { fail("REF-COMP-PART", `${part.slot} is a ${cls}; a ${standard ?? "section"} composition places only ${classes.join(", ")} parts`); continue; }
+    const composed = cls !== "component" && record?.pinned?.item?.meta?.source?.kind === "composition";
+    const stock = composed ? composedPart(root, part.slot, record, { ...options, composing: options.composing ?? new Set([slot]) }) : stockPart(root, part.slot, record, options);
     if (stock.error) { fail("REF-COMP-PART", `${part.slot} ${stock.error}; a composition places only stock parts`); continue; }
     if (!sameSet(part.files, stock.vendored)) { fail("REF-COMP-PART", `${part.slot} files ${JSON.stringify(part.files)} are not its pin's vendored reference paths ${JSON.stringify(stock.vendored)}`); continue; }
     declared.set(part.slot, { ...stock, used: false });
@@ -1671,11 +1725,24 @@ function checkComposition(root, slot, candidate, options = {}) {
     else part.used = true;
   };
 
+  // An `@/` import placing a declared composed part (a frame or section), by its file's import path.
+  const placesComposed = (path, file) => {
+    const matches = [...declared].filter(([, part]) => part.composed && part.codeFiles.some(entry => importPath(entry) === path));
+    if (matches.length > 1) fail("REF-COMP-IMPORT", `@/${path} is a file of ${matches.map(([id]) => id).join(" and ")}; declare one`, { file });
+    else if (matches.length === 1) matches[0][1].used = true;
+    return matches.length > 0;
+  };
+  const elements = [];
   if (code.size && !layer) fail("REF-COMP-IMPORT", `no component layer package (${DS_COMPONENT_LAYER}) to resolve a composition's imports against`);
   for (const [file, text] of [...code].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
     const before = findings.length;
     let events = [];
     try { events = dsOnlyEvents(text, file, { kind: "section" }); } catch (error) { fail("REF-NORMALIZE", error.message, { file }); }
+    try {
+      const structure = compositionStructure(text, file);
+      elements.push(...structure.elements);
+      for (const { text: literal, where } of structure.copy) fail("REF-COMP-COPY", `${where === "text" ? "JSX text" : `<${where}>`} ${JSON.stringify(literal)}: a composition reads copy only by Writer slot keys`, { file });
+    } catch (error) { if (!findings.slice(before).some(f => f.code === "REF-NORMALIZE")) fail("REF-NORMALIZE", error.message, { file }); }
     for (const event of events) {
       if (event.type === "markup") { fail("REF-COMP-MARKUP", `<${event.tag} ${event.attr}>: styled raw markup is not composition; a composition renders only its stock parts`, { file }); continue; }
       if (event.type === "dynamic") { fail("REF-COMP-IMPORT", `dynamic import ${event.specifier}: a composition imports only its declared parts`, { file }); continue; }
@@ -1685,6 +1752,7 @@ function checkComposition(root, slot, candidate, options = {}) {
         if (![local, `${local}.tsx`, `${local}.ts`, `${local}/index.tsx`, `${local}/index.ts`].some(path => code.has(path))) fail("REF-COMP-IMPORT", `${specifier} is neither a declared part nor a file of this composition`, { file });
         continue;
       }
+      if (specifier.startsWith("@/") && placesComposed(specifier.slice(2), file)) continue;
       if (!layer) continue;
       if (specifier === DS_COMPONENT_LAYER) {
         for (const name of names) {
@@ -1704,7 +1772,20 @@ function checkComposition(root, slot, candidate, options = {}) {
   }
   for (const [id, part] of declared) if (!part.used) fail("REF-COMP-UNUSED", `${id} is a declared part, but no import resolves to its vendored files`);
 
-  const doc = options.slotDoc ?? slotRecords.get(slot)?.slotDoc;
+  const contract = doc?.contract;
+  if (contract && typeof contract === "object") {
+    if (typeof contract.root === "string" && /^[a-z][a-z0-9-]*$/.test(contract.root) && !elements.some(element => element.tag === contract.root)) {
+      fail("REF-COMP-ROOT", `contract.root <${contract.root}> is no element of this composition; render the root element the contract names`);
+    }
+    const contractSlots = Array.isArray(contract.slots) ? contract.slots : [];
+    for (const landmark of Array.isArray(contract.landmarks) ? contract.landmarks : []) {
+      if (!landmark || typeof landmark.role !== "string") continue;
+      const accepts = contractSlots.find(each => each?.id === landmark.slot)?.accepts;
+      const accepted = (Array.isArray(accepts) ? accepts : [accepts]).filter(id => typeof id === "string" && declared.has(id));
+      if (accepted.length || elements.some(element => element.role === landmark.role)) continue;
+      fail("REF-COMP-LANDMARK", `landmark ${landmark.slot} (${landmark.role}) is neither a declared part its contract slot accepts (${typeof accepts === "string" ? accepts : JSON.stringify(accepts ?? null)}) nor an element of role ${landmark.role}`);
+    }
+  }
   const partSlots = parts.filter(part => typeof part?.slot === "string").map(part => part.slot);
   if (!doc) fail("REF-COMP-USES", `${slot} has no slot.json whose uses could match the declared parts`);
   else if (!Array.isArray(doc.uses) || !sameSet(doc.uses, partSlots)) fail("REF-COMP-USES", `slot.json uses ${JSON.stringify(doc.uses ?? [])} must equal the declared parts ${JSON.stringify([...partSlots].sort())}`);

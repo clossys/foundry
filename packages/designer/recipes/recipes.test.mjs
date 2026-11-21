@@ -22,11 +22,16 @@ const ROOT = resolve(HERE, "..", "..", "..");
 const CONSUMER_ROOT = process.env.CLOSSYS_ROOT ? resolve(process.env.CLOSSYS_ROOT) : join(ROOT, "packages/producer/test-fixtures/consumer");
 const CONSUMER = join(CONSUMER_ROOT, "clossys");
 const dist = path => import(pathToFileURL(join(ROOT, "packages", "producer", "dist", path)).href);
-const { generatorIssues, loadRecipes, produceIssues, recipesFor } = await dist("records/recipes.js");
+const { checksIssues, generatorIssues, loadRecipes, produceIssues, recipeSourceIssue, recipesFor, standardRecipe, REF_VERBATIM_CHECK, REF_VERBATIM_SOURCES, submitGuardedChecks } = await dist("records/recipes.js");
+// guard.js first: constitution/fix.js reaches guard.js through the rule registry, so guard.js is the safe entry.
+const { guardChecks, REF_VERBATIM_GUARD } = await dist("constitution/guard.js");
+const REF_VERBATIM_ID = REF_VERBATIM_GUARD.id;
 const { loadStandards } = await dist("records/standards.js");
 const { craftIssues } = await dist("constitution/rules/r15.js");
 const { importSpecifiers, importsRecipe, judgeFiles } = await dist("constitution/rules/r16.js");
 const { DESIGNER_STANDARD_CRITERIA } = await dist("constitution/criteria/designer/3s-des/index.js");
+// The composition rule's part classes, which each composition recipe's `parts` must equal (a test may read the gate).
+const { compositionPartClasses } = await import(pathToFileURL(join(HERE, "..", "scripts", "check-ref-verbatim.mjs")).href);
 
 const recipes = loadRecipes(ROOT).filter(recipe => recipe.agent === "designer");
 const standards = loadStandards(ROOT).filter(standard => standard.agent === "designer");
@@ -34,10 +39,13 @@ const readJson = path => JSON.parse(readFileSync(path, "utf8"));
 const clone = value => structuredClone(value);
 const rules = issues => issues.map(item => item.rule);
 
-const RECIPE_IDS = ["create.component", "create.element", "create.glyph", "create.mark", "create.marketing-section", "create.tokens"];
+const byIdOf = id => recipes.find(recipe => recipe.id === id);
+const RECIPE_IDS = ["create.app-section", "create.component", "create.element", "create.frame", "create.glyph", "create.mark", "create.marketing-section", "create.tokens"];
+/** The composition recipes: each names the checks its candidates must pass and crafts composition candidates only. */
+const COMPOSITION_RECIPES = { "create.app-section": ["section.app", "section.adaptive"], "create.frame": ["frame"] };
 
 describe("Designer recipes load clean and cover every standard (R15.5)", () => {
-  it("loads exactly the six recipe folders, each with no issue", () => {
+  it("loads exactly the eight recipe folders, each with no issue", () => {
     assert.deepEqual(recipes.map(recipe => recipe.id), RECIPE_IDS);
     for (const recipe of recipes) {
       assert.deepEqual(recipe.issues, [], recipe.id);
@@ -53,10 +61,98 @@ describe("Designer recipes load clean and cover every standard (R15.5)", () => {
     assert.deepEqual(uncovered, []);
   });
 
+  it("gives every Designer standard exactly one producing recipe, which code chooses (create.element makes media rules only)", () => {
+    const chosen = Object.fromEntries(standards.map(standard => [standard.id, standardRecipe(recipes, "designer", standard.id)]));
+    for (const [id, result] of Object.entries(chosen)) assert.ok(result.recipe, `${id}: ${result.issue}`);
+    assert.deepEqual(byIdOf("create.element").doc.produces, ["asset.media-rule"]);
+    assert.equal(chosen["asset.media-rule"].recipe.id, "create.element");
+    assert.equal(chosen.frame.recipe.id, "create.frame");
+    assert.equal(chosen["section.app"].recipe.id, "create.app-section");
+    assert.equal(chosen["section.adaptive"].recipe.id, "create.app-section");
+    // Mutation: widen create.element back over frames, and frames have two producing recipes.
+    const widened = recipes.map(recipe => recipe.id === "create.element" ? { ...recipe, doc: { ...recipe.doc, produces: ["asset.media-rule", "frame"] } } : recipe);
+    assert.deepEqual(standardRecipe(widened, "designer", "frame"), { issue: "recipes create.element, create.frame all produce for frame; a standard has exactly one producing recipe" });
+  });
+
   it("holds no adopt recipe while every Designer standard has no seeds (R15.9 would flag it)", () => {
     for (const standard of standards) assert.deepEqual(standard.doc.seeds, [], standard.id);
     assert.equal(recipes.filter(recipe => recipe.doc.rung === "adopt").length, 0);
   });
+});
+
+describe("composition recipes name the checks their candidates must pass (in code, not prose)", () => {
+  const byId = id => recipes.find(recipe => recipe.id === id);
+
+  it("create.app-section and create.frame produce for app sections and frames, compose only, and name submit-guarded checks", () => {
+    for (const [id, produces] of Object.entries(COMPOSITION_RECIPES)) {
+      const recipe = byId(id);
+      assert.deepEqual(recipe.issues, [], id);
+      assert.deepEqual(recipe.doc.produces, produces, id);
+      assert.deepEqual(recipe.doc.sources, ["composition"], id);
+      for (const standard of produces) assert.deepEqual(recipe.doc.parts, compositionPartClasses(standard), `${id}: parts are the part classes the composition rule admits for ${standard}`);
+      for (const check of ["R05.1", "R06.1", "R07.1", "ref-verbatim"]) assert.ok(recipe.doc.checks.includes(check), `${id} names ${check}`);
+      for (const check of recipe.doc.checks) assert.ok(submitGuardedChecks().has(check), `${id}: ${check} is run by the submit guard`);
+    }
+    assert.ok(byId("create.frame").doc.checks.includes("R07.6"), "a frame composes its regions (R07.6)");
+    assert.deepEqual(byId("create.frame").doc.parts, ["component", "frame", "section"], "frames.site-shell places frames and a section");
+    assert.deepEqual(byId("create.app-section").doc.parts, ["component"]);
+  });
+
+  it("the checks a recipe may name are exactly the submit guard's: rules.json checks guarded on submit, plus the ref-verbatim gate", () => {
+    assert.equal(REF_VERBATIM_CHECK, REF_VERBATIM_ID);
+    assert.deepEqual([...submitGuardedChecks()].sort(), [REF_VERBATIM_ID, ...guardChecks("submit").map(check => check.id)].sort());
+    assert.deepEqual([...REF_VERBATIM_SOURCES], ["composition", "registry"]);
+  });
+
+  it("refuses a named check the submit guard does not run, a duplicate, and ref-verbatim over a kind it does not judge (mutation)", () => {
+    const doc = clone(byId("create.frame").doc);
+    assert.deepEqual(checksIssues(doc), []);
+    const unknown = clone(doc); unknown.checks.push("R99.1");
+    assert.deepEqual(checksIssues(unknown), ["checks names R99.1, which the submit guard does not run (a rules.json check guarded on submit, or ref-verbatim)"]);
+    const unguarded = clone(doc); unguarded.checks.push("R02.1");
+    assert.ok(checksIssues(unguarded).some(issue => /R02\.1, which the submit guard does not run/.test(issue)));
+    const twice = clone(doc); twice.checks.push("R05.1");
+    assert.deepEqual(checksIssues(twice), ["checks names R05.1 twice"]);
+    const original = clone(doc); original.sources = ["composition", "original"];
+    assert.deepEqual(checksIssues(original), ["sources names original, which ref-verbatim does not judge at every rung (composition, registry)"]);
+    const open = clone(doc); delete open.sources;
+    assert.ok(checksIssues(open).some(issue => /ref-verbatim with no sources/.test(issue)));
+  });
+
+  it("refuses a submission whose source kind the recipe does not craft, and passes a composition (mutation)", () => {
+    const recipe = byId("create.app-section");
+    const item = kind => ({ name: "empty-state", type: "registry:block", files: [], meta: { slot: "sections.empty-state", source: { kind, ref: [], license: "MIT" } } });
+    // The kind is the candidate view's meta.source.kind (records/slot-current.ts viewSourceKind), the field the guard reads.
+    assert.equal(recipeSourceIssue(recipe, item("composition").meta.source.kind), undefined);
+    assert.equal(recipeSourceIssue(recipe, item("original").meta.source.kind), "recipe create.app-section crafts composition candidates; this one's meta.source.kind is original");
+    assert.equal(recipeSourceIssue(recipe, undefined), "recipe create.app-section crafts composition candidates; this one's meta.source.kind is (none)");
+    assert.equal(recipeSourceIssue(byId("create.marketing-section"), "original"), undefined, "a recipe with no sources refuses no kind");
+  });
+});
+
+describe("stage-check covers the composition recipes on their proof slots", () => {
+  const cases = [
+    { slot: "sections.empty-state", recipe: "create.app-section", axes: [{ layout: "stacked", density: "relaxed", emphasis: "heading" }, { layout: "inline", density: "compact", emphasis: "action" }, { layout: "centred", density: "even", emphasis: "illustration" }] },
+    { slot: "frames.site-header", recipe: "create.frame", axes: [{ navigation: "leading", chrome: "solid", emphasis: "brand" }, { navigation: "centred", chrome: "transparent", emphasis: "navigation" }, { navigation: "disclosed", chrome: "minimal", emphasis: "action" }] },
+  ];
+  for (const { slot, recipe, axes } of cases) {
+    it(`${recipe} on ${slot}: a brief and three distinct directions pass; the other recipe's brief does not`, () => {
+      const world = stageWorld(CONSUMER_ROOT, slot);
+      const needed = [...new Set([...world.inputs, ...world.required, ...world.traits.filter(id => pinOf(CONSUMER_ROOT, id))])];
+      const realised = [...new Set([...world.required, ...world.traits.filter(id => pinOf(CONSUMER_ROOT, id))])];
+      const brief = {
+        recipe, standard: world.standardId, requirements: [...world.requirements],
+        inputs: needed.map(id => ({ slot: id, candidate: pinOf(CONSUMER_ROOT, id).candidate, sha256: pinOf(CONSUMER_ROOT, id).sha256 })),
+        tasteLog: tasteWindow(CONSUMER_ROOT, world.standardId),
+        brief: `Compose ${slot} from its pinned stock components only, quiet and exact per the pinned visual style.`,
+      };
+      assert.deepEqual(checkBrief(CONSUMER_ROOT, slot, brief), []);
+      const directions = { recipe, directions: axes.map((values, index) => ({ id: `d${index + 1}`, idea: `places components.button ${Object.values(values).join(" ")}`, axes: values, traits: realised })) };
+      assert.deepEqual(checkDiverge(CONSUMER_ROOT, slot, directions), []);
+      const other = clone(brief); other.recipe = recipe === "create.frame" ? "create.app-section" : "create.frame";
+      assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, other)).includes("R15.5"));
+    });
+  }
 });
 
 describe("craft.md runs the fixed 5b stages with a check at each", () => {

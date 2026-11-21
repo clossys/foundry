@@ -30,6 +30,25 @@
     ],
     "steps": [
       {
+        "id": "triage",
+        "does": "code reads the run's trigger: one that names one record and no rule (T1 init, T2 starter-fill, T4 add-l3, T6 failed-check, T7 upstream-cascade, T8 new-release) settles refine-brief with no tightening and keeps a settle record; only a slot-wide trigger (T3 tighten-brief, T5 owner-feedback) reaches the owner of the slot",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys settle brief <ref>",
+        "reads": [
+          "<slot>/slot.json"
+        ],
+        "writes": [
+          ".clossys/runs/loops/*.settle/*"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
         "id": "refine-brief",
         "does": "decide whether the trigger is a rule for the whole slot (tighten the brief) or one record; often no tightening",
         "decider": {
@@ -50,6 +69,29 @@
         "checks": [
           "brief.tighten-only"
         ],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
+        "id": "adopt",
+        "does": "code reads the slot's contract: a Designer components slot under an adopt-first standard (not a consumer asset, one option) that holds no candidate, whose contract fixture a shadcn-aria or diceui stock item ships with every import locked, gets that item unmodified at rung L1 (submitted by code:adopt through the candidate guard) and settles create with a settle record; certify judges it like any candidate, and every other slot, a refused submit or a failed certify reaches the agent's create",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys settle adopt <ref>",
+        "reads": [
+          "<slot>/slot.json",
+          "<slot>/candidates/*",
+          "<slot>/ledger.json"
+        ],
+        "writes": [
+          "<slot>/candidates/*",
+          "<slot>/ledger.json",
+          ".clossys/runs/loops/*.settle/*"
+        ],
+        "checks": [],
         "onFail": {
           "raise": "queue.clarify",
           "then": "retry"

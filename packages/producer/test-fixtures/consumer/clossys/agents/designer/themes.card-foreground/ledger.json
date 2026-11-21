@@ -243,6 +243,14 @@
               }
             }
           ]
+        },
+        "recipe": {
+          "id": "create.tokens",
+          "axes": [
+            "temperament",
+            "departure",
+            "emphasis"
+          ]
         }
       }
     },
@@ -262,21 +270,27 @@
           "id": "d1",
           "idea": "a plain reading of the slot contract",
           "axes": {
-            "tone": "plain"
+            "temperament": "plain",
+            "departure": "plain",
+            "emphasis": "plain"
           }
         },
         {
           "id": "d2",
           "idea": "a warm reading of the slot contract",
           "axes": {
-            "tone": "warm"
+            "temperament": "warm",
+            "departure": "warm",
+            "emphasis": "warm"
           }
         },
         {
           "id": "d3",
           "idea": "a brisk reading of the slot contract",
           "axes": {
-            "tone": "brisk"
+            "temperament": "brisk",
+            "departure": "brisk",
+            "emphasis": "brisk"
           }
         }
       ]

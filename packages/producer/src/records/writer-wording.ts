@@ -22,6 +22,7 @@ import { join } from "node:path";
 import type { Cell } from "@clossys/director";
 import { parseWriterSlotBody } from "@clossys/writer/slot-body";
 import { resolveAgent } from "../agents.js";
+import { confirmableBasis } from "./pin.js";
 import { parseFrontmatter } from "./slot-model/index.js";
 import type { PinDoc } from "./slot-model/types.js";
 import { listSlots, readCandidate } from "./slots.js";
@@ -100,8 +101,8 @@ const textOf = (slot: SuiteSlot, record: string, locale: string): string | undef
   return texts.length ? texts.join(" ") : undefined;
 };
 const wording = (finding: SuiteFinding) => WORDING_CHECKS.includes(finding.check) && finding.record !== undefined && finding.locale !== undefined;
-/** The owner already decided this slot's copy: picked for it alone, or an agent pick the owner confirmed. */
-export const ownerSettled = (pin: PinDoc) => pin.basis === "picked" || (pin.basis === "agent" && pin.confirmed !== undefined);
+/** The owner already decided this slot's copy: picked for it alone, or an agent or code pick the owner confirmed. */
+export const ownerSettled = (pin: PinDoc) => pin.basis === "picked" || (confirmableBasis(pin.basis) && pin.confirmed !== undefined);
 
 /** Every pinned Writer slot with wording findings the owner has not settled, and the Writer's rewrite of each. */
 export function writerWording(consumer: string, directorCells: readonly Cell[] = []): WriterWording {

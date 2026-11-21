@@ -21,7 +21,7 @@ export const EVENT_KINDS: readonly { readonly kind: string; readonly file: strin
   { kind: "request.create / request.write", file: "packages/producer/src/records/request.ts", literal: "\"request.create\"", subject: "request:<id>" },
   { kind: "queue.create / queue.replace", file: "packages/producer/src/queue/entry.ts", literal: "\"queue.create\"", subject: "<queue>/<entry id>: every queue entry write, the chat answer path included" },
   { kind: "library.version", file: "packages/producer/src/records/library.ts", literal: "\"library.version\"", subject: "library:<slot>/<element>/v<n>" },
-  { kind: "run.state / run.record / pin.revert", file: "packages/producer/src/loop/runner.ts", literal: "\"run.record\"", subject: "loop:<loop>/<run id>: run state, the run's ledger record, a reverted pin" },
+  { kind: "run.state / run.record / run.settle / pin.revert", file: "packages/producer/src/loop/runner.ts", literal: "\"run.settle\"", subject: "loop:<loop>/<run id>: run state, the run's ledger record, a settle record (a fixed-rule code step that settled or passed on an agent step), a reverted pin" },
 ];
 
 /** The CLI verbs of the engine. */
