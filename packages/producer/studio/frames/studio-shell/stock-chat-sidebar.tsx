@@ -19,7 +19,7 @@ export function ChatContent({ copy, icon, emptyIcon }: { copy: ChatCopy; icon?: 
       <SidebarGroupLabel>{icon}{copy.title}</SidebarGroupLabel>
     </SidebarHeader>
     <SidebarContent>
-      <Empty data-chat-empty>
+      <Empty data-studio-chat-empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">{emptyIcon}</EmptyMedia>
           <EmptyTitle>{copy.emptyTitle}</EmptyTitle>

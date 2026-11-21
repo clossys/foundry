@@ -56,14 +56,14 @@ describe('board anatomy visual pass (VF-1)', () => {
     view.rerender(<LeafLabel id="themes.background" label="Background" />);
     expect(screen.getByText('Background')).not.toHaveClass('font-mono');
     // vf13 (r2 sf-11 / components-09): the human label leads and the id stays underneath in the mono face.
-    expect(view.container.querySelector('[data-leaf-id]')).toHaveTextContent('themes.background');
-    expect(view.container.querySelector('[data-leaf-id]')).toHaveClass('font-mono', 'text-ink-secondary');
+    expect(view.container.querySelector('[data-library-leaf-id]')).toHaveTextContent('themes.background');
+    expect(view.container.querySelector('[data-library-leaf-id]')).toHaveClass('font-mono', 'text-ink-secondary');
   });
 
   it('renders an id-labelled board row in the mono face', () => {
     const i = input('assets.icon-search');
     render(<LibraryBoardSection records={valueLibraryBoardRecords(i)} previews={valueLibraryBoardPreviews(i, labels)} labels={labels} onCommand={vi.fn()} />);
-    expect(screen.getByText('assets.icon-search', { selector: '[data-leaf-id]' })).toHaveClass('font-mono');
+    expect(screen.getByText('assets.icon-search', { selector: '[data-library-leaf-id]' })).toHaveClass('font-mono');
   });
 });
 

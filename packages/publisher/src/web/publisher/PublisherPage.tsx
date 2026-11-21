@@ -112,7 +112,7 @@ export interface PublisherPageProps extends Omit<PublisherInstancesViewProps, "p
 
 /** Resolved text keeps its exact Writer identity on its direct DOM parent. */
 function PublisherCopyText({ resolver, reference }: { resolver?: PublisherCopyResolver; reference: PublisherCopyRef }) {
-  return <span data-copy-ref={reference.id}>{publisherCopy(resolver, reference)}</span>;
+  return <span data-publisher-copy-ref={reference.id}>{publisherCopy(resolver, reference)}</span>;
 }
 
 /** Channel-first workspace. All check evidence still comes from the original bindings. */

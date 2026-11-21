@@ -43,9 +43,9 @@ it("applies resolved colors and both contrast pairs inside selected consumer chr
 it("draws type tracking, spacing and radius using the actual selected values", () => {
   const selected = context();
   const type = render(<DesignerSpecimen leaf="themes.tracking-tight" context={selected} need={need} />);
-  const sample = type.container.querySelector<HTMLElement>("[data-type-sample]")!;
+  const sample = type.container.querySelector<HTMLElement>("[data-specimen-type-sample]")!;
   expect(sample).toBeTruthy();
-  expect(sample.style.letterSpacing).toBe(selected.profile.values.members[sample.dataset.typeSample!]!.css.light);
+  expect(sample.style.letterSpacing).toBe(selected.profile.values.members[sample.dataset.specimenTypeSample!]!.css.light);
   type.unmount();
   const spacing = render(<DesignerSpecimen leaf="themes.spacing" context={selected} need={need} />);
   const ruler = spacing.getAllByRole("img")[0] as HTMLElement;

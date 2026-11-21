@@ -262,13 +262,13 @@ export async function runModulesCheck(origin, { only, full = false } = {}) {
           result(line, ok, { clipboard: String(text).slice(0, 120), shown: String(shownText).slice(0, 120), href });
         } else if (verb === 'cmdk') {
           await key('k', { code: 'KeyK', modifiers: 4, keyCode: 75 });
-          await evaluate(until(`document.querySelector('[role="dialog"] [data-page-command]')`, 3000));
-          const listed = await evaluate(`[...document.querySelectorAll('[role="dialog"] [data-page-command]')].map(item => ({ id: item.getAttribute('data-page-command'), shortcut: item.querySelector('[data-slot="command-shortcut"]')?.textContent.trim() ?? '' }))`) ?? [];
+          await evaluate(until(`document.querySelector('[role="dialog"] [data-studio-page-command]')`, 3000));
+          const listed = await evaluate(`[...document.querySelectorAll('[role="dialog"] [data-studio-page-command]')].map(item => ({ id: item.getAttribute('data-studio-page-command'), shortcut: item.querySelector('[data-slot="command-shortcut"]')?.textContent.trim() ?? '' }))`) ?? [];
           const missing = popovers.filter(row => !listed.some(item => item.id === `popover:${row.id}` && item.shortcut.toLowerCase() === row.shortcut));
           // Run the last popover from the menu: it must open that popover.
           const last = popovers.at(-1);
-          await press(`[role="dialog"] [data-page-command=${js(`popover:${last.id}`)}]`);
-          const ran = await evaluate(until(`${shown(last.id)} && !document.querySelector('[role="dialog"] [data-page-command]')`, 3000));
+          await press(`[role="dialog"] [data-studio-page-command=${js(`popover:${last.id}`)}]`);
+          const ran = await evaluate(until(`${shown(last.id)} && !document.querySelector('[role="dialog"] [data-studio-page-command]')`, 3000));
           result(line, popovers.length > 0 && !missing.length && listed.length === popovers.length && ran, { missing: missing.map(row => row.id), listed: listed.length, ran });
         } else if (verb === 'key' && arg === 'escape') {
           const first = ids[0];

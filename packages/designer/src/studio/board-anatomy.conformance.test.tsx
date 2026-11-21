@@ -42,8 +42,8 @@ function cellFaults(cell: HTMLElement): string[] {
   if (plates.length !== 1) return [`${plates.length} plate cells`];
   const plate = plates[0]!;
   if (plate.getAttribute("data-variant") !== "plate") faults.push("cell is not a plate");
-  const status = plate.querySelectorAll<HTMLElement>(":scope > [data-cell-status]");
-  const actions = plate.querySelectorAll<HTMLElement>(":scope > [data-cell-actions]");
+  const status = plate.querySelectorAll<HTMLElement>(":scope > [data-candidate-cell-status]");
+  const actions = plate.querySelectorAll<HTMLElement>(":scope > [data-candidate-cell-actions]");
   if (status.length !== 1) faults.push(`${status.length} status slots`);
   if (actions.length !== 1) faults.push(`${actions.length} action slots`);
   const buttons = [...plate.querySelectorAll<HTMLElement>("button")];
@@ -94,8 +94,8 @@ describe("one board and cell anatomy on every layer", () => {
         if (header.length) entry.header += 1;
         if (cells.length) entry.cells += 1;
         if (header.length || cells.length) { entry.nonconforming += 1; entry.faults.push(`${board.parentElement!.dataset.studioCanvasBoard}: ${[...header, ...cells].slice(0, 3).join("; ")}`); }
-        filled += board.querySelectorAll("[data-candidate-cell] [data-cell-status][hidden]").length;
-        unchosen += [...board.querySelectorAll("[data-cell-status]")].filter(status => status.textContent === labels.board.notChosen).length;
+        filled += board.querySelectorAll("[data-candidate-cell] [data-candidate-cell-status][hidden]").length;
+        unchosen += [...board.querySelectorAll("[data-candidate-cell-status]")].filter(status => status.textContent === labels.board.notChosen).length;
       }
     }
     // Per layer: nonconforming boards / boards (header faults, cell faults).
@@ -115,9 +115,9 @@ describe("one board and cell anatomy on every layer", () => {
       renderPlain(<CandidateCell labels={labels} />).container,
     ];
     for (const view of views) expect(cellFaults(view)).toEqual([]);
-    expect(views[0]!.querySelector("[data-cell-status]")).toHaveAttribute("hidden");
-    expect(views[1]!.querySelector("[data-cell-status]")).toHaveTextContent(labels.previewUnavailable);
-    expect(views[2]!.querySelector("[data-cell-status]")).toHaveTextContent(labels.previewUnavailable);
+    expect(views[0]!.querySelector("[data-candidate-cell-status]")).toHaveAttribute("hidden");
+    expect(views[1]!.querySelector("[data-candidate-cell-status]")).toHaveTextContent(labels.previewUnavailable);
+    expect(views[2]!.querySelector("[data-candidate-cell-status]")).toHaveTextContent(labels.previewUnavailable);
   });
 
   it.each(["filled", "unchosen", "stale"] as const)("renders the public library board %s leaf with the same header and cell", state => {
@@ -131,7 +131,7 @@ describe("one board and cell anatomy on every layer", () => {
     const view = renderPlain(<LibraryBoardSection records={valueLibraryBoardRecords(input)} previews={state === "stale" ? { ...previews, selectionHash: `${previews.selectionHash}-stale` } : previews} labels={labels} onCommand={vi.fn()} />);
     const board = view.container.querySelector<HTMLElement>("[data-library-board]")!;
     expect(boardFaults(board, "Icons")).toEqual({ header: [], cells: [] });
-    const status = board.querySelector("[data-cell-status]")!;
+    const status = board.querySelector("[data-candidate-cell-status]")!;
     if (state === "filled") expect(status).toHaveAttribute("hidden");
     else expect(status).toHaveTextContent(state === "unchosen" ? labels.board.notChosen : labels.previewUnavailable);
   });

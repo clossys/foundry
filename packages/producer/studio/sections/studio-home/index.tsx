@@ -33,7 +33,7 @@ export default function HomeSection({ home, ...provenance }: { home: HomeInput }
         {home.agents.map(agent => {
           const census = agent.census;
           const ready = census?.state === 'ready' ? census : undefined;
-          return <Card key={agent.id} data-home-agent={agent.id} data-census-state={census?.state ?? 'missing'}>
+          return <Card key={agent.id} data-studio-home-agent={agent.id} data-census-state={census?.state ?? 'missing'}>
             <CardHeader>
               <CardDescription>{agent.label}</CardDescription>
               <CardTitle aria-label={agent.censusLabels.total}>{ready ? ready.total : '—'}</CardTitle>

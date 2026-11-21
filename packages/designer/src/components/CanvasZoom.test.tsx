@@ -37,12 +37,12 @@ it("zoom steps and reset still drive the camera", async () => {
 it("never shows 100% twice: the reset is inert and hidden while the readout already says 100%", () => {
   const { container } = setup(1);
   expect(screen.getByRole("status", { name: "Zoom level" })).toHaveTextContent("100%");
-  const reset = container.querySelector("[data-zoom-reset]")!;
+  const reset = container.querySelector("[data-studio-zoom-reset]")!;
   expect(reset).toHaveClass("invisible");
   expect(reset).toHaveAttribute("inert");
   cleanup();
   const other = setup(0.5);
-  const live = other.container.querySelector("[data-zoom-reset]")!;
+  const live = other.container.querySelector("[data-studio-zoom-reset]")!;
   expect(live).not.toHaveClass("invisible");
   expect(live).not.toHaveAttribute("inert");
 });

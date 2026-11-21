@@ -70,7 +70,7 @@
           },
           {
             "path": "packages/designer/src/blocks/Hero.tsx",
-            "sha256": "da68db05eb49897b75d44e500e7d51cb7f38d47957d503db4a9902e16e2ca51f"
+            "sha256": "f21d5e51b54c123369cc7bcf5e4539ba0c0696e9641407a90b2be1388d921c61"
           },
           {
             "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
@@ -82,7 +82,7 @@
           },
           {
             "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
-            "sha256": "7e4f970b58593caf96074a117298fd901901db942e38217c18b45e2789bafda5"
+            "sha256": "4b74ef6a24d0a8e7f139a0a17ad11ad4e7bce38c5ba838e8945a1206dafdd5d5"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",

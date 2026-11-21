@@ -59,10 +59,10 @@ describe("group-a renderers pass the contract members and slots the blocks now t
   it("sections.faq: layout.two-column splits the questions into two lists; layout.list is the default list", () => {
     const list = rendered("faq", ["layout.list"]);
     expect(rendered("faq", [])).toBe(list);
-    expect(list).not.toContain("data-faq-columns");
+    expect(list).not.toContain("data-question-columns");
     const twoColumn = rendered("faq", ["layout.two-column"]);
     expect(twoColumn).not.toBe(list);
-    const columns = mounted(twoColumn).querySelector("[data-faq-columns]");
+    const columns = mounted(twoColumn).querySelector("[data-question-columns]");
     expect(columns).not.toBeNull();
     expect(columns!.children).toHaveLength(2);
     expect(within(columns as HTMLElement).getAllByRole("button")).toHaveLength(S.faq.items.length);

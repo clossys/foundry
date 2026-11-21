@@ -1165,11 +1165,11 @@
         },
         {
           "path": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
-          "sha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
+          "sha256": "8925ec8f35ec62362c0200fbed13489a053ca19c3e67d7ed4eebe7c6c4940a36"
         },
         {
           "path": "packages/designer/src/frames/site-frame/landing/internal/errors.ts",
-          "sha256": "19a0d6e258427849321149d4fb3cefe1d4122f8cbb82c224ba3349859783eaa4"
+          "sha256": "3993912d4d9b5dbdca8c9a38ef882cb6ab26669908964cfe67c0fd83e47cbb7d"
         },
         {
           "path": "packages/designer/src/frames/site-frame/site-frame-contract.ts",
@@ -1830,7 +1830,7 @@
         },
         {
           "path": "packages/designer/src/blocks/RecordCards.tsx",
-          "sha256": "1f54c2f3430e2a7747e7855e778e42b836cc9007dbb33c55c2bcacc77591cea3"
+          "sha256": "1de8bfeaf2f27d5ff96fe9d2ef7650147a23b46140909e57f8809d92bde1ae28"
         },
         {
           "path": "packages/designer/src/catalog-assets/media.ts",
@@ -2132,7 +2132,7 @@
         },
         {
           "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
-          "sha256": "6209446c574599c589df0de1f71e9270eb595f092c9726a742643777bf99a5d8"
+          "sha256": "d93077dfbd62f82586a1dfa4a1fc40afd22dbc13541d36b5b8cfb285790092c1"
         },
         {
           "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
@@ -2999,7 +2999,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Faq.server.tsx",
-          "sha256": "118303fe0fc3de43066fc6a37ad5315821834db2b17db4f9f2cbc930bef30644"
+          "sha256": "757337823893c55667301a76066fb90b143f88dd7d3251c5225156ee0e9999fb"
         },
         {
           "path": "packages/designer/src/blocks/Faq.tsx",
@@ -3406,7 +3406,7 @@
         },
         {
           "path": "packages/designer/src/blocks/Hero.tsx",
-          "sha256": "da68db05eb49897b75d44e500e7d51cb7f38d47957d503db4a9902e16e2ca51f"
+          "sha256": "f21d5e51b54c123369cc7bcf5e4539ba0c0696e9641407a90b2be1388d921c61"
         },
         {
           "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
@@ -3418,7 +3418,7 @@
         },
         {
           "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
-          "sha256": "7e4f970b58593caf96074a117298fd901901db942e38217c18b45e2789bafda5"
+          "sha256": "4b74ef6a24d0a8e7f139a0a17ad11ad4e7bce38c5ba838e8945a1206dafdd5d5"
         },
         {
           "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -4749,7 +4749,7 @@
         },
         {
           "path": "packages/designer/src/blocks/Faq.server.tsx",
-          "sha256": "118303fe0fc3de43066fc6a37ad5315821834db2b17db4f9f2cbc930bef30644"
+          "sha256": "757337823893c55667301a76066fb90b143f88dd7d3251c5225156ee0e9999fb"
         },
         {
           "path": "packages/designer/src/blocks/internal/block-vars.ts",

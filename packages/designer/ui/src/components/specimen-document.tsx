@@ -46,13 +46,13 @@ export type FontSpecimenStep = (typeof RAMP)[number]
 export function FontSpecimen({ variable, family, sample, labels }: { variable: string; family: string; sample: string; labels: Readonly<Record<FontSpecimenStep, string>> }) {
   return (
     <main>
-      <Card data-specimen-document="font" data-font-variable={variable}>
+      <Card data-specimen-document="font" data-specimen-font-variable={variable}>
         <CardHeader>
           <CardDescription>{family}</CardDescription>
         </CardHeader>
         <CardContent>
           {RAMP.map((step) => (
-            <Item key={step} size="sm" data-ramp-step={step}>
+            <Item key={step} size="sm" data-specimen-ramp-step={step}>
               <ItemContent>
                 <ItemDescription>{labels[step]}</ItemDescription>
                 <ItemTitle>{sample}</ItemTitle>

@@ -162,13 +162,16 @@ describe("real package-surface library golden", () => {
     // Re-pinned by foundry-build-0048 CONTAM-U2 (hand-edited from the failing run, no `-u`): the stamps move to
     // data-provenance-*, so the measured fill surfaces re-hash provenance-attrs.ts and site-shell now measures its import.
     // Values and components unchanged: composite 6ea08ccc -> b8d538d3, surface 45dd4f1f -> 97a5b09d, whole 77d3a047 -> e797a9e3.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:b8d538d3eba9c7c5ae86e254c9018c934f80190762541501d06f40b099cd49b4"`);
+    // Re-pinned by foundry-build-0048 CONTAM-U10 (hand-edited from the failing run, no `-u`): short-prefix attributes move to
+    // full-word names, so the measured hero, cards, faq, comparison, sectioned-document and site-shell fills re-hash their
+    // sources. Values and components unchanged: composite b8d538d3 -> 334b4cc8, surface 97a5b09d -> fb410dc3, whole e797a9e3 -> e3d36d35.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:334b4cc8ffde8a48f232733d8914bf2d668a214fca6d14f610b91839dd16590c"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:149d271dd68aea6f"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
     expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:ef9a46557ea2aa79b1db4b19f2578dc33d1cde7c13f5f806b80a537f755a3734"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:97a5b09ddab2702d7fefd2242b841fe1ef0f38a03bbb88c2e3f44be63c03c1ff"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"e797a9e3602ed40d40e865bbba077788559de85af20fdabaa0183a2f69bd757b"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:fb410dc317c5c9857f1c24a4d001d9d1dfa1a44b1841aadc96e5e02c7a83640b"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"e3d36d355e139739df65aa8480d67260b68fc0a7b1ab2d74be954cc80fbaf6d9"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

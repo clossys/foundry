@@ -85,7 +85,7 @@
           },
           {
             "path": "packages/designer/src/blocks/Faq.server.tsx",
-            "sha256": "118303fe0fc3de43066fc6a37ad5315821834db2b17db4f9f2cbc930bef30644"
+            "sha256": "757337823893c55667301a76066fb90b143f88dd7d3251c5225156ee0e9999fb"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",

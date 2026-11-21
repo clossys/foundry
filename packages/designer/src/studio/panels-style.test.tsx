@@ -19,7 +19,7 @@ it("constrains the real RAC rows and ellipsizes labels; the ellipsis-removal mut
   const rows = view.container.querySelectorAll('[role="row"]');
   expect(rows.length).toBe(2);
   for (const row of rows) expect(row).toHaveClass("min-w-0", "max-w-full");
-  const names = view.container.querySelectorAll("[data-tree-label]");
+  const names = view.container.querySelectorAll("[data-studio-tree-label]");
   expect(names.length).toBe(2);
   for (const label of names) {
     assertRowEllipsis(label);
