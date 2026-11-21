@@ -325,7 +325,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/icon-theme-dark-v1.json",
-      "sha256": "ce825b81696b8e76dbf380363f97358d437f390b872bf2df4f81bd8fb282409a"
+      "sha256": "42be3852690593033010329d3666e5e9a44f7bd1e6f00e52909631f7796736e8"
     },
     {
       "op": "submit",

@@ -12,7 +12,7 @@ Each stage is one clossys verb. A non-zero exit stops the run at that stage. Fix
 
 ### 1. build (deterministic)
 
-Build the publication from the current pins into `.clossys/builds/<id8>/` (the first eight characters
+Build the publication from the current pins into `clossys/.state/builds/<id8>/` (the first eight characters
 of the build digest).
 
 ```sh

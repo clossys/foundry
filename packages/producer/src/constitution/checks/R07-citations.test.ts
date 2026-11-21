@@ -74,7 +74,7 @@ describe("R07 citations", () => {
     const page = pinChecks(ctx).find(check => check.slot.agent === "publisher" && check.slot.id === "site.home")!;
     expect(page.state).toBe("legacy");
     const scorecard = (pinSet: string, certified = true) => {
-      const dir = join(ctx.root, ".clossys", "checks", "publisher", "site.home");
+      const dir = join(ctx.root, "clossys", ".state", "checks", "publisher", "site.home");
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, "scorecard.json"), JSON.stringify({ schema: "clossys.scorecard/1", slot: "publisher/site.home", candidates: [{ rank: 1, candidate: page.candidate.name, sha256: page.candidate.sha256, submitted: true, certified, verdict: "certify", reasons: [], pinSet }] }));
     };

@@ -26,7 +26,13 @@ import { carriesInteractiveBackdrop, catalogSurfaceContract, contractBackdropSlo
 import type { SpecimenRecord, SpecimenRecordSource } from "../specimen/types.js";
 import { installedPath } from "../specimen/installed-path.js";
 
-export const INSTALL_MANIFEST = ".clossys/install.json";
+/**
+ * The substrate's own machine folder: the install manifest, and the transient render bundle (Producer's
+ * renderBoundPage). Named apart from the consumer layout's legacy root state folder (`.clossys/`), which a
+ * workspace may hold only until `clossys migrate state` moved it, so an install never creates one.
+ */
+export const INSTALL_STATE_DIR = ".clossys-install";
+export const INSTALL_MANIFEST = `${INSTALL_STATE_DIR}/install.json`;
 const MANIFEST_SCHEMA = "clossys.install/1";
 
 /** One page: a frame slot and its ordered section slots, plus per-slot bindings. */
@@ -528,7 +534,7 @@ export async function installPage(options: InstallOptions): Promise<InstallResul
   } finally {
     await rm(scratch, { recursive: true, force: true });
   }
-  await mkdir(join(substrate, ".clossys"), { recursive: true });
+  await mkdir(join(substrate, INSTALL_STATE_DIR), { recursive: true });
   await writeFile(join(substrate, INSTALL_MANIFEST), `${JSON.stringify({ schema: MANIFEST_SCHEMA, items }, null, 2)}\n`);
   return { slots, installed, findings };
 }

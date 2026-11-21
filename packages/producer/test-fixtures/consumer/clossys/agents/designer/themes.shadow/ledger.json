@@ -337,7 +337,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/shadow-v1.json",
-      "sha256": "417695d35e4bcdd22ea3c510f671ff795665f7e3571a51aff09096de9796be13"
+      "sha256": "0fc4d14179fdbca0b1a32837d63493b4a3717e8b3cdfe2684c663c0cc9385b01"
     },
     {
       "op": "submit",

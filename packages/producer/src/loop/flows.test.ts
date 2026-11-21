@@ -537,11 +537,11 @@ describe("F6 failed check (T6)", () => {
 
   it("G7: a built-in code step (route) appends its run record, and the ledger carries the sha256 of every file it wrote", async () => {
     const w = world(["writer/narratives.legal-document"]);
-    writeFileSync(join(w.root, ".gitignore"), "/.clossys/runs/\n");
+    writeFileSync(join(w.root, ".gitignore"), "/clossys/.state/runs/\n");
     const findings = [{ check: "constitution.strict", subject: "writer/narratives.legal-document/slot.json", detail: "placeholder finding" }];
     const run = await startRun(w.root, { loop: "loop.audit" }, stub(w.root, { codeFor: call => call.step === "strict" ? { exit: 1, findings } : undefined }), { now: clock() });
     expect(run.state!.raised).toHaveLength(1);
-    const store = join(w.root, ".clossys", "runs", "loop.audit.route.jsonl");
+    const store = join(w.root, "clossys", ".state", "runs", "loop.audit.route.jsonl");
     expect(existsSync(store)).toBe(true);
     const record = JSON.parse(readFileSync(store, "utf8").trim().split("\n").at(-1)!) as { schema: string; step: string; invocation: string; exit: number; writes: { path: string; sha256: string }[] };
     expect(record).toMatchObject({ schema: "clossys.pipeline-run/1", step: "loop.audit.route", invocation: "check --route", exit: 0 });
@@ -777,7 +777,7 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     const wrote = (id: string) => started.state!.steps.find(step => step.id === id)!.wrote!.map(row => row.file);
     // The manifest and its submit event in the release slot's ledger (release/manifest.ts, R14.1).
     expect(wrote("manifest")).toEqual(["publisher/release.site/candidates/site-v1.json", "publisher/release.site/ledger.json"]);
-    expect(wrote("build").some(file => file.startsWith(".clossys/builds/"))).toBe(true);
+    expect(wrote("build").some(file => file.startsWith("clossys/.state/builds/"))).toBe(true);
     ownerAnswer(w.root, started.entry!, "ready", now);
     const done = await resumeRun(w.root, started.state!.runId, hooks, { now });
     expect(done.state!.status).toBe("pinned-ready");
@@ -1028,7 +1028,7 @@ ${action}
     expect(ledger.steps.find(step => step.id === "certify")).toMatchObject({ cli: `clossys options writer/${SLOT} --check`, exit: 0 });
     expect(ledger.steps.find(step => step.id === "create")!.wrote).toEqual(made.map(item => ({ file: `writer/${SLOT}/candidates/${item.name}`, sha256: item.sha256 })));
     expect(ledger.checks["candidates.certified"]).toBe("pass");
-    const report = JSON.parse(readFileSync(join(w.root, ".clossys", "checks", "writer", SLOT, "certify.json"), "utf8"));
+    const report = JSON.parse(readFileSync(join(w.root, "clossys", ".state", "checks", "writer", SLOT, "certify.json"), "utf8"));
     expect(report).toMatchObject({ schema: "clossys.certify/1", ok: true, distinct: 3, options: 3, why: [] });
   });
 
@@ -1041,7 +1041,7 @@ ${action}
     const state = readRunState(w.root, runId);
     expect(state?.status).not.toBe("done");
     expect(state?.steps.find(step => step.id === "certify")?.exit).toBe(1);
-    const report = JSON.parse(readFileSync(join(w.root, ".clossys", "checks", "writer", SLOT, "certify.json"), "utf8"));
+    const report = JSON.parse(readFileSync(join(w.root, "clossys", ".state", "checks", "writer", SLOT, "certify.json"), "utf8"));
     expect(report.ok).toBe(false);
     expect(report.why.join("; ")).toMatch(/\[options-short\] holds 0 distinct option\(s\) on tone, needs 3/);
     expect(report.why.join("; ")).toMatch(new RegExp(`not passing: ${bad.name.replace(".", "\\.")} \\(\\[limit\\] en header\\.heading is \\d+ characters`));
@@ -1271,9 +1271,9 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
   }
 });
 
-/** The engine log events of one run (`.clossys/events.jsonl`), by kind. */
+/** The engine log events of one run (`clossys/.state/events.jsonl`), by kind. */
 const runEvents = (root: string, loop: LoopName, runId: string, kind: string) => {
-  const file = join(root, ".clossys", "events.jsonl");
+  const file = join(root, "clossys", ".state", "events.jsonl");
   if (!existsSync(file)) return [];
   return readFileSync(file, "utf8").trim().split("\n").map(line => JSON.parse(line) as { kind: string; subject: string; actor: string; inputs?: { path: string; sha256: string | null }[] })
     .filter(event => event.kind === kind && event.subject === `loop:${loop}/${runId}`);
@@ -1296,9 +1296,9 @@ describe("DET-STEPS: a fixed-rule code step settles the agent step after it; onl
     // item code may install, so the agent creates, and the stub's candidate is not certified, so the agent picks).
     const events = runEvents(w.root, "loop.fill", run.state!.runId, "run.settle");
     expect(events).toEqual([0, 1, 2].map(() => expect.objectContaining({ actor: "code:clossys run" })));
-    expect((events[0]!.inputs ?? []).map(input => input.path)).toContain(`.clossys/runs/loops/${run.state!.runId}.settle/triage.json`);
-    expect((events[1]!.inputs ?? []).map(input => input.path)).toContain(`.clossys/runs/loops/${run.state!.runId}.settle/adopt.json`);
-    expect((events[2]!.inputs ?? []).map(input => input.path)).toContain(`.clossys/runs/loops/${run.state!.runId}.settle/score.json`);
+    expect((events[0]!.inputs ?? []).map(input => input.path)).toContain(`clossys/.state/runs/loops/${run.state!.runId}.settle/triage.json`);
+    expect((events[1]!.inputs ?? []).map(input => input.path)).toContain(`clossys/.state/runs/loops/${run.state!.runId}.settle/adopt.json`);
+    expect((events[2]!.inputs ?? []).map(input => input.path)).toContain(`clossys/.state/runs/loops/${run.state!.runId}.settle/score.json`);
     expect(settleRecord(w.root, run.state!.runId, "adopt")).toMatchObject({ schema: "clossys.settle/1", rule: "adopt", outcome: "agent", settles: [], why: expect.stringMatching(/the agent creates$/) });
     expect(settleRecord(w.root, run.state!.runId, "score")).toMatchObject({ schema: "clossys.settle/1", rule: "pick", outcome: "agent", settles: [] });
   });

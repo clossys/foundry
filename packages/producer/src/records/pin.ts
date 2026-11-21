@@ -20,6 +20,8 @@ import { fileURLToPath } from "node:url";
 import { ISO, parseCandidateName, slotDir, targetSchema } from "./candidate.js";
 import { validateAgainst } from "./schema.js";
 import { actorLine, recordEvent, recordSubject } from "../engine/log.js";
+import { engineRootOf } from "../engine/chain.js";
+import { refuseLegacyState } from "../engine/state-dir.js";
 import type { Actor, AgentId, Iso, Pin, PinMap, PinRecord, Ref, SlotId } from "./types.js";
 
 export const PIN_FILE = "pin.json";
@@ -161,6 +163,9 @@ export function buildPin(input: NewPin): Pin {
 
 /** Writes a pin or pin map document atomically (temp file, then rename). */
 export function writePinDoc(file: string, doc: Pin | PinMap): void {
+  // Its event could not be logged while the workspace's state is still in the legacy root folder: refuse before writing.
+  const root = engineRootOf(file);
+  if (root !== undefined) refuseLegacyState(root);
   mkdirSync(dirname(file), { recursive: true });
   const temp = `${file}.${process.pid}.tmp`;
   writeFileSync(temp, `${JSON.stringify(doc, null, 2)}\n`);

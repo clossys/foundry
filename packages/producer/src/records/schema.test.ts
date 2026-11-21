@@ -25,11 +25,11 @@ const FORMATS = [
 
 /** Every literal file of the spec set, at the path the spec gives (system.md 2.2, 3; package files under packages/). */
 const LITERAL_FILES = [
-  ".clossys/checks/designer/sections.hero/hero-v2.json.json",
-  ".clossys/checks/designer/themes.primary/primary-v2.json.json",
-  ".clossys/checks/director/execution.roadmap.release/release-v1.md.json",
-  ".clossys/checks/director/identity.naming.name/name-v1.md.json",
-  ".clossys/checks/writer/sections.hero.copy/home.hero-v3.json.json",
+  "clossys/.state/checks/designer/sections.hero/hero-v2.json.json",
+  "clossys/.state/checks/designer/themes.primary/primary-v2.json.json",
+  "clossys/.state/checks/director/execution.roadmap.release/release-v1.md.json",
+  "clossys/.state/checks/director/identity.naming.name/name-v1.md.json",
+  "clossys/.state/checks/writer/sections.hero.copy/home.hero-v3.json.json",
   "clossys/agents/designer/assets.lockup/candidates/lockup-v1.svg",
   "clossys/agents/designer/sections.hero/candidates/hero-v2.json",
   "clossys/agents/designer/sections.hero/pin.json",
@@ -157,7 +157,7 @@ const READ_SAMPLES: Record<string, Record<string, unknown>> = {
     inputsSha256: "7d0e2c41aa000000000000000000000000000000000000000000000000000000", renderedAt: "2026-11-18T10:05:20Z",
     by: { actor: "code", cli: "clossys render", version: "1.0.0" },
     specimens: [{ candidate: "home.hero-v3.json", specimen: "copy-in-context", locale: "en", width: 1280,
-      png: ".clossys/renders/compare/home.hero-v3--home.hero-v2/home.hero-v3-en-1280.png" }],
+      png: "clossys/.state/renders/compare/home.hero-v3--home.hero-v2/home.hero-v3-en-1280.png" }],
   },
   "clossys.preview/1": {
     schema: "clossys.preview/1", publication: "site", buildId: "preview-4be1f07a93c2", url: "http://localhost:4600/",

@@ -14,6 +14,7 @@
  *
  * Writes nothing.
  */
+import { STATE_DIR, statePath } from "../engine/state-dir.js";
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -179,9 +180,9 @@ function ledgerActor(event: Record<string, unknown> | undefined): Actor | undefi
   return undefined;
 }
 
-/** `.clossys/checks/<agent>/<slot>/<candidate>.json` (a check-result/1), when one is on disk. */
+/** `clossys/.state/checks/<agent>/<slot>/<candidate>.json` (a check-result/1), when one is on disk. */
 function storedCheck(root: string, agent: string, slot: string, name: string): ViewCandidate["check"] | undefined {
-  const path = join(root, ".clossys", "checks", agent, slot, `${name}.json`);
+  const path = statePath(root, "checks", agent, slot, `${name}.json`);
   if (!existsSync(path)) return undefined;
   const value = readJsonFile(path);
   if (!isObject(value) || !["pass", "fail", "error"].includes(String(value.status))) return { status: "error", failed: [] };
@@ -189,9 +190,9 @@ function storedCheck(root: string, agent: string, slot: string, name: string): V
   return { status: value.status as "pass" | "fail" | "error", failed: [...new Set(failed)] };
 }
 
-/** Files under `.clossys/renders/<agent>/<slot>/<candidate>/`, as root-relative paths. */
+/** Files under `clossys/.state/renders/<agent>/<slot>/<candidate>/`, as root-relative paths. */
 function rendersOf(root: string, agent: string, slot: string, name: string): string[] {
-  const rel = join(".clossys", "renders", agent, slot, name);
+  const rel = join(STATE_DIR, "renders", agent, slot, name);
   if (!statSync(join(root, rel), { throwIfNoEntry: false })?.isDirectory()) return [];
   return readdirSync(join(root, rel)).sort().map(file => join(rel, file));
 }

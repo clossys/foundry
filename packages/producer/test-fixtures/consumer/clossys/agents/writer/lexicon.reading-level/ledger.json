@@ -280,7 +280,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/reading-level-v1.json",
-      "sha256": "8d1ef20aa0f48b763de1dce1b9c6f6951981c15742c391ee3ef5342fbfc2f122"
+      "sha256": "426a42821fcb51d59d895fe96f0c00c86528fd7ac682a53ead0861d9ff8c9d78"
     },
     {
       "op": "submit",

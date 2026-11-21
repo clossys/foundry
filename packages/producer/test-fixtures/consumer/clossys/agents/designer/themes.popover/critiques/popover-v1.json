@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/designer/themes.popover/popover-v1.png"
+        "ref": "clossys/.state/renders/designer/themes.popover/popover-v1.png"
       }
     ]
   }

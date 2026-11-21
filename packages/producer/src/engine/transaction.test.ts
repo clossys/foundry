@@ -96,16 +96,16 @@ describe("an agent step's engine changes (loop/agent-snapshot.ts engineLogIssue,
     write(1, "a");
     const before = treeSnapshot(root, "r1");
     agentWrite(2, "b");
-    const marker = `.clossys/engine.lock.recover-${"a".repeat(32)}`;
+    const marker = `clossys/.state/engine.lock.recover-${"a".repeat(32)}`;
     const uuid = "0f0e0d0c-0b0a-4908-8706-050403020100";
-    for (const left of [".clossys/engine.lock", marker, `${marker}.recover-${"b".repeat(32)}`, `${marker}.new-${uuid}-${uuid}`]) writeFileSync(join(root, left), "{}");
+    for (const left of ["clossys/.state/engine.lock", marker, `${marker}.recover-${"b".repeat(32)}`, `${marker}.new-${uuid}-${uuid}`]) writeFileSync(join(root, left), "{}");
     expect(judge(before, [key(2)])).toEqual([]);
     // Anything else beside the lock is still judged.
-    writeFileSync(join(root, ".clossys", "engine.lock.recover-x"), "{}");
-    writeFileSync(join(root, ".clossys", "engine.locked"), "{}");
+    writeFileSync(join(root, "clossys", ".state", "engine.lock.recover-x"), "{}");
+    writeFileSync(join(root, "clossys", ".state", "engine.locked"), "{}");
     expect(judge(before, [key(2)])).toEqual([
-      "added .clossys/engine.lock.recover-x without reporting it (--wrote)",
-      "added .clossys/engine.locked without reporting it (--wrote)",
+      "added clossys/.state/engine.lock.recover-x without reporting it (--wrote)",
+      "added clossys/.state/engine.locked without reporting it (--wrote)",
     ]);
   });
 
@@ -182,15 +182,15 @@ describe("an agent step's engine changes (loop/agent-snapshot.ts engineLogIssue,
   it("lets a run event name the run's own state file only for that run", () => {
     write(1, "a");
     const before = treeSnapshot(root, "r1");
-    mkdirSync(join(root, ".clossys", "runs", "loops"), { recursive: true });
-    writeFileSync(join(root, ".clossys", "runs", "loops", "r1.json"), "{}");
-    appendEvent(root, { actor: "code:clossys run", kind: "run.state", subject: "loop:loop.create/r1", inputs: [{ path: ".clossys/runs/loops/r1.json", sha256: sha256("{}") }] });
+    mkdirSync(join(root, "clossys", ".state", "runs", "loops"), { recursive: true });
+    writeFileSync(join(root, "clossys", ".state", "runs", "loops", "r1.json"), "{}");
+    appendEvent(root, { actor: "code:clossys run", kind: "run.state", subject: "loop:loop.create/r1", inputs: [{ path: "clossys/.state/runs/loops/r1.json", sha256: sha256("{}") }] });
     expect(judge(before, [], "r1")).toEqual([]);
-    expect(judge(before, [])).toEqual([expect.stringMatching(/names \.clossys\/runs\/loops\/r1\.json, which step create did not change$/)]);
-    writeFileSync(join(root, ".clossys", "runs", "loops", "r1.json"), "{\"later\":1}");
-    expect(logIssues(before, [], "r1")).toEqual([expect.stringMatching(/its sha256 of \.clossys\/runs\/loops\/r1\.json is not the state file's bytes$/)]);
-    writeFileSync(join(root, ".clossys", "runs", "loops", "r1.json"), "{}");
-    appendEvent(root, { actor: "agent:writer", kind: "run.state", subject: "loop:loop.create/r1", inputs: [{ path: ".clossys/runs/loops/r1.json", sha256: sha256("{}") }] });
+    expect(judge(before, [])).toEqual([expect.stringMatching(/names clossys\/\.state\/runs\/loops\/r1\.json, which step create did not change$/)]);
+    writeFileSync(join(root, "clossys", ".state", "runs", "loops", "r1.json"), "{\"later\":1}");
+    expect(logIssues(before, [], "r1")).toEqual([expect.stringMatching(/its sha256 of clossys\/\.state\/runs\/loops\/r1\.json is not the state file's bytes$/)]);
+    writeFileSync(join(root, "clossys", ".state", "runs", "loops", "r1.json"), "{}");
+    appendEvent(root, { actor: "agent:writer", kind: "run.state", subject: "loop:loop.create/r1", inputs: [{ path: "clossys/.state/runs/loops/r1.json", sha256: sha256("{}") }] });
     expect(logIssues(before, [], "r1")).toEqual([expect.stringMatching(/names the run's own state file but is agent:writer run\.state, not the runner's code:clossys run run\.state$/)]);
   });
 
@@ -200,13 +200,13 @@ describe("an agent step's engine changes (loop/agent-snapshot.ts engineLogIssue,
     const before = treeSnapshot(root, "r1");
     const text = readFileSync(join(root, EVENTS_FILE), "utf8");
     writeFileSync(join(root, EVENTS_FILE), text.replace("copy.slot-1\"", "copy.slot-9\""));
-    expect(judge(before, [])).toEqual(expect.arrayContaining([expect.stringMatching(/^changed \.clossys\/events\.jsonl: does not verify/)]));
+    expect(judge(before, [])).toEqual(expect.arrayContaining([expect.stringMatching(/^changed clossys\/\.state\/events\.jsonl: does not verify/)]));
     rmSync(join(root, EVENTS_FILE));
     write(2, "c");
     expect(judge(before, [key(2)])).toContain(`changed ${EVENTS_FILE}: the log before step create is not a prefix of it (an event was changed or removed)`);
     writeFileSync(join(root, EVENTS_FILE), text);
     writeFileSync(join(root, INDEX_FILE), "{}\n");
-    expect(judge(before, [key(2)])).toEqual([expect.stringMatching(/^changed \.clossys\/index\.json: is not the rebuild of the log/)]);
+    expect(judge(before, [key(2)])).toEqual([expect.stringMatching(/^changed clossys\/\.state\/index\.json: is not the rebuild of the log/)]);
     rmSync(join(root, EVENTS_FILE));
     expect(judge(before, [key(2)])).toContain(`removed ${EVENTS_FILE}`);
   });

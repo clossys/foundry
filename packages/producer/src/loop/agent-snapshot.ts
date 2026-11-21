@@ -3,11 +3,11 @@
  *
  * A code step's writes are what its verb changed between two snapshots (cli.ts). An agent step's were only what the
  * agent reported (`--wrote`), so a write it left out was never judged. Now the runner snapshots the consumer's record
- * trees (`clossys/` and `.clossys/`, by content: sha256 and link count of every regular file, the target of every
+ * tree (`clossys/`, with its state folder `clossys/.state/`, by content: sha256 and link count of every regular file, the target of every
  * symlink, the mode of anything else) right before it hands the step to the agent, keeps that snapshot in the run
  * state while the run waits on the agent, and diffs it against the tree when the step answers:
  *
- * - a file the step removed is refused, except the run slot's own `.clossys/checks/<agent>/<slot-id>/cascade.json` when
+ * - a file the step removed is refused, except the run slot's own `clossys/.state/checks/<agent>/<slot-id>/cascade.json` when
  *   the step is Producer's standard pick step (bound by `agentStepBinding`) and its pin record is in the after-snapshot
  *   (`clossys pin` clears the re-verdict the new pin replaces; planner decision, U9a fix round 4);
  * - a file the step changed or added that it did not report is refused, except the run slot's own `ledger.json` when
@@ -15,7 +15,7 @@
  * - every reported file then goes through the write allowlist (runner.ts undeclaredWrites), with the snapshot so a
  *   queue entry or candidate that was there before the step is refused (create-only).
  *
- * - the engine's event log and index (`.clossys/events.jsonl`, `.clossys/index.json`) change as a consequence of the
+ * - the engine's event log and index (`clossys/.state/events.jsonl`, `clossys/.state/index.json`) change as a consequence of the
  *   step's verbs, never by the step's own hand: the log only by a pure append that verifies on the chain and whose new
  *   events are the step agent's own, of a kind its verb makes, naming only files this step changed by their bytes (or
  *   the runner's events for the run's own state file), the index only to a rebuild of the log (`engineLogIssue`,
@@ -34,6 +34,7 @@
  * lock's own state (ENGINE_LOCK_STATE): the engine's lock protocol writes it, and it is never a record.
  * A run waiting on an agent step whose snapshot is missing or does not hash to its digest stops (fail closed).
  */
+import { stateRel } from "../engine/state-dir.js";
 import { createHash } from "node:crypto";
 import { lstatSync, readdirSync, readFileSync, readlinkSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -48,7 +49,7 @@ import { isStandardAgentStep } from "./agent-loops.js";
 import { isLoopAgent } from "./agent-loops-ia.js";
 import { RUN_CLI } from "./route.js";
 
-/** Root-relative posix path of every file under `clossys/` and `.clossys/` → what it is (`file:<sha256>:<links>`, `link:<target>`, `other:<mode>`). */
+/** Root-relative posix path of every file under `clossys/` (its state folder included) → what it is (`file:<sha256>:<links>`, `link:<target>`, `other:<mode>`). */
 export type TreeFiles = Record<string, string>;
 /** Snapshot key → the file's bytes (utf8) before the step: only the queue entries the step names exactly (`stepEntryTexts`). */
 export type TreeTexts = Record<string, string>;
@@ -58,8 +59,11 @@ export type TreeTexts = Record<string, string>;
  */
 export interface AgentSnapshot { readonly step: string; readonly files: TreeFiles; readonly digest: string; readonly texts?: TreeTexts }
 
-/** The trees an agent step's snapshot covers: every Producer record, queue, ledger, check and run lives under them. */
-export const SNAPSHOT_TREES = ["clossys", ".clossys"] as const;
+/**
+ * The trees an agent step's snapshot covers: every Producer record, queue, ledger, check and run lives under them; the
+ * state folder (STATE_DIR) is inside `clossys/`.
+ */
+export const SNAPSHOT_TREES = ["clossys"] as const;
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 const escapeRegex = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -70,10 +74,10 @@ const escapeRegex = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"
  */
 const ENGINE_LOCK_STATE = new RegExp(`^${escapeRegex(LOCK_FILE)}(?:\\.recover-[0-9a-f]{32})*(?:\\.new-[0-9a-f-]{36}-[0-9a-f-]{36})?$`);
 
-/** The snapshot of `clossys/` and `.clossys/` under `root`, leaving out only run `runId`'s own state, lock and temp files and the engine lock's state. */
+/** The snapshot of `clossys/` (its state folder included) under `root`, leaving out only run `runId`'s own state, lock and temp files and the engine lock's state. */
 export function treeSnapshot(root: string, runId: string): TreeFiles {
-  const own = new Set([`.clossys/runs/loops/${runId}.json`, `.clossys/runs/loops/${runId}.lock`]);
-  const ownTemp = new RegExp(`^\\.clossys/runs/loops/${escapeRegex(runId)}\\.json\\.\\d+\\.tmp$`);
+  const own = new Set([stateRel("runs", "loops", `${runId}.json`), stateRel("runs", "loops", `${runId}.lock`)]);
+  const ownTemp = new RegExp(`^${escapeRegex(stateRel("runs", "loops", runId))}\\.json\\.\\d+\\.tmp$`);
   const out: TreeFiles = {};
   const mark = (path: string, at: string): void => {
     let stat;
@@ -266,7 +270,7 @@ export function ledgerAppendIssue(root: string, key: string, beforeMark: string 
 }
 
 /** The run's own state file as a snapshot key: left out of the snapshot, and the one input a run event may name unchanged. */
-export const ownStateKey = (runId: string): string => `.clossys/runs/loops/${runId}.json`;
+export const ownStateKey = (runId: string): string => stateRel("runs", "loops", `${runId}.json`);
 
 /**
  * Who an engine event of an agent step's verb may name as its actor: `seat` is the step's agent as the record writers
@@ -478,7 +482,7 @@ export function engineIndexIssue(root: string, afterMark: string | undefined): s
 export const ownLedgerKey = (subject: { agent: string; slotId: string }): string => `clossys/agents/${subject.agent}/${subject.slotId}/${LEDGER_FILE}`;
 
 /** The run slot's own cascade re-verdict and pin record, as snapshot keys. */
-export const ownCascadeKey = (subject: { agent: string; slotId: string }): string => `.clossys/checks/${subject.agent}/${subject.slotId}/cascade.json`;
+export const ownCascadeKey = (subject: { agent: string; slotId: string }): string => stateRel("checks", subject.agent, subject.slotId, "cascade.json");
 export const ownPinKey = (subject: { agent: string; slotId: string }): string => `clossys/agents/${subject.agent}/${subject.slotId}/pin.json`;
 
 /**

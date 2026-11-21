@@ -22,7 +22,7 @@ import { pathToFileURL } from "node:url";
 import { isModuleAbsent } from "../errors.js";
 import { DESIGNER_SHADCN_UTILS, shadcnComponentsJsonText } from "@clossys/designer/shadcn-flavor";
 import {
-  installAndBind, isBlocking, needComponentSelection, PAGE_HOST_EXPORT, pageHostModule, relativeSpecifier, substrateDependencies,
+  INSTALL_STATE_DIR, installAndBind, isBlocking, needComponentSelection, PAGE_HOST_EXPORT, pageHostModule, relativeSpecifier, substrateDependencies,
   type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins, type InstallResult, type PageHostSelection, type ShadcnRunner,
 } from "@clossys/publisher/install";
 import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
@@ -603,8 +603,8 @@ export async function renderBoundPage(page: BoundPage, substrate: string, title?
     // ESM bundle has no `require` of its own, so esbuild's shim would throw "Dynamic require ... is not supported".
     banner: { js: 'import { createRequire as __clossysCreateRequire } from "node:module"; const require = __clossysCreateRequire(import.meta.url);' },
   });
-  const bundle = join(substrate, ".clossys", `render-${createHash("sha256").update(result.outputFiles[0]!.text).digest("hex").slice(0, 12)}.mjs`);
-  await mkdir(join(substrate, ".clossys"), { recursive: true });
+  const bundle = join(substrate, INSTALL_STATE_DIR, `render-${createHash("sha256").update(result.outputFiles[0]!.text).digest("hex").slice(0, 12)}.mjs`);
+  await mkdir(join(substrate, INSTALL_STATE_DIR), { recursive: true });
   await writeFile(bundle, result.outputFiles[0]!.text);
   const module = await import(pathToFileURL(bundle).href).finally(() => rm(bundle, { force: true }));
   const React = await import("react");

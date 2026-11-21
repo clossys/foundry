@@ -2,7 +2,7 @@
  * The CASCADE step (`clossys check <dependants>`, foundry-build-0048 U6): after a repin, every pinned candidate whose
  * pinSet changed is judged again on the pinSet now (constitution/cascade.ts, R07.5), through the one certifier.
  *
- * - A re-verdict is written to `.clossys/checks/<agent>/<slot>/cascade.json` (`clossys.reverdict/1`).
+ * - A re-verdict is written to `clossys/.state/checks/<agent>/<slot>/cascade.json` (`clossys.reverdict/1`).
  * - A pass leaves the slot as it is (a `needs-refresh` slot whose every pin passes goes back to `live`).
  * - A failure marks the slot `needs-refresh` and is a finding (`cascade.reverdict`) for the slot's owner: CHOOSE when
  *   another submitted candidate certifies on the pinSet now, else CREATE. The loop routes it as a kind fix with its cause.
@@ -30,7 +30,7 @@ export interface CascadeRun {
   readonly reverdicted: readonly { readonly slot: string; readonly verdicts: readonly PinVerdict[] }[];
   /** One per failing slot: routed to its owner as a kind fix. */
   readonly findings: readonly Finding[];
-  /** Workspace-relative files the step wrote (agent-tree files as `<agent>/<slot>/...`, checks under `.clossys/`). */
+  /** Workspace-relative files the step wrote (agent-tree files as `<agent>/<slot>/...`, checks under `clossys/.state/`). */
   readonly wrote: readonly string[];
   /** Slots still stale after the last round (when not converged). */
   readonly stale: readonly string[];

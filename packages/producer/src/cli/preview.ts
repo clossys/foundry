@@ -3,7 +3,7 @@
  * [--selection <module>[#export]] [--once] [--json] [--root <dir>]` (system.md 12.5).
  *
  * Builds the publication from its resolved pins (each `--with` swaps one slot's pin in a staged
- * copy; `clossys/` is never written) into `.clossys/builds/preview-<id>/`, prints the
+ * copy; `clossys/` is never written) into `clossys/.state/builds/preview-<id>/`, prints the
  * clossys.preview/1 view and serves it on 127.0.0.1 (default port 4600) until interrupted.
  * `--once` builds and prints without serving.
  */
@@ -17,7 +17,7 @@ import { buildPreview, preparePreview, previewPort, previewUrl, previewView, sta
 export const PREVIEW_USAGE = "Usage: clossys preview <publication> [--with <agent>/<slot>/<candidate>]... [--port <n>] [--locale <locale>]...\n"
   + "  [--selection <module>[#export]] [--once] [--json] [--root <dir>]\n"
   + "  builds the publication from its pins (each --with swaps one slot, never written to clossys/) into\n"
-  + "  .clossys/builds/preview-<id>/ and serves it on 127.0.0.1 (default port 4600); --once builds and exits.";
+  + "  clossys/.state/builds/preview-<id>/ and serves it on 127.0.0.1 (default port 4600); --once builds and exits.";
 
 export interface PreviewCliDeps extends Pick<PreviewBuildOptions, "runner" | "npm" | "vite"> {
   /** Resolves when serving should stop; defaults to SIGINT or SIGTERM. */

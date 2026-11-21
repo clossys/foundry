@@ -325,7 +325,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/icon-theme-system-v1.json",
-      "sha256": "f468f1bc41e2c5802cd18fa073229638eb78c48b6ed3d0c4fec65703e261ae36"
+      "sha256": "558a8b1871b772b74cc81c4d0a0609225d3169e3de28a9aa0776d0e8eaf2847d"
     },
     {
       "op": "submit",

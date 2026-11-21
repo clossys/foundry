@@ -325,7 +325,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/icon-locked-v1.json",
-      "sha256": "bbbede7c62d06a35df54df75c1a13da77e45d7071c9f8f9b6edeccae6d12883f"
+      "sha256": "d2d625b488ae0b4d2f5270eda09adc5adfd173439f35b2a45fa9494f94923cdd"
     },
     {
       "op": "submit",

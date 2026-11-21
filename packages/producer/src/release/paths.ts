@@ -1,8 +1,9 @@
 /**
  * Where a release lives (publisher.md 9.4.3, flows.md F8): the release slot `publisher/release.<pub>` named by the
  * publication in `clossys/agents/publisher/ia.json`, its manifest candidates, and the build output under
- * `.clossys/builds/` (generated, never committed: only the build id is).
+ * `clossys/.state/builds/` (generated, never committed: only the build id is).
  */
+import { STATE_DIR } from "../engine/state-dir.js";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { slotDir } from "../records/candidate.js";
@@ -10,7 +11,7 @@ import { slotDir } from "../records/candidate.js";
 export const PUBLICATION_ID = /^[a-z0-9][a-z0-9-]*$/;
 export const RELEASE_SLOT = /^release\.[a-z0-9][a-z0-9-]*$/;
 /** Build output, relative to the workspace root. */
-export const BUILDS_DIR = join(".clossys", "builds");
+export const BUILDS_DIR = join(STATE_DIR, "builds");
 
 /** `publisher/ia.json` publications, or undefined when the file is missing or unreadable. */
 function publications(root: string): Record<string, { release?: unknown }> | undefined {
@@ -39,7 +40,7 @@ export function publicationOf(root: string, slotId: string): string {
 
 export const releaseDir = (root: string, publication: string): string => slotDir(root, "publisher", releaseSlotId(root, publication));
 export const buildsDir = (root: string): string => join(root, BUILDS_DIR);
-/** `.clossys/builds/<id first 8>/` */
+/** `clossys/.state/builds/<id first 8>/` */
 export const buildDir = (root: string, id: string): string => join(buildsDir(root), id.slice(0, 8));
-/** The publication's latest build: `.clossys/builds/latest-<pub>.json`. */
+/** The publication's latest build: `clossys/.state/builds/latest-<pub>.json`. */
 export const latestBuildFile = (root: string, publication: string): string => join(buildsDir(root), `latest-${publication}.json`);

@@ -14,7 +14,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it } from "vitest";
-import type { BoundPage } from "@clossys/publisher/install";
+import { INSTALL_STATE_DIR, type BoundPage } from "@clossys/publisher/install";
 import { ensureSubstrate, renderBoundPage, SUBSTRATE_HOST_FILE, SUBSTRATE_VITE_CONFIG } from "./install.js";
 import { placeholderImages, SPECIMEN_IMAGE_PLACEHOLDER } from "../specimen/specimen-images.js";
 
@@ -266,7 +266,9 @@ describe("publishing substrate CommonJS interop", () => {
     expect(html).toContain("<title>Plain &lt;Studio&gt; &amp; home</title>");
     expect(html).not.toContain("<title>probe</title>");
     // The bundle imports the host React by its absolute path: a release copies the substrate, so it must not stay there.
-    expect(existsSync(join(dir, ".clossys")) ? readdirSync(join(dir, ".clossys")).filter(name => name.startsWith("render-")) : []).toEqual([]);
+    expect(readdirSync(join(dir, INSTALL_STATE_DIR)).filter(name => name.startsWith("render-"))).toEqual([]);
+    // The substrate's machine folder is not the consumer layout's legacy root state folder.
+    expect(existsSync(join(dir, ".clossys"))).toBe(false);
     expect(await renderProbePage("export function Probe() {\n  return <p>probe</p>\n}\n")).not.toContain("<title>");
   }, 120_000);
 

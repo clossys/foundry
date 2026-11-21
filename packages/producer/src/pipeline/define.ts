@@ -149,7 +149,7 @@ export class StepDefinitionError extends Error {}
 
 // ---------------------------------------------------------------- the step standard
 export const ACTION_SCHEMA = "clossys.action/1";
-/** W1b's run-record format: every step writes `.clossys/runs/<step>.jsonl` rows of this schema. */
+/** W1b's run-record format: every step writes `clossys/.state/runs/<step>.jsonl` rows of this schema. */
 export const RUN_RECORD = "clossys.pipeline-run/1";
 export const ACTION_AGENTS = ["director", "designer", "writer", "publisher", "producer", "owner"] as const;
 export type ActionAgent = typeof ACTION_AGENTS[number];

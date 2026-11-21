@@ -1,4 +1,4 @@
-/** `clossys migrate copy-keys|inputs|ledger|contracts|citations-to-slots|recut|requests|slots [--check|--apply] [--root <dir>] [--json]`: deterministic slot-record codemods. */
+/** `clossys migrate copy-keys|inputs|ledger|contracts|citations-to-slots|recut|requests|slots|state [--check|--apply] [--root <dir>] [--json]`: deterministic slot-record codemods. */
 import { resolve } from "node:path";
 import { applyCopyKeyMigration, planCopyKeyMigration } from "../migrate/copy-keys.js";
 import { applyCitationsToSlots, planCitationsToSlots } from "../migrate/citations-to-slots.js";
@@ -7,6 +7,8 @@ import { applyLedgerBackfill, planLedgerBackfill } from "../migrate/ledger.js";
 import { RECUT_AGENTS, applyRecut, planFollowUp, planRecut, recutPending, recutProblems } from "../migrate/recut.js";
 import { applyContracts, planContracts } from "../migrate/contracts.js";
 import { applyRequestMigration, planRequestMigration } from "../migrate/requests.js";
+import { applyStateMigration, pendingStateMigration, planStateMigration } from "../engine/migrate-state.js";
+import { LEGACY_STATE_DIR, STATE_DIR } from "../engine/state-dir.js";
 import "../constitution/guard.js"; // registers the write guard's runner (migrate slots runs the migrate guard per folder)
 import { SLOTS_JOURNAL, SLOTS_MIGRATION_CLI, applySlotsMigration, planSlotsMigration, slotsPending } from "../migrate/slots.js";
 import { cliActor } from "../records/pin.js";
@@ -15,13 +17,14 @@ import { SLOT_AGENTS } from "../records/slot-model/index.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
-// The requests and slots lines are DRAFT copy (not owner-approved).
+// The requests, slots and state lines are DRAFT copy (not owner-approved).
 export const MIGRATE_USAGE = "Usage: clossys migrate copy-keys|inputs|ledger [--check] [--root <dir>] [--json]\n"
   + "       clossys migrate contracts [--check] [--at <iso>] [--root <dir>] [--json]\n"
   + "       clossys migrate citations-to-slots [--apply] [--root <dir>] [--json]\n"
   + "       clossys migrate recut [--apply|--check] [--at <iso>] [--root <dir>] [--json]\n"
   + "       clossys migrate requests [--apply|--check] [--at <iso>] [--root <dir>] [--json]\n"
   + "       clossys migrate slots [--apply|--check] [--at <iso>] [--root <dir>] [--json]\n"
+  + "       clossys migrate state [--apply|--check] [--root <dir>] [--json]\n"
   + "copy-keys renames camelCase copy ids in Designer and Writer slot.json and Writer candidates to the catalog's kebab-case ids; record text is unchanged.\n"
   + "inputs declares Designer and Writer slot.json inputs from the read graph (the Designer brief, slot-contract theme and asset reads, pinned Writer source refs); inputs are only added.\n"
   + "citations-to-slots rewrites citations to slot ids, which resolve through the cited slot's pin: every versioned citation of a known slot (<slot>@<n>, <agent>:<slot>@<n>) in a candidate becomes <slot> or <agent>:<slot> (a line anchor <ref>@<n>#L<line> keeps a version: in the pinned candidate it moves to the version the pin's recited gave it), and every pin drops recited, its sha256 carried to the rewritten pinned bytes (the decision is kept). It is a dry run that reports counts per agent unless --apply is given; --apply records one migrated event per rewritten file in clossys/evidence/migrations.json (the provenance constitution R08.2 accepts); a second run plans nothing.\n"
@@ -30,12 +33,13 @@ export const MIGRATE_USAGE = "Usage: clossys migrate copy-keys|inputs|ledger [--
   + "contracts seeds every Director, Designer and Writer slot/2 slot.json with what CREATE and CHOOSE read, from package data only: family (options, varyOn, values and class from the option table; an agent the table maps nothing for offers one candidate), contract.requirements (every requirement check of the slot's standard) and contract.fixture where the contract determines it (a Writer copy contract's required keys in its source locale); each rewrite is one ledgered slot event (verb migrate), slot data the package does not determine is named as a gap, and a second run changes nothing.\n"
   + "requests moves the request records Director and Designer kept of their own (requests/REQ-NNNN.json, needs/NEED-NNN.json) into Producer's queue as clossys.queue-entry/2 entries, raised by producer and routed like any other: a Director request becomes one entry per cell (a contradiction on a placed cell a kind fix, another request on a placed cell a change wanting a candidate, a cell no slot holds a kind slot); a Designer need becomes one entry about its candidate slot, its why \"<raisedBy> needs <missing>\" as Designer dogfood links it; the requester is the record's raiser when that is a placed slot, the owner when the owner raised it, and otherwise the agent that kept it (a change or fix from its target slot, a slot entry from the agent's placed slot that cites the need), never the owner for an agent's record. Nothing is lost: each entry's raised event carries the whole record (its why, id, file and JSON), and a record whose work an earlier record of the run or an open entry already holds is a planned merge that --apply appends as one more raised event. Status maps faithfully: open, drafted or proposed is open work; resolved, built or closed closes changed (a fix fixed) and declined closes declined, as the assignee agent through the queue's close gates; a close those gates refuse, a slot entry to close, and an owner-approved need are findings. A dry run unless --apply is given; any finding (a record that does not read, a need with no candidate slot, an agent's slot entry no slot of its own cites, a raise, merge or close the queue refuses, a store or record reached through a symbolic link, a legacy store under --root outside clossys/) exits 1 and --apply then writes nothing; --apply removes each migrated file only after every entry it became is re-read from disk carrying it and synced, then a legacy folder left empty; a rerun after a stopped run finishes only what is missing, and a second run plans nothing.\n"
   + "slots converts the store to one format in place: every slot folder under clossys/agents/ (the Producer's seats too) ends with a clossys.slot/2 slot.json, a clossys.pin/2 (or clossys.pin-map/1) pin.json and candidates carrying a clossys.candidate/1 header (content kept; a pin moves to the headered bytes only when it pinned exactly the bytes the header was added to), then clossys/store-format.json is written, after which every reader refuses a slot/1 or pin/1 found in the store. A dry run unless --apply is given; any finding (a file that does not read, a slot/1 with no slot/2 form, a symbolic link anywhere below clossys/) exits 1 and --apply then writes nothing; --apply journals the plan, writes each new file beside the old one, syncs and re-reads it, and only then replaces the old one; a rerun after a stopped run resumes the journal, and a second run plans nothing.\n"
+  + "state moves a legacy root .clossys/ folder into clossys/.state/, the consumer layout's one state folder (clossys check --engine fails while .clossys/ exists): each top-level entry (the event log, its index, run state, locks, check results, renders, builds) is renamed under the engine lock, the emptied folder is removed, and one state.migrate event names every record path the log logged under .clossys/ absent there and present at its new path with the bytes the log logged. A dry run unless --apply is given; a refusal (.clossys is not a folder, a lock file in it, a waiting or running loop run, an entry clossys/.state/ already holds: no merge) exits 1 and moves nothing; a second run plans nothing, or, after a run stopped between the moves and its event, logs the pending event (--check exits 1 while it is pending). While .clossys/ exists every other verb but clossys check --engine refuses (exit 2), so nothing starts a second log first.\n"
   + "--check reports pending changes and exits 1 when any remain.";
 
 export async function runMigrateCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   const [command, ...rest] = argv;
   if (command === "--help" || command === undefined) return { exitCode: command ? 0 : 2, message: MIGRATE_USAGE };
-  if (command !== "copy-keys" && command !== "inputs" && command !== "ledger" && command !== "contracts" && command !== "citations-to-slots" && command !== "recut" && command !== "requests" && command !== "slots") return { exitCode: 2, message: `Unknown migrate command: ${command}\n${MIGRATE_USAGE}` };
+  if (command !== "copy-keys" && command !== "inputs" && command !== "ledger" && command !== "contracts" && command !== "citations-to-slots" && command !== "recut" && command !== "requests" && command !== "slots" && command !== "state") return { exitCode: 2, message: `Unknown migrate command: ${command}\n${MIGRATE_USAGE}` };
   let check = false, apply = false, root: string | undefined, at: string | undefined;
   // `clossys migrate <command> --help` prints the usage, like `clossys migrate --help`, and touches nothing.
   if (rest.includes("--help") || rest.includes("-h")) return { exitCode: 0, message: MIGRATE_USAGE };
@@ -44,12 +48,16 @@ export async function runMigrateCli(argv: readonly string[], cwd: string): Promi
     if (arg === "--check") check = true;
     else if (arg === "--json") continue;
     else if (arg === "--root" && rest[index + 1] && !rest[index + 1]!.startsWith("--")) root = rest[++index];
-    else if (arg === "--apply" && (command === "citations-to-slots" || command === "recut" || command === "requests" || command === "slots")) apply = true;
+    else if (arg === "--apply" && (command === "citations-to-slots" || command === "recut" || command === "requests" || command === "slots" || command === "state")) apply = true;
     else if (arg === "--at" && (command === "recut" || command === "contracts" || command === "requests" || command === "slots") && rest[index + 1] && !rest[index + 1]!.startsWith("--")) at = rest[++index];
     else return { exitCode: 2, message: `Unknown argument: ${arg}\n${MIGRATE_USAGE}` };
   }
   const dir = discoverRoot(resolve(cwd, root ?? "."));
   const consumer = resolve(dir, "clossys");
+  if (command === "state") {
+    if (apply && check) return { exitCode: 2, message: `--apply and --check do not combine\n${MIGRATE_USAGE}` };
+    return migrateState(dir, apply, check);
+  }
   if (command === "inputs") return migrateInputs(consumer, dir, check);
   if (command === "ledger") return migrateLedger(consumer, dir, check);
   if (command === "contracts") {
@@ -86,6 +94,30 @@ export async function runMigrateCli(argv: readonly string[], cwd: string): Promi
   ];
   const exitCode = plan.findings.length || (check && plan.files.length) ? 1 : 0;
   return { exitCode, message: lines.join("\n"), root: dir, check };
+}
+
+function migrateState(dir: string, apply: boolean, check: boolean): CliResult {
+  const plan = planStateMigration(dir);
+  const refused = plan.refusals.map(reason => `refused: ${reason}`);
+  if (!plan.legacy) {
+    // A run that moved the folder and stopped before its event leaves the event pending; --apply logs it.
+    const pending = pendingStateMigration(dir).filter(input => input.sha256 === null).length;
+    if (!pending) return { exitCode: 0, message: `migrate state: no ${LEGACY_STATE_DIR}/ at ${dir}; engine state is in ${STATE_DIR}/`, root: dir, check, output: { legacy: false, moves: [], refusals: [] } };
+    if (!apply) return { exitCode: check ? 1 : 0, message: `migrate state (dry run; --apply logs it): no ${LEGACY_STATE_DIR}/ at ${dir}, but the state.migrate event of an earlier move is pending for ${pending} logged record path(s)`, root: dir, check, output: { ...plan, pending } };
+    const result = applyStateMigration(dir);
+    return { exitCode: 0, message: `migrate state: no ${LEGACY_STATE_DIR}/ to move; logged the pending state.migrate event${result.event ? ` (seq ${result.event.seq}) for ${pending} logged record path(s)` : ""}`, root: dir, check, output: { ...plan, event: result.event } };
+  }
+  if (plan.refusals.length || !apply) {
+    const lines = [`migrate state${apply ? "" : " (dry run; --apply moves)"}: ${plan.moves.length} entr${plan.moves.length === 1 ? "y" : "ies"} of ${LEGACY_STATE_DIR}/ to move into ${STATE_DIR}/; ${plan.refusals.length} refusal(s)`, ...plan.moves.map(name => `${LEGACY_STATE_DIR}/${name} -> ${STATE_DIR}/${name}`), ...refused];
+    return { exitCode: plan.refusals.length || check ? 1 : 0, message: lines.join("\n"), root: dir, check, output: plan };
+  }
+  const result = applyStateMigration(dir);
+  const logged = result.event ? result.event.inputs.filter(input => input.sha256 === null).length : 0;
+  const lines = [
+    `migrate state: moved ${plan.moves.length} entr${plan.moves.length === 1 ? "y" : "ies"} of ${LEGACY_STATE_DIR}/ into ${STATE_DIR}/ and removed ${LEGACY_STATE_DIR}/; ${result.event ? `state.migrate event seq ${result.event.seq} names ${logged} logged record path(s) at their new place` : "no logged record path moved"}`,
+    ...plan.moves.map(name => `${LEGACY_STATE_DIR}/${name} -> ${STATE_DIR}/${name}`),
+  ];
+  return { exitCode: 0, message: lines.join("\n"), root: dir, check, output: { ...plan, event: result.event } };
 }
 
 function migrateContracts(consumer: string, dir: string, check: boolean, at: string): CliResult {

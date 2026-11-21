@@ -274,7 +274,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/sentence-length-v1.json",
-      "sha256": "5709e20939875615d1ce5fb0cb9f28582229abab3f92c346da04a173988704bf"
+      "sha256": "b3fd514c27fedead92d15c32d4c36d053419c8a1dd978074b9f82849487e6d77"
     },
     {
       "op": "submit",

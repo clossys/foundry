@@ -319,7 +319,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/card-foreground-v1.json",
-      "sha256": "19d79f05923048c1a4cb0f122efc2954cadbc1c79ddce3e94f81e1ef6744caba"
+      "sha256": "b3111c0d9fba1da5f9c991f52a7e3e9a0489a727e827882c427a931242af592b"
     },
     {
       "op": "submit",

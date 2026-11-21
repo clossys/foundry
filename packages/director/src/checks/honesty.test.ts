@@ -127,7 +127,7 @@ describe("W5b item 3: a cell judgement must cite a run record", () => {
     stageFinding(root, "critic-q3", `---\nid: critic-q3\nsource: user\nobserved: 2026-11-10\nby: critic\njudge: Q3:${CORE}@1\nverdict: ${verdict}\njudged: ["${CORE}@1"]\n${run ? `run: ${run}\n` : ""}---\n- Evidence read.\n`);
   }
   function runStore(base: string, exit: number) {
-    const path = join(base, ".clossys", "runs", "critic.cell.jsonl");
+    const path = join(base, "clossys", ".state", "runs", "critic.cell.jsonl");
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, `${JSON.stringify({ schema: "clossys.pipeline-run/1", run: RUN, step: "critic.cell", invocation: "x", argv: [], exit, reads: [], writes: [] })}\n`);
   }
@@ -269,7 +269,7 @@ describe("C4-JUDGE: a judge verdict is recorded only by `director check judge`",
     expect(judge(root, `Q3:${CORE}@1`, "--verdict", "pass", "--heard", "owner-heard", "--reason", "x").value.error).toContain("--run");
     expect(judge(root, `Q3:${CORE}@2`, "--verdict", "pass", "--heard", "owner-heard", "--run", `critic.cell#${RUN}`, "--reason", "x").value.error).toContain("pinned version");
     expect(judge(root, `Q3:${CORE}@1`, "--verdict", "pass", "--heard", "owner-heard", "--run", `critic.cell#${RUN}`, "--reason", "x").value.error).toContain("not a finished run");
-    const path = join(base, ".clossys", "runs", "critic.cell.jsonl");
+    const path = join(base, "clossys", ".state", "runs", "critic.cell.jsonl");
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, `${JSON.stringify({ schema: "clossys.pipeline-run/1", run: RUN, step: "critic.cell", invocation: "x", argv: [], exit: 0, reads: [], writes: [] })}\n`);
     const done = judge(root, `Q3:${CORE}@1`, "--verdict", "pass", "--heard", "owner-heard", "--run", `critic.cell#${RUN}`, "--reason", "Evidence supports each bullet.");
@@ -279,7 +279,7 @@ describe("C4-JUDGE: a judge verdict is recorded only by `director check judge`",
   });
   it("C5-DIR: the cited run record travels with the verdict, so a checkout without the local run store still counts it", () => {
     const { root, base } = unjudgedRoot([CORE]);
-    const local = join(base, ".clossys", "runs", "critic.cell.jsonl");
+    const local = join(base, "clossys", ".state", "runs", "critic.cell.jsonl");
     const line = JSON.stringify({ schema: "clossys.pipeline-run/1", run: RUN, step: "critic.cell", invocation: "director check check", argv: ["director", "check", "check"], exit: 0, reads: [], writes: [] });
     mkdirSync(dirname(local), { recursive: true });
     writeFileSync(local, `${line}\n`);
@@ -293,7 +293,7 @@ describe("C4-JUDGE: a judge verdict is recorded only by `director check judge`",
     expect(q(2).value.result.recorded.runRecord).toBeUndefined();
     expect(readFileSync(tracked, "utf8")).toBe(`${line}\n`);
     // A fresh checkout: the gitignored local store is gone, the tracked copy still resolves both verdicts.
-    rmSync(join(base, ".clossys"), { recursive: true, force: true });
+    rmSync(join(base, "clossys", ".state"), { recursive: true, force: true });
     const model = readStrategyRoot(root, reader);
     expect(model.issues).toEqual([]);
     expect(recordedJudgeVerdicts(model)).toMatchObject({ [`Q3:${CORE}@1`]: "pass", [`Q2:${CORE}@1`]: "pass" });

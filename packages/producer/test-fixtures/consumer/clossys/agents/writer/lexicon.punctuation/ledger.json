@@ -274,7 +274,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/punctuation-v1.json",
-      "sha256": "7d150fefe6a005573fa46fd49b7f6e3bda00897b709cb1365a21593ce06bea22"
+      "sha256": "998612c13ced4bb4676b86072995608000574f9322e4349aa81afb9260c2d3ba"
     },
     {
       "op": "submit",

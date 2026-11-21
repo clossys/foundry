@@ -289,7 +289,7 @@ describe("R5: every fail-closed branch of the owner's answer and the pin on disk
     const { world, name, entry } = await signed();
     expect((await pin(world, name, entry)).exitCode).toBe(0);
     const build = latestBuild(world.root, "site")!;
-    unlinkSync(join(world.root, ".clossys/builds", `${build.id.slice(0, 8)}.json`));
+    unlinkSync(join(world.root, "clossys/.state/builds", `${build.id.slice(0, 8)}.json`));
     const ready = checkReleaseReady(world.root);
     expect(ready.status).toBe("fail");
     expect(ready.findings.map(row => row.detail)).toContain(`build ${build.id.slice(0, 12)} has no stamp: what it read is unknown`);
@@ -346,7 +346,7 @@ describe("the release certifier (R05.1, conform K3)", () => {
     expect(exists(cache)).toBe(true);
     // The build the manifest names leaves the disk (its stamp removed): nothing in the manifest's cache key changed.
     const build = latestBuild(world.root, "site")!;
-    unlinkSync(join(world.root, ".clossys/builds", `${build.id.slice(0, 8)}.json`));
+    unlinkSync(join(world.root, "clossys/.state/builds", `${build.id.slice(0, 8)}.json`));
     const again = judged();
     // The cache is on and serves the other slots; the release slot is judged afresh and fails on the missing build.
     expect(again.hits).toBeGreaterThan(0);

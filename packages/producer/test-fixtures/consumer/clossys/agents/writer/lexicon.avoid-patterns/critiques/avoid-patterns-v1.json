@@ -20,7 +20,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/writer/lexicon.avoid-patterns/avoid-patterns-v1.png"
+        "ref": "clossys/.state/renders/writer/lexicon.avoid-patterns/avoid-patterns-v1.png"
       }
     ]
   }

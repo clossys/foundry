@@ -319,7 +319,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/background-v1.json",
-      "sha256": "465a5ec7e4203b61c9802d1c4cfab505461141c49b7ea7313c29254c73a9ee65"
+      "sha256": "7f37825d36921f28f165b3ea7f0117f329a11acba1031fcc5ec304d2ccaa316a"
     },
     {
       "op": "submit",

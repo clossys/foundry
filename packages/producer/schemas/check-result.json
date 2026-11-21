@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "clossys.check-result/1",
   "title": "Check result",
-  "description": "Result of clossys check for one candidate, at .clossys/checks/<agent>/<slot-id>/<candidate>.json (system.md 4, 6.4).",
+  "description": "Result of clossys check for one candidate, at clossys/.state/checks/<agent>/<slot-id>/<candidate>.json (system.md 4, 6.4).",
   "type": "object",
   "required": [
     "schema",

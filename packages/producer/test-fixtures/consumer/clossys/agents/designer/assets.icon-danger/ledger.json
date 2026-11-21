@@ -325,7 +325,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/icon-danger-v1.json",
-      "sha256": "9ec18d77d8ee10a9274e8440f770169bd2aefcb613298f60acb1a30e34688851"
+      "sha256": "7c4e21af4c1b7d44055cbac1ffcd23db6f607bef6a14edc292e0bee38d503c2f"
     },
     {
       "op": "submit",

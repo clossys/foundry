@@ -32,6 +32,7 @@ import { refVerbatimSuite } from "../check/record-suites.js";
 import { runConstitution } from "../constitution/run.js";
 import { NO_HISTORY } from "../constitution/__fixtures__/workspace.js";
 import { pinUpstream } from "./__fixtures__/upstream.js";
+import { STATE_DIR } from "../engine/state-dir.js";
 
 const AT = "2026-11-17T12:00:00Z";
 const temps: string[] = [];
@@ -39,7 +40,8 @@ afterEach(() => { for (const dir of temps.splice(0)) rmSync(dir, { recursive: tr
 function copy(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "agent-loops-cli-")));
   temps.push(root);
-  cpSync(join(FIXTURE_CONSUMER_ROOT, "clossys"), join(root, "clossys"), { recursive: true });
+  // The records only: the fixture's engine state (STATE_DIR) stays behind, so each copy starts its own event log.
+  cpSync(join(FIXTURE_CONSUMER_ROOT, "clossys"), join(root, "clossys"), { recursive: true, filter: src => src !== join(FIXTURE_CONSUMER_ROOT, STATE_DIR) });
   return root;
 }
 function tree(dir: string, base = dir, out: Record<string, string> = {}): Record<string, string> {
@@ -392,12 +394,12 @@ describe("the runner runs the owning agent's pin for all five loops (planRun / s
     // A glob or placeholder declared write (had it passed the load) still writes only what the agent write allowlist
     // holds: another agent's slot, another agent's check folder, a request it did not raise (r-1 is no entry of its own)
     // and a symlink into another tree are refused; refine-brief's own slot record, as the standard declares it, goes on.
-    const glob = { ...(step as object), writes: ["*/*/slot.json", "<dependant>/slot.json", ".clossys/checks/*/x/scorecard.json", "<slot>/", "producer/queue.slot/entries/*"] } as never;
-    expect(undeclaredWrites(root, state, glob, ["writer/sections.article.copy/slot.json", ".clossys/checks/writer/x/scorecard.json", `${slot}/slot.json`, "producer/queue.slot/entries/r-1.json"], {})).toEqual(["writer/sections.article.copy/slot.json", ".clossys/checks/writer/x/scorecard.json", "producer/queue.slot/entries/r-1.json"]);
+    const glob = { ...(step as object), writes: ["*/*/slot.json", "<dependant>/slot.json", "clossys/.state/checks/*/x/scorecard.json", "<slot>/", "producer/queue.slot/entries/*"] } as never;
+    expect(undeclaredWrites(root, state, glob, ["writer/sections.article.copy/slot.json", "clossys/.state/checks/writer/x/scorecard.json", `${slot}/slot.json`, "producer/queue.slot/entries/r-1.json"], {})).toEqual(["writer/sections.article.copy/slot.json", "clossys/.state/checks/writer/x/scorecard.json", "producer/queue.slot/entries/r-1.json"]);
     symlinkSync(join(root, "clossys", "agents", "writer", "sections.article.copy"), join(root, "clossys", "agents", slot, "linked"));
     expect(undeclaredWrites(root, state, glob, [`${slot}/linked/slot.json`, `${slot}/fresh/notes.md`, `${slot}/candidates/fresh-v9.json`], {})).toEqual([`${slot}/linked/slot.json`, `${slot}/fresh/notes.md`]);
     expect(agentWriteRef(root, `${slot}/linked/slot.json`)).toEqual({ refused: expect.stringMatching(/is a symlink$/) });
-    expect(agentWriteRef(root, ".clossys/checks/designer/x/scratch/a.json")).toEqual({ segments: [".clossys", "checks", "designer", "x", "scratch", "a.json"] });
+    expect(agentWriteRef(root, "clossys/.state/checks/designer/x/scratch/a.json")).toEqual({ segments: ["clossys", ".state", "checks", "designer", "x", "scratch", "a.json"] });
     expect(agentWriteRef(root, `clossys/agents/${slot}/candidates/n.json`)).toEqual({ segments: [...slot.split("/"), "candidates", "n.json"] });
   }, LONG);
 
@@ -419,8 +421,8 @@ describe("the runner runs the owning agent's pin for all five loops (planRun / s
     // writes only the agent's scratch, never Producer's verdicts or other files beside them.
     put("clossys/agents/producer/queue.approve/entries/20261117T1200Z-forged.json", shapedRequest);
     expect(undeclaredWrites(root, state, step("extra", ["producer/queue.approve/entries/*"]), ["producer/queue.approve/entries/20261117T1200Z-forged.json"], {})).toEqual(["producer/queue.approve/entries/20261117T1200Z-forged.json"]);
-    const checks = [`.clossys/checks/designer/${slotId}/cascade.json`, `.clossys/checks/designer/${slotId}/other/x.json`, `.clossys/checks/designer/${slotId}/scratch/n.json`];
-    expect(undeclaredWrites(root, state, step("extra", [".clossys/checks/<agent>/<slot-id>/"]), checks, {})).toEqual(checks.slice(0, 2));
+    const checks = [`clossys/.state/checks/designer/${slotId}/cascade.json`, `clossys/.state/checks/designer/${slotId}/other/x.json`, `clossys/.state/checks/designer/${slotId}/scratch/n.json`];
+    expect(undeclaredWrites(root, state, step("extra", ["clossys/.state/checks/<agent>/<slot-id>/"]), checks, {})).toEqual(checks.slice(0, 2));
 
     // R2: a hard link from a new candidate to another agent's slot record or to the agent's own pin is refused.
     mkdirSync(join(agents, slot, "candidates"), { recursive: true });
@@ -568,13 +570,13 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     expect(ok.state?.steps.map(step => step.id)).toContain("refine-brief");
 
     // A removed file is refused, whether or not it is reported (only the bound standard pick may clear its re-verdict).
-    const cascade = `.clossys/checks/designer/${slotId}/cascade.json`;
+    const cascade = `clossys/.state/checks/designer/${slotId}/cascade.json`;
     put(root, cascade, { schema: "clossys.reverdict/1", verdicts: [] });
     const removing = await waitAt(5);
     rmSync(join(root, cascade));
     const removed = await resumeRun(root, removing.runId, answering("refine-brief", [cascade]), { now: minute(6) });
     expect(removed.exitCode).toBe(1);
-    expect(removed.message).toMatch(new RegExp(`step refine-brief removed \\.clossys/checks/designer/${slotId.replace(/\./g, "\\.")}/cascade\\.json`));
+    expect(removed.message).toMatch(new RegExp(`step refine-brief removed clossys/\\.state/checks/designer/${slotId.replace(/\./g, "\\.")}/cascade\\.json`));
 
     // A repeated wait keeps the first snapshot: a write made while the run waited is still the step's.
     const twice = await waitAt(7);
@@ -587,7 +589,7 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
 
     // A symlink the step adds is refused, reported or not: the snapshot judges what is there, not what it points at.
     const linking = await waitAt(10);
-    const link = `.clossys/checks/designer/${slotId}/linked.json`;
+    const link = `clossys/.state/checks/designer/${slotId}/linked.json`;
     symlinkSync(join(root, "clossys", "agents", slot, "slot.json"), join(root, link));
     const linked = await resumeRun(root, linking.runId, answering("refine-brief", [link]), { now: minute(11) });
     expect(linked.exitCode).toBe(1);
@@ -933,10 +935,10 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     if (!plan.ok) throw new Error(plan.reason);
     expect(plan.state.version.ref).toBe("writer/loop.choose/choose-v1.json");
     const pick = standardStep("loop.choose", "pick");
-    const wrote = [`${slot}/pin.json`, `.clossys/checks/writer/${slotId}/scorecard.json`];
-    const reported = new Set(wrote.map(file => file.startsWith(".clossys/") ? file : `clossys/agents/${file}`));
+    const wrote = [`${slot}/pin.json`, `clossys/.state/checks/writer/${slotId}/scorecard.json`];
+    const reported = new Set(wrote.map(file => file.startsWith("clossys/.state/") ? file : `clossys/agents/${file}`));
     const pickJudged = (withCascade: boolean) => {
-      const cascade = join(root, ".clossys", "checks", "writer", slotId, "cascade.json");
+      const cascade = join(root, "clossys", ".state", "checks", "writer", slotId, "cascade.json");
       if (withCascade) { mkdirSync(join(cascade, ".."), { recursive: true }); writeFileSync(cascade, `${JSON.stringify({ schema: "clossys.reverdict/1", verdicts: [] })}\n`); }
       rmSync(pinPath(root, "writer", slotId), { force: true });
       const before = treeSnapshot(root, plan.state.runId);
@@ -956,7 +958,7 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     const clearing = pickJudged(true);
     const clearingPin = await clearing.run;
     expect(clearingPin.exitCode, clearingPin.message).toBe(0);
-    const own = `.clossys/checks/writer/${slotId}/cascade.json`;
+    const own = `clossys/.state/checks/writer/${slotId}/cascade.json`;
     const after = treeSnapshot(root, plan.state.runId);
     expect(clearing.before[own]).toMatch(/^file:/);
     expect(after[own]).toBeUndefined();
@@ -964,7 +966,7 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     expect(judge(clearing.before, after, pick)).toEqual([]);
     expect(judgeSnapshot(root, clearing.before, after, reported, pick, "writer", subject).issues).toEqual([`removed ${own}`]);
     // Refused: another slot's or another agent's re-verdict removed beside it.
-    for (const foreign of [".clossys/checks/writer/sections.article.copy/cascade.json", `.clossys/checks/designer/${slotId}/cascade.json`]) {
+    for (const foreign of ["clossys/.state/checks/writer/sections.article.copy/cascade.json", `clossys/.state/checks/designer/${slotId}/cascade.json`]) {
       expect(judge({ ...clearing.before, [foreign]: clearing.before[own]! }, after, pick)).toEqual([`removed ${foreign}`]);
     }
     // Refused: the removal without the pin record it wrote (absent, or unchanged from before).
@@ -972,7 +974,7 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     const noPin = { ...after }; delete noPin[pinKey];
     expect(judge(clearing.before, noPin, pick)).toContain(`removed ${own}`);
     // A step that left the pin as it was logged no pin event either: the engine log and index are as they are now too.
-    const unlogged = { [".clossys/events.jsonl"]: after[".clossys/events.jsonl"]!, [".clossys/index.json"]: after[".clossys/index.json"]! };
+    const unlogged = { ["clossys/.state/events.jsonl"]: after["clossys/.state/events.jsonl"]!, ["clossys/.state/index.json"]: after["clossys/.state/index.json"]! };
     expect(judge({ ...clearing.before, ...unlogged, [pinKey]: after[pinKey]! }, after, pick)).toEqual([`removed ${own}`]);
     // Refused: a non-pick verb removing its own re-verdict (refine-brief of loop.create, or a cascade step).
     const create = standardOf("loop.create");

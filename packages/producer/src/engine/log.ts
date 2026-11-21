@@ -1,5 +1,5 @@
 /**
- * The one writer of `.clossys/events.jsonl` (engine/chain.ts holds the format and verifyChain). `appendEvent()`
+ * The one writer of `clossys/.state/events.jsonl` (engine/chain.ts holds the format and verifyChain). `appendEvent()`
  * validates a draft, takes the workspace's engine lock (engine/lock.ts), chains the event to the last line, appends it
  * as one line and keeps the derived index (engine/derived.ts), all under the lock. `recordEvent()` is the call a record
  * writer makes after it left its files; inside `deferEvents()` (every slot-record lock) it holds the event until the
@@ -16,6 +16,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { CONSUMER_DIR, EngineEventError, EngineLogError, enginePaths, engineRootOf, eventLine, inputsOf, sha256 } from "./chain.js";
 import { indexAfterAppend, rebuildIndexUnlocked, type EngineIndex } from "./derived.js";
 import { ENGINE_LOCK_WAIT_MS, withEngineLock } from "./lock.js";
+import { refuseLegacyState } from "./state-dir.js";
 import { EVENT_SCHEMA, GENESIS, draftIssues, eventIssues, type EngineEvent, type EventDraft } from "./types.js";
 
 export interface AppendOptions {
@@ -46,8 +47,12 @@ function lastLine(file: string): { line: string | undefined; torn: boolean } {
   } finally { closeSync(fd); }
 }
 
-/** Run `action` under the workspace's engine lock. */
+/**
+ * Run `action` under the workspace's engine lock. Refuses first (LegacyStateError, nothing written, not even the lock)
+ * while the workspace still keeps its state in the legacy root folder: an append there would start a second log.
+ */
 function locked<T>(root: string, action: () => T, waitMs = ENGINE_LOCK_WAIT_MS): T {
+  refuseLegacyState(root);
   const paths = enginePaths(root);
   mkdirSync(paths.dir, { recursive: true });
   return withEngineLock(paths.lock, action, waitMs);
@@ -56,35 +61,51 @@ function locked<T>(root: string, action: () => T, waitMs = ENGINE_LOCK_WAIT_MS):
 /**
  * Append one event to the workspace's log. Validates the draft, takes the engine lock, chains the event to the last
  * line (`seq`, `prev`), writes it as one line (fsync) and keeps the derived index. Refuses, writing nothing, on an
- * invalid draft (EngineEventError), a torn or invalid last line (EngineLogError) or a lock held past the wait
- * (EngineBusyError).
+ * invalid draft (EngineEventError), a torn or invalid last line (EngineLogError), a lock held past the wait
+ * (EngineBusyError) or a workspace whose state is still in the legacy root folder (LegacyStateError).
  */
 export function appendEvent(root: string, draft: EventDraft, options: AppendOptions = {}): EngineEvent {
   const at = resolve(root);
+  const given = validDraft(draft);
+  return locked(at, () => appendUnderLock(at, given), options.waitMs);
+}
+
+/**
+ * appendEvent for a caller that already holds the workspace's engine lock (engine/migrate-state.ts, which takes the
+ * lock itself, moves the legacy folder and logs its event before it lets go). Same refusals, minus the lock wait.
+ */
+export function appendEventHeld(root: string, draft: EventDraft): EngineEvent {
+  return appendUnderLock(resolve(root), validDraft(draft));
+}
+
+type ValidDraft = Omit<EventDraft, "at"> & { readonly at: string };
+function validDraft(draft: EventDraft): ValidDraft {
   const inputs = [...draft.inputs].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
   const given = { actor: draft.actor, kind: draft.kind, subject: draft.subject, at: draft.at ?? new Date().toISOString(), inputs };
   const issues = draftIssues(given);
   if (issues.length) throw new EngineEventError(issues);
+  return given;
+}
+
+function appendUnderLock(at: string, given: ValidDraft): EngineEvent {
   const paths = enginePaths(at);
-  return locked(at, () => {
-    const tail = lastLine(paths.events);
-    if (tail.torn) throw new EngineLogError(`${paths.events} ends in a torn line (no newline); run clossys check --engine; nothing was written`);
-    let seq = 0;
-    let prev = GENESIS;
-    if (tail.line !== undefined) {
-      let last: unknown;
-      try { last = JSON.parse(tail.line); } catch { throw new EngineLogError(`${paths.events}: the last line is not JSON; run clossys check --engine; nothing was written`); }
-      const lastIssues = eventIssues(last);
-      if (lastIssues.length) throw new EngineLogError(`${paths.events}: the last line is not an event (${lastIssues[0]}); nothing was written`);
-      seq = (last as EngineEvent).seq + 1;
-      prev = sha256(tail.line);
-    }
-    const { line, event } = eventLine({ schema: EVENT_SCHEMA, seq, prev, ...given });
-    const fd = openSync(paths.events, "a");
-    try { writeSync(fd, `${line}\n`); fsyncSync(fd); } finally { closeSync(fd); }
-    indexAfterAppend(at, event, line, tail.line);
-    return event;
-  }, options.waitMs);
+  const tail = lastLine(paths.events);
+  if (tail.torn) throw new EngineLogError(`${paths.events} ends in a torn line (no newline); run clossys check --engine; nothing was written`);
+  let seq = 0;
+  let prev = GENESIS;
+  if (tail.line !== undefined) {
+    let last: unknown;
+    try { last = JSON.parse(tail.line); } catch { throw new EngineLogError(`${paths.events}: the last line is not JSON; run clossys check --engine; nothing was written`); }
+    const lastIssues = eventIssues(last);
+    if (lastIssues.length) throw new EngineLogError(`${paths.events}: the last line is not an event (${lastIssues[0]}); nothing was written`);
+    seq = (last as EngineEvent).seq + 1;
+    prev = sha256(tail.line);
+  }
+  const { line, event } = eventLine({ schema: EVENT_SCHEMA, seq, prev, ...given });
+  const fd = openSync(paths.events, "a");
+  try { writeSync(fd, `${line}\n`); fsyncSync(fd); } finally { closeSync(fd); }
+  indexAfterAppend(at, event, line, tail.line);
+  return event;
 }
 
 /**

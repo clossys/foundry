@@ -18,7 +18,7 @@ function workspace(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "ia-no-folder-")));
   dirs.push(root);
   cpSync(consumerPath(), join(root, "clossys"), { recursive: true });
-  writeFileSync(join(root, ".gitignore"), "node_modules/\n/.clossys/runs/\n");
+  writeFileSync(join(root, ".gitignore"), "node_modules/\n/clossys/.state/runs/\n");
   rmSync(join(root, "clossys", "agents", SLOT), { recursive: true, force: true });
   return root;
 }

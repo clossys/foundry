@@ -21,7 +21,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/designer/themes.border/border-v1.png"
+        "ref": "clossys/.state/renders/designer/themes.border/border-v1.png"
       }
     ]
   }

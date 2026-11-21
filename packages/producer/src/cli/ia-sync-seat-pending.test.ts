@@ -13,13 +13,14 @@ import "./main.js";
 import { runIaCli } from "./owner.js";
 import { FIXTURE_CONSUMER_ROOT } from "../records/slot-model/fixture-consumer.test.js";
 import { syncDrift, syncVerdict } from "../records/slot-model/ia-sync.js";
+import { STATE_DIR } from "../engine/state-dir.js";
 
 const temps: string[] = [];
 afterEach(() => { for (const dir of temps.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 function copy(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "ia-sync-seat-")));
   temps.push(root);
-  cpSync(join(FIXTURE_CONSUMER_ROOT, "clossys"), join(root, "clossys"), { recursive: true });
+  cpSync(join(FIXTURE_CONSUMER_ROOT, "clossys"), join(root, "clossys"), { recursive: true, filter: src => src !== join(FIXTURE_CONSUMER_ROOT, STATE_DIR) });
   return root;
 }
 const seatDir = (root: string, id: string) => join(root, "clossys", "agents", "producer", id);

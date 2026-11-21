@@ -1,10 +1,11 @@
 /**
- * `clossys index --rebuild [--root <dir>] [--json]`: rewrite `<root>/.clossys/index.json` from the event log plus
+ * `clossys index --rebuild [--root <dir>] [--json]`: rewrite `<root>/clossys/.state/index.json` from the event log plus
  * the records it names (engine/derived.ts), under the engine lock. The index is never the source of truth: this is
  * how a missing or stale one is restored. Refuses (exit 1, nothing written) when the log does not verify.
  * `clossys index [--root <dir>] [--json]` without --rebuild compares the stored index with a rebuild, read-only.
  */
 import { dirname, resolve } from "node:path";
+import { INDEX_FILE } from "../engine/chain.js";
 import { indexAgreement } from "../engine/derived.js";
 import { rebuildIndex } from "../engine/log.js";
 import { hasModelRoot } from "../records/slots.js";
@@ -13,7 +14,7 @@ import type { CliResult } from "./main.js";
 import { findWorkspace } from "./workspace.js";
 
 export const INDEX_USAGE = "Usage: clossys index [--rebuild] [--root <dir>] [--json]\n"
-  + "  --rebuild rewrites .clossys/index.json from .clossys/events.jsonl plus the records it names (refused while the log does not verify);\n"
+  + "  --rebuild rewrites clossys/.state/index.json from clossys/.state/events.jsonl plus the records it names (refused while the log does not verify);\n"
   + "  without it, compares the stored index with a rebuild and exits 1 when they differ (read-only).";
 
 /** The workspace root (the folder holding `clossys/`) for a --root argument: a consumer folder's parent, or the nearest workspace. */
@@ -41,7 +42,7 @@ export async function runIndexCli(argv: readonly string[], cwd: string): Promise
   if (rebuild) {
     try {
       const index = rebuildIndex(root);
-      return { exitCode: 0, root, message: `index: rebuilt ${root}/.clossys/index.json from ${index.events} event(s), ${Object.keys(index.records).length} record(s)`, ...(json ? { output: index } : {}) };
+      return { exitCode: 0, root, message: `index: rebuilt ${root}/${INDEX_FILE} from ${index.events} event(s), ${Object.keys(index.records).length} record(s)`, ...(json ? { output: index } : {}) };
     } catch (error) {
       return { exitCode: 1, root, message: `index: ${error instanceof Error ? error.message : String(error)}` };
     }

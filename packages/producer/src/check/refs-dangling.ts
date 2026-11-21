@@ -11,9 +11,10 @@
  * - a record of a Writer record slot that neither the pin map nor a package default lists;
  * - a queue or ledger entry (`producer/queue.<kind>` or `producer/ledger.<loop>` with `record`) that does not exist;
  * - a check record (`producer/checks.<name>` with record `<agent>/<slot>`, the pin's CHOOSE scorecard) whose
- *   `.clossys/checks/<agent>/<slot>/<name>.json` does not exist, or whose bytes no longer hash to the ref's sha256;
+ *   `clossys/.state/checks/<agent>/<slot>/<name>.json` does not exist, or whose bytes no longer hash to the ref's sha256;
  * - `facts` when `clossys/facts.json` does not exist.
  */
+import { statePath } from "../engine/state-dir.js";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { candidatePath, packageDefaultDir, parseCandidateName, slotDir } from "../records/candidate.js";
@@ -46,7 +47,7 @@ export function danglingReason(root: string, ref: Ref): string | undefined {
   }
   if (agent === "producer" && /^checks\.[a-z][a-z0-9-]*$/.test(slotId)) {
     if (ref.record === undefined || !/^[a-z]+\/[a-z0-9][a-z0-9.-]*$/.test(ref.record)) return `${ref.to}: a check record names <agent>/<slot> as its record`;
-    const file = join(root, ".clossys", "checks", ...ref.record.split("/"), `${slotId.slice("checks.".length)}.json`);
+    const file = statePath(root, "checks", ...ref.record.split("/"), `${slotId.slice("checks.".length)}.json`);
     if (!existsSync(file)) return `${ref.to}#${ref.record}: no such check record`;
     // A cited check record is the one the pin saw: a later write over it (a re-pin's scorecard) leaves the old cite dangling.
     if (ref.sha256 !== undefined) {

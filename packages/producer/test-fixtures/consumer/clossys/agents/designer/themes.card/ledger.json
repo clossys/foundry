@@ -319,7 +319,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/card-v1.json",
-      "sha256": "010e1a463c127b3139f2d88520f26460e5d990a760bbe6c0681bca75047b862b"
+      "sha256": "8df698e6a0e03740c162f8c44b66b3c89f64e18219603bf06647a09f00960a04"
     },
     {
       "op": "submit",

@@ -310,7 +310,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/channel-v1.json",
-      "sha256": "2689f328b29011a8356b0fd1ba7b8c354e44c7798d72069c8a60622fb3ee597d"
+      "sha256": "d06554b23edbf4ddb0acd90db102a3d7e3dd0e2dcc3d7d72ddbfbbf304c6bb2c"
     },
     {
       "op": "submit",

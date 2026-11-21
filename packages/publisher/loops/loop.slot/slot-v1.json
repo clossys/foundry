@@ -53,7 +53,7 @@
         ],
         "writes": [
           "producer/queue.slot/entries/<request>.json",
-          ".clossys/runs/loops/*.settle/*"
+          "clossys/.state/runs/loops/*.settle/*"
         ],
         "checks": [],
         "onFail": {

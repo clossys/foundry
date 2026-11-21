@@ -325,7 +325,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/icon-legal-v1.json",
-      "sha256": "c2a556cc249ffcba93673f9ff9c1e5020c63c113751e6fe0dc6cb7ce12eaf894"
+      "sha256": "01b287faa35cdbccebbc489b4c34aab2f8f23a11247c0467743c401e3385ae84"
     },
     {
       "op": "submit",

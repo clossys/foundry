@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
 import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer, request, type Server, type ServerResponse } from "node:http";
 import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import { Writable } from "node:stream";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { ShadcnRunner } from "@clossys/publisher/install";
@@ -35,6 +35,9 @@ const vite: ShadcnRunner = async (_args, { cwd }) => {
 const deps = { vite };
 
 /** Every file under `dir` with its sha256, for proving a tree unchanged. */
+/** The consumer's records: every file under clossys/ but its state folder (where builds live). */
+const records = (dir: string): Record<string, string> => Object.fromEntries(Object.entries(tree(dir)).filter(([path]) => path !== ".state" && !path.startsWith(`.state${sep}`)));
+
 function tree(dir: string): Record<string, string> {
   const rows: Record<string, string> = {};
   const walk = (at: string) => {
@@ -111,11 +114,11 @@ describe("clossys preview", () => {
     expect(validateAgainst(SCHEMA, view)).toEqual([]);
     expect(view).toMatchObject({ schema: "clossys.preview/1", publication: "example-site", url: `http://127.0.0.1:${PREVIEW_PORT}/`, overrides: [], sample: [] });
     expect(view.buildId).toMatch(/^preview-[0-9a-f]{12}$/);
-    expect(statSync(join(root, ".clossys", "builds", view.buildId, "installs")).isDirectory()).toBe(true);
+    expect(statSync(join(root, "clossys", ".state", "builds", view.buildId, "installs")).isDirectory()).toBe(true);
   });
 
   it("lists the routes Studio's publisher preview lists for the same build", async () => {
-    const studio = await publication(root, "example-site", join(root, ".clossys", "builds", view.buildId, "installs"));
+    const studio = await publication(root, "example-site", join(root, "clossys", ".state", "builds", view.buildId, "installs"));
     expect(studio.state).toBe("ready");
     if (studio.state !== "ready") return;
     expect(studio.pages.every(page => page.emitted)).toBe(true);
@@ -152,21 +155,21 @@ describe("clossys preview", () => {
     }
   }, 120_000);
 
-  it("--with swaps exactly one slot in the staged build and writes nothing under clossys/", async () => {
-    const before = tree(join(root, "clossys"));
+  it("--with swaps exactly one slot in the staged build and writes no record under clossys/ (the build is in clossys/.state/)", async () => {
+    const before = records(join(root, "clossys"));
     const result = await runPreviewCli(["example-site", "--once", "--json", "--root", root, "--selection", join(root, "component-selection.ts"), "--with", "designer/sections.hero/simple-hero-v2.json"], root, deps);
     const swapped = result.output as any;
     expect(result.exitCode, result.message).toBe(0);
     expect(validateAgainst(SCHEMA, swapped)).toEqual([]);
-    expect(tree(join(root, "clossys"))).toEqual(before);
+    expect(records(join(root, "clossys"))).toEqual(before);
     const sha = createHash("sha256").update(readFileSync(join(root, "clossys", "agents", "designer", "sections.hero", "candidates", "simple-hero-v2.json"))).digest("hex");
     expect(swapped.overrides).toEqual([{ ref: "designer/sections.hero/simple-hero-v2.json", sha256: sha }]);
     expect(swapped.buildId).not.toBe(view.buildId);
     // The staged workspace differs from clossys/ in exactly that slot's pin.
-    const staged = tree(join(root, ".clossys", "builds", swapped.buildId, "root", "clossys"));
+    const staged = tree(join(root, "clossys", ".state", "builds", swapped.buildId, "root", "clossys"));
     const changed = Object.keys({ ...before, ...staged }).filter(file => before[file] !== staged[file]);
     expect(changed).toEqual([join("agents", "designer", "sections.hero", "pin.json")]);
-    const pin = JSON.parse(readFileSync(join(root, ".clossys", "builds", swapped.buildId, "root", "clossys", "agents", "designer", "sections.hero", "pin.json"), "utf8"));
+    const pin = JSON.parse(readFileSync(join(root, "clossys", ".state", "builds", swapped.buildId, "root", "clossys", "agents", "designer", "sections.hero", "pin.json"), "utf8"));
     const original = JSON.parse(readFileSync(join(root, "clossys", "agents", "designer", "sections.hero", "pin.json"), "utf8"));
     expect(pin).toEqual({ ...original, candidate: "simple-hero-v2.json", sha256: sha });
     await expect(runPreviewCli(["example-site", "--once", "--root", root, "--with", "writer/strings.site/site-v1.md", "--with", "writer/strings.site/site-v2.md"], root, deps)).rejects.toThrow(/twice/);

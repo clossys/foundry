@@ -8,11 +8,12 @@
  * A release slot's verdict is release.ready instead (flows.md F8): `clossys pin` runs it first and it binds
  * the owner's queue.approve answer to the manifest's sha256, which is a stronger record than a submit, so
  * the caller passes `{ verdict: "release.ready" }` only after that check passed for the pick.
- * Every pin writes the slot's ranked scorecard, `.clossys/checks/<agent>/<slot>/scorecard.json`: each
+ * Every pin writes the slot's ranked scorecard, `clossys/.state/checks/<agent>/<slot>/scorecard.json`: each
  * candidate with its submit record, its verdict and the reasons, ranked (certified and submitted
  * first, then fewest reasons), and the pin cites it (`refs` `producer/checks.scorecard`, rel cites,
  * with the scorecard's sha256).
  */
+import { refuseLegacyState, statePath } from "../engine/state-dir.js";
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -103,7 +104,8 @@ export function pinGate(root: string, consumer: string, agent: string, slotId: s
 
 /** Writes the scorecard and returns the pin ref citing it. */
 export function writeScorecard(root: string, agent: string, slotId: string, scorecard: Scorecard): Ref {
-  const dir = join(root, ".clossys", "checks", agent, slotId);
+  refuseLegacyState(root);
+  const dir = statePath(root, "checks", agent, slotId);
   mkdirSync(dir, { recursive: true });
   const bytes = `${JSON.stringify(scorecard, null, 2)}\n`;
   writeFileSync(join(dir, "scorecard.json"), bytes);

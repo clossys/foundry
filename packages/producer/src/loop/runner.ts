@@ -22,9 +22,10 @@
  * raises the entry and stops the run so that loop takes it. Exit 2 stops. A done run closes the change or fix it
  * started from and the fixes it raised on its own slot through the closure rule (records/request.ts closeWork).
  *
- * Run state is kept in `.clossys/runs/loops/<runId>.json`; resuming never runs a finished step again. Every run that
+ * Run state is kept in `clossys/.state/runs/loops/<runId>.json`; resuming never runs a finished step again. Every run that
  * ends (done, stopped or pinned-ready) writes one ledger entry, `clossys/agents/producer/ledger.<loop>/entries/<runId>.json`.
  */
+import { isStateRel, refuseLegacyState, statePath, stateRel } from "../engine/state-dir.js";
 import { existsSync, lstatSync, mkdirSync, openSync, closeSync, writeSync, readFileSync, realpathSync, renameSync, writeFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { appendRecord, buildRecord, invocationOf, observe } from "../pipeline/trace.js";
 import { basename, dirname, join, relative, sep } from "node:path";
@@ -150,7 +151,7 @@ export interface RunState {
   /** An owner entry about to be raised: saved before the raise, so a resume adopts the entry instead of raising it twice (B9). */
   pendingRaise?: { step: string; queue: string; at: Iso; then?: "retry" };
   /**
-   * U9a fix round 4: what `clossys/` and `.clossys/` held right before an agent step of an agent's own loop was handed
+   * U9a fix round 4: what `clossys/` (its records and its state folder, clossys/.state/) held right before an agent step of an agent's own loop was handed
    * to the agent, kept while the run waits on it; the step's answer is judged against it (agent-snapshot.ts).
    */
   agentSnapshot?: AgentSnapshot;
@@ -158,7 +159,7 @@ export interface RunState {
   notRun?: string[];
   /**
    * foundry-build-0048 DET-STEPS: the agent steps a `clossys settle` code step settled, each with the settle step's id;
-   * an agent step named here is skipped (no packet), and its settle record is `.clossys/runs/loops/<runId>.settle/<step>.json`.
+   * an agent step named here is skipped (no packet), and its settle record is `clossys/.state/runs/loops/<runId>.settle/<step>.json`.
    * A retry back to a settled create step (a code adopt that failed its check) clears it: the agent creates.
    */
   settled?: Record<string, string>;
@@ -190,7 +191,7 @@ export interface RunResult {
 export interface RunOptions { readonly now?: () => Date }
 
 const iso = (date: Date): Iso => date.toISOString().replace(/\.\d{3}Z$/, "Z");
-export const runsDir = (root: string): string => join(root, ".clossys", "runs", "loops");
+export const runsDir = (root: string): string => statePath(root, "runs", "loops");
 export const runStatePath = (root: string, runId: string): string => join(runsDir(root), `${runId}.json`);
 const lockPath = (root: string, runId: string): string => join(runsDir(root), `${runId}.lock`);
 
@@ -203,6 +204,7 @@ const alive = (pid: number): boolean => {
  * and is taken over. Returns the release, or why the run is busy.
  */
 function takeRunLock(root: string, runId: string): { release: () => void } | { busy: string } {
+  refuseLegacyState(root);
   const file = lockPath(root, runId);
   mkdirSync(dirname(file), { recursive: true });
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -225,6 +227,7 @@ export const ledgerDir = (root: string, loop: LoopName): string => join(root, "c
 const agentsDir = (root: string): string => join(root, "clossys", "agents");
 
 function saveState(root: string, state: RunState): void {
+  refuseLegacyState(root);
   const file = runStatePath(root, state.runId);
   mkdirSync(dirname(file), { recursive: true });
   const temp = `${file}.${process.pid}.tmp`;
@@ -254,13 +257,14 @@ export function waitingRuns(root: string): RunState[] {
 
 /** A path as the ledger names it: relative to `clossys/agents/` when inside it, else to the root. */
 /**
- * Where a step's wrote file lives: an absolute path as given; a root-relative `clossys/agents/...` or `.clossys/...`
+ * Where a step's wrote file lives: an absolute path as given; a root-relative `clossys/agents/...` or state-folder
+ * (`clossys/.state/...`)
  * path under the root; any other relative path under clossys/agents/. Agents name the candidate the submit verb printed
  * (clossys/agents/<agent>/<slot>/candidates/<name>), so both spellings hash the same file.
  */
 export function wroteFile(root: string, file: string): string {
   if (file.startsWith(sep)) return file;
-  if (file.startsWith("clossys/agents/") || file.startsWith(".clossys/")) return join(root, file);
+  if (file.startsWith("clossys/agents/") || isStateRel(file)) return join(root, file);
   return join(agentsDir(root), file);
 }
 function ledgerPath(root: string, file: string): string {
@@ -467,7 +471,7 @@ export async function resumeRun(root: string, runId: string, hooks: RunHooks, op
 
 async function resumeLocked(root: string, runId: string, hooks: RunHooks, now: () => Date): Promise<RunResult> {
   const state = readRunState(root, runId);
-  if (!state) return { exitCode: 2, message: `run: no run ${runId} in .clossys/runs/loops/` };
+  if (!state) return { exitCode: 2, message: `run: no run ${runId} in ${stateRel("runs", "loops")}/` };
   if (state.status !== "waiting" && state.status !== "running") return { exitCode: 2, state, message: `run: ${runId} is ${state.status}; only a waiting run resumes` };
   // B9: a run that wrote its ledger entry but stopped before saving its state has ended: adopt the entry, run nothing.
   const ended = adoptLedger(root, state);
@@ -905,7 +909,7 @@ function settlePick(ctx: Context, subject: SlotSubject | undefined): SettleVerdi
   const { agent, slotId } = subject;
   const slotFile = `clossys/agents/${refOf(subject)}/slot.json`;
   const pinFile = `clossys/agents/${refOf(subject)}/pin.json`;
-  const scorecardFile = `.clossys/checks/${refOf(subject)}/scorecard.json`;
+  const scorecardFile = stateRel("checks", refOf(subject), "scorecard.json");
   const notCode = codeSlotRefusals(root, agent, slotId);
   if (notCode.length) return { settled: false, why: `${notCode.join("; ")}; the pick is not code's`, cites: [slotFile, pinFile] };
   // The ranking the pin gate gives now (no pick yet): the same scorecard `clossys pin` judges and writes.
@@ -1004,7 +1008,7 @@ function settleStep(ctx: Context, step: LoopStep, subject: SlotSubject | undefin
 
 /**
  * A built-in code step runs observed, like any traced step (pipeline/trace.ts): it appends one
- * clossys.pipeline-run/1 record to `.clossys/runs/<loop>.<step>.jsonl` with every file it read and
+ * clossys.pipeline-run/1 record to `clossys/.state/runs/<loop>.<step>.jsonl` with every file it read and
  * wrote and their sha256, so a loop's own writes (queue entries, slot status) are on the run record.
  */
 function recordedBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefined, filled: { readonly argv: readonly string[]; readonly text: string }): BuiltIn | undefined {
@@ -1019,7 +1023,7 @@ function recordedBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | un
   // the fs observer does not hook, so without this the record would list none of what route raised.
   for (const file of result.wrote) {
     const rel = ledgerPath(ctx.root, file);
-    watch.observation.writes.add(rel.startsWith(".clossys") ? join(ctx.root, rel) : join(agentsDir(ctx.root), rel));
+    watch.observation.writes.add(isStateRel(rel) ? join(ctx.root, rel) : join(agentsDir(ctx.root), rel));
   }
   const argv = filled.argv[0] === "clossys" ? filled.argv.slice(1) : filled.argv;
   appendRecord(ctx.root, buildRecord({ root: ctx.root, step: `${ctx.state.loop}.${step.id}`, invocation: invocationOf(argv), argv, start, end: new Date(), exit: result.exit, observation: watch.observation }));
@@ -1046,7 +1050,7 @@ export function routeHandsOn(state: Pick<RunState, "loop" | "version">, step: Lo
 
 /**
  * U9a fix round 3: a file an agent step reported writing, as `agentWriteClass` judges it: its segments in the ledger's
- * agents-relative form (`clossys/agents/` dropped, `.clossys/...` kept), or why it is refused. Only the root's own real
+ * agents-relative form (`clossys/agents/` dropped, `clossys/.state/...` kept), or why it is refused. Only the root's own real
  * path is resolved (a temp root under a linked `/var`); every component below it is read with lstat and a symlink is
  * refused, never followed. A file that exists must be a regular file with one link: a hard link to a Producer record
  * (a pin, a slot record) would let a candidate write change it, so it is refused, as are directories and fifos.

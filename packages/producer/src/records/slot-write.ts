@@ -42,6 +42,7 @@ import { validateAgainst } from "../constitution/schema.js";
 import { fileState, MIGRATIONS_FILE, MIGRATIONS_SCHEMA, validateMigrations, type FileState, type FormatMigration, type MigratedEvent, type MigrationsDoc } from "./migrations.js";
 import { consumerEngineRoot, engineRootOf, inputsOf } from "../engine/chain.js";
 import { deferEvents, dropHeldEvents, logEvent, recordEvent } from "../engine/log.js";
+import { refuseLegacyState } from "../engine/state-dir.js";
 
 // ---------------------------------------------------------------------------
 // Locks and atomic replacement, shared by slot decisions and the Director store.
@@ -78,6 +79,9 @@ function staleLock(lock: string, now = Date.now()): boolean {
  * taken over by renaming it aside, so of two racing recoveries exactly one wins; a live lock refuses.
  */
 export function withDirLock<T>(lock: string, busy: string, action: () => T): T {
+  // The write's events would append to a log in STATE_DIR beside a legacy one: refuse before the lock or any record.
+  const root = engineRootOf(lock);
+  if (root !== undefined) refuseLegacyState(root);
   const acquire = () => { mkdirSync(lock); writeFileSync(join(lock, OWNER_FILE), JSON.stringify({ pid: process.pid, host: hostname(), at: Date.now() } satisfies LockOwner), { flag: "wx" }); };
   try { acquire(); }
   catch (error) {

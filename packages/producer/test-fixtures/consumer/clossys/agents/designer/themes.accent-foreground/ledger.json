@@ -338,7 +338,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/accent-foreground-v1.json",
-      "sha256": "320c378fe7ee0c8d6ebbc669d8a92738460d50331be79e227b30ad011c4ffcfa"
+      "sha256": "5401ce51da14ebffb4bb3c0778d5cac184775d8503cd284710e4c68aea406ca8"
     },
     {
       "op": "submit",

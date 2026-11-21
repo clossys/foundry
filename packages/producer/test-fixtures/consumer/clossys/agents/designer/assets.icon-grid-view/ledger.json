@@ -325,7 +325,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/icon-grid-view-v1.json",
-      "sha256": "bb573aa9c27a7887154bf1505061393d4db7f75644a4f956b43e25445d44c595"
+      "sha256": "86e8eb24343e74290aec3d774386ca0215c8f5ae0411fe183e1f24cc9ff02675"
     },
     {
       "op": "submit",

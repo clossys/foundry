@@ -7,6 +7,7 @@
  * on disk and its stamp, the release gates the publication names, the slot, the version the file name carries, the
  * ready version the slot pins) stays with the certifier (certify/release.ts). Pure.
  */
+import { stateRel } from "../../../../engine/state-dir.js";
 import { isRecord, strings } from "../../core/lib.js";
 import type { Criterion } from "../../core/types.js";
 
@@ -17,7 +18,7 @@ const PIN_VALUE = /@[0-9a-f]{64}$/;
 /** The source ref of a manifest derived from `previous`: `publisher/<release slot>/<previous>` (release/manifest.ts). */
 const DERIVED_REF = /^publisher\/release\.[a-z0-9][a-z0-9-]*\/(.+)$/;
 /** The build output folder a build id sits at (release/build.ts buildPath). */
-const buildPath = (id: string): string => `.clossys/builds/${id.slice(0, 8)}/`;
+const buildPath = (id: string): string => `${stateRel("builds", id.slice(0, 8))}/`;
 
 const show = (value: unknown): string => JSON.stringify(value) ?? "undefined";
 

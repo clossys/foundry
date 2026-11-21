@@ -325,7 +325,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/icon-chevron-down-v1.json",
-      "sha256": "31728bdbf8f9cd75040ab6ed8506017a79bd296ba13840e083837b857d9a2b4c"
+      "sha256": "3c077080b1a4055e892c5f8f2ef5de1f13022b6545de2ba4793fd8eab02e7772"
     },
     {
       "op": "submit",

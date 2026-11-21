@@ -325,7 +325,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/radius-v1.json",
-      "sha256": "d93e6b5df383fdfad4425fcdca8bb7a83aaf3e79916bb25713af5a86827b2f0d"
+      "sha256": "7add1d2c044f8263f5bec4b64599758c606821e8ffdbcbd58aaf45f28ea51921"
     },
     {
       "op": "submit",

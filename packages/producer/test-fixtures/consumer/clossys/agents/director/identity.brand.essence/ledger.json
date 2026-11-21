@@ -303,7 +303,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/essence-v1.json",
-      "sha256": "06bfe26fbe743b41e3cb9e9c1ea328a004b4399971ecb7e0efd031333b555da9"
+      "sha256": "a4551990c3d0d9b01a919e21e2ed91a1c99179a760a1ca994742bfa35eccaf2c"
     },
     {
       "op": "submit",

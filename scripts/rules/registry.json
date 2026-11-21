@@ -987,7 +987,7 @@
           "expect": "packages/writer/src/side-door\\.mjs:6 write appendFileSync: writes an engine or slot-record path outside the engine API"
         }
       ],
-      "note": "Every write to a workspace's .clossys/** or to a slot record goes through the Producer engine API (packages/producer/docs/engine.md), so it leaves an event in .clossys/events.jsonl: clossys check --side-door statically scans the producer, designer, writer, publisher and director src, bin and scripts plus the repository scripts and fails on any write, write wrapper, script record-writer call or unpaired slot-model primitive outside the engine surface. No allowlist and no baseline. The fixture is a package source file that appends to the event log by hand."
+      "note": "Every write to a workspace's clossys/.state/** or to a slot record goes through the Producer engine API (packages/producer/docs/engine.md), so it leaves an event in clossys/.state/events.jsonl: clossys check --side-door statically scans the producer, designer, writer, publisher and director src, bin and scripts plus the repository scripts and fails on any write, write wrapper, script record-writer call or unpaired slot-model primitive outside the engine surface. No allowlist and no baseline. The fixture is a package source file that appends to the event log by hand."
     },
     {
       "id": "R-REVIEW-MECHANICAL",

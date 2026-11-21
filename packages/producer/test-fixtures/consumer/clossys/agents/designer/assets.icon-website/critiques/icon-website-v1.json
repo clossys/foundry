@@ -20,7 +20,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/designer/assets.icon-website/icon-website-v1.png"
+        "ref": "clossys/.state/renders/designer/assets.icon-website/icon-website-v1.png"
       }
     ]
   }

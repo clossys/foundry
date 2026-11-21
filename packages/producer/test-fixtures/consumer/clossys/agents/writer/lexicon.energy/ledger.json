@@ -274,7 +274,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/energy-v1.json",
-      "sha256": "2f51dc20fb76bf27a74622b3f9fb26881483a7c59dff69b819c1a647ea2fafbf"
+      "sha256": "656972c5654b24eb7a4380472e5b8c0a3cac2cd3f746fa72c278813fd4d2b070"
     },
     {
       "op": "submit",

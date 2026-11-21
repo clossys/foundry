@@ -20,7 +20,7 @@
       },
       {
         "role": "render",
-        "ref": ".clossys/renders/designer/assets.icon-grid-view/icon-grid-view-v1.png"
+        "ref": "clossys/.state/renders/designer/assets.icon-grid-view/icon-grid-view-v1.png"
       }
     ]
   }

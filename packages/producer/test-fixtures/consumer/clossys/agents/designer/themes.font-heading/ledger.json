@@ -338,7 +338,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/font-heading-v1.json",
-      "sha256": "0f7e510938464ead93a788f0c084f5e55f397e5c73291ba822d72d23f6c4890f"
+      "sha256": "cd1eb38fd9fa5effbbd00f92a9e657f23e85097a8d63cd18e2e9b9e1d9756577"
     },
     {
       "op": "submit",

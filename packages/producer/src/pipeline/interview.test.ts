@@ -22,7 +22,7 @@ function workspace(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "interview-")));
   dirs.push(root);
   cpSync(FOUNDRY, join(root, "clossys"), { recursive: true, filter: source => !source.endsWith(SEAT_POLICY_FILE.split("/").at(-1)!) });
-  writeFileSync(join(root, ".gitignore"), "node_modules/\n/.clossys/runs/\n");
+  writeFileSync(join(root, ".gitignore"), "node_modules/\n/clossys/.state/runs/\n");
   return root;
 }
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
@@ -179,7 +179,7 @@ describe("interview (next --owner) and gaps", { timeout: 120_000 }, () => {
     const output = owner.output as { schema: string; rounds: Question[][] };
     expect(output.schema).toBe("clossys.next-owner/2");
     for (const round of output.rounds) expect(round.length).toBeLessThanOrEqual(ROUND_SIZE);
-    expect(existsSync(join(root, ".clossys", "runs"))).toBe(false);
+    expect(existsSync(join(root, "clossys", ".state", "runs"))).toBe(false);
   });
 });
 

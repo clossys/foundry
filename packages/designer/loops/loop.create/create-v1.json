@@ -40,7 +40,7 @@
           "<slot>/slot.json"
         ],
         "writes": [
-          ".clossys/runs/loops/*.settle/*"
+          "clossys/.state/runs/loops/*.settle/*"
         ],
         "checks": [],
         "onFail": {
@@ -90,7 +90,7 @@
         "writes": [
           "<slot>/candidates/*",
           "<slot>/ledger.json",
-          ".clossys/runs/loops/*.settle/*"
+          "clossys/.state/runs/loops/*.settle/*"
         ],
         "checks": [],
         "onFail": {
@@ -133,7 +133,7 @@
           "<slot>/ledger.json"
         ],
         "writes": [
-          ".clossys/checks/<agent>/<slot-id>/*"
+          "clossys/.state/checks/<agent>/<slot-id>/*"
         ],
         "checks": [
           "<slot standard>",

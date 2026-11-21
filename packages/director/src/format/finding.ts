@@ -13,7 +13,7 @@ const CELL_PART = CELL_ID_PATTERN.source.slice(1, -1);
 /** A judge id the checks accept as a verdict key: the storyline critic, a judge contradiction pair, or one cell's Q judgement. */
 export const JUDGE_ID_PATTERN = new RegExp(`^(?:C4|C2:X[1-9][0-9]*|Q[1-7]:${CELL_PART}@[1-9][0-9]*)$`);
 const JUDGED_REF_PATTERN = new RegExp(`^${CELL_PART}@[1-9][0-9]*$`);
-/** A run citation: the traced step id and the 16-hex run id of one record in `.clossys/runs/<step>.jsonl`. */
+/** A run citation: the traced step id and the 16-hex run id of one record in `clossys/.state/runs/<step>.jsonl`. */
 export const RUN_CITATION_PATTERN = /^([A-Za-z0-9][A-Za-z0-9:._-]*)#([0-9a-f]{16})$/;
 
 /**

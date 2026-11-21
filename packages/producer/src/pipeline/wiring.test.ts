@@ -26,7 +26,7 @@ function workspace(): string {
   for (const name of ["a.json", "b.json"]) writeFileSync(join(slot, "candidates", name), "{}\n");
   writeFileSync(join(slot, "pin.json"), JSON.stringify({ candidate: "a.json" }));
   // The store's contract: a workspace keeps run records only when it ignores them (trace.ts storeIgnored).
-  writeFileSync(join(root, ".gitignore"), "node_modules/\n/.clossys/runs/\n");
+  writeFileSync(join(root, ".gitignore"), "node_modules/\n/clossys/.state/runs/\n");
   return root;
 }
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
@@ -229,14 +229,14 @@ describe("status citations", () => {
 
   it("writes no record into a workspace that does not ignore the store", async () => {
     const root = workspace();
-    for (const gitignore of [null, "node_modules/\n", "/.clossys/\n!/.clossys/runs/\n"]) {
+    for (const gitignore of [null, "node_modules/\n", "/clossys/.state/\n!/clossys/.state/runs/\n"]) {
       if (gitignore === null) unlinkSync(join(root, ".gitignore")); else writeFileSync(join(root, ".gitignore"), gitignore);
       expect(storeIgnored(root)).toBe(false);
       expect((await runPipeline(["pipeline", "status", "--root", root], root)).exitCode).toBe(0);
       expect(readRuns(root)).toEqual([]);
-      expect(existsSync(join(root, ".clossys"))).toBe(false);
+      expect(existsSync(join(root, "clossys/.state"))).toBe(false);
     }
-    for (const line of ["/.clossys/runs/", ".clossys/", "/.clossys"]) {
+    for (const line of ["/clossys/.state/runs/", "clossys/.state/", "/clossys/.state"]) {
       writeFileSync(join(root, ".gitignore"), `dist/\n${line}\n`);
       expect(storeIgnored(root)).toBe(true);
     }

@@ -82,7 +82,7 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     expect(result.message).toMatch(/pinned copy-v1\.md/);
     expect(result.exitCode).toBe(0);
     const pin = JSON.parse(readFileSync(join(w.dir, "pin.json"), "utf8"));
-    const scorecardFile = join(w.root, ".clossys", "checks", "writer", SLOT, "scorecard.json");
+    const scorecardFile = join(w.root, "clossys", ".state", "checks", "writer", SLOT, "scorecard.json");
     const bytes = readFileSync(scorecardFile, "utf8");
     expect(pin).toMatchObject({ schema: "clossys.pin-map/1", createdBy: { actor: "code", cli: "clossys pin" } });
     expect(pin.records.copy).toMatchObject({ candidate: good.name, sha256: good.sha256, basis: "picked", decidedBy: `owner:queue.pick#${QUEUE_ID}` });
@@ -216,7 +216,7 @@ describe("the CHOOSE gate: clossys pin on a slot/2 slot", () => {
     const good = w.submit(GOOD);
     const gate = pinGate(w.root, w.consumer, "writer", SLOT, good.name, AT);
     expect(gate.refusals).toEqual([]);
-    expect(existsSync(join(w.root, ".clossys", "checks", "writer", SLOT, "scorecard.json"))).toBe(false);
+    expect(existsSync(join(w.root, "clossys", ".state", "checks", "writer", SLOT, "scorecard.json"))).toBe(false);
   });
 });
 

@@ -19,6 +19,7 @@
  * Anything else there (a user file, an edited projection, a symlink, no prior lock) is `compile.out-unowned`
  * (exit 1) and nothing is deleted or written. Deletes never leave `<real out>/publications/`.
  */
+import { STATE_DIR } from "../engine/state-dir.js";
 import { createHash } from "node:crypto";
 import { lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, unlinkSync, writeFileSync, type Stats } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -32,7 +33,7 @@ export const PUBLICATION_SLOT = /^publication\.([a-z][a-z0-9-]*)$/;
 export const COMPILE_LOCK_SCHEMA = "clossys.compile-lock/1";
 export const COMPILED_PUBLICATIONS_SCHEMA = "clossys.compiled-publications/1";
 /** Where the release loop's compile step writes, relative to the workspace root (loop.release step `compile`). */
-export const GENERATED_DIR = join(".clossys", "generated");
+export const GENERATED_DIR = join(STATE_DIR, "generated");
 export const LOCK_FILE = "compile.lock.json";
 
 /**

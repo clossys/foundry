@@ -80,8 +80,8 @@ describe("native Studio selection and generated dogfood inputs", () => {
 
   it("writes byte-identical native resolved profile, indexes and source packets in fresh generations", async () => {
     const options = { root: consumer, sourceHead, selectionHash, packet, library };
-    const first = await writeStudioCheckInputs({ ...options, output: join(consumer, ".clossys/check-inputs/first") });
-    const second = await writeStudioCheckInputs({ ...options, output: join(consumer, ".clossys/check-inputs/second") });
+    const first = await writeStudioCheckInputs({ ...options, output: join(consumer, "clossys/.state/check-inputs/first") });
+    const second = await writeStudioCheckInputs({ ...options, output: join(consumer, "clossys/.state/check-inputs/second") });
     const a = await disk(first.output), b = await disk(second.output);
     expect(a).toEqual(b);
     expect(JSON.parse(a["library/resolved.json"]!)).toMatchObject({ selectionHash });
@@ -98,7 +98,7 @@ describe("native Studio selection and generated dogfood inputs", () => {
 
   it.each(["resolved.json", "component-index.ts", "surface-index.ts"])("refuses missing native %s before publishing an output", async name => {
     const incomplete = new Map(library); incomplete.delete(name);
-    const output = join(consumer, ".clossys", `missing-${name}`);
+    const output = join(consumer, "clossys", ".state", `missing-${name}`);
     await expect(writeStudioCheckInputs({ root: consumer, sourceHead, selectionHash, packet, library: incomplete, output })).rejects.toThrow(/incomplete/);
     await expect(readFile(join(output, "manifest.json"))).rejects.toMatchObject({ code: "ENOENT" });
   });
@@ -111,7 +111,7 @@ describe("native Studio selection and generated dogfood inputs", () => {
       await expect(writeStudioCheckInputs({ ...options, output })).rejects.toThrow(/inside the consumer root/);
     }
     const emitted = await writeStudioCheckInputs(options);
-    expect(emitted.output).toBe(join(nativeConsumer, ".clossys/check-inputs"));
+    expect(emitted.output).toBe(join(nativeConsumer, "clossys/.state/check-inputs"));
     expect(emitted.site).toBe(nativeConsumer);
     const repository = dirname(dirname(packageRoot.replace(/\/$/, "")));
     const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repository, encoding: "utf8" }).trim();
@@ -135,9 +135,9 @@ describe("native Studio selection and generated dogfood inputs", () => {
   }, 30_000);
 
   it("refuses stale identity, missing page sources and a symlinked output", async () => {
-    await expect(writeStudioCheckInputs({ root: consumer, sourceHead, selectionHash: "stale", packet, library, output: join(consumer, ".clossys/stale") })).rejects.toThrow(/stale/);
+    await expect(writeStudioCheckInputs({ root: consumer, sourceHead, selectionHash: "stale", packet, library, output: join(consumer, "clossys/.state/stale") })).rejects.toThrow(/stale/);
     const missing = { ...packet, files: new Map(packet.files) }; missing.files.delete(packet.contract.pages[0]);
-    await expect(writeStudioCheckInputs({ root: consumer, sourceHead, selectionHash, packet: missing, library, output: join(consumer, ".clossys/missing-page") })).rejects.toThrow(/incomplete/);
+    await expect(writeStudioCheckInputs({ root: consumer, sourceHead, selectionHash, packet: missing, library, output: join(consumer, "clossys/.state/missing-page") })).rejects.toThrow(/incomplete/);
     const real = join(consumer, "real-output"); await mkdir(real);
     const alias = join(consumer, "output-alias"); await symlink(real, alias, "dir");
     await expect(writeStudioCheckInputs({ root: consumer, sourceHead, selectionHash, packet, library, output: join(alias, "child") })).rejects.toThrow(/symbolic/);

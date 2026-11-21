@@ -482,7 +482,7 @@
     {
       "id": "designer check-fill-source-imports",
       "cwd": "packages/designer",
-      "run": "R=$(git rev-parse --show-toplevel) && H=$(git rev-parse HEAD) && O=\".clossys/check-inputs/check-studio-$H-$$\" && node ../producer/scripts/emit-studio-check-inputs.mjs --root \"$R\" --source-head \"$H\" --out \"$O\" && NODE_OPTIONS=--max-old-space-size=4096 node scripts/check-fill-source-imports.mjs --site \"$R\" --library \"$R/$O/library\" --contract \"$R/$O/site/consumer-dogfood.json\" --source-head \"$H\"",
+      "run": "R=$(git rev-parse --show-toplevel) && H=$(git rev-parse HEAD) && O=\"clossys/.state/check-inputs/check-studio-$H-$$\" && node ../producer/scripts/emit-studio-check-inputs.mjs --root \"$R\" --source-head \"$H\" --out \"$O\" && NODE_OPTIONS=--max-old-space-size=4096 node scripts/check-fill-source-imports.mjs --site \"$R\" --library \"$R/$O/library\" --contract \"$R/$O/site/consumer-dogfood.json\" --source-head \"$H\"",
       "kind": "static"
     },
     {

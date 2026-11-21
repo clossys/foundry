@@ -50,7 +50,7 @@ describe("clossys compile", () => {
     expect(result.message).toContain("the Studio is not placed, so it is skipped");
     expect(result.message).toContain("compile.no-publication: publisher/ia.json:");
     expect(result.message).toContain("clossys ia publisher/publication.<id> --under <l1>/<l2>");
-    const out = join(root, ".clossys", "generated");
+    const out = join(root, "clossys", ".state", "generated");
     // Nothing of the Studio compile: no generated/ or app/ tree, only this compile's own files.
     expect(existsSync(join(out, "generated"))).toBe(false);
     expect(existsSync(join(out, "app"))).toBe(false);
@@ -72,7 +72,7 @@ describe("clossys compile", () => {
     expect(readJson(join(out, "publications.json")).publications).toEqual([
       { id: "site", slot: "publisher/publication.site", state: "unresolved", reason: "publisher/publication.site has no pin yet; pins.resolve judges it at release" },
     ]);
-    expect(existsSync(join(root, ".clossys"))).toBe(false);
+    expect(existsSync(join(root, "clossys/.state"))).toBe(false);
   });
 
   it("records lock outputs relative to --out, also when --out is outside the root", async () => {
@@ -93,7 +93,7 @@ describe("clossys compile", () => {
     expect(result.exitCode).toBe(1);
     expect(result.message).toContain("compile.no-publication: publisher/ia.json:");
     expect(result.message).not.toContain("publication.old");
-    expect(readJson(join(root, ".clossys", "generated", "publications.json")).publications).toEqual([]);
+    expect(readJson(join(root, "clossys", ".state", "generated", "publications.json")).publications).toEqual([]);
   });
 });
 

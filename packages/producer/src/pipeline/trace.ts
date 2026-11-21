@@ -18,17 +18,18 @@
  * synced, so `import { readFileSync } from "node:fs"` sees the wrapper) while a collector is active.
  * A child process is observed by preloading trace-preload.js through NODE_OPTIONS (`clossys
  * pipeline trace`, scripts/trace-run.mjs). Paths outside the workspace and under node_modules, .git,
- * .next, .turbo and .clossys are not recorded.
+ * .next and .turbo, and in the state folder (clossys/.state, engine/state-dir.ts), are not recorded.
  *
- * The store is local, never committed: `<root>/.clossys/runs/<step>.jsonl`, one JSON record per line,
+ * The store is local, never committed: `<root>/clossys/.state/runs/<step>.jsonl`, one JSON record per line,
  * keys in a fixed order, the newest RUNS_KEPT records per invocation kept. Records are keyed by
  * content hashes and relative paths, so a store copied to another checkout means the same thing
  * there. Committing it would rewrite tracked files on every gate run and conflict across branches.
  *
  * So the store is written only into a workspace that ignores it by contract: its root `.gitignore`
- * lists `/.clossys/runs/` (or `/.clossys/`). In any other workspace a run leaves no record (the
+ * lists `/clossys/.state/runs/` (or `/clossys/.state/`). In any other workspace a run leaves no record (the
  * step shows never run) and writes nothing: a check never dirties a consumer's tree.
  */
+import { STATE_DIR, legacyStateAt, stateRel } from "../engine/state-dir.js";
 import { createHash } from "node:crypto";
 import { createRequire, syncBuiltinESMExports } from "node:module";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -38,14 +39,15 @@ import { fileURLToPath } from "node:url";
 const require = createRequire(import.meta.url);
 /**
  * True when a filesystem error only says the path is not there (as ../errors.ts isAbsent). Inlined:
- * this module loads standalone (trace-preload.js, the store tests run it with node directly).
+ * this module loads standalone (trace-preload.js, the store tests run it with node directly), importing only
+ * engine/state-dir.ts, which imports only node builtins.
  */
 const isAbsent = (error: unknown): boolean => ["ENOENT", "ENOTDIR"].includes((error as NodeJS.ErrnoException | undefined)?.code ?? "");
 /** The CommonJS fs object: its properties are writable, and syncBuiltinESMExports copies them to node:fs's ES exports. */
 const fs = require("node:fs") as typeof import("node:fs");
 
 export const RUN_SCHEMA = "clossys.pipeline-run/1";
-export const RUNS_DIR = ".clossys/runs";
+export const RUNS_DIR = stateRel("runs");
 /** Newest records kept per (step, invocation). */
 export const RUNS_KEPT = 3;
 /** Set to `0` to run without recording (the record is then simply absent: the step shows never run). */
@@ -90,7 +92,9 @@ export interface RunDecision {
 /** A record as read back from the store, with where it is: the citation the page shows. */
 export interface StoredRun { readonly record: RunRecord; readonly store: string; readonly line: number }
 
-const SKIP_SEGMENTS = new Set(["node_modules", ".git", ".next", ".turbo", ".clossys"]);
+const SKIP_SEGMENTS = new Set(["node_modules", ".git", ".next", ".turbo"]);
+/** A workspace-relative POSIX path inside a state folder (STATE_DIR) at any depth: engine state, never a record input. */
+const IN_STATE = new RegExp(`(?:^|/)${STATE_DIR.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:/|$)`);
 const sha = (bytes: string | Uint8Array): string => createHash("sha256").update(bytes).digest("hex");
 export const tracingEnabled = (): boolean => process.env[TRACE_ENV] !== "0";
 
@@ -253,6 +257,7 @@ export function workspacePath(root: string, absolute: string): string | null {
   const parts = rel.split(sep);
   if (parts.some(part => SKIP_SEGMENTS.has(part))) return null;
   const posix = parts.join("/");
+  if (IN_STATE.test(posix)) return null;
   return dir ? `${posix}/` : posix;
 }
 
@@ -374,12 +379,12 @@ export function buildRecord(input: RunInput): RunRecord {
 /** A step id as a store file name: `check:pipeline` -> `check.pipeline.jsonl`. */
 export const storeFile = (step: string): string => `${RUNS_DIR}/${step.replace(/[^a-z0-9.-]/gi, ".")}.jsonl`;
 
-/** `.gitignore` lines that ignore the store: the store directory or the whole `.clossys/` directory, anchored or not. */
-export const STORE_IGNORE_LINES: readonly string[] = [".clossys/runs/", ".clossys/runs", ".clossys/", ".clossys"].flatMap(line => [line, `/${line}`]);
+/** `.gitignore` lines that ignore the store: the store directory or the whole state folder (STATE_DIR), anchored or not. */
+export const STORE_IGNORE_LINES: readonly string[] = [`${RUNS_DIR}/`, RUNS_DIR, `${STATE_DIR}/`, STATE_DIR].flatMap(line => [line, `/${line}`]);
 
 /**
  * Whether the workspace ignores the run store by contract: its root `.gitignore` has one of
- * STORE_IGNORE_LINES and no later negation re-includes anything under `.clossys/`.
+ * STORE_IGNORE_LINES and no later negation re-includes anything under the state folder.
  */
 export function storeIgnored(root: string): boolean {
   const bytes = readPresent(join(root, ".gitignore"));
@@ -388,7 +393,7 @@ export function storeIgnored(root: string): boolean {
   let ignored = false;
   for (const line of text.split(/\r?\n/).map(each => each.trim())) {
     if (STORE_IGNORE_LINES.includes(line)) ignored = true;
-    else if (line.startsWith("!") && /(^|\/)\.clossys(\/|$)/.test(line.slice(1).replace(/^\//, ""))) ignored = false;
+    else if (line.startsWith("!") && IN_STATE.test(line.slice(1).replace(/^\//, ""))) ignored = false;
   }
   return ignored;
 }
@@ -454,7 +459,9 @@ function invocationOfLine(store: string, line: number, bytes: Buffer): string {
  * sibling that replaces the store.
  */
 export function appendRecord(root: string, record: RunRecord): StoredRun | null {
-  if (!storeIgnored(root)) return null;
+  // A workspace whose state is still in LEGACY_STATE_DIR keeps none beside it (state-dir.ts refuseLegacyState): the
+  // runs that go ahead there (`clossys migrate state`, `clossys check --engine`) leave no record until it moved.
+  if (!storeIgnored(root) || legacyStateAt(root)) return null;
   const store = storeFile(record.step);
   const file = join(root, ...store.split("/"));
   fs.mkdirSync(dirname(file), { recursive: true });

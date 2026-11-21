@@ -325,7 +325,7 @@
       "model": "fixture-critic",
       "tier": "mid",
       "critique": "critiques/spacing-v1.json",
-      "sha256": "0bc9cec63a460439e2873d57260e019e0cd317833547779b1ea327e1a4591da0"
+      "sha256": "07f9582197e9cb8764c07cdfb61443c2fcef556d62805575a039e68e68d0de25"
     },
     {
       "op": "submit",

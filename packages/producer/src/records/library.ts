@@ -5,6 +5,8 @@ import { hashFiles, listFiles } from "./hash.js";
 import type { SchemaIssue } from "./schema.js";
 import type { ElementRecord, PreviewRecord } from "./types.js";
 import { actorLine, recordEvent } from "../engine/log.js";
+import { engineRootOf } from "../engine/chain.js";
+import { refuseLegacyState } from "../engine/state-dir.js";
 import { loadElement, loadPreview, RecordError, validateElement, validatePreview } from "./validate.js";
 
 /**
@@ -100,6 +102,9 @@ export function writeElementVersion(libraryRoot: string, input: NewElementVersio
   const { slot, id } = input.element;
   const version = (listVersions(libraryRoot, slot, id).at(-1) ?? 0) + 1;
   const dir = versionDir(libraryRoot, slot, id, version);
+  // Its event could not be logged while the workspace's state is still in the legacy root folder: refuse before writing.
+  const root = engineRootOf(dir);
+  if (root !== undefined) refuseLegacyState(root);
   if (existsSync(dir)) throw new Error(`${dir} already exists; versions are immutable`);
   const paths = Object.keys(input.files).sort();
   if (paths.length === 0) throw new Error("an element version needs at least one payload file");

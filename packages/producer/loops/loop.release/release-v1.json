@@ -35,7 +35,7 @@
           "clossys/agents/*/pin.json"
         ],
         "writes": [
-          ".clossys/generated/"
+          "clossys/.state/generated/"
         ],
         "checks": [
           "types.compile"
@@ -49,10 +49,10 @@
         },
         "cli": "clossys release <pub> --build",
         "reads": [
-          ".clossys/generated/"
+          "clossys/.state/generated/"
         ],
         "writes": [
-          ".clossys/builds/<buildId>/"
+          "clossys/.state/builds/<buildId>/"
         ],
         "checks": [
           "page.no-inline-copy"
@@ -66,7 +66,7 @@
         },
         "cli": "clossys release <pub> --manifest",
         "reads": [
-          ".clossys/builds/<buildId>/"
+          "clossys/.state/builds/<buildId>/"
         ],
         "writes": [
           "publisher/release.<pub>/candidates/<pub>-v<n>.json"
@@ -86,7 +86,7 @@
           "publisher/release.<pub>/candidates/<pub>-v<n>.json"
         ],
         "writes": [
-          ".clossys/checks/publisher/release.<pub>/*"
+          "clossys/.state/checks/publisher/release.<pub>/*"
         ],
         "checks": [
           "copy.sample-remaining",

@@ -90,8 +90,8 @@ describe("a recut (clossys.slot/2) consumer store seats, pins, checks and compil
 
     const compile = await runCli(["compile", "--root", s.root]);
     expect(compile.exitCode, compile.message).toBe(0);
-    expect(readJson(join(s.root, ".clossys", "generated", "publications.json")).publications).toEqual([{ id: "site", slot: "publisher/publication.site", state: "compiled", file: "publications/site.json" }]);
-    const projected = readJson(join(s.root, ".clossys", "generated", "publications", "site.json"));
+    expect(readJson(join(s.root, "clossys", ".state", "generated", "publications.json")).publications).toEqual([{ id: "site", slot: "publisher/publication.site", state: "compiled", file: "publications/site.json" }]);
+    const projected = readJson(join(s.root, "clossys", ".state", "generated", "publications", "site.json"));
     expect(projected).toMatchObject({ publicationId: "site", map: { publicationId: "site", format: "web.page.responsive" } });
     expect(projected.map.entries.map((entry: { id: string }) => entry.id)).toContain("home");
   }, 300_000);

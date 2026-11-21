@@ -356,7 +356,7 @@
       "model": "fixture-critic",
       "tier": "high",
       "critique": "critiques/lockup-v1.json",
-      "sha256": "ccc07f978f4fc893b152bf93990dae2157a594f44916e30cb4a5a890759faac1"
+      "sha256": "96983583e21b5b3a4c90449edcd97d760d13951e10af67be6a3474ae7deacfd1"
     },
     {
       "op": "submit",

@@ -33,11 +33,11 @@
         "cli": "clossys check <dependants>",
         "reads": [
           "<slot>/slot.json",
-          ".clossys/checks/"
+          "clossys/.state/checks/"
         ],
         "writes": [
           "<dependant>/slot.json",
-          ".clossys/checks/"
+          "clossys/.state/checks/"
         ],
         "checks": [
           "cascade.clean",
@@ -57,10 +57,10 @@
         "cli": "clossys settle impact <ref>",
         "reads": [
           "<slot>/pin.json",
-          ".clossys/checks/"
+          "clossys/.state/checks/"
         ],
         "writes": [
-          ".clossys/runs/loops/*.settle/*"
+          "clossys/.state/runs/loops/*.settle/*"
         ],
         "checks": [],
         "onFail": {
@@ -82,10 +82,10 @@
         "reads": [
           "<slot>/slot.json",
           "<slot>/pin.json",
-          ".clossys/checks/"
+          "clossys/.state/checks/"
         ],
         "writes": [
-          ".clossys/checks/<agent>/<slot-id>/scratch/impact.md"
+          "clossys/.state/checks/<agent>/<slot-id>/scratch/impact.md"
         ],
         "checks": [],
         "onFail": {

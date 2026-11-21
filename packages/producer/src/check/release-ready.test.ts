@@ -50,7 +50,7 @@ describe("release.ready on Tallyhouse", () => {
     expect(result.status).toBe("fail");
     const text = result.findings.map(row => row.detail).join("\n");
     expect(text).toContain("with no sha256");
-    expect(text).toContain("build .clossys/builds/637f0615/ is not on disk");
+    expect(text).toContain("build clossys/.state/builds/637f0615/ is not on disk");
   });
 });
 
