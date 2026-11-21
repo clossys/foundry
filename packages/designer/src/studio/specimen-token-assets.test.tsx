@@ -278,3 +278,20 @@ it("executes the exact consumer source override and refuses to borrow a missing 
   const absent = { ...native, modules: selected.modules };
   expect(leaf.validate({ items, context: absent, need, labels, renderParts: tokenParts(absent) })).toEqual([expect.objectContaining({ reason: `module-unavailable: ${entry}` })]);
 });
+
+it("motion accepts a token read only with a time fallback; a non-time fallback is still refused", () => {
+  const motion = tokenAssetSpecimenLeaves[5]!;
+  const verdict = (shorthand: string) => {
+    const selected = context(), items = tokenSpecimenItems(selected, "themes.animate-marquee");
+    for (const item of items) {
+      const member = selected.profile.values.members[(item.value as { memberId: string }).memberId]!;
+      (member.css as { light: unknown }).light = shorthand;
+    }
+    return motion.validate({ items, context: selected, need, labels, renderParts: tokenParts(selected) });
+  };
+  expect(verdict("marquee var(--duration, 40s) linear infinite")).toEqual([]);
+  expect(verdict("marquee var(--duration, 250ms) linear infinite")).toEqual([]);
+  for (const refused of ["marquee var(--duration, red) linear infinite", "marquee var(--duration, var(--x)) linear infinite", "marquee var(--duration, 40px) linear infinite", "marquee var(--duration, 40s, 2s) linear infinite"]) {
+    expect(verdict(refused).length, refused).toBeGreaterThan(0);
+  }
+});
