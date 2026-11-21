@@ -3,6 +3,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { legacyColorUses, recomposeLegacyColors, type LegacyColorMap } from "../catalog-core/legacy-color.js";
 import { handAuthoredThemeKeys, renderThemeKeys, shadcnColorKeys, type ThemesTokenSlot } from "../compiled-css/shadcn-theme-keys.js";
+import { globalDeclaredFallback } from "../compiled-css/declared-fallbacks.js";
+import { compiledCssDeclaredSources } from "../compiled-css/generate.js";
 
 /**
  * H-TOKEN (GATES-RED round 3): frames compose on the stock shadcn semantic variables.
@@ -39,6 +41,7 @@ const sources = [...walk("src/frames"), ...walk("src/shell")]
 const legacyMap = JSON.parse(read("styles/legacy-color-map.json")) as LegacyColorMap & { schema: string };
 const themeKeysCss = read("styles/theme-keys.css");
 const themes = JSON.parse(read("src/catalog/slots/themes.json")) as ThemesTokenSlot[];
+const fallbackOf = globalDeclaredFallback(compiledCssDeclaredSources(new URL("styles", pkg).pathname), "");
 const mapped = (rows: ReturnType<typeof legacyColorUses>) => rows.filter(row => row.shadcn !== null).map(row => `${row.file}:${row.line} ${row.use} -> ${row.shadcn}`);
 
 describe("legacy colour map (H-TOKEN)", () => {
@@ -54,9 +57,10 @@ describe("legacy colour map (H-TOKEN)", () => {
   });
 
   it("keeps the generated shadcn key region fresh, with no collision now the legacy brand accent is migrated (G4)", () => {
-    expect(renderThemeKeys(themes, themeKeysCss)).toBe(themeKeysCss);
-    expect(shadcnColorKeys(themes, themeKeysCss).collisions).toEqual([]);
-    expect(themeKeysCss).toContain("--color-accent: var(--accent);");
+    expect(renderThemeKeys(themes, themeKeysCss, fallbackOf)).toBe(themeKeysCss);
+    expect(shadcnColorKeys(themes, themeKeysCss, fallbackOf).collisions).toEqual([]);
+    expect(themeKeysCss).toContain(`--color-accent: var(--accent, ${fallbackOf("--accent")});`);
+    expect(fallbackOf("--accent")).toBe("oklch(0.97 0 0)");
   });
 });
 

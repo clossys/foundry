@@ -30,10 +30,10 @@ describe("stock shadcn colour vocabulary from the themes leaves", () => {
 
   it("equals the generated stock region of styles/theme-keys.css, key for key", () => {
     const region = themeKeys.slice(themeKeys.indexOf(SHADCN_KEYS_BEGIN) + SHADCN_KEYS_BEGIN.length, themeKeys.indexOf(SHADCN_KEYS_END));
-    const generated = new Map([...region.matchAll(/^\s*(--color-[a-z0-9-]+):\s*var\((--[a-z0-9-]+)\);/gm)].map(match => [match[1]!, match[2]!]));
+    const generated = new Map([...region.matchAll(/^\s*(--color-[a-z0-9-]+):\s*var\((--[a-z0-9-]+), [^;]+\);/gm)].map(match => [match[1]!, match[2]!]));
     expect(new Map([...STOCK_COLOR_KEYS].map(([key, entry]) => [key, entry.property]))).toEqual(generated);
     const inline = parseDeclarationsForSelector(themeKeys, "@theme inline");
-    for (const entry of STOCK_COLOR_KEYS.values()) expect(inline.get(entry.key), entry.key).toBe(`var(${entry.property})`);
+    for (const entry of STOCK_COLOR_KEYS.values()) expect(inline.get(entry.key), entry.key).toMatch(new RegExp(`^var\\(${entry.property}, [^;]+\\)$`));
   });
 
   it("ships a light value for every stock variable, and both dark contexts for every dark-mode leaf", () => {
