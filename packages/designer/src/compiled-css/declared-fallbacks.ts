@@ -273,3 +273,221 @@ export function addDeclaredFallbacks(css: string, sources: DeclaredSources): str
   if (undeclared.size > 0) throw new UndeclaredTokenFallbackError([...undeclared].sort());
   return out;
 }
+
+/** A declaration in a plain `:root` rule or a `@theme` block of the generated output (a global declaration, not a scoped one). */
+function isGlobalOutputDeclaration(d: CustomPropertyDeclaration): boolean {
+  return isDefaultThemeDeclaration(d);
+}
+
+/**
+ * The global declared value of each token: the same sources and precedence as `declaredTokenValues`,
+ * except that a declaration in the generated output counts only when it sits in a plain `:root` rule
+ * or a `@theme` block. A token declared only inside a scoped rule (`.x { --y: ... }`) is absent here.
+ */
+export function globalDeclaredTokenValues(sources: DeclaredSources, outputCss: string): Map<string, string> {
+  const declared = new Map<string, string>();
+  const add = (decls: CustomPropertyDeclaration[], accept: (d: CustomPropertyDeclaration) => boolean) => {
+    const own = new Map<string, string>();
+    for (const d of decls) if (accept(d) && !own.has(d.name)) own.set(d.name, unwrapSelfReference(d.name, d.value));
+    for (const [name, value] of own) if (!declared.has(name)) declared.set(name, value);
+  };
+  add(collectCustomPropertyDeclarations(sources.tokensCss), isDefaultRootDeclaration);
+  add(collectCustomPropertyDeclarations(sources.themeCss), isDefaultThemeDeclaration);
+  add(collectCustomPropertyDeclarations(sources.defaultThemeCss), isDefaultPackageThemeDeclaration);
+  add(collectCustomPropertyDeclarations(outputCss), isGlobalOutputDeclaration);
+  add(collectCustomPropertyDeclarations(sources.tailwindThemeCss), isThemeBlockDeclaration);
+  return declared;
+}
+
+/** `@property --tw-* { initial-value: V }` registrations in `css`: Tailwind's declared value for its own internal properties. */
+export function tailwindPropertyInitialValues(css: string): Map<string, string> {
+  const out = new Map<string, string>();
+  const text = stripCssComments(css);
+  for (const m of text.matchAll(/@property\s+(--tw-[a-zA-Z0-9_-]+)\s*\{([^}]*)\}/g)) {
+    const initial = /(?:^|;)\s*initial-value\s*:([^;]*)/.exec(m[2] as string);
+    if (initial && !out.has(m[1] as string)) out.set(m[1] as string, (initial[1] as string).trim());
+  }
+  return out;
+}
+
+/** How a `var(--x[, F])` read's fallback is judged: equal to a global declared value, or listed by name and left as written. */
+export type FallbackReadKind =
+  /** A global declared value exists; the fallback must equal it (expanded). */
+  | "global"
+  /** A Tailwind `--tw-*` property; the fallback must equal its `@property` initial value. */
+  | "tw-property"
+  /** Set only inline at runtime (`runtime-setters.ts`); no declared value. */
+  | "runtime"
+  /** Declared only inside a scoped rule of the output; no global value. */
+  | "scoped"
+  /** A global value exists, but it reads a token with no global value, so it cannot be expanded. */
+  | "unresolvable"
+  /** No source declares it and nothing sets it. */
+  | "undeclared";
+
+export interface FallbackRead {
+  name: string;
+  /** The fallback as written, or `null` for a bare read. */
+  fallback: string | null;
+  kind: FallbackReadKind;
+  /** For `global` and `tw-property`: the value the fallback must equal. */
+  expected?: string;
+  /** Character offset of `var(` in the input. */
+  offset: number;
+}
+
+/** Splits `css` into alternating code and comment segments, so reads inside comments are never judged or rewritten. */
+function codeSegments(css: string): { text: string; code: boolean }[] {
+  const out: { text: string; code: boolean }[] = [];
+  let start = 0;
+  let quote: string | null = null;
+  for (let i = 0; i < css.length; i++) {
+    const ch = css[i] as string;
+    if (quote !== null) {
+      if (ch === "\\") i++;
+      else if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === "/" && css[i + 1] === "*") {
+      const end = css.indexOf("*/", i + 2);
+      const stop = end === -1 ? css.length : end + 2;
+      if (i > start) out.push({ text: css.slice(start, i), code: true });
+      out.push({ text: css.slice(i, stop), code: false });
+      start = stop;
+      i = stop - 1;
+    }
+  }
+  if (start < css.length) out.push({ text: css.slice(start), code: true });
+  return out;
+}
+
+/** The `var(` read starting at `at`: its name, fallback (or null) and end offset (exclusive). */
+function parseVar(text: string, at: number): { name: string; fallback: string | null; fallbackStart: number; end: number } | undefined {
+  let depth = 0;
+  let comma = -1;
+  for (let j = at + 3; j < text.length; j++) {
+    const ch = text[j];
+    if (ch === "(") depth++;
+    else if (ch === ")") {
+      depth--;
+      if (depth === 0) {
+        const name = text.slice(at + 4, comma < 0 ? j : comma).trim();
+        if (!/^--[a-zA-Z0-9_-]+$/.test(name)) return undefined;
+        return { name, fallback: comma < 0 ? null : text.slice(comma + 1, j).trim(), fallbackStart: comma + 1, end: j + 1 };
+      }
+    } else if (ch === "," && depth === 1 && comma < 0) comma = j;
+  }
+  return undefined;
+}
+
+/** The judge for one stylesheet: classifies each read and knows each global token's expanded value. */
+function fallbackJudge(sources: DeclaredSources, outputCss: string) {
+  const global = globalDeclaredTokenValues(sources, outputCss);
+  const scoped = declaredTokenValues(sources, outputCss);
+  const twInitial = tailwindPropertyInitialValues(outputCss);
+  const expanded = new Map<string, string | undefined>();
+  const expand = (name: string, visiting: Set<string>): string | undefined => {
+    if (expanded.has(name)) return expanded.get(name);
+    const raw = global.get(name);
+    if (raw === undefined) return sources.runtimeSetVariables.has(name) ? RUNTIME_ONLY_FALLBACK : undefined;
+    if (visiting.has(name)) return undefined;
+    visiting.add(name);
+    let ok = true;
+    const value = raw.replace(BARE_VAR_RE, (whole, inner: string) => {
+      const v = expand(inner, visiting);
+      if (v === undefined) {
+        ok = false;
+        return whole;
+      }
+      return `var(${inner}, ${v})`;
+    });
+    visiting.delete(name);
+    const result = ok ? value : undefined;
+    expanded.set(name, result);
+    return result;
+  };
+  const classify = (name: string): { kind: FallbackReadKind; expected?: string } => {
+    if (/^--tw-/.test(name) && twInitial.has(name) && !global.has(name)) return { kind: "tw-property", expected: twInitial.get(name) as string };
+    if (global.has(name)) {
+      const value = expand(name, new Set());
+      return value === undefined ? { kind: "unresolvable" } : { kind: "global", expected: value };
+    }
+    if (scoped.has(name)) return { kind: "scoped" };
+    if (sources.runtimeSetVariables.has(name)) return { kind: "runtime" };
+    return { kind: "undeclared" };
+  };
+  return { classify };
+}
+
+/**
+ * Every `var(--x[, F])` read in `css` outside comments, nested reads included, with how its fallback
+ * is judged. The judge reads the same declared sources as `addDeclaredFallbacks`; `outputCss` is the
+ * generated stylesheet (`compiled.css`), for its global declarations and Tailwind's `@property` values.
+ */
+export function classifyFallbackReads(css: string, sources: DeclaredSources, outputCss: string): FallbackRead[] {
+  const { classify } = fallbackJudge(sources, outputCss);
+  const reads: FallbackRead[] = [];
+  let base = 0;
+  for (const segment of codeSegments(css)) {
+    if (segment.code) {
+      for (let i = segment.text.indexOf("var("); i >= 0; i = segment.text.indexOf("var(", i + 4)) {
+        const read = parseVar(segment.text, i);
+        if (!read) continue;
+        reads.push({ name: read.name, fallback: read.fallback, offset: base + i, ...classify(read.name) });
+      }
+    }
+    base += segment.text.length;
+  }
+  return reads;
+}
+
+/**
+ * Rewrites `css` so every read of a global token carries its expanded declared value as fallback,
+ * every Tailwind `--tw-*` read its `@property` initial value, and a bare read of a runtime-only
+ * token `unset`. Scoped, runtime and unresolvable reads that already carry a fallback are left as
+ * written. Throws `UndeclaredTokenFallbackError` for a bare read with no value to write.
+ */
+export function alignDeclaredFallbacks(css: string, sources: DeclaredSources, outputCss: string): string {
+  const { classify } = fallbackJudge(sources, outputCss);
+  const refused = new Set<string>();
+  const rewrite = (text: string): string => {
+    let out = "";
+    let last = 0;
+    for (let i = text.indexOf("var("); i >= 0; i = text.indexOf("var(", i + 4)) {
+      if (i < last) continue;
+      const read = parseVar(text, i);
+      if (!read) continue;
+      const { kind, expected } = classify(read.name);
+      let replacement: string;
+      if ((kind === "global" || kind === "tw-property") && expected !== undefined) replacement = `var(${read.name}, ${expected})`;
+      else if (read.fallback === null) {
+        if (kind === "runtime") replacement = `var(${read.name}, ${RUNTIME_ONLY_FALLBACK})`;
+        else {
+          refused.add(read.name);
+          replacement = text.slice(i, read.end);
+        }
+      } else replacement = `var(${read.name}, ${rewrite(read.fallback)})`;
+      out += text.slice(last, i) + replacement;
+      last = read.end;
+    }
+    return out + text.slice(last);
+  };
+  const out = codeSegments(css).map((s) => (s.code ? rewrite(s.text) : s.text)).join("");
+  if (refused.size > 0) throw new UndeclaredTokenFallbackError([...refused].sort());
+  return out;
+}
+
+/**
+ * The fallback a read of global token `name` must carry (its expanded declared value), for a
+ * generator that writes reads itself. Throws `UndeclaredTokenFallbackError` when `name` has no
+ * global declared value: no default is invented.
+ */
+export function globalDeclaredFallback(sources: DeclaredSources, outputCss: string): (name: string) => string {
+  const { classify } = fallbackJudge(sources, outputCss);
+  return (name) => {
+    const { kind, expected } = classify(name);
+    if (kind !== "global" || expected === undefined) throw new UndeclaredTokenFallbackError([name]);
+    return expected;
+  };
+}

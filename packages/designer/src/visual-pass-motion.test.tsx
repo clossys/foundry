@@ -42,8 +42,8 @@ afterEach(() => {
 describe("overlay motion (cross-12)", () => {
   it.each([["overlay-motion-pop", "overlay-pop"], ["overlay-motion-fade", "overlay-fade"]])("%s binds %s to entering and a reversed fade to exiting on the overlay tier", (name, enter) => {
     const css = utility(name);
-    expect(css).toMatch(new RegExp(`&\\[data-entering\\] \\{ animation: ${enter} var\\(--ui-duration-overlay, 120ms\\) var\\(--ease-enter`));
-    expect(css).toMatch(/&\[data-exiting\] \{ animation: overlay-fade var\(--ui-duration-overlay, 120ms\) var\(--ease-exit[^;]*reverse both; \}/);
+    expect(css).toMatch(new RegExp(`&\\[data-entering\\] \\{ animation: ${enter} var\\(--ui-duration-overlay, var\\(--ui-duration-fast, 120ms\\)\\) var\\(--ease-enter, var\\(--ease-decelerate, cubic-bezier\\(0, 0, \\.2, 1\\)\\)\\) both; \\}`));
+    expect(css).toMatch(/&\[data-exiting\] \{ animation: overlay-fade var\(--ui-duration-overlay, var\(--ui-duration-fast, 120ms\)\) var\(--ease-exit, var\(--ease-accelerate, cubic-bezier\(\.4, 0, 1, 1\)\)\) reverse both; \}/);
   });
 
   it("opens the stock Popover, Menu and Tooltip panels as their own placed overlay surfaces", async () => {
