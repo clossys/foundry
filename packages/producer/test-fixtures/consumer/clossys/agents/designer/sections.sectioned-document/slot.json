@@ -8,7 +8,7 @@
     "l0": "sections",
     "l1": "sections/sections",
     "l2": "sections/sections/sections-reading",
-    "order": 163
+    "order": 166
   },
   "createdBy": {
     "actor": "code",
@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -75,11 +75,15 @@
       "rel": "uses"
     },
     {
-      "to": "designer/components.button",
+      "to": "designer/components.link",
       "rel": "uses"
     },
     {
       "to": "designer/components.semantic-content",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.status-mark",
       "rel": "uses"
     },
     {
@@ -167,8 +171,9 @@
       "components.disclosure",
       "components.icon",
       "components.item",
-      "components.button",
-      "components.semantic-content"
+      "components.link",
+      "components.semantic-content",
+      "components.status-mark"
     ],
     "parts": [],
     "allowedReads": {

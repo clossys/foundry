@@ -80,63 +80,6 @@
           "sha256": "df8a59e906d2438615c5e48ac3d1c9bd698ee15f6eebaad04672bf4babb87826"
         }
       ]
-    },
-    {
-      "op": "slot",
-      "at": "2026-11-19T00:00:00Z",
-      "by": "agent:designer",
-      "verb": "retire",
-      "skill": {
-        "path": "packages/producer/actions/retire/skill.md",
-        "sha256": "a52f3873b4d4b217153a28d88cb3a21f8b5dc74ccdafb1920f0ac1626ac491ea"
-      },
-      "model": "none",
-      "tier": "none",
-      "reason": "renumbered after designer/components.link retired",
-      "records": [
-        {
-          "file": "slot.json",
-          "sha256": "bd035877a1c9129c240401da1b8416f30e32030241325f0399134ce751cf4679"
-        }
-      ]
-    },
-    {
-      "op": "slot",
-      "at": "2026-11-19T00:00:00Z",
-      "by": "agent:designer",
-      "verb": "retire",
-      "skill": {
-        "path": "packages/producer/actions/retire/skill.md",
-        "sha256": "a52f3873b4d4b217153a28d88cb3a21f8b5dc74ccdafb1920f0ac1626ac491ea"
-      },
-      "model": "none",
-      "tier": "none",
-      "reason": "renumbered after designer/components.media-player retired",
-      "records": [
-        {
-          "file": "slot.json",
-          "sha256": "1bd1c93a62089b8b917b5d4102b0d72176aaa5612d8883c6b67737df04874422"
-        }
-      ]
-    },
-    {
-      "op": "slot",
-      "at": "2026-11-19T00:00:00Z",
-      "by": "agent:designer",
-      "verb": "retire",
-      "skill": {
-        "path": "packages/producer/actions/retire/skill.md",
-        "sha256": "a52f3873b4d4b217153a28d88cb3a21f8b5dc74ccdafb1920f0ac1626ac491ea"
-      },
-      "model": "none",
-      "tier": "none",
-      "reason": "renumbered after designer/components.status-mark retired",
-      "records": [
-        {
-          "file": "slot.json",
-          "sha256": "432affa78b5e51ddd4253f123a7e582de8a5b2005caf76c4833865c2f3cdb52f"
-        }
-      ]
     }
   ]
 }

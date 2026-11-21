@@ -44,25 +44,6 @@
           "sha256": "16165bab6e3f92f7e74294fa88db9f0f1620f7746a5d72a004d361eb3a2404d3"
         }
       ]
-    },
-    {
-      "op": "slot",
-      "at": "2026-11-19T00:00:00Z",
-      "by": "agent:writer",
-      "verb": "retire",
-      "skill": {
-        "path": "packages/producer/actions/retire/skill.md",
-        "sha256": "a52f3873b4d4b217153a28d88cb3a21f8b5dc74ccdafb1920f0ac1626ac491ea"
-      },
-      "model": "none",
-      "tier": "none",
-      "reason": "renumbered after writer/components.media-player.copy retired",
-      "records": [
-        {
-          "file": "slot.json",
-          "sha256": "80c61e80e6289217ef4d53c72702715abbc48486b201a6125588d67a55ea4c83"
-        }
-      ]
     }
   ]
 }

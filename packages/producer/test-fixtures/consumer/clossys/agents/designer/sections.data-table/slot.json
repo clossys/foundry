@@ -8,7 +8,7 @@
     "l0": "sections",
     "l1": "sections/sections",
     "l2": "sections/sections/sections-records",
-    "order": 172
+    "order": 175
   },
   "createdBy": {
     "actor": "code",
@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -111,6 +111,10 @@
       "rel": "uses"
     },
     {
+      "to": "designer/components.link",
+      "rel": "uses"
+    },
+    {
       "to": "designer/components.menu",
       "rel": "uses"
     },
@@ -132,6 +136,10 @@
     },
     {
       "to": "designer/components.skeleton",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.status-mark",
       "rel": "uses"
     },
     {
@@ -292,7 +300,9 @@
       "components.select",
       "components.text-field",
       "components.badge",
+      "components.status-mark",
       "components.tooltip",
+      "components.link",
       "components.skeleton",
       "components.semantic-content",
       "components.tag-group",

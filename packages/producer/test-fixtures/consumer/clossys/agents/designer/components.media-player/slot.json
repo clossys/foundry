@@ -1,0 +1,389 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "components.media-player",
+  "agent": "designer",
+  "kind": "element/component",
+  "status": "starter",
+  "ia": {
+    "l0": "components",
+    "l1": "components/components",
+    "l2": "components/components/components-text-and-media",
+    "order": 139
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-chevron-right",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.image",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.video",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.category.definition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.essence",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.imagery",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.style",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.accent",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.background",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.popover",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.radius",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.ring",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.secondary",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.spacing",
+      "rel": "input"
+    },
+    {
+      "to": "designer/components.button",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.icon",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.semantic-content",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.slider",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.toggle-button",
+      "rel": "uses"
+    }
+  ],
+  "base": null,
+  "standard": "component",
+  "brief": {
+    "purpose": "Fill designer/components.media-player to the component standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-chevron-right",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.image",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.video",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.category.definition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.essence",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.imagery",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.style",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.accent",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.background",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.popover",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.radius",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.ring",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.secondary",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.spacing",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "controls.full",
+        "controls.minimal"
+      ]
+    },
+    "props": [
+      "autoplay",
+      "captions",
+      "className",
+      "controls",
+      "decorative",
+      "loop",
+      "muted",
+      "passage",
+      "poster",
+      "video"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.radius",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.spacing",
+        "themes.ring",
+        "themes.sidebar-ring"
+      ],
+      "assets": [
+        "assets.image",
+        "assets.video",
+        "assets.icon-chevron-right"
+      ],
+      "components": [
+        "components.button",
+        "components.toggle-button",
+        "components.slider",
+        "components.icon",
+        "components.semantic-content"
+      ]
+    },
+    "composes": [
+      "components.button",
+      "components.toggle-button",
+      "components.slider",
+      "components.icon",
+      "components.semantic-content"
+    ],
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "title",
+          "kind": "plain",
+          "role": "heading",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "play",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "pause",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "mute",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "seek",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "captions",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "error.title",
+          "kind": "plain",
+          "role": "heading",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "error.description",
+          "kind": "plain",
+          "role": "lead",
+          "required": true,
+          "maxLength": {
+            "en": 200
+          },
+          "dir": "auto"
+        }
+      ]
+    },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "ui/media-player.tsx",
+        "export": "MediaPlayer",
+        "props": {}
+      }
+    },
+    "requirements": [
+      {
+        "check": "source.ref"
+      },
+      {
+        "check": "compose.layers"
+      },
+      {
+        "check": "composes.allowed"
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

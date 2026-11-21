@@ -1,0 +1,216 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "components.status-mark",
+  "agent": "designer",
+  "kind": "element/component",
+  "status": "starter",
+  "ia": {
+    "l0": "components",
+    "l1": "components/components",
+    "l2": "components/components/components-text-and-media",
+    "order": 136
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slot-1-to-2",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-danger",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-info",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-success",
+      "rel": "input"
+    },
+    {
+      "to": "designer/assets.icon-warning",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.category.definition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.essence",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.imagery",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.style",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.destructive",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted-foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.spacing",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "component",
+  "brief": {
+    "purpose": "Fill designer/components.status-mark to the component standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-danger",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-info",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-success",
+        "rel": "input"
+      },
+      {
+        "to": "designer/assets.icon-warning",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.category.definition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.essence",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.imagery",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.style",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.destructive",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted-foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.spacing",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "tone.neutral",
+        "tone.success",
+        "tone.warning",
+        "tone.danger",
+        "tone.info"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.destructive",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": [
+        "assets.icon-success",
+        "assets.icon-warning",
+        "assets.icon-danger",
+        "assets.icon-info"
+      ]
+    },
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "ui/status.tsx",
+        "export": "Status",
+        "props": {}
+      }
+    },
+    "requirements": [
+      {
+        "check": "source.ref"
+      },
+      {
+        "check": "compose.layers"
+      },
+      {
+        "check": "composes.allowed"
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

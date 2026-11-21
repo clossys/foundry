@@ -8,7 +8,7 @@
     "l0": "components",
     "l1": "components/components",
     "l2": "components/components/components-navigation",
-    "order": 124
+    "order": 125
   },
   "createdBy": {
     "actor": "code",
@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -85,30 +85,6 @@
     {
       "to": "designer/themes.spacing",
       "rel": "input"
-    },
-    {
-      "to": "designer/components.button",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.text-field",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.separator",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.sheet",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.skeleton",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.tooltip",
-      "rel": "uses"
     }
   ],
   "base": null,

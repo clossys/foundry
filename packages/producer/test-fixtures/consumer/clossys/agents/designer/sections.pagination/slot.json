@@ -8,7 +8,7 @@
     "l0": "sections",
     "l1": "sections/sections",
     "l2": "sections/sections/sections-navigation",
-    "order": 150
+    "order": 153
   },
   "createdBy": {
     "actor": "code",
@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -72,6 +72,10 @@
     },
     {
       "to": "designer/components.icon",
+      "rel": "uses"
+    },
+    {
+      "to": "designer/components.link",
       "rel": "uses"
     },
     {
@@ -165,6 +169,7 @@
     },
     "allowedComposes": [
       "components.button",
+      "components.link",
       "components.select",
       "components.icon",
       "components.semantic-content",
