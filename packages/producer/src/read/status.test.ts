@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { recutCandidateBytes } from "../migrate/recut.js";
 import { sha256Hex } from "../records/hash.js";
+import { buildPin, pinIssues } from "../records/pin.js";
+import { storeFormatPath } from "../records/store-format.js";
 import { SLOT_AGENTS, serializeFrontmatter, validateCandidate, validatePin } from "../records/slot-model/index.js";
 import { agentSlotCensus } from "../server/slot-census.js";
 import { runStatusCli } from "../cli/status.js";
@@ -45,6 +47,16 @@ describe.each(FIXTURES)("on %s", (_name, FIXTURE, pinnedParity) => {
     const bytes = current ? recutCandidateBytes(name, brief(version), { agent: "director", slotId: SLOT, at: "2026-01-01T00:00:00Z", version: "0.0.0", sourceRef: `agents/director/${SLOT}/candidates/${name}` }) : brief(version);
     mkdirSync(slotPath("director", SLOT, "candidates"), { recursive: true });
     writeFileSync(slotPath("director", SLOT, "candidates", name), bytes);
+    // The pin format the store declares: a migrated store (store-format.json) reads clossys.pin/2 only, so an owner
+    // pick there cites the queue answer it records; an unmarked store still reads the bare pin.
+    if (existsSync(storeFormatPath(join(root, "clossys")))) {
+      const answer = `20260101T000${version}Z-status-moat`;
+      const record = { candidate: name, sha256: sha256Hex(bytes), decidedBy: basis === "picked" ? `owner:queue.pick#${answer}` : "agent:synthetic-test-only", basis, at: `2026-01-0${version}T00:00:00Z` } as const;
+      const doc = buildPin({ agent: "director", slotId: SLOT, record, refs: basis === "picked" ? [{ to: "producer/queue.pick", record: answer, rel: "answers" }] : [], createdBy: { actor: "code", cli: "clossys pin", version: "0.0.0-test" } });
+      expect(pinIssues(doc, { agent: "director", slotId: SLOT })).toEqual([]);
+      writeFileSync(slotPath("director", SLOT, "pin.json"), JSON.stringify(doc));
+      return doc;
+    }
     const doc = { candidate: name, sha256: sha256Hex(bytes), decidedBy: basis === "picked" ? "owner:synthetic-test-only:status" : "agent:synthetic-test-only", basis, at: `2026-01-0${version}T00:00:00Z` };
     expect(validatePin(doc)).toEqual([]);
     writeFileSync(slotPath("director", SLOT, "pin.json"), JSON.stringify(doc));

@@ -16,9 +16,8 @@
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { manifestIssues } from "../constitution/rules/r16.js";
+import { critiqueRecordIssues, manifestIssues } from "../records/critique-record.js";
 import { packagePath } from "../package-path.js";
-import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { SEAT_AGENT, SLOT_AGENTS, SLOT_ID, seatStepOf, type ModelAgent } from "../records/slot-model/index.js";
 import { readModelBytes, readSlotEntry } from "../records/slots.js";
 import { writeCritique } from "../records/slot-write.js";
@@ -155,16 +154,7 @@ export async function runCritiqueCli(argv: readonly string[], cwd: string): Prom
   let record: unknown;
   try { record = JSON.parse(readFileSync(resolve(cwd, file), "utf8")); } catch { return refused("critique", `cannot read ${file} as JSON`); }
   const slotDir = posixRelative(root, entry.dir);
-  const schema = loadSchema("critique");
-  const validate = (value: unknown): string[] => {
-    const issues = validateValue(value, schema).map(issue => `${issue.path} ${issue.message}`);
-    if (issues.length) return issues;
-    const doc = value as { slot: string; candidate: string; standard: string; packet: { manifest: { role: string; ref: string }[] } };
-    if (doc.slot !== slot) issues.push(`the record names slot ${doc.slot}, not ${slot}`);
-    if (candidate !== undefined && doc.candidate !== candidate) issues.push(`the record names candidate ${doc.candidate}, not ${candidate}`);
-    issues.push(...manifestIssues(doc, agent, slotDir));
-    return issues;
-  };
+  const validate = (value: unknown): string[] => critiqueRecordIssues(value, { slot, agent, slotDir, ...(candidate !== undefined ? { candidate } : {}) });
   try {
     const named = candidate ?? (record as { candidate?: string } | null)?.candidate;
     const written = writeCritique(consumer, agent, slot, record, { ...(named ? { candidate: named } : {}), ...(at ? { at } : {}), validate }, { model, tier, by: `agent:${agent}.critic` });

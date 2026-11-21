@@ -1,0 +1,11 @@
+{
+  "schema": "clossys.store-format/1",
+  "slot": "clossys.slot/2",
+  "pin": "clossys.pin/2",
+  "convertedAt": "2026-11-19T00:00:00Z",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys migrate slots",
+    "version": "0.1.0"
+  }
+}

@@ -16,6 +16,8 @@
  * from BASE and compares the result with the committed tree.
  * BLOCKED lists the closure slots the run cannot fill (a refused shape, or a craft standard with no generator), with
  * why; the run leaves them (and their downstream) unpinned and prints them. Any other refusal stops the run (exit 1).
+ * Before the seeding, the run does what a real consumer does to its store: `clossys migrate slots --apply` (the
+ * Producer seats are clossys.slot/1 in the base).
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -702,6 +704,16 @@ async function migrate(w) {
   }
 }
 
+/**
+ * The store in one format, before anything else writes (foundry-build-0048 B1-STRICT): the base's Producer seats are
+ * clossys.slot/1, which records.computed-match refuses. There is no `migrate slot-1-to-2` verb; `clossys migrate
+ * slots --apply` runs that conversion for every slot folder, the seats included, and writes store-format.json. A
+ * migrated store plans nothing, so a rerun writes the same bytes.
+ */
+async function storeFormat(w) {
+  await w.run("producer", "migrate", "slots", "--apply", "--at", AT);
+}
+
 // ---------------------------------------------------------------- slots the real certifier refuses
 
 /**
@@ -816,6 +828,7 @@ export async function seed({ from, out, only, keep = false, resume } = {}) {
     if (!existsSync(join(root, ".git"))) { execFileSync("git", ["init", "-q"], { cwd: root }); ownGit = true; }
     if (!existsSync(join(root, "clossys", "components.json"))) await setup(root);
     const w = world(root, scratch);
+    await storeFormat(w);
     await migrate(w);
     const all = closure(w.consumer);
     for (const ref of Object.keys(BLOCKED)) if (!all.includes(ref)) throw new Error(`BLOCKED names ${ref}, which the closure does not read`);

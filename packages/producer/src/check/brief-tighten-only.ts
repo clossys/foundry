@@ -6,8 +6,9 @@
  * when the base is missing, or when `base.sha256` does not match the installed package file.
  * A consumer-added slot (`base: null`, flows F4) is judged against its own brief.
  */
-import { SLOT_SCHEMA, consumerSlotFolders, readBaseSlot, readSlot, slotSchemaOf, tightenIssue, treeResult, type TreeCheck, type TreeCheckResult, type TreeFinding } from "../records/slot.js";
+import { SLOT_SCHEMA, consumerSlotFolders, readSlot, slotSchemaOf, tightenIssue, treeResult, type TreeCheck, type TreeCheckResult, type TreeFinding } from "../records/slot.js";
 import type { Slot } from "../records/types.js";
+import { resolveSlotBase } from "./declared-base.js";
 
 export const BRIEF_TIGHTEN_ONLY = "brief.tighten-only";
 
@@ -17,7 +18,7 @@ export function tightenFindings(root: string, slot: Slot): TreeFinding[] {
   let scope: { brief: unknown; contract: unknown } = slot;
   if (slot.base !== null) {
     let base;
-    try { base = readBaseSlot(root, slot.agent, slot.id); } catch (error) { return [{ subject, detail: (error as Error).message }]; }
+    try { base = resolveSlotBase(root, slot); } catch (error) { return [{ subject, detail: (error as Error).message }]; }
     if (!base) return [{ subject, detail: `base ${slot.base.package}/${slot.base.path} is not installed` }];
     if (base.meta.sha256 !== slot.base.sha256) return [{ subject, detail: `base.sha256 ${slot.base.sha256.slice(0, 8)} does not match the installed ${base.meta.package}@${base.version} (${base.meta.sha256.slice(0, 8)}); run clossys ia sync` }];
     scope = base.doc;
