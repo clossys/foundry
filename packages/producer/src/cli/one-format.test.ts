@@ -434,7 +434,7 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     // (the store has not run `clossys migrate slots` yet).
     rmSync(seat, { recursive: true });
     cpSync(join(LEGACY_TREE, "clossys", "agents", "producer", "seat.critic"), seat, { recursive: true });
-    rmSync(storeFormatPath(w.consumer));
+    rmSync(storeFormatPath(w.consumer), { force: true });
     expect(json(join(seat, "slot.json")).schema).toBe("clossys.slot/1");
     // A human seat (seat.assigned: a procedure sentence and a clossys command), decided by the planner.
     const args = ["critic", "--by", "agent:producer", "--no-llm", "--procedure", "Read the draft and record one verdict on it.", "--command", "clossys verdict", "--decided-by", "planner:U13", "--at", AT, "--root", w.root];
