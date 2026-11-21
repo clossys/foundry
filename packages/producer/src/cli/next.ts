@@ -29,7 +29,8 @@ import { readCandidate, readLedger, readSlot, readSlotEntry } from "../records/s
 import { CandidateRefusal } from "../records/candidate.js";
 import { readCandidateText } from "../records/slot-current.js";
 import type { Actor, AgentId, Tier } from "../records/types.js";
-import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, submittedBytes, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
+import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, openCraftEvents, submittedBytes, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
+import { craftRunRecipe, loadRecipes, recipeSourceIssue } from "../records/recipes.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { nextPacket, openItems, openPackets, skillFile } from "../pipeline/chain.js";
 import type { Packet } from "../pipeline/chain.js";
@@ -288,6 +289,9 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   // a slot-state precondition, refused after the submission's own content checks.
   const p2 = p2Refusal(entry.dir, agent, ladder!);
   if (p2) return reject(p2);
+  // The open craft run's recipe decides the source kinds its candidate may carry (recipe.json sources).
+  const recipeRefused = craftRecipeRefusal(root, entry.dir, agent, content);
+  if (recipeRefused) return reject(recipeRefused);
   // The guard is absolute (section 4): the writer runs every constitution check whose rules.json
   // guard lists submit on the tree with the new file and its event in place, and refuses on any
   // finding about the new file, whatever the check's status and whether the slot had it before.
@@ -320,6 +324,20 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
 }
 
 type LedgerRow = Record<string, unknown>;
+
+/**
+ * Why a submission closing the slot's open craft run is refused by that run's recipe (records/recipes.ts
+ * recipeSourceIssue: its source kind is not one of the recipe's `sources`), or undefined. No open run, or a run
+ * whose recipe lists no sources, refuses nothing here; the guard's checks still run.
+ */
+export function craftRecipeRefusal(root: string, slotDir: string, agent: string, candidate: unknown): string | undefined {
+  const open = openCraftEvents((readLedger(slotDir, "slot")?.events ?? []) as unknown as LedgerRow[]);
+  if (!open.length) return undefined;
+  const recipe = craftRunRecipe(open, loadRecipes(root), agent);
+  const issue = recipe && recipeSourceIssue(recipe, candidate);
+  return issue && `${issue}; fix: submit a ${recipe!.doc!.sources!.join(" or ")} candidate (meta.source.kind) that the recipe's checks (${(recipe!.doc!.checks ?? []).join(", ") || "none named"}) judge`;
+}
+
 const isCreate = (event: LedgerRow | undefined) => !!event && (event.create === true || event.verdict === "create" || event.kind === "create");
 
 /**

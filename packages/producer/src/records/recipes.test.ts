@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { generatorIssues, loadRecipes, plumbCraftIssues, produceIssues, readRecipe, recipesFor } from "./recipes.js";
+import { candidateSourceKind, generatorIssues, loadRecipes, plumbCraftIssues, produceIssues, readRecipe, recipeSourceIssue, recipesFor, submitGuardedChecks } from "./recipes.js";
 import { loadStandards } from "./standards.js";
 
 const FIXTURES = fileURLToPath(new URL("../constitution/__fixtures__/", import.meta.url));
@@ -82,5 +82,22 @@ describe("records/recipes", () => {
       'craft.md stage "### 1. brief (model)" is not marked (deterministic)',
     ]);
     expect(plumbCraftIssues("### 1. run (deterministic)\n\n```sh\nnpm run build\n```\n")).toEqual(['craft.md runs "npm run build", not a clossys verb: a plumb recipe\'s stages are CLI verbs only']);
+  });
+  it("checks: a recipe names only checks the submit guard runs; ref-verbatim recipes craft judged kinds only (mutation)", () => {
+    const root = workspace();
+    expect(submitGuardedChecks().has("R05.1")).toBe(true);
+    expect(submitGuardedChecks().has("ref-verbatim")).toBe(true);
+    expect(submitGuardedChecks().has("R02.1")).toBe(false);
+    recipeJson(root, { ...BASE, checks: ["R05.1", "ref-verbatim"], sources: ["composition"] });
+    expect(readRecipe(root, "writer", "fixture-headline-craft").issues).toEqual([]);
+    recipeJson(root, { ...BASE, checks: ["R05.1", "R99.1"], sources: ["composition"] });
+    expect(readRecipe(root, "writer", "fixture-headline-craft").issues).toEqual(["checks names R99.1, which the submit guard does not run (a rules.json check guarded on submit, or ref-verbatim)"]);
+    recipeJson(root, { ...BASE, checks: ["ref-verbatim"], sources: ["original"] });
+    expect(readRecipe(root, "writer", "fixture-headline-craft").issues).toEqual(["sources names original, which ref-verbatim does not judge at every rung (composition, registry)"]);
+    recipeJson(root, { ...BASE, checks: ["R05.1", "ref-verbatim"], sources: ["composition"] });
+    const recipe = readRecipe(root, "writer", "fixture-headline-craft");
+    expect(candidateSourceKind({ clossys: { source: { kind: "composition" } }, content: {} })).toBe("composition");
+    expect(recipeSourceIssue(recipe, { meta: { source: { kind: "composition" } } })).toBeUndefined();
+    expect(recipeSourceIssue(recipe, { meta: { source: { kind: "original" } } })).toBe("recipe fixture-headline-craft crafts composition candidates; this one's meta.source.kind is original");
   });
 });

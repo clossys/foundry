@@ -29,6 +29,13 @@ export interface RecipeDoc {
   readonly generator?: string;
   /** The plumb action that computes the candidates (rung plumb only). */
   readonly action?: string;
+  /**
+   * The deterministic checks a candidate this recipe crafts must pass: each a check the submit guard runs
+   * (a rules.json check whose `guard` lists submit, or the ref-verbatim gate). Checked in code below.
+   */
+  readonly checks?: readonly string[];
+  /** The source kinds (`meta.source.kind`) a candidate this recipe crafts may carry; `next --submit` refuses any other. */
+  readonly sources?: readonly string[];
 }
 
 /** The plumb action a plumb recipe names, as its action.json declares it. */
@@ -117,6 +124,70 @@ export function generatorIssues(source: string): string[] {
   return NONDETERMINISM.filter(([pattern]) => pattern.test(source)).map(([, what]) => `generator ${what}`);
 }
 
+/** The Designer ref-verbatim gate's id as a recipe names it (constitution/fix.ts REF_VERBATIM_ID: recipes.test.ts pins the two equal). */
+export const REF_VERBATIM_CHECK = "ref-verbatim";
+/**
+ * The source kinds the ref-verbatim gate judges at every rung (constitution/guard.ts refVerbatimOf): composition
+ * lineage (each part stock, each import a declared part) and registry lineage (byte-exact adoption).
+ */
+export const REF_VERBATIM_SOURCES: readonly string[] = Object.freeze(["composition", "registry"]);
+
+let submitGuarded: ReadonlySet<string> | undefined;
+/**
+ * The checks the submit guard runs on every submitted candidate: each rules.json check whose `guard` lists
+ * submit, plus the ref-verbatim gate. rules.json is read as data (as constitution/registry.ts reads it), so this
+ * module imports no judge (R16.1).
+ */
+export function submitGuardedChecks(): ReadonlySet<string> {
+  if (!submitGuarded) {
+    const rules = JSON.parse(readFileSync(new URL("../../src/constitution/rules.json", import.meta.url), "utf8")) as { checks?: { id?: unknown; guard?: unknown }[] }[];
+    const ids = rules.flatMap(rule => rule.checks ?? []).filter(check => Array.isArray(check.guard) && check.guard.includes("submit")).map(check => String(check.id));
+    submitGuarded = new Set([REF_VERBATIM_CHECK, ...ids]);
+  }
+  return submitGuarded;
+}
+
+/**
+ * The issues of a recipe's `checks` and `sources`: every named check is one the submit guard runs (a recipe never
+ * names a check that does not run), none twice; a recipe naming the ref-verbatim gate limits `sources` to kinds the
+ * gate judges at every rung (REF_VERBATIM_SOURCES), so its candidates cannot step outside the gate.
+ */
+export function checksIssues(doc: RecipeDoc, guarded: ReadonlySet<string> = submitGuardedChecks()): string[] {
+  const issues: string[] = [];
+  const twice = (list: readonly string[]) => list.filter((item, index) => list.indexOf(item) !== index);
+  for (const id of new Set(twice(doc.checks ?? []))) issues.push(`checks names ${id} twice`);
+  for (const id of new Set(twice(doc.sources ?? []))) issues.push(`sources names ${id} twice`);
+  for (const id of doc.checks ?? []) if (!guarded.has(id)) issues.push(`checks names ${id}, which the submit guard does not run (a rules.json check guarded on submit, or ${REF_VERBATIM_CHECK})`);
+  if (doc.checks?.includes(REF_VERBATIM_CHECK)) {
+    if (!doc.sources) issues.push(`checks names ${REF_VERBATIM_CHECK} with no sources: list the source kinds (${REF_VERBATIM_SOURCES.join(", ")}) the gate judges at every rung`);
+    else for (const kind of doc.sources) if (!REF_VERBATIM_SOURCES.includes(kind)) issues.push(`sources names ${kind}, which ${REF_VERBATIM_CHECK} does not judge at every rung (${REF_VERBATIM_SOURCES.join(", ")})`);
+  }
+  return issues;
+}
+
+/** A candidate's source kind: `meta.source.kind` of the body, or `clossys.source.kind` of a clossys.candidate/1 header. */
+export function candidateSourceKind(candidate: unknown): string | undefined {
+  if (!isRecord(candidate)) return undefined;
+  const meta = isRecord(candidate.meta) ? candidate.meta : undefined;
+  const header = isRecord(candidate.clossys) ? candidate.clossys : undefined;
+  const body = isRecord(candidate.content) ? candidate.content : undefined;
+  const bodyMeta = body && isRecord(body.meta) ? body.meta : undefined;
+  for (const source of [meta?.source, header?.source, bodyMeta?.source]) if (isRecord(source) && typeof source.kind === "string") return source.kind;
+  return undefined;
+}
+
+/**
+ * Why `next --submit` refuses `candidate` as the output of a craft run under `recipe`: its source kind is not one of
+ * the recipe's `sources`. Undefined when the recipe lists no sources or the kind is listed.
+ */
+export function recipeSourceIssue(recipe: Recipe, candidate: unknown): string | undefined {
+  const sources = recipe.doc?.sources;
+  if (!sources) return undefined;
+  const kind = candidateSourceKind(candidate);
+  if (kind !== undefined && sources.includes(kind)) return undefined;
+  return `recipe ${recipe.id} crafts ${sources.join(" or ")} candidates; this one's meta.source.kind is ${kind ?? "(none)"}`;
+}
+
 /** Reads one recipe folder. */
 export function readRecipe(root: string, agent: ModelAgent, id: string): Recipe {
   const dir = join("packages", agent, "recipes", id).split("\\").join("/");
@@ -162,6 +233,7 @@ export function readRecipe(root: string, agent: ModelAgent, id: string): Recipe 
     }
     if (files["craft.md"]) issues.push(...plumbCraftIssues(readFileSync(join(abs, "craft.md"), "utf8")));
   } else if (doc?.action) issues.push(`action ${doc.action} is for a plumb recipe; a ${doc.rung} recipe is crafted and names no action`);
+  if (doc) issues.push(...checksIssues(doc));
   let generatorText: string | undefined;
   if (doc?.generator) {
     if (!files[doc.generator]) issues.push(`generator ${doc.generator} is not a file in the recipe folder`);

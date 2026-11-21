@@ -101,6 +101,21 @@ describe("submit: refused at the write with the rule id and a one-line fix", () 
     expect(refused.message).toContain(R20_FIX);
   });
 
+  it("holds a composition to the ref-verbatim gate at the create rung (create.app-section, create.frame): a hand-written primitive is refused", async () => {
+    const composed = (kind: string) => ({
+      name: "primary", type: "registry:block",
+      files: [{ path: "ui/primary.tsx", type: "registry:block", content: 'import { Button } from "@/components/ui/button"\n\nexport function Primary() {\n  return <section><div className="rounded-md border">hand-written</div><Button>Go</Button></section>\n}\n' }],
+      meta: { source: { kind, ref: [], license: "MIT", ...(kind === "composition" ? { parts: [{ slot: "ui.button", files: ["registry/aria-nova/ui/button.tsx"] }] } : {}) }, element: { id: "primary", reason: "Realises director:brand.voice: composes ui.button only." } },
+    });
+    const refused = await submit(composed("composition"), { rules: [], refVerbatim: true, history: () => NO_HISTORY });
+    expect(refused.exitCode, refused.message).toBe(1);
+    expect(refused.message).toMatch(/REF-COMP-[A-Z]+ .*\[composition: composition lineage\]/);
+    expect(refused.message).toMatch(/REF-COMP-MARKUP/);
+    expect(candidates()).toEqual([]);
+    // The same draft with the gate off is written: the refusal was the composition gate's.
+    expect((await submit(composed("composition"), { rules: [], refVerbatim: false })).exitCode).toBe(0);
+  });
+
   it("holds an adopt to the ref-verbatim gate: refused with its fix while no vendored reference backs it", async () => {
     const adopt = ["--rung", "L1", "--seed", "shadcn-aria/button"];
     const button = { name: "button", type: "registry:ui", files: [{ path: "ui/button.tsx", type: "registry:ui", content: "export const Button = 2;\n" }], meta: { source: { kind: "registry", ref: ["shadcn-aria/button@4.23.0"] } } };

@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.frame",
+  "produces": [
+    "frame"
+  ],
+  "rung": "create",
+  "axes": [
+    "navigation",
+    "chrome",
+    "emphasis"
+  ],
+  "checks": [
+    "R05.1",
+    "R06.1",
+    "R07.1",
+    "R07.6",
+    "ref-verbatim"
+  ],
+  "sources": [
+    "composition"
+  ]
+}
