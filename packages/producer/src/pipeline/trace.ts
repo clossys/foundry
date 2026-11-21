@@ -29,7 +29,7 @@
  * lists `/clossys/.state/runs/` (or `/clossys/.state/`). In any other workspace a run leaves no record (the
  * step shows never run) and writes nothing: a check never dirties a consumer's tree.
  */
-import { STATE_DIR, stateRel } from "../engine/state-dir.js";
+import { STATE_DIR, legacyStateAt, stateRel } from "../engine/state-dir.js";
 import { createHash } from "node:crypto";
 import { createRequire, syncBuiltinESMExports } from "node:module";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -459,7 +459,9 @@ function invocationOfLine(store: string, line: number, bytes: Buffer): string {
  * sibling that replaces the store.
  */
 export function appendRecord(root: string, record: RunRecord): StoredRun | null {
-  if (!storeIgnored(root)) return null;
+  // A workspace whose state is still in LEGACY_STATE_DIR keeps none beside it (state-dir.ts refuseLegacyState): the
+  // runs that go ahead there (`clossys migrate state`, `clossys check --engine`) leave no record until it moved.
+  if (!storeIgnored(root) || legacyStateAt(root)) return null;
   const store = storeFile(record.step);
   const file = join(root, ...store.split("/"));
   fs.mkdirSync(dirname(file), { recursive: true });

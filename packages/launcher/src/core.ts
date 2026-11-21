@@ -1,4 +1,4 @@
-import { dirname, join, resolve, sep } from "node:path";
+import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
   ApplyWorkspaceOptions,
@@ -257,6 +257,25 @@ function locateHub(
   if (current !== undefined) return { document: current, migration: "clean" };
   if (legacy !== undefined) return { document: legacy, migration: "legacy" };
   return { migration: "none" };
+}
+
+/**
+ * The entries of a legacy `.clossys/` other than the hub marker and its
+ * inventory: the engine state Producer kept there before the consumer layout
+ * (its event log, index, locks, runs, checks). Launcher moves only the two hub
+ * files and never deletes these; `clossys migrate state --apply` moves the
+ * whole folder, hub marker included, to `clossys/.state/` under the engine
+ * lock, after which the hub reads as clean.
+ */
+function legacyEngineState(host: WorkspaceHost, directory: string): string[] {
+  const legacy = join(directory, LEGACY_STATE_DIR_REL);
+  if (!host.isDirectory(legacy)) return [];
+  const hubFiles = new Set([basename(LEGACY_WORKSPACE_MARKER_REL), basename(LEGACY_WORKSPACE_INVENTORY_REL)]);
+  return host.readDir(legacy).filter((name) => name !== "." && name !== ".." && !hubFiles.has(name)).sort();
+}
+
+function legacyEngineStateRefusal(entries: readonly string[]): string {
+  return `the legacy ${LEGACY_STATE_DIR_REL}/ folder also holds engine state (${entries.join(", ")}); launcher never deletes it -- run \`clossys migrate state --apply\` here first (it moves the whole folder, hub marker included, to ${STATE_DIR_REL}/), then run launcher again`;
 }
 
 function readHub(host: WorkspaceHost, directory: string): HubDocument | undefined {
@@ -649,6 +668,10 @@ export function planWorkspace(
     );
   }
   if (cwd.hub) {
+    if (cwd.hubMigration === "legacy") {
+      const engineState = legacyEngineState(host, cwd.absolutePath);
+      if (engineState.length > 0) return refuse("violated", legacyEngineStateRefusal(engineState));
+    }
     let chosen: { chosenInventory: ChosenInventory } | undefined;
     if (options.repositories !== undefined) {
       if (cwd.hubMigration === "legacy") {
@@ -1779,11 +1802,15 @@ function finishHubApply(
  * (`plan.migrateFrom === "legacy"`, or `classifyClonedHub` for a fresh
  * clone); a hub with markers at both paths is refused by `planWorkspace`
  * (or, for a clone, by `classifyClonedHub`) before anything is written, so
- * this never merges two hub states.
+ * this never merges two hub states. A legacy folder that also holds engine
+ * state (`legacyEngineState`) is refused before anything is written, so the
+ * folder is never removed with state only `clossys migrate state` moves.
  */
 function migrateLegacyHubState(host: WorkspaceHost, directory: string): HubHealthReport["migration"] {
   const markerRaw = host.readText(join(directory, LEGACY_WORKSPACE_MARKER_REL));
   if (markerRaw === null) return undefined;
+  const engineState = legacyEngineState(host, directory);
+  if (engineState.length > 0) throw new Error(legacyEngineStateRefusal(engineState));
   writeSkeletonFile(host, directory, WORKSPACE_MARKER_REL, markerRaw.endsWith("\n") ? markerRaw : `${markerRaw}\n`);
   // Moved byte for byte, so bytes that are not valid UTF-8 are still refused when read from the new place.
   const inventoryBytes = host.readBytes(join(directory, LEGACY_WORKSPACE_INVENTORY_REL));
@@ -1839,7 +1866,12 @@ function classifyClonedHub(
         `the cloned ${plan.owner}/${plan.repository} carries a hub marker owned by "${located.document.owner}", not "${plan.owner}"; refusing to resume a hub for the wrong account`,
       );
     }
-    return located.migration === "legacy" ? { kind: "resume", migrateFrom: "legacy" } : { kind: "resume" };
+    if (located.migration === "legacy") {
+      const engineState = legacyEngineState(host, plan.directory);
+      if (engineState.length > 0) throw new Error(`in the cloned ${plan.owner}/${plan.repository}, ${legacyEngineStateRefusal(engineState)}`);
+      return { kind: "resume", migrateFrom: "legacy" };
+    }
+    return { kind: "resume" };
   }
   if (!plan.advisorVersion) {
     throw new Error(`cannot read a public ${ADVISOR_PACKAGE} version from the npm registry; appointing the cloned ${plan.owner}/${plan.repository} pins it`);

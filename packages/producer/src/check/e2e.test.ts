@@ -220,14 +220,14 @@ describe("install and render findings", () => {
 
   it("names every build file holding an absolute path of the consumer, and passes one that holds none", () => {
     const root = temp(), build = join(root, "consumer", "clossys", ".state", "builds", "abc");
-    mkdirSync(join(build, "site", "install-home", ".clossys"), { recursive: true });
+    mkdirSync(join(build, "site", "install-home", ".clossys-install"), { recursive: true });
     writeFileSync(join(build, "site", "install-home", "index.html"), "<title>Plain Studio home</title>");
     writeFileSync(join(build, "site", "install-home", "app.js"), 'import "../../node_modules/react/index.js";');
     expect(portableFindings(build, [join(root, "consumer"), root])).toEqual([]);
-    writeFileSync(join(build, "site", "install-home", ".clossys", "render-1.mjs"), `import "${join(root, "consumer", "node_modules", "react", "index.js")}";`);
+    writeFileSync(join(build, "site", "install-home", ".clossys-install", "render-1.mjs"), `import "${join(root, "consumer", "node_modules", "react", "index.js")}";`);
     writeFileSync(join(build, "site", "install-home", "pack.json"), JSON.stringify({ from: join(root, "pack") }));
     expect(portableFindings(build, [join(root, "consumer"), root]).map(row => `${row.cause} ${row.subject} ${row.detail}`)).toEqual([
-      `e2e.portable site/install-home/.clossys/render-1.mjs holds the consumer's absolute path ${join(root, "consumer")}`,
+      `e2e.portable site/install-home/.clossys-install/render-1.mjs holds the consumer's absolute path ${join(root, "consumer")}`,
       `e2e.portable site/install-home/pack.json holds the consumer's absolute path ${root}`,
     ]);
   });

@@ -17,7 +17,7 @@
  *       a judge seat picks one candidate: pin.json with basis "agent", shown as "confirm"
  *       in Studio until the owner pins with `clossys pin`.
  */
-import { statePath } from "../engine/state-dir.js";
+import { refuseLegacyState, statePath } from "../engine/state-dir.js";
 import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { CERTIFY_REPORT_SCHEMA, certifiedOptions } from "../constitution/pin-gate.js";
@@ -161,6 +161,7 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
     const at = new Date().toISOString();
     const judged = certifiedOptions(root, consumer, agent, id, at);
     const report = { schema: CERTIFY_REPORT_SCHEMA, slot: `${agent}/${id}`, at, ok: judged.ok, distinct: judged.distinct, options: judged.options, why: judged.why, candidates: judged.scorecard.candidates };
+    refuseLegacyState(root);
     const dir = statePath(root, "checks", agent, id);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "certify.json"), `${JSON.stringify(report, null, 2)}\n`);

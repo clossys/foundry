@@ -87,7 +87,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Migrate: clossys migrate copy-keys [--check] [--root <dir>] (camelCase copy ids to the catalog's kebab-case ids; record text unchanged)\n"
   + "Migrate: clossys migrate inputs [--check] [--root <dir>] (declare Designer and Writer slot inputs from the read graph; only adds)\n"
   + "Migrate: clossys migrate ledger [--check] [--root <dir>] (backfill slot and agent ledger.json from git history; unexplained edits stay gaps; a second run changes nothing)\n"
-  + "Migrate: clossys migrate state [--apply|--check] [--json] [--root <dir>] (dry run by default: the entries of a root .clossys/ folder that move into clossys/.state/; --apply moves them under the engine lock, logs one state.migrate event and removes the emptied folder; a second run plans nothing)\n"
+  + "Migrate: clossys migrate state [--apply|--check] [--json] [--root <dir>] (dry run by default: the entries of a root .clossys/ folder that move into clossys/.state/; --apply moves them under the engine lock, logs one state.migrate event and removes the emptied folder; a second run plans nothing, or logs the event a stopped run left pending; while the folder exists every other verb but check --engine refuses, exit 2)\n"
   + "Migrate: clossys migrate citations-to-slots [--apply] [--json] [--root <dir>] (dry run by default: counts per agent of candidates whose citations still name a version and pins that still carry recited; --apply rewrites them in place)\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
   + "Slots: clossys check [--slots] [--readiness [--strict]] [--root <dir>] (enforced by default; --readiness --strict fails on every blocked slot)\n"

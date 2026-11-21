@@ -1792,6 +1792,29 @@ describe("legacy .clossys/ -> clossys/.state/ migration (#1171)", () => {
     expect(result.message).toMatch(/migration: moved hub state from \.clossys to clossys\/\.state/);
   });
 
+  it("refuses, and never deletes it, a legacy .clossys/ that also holds engine state until clossys migrate state moved it", () => {
+    const directory = tempDir();
+    writeLegacyHub(directory, "acme", "hub", [{ id: "acme/hub" }]);
+    // A plan made while the folder held only the hub files, then Producer's state beside them (the apply-time guard).
+    const stale = planWorkspace(observeWorkspace(host(directory)), host(directory));
+    expect(stale).toMatchObject({ action: "resume", migrateFrom: "legacy" });
+    const events = join(directory, ".clossys", "events.jsonl");
+    writeFileSync(events, '{"seq":1}\n');
+    mkdirSync(join(directory, ".clossys", "checks", "writer"), { recursive: true });
+
+    const decision = planWorkspace(observeWorkspace(host(directory)), host(directory));
+    expect(decision).toMatchObject({ action: "refuse", state: "violated" });
+    if (decision.action !== "refuse") throw new Error("expected refuse");
+    expect(decision.message).toMatch(/engine state \(checks, events\.jsonl\)/);
+    expect(decision.message).toMatch(/clossys migrate state --apply/);
+
+    expect(() => applyWorkspacePlan(host(directory), stale, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])))).toThrow(/clossys migrate state --apply/);
+    expect(readFileSync(events, "utf8")).toBe('{"seq":1}\n');
+    expect(existsSync(join(directory, ".clossys", "workspace.json"))).toBe(true);
+    expect(existsSync(join(directory, ".clossys", "checks", "writer"))).toBe(true);
+    expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
+  });
+
   it("refuses as indeterminate, never silently merging, when both the current and legacy marker exist", () => {
     const directory = tempDir();
     writeLegacyHub(directory, "acme", "hub");

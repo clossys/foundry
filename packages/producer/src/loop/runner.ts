@@ -25,7 +25,7 @@
  * Run state is kept in `clossys/.state/runs/loops/<runId>.json`; resuming never runs a finished step again. Every run that
  * ends (done, stopped or pinned-ready) writes one ledger entry, `clossys/agents/producer/ledger.<loop>/entries/<runId>.json`.
  */
-import { isStateRel, statePath, stateRel } from "../engine/state-dir.js";
+import { isStateRel, refuseLegacyState, statePath, stateRel } from "../engine/state-dir.js";
 import { existsSync, lstatSync, mkdirSync, openSync, closeSync, writeSync, readFileSync, realpathSync, renameSync, writeFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { appendRecord, buildRecord, invocationOf, observe } from "../pipeline/trace.js";
 import { basename, dirname, join, relative, sep } from "node:path";
@@ -204,6 +204,7 @@ const alive = (pid: number): boolean => {
  * and is taken over. Returns the release, or why the run is busy.
  */
 function takeRunLock(root: string, runId: string): { release: () => void } | { busy: string } {
+  refuseLegacyState(root);
   const file = lockPath(root, runId);
   mkdirSync(dirname(file), { recursive: true });
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -226,6 +227,7 @@ export const ledgerDir = (root: string, loop: LoopName): string => join(root, "c
 const agentsDir = (root: string): string => join(root, "clossys", "agents");
 
 function saveState(root: string, state: RunState): void {
+  refuseLegacyState(root);
   const file = runStatePath(root, state.runId);
   mkdirSync(dirname(file), { recursive: true });
   const temp = `${file}.${process.pid}.tmp`;

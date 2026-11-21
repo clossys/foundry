@@ -2,20 +2,23 @@
  * `clossys migrate state`: move a legacy root state folder (LEGACY_STATE_DIR, `.clossys/`) into the consumer-layout
  * contract's state folder (STATE_DIR, `clossys/.state/`), the one place the engine now reads and writes. The folder's
  * top-level entries (the event log, its index, run state, locks, check results, renders, builds) are renamed into
- * STATE_DIR under the engine lock, the emptied legacy folder is removed, and one `state.migrate` event is appended to
- * the moved log: every record path the log still logs under the legacy folder is named absent, and its new path under
- * STATE_DIR carries the bytes the log vouched for, so `clossys check --engine` sees neither drift nor a layout finding.
+ * STATE_DIR under the engine lock, the emptied legacy folder is removed, and, still under the lock, one `state.migrate`
+ * event is appended to the moved log: every record path the log still logs under the legacy folder is named absent, and
+ * its new path under STATE_DIR carries the bytes the log vouched for, so `clossys check --engine` sees neither drift
+ * nor a layout finding. While the legacy folder exists every other engine write refuses (state-dir.ts
+ * refuseLegacyState), so nothing can start a second log in STATE_DIR first; this verb alone writes then.
  *
  * The plan refuses, moving nothing (no merge, no fallback): a legacy path that is not a plain folder; a lock file
- * anywhere in it (a writer may hold it); a loop run still waiting or running (its snapshot names legacy paths); an entry
- * whose name STATE_DIR already holds. A second run plans nothing.
+ * anywhere in it (`isLockFile`: a writer may hold it); a loop run still waiting or running (its snapshot names legacy
+ * paths); an entry whose name STATE_DIR already holds. A run stopped after the moves and before the event resumes: a
+ * second `--apply` finds the event pending (`pendingStateMigration`) and logs it; after that a run plans nothing.
  */
 import { lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, rmdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { enginePaths } from "./chain.js";
 import { computeIndex } from "./derived.js";
 import { withEngineLock } from "./lock.js";
-import { appendEvent } from "./log.js";
+import { appendEventHeld } from "./log.js";
 import { LEGACY_STATE_DIR, STATE_DIR, statePath, stateRel } from "./state-dir.js";
 import type { EngineEvent, EventInput } from "./types.js";
 
@@ -51,6 +54,16 @@ function filesBelow(dir: string, base: string): string[] {
   return out;
 }
 
+/**
+ * Whether a file of the legacy folder is a lock a writer may hold, by its name: `<name>.lock` (the engine lock, queue
+ * and request locks, loop run locks) or a lock's recovery marker (`<lock>.recover-<id>`, engine/lock.ts, nested ones
+ * too). A file that only carries the word, like the compile manifest `generated/compile.lock.json`, is not a lock.
+ */
+export function isLockFile(rel: string): boolean {
+  const name = rel.slice(rel.lastIndexOf("/") + 1);
+  return name.endsWith(".lock") || name.includes(".lock.recover-");
+}
+
 /** The plan for the workspace `root`: what moves and what refuses the move. Reads only. */
 export function planStateMigration(root: string): StateMigrationPlan {
   const at = resolve(root);
@@ -65,7 +78,7 @@ export function planStateMigration(root: string): StateMigrationPlan {
   const refusals: string[] = [];
   const moves = readdirSync(legacy).sort();
   for (const file of filesBelow(legacy, "")) {
-    if (file.endsWith(".lock") || file.includes(".lock.")) refusals.push(`${LEGACY_STATE_DIR}/${file} is a lock: a writer may hold it; let it finish, then run again`);
+    if (isLockFile(file)) refusals.push(`${LEGACY_STATE_DIR}/${file} is a lock: a writer may hold it; let it finish, then run again`);
   }
   const loops = join(legacy, "runs", "loops");
   if (exists(loops) && lstatSync(loops).isDirectory()) {
@@ -91,33 +104,46 @@ export interface StateMigrationResult {
 const moved = (path: string): string => `${STATE_DIR}/${path.slice(LEGACY_STATE_DIR.length + 1)}`;
 
 /**
- * Apply the plan: refuses (throws, moving nothing) when the plan has a refusal. Renames each entry into STATE_DIR
- * under the engine lock, removes the emptied legacy folder, then appends one state.migrate event naming each legacy
+ * The inputs of the state.migrate event the log in STATE_DIR still lacks: each record path it logs under the legacy
+ * folder with bytes (absent at its old path now) and the same path under STATE_DIR with those bytes. Empty before a
+ * move (the log is still in the legacy folder) and after a logged one (the legacy paths are logged absent). Reads only.
+ */
+export function pendingStateMigration(root: string): EventInput[] {
+  const at = resolve(root);
+  if (!exists(enginePaths(at).events)) return [];
+  const prefix = `${LEGACY_STATE_DIR}/`;
+  const byPath = new Map<string, EventInput>();
+  for (const [path, entry] of Object.entries(computeIndex(at).records)) {
+    if (!path.startsWith(prefix) || entry.logged === null) continue;
+    byPath.set(path, { path, sha256: null });
+    byPath.set(moved(path), { path: moved(path), sha256: entry.logged });
+  }
+  return [...byPath.values()];
+}
+
+/**
+ * Apply the plan: refuses (throws, moving nothing) when the plan has a refusal. Under the engine lock: renames each
+ * entry into STATE_DIR, removes the emptied legacy folder, then appends one state.migrate event naming each legacy
  * record path the moved log logs: absent at its old path, and at its new path the sha256 the log last logged for it.
+ * With no legacy folder it logs a pending event (a run stopped after its moves), else does nothing.
  */
 export function applyStateMigration(root: string): StateMigrationResult {
   const at = resolve(root);
   const plan = planStateMigration(at);
   if (plan.refusals.length) throw new Error(`migrate state: ${plan.refusals.join("; ")}`);
-  if (!plan.legacy) return { plan };
+  if (!plan.legacy && !pendingStateMigration(at).length) return { plan };
   const paths = enginePaths(at);
   mkdirSync(paths.dir, { recursive: true });
-  withEngineLock(paths.lock, () => {
+  return withEngineLock(paths.lock, (): StateMigrationResult => {
     const again = planStateMigration(at);
     if (again.refusals.length) throw new Error(`migrate state: ${again.refusals.join("; ")}`);
-    for (const name of again.moves) renameSync(join(at, LEGACY_STATE_DIR, name), statePath(at, name));
-    rmdirSync(join(at, LEGACY_STATE_DIR));
+    if (again.legacy) {
+      for (const name of again.moves) renameSync(join(at, LEGACY_STATE_DIR, name), statePath(at, name));
+      rmdirSync(join(at, LEGACY_STATE_DIR));
+    }
+    const inputs = pendingStateMigration(at);
+    if (!inputs.length) return { plan };
+    const event = appendEventHeld(at, { actor: STATE_MIGRATE_ACTOR, kind: "state.migrate", subject: `state:${STATE_DIR}`, inputs });
+    return { plan, event };
   });
-  const prefix = `${LEGACY_STATE_DIR}/`;
-  const records = computeIndex(at).records;
-  const byPath = new Map<string, EventInput>();
-  for (const [path, entry] of Object.entries(records)) {
-    if (!path.startsWith(prefix) || entry.logged === null) continue;
-    byPath.set(path, { path, sha256: null });
-    byPath.set(moved(path), { path: moved(path), sha256: entry.logged });
-  }
-  const inputs = [...byPath.values()];
-  if (!inputs.length) return { plan };
-  const event = appendEvent(at, { actor: STATE_MIGRATE_ACTOR, kind: "state.migrate", subject: `state:${STATE_DIR}`, inputs });
-  return { plan, event };
 }

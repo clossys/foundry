@@ -8,7 +8,7 @@
  *   held lock refuses, it is never broken automatically) and only by a temp-file write plus rename, so a reader sees
  *   the old bytes or the new bytes, never a torn file.
  */
-import { statePath } from "../engine/state-dir.js";
+import { refuseLegacyState, statePath } from "../engine/state-dir.js";
 import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { QueueEntry, QueueName } from "../records/types.js";
@@ -116,6 +116,7 @@ export const serializeEntry = (entry: QueueEntry): string => `${JSON.stringify(e
  * the returned entry carries the id it was written under. Never overwrites a file.
  */
 export function createQueueEntry(root: string, entry: QueueEntry): QueueEntry {
+  refuseLegacyState(root);
   mkdirSync(queueEntriesDir(root, entry.queue), { recursive: true });
   for (let attempt = 1; attempt <= 9; attempt++) {
     const id = attempt === 1 ? entry.id : `${entry.id}-${attempt}`;
@@ -156,8 +157,12 @@ export class EntryLockedError extends Error {
   }
 }
 
-/** Runs `body` while holding the entry's lock; a held lock refuses with EntryLockedError. */
+/**
+ * Runs `body` while holding the entry's lock; a held lock refuses with EntryLockedError, and a workspace whose state is
+ * still in the legacy root folder with LegacyStateError (state-dir.ts), before the lock is taken.
+ */
 export function withQueueEntryLock<T>(root: string, queue: QueueName, id: string, body: () => T): T {
+  refuseLegacyState(root);
   const lock = queueLockPath(root, queue, id);
   mkdirSync(dirname(lock), { recursive: true });
   let fd: number;

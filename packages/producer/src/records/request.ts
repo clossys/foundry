@@ -14,7 +14,7 @@
  * `closed` name the raising and closing events). The slot model itself is read through records/slots.ts and written
  * through records/slot-write.ts only.
  */
-import { statePath } from "../engine/state-dir.js";
+import { refuseLegacyState, statePath } from "../engine/state-dir.js";
 import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
@@ -337,6 +337,7 @@ export class CheckFailure extends RequestError {
 export function writeRequest(consumer: string, request: SlotRequest): string {
   const issues = requestIssues(request, dirname(consumer));
   if (issues.length) throw new RequestError(`request ${request.id} would be invalid: ${issues.slice(0, 5).join("; ")}`);
+  refuseLegacyState(dirname(consumer));
   const dir = requestsDir(consumer, request.kind);
   mkdirSync(dir, { recursive: true });
   const file = requestPath(consumer, request.id, request.kind);
@@ -357,6 +358,7 @@ export const requestActor = (request: SlotRequest): string => actorLine(request.
 /** A draft under the id it is written as: the draft's own, or a `-2`..`-9` suffix of it when that one is taken. */
 const addressed = (draft: SlotRequest, id: string): SlotRequest => ({ ...draft, id, opened: `${id}#1`, events: draft.events.map((event, index) => ({ ...event, id: `${id}#${index + 1}` })) });
 function createRequest(consumer: string, draft: SlotRequest): SlotRequest {
+  refuseLegacyState(dirname(consumer));
   const dir = requestsDir(consumer, draft.kind);
   mkdirSync(dir, { recursive: true });
   for (let attempt = 1; attempt <= 9; attempt++) {
@@ -384,9 +386,11 @@ const pause = new Int32Array(new SharedArrayBuffer(4));
 
 /**
  * Runs `body` holding a request lock (the queue/entry.ts withQueueEntryLock pattern: an exclusive create, removed after,
- * never broken automatically). A held lock is waited on for up to five seconds, then refuses with nothing written.
+ * never broken automatically). A held lock is waited on for up to five seconds, then refuses with nothing written; a
+ * workspace whose state is still in the legacy root folder refuses first (state-dir.ts LegacyStateError).
  */
 export function withRequestLock<T>(consumer: string, key: string, body: () => T): T {
+  refuseLegacyState(dirname(consumer));
   const lock = requestLockPath(consumer, key);
   mkdirSync(dirname(lock), { recursive: true });
   const until = Date.now() + LOCK_WAIT_MS;

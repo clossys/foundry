@@ -5,11 +5,10 @@
  * lives only in the contract's state folder (STATE_DIR), so a root LEGACY_STATE_DIR (a file, folder or link) fails
  * (`layoutFindings`). Read-only: it writes nothing, not even the index.
  */
-import { lstatSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { verifyChain, type ChainIssue } from "./chain.js";
 import { indexAgreement, recordDrift } from "./derived.js";
-import { LEGACY_STATE_DIR, STATE_DIR } from "./state-dir.js";
+import { LEGACY_STATE_DIR, STATE_DIR, legacyStateAt } from "./state-dir.js";
 
 export interface EngineCheckReport {
   readonly check: "engine";
@@ -28,11 +27,7 @@ export interface EngineCheckReport {
 
 /** The consumer-layout findings of a workspace root: one line when LEGACY_STATE_DIR exists there, in any form. */
 export function layoutFindings(root: string): string[] {
-  try { lstatSync(join(root, LEGACY_STATE_DIR)); } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code;
-    if (code === "ENOENT" || code === "ENOTDIR") return [];
-    throw error;
-  }
+  if (!legacyStateAt(root)) return [];
   return [`${LEGACY_STATE_DIR}/ exists at the workspace root; the consumer layout keeps engine state only in ${STATE_DIR}/ (move it: clossys migrate state --apply)`];
 }
 

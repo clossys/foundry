@@ -13,7 +13,7 @@
  * first, then fewest reasons), and the pin cites it (`refs` `producer/checks.scorecard`, rel cites,
  * with the scorecard's sha256).
  */
-import { statePath } from "../engine/state-dir.js";
+import { refuseLegacyState, statePath } from "../engine/state-dir.js";
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -104,6 +104,7 @@ export function pinGate(root: string, consumer: string, agent: string, slotId: s
 
 /** Writes the scorecard and returns the pin ref citing it. */
 export function writeScorecard(root: string, agent: string, slotId: string, scorecard: Scorecard): Ref {
+  refuseLegacyState(root);
   const dir = statePath(root, "checks", agent, slotId);
   mkdirSync(dir, { recursive: true });
   const bytes = `${JSON.stringify(scorecard, null, 2)}\n`;

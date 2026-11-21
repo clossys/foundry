@@ -5,7 +5,7 @@
  * `clossys pin publisher/release.<pub> <manifest> --by owner:queue.approve#<id>`, which refuses it unless
  * `release.ready` would pass.
  */
-import { STATE_DIR } from "../engine/state-dir.js";
+import { STATE_DIR, refuseLegacyState } from "../engine/state-dir.js";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { discoverRoot } from "./root.js";
@@ -157,6 +157,7 @@ async function releaseCli(argv: readonly string[], cwd: string, options: Release
           ...findings.map(row => ({ check: row.check ?? "release.gates", status: "fail" as const, detail: `${row.subject}: ${row.detail}` })),
         ],
       };
+      refuseLegacyState(root);
       mkdirSync(dirname(join(root, rel)), { recursive: true });
       writeFileSync(join(root, rel), `${JSON.stringify(doc, null, 2)}\n`);
       wrote.push(rel.split(/[\\/]/).join("/"));
