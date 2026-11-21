@@ -29,7 +29,7 @@ export type SlotStatusRow = {
 /** The current hash of an upstream reference, or undefined when it no longer exists. */
 export type ReferenceHash = (source: ReferenceRef) => Hash | undefined;
 
-/** A reference-hash resolver over package manifests (for example Designer's references/manifest.json). */
+/** A reference-hash resolver over package manifests (for example @clossys/designer). */
 export function manifestReferenceHash(manifests: readonly ReferencesManifest[]): (source: ReferenceRef) => Hash | undefined {
   const index = new Map<string, Hash>();
   for (const manifest of manifests) for (const item of manifest.items) index.set(`${item.registry}/${item.name}@${item.version}`, item.hash);

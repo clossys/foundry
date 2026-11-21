@@ -1,6 +1,5 @@
 /**
- * R01.7-R01.15, the IA checks (foundry-plan-0002 unit IA-C; slot-constitution.md "IA round",
- * evidence/ia-review/L0-L1-proposal.md (g)). The owner's levels: L0 is the nav link (an ia.json
+ * R01.7-R01.15, the IA checks (foundry-plan-0002 unit IA-C; slot-constitution.md "IA round"). The owner's levels: L0 is the nav link (an ia.json
  * `layers` entry), L1 a tab (a node), L2 a group (a node's child) and L3 the leaf (a slot).
  *
  * An ia.json without `layers` is read the way the Studio shows it today, so every check reports on

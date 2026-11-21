@@ -1,6 +1,6 @@
 /**
  * What `clossys review` runs on this repository: the install, the count probes, the generated fixtures, the e2e and
- * the leak scan. Tests pass their own config for small fixture repositories; docs/review.md is generated from these.
+ * the leak scan. Tests pass their own config for small fixture repositories; docs/review.md (not shipped) is generated from these.
  */
 export interface CountProbe {
   readonly id: string;

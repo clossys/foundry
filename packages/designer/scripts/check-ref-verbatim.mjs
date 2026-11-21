@@ -122,11 +122,11 @@ const treeHash = (files) =>
   )}`;
 
 /**
- * The seed lookup (`source.ref` → reference-manifest item) lives in Producer's certify/source.ts
+ * The seed lookup (`source.ref` → reference-manifest item) lives in @clossys/producer
  * (R03, slot-constitution.md W2-C), which every agent's adopt check shares. This module is a shipped
  * export (`@clossys/designer/ref-verbatim`) that must import without Producer, so source.ts is loaded
  * when Producer resolves and required only when a candidate is read;
- * sha256 and treeHash stay local and certify/source.test.ts pins them equal to source.ts's.
+ * sha256 and treeHash stay local and certify/source.test.ts (not shipped) pins them equal to source.ts's.
  */
 const SOURCE_ANCHOR = "@clossys/producer/records/slots";
 let producerSourceDir; let producerSourceMissing;
@@ -1076,8 +1076,8 @@ export const PACKAGE_LICENCE_FILES = Object.freeze(["LICENSE", "LICENCE", "LICEN
  * - every other (non-code, non-record) file is byte-identical to the same path
  *   inside the installed package at the lockfile-resolved version, e.g. its
  *   stylesheet dist/style.css (REF-NPM-ASSET);
- * - its LICENCE.md record is byte-identical to the installed package's own
- *   licence file (LICENSE, LICENCE, LICENSE.md, ...), so the licence it records
+ * - its licence record is byte-identical to the installed package's own
+ *   licence file (LICENSE or LICENCE, with or without an extension), so the licence it records
  *   is the one the package ships (REF-NPM-ASSET).
  * The lockfile and the install are looked up inside the consumer root's
  * repository only (repositoryBoundary).

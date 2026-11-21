@@ -1,4 +1,4 @@
-/** Shared shapes of `clossys review` (docs/review.md is generated from the constants that use them). */
+/** Shared shapes of `clossys review` (docs/review.md (not shipped) is generated from the constants that use them). */
 
 export type Level = "fail" | "note";
 

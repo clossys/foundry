@@ -1,7 +1,7 @@
 /**
  * The admin workspace plan (foundry-build-0048 Amendment 2026-11-18b, A1): the admin pages and publication `clossys
  * init` seats in every consumer and `publisher.admin-seated` holds it to, read from the installed Publisher package's
- * own `admin` starter (starters/admin/publication.json), its tree contracts and its page defaults, and from the
+ * own `admin` starter (@clossys/publisher), its tree contracts and its page defaults, and from the
  * Designer section contracts (a data-bound admin section declares the clossys records it reads, `limits["reads.records"]`,
  * read-only, bound `host-injected` under a route scope, `limits["reads.scope"]`). Read-only; init-admin.ts places it.
  *
@@ -66,7 +66,7 @@ export interface AdminPlan {
   readonly pages: readonly AdminPage[]; readonly publication: string; readonly root: string;
   /**
    * Every slot the admin publication cites (its inputs and uses): its pages in plan order, then the slots its Publisher
-   * package default (`defaults/publication.admin/starter-v1.json`) names, the Writer publication meta among them
+   * package default (`@clossys/publisher`) names, the Writer publication meta among them
    * (foundry-build-0048 CONSISTENCY D5 option 4: the publication consumes `writer/publication.admin.meta`).
    */
   readonly publicationCites: readonly string[];

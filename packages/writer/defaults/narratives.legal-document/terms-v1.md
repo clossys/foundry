@@ -10,7 +10,7 @@ clossys:
   refs: [{"to": "director/identity.naming.name", "key": "Name", "rel": "input"}, {"to": "facts", "rel": "input"}]
   slot: "writer/narratives.legal-document"
   record: "terms"
-  source: {"kind": "package-default", "ref": ["ia-target/writer.md#942-prose-narrativeslegal-document-record-privacy"]}
+  source: {"kind": "package-default", "ref": []}
   rationale: [{"purpose": "package default", "why": "A draft template pending owner approval, not legal advice: it binds owner facts, so it fails facts.owner until the consumer's facts.json holds them and can never be pinned with placeholders.", "sources": []}]
 ---
 

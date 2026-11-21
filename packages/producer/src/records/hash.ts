@@ -8,7 +8,7 @@ import type { Hash } from "./types.js";
  * references. Each file contributes the line `<sha256 hex>  <posix path>\n`;
  * lines are sorted by path and the concatenation is hashed again.
  *
- * Designer's references check (packages/designer/scripts/check-references.mjs)
+ * Designer's references check (@clossys/designer)
  * implements the same algorithm without importing this module, and a Producer
  * test recomputes manifest hashes with this one so the two cannot drift.
  */

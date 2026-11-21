@@ -55,7 +55,7 @@ redirect output is sorted by source. Input arrays and records are not mutated.
 `projectPinnedPublication(records, publicationId)` returns `{ map, routePack? }`
 from the raw slot records of a consumer's `agents/publisher`. Publisher opens no
 files: the records come from the one slot-model reader (Producer
-`records/slots.ts`, `readPinnedPublication(consumer, publicationId)`), which
+`@clossys/producer`, `readPinnedPublication(consumer, publicationId)`), which
 hands over each candidate's bytes and their sha256. The projection discovers
 slots through `ia.json`, checks each selected candidate's hash against
 `pin.json`, and projects the publication's embedded tree. It preserves entry

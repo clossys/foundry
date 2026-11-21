@@ -66,7 +66,7 @@ const DESIGNER_PREFIXES: Record<string, TargetSlotKind> = {
 };
 const WRITER_KINDS: Record<string, TargetSlotKind> = {
   lexicon: "voice", narrative: "prose", narratives: "prose", passage: "copy", passages: "copy", pattern: "copy", patterns: "copy", string: "copy", strings: "copy",
-  // The Copy tree's id prefixes (src/catalog/ia/copy.json): the copy of a Designer unit, a page or a publication.
+  // The Copy tree's id prefixes (@clossys/writer): the copy of a Designer unit, a page or a publication.
   components: "copy", sections: "copy", frames: "copy", assets: "copy", page: "copy", publication: "copy",
 };
 const PUBLISHER_PREFIXES: Record<string, TargetSlotKind> = {

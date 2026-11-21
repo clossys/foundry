@@ -1,6 +1,6 @@
 /**
  * Byte-authenticated stock source proofs. The table is written by
- * `scripts/generate-component-source-proofs.mjs` from the real TypeScript AST of
+ * `scripts/generate-component-source-proofs.mjs` (not shipped) from the real TypeScript AST of
  * every stock component source; it is never edited by hand. A proof applies only
  * to the exact bytes and script kind it was read from (sha256), so any mutation
  * has no proof and falls back to the bounded grammar, which refuses what it

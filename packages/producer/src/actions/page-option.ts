@@ -41,7 +41,7 @@ const NAV_FIELDS = new Set(["nav", "hidden", "group"]);
 const NAV_GROUP = /^[a-z][a-z0-9-]*$/;
 /**
  * Style keys: the same keys Publisher's option-form `inlineCopyFindings` refuses as `page.no-style`
- * (packages/publisher/src/check/page-sections-instance.ts STYLE_KEYS); publisher.test.ts pins the two verdicts equal.
+ * (@clossys/publisher STYLE_KEYS); publisher.test.ts (not shipped) pins the two verdicts equal.
  */
 const STYLE_KEYS = /^(?:class|className|style|styles|css|tw|color|colour|background|font|fontSize|padding|margin|spacing|theme)$/i;
 /** A Writer key ref `<writer slot>#<key>`. */

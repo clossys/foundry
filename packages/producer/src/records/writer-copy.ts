@@ -3,7 +3,7 @@
  * Writer copy slot (`writer-copy-slots.ts`: Writer's tree data, never an id prefix) whose bytes match its pin, keyed by record id in any namespace the consumer
  * registers (`studio.<key>`, `site.<key>`, ...), resolved by the Writer's own resolver. This is how the Producer turns a Writer key into text where it writes
  * text itself (the content-map projection, a plain-text response, a frame's title); Studio resolves
- * the same keys in the browser through `studio/lib/studio-copy.ts`.
+ * the same keys in the browser through `studio/lib/studio-copy.ts` (not shipped).
  *
  * A key the pinned Writer copy does not hold throws: there is no literal fallback. Whether a value
  * is a key is decided by registration (`has`), never by a namespace prefix.

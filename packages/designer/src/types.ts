@@ -1,6 +1,6 @@
 /**
  * Shared primitive types, declared locally: a content package never imports `@clossys/producer`,
- * at runtime or as a type (system.md 14.2). `packages/producer/src/records/types.ts` holds the
+ * at runtime or as a type (system.md 14.2). `@clossys/producer` holds the
  * canonical full set; these are structurally identical aliases.
  */
 

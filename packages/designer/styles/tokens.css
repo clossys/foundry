@@ -214,7 +214,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * 1.4.11) against every surface a control sits on — base, sunken, raised
    * and aside, in both themes — so --color-line-base can stay a light
    * hairline. The lightest value that clears 3:1 on the sunken well
-   * (3.06:1); src/tokens/visual-pass-contrast.test.ts pins it. */
+   * (3.06:1); src/tokens/visual-pass-contrast.test.ts (not shipped) pins it. */
   --color-line-control:           oklch(0.62 0 0);
   /* Panel identity: the edge colour of an outlined card or product panel.
    * Brandable; an alias of the base line, so it follows the theme. */

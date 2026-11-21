@@ -12,7 +12,7 @@ export interface Mutant { readonly id: string; readonly file: string; readonly l
 
 const COMPARISON: Readonly<Record<string, string>> = { "===": "!==", "!==": "===", "<=": ">", ">=": "<", "<": ">=", ">": "<=" };
 
-/** The operators, by id, with what each does (docs/review.md lists them). */
+/** The operators, by id, with what each does (docs/review.md (not shipped) lists them). */
 export const OPERATORS: readonly { readonly id: string; readonly does: string }[] = [
   { id: "flip-comparison", does: "=== <-> !==, <= -> >, >= -> <, < -> >=, > -> <= (spaced binary operators only)" },
   { id: "negate-condition", does: "if (c) -> if (!(c)), when the condition closes on the same line" },

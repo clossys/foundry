@@ -3,7 +3,7 @@
  * One module per live section: `<Name>Copy` from `copy.fields` (dotted keys nest, `[]` becomes an array, `required`
  * drops the `?`), `<Name>Variant` from the closed `members.names` (`axis.value` becomes one optional axis union), and
  * `<Name>Props` binding both. The committed modules under this folder are the build's generated output; tsc compiles
- * them into dist, and `props.test.ts` fails when one drifts from this generator. Regenerate after a build with
+ * them into dist, and `props.test.ts` (not shipped) fails when one drifts from this generator. Regenerate after a build with
  * `node dist/generated/props/write.js src/generated/props` from the package root.
  */
 import { createHash } from "node:crypto";

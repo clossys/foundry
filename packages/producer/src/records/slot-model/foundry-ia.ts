@@ -26,14 +26,14 @@ export interface FoundrySlot {
   readonly declaredUses: readonly string[];
   /** Downstream slots this slot feeds (Director contract feeds). */
   readonly feeds: readonly string[];
-  /** The package's per-slot defaults (src/catalog/slot-defaults.json): its standard and any non-derived inputs. */
+  /** The package's per-slot defaults (`@clossys/<agent>/src/catalog/slot-defaults.json`): its standard and any non-derived inputs. */
   readonly defaults: SlotDefaults;
   /** The clossys.slot/2 kind the package tree names (Writer voice, prose, copy); `kind` is its slot/1 family. */
   readonly targetKind?: TargetSlotKind;
   /** The package tree's own refs (`<agent>/<id>`, rel, key), in order: a clossys.slot/2 slot takes them as written. */
   readonly refs?: readonly { readonly to: string; readonly rel: string; readonly key?: string }[];
 }
-/** One slot's row in a package's src/catalog/slot-defaults.json (schema clossys.slot-defaults/1). */
+/** One slot's row in a package's `@clossys/<agent>/src/catalog/slot-defaults.json` (schema clossys.slot-defaults/1). */
 export interface SlotDefaults {
   /** The standard that judges the slot. */
   readonly standard?: string;
@@ -103,7 +103,7 @@ export function directorIa(): FoundryIa {
 }
 
 /**
- * The ids Designer's src/catalog/retired.json lists; none when the installed package ships no such file. A file that is
+ * The ids `@clossys/designer/src/catalog/retired.json` lists; none when the installed package ships no such file. A file that is
  * there but is not an array is a broken package, not an empty list: it throws rather than place every retired leaf.
  */
 export function designerRetired(root: string): ReadonlySet<string> {

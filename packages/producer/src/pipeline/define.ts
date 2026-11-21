@@ -1,5 +1,5 @@
 /**
- * R-PIPELINE-IS-CODE and the step standard (docs/step-standard.md): every pipeline step is one action
+ * R-PIPELINE-IS-CODE and the step standard (docs/step-standard.md (not shipped)): every pipeline step is one action
  * contract, a data file at packages/<package>/actions/<id>/action.json, bound to its code by id
  * (steps/bindings.ts). `defineAction` turns a contract and its binding into the Step the runner, the
  * graph and the canvas read; `pipeline/actions.json` is the generated snapshot of every contract. The

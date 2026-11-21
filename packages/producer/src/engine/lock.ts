@@ -103,7 +103,7 @@ function tryCreate(lock: string, owner: LockOwner): boolean {
 }
 
 /**
- * Test seam (engine/lock.test.ts): called at each recovery step with the step's name and the lock path. Unset in
+ * Test seam (engine/lock.test.ts (not shipped)): called at each recovery step with the step's name and the lock path. Unset in
  * production. `judged`: a writer judged the lock stale and is about to recover it; `replace`: it holds the
  * instance's marker, re-verified the instance and is about to rename its own lock over it; `declined`: the recovery
  * left the lock as it was (another writer recovered it, or holds the marker).

@@ -3,7 +3,7 @@
  *
  * The resolved pin set is (slot id, pinned sha256) for every live slot with a pin, sorted; its
  * sha256 is the pin-set hash. `clossys compile` (cli/compile.ts) writes it into
- * studio/compile.lock.json as `pinSetHash`.
+ * studio/compile.lock.json (not shipped) as `pinSetHash`.
  * R12.1 The lock records a pin-set hash and it equals the current one (seconds).
  * R12.2 The compile reads no clock, randomness, network or environment: check-compile-pure on the
  * built CLI (a root without a build is a row: build first).

@@ -246,7 +246,7 @@ async function placePinProbeSlot(temp: string, agent: AgentModel): Promise<{ id:
   if (kind === undefined || standard?.doc === undefined) return `pin probe: ${agent.agent} has no live clossys.slot/2 slot and no held kind with a standard to place one`;
   const id = `${kind}.${PIN_PROBE_SLOT}`;
   const file = join(temp, `pin-probe-contract-${agent.agent}.json`);
-  // A routed kind's fixture is its sample route (certify/page.ts), so the probe's refusal is about the candidate, not a missing fixture.
+  // A routed kind's fixture is its sample route (../constitution/certify/page.ts), so the probe's refusal is about the candidate, not a missing fixture.
   const fixture = kind === "page" || kind === "publication" ? { fixture: { route: { path: `/${PIN_PROBE_NAME}` } } } : {};
   writeFileSync(file, JSON.stringify({ requirements: standard.doc.requirements.map(item => ({ check: item.check })), ...fixture }));
   const result = await runIaCli([`${agent.agent}/${id}`, "--under", PIN_PROBE_UNDER, "--kind", kind, "--standard", standard.id, "--contract", file], temp);

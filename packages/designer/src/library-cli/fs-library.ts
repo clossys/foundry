@@ -38,6 +38,8 @@ export class LibraryCheckError extends Error {
 }
 
 const queues = new Map<string, Promise<unknown>>();
+/** First line of a generated consumer library `index.ts`; kept apart from the import lines it heads. */
+const GENERATED_INDEX_HEADER = "// Generated consumer library. Do not edit.\n";
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const exactKeys = (value: Record<string, unknown>, required: string[], optional: string[] = []): boolean => required.every(key => Object.hasOwn(value, key)) && Object.keys(value).every(key => required.includes(key) || optional.includes(key));
 const safeMember = (value: unknown): value is string => typeof value === "string" && /^[a-z0-9-]+(?:\.[a-z0-9-]+)*$/.test(value) && !value.split(".").some(part => ["__proto__", "constructor", "prototype"].includes(part));
@@ -144,7 +146,7 @@ export function libraryFiles(catalog: CatalogData | CompositeCatalogData, input:
   files.set("resolved.json", stableStringify(resolved));
   if (targets.some(target => !LIBRARY_EMIT_TARGETS.includes(target as EmitTarget))) throw new LibraryInputError("Unavailable emit target");
   for (const file of emit(resolved, targets as readonly EmitTarget[])) files.set(file.path, file.contents);
-  files.set("index.ts", '// Generated consumer library. Do not edit.\nimport type { LibraryData } from "@clossys/designer/catalog";\nimport source from "./source.json";\nimport metadata from "./metadata.json";\nimport selection from "./selection.json";\n'
+  files.set("index.ts", GENERATED_INDEX_HEADER + 'import type { LibraryData } from "@clossys/designer/catalog";\nimport source from "./source.json";\nimport metadata from "./metadata.json";\nimport selection from "./selection.json";\n'
     + names.map((name, index) => `import fill${index} from "./fills/${name}.json";\n`).join("")
     + `export const library = { ...metadata, source, selection, fills: [${names.map((_, index) => `fill${index}`).join(", ")}] } as unknown as LibraryData;\n`);
   return files;
@@ -180,7 +182,7 @@ function compositeFiles(catalog: CompositeCatalogData, input: CompositeLibraryDa
   }
   const valueNames = copy.values.fills.map(fill => fill.$extensions["com.clossys.fill"].slot).sort();
   const componentNames = [...seen].sort();
-  files.set("index.ts", '// Generated consumer library. Do not edit.\nimport type { CompositeLibraryData } from "@clossys/designer/catalog";\nimport source from "./source.json";\nimport metadata from "./metadata.json";\nimport selection from "./selection.json";\n'
+  files.set("index.ts", GENERATED_INDEX_HEADER + 'import type { CompositeLibraryData } from "@clossys/designer/catalog";\nimport source from "./source.json";\nimport metadata from "./metadata.json";\nimport selection from "./selection.json";\n'
     + [...valueNames, ...componentNames, ...(copy.surfaces?.fills.map(doc=>surfaceEntryOf(doc).slot)??[])].map((name, index) => `import fill${index} from "./fills/${name}.json";\n`).join("")
     + `export const library = { source, ...${JSON.stringify(copy.adoptedAt === undefined ? {} : { adoptedAt: copy.adoptedAt })}, values: { ...metadata.values, selection, fills: [${valueNames.map((_, index) => `fill${index}`).join(", ")}] }, components: { ...metadata.components, fills: [${componentNames.map((_, index) => `fill${index + valueNames.length}`).join(", ")}], files: ${JSON.stringify(ownedFiles)} }${copy.surfaces===undefined?"":`, surfaces: { version: 1, fills: [${copy.surfaces.fills.map((_,index)=>`fill${index+valueNames.length+componentNames.length}`).join(", ")}], files: ${JSON.stringify(copy.surfaces.files)} }`} } as unknown as CompositeLibraryData;\n`);
   return files;

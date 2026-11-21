@@ -9,7 +9,7 @@
  * wait, a torn log tail) cannot undo the write: it surfaces as RecordCommittedError (code RECORD_COMMITTED), never as
  * the EngineBusyError a caller may retry, so no caller writes the record a second time.
  *
- * Node runs this file with type stripping in child writers (engine/*.test.ts, records/ledger.test.ts).
+ * Node runs this file with type stripping in child writers (engine/*.test.ts, records/ledger.test.ts (not shipped)).
  */
 import { closeSync, fstatSync, fsyncSync, mkdirSync, openSync, readSync, writeSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";

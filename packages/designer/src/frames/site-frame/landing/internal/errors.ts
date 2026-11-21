@@ -12,7 +12,7 @@
 /**
  * The closed set of reasons a renderer in this package refuses to render.
  *
- * The last six were added alongside `internal/tokens.ts` — the
+ * The last six were added alongside `@clossys/publisher` — the
  * `@clossys/designer/tokens` -> literal-color flattening every channel
  * (`./web`, `./email`, `./print`, `./image`, `./slides`) shares, so a
  * bad token/color input fails the same way regardless of which channel
@@ -53,7 +53,7 @@
  *   - `"unknown-style-role"` — a `StyleBinding.color`/`.background` names a
  *     token role absent from `@clossys/designer/tokens`' `TOKENS` registry
  *     (checked after `flattenTokens()`), the same "never a silent fallback
- *     colour" discipline `internal/tokens.ts` itself holds to.
+ *     colour" discipline `@clossys/publisher` itself holds to.
  *
  * One more member was appended for `./slides` (a `SlidesDeckInput` whose
  * slides don't all agree on `meta.aspect` — see `src/slides/
@@ -67,7 +67,7 @@
  *
  * Two more members were added alongside `./web`'s `defineWebTemplate`/
  * `createWebRenderer` (the extensible web-template registry — see
- * `web/internal/defineWebTemplate.ts` and `web/internal/createWebRenderer.ts`).
+ * `@clossys/publisher`).
  * Both are DEFINITION-TIME failures — thrown before any `SurfaceDocument`
  * is ever rendered against the template in question — reusing this same
  * closed reason set rather than introducing a second error type for

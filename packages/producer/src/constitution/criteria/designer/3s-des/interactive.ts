@@ -1,7 +1,7 @@
 /**
  * interactive.backdrop (foundry-build-0048 A4, U23 owner 2026-11-18): an interactive backdrop is plain
  * data, a descriptor `{component, params}` over one of the adopted backdrop components
- * (`catalog/rules/backdrop-components.json` in @clossys/designer). It rides as `meta.backdrop` on the
+ * (`@clossys/designer`). It rides as `meta.backdrop` on the
  * surface's own code candidate, never as a candidate of its own: the code stays under its own source
  * and the verbatim rule, and only the descriptor is judged here, as data, by the same function the
  * slot-model validator, certify's backdrop fit and Publisher install call

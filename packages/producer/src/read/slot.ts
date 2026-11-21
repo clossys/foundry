@@ -4,7 +4,7 @@
  * The pure read model behind the verb. Two record layouts are read:
  * - int2 (`clossys.slot/1`, positions in `<agent>/ia.json`): through src/records/slots.ts, the same
  *   reader the Studio `slot-detail` and `slot-gallery` projections use, without importing the server.
- *   Candidates, pin and used-by are the same answers (parity test in slot.test.ts).
+ *   Candidates, pin and used-by are the same answers (parity test in slot.test.ts (not shipped)).
  * - target (`clossys.slot/2`, the Tallyhouse fixture): slot.json, candidates/, pin.json (pin/2 or
  *   pin-map/1) read directly; candidate headers through readRecordHeader (src/records/schema.ts).
  *

@@ -15,7 +15,7 @@ Answer one slot entry assigned to the Writer (loop.slot, the decide step): a req
 
 DRAFT, for owner approval (foundry-build-0048 U7): this wording is not approved yet.
 
-- A kind slot entry reaches the Writer only through Producer's routing table (queue/routing.json): its `route` names the row and this skill as the handler. Never answer an entry routed elsewhere.
+- A kind slot entry reaches the Writer only through Producer's routing table (@clossys/producer): its `route` names the row and this skill as the handler. Never answer an entry routed elsewhere.
 - List yours with `clossys request --list --open --agent writer`; an owner-class need is the owner's packet, not yours.
 - Answer by the steps above, then `clossys request <id> --close`: it links the requester slot-to-slot and notifies `from`.
 - Never keep a request list, file or folder of your own; the queue entry is the one record.

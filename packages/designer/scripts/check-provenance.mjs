@@ -31,7 +31,7 @@ import { designerPins, pinLabel } from "./slot-pins.mjs";
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const json = path => JSON.parse(readFileSync(path, "utf8"));
 
-/** The rule, its interactiveBackdrops data references read from this package (certify/source.ts resolveProvenanceRule). */
+/** The rule, its interactiveBackdrops data references read from this package (@clossys/producer resolveProvenanceRule). */
 export function loadRule(path = join(packageRoot, "src/catalog/rules/provenance.json")) {
   return source().resolveProvenanceRule(json(path), rel => json(join(packageRoot, rel)));
 }
@@ -41,7 +41,7 @@ export function loadManifest(path = join(packageRoot, "references/manifest.json"
 }
 
 /**
- * The provenance logic lives in Producer's certify/source.ts (R03, slot-constitution.md W2-C), so
+ * The provenance logic lives in @clossys/producer (R03, slot-constitution.md W2-C), so
  * every agent's adopt check runs the same code; this script calls it. Producer is an optional
  * package, resolved by its public specifier as slot-pins.mjs does: only an unresolvable specifier
  * means Producer is absent (a named error on first use); once it resolves, a load error is real.
@@ -62,13 +62,13 @@ function source() {
   return lifted;
 }
 
-/** Findings for one item version's lineage against the rule and the manifest (certify/source.ts). */
+/** Findings for one item version's lineage against the rule and the manifest (@clossys/producer). */
 export function lineageFindings(label, lineage, { rule = loadRule(), manifest = loadManifest() } = {}) {
   return source().lineageFindings(label, lineage, { rule, manifest });
 }
 
 /**
- * Lineage of one Designer candidate (registry item), certify/source.ts: `original` stays original,
+ * Lineage of one Designer candidate (registry item), @clossys/producer: `original` stays original,
  * `registry` is a verbatim adoption, `derived` is customized. `composition` and `npm` candidates are
  * verified by check-ref-verbatim: null here.
  */
@@ -76,7 +76,7 @@ export function candidateLineage(slot, item) {
   return source().candidateLineage(slot, item);
 }
 
-/** Findings for the interactive backdrop descriptor (meta.backdrop) a candidate carries beside its code (certify/source.ts). */
+/** Findings for the interactive backdrop descriptor (meta.backdrop) a candidate carries beside its code (@clossys/producer). */
 export function backdropFindings(label, slot, item, { rule = loadRule() } = {}) {
   return source().backdropFindings(label, slot, item, rule);
 }

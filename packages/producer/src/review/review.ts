@@ -1,6 +1,6 @@
 /**
  * `clossys review <base> <head>`: everything a reviewer re-ran by hand, as one deterministic run in a temporary
- * detached worktree of head. The steps (REVIEW_STEPS) and their fail rules are docs/review.md; the report ends with
+ * detached worktree of head. The steps (REVIEW_STEPS) and their fail rules are docs/review.md (not shipped); the report ends with
  * `MECHANICAL: PASS|FAIL <head-sha> <tree-sha>` and the findings list. A model reviewer reads that report plus the
  * doc truth and the packet's scope, and re-runs nothing.
  */
@@ -17,7 +17,7 @@ import type { Finding, MutantResult, ReviewReport, StepResult, StepStatus } from
 
 export const REVIEW_SCHEMA = "clossys.review/1";
 
-/** The steps in run order, each with the finding id it raises and when it fails (docs/review.md). */
+/** The steps in run order, each with the finding id it raises and when it fails (docs/review.md (not shipped)). */
 export const REVIEW_STEPS: readonly { readonly step: string; readonly finding: string; readonly fails: string }[] = [
   { step: "changed", finding: "-", fails: "never: the files and packages of git diff --name-status base...head" },
   { step: "forbidden", finding: "forbidden.*", fails: "any forbidden path below" },

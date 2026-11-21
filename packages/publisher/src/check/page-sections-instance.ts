@@ -1,5 +1,5 @@
 /**
- * Page option checks (ia-target/publisher.md 9.4.2; absorbs foundry-audit-0018). A page option places one section per
+ * Page option checks (absorbs foundry-audit-0018). A page option places one section per
  * layout role. The role is the section's instance key: unique on the page, so one Designer section kind may appear twice
  * under two roles, and the Writer record key `<page>.<role>` stays unique. Publisher assembles only: a page option names
  * a Designer unit and a Writer record key per role, never words and never styling.

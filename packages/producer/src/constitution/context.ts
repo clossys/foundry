@@ -37,7 +37,7 @@ function readJsonRecord(abs: string, rel: string): JsonRecord {
 }
 
 /**
- * src/constitution/skill-hashes.json (scripts/generate-skill-hashes.mjs): every past state of every
+ * src/constitution/skill-hashes.json (scripts/generate-skill-hashes.mjs (not shipped)): every past state of every
  * action skill (`skills`) and of every plumb action's action.json (`actions`), by path.
  */
 export function readSkillHashes(url: URL = new URL("../../src/constitution/skill-hashes.json", import.meta.url)): Map<string, Set<string>> {

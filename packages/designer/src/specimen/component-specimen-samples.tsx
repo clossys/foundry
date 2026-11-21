@@ -380,7 +380,7 @@ export const componentSpecimenUnavailableReason = (key: string): SpecimenUnavail
 
 /**
  * Designer-provided sample content for a Foundry component export (`./components#Meter`) or a vendored
- * shadcn@aria source export (`components/tabs/tabs.tsx#Tabs`), drawn from the shared specimen dataset, so a
+ * shadcn@aria source export (`Tabs` of the registry's `tabs.tsx`), drawn from the shared specimen dataset, so a
  * data-driven component draws without host data. Undefined when the export needs none or its parts are not in
  * the host's modules. A host `specimens` entry always replaces it.
  */

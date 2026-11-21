@@ -44,7 +44,7 @@ export function specimenStateOf(slot: string): SpecimenState | undefined {
   return SLOT_SPECIMEN_STATES[slot];
 }
 
-/** An installed code file of an item: its substrate path (`components/ui/sidebar.tsx`) and bytes. */
+/** An installed code file of an item: its substrate path (the `components/ui/sidebar` file, say) and bytes. */
 export interface InstalledCode { readonly path: string; readonly content: string }
 
 /** A registry item's code files at the substrate paths the shadcn CLI installs them to. */
@@ -62,7 +62,7 @@ export function installedCode(item: unknown): InstalledCode[] {
 const CODE_EXTENSION = /\.(?:[cm]?[jt]sx?)$/;
 const IMPORT_SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(?\s*)["']([^"']+)["']/g;
 
-/** The specifier a substrate file answers to: `components/ui/sidebar.tsx` is `@/components/ui/sidebar`. */
+/** The specifier a substrate file answers to: the `components/ui/sidebar` TSX file is `@/components/ui/sidebar`. */
 function moduleOf(path: string): string {
   return `@/${path.replace(CODE_EXTENSION, "")}`;
 }

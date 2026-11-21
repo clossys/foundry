@@ -146,7 +146,7 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     if (head === "recipe") return await (await import("../cli/recipe.js")).runRecipeCli(argv.slice(1), cwd);
     // The engine index (engine.md "Index"): compared with a rebuild, or rebuilt from the event log plus the records.
     if (head === "index") return await (await import("../cli/index-verb.js")).runIndexCli(argv.slice(1), cwd);
-    // The mechanical review and the executor's receipt (docs/review.md): every re-runnable review step, from code.
+    // The mechanical review and the executor's receipt (docs/review.md (not shipped)): every re-runnable review step, from code.
     if (head === "review") return await (await import("../cli/review.js")).runReviewCli(argv.slice(1), cwd);
     if (head === "receipt") return await (await import("../cli/review.js")).runReceiptCli(argv.slice(1), cwd);
     // An agent's own loops (foundry-build-0048 U9a): adopt, pin through the pin gate, and judge one against its standard.

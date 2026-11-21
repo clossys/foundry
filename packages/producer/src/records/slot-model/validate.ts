@@ -203,7 +203,7 @@ export function fixtureShapeIssues(kind: SlotKind, contract: Readonly<Record<str
   }
 }
 
-/** pin.json against the one pin schema (planner R9): @clossys/director pinIssues, the same verdict Director's parseSlotPin and scripts/check-decisions.mjs give. */
+/** pin.json against the one pin schema (planner R9): @clossys/director pinIssues, the same verdict Director's parseSlotPin and scripts/check-decisions.mjs (not shipped) give. */
 /**
  * A slot's pin.json in any format a store holds: the int2 pin (pin/1, no schema key), the target `clossys.pin/2`
  * or a Writer Prose or Copy slot's `clossys.pin-map/1`. Each is judged by its own schema and rules; readers then

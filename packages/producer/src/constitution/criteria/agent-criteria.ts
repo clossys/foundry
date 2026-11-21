@@ -1,7 +1,7 @@
 /**
  * The per-agent criteria by id: the static twin of every `criteria/<agent>/<unit>/index.json` folder,
  * so certification (synchronous) resolves agent requirements as it resolves core ones. Each folder's
- * test (designer/3s-des's own, agents.test.ts for the others) joins its index.json to this map both
+ * test (designer/3s-des's own, agents.test.ts (not shipped) for the others) joins its index.json to this map both
  * ways, so a registered criterion can never be missing here and nothing unregistered can resolve.
  */
 import type { Criterion } from "./core/types.js";

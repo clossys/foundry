@@ -1,7 +1,7 @@
 import type { Binding } from "../define.js";
 
 /**
- * Code binds to action contracts by id (docs/step-standard.md). A `clossys <verb>` action binds its
+ * Code binds to action contracts by id (docs/step-standard.md (not shipped)). A `clossys <verb>` action binds its
  * handler entry (a src/pipeline/handlers.ts key) and, for a verb that parses its own argv, its parser;
  * a traced action binds the script its command runs; a gap may bind the modules its decider uses (no action is a gap in this build).
  * check:step-standard fails both ways: a contract with no binding, a binding with no contract, a

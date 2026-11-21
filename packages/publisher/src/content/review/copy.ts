@@ -6,7 +6,7 @@ import type { ReviewContext, ReviewCopySchema, ReviewSectionRegistration } from 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const exact = (value: Record<string, unknown>, keys: readonly string[]) => Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
 const schemaKey = /^[a-z][a-zA-Z0-9-]*(?:\[\])?(?:\.[a-z][a-zA-Z0-9-]*(?:\[\])?)*$/;
-/** Closed Writer role list of the DG-1 field (Designer check/copy-fields-role.ts). The type
+/** Closed Writer role list of the DG-1 field (Designer @clossys/designer). The type
  * assertions below fail the build when Designer adds or drops a role; no runtime import. */
 const COPY_ROLES = ["eyebrow", "heading", "lead", "body", "action", "label", "alt"] as const satisfies readonly SectionCopyField["role"][];
 type Same<A, B> = [A] extends [B] ? [B] extends [A] ? true : false : false;

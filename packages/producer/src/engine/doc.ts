@@ -1,6 +1,6 @@
 /**
  * `packages/producer/docs/engine.md`, generated from the engine's own constants (never free prose):
- * `npm run generate:engine-doc -w @clossys/producer` writes it, and engine/doc.test.ts fails when the file differs from
+ * `npm run generate:engine-doc -w @clossys/producer` writes it, and engine/doc.test.ts (not shipped) fails when the file differs from
  * engineDoc() or when a spec citation in the Producer source names a section CITED_SECTIONS does not hold.
  */
 import { CHAIN_ISSUES, ENGINE_DIR, EVENTS_FILE, INDEX_FILE, LOCK_FILE, RECORD_AGENTS } from "./chain.js";
@@ -107,7 +107,7 @@ const table = (head: readonly string[], rows: readonly (readonly string[])[]) =>
   [`| ${head.join(" | ")} |`, `|${head.map(() => "---").join("|")}|`, ...rows.map(row => `| ${row.map(cell => cell.replace(/\|/g, "\\|")).join(" | ")} |`)].join("\n");
 const code = (text: string) => `\`${text}\``;
 
-/** The text of docs/engine.md. */
+/** The text of docs/engine.md (not shipped). */
 export function engineDoc(): string {
   const parts = [
     "# Producer engine",

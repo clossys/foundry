@@ -4,7 +4,7 @@ import { specimenDataset as d } from "./specimen-dataset.js";
 /**
  * Where each Studio specimen's sample content comes from in the shared synthetic dataset (specimen-dataset.ts).
  * Addresses only: every value here is a dataset node or a value read from one, never an inline array or
- * literal (component-specimen-dataset.test.ts walks them). component-specimen-samples.tsx renders each bound
+ * literal (../studio/component-specimen-dataset.test.tsx (not shipped) walks them). component-specimen-samples.tsx renders each bound
  * implementation export with it. Foundry entries are keyed by the descriptor's `pin.export`.
  */
 

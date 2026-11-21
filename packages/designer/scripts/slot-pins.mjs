@@ -1,5 +1,5 @@
 /**
- * Designer pins through the one slot-model reader (packages/producer/src/records/slots.ts).
+ * Designer pins through the one slot-model reader (@clossys/producer).
  * Designer checks never read pin.json, slot.json or candidate files by hand, and never read a
  * legacy selection store: a pin is what `listSlots` lists, its bytes are what `readCandidate` returns, and
  * its registry item is those bytes read through the reader's `candidateView` (a clossys.candidate/1 file

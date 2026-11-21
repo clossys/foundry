@@ -20,6 +20,6 @@ export interface ThemeProjection {
 /**
  * The resolved `themes.*` pins keyed by slot id, each with its candidate's parsed content (a shadcn
  * `registry:theme` or `registry:font` item). Resolution lives in `@clossys/producer`
- * (`src/read/theme-pins.ts`); this package only projects what it is handed.
+ * (`@clossys/producer`); this package only projects what it is handed.
  */
 export type ResolvedThemePins = Record<string, ThemeSource & { content: unknown }>;

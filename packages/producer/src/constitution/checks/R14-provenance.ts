@@ -7,7 +7,7 @@
  * - R14.2 every event names a verb from the verb table and an action skill whose sha256 is the
  *   installed file's or is listed in src/constitution/skill-hashes.json (ctx.skillShas); an event
  *   whose skill file was missing when it ran (sha256 null) is a row. A plumb action carries no skill
- *   (docs/step-standard.md), so an event may instead cite `packages/<pkg>/actions/<step>/action.json`
+ *   (docs/step-standard.md (not shipped)), so an event may instead cite `packages/<pkg>/actions/<step>/action.json`
  *   with a known sha256, but only when the actions registry has that step as `plumb` (ctx.actionKind);
  *   a decide action's events (and an unregistered step's) still cite its skill.md;
  * - R14.3 events that ran an LLM name the model and tier; deterministic verbs record none/none.

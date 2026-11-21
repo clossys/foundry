@@ -306,7 +306,7 @@ export interface CandidateText {
 /**
  * True when the candidates of a slot.json value are read through their view: a clossys.slot/2 document whose kind is
  * one of the viewed families (brief, element, strings, page, publication). A loop, queue or ledger slot keeps its raw
- * bytes (certify/loop.ts reads the loop header itself), as does every clossys.slot/1 slot. The slot need not be valid:
+ * bytes (../constitution/certify/loop.ts reads the loop header itself), as does every clossys.slot/1 slot. The slot need not be valid:
  * the rules still read an invalid slot's candidates with their source, and R01 reports the slot.
  */
 export function viewsCandidate(slotValue: unknown): boolean {

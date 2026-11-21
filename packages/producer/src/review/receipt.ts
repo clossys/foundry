@@ -123,7 +123,7 @@ export function readReceipt(file: string): Receipt {
 
 const samePath = (a: string, b: string) => { const real = (path: string) => { try { return realpathSync(path); } catch { return resolve(path); } }; return real(a) === real(b); };
 
-/** The receipt findings, by id and when each fails (docs/review.md). */
+/** The receipt findings, by id and when each fails (docs/review.md (not shipped)). */
 export const RECEIPT_FINDINGS: readonly { readonly id: string; readonly fails: string }[] = [
   { id: "receipt.missing", fails: "there is no receipt.json for the packet" },
   { id: "receipt.packet", fails: "receipt.json names another packet file than --packet" },

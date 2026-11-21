@@ -122,7 +122,7 @@ describe("composition recipes name the checks their candidates must pass (in cod
   it("refuses a submission whose source kind the recipe does not craft, and passes a composition (mutation)", () => {
     const recipe = byId("create.app-section");
     const item = kind => ({ name: "empty-state", type: "registry:block", files: [], meta: { slot: "sections.empty-state", source: { kind, ref: [], license: "MIT" } } });
-    // The kind is the candidate view's meta.source.kind (records/slot-current.ts viewSourceKind), the field the guard reads.
+    // The kind is the candidate view's meta.source.kind (@clossys/producer viewSourceKind), the field the guard reads.
     assert.equal(recipeSourceIssue(recipe, item("composition").meta.source.kind), undefined);
     assert.equal(recipeSourceIssue(recipe, item("original").meta.source.kind), "recipe create.app-section crafts composition candidates; this one's meta.source.kind is original");
     assert.equal(recipeSourceIssue(recipe, undefined), "recipe create.app-section crafts composition candidates; this one's meta.source.kind is (none)");

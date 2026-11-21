@@ -204,7 +204,7 @@ export function coveringTests(tree: string, changes: readonly { readonly path: s
     const source = change.path;
     if (change.status === "D" || !isSource(source) || !existsSync(join(tree, source))) continue;
     const tests = reach(source);
-    // A touched test beside the source (foo.ts / foo.test.ts) covers it even when it reaches it indirectly.
+    // A touched test beside the source (its `.test` sibling) covers it even when it reaches it indirectly.
     const sibling = source.replace(SOURCE_FILE, match => `.test${match}`);
     if (all.has(sibling) && !tests.some(([test]) => test === sibling)) tests.unshift([sibling, 0]);
     for (const [test] of tests) all.add(test);

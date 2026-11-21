@@ -2,7 +2,7 @@
  * Retired-id read check (foundry-build-0037). A retired id is recorded once, in the retired data that retires it; any
  * other mention of it in the Publisher package is a live read and fails. There is no baseline and no allowlist.
  *
- * Retired ids: Designer's catalog registry plus the in-place retirements of its IA extension (ia/slides.json), and
+ * Retired ids: Designer's catalog registry plus the in-place retirements of its IA extension (@clossys/designer), and
  * Publisher's catalog registry. A missing Designer or Publisher list, a missing Designer IA extension, or an empty set
  * throws instead of shrinking what the scan can see.
  *

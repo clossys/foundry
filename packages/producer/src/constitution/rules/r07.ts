@@ -11,7 +11,7 @@
  *   that are not the licence; the frame must compose the slot instead. A draft is judged too, so the
  *   submit guard refuses an inlining draft before it is written (the row names the draft).
  * A composed frame's contract landmarks and contract.root are the ref-verbatim composition rule's
- * (REF-COMP-LANDMARK, REF-COMP-ROOT in packages/designer/scripts/check-ref-verbatim.mjs).
+ * (REF-COMP-LANDMARK, REF-COMP-ROOT in @clossys/designer).
  */
 import type { CandidateRecord, ConstitutionContext, Row, SlotRecord } from "../types.js";
 import { isObject, listed, liveSlotRecords, registryFiles, row, slotDoc, stringList } from "../checks/shared.js";

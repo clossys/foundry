@@ -146,7 +146,7 @@ export const queueLockPath = (root: string, queue: QueueName, id: string): strin
 
 export class EntryLockedError extends Error {
   // A plain field, not a parameter property: records/slot-write.ts reaches this module through the actor guard
-  // (records/seat-owner.ts), and Node's type stripping runs slot-write.ts in child writers (records/ledger.test.ts).
+  // (records/seat-owner.ts), and Node's type stripping runs slot-write.ts in child writers (records/ledger.test.ts (not shipped)).
   readonly lock: string;
   constructor(lock: string) {
     super(`the entry is locked by another writer (${lock}); nothing was written. If no writer is running, remove the lock file by hand`);

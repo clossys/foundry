@@ -16,7 +16,7 @@
  * The Foundry server charts stay the gap seat for server-rendered use.
  *
  * Regenerate the committed fills with the focused test:
- *   UPDATE_SHADCN_CHART_FILLS=1 npx vitest run src/importers/shadcn-charts.test.tsx
+ *   UPDATE_SHADCN_CHART_FILLS=1 npx vitest run src/importers/shadcn-charts.test.tsx (not shipped)
  */
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";

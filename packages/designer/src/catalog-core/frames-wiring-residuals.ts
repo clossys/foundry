@@ -1,8 +1,8 @@
 /**
  * The frame layer's wiring check: every WL2/WL3/WL4 error `checkWiring` reports over `src/frames`
  * and `src/shell` (registered component fills excluded, since a Component reads themes freely).
- * There is no committed report and no budget: `scripts/frames-wiring-residuals.mjs --check` and
- * `frames-wiring.test.ts` both fail on any finding at all.
+ * There is no committed report and no budget: `scripts/frames-wiring-residuals.mjs (not shipped) --check` and
+ * `frames-wiring.test.ts` (not shipped) both fail on any finding at all.
  */
 import type { WiringFinding, WiringInput, WiringResult } from "./wiring.js";
 

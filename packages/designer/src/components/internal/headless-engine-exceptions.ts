@@ -2,7 +2,7 @@
  * React Aria is the default headless engine. Another headless engine (for
  * example TanStack Table) is allowed only per component, with a registered
  * exception record here, and must still render through Foundry/Aria styled
- * parts. Enforced by src/render-primitive-imports.test.ts. Empty by design.
+ * parts. Enforced by src/render-primitive-imports.test.ts (not shipped). Empty by design.
  */
 export interface HeadlessEngineException {
   /** Module path relative to packages/, e.g. "designer/src/components/DataGrid.tsx". */

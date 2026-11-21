@@ -1,5 +1,5 @@
 /**
- * The constitution check suite (rules R01-R16 and R20, programs/release2-swaps/slot-constitution.md): types
+ * The constitution check suite (rules R01-R16 and R20 of the slot constitution): types
  * shared by the context builder, the rule modules and the runner. Every rule is a pure function of
  * one `ConstitutionContext`, built once per run from one read of the tree. A rule module never opens
  * a file itself; the same records in give the same rows out.

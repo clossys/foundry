@@ -21,7 +21,7 @@ export interface SlotPin { candidate: string; sha256: string; decidedBy: string;
 
 /**
  * pin.json against the one pin schema (format/pin.ts), the same verdict as @clossys/producer validatePin and
- * scripts/check-decisions.mjs. That a Director pin names a Markdown candidate is the store's rule, not the schema's.
+ * scripts/check-decisions.mjs (not shipped). That a Director pin names a Markdown candidate is the store's rule, not the schema's.
  * A document whose `schema` is `clossys.pin/2` (what `clossys pin` writes after a recut) is judged by pin2Issues
  * instead and read as its pin record; `slot`, when given, is the Director slot id the pin.json was read from.
  */
@@ -51,7 +51,7 @@ export function isSlotCandidatePath(id: string, path: string): boolean {
 
 /**
  * Candidate frontmatter is one `key: <JSON value>` line per field between `---` lines. A clossys.candidate/1 candidate's
- * `clossys` header line is read as Producer's candidate view reads it (packages/producer records/slot-current.ts
+ * `clossys` header line is read as Producer's candidate view reads it (@clossys/producer
  * candidateView): the header is dropped and its `source` is the candidate's `source`; a second `source` beside the
  * header is refused, as the slot/2 readers refuse it.
  */

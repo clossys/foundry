@@ -5,7 +5,7 @@
  * options), so ref-verbatim proves pins against it and the publishing substrate installs items in
  * it. Each components.json differs only in `tailwind.css`, the stylesheet of the project it sits in:
  *
- *   packages/designer/ui/components.json   the Designer's own ui workspace   (src/index.css)
+ *   packages/designer/ui/components.json   the Designer's own ui workspace   (../../ui/src/index.css (not shipped))
  *   clossys/components.json                the consumer root                 (the stylesheet its pins render in)
  *   <substrate>/components.json            the publishing substrate          (app.css)
  *

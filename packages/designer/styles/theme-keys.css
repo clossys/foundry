@@ -357,7 +357,7 @@
  * (not `none`) so `transitionend` / `animationend` still fire for exit logic
  * that waits on them, and looping animations run once. `!important` is what
  * lets a universal selector outrank class utilities in any layer. Rendered
- * proof: `src/reduced-motion.browser.test.ts`.
+ * proof: `src/reduced-motion.browser.test.ts` (not shipped).
  */
 @layer foundry-ui-compiled {
   @media (prefers-reduced-motion: reduce) {
@@ -1371,7 +1371,7 @@
 @utility frame-main-bleed { &:has([data-frame-bleed]) { padding: 0; } }
 /* App frame chrome spacing, named so the frame layer reads no spacing token itself.
    px-frame-control (the chrome controls' inline inset) and p-frame-panel (the docked
-   panel's inset) join tailwind-merge's px and p groups in components/internal/cx.ts,
+   panel's inset) join tailwind-merge's px and p groups in ../src/components/internal/cx.ts,
    so they replace a Button's own px-md and a Card's own p-lg. */
 @utility px-frame-control { padding-inline: var(--spacing-sm, 8px); }
 @utility p-frame-panel { padding: var(--spacing-sm, 8px); }
@@ -1386,7 +1386,7 @@
 }
 @utility frame-region-closed { inline-size: 0; }
 /* The library column cap: the AppFrame right panel preset's maximum
-   (APP_FRAME_RIGHT_PANEL_CONFIG.max), pinned equal by choices.bounds.test.tsx. */
+   (APP_FRAME_RIGHT_PANEL_CONFIG.max), pinned equal by choices.bounds.test.tsx (not shipped). */
 @utility library-column-bound { max-inline-size: var(--ui-layout-inspector-max-w, 420px); }
 @utility frame-nav-width {
   inline-size: 0;

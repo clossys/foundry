@@ -91,7 +91,7 @@ function recipeIssues(root, recipeId, world, out) {
     out.push(issue("R15.5", `recipe ${recipeId} does not produce for ${world.standardId}`, `use a recipe whose produces[] lists ${world.standardId}`));
     return recipe;
   }
-  // Code chooses a run's recipe: the one recipe producing for the standard (the producer's records/recipes.ts standardRecipe).
+  // Code chooses a run's recipe: the one recipe producing for the standard (@clossys/producer standardRecipe).
   const producing = readdirSync(join(PACKAGE, "recipes"), { withFileTypes: true }).filter(entry => entry.isDirectory() && existsSync(join(PACKAGE, "recipes", entry.name, "recipe.json")))
     .filter(entry => { const doc = readJson(join(PACKAGE, "recipes", entry.name, "recipe.json")); return Array.isArray(doc.produces) && doc.produces.includes(world.standardId); }).map(entry => entry.name).sort();
   if (producing.length !== 1) {

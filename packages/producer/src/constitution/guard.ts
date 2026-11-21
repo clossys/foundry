@@ -89,7 +89,7 @@ export interface GuardOptions extends ContextOptions {
    * A guard given one re-reads only its targets' slot folders and the agent-level files (refreshContext), not the
    * whole tree; the caller states that nothing else under `<consumer>/agents` was written since, which holds for a
    * run whose writes are its targets' folders under their slot locks (`clossys pin`, `clossys migrate slots`).
-   * The rows judged are the same rows a fresh read gives (guard-session.test.ts). A refusal, or a check that throws,
+   * The rows judged are the same rows a fresh read gives (guard-session.test.ts (not shipped)). A refusal, or a check that throws,
    * clears it.
    */
   readonly session?: GuardSession;

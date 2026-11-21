@@ -30,7 +30,7 @@ export interface WriterDeclarationsProjectOptions {
 }
 /**
  * Puts the validated bytes at `path`. The slot model has one writer (constitution R11.1,
- * @clossys/producer records/slot-write.ts), so this package never writes the file itself:
+ * @clossys/producer), so this package never writes the file itself:
  * pass `replaceModelFile` from `@clossys/producer`.
  */
 export type WriterDeclarationsWrite = (path: string, bytes: string) => void | Promise<void>;
