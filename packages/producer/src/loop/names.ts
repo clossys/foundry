@@ -60,6 +60,20 @@ export const LOOP_SUBJECT: Readonly<Record<LoopName, "slot" | "request" | "publi
   "loop.cascade": "slot",
 };
 
+/**
+ * Whether a loop answers a clossys.queue-entry/2 of `kind` (foundry-build-0048 LOOP-STEPS): the entry is one the runner
+ * admits that loop's run for, and the run closes. loop.slot runs for one kind slot entry (`--request`, LOOP_SUBJECT
+ * request); a slot loop started from an entry (owner feedback T5 or a failed check T6) runs `--from` one change or fix
+ * about its slot. loop.scope files needs and answers none, and neither do release, audit, fill or cascade. A route
+ * whose handler loop does not answer its entry's kind is refused (queue/routing.ts HandlerMismatchError).
+ */
+export function loopAnswers(loop: string, kind: string): boolean {
+  if (!isLoopName(loop)) return false;
+  if (kind === "slot") return LOOP_SUBJECT[loop] === "request";
+  if (kind === "change" || kind === "fix") return LOOP_SUBJECT[loop] === "slot" && LOOP_TRIGGERS[loop].some(code => code === "T5" || code === "T6");
+  return false;
+}
+
 /** `requests.filed` (loop.scope): every consumer slot edge naming no slot is filed as a kind slot queue entry. */
 export const REQUESTS_FILED = "requests.filed";
 

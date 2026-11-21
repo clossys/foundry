@@ -14,7 +14,10 @@
  * Import failures are recorded and resolution falls through (to the installed package or any pinned
  * installer), so a render failure is still measured. The fixture tree's `$component` names another
  * export of the entry module or a `<package>.<Export>`; `{ "$copy": key }` is the pinned Writer copy.
- * A candidate whose specimen mounts no component (a theme, a font, an asset) needs no fixture.
+ * A candidate whose specimen mounts no component (a theme, a font, an asset) needs no fixture. Which of these a
+ * candidate gets is read from its registry type in one table (registry-types.ts), and its slot decides which types it
+ * accepts (P1): a hook or lib item, in a hook or lib slot only, is never rendered; it is held to the code check
+ * (`codeFit`). A registry type with no row, or one the slot does not accept, fails closed before any check.
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
@@ -22,12 +25,12 @@ import { createRequire } from "node:module";
 import { join, posix } from "node:path";
 import ts from "typescript";
 import { interactiveBackdropMetaIssues, previewFigureAltIssues, previewInteractiveBackdropIssues } from "@clossys/designer/catalog";
-import { specimenKindOf } from "@clossys/publisher/specimen";
 import { contractFixtureIssues, type ContractFixture } from "../../records/slot-model/contract-fixture.js";
 import { dependencyPart } from "../../specimen/specimen-tree.js";
 import { installPathOf, isObject, registryFiles, slotDoc, stringList } from "../checks/shared.js";
 import type { CandidateRecord, SlotRecord } from "../types.js";
 import { pinKey, type CertifyEnv } from "./env.js";
+import { CODE_ITEM_FILE_TYPES, elementCheckOf, HOOK_NAME, RegistryTypeError, type ElementCheck } from "./registry-types.js";
 import { reason, type Reason } from "./types.js";
 
 const HOST_MODULES = new Set(["react", "react-dom", "react-dom/server", "react/jsx-runtime", "react/jsx-dev-runtime"]);
@@ -90,7 +93,7 @@ interface Payload {
   readonly declared: ReadonlyMap<string, string | undefined>;
 }
 
-function payloadOf(slot: string, candidate: CandidateRecord): Payload {
+function payloadOf(slot: string, candidate: CodeCandidate): Payload {
   const files = registryFiles(candidate);
   const byPath = new Map<string, { path: string; content: string }>(), byInstall = new Map<string, { path: string; content: string }>();
   for (const file of files) {
@@ -112,12 +115,29 @@ const lookup = (map: ReadonlyMap<string, { path: string; content: string }>, bas
   return undefined;
 };
 
+/** The part of a candidate the module system and the code check read: its registry item. */
+export type CodeCandidate = Pick<CandidateRecord, "json">;
+
+/**
+ * What the module system and the code check read beyond the candidate: the gate's CertifyEnv satisfies it, and the
+ * specimen certifier (library-source.ts) builds one from a consumer's own pins, so both run the same code check.
+ */
+export interface CodeEnv {
+  readonly root: string;
+  /** `designer:<slot-id>` → the live slot's sha-matching pinned candidate. */
+  readonly pins: ReadonlyMap<string, { readonly candidate: CodeCandidate }>;
+  /** Install path → the live Designer slots whose pinned candidate installs a file there. */
+  readonly installers: ReadonlyMap<string, readonly string[]>;
+  /** Pinned Writer copy: key → text. */
+  readonly copy: ReadonlyMap<string, string>;
+}
+
 /** One certification's module system: the primary candidate plus the pinned payloads it reaches. */
 class Modules {
   readonly failures: Reason[] = [];
   private readonly cache = new Map<string, { exports: unknown }>();
   private readonly payloads = new Map<string, Payload>();
-  constructor(private readonly primary: Payload, private readonly uses: ReadonlySet<string>, private readonly env: CertifyEnv, private readonly host: Require) {}
+  constructor(private readonly primary: Payload, private readonly uses: ReadonlySet<string>, private readonly env: CodeEnv, private readonly host: Require) {}
 
   private fail(message: string) { if (!this.failures.some(item => item.message === message)) this.failures.push(reason("import", message)); }
 
@@ -168,19 +188,38 @@ class Modules {
       if (owner === this.primary) this.fail(`imports ${spec}, which neither the candidate nor a pinned slot installs`);
       throw new Error(`${from.path}: cannot resolve ${spec}`);
     }
-    const name = packageName(spec);
-    if (owner === this.primary) {
-      if (!owner.declared.has(name)) this.fail(`imports ${name}, which dependencies does not declare`);
-      else {
-        const want = owner.declared.get(name);
-        if (!want || !EXACT.test(want)) this.fail(`declares ${name}${want ? `@${want}` : ""} without an exact version`);
-        else {
-          const have = installedVersion(this.host, name);
-          if (have !== want) this.fail(`declares ${name}@${want} but ${have ? `${have} is` : "none is"} installed`);
-        }
-      }
-    }
+    if (owner === this.primary) this.checkPackage(packageName(spec), owner);
     return this.host(spec);
+  }
+
+  /** A bare package the primary imports: declared in `dependencies` at an exact version equal to the installed one. */
+  private checkPackage(name: string, owner: Payload) {
+    if (!owner.declared.has(name)) return this.fail(`imports ${name}, which dependencies does not declare`);
+    const want = owner.declared.get(name);
+    if (!want || !EXACT.test(want)) return this.fail(`declares ${name}${want ? `@${want}` : ""} without an exact version`);
+    const have = installedVersion(this.host, name);
+    if (have !== want) this.fail(`declares ${name}@${want} but ${have ? `${have} is` : "none is"} installed`);
+  }
+
+  /**
+   * Whether `spec`, imported by `from` of the primary, resolves without loading it (a code item's every import, the
+   * dynamic ones too): a host module; a file the candidate ships; an `@/` path a `uses` slot's pin installs; a package
+   * declared at an exact version equal to the installed one. Each miss is recorded as an import failure.
+   */
+  resolves(spec: string, from: { path: string }, owner: Payload): void {
+    if (HOST_MODULES.has(spec)) return;
+    if (spec.startsWith(".") || spec.startsWith("/")) {
+      const base = posix.normalize(posix.join(posix.dirname(from.path), spec));
+      if (lookup(owner.byPath, base)) return;
+      const install = [...owner.byInstall.entries()].find(([, file]) => file === from)?.[0];
+      if (install && lookup(owner.byInstall, posix.normalize(posix.join(posix.dirname(install), spec)))) return;
+      return this.fail(`${from.path} imports ${spec}, which the candidate does not ship`);
+    }
+    if (spec.startsWith("@/")) {
+      if (!this.alias(spec.slice(2), owner)) this.fail(`imports ${spec}, which neither the candidate nor a pinned slot installs`);
+      return;
+    }
+    this.checkPackage(packageName(spec), owner);
   }
 
   load(file: { path: string; content: string }, owner: Payload): unknown {
@@ -202,11 +241,14 @@ class Modules {
 
 const isComponent = (value: unknown) => typeof value === "function" || (!!value && typeof value === "object" && "$$typeof" in value);
 
-/** Whether the specimen of this candidate mounts a component (`visual`), or why its kind is unknown. */
-export function mountsComponent(slot: SlotRecord, candidate: CandidateRecord): boolean | Reason {
+/**
+ * The check this candidate is held to in its slot, whose contract is `contract` (registry-types.ts, the one table, and
+ * the slot's class derived from `contract` and its layer), or why its type is unknown or not one the slot accepts.
+ */
+export function elementCheck(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>): ElementCheck | Reason {
   const item = candidate.json;
-  try { return specimenKindOf({ id: `${slot.id}/${candidate.name}`, kind: isObject(item) ? item.type : undefined, layer: slot.id.split(".")[0] }) === "visual"; }
-  catch (error) { return reason("invalid", (error as Error).message); }
+  try { return elementCheckOf(`${slot.id}/${candidate.name}`, isObject(item) ? item.type : undefined, slot.id.split(".")[0], contract); }
+  catch (error) { return reason(error instanceof RegistryTypeError ? "registry-type" : "invalid", (error as Error).message); }
 }
 
 /**
@@ -233,29 +275,97 @@ function figureAltFit(slot: SlotRecord, candidate: CandidateRecord, contract: Re
   return previewFigureAltIssues(candidate.json, slot.id, contract).map(message => reason("invalid", `slot ${slot.id}: ${message}`));
 }
 
-/** Fit failures of an element candidate against `contract` (its fixture): its backdrop, if any, its figures' alt and its render; empty when it fits. */
+/**
+ * Fit failures of an element candidate against `contract` (its fixture): its backdrop, if any, its figures' alt, and
+ * the check its registry type is held to (registry-types.ts): a render for a visual item, the code check for a hook or
+ * lib, nothing for an item that mounts no component; empty when it fits.
+ */
 export function certifyElement(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>, env: CertifyEnv): Reason[] {
-  return [...backdropFit(slot, candidate, contract), ...figureAltFit(slot, candidate, contract), ...renderFit(slot, candidate, contract, env)];
+  const check = elementCheck(slot, candidate, contract);
+  const fit = typeof check !== "string" ? [check] : check === "render" ? renderFit(slot, candidate, contract, env) : check === "none" ? [] : codeFit(slot.id, usesOf(slot), candidate, contract, env, check);
+  return [...backdropFit(slot, candidate, contract), ...figureAltFit(slot, candidate, contract), ...fit];
 }
 
-/** Render fit of an element candidate against `contract` (its fixture); empty when it renders. */
-function renderFit(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>, env: CertifyEnv): Reason[] {
-  const mounts = mountsComponent(slot, candidate);
-  if (mounts !== true && mounts !== false) return [mounts];
-  if (!mounts) return [];
-  if (contract.fixture === undefined) return [reason("no-fixture", `slot ${slot.id} declares no contract fixture (slot.json contract.fixture)`)];
+/** What every fixture-held check (the render and the code check) starts from: the fixture, its inputs and the file it names. */
+type FixtureStart = { readonly reasons: Reason[]; readonly fixture: ContractFixture; readonly primary: Payload; readonly entry: { path: string; content: string }; readonly modules: Modules; readonly host: Require };
+/** The slots a slot's slot.json `uses` names, whose pins its candidates may import through `@/`. */
+const usesOf = (slot: SlotRecord): readonly string[] => stringList((slotDoc(slot) ?? {}).uses);
+function fixtureStart(slotId: string, uses: readonly string[], candidate: CodeCandidate, contract: Readonly<Record<string, unknown>>, env: CodeEnv): FixtureStart | Reason[] {
+  if (contract.fixture === undefined) return [reason("no-fixture", `slot ${slotId} declares no contract fixture (slot.json contract.fixture)`)];
   const invalid = contractFixtureIssues(contract);
   if (invalid.length) return invalid.map(issue => reason("fixture", issue.message));
   const fixture = contract.fixture as ContractFixture;
   const reasons: Reason[] = [];
   for (const key of fixture.inputs?.copy ?? []) if (!env.copy.has(key)) reasons.push(reason("copy", `fixture input copy ${key} is no pinned Writer key`));
   for (const id of fixture.inputs?.slots ?? []) if (!env.pins.has(pinKey("designer", id))) reasons.push(reason("fixture", `fixture input slot ${id} is no pinned Designer slot`));
-  const primary = payloadOf(slot.id, candidate);
+  const primary = payloadOf(slotId, candidate);
   const entry = primary.byPath.get(posix.normalize(fixture.fixtures.file));
   if (!entry) return [...reasons, reason("fixture", `the candidate ships no ${fixture.fixtures.file}, which the contract fixture mounts`)];
-  const doc = slotDoc(slot) ?? {};
   const host = hostRequire(env.root);
-  const modules = new Modules(primary, new Set(stringList(doc.uses)), env, host);
+  return { reasons, fixture, primary, entry, modules: new Modules(primary, new Set(uses), env, host), host };
+}
+
+const exportedFunctions = (exports: unknown): string[] => (isObject(exports) || typeof exports === "function" ? Object.keys(exports as object).filter(key => typeof (exports as Record<string, unknown>)[key] === "function") : []);
+
+/**
+ * The code check of a hook or lib item (HOOK-SLOT), which is never rendered: held to the contract fixture like a
+ * visual item (the file it names is shipped and the export it names is a function, a `use*` one for a hook); it ships
+ * only the file types its kind may (`CODE_ITEM_FILE_TYPES`); every code file loads in the certifier's module system
+ * and every module it imports, static or dynamic, resolves (a package only when declared at an exact version equal to
+ * the installed one); every `registry:hook` file exports a function named `use*`, every lib file at least one function.
+ */
+function codeFit(slotId: string, uses: readonly string[], candidate: CodeCandidate, contract: Readonly<Record<string, unknown>>, env: CodeEnv, check: "hook" | "lib"): Reason[] {
+  const start = fixtureStart(slotId, uses, candidate, contract, env);
+  if (Array.isArray(start)) return start;
+  const { reasons, fixture, primary, entry, modules } = start;
+  const type = check === "hook" ? "registry:hook" : "registry:lib";
+  const allowed = CODE_ITEM_FILE_TYPES[check];
+  for (const file of primary.files) {
+    if (typeof file.type !== "string" || !allowed.includes(file.type)) reasons.push(reason("hook", `a ${type} item ships ${file.path} as ${typeof file.type === "string" ? file.type : "no type"}; it may ship only ${allowed.join(" and ")} files, and is never rendered`));
+  }
+  const quiet = { error: console.error, warn: console.warn };
+  console.error = () => {}; console.warn = () => {};
+  try {
+    for (const file of primary.files) {
+      if (!CODE.test(file.path)) continue;
+      let exports: unknown;
+      try { exports = modules.load(file, primary); }
+      catch (error) { reasons.push(reason("import", `loading ${file.path} throws: ${firstLine(error)}`)); continue; }
+      for (const spec of importSpecifiers(file.path, file.content)) modules.resolves(spec, file, primary);
+      const functions = exportedFunctions(exports);
+      if (file.type === "registry:hook" && !functions.some(name => HOOK_NAME.test(name))) reasons.push(reason("hook", `${file.path} exports no function named use*, so it is no hook`));
+      if (file.type === "registry:lib" && !functions.length) reasons.push(reason("hook", `${file.path} exports no function`));
+      if (file === entry) {
+        const name = fixture.fixtures.export;
+        const value = isObject(exports) ? (exports as Record<string, unknown>)[name] : undefined;
+        if (typeof value !== "function") reasons.push(reason("fixture", `${entry.path} exports no function ${name}, which the contract fixture names`));
+        else if (check === "hook" && !HOOK_NAME.test(name)) reasons.push(reason("fixture", `the contract fixture names ${name}, which is no use* hook export`));
+      }
+    }
+  } finally { console.error = quiet.error; console.warn = quiet.warn; }
+  return [...reasons, ...modules.failures];
+}
+
+/**
+ * The code check of a hook or lib item outside the gate (the specimen certifier, library-source.ts `certifyCandidate`):
+ * the same `codeFit`, over a consumer's own pins (`env`), for a slot whose `uses` are given. The caller has already
+ * read the check from the table for this slot (`elementCheckOf`), so `check` is the one its slot accepts.
+ */
+export function certifyCode(input: { readonly slot: string; readonly uses: readonly string[]; readonly item: unknown; readonly contract: Readonly<Record<string, unknown>>; readonly env: CodeEnv; readonly check: "hook" | "lib" }): Reason[] {
+  return codeFit(input.slot, input.uses, { json: input.item }, input.contract, input.env, input.check);
+}
+
+/** Every module specifier a code file imports or re-exports, static or dynamic (`import()`, `require()`). */
+function importSpecifiers(path: string, source: string): string[] {
+  const info = ts.preProcessFile(source, true, true);
+  return CODE.test(path) ? [...new Set(info.importedFiles.map(item => item.fileName))] : [];
+}
+
+/** Render fit of an element candidate against `contract` (its fixture); empty when it renders. */
+function renderFit(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>, env: CertifyEnv): Reason[] {
+  const start = fixtureStart(slot.id, usesOf(slot), candidate, contract, env);
+  if (Array.isArray(start)) return start;
+  const { reasons, fixture, primary, entry, modules, host } = start;
   const quiet = { error: console.error, warn: console.warn };
   console.error = () => {}; console.warn = () => {};
   try {

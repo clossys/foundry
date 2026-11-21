@@ -51,13 +51,14 @@ import {
 } from "./names.js";
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
 import { agentWriteClass, currentStandardOf, isAgentLoop, isLoopAgent, pathPattern, patternsMeet, standardOwnWrites, type LoopAgent } from "./agent-loops.js";
-import { judgeSnapshot, keepSnapshot, keptSnapshot, snapshotKey, treeSnapshot, type AgentSnapshot, type TreeFiles } from "./agent-snapshot.js";
+import { judgeSnapshot, keepSnapshot, keptSnapshot, keptTexts, snapshotKey, stepEntryTexts, treeSnapshot, type AgentSnapshot, type TreeFiles, type TreeTexts } from "./agent-snapshot.js";
 import { checkReleaseReady } from "../release/ready.js";
 import { certifiedOptions, pinGate } from "../constitution/pin-gate.js";
 import { codeSlotRefusals, scorecardTopRefusal } from "./code-pin.js";
 import { pinTargetSlot } from "../cli/pin.js";
-import { closeWork, decideRequest, exactReuseOf, freshRaiseIssues, isContentAgent, readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, workQueue, type SlotRequest } from "../records/request.js";
+import { agentWorkRaiseIssues, closeWork, decideRequest, exactReuseOf, freshRaiseIssues, isContentAgent, readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, workQueue, type SlotRequest } from "../records/request.js";
 import { FIX_CHECKS } from "../queue/requester-check.js";
+import { handlerMismatch } from "../queue/routing.js";
 import { cascadeClean, runCascade } from "./cascade.js";
 import { CASCADE_REVERDICT } from "../constitution/cascade.js";
 import { inputsOf } from "../engine/chain.js";
@@ -394,6 +395,9 @@ export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
     if (!REQUEST_ID.test(input.request)) return { ok: false, reason: `--request ${JSON.stringify(input.request)} is not a request id` };
     try { request = readRequest(join(root, "clossys"), input.request); } catch (error) { if (error instanceof RequestError) return { ok: false, reason: error.message }; throw error; }
     if (request.status !== "open") return { ok: false, reason: `--request ${input.request} is ${request.status}; a run answers an open request` };
+    // LOOP-STEPS: a run answers only an entry routed to its loop (the handler skill's "never answer an entry routed elsewhere").
+    const mismatch = handlerMismatch(input.loop, request.kind, request.route);
+    if (mismatch) return { ok: false, reason: `HandlerMismatchError: --request ${input.request}: ${mismatch}` };
   }
   if (needs === "request" && !request) return { ok: false, reason: `${input.loop} runs for one request: --request <id> (clossys request --list --open)` };
   // U9a: the run's agent runs its own pinned version of this loop when it holds one.
@@ -651,6 +655,8 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
 
     let exit: Exit; let wrote: readonly string[] | undefined; let findings: readonly Finding[] = []; let raisedByStep = false; let ledgerDecider: Decider; let cli = filled.text;
     let ran: readonly string[] | undefined; let couldNot: string | undefined;
+    /** LOOP-STEPS: the upstream requests this agent step raised through its skill's own verb (judged by stepRaises). */
+    let raisedHere: string[] = [];
     if (decider.by === "agent") {
       const agent = stepAgentOf(root, state, step);
       if (!agent) return stop(ctx, `step ${step.id} names ${OWNER_OF_SLOT}, but ${state.loop} runs for no slot`, 2);
@@ -667,19 +673,26 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
       // foundry-build-0048 U26 (r1 B1): Producer's standard version is judged the same way as an agent's own version.
       const ownLoop = isAgentLoop(state.loop);
       let before: TreeFiles | undefined;
+      let texts: TreeTexts | undefined;
       if (ownLoop) {
         if (held && state.waiting?.on === "agent") {
           before = keptSnapshot(state.agentSnapshot, step.id);
-          if (before === undefined) {
+          texts = before === undefined ? undefined : keptTexts(state.agentSnapshot, before);
+          if (before === undefined || texts === undefined) {
             delete state.agentSnapshot;
             return stop(ctx, `step ${step.id}: the snapshot the run kept before agent:${agent} ran is missing or corrupt, so what the step wrote cannot be judged`, 2);
           }
-        } else before = treeSnapshot(root, state.runId);
+        } else {
+          before = treeSnapshot(root, state.runId);
+          // LOOP-STEPS: the before bytes of the queue entries the step names exactly, so a second write of one by the
+          // step's own verbs (the skill's --check, then --decide) is judged against the states it passed through.
+          texts = stepEntryTexts(root, before, stepEntryKeys(state, step));
+        }
       }
       const outcome = await hooks.agent(packet);
       if (outcome === "wait") {
         state.status = "waiting"; state.waiting = { step: step.id, on: "agent" };
-        if (before !== undefined) state.agentSnapshot = keepSnapshot(step.id, before);
+        if (before !== undefined) state.agentSnapshot = keepSnapshot(step.id, before, texts);
         saveState(root, state);
         return { exitCode: 0, state, packet, message: `run ${state.runId}: step ${step.id} waits for agent:${agent} (${decider.verb}, ${decider.tier})` };
       }
@@ -691,7 +704,15 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
         // Every change the step made: a removal, an unreported write, or a ledger change that is not its own append.
         const reported = new Set((wrote ?? []).map(file => snapshotKey(root, wroteFile(root, file))));
         const current = isAgentLoop(state.loop) ? currentStandardOf(root, state.loop) : undefined;
-        const judged = judgeSnapshot(root, before, treeSnapshot(root, state.runId), reported, step, agent, state.subject, current?.ok ? current.standard : undefined, state.runId);
+        // LOOP-STEPS: an upstream request a create step raised is judged by the request verb's own rebuilt entry
+        // (stepRaises), never by the write allowlist; the log's request.create must name exactly an accepted one.
+        const raises = decider.verb === "create-candidates" ? stepRaises(root, state, agent, wrote, before) : undefined;
+        if (raises?.issues.length) {
+          delete state.waiting;
+          recordStep(ctx, step, ledgerDecider, cli, 1, wrote, vars);
+          return stop(ctx, `step ${step.id} raised ${raises.issues.join("; ")}; ${state.version.ref} refuses it`, 1);
+        }
+        const judged = judgeSnapshot(root, before, treeSnapshot(root, state.runId), reported, step, agent, state.subject, current?.ok ? current.standard : undefined, state.runId, texts, new Set(raises?.keys ?? []));
         if (judged.issues.length) {
           delete state.waiting;
           recordStep(ctx, step, ledgerDecider, cli, 1, wrote, vars);
@@ -700,6 +721,12 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
         // The slot ledger is judged by its append rule above, never by the write allowlist.
         const appended = new Set(judged.appended);
         judgedWrote = wrote?.filter(file => !appended.has(snapshotKey(root, wroteFile(root, file))));
+        // The accepted raises leave the write allowlist; any other queue entry still goes to it and is refused.
+        if (raises) {
+          const keys = new Set(raises.keys);
+          judgedWrote = judgedWrote?.filter(file => !keys.has(snapshotKey(root, wroteFile(root, file))));
+          raisedHere = raises.names;
+        }
       }
       // U9a: an agent's own loop writes only what its step declares; anything else stops the run, whatever its exit.
       const stray = undeclaredWrites(root, state, step, judgedWrote, before);
@@ -734,6 +761,10 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     const recorded = recordStep(ctx, step, ledgerDecider, cli, exit, wrote, vars, ran);
     state.findings = [...findings];
     if (recorded.exit === 2 && couldNot) return stop(ctx, `step ${step.id} could not run: ${couldNot}`, 2);
+    for (const name of raisedHere) if (!state.raised.includes(name)) state.raised.push(name);
+    // LOOP-STEPS: a create step that could not make its candidates and asked upstream parks on that request; the run
+    // resumes the step once it closes (readRetry), never stops on it.
+    if (raisedHere.length && recorded.exit !== 0) return waitOnRaised(ctx, step, raisedHere[0]!);
     if (recorded.why && !step.onFail) return stop(ctx, `step ${step.id} failed: ${recorded.why}`, 1);
     const result = await afterStep(ctx, step, recorded.exit, findings, subject, raisedByStep);
     if (result) return result;
@@ -1059,6 +1090,23 @@ function ownNewRequest(root: string, file: string, agent: LoopAgent): boolean {
 }
 
 /**
+ * The queue entries an agent step names by their exact path in its `writes` (with `<request>`, `<slot>` and `<slot-id>`
+ * filled for the run), as snapshot keys: loop.slot's decide step names its own `producer/queue.slot/entries/<request>.json`.
+ * A wildcard write names no entry.
+ */
+export function stepEntryKeys(state: Pick<RunState, "subject" | "request">, step: Pick<LoopStep, "writes">): string[] {
+  const slot = state.subject ? `${state.subject.agent}/${state.subject.slotId}` : undefined;
+  const out: string[] = [];
+  for (const write of step.writes ?? []) {
+    let path = write.replace(/^clossys\/agents\//, "");
+    if (slot) path = path.replace(/^<slot>(?=\/|$)/, slot).replaceAll("<slot-id>", state.subject!.slotId);
+    if (state.request) path = path.replaceAll("<request>", state.request);
+    if (/^producer\/queue\.[a-z]+\/entries\/[^/*<>]+\.json$/.test(path)) out.push(`clossys/agents/${path}`);
+  }
+  return out;
+}
+
+/**
  * U9a: the files an agent step of an agent's own loop version reported writing that it may not write: outside the root,
  * through `..`, through a symlink or a hard link (`agentWriteRef`), a Producer-owned file (anything but what the
  * standard's own step of that id declares, filled for the run, or the agent write allowlist `agentWriteClass`; a slot
@@ -1237,6 +1285,72 @@ function raiseOnce(ctx: Context, step: string, raise: Raise, then?: "retry"): Qu
   const entry = adopted ?? raiseEntry(root, raise, at, false).entry;
   delete state.pendingRaise;
   return entry;
+}
+
+/**
+ * LOOP-STEPS: a create step that raised an upstream request and did not make its candidates (exit 1 or 2) waits on
+ * the request it raised (`then: retry`): the step runs again when the request closes (readRetry).
+ */
+function waitOnRaised(ctx: Context, step: LoopStep, entry: string): Promise<RunResult> {
+  const { root, state } = ctx;
+  state.status = "waiting"; state.waiting = { step: step.id, on: "entry", entry, then: "retry" };
+  saveState(root, state);
+  return Promise.resolve({ exitCode: 0, state, entry, message: `run ${state.runId}: step ${step.id} raised ${entry} and waits until it closes; then the step runs again` });
+}
+
+/** A raised clossys.queue-entry/2 request named `queue.<slot|change|fix>#<id>`, when one reads as valid. */
+const RAISED_ENTRY = /^queue\.(slot|change|fix)#(.+)$/;
+function readRaised(root: string, name: string): SlotRequest | undefined {
+  const match = RAISED_ENTRY.exec(name);
+  if (!match || !REQUEST_ID.test(match[2]!)) return undefined;
+  try {
+    const request = readRequest(join(root, "clossys"), match[2]!);
+    return workQueue(request.kind) === `queue.${match[1]}` ? request : undefined;
+  } catch (error) {
+    if (error instanceof RequestError) return undefined;
+    throw error;
+  }
+}
+
+/** The run's raised upstream requests still open other than `but`: entries from the run's own slot about another slot. */
+function openRaises(root: string, state: RunState, but: string): string[] {
+  const from = state.subject ? `${state.subject.agent}/${state.subject.slotId}` : undefined;
+  return state.raised.filter(name => name !== but).filter(name => {
+    const request = from === undefined ? undefined : readRaised(root, name);
+    return request !== undefined && request.status === "open" && request.from === from && request.target !== from;
+  });
+}
+
+const RAISE_KEY = /^clossys\/agents\/producer\/queue\.(slot|change)\/entries\/([^/]+)\.json$/;
+/**
+ * LOOP-STEPS: the upstream requests a create step raised (`<agent>.candidates`: "raise a request (clossys request
+ * --kind change --subject <agent>/<slot> --from <agent>/<slot> ..., or a slot need)"): every reported file that is a
+ * new kind change or slot entry (absent from `before`). Each must be a regular file with one link named by its id and
+ * exactly the entry the request verb raises for the step's agent from the run's own slot (agentWorkRaiseIssues for a
+ * change, freshRaiseIssues for a slot need); one that is not is an issue, and the step is refused. An entry that was
+ * there before is no raise: it is left to the write allowlist, which refuses it.
+ */
+export function stepRaises(root: string, state: Pick<RunState, "subject">, agent: AgentId, wrote: readonly string[] | undefined, before: TreeFiles): { keys: string[]; names: string[]; issues: string[] } {
+  const keys: string[] = [], names: string[] = [], issues: string[] = [];
+  for (const file of wrote ?? []) {
+    const key = snapshotKey(root, wroteFile(root, file));
+    const match = RAISE_KEY.exec(key);
+    if (!match || key in before) continue;
+    const shown = key.slice("clossys/agents/".length);
+    const from = state.subject ? `${state.subject.agent}/${state.subject.slotId}` : undefined;
+    if (from === undefined || state.subject!.agent !== agent || !isContentAgent(agent)) { issues.push(`${shown}: only a slot's own agent raises from its slot`); continue; }
+    if ("refused" in agentWriteRef(root, file)) { issues.push(`${shown}: is not a regular file with one link`); continue; }
+    let doc: unknown;
+    try { doc = JSON.parse(readFileSync(join(root, ...key.split("/")), "utf8")); } catch { issues.push(`${shown}: is not JSON`); continue; }
+    const id = typeof doc === "object" && doc !== null ? (doc as { id?: unknown }).id : undefined;
+    if (`${String(id)}.json` !== `${match[2]!}.json`) { issues.push(`${shown}: is not named by its id ${String(id)}`); continue; }
+    const consumer = join(root, "clossys");
+    const why = match[1] === "change" ? agentWorkRaiseIssues(consumer, doc, agent, from)
+      : (doc as { from?: unknown }).from !== from ? [`from ${String((doc as { from?: unknown }).from)}: the step raises only from the run's own slot ${from}`] : freshRaiseIssues(consumer, doc, agent);
+    if (why.length) { issues.push(`${shown}: ${why.join("; ")}`); continue; }
+    keys.push(key); names.push(`queue.${match[1]!}#${String(id)}`);
+  }
+  return { keys, names, issues };
 }
 
 /** A failed step whose onFail asks the owner (`queue.clarify` then `retry`): raise once, wait, then run it again. */
@@ -1427,6 +1541,21 @@ async function readRetry(ctx: Context): Promise<RunResult | null> {
   const { root, state } = ctx;
   const waiting = state.waiting;
   if (!waiting || waiting.on !== "entry" || waiting.then !== "retry") return null;
+  if (RAISED_ENTRY.test(waiting.entry)) {
+    // LOOP-STEPS: an upstream request the step raised; closed (whatever its outcome), the step runs again and reads it.
+    const raised = readRaised(root, waiting.entry);
+    if (!raised) return stop(ctx, `${waiting.entry} is gone`, 2);
+    if (raised.status === "open") return { exitCode: 0, state, entry: waiting.entry, message: `run ${state.runId}: ${waiting.step} still waits on ${waiting.entry} (assigned to ${raised.assignee})` };
+    state.refs.push({ to: `producer/${workQueue(raised.kind)}` as Ref["to"], record: raised.id, rel: "cites" });
+    const next = openRaises(root, state, waiting.entry)[0];
+    if (next) {
+      state.waiting = { step: waiting.step, on: "entry", entry: next, then: "retry" };
+      saveState(root, state);
+      return { exitCode: 0, state, entry: next, message: `run ${state.runId}: ${waiting.step} still waits on ${next} (${waiting.entry} closed)` };
+    }
+    delete state.waiting;
+    return null;
+  }
   const entry = readEntry(root, waiting.entry);
   if (!entry) return stop(ctx, `${waiting.entry} is gone`, 2);
   if (entry.status === "open") return { exitCode: 0, state, entry: waiting.entry, message: `run ${state.runId}: ${waiting.step} still waits for the owner on ${waiting.entry}` };
