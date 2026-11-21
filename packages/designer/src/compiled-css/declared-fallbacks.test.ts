@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { generateCompiledCss } from "./generate.js";
+import { compiledCssDeclaredSources, generateCompiledCss } from "./generate.js";
 import { scanCompiledCssSources } from "./scan-sources.js";
 import {
   addDeclaredFallbacks,
@@ -36,7 +36,17 @@ const themeCss = `
 @theme { --spacing: 0.25rem; }
 @theme inline { --text-caption: var(--text-caption, 12px); }
 `;
-const sources = { tokensCss, themeCss };
+const defaultThemeCss = `
+:root[data-brand-bound] { --primary: oklch(0.205 0 0); }
+@media (prefers-color-scheme: dark) { :root[data-brand-bound]:not([data-theme="light"]) { --primary: oklch(0.922 0 0); } }
+:root[data-brand-bound][data-theme="dark"] { --primary: oklch(0.922 0 0); }
+:root { --radius-theme: 0.625rem; }
+`;
+const tailwindThemeCss = `
+@theme default { --text-sm: 0.875rem; --spacing: 99rem; --primary: red; }
+`;
+const sources = { tokensCss, themeCss, defaultThemeCss, tailwindThemeCss };
+const bareSources = { tokensCss: "", themeCss: "", defaultThemeCss: "", tailwindThemeCss: "" };
 
 describe("collectCustomPropertyDeclarations", () => {
   it("keeps each declaration's enclosing preludes and never splits inside url() or a string", () => {
@@ -70,13 +80,23 @@ describe("addDeclaredFallbacks", () => {
     );
   });
 
+  it("takes the package default theme's light value, never its dark variants", () => {
+    const out = addDeclaredFallbacks(`.a { color: ${bare("--primary")}; border-radius: ${bare("--radius-theme")}; }`, sources);
+    expect(out).toBe(".a { color: var(--primary, oklch(0.205 0 0)); border-radius: var(--radius-theme, 0.625rem); }");
+  });
+
+  it("reads Tailwind's default theme last, so a package declaration of the same name wins", () => {
+    const out = addDeclaredFallbacks(`.a { font-size: ${bare("--text-sm")}; gap: ${bare("--spacing")}; }`, sources);
+    expect(out).toBe(".a { font-size: var(--text-sm, 0.875rem); gap: var(--spacing, 0.25rem); }");
+  });
+
   it("leaves a read that already carries a fallback alone", () => {
     const css = ".a { padding: var(--spacing-sm, 2px); }";
     expect(addDeclaredFallbacks(css, sources)).toBe(css);
   });
 
   it("refuses a token with no declared source, naming every one, and invents no default", () => {
-    const css = `.a { color: ${bare("--primary")}; background: ${bare("--trigger-width")}; border-color: ${bare("--color-ink")}; }`;
+    const css = `.a { color: ${bare("--primary")}; background: ${bare("--trigger-width")}; outline-color: ${bare("--ring")}; border-color: ${bare("--color-ink")}; }`;
     let caught: unknown;
     try {
       addDeclaredFallbacks(css, sources);
@@ -84,13 +104,13 @@ describe("addDeclaredFallbacks", () => {
       caught = error;
     }
     expect(caught).toBeInstanceOf(UndeclaredTokenFallbackError);
-    expect((caught as UndeclaredTokenFallbackError).tokens).toEqual(["--primary", "--trigger-width"]);
-    expect((caught as Error).message).toMatch(/--primary, --trigger-width/);
+    expect((caught as UndeclaredTokenFallbackError).tokens).toEqual(["--ring", "--trigger-width"]);
+    expect((caught as Error).message).toMatch(/--ring, --trigger-width/);
   });
 
   it("refuses a declared value whose bare read has no source, naming the missing token", () => {
     const css = `.a { color: ${bare("--x")}; }`;
-    expect(() => addDeclaredFallbacks(css, { tokensCss: `:root { --x: ${bare("--nowhere")}; }`, themeCss: "" })).toThrow(/--nowhere/);
+    expect(() => addDeclaredFallbacks(css, { ...bareSources, tokensCss: `:root { --x: ${bare("--nowhere")}; }` })).toThrow(/--nowhere/);
   });
 });
 
@@ -133,15 +153,7 @@ describe("styles/compiled.css carries declared fallbacks", () => {
     const scan = scanCompiledCssSources(packageRoot);
     const raw = (await generateCompiledCss({ stylesDir, candidates: scan.candidates, declaredFallbacks: false })).css;
     const committed = read("compiled.css");
-    const declared = declaredTokenValues(
-      {
-        tokensCss: read("tokens.css"),
-        themeCss: read("theme.css")
-          .replace(/^@import\s+["']\.\/tokens\.css["'];\s*\n/m, "")
-          .replace(/^@import\s+["']\.\/theme-keys\.css["'];\s*\n/m, () => `${read("theme-keys.css")}\n`),
-      },
-      raw,
-    );
+    const declared = declaredTokenValues(compiledCssDeclaredSources(stylesDir), raw);
     const problems: string[] = [];
     let rawAt = 0;
     let delta = 0;

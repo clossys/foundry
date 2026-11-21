@@ -13,7 +13,13 @@
  *    is the default (light, unbranded) value;
  * 2. `styles/theme.css` as the generator compiles it (with `theme-keys.css`
  *    inlined), in a plain `:root` rule or a `@theme` block;
- * 3. the generated output itself, first declaration in output order.
+ * 3. the package default theme (`defaultThemeCss()` in
+ *    `src/builder/theme/css.ts`, the theme a consumer gets when it pins no
+ *    `themes.*` slot), in its light `:root` or `:root[data-brand-bound]` rule;
+ * 4. the generated output itself, first declaration in output order;
+ * 5. Tailwind's own default theme (read from the installed tailwindcss
+ *    package), in a `@theme` block, for the default keys the stock shadcn
+ *    parts read (`--text-sm`, `--font-weight-medium`, ...).
  *
  * The first source that declares a name wins. A declared value that itself
  * reads a bare `var(--y)` is expanded the same way, so the fallback carries no
@@ -37,7 +43,7 @@ export class UndeclaredTokenFallbackError extends Error {
   readonly tokens: readonly string[];
   constructor(tokens: readonly string[]) {
     super(
-      `generateCompiledCss: ${tokens.length} token(s) are read with a bare var() but have no declared source in styles/tokens.css, styles/theme.css (with theme-keys.css) or the generated output, so no fallback can be emitted: ${tokens.join(", ")}. Declare each token in a source, or stop reading it.`,
+      `generateCompiledCss: ${tokens.length} token(s) are read with a bare var() but have no declared source in styles/tokens.css, styles/theme.css (with theme-keys.css), the package default theme, the generated output or Tailwind's default theme, so no fallback can be emitted: ${tokens.join(", ")}. Declare each token in a source, or stop reading it.`,
     );
     this.name = "UndeclaredTokenFallbackError";
     this.tokens = tokens;
@@ -145,6 +151,18 @@ function isDefaultThemeDeclaration(d: CustomPropertyDeclaration): boolean {
   return (isPlainRoot(last) || isThemeBlock(last)) && d.context.slice(0, -1).every(isLayerWrapper);
 }
 
+/** A light declaration of the package default theme: `:root` or `:root[data-brand-bound]`, only `@layer` wrappers around it. */
+function isDefaultPackageThemeDeclaration(d: CustomPropertyDeclaration): boolean {
+  const last = d.context[d.context.length - 1] ?? "";
+  return (isPlainRoot(last) || last === ":root[data-brand-bound]") && d.context.slice(0, -1).every(isLayerWrapper);
+}
+
+/** A declaration in a `@theme` block, only `@layer` wrappers around it. */
+function isThemeBlockDeclaration(d: CustomPropertyDeclaration): boolean {
+  const last = d.context[d.context.length - 1] ?? "";
+  return isThemeBlock(last) && d.context.slice(0, -1).every(isLayerWrapper);
+}
+
 /** A declaration anywhere in the output except an `@property` registration. */
 function isOutputDeclaration(d: CustomPropertyDeclaration): boolean {
   return !d.context.some((prelude) => /^@property\b/.test(prelude));
@@ -165,9 +183,13 @@ export interface DeclaredSources {
   tokensCss: string;
   /** The theme stylesheet as the generator compiles it: its own tokens import line stripped, the theme-keys stylesheet inlined. */
   themeCss: string;
+  /** The package default theme stylesheet (`defaultThemeCss()`). */
+  defaultThemeCss: string;
+  /** Tailwind's own default theme stylesheet, read from the installed tailwindcss package. */
+  tailwindThemeCss: string;
 }
 
-/** The declared value of each token, by source precedence: tokens.css, then theme.css, then the output. */
+/** The declared value of each token, by source precedence: tokens.css, theme.css, the package default theme, the output, Tailwind's default theme. */
 export function declaredTokenValues(sources: DeclaredSources, outputCss: string): Map<string, string> {
   const declared = new Map<string, string>();
   const add = (decls: CustomPropertyDeclaration[], accept: (d: CustomPropertyDeclaration) => boolean) => {
@@ -177,7 +199,9 @@ export function declaredTokenValues(sources: DeclaredSources, outputCss: string)
   };
   add(collectCustomPropertyDeclarations(sources.tokensCss), isDefaultRootDeclaration);
   add(collectCustomPropertyDeclarations(sources.themeCss), isDefaultThemeDeclaration);
+  add(collectCustomPropertyDeclarations(sources.defaultThemeCss), isDefaultPackageThemeDeclaration);
   add(collectCustomPropertyDeclarations(outputCss), isOutputDeclaration);
+  add(collectCustomPropertyDeclarations(sources.tailwindThemeCss), isThemeBlockDeclaration);
   return declared;
 }
 

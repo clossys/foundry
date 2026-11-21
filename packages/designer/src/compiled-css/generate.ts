@@ -121,6 +121,7 @@ import { dirname, resolve as resolvePath } from "node:path";
 import { assertPeerVersion } from "../internal/peer-version.js";
 import { resolveInstalledPeerVersion } from "../internal/resolve-installed-peer-version.js";
 import { TAILWINDCSS_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
+import { defaultThemeCss } from "../builder/theme/css.js";
 import { addDeclaredFallbacks, type DeclaredSources } from "./declared-fallbacks.js";
 
 export interface GenerateCompiledCssOptions {
@@ -274,9 +275,19 @@ function buildEntryCss(stylesDir: string): { entryCss: string; sources: Declared
     throw new Error(`generateCompiledCss: cannot read "${tokensCssPath}": ${error instanceof Error ? error.message : String(error)}`);
   }
 
+  // Tailwind's own default theme, as installed: the declared source of the
+  // default keys (`--text-sm`, `--font-weight-medium`, ...) the stock shadcn
+  // parts read, which the reference-mode import never emits.
+  let tailwindThemeCss: string;
+  try {
+    tailwindThemeCss = readFileSync(createRequire(import.meta.url).resolve("tailwindcss/theme.css"), "utf8");
+  } catch (error) {
+    throw new Error(`generateCompiledCss: cannot read "tailwindcss/theme.css": ${error instanceof Error ? error.message : String(error)}`);
+  }
+
   return {
     entryCss: `@import "tailwindcss/theme" theme(reference);\n${themeBlockOnly}\n@import "tailwindcss/utilities" layer(foundry-ui-compiled);\n`,
-    sources: { tokensCss, themeCss: themeBlockOnly },
+    sources: { tokensCss, themeCss: themeBlockOnly, defaultThemeCss: defaultThemeCss(), tailwindThemeCss },
   };
 }
 
@@ -412,6 +423,11 @@ function addExplicitFallbacksForInternalProperties(css: string): string {
  * accurate for genuine absence, but silent about a version mismatch) or
  * an unexplained crash inside Tailwind's own `compile()`/`build()` calls.
  */
+/** The declared sources `generateCompiledCss` reads fallbacks from for `stylesDir` (see `declared-fallbacks.ts`). */
+export function compiledCssDeclaredSources(stylesDir: string): DeclaredSources {
+  return buildEntryCss(stylesDir).sources;
+}
+
 export async function generateCompiledCss(options: GenerateCompiledCssOptions): Promise<GenerateCompiledCssResult> {
   assertPeerVersion({
     peer: "tailwindcss",

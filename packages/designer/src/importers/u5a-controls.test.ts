@@ -6,12 +6,15 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { rewriteShadcnAria } from "./rewrite.js";
-import { generateCompiledCss } from "../compiled-css/generate.js";
+import { compiledCssDeclaredSources, generateCompiledCss } from "../compiled-css/generate.js";
+import { addDeclaredFallbacks } from "../compiled-css/declared-fallbacks.js";
 import slots from "../catalog/slots/components.json" with { type: "json" };
 import { generatedShadcnComponentFiles, importShadcnAriaComponents, materializeShadcnComponent, SHADCN_COMPONENT_ITEMS } from "./shadcn-aria-components.js";
 
 const here = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
 const read = (name: string) => readFileSync(resolve(here, name), "utf8");
+/** `declaration` as the generator writes it: each bare token read carries its declared value as a fallback, read by code. */
+const declaredRead = (declaration: string) => addDeclaredFallbacks(declaration, compiledCssDeclaredSources(resolve(here, "../../../../styles")));
 const input = () => ({ items: readdirSync(here).filter(name => name.endsWith(".json")).map(name => JSON.parse(read(name))).filter(item => item.type === "registry:ui"), styles: { path: "apps/v4/registry/styles/style-nova.css", content: read("style-nova.css") }, notice: { path: "LICENSE.md", content: read("LICENSE.md") } });
 const supported: Record<string, string[]> = {
   checkbox: ["scope.single", "state.checked", "state.indeterminate", "state.invalid"],
@@ -118,8 +121,8 @@ describe("six pinned control evidence surfaces", () => {
     expect(rewrite.reads.themes).toContain("themes.spacing.default");
     expect(rewrite.issues.some(issue => issue.code === "K7")).toBe(false);
     const { css } = await generateCompiledCss({ stylesDir: resolve(here, "../../../../styles"), candidates: ["w-(--spacing-sm)", "border-t-(length:--ui-border-hairline)"] });
-    expect(css).toContain("width: var(--spacing-sm)");
-    expect(css).toContain("border-top-width: var(--ui-border-hairline)");
+    expect(css).toContain(declaredRead("width: var(--spacing-sm)"));
+    expect(css).toContain(declaredRead("border-top-width: var(--ui-border-hairline)"));
   });
   it("keeps checked and selected checkbox/switch paint bound to action ink", () => {
     const result = importShadcnAriaComponents(input());
@@ -149,8 +152,8 @@ describe("six pinned control evidence surfaces", () => {
       expect(code).toContain("hover:bg-(--color-surface-sunken)");
       expect(code).toContain("not-data-selected:bg-(--color-surface-sunken)");
       const { css } = await generateCompiledCss({ stylesDir: resolve(here, "../../../../styles"), candidates: ["data-selected:bg-(--color-action)", "data-selected:text-(--color-ink-on-action)"] });
-      expect(css).toContain("background-color: var(--color-action)");
-      expect(css).toContain("color: var(--color-ink-on-action)");
+      expect(css).toContain(declaredRead("background-color: var(--color-action)"));
+      expect(css).toContain(declaredRead("color: var(--color-ink-on-action)"));
     }
     const other = rewriteShadcnAria({ item: "example", leaf: "checkbox", files: [{ path: "example.tsx", content }], styles: "", leafByItem: {} });
     expect(other.reads.themes).not.toContain("themes.primary.default");
@@ -162,7 +165,7 @@ describe("six pinned control evidence surfaces", () => {
       expect(result.reads.themes).toEqual([]);
       expect(result.issues).toEqual([]);
       const { css } = await generateCompiledCss({ stylesDir: resolve(here, "../../../../styles"), candidates: [`h-(--ui-control-h-${member})`, `control-h-${member}`] });
-      expect(css).toContain(`height: var(--ui-control-h-${member})`);
+      expect(css).toContain(declaredRead(`height: var(--ui-control-h-${member})`));
       expect(css).toContain("min-block-size: var(--ui-layout-tap-target, 44px)");
     }
     const unknown = rewriteShadcnAria({ item: "toggle", leaf: "toggle-button", files: [{ path: "toggle.tsx", content: 'const value = "cn-toggle-size-xl"' }], styles: ".cn-toggle-size-xl { @apply h-7; }", leafByItem: {} });
