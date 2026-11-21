@@ -155,6 +155,26 @@ describe("runtime setters", () => {
     expect([...runtimeSetNames(scan)].sort()).toEqual(["--clearance", "--gap", "--panel-w", "--ratio"]);
   });
 
+  it("finds declarations in HTML style attributes written as strings, skipping ${...} interpolations (CONTAM-U7)", () => {
+    const scan = scanRuntimeSetters(`
+      const a = \`<div style="--ink:\${ref(rules.ink, "var(--border)")};--tile:\${ref(rules.tile, "24px")};background:\${shape}"></div>\`;
+      const b = "<p data-x=1 style='--lines:3'>";
+      const c = \`<html style="color-scheme:\${mode}">\`;
+      const d = \`<div class="--not-style:1" title="style">\`;
+      // <div style="--in-comment:1">
+      const e = '<div style="--unclosed:1';
+    `);
+    expect([...runtimeSetNames(scan)].sort()).toEqual(["--ink", "--lines", "--tile"]);
+  });
+
+  it("refuses a bare read again once its only HTML style-attribute setter is removed", () => {
+    const set = runtimeSetNames(scanRuntimeSetters('const html = `<p style="--lines:${n}">`;'));
+    const css = ".a { -webkit-line-clamp: var(--lines); }";
+    expect(addDeclaredFallbacks(css, { ...bareSources, runtimeSetVariables: set })).toBe(".a { -webkit-line-clamp: var(--lines, unset); }");
+    const removed = runtimeSetNames(scanRuntimeSetters('const html = `<p data-lines="${n}">`;'));
+    expect(() => addDeclaredFallbacks(css, { ...bareSources, runtimeSetVariables: removed })).toThrow(/--lines/);
+  });
+
   it("reads this package's own sources: every variable the stylesheets set only at run time", () => {
     const names = runtimeSetVariables(resolve(import.meta.dirname, "..", ".."));
     for (const name of ["--frame-panel-w", "--gap", "--plate-x", "--plate-y", "--plate-z", "--studio-pattern-image", "--studio-pattern-size", "--studio-ruler-bar", "--studio-specimen-value", "--studio-swatch"]) {

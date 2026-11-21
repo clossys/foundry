@@ -29,7 +29,7 @@ function PreviewFrame({ width, theme, mode, title, children }: PreviewViewportPr
   // The keyed owner also prevents a new theme from reusing the old document or height.
   return <>{frameDocument ? createPortal(children, frameDocument.body) : null}
     <iframe title={title} sandbox="allow-same-origin" className="block border-0"
-    style={{ width, height: height ?? (mode === "instance" ? "calc(var(--ui-layout-aside-w)*1.5)" : "var(--ui-layout-aside-w)"), minHeight: mode === "instance" ? "calc(var(--ui-layout-aside-w)*.75)" : undefined }}
+    style={{ width, height: height ?? (mode === "instance" ? "calc(var(--ui-layout-aside-w, 320px)*1.5)" : "var(--ui-layout-aside-w, 320px)"), minHeight: mode === "instance" ? "calc(var(--ui-layout-aside-w, 320px)*.75)" : undefined }}
     srcDoc={`<!doctype html><html lang="en" data-theme="${theme}"><head></head><body class="m-0 bg-surface-base text-ink-primary"></body></html>`}
     onLoad={event => {
       const frame = event.currentTarget.contentDocument;

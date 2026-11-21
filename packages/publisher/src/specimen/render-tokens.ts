@@ -176,19 +176,19 @@ function glyph(nodes: unknown): string | undefined {
 const ratioOf = (rules: Record<string, any>) => typeof rules.width === "number" && typeof rules.height === "number" && rules.width > 0 && rules.height > 0 ? `${rules.width} / ${rules.height}` : undefined;
 
 const PATTERNS: Record<string, string> = {
-  dots: "radial-gradient(circle, var(--specimen-ink) 1.5px, transparent 1.6px) 0 0 / var(--specimen-tile) var(--specimen-tile)",
-  grid: "linear-gradient(var(--specimen-ink) 1px, transparent 1px) 0 0 / var(--specimen-tile) var(--specimen-tile), linear-gradient(90deg, var(--specimen-ink) 1px, transparent 1px) 0 0 / var(--specimen-tile) var(--specimen-tile)",
-  lines: "repeating-linear-gradient(45deg, var(--specimen-ink) 0 1px, transparent 1px calc(var(--specimen-tile) / 2))",
-  grain: "radial-gradient(circle, var(--specimen-ink) 0.6px, transparent 0.8px) 0 0 / 5px 5px, radial-gradient(circle, var(--specimen-ink) 0.6px, transparent 0.8px) 2px 3px / 7px 7px",
-  noise: "radial-gradient(circle, var(--specimen-ink) 0.7px, transparent 0.9px) 1px 1px / 4px 6px, radial-gradient(circle, var(--specimen-ink) 0.7px, transparent 0.9px) 3px 2px / 6px 5px",
-  topo: "repeating-radial-gradient(circle at 30% 40%, transparent 0 calc(var(--specimen-tile) / 2 - 1px), var(--specimen-ink) calc(var(--specimen-tile) / 2 - 1px) calc(var(--specimen-tile) / 2))",
+  dots: "radial-gradient(circle, var(--specimen-ink, unset) 1.5px, transparent 1.6px) 0 0 / var(--specimen-tile, unset) var(--specimen-tile, unset)",
+  grid: "linear-gradient(var(--specimen-ink, unset) 1px, transparent 1px) 0 0 / var(--specimen-tile, unset) var(--specimen-tile, unset), linear-gradient(90deg, var(--specimen-ink, unset) 1px, transparent 1px) 0 0 / var(--specimen-tile, unset) var(--specimen-tile, unset)",
+  lines: "repeating-linear-gradient(45deg, var(--specimen-ink, unset) 0 1px, transparent 1px calc(var(--specimen-tile, unset) / 2))",
+  grain: "radial-gradient(circle, var(--specimen-ink, unset) 0.6px, transparent 0.8px) 0 0 / 5px 5px, radial-gradient(circle, var(--specimen-ink, unset) 0.6px, transparent 0.8px) 2px 3px / 7px 7px",
+  noise: "radial-gradient(circle, var(--specimen-ink, unset) 0.7px, transparent 0.9px) 1px 1px / 4px 6px, radial-gradient(circle, var(--specimen-ink, unset) 0.7px, transparent 0.9px) 3px 2px / 6px 5px",
+  topo: "repeating-radial-gradient(circle at 30% 40%, transparent 0 calc(var(--specimen-tile, unset) / 2 - 1px), var(--specimen-ink, unset) calc(var(--specimen-tile, unset) / 2 - 1px) calc(var(--specimen-tile, unset) / 2))",
 };
 
 function pattern(rules: Record<string, any>): string | undefined {
   const shape = typeof rules.shape === "string" ? PATTERNS[rules.shape] : undefined;
   if (!shape) return undefined;
   const ref = (value: unknown, fallback: string) => typeof value === "string" && /^--[a-z][a-z0-9-]*$/.test(value) ? `var(${value}, ${fallback})` : fallback;
-  return `<div class="specimen-asset-pattern" style="--specimen-ink:${ref(rules.ink, "var(--border)")};--specimen-tile:${ref(rules.tile, "24px")};background:${shape}"></div>`;
+  return `<div class="specimen-asset-pattern" style="--specimen-ink:${ref(rules.ink, "var(--border, oklch(0.922 0 0))")};--specimen-tile:${ref(rules.tile, "24px")};background:${shape}"></div>`;
 }
 
 /** One DTCG member drawn as the asset, or undefined when it cannot be drawn. */
