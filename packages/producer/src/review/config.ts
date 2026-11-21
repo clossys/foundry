@@ -67,12 +67,16 @@ export const FOUNDRY_CONFIG: ReviewConfig = {
       id: "constitution", counts: `clossys check --constitution --json on ${FIXTURE_CONSUMER}: rows per registered rule`,
       argv: ["node", CLI, "check", "--constitution", "--json", "--root", FIXTURE_CONSUMER],
       parse: stdout => {
-        const rules = (jsonOf(stdout).output as { rules?: { id: string; rows: number }[] } | undefined)?.rules;
+        const rules = (jsonOf(stdout) as { rules?: { id: string; rows: number }[] }).rules;
         if (!Array.isArray(rules)) throw new Error("no rules in the constitution report");
         return Object.fromEntries(rules.map(rule => [rule.id, rule.rows]));
       },
     },
-    { id: "side-door", counts: "clossys check --side-door --json on the checkout: engine.side-door findings", argv: ["node", CLI, "check", "--side-door", "--json", "--root", "."], parse: stdout => ({ "engine.side-door": (jsonOf(stdout).output as { findings: unknown[] }).findings.length }) },
+    { id: "side-door", counts: "clossys check --side-door --json on the checkout: engine.side-door findings", argv: ["node", CLI, "check", "--side-door", "--json", "--root", "."], parse: stdout => {
+      const findings = (jsonOf(stdout) as { findings?: unknown[] }).findings;
+      if (!Array.isArray(findings)) throw new Error("no findings in the side-door report");
+      return { "engine.side-door": findings.length };
+    } },
     {
       id: "ia-orphans", counts: `ia.orphans over ${FIXTURE_CONSUMER}: orphan slot folders`,
       argv: ["node", "--input-type=module", "-e", `const m = await import("./packages/producer/dist/check/ia-orphans.js"); console.log(JSON.stringify({ n: m.iaOrphans.run(${JSON.stringify(FIXTURE_CONSUMER)}).findings.length }));`],

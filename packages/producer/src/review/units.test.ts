@@ -1,7 +1,8 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished } from "vitest";
 import { forbiddenFindings, FORBIDDEN_RULES, type Change } from "./changes.js";
+import { FOUNDRY_CONFIG } from "./config.js";
 import { REVIEW_DOC, reviewDoc } from "./doc.js";
 import { normalizeOutput, scratch, tailSha } from "./exec.js";
 import { buildSet } from "./graph.js";
@@ -70,6 +71,7 @@ describe("receipt commands", () => {
 describe("build set", () => {
   it("orders by manifest edges only: a test-dist-closure edge adds a package but never builds it first", () => {
     const tree = scratch("review-graph-");
+    onTestFinished(() => rmSync(tree, { recursive: true, force: true }));
     const manifest = (dir: string, body: Record<string, unknown>) => { mkdirSync(join(tree, dir), { recursive: true }); writeFileSync(join(tree, dir, "package.json"), JSON.stringify(body)); };
     manifest(".", { name: "ws", workspaces: ["packages/*"] });
     manifest("packages/base", { name: "base", scripts: { build: "x" } });
@@ -83,6 +85,18 @@ describe("build set", () => {
     expect(order.map(workspace => workspace.name)).toEqual(["base", "ui", "pages", "app", "tool"]);
     expect([...prerequisites].sort()).toEqual(["packages/base", "packages/pages", "packages/tool", "packages/types", "packages/ui"]);
     expect(buildSet(tree, ["packages/base"]).order.map(workspace => workspace.name)).toEqual(["base"]);
+  });
+});
+
+describe("count probes", () => {
+  it("read the top-level --json reports of clossys check, --constitution, --side-door and ia.orphans", () => {
+    const parse = (id: string, doc: unknown) => FOUNDRY_CONFIG.counts.find(item => item.id === id)!.parse(`progress line\n${JSON.stringify(doc)}\n`);
+    expect(parse("check", { findings: [{ rule: "a" }, { rule: "b" }, { rule: "a" }] })).toEqual({ a: 2, b: 1 });
+    expect(parse("constitution", { ok: false, rules: [{ id: "R1", rows: 3 }, { id: "R2", rows: 0 }] })).toEqual({ R1: 3, R2: 0 });
+    expect(parse("side-door", { ok: false, findings: [{ file: "x" }, { file: "y" }] })).toEqual({ "engine.side-door": 2 });
+    expect(parse("ia-orphans", { n: 4 })).toEqual({ "ia.orphans": 4 });
+    expect(() => parse("constitution", { output: { rules: [] } })).toThrow(/no rules/);
+    expect(() => parse("side-door", { output: { findings: [] } })).toThrow(/no findings/);
   });
 });
 
