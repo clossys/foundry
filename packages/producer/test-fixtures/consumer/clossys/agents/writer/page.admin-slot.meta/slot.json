@@ -8,7 +8,7 @@
     "l0": "copy",
     "l1": "copy/page-metadata",
     "l2": "copy/page-metadata/admin",
-    "order": 101
+    "order": 100
   },
   "createdBy": {
     "actor": "code",

@@ -8,7 +8,7 @@
     "l0": "frames",
     "l1": "frames/frames",
     "l2": "frames/frames/frames-shells",
-    "order": 201
+    "order": 198
   },
   "createdBy": {
     "actor": "code",
@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -132,10 +132,6 @@
     },
     {
       "to": "designer/components.semantic-content",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.status-mark",
       "rel": "uses"
     },
     {
@@ -388,8 +384,7 @@
       "components.disclosure",
       "components.icon",
       "components.logo",
-      "components.semantic-content",
-      "components.status-mark"
+      "components.semantic-content"
     ],
     "skipTarget": "main-content",
     "props": [

@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.critique/1",
+  "slot": "themes.destructive",
+  "candidate": "destructive-v1.json",
+  "standard": "token.color",
+  "scores": {
+    "restraint": 4,
+    "temperament": 4,
+    "mode-balance": 4,
+    "accent-economy": 4
+  },
+  "packet": {
+    "manifest": [
+      {
+        "role": "taste",
+        "ref": "packages/designer/standards/token.color/taste.md"
+      },
+      {
+        "role": "contract",
+        "ref": "clossys/agents/designer/themes.destructive/slot.json#contract"
+      },
+      {
+        "role": "render",
+        "ref": ".clossys/renders/designer/themes.destructive/destructive-v1.png"
+      }
+    ]
+  }
+}

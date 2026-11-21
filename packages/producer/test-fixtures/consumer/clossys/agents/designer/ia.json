@@ -312,7 +312,6 @@
           "id": "components-navigation",
           "label": "Navigation",
           "slots": [
-            "components.link",
             "components.breadcrumbs",
             "components.tabs",
             "components.sidebar",
@@ -339,10 +338,8 @@
             "components.semantic-content",
             "components.rich-text",
             "components.badge",
-            "components.status-mark",
             "components.keyboard",
             "components.avatar",
-            "components.media-player",
             "components.icon",
             "components.logo"
           ]
@@ -875,6 +872,30 @@
       "by": "migration:recut",
       "reason": "not-needed: recut, @clossys/designer retired.json retires it",
       "at": "2026-11-17T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.link",
+      "sha256": "1c579f535b369caeaea08af1ff4af6c80da18eb22c3bf559f6497b9c78a6fba2",
+      "by": "agent:designer",
+      "reason": "duplicate: shadcn stock ships no Link component; the Button link variant covers it",
+      "at": "2026-11-19T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.media-player",
+      "sha256": "25a174e1d42d21c41a27f1284cddb44499a191dfbddd9f8dfeeefa6d0bf3a337",
+      "by": "agent:designer",
+      "reason": "not-needed: no stock media player ships in the consumer's engine; owner 2026-11-20",
+      "at": "2026-11-19T00:00:00Z"
+    },
+    {
+      "schema": "clossys.retire/1",
+      "slot": "designer/components.status-mark",
+      "sha256": "9816c77911cfb8c893f49cf27ef60bf117e0ba35aee93c23a3471859a8ef2cc0",
+      "by": "agent:designer",
+      "reason": "not-needed: no stock status mark ships in the consumer's engine; owner 2026-11-20",
+      "at": "2026-11-19T00:00:00Z"
     }
   ]
 }

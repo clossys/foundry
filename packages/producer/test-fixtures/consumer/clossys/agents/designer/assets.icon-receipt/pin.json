@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/assets.icon-receipt/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/assets.icon-receipt",
+      "sha256": "72a5516de5a67527577c8e99d9dee6f55f589c3d2e28a7b2846762021eaef96a"
+    }
+  ],
+  "candidate": "icon-receipt-v1.json",
+  "sha256": "1e882f0ec840ab53880eae41863c1cb7bae057c6f8d16f1204379b44fc988afe",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

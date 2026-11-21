@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/components.progress-bar/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/components.progress-bar",
+      "sha256": "c9aa8d15dde32b37c01a440eacc9fae086340e1813284ca0211fb7d87ba61461"
+    }
+  ],
+  "candidate": "progress-bar-v1.json",
+  "sha256": "0721b88dd5aade7e804f6d6d739669ef236357f3cc888e3db7a8b87f231a3d20",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

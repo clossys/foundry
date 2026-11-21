@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "writer/lexicon.warmth",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "warmth-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "warmth-v1.md",
+      "sha256": "7cf5a6b4fea3b362d78d22343f2e18f0b9c29efef211a07d31825cf00cacf4f6",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "6991a2afaeefda1b559e36870d523f508308d88f4ab5406b530286236eb15819"
+    }
+  ]
+}

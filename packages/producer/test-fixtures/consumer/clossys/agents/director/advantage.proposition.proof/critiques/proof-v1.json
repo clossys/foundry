@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.critique/1",
+  "slot": "advantage.proposition.proof",
+  "candidate": "proof-v1.md",
+  "standard": "brief.list",
+  "scores": {
+    "decisive": 4,
+    "evidence-weight": 4,
+    "tripwire-usefulness": 4,
+    "ranked-focus": 4
+  },
+  "packet": {
+    "manifest": [
+      {
+        "role": "taste",
+        "ref": "packages/director/standards/brief.list/taste.md"
+      },
+      {
+        "role": "contract",
+        "ref": "clossys/agents/director/advantage.proposition.proof/slot.json#contract"
+      },
+      {
+        "role": "render",
+        "ref": ".clossys/renders/director/advantage.proposition.proof/proof-v1.png"
+      }
+    ]
+  }
+}

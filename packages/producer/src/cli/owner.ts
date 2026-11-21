@@ -650,7 +650,8 @@ export async function runIaCli(argv: readonly string[], cwd: string, _options: {
   // One format (U13): judged by the slot's own schema, never by what else the store holds. A new slot is created as
   // clossys.slot/2; an existing slot/1 (or any other schema) is refused, never rewritten in place.
   if (stored && !storedV2) return refuse("ia", oldSlotRefusal("ia", target).replace(/^ia refused: /, ""));
-  const existing = storedV2 ? currentView(storedV2) as unknown as Record<string, unknown> : stored;
+  // The view's option family is slot/2 data the slot/1 document does not hold: the write below carries it from the stored file.
+  const existing = storedV2 ? (({ family: _family, ...view }) => view)(currentView(storedV2) as unknown as Record<string, unknown>) : stored;
   const proposedKind = request?.proposal?.kind;
   if (proposedKind !== undefined && !(AGENT_KIND[agent] as readonly string[]).includes(proposedKind)) return refuse("ia", `--request ${request!.id} proposes kind ${proposedKind}, not a ${agent} slot kind (${AGENT_KIND[agent].join(", ")})`);
   // A release slot is judged as its kind family (publication) until its clossys.slot/2 file is written as kind release.
@@ -860,6 +861,7 @@ function currentSlotWrite(root: string, doc: SlotV1, position: { l1: string; l2:
     refs: [...inputs, ...uses, ...stored.refs.filter(ref => ref.rel !== "input" && ref.rel !== "uses")],
     ...(made.options === undefined && stored.options !== undefined ? { options: stored.options } : {}),
     ...(made.varyOn === undefined && stored.varyOn !== undefined ? { varyOn: stored.varyOn } : {}),
+    ...(stored.family !== undefined ? { family: stored.family } : {}),
   };
   const issues = validateSlot(slot);
   if (issues.length) return { error: `the ${SLOT_V2_SCHEMA} file would be invalid: ${issues.slice(0, 5).map(issue => `${issue.path} ${issue.message}`).join("; ")}` };
@@ -1368,15 +1370,23 @@ function retireSlot(consumer: string, root: string, agent: SlotAgent, slot: stri
   const next = { ...withoutSlot(ia, slot), retired: [...history, record] };
   const issues = validateIa(next, iaFile);
   if (issues.length) return refuse("retire", issues.map(issue => issue.message).join("; "));
-  // Positions number slots across the whole agent IA: every slot after the retired one moves up, so its slot.json follows.
+  // Positions number slots across the whole agent IA: every slot after the retired one moves up, so its slot.json
+  // follows in its own format: a clossys.slot/1 ia is the position itself, a clossys.slot/2 ia the slash-path
+  // positionIa of it, rewritten and validated as slot/2 (as `ia --remove` renumbers).
   const was = slotPositions(agent, ia as unknown as IaDoc), now = slotPositions(agent, next as unknown as IaDoc);
   const renumbered: [string, string][] = [];
   for (const [id, position] of now) {
     const file = slotFile(slotDir(consumer, agent, id));
     if (!modelExists(file)) continue;
     const doc = readModelJson(file) as Record<string, unknown> & { ia?: unknown };
-    if (jsonBytes(doc.ia) === jsonBytes(position) || jsonBytes(doc.ia) !== jsonBytes(was.get(id))) continue;
-    renumbered.push([file, jsonBytes({ ...doc, ia: position })]);
+    const v2 = doc.schema === SLOT_V2_SCHEMA;
+    const want = v2 ? positionIa(id, position) : position, had = v2 ? positionIa(id, was.get(id)) : was.get(id);
+    if (jsonBytes(doc.ia) === jsonBytes(want) || jsonBytes(doc.ia) !== jsonBytes(had)) continue;
+    if (!v2) { renumbered.push([file, jsonBytes({ ...doc, ia: position })]); continue; }
+    const moved = { ...doc, ia: want } as unknown as Slot;
+    const invalid = validateSlot(moved);
+    if (invalid.length) return refuse("retire", `${agent}/${id}: ${invalid.map(issue => `${issue.path} ${issue.message}`).join("; ")}`);
+    renumbered.push([file, serializeSlot(moved)]);
   }
   const folder = isModelDir(dir);
   const moveBack = () => { if (folder && modelExists(to) && !modelExists(dir)) moveModelEntry(to, dir); dropEmptyDir(dirname(to)); };

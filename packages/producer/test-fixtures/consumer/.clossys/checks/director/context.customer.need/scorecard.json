@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "director/context.customer.need",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "need-v1.md",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "need-v1.md",
+      "sha256": "7ed4acb5ade99b8c3db11affe6dc7619cb19e107282baa5fc3936111270c4275",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "4079431faaaa29e34f2e17747494498585bae81b025bd261f2023c0e160d17e8"
+    }
+  ]
+}

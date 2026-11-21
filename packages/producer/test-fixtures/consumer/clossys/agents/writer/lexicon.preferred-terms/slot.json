@@ -16,22 +16,19 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
   "refs": [
     {
       "to": "director/identity.verbal.voice",
-      "rel": "input",
-      "key": "Do"
+      "rel": "input"
     },
     {
       "to": "director/identity.naming.name",
-      "rel": "input",
-      "key": "Name"
+      "rel": "input"
     },
     {
       "to": "director/identity.naming.architecture",
-      "rel": "input",
-      "key": "Rule"
+      "rel": "input"
     },
     {
       "to": "director/focus.category.definition",
@@ -46,18 +43,15 @@
     "inputs": [
       {
         "to": "director/identity.verbal.voice",
-        "rel": "input",
-        "key": "Do"
+        "rel": "input"
       },
       {
         "to": "director/identity.naming.name",
-        "rel": "input",
-        "key": "Name"
+        "rel": "input"
       },
       {
         "to": "director/identity.naming.architecture",
-        "rel": "input",
-        "key": "Rule"
+        "rel": "input"
       },
       {
         "to": "director/focus.category.definition",
@@ -84,7 +78,15 @@
       {
         "check": "lexicon.record"
       }
-    ]
+    ],
+    "fixture": {
+      "keys": [
+        "site"
+      ],
+      "locales": [
+        "en"
+      ]
+    }
   },
   "tighten": [],
   "family": {

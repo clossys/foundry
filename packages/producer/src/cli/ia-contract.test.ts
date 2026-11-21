@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -144,5 +144,21 @@ describe("clossys ia: input-less leaves of one L2 overlap only on equal requirem
     const root = await seeded();
     const result = await place(root, "sections.second", { requirements: [{ check: "text.nonempty" }] }, ["--inputs", "sections.first"]);
     expect(result.exitCode, result.message).toBe(0);
+  });
+});
+
+// A slot/2 slot's option family is slot/2 data: `ia --contract` on such a slot (the pinned-world seeder rewrites
+// Writer contracts through it) keeps the family rather than refusing it as an unknown slot/1 key or dropping it.
+describe("clossys ia --contract on a slot/2 slot with an option family", () => {
+  it("keeps the family it stored", async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "ia-family-")));
+    cpSync(new URL("../../test-fixtures/consumer/", import.meta.url), root, { recursive: true });
+    const path = join(root, "clossys", "agents", "director", "aspiration.purpose.vision", "slot.json");
+    const before = JSON.parse(readFileSync(path, "utf8")) as { contract: unknown; family: unknown };
+    expect(before.family).toBeDefined();
+    put(join(root, "contract.json"), JSON.stringify(before.contract));
+    const result = await runIaCli(["director/aspiration.purpose.vision", "--contract", join(root, "contract.json")], root);
+    expect(result.exitCode, result.message).toBe(0);
+    expect((JSON.parse(readFileSync(path, "utf8")) as { family: unknown }).family).toEqual(before.family);
   });
 });

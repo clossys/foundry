@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "director/focus.category.definition/pin",
+  "agent": "director",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "director/focus.category.definition",
+      "sha256": "9e1c58f0a61ed97b76c8313980c9b7ae593e363f3772d73177e18e78d8b7f15b"
+    }
+  ],
+  "candidate": "definition-v1.md",
+  "sha256": "aa13638b9ad5aca20634e0a602faf41b3b7a432032861c019608b0ae81b7a8bb",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

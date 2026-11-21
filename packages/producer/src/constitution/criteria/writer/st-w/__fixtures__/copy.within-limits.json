@@ -76,6 +76,49 @@
         }
       },
       "note": "limits from the bound passage contract's field maxLength"
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "\n## en\n\n### skip.label\n<!-- {\"id\":\"skip.label\",\"bindings\":[]} -->\nSkip to content\n\n### navigation.open\n<!-- {\"id\":\"navigation.open\",\"bindings\":[]} -->\nOpen menu\n",
+        "json": {
+          "slot": "frames.site-header.copy",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "contract": {
+          "unit": "designer/frames.site-header",
+          "candidate": "clossys.copy-candidate/1",
+          "copy": {
+            "sourceLocale": "en",
+            "fields": [
+              {
+                "key": "skip.label",
+                "kind": "plain",
+                "role": "label",
+                "required": true,
+                "maxLength": {
+                  "en": 60
+                },
+                "dir": "auto"
+              },
+              {
+                "key": "navigation.open",
+                "kind": "plain",
+                "role": "action",
+                "required": true,
+                "maxLength": {
+                  "en": 24
+                },
+                "dir": "auto"
+              }
+            ]
+          }
+        }
+      },
+      "note": "limits from a unit copy contract's field maxLength, which states no contract kind"
     }
   ],
   "fail": [
@@ -205,6 +248,49 @@
         }
       },
       "note": "a bound contract that states no limits leaves nothing to check"
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "\n## en\n\n### skip.label\n<!-- {\"id\":\"skip.label\",\"bindings\":[]} -->\nSkip to content\n\n### navigation.open\n<!-- {\"id\":\"navigation.open\",\"bindings\":[]} -->\nOpen menu\n",
+        "json": {
+          "slot": "frames.site-header.copy",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "contract": {
+          "unit": "designer/frames.site-header",
+          "candidate": "clossys.copy-candidate/1",
+          "copy": {
+            "sourceLocale": "en",
+            "fields": [
+              {
+                "key": "skip.label",
+                "kind": "plain",
+                "role": "label",
+                "required": true,
+                "maxLength": {
+                  "en": 60
+                },
+                "dir": "auto"
+              },
+              {
+                "key": "navigation.open",
+                "kind": "plain",
+                "role": "action",
+                "required": true,
+                "maxLength": {
+                  "en": 4
+                },
+                "dir": "auto"
+              }
+            ]
+          }
+        }
+      },
+      "note": "a unit copy contract's field maxLength binds: navigation.open exceeds 4 characters"
     }
   ]
 }

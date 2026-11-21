@@ -1,3 +1,4 @@
+import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { LABEL } from "../certify/certify.world.js";
@@ -5,7 +6,7 @@ import { certify, certifyEnv } from "../certify/index.js";
 import { expectCatches, type WorkspaceSpec } from "../__fixtures__/workspace.js";
 import type { Check, ConstitutionContext } from "../types.js";
 import { importSpecifiers, R03, R03_CHECKS, r03_1, r03_2, r03_3, r03_4, r03_5, RAW_HEADLESS, RUNG_READS, sourceKindOf } from "./r03.js";
-import { adoptedItem, createVerdict, createdItem, r03Spec, r03World, SEED_HASH, SEED_REF, submit } from "./r03.world.js";
+import { adoptedItem, createVerdict, createdItem, r03Spec, r03World, SEED_HASH, SEED_REF, submit, vendorSeed } from "./r03.world.js";
 import { put } from "./r15.world.js";
 import { sha256Hex } from "../../records/hash.js";
 
@@ -131,7 +132,7 @@ describe("R03.3 one certifier", () => {
 
 describe("R03.4 adopt-first keeps seed files byte-exact", () => {
   it("catches an edited vendored copy under an adopt-first standard", () => {
-    catches(r03_4, broken(spec => { button(spec).candidates = { "button-v1.json": adoptedItem(`${LABEL}// edited\n`) }; }), /component is adopt-first: .*ui\/ui\.button\.tsx is not byte-exact to shadcn\/button@1\.0\.0/);
+    catches(r03_4, broken(spec => { button(spec).candidates = { "button-v1.json": adoptedItem(`${LABEL}// edited\n`) }; }), /component is adopt-first: .*ui\/ui\.button\.tsx is not byte-exact to the normalized reference shadcn\/button@1\.0\.0/);
   });
 
   it("allows an adapt that only adds files, and catches one that maps no seed file", () => {
@@ -139,6 +140,19 @@ describe("R03.4 adopt-first keeps seed files byte-exact", () => {
     const ctx = broken(spec => { button(spec).candidates = { "button-v1.json": added }; button(spec).ledger = { events: [submit("button-v1.json", "L3", { seed: SEED_REF })] }; });
     expect(r03_4(ctx)).toEqual([]);
     catches(r03_4, broken(spec => { const item = adoptedItem(); item.meta = { source: (item.meta as { source: unknown }).source }; button(spec).candidates = { "button-v1.json": item }; }), /maps no file to it/);
+  });
+
+  it("compares with the normalized reference, not the raw seed bytes", () => {
+    // The vendored seed imports through the registry path; the consumer's components.json rewrites it to its alias.
+    const raw = `import { cn } from "@/registry/aria-nova/lib/utils";\n${LABEL}`;
+    const normalized = `import { cn } from "@/lib/utils";\n${LABEL}`;
+    const seeded = (code: string) => broken(spec => { button(spec).candidates = { "button-v1.json": adoptedItem(code) }; }, (root, consumer) => vendorSeed(root, consumer, raw));
+    expect(r03_4(seeded(normalized))).toEqual([]);
+    catches(r03_4, seeded(raw), /ui\/ui\.button\.tsx is not byte-exact to the normalized reference shadcn\/button@1\.0\.0 registry\/ui\/button\.tsx/);
+  });
+
+  it("refuses when the seed cannot be normalized (no consumer components.json)", () => {
+    catches(r03_4, broken(() => {}, (_root, consumer) => rmSync(join(consumer, "components.json"))), /cannot read the normalized reference shadcn\/button@1\.0\.0 .*no components\.json/);
   });
 
   it("is silent on a craft standard or no standard", () => {

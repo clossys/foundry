@@ -14,6 +14,8 @@ import { validateAgainst } from "../constitution/schema.js";
 import { slotIndex } from "../records/slots.js";
 import { appendRetireCandidate, appendRetireSlot } from "../records/slot-write.js";
 import { SeatRefusal } from "../records/seat-owner.js";
+import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
+import { positionIa } from "../records/slot.js";
 
 let workspace: string;
 let agents: string;
@@ -182,6 +184,23 @@ describe("clossys retire <agent>/<slot> --slot", () => {
     expect(load(join(agents, "_retired", ID, "pin.json")).candidate).toBe("example-v2.json");
     // The slots after it move up one place, and their slot.json follows.
     expect([OTHER, USER].map(id => load(join(agents, id, "slot.json")).ia.order)).toEqual([0, 1]);
+    expect(checkSlotModel(join(workspace, "clossys"))).toEqual([]);
+  });
+
+  it("renumbers a clossys.slot/2 store: each later slot.json takes the slash-path positionIa of its new place", async () => {
+    // One format (U13): the store is converted by the real migration (clossys migrate slots --apply) first.
+    const plan = planSlotsMigration(workspace, { at: AT, version: "0.0.0-test" });
+    expect(plan.findings).toEqual([]);
+    applySlotsMigration(workspace, plan, { at: AT, version: "0.0.0-test" });
+    expect([OTHER, USER].map(id => load(join(agents, id, "slot.json")).schema)).toEqual(["clossys.slot/2", "clossys.slot/2"]);
+    expect((await retire(`designer/${ID}`, "--slot")).exitCode).toBe(0);
+    const now = slotPositions("designer", load(join(agents, "ia.json")) as IaDoc);
+    for (const [order, id] of [OTHER, USER].entries()) {
+      const doc = load(join(agents, id, "slot.json"));
+      expect(doc.schema).toBe("clossys.slot/2");
+      expect(doc.ia).toEqual(positionIa(id, now.get(id)));
+      expect(doc.ia.order).toBe(order);
+    }
     expect(checkSlotModel(join(workspace, "clossys"))).toEqual([]);
   });
 

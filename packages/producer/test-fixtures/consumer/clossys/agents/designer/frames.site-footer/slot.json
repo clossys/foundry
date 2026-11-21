@@ -8,7 +8,7 @@
     "l0": "frames",
     "l1": "frames/frames",
     "l2": "frames/frames/frames-bars",
-    "order": 206
+    "order": 203
   },
   "createdBy": {
     "actor": "code",
@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -80,10 +80,6 @@
     },
     {
       "to": "designer/components.icon",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.link",
       "rel": "uses"
     },
     {
@@ -184,7 +180,7 @@
       {
         "id": "links",
         "required": false,
-        "accepts": "components.link"
+        "accepts": "components.button"
       },
       {
         "id": "legal",
@@ -257,7 +253,7 @@
       ]
     },
     "composes": [
-      "components.link",
+      "components.button",
       "components.icon",
       "components.logo",
       "components.separator",
@@ -300,7 +296,7 @@
         "props": {
           "children": [
             "DRAFT columns",
-            "DRAFT links (components.link)",
+            "DRAFT links (components.button)",
             "DRAFT legal",
             "DRAFT social (components.icon)"
           ]

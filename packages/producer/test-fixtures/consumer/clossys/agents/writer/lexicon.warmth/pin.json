@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "writer/lexicon.warmth/pin",
+  "agent": "writer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "writer/lexicon.warmth",
+      "sha256": "3fafdc54ada1edabf5ba86f4a84807c879bbae62a933fb8ad2f1ddbd9e5a8bfc"
+    }
+  ],
+  "candidate": "warmth-v1.md",
+  "sha256": "7cf5a6b4fea3b362d78d22343f2e18f0b9c29efef211a07d31825cf00cacf4f6",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}
