@@ -32,6 +32,7 @@ import { refVerbatimSuite } from "../check/record-suites.js";
 import { runConstitution } from "../constitution/run.js";
 import { NO_HISTORY } from "../constitution/__fixtures__/workspace.js";
 import { pinUpstream } from "./__fixtures__/upstream.js";
+import { STATE_DIR } from "../engine/state-dir.js";
 
 const AT = "2026-11-17T12:00:00Z";
 const temps: string[] = [];
@@ -39,7 +40,8 @@ afterEach(() => { for (const dir of temps.splice(0)) rmSync(dir, { recursive: tr
 function copy(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "agent-loops-cli-")));
   temps.push(root);
-  cpSync(join(FIXTURE_CONSUMER_ROOT, "clossys"), join(root, "clossys"), { recursive: true });
+  // The records only: the fixture's engine state (STATE_DIR) stays behind, so each copy starts its own event log.
+  cpSync(join(FIXTURE_CONSUMER_ROOT, "clossys"), join(root, "clossys"), { recursive: true, filter: src => src !== join(FIXTURE_CONSUMER_ROOT, STATE_DIR) });
   return root;
 }
 function tree(dir: string, base = dir, out: Record<string, string> = {}): Record<string, string> {
