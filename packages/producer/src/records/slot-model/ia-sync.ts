@@ -40,6 +40,7 @@ import { OPTION_TABLE } from "./option-classes.js";
 import { CONTRACT_AGENTS, familyFor, seededContract } from "../../migrate/contracts.js";
 import { readStandard } from "../standards.js";
 import { AGENT_LOOPS, holdsAgentLoops, isLoopAgent, withAgentLoopsIa } from "../../loop/agent-loops-ia.js";
+import { consumedIds, consumedLeaves, filterFoundryIa, isConsumedAgent } from "./consumed.js";
 
 /**
  * The agents whose IA a package owns: the three catalog agents and the Producer seat tree
@@ -53,7 +54,7 @@ const CREATED_BY_SYNC: ReadonlySet<SyncAgent> = new Set(["producer"]);
 
 export const SYNC_KINDS = [
   "undeclared-leaf", "unadopted-leaf", "redefined", "source", "layers", "axes", "node", "group", "order", "contract", "kind", "behaviour", "position", "slot-missing",
-  "seat-pending",
+  "seat-pending", "unconsumed-leaf",
 ] as const;
 export type SyncKind = typeof SYNC_KINDS[number];
 export interface SyncFinding { readonly agent: SyncAgent; readonly kind: SyncKind; readonly slot?: string; readonly detail: string }
@@ -64,14 +65,20 @@ export interface SyncFinding { readonly agent: SyncAgent; readonly kind: SyncKin
  * that waits on a seat decision (`clossys seat <step>`), not a record that is missing. A seat folder that holds any
  * record (a pin, a candidate, a ledger) but no slot.json is `slot-missing` and fails both paths.
  */
-export const PENDING_SYNC_KINDS: ReadonlySet<SyncKind> = new Set(["seat-pending"]);
+export const PENDING_SYNC_KINDS: ReadonlySet<SyncKind> = new Set(["seat-pending", "unconsumed-leaf"]);
+/**
+ * `unconsumed-leaf` (CONSISTENCY D5 option 1) is a package leaf the consumer placed that no declared or seated
+ * publication reaches (records/slot-model/consumed.ts). The sync neither adds nor drops it: ia.orphans judges it (it
+ * fails there), and the adopt verb's own re-run (`clossys ia <agent> --adopt`) takes it out of the tree.
+ */
+export const unconsumedRemedy = (agent: string): string => `clossys ia ${agent} --adopt (its re-run takes unconsumed package leaves out of the tree; clossys request adopts one again)`;
 export const failsSync = (finding: Pick<SyncFinding, "kind">): boolean => !PENDING_SYNC_KINDS.has(finding.kind);
 /** The remedy a seat-pending finding names: the seat verb, as its usage states it (owner.ts SEAT_USAGE). */
 export const seatRemedy = (step: string): string =>
   `clossys seat ${step} --by <who> (--model <id> --tier low|mid|high --prompt-file <path> | --llm-from <step> | --no-llm) --decided-by owner:queue.<kind>#<id>|planner[:<ref>]`;
 
 /** Whether a slot folder holds any record file at any depth: empty folders (a refused verb's leftover) hold none. */
-const holdsRecord = (dir: string): boolean =>
+export const holdsRecord = (dir: string): boolean =>
   listModelDir(dir).some(name => { const path = `${dir}/${name}`; return isModelDir(path) ? holdsRecord(path) : modelExists(path); });
 
 type Doc = Record<string, unknown>;
@@ -319,16 +326,31 @@ export interface SyncState {
   readonly target: IaDoc;
   readonly positions: ReadonlyMap<string, SlotPosition>;
   readonly undeclared: readonly string[];
+  /** Every package leaf id, the ones `pkg` leaves out included. */
+  readonly packageIds: ReadonlySet<string>;
+  /** Placed package leaves no publication reaches (CONSISTENCY D5 option 1); empty when consumption is not judged. */
+  readonly unconsumed: readonly string[];
 }
 
-export function syncState(consumerDir: string, agent: SyncAgent, pkg: FoundryIa = PACKAGE_IA[agent]()): SyncState {
+/**
+ * The sync state of one agent. With the package IA defaulted, a Director, Designer or Writer package is scoped to the
+ * leaves a publication reaches (consumed.ts) plus the package leaves the consumer already places: the sync adopts a
+ * newly consumed leaf and never re-adds an unconsumed one. `consumed` scopes a given package the same way (tests).
+ */
+export function syncState(consumerDir: string, agent: SyncAgent, pkg?: FoundryIa, consumed?: ReadonlySet<string>): SyncState {
+  const full = pkg ?? PACKAGE_IA[agent]();
   const file = iaPath(consumerDir, agent);
   const consumer = modelExists(file) ? readDoc(file) as unknown as IaDoc : undefined;
-  const packaged = new Set<string>([...pkg.slots.keys(), ...(isLoopAgent(agent) ? AGENT_LOOPS : [])]);
+  const packageIds = new Set(full.slots.keys());
+  const packaged = new Set<string>([...packageIds, ...(isLoopAgent(agent) ? AGENT_LOOPS : [])]);
   const declared = new Set(consumer?.extensions ?? []);
-  const undeclared = consumer ? placedIds(consumer).filter(id => !packaged.has(id) && !declared.has(id)) : [];
-  const target = targetIa(agent, pkg.ia, consumer);
-  return { agent, pkg, consumer, target, positions: slotPositions(agent, target), undeclared };
+  const placedNow = new Set(consumer ? placedIds(consumer) : []);
+  const undeclared = consumer ? [...placedNow].filter(id => !packaged.has(id) && !declared.has(id)) : [];
+  const reach = consumed ?? (pkg === undefined && isConsumedAgent(agent) ? consumedIds(consumedLeaves(dirname(consumerDir)), agent) : undefined);
+  const scoped = reach ? filterFoundryIa(full, new Set([...packageIds].filter(id => reach.has(id) || placedNow.has(id)))) : full;
+  const unconsumed = reach ? [...packageIds].filter(id => placedNow.has(id) && !reach.has(id)) : [];
+  const target = targetIa(agent, scoped.ia, consumer);
+  return { agent, pkg: scoped, consumer, target, positions: slotPositions(agent, target), undeclared, packageIds, unconsumed };
 }
 
 const sameJson = (a: unknown, b: unknown) => isDeepStrictEqual(JSON.parse(JSON.stringify(a ?? null)), JSON.parse(JSON.stringify(b ?? null)));
@@ -347,7 +369,8 @@ export function syncDrift(consumerDir: string, agent: SyncAgent, state: SyncStat
   const placed = new Set(placedIds(consumer));
   for (const id of state.undeclared) add("undeclared-leaf", `${id} is placed in the consumer but is neither a package leaf nor a declared extension`, id);
   for (const id of pkg.slots.keys()) if (!placed.has(id)) add("unadopted-leaf", `${id} is a package leaf the consumer has not adopted`, id);
-  for (const id of consumer.extensions ?? []) if (pkg.slots.has(id)) add("redefined", `${id} is declared as an extension but is a package leaf`, id);
+  for (const id of state.unconsumed) add("unconsumed-leaf", `${id} is a package leaf no declared or seated publication reaches: ${unconsumedRemedy(agent)}`, id);
+  for (const id of consumer.extensions ?? []) if (state.packageIds.has(id)) add("redefined", `${id} is declared as an extension but is a package leaf`, id);
   if (consumer.source !== target.source) add("source", `source ${JSON.stringify(consumer.source)} is not the package's ${JSON.stringify(target.source)}`);
   if (!sameJson(consumer.layers, target.layers)) add("layers", `layers differ from the package (${consumer.layers ? consumer.layers.map(layer => layer.id).join(", ") : "none"} vs ${target.layers ? target.layers.map(layer => layer.id).join(", ") : "none"})`);
   if (!sameJson(consumer.axes, target.axes)) add("axes", `axes differ from the package (${consumer.axes ? "declared" : "none"} vs ${target.axes ? "declared" : "none"})`);

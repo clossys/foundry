@@ -17,6 +17,7 @@
   ],
   "defaults": [
     "layout.deck/standard-v1.json",
-    "page.deck/starter-v1.json"
+    "page.deck/starter-v1.json",
+    "publication.slides/starter-v1.json"
   ]
 }

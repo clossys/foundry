@@ -64,6 +64,12 @@ export interface AdminPage {
 export interface AdminRead { readonly section: string; readonly port: string; readonly records: string; readonly scope: string }
 export interface AdminPlan {
   readonly pages: readonly AdminPage[]; readonly publication: string; readonly root: string;
+  /**
+   * Every slot the admin publication cites (its inputs and uses): its pages in plan order, then the slots its Publisher
+   * package default (`defaults/publication.admin/starter-v1.json`) names, the Writer publication meta among them
+   * (foundry-build-0048 CONSISTENCY D5 option 4: the publication consumes `writer/publication.admin.meta`).
+   */
+  readonly publicationCites: readonly string[];
   /** The admin publication's seeded clossys.publication/1 record (adminPublicationRecord). */
   readonly record: Readonly<Record<string, unknown>>;
 }
@@ -165,6 +171,14 @@ export const dataBoundReads = (root: string): ReadonlyMap<string, AdminRead> => 
 /** The route scope parameters a `reads.scope` names (`workspace` names none). */
 export const scopeParams = (scope: string): string[] => scope === "workspace" ? [] : scope.split(",").map(part => part.trim()).filter(Boolean);
 
+const SLOT_STRING = /^(?:director|designer|writer|publisher)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})(?:#.*)?$/;
+/** The slot ids (agent prefix and `#record` dropped) every `<agent>/<slot>` string in a package default names, in document order. */
+function slotIdsIn(value: unknown): string[] {
+  if (typeof value === "string") { const id = SLOT_STRING.exec(value)?.[1]; return id ? [id] : []; }
+  if (Array.isArray(value)) return value.flatMap(slotIdsIn);
+  return value !== null && typeof value === "object" ? Object.values(value).flatMap(slotIdsIn) : [];
+}
+
 /** The admin seat plan, as the installed Publisher (and Designer) packages state it for `root`. */
 export function adminPlan(root: string): AdminPlan {
   const publisher = (rel: string) => packagePath(root, `packages/publisher/${rel}`);
@@ -196,7 +210,9 @@ export function adminPlan(root: string): AdminPlan {
       record,
     };
   });
-  return { pages, publication: ADMIN_PUBLICATION_SLOT, root: starter.root, record: adminPublicationRecord(pages.map(page => page.id)) };
+  const publicationDefault = readJson<{ content?: unknown }>(publisher(`defaults/${ADMIN_PUBLICATION_SLOT}/starter-v1.json`)).content;
+  const publicationCites = [...new Set([...pages.map(page => page.id), ...slotIdsIn(publicationDefault)])];
+  return { pages, publication: ADMIN_PUBLICATION_SLOT, root: starter.root, publicationCites, record: adminPublicationRecord(pages.map(page => page.id)) };
 }
 
 /** The consumer-side contract `clossys ia` places for one admin page (free-form besides its fixture and requirements). */

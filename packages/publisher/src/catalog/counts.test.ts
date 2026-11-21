@@ -190,7 +190,7 @@ describe("starter publications and package defaults", () => {
     const slotsWithDefault = new Set([...defaults.keys()].map(key => key.slice(0, key.indexOf("/"))));
     const missing = starterLeaves().filter(id => !id.startsWith("release.") && !slotsWithDefault.has(id));
     expect(missing).toEqual([]);
-    expect(defaults.size).toBe(55);
+    expect(defaults.size).toBe(60);
     for (const [key, file] of defaults) {
       expect(file.clossys.source.kind, key).toBe("package-default");
       expect(file.clossys.id, key).toBe(`publisher/${key.slice(0, key.indexOf("/"))}/package:${key.slice(key.indexOf("/") + 1)}`);
@@ -200,6 +200,19 @@ describe("starter publications and package defaults", () => {
   it("every starter slot is consumed by a starter (starter.consumed-only)", () => {
     const consumed = new Set(STARTER_IDS.flatMap(id => { const s = loadStarter(id); return [...s.pages, ...s.layouts, ...s.chrome, s.release]; }));
     expect(starterLeaves().filter(id => !consumed.has(id))).toEqual([]);
+  });
+
+  it("each starter's publication default names its Writer publication meta slot as consumed (CONSISTENCY D5 option 4)", () => {
+    const writerCopy = loadWriterCopySlots();
+    for (const id of STARTER_IDS) {
+      const starter = loadStarter(id);
+      expect(starter.defaults, id).toContain(`publication.${id}/starter-v1.json`);
+      const option = defaults.get(`publication.${id}/starter-v1.json`)!;
+      expect(option.clossys.slot, id).toBe(`publisher/publication.${id}`);
+      const copy = (option.content as { meta?: { copy?: string } }).meta?.copy;
+      expect(copy, id).toBe(`writer/publication.${id}.meta#${id}.meta`);
+      expect(writerCopy.has(`publication.${id}.meta`), id).toBe(true);
+    }
   });
 
   it("a layout default orders exactly the layout's roles and requires at least the required ones", () => {

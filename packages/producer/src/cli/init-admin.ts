@@ -121,7 +121,9 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
       const refused = await place(page.id, "page", adminContract(plan, page.id), refs) ?? await rewire(page.id, "page", refs);
       if (refused) return fail(refused);
     }
-    const pageRefs = adminRefs(plan.pages.map(page => page.id), held());
+    // The publication cites its pages and the slots its package default names (the Writer publication meta), each
+    // that the workspace holds: a page this run placed, or a slot of any agent.
+    const pageRefs = adminRefs(plan.publicationCites, new Set([...held(), ...known]));
     const refused = await place(plan.publication, "publication", adminContract(plan, plan.publication), pageRefs) ?? await rewire(plan.publication, "publication", pageRefs);
     if (refused) return fail(refused);
   } finally { rmSync(dir, { recursive: true, force: true }); }

@@ -30,6 +30,7 @@ import { join } from "node:path";
 import { SEATABLE_STARTERS } from "../cli/starter-plan.js";
 import { placedIds } from "../constitution/context.js";
 import { packagePath } from "../package-path.js";
+import { LOOP_NAMES } from "../loop/names.js";
 import { releaseSlotId } from "../release/paths.js";
 import { SLOT_SCHEMA, consumerSlotFolders, readSlot, slotSchemaOf, treeResult, type TreeCheck, type TreeCheckResult, type TreeFinding } from "../records/slot.js";
 import { slotReadIssues } from "../records/slot-current.js";
@@ -157,10 +158,9 @@ function placedSeats(root: string): Set<string> {
   try { return new Set(placedIds(JSON.parse(readFileSync(file, "utf8"))).filter(id => seatStepOf(id) !== undefined)); } catch { return new Set(); }
 }
 
-export function runIaOrphans(root: string): TreeCheckResult {
-  const folders = consumerSlotFolders(root);
-  const { roots, findings, seated } = publicationRoots(root);
-  const seats = placedSeats(root);
+/** The consumer's slot graph as ia.orphans walks it: forward edges by slot key, and the consumedBy edges read backward. */
+export interface ConsumerGraph { readonly forward: ReadonlyMap<string, readonly string[]>; readonly backward: ReadonlyMap<string, readonly string[]> }
+export function consumerGraph(root: string, folders: ReturnType<typeof consumerSlotFolders> = consumerSlotFolders(root)): ConsumerGraph {
   const forward = new Map<string, string[]>();
   const backward = new Map<string, string[]>();
   for (const folder of folders) {
@@ -178,18 +178,41 @@ export function runIaOrphans(root: string): TreeCheckResult {
     }
     forward.set(key, edges);
   }
-  const walk = (from: readonly string[], skip: ReadonlySet<string>): Set<string> => {
-    const seen = new Set<string>();
-    const queue = [...from];
-    while (queue.length) {
-      const next = queue.pop()!;
-      if (seen.has(next) || skip.has(next)) continue;
-      seen.add(next);
-      queue.push(...(forward.get(next) ?? []), ...(backward.get(next) ?? []));
-    }
-    return seen;
-  };
-  const reached = walk(roots, new Set());
+  return { forward, backward };
+}
+
+/** Every key the graph reaches from `from`, through forward edges and consumedBy edges read backward, never entering `skip`. */
+export function walkGraph(graph: ConsumerGraph, from: readonly string[], skip: ReadonlySet<string> = new Set()): Set<string> {
+  const seen = new Set<string>();
+  const queue = [...from];
+  while (queue.length) {
+    const next = queue.pop()!;
+    if (seen.has(next) || skip.has(next)) continue;
+    seen.add(next);
+    queue.push(...(graph.forward.get(next) ?? []), ...(graph.backward.get(next) ?? []));
+  }
+  return seen;
+}
+
+/**
+ * The loop runner as a consumer (foundry-build-0048 CONSISTENCY D5 option 3): the Producer loops it runs,
+ * `producer/<loop>` for every loop name. A slot is consumed by the runner only through its own recorded
+ * `consumedBy` edge to one of them (an agent loop slot names the Producer loop it extends); nothing is exempt.
+ */
+export const RUNNER_ROOTS: readonly string[] = LOOP_NAMES.map(loop => `producer/${loop}`);
+
+/** The slot keys a seated publication or the loop runner reaches in the consumer (the walk ia.orphans judges by). */
+export function publicationReach(root: string, graph: ConsumerGraph = consumerGraph(root)): { reached: Set<string>; findings: TreeFinding[]; seated: Set<string> } {
+  const { roots, findings, seated } = publicationRoots(root);
+  return { reached: walkGraph(graph, [...roots, ...RUNNER_ROOTS]), findings, seated };
+}
+
+export function runIaOrphans(root: string): TreeCheckResult {
+  const folders = consumerSlotFolders(root);
+  const seats = placedSeats(root);
+  const graph = consumerGraph(root, folders);
+  const { reached, findings, seated } = publicationReach(root, graph);
+  const walk = (from: readonly string[], skip: ReadonlySet<string>) => walkGraph(graph, from, skip);
   // Folders a declared, unseated publication reaches through the same edges, by publication (CONSISTENCY C2).
   const waiting = new Map<string, string[]>();
   for (const [publication, slots] of declaredPublications(root)) {

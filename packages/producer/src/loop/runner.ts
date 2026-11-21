@@ -28,6 +28,8 @@ import { existsSync, lstatSync, mkdirSync, openSync, closeSync, writeSync, readF
 import { appendRecord, buildRecord, invocationOf, observe } from "../pipeline/trace.js";
 import { basename, dirname, join, relative, sep } from "node:path";
 import { checkPinsResolve, resolveAll } from "../check/pins-resolve.js";
+import { IA_ORPHANS, runIaOrphans } from "../check/ia-orphans.js";
+import { RECORDS_COMPUTED_MATCH, runRecordsComputedMatch } from "../check/records-computed-match.js";
 import { answerQueueEntry } from "../queue/answer.js";
 import { entryStamp, findQueueEntry, listQueueEntryFiles, readQueueEntry, slugOf } from "../queue/entry.js";
 import { sha256Hex } from "../records/hash.js";
@@ -1362,11 +1364,23 @@ export async function runInit(root: string, hooks: RunHooks, options: RunOptions
   ];
   for (const step of prelude) {
     const outcome = await hooks.code({ runId: state.runId, step: step.id, cli: step.cli, argv: stepArgv(step.cli, {}).argv.slice(1) });
-    state.steps.push({ id: step.id, decider: { by: "code" }, cli: step.cli, exit: outcome.exit, wrote: wroteOf(root, outcome.wrote) });
-    for (const check of step.checks) state.checks[check] = outcome.exit === 0 ? "pass" : "fail";
-    if (outcome.exit !== 0) return writeLedger(ctx, "stopped", `init stopped at ${step.id} (exit ${outcome.exit})`, outcome.exit);
+    // Each check is judged from the files after the step, never copied from the step's exit (CONSISTENCY round 2):
+    // a failed ia sync whose orphans pass records ia.orphans as passed, and an exit 0 over a failing check stops (B3).
+    const judged = step.checks.map(check => ({ check, verdict: preludeCheck(ctx, check) }));
+    for (const { check, verdict } of judged) state.checks[check] = verdict.ok ? "pass" : "fail";
+    const failed = judged.filter(each => !each.verdict.ok).map(each => (each.verdict as { why: string }).why);
+    const exit: Exit = outcome.exit === 0 && failed.length ? 1 : outcome.exit;
+    state.steps.push({ id: step.id, decider: { by: "code" }, cli: step.cli, exit, wrote: wroteOf(root, outcome.wrote) });
+    if (exit !== 0) return writeLedger(ctx, "stopped", `init stopped at ${step.id} (exit ${exit})${failed.length ? `: ${failed.join("; ")}` : ""}`, exit);
   }
   return writeLedger(ctx, "done", "initialized", 0);
+}
+
+/** One prelude check of runInit, computed from the consumer's files: the tree checks by their own run, pins.resolve as B3 verifies it. */
+function preludeCheck(ctx: Context, name: string): { ok: true } | { ok: false; why: string } {
+  const tree = name === IA_ORPHANS ? runIaOrphans(ctx.root) : name === RECORDS_COMPUTED_MATCH ? runRecordsComputedMatch(ctx.root) : undefined;
+  if (!tree) return verifyCheck(ctx, name);
+  return tree.status === "fail" ? { ok: false, why: `${name}: ${tree.findings.slice(0, 3).map(row => `${row.subject} ${row.detail}`).join("; ")}${tree.findings.length > 3 ? ` (+${tree.findings.length - 3} more)` : ""}` } : { ok: true };
 }
 
 /**

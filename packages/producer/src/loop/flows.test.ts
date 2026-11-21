@@ -188,8 +188,17 @@ const ownerAnswer = (root: string, entry: string, answer: string, now: () => Dat
 const stepLine = (entry: LedgerEntry) => entry.steps.map(step => `${step.id}:${step.decider.by}${step.decider.by === "agent" ? `/${step.decider.model}` : ""}:${step.exit}`);
 
 describe("F1 init (T1)", () => {
+  // The prelude judges each check from the files (CONSISTENCY round 2), so the init world is one whose checks pass:
+  // a Publisher IA with no publication and no slot folder (no orphan, nothing to match, nothing unpinned).
+  const settled = () => {
+    const w = world([]);
+    mkdirSync(join(w.root, "clossys", "agents", "publisher"), { recursive: true });
+    writeFileSync(join(w.root, "clossys", "agents", "publisher", "ia.json"), `${JSON.stringify({ publications: {} })}\n`);
+    return w;
+  };
+
   it("runs ia sync and check, then writes <stamp>-fill-init with outcome initialized", async () => {
-    const w = world(["designer/components.button"]);
+    const w = settled();
     const hooks = stub(w.root);
     const result = await runInit(w.root, hooks, { now: clock() });
     expect(result.exitCode).toBe(0);
@@ -200,11 +209,20 @@ describe("F1 init (T1)", () => {
     expect(entry!.checks).toEqual({ "ia.orphans": "pass", "records.computed-match": "pass", "pins.resolve": "pass" });
   });
 
-  it("stops the init at a failing ia sync", async () => {
-    const w = world([]);
+  it("stops the init at a failing ia sync, recording each check by its own run", async () => {
+    const w = settled();
     const result = await runInit(w.root, stub(w.root, { codeFor: call => call.step === "ia-sync" ? { exit: 1 } : undefined }), { now: clock() });
     expect(result.exitCode).toBe(1);
-    expect(w.ledger("loop.fill")[0]).toMatchObject({ status: "stopped", outcome: "init stopped at ia-sync (exit 1)" });
+    expect(w.ledger("loop.fill")[0]).toMatchObject({ status: "stopped", outcome: "init stopped at ia-sync (exit 1)", checks: { "ia.orphans": "pass", "records.computed-match": "pass" } });
+  });
+
+  it("stops the init at an ia sync that exits 0 over a failing check, naming the check", async () => {
+    const w = world([]);
+    const result = await runInit(w.root, stub(w.root), { now: clock() });
+    expect(result.exitCode).toBe(1);
+    const [entry] = w.ledger("loop.fill");
+    expect(entry).toMatchObject({ status: "stopped", outcome: "init stopped at ia-sync (exit 1): ia.orphans: publisher/ia.json missing: no publication roots", checks: { "ia.orphans": "fail" } });
+    expect(stepLine(entry!)).toEqual(["ia-sync:code:1"]);
   });
 });
 

@@ -25,7 +25,9 @@ const writeIa = (consumer: string, agent: string, doc: unknown) => writeFileSync
 
 describe("ia sync --check", () => {
   it("finds no drift in a consumer generated from the package IA", () => {
-    for (const agent of SYNC_AGENTS) expect(syncDrift(fixture, agent), agent).toEqual([]);
+    // The fixture is a full (pre-D5) adopt: its package leaves no publication reaches are listed as unconsumed-leaf, a
+    // pending finding (ia.orphans fails them; the adopt re-run removes them). Nothing else is listed.
+    for (const agent of SYNC_AGENTS) expect(syncDrift(fixture, agent).filter(finding => finding.kind !== "unconsumed-leaf"), agent).toEqual([]);
   });
 
   it("reports an unadopted package leaf and a placed leaf that is neither packaged nor declared", () => {
