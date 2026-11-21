@@ -6,11 +6,12 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join, posix, resolve } from "node:path";
-import { adaptTheme, installedPath, recordStoreSource, SPECIMEN_SAMPLE_COPY_KEYS, specimenKindOf, type SpecimenAliasContext, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore, type SpecimenTheme } from "@clossys/publisher/specimen";
+import { adaptTheme, installedPath, recordStoreSource, SPECIMEN_SAMPLE_COPY_KEYS, type SpecimenAliasContext, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore, type SpecimenTheme } from "@clossys/publisher/specimen";
 import { listSlots, pinStamp, readCandidate, readSlot, readSlotEntry, slotCandidateIssues, viewIssues, viewPlacedAt, type SlotEntry } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate } from "../records/slot-model/index.js";
 import { contractFixtureIssues, contractFixtureOf, type ContractFixture } from "../records/slot-model/contract-fixture.js";
 import { RecordError } from "../records/validate.js";
+import { elementCheckOf, type ElementCheck } from "../constitution/certify/registry-types.js";
 import { dependencyPart, fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues, treeDependencyParts } from "./specimen-tree.js";
 import { installedCode, itemSpecimenState, specimenStateOf, VISIBLE_STATE_CSS } from "./specimen-state.js";
 import { firstComponentSource } from "@clossys/publisher/build";
@@ -302,15 +303,18 @@ export function certifyCandidate(input: CertifyCandidateInput): CandidateCertifi
   let item: CandidateItem;
   try { item = JSON.parse(bytes) as CandidateItem; }
   catch { return { certified: false, reasons: ["the candidate is not JSON"], mounts: false }; }
-  let mounts: boolean;
-  try { mounts = specimenKindOf({ id: where, kind: item.type, layer: input.layer ?? slot.split(".")[0] }) === "visual"; }
+  // The check its registry type is held to (certify/registry-types.ts, the one table): a hook or lib item mounts no
+  // component but is held to the contract fixture like a visual one; a registry type with no row fails closed.
+  let check: ElementCheck;
+  try { check = elementCheckOf(where, item.type, input.layer ?? slot.split(".")[0]); }
   catch (error) { return { certified: false, reasons: [error instanceof Error ? error.message : String(error)], mounts: false }; }
+  const mounts = check === "render";
   const reasons: string[] = [];
   const build = (candidate: CandidateItem) => {
     try { specimenInputs(root, where, candidate, true, writerSource); }
     catch (error) { reasons.push(error instanceof Error ? error.message : String(error)); }
   };
-  if (!mounts) { build(item); return { certified: !reasons.length, reasons, mounts }; }
+  if (check === "none") { build(item); return { certified: !reasons.length, reasons, mounts }; }
   const declared = contract?.fixture;
   if (declared === undefined) return { certified: false, reasons: [`uncertified: slot ${slot} declares no contract fixture (slot.json contract.fixture)`], mounts };
   const invalid = contractFixtureIssues(contract ?? {});
