@@ -158,7 +158,7 @@ describe("init --publication submits through the guarded candidates verb (slot/2
       expect(existsSync(bare.agent("publisher", "publication.site", "candidates", "site-v2.json"))).toBe(false);
       expect(bare.events().filter(event => event.op === "submit").length).toBe(submits);
     }
-    expect(INIT_USAGE).toContain("Usage: clossys init [--root <dir>] [--at <iso>] [--json]");
+    expect(INIT_USAGE).toContain("Usage: clossys init [--starters <id,...>] [--root <dir>] [--at <iso>] [--json]");
     expect(INIT_USAGE).toContain("Usage: clossys init --publication <id>");
     expect(INIT_USAGE).toContain("runs plain clossys init first");
   }, 300_000);
