@@ -175,6 +175,8 @@ export async function publishSite(options: PublishSiteOptions): Promise<PublishS
     for (const route of plan.routes) {
       // The cell supplies copy bullets only; the route pack owns the sections, the content map the frame.
       const cell = await pageRecordFromCell(root, route.id, pins, copy);
+      // The route's content-map title is its document title: a key Writer does not hold blocks the render, as for a page.
+      if (!Object.hasOwn(copy, route.title)) findings.push({ code: "missing-copy-key", detail: `${route.id}: Writer has no key ${route.title} (for the page title)` });
       if (cell.frame !== route.frame || JSON.stringify(cell.sections) !== JSON.stringify(route.sections)) {
         findings.push({ code: "site-cell-mismatch", severity: "info", detail: `${route.id}: page cell lists ${cell.frame} [${cell.sections.join(", ")}]; the site mounts ${route.frame} [${route.sections.join(", ")}]` });
       }
@@ -203,7 +205,8 @@ export async function publishSite(options: PublishSiteOptions): Promise<PublishS
       for (const [index, page] of pages.entries()) {
         const route = plan.routes[index]!;
         try {
-          const markup = await renderBoundPage(page, substrate);
+          // The content-map title's Writer text, the same title the routed entry sets (siteTable).
+          const markup = await renderBoundPage(page, substrate, copy[route.title] || undefined);
           const file = htmlPath(out, route.path);
           await mkdir(join(file, ".."), { recursive: true });
           await writeFile(file, markup);

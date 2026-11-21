@@ -346,6 +346,7 @@
   ],
   "render": {
     "install-home/site/home": [
+      "<title>Plain Studio home</title>",
       "<main data-frame=\"plain\">",
       "<p data-copy=\"frame.title\">Plain Studio</p>",
       "<h1 data-copy=\"hero.heading\">Pages built from pinned records</h1>",

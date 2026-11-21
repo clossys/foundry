@@ -12,7 +12,7 @@ import { parseArgs } from "../cli/args.js";
 import { runReleaseCli } from "../cli/release.js";
 import type { BuildRequest, ReleaseBuilder } from "../release/build.js";
 import { releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
-import { E2E_CAUSES, E2E_CHECK, E2E_COHORT, childEnv, e2eDoc, installFindings, producerPackageRoot, readScenario, renderFindings, runScenario, type Clossys, type ScenarioStep } from "./e2e.js";
+import { E2E_CAUSES, E2E_CHECK, E2E_COHORT, childEnv, e2eDoc, installFindings, machineRoots, movedFinding, portableFindings, producerPackageRoot, readScenario, renderFindings, runScenario, type Clossys, type ScenarioStep } from "./e2e.js";
 
 const PACKAGE = producerPackageRoot();
 const SHIPPED = join(PACKAGE, "e2e");
@@ -84,6 +84,15 @@ describe("the shipped scenario", () => {
       expect(line, `${slot}: ${key} is a Writer key`).toBeDefined();
       expect(html, slot).toContain(`data-copy="${slot}"`);
     }
+  });
+
+  it("asserts the document title is the page's Writer title text, never the page id", () => {
+    const strings = readFileSync(join(SHIPPED, "site.md"), "utf8").split("\n");
+    const page = JSON.parse(readFileSync(join(SHIPPED, "home.json"), "utf8")) as { title: string };
+    const heading = strings.indexOf(`### ${page.title}`);
+    expect(heading, `${page.title} is a Writer key`).toBeGreaterThan(-1);
+    const text = strings.slice(heading + 1).find(line => line.trim() && !line.startsWith("<!--"))!;
+    expect(Object.values(scenario.render).flat()).toContain(`<title>${text}</title>`);
   });
 });
 
@@ -207,6 +216,64 @@ describe("install and render findings", () => {
       'e2e.render install-home/site/home index.html lacks "Every word on this page"',
       "e2e.render install-about/site/about the build holds no site/install-about/site/about/index.html",
     ]);
+  });
+
+  it("names every build file holding an absolute path of the consumer, and passes one that holds none", () => {
+    const root = temp(), build = join(root, "consumer", ".clossys", "builds", "abc");
+    mkdirSync(join(build, "site", "install-home", ".clossys"), { recursive: true });
+    writeFileSync(join(build, "site", "install-home", "index.html"), "<title>Plain Studio home</title>");
+    writeFileSync(join(build, "site", "install-home", "app.js"), 'import "../../node_modules/react/index.js";');
+    expect(portableFindings(build, [join(root, "consumer"), root])).toEqual([]);
+    writeFileSync(join(build, "site", "install-home", ".clossys", "render-1.mjs"), `import "${join(root, "consumer", "node_modules", "react", "index.js")}";`);
+    writeFileSync(join(build, "site", "install-home", "pack.json"), JSON.stringify({ from: join(root, "pack") }));
+    expect(portableFindings(build, [join(root, "consumer"), root]).map(row => `${row.cause} ${row.subject} ${row.detail}`)).toEqual([
+      `e2e.portable site/install-home/.clossys/render-1.mjs holds the consumer's absolute path ${join(root, "consumer")}`,
+      `e2e.portable site/install-home/pack.json holds the consumer's absolute path ${root}`,
+    ]);
+  });
+
+  it("names a build file holding the machine's home or temp path, a path that does not depend on where the consumer lives", () => {
+    const root = temp(), build = join(root, "consumer", ".clossys", "builds", "abc");
+    mkdirSync(join(build, "site"), { recursive: true });
+    const machine = { home: "/Users/someone", tmp: "/private/var/folders/xy/T" };
+    writeFileSync(join(build, "site", "index.html"), "<title>Plain Studio home</title>");
+    expect(portableFindings(build, [join(root, "consumer")], machine)).toEqual([]);
+    writeFileSync(join(build, "site", "cache.js"), 'import "/Users/someone/.npm/_cacache/react/index.js";');
+    writeFileSync(join(build, "site", "scratch.js"), 'import "/private/var/folders/xy/T/esbuild-1/out.js";');
+    expect(portableFindings(build, [join(root, "consumer")], machine).map(row => `${row.cause} ${row.subject} ${row.detail}`)).toEqual([
+      "e2e.portable site/cache.js holds the machine's home path /Users/someone",
+      "e2e.portable site/scratch.js holds the machine's temp path /private/var/folders/xy/T",
+    ]);
+    // A home of "/" would match every file: it is no needle.
+    expect(portableFindings(build, [join(root, "consumer")], { home: "/", tmp: "" }).map(row => row.subject)).toEqual([]);
+  });
+
+  it("searches the unresolved temp folder and /tmp/ as well as the real temp folder", () => {
+    const root = temp(), build = join(root, "consumer", ".clossys", "builds", "abc"), real = join(root, "real-temp"), link = join(root, "link-temp");
+    mkdirSync(join(build, "site"), { recursive: true });
+    mkdirSync(real);
+    symlinkSync(real, link);
+    const saved = process.env.TMPDIR;
+    process.env.TMPDIR = link;
+    let machine: ReturnType<typeof machineRoots>;
+    try { machine = machineRoots(); } finally { if (saved === undefined) delete process.env.TMPDIR; else process.env.TMPDIR = saved; }
+    expect(machine.tmp).toEqual([realpathSync(link), link, "/tmp/"]);
+    writeFileSync(join(build, "site", "index.html"), "<title>Plain Studio home</title>");
+    expect(portableFindings(build, [join(root, "consumer")], machine)).toEqual([]);
+    writeFileSync(join(build, "site", "raw.js"), `import "${link}/esbuild-1/out.js";`);
+    writeFileSync(join(build, "site", "slash-tmp.js"), 'import "/tmp/esbuild-out/x.js";');
+    expect(portableFindings(build, [join(root, "consumer")], machine).map(row => `${row.cause} ${row.subject} ${row.detail}`)).toEqual([
+      `e2e.portable site/raw.js holds the machine's temp path ${link}`,
+      "e2e.portable site/slash-tmp.js holds the machine's temp path /tmp/",
+    ]);
+  });
+
+  it("the consumer moved elsewhere must build the same digest: another digest or none is a blocking e2e.portable", () => {
+    const at = { work: "/w", origin: "/w/consumer", moved: "/w/moved/elsewhere/consumer" };
+    const first = { id: "94d3f99e3be3aaaa" };
+    expect(movedFinding("example-site", first, { id: "94d3f99e3be3aaaa" }, at)).toBeUndefined();
+    expect(movedFinding("example-site", first, { id: "f842824a595ebbbb" }, at)).toEqual({ check: E2E_CHECK, cause: "e2e.portable", subject: "example-site", detail: "the consumer moved to moved/elsewhere/consumer builds f842824a595e, at consumer it built 94d3f99e3be3" });
+    expect(movedFinding("example-site", first, undefined, at)?.detail).toBe("the consumer moved to moved/elsewhere/consumer builds nothing, at consumer it built 94d3f99e3be3");
   });
 
   it("drops every CLOSSYS_* and npm_* variable from the child environment and points the registry at the stub", () => {
