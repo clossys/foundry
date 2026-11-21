@@ -2782,6 +2782,30 @@
       },
       "via": "adopted"
     },
+    "themes.animate-marquee.duration": {
+      "$type": "duration",
+      "alias": {},
+      "css": {
+        "light": "40s"
+      },
+      "emit": "--duration",
+      "fill": "example/themes.animate-marquee",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "foundry/themes.animate-marquee",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.animate-marquee.duration",
+        "sha256": "2fe190f7241b0d76b374fa74a8a29606ccae169154f8a8a7d94a13c52568ab0a",
+        "source": "foundry"
+      },
+      "slot": "themes.animate-marquee",
+      "source": "example",
+      "value": {
+        "light": "40s"
+      },
+      "via": "adopted"
+    },
     "themes.animate-shiny-text.default": {
       "$type": "duration",
       "alias": {},
@@ -4204,6 +4228,6 @@
     }
   },
   "notices": [],
-  "selectionHash": "fnv1a64:ad24b88dc0eeca6b",
+  "selectionHash": "fnv1a64:2dcbb21f7242a085",
   "version": 1
 }
