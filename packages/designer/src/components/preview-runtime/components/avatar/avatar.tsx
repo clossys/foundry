@@ -15,7 +15,7 @@ function Avatar({
       data-slot="avatar"
       data-size={size}
       className={cn(
-        "size-(--spacing-2xl) rounded-full after:rounded-full data-[size=lg]:size-[var(--spacing-3xl)] data-[size=sm]:size-(--spacing-xl) group/avatar relative flex shrink-0 select-none after:absolute after:inset-0 after:border-(length:--ui-border-hairline,1px) after:border-(--color-line-base) after:mix-blend-darken dark:after:mix-blend-lighten",
+        "size-(--spacing-2xl) rounded-full after:rounded-full data-[size=lg]:size-[var(--spacing-3xl,48px)] data-[size=sm]:size-(--spacing-xl) group/avatar relative flex shrink-0 select-none after:absolute after:inset-0 after:border-(length:--ui-border-hairline,1px) after:border-(--color-line-base) after:mix-blend-darken dark:after:mix-blend-lighten",
         className
       )}
       {...props}
@@ -95,7 +95,7 @@ function AvatarGroupCount({
     <div
       data-slot="avatar-group-count"
       className={cn(
-        "bg-(--color-surface-sunken) text-(--color-ink-muted) size-(--spacing-2xl) rounded-full text-(length:--text-sm) group-has-data-[size=lg]/avatar-group:size-[var(--spacing-3xl)] group-has-data-[size=sm]/avatar-group:size-(--spacing-xl) [&>svg]:size-(--spacing-lg,calc(var(--spacing)*4)) group-has-data-[size=lg]/avatar-group:[&>svg]:size-[var(--spacing-xl)] group-has-data-[size=sm]/avatar-group:[&>svg]:size-(--spacing-md) relative flex shrink-0 items-center justify-center ring-(length:--ui-border-rule) ring-(--color-surface-base)",
+        "bg-(--color-surface-sunken) text-(--color-ink-muted) size-(--spacing-2xl) rounded-full text-(length:--text-sm) group-has-data-[size=lg]/avatar-group:size-[var(--spacing-3xl,48px)] group-has-data-[size=sm]/avatar-group:size-(--spacing-xl) [&>svg]:size-(--spacing-lg,16px) group-has-data-[size=lg]/avatar-group:[&>svg]:size-[var(--spacing-xl,24px)] group-has-data-[size=sm]/avatar-group:[&>svg]:size-(--spacing-md) relative flex shrink-0 items-center justify-center ring-(length:--ui-border-rule) ring-(--color-surface-base)",
         "",
         className
       )}

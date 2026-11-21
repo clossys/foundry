@@ -224,7 +224,7 @@ function Sidebar({
           "[[data-slot=sidebar][data-collapsible=offcanvas]_&]:w-0",
           "[[data-slot=sidebar][data-side=right]_&]:rotate-180",
           variant === "floating" || variant === "inset"
-            ? "[[data-slot=sidebar][data-collapsible=icon]_&]:w-[calc(var(--ui-layout-sidebar-rail-w)+(var(--spacing-lg)))]"
+            ? "[[data-slot=sidebar][data-collapsible=icon]_&]:w-[calc(var(--ui-layout-sidebar-rail-w,64px)+(var(--spacing-lg,16px)))]"
             : "[[data-slot=sidebar][data-collapsible=icon]_&]:w-(--ui-layout-sidebar-rail-w)"
         )}
       />
@@ -232,10 +232,10 @@ function Sidebar({
         data-slot="sidebar-container"
         data-side={side}
         className={cn(
-          "fixed inset-y-0 z-(--ui-z-sticky) hidden h-svh w-(--ui-layout-sidebar-w) motion-safe:transition-[inset-inline-start,inset-inline-end,width] motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:duration-(--ui-duration-default) ease-(--ease-default) data-[side=left]:start-0 data-[side=left]:[[data-slot=sidebar][data-collapsible=offcanvas]_&]:start-[calc(var(--ui-layout-sidebar-w)*-1)] data-[side=right]:end-0 data-[side=right]:[[data-slot=sidebar][data-collapsible=offcanvas]_&]:end-[calc(var(--ui-layout-sidebar-w)*-1)] md:flex",
+          "fixed inset-y-0 z-(--ui-z-sticky) hidden h-svh w-(--ui-layout-sidebar-w) motion-safe:transition-[inset-inline-start,inset-inline-end,width] motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:duration-(--ui-duration-default) ease-(--ease-default) data-[side=left]:start-0 data-[side=left]:[[data-slot=sidebar][data-collapsible=offcanvas]_&]:start-[calc(var(--ui-layout-sidebar-w,256px)*-1)] data-[side=right]:end-0 data-[side=right]:[[data-slot=sidebar][data-collapsible=offcanvas]_&]:end-[calc(var(--ui-layout-sidebar-w,256px)*-1)] md:flex",
           // Adjust the padding for floating and inset variants.
           variant === "floating" || variant === "inset"
-            ? "p-(--spacing-sm) [[data-slot=sidebar][data-collapsible=icon]_&]:w-[calc(var(--ui-layout-sidebar-rail-w)+(var(--spacing-lg))+var(--ui-border-rule))]"
+            ? "p-(--spacing-sm) [[data-slot=sidebar][data-collapsible=icon]_&]:w-[calc(var(--ui-layout-sidebar-rail-w,64px)+(var(--spacing-lg,16px))+var(--ui-border-rule,2px))]"
             : "[[data-slot=sidebar][data-collapsible=icon]_&]:w-(--ui-layout-sidebar-rail-w) [[data-slot=sidebar][data-side=left]_&]:border-e-(length:--ui-border-hairline) [[data-slot=sidebar][data-side=right]_&]:border-s-(length:--ui-border-hairline)",
           className
         )}
@@ -469,7 +469,7 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-const sidebarMenuButtonVariants_DEFINITION = {"base":"ring-(--color-focus-ring) hover:bg-(--color-surface-selected) hover:text-(--color-ink-primary) active:bg-(--color-surface-selected) active:text-(--color-ink-primary) data-active:bg-(--color-surface-selected) data-active:text-(--color-ink-primary) data-open:hover:bg-(--color-surface-selected) data-open:hover:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) p-(--spacing-sm) text-start text-(length:--text-sm) motion-safe:transition-[width,height,padding] motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:duration-(--ui-duration-default) ease-(--ease-default) group-has-data-[sidebar=menu-action]/menu-item:pe-(--spacing-2xl) [[data-slot=sidebar][data-collapsible=icon]_&]:size-(--spacing-2xl)! [[data-slot=sidebar][data-collapsible=icon]_&]:p-(--spacing-sm)! focus-visible:ring-(length:--ui-border-rule) data-active:font-(weight:--font-weight-medium) aria-expanded:hover:bg-(--color-surface-selected) aria-expanded:hover:text-(--color-ink-primary) peer/menu-button group/menu-button flex w-full items-center overflow-hidden focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled) aria-disabled:pointer-events-none aria-disabled:opacity-(--ui-alpha-disabled) [&_svg]:size-(--spacing-lg) [&_svg]:shrink-0 [&>span:last-child]:truncate","variants":{"variant":{"default":"hover:bg-(--color-surface-selected) hover:text-(--color-ink-primary)","outline":"bg-(--color-surface-base) hover:bg-(--color-surface-selected) hover:text-(--color-ink-primary) shadow-[0_0_0_1px_var(--color-line-base)] hover:shadow-[0_0_0_1px_var(--color-surface-selected)]"},"size":{"default":"h-(--spacing-2xl) text-(length:--text-sm)","sm":"h-(--spacing-xl) text-(length:--text-xs)","lg":"h-(--spacing-3xl) text-(length:--text-sm) [[data-slot=sidebar][data-collapsible=icon]_&]:p-0!"}},"defaultVariants":{"variant":"default","size":"default"}}
+const sidebarMenuButtonVariants_DEFINITION = {"base":"ring-(--color-focus-ring) hover:bg-(--color-surface-selected) hover:text-(--color-ink-primary) active:bg-(--color-surface-selected) active:text-(--color-ink-primary) data-active:bg-(--color-surface-selected) data-active:text-(--color-ink-primary) data-open:hover:bg-(--color-surface-selected) data-open:hover:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) p-(--spacing-sm) text-start text-(length:--text-sm) motion-safe:transition-[width,height,padding] motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:duration-(--ui-duration-default) ease-(--ease-default) group-has-data-[sidebar=menu-action]/menu-item:pe-(--spacing-2xl) [[data-slot=sidebar][data-collapsible=icon]_&]:size-(--spacing-2xl)! [[data-slot=sidebar][data-collapsible=icon]_&]:p-(--spacing-sm)! focus-visible:ring-(length:--ui-border-rule) data-active:font-(weight:--font-weight-medium) aria-expanded:hover:bg-(--color-surface-selected) aria-expanded:hover:text-(--color-ink-primary) peer/menu-button group/menu-button flex w-full items-center overflow-hidden focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled) aria-disabled:pointer-events-none aria-disabled:opacity-(--ui-alpha-disabled) [&_svg]:size-(--spacing-lg) [&_svg]:shrink-0 [&>span:last-child]:truncate","variants":{"variant":{"default":"hover:bg-(--color-surface-selected) hover:text-(--color-ink-primary)","outline":"bg-(--color-surface-base) hover:bg-(--color-surface-selected) hover:text-(--color-ink-primary) shadow-[0_0_0_1px_var(--color-line-base,oklch(0.8761_0_0))] hover:shadow-[0_0_0_1px_var(--color-surface-selected,oklch(0.4748_0_0_/_0.1))]"},"size":{"default":"h-(--spacing-2xl) text-(length:--text-sm)","sm":"h-(--spacing-xl) text-(length:--text-xs)","lg":"h-(--spacing-3xl) text-(length:--text-sm) [[data-slot=sidebar][data-collapsible=icon]_&]:p-0!"}},"defaultVariants":{"variant":"default","size":"default"}}
 function sidebarMenuButtonVariants(props: { "variant"?: "default" | "outline" | null; "size"?: "default" | "sm" | "lg" | null; class?: ClassValue; className?: ClassValue } = {}) {
   props ??= {}
   const definition = sidebarMenuButtonVariants_DEFINITION
@@ -608,7 +608,7 @@ function SidebarMenuSkeleton({
         data-sidebar="menu-skeleton-text"
         style={
           {
-            maxWidth: "var(--ui-width-notice-max)",
+            maxWidth: "var(--ui-width-notice-max, 24rem)",
           } as React.CSSProperties
         }
       />

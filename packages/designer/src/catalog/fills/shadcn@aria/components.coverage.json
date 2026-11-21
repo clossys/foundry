@@ -965,7 +965,7 @@
         {
           "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
           "message": "Restyled source: bind the public spacing multiplier to the existing spacing.xs unit; preserve caller value and default",
-          "value": "style --gap = calc(var(--spacing) * spacing)"
+          "value": "style --gap = --spacing unit * spacing"
         }
       ],
       "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",

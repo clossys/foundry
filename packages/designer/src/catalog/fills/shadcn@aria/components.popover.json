@@ -66,11 +66,11 @@
         },
         {
           "path": "components/popover/popover.tsx",
-          "sha256": "d6d9b79869b92f45be7ace7ce62aaf7e58f5dc89a51b5edab1c2d8b55aa38e2a"
+          "sha256": "476cbdab808678c1bf127f195390e733baf99ff7a943af08b9316e0278c7b908"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
         }
       ],
       "parts": [
@@ -121,7 +121,7 @@
       "root": "rac:Popover",
       "slot": "components.popover",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@1"
+      "transform": "shadcn-aria-rewrite@3"
     }
   }
 }

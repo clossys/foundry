@@ -85,11 +85,11 @@
         },
         {
           "path": "components/toggle-group/toggle-group.tsx",
-          "sha256": "498bbe56c2bdef19944e118cdb915962528c3905ad1b9739a07b04d0232b12a3"
+          "sha256": "eab7a9313a183dfe5fd732922464dae8197b32103d3f3ca6bfd6c4a79f520496"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
         }
       ],
       "parts": [
@@ -141,7 +141,7 @@
       "root": "rac:ToggleButtonGroup",
       "slot": "components.toggle-group",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@1"
+      "transform": "shadcn-aria-rewrite@3"
     }
   }
 }

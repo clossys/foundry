@@ -50,10 +50,10 @@ const cellVariants = cva(
         true: "relative isolate z-(--ui-z-base) rounded-e-(--cell-radius) bg-(--color-surface-sunken) after:absolute after:inset-y-0 after:start-0 after:w-(--spacing-lg) after:bg-(--color-surface-sunken)",
       },
       isUnavailable: {
-        true: "text-(--color-ink-muted) opacity-(--ui-alpha-disabled,50%) [&>div]:line-through",
+        true: "text-(--color-ink-muted) opacity-(--ui-alpha-disabled,0.5) [&>div]:line-through",
       },
       isDisabled: {
-        true: "text-(--color-ink-muted) opacity-(--ui-alpha-disabled,50%)",
+        true: "text-(--color-ink-muted) opacity-(--ui-alpha-disabled,0.5)",
       },
       isOutsideMonth: {
         true: "text-(--color-ink-muted) aria-selected:text-(--color-ink-muted)",
@@ -84,7 +84,7 @@ const Calendar = ReactForwardRef(function Calendar<T extends DateValue, M extend
       data-slot="calendar"
       visibleDuration={{ months: props.numberOfMonths || 1 }}
       className={state => cn(
-        "p-(--spacing-sm) [--cell-radius:var(--radius-control)] [--cell-size:var(--ui-control-h-sm)] group/calendar w-fit bg-(--color-surface-base) in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
+        "p-(--spacing-sm) [--cell-radius:var(--radius-control,6px)] [--cell-size:var(--ui-control-h-sm,28px)] group/calendar w-fit bg-(--color-surface-base) in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
         typeof props.className === "function" ? props.className(state) : props.className
       )}
     >
@@ -115,7 +115,7 @@ const RangeCalendar = ReactForwardRef(function RangeCalendar<T extends DateValue
       data-slot="calendar"
       visibleDuration={{ months: props.numberOfMonths || 1 }}
       className={state => cn(
-        "p-(--spacing-sm) [--cell-radius:var(--radius-control)] [--cell-size:var(--ui-control-h-sm)] group/calendar w-fit bg-(--color-surface-base) in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
+        "p-(--spacing-sm) [--cell-radius:var(--radius-control,6px)] [--cell-size:var(--ui-control-h-sm,28px)] group/calendar w-fit bg-(--color-surface-base) in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
         typeof props.className === "function" ? props.className(state) : props.className
       )}
     >
@@ -149,16 +149,16 @@ function CalendarInner({
         <Button
           variant={buttonVariant}
           slot="previous"
-          className="size-(--cell-size) p-0 select-none aria-disabled:opacity-(--ui-alpha-disabled,50%)"
+          className="size-(--cell-size) p-0 select-none aria-disabled:opacity-(--ui-alpha-disabled,0.5)"
         >
-          <LibraryIcon asset="assets.icon-chevron-left" decorative className="size-(--spacing-lg,calc(var(--spacing)*4))" />
+          <LibraryIcon asset="assets.icon-chevron-left" decorative className="size-(--spacing-lg,16px)" />
         </Button>
         <Button
           variant={buttonVariant}
           slot="next"
-          className="size-(--cell-size) p-0 select-none aria-disabled:opacity-(--ui-alpha-disabled,50%)"
+          className="size-(--cell-size) p-0 select-none aria-disabled:opacity-(--ui-alpha-disabled,0.5)"
         >
-          <LibraryIcon asset="assets.icon-chevron-right" decorative className="size-(--spacing-lg,calc(var(--spacing)*4))" />
+          <LibraryIcon asset="assets.icon-chevron-right" decorative className="size-(--spacing-lg,16px)" />
         </Button>
       </header>
       {Array.from({ length: numberOfMonths }, (_, i) => (
@@ -208,7 +208,7 @@ function CalendarInner({
                         isRange
                       }
                       className={cn(
-                        "relative isolate z-(--ui-z-sticky) flex aspect-square h-full w-full min-w-(--cell-size) flex-col gap-(--spacing-xs) border-0 leading-(--leading-heading) font-(weight:--font-weight-normal) group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-(--ui-z-sticky) group-data-[focused=true]/day:border-(--color-focus-ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-(length:--ui-border-focus,3px) group-data-[focused=true]/day:outline-offset-(--ui-focus-offset) group-data-[focused=true]/day:outline-(--color-focus-ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-(length:--ui-border-focus,3px) group-data-[focused=true]/day:outline-offset-(--ui-focus-offset) group-data-[focused=true]/day:outline-(--color-focus-ring) data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-e-(--cell-radius) data-[range-end=true]:bg-(--color-action) data-[range-end=true]:text-(--color-ink-on-action) data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-(--color-surface-sunken) data-[range-middle=true]:text-(--color-ink-primary) data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-s-(--cell-radius) data-[range-start=true]:bg-(--color-action) data-[range-start=true]:text-(--color-ink-on-action) data-[selected-single=true]:bg-(--color-action) data-[selected-single=true]:text-(--color-ink-on-action) dark:hover:text-(--color-ink-primary) [&>span]:text-(length:--text-xs) [&>span]:opacity-(--ui-alpha-stale)"
+                        "relative isolate z-(--ui-z-sticky) flex aspect-square h-full w-full min-w-(--cell-size) flex-col gap-(--spacing-xs) border-0 leading-(--leading-heading) font-(weight:--font-weight-normal) group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-(--ui-z-sticky) group-data-[focused=true]/day:border-(--color-focus-ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-(length:--ui-border-focus,2px) group-data-[focused=true]/day:outline-offset-(--ui-focus-offset) group-data-[focused=true]/day:outline-(--color-focus-ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-(length:--ui-border-focus,2px) group-data-[focused=true]/day:outline-offset-(--ui-focus-offset) group-data-[focused=true]/day:outline-(--color-focus-ring) data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-e-(--cell-radius) data-[range-end=true]:bg-(--color-action) data-[range-end=true]:text-(--color-ink-on-action) data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-(--color-surface-sunken) data-[range-middle=true]:text-(--color-ink-primary) data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-s-(--cell-radius) data-[range-start=true]:bg-(--color-action) data-[range-start=true]:text-(--color-ink-on-action) data-[selected-single=true]:bg-(--color-action) data-[selected-single=true]:text-(--color-ink-on-action) dark:hover:text-(--color-ink-primary) [&>span]:text-(length:--text-xs) [&>span]:opacity-(--ui-alpha-stale)"
                       )}
                     >
                       {renderCell

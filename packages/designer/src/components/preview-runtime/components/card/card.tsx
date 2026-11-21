@@ -10,7 +10,7 @@ function Card({
     <div
       data-slot="card"
       data-size={size}
-      className={cn("ring-(--color-ink-primary)/10 bg-(--color-surface-raised) text-(--color-ink-primary) gap-(--card-spacing) overflow-hidden rounded-(--radius-control) py-(--card-spacing) text-(length:--text-sm) ring-(length:--ui-border-hairline) [--card-spacing:var(--spacing-lg)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:var(--spacing-md)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-(--radius-control) *:[img:last-child]:rounded-b-(--radius-control) group/card flex flex-col", className)}
+      className={cn("ring-(--color-ink-primary)/10 bg-(--color-surface-raised) text-(--color-ink-primary) gap-(--card-spacing) overflow-hidden rounded-(--radius-control) py-(--card-spacing) text-(length:--text-sm) ring-(length:--ui-border-hairline) [--card-spacing:var(--spacing-lg,16px)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:var(--spacing-md,12px)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-(--radius-control) *:[img:last-child]:rounded-b-(--radius-control) group/card flex flex-col", className)}
       {...props}
     />
   )

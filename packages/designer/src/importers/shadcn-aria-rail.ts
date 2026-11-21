@@ -6,6 +6,7 @@ import { sha256 } from "../catalog-core/digest.js";
 import { componentDescriptorHash, type ComponentCandidateDocument } from "../catalog-core/resolve-components.js";
 import type { SourceBundle } from "../catalog-core/changeset-components.js";
 import { rewriteShadcnAria, type SourceFile } from "./rewrite.js";
+import { packageDeclaredFallbackReader, type DeclaredFallbackReader } from "./declared-fallback-reader.js";
 
 /** Current official Aria source additions; existing v1 fills keep their authenticated pin. */
 export const SHADCN_ARIA_RAIL_ITEMS = ["sidebar", "command", "sheet", "empty", "item", "scroll-area", "dropdown-menu", "kbd"] as const;
@@ -14,14 +15,16 @@ const exportsOf = (code: string): string[] => [...code.matchAll(/export\s*\{([^}
 const dependencies = (code: string): string[] => [...code.matchAll(/from\s*"@\/registry\/bases\/aria\/ui\/([a-z-]+)"/g)].map(match => match[1]!);
 const sorted = (values: Iterable<string>): string[] => [...new Set(values)].sort();
 
-export function importShadcnAriaRail() {
+/** `reader` supplies every fallback the rewrite writes; the package's declared values when absent. */
+export function importShadcnAriaRail(options: { reader?: DeclaredFallbackReader } = {}) {
+  const reader = options.reader ?? packageDeclaredFallbackReader();
   const byItem = new Map(data.files.map(file => [file.item, file]));
   const adapted = new Map(adaptations.files.map(file => [file.item, file]));
   if (adaptations.upstreamCommit !== data.commit) throw new Error("shadcn-rail: adaptation commit mismatch");
   for (const file of adaptations.files) if (byItem.get(file.item)?.sha256 !== file.inputSha256) throw new Error(`shadcn-rail: adaptation input mismatch ${file.path}`);
   for (const file of data.files) if (sha256(file.content) !== file.sha256) throw new Error(`shadcn-rail: source pin mismatch: ${file.path}`);
   const style = byItem.get("style")!, license = byItem.get("license")!;
-  const source = "shadcn@aria", transform = "shadcn-aria-rewrite@2";
+  const source = "shadcn@aria", transform = "shadcn-aria-rewrite@4";
   const leafByItem = Object.fromEntries(SHADCN_ARIA_RAIL_ITEMS.map(item => [item, leafOf(item)]));
   const allFiles = new Map<string, SourceFile>();
   const fills: ComponentCandidateDocument[] = [], sourceBundles: SourceBundle[] = [];
@@ -56,7 +59,7 @@ export function importShadcnAriaRail() {
       }
       const privatePart = name !== item;
       const inputPath = privatePart ? `components/_parts/rail-${name}/${name}.tsx` : upstream.path;
-      const result = rewriteShadcnAria({ item: name, leaf: privatePart ? name : leaf, files: [{ path: inputPath, content: (item === "kbd" ? upstream.content : adapted.get(name)!.content).replaceAll("@/registry/bases/aria/hooks/use-mobile", `${privatePart ? "../../" : "../"}_parts/rail-use-mobile/index`) }], styles: style.content, leafByItem, transformVersion: 2, retainRegistryButtonProps: true });
+      const result = rewriteShadcnAria({ item: name, leaf: privatePart ? name : leaf, files: [{ path: inputPath, content: (item === "kbd" ? upstream.content : adapted.get(name)!.content).replaceAll("@/registry/bases/aria/hooks/use-mobile", `${privatePart ? "../../" : "../"}_parts/rail-use-mobile/index`) }], styles: style.content, leafByItem, transformVersion: 2, retainRegistryButtonProps: true, reader });
       result.reads.themes.forEach(x => tokens.add(x)); result.reads.assets.forEach(x => assets.add(x)); result.reads.components.forEach(x => components.add(x));
       issues.push(...result.issues); notes.push(...result.notes ?? []);
       for (const file of result.files) {

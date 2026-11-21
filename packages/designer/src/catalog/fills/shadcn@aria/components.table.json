@@ -67,11 +67,11 @@
         },
         {
           "path": "components/table/table.tsx",
-          "sha256": "59a3405ef593bbd4e83184d4bdbccf95b6879cfa54ed7342b1e0248a5100ada4"
+          "sha256": "b83008e0aff24712afc98054def7f6604da48e8b9bb646b371a713ce8007556e"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
         }
       ],
       "parts": [
@@ -150,7 +150,7 @@
       ],
       "slot": "components.table",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@1"
+      "transform": "shadcn-aria-rewrite@3"
     }
   }
 }

@@ -34,7 +34,7 @@ function Popover({
       offset={offset}
       crossOffset={crossOffset}
       className={cn(
-        "bg-(--color-overlay-surface) text-(--color-ink-primary) data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom data-[placement=bottom]:library-slide-top data-[placement=left]:library-slide-right data-[placement=right]:library-slide-left data-[placement=top]:library-slide-bottom ring-(--color-ink-primary)/10 flex flex-col gap-(--spacing-md) rounded-(--radius-control) p-(--spacing-md) text-(length:--text-sm) shadow-(--ui-elevation-floating) ring-(length:--ui-border-hairline) duration-(--ui-duration-fast,100ms) z-(--ui-z-modal,50) w-[calc(var(--spacing-6xl)*2)] origin-(--trigger-anchor-point) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)",
+        "bg-(--color-overlay-surface) text-(--color-ink-primary) data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom data-[placement=bottom]:library-slide-top data-[placement=left]:library-slide-right data-[placement=right]:library-slide-left data-[placement=top]:library-slide-bottom ring-(--color-ink-primary)/10 flex flex-col gap-(--spacing-md) rounded-(--radius-control) p-(--spacing-md) text-(length:--text-sm) shadow-(--ui-elevation-floating) ring-(length:--ui-border-hairline) duration-(--ui-duration-fast,120ms) z-(--ui-z-modal,50) w-[calc(var(--spacing-6xl,128px)*2)] origin-(--trigger-anchor-point) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,2px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)",
         className
       )}
       {...props}
@@ -46,7 +46,7 @@ function PopoverHeader({ className, ...props }: ReactComponentProps<"div">) {
   return (
     <div
       data-slot="popover-header"
-      className={cn("flex flex-col gap-[var(--spacing-xs)] text-(length:--text-sm)", className)}
+      className={cn("flex flex-col gap-[var(--spacing-xs,4px)] text-(length:--text-sm)", className)}
       {...props}
     />
   )

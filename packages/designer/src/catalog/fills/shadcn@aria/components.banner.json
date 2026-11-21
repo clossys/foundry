@@ -67,11 +67,11 @@
         },
         {
           "path": "components/banner/alert.tsx",
-          "sha256": "e188abddf9aff0e0619648739ec858cf5d896209705462caf07425099833272d"
+          "sha256": "5abec806c9ae514b72e010f0cfb713894df15a8391b86fa64c6bb52a5e387296"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
         }
       ],
       "parts": [
@@ -122,7 +122,7 @@
       "root": "presentational",
       "slot": "components.banner",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@1"
+      "transform": "shadcn-aria-rewrite@3"
     }
   }
 }

@@ -186,9 +186,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     mkdirSync(cache, { recursive: true });
     const temporary = mkdtempSync(resolve(cache, "rail-transform-"));
     const entry = resolve(temporary, "importer.mjs");
-    await build({ entryPoints: [resolve(packageRoot, "src/importers/shadcn-aria-rail.ts")], outfile: entry, bundle: true, format: "esm", platform: "node", packages: "external", logLevel: "silent" });
+    // The bundle lives outside src/, so the rewrite's fallbacks come from a reader built over this package's styles/.
+    await build({ stdin: { contents: 'export * from "./shadcn-aria-rail.ts";\nexport { declaredFallbackReaderAt } from "./declared-fallback-reader.ts";\n', resolveDir: resolve(packageRoot, "src/importers"), sourcefile: "rail-entry.ts", loader: "ts" }, outfile: entry, bundle: true, format: "esm", platform: "node", packages: "external", logLevel: "silent" });
     const module = await import(pathToFileURL(entry).href);
-    const imported = module.importShadcnAriaRail();
+    const imported = module.importShadcnAriaRail({ reader: module.declaredFallbackReaderAt(resolve(packageRoot, "styles")) });
     if (imported.candidates.some(row => row.blockers.length)) throw new Error("Adapted source still has rewrite blockers");
     for (const document of imported.fills) {
       const slot = document.$extensions["com.clossys.fill"].slot;

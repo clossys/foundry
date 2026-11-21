@@ -26,11 +26,12 @@ import componentSlots from "../catalog/slots/components.json" with { type: "json
 import type { ComponentSlot, FillMeta } from "../catalog-core/types.js";
 import { sha256 } from "../catalog-core/digest.js";
 import { stableStringify } from "../catalog-core/stable.js";
+import { cssRead, packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
 
 export interface ChartSourceFile { path: string; content: string }
 
 export const SHADCN_CHARTS_SOURCE = "shadcn-charts";
-export const SHADCN_CHARTS_TRANSFORM = "shadcn-registry-alias@1";
+export const SHADCN_CHARTS_TRANSFORM = "shadcn-registry-alias@2";
 export const SHADCN_CHARTS_PIN = Object.freeze({
   url: "https://github.com/shadcn-ui/ui",
   commit: "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
@@ -54,11 +55,11 @@ export const SHADCN_CHART_SERIES_COLORS: readonly string[] = Object.entries(adap
   .sort(([a], [b]) => Number(a.slice(6)) - Number(b.slice(6)))
   .map(([name, binding]) => `var(--${name}, var(${binding.property}))`);
 
-/** Chart chrome reads the existing chart token family. */
+/** Chart chrome reads the existing chart token family, each read carrying the package's declared value. */
 export const SHADCN_CHART_CHROME = Object.freeze({
-  grid: "var(--color-chart-grid)",
-  axis: "var(--color-chart-axis)",
-  axisLabel: "var(--color-chart-axis-label)",
+  grid: cssRead(packageDeclaredFallbackReader(), "--color-chart-grid"),
+  axis: cssRead(packageDeclaredFallbackReader(), "--color-chart-axis"),
+  axisLabel: cssRead(packageDeclaredFallbackReader(), "--color-chart-axis-label"),
 });
 
 const ALIAS_IMPORT = 'import { cn } from "cn"';
