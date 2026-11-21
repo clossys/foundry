@@ -95,7 +95,7 @@ describe("UsagePanel", () => {
     expect(rowIds(list("U-used-where"), "frames")).toEqual(["frames.app-shell"]);
     await user.click(within(list("U-used-where")).getByRole("button", { name: "pages.home" }));
     expect(onNavigate).toHaveBeenLastCalledWith("pages.home");
-    // Back walks the stack in order.
+    // Back walks the history in order.
     await user.click(screen.getByRole("button", { name: "U-back" }));
     expect(onNavigate).toHaveBeenLastCalledWith("sections.hero");
     await user.click(screen.getByRole("button", { name: "U-back" }));

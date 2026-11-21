@@ -9,7 +9,7 @@ import type { CandidateContent } from "../model.js";
 
 export const copyRefFixtureAt = "2026-09-01T00:00:00.000Z";
 
-/** The same locale policy shape consumed by Writer's shared I18N helpers. */
+/** The same locale policy shape read by Writer's shared I18N helpers. */
 export function copyRefLocaleManifest(): Pick<WriterManifest, "defaultLocale" | "locales" | "fallback"> {
   return {
     defaultLocale: "en",

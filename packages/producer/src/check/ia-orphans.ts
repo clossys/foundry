@@ -239,7 +239,7 @@ export function walkGraph(graph: ConsumerGraph, from: readonly string[], skip: R
  * The loop runner as a consumer (foundry-build-0048 CONSISTENCY D5 option 3): the Producer loops it runs,
  * `producer/<loop>` for every loop name. The runner consumes an agent `loop.*` slot only through that slot's own
  * recorded `consumedBy` edge to one of them (an agent loop slot names the Producer loop it extends), and nothing
- * further: no other slot is consumed by the runner, and nothing is exempt (CONSISTENCY fix r1).
+ * further: the runner consumes no other slot, and nothing is exempt (CONSISTENCY fix r1).
  */
 export const RUNNER_ROOTS: readonly string[] = LOOP_NAMES.map(loop => `producer/${loop}`);
 

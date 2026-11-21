@@ -66,7 +66,7 @@ describe("clossys critique-packet", () => {
 
 describe("clossys critique-packet from a consumer repo (no packages/ folder)", () => {
   it("reads the standard's taste.md from the installed package, cited by its package ref", async () => {
-    // A consumer outside the monorepo: no packages/ folder, so standards resolve through @clossys/designer.
+    // A consumer outside this repository: no packages/ folder, so standards resolve through @clossys/designer.
     rmSync(join(workspace, "packages"), { recursive: true, force: true });
     const installed = installedPackageRoot("designer");
     expect(installed).toBeDefined();

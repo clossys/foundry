@@ -24,7 +24,7 @@ export const marketingFooterSpecimen = {
   ],
 } as const;
 
-/** Shape consumed by DesignerSpecimenContext.surfaces; the host supplies its checked descriptor hash. */
+/** Shape read by DesignerSpecimenContext.surfaces; the host supplies its checked descriptor hash. */
 export function marketingFooterSpecimenBinding(descriptorHash: string, input: RuntimeRenderInput<ReactNode>) {
   return {
     descriptorHash,

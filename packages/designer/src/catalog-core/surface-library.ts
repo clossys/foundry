@@ -338,7 +338,7 @@ const packageIdentityMatches = (doc: SurfacePackageDocument, identity: PackageId
     const meta = doc.$extensions["com.clossys.fill"];
     return meta.source === identity.source && meta.id === identity.fill && meta.license === identity.license && stableStringify(meta.pin) === stableStringify(identity.pin);
 };
-/** Validate historical contract fields consumed by static checks and contract diffs. */
+/** Validate historical contract fields read by static checks and contract diffs. */
 function assertPackageContract(value: unknown, slot: string): asserts value is SurfacePackageRegistration["contract"] {
     if (!value || typeof value !== "object" || Array.isArray(value)) surfaceFault("S2 historical contract required");
     const row = value as Node, section = slot.startsWith("sections.");

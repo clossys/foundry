@@ -147,7 +147,7 @@ export interface DtcgToken {
     "com.clossys.modes"?: { dark?: DtcgValue };
     "com.clossys.font"?: FontPayload;
     "com.clossys.source"?: { line: number };
-    /** Value-source attribution retained when a candidate is adopted by a consumer. */
+    /** Value-source attribution retained when a consumer takes up a candidate. */
     "com.clossys.provenance"?: {
       sourceLabel: string;
       sourceAddress: string;

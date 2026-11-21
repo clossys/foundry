@@ -137,7 +137,7 @@ describe("check:pipeline", { concurrency: 3 }, () => {
     assert.equal(result.code, 0, JSON.stringify(result.out.failures, null, 2));
   });
   it("judges a temp write by its real path: os.tmpdir() linked into the repository is a repository write", () => {
-    const link = join(work, "tmp-into-repo");
+    const link = join(work, "tmp-into-checkout");
     symlinkSync(REPO, link, "dir");
     const result = run(["--scan", join(WRITER_FIXTURES, "temp-write")], { ...process.env, TMPDIR: link, TMP: link, TEMP: link });
     assert.equal(result.code, 1);
