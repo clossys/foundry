@@ -61,7 +61,7 @@ export interface SpecimenContentRenderRequest {
   readonly level?: 3;
   readonly role?: "alert";
 }
-export type SpecimenBreakpointReference = "var(--breakpoint-mobile)" | "var(--breakpoint-desktop)";
+export type SpecimenBreakpointReference = "var(--breakpoint-mobile, 375px)" | "var(--breakpoint-desktop, 1280px)";
 export interface SpecimenNativeViewportRequest {
   readonly Content: typeof import("../components/SemanticContent.js").SemanticContent;
   readonly leaf: string;

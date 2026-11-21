@@ -1,5 +1,6 @@
 import type { SemanticContent as SemanticContentComponent } from "../../components/SemanticContent.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
+import { TOKENS } from "../../tokens/tokens.js";
 import type { StillBackdropArt } from "../../backdrop/consumer-art.js";
 import { stillBackdropPolicy, type HeroBackdropScrim } from "../../backdrop/still-backdrop-policy.js";
 
@@ -38,7 +39,7 @@ export function StillBackdrop({ art, scrim = "light" }: { art: StillBackdropArt;
       ) : (
         <img src={art.source.src} alt="" width={art.width} height={art.height} loading="lazy" decoding="async" draggable={false} className="h-full w-full object-cover" style={{ pointerEvents }} />
       )}
-      <SemanticContent as="div" data-hero-gradient="media-scrim" className="absolute inset-0" style={{ pointerEvents, backgroundImage: "linear-gradient(transparent, var(--color-overlay-scrim))" }} />
+      <SemanticContent as="div" data-hero-gradient="media-scrim" className="absolute inset-0" style={{ pointerEvents, backgroundImage: `linear-gradient(transparent, var(--color-overlay-scrim, ${TOKENS["--color-overlay-scrim"]!.value}))` }} />
       {Array.from({ length: policy.passes }, (_, index) => <SemanticContent as="div" key={index} data-hero-scrim={scrim} className="absolute inset-0 bg-overlay-scrim" style={{ pointerEvents }} />)}
     </SemanticContent>
   );

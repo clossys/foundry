@@ -191,7 +191,7 @@ function LayerFanSpecimen({ css, property }: { css: string; property?: string })
       // Each plate sits at its shipped rank and z value; only the member's own plate takes the value under review.
       return <span key={token.property} aria-hidden="true" data-layer-rank={rank} data-layer-property={token.property} data-current={current ? "" : undefined}
         {...specimenOverride("token-scale-context", {
-          "--plate-x": `calc(${rank} * var(--spacing-sm))`, "--plate-y": `calc(${rank} * var(--spacing-xs))`,
+          "--plate-x": `calc(${rank} * var(--spacing-sm, 8px))`, "--plate-y": `calc(${rank} * var(--spacing-xs, 4px))`,
           "--plate-z": current ? css : String(token.value),
         })}
         className={join(

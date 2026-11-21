@@ -60,10 +60,10 @@ it("retains native case identities while applying the fixed viewport breakpoint 
   // The themes layer has no breakpoint leaf: viewport widths are the fixed Foundry breakpoint references.
   const section = surfaceSpecimenItems(context, "sections.content");
   expect(section.items.map(item => item.id)).toEqual(["sections.content/1280", "sections.content/375"]);
-  expect(section.items.map(item => item.value.width)).toEqual(["var(--breakpoint-desktop)", "var(--breakpoint-mobile)"]);
+  expect(section.items.map(item => item.value.width)).toEqual(["var(--breakpoint-desktop, 1280px)", "var(--breakpoint-mobile, 375px)"]);
   const frame = surfaceSpecimenItems(context, "frames.auth-shell");
   expect(frame.items.map(item => item.id)).toEqual(["frames.auth-shell/default"]);
-  expect(frame.items[0]!.value.width).toBe("var(--breakpoint-desktop)");
+  expect(frame.items[0]!.value.width).toBe("var(--breakpoint-desktop, 1280px)");
 });
 
 it("refuses missing declared parts under the authenticated selected provider without mounting an iframe", async () => {

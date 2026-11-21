@@ -186,7 +186,7 @@ function renderItem(mode: Mode, item: SpecimenItem, props: SpecimenLeafProps): R
   }
   const artwork = selected(props.context, mode === "icon-grid" ? "components.icon" : "components.logo");
   if (isNeed(artwork)) return props.need(artwork);
-  return <>{(["light", "dark"] as const).map(ground => <Content as="div" key={ground} data-asset-ground={ground} style={{ background: ground === "light" ? "var(--card)" : "var(--foreground)", color: ground === "light" ? "var(--foreground)" : "var(--background)" }}>
+  return <>{(["light", "dark"] as const).map(ground => <Content as="div" key={ground} data-asset-ground={ground} style={{ background: ground === "light" ? "var(--card, oklch(1 0 0))" : "var(--foreground, oklch(0.145 0 0))", color: ground === "light" ? "var(--foreground, oklch(0.145 0 0))" : "var(--background, oklch(1 0 0))" }}>
     {mode === "icon-grid" ? <Icon glyph={member.value.light as IconNode} decorative={false} label={`${id} ${ground}`} /> : typeof member.value.light === "string" ? <Logomark src={`data:image/svg+xml,${encodeURIComponent(member.value.light)}`} size="lg" title={id} /> : null}
   </Content>)}</>;
 }

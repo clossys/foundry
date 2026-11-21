@@ -591,7 +591,7 @@ it("flow world overlays stay pinned across camera moves, respect frame insets/na
   expect(explorer.style.insetBlockStart).toBe("24px");expect(explorer.style.insetInlineStart).toBe("32px");expect(inspector.style.insetInlineEnd).toBe("40px");
   const pinned=explorer.getAttribute("style");
   result.rerender(<CanvasSurface {...result.props} viewport={{x:150,y:-80,zoom:.7}}/>);
-  expect(explorer.getAttribute("style")).toBe(pinned);expect(inspector.style.inlineSize).toBe("var(--ui-layout-aside-w)");expect(inspector.style.insetInlineEnd).toBe("40px");
+  expect(explorer.getAttribute("style")).toBe(pinned);expect(inspector.style.inlineSize).toBe("var(--ui-layout-aside-w, 320px)");expect(inspector.style.insetInlineEnd).toBe("40px");
   act(()=>actions.current!.pan(10,20));expect(result.props.onViewportChange).toHaveBeenLastCalledWith({x:160,y:-60,zoom:.7});
   const target=screen.getByText("Target");vi.spyOn(target,"getBoundingClientRect").mockReturnValue({left:190,top:20,width:70,height:140} as DOMRect);
   act(()=>actions.current!.flyTo(target,{focus:true,zoom:1}));expect(target).toHaveFocus();expect(result.props.onViewportChange).toHaveBeenLastCalledWith({x:350,y:100,zoom:1});
@@ -639,7 +639,7 @@ it("collapses both panels to named icon controls before hiding the map, keeps zo
   expect(screen.getByRole("group",{name:"Canvas zoom"})).toBeVisible();
   expect(screen.getByRole("region",{name:"Stage panels"})).toHaveClass("isolate");
   for(const overlay of result.container.querySelectorAll<HTMLElement>('[data-canvas-panel], [data-canvas-minimap], [data-canvas-controls]')) {
-    expect(overlay.style.zIndex).toBe("var(--ui-z-sticky)");expect(overlay.style.position).not.toBe("fixed");
+    expect(overlay.style.zIndex).toBe("var(--ui-z-sticky, 10)");expect(overlay.style.position).not.toBe("fixed");
   }
 });
 it("opens only one compact panel, reserves the bottom controls, and returns Escape focus to its icon trigger",()=>{
@@ -651,8 +651,8 @@ it("opens only one compact panel, reserves the bottom controls, and returns Esca
   expect(screen.queryByRole("textbox",{name:"Explorer search"})).not.toBeInTheDocument();
   const input=screen.getByRole("textbox",{name:"Inspector edit"});input.focus();
   const panel=input.closest<HTMLElement>('[data-canvas-panel]')!;
-  expect(panel.style.insetInlineStart).toBe("calc(var(--spacing-md) + var(--ui-control-h-md) + var(--spacing-md))");expect(panel.style.insetInlineEnd).toBe("var(--spacing-md)");
-  expect(panel.style.maxBlockSize).toContain("var(--ui-control-h-sm)");
+  expect(panel.style.insetInlineStart).toBe("calc(var(--spacing-md, 12px) + var(--ui-control-h-md, 32px) + var(--spacing-md, 12px))");expect(panel.style.insetInlineEnd).toBe("var(--spacing-md, 12px)");
+  expect(panel.style.maxBlockSize).toContain("var(--ui-control-h-sm, 28px)");
   fireEvent.keyDown(input,{key:"ArrowRight"});expect(input).toHaveFocus();
   fireEvent.keyDown(input,{key:"Escape"});
   expect(screen.getByRole("button",{name:"Open inspector"})).toHaveFocus();

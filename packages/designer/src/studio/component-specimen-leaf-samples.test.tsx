@@ -41,7 +41,7 @@ it.each(Object.entries(sections))("draws %s as its %s section with dataset items
 it("draws the section viewports with the selected Foundry surface at each breakpoint", () => {
   const html = renderToStaticMarkup(<>{defaultComponentPreviews.preview("components.specimen-viewport", profile)}</>);
   const document = new DOMParser().parseFromString(html, "text/html");
-  expect([...document.querySelectorAll("[data-specimen-viewport]")].map(node => node.getAttribute("data-specimen-width"))).toEqual(["var(--breakpoint-desktop)", "var(--breakpoint-mobile)"]);
+  expect([...document.querySelectorAll("[data-specimen-viewport]")].map(node => node.getAttribute("data-specimen-width"))).toEqual(["var(--breakpoint-desktop, 1280px)", "var(--breakpoint-mobile, 375px)"]);
   for (const viewport of document.querySelectorAll("[data-specimen-viewport]")) expect(viewport.textContent?.trim()).not.toBe("");
 });
 

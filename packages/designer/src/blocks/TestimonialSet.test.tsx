@@ -144,7 +144,7 @@ describe("TestimonialSet", () => {
     expect(row.querySelector('[data-slot="card"]')).toHaveClass("h-full", "min-w-0", "group/card");
     const content = row.querySelector<HTMLElement>('[data-slot="card-content"]')!;
     expect(content).toHaveClass("text-body-l");
-    expect(content.style.getPropertyValue("--text-blockquote")).toBe("var(--text-body-l, inherit)");
+    expect(content.style.getPropertyValue("--text-blockquote")).toBe("var(--text-body-l, 17px)");
   });
 
   it("uses two desktop columns for two and four, and three for six", () => {

@@ -80,7 +80,7 @@ const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control 
  * transparent width at rest so the label never shifts); forced colours draw
  * an outline instead, because neither paint survives there.
  */
-const ICON_SLOT = { inlineSize: "var(--ui-icon-sm)" } as const;
+const ICON_SLOT = { inlineSize: "var(--ui-icon-sm, var(--spacing-lg, 16px))" } as const;
 const CURRENT = "bg-surface-selected font-medium border-s-primary forced-colors:outline-solid forced-colors:outline-1 forced-colors:outline-current";
 // A host passes the public Icon, this block renders the selected icon leaf: both are glyph-bearing icon elements.
 function smallIcon(icon: ReactNode): ReactNode {
@@ -179,7 +179,7 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
     const content = <><SemanticContent as="span" aria-hidden="true" className="flex shrink-0 items-center justify-center" style={ICON_SLOT}>{node.icon == null || typeof node.icon === "string" || typeof node.icon === "number" ? <Icon glyph={node.children?.length ? Folder : FileText} decorative size="sm" /> : smallIcon(node.icon)}</SemanticContent>
       <SemanticContent as="span" className="min-w-0 truncate">{node.label}</SemanticContent></>;
     const shared = { "data-application-navigation-control": "", "data-navigation-node-id": node.id, "data-parent-id": parentId,
-      "aria-current": current ? "page" as const : undefined, style: { borderInlineStartWidth: "var(--ui-border-rule)" }, className };
+      "aria-current": current ? "page" as const : undefined, style: { borderInlineStartWidth: "var(--ui-border-rule, 2px)" }, className };
     return node.href !== undefined ? <Link {...shared} variant="link" href={node.href} onClick={event => frameLinkNavigation(event, onNavigate)}>{content}</Link> :
       <Button {...shared} variant="ghost" onPress={() => { node.onAction?.(); if (narrow) changeOpen(false); }}>{content}</Button>;
   };
@@ -241,5 +241,5 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
     heading={<SemanticContent as="span" className="sr-only">{label}</SemanticContent>} closeLabel={closeLabel} closeButtonStyle={getAppNavigationCloseStyle(cornerMeasurement)} navigationKey={route} dismissAt={dismissAt}
     isOpen={requested} onOpenChange={changeOpen} className="gap-xs p-sm">{links}</Drawer>;
   return <>{control}{(!collapsed || retainMounted) && <Panel className="h-full min-h-0 shrink-0 gap-xs rounded-none border-0 p-sm"
-    style={{ inlineSize: "var(--ui-layout-sidebar-w)" }}>{links}</Panel>}</>;
+    style={{ inlineSize: "var(--ui-layout-sidebar-w, 256px)" }}>{links}</Panel>}</>;
 }

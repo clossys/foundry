@@ -36,7 +36,7 @@ const COUNT_CLASSES: Readonly<Record<number, string>> = {
   6: "grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3",
 };
 
-const QUOTE_STYLE = { "--text-blockquote": "var(--text-body-l, inherit)" } as CSSProperties;
+const QUOTE_STYLE = { "--text-blockquote": "var(--text-body-l, 17px)" } as CSSProperties;
 
 function TestimonialSetFigure({ item, ground }: { item: TestimonialSetItem; ground: SectionGround }) {
   const portrait = item.portrait == null ? null : <SemanticContent as="span" aria-hidden="true" className="size-10 shrink-0 overflow-hidden rounded-pill">{item.portrait}</SemanticContent>;

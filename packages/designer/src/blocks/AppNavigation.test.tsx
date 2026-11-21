@@ -187,13 +187,13 @@ describe("AppNavigation", () => {
       expect(control).toHaveClass("control-h-md");
       expect(control.style.blockSize).toBe("");
       expect(control.style.minBlockSize).toBe("");
-      expect(control.style.borderInlineStartWidth).toBe("var(--ui-border-rule)");
+      expect(control.style.borderInlineStartWidth).toBe("var(--ui-border-rule, 2px)");
     }
     const actionControl = screen.getByRole("button", { name: "Actions" });
     expect(actionControl).toHaveClass("control-h-md");
     expect(actionControl.style.blockSize).toBe("");
     expect(actionControl.style.minBlockSize).toBe("");
-    expect(actionControl.style.borderInlineStartWidth).toBe("var(--ui-border-rule)");
+    expect(actionControl.style.borderInlineStartWidth).toBe("var(--ui-border-rule, 2px)");
     const chevron = screen.getByRole("button", { name: "Collapse Catalogs" });
     expect(chevron).toHaveClass("icon-control-md");
     expect(chevron).not.toHaveAttribute("style");
@@ -468,7 +468,7 @@ describe("AppNavigation visual pass (VF-1 shell-01/02, cross-05)", () => {
     render(<AppNavigation tree={tree} activeId="blocks" />);
     const current = screen.getByRole("link", { name: "Blocks" });
     expect(current).toHaveClass("bg-surface-selected", "border-s-primary", "font-medium");
-    expect(current.style.borderInlineStartWidth).toBe("var(--ui-border-rule)");
+    expect(current.style.borderInlineStartWidth).toBe("var(--ui-border-rule, 2px)");
     expect(current).not.toHaveClass("outline-solid", "outline-line-strong", "font-semibold");
     const rest = screen.getByRole("link", { name: "Home" });
     expect(rest).toHaveClass("border-s-transparent", "hover:bg-control-tonal-hover");

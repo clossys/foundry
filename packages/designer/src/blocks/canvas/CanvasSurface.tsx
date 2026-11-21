@@ -137,7 +137,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
   zoomPercentageLabel = "Canvas zoom percentage", zoomInLabel = "Zoom in", fitLabel = "Fit canvas",
 } = props;
   const inset = (value: CSSProperties["insetBlockStart"]): string => {
-    if (value === undefined) return "var(--spacing-md)";
+    if (value === undefined) return "var(--spacing-md, 12px)";
     if (typeof value === "number") { if (!Number.isFinite(value) || value < 0) throw new TypeError("Canvas frame inset must be finite and nonnegative"); return `${value}px`; }
     if (typeof value !== "string" || !value.trim() || /[;{}<>]|url\s*\(|expression\s*\(/i.test(value)) throw new TypeError("Canvas frame inset must be a safe CSS length");
     return value;
@@ -146,7 +146,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
   const flowing = contentLayout === "flow";
   if (flowing && (itemInteraction !== "content" || items.length || edges.length)) throw new TypeError("Canvas flow requires Frame-owned content without positioned items");
   const collapsedMap = itemInteraction === "content" && overlayLayout === "narrow";
-  const reserveControls = minimap && !collapsedMap ? "calc(var(--ui-layout-sidebar-w) * 3 / 5 + var(--spacing-md))" : zoomControls ? "calc(var(--ui-control-h-sm) + var(--spacing-md) * 2)" : "0px";
+  const reserveControls = minimap && !collapsedMap ? "calc(var(--ui-layout-sidebar-w, 256px) * 3 / 5 + var(--spacing-md, 12px))" : zoomControls ? "calc(var(--ui-control-h-sm, 28px) + var(--spacing-md, 12px) * 2)" : "0px";
   if (new Set(overlays.map(panel => panel.placement)).size !== overlays.length || overlays.some(panel => !["explorer", "inspector"].includes(panel.placement))) throw new TypeError("Canvas overlays require unique closed placements");
   if (!label.trim()) throw new TypeError("CanvasSurface requires an accessible label.");
   validateCanvasItems(items);
@@ -504,8 +504,8 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
     <SemanticContent as="div" ref={world} data-canvas-world="" dir="ltr" className={cx(flowing ? "relative" : "absolute inset-0", worldClassName, (fitting || moving) && !reducedMotion && "transition-transform motion-reduce:transition-none")}
       onTransitionEnd={event => { if (event.target !== event.currentTarget) return; setFitting(false); onViewportTransitionEnd?.(); }}
       style={{ transformOrigin: "0 0", transform: flowing ? undefined : `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
-        transitionDuration: reducedMotion ? "0s" : moving ? viewportTransition.duration : fitting ? "var(--ui-duration-fast)" : "0s",
-        transitionTimingFunction: moving ? viewportTransition.easing : "var(--ease-default)" }}>
+        transitionDuration: reducedMotion ? "0s" : moving ? viewportTransition.duration : fitting ? "var(--ui-duration-fast, 120ms)" : "0s",
+        transitionTimingFunction: moving ? viewportTransition.easing : "var(--ease-default, cubic-bezier(.2, 0, 0, 1))" }}>
       {edges.length ? <svg data-canvas-edges="" aria-hidden="true" focusable="false" className="pointer-events-none absolute text-ink-muted"
         viewBox={`${worldBounds.x} ${worldBounds.y} ${worldBounds.width} ${worldBounds.height}`}
         style={{ left: worldBounds.x, top: worldBounds.y, width: worldBounds.width, height: worldBounds.height }}>
@@ -546,7 +546,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
     {overlays.map(panel => {
       const compactOpen = overlayLayout !== "wide" && panel.isOpen;
       const otherTrigger = overlays.some(other => other.placement !== panel.placement);
-      const triggerReserve = "var(--ui-control-h-md) + var(--spacing-md)";
+      const triggerReserve = "var(--ui-control-h-md, 32px) + var(--spacing-md, 12px)";
       const contentId = `${instructionId}-${panel.placement}`;
       return <SemanticContent as="div" key={panel.placement} ref={node => { if (node) panelRefs.current.set(panel.placement, node); else panelRefs.current.delete(panel.placement); }} data-canvas-panel={panel.placement}
         onKeyDown={event => {
@@ -558,8 +558,8 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
         style={{ insetBlockStart: topInset, maxBlockSize: `max(0px, calc(100% - ${topInset} - ${bottomInset} - ${reserveControls}))`, maxInlineSize: `calc(100% - ${startInset} - ${endInset})`,
           insetInlineStart: panel.placement === "explorer" ? startInset : compactOpen ? otherTrigger ? `calc(${startInset} + ${triggerReserve})` : startInset : undefined,
           insetInlineEnd: panel.placement === "inspector" ? endInset : compactOpen ? otherTrigger ? `calc(${endInset} + ${triggerReserve})` : endInset : undefined,
-          inlineSize: !panel.isOpen || compactOpen ? "auto" : panel.placement === "explorer" ? "var(--ui-layout-sidebar-w)" : "var(--ui-layout-aside-w)",
-          zIndex: "var(--ui-z-sticky)", boxShadow: UI_ELEVATION_FLOATING }}>
+          inlineSize: !panel.isOpen || compactOpen ? "auto" : panel.placement === "explorer" ? "var(--ui-layout-sidebar-w, 256px)" : "var(--ui-layout-aside-w, 320px)",
+          zIndex: "var(--ui-z-sticky, 10)", boxShadow: UI_ELEVATION_FLOATING }}>
         <SemanticContent as="div" className={cx("flex items-center justify-between", panel.isOpen && "gap-sm border-b border-line-base p-xs")}>
           {panel.isOpen ? <SemanticContent as="h2" className="min-w-0 truncate px-sm text-body-s font-semibold">{panel.label}</SemanticContent> : null}
           <Button data-canvas-panel-toggle="" variant="ghost" size="sm" className="icon-control-md shrink-0 p-0" aria-label={panel.isOpen ? panel.closeLabel : panel.openLabel}
@@ -574,7 +574,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
       style={{ left: marquee.x, top: marquee.y, width: marquee.width, height: marquee.height, borderWidth: UI_BORDER_HAIRLINE }} />}
     {minimap && !flowing && <Button type="button" variant="ghost" data-canvas-minimap="" aria-label={recenterLabel} hidden={collapsedMap} inert={collapsedMap}
       className={cx("absolute overflow-hidden rounded-control border border-line-base bg-surface-sunken focus-ring-inset", itemInteraction === "content" ? "bottom-md start-md" : "bottom-sm start-sm h-24 w-40")}
-      style={itemInteraction === "content" ? { inlineSize: "var(--ui-layout-sidebar-w)", maxInlineSize: `calc(100% - ${startInset} - ${endInset})`, aspectRatio: "5 / 3", insetInlineStart: startInset, insetBlockEnd: bottomInset, zIndex: "var(--ui-z-sticky)" } : { zIndex: "var(--ui-z-sticky)" }}
+      style={itemInteraction === "content" ? { inlineSize: "var(--ui-layout-sidebar-w, 256px)", maxInlineSize: `calc(100% - ${startInset} - ${endInset})`, aspectRatio: "5 / 3", insetInlineStart: startInset, insetBlockEnd: bottomInset, zIndex: "var(--ui-z-sticky, 10)" } : { zIndex: "var(--ui-z-sticky, 10)" }}
       onClick={event => {
         const bounds = event.currentTarget.getBoundingClientRect();
         const unit = (value: number) => Math.min(1, Math.max(0, value));
@@ -587,7 +587,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
       <SemanticContent as="span" aria-hidden="true" className="pointer-events-none absolute border border-primary bg-accent"
         style={{ left: `${map.visible.x * 100}%`, top: `${map.visible.y * 100}%`, width: `${map.visible.width * 100}%`, height: `${map.visible.height * 100}%`, borderWidth: UI_BORDER_HAIRLINE }} />
     </Button>}
-    {zoomControls && !flowing && <SemanticContent as="div" data-canvas-controls="" role="group" aria-label={zoomGroupLabel} className={cx("absolute flex max-w-full flex-wrap items-center gap-xs rounded-control bg-surface-raised p-xs", itemInteraction === "content" ? "bottom-md end-md" : "bottom-sm end-sm")} style={itemInteraction === "content" ? { insetInlineEnd: endInset, insetBlockEnd: bottomInset, maxInlineSize: `calc(100% - ${startInset} - ${endInset})`, zIndex: "var(--ui-z-sticky)" } : { zIndex: "var(--ui-z-sticky)" }}>
+    {zoomControls && !flowing && <SemanticContent as="div" data-canvas-controls="" role="group" aria-label={zoomGroupLabel} className={cx("absolute flex max-w-full flex-wrap items-center gap-xs rounded-control bg-surface-raised p-xs", itemInteraction === "content" ? "bottom-md end-md" : "bottom-sm end-sm")} style={itemInteraction === "content" ? { insetInlineEnd: endInset, insetBlockEnd: bottomInset, maxInlineSize: `calc(100% - ${startInset} - ${endInset})`, zIndex: "var(--ui-z-sticky, 10)" } : { zIndex: "var(--ui-z-sticky, 10)" }}>
       <Button size="sm" variant="ghost" aria-label={zoomOutLabel} onPress={() => requestZoom(1 / 1.2)}>−</Button>
       <SemanticContent as="span" role="status" aria-label={zoomPercentageLabel} className="text-body-s tabular-nums">{Math.round(viewport.zoom * 100)}%</SemanticContent>
       <Button size="sm" variant="ghost" aria-label={zoomInLabel} onPress={() => requestZoom(1.2)}>+</Button>
