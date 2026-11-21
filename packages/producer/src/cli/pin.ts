@@ -26,7 +26,7 @@ import type { GuardSession } from "../constitution/guard.js";
 import { pinGate, writeScorecard } from "../constitution/pin-gate.js";
 import { clearReverdict, reverdictPath, scorecardPath } from "../constitution/cascade.js";
 import { seatRefusal } from "../records/seat-owner.js";
-import { CODE_SCORECARD } from "../records/pin.js";
+import { CODE_SCORECARD, confirmableBasis } from "../records/pin.js";
 import { codeSlotRefusals, scorecardTopRefusal } from "../loop/code-pin.js";
 import { isLoopName } from "../loop/names.js";
 import { ownerDecisionRefusal } from "../records/owner-answer.js";
@@ -43,8 +43,8 @@ export const PIN_USAGE = "Usage: clossys pin <agent>/<slot> <candidate-id> [--by
   + "        scorecard: code pins the scorecard's single top row, never on an owner-pick or confirm slot).\n"
   + "  --basis: how the pin was decided. --by planner[:<ref>] is always planner; any other --by needs an explicit\n"
   + "           --basis: picked (the owner chose this candidate) or bulk (a blanket owner approval), or planner.\n"
-  + "  --confirm: the owner confirms the slot's agent pick of <candidate-id>; the pin keeps basis agent and its\n"
-  + "             agent:<seat> decider and records confirmed {by, ref, at}. --ref names where the owner's words are.\n"
+  + "  --confirm: the owner confirms the slot's agent or code pick of <candidate-id>; the pin keeps its basis (agent\n"
+  + "             or scorecard) and decider and records confirmed {by, ref, at}. --ref names where the owner's words are.\n"
   + "  A pin refuses on any finding of a constitution check whose rules.json guard lists pin (pick for an agent:<seat>\n"
   + "  pick) about the pinned candidate, pin.json or slot.json: an uncertified candidate (R05), an unresolved citation\n"
   + "  (R07.1) or a region no frame composes (R07.6) is never pinned.\n"
@@ -322,8 +322,8 @@ function runTargetNotNeeded(root: string, agent: string, slotId: string, record:
  * slot ledger and the pin guard runs (writeTargetConfirm). Never a pin/1.
  */
 function runTargetConfirm(root: string, agent: string, slotId: string, record: string | undefined, candidateId: string | undefined, flags: Flags, guard: WriteGuard): CliResult {
-  if (flags.notNeeded) throw new CliUsageError(`--confirm confirms an agent pick; it takes no --not-needed\n${PIN_USAGE}`);
-  if (flags.basis !== undefined) throw new CliUsageError(`--confirm keeps the agent pick's basis agent; it takes no --basis\n${PIN_USAGE}`);
+  if (flags.notNeeded) throw new CliUsageError(`--confirm confirms an agent or code pick; it takes no --not-needed\n${PIN_USAGE}`);
+  if (flags.basis !== undefined) throw new CliUsageError(`--confirm keeps the pick's basis (agent or scorecard); it takes no --basis\n${PIN_USAGE}`);
   if (!CONFIRMED_BY.test(flags.by)) throw new CliUsageError(`--confirm is the owner's: --by must be owner:queue.<kind>#<id>, got ${flags.by}\n${PIN_USAGE}`);
   const answer = ownerAnswerRef(flags.by);
   // DRAFT copy (not owner-approved).
@@ -344,8 +344,8 @@ function runTargetConfirm(root: string, agent: string, slotId: string, record: s
       if (read.kind !== "pin" && read.kind !== "pin-map") return { exitCode: 1, message: `confirm refused: ${target} has no clossys.pin/2 agent pick to confirm${read.kind === "none" ? "" : ` (${read.issues.join("; ")})`}` };
       const held = read.kind === "pin-map" ? (record !== undefined ? read.doc.records[record] : undefined) : record === undefined ? read.doc : undefined;
       if (!held) return { exitCode: 1, message: `confirm refused: ${target} names no pinned record` };
-      if (held.basis !== "agent") return { exitCode: 1, message: `confirm refused: ${target} is pinned with basis ${held.basis}; only an agent pick is confirmed` };
-      if (held.candidate !== candidateId && held.candidate.replace(/\.(?:md|json|svg)$/, "") !== candidateId) return { exitCode: 1, message: `confirm refused: ${target} holds the agent pick ${held.candidate}, not ${candidateId}` };
+      if (!confirmableBasis(held.basis)) return { exitCode: 1, message: `confirm refused: ${target} is pinned with basis ${held.basis}; only an agent or code pick is confirmed` };
+      if (held.candidate !== candidateId && held.candidate.replace(/\.(?:md|json|svg)$/, "") !== candidateId) return { exitCode: 1, message: `confirm refused: ${target} holds the ${held.basis === "scorecard" ? "code" : "agent"} pick ${held.candidate}, not ${candidateId}` };
       if (held.confirmed) return { exitCode: 1, message: `confirm refused: ${target} ${held.candidate} is already confirmed (${held.confirmed.ref})` };
       // Only the owner's typed clossys.queue-entry/2 answer `pin <target> <candidate> --confirm` confirms (records/owner-answer.ts).
       const bound = ownerDecisionRefusal(root, flags.by, { kind: "confirm", slot: `${agent}/${slotId}`, target, candidate: held.candidate });

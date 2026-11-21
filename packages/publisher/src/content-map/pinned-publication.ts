@@ -147,15 +147,19 @@ const iso = (value: unknown): boolean => typeof value === "string" && /^\d{4}-\d
 const PIN_V2_KEYS = ["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "updatedAt", "refs", "candidate", "sha256", "decidedBy", "basis", "at", "confirmed"] as const;
 const PIN_V2_REQUIRED = ["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "refs", "candidate", "sha256", "decidedBy", "basis", "at"] as const;
 /** A `clossys.pin/2` Publisher pin.json for slot `id`: its COMMON block and confirmation (Producer records/pin.ts pinIssues, mirrored). */
+/** The code decider of a scorecard pin (`clossys settle pick`); it pairs only with basis scorecard. */
+const CODE_SCORECARD = "code:scorecard";
+/** The pin bases the owner confirms: an agent pick and a code (scorecard) pick. */
+const CONFIRMABLE_BASES: readonly string[] = ["agent", "scorecard"];
 function currentPin(pin: JsonObject, id: string, pinPath: string) {
   keys(pin, PIN_V2_KEYS, pinPath);
   for (const key of PIN_V2_REQUIRED) if (!Object.hasOwn(pin, key)) fail(pinPath, `Missing pin key ${key}`);
   if (pin.id !== `publisher/${id}/pin` || pin.agent !== "publisher" || pin.kind !== "pin" || !["pinned", "confirm"].includes(pin.status)) fail(pinPath, "Invalid pin identity, kind or status");
   if (!object(pin.createdBy) || !text(pin.createdBy.actor) || !iso(pin.createdAt) || pin.updatedAt !== undefined && !iso(pin.updatedAt)) fail(pinPath, "Invalid pin provenance");
   if (!Array.isArray(pin.refs) || pin.refs.some(ref => !object(ref) || typeof ref.to !== "string" || typeof ref.rel !== "string")) fail(pinPath, "Invalid pin refs");
-  if (typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner)(?::.+)?|agent:(?:director|designer|writer|publisher|producer)|migrated)$/.test(pin.decidedBy)) fail(pinPath, "Invalid pin");
+  if (typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner)(?::.+)?|agent:(?:director|designer|writer|publisher|producer)|code:scorecard|migrated)$/.test(pin.decidedBy)) fail(pinPath, "Invalid pin");
   if (pin.confirmed !== undefined) {
-    if (pin.basis !== "agent") fail(pinPath, "confirmed is only on an agent pick (basis agent)");
+    if (!CONFIRMABLE_BASES.includes(pin.basis as string)) fail(pinPath, "confirmed is only on an agent or code pick (basis agent or scorecard)");
     if (!object(pin.confirmed)) fail(pinPath, "Invalid pin confirmation");
     keys(pin.confirmed, ["by", "ref", "at"], pinPath);
     if (pin.confirmed.by !== "owner" || !text(pin.confirmed.ref) || !iso(pin.confirmed.at)) fail(pinPath, "Invalid pin confirmation");
@@ -166,10 +170,10 @@ function currentPin(pin: JsonObject, id: string, pinPath: string) {
 function legacyPin(pin: JsonObject, pinPath: string) {
   keys(pin, ["candidate", "sha256", "decidedBy", "basis", "at", "confirmed", "recited"], pinPath);
   // The owner's confirmation of an agent pick (`clossys pin --confirm --ref`), same shape as the slot model's
-  // PinConfirmation: {by: owner[:<ref>], ref, at}, and only on a basis agent pin.
+  // PinConfirmation: {by: owner[:<ref>], ref, at}, and only on a basis agent or scorecard pin.
   if (pin.confirmed !== undefined) {
     const confirmed = pin.confirmed;
-    if (pin.basis !== "agent") fail(pinPath, "confirmed is only on an agent pick (basis agent)");
+    if (!CONFIRMABLE_BASES.includes(pin.basis as string)) fail(pinPath, "confirmed is only on an agent or code pick (basis agent or scorecard)");
     if (!object(confirmed)) fail(pinPath, "Invalid pin confirmation");
     keys(confirmed, ["by", "ref", "at"], pinPath);
     if (typeof confirmed.by !== "string" || !/^owner(?::\S.*)?$/.test(confirmed.by) || !text(confirmed.ref) || !iso(confirmed.at)) fail(pinPath, "Invalid pin confirmation");
@@ -179,12 +183,14 @@ function legacyPin(pin: JsonObject, pinPath: string) {
   if (pin.recited !== undefined && (!object(pin.recited) || !text(pin.recited.by) || !text(pin.recited.at) || !object(pin.recited.cites))) fail(pinPath, "Invalid pin recite");
   recordFields(pin, pinPath);
 }
-/** The record fields both pin formats share: hash, decider, basis (agent iff decidedBy agent:<id>) and time. */
+/** The record fields both pin formats share: hash, decider, basis (agent iff decidedBy agent:<id>, scorecard iff
+ * decidedBy code:scorecard, the `clossys settle pick` code pin) and time. */
 function recordFields(pin: JsonObject, pinPath: string) {
   if (typeof pin.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(pin.sha256)
-    || typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/.test(pin.decidedBy)
+    || typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|code:scorecard|migrated)$/.test(pin.decidedBy)
     || !["picked", "bulk", "planner", "agent", "scorecard"].includes(pin.basis as string)
     || (pin.basis === "agent") !== pin.decidedBy.startsWith("agent:")
+    || (pin.basis === "scorecard") !== (pin.decidedBy === CODE_SCORECARD)
     || !iso(pin.at)) fail(pinPath, "Invalid pin");
 }
 function pinned(records: PinnedPublicationSource, index: Map<string, Position>, id: string, kind: "page" | "publication") {

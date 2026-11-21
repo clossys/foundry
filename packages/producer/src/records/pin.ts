@@ -28,6 +28,11 @@ export const PIN2_BASES: readonly PinBasis2[] = ["picked", "bulk", "planner", "a
 export const OWNER_BASES: readonly PinBasis2[] = ["picked", "bulk"];
 /** The one code decider (basis scorecard): `clossys settle pick` pinning the scorecard's single top row. */
 export const CODE_SCORECARD = "code:scorecard";
+/** The bases the owner confirms (`clossys pin --confirm`): an agent pick and a code pick (basis scorecard). Code
+ * takes over the mechanical choice; the owner keeps the confirmation (DET-STEPS fix r1 ruling). */
+export const CONFIRMABLE_BASES: readonly PinBasis2[] = ["agent", "scorecard"];
+/** Whether the owner confirms a pin of this basis: an agent pick or a code pick, never an owner, bulk or planner pin. */
+export const confirmableBasis = (basis: unknown): boolean => (CONFIRMABLE_BASES as readonly unknown[]).includes(basis);
 /** The ref a pin's scorecard is cited by (constitution/pin-gate.ts SCORECARD_REF_TO). */
 const SCORECARD_TO = "producer/checks.scorecard";
 
@@ -89,7 +94,7 @@ export function pinRecordIssues(record: PinRecord, refs: readonly Ref[], where =
       }
     }
   }
-  if (record.confirmed && record.basis !== "agent") issues.push(`${where}: confirmed is only for a basis agent pick, not ${record.basis}`);
+  if (record.confirmed && !confirmableBasis(record.basis)) issues.push(`${where}: confirmed is only for a basis agent or scorecard pick, not ${record.basis}`);
   if (record.confirmed && Date.parse(record.confirmed.at) < Date.parse(record.at)) issues.push(`${where}: confirmed.at is before the pick (${record.at})`);
   return issues;
 }

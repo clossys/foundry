@@ -32,7 +32,7 @@ import { checkPinsResolve, resolveAll } from "../check/pins-resolve.js";
 import { answerQueueEntry } from "../queue/answer.js";
 import { entryStamp, findQueueEntry, listQueueEntryFiles, readQueueEntry, slugOf } from "../queue/entry.js";
 import { sha256Hex } from "../records/hash.js";
-import { CODE_SCORECARD, OWNER_BASES, buildPin, cliActor, pinIssues, pinPath, writePinDoc } from "../records/pin.js";
+import { CODE_SCORECARD, OWNER_BASES, buildPin, confirmableBasis, cliActor, pinIssues, pinPath, writePinDoc } from "../records/pin.js";
 import { mergeRefs, readPinFile } from "../records/pin-map.js";
 import { isRecordSlot, resolveSlot, slotRecords, type Resolution } from "../records/resolve.js";
 import { readSlotEntry } from "../records/slots.js";
@@ -1460,7 +1460,7 @@ function confirmPin(ctx: Context, subject: SlotSubject, entry: QueueEntry): { ex
       const read = readPinFile(file, { agent, slotId });
       if (read.kind !== "pin" || read.issues.length) return { exit: 1 as Exit, wrote: [], why: `${refOf(subject)} has no valid pin for the owner to confirm${read.kind === "pin" || read.kind === "invalid" || read.kind === "pin/1" ? `: ${read.issues.join("; ")}` : ""}` };
       const pin = read.doc;
-      if (pin.basis !== "agent") return { exit: 1 as Exit, wrote: [], why: `${refOf(subject)} is pinned by ${pin.decidedBy} (basis ${pin.basis}); only an agent pick is confirmed` };
+      if (!confirmableBasis(pin.basis)) return { exit: 1 as Exit, wrote: [], why: `${refOf(subject)} is pinned by ${pin.decidedBy} (basis ${pin.basis}); only an agent or code pick is confirmed` };
       const at = iso(ctx.now());
       const answers: Ref = { to: `producer/${entry.queue}` as Ref["to"], record: entry.id, rel: "answers" };
       const confirmed = { by: "owner" as const, ref: entryName(entry), at };

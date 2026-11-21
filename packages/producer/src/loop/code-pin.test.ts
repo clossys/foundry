@@ -17,14 +17,17 @@ import { pinGate } from "../constitution/pin-gate.js";
 import { buildCandidateHeader, candidatePath, serializeCandidate, writeCandidateFile } from "../records/candidate.js";
 import { skillPath } from "../records/ledger.js";
 import { buildPin, cliActor, CODE_SCORECARD, pinIssues, pinPath, writePinDoc } from "../records/pin.js";
+import { answerRequest, raiseWork } from "../records/request.js";
 import { appendSlotDocEvent, writeCandidate } from "../records/slot-write.js";
-import { codeSlotRefusals, ownerStepRefusal, scorecardTopRefusal } from "./code-pin.js";
+import { gapsOf } from "../pipeline/interview.js";
+import { codeSlotRefusals, heldDecisionRefusal, ownerStepRefusal, scorecardTopRefusal } from "./code-pin.js";
 import { readPackageLoop } from "./files.js";
 import type { LoopName } from "./names.js";
 import { startRun, type AgentPacket, type CodeCall, type RunHooks } from "./runner.js";
 
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
 const AT = "2026-11-17T12:00:00Z";
+const LATER = "2026-11-17T13:00:00Z";
 const HERO = "sections.hero";
 const QUEUE_ID = "20261117T1200Z-hero";
 const HERO_SOURCE = { kind: "derived", ref: ["tailark-oss/mist-hero-section-1@8139698"], hash: "sha256:315ecac252ac891e44ae37f2c2d946312c78f3998fd7ed5d7279ab0f1582ce52", license: "MIT" };
@@ -171,6 +174,61 @@ describe("clossys pin --by code:scorecard: code pins the scorecard's single top 
     const pin = buildPin({ agent: "designer", slotId: HERO, record: { candidate: good.name, sha256: "0".repeat(64), decidedBy: "agent:designer", basis: "scorecard" as never, at: AT }, refs: [], createdBy: cliActor("clossys pin") });
     expect(pinIssues(pin).join("; ")).toMatch(/scorecard/);
   }, 60_000);
+});
+
+describe("DET-STEPS fix r1 ruling: a code pin gets the owner surfaces of an agent pick", () => {
+  it("raises agent-pick.unconfirmed for a code pin, offers its confirm option, and the owner's answer confirms it (clossys pin --confirm)", async () => {
+    const w = heroWorld();
+    const good = w.submit("Ship your site this week");
+    expect((await w.codePin(good.name)).exitCode).toBe(0);
+    const unconfirmed = () => gapsOf(w.root, { agent: "designer" }).gaps.filter(gap => gap.code === "agent-pick.unconfirmed" && gap.item === `designer/${HERO}`);
+    expect(unconfirmed()).toEqual([expect.objectContaining({ kind: "coverage", agent: "designer", step: "pin.designer", decider: "owner", message: `designer/${HERO}: code pick (${CODE_SCORECARD}) ${good.name} waits for the owner's confirmation` })]);
+    const entry = raiseWork(w.consumer, { kind: "change", target: `designer/${HERO}`, from: "owner", want: "repin", why: "confirm the hero", source: "cli", by: "owner", at: AT }).request;
+    const option = entry.options?.find(each => each.then.args[2] === "--confirm");
+    expect(option, JSON.stringify(entry.options)).toMatchObject({ label: expect.stringContaining(`Confirm ${CODE_SCORECARD}'s pick ${good.name}`), then: { verb: "pin", args: [`designer/${HERO}`, good.name, "--confirm"] } });
+    const answered = await answerRequest(w.consumer, entry.id, { option: option!.id, at: LATER, via: "chat", quote: "Confirm it." });
+    expect(answered.ok, answered.message).toBe(true);
+    const pin = JSON.parse(readFileSync(w.pinFile, "utf8"));
+    expect(pin).toMatchObject({ candidate: good.name, sha256: good.sha256, decidedBy: CODE_SCORECARD, basis: "scorecard", status: "pinned", confirmed: { by: "owner", ref: `producer/queue.change#${entry.id}`, at: LATER } });
+    expect(pinIssues(pin, { agent: "designer", slotId: HERO })).toEqual([]);
+    expect(unconfirmed()).toEqual([]);
+  }, 120_000);
+
+  it("runTargetConfirm confirms a code pin with the owner's typed answer, and still refuses an owner pin", async () => {
+    const w = heroWorld();
+    const good = w.submit("Ship your site this week");
+    expect((await w.codePin(good.name)).exitCode).toBe(0);
+    const entry = raiseWork(w.consumer, { kind: "change", target: `designer/${HERO}`, from: "owner", want: "repin", why: "confirm the hero", source: "cli", by: "owner", at: AT }).request;
+    const option = entry.options!.find(each => each.then.args[2] === "--confirm")!;
+    expect((await answerRequest(w.consumer, entry.id, { option: option.id, at: LATER, via: "chat", quote: "Confirm it." })).ok).toBe(true);
+    const confirmed = readFileSync(w.pinFile, "utf8");
+    // Confirmed once: a second --confirm is refused and changes nothing.
+    const again = await runPinCli([`designer/${HERO}`, good.name, "--confirm", "--by", `owner:queue.change#${entry.id}`, "--at", LATER, "--root", w.root], w.root);
+    expect(again.exitCode).toBe(1);
+    expect(readFileSync(w.pinFile, "utf8")).toBe(confirmed);
+    // An owner pin is its own decision: --confirm refuses its basis.
+    const o = heroWorld();
+    const pick = o.submit("Ship your site this week");
+    expect((await o.ownerPin(pick.name)).exitCode).toBe(0);
+    const refused = await runPinCli([`designer/${HERO}`, pick.name, "--confirm", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", LATER, "--root", o.root], o.root);
+    expect(refused).toMatchObject({ exitCode: 1, message: expect.stringMatching(/is pinned with basis picked; only an agent or code pick is confirmed/) });
+  }, 120_000);
+
+  it("heldDecisionRefusal refuses a pin.json code cannot read as a valid pin/2: an int2 pin/1, broken JSON, an invalid pin/2", () => {
+    const w = heroWorld();
+    mkdirSync(join(w.consumer, "agents", "designer", HERO), { recursive: true });
+    expect(heldDecisionRefusal(w.root, "designer", HERO)).toBeUndefined();
+    writeFileSync(w.pinFile, `${JSON.stringify({ candidate: "hero-v1.json", sha256: "0".repeat(64), decidedBy: "owner", basis: "picked", at: AT })}\n`);
+    expect(heldDecisionRefusal(w.root, "designer", HERO)).toMatch(/cannot read as a valid clossys\.pin\/2 \(pin\.json is an int2 pin \(pin\/1\)/);
+    expect(codeSlotRefusals(w.root, "designer", HERO).join("; ")).toMatch(/code never replaces a pin it cannot read/);
+    writeFileSync(w.pinFile, "{ not json");
+    expect(heldDecisionRefusal(w.root, "designer", HERO)).toMatch(/pin\.json is not JSON/);
+    const pin = buildPin({ agent: "designer", slotId: HERO, record: { candidate: "hero-v1.json", sha256: "0".repeat(64), decidedBy: CODE_SCORECARD, basis: "scorecard", at: AT }, refs: [{ to: "producer/checks.scorecard" as never, rel: "cites" }], createdBy: cliActor("clossys pin") });
+    writePinDoc(w.pinFile, { ...pin, id: "designer/sections.footer/pin" } as never);
+    expect(heldDecisionRefusal(w.root, "designer", HERO)).toMatch(/code never replaces a pin it cannot read/);
+    writePinDoc(w.pinFile, pin);
+    expect(heldDecisionRefusal(w.root, "designer", HERO)).toBeUndefined();
+  });
 });
 
 describe("loop.choose's score step (clossys settle pick): code settles the pick, or the agent picks", () => {

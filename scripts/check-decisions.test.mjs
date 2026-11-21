@@ -67,10 +67,12 @@ test("a pin missing decidedBy or at fails, including the pre-CLI pinnedBy shape"
   });
 });
 
-test("an owner confirmation is accepted only on an agent pick, with by owner, a ref and an ISO time", () => {
+test("an owner confirmation is accepted only on an agent or code pick, with by owner, a ref and an ISO time", () => {
   withRepo(({ consumer, pinned }) => {
     const confirmed = { by: "owner", ref: "clossys/workspace#46 issuecomment-1", at: "2026-11-11T23:30:00.000Z" };
     editPin(pinned, (pin) => ({ ...pin, decidedBy: "agent:director", basis: "agent", confirmed }));
+    assert.deepEqual(rules(consumer), []);
+    editPin(pinned, (pin) => ({ ...pin, decidedBy: "code:scorecard", basis: "scorecard", confirmed }));
     assert.deepEqual(rules(consumer), []);
     editPin(pinned, (pin) => ({ ...pin, decidedBy: "owner", basis: "bulk" }));
     assert.deepEqual(rules(consumer), ["pin-shape"]);

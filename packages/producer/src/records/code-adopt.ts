@@ -107,8 +107,14 @@ export function stockItemOf(root: string, slotId: string): { readonly stock: Sto
   const file = ((doc.contract as { fixture?: { fixtures?: { file?: unknown } } }).fixture?.fixtures?.file);
   if (typeof file !== "string") return { none: `${at} has no contract fixture file, so no stock item ships it` };
   const manifest = manifestOf(root);
-  const rows = manifest.items.filter(row => STOCK_REGISTRIES.includes(row.registry) && row.files.some(each => each.path === file));
-  const row = rows.find(each => (each.slots ?? []).includes(slotId)) ?? rows.find(each => each.name === file.split("/").at(-1)!.replace(/\.tsx$/, "")) ?? rows[0];
+  const shipping = manifest.items.filter(row => STOCK_REGISTRIES.includes(row.registry) && row.files.some(each => each.path === file));
+  // The source ladder, explicitly: the first registry of STOCK_REGISTRIES (shadcn-aria) that ships the fixture wins,
+  // the partner (diceui) only when it does not; within one registry, the row naming this slot, then the row named
+  // for the fixture file, then the first row in manifest order.
+  const base = file.split("/").at(-1)!.replace(/\.tsx$/, "");
+  const registry = STOCK_REGISTRIES.find(name => shipping.some(row => row.registry === name));
+  const rows = shipping.filter(row => row.registry === registry);
+  const row = rows.find(each => (each.slots ?? []).includes(slotId)) ?? rows.find(each => each.name === base) ?? rows[0];
   if (!row) return { none: `no ${STOCK_REGISTRIES.join(" or ")} stock item ships ${at}'s contract fixture ${file}` };
   const ref = refIdOf(row);
   const consumer = join(root, "clossys");

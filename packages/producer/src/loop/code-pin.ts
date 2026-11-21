@@ -51,10 +51,17 @@ export function ownerStepRefusal(root: string, agent: AgentId, slotId: string): 
 /** Why the held pin is a human decision code may not replace, or undefined. */
 export function heldDecisionRefusal(root: string, agent: AgentId, slotId: string, record?: string): string | undefined {
   const held = readPinFile(join(root, "clossys", "agents", agent, slotId, "pin.json"), { agent, slotId });
-  const pin = held.kind === "pin" ? held.doc : held.kind === "pin-map" && record !== undefined ? held.doc.records[record] : undefined;
+  const at = `${agent}/${slotId}${record !== undefined ? `#${record}` : ""}`;
+  if (held.kind === "none") return undefined;
+  // A pin code cannot read as a valid pin/2 (an int2 pin/1, an unknown schema, broken JSON, or a pin/2 or pin map
+  // with issues) may hold an owner or planner decision: code never replaces it, it waits for the migration or the fix.
+  if (held.kind === "pin/1" || held.kind === "invalid" || held.issues.length) {
+    return `${at} holds a pin.json code cannot read as a valid clossys.pin/2 (${held.issues.join("; ")}); code never replaces a pin it cannot read`;
+  }
+  const pin = held.kind === "pin" ? held.doc : record !== undefined ? held.doc.records[record] : undefined;
   if (!pin) return undefined;
   if (pinRecordStatus(pin) === "pinned" || OWNER_BASES.includes(pin.basis) || pin.basis === "planner") {
-    return `${agent}/${slotId}${record !== undefined ? `#${record}` : ""} holds ${pin.candidate} decided by ${pin.decidedBy} (${pin.basis}); code never replaces an owner or planner decision`;
+    return `${at} holds ${pin.candidate} decided by ${pin.decidedBy} (${pin.basis}); code never replaces an owner or planner decision`;
   }
   return undefined;
 }

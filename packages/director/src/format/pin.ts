@@ -20,7 +20,7 @@ export const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|c
 export const PIN_BASES = ["picked", "bulk", "planner", "agent", "scorecard"] as const;
 /** The one code decider: `clossys settle pick` pins the scorecard's single top row (basis scorecard). */
 export const CODE_SCORECARD = "code:scorecard";
-/** Who may confirm an agent pick: the owner only. */
+/** Who may confirm an agent or code pick: the owner only. */
 export const CONFIRMED_BY = /^owner(?::\S.*)?$/;
 /** Where a confirmation's owner words are: one ledger comment, optionally followed by a note in parentheses. */
 export const OWNER_WORDS_REF = /^(?:[\w.-]+\/[\w.-]+#\d+ issuecomment-\d+|https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/issues\/\d+#issuecomment-\d+)(?: \([^()]*\))?$/;
@@ -44,7 +44,7 @@ export function pinIssues(value: unknown): string[] {
   if (!iso(value.at)) issues.push("at must be an ISO timestamp");
   if (value.confirmed !== undefined) {
     const confirmed = value.confirmed;
-    if (value.basis !== "agent") issues.push("confirmed is only on an agent pick (basis agent); an owner pin is its own decision");
+    if (value.basis !== "agent" && value.basis !== "scorecard") issues.push("confirmed is only on an agent or code pick (basis agent or scorecard); an owner pin is its own decision");
     if (!object(confirmed)) issues.push("confirmed must be {by, ref, at}");
     else {
       for (const key of Object.keys(confirmed)) if (!(PIN_CONFIRMED_KEYS as readonly string[]).includes(key)) issues.push(`confirmed has unknown key ${key}`);

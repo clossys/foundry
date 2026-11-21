@@ -24,7 +24,7 @@ import { consumerFacts, placedSlots, readDeclarations, routeEntry, RoutingError,
 import { FIX_CHECKS, fixCheck, requesterCheck, requesterPinSets, requesterSlots } from "../queue/requester-check.js";
 import { PRODUCER_ROOT, skillPath } from "./ledger.js";
 import { resolveOwnerRef } from "./owner-decisions.js";
-import { OWNER_QUEUE_ANSWER, pinPath } from "./pin.js";
+import { OWNER_QUEUE_ANSWER, confirmableBasis, pinPath } from "./pin.js";
 import { readPinFile } from "./pin-map.js";
 import { isRecordSlot } from "./resolve.js";
 import { validateAgainst } from "./schema.js";
@@ -534,7 +534,8 @@ function ownerOptions(consumer: string, entry: { readonly kind: WorkKind; readon
   return out;
 }
 /**
- * The owner's confirmation of an agent pick (U13 r3): `confirm-<candidate>` per unconfirmed agent pick the target holds,
+ * The owner's confirmation of an agent or code pick (U13 r3; DET-STEPS fix r1): `confirm-<candidate>` per unconfirmed
+ * agent or code (basis scorecard) pick the target holds,
  * the pin/2 or each pin-map record (`pin <target>[#<record>] <candidate> --confirm`, which keeps the agent's pick and
  * records the owner's confirmation bound to this answer, then closes changed). DRAFT labels.
  */
@@ -543,7 +544,7 @@ function confirmOptions(consumer: string, slot: string): OwnerOption[] {
   if (!target) return [];
   const pin = readPinFile(pinPath(dirname(consumer), target.agent, target.need));
   const held: [string, PinRecord][] = pin.kind === "pin" ? [[slot, pin.doc]] : pin.kind === "pin-map" ? Object.entries(pin.doc.records).map(([key, record]) => [`${slot}#${key}`, record]) : [];
-  return held.filter(([, record]) => record.basis === "agent" && !record.confirmed)
+  return held.filter(([, record]) => confirmableBasis(record.basis) && !record.confirmed)
     .map(([to, record]) => ({ id: optionId("confirm", record.candidate), label: `Confirm ${record.decidedBy}'s pick ${record.candidate} on ${to}`, then: { verb: "pin" as const, args: [to, record.candidate, "--confirm"] } }));
 }
 /** The options Producer asks the owner on an agent's fix claim it cannot accept itself (DRAFT labels). */

@@ -14,7 +14,7 @@
  *                      owner|planner|migration[:<ref>] | agent:<seat> | code:scorecard | migrated, basis picked |
  *                      bulk | planner | agent | scorecard (agent exactly with decidedBy agent:<seat>, scorecard
  *                      exactly with decidedBy code:scorecard), ISO at, and
- *                      confirmed {by owner, ref <ledger comment>, at} only on an agent pick
+ *                      confirmed {by owner, ref <ledger comment>, at} only on an agent or code pick
  *   pin-candidate      the pinned candidate file does not exist
  *   pin-hash           sha256 in pin.json differs from the candidate file's bytes
  *   both               the slot is pinned and marked not needed at once
@@ -67,7 +67,7 @@ export function pinShapeIssues(pin) {
   if (!isoTime(pin.at)) issues.push('at must be an ISO timestamp');
   if (pin.confirmed !== undefined) {
     const confirmed = pin.confirmed;
-    if (pin.basis !== 'agent') issues.push('confirmed is only on an agent pick (basis agent); an owner pin is its own decision');
+    if (pin.basis !== 'agent' && pin.basis !== 'scorecard') issues.push('confirmed is only on an agent or code pick (basis agent or scorecard); an owner pin is its own decision');
     if (!object(confirmed)) issues.push('confirmed must be {by, ref, at}');
     else {
       for (const key of Object.keys(confirmed)) if (!CONFIRMED_KEYS.includes(key)) issues.push(`confirmed has unknown key ${key}`);
