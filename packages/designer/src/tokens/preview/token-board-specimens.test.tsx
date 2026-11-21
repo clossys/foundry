@@ -31,7 +31,7 @@ const CONTAIN = "token-specimen-contain";
 it("defines the containment utility from a size token, clipping its content", () => {
   const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "styles", "theme-keys.css"), "utf8");
   const rule = /@utility token-specimen-contain \{([^}]*)\}/.exec(css)?.[1] ?? "";
-  expect(rule).toMatch(/max-inline-size:\s*var\(--ui-layout-sidebar-w\)/);
+  expect(rule).toMatch(/max-inline-size:\s*var\(--ui-layout-sidebar-w, 256px\)/);
   expect(rule).toMatch(/overflow:\s*hidden/);
   expect(rule).toMatch(/overflow-wrap:\s*anywhere/);
 });
