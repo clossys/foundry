@@ -146,7 +146,7 @@ There is no session log. What the owner says is recorded as findings:
    choice, your first question is the archetype, with your hypothesis. Record
    the owner's answer with
    `npx clossys director check archetype <name> --by owner`, never by editing
-   a file: it writes `clossys/evidence/director/director-archetype.md` and the
+   a file: it writes `<root>/clossys/evidence/director/director-archetype.md` and the
    run is traced. `status`, `complete` and `clossys direct --check` then use
    its core cells; `npx clossys director check archetype` shows the recorded
    one. Pass `--archetype <name>` on `status` and `complete` as well, so the

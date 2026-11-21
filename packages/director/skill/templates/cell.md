@@ -53,7 +53,7 @@ Rules:
 
 This illustrative core segment describes an unnamed studio tool. It is version 2, after the user narrowed version 1 during a pricing pushback. The finding excerpts below are fictional format examples, not consumer evidence.
 
-File `focus.segment.core/candidates/studio-segment-core-v2.md`:
+Candidate `studio-segment-core-v2.md` in the `focus.segment.core` slot's `candidates/` folder:
 
 ```markdown
 ---
@@ -87,7 +87,7 @@ The owner confirmed it, so it was pinned:
 npx clossys pin director/focus.segment.core studio-segment-core-v2 --by owner --basis picked
 ```
 
-One finding it cites (`clossys/evidence/director/studio-interviews-2026-10.md`):
+One finding it cites (`<root>/clossys/evidence/director/studio-interviews-2026-10.md`):
 
 ```markdown
 ---

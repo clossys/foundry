@@ -9,7 +9,7 @@
  * its own contract.
  *
  * The slot behaviour is package data too (SOURCE-MIGRATE step 4): `standard` and non-derived
- * `inputs` from the agent's src/catalog/slot-defaults.json, `options`/`varyOn` from the producer
+ * `inputs` from the agent's `@clossys/<agent>/src/catalog/slot-defaults.json`, `options`/`varyOn` from the producer
  * option classes, and every other `inputs` derived from the read graph. A consumer's `uses` stay its
  * own: they follow the candidates it pins.
  *

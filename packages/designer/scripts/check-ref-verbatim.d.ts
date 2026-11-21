@@ -73,7 +73,7 @@ export type RefVerbatimElement = {
 export type RefVerbatimTarget = string | { readonly slot: string; readonly element: string; readonly version: number };
 
 export type RefVerbatimOptions = {
-  /** components.json of the consumer; default `<root>/components.json`, then `<root>/../components.json`. */
+  /** components.json of the consumer; default the `components.json` in `<root>`, then the one in its parent folder. */
   readonly components?: string;
   readonly manifest?: unknown;
   readonly referencesDir?: string;

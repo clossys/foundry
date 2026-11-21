@@ -86,7 +86,7 @@
  * "link" hrefs: parse with `new URL`, compare `.protocol` against a closed
  * allowlist, never a prefix/substring string match — reproduced locally
  * here (not imported) for the same reason `../document/validate.ts`
- * itself reproduces `packages/auth/src/redirect.ts`'s scheme check rather
+ * itself reproduces `packages/bouncer/src/redirect.ts`'s scheme check rather
  * than importing it: this package does not and should not depend on
  * `document`'s validator just for one shared helper, and each subpath's
  * own small, local copy is cheaper than a cross-subpath dependency for a

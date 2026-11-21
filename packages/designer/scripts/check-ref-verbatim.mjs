@@ -1076,8 +1076,8 @@ export const PACKAGE_LICENCE_FILES = Object.freeze(["LICENSE", "LICENCE", "LICEN
  * - every other (non-code, non-record) file is byte-identical to the same path
  *   inside the installed package at the lockfile-resolved version, e.g. its
  *   stylesheet dist/style.css (REF-NPM-ASSET);
- * - its LICENCE.md record is byte-identical to the installed package's own
- *   licence file (LICENSE, LICENCE, LICENSE.md, ...), so the licence it records
+ * - its licence record is byte-identical to the installed package's own
+ *   licence file (LICENSE or LICENCE, with or without an extension), so the licence it records
  *   is the one the package ships (REF-NPM-ASSET).
  * The lockfile and the install are looked up inside the consumer root's
  * repository only (repositoryBoundary).

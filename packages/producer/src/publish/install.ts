@@ -101,7 +101,7 @@ async function dropModuleType(file: string): Promise<void> {
 }
 
 /**
- * The flavor's `utils` alias module (`lib/utils.ts`), as `shadcn init` writes it, and the `cn`
+ * The flavor's `utils` alias module (`lib/utils`), as `shadcn init` writes it, and the `cn`
  * package it imports. Items import `cn` from `@/lib/utils` without listing it as a registry
  * dependency, so a substrate without it fails to build (`Could not load lib/utils`), or
  * resolves that import to whatever else an item put at `lib/utils`. A substrate written before
@@ -163,7 +163,7 @@ export function nextImageDefine(substrate: string): Record<string, string> {
 /**
  * The substrate's `resolve.alias`, `here` being the expression for the substrate directory. The
  * flavor's utils alias (`@/lib/utils`, components.json `aliases.utils`) resolves to exactly the
- * module the flavor writes (DESIGNER_SHADCN_UTILS, `lib/utils.ts`), ahead of the `@` prefix
+ * module the flavor writes (DESIGNER_SHADCN_UTILS, the TypeScript `lib/utils`), ahead of the `@` prefix
  * alias. Vite tries `.js` before `.ts`, so through `@` alone any `lib/utils.js` an item ships
  * shadows it: the @tailwindcss/typography sources (sections.legal-prose v1, sections.article v1,
  * sections.sectioned-document v1) install their CommonJS `utils.js` there, and every item that

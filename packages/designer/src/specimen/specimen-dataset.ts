@@ -253,8 +253,7 @@ const taskList: TaskListProps = {
 
 /**
  * Writer snapshot (planner:R2F-48): the exact draft records the specimens below draw, copied from
- * packages/writer/src/catalog/records/site.en.json and keyed by record id. Writer owns this copy;
- * specimen-writer-snapshot.test.ts fails when a record's text or context drifts from the catalogue.
+ * packages/writer/src/catalog/records/site.en.json and keyed by record id. Writer owns this copy.
  */
 const writerSnapshot = {
   "st.7mpayr0001": { context: "Inline media player title", text: "Example Co. overview" },

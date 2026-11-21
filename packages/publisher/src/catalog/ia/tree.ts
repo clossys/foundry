@@ -8,7 +8,7 @@ import retiredList from "../retired.json" with { type: "json" };
 import { routeFormatFindings } from "./route-format.js";
 
 /**
- * The Publisher slot tree (ia-target/publisher.md section 2): three L0s, Composition, Directory and Release, one file
+ * The Publisher slot tree: three L0s, Composition, Directory and Release, one file
  * each. A node id is `<l0>/<l1>[/<l2>]`; L3 leaves are slot ids. A `parked` node parks every leaf under it; there are no
  * other-live Publisher L3s, so every live leaf is a starter leaf. Each file also holds the slot contract of its leaves
  * (`slots`): a layout's frame and roles, a chrome unit and its copy record, a page's path and allowed layouts, a release's

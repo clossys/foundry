@@ -3,7 +3,7 @@
  * consumer onto the recut slot trees of the installed packages.
  *
  * 1. Plan. Every consumer slot folder of the Director, Designer, Writer and Publisher is mapped through its
- *    package: an id the package tree places and `src/catalog/retired.json` does not list stays (live); a
+ *    package: an id the package tree places and its `@clossys/<agent>/src/catalog/retired.json` does not list stays (live); a
  *    retired id whose `target` (or `replacedBy`) is a live leaf of the same agent moves there (move); any
  *    other retired id is retired: its folder goes to `agents/<agent>/_retired/<id>` (the `clossys retire
  *    --slot` place) with its bytes unchanged, and it leaves the agent ia.json, recorded in its `retired`
@@ -87,7 +87,7 @@ export interface PackageTable {
   readonly agent: RecutAgent;
   readonly live: ReadonlySet<string>;
   readonly retired: ReadonlyMap<string, string | undefined>;
-  /** False when the package ships no src/catalog/retired.json. */
+  /** False when the package ships no `@clossys/<agent>/src/catalog/retired.json`. */
   readonly hasRetired: boolean;
 }
 

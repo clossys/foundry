@@ -280,7 +280,7 @@ export async function resolvePage(page: InstallPageRecord, pins: InstallPins, so
       const registryFiles: RegistryFile[] = [];
       for (const file of found.item.files as unknown[]) {
         if (!isRecord(file) || typeof file.path !== "string") continue;
-        // A non-code file with nowhere to land (a LICENCE.md, a theme's token data) is the item's
+        // A non-code file with nowhere to land (a licence file, a theme's token data) is the item's
         // documentation, not part of the app: shadcn could not place it, so it is not installed.
         // A code file without a target stays a finding below.
         if (!CODE.test(file.path) && !installedPath({ path: file.path, ...(typeof file.type === "string" ? { type: file.type } : {}), ...(typeof file.target === "string" ? { target: file.target } : {}) })) continue;

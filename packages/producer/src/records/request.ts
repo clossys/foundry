@@ -1480,7 +1480,7 @@ export function signedApproval(consumer: string, ref: string, request: SlotReque
   return { entry: name };
 }
 
-/** The skill the target agent answers a slot request with (`packages/<agent>/actions/<agent>.slot/skill.md`). */
+/** The skill the target agent answers a slot request with (`skill.md` in the agent package's `actions/<agent>.slot` folder). */
 export const slotSkill = (agent: ContentAgent) => skillPath(agent, `${agent}.slot`);
 
 /**

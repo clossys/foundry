@@ -8,7 +8,7 @@
  *  - it is a Writer tree slot of the copy kind, or
  *  - it is not a Writer tree slot (an owner-signed consumer extension) and it is not placed under an L0 with no copy
  *    slot (the voice and prose groups).
- * An id Writer's src/catalog/retired.json lists is never copy: a retired id stays unreadable, whatever store still
+ * An id `@clossys/writer/src/catalog/retired.json` lists is never copy: a retired id stays unreadable, whatever store still
  * places it. Of a copy slot's pinned records only the keyed record bodies (`.md`) are keyed copy; a `.json` field
  * record resolves by `<slot>#<record>` through records/resolve.ts.
  *
@@ -32,13 +32,13 @@ export interface WriterCopyRule {
   readonly treeKinds: ReadonlyMap<string, TargetSlotKind>;
   /** The tree L0 groups none of whose slots holds keyed copy (voice, prose). */
   readonly nonCopyGroups: ReadonlySet<string>;
-  /** The ids Writer's src/catalog/retired.json lists. */
+  /** The ids `@clossys/writer/src/catalog/retired.json` lists. */
   readonly retired: ReadonlySet<string>;
 }
 
 let memo: WriterCopyRule | undefined;
 
-/** The ids Writer's src/catalog/retired.json lists; none when the installed package ships no such file. */
+/** The ids `@clossys/writer/src/catalog/retired.json` lists; none when the installed package ships no such file. */
 export function writerRetired(root: string = resolveAgent("writer").packageRoot): ReadonlySet<string> {
   let rows: unknown;
   try { rows = JSON.parse(readFileSync(join(root, "src/catalog/retired.json"), "utf8")); }
