@@ -87,7 +87,7 @@ describe("an agent decide step runs its skill's --check then --decide (consumer-
     expect(done.message).toMatch(/done: loop\.slot done/);
     expect(done.exitCode).toBe(0);
     expect(w.read(entry)).toMatchObject({ status: "closed", decision: "reuse", link: "writer/narratives.guide" });
-    expect(ledgerOf(w, "ledger.slot", runId).steps.map(step => `${step.id}:${step.exit}`)).toEqual(["overlap:0", "decide-writer:0", "link:0"]);
+    expect(ledgerOf(w, "ledger.slot", runId).steps.map(step => `${step.id}:${step.exit}`)).toEqual(["overlap:0", "match:0", "decide-writer:0", "link:0"]);
   });
 
   for (const [seat, argv] of [
@@ -245,14 +245,18 @@ describe("an agent decide step runs its skill's --check then --decide (consumer-
 describe("a create step raises the upstream change its skill tells it to (consumer-agent-step-upstream-raise-refused)", { timeout: 120_000 }, () => {
   const SLOT = "designer/assets.app-icon";
   const UPSTREAM = "director/context.customer.need";
-  /** loop.create on the designer slot, waiting on its create step. */
+  /**
+   * loop.create on the designer slot, waiting on its create step. DET-STEPS: the code steps triage and adopt run first;
+   * with no slot-wide trigger triage settles refine-brief, and an assets slot is no byte-exact adopt slot, so the agent
+   * creates.
+   */
   async function createWaiting() {
     const w = await world();
     const start = await w.run("loop.create", "--slot", SLOT);
-    expect(start.message, start.message).toMatch(/step refine-brief waits for agent:designer/);
+    expect(start.message, start.message).toMatch(/step create waits for agent:designer \(create-candidates, mid\)/);
     const runId = waitingRun(start.message);
-    const create = await w.run("loop.create", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
-    expect(create.message, create.message).toMatch(/step create waits for agent:designer \(create-candidates, mid\)/);
+    expect(readRunState(w.root, runId)!.steps.map(step => `${step.id}:${step.exit}`)).toEqual(["triage:0", "adopt:0"]);
+    expect(readRunState(w.root, runId)!.settled).toEqual({ "refine-brief": "triage" });
     return { w, runId };
   }
   const raise = async (w: World, ...more: string[]) => {

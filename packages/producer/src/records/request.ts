@@ -24,7 +24,7 @@ import { consumerFacts, placedSlots, readDeclarations, routeEntry, RoutingError,
 import { FIX_CHECKS, fixCheck, requesterCheck, requesterPinSets, requesterSlots } from "../queue/requester-check.js";
 import { PRODUCER_ROOT, skillPath } from "./ledger.js";
 import { resolveOwnerRef } from "./owner-decisions.js";
-import { OWNER_QUEUE_ANSWER, pinPath } from "./pin.js";
+import { OWNER_QUEUE_ANSWER, confirmableBasis, pinPath } from "./pin.js";
 import { readPinFile } from "./pin-map.js";
 import { isRecordSlot } from "./resolve.js";
 import { validateAgainst } from "./schema.js";
@@ -534,7 +534,8 @@ function ownerOptions(consumer: string, entry: { readonly kind: WorkKind; readon
   return out;
 }
 /**
- * The owner's confirmation of an agent pick (U13 r3): `confirm-<candidate>` per unconfirmed agent pick the target holds,
+ * The owner's confirmation of an agent or code pick (U13 r3; DET-STEPS fix r1): `confirm-<candidate>` per unconfirmed
+ * agent or code (basis scorecard) pick the target holds,
  * the pin/2 or each pin-map record (`pin <target>[#<record>] <candidate> --confirm`, which keeps the agent's pick and
  * records the owner's confirmation bound to this answer, then closes changed). DRAFT labels.
  */
@@ -543,7 +544,7 @@ function confirmOptions(consumer: string, slot: string): OwnerOption[] {
   if (!target) return [];
   const pin = readPinFile(pinPath(dirname(consumer), target.agent, target.need));
   const held: [string, PinRecord][] = pin.kind === "pin" ? [[slot, pin.doc]] : pin.kind === "pin-map" ? Object.entries(pin.doc.records).map(([key, record]) => [`${slot}#${key}`, record]) : [];
-  return held.filter(([, record]) => record.basis === "agent" && !record.confirmed)
+  return held.filter(([, record]) => confirmableBasis(record.basis) && !record.confirmed)
     .map(([to, record]) => ({ id: optionId("confirm", record.candidate), label: `Confirm ${record.decidedBy}'s pick ${record.candidate} on ${to}`, then: { verb: "pin" as const, args: [to, record.candidate, "--confirm"] } }));
 }
 /** The options Producer asks the owner on an agent's fix claim it cannot accept itself (DRAFT labels). */
@@ -1291,6 +1292,17 @@ export function overlapRefusal(leaf: string, overlaps: readonly Overlap[], how: 
 }
 
 /** The request check: the target agent's placed slots a need may already be (a prefix of it, or past the threshold). */
+/**
+ * foundry-build-0048 DET-STEPS: the slot an open, undecided request's need names exactly: `<assignee>/<need>` when the
+ * need is a leaf id the assignee has placed (since the request was raised), else undefined. A part, a whole or a similar
+ * name is a near match, and the assignee decides it. A need carries no contract, so no contract is matched (DECIDED D3).
+ */
+export function exactReuseOf(consumer: string, request: Pick<SlotRequest, "target" | "status" | "assignee" | "decision">): string | undefined {
+  const target = targetOf(request);
+  if (!target || request.status !== "open" || request.assignee === "owner" || request.decision !== undefined) return undefined;
+  return isPlaced(consumer, target.agent, target.need) ? `${target.agent}/${target.need}` : undefined;
+}
+
 export function needOverlaps(consumer: string, agent: ContentAgent, need: string): Overlap[] {
   const out: Overlap[] = [];
   for (const slot of ownerSlots(consumer, agent)) {
@@ -1395,7 +1407,14 @@ export function decideRequest(consumer: string, id: string, input: ({ readonly d
     if (request.status !== "open") throw new RequestError(`request ${id} is closed`);
     const target = targetOf(request)!;
     if (request.assignee === "owner") throw new RequestError(`request ${id} is assigned to the owner: the owner answers one of its options (clossys request ${id} --answer <option>; handoff sends it to ${target.agent}), nothing is decided by --by ${input.by}`);
-    if (input.by !== target.agent && input.by !== "owner") throw new RequestError(`request ${id} is decided by its assignee ${target.agent} (or the owner), not ${input.by}`);
+    // foundry-build-0048 DET-STEPS: code (the producer seat, loop.slot's match step) decides one thing only: a reuse of
+    // the placed slot the need names exactly (same leaf id). A near match is the assignee's judgment, never code's.
+    if (input.by === "producer") {
+      const exact = exactReuseOf(consumer, request);
+      if (input.decision !== "reuse" || exact === undefined || input.slot !== exact) {
+        throw new RequestError(`request ${id}: code answers only an exact match (a reuse of the placed slot ${target.agent}/${target.need} the need names); ${input.decision === "reuse" ? `reuse ${input.slot}` : "a create"} is ${target.agent}'s to decide`);
+      }
+    } else if (input.by !== target.agent && input.by !== "owner") throw new RequestError(`request ${id} is decided by its assignee ${target.agent} (or the owner), not ${input.by}`);
     const needs = request.overlaps ?? needOverlaps(consumer, target.agent, target.need);
     let next: SlotRequest;
     let detail: string;

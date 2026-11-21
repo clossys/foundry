@@ -111,7 +111,7 @@ describe(LOOP_REACHABLE, () => {
   it("kills an unknown agent, a non-owner human, a bad onFail, a reused step id and a trigger the loop does not answer", () => {
     const issuesOf = (change: (content: Content) => void): string => { const content = packaged("loop.fill"); change(content); return loopReachableIssues("loop.fill", content).join("\n"); };
     expect(issuesOf(c => { step(c, "create").decider.agent = "stranger"; })).toMatch(/create.*stranger|decider/);
-    expect(issuesOf(c => { step(c, "confirm").decider.who = "planner"; })).toMatch(/steps\[5\]\.decider must match exactly one alternative/);
+    expect(issuesOf(c => { step(c, "confirm").decider.who = "planner"; })).toMatch(/steps\[8\]\.decider must match exactly one alternative/);
     expect(issuesOf(c => { step(c, "check").onFail.then = "loop.ship"; })).toMatch(/onFail|then/);
     expect(issuesOf(c => { c.steps.push({ ...step(c, "cascade") }); })).toMatch(/step id cascade is used twice/);
     expect(issuesOf(c => { c.trigger = ["T1", "T8"]; })).toMatch(/trigger T8 does not start loop\.fill/);
@@ -136,7 +136,21 @@ describe("loop.create and loop.choose (foundry-build-0048 U3)", () => {
     const choose = packaged("loop.choose");
     expect(step(choose, "pick")).toMatchObject({ cli: "clossys pin <ref> <candidate> --by agent:<agent>", decider: { by: "agent", verb: "pick" }, checks: ["pins.resolve"] });
     expect(step(choose, "rank")).toMatchObject({ checks: ["candidates.certified"], onFail: { raise: "queue.fix", then: "loop.create" } });
-    expect(choose.steps.map(each => each.id)).toEqual(["rank", "owner-pick", "pick", "confirm", "cascade"]);
+    expect(choose.steps.map(each => each.id)).toEqual(["rank", "owner-pick", "score", "pick", "confirm", "cascade"]);
+    // DET-STEPS round 2: code settles the pick first (clossys settle pick), and its failure route asks and retries.
+    for (const loop of ["loop.choose", "loop.fill", "loop.refine"] as const) {
+      const content = packaged(loop);
+      expect(step(content, "score"), loop).toMatchObject({ cli: "clossys settle pick <ref>", decider: { by: "code" }, onFail: { raise: "queue.clarify", then: "retry" } });
+      const ids = content.steps.map(each => each.id);
+      expect(ids.indexOf("score"), loop).toBe(ids.indexOf("pick") - 1);
+    }
+    // DET-STEPS round 2 (Adopt A): code installs a byte-exact adopt slot's stock item first (clossys settle adopt).
+    for (const loop of ["loop.create", "loop.fill", "loop.refine"] as const) {
+      const content = packaged(loop);
+      expect(step(content, "adopt"), loop).toMatchObject({ cli: "clossys settle adopt <ref>", decider: { by: "code" }, onFail: { raise: "queue.clarify", then: "retry" } });
+      const ids = content.steps.map(each => each.id);
+      expect(ids.indexOf("adopt"), loop).toBe(ids.indexOf("create") - 1);
+    }
   });
 });
 

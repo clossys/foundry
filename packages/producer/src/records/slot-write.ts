@@ -30,7 +30,8 @@ import { SlotFormatError, serializeSlot, validateSlot } from "./slot.js";
 import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
 import type { Actor, AgentId, CandidateHeader, Iso, Slot } from "./types.js";
 import { buildCandidateHeader, CandidateRefusal, candidateHeaderIssues, serializeCandidate } from "./candidate.js";
-import { cliActor, toIsoZ } from "./pin.js";
+import { cliActor, confirmableBasis, toIsoZ } from "./pin.js";
+import { CODE_ADOPT, codeAdoptRefusal } from "./code-adopt.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, expectedCandidateSha, skillFile, skillPath,
   type LedgerEvent, type LedgerRecordState, type LedgerSkill, type Provenance, type RecordFile, type Verb,
@@ -760,7 +761,12 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
   readonly guard?: WriteGuard;
   readonly header?: { readonly createdBy: Actor };
 } = {}): { name: string; sha256: string } {
-  assertActor(dirname(consumer), options.provenance?.by ?? "planner", agent, "candidate", authorsOf(agent));
+  const by = options.provenance?.by ?? "planner";
+  // code:adopt authors only the stock item of a byte-exact adopt slot (records/code-adopt.ts); every other author is a seat.
+  if (by === CODE_ADOPT) {
+    const why = codeAdoptRefusal(dirname(consumer), agent, id, content, options.fields);
+    if (why !== undefined) throw new SeatRefusal(`candidate refused: --by ${CODE_ADOPT}: ${why}`);
+  } else assertActor(dirname(consumer), by, agent, "candidate", authorsOf(agent));
   const { entry } = locatedOne(consumer, agent, id);
   if (options.canonical) canonicalDirectory(entry.dir);
   return slotLocked(entry.dir, () => {
@@ -1073,8 +1079,8 @@ export function writeConfirm(consumer: string, agent: SlotAgent, id: string, can
     const current = JSON.parse(readFileSync(path, "utf8")) as PinDoc;
     const currentIssues = validatePin(current);
     if (currentIssues.length) throw new Error(`confirm refused: the current pin is invalid: ${currentIssues.map(issue => issue.message).join("; ")}`);
-    if (current.basis !== "agent") throw new Error(`confirm refused: ${agent}/${id} is pinned by ${current.decidedBy} (basis ${current.basis}), not an agent pick; the owner pins it with --basis picked`);
-    if (current.candidate !== candidate) throw new Error(`confirm refused: ${agent}/${id} is agent-picked at ${current.candidate}, not ${candidate}`);
+    if (!confirmableBasis(current.basis)) throw new Error(`confirm refused: ${agent}/${id} is pinned by ${current.decidedBy} (basis ${current.basis}), not an agent or code pick; the owner pins it with --basis picked`);
+    if (current.candidate !== candidate) throw new Error(`confirm refused: ${agent}/${id} is picked by ${current.decidedBy} at ${current.candidate}, not ${candidate}`);
     if (readCandidate(consumer, agent, id, candidate).sha256 !== current.sha256) throw new Error(`confirm refused: ${candidate} no longer matches the agent pick's sha256`);
     const pin: PinDoc = { candidate: current.candidate, sha256: current.sha256, decidedBy: current.decidedBy, basis: current.basis, at: current.at, confirmed: { by: input.by, ref: input.ref, at: input.at } };
     const issues = validatePin(pin);

@@ -35,7 +35,7 @@
  *   no-candidates       a slot with zero candidate files
  *   pin-candidate       pin.json names a candidate file that does not exist
  *   pin-hash            pin.json sha256 differs from the candidate file's bytes
- *   pin-attribution     pin.json has no decidedBy, or no basis (picked | bulk | planner | agent)
+ *   pin-attribution     pin.json has no decidedBy, or no basis (picked | bulk | planner | agent | scorecard)
  *   not-needed-reason   slot.json notNeeded has no reason
  *   unlisted-seat       a seat folder (it has candidates/ or pin.json) that the Producer ia.json does not list
  *   missing-seat        a Producer ia.json seat with no folder
@@ -55,7 +55,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { consumerPath } from '../packages/producer/scripts/consumer-root.mjs';
 
-export const PIN_BASES = Object.freeze(['picked', 'bulk', 'planner', 'agent']);
+export const PIN_BASES = Object.freeze(['picked', 'bulk', 'planner', 'agent', 'scorecard']);
 const SLOT_ENTRIES = new Set(['slot.json', 'candidates', 'pin.json']);
 /** Agent trees of the seat kind (slot-model types.ts FOLDER_KIND: producer is "seat"); every other tree holds slots. */
 export const SEAT_TREES = Object.freeze(['producer']);

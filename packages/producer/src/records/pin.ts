@@ -10,6 +10,8 @@
  * - basis `picked` or `bulk` is the owner's: decidedBy `owner[:<ref>]` (or `migrated`), and the pin carries an
  *   `answers` ref to the queue entry that holds the owner's answer. An owner basis is never invented: a
  *   migrated pin keeps decidedBy `migrated` instead;
+ * - basis `scorecard` iff decidedBy `code:scorecard` (clossys settle pick: code pinned the pin gate's single top
+ *   scorecard row), and the pin cites that scorecard (`producer/checks.scorecard`);
  * - `confirmed` only on a basis `agent` pick.
  */
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
@@ -22,8 +24,17 @@ import type { Actor, AgentId, Iso, Pin, PinMap, PinRecord, Ref, SlotId } from ".
 
 export const PIN_FILE = "pin.json";
 export type PinBasis2 = PinRecord["basis"];
-export const PIN2_BASES: readonly PinBasis2[] = ["picked", "bulk", "planner", "agent"];
+export const PIN2_BASES: readonly PinBasis2[] = ["picked", "bulk", "planner", "agent", "scorecard"];
 export const OWNER_BASES: readonly PinBasis2[] = ["picked", "bulk"];
+/** The one code decider (basis scorecard): `clossys settle pick` pinning the scorecard's single top row. */
+export const CODE_SCORECARD = "code:scorecard";
+/** The bases the owner confirms (`clossys pin --confirm`): an agent pick and a code pick (basis scorecard). Code
+ * takes over the mechanical choice; the owner keeps the confirmation (DET-STEPS fix r1 ruling). */
+export const CONFIRMABLE_BASES: readonly PinBasis2[] = ["agent", "scorecard"];
+/** Whether the owner confirms a pin of this basis: an agent pick or a code pick, never an owner, bulk or planner pin. */
+export const confirmableBasis = (basis: unknown): boolean => (CONFIRMABLE_BASES as readonly unknown[]).includes(basis);
+/** The ref a pin's scorecard is cited by (constitution/pin-gate.ts SCORECARD_REF_TO). */
+const SCORECARD_TO = "producer/checks.scorecard";
 
 /** `owner:queue.<kind>#<entry-id>`: the owner's answer to one queue entry (flows.md N10); a clossys.queue-entry/2 entry's is its answered option (U7 r4). */
 export const OWNER_QUEUE_ANSWER = /^owner:(queue\.(?:pick|approve|clarify|fix|change|slot))#([0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*)$/;
@@ -69,6 +80,9 @@ export function pinRecordIssues(record: PinRecord, refs: readonly Ref[], where =
   if (record.basis !== "agent" && /^agent:/.test(by)) issues.push(`${where}: decidedBy ${by} is an agent pick, so its basis is agent, not ${record.basis}`);
   if (record.basis === "planner" && !/^planner(:|$)/.test(by)) issues.push(`${where}: basis planner needs decidedBy planner[:<ref>], got ${by}`);
   if (record.basis !== "planner" && /^planner(:|$)/.test(by)) issues.push(`${where}: decidedBy ${by} is a planner pin, so its basis is planner, not ${record.basis}`);
+  if (record.basis === "scorecard" && by !== CODE_SCORECARD) issues.push(`${where}: basis scorecard needs decidedBy ${CODE_SCORECARD}, got ${by}`);
+  if (record.basis !== "scorecard" && by === CODE_SCORECARD) issues.push(`${where}: decidedBy ${by} is a code pin, so its basis is scorecard, not ${record.basis}`);
+  if (record.basis === "scorecard" && !refs.some(ref => ref.to === SCORECARD_TO && ref.rel === "cites")) issues.push(`${where}: basis scorecard cites no scorecard (${SCORECARD_TO}); code pins only the scorecard's single top row`);
   if (OWNER_BASES.includes(record.basis)) {
     if (by !== "migrated" && !/^owner(:|$)/.test(by)) issues.push(`${where}: basis ${record.basis} is the owner's, but decidedBy is ${by}`);
     if (/^owner(:|$)/.test(by)) {
@@ -80,7 +94,7 @@ export function pinRecordIssues(record: PinRecord, refs: readonly Ref[], where =
       }
     }
   }
-  if (record.confirmed && record.basis !== "agent") issues.push(`${where}: confirmed is only for a basis agent pick, not ${record.basis}`);
+  if (record.confirmed && !confirmableBasis(record.basis)) issues.push(`${where}: confirmed is only for a basis agent or scorecard pick, not ${record.basis}`);
   if (record.confirmed && Date.parse(record.confirmed.at) < Date.parse(record.at)) issues.push(`${where}: confirmed.at is before the pick (${record.at})`);
   return issues;
 }

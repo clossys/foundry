@@ -362,7 +362,7 @@ export interface PinRecord {
   candidate: CandidateName;
   sha256: Sha256;
   decidedBy: string;                      // owner[:ref] | planner[:ref] | agent:<id> | migrated
-  basis: "picked" | "bulk" | "planner" | "agent";
+  basis: "picked" | "bulk" | "planner" | "agent" | "scorecard";
   at: Iso;
   confirmed?: { by: "owner"; ref: string; at: Iso };
 }

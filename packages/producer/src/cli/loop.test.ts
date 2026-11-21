@@ -370,7 +370,8 @@ describe("the runner runs the owning agent's pin for all five loops (planRun / s
     const slot = `designer/${firstSlot(root, "designer")}`;
     // refine-brief declares <slot>/slot.json; writer's slot is another agent's tree.
     const stray: RunHooks = { agent: () => ({ exit: 0, model: "test-model", wrote: ["writer/sections.article.copy/slot.json"] }), code: () => ({ exit: 0, wrote: [] }) };
-    const run = await startRun(root, { loop: "loop.create", slot }, stray, { now: () => new Date(AT) });
+    // T3 (tighten-brief) is slot-wide: the triage code step leaves refine-brief to the agent (DET-STEPS 5).
+    const run = await startRun(root, { loop: "loop.create", slot, trigger: "T3" }, stray, { now: () => new Date(AT) });
     expect(run.state?.version.ref).toBe("designer/loop.create/create-v1.json");
     expect(run.exitCode).toBe(1);
     expect(run.message).toMatch(/step refine-brief wrote writer\/sections\.article\.copy\/slot\.json, which designer\/loop\.create\/create-v1\.json does not declare it writes/);
@@ -540,7 +541,8 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     const slotId = firstSlot(root, "designer");
     const slot = `designer/${slotId}`;
     const waitAt = async (n: number) => {
-      const run = await startRun(root, { loop: "loop.create", slot }, waitAll, { now: minute(n) });
+      // T3 is slot-wide, so refine-brief reaches the agent (a T2 run settles it in code: DET-STEPS 5).
+      const run = await startRun(root, { loop: "loop.create", slot, trigger: "T3" }, waitAll, { now: minute(n) });
       expect(run.packet?.step, run.message).toBe("refine-brief");
       return run.state!;
     };
@@ -605,7 +607,7 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
       [9, (doc: Record<string, any>) => { doc.agentSnapshot.files["../outside.json"] = `file:${"0".repeat(64)}:1`; doc.agentSnapshot.digest = snapshotDigest(doc.agentSnapshot.files); }],
       [11, (doc: Record<string, any>) => { const key = Object.keys(doc.agentSnapshot.files)[0]!; doc.agentSnapshot.files[key] = "gone"; doc.agentSnapshot.digest = snapshotDigest(doc.agentSnapshot.files); }],
     ] as const) {
-      const run = await startRun(root, { loop: "loop.create", slot }, waitAll, { now: minute(n) });
+      const run = await startRun(root, { loop: "loop.create", slot, trigger: "T3" }, waitAll, { now: minute(n) });
       expect(run.packet?.step, run.message).toBe("refine-brief");
       const file = runStatePath(root, run.state!.runId);
       const doc = readJson(file);

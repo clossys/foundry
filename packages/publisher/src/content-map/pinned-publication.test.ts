@@ -178,7 +178,7 @@ it("NATIVE reads an owner-confirmed agent pick and refuses a malformed or mispla
   await edit(pin, value => { value.confirmed = { ...confirmed, extra: true }; });
   await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Unknown key extra/);
   await edit(pin, value => { value.decidedBy = "migrated"; value.basis = "bulk"; value.confirmed = confirmed; });
-  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/only on an agent pick/);
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/only on an agent or code pick/);
 });
 
 it("NATIVE hash-verification mutation control refuses tampered selected bytes", async () => {
@@ -356,6 +356,31 @@ it("PIN/2 reads an owner-confirmed agent pick (confirmed.by owner)", async () =>
   expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
   await edit(pin, value => { value.confirmed.by = "owner:ref"; });
   await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Invalid pin confirmation/);
+});
+
+it("DET-STEPS projects a code pin (decidedBy code:scorecard, basis scorecard) in both pin formats, owner-confirmed or not", async () => {
+  const f = await fixture();
+  const confirmed = { by: "owner", ref: "queue.pick#20261121T0000Z-example", at: "2026-11-21T00:00:00Z" };
+  const pin = join(dir(f.path, f.pubId), "pin.json");
+  await edit(pin, value => { value.decidedBy = "code:scorecard"; value.basis = "scorecard"; });
+  expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
+  await edit(pin, value => { value.confirmed = confirmed; });
+  expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
+  await asPin2(f.path, f.ids);
+  await edit(pin, value => { value.decidedBy = "code:scorecard"; value.basis = "scorecard"; });
+  expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
+  await edit(pin, value => { value.status = "pinned"; value.confirmed = confirmed; });
+  expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
+});
+
+it.each([
+  ["pin/1", "code:scorecard", "planner"], ["pin/1", "planner", "scorecard"], ["pin/1", "agent:publisher", "scorecard"], ["pin/1", "code:scorecard", "agent"], ["pin/1", "code:adopt", "scorecard"],
+  ["pin/2", "code:scorecard", "planner"], ["pin/2", "planner", "scorecard"], ["pin/2", "agent:publisher", "scorecard"], ["pin/2", "code:scorecard", "agent"], ["pin/2", "code:adopt", "scorecard"],
+])("DET-STEPS refuses a %s pin pairing decidedBy %s with basis %s (scorecard iff code:scorecard)", async (format, decidedBy, basis) => {
+  const f = await fixture();
+  if (format === "pin/2") await asPin2(f.path, f.ids);
+  await edit(join(dir(f.path, f.pubId), "pin.json"), value => { value.decidedBy = decidedBy; value.basis = basis; });
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Invalid pin/);
 });
 
 it.each(["wrong id", "wrong agent", "wrong kind", "bad status", "no refs", "no createdBy", "bad createdAt", "recited", "unknown schema", "migration decider", "hash drift"])("PIN/2 refuses %s in a clossys.pin/2 pin.json", async name => {
