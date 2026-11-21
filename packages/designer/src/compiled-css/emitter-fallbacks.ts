@@ -37,7 +37,7 @@ import { addDeclaredFallbacks, alignDeclaredFallbacks, classifyFallbackReads, ty
 /** The emitter directories, relative to the package root. */
 export const EMITTER_DIRS = ["src/blocks", "src/specimen", "src/tokens/preview", "src/components"] as const;
 
-/** Generated output under `EMITTER_DIRS`, relative to the package root: `scripts/generate-default-component-preview.mjs` writes it. */
+/** Generated output under `EMITTER_DIRS`, relative to the package root: the repository's component-preview generator writes it (it does not ship). */
 export const GENERATED_DIRS = ["src/components/preview-runtime"] as const;
 
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx"]);
