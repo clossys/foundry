@@ -14,8 +14,10 @@ const fixtures = [tokens, assets, components, sections, frames];
 // literal. The owner re-sign of 2026-11-02 (leaf-freeze.test.ts) signs 236 canonical leaves;
 // the build catalog measured before any mutation must be that tree, and every guarded
 // mutation below must leave it exactly as loaded. The owner sign of 2026-11-05 adds the eight
-// components.specimen-* leaves (ia/components.specimen-leaf-amendments.json): 236 + 8 = 244.
-const OWNER_SIGNED_LEAVES = 244;
+// components.specimen-* leaves (ia/components.specimen-leaf-amendments.json): 236 + 8 = 244. The later signed
+// additions leaf-freeze.test.ts counts in LOADED_LEAVES follow: the two canvas leaves (owner LAD-3, 2026-11-11),
+// frames.deck (foundry-build-0032) and the five admin record sections (foundry-build-0048, A3): 244 + 2 + 1 + 5 = 252.
+const OWNER_SIGNED_LEAVES = 252;
 const BUILD_SLOTS = loadBuildCatalog().slots.map(slot => slot.id);
 // Group/family/leaf counts of the committed IA trees (components and sections re-measured in GATES-RED round 4;
 // both were already 68 and 7/24/66 at 35c58c51f, so the old literals failed there too). Components

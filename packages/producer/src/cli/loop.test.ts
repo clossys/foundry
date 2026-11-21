@@ -4,6 +4,7 @@
  * `loop.agent-standard` / `loop.connected` refuse a consumer whose agent loops are missing, unpinned, drop a required
  * step or break the chain.
  */
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, linkSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -40,6 +41,10 @@ function copy(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "agent-loops-cli-")));
   temps.push(root);
   cpSync(join(FIXTURE_CONSUMER_ROOT, "clossys"), join(root, "clossys"), { recursive: true });
+  // The consumer's lockfile is part of the consumer, and a consumer is a repository: ref-verbatim resolves a pinned
+  // candidate's npm dependencies from the nearest package-lock.json inside the consumer's repository.
+  cpSync(join(FIXTURE_CONSUMER_ROOT, "package-lock.json"), join(root, "package-lock.json"));
+  execFileSync("git", ["init", "-q"], { cwd: root });
   return root;
 }
 function tree(dir: string, base = dir, out: Record<string, string> = {}): Record<string, string> {

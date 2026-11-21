@@ -1,6 +1,6 @@
 {
   "blockedCount": 0,
-  "descriptorCount": 37,
+  "descriptorCount": 36,
   "leaves": [
     {
       "blockers": 0,
@@ -111,11 +111,6 @@
       "blockers": 0,
       "codes": [],
       "slot": "components.radio-group"
-    },
-    {
-      "blockers": 0,
-      "codes": [],
-      "slot": "components.rich-text"
     },
     {
       "blockers": 0,

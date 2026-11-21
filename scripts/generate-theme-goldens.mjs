@@ -14,9 +14,9 @@
  *     `emit(...)` exactly as emit.golden.test.ts builds them;
  *   - designer src/library-cli/__fixtures__/agent-receipted/: `seedLibrary()` from
  *     src/library-cli/__fixtures__/agent-library.ts (see agent-receipted.md);
- *   - designer src/catalog-bundles.data.json `valueFiles` for the theme fills
- *     (catalog/fills/<source>/themes.*.json): sha256 and document re-read from the source file
- *     each entry binds (catalog-bundles.test.ts); every other entry is carried through as is.
+ *   - designer src/catalog-bundles.data.json `valueFiles` (theme and asset fills,
+ *     catalog/fills/<source>/*.json): sha256 and document re-read from the source file each
+ *     entry binds (catalog-bundles.test.ts); every other field is carried through as is.
  *
  *   node scripts/generate-theme-goldens.mjs [--check]
  *
@@ -58,12 +58,11 @@ expected.set(join(producer, "src", "read", "__fixtures__", "theme-pins", "int2-d
   expected.set(join(golden, "resolved.foundry.json"), stableStringify(profile));
 }
 
-// 3. catalog-bundles.data.json theme valueFiles: bound to their source bytes.
+// 3. catalog-bundles.data.json valueFiles: every entry bound to its source bytes.
 {
   const path = join(designer, "src", "catalog-bundles.data.json");
   const data = JSON.parse(readFileSync(path, "utf8"));
   for (const file of data.valueFiles) {
-    if (!/\/themes\.[^/]+\.json$/.test(file.path)) continue;
     const bytes = readFileSync(join(designer, "src", file.path), "utf8");
     file.sha256 = createHash("sha256").update(bytes, "utf8").digest("hex");
     file.document = JSON.parse(bytes);

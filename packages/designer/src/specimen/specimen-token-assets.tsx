@@ -66,8 +66,14 @@ function typeStyle(member: ResolvedMember): CSSProperties | undefined {
   return undefined;
 }
 const entries = (context: DesignerSpecimenContext, leaf: string) => Object.entries(context.profile.values.members).filter(([, member]) => member.slot === leaf);
+/**
+ * A themes.animate-* leaf's specimens are its animations: the members the token contract emits to an --animate-*
+ * property. A parameter member the shorthand reads (themes.animate-marquee.duration emits --duration) plays nothing
+ * on its own, so it is not a specimen; every animation member is still validated as a shorthand.
+ */
+const specimenMember = (leaf: string, member: ResolvedMember): boolean => !leaf.startsWith("themes.animate-") || member.emit === undefined || member.emit.startsWith("--animate-");
 export function tokenSpecimenItems(context: DesignerSpecimenContext, leaf: string): readonly SpecimenItem<TokenAssetSpecimenValue>[] {
-  return entries(context, leaf).map(([id]) => ({ id, label: id.slice(leaf.length + 1), value: { memberId: id } }));
+  return entries(context, leaf).filter(([, member]) => specimenMember(leaf, member)).map(([id]) => ({ id, label: id.slice(leaf.length + 1), value: { memberId: id } }));
 }
 export const assetSpecimenItems = tokenSpecimenItems;
 export function colorRampSpecimenItems(context: DesignerSpecimenContext, leaf: string): readonly SpecimenItem<ColorRampSpecimenValue>[] {

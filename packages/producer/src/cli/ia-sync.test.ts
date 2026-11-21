@@ -89,6 +89,10 @@ describe("ia sync (write)", () => {
 
   it("--dry lists the writes and writes nothing", async () => {
     const root = copy();
+    // The pinned fixture carries the seeder's own contract writes, which the package IA does not hold: sync first,
+    // so the one hand edit below is the only write a --dry run lists.
+    const synced = await runIaCli(["sync", "--root", root], root);
+    expect(synced.exitCode, synced.message).toBe(0);
     const ia = readJson(iaFile(root, "designer"));
     ia.layers = [{ id: "hand", label: "Hand", nodes: [ia.nodes[0].id] }];
     writeJson(iaFile(root, "designer"), ia);

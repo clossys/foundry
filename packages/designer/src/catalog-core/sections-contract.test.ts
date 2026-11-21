@@ -347,7 +347,10 @@ describe("section build IA registry", () => {
       "sections.error-message": id("error-state"),
     });
     for (const outside of ["items.raw", "matrix.raw", "form.toolbar", "items.app-navigation", "matrix.drawer", "items.specimen-stack", "items.relation-graph", "form.refresh-status"]) expect(targets).not.toHaveProperty(outside);
-    expect(globalRetired).toEqual([]);
+    // Global retirement history (catalog/retired.json) holds the owner and planner retirements of every layer; the
+    // legacy aliases never enter it, and the loaded catalog reports exactly that history.
+    const legacy = new Set(registry.retired.map(entry => entry.id));
+    expect(globalRetired.filter(entry => legacy.has(entry.id))).toEqual([]);
     expect(loadCatalog().retired).toEqual(globalRetired);
   });
 
