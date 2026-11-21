@@ -268,6 +268,33 @@ describe("F1 init prelude: fill queue and pins.resolve scope (FILL-PRELUDE D1)",
     expect(stepLine(entry!)).toEqual(["ia-sync:code:0", "queue:code:0", "check:code:1"]);
   });
 
+  it("prelude scope: a slot that holds a candidate and no pin.json (no package default) is judged, and its unresolved state stops the init", async () => {
+    const w = settledWith(["designer/components.button", "designer/themes.background"]);
+    candidate(w.root, "designer/themes.background");
+    expect(existsSync(pinPath(w.root, "designer", "themes.background"))).toBe(false);
+    const result = await runInit(w.root, stub(w.root), { now: clock() });
+    expect(result.exitCode).toBe(1);
+    const [entry] = w.ledger("loop.fill");
+    expect(entry!.outcome).toMatch(/^init stopped at check \(exit 1\): pins\.resolve: designer\/themes\.background /);
+    expect(entry!.outcome).not.toContain("components.button");
+    expect(entry!.checks).toMatchObject({ "pins.resolve": "fail", "fill.queued": "pass" });
+  });
+
+  it("prelude scope: a slot that holds a pin.json and no candidate is judged: its pin names a missing candidate and stops the init", async () => {
+    const w = settledWith(["designer/components.button", "designer/themes.background"]);
+    candidate(w.root, "designer/themes.background");
+    pinAs(w.root, { agent: "designer", slotId: "themes.background", candidate: "placeholder-v1.json", decidedBy: "agent:designer", basis: "agent", at: "2026-11-20T07:40:00Z", createdBy: cliActor("clossys pick") });
+    unlinkSync(candidatePath(w.root, "designer", "themes.background", "placeholder-v1.json"));
+    expect(existsSync(pinPath(w.root, "designer", "themes.background"))).toBe(true);
+    expect(readdirSync(dirname(candidatePath(w.root, "designer", "themes.background", "placeholder-v1.json"))).filter(name => name.endsWith(".json"))).toEqual([]);
+    const result = await runInit(w.root, stub(w.root), { now: clock() });
+    expect(result.exitCode).toBe(1);
+    const [entry] = w.ledger("loop.fill");
+    expect(entry!.outcome).toMatch(/^init stopped at check \(exit 1\): pins\.resolve: designer\/themes\.background /);
+    expect(entry!.outcome).not.toContain("components.button");
+    expect(entry!.checks).toMatchObject({ "pins.resolve": "fail" });
+  });
+
   it("queue entries: every unpinned leaf is one run.queue event, in chain order; a pinned slot is not queued", async () => {
     const w = settledWith(["designer/themes.background", "designer/components.button", "director/context.market.size", "designer/sections.features"]);
     candidate(w.root, "designer/sections.features");
