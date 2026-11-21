@@ -21,7 +21,7 @@ import { parseFrontmatter } from "../../records/slot-model/index.js";
 import { isObject, liveSlotRecords } from "../checks/shared.js";
 import type { ConstitutionContext, SlotRecord } from "../types.js";
 import { bodyHeadings } from "./brief.js";
-import { mountsComponent } from "./element.js";
+import { elementCheck } from "./element.js";
 import { certifyEnv, pinnedOf, writerRecords, type CertifyEnv } from "./env.js";
 import { certifyFit, slotDocOf } from "./index.js";
 import { MISSING_RECORD_CODES, type Reason } from "./types.js";
@@ -40,7 +40,7 @@ export function proposedContract(slot: SlotRecord, env: CertifyEnv): { contract:
     case "element": {
       const meta = json && isObject(json.meta) ? json.meta : undefined;
       const preview = meta && isObject(meta.preview) ? meta.preview : undefined;
-      if (!preview) return { contract, source: mountsComponent(slot, pinned) === false ? "not-needed" : "none" };
+      if (!preview) return { contract, source: elementCheck(slot, pinned, contract) === "none" ? "not-needed" : "none" };
       const { copy: _snapshot, ...fixture } = preview;
       const props = isObject(fixture.fixtures) && isObject(fixture.fixtures.props) ? Object.keys(fixture.fixtures.props) : [];
       return { contract: { ...contract, ...(Array.isArray(contract.props) ? {} : { props }), fixture }, source: "pinned" };
