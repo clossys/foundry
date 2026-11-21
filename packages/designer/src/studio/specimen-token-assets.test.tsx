@@ -25,6 +25,8 @@ import { assetSpecimenItems, colorRampSpecimenItems, tokenAssetSpecimenLeaves, t
 import { renderSpecimenContrastHostPart, renderSpecimenSwatchHostPart } from "./specimen-token-host-parts.js";
 import type { SpecimenTokenHostParts } from "./specimen-token-host-part-types.js";
 import { specimenDataset } from "./specimen-dataset.js";
+import { compiledCssDeclaredSources } from "../compiled-css/generate.js";
+import { globalDeclaredFallback } from "../compiled-css/declared-fallbacks.js";
 
 const catalog = loadCatalog();
 const valueLibrary = completedCatalogLibrary(catalog, { id: "specimen-test-consumer", kind: "consumer", author: "consumer", license: "MIT" }, "2026-10-29");
@@ -179,6 +181,8 @@ it.each([0, 1])("refuses missing registered swatch and contrast parts before ren
   }
 });
 
+const stylesDir = resolvePath(import.meta.dirname, "../../styles");
+const declaredFallback = globalDeclaredFallback(compiledCssDeclaredSources(stylesDir), readFileSync(resolvePath(stylesDir, "compiled.css"), "utf8"));
 it("uses actual selected SVG logos and selected icon glyphs on both grounds", async () => {
   const selected = context();
   for (const index of [6, 7]) {
@@ -188,8 +192,10 @@ it("uses actual selected SVG logos and selected icon glyphs on both grounds", as
     for (const [ground, surface, ink] of [[grounds[0]!, "themes.card.default", "themes.foreground.default"], [grounds[1]!, "themes.foreground.default", "themes.background.default"]] as const) {
       const background = selected.profile.values.members[surface]!, foreground = selected.profile.values.members[ink]!;
       expect(background.$type).toBe("color"); expect(foreground.$type).toBe("color");
-      expect(ground.style.background).toBe(`var(${background.emit})`);
-      expect(ground.style.color).toBe(`var(${foreground.emit})`);
+      // CONTAM-U9 (1346bde66): the specimen emitter writes every read with its declared fallback, the value the
+      // compiled.css declared-fallback reader gives that global token.
+      expect(ground.style.background).toBe(`var(${background.emit}, ${declaredFallback(background.emit!)})`);
+      expect(ground.style.color).toBe(`var(${foreground.emit}, ${declaredFallback(foreground.emit!)})`);
     }
     if (index === 6) expect(view.container.querySelectorAll("img[src^='data:image/svg+xml,']")).toHaveLength(2);
     else expect(view.container.querySelectorAll("svg")).toHaveLength(2);
