@@ -318,6 +318,16 @@ describe("clossys review: fail branches", () => {
     expect(finding(report, "tests")!.detail).toMatch(/^exit 1: /);
   }, 30_000);
 
+  it("mutates against the green covering tests when another covering test is red", () => {
+    const red = "import { test } from \"node:test\";\nimport assert from \"node:assert/strict\";\nimport { isAdult } from \"./math.mjs\";\ntest(\"red\", () => assert.equal(isAdult(1), true));\n";
+    const [repo, base, head] = fixture({ ...GUARDED, "src/zz.test.mjs": red });
+    const report = review(repo, base, head);
+    expect(fails(report)).toEqual(["tests"]);
+    expect(finding(report, "tests")!.subject).toBe("src/zz.test.mjs");
+    expect(report.mutants.length).toBeGreaterThan(0);
+    expect(report.mutants.every(mutant => mutant.status === "killed" && mutant.by === "src/math.test.mjs")).toBe(true);
+  }, 60_000);
+
   it("fails a changed source that no test reaches, and covers one reached only through another module", () => {
     const [repo, base, head] = fixture({
       "src/lonely.mjs": "export const lonely = 1;\n",

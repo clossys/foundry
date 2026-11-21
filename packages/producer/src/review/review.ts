@@ -51,7 +51,8 @@ export class ReviewArgumentError extends Error {}
 const npmBuild = (name: string) => ["npm", "run", "build", `--workspace=${name}`];
 const lastLine = (output: string) => output.trim().split("\n").slice(-1)[0]?.slice(0, 200) ?? "";
 /** The last few lines that are not npm's own wrapper lines: the failing tool's message. */
-const tailLines = (output: string, count = 4) => output.trim().split("\n").filter(line => line.trim() && !/^npm (error|ERR!)/.test(line)).slice(-count).map(line => line.slice(0, 200)).join(" | ") || lastLine(output);
+const RULE_LINE = /^[\s\u23af\u2500=-]*(?:\[\d+\/\d+\][\s\u23af\u2500=-]*)?$/;
+const tailLines = (output: string, count = 4) => output.trim().split("\n").filter(line => line.trim() && !/^npm (error|ERR!)/.test(line) && !RULE_LINE.test(line)).slice(-count).map(line => line.slice(0, 200)).join(" | ") || lastLine(output);
 /** A failed run as a finding detail: exit code (and timeout), then the tool's last lines. */
 const failed = (result: RunResult, lines = 4) => `${exitText(result)}: ${tailLines(result.output, lines)}`;
 
@@ -313,9 +314,10 @@ function mutation(repo: string, mergeBase: string, head: string, at: string, fil
     .flatMap(file => fileMutants(file, readFileSync(join(at, file), "utf8"), headHunks(repo, mergeBase, head, file)));
   const chosen = selectMutants(candidates, seed, cap);
   for (const mutant of chosen) {
-    const covering = bySource.get(mutant.file) ?? [];
+    // Only the covering tests green at the head can kill a mutant; a red one says nothing about it.
+    const all = bySource.get(mutant.file) ?? [], covering = all.filter(test => !red.has(test));
     const base = { id: mutant.id, file: mutant.file, line: mutant.line, operator: mutant.operator, from: mutant.from.trim(), to: mutant.to.trim() };
-    if (!covering.length || covering.some(test => red.has(test))) { out.push({ ...base, status: "uncovered", ...(covering.length ? { by: "a covering test is red at the head" } : {}) }); continue; }
+    if (!covering.length) { out.push({ ...base, status: "uncovered", ...(all.length ? { by: "every covering test is red at the head" } : {}) }); continue; }
     const path = join(at, mutant.file), original = readFileSync(path, "utf8");
     let result: MutantResult = { ...base, status: "survived" };
     try {

@@ -93,7 +93,8 @@ compares the two. A generator that exits non-zero is `fixture.generate`; any dif
 At most 40 mutants of the head's changed lines (the `-U0` hunks of each changed source file that is not a
 test). Above the cap the selection is the mutants with the lowest sha256 of `<seed>:<mutant id>`, kept in file and
 line order, so the same diff and seed always pick the same mutants (`--seed`, default `0`). Each mutant runs the
-tests covering its file (touched tests and the tests importing it) one at a time until one fails.
+covering tests of its own package that are green at the head (nearest in the import graph first) one at a time
+until one fails.
 
 | Operator | Rewrites |
 |---|---|
@@ -104,7 +105,7 @@ tests covering its file (touched tests and the tests importing it) one at a time
 | swap-literal | true <-> false, an integer n -> n + 1 (0 -> 1) |
 
 A mutant is `killed` when a covering test fails, `invalid` when that failure is a compile error, `survived` when every
-covering test passes (a `mutation.survived` note), and `uncovered` when no test covers its file or one is red at the head.
+covering test passes (a `mutation.survived` note), and `uncovered` when no green test of its package covers its file.
 
 ## Receipts
 
