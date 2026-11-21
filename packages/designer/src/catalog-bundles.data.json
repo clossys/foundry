@@ -296,7 +296,7 @@
     },
     {
       "path": "catalog/fills/foundry/themes.animate-marquee-vertical.json",
-      "sha256": "3ef8b8730cb1207780ec8a83e74a5a4bca62101d1953764e7fc842bf8ee8ff32",
+      "sha256": "6f473d38f2024a5eef71ed594b950f912401a89d66ffc6278f0ac4e787016e10",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
@@ -332,11 +332,11 @@
             "default": {
               "$extensions": {
                 "com.clossys.css": {
-                  "raw": "marquee-vertical var(--duration) linear infinite"
+                  "raw": "marquee-vertical var(--duration, 40s) linear infinite"
                 }
               },
               "$type": "duration",
-              "$value": "marquee-vertical var(--duration) linear infinite"
+              "$value": "marquee-vertical var(--duration, 40s) linear infinite"
             }
           }
         }
@@ -344,7 +344,7 @@
     },
     {
       "path": "catalog/fills/foundry/themes.animate-marquee.json",
-      "sha256": "66be7264784aa68858817c54d295cbcc971677188be963ef813f6cae9d6c873d",
+      "sha256": "2be2a755db075c1404a6903f7ffd3d35ea7d18c705073c821adc259d20fe7a07",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
@@ -380,11 +380,11 @@
             "default": {
               "$extensions": {
                 "com.clossys.css": {
-                  "raw": "marquee var(--duration) infinite linear"
+                  "raw": "marquee var(--duration, 40s) infinite linear"
                 }
               },
               "$type": "duration",
-              "$value": "marquee var(--duration) infinite linear"
+              "$value": "marquee var(--duration, 40s) infinite linear"
             },
             "duration": {
               "$extensions": {

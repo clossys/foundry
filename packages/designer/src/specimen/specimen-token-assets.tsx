@@ -29,7 +29,8 @@ export interface TokenAssetSpecimenDefinition extends SpecimenLeafDefinition {
 }
 
 /** A themes.animate-* member's CSS `animation` shorthand: keyframes name, a time or one var(), then timing words. */
-const ANIMATION = /^[a-z][a-z0-9-]*\s+(?:(?:\d*\.)?\d+m?s|var\(--[a-z][\w-]*\))(?:\s+(?:[a-z-]+|cubic-bezier\([\d.\s,+-]+\)))*$/;
+// Duration: a time literal, or a token read whose optional fallback is itself a time literal (`var(--duration, 40s)`).
+const ANIMATION = /^[a-z][a-z0-9-]*\s+(?:(?:\d*\.)?\d+m?s|var\(--[a-z][\w-]*(?:,\s*(?:\d*\.)?\d+m?s)?\))(?:\s+(?:[a-z-]+|cubic-bezier\([\d.\s,+-]+\)))*$/;
 const animation = (member: ResolvedMember): string | undefined => {
   const css = member.css.light;
   return member.slot.startsWith("themes.animate-") && typeof css === "string" && !unsafeText(css) && ANIMATION.test(css.trim()) ? css.trim() : undefined;
