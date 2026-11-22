@@ -115,7 +115,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "5fdbef200b1bbacf4c96625fd511c8d8f6b7b581fee81270e1cd43f45de3c252"
+          "sha256": "7a0d4fb68b9ba0528fe0f46bc8413c522d003d8b5d49e2ff095ff405a2d2c001"
         }
       ]
     },
@@ -134,7 +134,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "89db29603039df27c2f10af1732fb0f54c201ad4ff8e1e5ef253d1136b08593f"
+          "sha256": "c4e1190dacc34567764d2aad71de87785414aa3120778d32f6aca5626c7f1a65"
         }
       ]
     },
@@ -153,7 +153,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "c54f5aee51b818a18346b492893095afa9a8f7f4640e717012b0bffd4fe08381"
+          "sha256": "1b76c75bddcb54db0fbd439d74211e354957a44790020aab459c5e1f870766c7"
         }
       ]
     },
@@ -172,7 +172,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "fd921b838ebc1f4dbb83355ccf47f27a8002928831cc1c4fc845d309a2ed9e96"
+          "sha256": "39867de32eaf8f8a08d35216b39e20547f82cfca4928c4c68b2bea137f51b5f6"
         }
       ]
     }

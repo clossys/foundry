@@ -35,9 +35,30 @@
       "trigger": "react-aria-components.Button",
       "triggerText": "Open",
       "contentText": "Content"
+    },
+    "groups": {
+      "components.resize-handle": {
+        "export": "ResizablePanelGroup",
+        "children": [
+          {
+            "$component": "ResizablePanel",
+            "children": "DRAFT panel"
+          },
+          {
+            "$component": "ResizableHandle",
+            "props": {
+              "withHandle": true
+            }
+          },
+          {
+            "$component": "ResizablePanel",
+            "children": "DRAFT panel"
+          }
+        ]
+      }
     }
   },
-  "fixtures": 99,
+  "fixtures": 100,
   "gaps": [
     {
       "slot": "components.chart-area",
@@ -108,11 +129,6 @@
       "slot": "components.number-field",
       "layer": "components",
       "reason": "no adopted reference"
-    },
-    {
-      "slot": "components.resize-handle",
-      "layer": "components",
-      "reason": "registry/aria-nova/ui/resizable.tsx exports no Resizable and 3 other components"
     },
     {
       "slot": "components.semantic-content",
