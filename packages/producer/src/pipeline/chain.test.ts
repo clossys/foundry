@@ -5,7 +5,8 @@ import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runNextCli, runNextSubmitCli } from "../cli/next.js";
 import { runRunCli } from "../cli/run.js";
-import { explainChain, nextPacket, openPackets, runChain } from "./chain.js";
+import { explainChain, nextPacket, openPackets, QUEUE_ANSWER, runChain } from "./chain.js";
+import { ownerEntry } from "./owner-entry.js";
 import { gapsOf, interviewIssues, interviewOf, INTERVIEW_AGENTS } from "./interview.js";
 import type { Exec } from "./chain.js";
 import type { Step } from "./define.js";
@@ -402,7 +403,16 @@ describe("clossys next", { timeout: 60_000 }, () => {
     const packet = approve.packets.find(each => each.step === "writer.approve");
     if (packet) {
       const argv = packet.options[0]!.argv!.slice(1);
-      expect((await runPipeline([...argv, ...at], root)).exitCode).toBe(0);
+      // The packet names the owner's answer as the <queue-answer> placeholder: run as printed it is refused, and with
+      // the queue entry holding the owner's answer (owner:queue.approve#<id>) the approval records.
+      expect(argv).toContain(QUEUE_ANSWER);
+      const placeholder = await runPipeline([...argv, ...at], root);
+      expect(placeholder.exitCode).toBe(1);
+      expect(placeholder.message).toContain("only the owner approves Writer copy");
+      const [, item, name] = argv as [string, string, string];
+      const by = ownerEntry(join(root, "clossys"), { queue: "approve", id: "20261121T0000Z-chain-approve", about: item, answer: { candidate: name }, at: "2026-11-21T00:00:00Z" });
+      const answered = await runPipeline([...argv.map(word => word === QUEUE_ANSWER ? by : word), ...at], root);
+      expect(answered.exitCode, `${argv.join(" ")}: ${answered.message}`).toBe(0);
       const after = (await runNextCli(["--owner", "--json", ...at], root)).output as { packets: { step: string; item: string }[] };
       expect(after.packets.some(each => each.step === "writer.approve" && each.item === argv[1])).toBe(false);
     }

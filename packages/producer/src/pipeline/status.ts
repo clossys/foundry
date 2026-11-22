@@ -5,6 +5,7 @@ import { PACKAGE_ROOT } from "./options.js";
 import { readSeats } from "./seats.js";
 import { isModelDir, listModelDir, modelExists, readModelText } from "../records/slots.js";
 import { FOLDER_KIND } from "../records/slot-model/types.js";
+import { readPinFile } from "../records/pin-map.js";
 import { errorMessage, isAbsent } from "../errors.js";
 import type { SeatReport } from "./seats.js";
 import { buildGraph } from "./graph.js";
@@ -91,6 +92,14 @@ function iaSlots(root: string, agent: string): string[] {
   return (ia?.nodes ?? []).flatMap(node => (node.children ?? []).flatMap(child => (child.slots ?? []).filter((slot): slot is string => typeof slot === "string")));
 }
 
+/** The candidate names a slot's pin.json pins: a pin's one candidate, or every record's candidate of a pin map. */
+function pinnedCandidates(file: string): string[] {
+  const pin = readPinFile(file);
+  if (pin.kind === "pin" || pin.kind === "pin/1") return typeof pin.doc.candidate === "string" ? [pin.doc.candidate] : [];
+  if (pin.kind === "pin-map") return Object.values(pin.doc.records ?? {}).map(record => record.candidate).filter((name): name is string => typeof name === "string");
+  return [];
+}
+
 /**
  * Writer keys awaiting a decision, per Writer slot: keys a slot's candidates propose that its pinned
  * candidate does not hold (every key of an unpinned slot's newest candidate). A pinned key is decided.
@@ -118,10 +127,13 @@ export function writerKeysUnapproved(root: string): ReadonlyMap<string, readonly
     const candidates = join(dir, slot, "candidates");
     const names = listModelDir(candidates).filter(name => name.endsWith(".md")).sort((a, b) => version(a) - version(b));
     if (!names.length) continue;
-    const pin = readJson(join(dir, slot, "pin.json")) as { candidate?: unknown } | undefined;
-    const pinned = typeof pin?.candidate === "string" && names.includes(pin.candidate) ? keysOf(join(candidates, pin.candidate)) : new Set<string>();
+    // A Writer copy or prose slot pins per record (clossys.pin-map/1); every record's pinned candidate decides its keys.
+    const held = pinnedCandidates(join(dir, slot, "pin.json"));
+    const pinned = new Set<string>();
+    for (const name of held) if (names.includes(name)) for (const key of keysOf(join(candidates, name))) pinned.add(key);
     const proposed = new Set<string>();
-    const after = typeof pin?.candidate === "string" ? names.filter(name => version(name) > version(pin.candidate as string)) : names.slice(-1);
+    const newest = Math.max(...held.map(version));
+    const after = held.length ? names.filter(name => version(name) > newest) : names.slice(-1);
     for (const name of after) for (const key of keysOf(join(candidates, name))) if (!pinned.has(key)) proposed.add(key);
     if (proposed.size) unapproved.set(slot, [...proposed].sort());
   }

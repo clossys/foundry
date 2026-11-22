@@ -1,9 +1,10 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it } from "vitest";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import { tmpdir } from "node:os";
 import { formatRef } from "@clossys/director";
+import { evidenceDir, stagePassingSlot, strategyRoot } from "../../../director/src/__fixtures__/slot-model.js";
 import { openStrategy } from "../../../director/src/api.js";
 import { directorStoreReader } from "../../../producer/src/records/slots.js";
 import { loadCatalog } from "../../../director/src/catalog.js";
@@ -23,19 +24,16 @@ const catalog: CatalogData = { slots: [], fills: [], sources: [], standards: [],
 function put(root: string, path: string, value: string) {
   mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), value);
 }
+// The Director reads the flat slot model (4ef830bf6): each cell is `<slot-id>/candidates/<name>-v<n>.md` and its
+// pin.json names the active candidate; a candidate cites slot ids, resolved through the cited slot's pin.
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), "designer-brief-")); roots.push(root);
+  const base = mkdtempSync(join(tmpdir(), "designer-brief-")); roots.push(base);
+  const root = strategyRoot(base);
   const ids = [...required, "identity.verbal.voice"];
-  const active = Object.fromEntries(ids.map(id => [id, 1]));
-  const tree = { schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core: "archetype", active };
-  put(root, "tree.json", JSON.stringify(tree));
-  put(root, "sessions/2026-10-29-1.md", `- U1: Choose the bounded fixture approach.\n- S2: Playback for confirm: ${ids.map(cell => formatRef({ kind: "cell", ref: { cell, version: 1 } })).join(", ")}\n- U3: Yes.\n`);
   const definitions = loadCatalog();
-  function cell(id: string, version: number, status: "active" | "draft" | "retired" = "active") {
-    const links = definitions.coherence.links.filter(link => link.downstream === id).map(link => formatRef({ kind: "cell", ref: { cell: link.upstream, version: 1 } }));
-    const refs = ["msg:2026-10-29-1#U1", ...links];
-    const keys = definitions.cells.find(cell => cell.id === id)!.mustContain;
-    put(root, `cells/${id}/v${version}.md`, `---\nid: ${id}\nversion: ${version}\nstatus: ${status}\nupdated: 2026-10-29\ncites: [${refs.join(", ")}]\nfeeds: [designer.identity]\nfunctions: [brand]\n${status === "active" ? "confirmed: msg:2026-10-29-1#U3\n" : ""}---\n\n## Direction\n${keys.map(key => `- ${key.key}: Choose 1 bounded fixture approach over broader alternatives.`).join("\n")}\n\n## Because\n- The fixture user selected this approach (${refs.join(", ")})\n\n## Watch\n- If requests > 5 each month, then review.\n`);
+  function cell(id: string, version: number, options: { unpinned?: boolean } = {}) {
+    const links = definitions.coherence.links.filter(link => link.downstream === id).map(link => link.upstream);
+    stagePassingSlot(root, id, version, { refs: links, ...options });
   }
   ids.forEach(id => cell(id, 1));
   function reader() { return openStrategy(root, directorStoreReader, { contracts: [contract] }); }
@@ -49,7 +47,7 @@ function fixture() {
     const input = { catalog, library: selected, strategy };
     return check(input).findings.filter(finding => finding.rule === "strategy");
   }
-  return { root, tree, reader, cell, library, brief, findings };
+  return { base, root, reader, cell, library, brief, findings };
 }
 afterEach(() => { roots.splice(0).forEach(root => rmSync(root, { recursive: true, force: true })); });
 
@@ -87,13 +85,13 @@ describe("Designer selection brief provenance", () => {
     const input = { catalog: { values: catalog, components: { slots: [], fills: [] } }, library: { source, values: f.library, components: { fills: [], files: [] } }, strategy: f.reader() };
     expect(publicCheck(input).findings.filter(finding => finding.rule === "strategy")).toEqual([]);
     expect(publicResolve(input).check.findings.filter(finding => finding.rule === "strategy")).toEqual([]);
-    f.cell(required[1]!, 2); f.tree.active[required[1]!] = 2; put(f.root, "tree.json", JSON.stringify(f.tree));
+    f.cell(required[1]!, 2);
     input.strategy = f.reader();
     expect(publicCheck(input).findings.some(finding => finding.rule === "strategy" && finding.message.includes("stale"))).toBe(true);
     expect(publicResolve(input).check.findings.some(finding => finding.rule === "strategy" && finding.message.includes("stale"))).toBe(true);
   });
   it("rejects legacy direction in persisted metadata and selection instead of stripping it", async () => {
-    const f = fixture(); const root = join(f.root, "library"); mkdirSync(join(root, "fills"), { recursive: true });
+    const f = fixture(); const root = join(f.base, "library"); mkdirSync(join(root, "fills"), { recursive: true });
     const files = libraryFiles(catalog, f.library, []);
     for (const [path, content] of files) put(root, path, content);
     expect((await readLibrary(root, catalog)).selection).not.toHaveProperty("direction");
@@ -105,14 +103,15 @@ describe("Designer selection brief provenance", () => {
   });
   it("leaves current refs fresh when a newer draft exists, then reports activation stale", () => {
     const f = fixture(); expect(f.findings()).toEqual([]);
-    f.cell(required[1]!, 2, "draft"); expect(f.findings()).toEqual([]);
-    f.tree.active[required[1]!] = 2; put(f.root, "tree.json", JSON.stringify(f.tree));
-    f.cell(required[1]!, 1, "retired"); f.cell(required[1]!, 2);
+    // An unpinned newer candidate is an open decision; pinning it makes the selection's v1 ref stale.
+    f.cell(required[1]!, 2, { unpinned: true }); expect(f.findings()).toEqual([]);
+    f.cell(required[1]!, 2);
     expect(f.findings()).toEqual(expect.arrayContaining([expect.objectContaining({ severity: "notice", message: expect.stringContaining("stale") })]));
     expect(f.findings().some(finding => finding.message.includes(formatRef({ kind: "cell", ref: { cell: required[1]!, version: 1 } })))).toBe(true);
   });
   it("reports changed supporting bytes even when all pinned versions remain active", () => {
-    const f = fixture(); put(f.root, "sessions/2026-10-29-1.md", readFileSync(join(f.root, "sessions/2026-10-29-1.md"), "utf8") + "- U4: Additional evidence.\n");
+    // The cells' supporting evidence is the consumer's Director finding they cite.
+    const f = fixture(); const finding = join(evidenceDir(f.root), "fixture-passing.md"); put(f.base, relative(f.base, finding), readFileSync(finding, "utf8") + "- Additional evidence.\n");
     expect(f.findings()).toEqual(expect.arrayContaining([expect.objectContaining({ message: expect.stringContaining("fingerprint"), severity: "notice" })]));
   });
   it("rejects malformed provenance, legacy direction, dangling refs and missing required cells", () => {
@@ -124,7 +123,7 @@ describe("Designer selection brief provenance", () => {
     expect(f.findings(f.reader(), legacy).some(finding => finding.message.includes("direction"))).toBe(true);
     const dangling = { ...f.library, strategy: { contract: contract.id, fingerprint: f.brief.fingerprint, refs: [{ cell: required[0]!, version: 99 }] } };
     expect(f.findings(f.reader(), dangling).some(finding => finding.message.includes("dangling"))).toBe(true);
-    delete f.tree.active[required[0]!]; put(f.root, "tree.json", JSON.stringify(f.tree));
+    unlinkSync(join(f.root, required[0]!, "pin.json"));
     expect(f.findings().some(finding => finding.message.includes("missing") && finding.severity === "error")).toBe(true);
   });
 });

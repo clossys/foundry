@@ -128,7 +128,8 @@ describe("selected token definition source contract", () => {
     expect(scan("@utility marker { list-style:none; &::-webkit-details-marker { display:none; } }").findings).toEqual([]);
     expect(scan("@utility marker { @supports not ((display:grid) or (display:flex)) { &::before { display:block; } } }").findings).toEqual([]);
     const report = scan("@utility marker { padding:4px; @media (width > 10px) { &:hover { padding:8px; } } }");
-    expect(report.findings.filter(row => row.code === "DF2")).toHaveLength(2);
+    // The two raw declarations and the raw px @media threshold (the G5 query-pixel rule) are each a literal.
+    expect(report.findings.filter(row => row.code === "DF2").map(row => row.evidence)).toEqual(["Hard-coded raw-length: 4px", "Hard-coded raw-length: 8px", "Hard-coded pixel query threshold: 10px bypasses registered token binding."]);
     expect(report.findings.some(row => row.evidence.includes("Unresolved"))).toBe(false);
   });
   it("parses non-leading nesting with native grammar alternatives without minting definitions", () => {

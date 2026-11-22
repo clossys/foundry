@@ -21191,7 +21191,7 @@
   "coverage": {
     "kind": "planned binding fixture; not rendered-page coverage",
     "productionBound": 0,
-    "proposedBindings": 528,
+    "proposedBindings": 530,
     "draftRecords": 486,
     "reusedExistingRecords": 10
   },

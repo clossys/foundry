@@ -31,7 +31,8 @@ const COVERED_IN_FULL = ["avatar", "badge", "checkbox", "combo-box", "dialog", "
 export const PENDING_REPLACEMENT: Readonly<Record<string, string>> = {
   "foundry/assets.image-ratio": "waits for Open Props (SF14-A); the Foundry fill stays until then",
   ...Object.fromEntries(["lockup", "mark", "favicon", "app-icon"].map(leaf => [`foundry/assets.${leaf}`, BRAND_DERIVE])),
-  ...Object.fromEntries(["banner", "breadcrumbs", "button", "calendar", "card", "chart-area", "chart-bar", "chart-line", "disclosure", "progress-bar", "skeleton", "slider", "table", "toggle-button"]
+  // foundry/components.breadcrumbs no longer ships (R2F-25 75202fdb4: stock shadcn@aria anatomy only), so it holds no record.
+  ...Object.fromEntries(["banner", "button", "calendar", "card", "chart-area", "chart-bar", "chart-line", "disclosure", "progress-bar", "skeleton", "slider", "table", "toggle-button"]
     .map(leaf => [`foundry/components.${leaf}`, U4_TAIL])),
   ...Object.fromEntries(COVERED_IN_FULL.map(leaf => [`foundry/components.${leaf}`, GENERATED])),
 };

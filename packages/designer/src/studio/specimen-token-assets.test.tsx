@@ -25,6 +25,8 @@ import { assetSpecimenItems, colorRampSpecimenItems, tokenAssetSpecimenLeaves, t
 import { renderSpecimenContrastHostPart, renderSpecimenSwatchHostPart } from "./specimen-token-host-parts.js";
 import type { SpecimenTokenHostParts } from "./specimen-token-host-part-types.js";
 import { specimenDataset } from "./specimen-dataset.js";
+import { compiledCssDeclaredSources } from "../compiled-css/generate.js";
+import { globalDeclaredFallback } from "../compiled-css/declared-fallbacks.js";
 
 const catalog = loadCatalog();
 const valueLibrary = completedCatalogLibrary(catalog, { id: "specimen-test-consumer", kind: "consumer", author: "consumer", license: "MIT" }, "2026-10-29");
@@ -179,6 +181,8 @@ it.each([0, 1])("refuses missing registered swatch and contrast parts before ren
   }
 });
 
+const stylesDir = resolvePath(import.meta.dirname, "../../styles");
+const declaredFallback = globalDeclaredFallback(compiledCssDeclaredSources(stylesDir), readFileSync(resolvePath(stylesDir, "compiled.css"), "utf8"));
 it("uses actual selected SVG logos and selected icon glyphs on both grounds", async () => {
   const selected = context();
   for (const index of [6, 7]) {
@@ -188,8 +192,10 @@ it("uses actual selected SVG logos and selected icon glyphs on both grounds", as
     for (const [ground, surface, ink] of [[grounds[0]!, "themes.card.default", "themes.foreground.default"], [grounds[1]!, "themes.foreground.default", "themes.background.default"]] as const) {
       const background = selected.profile.values.members[surface]!, foreground = selected.profile.values.members[ink]!;
       expect(background.$type).toBe("color"); expect(foreground.$type).toBe("color");
-      expect(ground.style.background).toBe(`var(${background.emit})`);
-      expect(ground.style.color).toBe(`var(${foreground.emit})`);
+      // CONTAM-U9 (1346bde66): the specimen emitter writes every read with its declared fallback, the value the
+      // compiled.css declared-fallback reader gives that global token.
+      expect(ground.style.background).toBe(`var(${background.emit}, ${declaredFallback(background.emit!)})`);
+      expect(ground.style.color).toBe(`var(${foreground.emit}, ${declaredFallback(foreground.emit!)})`);
     }
     if (index === 6) expect(view.container.querySelectorAll("img[src^='data:image/svg+xml,']")).toHaveLength(2);
     else expect(view.container.querySelectorAll("svg")).toHaveLength(2);
@@ -227,15 +233,20 @@ it("refuses an unavailable native image capability and a missing selected compon
   expect(tokenAssetSpecimenLeaves[0]!.validate({ items: itemsFor(0, selected), context: noPorts, need, labels }).some(fault => fault.reason.includes("module-unavailable"))).toBe(true);
 });
 
-it("refuses the stale saved source disclosure's undeclared item instead of claiming source conformance", () => {
+it("draws the saved source disclosure's declared secondary part and refuses an undeclared one instead of claiming source conformance", () => {
+  // The saved disclosure is the stock shadcn@aria Accordion (R2F-26 D1): its descriptor declares AccordionItem,
+  // AccordionTrigger and AccordionContent as proven secondary exports, so only a part outside that list is undeclared.
   const selected = context(), original = structuredClone(componentData) as unknown as CompositeResolved["components"];
-  expect(original.components["components.disclosure"]!.impl.kind).toBe("source");
+  const disclosure = original.components["components.disclosure"]!;
+  expect(disclosure.impl.kind).toBe("source");
+  expect(disclosure.descriptor.secondaryExports?.map(row => row.name)).toEqual(["AccordionContent", "AccordionItem", "AccordionTrigger"]);
   const value = {
     profile: { components: original }, selectionHash: original.selectionHash, modules: selected.modules,
     descriptors: Object.fromEntries(Object.entries(original.components).map(([leaf, chosen]) => [leaf, componentDescriptorHash(chosen.descriptor)])),
   };
-  expect(() => renderToStaticMarkup(<ConsumerComponentProvider value={value}><SelectedComponentLeaf leaf="components.disclosure" parts={["AccordionItem"]} componentProps={{}} /></ConsumerComponentProvider>))
-    .toThrow(/undeclared components\.disclosure\.AccordionItem/);
+  const draw = (part: string) => () => renderToStaticMarkup(<ConsumerComponentProvider value={value}><SelectedComponentLeaf leaf="components.disclosure" parts={[part]} componentProps={{}} /></ConsumerComponentProvider>);
+  expect(draw("AccordionItem")).not.toThrow();
+  expect(draw("AccordionHeader")).toThrow(/undeclared components\.disclosure\.AccordionHeader/);
 });
 
 it("executes the exact consumer source override and refuses to borrow a missing source module", async () => {

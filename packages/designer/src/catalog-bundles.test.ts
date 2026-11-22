@@ -23,7 +23,9 @@ describe("offline catalog candidate bundle", () => {
     expect(bundle.valueFills.some(doc => doc.$extensions["com.clossys.fill"].slot === "assets.image-ratio")).toBe(true);
     const foundry = bundle.componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "foundry");
     const foundrySlots = foundry.map(doc => doc.$extensions["com.clossys.fill"].slot);
-    expect(foundrySlots.toSorted()).toEqual(Object.keys(FOUNDRY_COMPONENT_MAP).map(leaf => `components.${leaf}`).sort());
+    // Every imported Foundry component, plus the hand-authored Foundry rich-text implementation (Tiptap engine
+    // exception, catalog/fills/foundry/components.rich-text.json), which loadCatalogBundles ships beside them.
+    expect(foundrySlots.toSorted()).toEqual([...Object.keys(FOUNDRY_COMPONENT_MAP).map(leaf => `components.${leaf}`), "components.rich-text"].sort());
     expect(new Set(foundrySlots).size).toBe(foundrySlots.length);
     for (const doc of foundry) {
       const fill = Object.values(doc.components)[0]!;
