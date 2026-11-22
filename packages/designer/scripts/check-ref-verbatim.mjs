@@ -1538,7 +1538,9 @@ function stockPart(root, slot, record, options) {
   const mapping = item.meta?.refVerbatim ?? {};
   // Additional source parts are verbatim too (each is diffed against its own vendored file); recorded adaptations, or the byte-proof format, are not stock.
   if ((Array.isArray(mapping.adaptations) && mapping.adaptations.length) || Object.hasOwn(mapping, "exactParts")) return { error: "is pinned with recorded adaptations, not verbatim" };
-  const checked = checkRegistryItem(root, slot, item, { ...options, strict: true, slotDoc: undefined });
+  // A code-adopted part is re-checked through its own adoption reader (`options.readerOf`), not the composition's.
+  const reader = options.readerOf ? { reader: options.readerOf(item) } : {};
+  const checked = checkRegistryItem(root, slot, item, { ...options, strict: true, slotDoc: undefined, ...reader });
   if (checked.status !== "pass") return { error: checked.status === "fail" ? `fails ref-verbatim itself (${[...new Set(checked.findings.map(f => f.code))].join(", ")})` : `has no checked code (${checked.status})` };
   const files = { ...(mapping.files ?? {}) };
   for (const extra of Array.isArray(mapping.parts) ? mapping.parts : []) Object.assign(files, extra?.files ?? {});
@@ -1586,6 +1588,15 @@ function composedPart(root, slot, record, options) {
 
 const importPath = file => (file.target ?? file.path).replace(/\.(tsx|ts|jsx|js|mjs|cjs)$/, "").replace(/\/index$/, "");
 
+/** The folder shadcn installs a registry file without a `target` to, by its type (publisher installedPath). */
+const INSTALL_DIRS = { "registry:ui": "components/ui", "registry:component": "components", "registry:block": "components", "registry:example": "components", "registry:hook": "hooks", "registry:lib": "lib" };
+/** The `@/` import path of a registry file's install path (publisher installedPath), or undefined when it has none. */
+const installedImport = file => {
+  const target = file.target ?? (INSTALL_DIRS[file.type] ? `${INSTALL_DIRS[file.type]}/${basename(file.path)}` : undefined);
+  const normal = target && posix.normalize(target.replace(/^~\//, ""));
+  return normal && !normal.startsWith("/") && !normal.startsWith("..") ? importPath({ path: normal }) : undefined;
+};
+
 const resolveModuleFile = base => {
   for (const path of [base, `${base}.tsx`, `${base}.ts`, join(base, "index.tsx"), join(base, "index.ts")]) {
     if (existsSync(path) && statSync(path).isFile()) return path;
@@ -1595,6 +1606,7 @@ const resolveModuleFile = base => {
 
 /** The component layer package (@clossys/designer-ui) whose barrel and `@/` alias a composition's imports resolve through. */
 function componentLayer(opts, componentsPath) {
+  if (opts.ui === false) return undefined;
   for (const dir of [opts.ui, componentsPath && dirname(componentsPath), join(packageRoot, "ui")].filter(Boolean)) {
     if (!existsSync(join(dir, "package.json"))) continue;
     const pkg = json(join(dir, "package.json"));
@@ -1784,8 +1796,14 @@ function checkComposition(root, slot, candidate, options = {}) {
     else if (matches.length === 1) matches[0][1].used = true;
     return matches.length > 0;
   };
+  // With no component layer installed (a packed consumer), an `@/` import resolves to the declared part whose pinned
+  // file installs at that path (publisher installedPath); the part itself is strict-checked verbatim (REF-COMP-PART).
+  const placesInstalled = (path, file) => {
+    const matches = [...declared].filter(([, part]) => !part.composed && part.codeFiles.some(entry => installedImport(entry) === path));
+    if (matches.length === 1) matches[0][1].used = true;
+    else fail("REF-COMP-IMPORT", matches.length ? `@/${path} installs a file of ${matches.map(([id]) => id).join(" and ")}; declare one` : `@/${path} is no declared part's install path, and no component layer package (${DS_COMPONENT_LAYER}) is installed to resolve it against`, { file });
+  };
   const elements = [];
-  if (code.size && !layer) fail("REF-COMP-IMPORT", `no component layer package (${DS_COMPONENT_LAYER}) to resolve a composition's imports against`);
   for (const [file, text] of [...code].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
     const before = findings.length;
     let events = [];
@@ -1805,7 +1823,11 @@ function checkComposition(root, slot, candidate, options = {}) {
         continue;
       }
       if (specifier.startsWith("@/") && placesComposed(specifier.slice(2), file)) continue;
-      if (!layer) continue;
+      if (!layer) {
+        if (specifier.startsWith("@/")) placesInstalled(specifier.slice(2), file);
+        else fail("REF-COMP-IMPORT", `${specifier}: no component layer package (${DS_COMPONENT_LAYER}) is installed to resolve it against; import each declared part by its @/ install path`, { file });
+        continue;
+      }
       if (specifier === DS_COMPONENT_LAYER) {
         for (const name of names) {
           if (name === "*" || name === "default") { fail("REF-COMP-IMPORT", `${name === "*" ? "a namespace import" : "a default import"} of ${DS_COMPONENT_LAYER} does not name the parts it places`, { file }); continue; }

@@ -7,7 +7,7 @@
       "path": "registry/frames/site-shell.tsx",
       "type": "registry:component",
       "target": "components/frames/site-shell.tsx",
-      "content": "import { Separator } from \"@clossys/designer-ui\";\n\nexport function PlainFrame({ title, children }: { title: string; children?: React.ReactNode }) {\n  return (\n    <main data-frame=\"plain\">\n      <header><p data-copy=\"frame.title\">{title}</p></header>\n      <Separator />\n      {children}\n    </main>\n  );\n}\n"
+      "content": "import { Separator } from \"@/components/ui/separator\";\n\nexport function PlainFrame({ title, children }: { title: string; children?: React.ReactNode }) {\n  return (\n    <main data-frame=\"plain\">\n      <header><p data-copy=\"frame.title\">{title}</p></header>\n      <Separator />\n      {children}\n    </main>\n  );\n}\n"
     }
   ],
   "meta": {
