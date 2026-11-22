@@ -4252,8 +4252,15 @@
         ],
         "themes": [
           "themes.accent",
+          "themes.background",
+          "themes.border",
+          "themes.destructive",
           "themes.font-mono",
-          "themes.primary"
+          "themes.foreground",
+          "themes.muted",
+          "themes.muted-foreground",
+          "themes.primary",
+          "themes.spacing"
         ]
       },
       "sourceFiles": [
@@ -4431,7 +4438,7 @@
         },
         {
           "path": "packages/designer/src/components/Meter.server.tsx",
-          "sha256": "6722cde47d126ee4de73605604d041277089293991b1551be3f76a46e150234c"
+          "sha256": "413fa52474bf44e02ccf3cfc86c2cb789b16c6b8136cc417e36bc6b6ce7b1438"
         },
         {
           "path": "packages/designer/src/components/preview-runtime/components/_parts/utils/index.ts",

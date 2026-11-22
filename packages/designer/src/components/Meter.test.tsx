@@ -81,14 +81,14 @@ describe("Meter", () => {
   it("hatches a warning fill and rings an info fill, so neither depends on colour alone", () => {
     const warning = part(renderToStaticMarkup(<Meter value={1} scaleMax={2} tone="warning" valueText="50%" />), "fill");
     expect(warning).toContain("text-status-warning");
-    expect(warning).toContain("repeating-linear-gradient(-45deg, currentColor 0 var(--ui-border-rule, 2px)");
+    expect(warning).toContain("bg-[repeating-linear-gradient(-45deg,currentColor_0_--spacing(0.5),transparent_0_--spacing(1))]");
     const info = part(renderToStaticMarkup(<Meter value={1} scaleMax={2} tone="info" valueText="50%" />), "fill");
     expect(info).toContain("bg-status-info-tint");
-    expect(info).toContain("box-shadow:inset 0 0 0 var(--ui-border-rule, 2px) currentColor");
+    expect(info).toContain("inset-ring-2 inset-ring-current");
     const danger = part(renderToStaticMarkup(<Meter value={1} scaleMax={2} tone="danger" valueText="50%" />), "fill");
-    expect(danger).toContain("bg-status-danger");
-    expect(danger).not.toContain("background-image");
-    expect(danger).not.toContain("box-shadow");
+    expect(danger).toContain("bg-destructive");
+    expect(danger).not.toContain("repeating-linear-gradient");
+    expect(danger).not.toContain("inset-ring");
   });
 
   it("clamps a value beyond the scale to a full bar", () => {
@@ -121,15 +121,17 @@ describe("Meter", () => {
       <Meter value={1} scaleMax={2} limit={2} tone="info" valueText="50%" />,
     );
     const tick = part(markup, "limit");
-    expect(tick).toContain("inline-size:var(--ui-border-rule, 2px)");
-    expect(tick).toContain("inset-inline-start:calc(100% - 1 * var(--ui-border-rule, 2px))");
+    expect(tick).toContain("w-0.5");
+    expect(tick).toContain("inset-inline-start:100%");
+    // The tick's lane is one tick narrower than the track, so 100% ends at the track's edge.
+    expect(markup).toContain('<span class="absolute inset-y-0 start-0 end-0.5"><span data-part="limit"');
   });
 
   it("draws no zone and no tick without a limit", () => {
     const markup = renderToStaticMarkup(<Meter value={1} scaleMax={2} tone="neutral" valueText="1 of 2" />);
     expect(part(markup, "zone")).toBe("");
     expect(part(markup, "limit")).toBe("");
-    expect(part(markup, "fill")).toContain("bg-ink-secondary");
+    expect(part(markup, "fill")).toContain("bg-muted-foreground");
   });
 
   it.each([
@@ -152,19 +154,19 @@ describe("Meter", () => {
   it("sets the value as a large, light focal figure with emphasis figure, body-small by default", () => {
     const { unmount } = render(<Meter value={3} scaleMax={4} limit={2} tone="info" valueText="3.0x" limitText="limit 2.0x" />);
     expect(screen.getByText("3.0x").closest("[data-emphasis]")).toHaveAttribute("data-emphasis", "default");
-    expect(screen.getByText("3.0x").parentElement).toHaveClass("text-body-s");
+    expect(screen.getByText("3.0x").parentElement).toHaveClass("text-sm");
     unmount();
     render(<Meter value={3} scaleMax={4} limit={2} tone="info" emphasis="figure" valueText="3.0x" limitText="limit 2.0x" />);
     expect(screen.getByText("3.0x").closest("[data-emphasis]")).toHaveAttribute("data-emphasis", "figure");
-    expect(screen.getByText("3.0x")).toHaveClass("text-h1", "@md:text-h0", "font-normal", "tabular-nums");
-    expect(screen.getByText("limit 2.0x")).toHaveClass("text-body-s", "text-ink-secondary");
+    expect(screen.getByText("3.0x")).toHaveClass("text-2xl", "@md:text-3xl", "font-normal", "tabular-nums");
+    expect(screen.getByText("limit 2.0x")).toHaveClass("text-sm", "text-muted-foreground");
   });
 
   it("forwards className and other div attributes", () => {
-    render(<Meter id="m" className="gap-sm" value={1} scaleMax={2} tone="info" valueText="50%" />);
+    render(<Meter id="m" className="gap-2" value={1} scaleMax={2} tone="info" valueText="50%" />);
     const root = document.getElementById("m");
-    expect(root?.className).toContain("gap-sm");
-    expect(root?.className).not.toContain("gap-xs");
+    expect(root?.className).toContain("gap-2");
+    expect(root?.className).not.toContain("gap-1");
   });
 });
 
@@ -177,11 +179,12 @@ describe("Meter previous measurement", () => {
     expect(history.closest("[aria-hidden='true']")).toBeNull();
     const prior = container.querySelector<HTMLElement>("[data-part='previous']");
     expect(prior).not.toBeNull();
-    expect(prior).toHaveClass("border-s", "border-dashed", "border-ink-secondary");
+    expect(prior).toHaveClass("border-s", "border-dashed", "border-muted-foreground");
     // A backing surface makes dash gaps visible even inside the identical neutral fill.
-    expect(prior).toHaveClass("bg-surface-base");
-    expect(prior?.style.borderInlineStartWidth).toBe("var(--ui-border-hairline, 1px)");
-    expect(prior?.style.inlineSize).toBe("var(--ui-border-hairline, 1px)");
+    expect(prior).toHaveClass("bg-background");
+    // A one-pixel marker in a lane one marker narrower than the track.
+    expect(prior).toHaveClass("w-px", "border-0", "box-border");
+    expect(prior?.parentElement).toHaveClass("start-0", "end-px");
     expect(prior?.closest("[aria-hidden='true']")).not.toBeNull();
     expect(prior?.style.insetInlineStart).toContain("25%");
     expect(prior?.textContent).toBe("");

@@ -290,7 +290,7 @@ describe("Specimen parts", () => {
     expect(screen.getByText("Above floor")).toBeInTheDocument();
     expect(screen.getByText("13 units of headroom")).toHaveClass("text-body-s");
     expect(container.querySelector("[data-emphasis]")).toHaveAttribute("data-emphasis", "figure");
-    expect(screen.getByText("38 units")).toHaveClass("text-h1", "@md:text-h0", "tabular-nums");
+    expect(screen.getByText("38 units")).toHaveClass("text-2xl", "@md:text-3xl", "tabular-nums");
     expect(container.querySelector('[data-direction="min"]')).not.toBeNull();
   });
 
@@ -501,7 +501,7 @@ describe("Specimen history, row caps and badges", () => {
     const meter = container.querySelector("[data-emphasis='figure']");
     expect(meter?.querySelector("[data-part='previous']")).not.toBeNull();
     expect(meter?.querySelector("[data-part='limit']")).not.toBeNull();
-    expect(screen.getByText("38 units")).toHaveClass("text-h1", "@md:text-h0");
+    expect(screen.getByText("38 units")).toHaveClass("text-2xl", "@md:text-3xl");
     expect(screen.getByText("floor 25")).toBeInTheDocument();
     expect(screen.getByText("Above floor")).toBeInTheDocument();
     expect(screen.getByText("13 units of headroom")).toBeInTheDocument();

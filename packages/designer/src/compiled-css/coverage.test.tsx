@@ -748,7 +748,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       for (const c of collectClassNames(result.container)) renderedClasses.add(c);
       result.unmount();
     }
-    for (const required of ["@container", "@md:table", "@md:not-sr-only", "@md:table-cell", "@lg:grid-cols-4", "desktop:grid-cols-3", "size-2xl", "font-mono", "max-tablet:hidden", "border-s", "border-dashed", "border-ink-secondary", "bg-surface-sunken", "text-ink-secondary", "bg-status-success-tint", "text-status-success-text", "bg-status-warning-tint", "text-status-warning-text", "bg-(--color-status-danger)/10", "text-(--color-status-danger)", "bg-status-info-tint", "text-status-info-text"]) {
+    for (const required of ["@container", "@md:table", "@md:not-sr-only", "@md:table-cell", "@lg:grid-cols-4", "desktop:grid-cols-3", "size-2xl", "font-mono", "max-tablet:hidden", "border-s", "border-dashed", "border-muted-foreground", "bg-muted", "text-ink-secondary", "bg-status-success-tint", "text-status-success-text", "bg-status-warning-tint", "text-status-warning-text", "bg-(--color-status-danger)/10", "text-(--color-status-danger)", "bg-status-info-tint", "text-status-info-text"]) {
       expect(renderedClasses.has(required), required).toBe(true);
     }
 

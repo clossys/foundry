@@ -9,7 +9,6 @@ import {
 } from "react-aria-components";
 import { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
 import { cx } from "./internal/cx.js";
-import { UI_ALPHA_DISABLED, UI_LAYOUT_TAP_TARGET, UI_RING_FOCUS } from "./internal/ui-vars.js";
 
 export interface GridListProps<T extends object> extends Omit<AriaGridListProps<T>, "className" | "style" | "layout" | "selectionBehavior"> {
   /** A host-authored accessible name, or a reference to its visible heading. */
@@ -38,7 +37,7 @@ function GridListRoot<T extends object>({ className, layout = "stack", ...rest }
   }
   return <GridListActionContext.Provider value={rest.onAction}>
     <AriaGridList {...rest} layout={layout} selectionBehavior="toggle"
-      className={cx("w-full min-w-0 text-body text-ink-primary outline-none", layout === "grid" ? "grid grid-cols-2 gap-sm" : "", className)} />
+      className={cx("w-full min-w-0 text-sm text-foreground outline-none", layout === "grid" ? "grid grid-cols-2 gap-2" : "", className)} />
   </GridListActionContext.Provider>;
 }
 
@@ -81,18 +80,14 @@ function GridListItem({ className, render, ...rest }: GridListItemProps) {
       };
       return render ? render(adaptedProps, state) : <div {...adaptedProps} />;
     }}
-    className={({ isSelected, isFocusVisible }) => cx(
-      "flex min-w-0 items-center gap-md px-md py-sm border-b border-s-2 border-line-base last:border-b-0 outline-none",
-      isSelected ? "bg-accent border-s-primary" : "border-s-transparent hover:bg-control-tonal-hover",
+    className={({ isSelected, isFocusVisible, isDisabled }) => cx(
+      "flex min-h-11 min-w-0 items-center gap-3 px-3 py-2 border-b border-s-2 border-border last:border-b-0 outline-none",
+      isSelected ? "bg-accent border-s-primary" : "border-s-transparent hover:bg-muted/50",
       isSelected || isFocusVisible ? "forced-colors:outline forced-colors:outline-solid" : "",
-      isFocusVisible ? "forced-colors:outline-2 forced-colors:-outline-offset-2" : "",
+      isFocusVisible ? "inset-ring-2 inset-ring-ring forced-colors:outline-2 forced-colors:-outline-offset-2" : "",
+      isDisabled ? "opacity-50" : "",
       className,
-    )}
-    style={({ isDisabled, isFocusVisible }) => ({
-      minBlockSize: UI_LAYOUT_TAP_TARGET,
-      opacity: isDisabled ? UI_ALPHA_DISABLED : undefined,
-      boxShadow: isFocusVisible ? `inset ${UI_RING_FOCUS}` : undefined,
-    })} />;
+    )} />;
 }
 
 function GridListSelectionCheckbox({ "aria-label": ariaLabel }: GridListSelectionCheckboxProps) {

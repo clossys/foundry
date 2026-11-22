@@ -135,7 +135,7 @@ export function Meter({
           : <span className={VALUE_ROW_CLASSES[emphasis].value}>{valueText}</span>}
         {limitText ? <span className={VALUE_ROW_CLASSES[emphasis].limit}>{limitText}</span> : null}
       </div>
-      {previousText !== undefined ? <p className="m-0 text-body-s text-ink-secondary tabular-nums">{previousText}</p> : null}
+      {previousText !== undefined ? <p className="m-0 text-sm text-muted-foreground tabular-nums">{previousText}</p> : null}
       <MeterBar tone={tone} {...resolved} />
     </AriaMeter>
   );

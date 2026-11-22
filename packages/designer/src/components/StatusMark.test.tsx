@@ -28,8 +28,11 @@ describe("StatusMark", () => {
     const label = root.querySelector("[data-part='label']") as HTMLElement;
     expect(root).toHaveAttribute("data-tone", tone);
     if (tone === "neutral") {
-      expect(label.className).toContain("text-ink-secondary");
-      expect(mark.getAttribute("class")).toContain("stroke-ink-muted");
+      expect(label.className).toContain("text-muted-foreground");
+      expect(mark.getAttribute("class")).toContain("stroke-muted-foreground");
+    } else if (tone === "danger") {
+      expect(label.className).toContain("text-destructive");
+      expect(mark.getAttribute("class")).toContain("text-destructive");
     } else {
       expect(label.className).toContain(`text-status-${tone}-text`);
       expect(mark.getAttribute("class")).toContain(`text-status-${tone}`);
@@ -47,12 +50,12 @@ describe("StatusMark", () => {
 
   it("forwards className and other span attributes", () => {
     render(
-      <StatusMark tone="info" className="text-caption" id="state">
+      <StatusMark tone="info" className="text-xs" id="state">
         Due
       </StatusMark>,
     );
     const root = document.getElementById("state");
-    expect(root?.className).toContain("text-caption");
-    expect(root?.className).not.toContain("text-body-s");
+    expect(root?.className).toContain("text-xs");
+    expect(root?.className).not.toContain("text-sm");
   });
 });
