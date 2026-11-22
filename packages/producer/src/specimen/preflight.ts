@@ -40,6 +40,7 @@ import { checkSlotModel } from "../records/slot-check.js";
 import { CANDIDATE_NAME } from "../records/slot-model/index.js";
 import { validateFile } from "../pipeline/schema.js";
 import { commonJsEntry } from "./installed-specimens.js";
+import { pinnedThemeReader } from "../read/theme-pins.js";
 import { pinnedWriterCopy } from "./specimen-tree.js";
 import { certifyCandidate, libraryRecordSource } from "./library-source.js";
 import { reasonClass } from "./contract-fixture-derive.js";
@@ -198,8 +199,9 @@ async function mountRules(source: SpecimenRecordSource, builder: Builder, id: st
 async function refVerbatimRules(root: string): Promise<{ byCandidate: Map<string, string[]>; limit?: string }> {
   const byCandidate = new Map<string, string[]>();
   try {
-    const { refVerbatimReport } = await import("@clossys/designer/ref-verbatim" as string) as { refVerbatimReport: (root: string, options: { all: boolean }) => { elements: { slot?: string; element?: string; version?: number; status?: string; findings?: { code: string; detail: string; file?: string }[] }[] } };
-    for (const element of refVerbatimReport(root, { all: true }).elements) {
+    const { refVerbatimReport } = await import("@clossys/designer/ref-verbatim" as string) as { refVerbatimReport: (root: string, options: { all: boolean; reader: ReturnType<typeof pinnedThemeReader> }) => { elements: { slot?: string; element?: string; version?: number; status?: string; findings?: { code: string; detail: string; file?: string }[] }[] } };
+    // A consumer adoption's reference is normalized through the consumer's pinned themes reader it names.
+    for (const element of refVerbatimReport(root, { all: true, reader: pinnedThemeReader(root) }).elements) {
       if (!element.slot || !element.element || !element.version) continue;
       const key = `${element.slot}/${element.element}-v${element.version}.json`;
       const rules = (element.findings ?? []).map(finding => `ref-verbatim/${finding.code}: ${detail(`${finding.file ? `${finding.file}: ` : ""}${finding.detail}`)}`);

@@ -1,7 +1,7 @@
 // Repository tooling. Immutable upstream input becomes explicit, checked adaptation data.
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { dirname, resolve } from "node:path";
+import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { build } from "esbuild";
@@ -178,8 +178,17 @@ export function generateRailAdapters() {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  // --check compares every output with its committed file and writes nothing; any difference exits 1.
+  const check = process.argv.includes("--check");
+  const differs = [];
+  const output = (path, text) => {
+    if (!check) { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, text); return; }
+    let committed;
+    try { committed = readFileSync(path, "utf8"); } catch { committed = undefined; }
+    if (committed !== text) differs.push(relative(packageRoot, path));
+  };
   const result = generateRailAdapters();
-  writeFileSync(resolve(packageRoot, "src/importers/vendor/shadcn-aria-rail.adapters.json"), JSON.stringify(result, null, 2) + "\n");
+  output(resolve(packageRoot, "src/importers/vendor/shadcn-aria-rail.adapters.json"), JSON.stringify(result, null, 2) + "\n");
   console.log(`Registered ${result.files.flatMap(file => file.defaults).length} machine defaults and ${result.copy.length} Writer references; lowered ${result.files.flatMap(file => file.variants).length} closed variant tables.`);
   if (process.argv.includes("--emit")) {
     const cache = resolve(packageRoot, "node_modules/.cache");
@@ -193,14 +202,16 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     if (imported.candidates.some(row => row.blockers.length)) throw new Error("Adapted source still has rewrite blockers");
     for (const document of imported.fills) {
       const slot = document.$extensions["com.clossys.fill"].slot;
-      if (slot !== "components.keyboard") writeFileSync(resolve(packageRoot, `src/catalog/fills/shadcn@aria/${slot}.json`), JSON.stringify(document, null, 2) + "\n");
+      if (slot !== "components.keyboard") output(resolve(packageRoot, `src/catalog/fills/shadcn@aria/${slot}.json`), JSON.stringify(document, null, 2) + "\n");
     }
     for (const file of imported.files) {
       if (!file.path.startsWith("components/") || file.path.startsWith("components/keyboard/")) continue;
-      const path = resolve(packageRoot, "src", file.path);
-      mkdirSync(dirname(path), { recursive: true });
-      writeFileSync(path, module.railPackageFile(file).content);
+      output(resolve(packageRoot, "src", file.path), module.railPackageFile(file).content);
     }
-    console.log(`Emitted ${imported.files.length} adapted source/support files with zero rewrite blockers.`);
+    console.log(`${check ? "Checked" : "Emitted"} ${imported.files.length} adapted source/support files with zero rewrite blockers.`);
   }
+  if (check && differs.length) {
+    console.error(`generate-rail-adapters --check: ${differs.length} committed output(s) differ from the generator; rerun without --check:\n${differs.map(path => `  - ${path}`).join("\n")}`);
+    process.exitCode = 1;
+  } else if (check) console.log("generate-rail-adapters --check: every committed output matches.");
 }

@@ -22,6 +22,8 @@ import { fileURLToPath } from "node:url";
 import { compiledCssDeclaredSources } from "../compiled-css/generate.js";
 import { globalDeclaredFallback, UndeclaredTokenFallbackError } from "../compiled-css/declared-fallbacks.js";
 
+export { UndeclaredTokenFallbackError };
+
 export interface DeclaredFallbackReader {
   /** Where the values come from, for receipts and refusal messages. */
   readonly source: string;
@@ -87,10 +89,52 @@ export function cssRead(reader: DeclaredFallbackReader, name: string): string {
 /** A bare read: `var(--x)` with no fallback argument. */
 const BARE_READ = /var\(\s*(--[a-zA-Z0-9_-]+)\s*\)/g;
 
-/** The `[start, end)` spans of comments a `.ts`/`.tsx` source carries: `//` comments that start a line, and block comments. */
+/**
+ * The `[start, end)` spans of comments a `.ts`/`.tsx` source carries: `//` comments that start a line, and block
+ * comments. A comment opener inside a string or template literal is text, not a comment: quoted strings end at
+ * their closing quote (or the line end), and a template's `${…}` expressions are scanned as code.
+ */
 function commentSpans(text: string): [number, number][] {
   const spans: [number, number][] = [];
-  for (const match of text.matchAll(/^[ \t]*\/\/.*$|\/\*[\s\S]*?\*\//gm)) spans.push([match.index, match.index + match[0].length]);
+  // "`" marks an open template literal, "${" a template expression, "{" a brace nested inside one.
+  const stack: string[] = [];
+  let lineStart = true;
+  for (let i = 0; i < text.length;) {
+    const char = text[i]!;
+    if (stack.at(-1) === "`") {
+      if (char === "\\") i += 2;
+      else if (char === "`") { stack.pop(); i++; }
+      else if (char === "$" && text[i + 1] === "{") { stack.push("${"); i += 2; }
+      else i++;
+      continue;
+    }
+    if (char === "/" && text[i + 1] === "/" && lineStart) {
+      const end = text.indexOf("\n", i);
+      spans.push([i, end < 0 ? text.length : end]);
+      i = end < 0 ? text.length : end;
+      continue;
+    }
+    if (char === "/" && text[i + 1] === "*") {
+      const end = text.indexOf("*/", i + 2);
+      const close = end < 0 ? text.length : end + 2;
+      spans.push([i, close]);
+      i = close;
+      lineStart = false;
+      continue;
+    }
+    if (char === "\n") { lineStart = true; i++; continue; }
+    if (char !== " " && char !== "\t") lineStart = false;
+    if (char === "\"" || char === "'") {
+      let j = i + 1;
+      while (j < text.length && text[j] !== char && text[j] !== "\n") j += text[j] === "\\" ? 2 : 1;
+      i = text[j] === char ? j + 1 : j;
+      continue;
+    }
+    if (char === "`") stack.push("`");
+    else if (char === "{" && stack.length) stack.push("{");
+    else if (char === "}" && stack.length) stack.pop();
+    i++;
+  }
   return spans;
 }
 

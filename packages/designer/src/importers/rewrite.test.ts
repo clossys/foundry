@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import ts from "typescript";
 import { importShadcnAriaComponents, SHADCN_COMPONENT_ITEMS } from "./shadcn-aria-components.js";
 import { rewriteShadcnAria } from "./rewrite.js";
-import { classRead, packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
+import { assertNoBareReads, bareReads, classRead, packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
 import { compiledCssDeclaredSources, generateCompiledCss } from "../compiled-css/generate.js";
 import { addDeclaredFallbacks } from "../compiled-css/declared-fallbacks.js";
 import type { ShadcnComponentInput } from "./shadcn-aria-components.js";
@@ -625,5 +625,20 @@ describe("shadcn-aria-rewrite@3", () => {
     expect(rewrite('const unrelated="outline-none animate-pulse hover:ring-3"').issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ value: "outline-none" }), expect.objectContaining({ value: "animate-pulse" }), expect.objectContaining({ value: "hover:ring-3" }),
     ]));
+  });
+});
+
+describe("declared-fallback-reader bare-read guard (D5-2D)", () => {
+  it("reads a comment opener inside a string or template literal as text, not as a comment", () => {
+    const text = 'const open = "/*"\nconst read = "rounded-[var(--radius)]"\nconst close = \'*/\'\n';
+    expect(bareReads(text)).toEqual(["--radius"]);
+    expect(() => assertNoBareReads({ path: "strings.tsx", content: text })).toThrow(/strings\.tsx still reads --radius/);
+    const template = "const t = `/* ${\"x\"} var(--radius) */`\nconst u = `${\"/*\"}`\nconst v = \"var(--spacing)\"\nconst w = \"*/\"\n";
+    expect(bareReads(template)).toEqual(["--radius", "--spacing"]);
+  });
+
+  it("still skips real comments: block comments anywhere and // comments that start a line", () => {
+    const text = "/* var(--radius) */\n  // var(--spacing)\nconst a = \"var(--border)\" /* var(--input) */\n";
+    expect(bareReads(text)).toEqual(["--border"]);
   });
 });

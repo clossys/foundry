@@ -27,6 +27,7 @@ import { fixHint, REF_VERBATIM_FIX, REF_VERBATIM_ID } from "./fix.js";
 import { registeredRules, type RegisteredRule } from "./registry.js";
 import { submitOf } from "./rules/r03.js";
 import { slotDoc } from "./checks/shared.js";
+import { adoptionReaderOf } from "../records/code-adopt.js";
 import { registerGuardRunner } from "../records/slot-write.js";
 import { sourceKindOf } from "../records/source-kind.js";
 import type { Check, ConstitutionContext, Row, RuleId } from "./types.js";
@@ -138,7 +139,9 @@ export function refVerbatimRows(ctx: ConstitutionContext, targets: readonly Guar
     let findings: readonly { code: string; detail: string; file?: string }[];
     try {
       const doc = slotDoc(slot) as { uses?: readonly string[] } | undefined;
-      findings = checkRegistryItem(ctx.consumer, slot.id, candidate.json, { strict: true, ...(doc ? { slotDoc: doc } : {}) }).findings;
+      // A consumer adoption names its fallback reader: the gate normalizes its reference through the same one.
+      const reader = adoptionReaderOf(ctx.consumer, candidate.json);
+      findings = checkRegistryItem(ctx.consumer, slot.id, candidate.json, { strict: true, ...(doc ? { slotDoc: doc } : {}), ...(reader ? { reader } : {}) }).findings;
     } catch (error) { findings = [{ code: "REF-NO-SOURCE", detail: `ref-verbatim could not run: ${error instanceof Error ? error.message : String(error)}` }]; }
     for (const finding of findings) rows.push({ ...base, reason: `${finding.code} ${finding.detail}${finding.file ? ` (${finding.file})` : ""} [${gated.label}: ${gated.why}]` });
   }
