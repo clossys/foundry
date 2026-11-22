@@ -92,7 +92,7 @@ describe("Drawer", () => {
     const close = await screen.findByRole("button", { name: "Close tools" });
     // The stock SheetClose (rail Button) draws keyboard focus with its own outline utilities (E2).
     expect(close).toHaveAttribute("data-slot", "sheet-close");
-    expect(close).toHaveClass("icon-control-md", "border-0", "bg-transparent", "p-0", "focus-visible:outline-solid", "focus-visible:outline-(length:--ui-border-focus)", "focus-visible:outline-(--color-focus-ring)");
+    expect(close).toHaveClass("icon-control-md", "border-0", "bg-transparent", "p-0", "focus-visible:outline-solid", "focus-visible:outline-2", "focus-visible:outline-(--ring)");
     expect(close).toHaveAccessibleName("Close tools");
     const glyph = close.querySelector("svg");
     expect(glyph).not.toBeNull();

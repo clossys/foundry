@@ -17,7 +17,7 @@ describe("Panel", () => {
     expect(panel).not.toHaveAttribute("variant");
     expect([...panel.children].map(node => node.getAttribute("data-panel-region"))).toEqual(["header", "content", "footer"]);
     expect(panel).toHaveTextContent("HeadingContentFooter");
-    expect(panel).toHaveClass("ring-(length:--ui-border-hairline)");
+    expect(panel).toHaveClass("ring-1");
     expect(panel.className).not.toMatch(/transition|animate|forced-color-adjust-none/);
   });
 
