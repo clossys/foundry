@@ -41,7 +41,9 @@ const RECIPE_IDS = ["create.copy", "create.headline", "create.lexicon"];
 const STANDARD_COUNT = 9;
 
 function pinned(slot) {
-  const pin = readJson(join(CONSUMER, "agents", AGENT, slot, "pin.json"));
+  const doc = readJson(join(CONSUMER, "agents", AGENT, slot, "pin.json"));
+  // A copy slot is pinned by a clossys.pin-map/1 (one record per slot); a lexicon slot by a clossys.pin/2.
+  const pin = doc.records ? Object.values(doc.records)[0] : doc;
   return { name: pin.candidate, text: readFileSync(join(CONSUMER, "agents", AGENT, slot, "candidates", pin.candidate), "utf8") };
 }
 const asDraft = ({ name, text }) => { let json; if (name.endsWith(".json")) { try { json = JSON.parse(text); } catch { json = undefined; } } return { name, text, json }; };
@@ -124,14 +126,14 @@ describe("craft.md runs the fixed 5b stages with a check at each", () => {
 });
 
 describe("stage-check brief and diverge: each stage checks its own output", () => {
-  const slot = "strings.actions";
-  const brief = briefFor(slot, "create.copy", "Action labels in the pinned voice: a verb first, plain, short enough for a button, and the same verb for the same act everywhere in Studio.");
+  const slot = "frames.site-header.copy";
+  const brief = briefFor(slot, "create.copy", "Site header labels in the pinned voice: a verb first for actions, plain, short enough for a button, and the same verb for the same act everywhere on the site.");
   const directions = {
     recipe: "create.copy",
     directions: [
       { id: "verb-first", idea: "Bare verbs with one object", axes: { angle: "verb-first", register: "plain", structure: "verb-object" }, traits: [VOICE_SLOT] },
       { id: "outcome", idea: "Name the outcome the action gives", axes: { angle: "outcome", register: "warm", structure: "verb-result" }, traits: [VOICE_SLOT, "identity.naming.name"] },
-      { id: "terse", idea: "One word where one word is enough", axes: { angle: "economy", register: "terse", structure: "single-word" }, traits: [VOICE_SLOT, "finding:writer-owner-answers-2026-11-03"] },
+      { id: "terse", idea: "One word where one word is enough", axes: { angle: "economy", register: "terse", structure: "single-word" }, traits: [VOICE_SLOT, "lexicon.capitalization"] },
     ],
   };
 
@@ -149,7 +151,7 @@ describe("stage-check brief and diverge: each stage checks its own output", () =
     assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, stale)).includes("R12"));
     const path = clone(brief); path.inputs.push({ slot: "clossys/agents/director/identity.verbal.voice/pin.json", candidate: "x", sha256: "0".repeat(64) });
     assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, path)).includes("R06.7"));
-    const designer = clone(brief); const pin = pinOf(CONSUMER_ROOT, "frames.studio-shell"); designer.inputs.push({ slot: "frames.studio-shell", candidate: pin.candidate, sha256: pin.sha256 });
+    const designer = clone(brief); const pin = pinOf(CONSUMER_ROOT, "components.logo"); designer.inputs.push({ slot: "components.logo", candidate: pin.candidate, sha256: pin.sha256 });
     assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, designer)).includes("R20"), "Writer copy derives from Director and Writer pins only");
     const wrongRecipe = clone(brief); wrongRecipe.recipe = "create.lexicon";
     assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, wrongRecipe)).includes("R15.5"));
@@ -158,7 +160,7 @@ describe("stage-check brief and diverge: each stage checks its own output", () =
   it("fails a direction that does not cite the voice, cosmetic variants and off-axis values (mutation)", () => {
     const noVoice = clone(directions); noVoice.directions[1].traits = ["identity.naming.name"];
     assert.ok(checkDiverge(CONSUMER_ROOT, slot, noVoice).some(item => item.rule === "R20" && item.what.includes(VOICE_SLOT)));
-    const designer = clone(directions); designer.directions[0].traits.push("frames.studio-shell");
+    const designer = clone(directions); designer.directions[0].traits.push("components.logo");
     assert.ok(rules(checkDiverge(CONSUMER_ROOT, slot, designer)).includes("R20"));
     const cosmetic = clone(directions); cosmetic.directions[2].axes.register = "Plain";
     assert.ok(checkDiverge(CONSUMER_ROOT, slot, cosmetic).some(item => item.rule === "R15.7" && /axis register/.test(item.what)));
@@ -174,10 +176,10 @@ describe("stage-check brief and diverge: each stage checks its own output", () =
 });
 
 describe("stage-check draft: the maker's preflight agrees with the judge", () => {
-  const SLOTS = ["strings.actions", "passages.hero", "patterns.confirmation", "lexicon.capitalization", "narratives.app-chrome"];
+  const SLOTS = ["frames.site-header.copy", "sections.hero.copy", "lexicon.capitalization"];
   const fixture = Object.fromEntries(SLOTS.map(slot => [slot, pinned(slot)]));
 
-  it("passes the pinned string, headline, pattern, lexicon and narrative candidates, and the judge passes every requirement", async () => {
+  it("passes the pinned string, headline and lexicon candidates, and the judge passes every requirement", async () => {
     for (const slot of SLOTS) {
       const { issues, judgeOnly } = checkDraft(CONSUMER_ROOT, slot, asDraft(fixture[slot]));
       assert.deepEqual(issues, [], slot);
@@ -187,32 +189,32 @@ describe("stage-check draft: the maker's preflight agrees with the judge", () =>
   });
 
   it("copy whose source does not cite the brand voice fails (worklist)", async () => {
-    await failsBoth("strings.actions", edit(fixture["strings.actions"], '"ref":["director:identity.verbal.voice"]', '"ref":["finding:writer-owner-answers-2026-11-03"]'), "copy.voice-derived");
+    await failsBoth("strings.actions", edit(fixture["frames.site-header.copy"], '"ref":["director:identity.verbal.voice",', '"ref":["finding:writer-owner-answers-2026-11-03",'), "copy.voice-derived");
   });
 
   it("a source ref that is a URL fails; an unpinned upstream slot fails the maker (worklist)", async () => {
-    await failsBoth("strings.actions", edit(fixture["strings.actions"], '"ref":["director:identity.verbal.voice"]', '"ref":["director:identity.verbal.voice","https://example.com/voice"]'), "copy.derived-upstream");
-    const unpinned = checkDraft(CONSUMER_ROOT, "strings.actions", asDraft(edit(fixture["strings.actions"], '"ref":["director:identity.verbal.voice"]', '"ref":["director:identity.verbal.voice","writer:strings.no-such-slot"]'))).issues;
+    await failsBoth("strings.actions", edit(fixture["frames.site-header.copy"], '"ref":["director:identity.verbal.voice",', '"ref":["director:identity.verbal.voice","https://example.com/voice",'), "copy.derived-upstream");
+    const unpinned = checkDraft(CONSUMER_ROOT, "frames.site-header.copy", asDraft(edit(fixture["frames.site-header.copy"], '"ref":["director:identity.verbal.voice",', '"ref":["director:identity.verbal.voice","writer:strings.no-such-slot",'))).issues;
     assert.ok(unpinned.some(item => item.check === "copy.derived-upstream" && /not a pinned writer slot/.test(item.what)));
   });
 
   it("an entry whose meta id is not its key fails (worklist)", async () => {
-    await failsBoth("strings.actions", edit(fixture["strings.actions"], '{"id":"studio.action.compare"', '{"id":"studio.action.compares"'), "copy.entries");
+    await failsBoth("frames.site-header.copy", edit(fixture["frames.site-header.copy"], '{"id":"navigation.open"', '{"id":"navigation.opens"'), "copy.entries");
   });
 
   it("markup, a placeholder, filler or a broken ICU message in a value fails (worklist: no markup)", async () => {
-    await failsBoth("patterns.confirmation", edit(fixture["patterns.confirmation"], "-->\nUndo", "-->\n**Undo**"), "copy.plain-values");
-    await failsBoth("patterns.confirmation", edit(fixture["patterns.confirmation"], "-->\nUndo", "-->\nTODO"), "text.no-placeholder");
-    await failsBoth("strings.actions", edit(fixture["strings.actions"], "-->\nCopy link", "-->\nCopy link seamlessly"), "lexicon.clean");
-    await failsBoth("strings.actions", edit(fixture["strings.actions"], "-->\nCopy link", "-->\nCopy {count, plural, one {# link}}"), "copy.plain-values");
+    await failsBoth("frames.site-header.copy", edit(fixture["frames.site-header.copy"], "-->\nSkip to content", "-->\n**Skip to content**"), "copy.plain-values");
+    await failsBoth("frames.site-header.copy", edit(fixture["frames.site-header.copy"], "-->\nSkip to content", "-->\nTODO"), "text.no-placeholder");
+    await failsBoth("frames.site-header.copy", edit(fixture["frames.site-header.copy"], "-->\nOpen menu", "-->\nOpen menu seamlessly"), "lexicon.clean");
+    await failsBoth("frames.site-header.copy", edit(fixture["frames.site-header.copy"], "-->\nOpen menu", "-->\nOpen {count, plural, one {# menu}}"), "copy.plain-values");
   });
 
   it("a value over the contract's limit fails (worklist)", async () => {
-    await failsBoth("strings.actions", edit(fixture["strings.actions"], "-->\nCopy link", "-->\nCopy the link to this slot to the clipboard now"), "copy.within-limits");
+    await failsBoth("frames.site-header.copy", edit(fixture["frames.site-header.copy"], "-->\nOpen menu", "-->\nOpen the main navigation menu for this page now"), "copy.within-limits");
   });
 
   it("a headline not in sentence case fails (worklist)", async () => {
-    await failsBoth("passages.hero", edit(fixture["passages.hero"], "See where every choice came from", "See Where Every Choice Came From"), "copy.sentence-case");
+    await failsBoth("sections.hero.copy", edit(fixture["sections.hero.copy"], "Keep your site current without waiting", "Keep Your Site Current Without Waiting"), "copy.sentence-case");
   });
 
   it("a lexicon record missing a field, a pattern missing a required part and a narrative with no frame fail", async () => {
