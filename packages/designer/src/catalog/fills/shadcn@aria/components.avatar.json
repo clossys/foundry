@@ -65,11 +65,11 @@
         },
         {
           "path": "components/avatar/avatar.tsx",
-          "sha256": "292adba7968d811cca3289119d44337fce3a36796918aa2953673889f2ba5814"
+          "sha256": "5e6f6cdccebe8edee158dfccda88ec53b2ad87d88b9f131a615eef0858eb70ae"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
         }
       ],
       "parts": [
@@ -134,7 +134,7 @@
       ],
       "slot": "components.avatar",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@1"
+      "transform": "shadcn-aria-rewrite@3"
     }
   }
 }

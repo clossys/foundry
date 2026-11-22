@@ -5,6 +5,7 @@ import { compile } from "tailwindcss";
 import { describe, expect, it } from "vitest";
 import { importShadcnAriaComponents, type ShadcnComponentInput } from "./shadcn-aria-components.js";
 import { SHADCN_ARIA_FIXED_PATTERNS, SHADCN_ARIA_STYLE_VARS, shadcnAriaStyleRead } from "./shadcn-aria-style-vars.js";
+import { packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
 
 const packageRoot = resolve(import.meta.dirname, "../..");
 const fixtures = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
@@ -71,7 +72,7 @@ function declaration(css: string, candidate: string, property: string): string {
   return match![1]!.trim();
 }
 
-/** Resolve `var(--x,<fallback>)` with `--x` unset, so only the style default remains. */
+/** Resolve `var(--x,<fallback>)` with `--x` unset, so only the declared fallback remains. */
 function withDefaults(value: string): string {
   const match = /^var\((--[\w-]+),\s*([\s\S]+)\)$/.exec(value);
   return match ? match[2]!.trim() : value;
@@ -80,17 +81,12 @@ function withDefaults(value: string): string {
 const squash = (value: string): string => value.replace(/\s+/g, "");
 
 /** How each fixed class is read in the rewritten fill, and the property that carries its value. */
-const READS: Record<string, { utility: string; property: string; hint?: "length"; fixedValue?: (css: string) => string }> = {
+const READS: Record<string, { utility: string; property: string; hint?: "length" }> = {
   "z-50": { utility: "z", property: "z-index" },
   "duration-100": { utility: "duration", property: "transition-duration" },
   "duration-200": { utility: "duration", property: "transition-duration" },
   "opacity-50": { utility: "opacity", property: "opacity" },
-  "ring-3": {
-    utility: "outline",
-    property: "outline-width",
-    hint: "length",
-    fixedValue: css => /calc\((\S+) \+ var\(--tw-ring-offset-width\)\)/.exec(css.slice(css.indexOf(".ring-3 {")))![1]!,
-  },
+  "ring-3": { utility: "outline", property: "outline-width", hint: "length" },
   "border": { utility: "border", property: "border-width", hint: "length" },
   "h-7": { utility: "h", property: "height" },
   "h-8": { utility: "h", property: "height" },
@@ -105,18 +101,24 @@ describe("shadcn@aria style variables", () => {
     expect(fixedHits()).toEqual([]);
   });
 
-  it("resolves every rewritten class, with defaults only, to the fixed class's own value", async () => {
-    const rows = SHADCN_ARIA_STYLE_VARS.filter(row => row.fallback !== undefined);
+  it("resolves every defaulted class, with its variable unset, to the reader's declared value of that variable", async () => {
+    const reader = packageDeclaredFallbackReader();
+    const rows = SHADCN_ARIA_STYLE_VARS.filter(row => row.defaulted);
     expect(rows.map(row => row.fixed).sort()).toEqual(Object.keys(READS).sort());
     const pairs = rows.map(row => {
       const read = READS[row.fixed]!;
-      return { row, read, rewritten: `${read.utility}-${shadcnAriaStyleRead(row.variable, row.fixed, read.hint)}` };
+      return { row, read, rewritten: `${read.utility}-${shadcnAriaStyleRead(row.variable, row.fixed, reader, read.hint)}` };
     });
-    const css = await build(pairs.flatMap(pair => [pair.row.fixed, pair.rewritten]));
+    const css = await build(pairs.map(pair => pair.rewritten));
     for (const { row, read, rewritten } of pairs) {
-      const fixed = read.fixedValue ? read.fixedValue(css) : declaration(css, row.fixed, read.property);
       const resolved = withDefaults(declaration(css, rewritten, read.property));
-      expect(squash(resolved), `${row.fixed} -> ${rewritten}`).toBe(squash(fixed));
+      expect(squash(resolved), `${row.fixed} -> ${rewritten}`).toBe(squash(reader.fallback(row.variable)));
     }
+  });
+
+  it("writes no fallback for a variable the reader does not declare", () => {
+    const row = SHADCN_ARIA_STYLE_VARS.find(row => row.defaulted)!;
+    const refusing = { source: "test", fallback(name: string): string { throw new Error(`undeclared ${name}`); } };
+    expect(() => shadcnAriaStyleRead(row.variable, row.fixed, refusing)).toThrow(`undeclared ${row.variable}`);
   });
 });

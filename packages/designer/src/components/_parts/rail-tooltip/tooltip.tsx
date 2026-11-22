@@ -62,7 +62,7 @@ function Tooltip({
     >
       {children}
       <OverlayArrow
-        className="size-(--spacing-md) translate-y-[calc(-50%-var(--ui-border-rule))] rotate-45 rounded-(--radius-subtle) z-(--ui-z-modal) bg-(--color-ink-primary) fill-(--color-ink-primary)"
+        className="size-(--spacing-md) translate-y-[calc(-50%-var(--ui-border-rule,2px))] rotate-45 rounded-(--radius-subtle) z-(--ui-z-modal) bg-(--color-ink-primary) fill-(--color-ink-primary)"
         style={({ placement, defaultStyle }) => ({
           ...defaultStyle,
           rotate: "0deg",

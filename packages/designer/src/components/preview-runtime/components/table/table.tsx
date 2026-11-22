@@ -81,7 +81,7 @@ function TableHead({ className, ...props }: ColumnProps) {
   return (
     <ColumnPrimitive
       data-slot="table-head"
-      className={cn("text-(--color-ink-primary) h-[var(--spacing-3xl)] px-(--spacing-sm) text-start align-middle font-(weight:--font-weight-medium) whitespace-nowrap [&:has([role=checkbox])]:pe-0 [&:has([data-slot=checkbox])]:pe-0", className)}
+      className={cn("text-(--color-ink-primary) h-[var(--spacing-3xl,48px)] px-(--spacing-sm) text-start align-middle font-(weight:--font-weight-medium) whitespace-nowrap [&:has([role=checkbox])]:pe-0 [&:has([data-slot=checkbox])]:pe-0", className)}
       {...props}
     />
   )

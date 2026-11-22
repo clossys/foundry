@@ -426,5 +426,5 @@
     "xl": "--spacing-xl",
     "xs": "--spacing-xs"
   },
-  "transform": "shadcn-aria-rewrite@1"
+  "transform": "shadcn-aria-rewrite@3"
 }

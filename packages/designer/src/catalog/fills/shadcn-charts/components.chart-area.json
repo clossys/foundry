@@ -69,7 +69,7 @@
         },
         {
           "path": "components/chart-area/chart-area.tsx",
-          "sha256": "627b171705165a3f06b783892f000d49f2616dfee89c439b03240294c12c3173"
+          "sha256": "95ff1fae05c54fa9402959e7eca53bd98d7a021f58a3f86d1a285f13a278e34a"
         },
         {
           "path": "components/chart/chart.tsx",
@@ -77,7 +77,7 @@
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "c20e375c7c425002d035b3442714ac64a03c4ff16a46fea7b0af5f524037feed"
+          "sha256": "c5713cfc177c63bf1801b0aedcdbd041d2892cc0c8807e7b80aa63c44e7a857a"
         }
       ],
       "parts": [
@@ -127,7 +127,7 @@
       "root": "engine:none",
       "slot": "components.chart-area",
       "source": "shadcn-charts",
-      "transform": "shadcn-registry-alias@1"
+      "transform": "shadcn-registry-alias@2"
     }
   }
 }

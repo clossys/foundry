@@ -94,11 +94,11 @@
         },
         {
           "path": "components/calendar/calendar.tsx",
-          "sha256": "b2e360b2a942456729d6fe34a9319e535fdae7d0f6a304c1e49ab5f515cd4fdc"
+          "sha256": "c6e8306cb55df01d8d74b4d0f378b3ddbbf35940e82a2752a77ea154a16b44d0"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
         }
       ],
       "parts": [
@@ -185,7 +185,7 @@
       "root": "rac:Calendar",
       "slot": "components.calendar",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@1"
+      "transform": "shadcn-aria-rewrite@3"
     }
   }
 }

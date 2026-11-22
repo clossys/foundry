@@ -1,63 +1,39 @@
 {
-  "avatar": [
-    "themes.spacing"
-  ],
+  "avatar": [],
   "badge": [],
-  "banner": [
-    "themes.spacing"
-  ],
-  "breadcrumbs": [
-    "themes.spacing"
-  ],
-  "button": [
-    "themes.spacing"
-  ],
-  "calendar": [
-    "themes.spacing"
-  ],
+  "banner": [],
+  "breadcrumbs": [],
+  "button": [],
+  "calendar": [],
   "card": [],
   "chart-area": [],
   "chart-bar": [],
   "chart-line": [],
-  "checkbox": [
-    "themes.spacing"
-  ],
+  "checkbox": [],
   "color-picker": [],
-  "combo-box": [
-    "themes.spacing"
-  ],
+  "combo-box": [],
   "date-field": [],
   "dialog": [],
-  "disclosure": [
-    "themes.spacing"
-  ],
+  "disclosure": [],
   "field": [],
   "file-trigger": [],
   "form": [],
   "grid-list": [],
   "icon": [],
-  "link": [
-    "themes.spacing"
-  ],
+  "link": [],
   "logo": [],
   "media-player": [],
-  "menu": [
-    "themes.spacing"
-  ],
+  "menu": [],
   "meter": [],
   "native-action": [],
   "navigation-tree": [],
   "number-field": [],
   "popover": [],
   "progress-bar": [],
-  "radio-group": [
-    "themes.spacing"
-  ],
+  "radio-group": [],
   "resize-handle": [],
   "search-field": [],
-  "select": [
-    "themes.spacing"
-  ],
+  "select": [],
   "semantic-content": [],
   "separator": [],
   "skeleton": [],
@@ -72,19 +48,13 @@
   "specimen-viewport": [],
   "spinner": [],
   "status-mark": [],
-  "switch": [
-    "themes.spacing"
-  ],
+  "switch": [],
   "table": [],
-  "tabs": [
-    "themes.spacing"
-  ],
+  "tabs": [],
   "tag-group": [],
   "text-field": [],
   "toast": [],
-  "toggle-button": [
-    "themes.spacing"
-  ],
+  "toggle-button": [],
   "toggle-group": [],
   "toolbar": [],
   "tooltip": [],

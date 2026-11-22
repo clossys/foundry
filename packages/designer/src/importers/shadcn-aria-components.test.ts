@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import * as digest from "../catalog-core/digest.js";
 import { sha256 } from "../catalog-core/digest.js";
 import { rewriteShadcnAria } from "./rewrite.js";
+import { packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
 import slots from "../catalog/slots/components.json" with { type: "json" };
 import type { ComponentSlot } from "../catalog-core/types.js";
 import { componentSecondaryExports } from "../catalog-core/component-secondary-exports.js";
@@ -20,7 +21,8 @@ export function pinnedInput(): ShadcnComponentInput {
 
 describe("pinned shadcn aria component import", () => {
   it("does not rehash shared upstream pin bytes for every produced fill", () => {
-    const input = pinnedInput();
+    // The declared-source reader is built once per process (its default theme is hashed then), before the observed runs.
+    const input = { ...pinnedInput(), reader: packageDeclaredFallbackReader() };
     const upstream = new Map([...input.items.flatMap(item => item.files), input.styles, input.notice].map(file => [file.path, file.content]));
     const hash = vi.spyOn(digest, "sha256");
     try {

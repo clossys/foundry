@@ -24,7 +24,7 @@ function Slider<T extends SliderValue = SliderValue>({
   return (
     <SliderPrimitive
       className={cn(
-        "data-vertical:min-h-[var(--spacing-6xl)] group relative flex w-full touch-none items-center select-none data-disabled:opacity-(--ui-alpha-disabled,50%) data-vertical:h-full data-vertical:w-auto data-vertical:flex-col",
+        "data-vertical:min-h-[var(--spacing-6xl,128px)] group relative flex w-full touch-none items-center select-none data-disabled:opacity-(--ui-alpha-disabled,0.5) data-vertical:h-full data-vertical:w-auto data-vertical:flex-col",
         className
       )}
       data-slot="slider"
@@ -47,7 +47,7 @@ function Slider<T extends SliderValue = SliderValue>({
                 data-slot="slider-thumb"
                 key={index}
                 index={index}
-                className="border-(--color-focus-ring) outline-solid outline-(length:--ui-border-focus,3px) outline-offset-(--ui-focus-offset) outline-(--color-focus-ring) relative size-(--ui-control-mark) rounded-full border-(length:--ui-border-hairline,1px) bg-(--color-surface-raised) transition-[color,box-shadow] duration-(--ui-duration-default) ease-(--default-transition-timing-function) after:absolute after:-inset-(--spacing-sm) hover:ring-(length:--ui-border-rule,3px) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)  active:ring-(length:--ui-border-rule,3px) block shrink-0 select-none group-data-horizontal:top-[50%] group-data-vertical:start-[50%] disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,50%)"
+                className="border-(--color-focus-ring) outline-solid outline-(length:--ui-border-focus,2px) outline-offset-(--ui-focus-offset) outline-(--color-focus-ring) relative size-(--ui-control-mark) rounded-full border-(length:--ui-border-hairline,1px) bg-(--color-surface-raised) transition-[color,box-shadow] duration-(--ui-duration-default) ease-(--default-transition-timing-function) after:absolute after:-inset-(--spacing-sm) hover:ring-(length:--ui-border-rule,2px) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,2px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)  active:ring-(length:--ui-border-rule,2px) block shrink-0 select-none group-data-horizontal:top-[50%] group-data-vertical:start-[50%] disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,0.5)"
               />
             ))}
           </>

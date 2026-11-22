@@ -4,7 +4,8 @@ import { dirname, resolve } from "node:path";
 import { registerHooks, stripTypeScriptTypes } from "node:module";
 import assert from "node:assert/strict";
 
-// Fixture-only runner: evaluate the two pure TypeScript modules without a build.
+// Fixture-only runner: evaluate the importer modules without a build (transform mode: the declared-fallback
+// reader reaches modules with TypeScript-only syntax).
 const here = dirname(fileURLToPath(import.meta.url));
 const src = resolve(here, "../../..");
 const mutant = process.argv.find(value => value.startsWith("--mutant="))?.slice(9);
@@ -29,7 +30,7 @@ registerHooks({
         const [before, after] = mutations[mutant];
         assert(source.includes(before), "mutation anchor exists"); source = source.replace(before, after);
       }
-      return { format: "module", source: stripTypeScriptTypes(source), shortCircuit: true };
+      return { format: "module", source: stripTypeScriptTypes(source, { mode: "transform" }), shortCircuit: true };
     }
     return next(url, context);
   },

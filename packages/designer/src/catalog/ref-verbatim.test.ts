@@ -83,6 +83,28 @@ describe("ref-verbatim allowed-hunk grammar", () => {
     expect(plain.map((h: Hunk) => (h.ok ? h.rule : `!${h.rule}`)).sort()).toEqual(["H-IMPORT", "H-LINK"]);
   });
 
+  it("accepts a token read's fallback only when it is exactly the declared-source reader's value", () => {
+    const declared: Record<string, string> = { "--color-surface": "oklch(0.98 0 0)", "--radius-md": "0.5rem" };
+    const fallback = (name: string): string => { const value = declared[name]; if (value === undefined) throw new Error(`undeclared ${name}`); return value; };
+    // Accepted: the no-fallback forms, with or without a reader.
+    expect(tokenSwapAllowed("bg-background", "bg-(--color-surface)")).toBe(true);
+    expect(tokenSwapAllowed("bg-background", "bg-[var(--color-surface)]", [], fallback)).toBe(true);
+    // Accepted: exactly the reader's value, in shorthand and arbitrary form, spaces spelled `_`.
+    expect(tokenSwapAllowed("bg-background", "bg-(--color-surface,oklch(0.98_0_0))", [], fallback)).toBe(true);
+    expect(tokenSwapAllowed("rounded-md", "rounded-[var(--radius-md,0.5rem)]", [], fallback)).toBe(true);
+    expect(tokenSwapAllowed("hover:bg-background", "hover:bg-(--color-surface,oklch(0.98_0_0))", [], fallback)).toBe(true);
+    // Refused: any other value, a chain, a name the reader refuses, or a fallback with no reader at all.
+    expect(tokenSwapAllowed("bg-background", "bg-(--color-surface,oklch(0.5_0_0))", [], fallback)).toBe(false);
+    expect(tokenSwapAllowed("rounded-md", "rounded-[var(--radius-md,1rem)]", [], fallback)).toBe(false);
+    expect(tokenSwapAllowed("bg-background", "bg-(--color-surface,var(--color-other,oklch(0.98_0_0)))", [], fallback)).toBe(false);
+    expect(tokenSwapAllowed("bg-background", "bg-(--brand,red)", [], fallback)).toBe(false);
+    expect(tokenSwapAllowed("bg-background", "bg-(--color-surface,oklch(0.98_0_0))")).toBe(false);
+    expect(tokenSwapAllowed("rounded-md", "rounded-[var(--radius-md,0.5rem)]")).toBe(false);
+    // The same rule holds inside a diff: the reader's value is an H-TOKEN hunk, any other value a class hunk.
+    expect(rules(ref.replace("bg-background", "bg-(--color-surface,oklch(0.98_0_0))"), { fallback })).toEqual(["H-TOKEN"]);
+    expect(rules(ref.replace("bg-background", "bg-(--color-surface,white)"), { fallback })).toEqual(["!REF-HUNK-CLASS"]);
+  });
+
   it("fails class, structure, logic and text changes with their codes", () => {
     expect(rules(ref.replace("p-8", "p-8 shadow-xl"))).toEqual(["!REF-HUNK-CLASS"]);
     expect(rules(ref.replace("bg-background", "bg-red-500"))).toEqual(["!REF-HUNK-CLASS"]);

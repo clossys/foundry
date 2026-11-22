@@ -4,11 +4,21 @@ import adapterData from "../catalog/adapters/shadcn@aria.json" with { type: "jso
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import { sha256 } from "../catalog-core/digest.js";
 import { shadcnAriaStyleRead } from "./shadcn-aria-style-vars.js";
+import { alignImportedReads, assertNoBareReads, classRead, cssRead, packageDeclaredFallbackReader, type DeclaredFallbackReader } from "./declared-fallback-reader.js";
 
 /** Set for the duration of one synchronous rewrite from its input. */
 let styleDefaults = false;
+let activeReader: DeclaredFallbackReader = Object.freeze({ source: "none", fallback(name: string): string { throw new Error(`rewrite: ${name} read outside a rewrite`); } });
 const styleRead = (property: string, fixed: string, hint?: "length"): string =>
-  styleDefaults ? shadcnAriaStyleRead(property, fixed, hint) : `(${hint ? `${hint}:` : ""}${property})`;
+  styleDefaults ? shadcnAriaStyleRead(property, fixed, activeReader, hint) : `(${hint ? `${hint}:` : ""}${property})`;
+/** The pinned toggle-group's public spacing multiplier, as upstream spells it (an input matcher, not an emitted read). */
+const UPSTREAM_TOGGLE_GAP = /"--gap": `calc\(var\(--spacing\) \* \$\{spacing\}\)`/;
+/** A read inside a class string, with the active reader's declared value as its fallback. */
+const tv = (name: string): string => classRead(activeReader, name);
+/** Whether this rewrite aligns every emitted read to its reader (`RewriteInput.reader` given). */
+let aligning = false;
+/** A read in an inline style value, with the active reader's declared value as its fallback. */
+const cv = (name: string): string => cssRead(activeReader, name);
 
 export interface SourceFile { path: string; content: string }
 export interface RewriteIssue { code: "K2" | "K4" | "K7" | "K9"; file: string; value: string; message: string }
@@ -17,7 +27,7 @@ export interface RewriteResult {
   notes?: readonly RewriteNote[];
   /** Registry input surfaces replaced by their contextual RAC primitive, not a nested field. */
   contextualInputs?: readonly string[];
-  transform: "shadcn-aria-rewrite@1" | "shadcn-aria-rewrite@2";
+  transform: "shadcn-aria-rewrite@3" | "shadcn-aria-rewrite@4";
   files: readonly SourceFile[];
   outputSha256: readonly { path: string; sha256: string }[];
   reads: { themes: readonly string[]; assets: readonly string[]; components: readonly string[] };
@@ -28,9 +38,16 @@ export interface RewriteInput {
   item: string; leaf: string; files: readonly SourceFile[]; styles: string;
   /** Registry item -> consumer leaf, including aliases such as input -> text-field. */
   leafByItem: Readonly<Record<string, string>>;
-  /** Give each shadcn@aria style variable the style's own value as its fallback. */
+  /** Give each defaulted shadcn@aria style variable the reader's declared value as its fallback. */
   styleDefaults?: boolean;
-  /** Component-only v2 adoption; existing v1 receipts retain their exact bytes. */
+  /**
+   * Where every fallback the rewrite writes comes from; the package's declared values when absent. Given, every bare
+   * read left in an emitted source is aligned to it and a name it does not declare is refused (the shadcn@aria and rail
+   * importers). Absent, emitted reads keep the source's own spelling, so an importer not yet re-adopted (rac-starter)
+   * keeps the exact bytes its receipts record.
+   */
+  reader?: DeclaredFallbackReader;
+  /** Component-only v2 rules (`@4`); existing `@1`/`@2` receipts retain their exact bytes. */
   transformVersion?: 2;
   /** Private registry dependencies retain their own Button API. */
   retainRegistryButtonProps?: boolean;
@@ -117,8 +134,16 @@ const iconCall = (asset: string, attributes: string): string => {
 const focusOutline = (prefix: string, paint: string): string =>
   ["outline-solid", `outline-${styleRead("--ui-border-focus", "ring-3", "length")}`, "outline-offset-(--ui-focus-offset)", `outline-(${paint})`].map(atom => prefix + atom).join(" ");
 
-/** Exact selected source bindings; unmatched spellings remain findings. */
-const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output: string; themes: readonly string[]; note: string }>>>> = {
+type SelectedBindings = Readonly<Record<string, Readonly<Record<string, { output: string; themes: readonly string[]; note: string }>>>>;
+const selectedBindingsByReader = new WeakMap<DeclaredFallbackReader, SelectedBindings>();
+/**
+ * Exact selected source bindings for the active reader; unmatched spellings remain findings.
+ * Keys are the pinned spellings with each read aligned to its declared value, as `utility` looks them up.
+ */
+function selectedBindings(): SelectedBindings {
+  const cached = selectedBindingsByReader.get(activeReader);
+  if (cached) return cached;
+  const table: SelectedBindings = {
   "avatar": {
     "*:data-[slot=avatar]:ring-2": {
       "output": "*:data-[slot=avatar]:ring-(length:--ui-border-rule)",
@@ -127,21 +152,21 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     },
     "data-[size=lg]:size-10": {
-      "output": "data-[size=lg]:size-[var(--spacing-3xl)]",
+      "output": `data-[size=lg]:size-[${tv("--spacing-3xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 40.0px to 48px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "group-has-data-[size=lg]/avatar-group:[&>svg]:size-5": {
-      "output": "group-has-data-[size=lg]/avatar-group:[&>svg]:size-[var(--spacing-xl)]",
+      "output": `group-has-data-[size=lg]/avatar-group:[&>svg]:size-[${tv("--spacing-xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "group-has-data-[size=lg]/avatar-group:size-10": {
-      "output": "group-has-data-[size=lg]/avatar-group:size-[var(--spacing-3xl)]",
+      "output": `group-has-data-[size=lg]/avatar-group:size-[${tv("--spacing-3xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -162,14 +187,14 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   },
   "badge": {
     "h-5": {
-      "output": "h-[var(--spacing-xl)]",
+      "output": `h-[${tv("--spacing-xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "py-0.5": {
-      "output": "py-[var(--spacing-xs)]",
+      "output": `py-[${tv("--spacing-xs")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -178,21 +203,21 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   },
   "banner": {
     "*:[svg]:translate-y-0.5": {
-      "output": "*:[svg]:translate-y-[var(--spacing-xs)]",
+      "output": `*:[svg]:translate-y-[${tv("--spacing-xs")}]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "gap-0.5": {
-      "output": "gap-[var(--spacing-xs)]",
+      "output": `gap-[${tv("--spacing-xs")}]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "has-data-[slot=alert-action]:pr-18": {
-      "output": "has-data-[slot=alert-action]:pr-[var(--spacing-4xl)]",
+      "output": `has-data-[slot=alert-action]:pr-[${tv("--spacing-4xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -201,7 +226,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   },
   "breadcrumbs": {
     "size-5": {
-      "output": "size-[var(--spacing-xl)]",
+      "output": `size-[${tv("--spacing-xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -215,14 +240,14 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       ],
       "note": "Preserve one-hairline press displacement; use existing exact 1px member with explicit geometric read."
     },
-    "rounded-[min(var(--radius-md),10px)]": {
+    [`rounded-[min(${tv("--radius-md")},10px)]`]: {
       "output": "rounded-(--radius-control)",
       "themes": [
         "themes.radius.default"
       ],
       "note": "Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix."
     },
-    "rounded-[min(var(--radius-md),12px)]": {
+    [`rounded-[min(${tv("--radius-md")},12px)]`]: {
       "output": "rounded-(--radius-control)",
       "themes": [
         "themes.radius.default"
@@ -268,7 +293,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Exact existing layer value; new component read only where absent."
     },
     "[--cell-size:--spacing(7)]": {
-      "output": "[--cell-size:var(--ui-control-h-sm)]",
+      "output": `[--cell-size:${tv("--ui-control-h-sm")}]`,
       "themes": [
       ],
       "note": "Restyle28px calendar cell to existing32px small control; local alias remains defined and all references bound."
@@ -302,8 +327,8 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       ],
       "note": "Exact separator rule thickness 1px; permission explicitly recorded."
     },
-    "max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))]": {
-      "output": "max-h-[min(calc(var(--spacing-6xl)*2-var(--spacing-2xl)),calc(var(--available-height)-var(--spacing-2xl)))]",
+    [`max-h-[min(calc(--spacing(72)---spacing(9)),calc(${tv("--available-height")}---spacing(9)))]`]: {
+      "output": `max-h-[min(calc(${tv("--spacing-6xl")}*2-${tv("--spacing-2xl")}),calc(${tv("--available-height")}-${tv("--spacing-2xl")}))]`,
       "themes": [
         "themes.spacing.default",
         "themes.spacing.default"
@@ -311,14 +336,14 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Retain RAC available-height clamp; restyle 288/36px constants to 256/32px existing scale."
     },
     "max-h-72": {
-      "output": "max-h-[calc(var(--spacing-6xl)*2)]",
+      "output": `max-h-[calc(${tv("--spacing-6xl")}*2)]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 288.0px to 256px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "min-w-36": {
-      "output": "min-w-[var(--spacing-6xl)]",
+      "output": `min-w-[${tv("--spacing-6xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -330,7 +355,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       ],
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     },
-    "[&>kbd]:rounded-[calc(var(--radius)-5px)]": {
+    [`[&>kbd]:rounded-[calc(${tv("--radius")}-5px)]`]: {
       "output": "[&>kbd]:rounded-(--radius-subtle)",
       "themes": [
         "themes.radius.default"
@@ -338,34 +363,34 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Use actual subtle 2px radius for nested keyboard corners, replacing private-radius-minus-5 geometry."
     },
     "has-[>button]:ml-[-0.3rem]": {
-      "output": "has-[>button]:ml-[calc(var(--spacing-xs)*-1)]",
+      "output": `has-[>button]:ml-[calc(${tv("--spacing-xs")}*-1)]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "has-[>button]:mr-[-0.3rem]": {
-      "output": "has-[>button]:mr-[calc(var(--spacing-xs)*-1)]",
+      "output": `has-[>button]:mr-[calc(${tv("--spacing-xs")}*-1)]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "has-[>kbd]:ml-[-0.15rem]": {
-      "output": "has-[>kbd]:ml-[calc(var(--spacing-xs)*-1)]",
+      "output": `has-[>kbd]:ml-[calc(${tv("--spacing-xs")}*-1)]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "has-[>kbd]:mr-[-0.15rem]": {
-      "output": "has-[>kbd]:mr-[calc(var(--spacing-xs)*-1)]",
+      "output": `has-[>kbd]:mr-[calc(${tv("--spacing-xs")}*-1)]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
-    "rounded-[calc(var(--radius)-3px)]": {
+    [`rounded-[calc(${tv("--radius")}-3px)]`]: {
       "output": "rounded-(--radius-default)",
       "themes": [
         "themes.radius.default"
@@ -401,21 +426,21 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Exact 1px optical offset for a checkbox or radio beside field content; the hairline is that 1px."
     },
     "gap-0.5": {
-      "output": "gap-[var(--spacing-xs)]",
+      "output": `gap-[${tv("--spacing-xs")}]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "gap-5": {
-      "output": "gap-[var(--spacing-xl)]",
+      "output": `gap-[${tv("--spacing-xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "h-5": {
-      "output": "h-[var(--spacing-xl)]",
+      "output": `h-[${tv("--spacing-xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -448,14 +473,14 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   },
   "keyboard": {
     "h-5": {
-      "output": "h-[var(--spacing-xl)]",
+      "output": `h-[${tv("--spacing-xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "min-w-5": {
-      "output": "min-w-[var(--spacing-xl)]",
+      "output": `min-w-[${tv("--spacing-xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -464,7 +489,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   },
   "menu": {
     "data-inset:pl-7": {
-      "output": "data-inset:pl-[var(--spacing-2xl)]",
+      "output": `data-inset:pl-[${tv("--spacing-2xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -477,7 +502,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Exact separator rule thickness 1px; permission explicitly recorded."
     },
     "max-h-72": {
-      "output": "max-h-[calc(var(--spacing-6xl)*2)]",
+      "output": `max-h-[calc(${tv("--spacing-6xl")}*2)]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -499,7 +524,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   },
   "popover": {
     "gap-0.5": {
-      "output": "gap-[var(--spacing-xs)]",
+      "output": `gap-[${tv("--spacing-xs")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -512,7 +537,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     },
     "w-72": {
-      "output": "w-[calc(var(--spacing-6xl)*2)]",
+      "output": `w-[calc(${tv("--spacing-6xl")}*2)]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -520,7 +545,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
     }
   },
   "select": {
-    "data-[size=sm]:rounded-[min(var(--radius-md),10px)]": {
+    [`data-[size=sm]:rounded-[min(${tv("--radius-md")},10px)]`]: {
       "output": "data-[size=sm]:rounded-(--radius-control)",
       "themes": [
         "themes.radius.default"
@@ -534,7 +559,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Exact separator rule thickness 1px; permission explicitly recorded."
     },
     "min-w-36": {
-      "output": "min-w-[var(--spacing-6xl)]",
+      "output": `min-w-[${tv("--spacing-6xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -546,7 +571,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       ],
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     },
-    "[&>kbd]:rounded-[calc(var(--radius)-5px)]": {
+    [`[&>kbd]:rounded-[calc(${tv("--radius")}-5px)]`]: {
       "output": "[&>kbd]:rounded-(--radius-subtle)",
       "themes": [
         "themes.radius.default"
@@ -554,34 +579,34 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Use actual subtle 2px radius for nested keyboard corners, replacing private-radius-minus-5 geometry."
     },
     "has-[>button]:ml-[-0.3rem]": {
-      "output": "has-[>button]:ml-[calc(var(--spacing-xs)*-1)]",
+      "output": `has-[>button]:ml-[calc(${tv("--spacing-xs")}*-1)]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "has-[>button]:mr-[-0.3rem]": {
-      "output": "has-[>button]:mr-[calc(var(--spacing-xs)*-1)]",
+      "output": `has-[>button]:mr-[calc(${tv("--spacing-xs")}*-1)]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "has-[>kbd]:ml-[-0.15rem]": {
-      "output": "has-[>kbd]:ml-[calc(var(--spacing-xs)*-1)]",
+      "output": `has-[>kbd]:ml-[calc(${tv("--spacing-xs")}*-1)]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
     "has-[>kbd]:mr-[-0.15rem]": {
-      "output": "has-[>kbd]:mr-[calc(var(--spacing-xs)*-1)]",
+      "output": `has-[>kbd]:mr-[calc(${tv("--spacing-xs")}*-1)]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors."
     },
-    "rounded-[calc(var(--radius)-3px)]": {
+    [`rounded-[calc(${tv("--radius")}-3px)]`]: {
       "output": "rounded-(--radius-default)",
       "themes": [
         "themes.radius.default"
@@ -618,7 +643,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Use selected raised thumb surface in both modes, replacing unconditional white."
     },
     "data-vertical:min-h-40": {
-      "output": "data-vertical:min-h-[var(--spacing-6xl)]",
+      "output": `data-vertical:min-h-[${tv("--spacing-6xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -633,25 +658,25 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Use actual existing switch-thumb role 14px instead of source 18.4px."
     },
     "group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)]": {
-      "output": "group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule))]",
+      "output": `group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-${tv("--ui-border-rule")})]`,
       "themes": [
       ],
       "note": "Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
     },
     "group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-2px)]": {
-      "output": "group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule))]",
+      "output": `group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-${tv("--ui-border-rule")})]`,
       "themes": [
       ],
       "note": "Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
     },
     "group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)]": {
-      "output": "group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule))]",
+      "output": `group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-${tv("--ui-border-rule")})]`,
       "themes": [
       ],
       "note": "Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
     },
     "group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-2px)]": {
-      "output": "group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule))]",
+      "output": `group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-${tv("--ui-border-rule")})]`,
       "themes": [
       ],
       "note": "Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
@@ -659,7 +684,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   },
   "table": {
     "h-10": {
-      "output": "h-[var(--spacing-3xl)]",
+      "output": `h-[${tv("--spacing-3xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -668,28 +693,28 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   },
   "tabs": {
     "group-data-horizontal/tabs:after:bottom-[-5px]": {
-      "output": "group-data-horizontal/tabs:after:bottom-[calc(var(--spacing-xs)*-1)]",
+      "output": `group-data-horizontal/tabs:after:bottom-[calc(${tv("--spacing-xs")}*-1)]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle selected indicator offset -5 to -4px existing spacing."
     },
     "group-data-horizontal/tabs:after:h-0.5": {
-      "output": "group-data-horizontal/tabs:after:h-[var(--spacing-xs)]",
+      "output": `group-data-horizontal/tabs:after:h-[${tv("--spacing-xs")}]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "group-data-vertical/tabs:after:w-0.5": {
-      "output": "group-data-vertical/tabs:after:w-[var(--spacing-xs)]",
+      "output": `group-data-vertical/tabs:after:w-[${tv("--spacing-xs")}]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "h-[calc(100%-1px)]": {
-      "output": "h-[calc(100%-var(--ui-border-hairline))]",
+      "output": `h-[calc(100%-${tv("--ui-border-hairline")})]`,
       "themes": [
       ],
       "note": "Preserve relative height minus exact hairline."
@@ -702,7 +727,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Restyle3px tabs padding to existing4px xs spacing."
     },
     "py-0.5": {
-      "output": "py-[var(--spacing-xs)]",
+      "output": `py-[${tv("--spacing-xs")}]`,
       "themes": [
         "themes.spacing.default"
       ],
@@ -719,20 +744,20 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   },
   "toggle-button": {
     "min-w-7": {
-      "output": "min-w-[var(--spacing-2xl)]",
+      "output": `min-w-[${tv("--spacing-2xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 28.0px to 32px using the existing spacing scale; variants and branch ownership remain exact."
     },
     "min-w-9": {
-      "output": "min-w-[var(--spacing-2xl)]",
+      "output": `min-w-[${tv("--spacing-2xl")}]`,
       "themes": [
         "themes.spacing.default"
       ],
       "note": "Restyle 36.0px to 32px using the existing spacing scale; variants and branch ownership remain exact."
     },
-    "rounded-[min(var(--radius-md),12px)]": {
+    [`rounded-[min(${tv("--radius-md")},12px)]`]: {
       "output": "rounded-(--radius-control)",
       "themes": [
         "themes.radius.default"
@@ -747,7 +772,7 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
     }
   },
   "toggle-group": {
-    "data-[size=sm]:rounded-[min(var(--radius-md),10px)]": {
+    [`data-[size=sm]:rounded-[min(${tv("--radius-md")},10px)]`]: {
       "output": "data-[size=sm]:rounded-(--radius-control)",
       "themes": [
         "themes.radius.default"
@@ -776,13 +801,16 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Exact existing subtle radius 2px."
     },
     "translate-y-[calc(-50%-2px)]": {
-      "output": "translate-y-[calc(-50%-var(--ui-border-rule))]",
+      "output": `translate-y-[calc(-50%-${tv("--ui-border-rule")})]`,
       "themes": [
       ],
       "note": "Preserve tooltip arrow centering and exact2px edge offset using existing rule width; explicit edge-geometry read."
     }
   }
-};
+  };
+  selectedBindingsByReader.set(activeReader, table);
+  return table;
+}
 
 
 /** Colons inside arbitrary selectors and CSS functions are not Tailwind variants. */
@@ -809,12 +837,16 @@ function styleRules(css: string): Map<string, string> {
 
 /** Deterministic source transform. Issues are blockers, never a conformance pass. */
 export function rewriteShadcnAria(input: RewriteInput): RewriteResult {
-  const previous = styleDefaults;
+  const previous = styleDefaults, previousReader = activeReader, previousAligning = aligning;
   styleDefaults = input.styleDefaults === true;
+  activeReader = input.reader ?? packageDeclaredFallbackReader();
+  aligning = input.reader !== undefined;
   try {
     return rewriteSource(input);
   } finally {
     styleDefaults = previous;
+    activeReader = previousReader;
+    aligning = previousAligning;
   }
 }
 
@@ -854,13 +886,13 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     && rules.get("cn-card")?.split(/\s+/).includes("data-[size=sm]:[--card-spacing:--spacing(3)]");
   const cardFiles = new Set(input.files.filter(file => /["'][^"']*\bcn-card\b/.test(file.content)).map(file => file.path));
   const calendarGeometry = input.item === "calendar" && input.leaf === "calendar"
-    && rules.get("cn-calendar")?.split(/\s+/).includes("[--cell-radius:var(--radius-md)]")
+    && rules.get("cn-calendar")?.split(/\s+/).map(term => alignImportedReads(term, activeReader)).includes(`[--cell-radius:${tv("--radius-md")}]`)
     && rules.get("cn-calendar")?.split(/\s+/).includes("[--cell-size:--spacing(7)]");
   const consumerVariables = new Map(input.files.map(file => [file.path, new Set([
     ...(cardSpacing && cardFiles.has(file.path) ? ["--card-spacing"] : []),
     ...(calendarGeometry && /\bcn-calendar\b/.test(file.content) ? ["--cell-radius", "--cell-size"] : []),
     ...(input.leaf === "toggle-group" && file.content.split('"--gap"').length === 2
-      && file.content.includes('"--gap": `calc(var(--spacing) * ${spacing})`') ? ["--gap"] : []),
+      && UPSTREAM_TOGGLE_GAP.test(file.content) ? ["--gap"] : []),
   ])]));
   // Collect explicit timing after style expansion, before adding any defaults.
   // Base timing also applies to state variants; state-specific timing stays scoped.
@@ -970,15 +1002,15 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       if (slide) return bindV2("themes.spacing.default", `${slide[2] ? "-" : ""}translate-${slide[1]}-(--spacing-2xl)`);
       if (base.includes("--spacing(4)")) {
         tokens.add("themes.spacing.default");
-        let output = base.replaceAll("--spacing(4)", "var(--spacing-lg)");
-        if (output.includes("+2px")) { output = output.replaceAll("+2px", "+var(--ui-border-rule)"); }
+        let output = base.replaceAll("--spacing(4)", tv("--spacing-lg"));
+        if (output.includes("+2px")) { output = output.replaceAll("+2px", `+${tv("--ui-border-rule")}`); }
         return prefix + output;
       }
       if (/^transition(?:-(?:all|colors|opacity|shadow|transform|\[[a-z-]+(?:,[a-z-]+)*\]))?$/.test(base)) {
         return `${value} ${prefix}duration-(--ui-duration-default) ${prefix}ease-(--ease-default)`;
       }
     }
-    const selected = selectedBindings[input.leaf]?.[value];
+    const selected = selectedBindings()[input.leaf]?.[alignImportedReads(value, activeReader)];
     if (selected) {
       for (const member of selected.themes) tokens.add(member);
       notes.push({ file, value, message: `Restyled source: ${selected.note}` });
@@ -1119,7 +1151,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       if (assignment) {
         const member = assignment[1] === "4" ? "lg" : "md";
         tokens.add("themes.spacing.default");
-        return `${prefix}[--card-spacing:var(--spacing-${member})]`;
+        return `${prefix}[--card-spacing:${tv(`--spacing-${member}`)}]`;
       }
       if (/^(?:gap(?:-[xy])?|p[trblxy]?)-\(--card-spacing\)$/.test(base)) return value;
     }
@@ -1130,7 +1162,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       tokens.add("themes.spacing.default"); return `${prefix}min-w-(--spacing-5xl)`;
     }
     if (base === "max-w-[calc(100%-2rem)]" && allowedTokens.includes("themes.spacing")) {
-      tokens.add("themes.spacing.default"); return `${prefix}max-w-[calc(100%-var(--spacing-2xl))]`;
+      tokens.add("themes.spacing.default"); return `${prefix}max-w-[calc(100%-${tv("--spacing-2xl")})]`;
     }
     const decorativeRing = /^ring-([12])$/.exec(base);
     if (decorativeRing) {
@@ -1316,12 +1348,12 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       content = content.replace(/^const SIDEBAR_WIDTH(?:_MOBILE|_ICON)? = .*\n/gm, "")
         .replace(/^\s*"--sidebar-width(?:-icon)?": SIDEBAR_WIDTH(?:_MOBILE|_ICON)?,\n/gm, "")
         .replace(/  \/\/ Random width between 50 to 90%\.\n  const \[width\] = React\.useState\(\(\) => \{[\s\S]*?\n  \}\)\n/, "")
-        .replace('"--skeleton-width": width,', 'maxWidth: "var(--ui-width-notice-max)",');
+        .replace('"--skeleton-width": width,', 'maxWidth: "' + cv("--ui-width-notice-max") + '",');
     }
     if (consumerVariables.get(file.path)?.has("--gap")) {
-      content = content.replace('"--gap": `calc(var(--spacing) * ${spacing})`', '"--gap": `calc(var(--spacing-xs) * ${spacing})`');
+      content = content.replace(UPSTREAM_TOGGLE_GAP, '"--gap": `calc(' + cv("--spacing-xs") + ' * ${spacing})`');
       tokens.add("themes.spacing.default");
-      notes.push({ file: file.path, value: "style --gap = calc(var(--spacing) * spacing)", message: "Restyled source: bind the public spacing multiplier to the existing spacing.xs unit; preserve caller value and default" });
+      notes.push({ file: file.path, value: "style --gap = --spacing unit * spacing", message: "Restyled source: bind the public spacing multiplier to the existing spacing.xs unit; preserve caller value and default" });
     }
     if (input.item === "select" && input.leaf === "select" && !inPart) {
       content = content.replace('size?: "sm" | "default"', 'size?: "sm" | "default" | "lg"');
@@ -1424,8 +1456,14 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     for (const match of content.matchAll(/(?:from\s*|import\s*\()(["'])([^"']+)\1/g)) if (match[2]!.startsWith("@/") || FOREIGN_ICONS.test(match[2]!)) add("K9", file.path, match[2]!, "Unresolved source import");
     if (/<IconPlaceholder\b|<svg\b|[✓✔✕✖×✗▾▴▸◂▶◀▲▼←→↑↓]/u.test(content)) add("K7", file.path, "glyph", "Unbound icon artwork remains");
     const name = file.path.split("/").at(-1)!;
-    return { path: inPart ? file.path : `components/${input.leaf}/${name}`, content };
+    const path = inPart ? file.path : `components/${input.leaf}/${name}`;
+    // Every read the rewrite emits carries the active reader's declared value (D3: no bare read).
+    if (aligning) {
+      if (/\.(?:ts|tsx)$/.test(path)) content = alignImportedReads(content, activeReader);
+      assertNoBareReads({ path, content });
+    }
+    return { path, content };
   }).sort((a, b) => a.path.localeCompare(b.path));
   const unique = [...new Map(issues.map(issue => [JSON.stringify(issue), issue])).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
-  return { transform: input.transformVersion === 2 ? "shadcn-aria-rewrite@2" : "shadcn-aria-rewrite@1", ...(contextualInputs.size ? { contextualInputs: sorted(contextualInputs) } : {}), ...(notes.length ? { notes: [...new Map(notes.map(note => [JSON.stringify(note), note])).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) } : {}), files, outputSha256: files.map(file => ({ path: file.path, sha256: sha256(file.content) })), reads: { themes: sorted(tokens), assets: sorted(assets), components: sorted(components) }, parts: sorted(parts), issues: unique };
+  return { transform: input.transformVersion === 2 ? "shadcn-aria-rewrite@4" : "shadcn-aria-rewrite@3", ...(contextualInputs.size ? { contextualInputs: sorted(contextualInputs) } : {}), ...(notes.length ? { notes: [...new Map(notes.map(note => [JSON.stringify(note), note])).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) } : {}), files, outputSha256: files.map(file => ({ path: file.path, sha256: sha256(file.content) })), reads: { themes: sorted(tokens), assets: sorted(assets), components: sorted(components) }, parts: sorted(parts), issues: unique };
 }
