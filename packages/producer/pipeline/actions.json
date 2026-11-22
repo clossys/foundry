@@ -2909,7 +2909,8 @@
           "workspace",
           "slot-pins",
           "cli-verbs",
-          "no-consumer-content"
+          "no-consumer-content",
+          "engine-side-door"
         ],
         "uses": []
       }
@@ -3023,7 +3024,9 @@
         "checks": [
           "pipeline",
           "step-standard",
-          "pipeline-wiring"
+          "pipeline-wiring",
+          "engine-doc",
+          "review-doc"
         ],
         "uses": []
       }
@@ -3168,7 +3171,8 @@
           "copy-rendered",
           "rendered-provenance",
           "no-hidden-fallbacks",
-          "studio"
+          "studio",
+          "e2e"
         ],
         "uses": []
       }

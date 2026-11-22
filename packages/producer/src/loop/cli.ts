@@ -158,7 +158,7 @@ export function cliHooks(root: string, answer?: StepAnswer, run: (argv: readonly
   };
   async function runCode(call: CodeCall): Promise<CodeOutcome> {
     if (call.cli === "clossys ia sync") {
-      const result = await runIaSyncCli(["sync", "--root", root], root);
+      const result = await runIaSyncCli(["--root", root], root);
       return { exit: result.exitCode, detail: result.message };
     }
     if (call.cli === "clossys check --strict") {

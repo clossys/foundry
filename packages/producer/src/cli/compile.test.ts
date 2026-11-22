@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runCli } from "./main.js";
 import { COMPILE_USAGE } from "./compile.js";
+import { loadSchema, validateValue } from "../pipeline/schema.js";
 
 /**
  * A consumer store shaped like the recut product snapshot: its Publisher IA places one page (`page.home` under
@@ -61,6 +62,17 @@ describe("clossys compile", () => {
     expect(lock.inputs).toEqual([{ path: "clossys/agents/publisher/ia.json", sha256: createHash("sha256").update(ia).digest("hex") }]);
     expect(lock.outputs.map((row: { path: string }) => row.path)).toEqual(["publications.json"]);
     expect(lock.pinSetHash).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it("writes a lock the compile-lock port schema accepts, and that schema requires the pinSetHash R12.1 reads", async () => {
+    const root = snapshotStore();
+    await runCli(["compile", "--root", root]);
+    const lock = readJson(join(root, "clossys", ".state", "generated", "compile.lock.json"));
+    const schema = loadSchema("compile-lock");
+    expect(validateValue(lock, schema)).toEqual([]);
+    const { pinSetHash: _dropped, ...unhashed } = lock;
+    expect(validateValue(unhashed, schema).map(issue => issue.message).join("; ")).toMatch(/pinSetHash/);
+    expect(validateValue({ ...lock, pinSetHash: "not-a-hash" }, schema)).not.toEqual([]);
   });
 
   it("records a placed publication with no pin as unresolved, not a finding, and exits 0", async () => {

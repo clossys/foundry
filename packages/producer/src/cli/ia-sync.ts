@@ -103,8 +103,8 @@ function raiseClarify(root: string, clarify: readonly SyncClarify[], at: Iso): s
   return written;
 }
 
-export async function runIaSyncCli(argv: readonly string[], cwd: string): Promise<CliResult> {
-  const args = argv[0] === "sync" ? argv.slice(1) : argv;
+/** The loop's ia-sync code step: `args` are its flags only; the `ia sync` words are the CLI's (owner.ts runIaSync). */
+export async function runIaSyncCli(args: readonly string[], cwd: string): Promise<CliResult> {
   let check = false, rootArg: string | undefined, at: Iso | undefined;
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]!;

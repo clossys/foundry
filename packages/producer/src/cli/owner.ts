@@ -1002,7 +1002,9 @@ export const DEFAULT_CONFIG = "export default {};\n";
 export async function runConfigCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   const flags = parseConfig(argv);
   if (flags.help) return { exitCode: 0, message: CONFIG_USAGE };
-  if (flags.positional.length || !flags.bare.has("--init")) throw new CliUsageError(`config takes --init\n${CONFIG_USAGE}`);
+  // config has one mode, --init (the one bare flag parseConfig takes); without it the verb runs nothing.
+  const init = [...flags.bare].some(flag => flag === "--init");
+  if (flags.positional.length || !init) throw new CliUsageError(`config takes --init\n${CONFIG_USAGE}`);
   // The workspace may not exist yet: --root (or cwd) is the workspace root itself, never discovered.
   const root = resolve(cwd, one(flags, "--root") ?? ".");
   const rel = "clossys/clossys.config.ts";

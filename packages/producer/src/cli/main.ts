@@ -34,11 +34,12 @@ export interface CliResult {
 }
 
 /**
- * The commands that run on a workspace whose engine state is still in the legacy root folder: the help, the engine
- * check (it reads only and names the layout finding) and `clossys migrate state`, the one verb that moves the folder.
+ * The commands that run on a workspace whose engine state is still in the legacy root folder: the help (bare
+ * `clossys`, or any `--help`/`-h`; there is no `help` verb), the engine check (it reads only and names the layout
+ * finding) and `clossys migrate state`, the one verb that moves the folder.
  */
 const runsOnLegacyState = (argv: readonly string[]): boolean =>
-  argv.length === 0 || argv[0] === "help" || argv.includes("--help") || argv.includes("-h")
+  argv.length === 0 || argv.includes("--help") || argv.includes("-h")
   || (argv[0] === "migrate" && argv[1] === "state")
   || (argv[0] === "check" && argv.includes("--engine"));
 

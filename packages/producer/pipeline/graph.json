@@ -1046,10 +1046,6 @@
         {
           "glob": "consumer:agents/director/*/pin.json",
           "schema": "pin"
-        },
-        {
-          "glob": "consumer:agents/director/*/candidates/*",
-          "schema": "candidate-brief"
         }
       ],
       "outputs": [],
@@ -1108,10 +1104,6 @@
         {
           "glob": "consumer:agents/director/*/pin.json",
           "schema": "pin"
-        },
-        {
-          "glob": "consumer:agents/director/*/candidates/*",
-          "schema": "candidate-brief"
         }
       ],
       "outputs": [],
@@ -1172,10 +1164,6 @@
           "schema": "pin"
         },
         {
-          "glob": "consumer:agents/director/*/candidates/*",
-          "schema": "candidate-brief"
-        },
-        {
           "glob": "consumer:agents/designer/*/slot.json",
           "schema": "slot"
         }
@@ -1224,7 +1212,6 @@
       "packet": {
         "inputs": [
           "consumer:agents/director/*/pin.json",
-          "consumer:agents/director/*/candidates/*",
           "consumer:agents/designer/*/slot.json"
         ],
         "write": [
@@ -1272,12 +1259,8 @@
           "schema": "pin"
         },
         {
-          "glob": "consumer:agents/director/*/candidates/*",
-          "schema": "candidate-brief"
-        },
-        {
-          "glob": "consumer:agents/designer/*/candidates/*",
-          "schema": "candidate-element"
+          "glob": "consumer:agents/designer/*/pin.json",
+          "schema": "pin"
         },
         {
           "glob": "consumer:agents/writer/*/slot.json",
@@ -1325,8 +1308,7 @@
       "packet": {
         "inputs": [
           "consumer:agents/director/*/pin.json",
-          "consumer:agents/director/*/candidates/*",
-          "consumer:agents/designer/*/candidates/*",
+          "consumer:agents/designer/*/pin.json",
           "consumer:agents/writer/*/slot.json"
         ],
         "write": [
@@ -1823,16 +1805,8 @@
           "schema": "pin"
         },
         {
-          "glob": "consumer:agents/designer/*/candidates/*",
-          "schema": "candidate-element"
-        },
-        {
           "glob": "consumer:agents/writer/*/pin.json",
           "schema": "pin"
-        },
-        {
-          "glob": "consumer:agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
         },
         {
           "glob": "consumer:agents/publisher/*/slot.json",
@@ -1880,9 +1854,7 @@
       "packet": {
         "inputs": [
           "consumer:agents/designer/*/pin.json",
-          "consumer:agents/designer/*/candidates/*",
           "consumer:agents/writer/*/pin.json",
-          "consumer:agents/writer/*/candidates/*",
           "consumer:agents/publisher/*/slot.json"
         ],
         "write": [
@@ -2330,7 +2302,7 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "publish.assemble",
-      "summary": "Compile the Studio from decision files only into the compile lock.",
+      "summary": "Compile the consumer's own publications (the Studio only when the consumer places it) from decision files only into the compile lock.",
       "inputs": [
         {
           "glob": "consumer:agents/*/*/pin.json",
@@ -3237,6 +3209,10 @@
       "agent": "producer",
       "package": "producer",
       "run": "clossys pipeline trace studio.map -- npm run generate:studio-map",
+      "chain": {
+        "skip": "Foundry's own Studio build: it writes Studio source and the Writer's Studio copy, which ship in no package; it runs only from a Foundry checkout",
+        "onDemand": "--studio"
+      },
       "pass": {
         "command": "clossys pipeline trace check:studio-map -- npm run check:studio-map",
         "exit": {
@@ -3299,6 +3275,10 @@
       "agent": "producer",
       "package": "producer",
       "run": "clossys pipeline trace specimen.evidence -- npm run generate:specimen-evidence",
+      "chain": {
+        "skip": "Foundry's own Studio build: it runs a Designer repository script that ships in no package; it runs only from a Foundry checkout",
+        "onDemand": "--studio"
+      },
       "pass": {
         "command": "clossys pipeline trace check:specimen-evidence -- npm run check:specimen-evidence",
         "exit": {
@@ -3356,6 +3336,10 @@
       "agent": "producer",
       "package": "producer",
       "run": "clossys pipeline trace studio.compose -- npm run studio:compose",
+      "chain": {
+        "skip": "Foundry's own Studio build: it composes the Studio, which ships in no package; it runs only from a Foundry checkout",
+        "onDemand": "--studio"
+      },
       "pass": {
         "command": "clossys pipeline trace check:studio-compose -- npm run studio:compose",
         "exit": {
@@ -3700,7 +3684,8 @@
         "workspace",
         "slot-pins",
         "cli-verbs",
-        "no-consumer-content"
+        "no-consumer-content",
+        "engine-side-door"
       ],
       "agent": "producer",
       "package": "producer",
@@ -3847,7 +3832,9 @@
       "checks": [
         "pipeline",
         "step-standard",
-        "pipeline-wiring"
+        "pipeline-wiring",
+        "engine-doc",
+        "review-doc"
       ],
       "agent": "producer",
       "package": "producer",
@@ -3938,6 +3925,10 @@
       "agent": "producer",
       "package": "producer",
       "run": "clossys pipeline trace build.receipt -- node scripts/generate-page-check-receipt.mjs",
+      "chain": {
+        "skip": "Foundry's own build receipt: it reads the Foundry repository's git state and ships in no package; it runs only from a Foundry checkout",
+        "onDemand": "--studio"
+      },
       "pass": {
         "command": "clossys check",
         "exit": {
@@ -4012,11 +4003,16 @@
         "copy-rendered",
         "rendered-provenance",
         "no-hidden-fallbacks",
-        "studio"
+        "studio",
+        "e2e"
       ],
       "agent": "producer",
       "package": "producer",
       "run": "clossys pipeline trace studio.checks -- npm run studio:check",
+      "chain": {
+        "skip": "Foundry's own Studio checks: they drive the Studio, which ships in no package; they run only from a Foundry checkout",
+        "onDemand": "--studio"
+      },
       "pass": {
         "command": "clossys pipeline trace check:studio-p0 -- npm run studio:check",
         "exit": {
@@ -4107,6 +4103,66 @@
         "rank": 15,
         "x": 8800,
         "y": 1840
+      }
+    },
+    {
+      "id": "publisher.check",
+      "kind": "plumb",
+      "actor": "code",
+      "stage": "publish.check",
+      "summary": "Publisher page checks (catalog, instance key, inline copy) over every consumer page candidate; any finding exits 1.",
+      "inputs": [
+        {
+          "glob": "consumer:agents/publisher/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "glob": "consumer:agents/publisher/*/candidates/*",
+          "schema": "candidate-publisher"
+        }
+      ],
+      "outputs": [],
+      "command": {
+        "cli": {
+          "verb": "publisher",
+          "parser": "src/actions/publisher.ts"
+        },
+        "entry": "src/actions/publisher.ts#runPublisherCli"
+      },
+      "checks": [
+        "workspace"
+      ],
+      "agent": "producer",
+      "package": "producer",
+      "run": "clossys publisher check",
+      "pass": {
+        "command": "clossys check",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "fail": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
+      },
+      "record": "clossys.pipeline-run/1",
+      "uses": [],
+      "holder": {
+        "id": "checks",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
+      "layout": {
+        "lane": "checks",
+        "stage": "publish.check",
+        "rank": 11,
+        "x": 7960,
+        "y": 2012
       }
     },
     {
@@ -4268,6 +4324,72 @@
         "rank": 15,
         "x": 9680,
         "y": 1128
+      }
+    },
+    {
+      "id": "publisher.release",
+      "kind": "plumb",
+      "actor": "code",
+      "stage": "publish.publish",
+      "summary": "Release gate: a publication's pinned pages must pass publisher.check, else the release is refused; a clean check runs clossys release.",
+      "inputs": [
+        {
+          "glob": "consumer:agents/publisher/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "glob": "consumer:agents/publisher/*/candidates/*",
+          "schema": "candidate-publisher"
+        }
+      ],
+      "outputs": [],
+      "command": {
+        "cli": {
+          "verb": "publisher",
+          "flags": [
+            "--gates"
+          ],
+          "parser": "src/actions/publisher.ts"
+        },
+        "entry": "src/actions/publisher.ts#runPublisherCli"
+      },
+      "checks": [
+        "workspace"
+      ],
+      "agent": "producer",
+      "package": "producer",
+      "run": "clossys publisher release <publication> --gates",
+      "chain": {
+        "skip": "publisher.release runs one caller-named publication; loop.release and the owner name it"
+      },
+      "pass": {
+        "command": "clossys check",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "fail": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
+      },
+      "record": "clossys.pipeline-run/1",
+      "uses": [],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
+      "layout": {
+        "lane": "publisher",
+        "stage": "publish.publish",
+        "rank": 11,
+        "x": 9400,
+        "y": 1300
       }
     }
   ],
@@ -4888,50 +5010,6 @@
     },
     {
       "from": "director.candidates",
-      "to": "designer.brief",
-      "via": [
-        {
-          "output": "consumer:agents/director/*/candidates/*",
-          "input": "consumer:agents/director/*/candidates/*",
-          "schema": "candidate-brief"
-        }
-      ]
-    },
-    {
-      "from": "director.candidates",
-      "to": "writer.brief",
-      "via": [
-        {
-          "output": "consumer:agents/director/*/candidates/*",
-          "input": "consumer:agents/director/*/candidates/*",
-          "schema": "candidate-brief"
-        }
-      ]
-    },
-    {
-      "from": "director.candidates",
-      "to": "designer.candidates",
-      "via": [
-        {
-          "output": "consumer:agents/director/*/candidates/*",
-          "input": "consumer:agents/director/*/candidates/*",
-          "schema": "candidate-brief"
-        }
-      ]
-    },
-    {
-      "from": "director.candidates",
-      "to": "writer.candidates",
-      "via": [
-        {
-          "output": "consumer:agents/director/*/candidates/*",
-          "input": "consumer:agents/director/*/candidates/*",
-          "schema": "candidate-brief"
-        }
-      ]
-    },
-    {
-      "from": "director.candidates",
       "to": "constitution",
       "via": [
         {
@@ -5700,17 +5778,6 @@
     },
     {
       "from": "designer.candidates",
-      "to": "writer.candidates",
-      "via": [
-        {
-          "output": "consumer:agents/designer/*/candidates/*",
-          "input": "consumer:agents/designer/*/candidates/*",
-          "schema": "candidate-element"
-        }
-      ]
-    },
-    {
-      "from": "designer.candidates",
       "to": "pick.designer",
       "via": [
         {
@@ -5723,17 +5790,6 @@
     {
       "from": "designer.candidates",
       "to": "pin.designer",
-      "via": [
-        {
-          "output": "consumer:agents/designer/*/candidates/*",
-          "input": "consumer:agents/designer/*/candidates/*",
-          "schema": "candidate-element"
-        }
-      ]
-    },
-    {
-      "from": "designer.candidates",
-      "to": "publisher.candidates",
       "via": [
         {
           "output": "consumer:agents/designer/*/candidates/*",
@@ -5953,17 +6009,6 @@
     },
     {
       "from": "writer.candidates",
-      "to": "publisher.candidates",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/candidates/*",
-          "input": "consumer:agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
-        }
-      ]
-    },
-    {
-      "from": "writer.candidates",
       "to": "constitution",
       "via": [
         {
@@ -6123,6 +6168,17 @@
         {
           "output": "consumer:agents/designer/*/pin.json#basis",
           "input": "consumer:agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.designer",
+      "to": "writer.candidates",
+      "via": [
+        {
+          "output": "consumer:agents/designer/*/pin.json#basis",
+          "input": "consumer:agents/designer/*/pin.json",
           "schema": "pin"
         }
       ]
@@ -6855,6 +6911,17 @@
           "output": "consumer:agents/designer/*/slot.json#notNeeded",
           "input": "consumer:agents/designer/*/slot.json",
           "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.designer",
+      "to": "writer.candidates",
+      "via": [
+        {
+          "output": "consumer:agents/designer/*/pin.json",
+          "input": "consumer:agents/designer/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -7643,6 +7710,17 @@
     },
     {
       "from": "publisher.candidates",
+      "to": "publisher.check",
+      "via": [
+        {
+          "output": "consumer:agents/publisher/*/candidates/*",
+          "input": "consumer:agents/publisher/*/candidates/*",
+          "schema": "candidate-publisher"
+        }
+      ]
+    },
+    {
+      "from": "publisher.candidates",
       "to": "publish.install",
       "via": [
         {
@@ -7655,6 +7733,17 @@
     {
       "from": "publisher.candidates",
       "to": "studio.produce",
+      "via": [
+        {
+          "output": "consumer:agents/publisher/*/candidates/*",
+          "input": "consumer:agents/publisher/*/candidates/*",
+          "schema": "candidate-publisher"
+        }
+      ]
+    },
+    {
+      "from": "publisher.candidates",
+      "to": "publisher.release",
       "via": [
         {
           "output": "consumer:agents/publisher/*/candidates/*",
@@ -7830,6 +7919,17 @@
     },
     {
       "from": "pick.publisher",
+      "to": "publisher.check",
+      "via": [
+        {
+          "output": "consumer:agents/publisher/*/pin.json#basis",
+          "input": "consumer:agents/publisher/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.publisher",
       "to": "publish.install",
       "via": [
         {
@@ -7846,6 +7946,17 @@
         {
           "output": "consumer:agents/publisher/*/pin.json#basis",
           "input": "consumer:agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.publisher",
+      "to": "publisher.release",
+      "via": [
+        {
+          "output": "consumer:agents/publisher/*/pin.json#basis",
+          "input": "consumer:agents/publisher/*/pin.json",
           "schema": "pin"
         }
       ]
@@ -8104,6 +8215,17 @@
     },
     {
       "from": "pin.publisher",
+      "to": "publisher.check",
+      "via": [
+        {
+          "output": "consumer:agents/publisher/*/pin.json",
+          "input": "consumer:agents/publisher/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pin.publisher",
       "to": "publish.install",
       "via": [
         {
@@ -8126,6 +8248,17 @@
           "output": "consumer:agents/publisher/*/slot.json#notNeeded",
           "input": "consumer:agents/*/*/slot.json",
           "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.publisher",
+      "to": "publisher.release",
+      "via": [
+        {
+          "output": "consumer:agents/publisher/*/pin.json",
+          "input": "consumer:agents/publisher/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -8662,6 +8795,11 @@
           "output": "consumer:agents/*/*/pin.json#candidate",
           "input": "consumer:agents/director/*/pin.json",
           "schema": "pin"
+        },
+        {
+          "output": "consumer:agents/*/*/pin.json#candidate",
+          "input": "consumer:agents/designer/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -8965,6 +9103,17 @@
     },
     {
       "from": "reissue",
+      "to": "publisher.check",
+      "via": [
+        {
+          "output": "consumer:agents/*/*/pin.json#candidate",
+          "input": "consumer:agents/publisher/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
       "to": "publish.install",
       "via": [
         {
@@ -8981,6 +9130,17 @@
         {
           "output": "consumer:agents/*/*/pin.json#candidate",
           "input": "consumer:agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "publisher.release",
+      "via": [
+        {
+          "output": "consumer:agents/*/*/pin.json#candidate",
+          "input": "consumer:agents/publisher/*/pin.json",
           "schema": "pin"
         }
       ]
@@ -9369,8 +9529,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 21538,
-      "after": 19949
+      "before": 22630,
+      "after": 21009
     },
     "lanes": [
       {
@@ -9735,10 +9895,6 @@
       {
         "from": "writer.candidates",
         "to": "options"
-      },
-      {
-        "from": "writer.candidates",
-        "to": "publisher.candidates"
       }
     ]
   },
@@ -10155,7 +10311,7 @@
         "ai",
         "code"
       ],
-      "steps": 19,
+      "steps": 20,
       "sources": [
         "derived"
       ],
@@ -10166,7 +10322,7 @@
       "kinds": [
         "code"
       ],
-      "steps": 10,
+      "steps": 11,
       "sources": [
         "derived"
       ],
@@ -10194,6 +10350,10 @@
         },
         {
           "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--init",
           "value": null
         },
         {
@@ -10253,6 +10413,10 @@
           "value": null
         },
         {
+          "flag": "--init",
+          "value": null
+        },
+        {
           "flag": "--json",
           "value": null
         },
@@ -10292,6 +10456,10 @@
         },
         {
           "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--init",
           "value": null
         },
         {
@@ -10337,6 +10505,10 @@
           "value": null
         },
         {
+          "flag": "--init",
+          "value": null
+        },
+        {
           "flag": "--json",
           "value": null
         },
@@ -10376,6 +10548,10 @@
         },
         {
           "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--init",
           "value": null
         },
         {
@@ -10421,6 +10597,10 @@
           "value": null
         },
         {
+          "flag": "--init",
+          "value": null
+        },
+        {
           "flag": "--json",
           "value": null
         },
@@ -10460,6 +10640,10 @@
         },
         {
           "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--init",
           "value": null
         },
         {
@@ -10913,6 +11097,10 @@
           "value": null
         },
         {
+          "flag": "--init",
+          "value": null
+        },
+        {
           "flag": "--json",
           "value": null
         },
@@ -11181,6 +11369,18 @@
           "value": false
         },
         {
+          "flag": "--e2e",
+          "value": false
+        },
+        {
+          "flag": "--engine",
+          "value": false
+        },
+        {
+          "flag": "--from",
+          "value": true
+        },
+        {
           "flag": "--green",
           "value": true
         },
@@ -11190,6 +11390,10 @@
         },
         {
           "flag": "--json",
+          "value": false
+        },
+        {
+          "flag": "--keep",
           "value": false
         },
         {
@@ -11215,6 +11419,14 @@
         {
           "flag": "--rule",
           "value": true
+        },
+        {
+          "flag": "--scenario",
+          "value": true
+        },
+        {
+          "flag": "--side-door",
+          "value": false
         },
         {
           "flag": "--slot",
@@ -11393,6 +11605,10 @@
           "value": null
         },
         {
+          "flag": "--compare",
+          "value": null
+        },
+        {
           "flag": "--draft",
           "value": null
         },
@@ -11450,6 +11666,10 @@
       "migrate": [
         {
           "flag": "--apply",
+          "value": null
+        },
+        {
+          "flag": "--at",
           "value": null
         },
         {
@@ -11641,8 +11861,20 @@
           "value": false
         },
         {
+          "flag": "--e2e",
+          "value": false
+        },
+        {
           "flag": "--enforced",
           "value": false
+        },
+        {
+          "flag": "--engine",
+          "value": false
+        },
+        {
+          "flag": "--from",
+          "value": true
         },
         {
           "flag": "--green",
@@ -11654,6 +11886,10 @@
         },
         {
           "flag": "--json",
+          "value": false
+        },
+        {
+          "flag": "--keep",
           "value": false
         },
         {
@@ -11679,6 +11915,14 @@
         {
           "flag": "--rule",
           "value": true
+        },
+        {
+          "flag": "--scenario",
+          "value": true
+        },
+        {
+          "flag": "--side-door",
+          "value": false
         },
         {
           "flag": "--slot",
@@ -11750,6 +11994,32 @@
         },
         {
           "flag": "--out",
+          "value": null
+        },
+        {
+          "flag": "--root",
+          "value": null
+        }
+      ],
+      "publisher.check": [
+        {
+          "flag": "--build",
+          "value": null
+        },
+        {
+          "flag": "--gates",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--manifest",
+          "value": null
+        },
+        {
+          "flag": "--ready",
           "value": null
         },
         {
@@ -11859,6 +12129,32 @@
         {
           "flag": "--root",
           "value": true
+        }
+      ],
+      "publisher.release": [
+        {
+          "flag": "--build",
+          "value": null
+        },
+        {
+          "flag": "--gates",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--manifest",
+          "value": null
+        },
+        {
+          "flag": "--ready",
+          "value": null
+        },
+        {
+          "flag": "--root",
+          "value": null
         }
       ]
     },

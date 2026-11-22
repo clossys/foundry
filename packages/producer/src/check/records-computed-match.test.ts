@@ -22,7 +22,7 @@ function world() {
 }
 async function syncedWorld() {
   const ws = world();
-  const first = await runIaSyncCli(["sync", "--at", AT], ws.root);
+  const first = await runIaSyncCli(["--at", AT], ws.root);
   return { ws, first };
 }
 const maxHeading = (by: Tighten, value: number): Tighten => ({ ...by, path: HEADING, op: "max", value });
@@ -94,7 +94,7 @@ describe("clossys ia sync", () => {
   it("adds a slot the consumer lacks", async () => {
     const ws = world();
     rmSync(ws.file("designer", "themes.primary"));
-    const result = await runIaSyncCli(["sync", "--at", AT], ws.root);
+    const result = await runIaSyncCli(["--at", AT], ws.root);
     expect(result.message).toContain("added designer/themes.primary");
     expect(ws.read("designer", "themes.primary")).toMatchObject({ status: "starter", createdAt: AT });
   });
@@ -102,11 +102,11 @@ describe("clossys ia sync", () => {
   it("writes no byte on a second run, and --check reports nothing pending", async () => {
     const { ws } = await syncedWorld();
     const before = slot2Ids(ws.root).map(([agent, id]) => ws.text(agent, id));
-    const again = await runIaSyncCli(["sync", "--at", LATER], ws.root);
+    const again = await runIaSyncCli(["--at", LATER], ws.root);
     expect(again.exitCode).toBe(0);
     expect(again.message).toMatch(/^ia sync: 0 slot\(s\) written/);
     expect(slot2Ids(ws.root).map(([agent, id]) => ws.text(agent, id))).toEqual(before);
-    expect((await runIaSyncCli(["sync", "--check"], ws.root)).exitCode).toBe(0);
+    expect((await runIaSyncCli(["--check"], ws.root)).exitCode).toBe(0);
   });
 
   it("applies a package regroup and a new base version, keeping the consumer tighten list and status", async () => {
@@ -114,8 +114,8 @@ describe("clossys ia sync", () => {
     const slot = ws.read("writer", HERO);
     const elsewhere = ws.read("writer", LEXICON).ia;
     ws.writeBase({ ...packageBaseOf(slot), ia: elsewhere }, "1.1.0");
-    expect((await runIaSyncCli(["sync", "--check"], ws.root)).exitCode).toBe(1);
-    const moved = await runIaSyncCli(["sync", "--at", LATER], ws.root);
+    expect((await runIaSyncCli(["--check"], ws.root)).exitCode).toBe(1);
+    const moved = await runIaSyncCli(["--at", LATER], ws.root);
     expect(moved.exitCode).toBe(0);
     expect(moved.message).toContain(`moved writer/${HERO}`);
     const next = ws.read("writer", HERO);
@@ -127,7 +127,7 @@ describe("clossys ia sync", () => {
   it("adopts a consumer-added slot the package now ships", async () => {
     const { ws } = await syncedWorld();
     ws.write("writer", LEXICON, { ...ws.read("writer", LEXICON), base: null });
-    const result = await runIaSyncCli(["sync", "--at", LATER], ws.root);
+    const result = await runIaSyncCli(["--at", LATER], ws.root);
     expect(result.message).toContain(`adopted writer/${LEXICON}`);
     expect(ws.read("writer", LEXICON).base).not.toBeNull();
   });
@@ -138,13 +138,13 @@ describe("clossys ia sync", () => {
     const kept = maxHeading(slot.tighten[0]!, 48);
     ws.write("writer", HERO, { ...slot, tighten: [...slot.tighten, kept] });
     ws.writeBase(withHeading(packageBaseOf(slot), 24), "1.1.0");
-    const result = await runIaSyncCli(["sync", "--at", LATER], ws.root);
+    const result = await runIaSyncCli(["--at", LATER], ws.root);
     expect(result.message).toMatch(/1 looser tighten entr\(ies\), queue.clarify 20261118T1140Z-writer-sections-hero-copy-tighten/);
     expect(ws.read("writer", HERO).tighten).toEqual([...slot.tighten, kept]);
     const dir = join(ws.root, "clossys/agents/producer/queue.clarify/entries");
     const [file] = readdirSync(dir);
     expect(JSON.parse(readFileSync(join(dir, file!), "utf8"))).toMatchObject({ schema: "clossys.queue-entry/1", queue: "queue.clarify", decider: "owner", subject: { to: `writer/${HERO}` } });
-    await runIaSyncCli(["sync", "--at", LATER], ws.root);
+    await runIaSyncCli(["--at", LATER], ws.root);
     expect(readdirSync(dir)).toHaveLength(1);
   });
 
@@ -152,7 +152,7 @@ describe("clossys ia sync", () => {
     const { ws } = await syncedWorld();
     cpSync(SLOT_V1, ws.file("writer", LEXICON));
     const old = ws.text("writer", LEXICON);
-    const result = await runIaSyncCli(["sync", "--at", LATER], ws.root);
+    const result = await runIaSyncCli(["--at", LATER], ws.root);
     expect(result.exitCode).toBe(1);
     expect(result.message).toMatch(/run clossys migrate slot-1-to-2 first/);
     expect(ws.text("writer", LEXICON)).toBe(old);
@@ -160,8 +160,8 @@ describe("clossys ia sync", () => {
 
   it("refuses unknown arguments and a bad --at", async () => {
     const { ws } = await syncedWorld();
-    expect((await runIaSyncCli(["sync", "--wat"], ws.root)).exitCode).toBe(2);
-    expect((await runIaSyncCli(["sync", "--at", "tomorrow"], ws.root)).exitCode).toBe(2);
+    expect((await runIaSyncCli(["--wat"], ws.root)).exitCode).toBe(2);
+    expect((await runIaSyncCli(["--at", "tomorrow"], ws.root)).exitCode).toBe(2);
     expect(serializeSlot(ws.read("writer", HERO))).toBe(ws.text("writer", HERO));
   });
 });

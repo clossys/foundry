@@ -883,9 +883,10 @@ async function runAnswer(consumer: string, id: string, input: AnswerInput): Prom
         throw new StepFailure("route", [`no fix on ${answered.request.target} would route, so the pin is not applied: ${error instanceof Error ? error.message : String(error)}`]);
       }
       withRequestLock(consumer, id, () => stillAnswered(readRequest(consumer, id), "pinned"));
-      const { runPinCli } = await import("../cli/pin.js");
-      let pinned: Awaited<ReturnType<typeof runPinCli>>;
-      try { pinned = await runPinCli([step.args[0]!, step.args[1]!, ...step.args.slice(2), "--by", self, "--at", input.at, "--root", dirname(consumer)], dirname(consumer)); } catch (error) {
+      // The pin runs as its step, through the pipeline runner (its step events and record), never by its entry.
+      const { runStep } = await import("../pipeline/runner.js");
+      let pinned: Awaited<ReturnType<typeof runStep>>;
+      try { pinned = await runStep(["pin", step.args[0]!, step.args[1]!, ...step.args.slice(2), "--by", self, "--at", input.at, "--root", dirname(consumer)], dirname(consumer)); } catch (error) {
         throw new StepFailure("pin", [error instanceof Error ? error.message : String(error)]);
       }
       if (pinned.exitCode !== 0) {

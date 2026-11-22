@@ -65,7 +65,8 @@
     "workspace",
     "slot-pins",
     "cli-verbs",
-    "no-consumer-content"
+    "no-consumer-content",
+    "engine-side-door"
   ],
   "uses": []
 }

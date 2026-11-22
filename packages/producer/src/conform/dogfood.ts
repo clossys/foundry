@@ -90,7 +90,8 @@ export function isContractRefusal(message: string, target: string, paths: readon
 export async function probeIaContract(consumer: string, agents: readonly AgentModel[], contract: Readonly<Record<string, unknown>> = INVALID_CONTRACT): Promise<Record<string, IaContractResult[] | string>> {
   // Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
   await import("../cli/main.js");
-  const { runIaCli } = await import("../cli/owner.js");
+  // The probe runs `ia` as its step, through the pipeline runner (its step events and record), never by its entry.
+  const { runStep } = await import("../pipeline/runner.js");
   const temp = realpathSync(mkdtempSync(join(tmpdir(), "conform-contract-")));
   const out: Record<string, IaContractResult[] | string> = {};
   try {
@@ -108,7 +109,7 @@ export async function probeIaContract(consumer: string, agents: readonly AgentMo
         const target = `${agent.agent}/${PROBE_SLOT}-${family}`;
         // Under the added group when the agent has a placed L1 (ia places under an existing group), else a new conform/probe group.
         const under = l1 ? `${l1.id}/${CONTRACT_PROBE_L2}` : "conform/probe";
-        const result = await runIaCli([target, "--under", under, "--kind", family, "--contract", file, "--dry"], temp);
+        const result = await runStep(["ia", target, "--under", under, "--kind", family, "--contract", file, "--dry"], temp);
         const message = (result.message ?? "").split("\n")[0]!;
         // An "already placed" refusal is the probe hitting a live slot, never a contract verdict: a failure, whatever else it says.
         const placed = /\balready placed\b/.test(message);
@@ -157,10 +158,8 @@ function uncertifiedBytes(slot: { readonly id: string; readonly kind?: string },
  */
 export async function probePinGate(consumer: string, agents: readonly AgentModel[]): Promise<Record<string, PinGateResult | string>> {
   await import("../cli/main.js");
-  const { runPinCli } = await import("../cli/pin.js");
-  const { runPickCli } = await import("../cli/options.js");
-  const { runVerdictCli } = await import("../cli/verdict.js");
-  const { runApproveCli } = await import("../cli/owner.js");
+  // Each probed verb runs as its step, through the pipeline runner (its step events and record), never by its entry.
+  const { runStep } = await import("../pipeline/runner.js");
   const { readStandard } = await import("../records/standards.js");
   const { writeCandidate } = await import("../records/slot-write.js");
   const { isRecordSlot } = await import("../records/resolve.js");
@@ -201,14 +200,14 @@ export async function probePinGate(consumer: string, agents: readonly AgentModel
       const verbs: VerbProbe[] = [];
       for (const [kind, candidate] of [["hand-placed", placed], ["submitted-uncertified", submitted]] as const) {
         const runs: [VerbProbe["verb"], () => Promise<{ exitCode: number; message?: string }>][] = [
-          ["pin", () => runPinCli([target, candidate, "--by", "planner", "--root", temp], temp)],
-          ["pick", () => runPickCli([slotTarget, candidate, "--by", `agent:${agent.agent}`, "--at", AT, "--root", temp], temp)],
+          ["pin", () => runStep(["pin", target, candidate, "--by", "planner", "--root", temp], temp)],
+          ["pick", () => runStep(["pick", slotTarget, candidate, "--by", `agent:${agent.agent}`, "--at", AT, "--root", temp], temp)],
           ["verdict", async () => {
             const file = join(temp, `verdict-${agent.agent}.json`);
             writeFileSync(file, JSON.stringify({ schema: "clossys.verdict/1", slot: pick.slot.id, pick: candidate, reason: "conform probe", criteria: [criterion ?? "conform-probe"] }));
-            return runVerdictCli([slotTarget, "--record", file, "--model", "conform-probe", "--tier", "high", "--by", `agent:${agent.agent}`, "--at", AT, "--root", temp], temp);
+            return runStep(["verdict", slotTarget, "--record", file, "--model", "conform-probe", "--tier", "high", "--by", `agent:${agent.agent}`, "--at", AT, "--root", temp], temp);
           }],
-          ...(agent.agent === "writer" ? [["approve", () => runApproveCli([slotTarget, candidate, "--by", ownerEntry(join(temp, "clossys"), { id: `20261117T1200Z-${PIN_PROBE_NAME}-${kind}`, about: slotTarget, answer: { candidate }, at: AT }), "--at", AT, "--root", temp], temp)]] as [VerbProbe["verb"], () => Promise<{ exitCode: number; message?: string }>][] : []),
+          ...(agent.agent === "writer" ? [["approve", () => runStep(["approve", slotTarget, candidate, "--by", ownerEntry(join(temp, "clossys"), { id: `20261117T1200Z-${PIN_PROBE_NAME}-${kind}`, about: slotTarget, answer: { candidate }, at: AT }), "--at", AT, "--root", temp], temp)]] as [VerbProbe["verb"], () => Promise<{ exitCode: number; message?: string }>][] : []),
         ];
         for (const [verb, run] of runs) {
           let result: { exitCode: number; message?: string };
@@ -239,7 +238,7 @@ const PIN_PROBE_UNDER = "conform/pin-probe";
  * standard's requirements (and, for a routed kind, a sample route fixture). A refusal is the probe failing, reported as such, never as a gated pin.
  */
 async function placePinProbeSlot(temp: string, agent: AgentModel): Promise<{ id: string; kind: string; standard: string } | string> {
-  const { runIaCli } = await import("../cli/owner.js");
+  const { runStep } = await import("../pipeline/runner.js");
   const kinds = (agent.adapter?.kinds ?? []).filter(kind => kind !== "release");
   const kind = kinds.find(each => agent.standards.some(standard => standard.doc?.kinds.includes(each)));
   const standard = kind === undefined ? undefined : agent.standards.find(each => each.doc?.kinds.includes(kind));
@@ -249,7 +248,7 @@ async function placePinProbeSlot(temp: string, agent: AgentModel): Promise<{ id:
   // A routed kind's fixture is its sample route (../constitution/certify/page.ts), so the probe's refusal is about the candidate, not a missing fixture.
   const fixture = kind === "page" || kind === "publication" ? { fixture: { route: { path: `/${PIN_PROBE_NAME}` } } } : {};
   writeFileSync(file, JSON.stringify({ requirements: standard.doc.requirements.map(item => ({ check: item.check })), ...fixture }));
-  const result = await runIaCli([`${agent.agent}/${id}`, "--under", PIN_PROBE_UNDER, "--kind", kind, "--standard", standard.id, "--contract", file], temp);
+  const result = await runStep(["ia", `${agent.agent}/${id}`, "--under", PIN_PROBE_UNDER, "--kind", kind, "--standard", standard.id, "--contract", file], temp);
   if (result.exitCode !== 0) return `pin probe could not place ${agent.agent}/${id} (exit ${result.exitCode}): ${(result.message ?? "").split("\n")[0]}`;
   return { id, kind, standard: standard.id };
 }

@@ -59,7 +59,8 @@
     "copy-rendered",
     "rendered-provenance",
     "no-hidden-fallbacks",
-    "studio"
+    "studio",
+    "e2e"
   ],
   "uses": []
 }

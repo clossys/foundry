@@ -21,6 +21,7 @@ import { RULES_FILE } from "../cli/rules-file.js";
 import { seatSlotId, SEAT_AGENT } from "../records/slot-model/types.js";
 import { writerCopyDuplicates } from "../records/writer-copy.js";
 import { QUEUE_ANSWER } from "./chain.js";
+import { verbArgv } from "./command-line.js";
 import { gapsOf, interviewOf, INTERVIEW_AGENTS, type Gaps, type Interview, type InterviewAgent, type QuestionOption } from "./interview.js";
 
 export type RunCall = (argv: readonly string[], cwd: string) => Promise<{ exitCode: number; message?: string }>;
@@ -135,22 +136,24 @@ export async function ownerWiringIssues(root: string, options: OwnerWiringOption
           try {
             for (const name of COPIED) if (existsSync(join(root, name))) cpSync(join(root, name), join(scratch, name), { recursive: true });
             let failed = false;
-            for (const prior of prerequisites(question)) for (const argv of filled(prior, scratch, nextEntry)) {
+            for (const prior of prerequisites(question)) for (const command of filled(prior, scratch, nextEntry)) {
               if (failed) break;
-              const result = argv[0] === "clossys" ? await options.run(argv.slice(1), scratch) : { exitCode: 127, message: "not a clossys argv" };
-              if (result.exitCode !== 0) { issues.push({ rule: "owner.wiring", message: `${label}: the answer it waits on (${question.after.join(", ")}) ran ${argv.join(" ")}, which exited ${result.exitCode}${result.message ? ` (${result.message.split("\n")[0]})` : ""}` }); failed = true; }
+              const argv = verbArgv(command);
+              const result = argv ? await options.run(argv, scratch) : { exitCode: 127, message: "not a clossys argv" };
+              if (result.exitCode !== 0) { issues.push({ rule: "owner.wiring", message: `${label}: the answer it waits on (${question.after.join(", ")}) ran ${command.join(" ")}, which exited ${result.exitCode}${result.message ? ` (${result.message.split("\n")[0]})` : ""}` }); failed = true; }
             }
             if (failed) continue;
             const before = gapsKey(gaps(scratch, { agent }));
             const held = new Set(writerCopyDuplicates(join(scratch, "clossys")).map(row => row.id));
-            for (const argv of filled(option, scratch, nextEntry)) {
+            for (const command of filled(option, scratch, nextEntry)) {
               calls++;
-              const target = SLOT_TARGET.exec(argv[2] ?? "");
+              const target = SLOT_TARGET.exec(command[2] ?? "");
               const where = target ? [join(scratch, "clossys", "agents", target[1]!, target[2]!)] : [join(scratch, "clossys"), join(scratch, RULES_DIR)];
               const was = where.map(digest).join();
-              const result = argv[0] === "clossys" ? await options.run(argv.slice(1), scratch) : { exitCode: 127, message: "not a clossys argv" };
-              if (result.exitCode !== 0) { issues.push({ rule: "owner.wiring", message: `${label}: ${argv.join(" ")} exited ${result.exitCode}${result.message ? ` (${result.message.split("\n")[0]})` : ""}` }); failed = true; break; }
-              if (where.map(digest).join() === was) { issues.push({ rule: "owner.wiring", message: `${label}: ${argv.join(" ")} exited 0 but changed no record${target ? ` in ${target[0]}` : " under clossys/"}` }); failed = true; break; }
+              const argv = verbArgv(command);
+              const result = argv ? await options.run(argv, scratch) : { exitCode: 127, message: "not a clossys argv" };
+              if (result.exitCode !== 0) { issues.push({ rule: "owner.wiring", message: `${label}: ${command.join(" ")} exited ${result.exitCode}${result.message ? ` (${result.message.split("\n")[0]})` : ""}` }); failed = true; break; }
+              if (where.map(digest).join() === was) { issues.push({ rule: "owner.wiring", message: `${label}: ${command.join(" ")} exited 0 but changed no record${target ? ` in ${target[0]}` : " under clossys/"}` }); failed = true; break; }
             }
             if (!failed) for (const row of writerCopyDuplicates(join(scratch, "clossys"))) if (!held.has(row.id)) {
               issues.push({ rule: "owner.wiring", message: `${label}: the answer records Writer key ${row.id} in ${row.slots.join(" and ")}; one Writer slot owns a key` }); failed = true;

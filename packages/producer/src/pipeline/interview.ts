@@ -61,6 +61,7 @@ import { isDecide } from "./define.js";
 import type { Step } from "./define.js";
 import { PACKAGE_ROOT } from "./options.js";
 import { policyModels, readSeatPolicy, SEAT_POLICY_FILE } from "./seat-policy.js";
+import { verbArgv } from "./command-line.js";
 import type { SeatPolicyState, SeatTier } from "./seat-policy.js";
 import { writerKeysUnapproved } from "./status.js";
 import { STEPS } from "./steps/index.js";
@@ -523,7 +524,7 @@ function policyQuestion(policy: SeatPolicyState, given: Readonly<Partial<Record<
 }
 
 /** An argv that only prints a brief (`clossys options ...`): it records nothing, so it is never an owner answer. */
-const briefOnly = (argv: readonly string[]) => argv[0] === "clossys" && argv[1] === "options";
+const briefOnly = (command: readonly string[]) => verbArgv(command)?.[0] === "options";
 const notNeeded = (items: readonly string[]) => ({ label: `Set ${items.length > 1 ? "them" : "it"} aside: not needed, for your reason.`, calls: items.map(item => ["clossys", "pin", item, "--not-needed", "--reason", "<reason>", "--by", QUEUE_ANSWER]) });
 
 /** Owner packets of one step grouped by option shape: items whose answers differ only by item and candidate rank are one question. */
