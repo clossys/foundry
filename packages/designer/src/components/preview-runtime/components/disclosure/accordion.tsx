@@ -29,7 +29,7 @@ function AccordionItem({ className, ...props }: DisclosureProps) {
   return (
     <AccordionItemPrimitive
       data-slot="accordion-item"
-      className={cn("not-last:border-b-(length:--ui-border-hairline)", className)}
+      className={cn("not-last:border-b", className)}
       {...props}
     />
   )
@@ -46,7 +46,7 @@ function AccordionTrigger({
         slot="trigger"
         data-slot="accordion-trigger"
         className={cn(
-          "focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,2px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:border-(--color-focus-ring) focus-visible:after:border-(--color-focus-ring) **:data-[slot=accordion-trigger-icon]:text-(--color-ink-muted) rounded-(--radius-control) py-(--spacing-md) text-start text-(length:--text-sm) font-(weight:--font-weight-medium) hover:underline focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,2px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) **:data-[slot=accordion-trigger-icon]:ms-auto **:data-[slot=accordion-trigger-icon]:size-(--spacing-lg,16px) group/accordion-trigger relative flex flex-1 items-start justify-between border-(length:--ui-border-hairline,1px) border-transparent transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,0.5)",
+          "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring) focus-visible:border-(--ring) focus-visible:after:border-(--ring) **:data-[slot=accordion-trigger-icon]:text-(--muted-foreground) rounded-(--radius) py-[calc(var(--spacing,0.25rem)*3)] text-start text-(length:--text-sm) font-medium hover:underline focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring) **:data-[slot=accordion-trigger-icon]:ms-auto **:data-[slot=accordion-trigger-icon]:size-[calc(var(--spacing,0.25rem)*4)] group/accordion-trigger relative flex flex-1 items-start justify-between border border-transparent transition-all disabled:pointer-events-none disabled:opacity-50",
           className
         )}
         {...props}
@@ -69,12 +69,12 @@ function AccordionContent({
   return (
     <AccordionContentPrimitive
       data-slot="accordion-content"
-      className="data-open:library-enter data-open:library-fade data-closed:library-exit data-closed:library-fade text-(length:--text-sm) h-(--disclosure-panel-height) overflow-clip transition-[height] duration-(--ui-duration-default) ease-(--default-transition-timing-function)"
+      className="data-open:library-enter data-open:library-fade data-closed:library-exit data-closed:library-fade text-(length:--text-sm) h-(--disclosure-panel-height) overflow-clip transition-[height]"
       {...props}
     >
       <div
         className={cn(
-          "pt-0 pb-(--spacing-md) [&_a]:underline [&_a]:underline-offset-(--spacing-md) [&_a]:hover:text-(--color-ink-primary) [&_p:not(:last-child)]:mb-(--spacing-lg)",
+          "pt-0 pb-[calc(var(--spacing,0.25rem)*3)] [&_a]:underline [&_a]:underline-offset-[calc(var(--spacing,0.25rem)*3)] [&_a]:hover:text-(--foreground) [&_p:not(:last-child)]:mb-[calc(var(--spacing,0.25rem)*4)]",
           className
         )}
       >

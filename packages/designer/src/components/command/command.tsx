@@ -49,7 +49,7 @@ function Command({
       data-slot="command"
       dir={dir}
       className={cn(
-        "bg-(--color-overlay-surface) text-(--color-ink-primary) rounded-(--radius-control)! p-(--spacing-xs) flex size-full flex-col overflow-hidden",
+        "bg-(--popover) text-(--foreground) rounded-(--radius)! p-[calc(var(--spacing,0.25rem)*1)] flex size-full flex-col overflow-hidden",
         className
       )}
       style={style}
@@ -90,7 +90,7 @@ function CommandDialog({
       isOpen={open}
       onOpenChange={onOpenChange}
       className={cn(
-        "rounded-(--radius-control)! top-1/3 translate-y-0 overflow-hidden p-0",
+        "rounded-(--radius)! top-1/3 translate-y-0 overflow-hidden p-0",
         className
       )}
       showCloseButton={showCloseButton}
@@ -113,19 +113,19 @@ function CommandInput({
       autoFocus
       aria-label={props.placeholder || resolveRailCopy(copyResolver, RAIL_COPY_REFS["command.search"])}
       data-slot="command-input-wrapper"
-      className="p-(--spacing-xs) pb-0"
+      className="p-[calc(var(--spacing,0.25rem)*1)] pb-0"
     >
-      <InputGroup className="bg-(--color-line-strong)/30 border-(--color-line-strong)/30 h-(--spacing-2xl)! rounded-(--radius-control)! shadow-(--ui-elevation-none)! *:data-[slot=input-group-addon]:ps-(--spacing-sm)!">
+      <InputGroup className="bg-(--input)/30 border-(--input)/30 h-[calc(var(--spacing,0.25rem)*8)]! rounded-(--radius)! shadow-none! *:data-[slot=input-group-addon]:ps-[calc(var(--spacing,0.25rem)*2)]!">
         <Input
           {...props}
           data-slot="command-input"
           className={cn(
-            "w-full text-(length:--text-sm) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) disabled:cursor-not-allowed disabled:opacity-(--ui-alpha-disabled) [&::-webkit-search-cancel-button]:hidden",
+            "w-full text-(length:--text-sm) focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring) disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-search-cancel-button]:hidden",
             className
           )}
         />
         <InputGroupAddon>
-          <LibraryIcon asset="assets.icon-search" decorative className="size-(--spacing-lg) shrink-0 opacity-(--ui-alpha-disabled)" />
+          <LibraryIcon asset="assets.icon-search" decorative className="size-[calc(var(--spacing,0.25rem)*4)] shrink-0 opacity-50" />
         </InputGroupAddon>
       </InputGroup>
     </SearchField>
@@ -138,7 +138,7 @@ function CommandList<T extends object>({ className, ...props }: MenuProps<T>) {
       {...props}
       data-slot="command-list"
       className={cn(
-        "no-scrollbar max-h-(--ui-width-notice-max) scroll-py-1 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) overflow-x-hidden overflow-y-auto",
+        "no-scrollbar max-h-72 scroll-py-1 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring) overflow-x-hidden overflow-y-auto",
         className
       )}
     />
@@ -149,7 +149,7 @@ function CommandEmpty({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="command-empty"
-      className={cn("py-(--spacing-xl) text-center text-(length:--text-sm)", className)}
+      className={cn("py-[calc(var(--spacing,0.25rem)*6)] text-center text-(length:--text-sm)", className)}
       {...props}
     />
   )
@@ -165,7 +165,7 @@ function CommandGroup<T extends object>({
   return (
     <MenuSection
       data-slot="command-group"
-      className={cn("text-(--color-ink-primary) **:[[cmdk-group-heading]]:text-(--color-ink-muted) overflow-hidden p-(--spacing-xs) **:[[cmdk-group-heading]]:px-(--spacing-sm) **:[[cmdk-group-heading]]:py-(--spacing-sm) **:[[cmdk-group-heading]]:text-(length:--text-xs) **:[[cmdk-group-heading]]:font-(weight:--font-weight-medium)", className)}
+      className={cn("text-(--foreground) **:[[cmdk-group-heading]]:text-(--muted-foreground) overflow-hidden p-[calc(var(--spacing,0.25rem)*1)] **:[[cmdk-group-heading]]:px-[calc(var(--spacing,0.25rem)*2)] **:[[cmdk-group-heading]]:py-[calc(var(--spacing,0.25rem)*2)] **:[[cmdk-group-heading]]:text-(length:--text-xs) **:[[cmdk-group-heading]]:font-medium", className)}
       {...props}
     >
       {heading && <Header cmdk-group-heading="">{heading}</Header>}
@@ -178,7 +178,7 @@ function CommandSeparator({ className, ...props }: SeparatorProps) {
   return (
     <Separator
       data-slot="command-separator"
-      className={cn("bg-(--color-line-base) -mx-(--spacing-xs) h-(--ui-border-hairline)", className)}
+      className={cn("bg-(--border) -mx-[calc(var(--spacing,0.25rem)*1)] h-px", className)}
       {...props}
     />
   )
@@ -195,7 +195,7 @@ function CommandItem<T extends object>({
       {...props}
       data-slot="command-item"
       className={cn(
-        "data-selected:bg-(--color-surface-sunken) data-selected:text-(--color-ink-primary) data-selected:*:[svg]:text-(--color-ink-primary) relative flex cursor-default items-center gap-(--spacing-sm) rounded-(--radius-control) px-(--spacing-sm) py-(--spacing-sm) text-(length:--text-sm) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) select-none in-data-[slot=dialog-content]:rounded-(--radius-control)! [&_svg:not([class*='size-'])]:size-(--spacing-lg) data-focused:bg-(--color-surface-sunken) data-focused:text-(--color-ink-primary) data-focused:*:[svg]:text-(--color-ink-primary) group/command-item data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-(--ui-alpha-disabled) [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "data-selected:bg-(--muted) data-selected:text-(--foreground) data-selected:*:[svg]:text-(--foreground) relative flex cursor-default items-center gap-[calc(var(--spacing,0.25rem)*2)] rounded-(--radius) px-[calc(var(--spacing,0.25rem)*2)] py-[calc(var(--spacing,0.25rem)*2)] text-(length:--text-sm) focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring) select-none in-data-[slot=dialog-content]:rounded-(--radius)! [&_svg:not([class*='size-'])]:size-[calc(var(--spacing,0.25rem)*4)] data-focused:bg-(--muted) data-focused:text-(--foreground) data-focused:*:[svg]:text-(--foreground) group/command-item data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       textValue={
@@ -219,7 +219,7 @@ function CommandShortcut({
   return (
     <span
       data-slot="command-shortcut"
-      className={cn("text-(--color-ink-muted) group-data-selected/command-item:text-(--color-ink-primary) ms-auto text-(length:--text-xs) tracking-(--tracking-label) group-data-focused/command-item:text-(--color-ink-primary)", className)}
+      className={cn("text-(--muted-foreground) group-data-selected/command-item:text-(--foreground) ms-auto text-(length:--text-xs) tracking-widest group-data-focused/command-item:text-(--foreground)", className)}
       {...props}
     />
   )

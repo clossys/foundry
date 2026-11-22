@@ -65,11 +65,11 @@
       "outputSha256": [
         {
           "path": "components/text-field/stock/input.tsx",
-          "sha256": "473513d2e29e75b9810d789087c17c352f42bd925aba0c2db39d88f778d17617"
+          "sha256": "fba0771643f4caefce6a48fbd095bb29b585d8ec1468126773fea3694fb00669"
         },
         {
           "path": "components/text-field/stock/textarea.tsx",
-          "sha256": "8a608e23a1a72c8fc47a5f69c54dbe251a3d63f90a22c1f0f7c671acf6649072"
+          "sha256": "9df19ce08416095a8469174ae30b7a9a7c13bd7da09272d1786eacd8791137c6"
         },
         {
           "path": "components/text-field/stock/utils.ts",
@@ -81,7 +81,7 @@
         },
         {
           "path": "notices/text-field.md",
-          "sha256": "cc547433cd60e6cca4de49959dde70718605fc0341b510ec5bc9db5fc119601a"
+          "sha256": "2a9de0eb47212ff76db7fdab2bc41083700452684bccd2963017b420d72a2426"
         }
       ],
       "propMap": {
@@ -115,6 +115,7 @@
         "themes": [
           "themes.destructive.default",
           "themes.foreground.default",
+          "themes.input.default",
           "themes.muted-foreground.default",
           "themes.radius.default",
           "themes.ring.default",

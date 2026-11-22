@@ -37,7 +37,7 @@ const HEADING = "contract.copy.fields[header.heading].maxLength.en";
 
 async function synced() {
   const ws = tallyhouseWorld();
-  await runIaSyncCli(["sync", "--at", LATER], ws.root);
+  await runIaSyncCli(["--at", LATER], ws.root);
   return ws;
 }
 

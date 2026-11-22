@@ -1,15 +1,17 @@
+import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { resolve } from "node:path";
-import { compile } from "tailwindcss";
 import { describe, expect, it } from "vitest";
+import adapter from "../catalog/adapters/shadcn@aria.json" with { type: "json" };
+import railBindings from "./rail-token-bindings.json" with { type: "json" };
 import { importShadcnAriaComponents, type ShadcnComponentInput } from "./shadcn-aria-components.js";
-import { SHADCN_ARIA_FIXED_PATTERNS, SHADCN_ARIA_STYLE_VARS, shadcnAriaStyleRead } from "./shadcn-aria-style-vars.js";
-import { packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
+import { importShadcnAriaRail } from "./shadcn-aria-rail.js";
+import { EMITTED_PROPERTIES } from "./rewrite.js";
+import { SHADCN_ARIA_STOCK_UTILITIES, isShadcnAriaStockUtility } from "./shadcn-aria-style-vars.js";
+import type { SourceFile } from "./rewrite.js";
 
-const packageRoot = resolve(import.meta.dirname, "../..");
 const fixtures = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
-const req = createRequire(import.meta.url);
+const fillsDir = resolve(import.meta.dirname, "../catalog/fills/shadcn@aria");
 
 /** Class atom without its variant prefix (the last `:` outside brackets/parens). */
 function base(atom: string): string {
@@ -30,95 +32,90 @@ function pinnedInput(): ShadcnComponentInput {
     styles: { path: "apps/v4/registry/styles/style-nova.css", content: read("style-nova.css") }, notice: { path: "LICENSE.md", content: read("LICENSE.md") } };
 }
 
-/** Fixed-pattern components in the source every shadcn@aria fill ships. */
-function fixedHits(): string[] {
-  const result = importShadcnAriaComponents(pinnedInput());
-  const filled = new Set(result.fills.map(doc => Object.values(doc.components)[0]!.item));
-  expect(filled.size).toBeGreaterThan(20);
-  const hits: string[] = [];
-  for (const item of filled) {
-    for (const file of result.rewrites[item]!.files.filter(file => /\.tsx?$/.test(file.path))) {
-      for (const atom of file.content.split(/[\s"'`{},]+/)) {
-        const bare = base(atom);
-        for (const [label, pattern] of Object.entries(SHADCN_ARIA_FIXED_PATTERNS)) {
-          if (pattern.test(bare)) hits.push(`${item} ${file.path}: ${label} (${atom})`);
-        }
-      }
-    }
+/** Every shadcn@aria adopted file (components and rail), each matched to the adopted fill that pins its digest. */
+function adoptedFiles(): { item: string; file: SourceFile }[] {
+  const components = importShadcnAriaComponents(pinnedInput());
+  const rail = importShadcnAriaRail();
+  // Adopted fill digests, by the slot that adopts them; every one must be produced by exactly the rewrite run here.
+  const adopted = new Map<string, string>();
+  for (const name of readdirSync(fillsDir).filter(name => name.endsWith(".json") && name !== "components.coverage.json")) {
+    const doc = JSON.parse(readFileSync(resolve(fillsDir, name), "utf8")) as { components: Record<string, { outputSha256: { path: string; sha256: string }[] }> };
+    for (const [leaf, component] of Object.entries(doc.components)) adopted.set(JSON.stringify(component.outputSha256), leaf);
   }
-  return hits;
+  const rows: { item: string; file: SourceFile }[] = [];
+  const matched = new Set<string>();
+  for (const [item, rewrite] of [...Object.entries(components.rewrites), ...Object.entries(rail.rewrites)]) {
+    const digest = JSON.stringify(rewrite.outputSha256);
+    if (!adopted.has(digest)) continue;
+    matched.add(digest);
+    for (const file of rewrite.files.filter(file => /\.(?:tsx?|css)$/.test(file.path))) rows.push({ item: `${adopted.get(digest)} (${item})`, file });
+  }
+  // A composed leaf ships the rewritten stock bytes beside Foundry-owned wiring (U-K4-own, not adopted bytes): each
+  // stock file must carry the digest its fill records.
+  const composed = new Set(components.composed.flatMap(doc => Object.keys(doc.components)));
+  for (const [digest, leaf] of adopted) {
+    if (matched.has(digest) || !composed.has(leaf)) continue;
+    const stock = components.composedFiles[leaf] ?? [];
+    const recorded = new Map((JSON.parse(digest) as { path: string; sha256: string }[]).map(row => [row.path, row.sha256]));
+    for (const file of stock) expect(recorded.get(file.path), `${leaf} ${file.path} adopted digest`).toBe(createHash("sha256").update(file.content).digest("hex"));
+    matched.add(digest);
+    for (const file of stock.filter(file => /\.(?:tsx?|css)$/.test(file.path))) rows.push({ item: `${leaf} (composed stock)`, file });
+  }
+  expect([...adopted].filter(([digest]) => !matched.has(digest)).map(([, leaf]) => leaf), "adopted fills not reproduced by the rewrite").toEqual([]);
+  expect(new Set(rows.map(row => row.item)).size).toBeGreaterThan(25);
+  return rows;
 }
 
-async function build(candidates: string[]): Promise<string> {
-  const compiler = await compile('@import "tailwindcss";', {
-    base: packageRoot,
-    loadStylesheet: async (id, from) => {
-      const path = id.startsWith("tailwindcss") ? req.resolve(id === "tailwindcss" ? "tailwindcss/index.css" : `${id}.css`) : resolve(from, id);
-      return { path, base: resolve(path, ".."), content: readFileSync(path, "utf8") };
-    },
-  });
-  return compiler.build(candidates).replace(/\/\*[\s\S]*?\*\//g, "");
-}
+/** Custom properties a file defines itself (class `[--x:…]`, style key `"--x":`, CSS `--x:`). */
+const defined = (code: string): Set<string> =>
+  new Set([...code.matchAll(/(?:^|[[{;,\s"'])(--[a-zA-Z][\w-]*)["']?\]?\s*:/gm)].map(match => match[1]!));
 
-const escapeClass = (candidate: string): string => candidate.replace(/[^a-zA-Z0-9_-]/g, ch => `\\${ch}`);
-
-/** The declaration value `property` takes in the rule for `candidate`. */
-function declaration(css: string, candidate: string, property: string): string {
-  const start = css.indexOf(`.${escapeClass(candidate)} {`);
-  expect(start, `rule for ${candidate}`).toBeGreaterThanOrEqual(0);
-  const body = css.slice(start, css.indexOf("}", start));
-  const match = new RegExp(`(?:^|[\\s;{])${property}:\\s*([^;]+);`).exec(body);
-  expect(match, `${property} in ${candidate}`).not.toBeNull();
-  return match![1]!.trim();
-}
-
-/** Resolve `var(--x,<fallback>)` with `--x` unset, so only the declared fallback remains. */
-function withDefaults(value: string): string {
-  const match = /^var\((--[\w-]+),\s*([\s\S]+)\)$/.exec(value);
-  return match ? match[2]!.trim() : value;
-}
-
-const squash = (value: string): string => value.replace(/\s+/g, "");
-
-/** How each fixed class is read in the rewritten fill, and the property that carries its value. */
-const READS: Record<string, { utility: string; property: string; hint?: "length" }> = {
-  "z-50": { utility: "z", property: "z-index" },
-  "duration-100": { utility: "duration", property: "transition-duration" },
-  "duration-200": { utility: "duration", property: "transition-duration" },
-  "opacity-50": { utility: "opacity", property: "opacity" },
-  "ring-3": { utility: "outline", property: "outline-width", hint: "length" },
-  "border": { utility: "border", property: "border-width", hint: "length" },
-  "h-7": { utility: "h", property: "height" },
-  "h-8": { utility: "h", property: "height" },
-  "h-9": { utility: "h", property: "height" },
-  "size-3.5": { utility: "size", property: "width" },
-  "size-4": { utility: "size", property: "width" },
+/**
+ * The only non-emitted properties an adopted byte may still read, each named by the residual it stands for:
+ * R-T the stock `text-*` type scale (adapter `fontSizes`); R-W the sidebar widths the rail sets at runtime (rail
+ * variables, no consumer source); R-U the upstream runtime reads no consumer member emits, unchanged from base (nova
+ * combobox `--available-height`, the rail mobile hook's `--breakpoint-mobile-lg`); RAC the geometry React Aria
+ * Components itself sets.
+ */
+const RESIDUALS: Readonly<Record<string, ReadonlySet<string>>> = {
+  "R-T": new Set(Object.values(adapter.fontSizes)),
+  "R-W": new Set(railBindings.variables.map(row => row.property)),
+  "R-U": new Set(["--available-height", "--breakpoint-mobile-lg"]),
+  "RAC": new Set(["--trigger-width", "--trigger-anchor-point", "--disclosure-panel-height", "--disclosure-panel-width", "--tab-panel-width", "--tab-panel-height",
+    "--visual-viewport-width", "--visual-viewport-height", "--page-width", "--page-height"]),
 };
 
-describe("shadcn@aria style variables", () => {
-  it("leaves none of the ten fixed nova patterns in the source of any shadcn@aria fill", () => {
-    expect(Object.keys(SHADCN_ARIA_FIXED_PATTERNS)).toHaveLength(10);
-    expect(fixedHits()).toEqual([]);
-  });
-
-  it("resolves every defaulted class, with its variable unset, to the reader's declared value of that variable", async () => {
-    const reader = packageDeclaredFallbackReader();
-    const rows = SHADCN_ARIA_STYLE_VARS.filter(row => row.defaulted);
-    expect(rows.map(row => row.fixed).sort()).toEqual(Object.keys(READS).sort());
-    const pairs = rows.map(row => {
-      const read = READS[row.fixed]!;
-      return { row, read, rewritten: `${read.utility}-${shadcnAriaStyleRead(row.variable, row.fixed, reader, read.hint)}` };
-    });
-    const css = await build(pairs.map(pair => pair.rewritten));
-    for (const { row, read, rewritten } of pairs) {
-      const resolved = withDefaults(declaration(css, rewritten, read.property));
-      expect(squash(resolved), `${row.fixed} -> ${rewritten}`).toBe(squash(reader.fallback(row.variable)));
+describe("shadcn@aria adopted bytes (target state)", () => {
+  it("read only consumer-emitted properties, local definitions and the named residuals", () => {
+    const outside: string[] = [];
+    const residual: Record<string, Set<string>> = {};
+    for (const { item, file } of adoptedFiles()) {
+      const local = defined(file.content);
+      for (const [property] of file.content.matchAll(/--[a-zA-Z][\w-]*/g)) {
+        if (EMITTED_PROPERTIES.has(property) || local.has(property)) continue;
+        const label = Object.entries(RESIDUALS).find(([, set]) => set.has(property))?.[0];
+        if (label) (residual[label] ??= new Set()).add(property);
+        else outside.push(`${item} ${file.path}: ${property}`);
+      }
     }
+    expect([...new Set(outside)]).toEqual([]);
+    expect([...residual["R-W"] ?? []].sort()).toEqual(["--ui-layout-sidebar-rail-w", "--ui-layout-sidebar-w"]);
+    expect([...residual["R-U"] ?? []].sort()).toEqual(["--available-height", "--breakpoint-mobile-lg"]);
+    for (const property of residual["R-T"] ?? []) expect(property).toMatch(/^--text-/);
   });
 
-  it("writes no fallback for a variable the reader does not declare", () => {
-    const row = SHADCN_ARIA_STYLE_VARS.find(row => row.defaulted)!;
-    const refusing = { source: "test", fallback(name: string): string { throw new Error(`undeclared ${name}`); } };
-    expect(() => shadcnAriaStyleRead(row.variable, row.fixed, refusing)).toThrow(`undeclared ${row.variable}`);
+  it("introduces no Foundry-only stacking, timing, opacity, ring, border or focus-offset property", () => {
+    const foundryOnly = /--ui-(?:z|duration|ease|alpha|border|focus|ring)-?[\w-]*|--ease-default|--opacity-[\w-]+/g;
+    const hits = adoptedFiles().flatMap(({ item, file }) => [...file.content.matchAll(foundryOnly)].map(match => `${item} ${file.path}: ${match[0]}`));
+    expect(hits).toEqual([]);
+  });
+
+  it("keeps every stock nova stacking, timing, opacity, weight, transition and border-width utility unchanged", () => {
+    const atoms = adoptedFiles().flatMap(({ file }) => file.content.split(/[\s"'`{},]+/).map(base));
+    const seen = Object.fromEntries(Object.entries(SHADCN_ARIA_STOCK_UTILITIES).map(([label, pattern]) => [label, atoms.some(atom => pattern.test(atom))]));
+    expect(seen).toEqual(Object.fromEntries(Object.keys(SHADCN_ARIA_STOCK_UTILITIES).map(label => [label, true])));
+    for (const stock of ["z-50", "duration-100", "duration-200", "ease-linear", "opacity-50", "border"]) expect(atoms, stock).toContain(stock);
+    expect(isShadcnAriaStockUtility("z-50")).toBe(true);
+    expect(isShadcnAriaStockUtility("z-(--ui-z-overlay)")).toBe(false);
   });
 });

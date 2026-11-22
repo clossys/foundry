@@ -39,6 +39,7 @@
           "themes.border.default",
           "themes.destructive.default",
           "themes.foreground.default",
+          "themes.input.default",
           "themes.muted-foreground.default",
           "themes.muted.default",
           "themes.popover.default",
@@ -119,7 +120,7 @@
         ]
       },
       "notice": "notices/SHADCN-ARIA-RAIL.md",
-      "transform": "shadcn-aria-rewrite@4",
+      "transform": "shadcn-aria-rewrite@6",
       "item": "sheet",
       "deps": [
         {
@@ -151,7 +152,7 @@
       "outputSha256": [
         {
           "path": "components/_parts/rail-button/button.tsx",
-          "sha256": "6466df81a6c34e176ddf656484d23a9b1c044e419cff3bafcc8e208c671e6451"
+          "sha256": "7cef5e1870a06846ffd34c5f7d4aa48be16cee57ede4847c9553394bec6dd8c2"
         },
         {
           "path": "components/_parts/rail-button/index.ts",
@@ -171,11 +172,11 @@
         },
         {
           "path": "components/sheet/sheet.tsx",
-          "sha256": "3fbf0574ec99a2270805ab964ce3dd6ba95b5282d38284b73624a0b5781e0bdf"
+          "sha256": "f8f12176e0ef9623ce71e89c6898e366260d448a6166006cadaca3e7a23e841e"
         },
         {
           "path": "notices/SHADCN-ARIA-RAIL.md",
-          "sha256": "ef2a475ab63e8e936989c5fafffa578773e2d97127c46ee47d032ae9c1277b3f"
+          "sha256": "a3254ebd0ca6ce0be7f1f08a73c4ac8f18ff3fbf11c10e0c80badf9ecfcddff4"
         }
       ],
       "blockers": [],

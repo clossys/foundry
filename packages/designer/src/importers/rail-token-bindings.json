@@ -1,91 +1,69 @@
 {
-  "version": 1,
+  "version": 2,
   "utilities": [
     {
       "utility": "tracking-tight",
-      "member": "themes.tracking-tight.default",
-      "output": "tracking-(--tracking-meta)"
+      "member": "themes.tracking-tight.default"
     },
     {
-      "utility": "tracking-widest",
-      "member": "themes.tracking-tight.default",
-      "output": "tracking-(--tracking-label)"
+      "utility": "tracking-widest"
     },
     {
-      "utility": "max-w-sm",
-      "output": "max-w-(--ui-width-notice-max)"
+      "utility": "max-w-sm"
     },
     {
-      "utility": "max-w-xs",
-      "output": "max-w-(--ui-width-notice-max)"
+      "utility": "max-w-xs"
     },
     {
-      "utility": "max-h-72",
-      "output": "max-h-(--ui-width-notice-max)"
+      "utility": "max-h-72"
     },
     {
-      "utility": "leading-normal",
-      "output": "leading-(--leading-heading)"
+      "utility": "leading-normal"
     },
     {
-      "utility": "leading-snug",
-      "output": "leading-(--leading-heading)"
+      "utility": "leading-snug"
     },
     {
-      "utility": "h-px",
-      "output": "h-(--ui-border-hairline)"
+      "utility": "h-px"
     },
     {
-      "utility": "translate-x-px",
-      "output": "translate-x-(--ui-border-hairline)"
+      "utility": "translate-x-px"
     },
     {
-      "utility": "-translate-x-px",
-      "output": "-translate-x-(--ui-border-hairline)"
+      "utility": "-translate-x-px"
     },
     {
-      "utility": "w-[2px]",
-      "output": "w-(--ui-border-rule)"
+      "utility": "w-[2px]"
     },
     {
-      "utility": "ring-1",
-      "output": "ring-(length:--ui-border-hairline)"
+      "utility": "ring-1"
     },
     {
-      "utility": "ring-2",
-      "output": "ring-(length:--ui-border-rule)"
+      "utility": "ring-2"
     },
     {
-      "utility": "duration-200",
-      "output": "duration-(--ui-duration-default)"
+      "utility": "duration-200"
     },
     {
-      "utility": "duration-150",
-      "output": "duration-(--ui-duration-fast)"
+      "utility": "duration-150"
     },
     {
-      "utility": "ease-linear",
-      "output": "ease-(--ease-default)"
+      "utility": "ease-linear"
     },
     {
-      "utility": "ease-in-out",
-      "output": "ease-(--ease-default)"
+      "utility": "ease-in-out"
     },
     {
-      "utility": "z-10",
-      "output": "z-(--ui-z-sticky)"
+      "utility": "z-10"
     },
     {
-      "utility": "z-20",
-      "output": "z-(--ui-z-aside)"
+      "utility": "z-20"
     },
     {
-      "utility": "z-50",
-      "output": "z-(--ui-z-modal)"
+      "utility": "z-50"
     },
     {
-      "utility": "bg-black/10",
-      "output": "bg-(--color-overlay-scrim)"
+      "utility": "bg-black/10"
     }
   ],
   "variables": [

@@ -2,13 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://clossys.com/schemas/producer/compile-lock.schema.json",
   "title": "Studio compile lock (studio/compile.lock.json)",
-  "description": "Derived from the clossys.compile-lock/1 file clossys compile writes (lands with claude/compile-pure).",
+  "description": "Derived from the clossys.compile-lock/1 file clossys compile writes: compileStudio's inputs and outputs, then pinSetHash, the pin-set hash R12.1 compares (cli/compile.ts recordPinSetHash).",
   "type": "object",
   "required": [
     "schema",
     "decisionInputs",
     "inputs",
-    "outputs"
+    "outputs",
+    "pinSetHash"
   ],
   "additionalProperties": false,
   "properties": {
@@ -32,6 +33,10 @@
       "items": {
         "$ref": "#/$defs/entry"
       }
+    },
+    "pinSetHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
     }
   },
   "$defs": {

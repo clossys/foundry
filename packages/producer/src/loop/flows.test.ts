@@ -554,12 +554,16 @@ describe("F6 failed check (T6)", () => {
   });
 });
 
-/** A consumer the real clossys release accepts (0016 fixture), and the verbs the loop's code steps call. */
+/**
+ * A consumer the real release step accepts (0016 fixture), and the verbs the loop's code steps call: the release steps
+ * run `clossys publisher release <pub> --<step>` (the top-level `clossys release` is retired), whose release step runs
+ * here over the stub builder.
+ */
 const realRelease = (): ReleaseWorld => { const world = releaseWorld(); roots.push(world.root); return world; };
 const releaseVerbs = (verbs: string[][], now: () => Date) => (argv: readonly string[], cwd: string): Promise<CliResult> => {
   verbs.push([...argv]);
   return argv[0] === "compile" ? Promise.resolve({ exitCode: 0 as const, message: "compiled (stub)" })
-    : argv[0] === "release" ? runReleaseCli(argv.slice(1), cwd, { builder: stubBuilder, now }) : runCli(argv, cwd);
+    : argv[0] === "publisher" && argv[1] === "release" ? runReleaseCli(argv.slice(2), cwd, { builder: stubBuilder, now }) : runCli(argv, cwd);
 };
 const latestLedger = (root: string, loop: LoopName): LedgerEntry => {
   const dir = ledgerDir(root, loop);
@@ -581,7 +585,7 @@ describe("F8 new release: loop.release (T8)", () => {
   });
 
   it("ends at the owner-signed ready-pin with status pinned-ready", async () => {
-    // The real chain: clossys release builds, writes the manifest and runs the gates; clossys pin takes the ready-pin.
+    // The real chain: clossys publisher release builds, writes the manifest and runs the gates; clossys pin takes the ready-pin.
     const w = realRelease();
     const now = clock();
     const verbs: string[][] = [];
@@ -603,6 +607,11 @@ describe("F8 new release: loop.release (T8)", () => {
     expect(stepLine(ledger)).toEqual(["compile:code:0", "build:code:0", "manifest:code:0", "gates:code:0", "signoff:human:0", "pin:code:0"]);
     expect(ledger.checks["release.ready"]).toBe("pass");
     expect(verbs.at(-1)).toEqual(["pin", "publisher/release.site", "site-v1.json", "--by", `owner:${run.entry}`, "--root", w.root]);
+    // Every release step is the publisher release verb; none is the retired top-level release.
+    expect(verbs.filter(argv => argv.includes("release")).map(argv => argv.slice(0, 4))).toEqual([
+      ["publisher", "release", "site", "--build"], ["publisher", "release", "site", "--manifest"], ["publisher", "release", "site", "--gates"],
+    ]);
+    expect(verbs.some(argv => argv[0] === "release")).toBe(false);
   });
 
   it("stops the release at failing gates, raising a kind fix per finding for loop.refine", async () => {

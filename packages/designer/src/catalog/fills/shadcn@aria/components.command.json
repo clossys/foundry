@@ -39,6 +39,7 @@
           "themes.border.default",
           "themes.destructive.default",
           "themes.foreground.default",
+          "themes.input.default",
           "themes.muted-foreground.default",
           "themes.muted.default",
           "themes.popover.default",
@@ -47,8 +48,7 @@
           "themes.radius.default",
           "themes.ring.default",
           "themes.secondary.default",
-          "themes.spacing.default",
-          "themes.tracking-tight.default"
+          "themes.spacing.default"
         ],
         "assets": [
           "assets.icon-check",
@@ -141,7 +141,7 @@
         ]
       },
       "notice": "notices/SHADCN-ARIA-RAIL.md",
-      "transform": "shadcn-aria-rewrite@4",
+      "transform": "shadcn-aria-rewrite@6",
       "item": "command",
       "deps": [
         {
@@ -185,7 +185,7 @@
       "outputSha256": [
         {
           "path": "components/_parts/rail-button/button.tsx",
-          "sha256": "6466df81a6c34e176ddf656484d23a9b1c044e419cff3bafcc8e208c671e6451"
+          "sha256": "7cef5e1870a06846ffd34c5f7d4aa48be16cee57ede4847c9553394bec6dd8c2"
         },
         {
           "path": "components/_parts/rail-button/index.ts",
@@ -193,7 +193,7 @@
         },
         {
           "path": "components/_parts/rail-dialog/dialog.tsx",
-          "sha256": "91b2188d543c0725d1eb27a4a457e72406a0577fb261fbd468b78ca01c75565c"
+          "sha256": "3a2732b6b9080026348090d3ce557f2792d411e5f2018e33e971e1cfe8453dc4"
         },
         {
           "path": "components/_parts/rail-dialog/index.ts",
@@ -205,7 +205,7 @@
         },
         {
           "path": "components/_parts/rail-input-group/input-group.tsx",
-          "sha256": "37e522da86c5927f9c88b66e4d8de9fd567cd356dbc4ae861377adfbbb302a53"
+          "sha256": "27dac6075294c33622c4e83dc6a6a308c1d1771c3bc1ac63c04ad3db03a82b3b"
         },
         {
           "path": "components/_parts/rail-input/index.ts",
@@ -213,7 +213,7 @@
         },
         {
           "path": "components/_parts/rail-input/input.tsx",
-          "sha256": "f8a3ae3c7185e067e7b6745ec15142a77f135602c2d4d7d3db218100464d3aea"
+          "sha256": "1a53143086ef6293f27a11ca4b9f96399ab9ece897e2038bab4da2ad0382ee2e"
         },
         {
           "path": "components/_parts/rail-textarea/index.ts",
@@ -221,7 +221,7 @@
         },
         {
           "path": "components/_parts/rail-textarea/textarea.tsx",
-          "sha256": "c05332918881bde77d2e5b65f3cdac02e07c48aa488ce24149c379a864d33499"
+          "sha256": "01b13c853bf2279e4117da996105e112ff3f24c6552975e5246b3e592f50189f"
         },
         {
           "path": "components/_parts/rail-utils/copy.ts",
@@ -237,11 +237,11 @@
         },
         {
           "path": "components/command/command.tsx",
-          "sha256": "abefbe8fbd0c0b0958678840b9c6b0e17dc9a90b79774db5e66d23c7d249ccec"
+          "sha256": "13da3d624c2979d71617004a73ba925808dfc41d0d7d7171178b28ac89a8ba09"
         },
         {
           "path": "notices/SHADCN-ARIA-RAIL.md",
-          "sha256": "ef2a475ab63e8e936989c5fafffa578773e2d97127c46ee47d032ae9c1277b3f"
+          "sha256": "a3254ebd0ca6ce0be7f1f08a73c4ac8f18ff3fbf11c10e0c80badf9ecfcddff4"
         }
       ],
       "blockers": [],

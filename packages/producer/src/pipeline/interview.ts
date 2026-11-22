@@ -54,13 +54,14 @@ import { writerCopyPins } from "../records/writer-copy-slots.js";
 import { writerWording, type WordingRow } from "../records/writer-wording.js";
 import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
 import type { DirectorContent } from "./director-interview.js";
-import { agentOfItem, candidatesOf, chainCommand, contextOf, explainChain, INTERVIEW_AGENTS, openItems, packetOf, PLACEHOLDER_MEANING, QUEUE_ANSWER, skillLine, skillOf, verbOf } from "./chain.js";
+import { agentOfItem, candidatesOf, chainCommand, contextOf, explainChain, INTERVIEW_AGENTS, openItems, packetOf, pinTargetOf, PLACEHOLDER_MEANING, QUEUE_ANSWER, skillLine, skillOf, verbOf } from "./chain.js";
 import type { Context, InterviewAgent, Packet } from "./chain.js";
 import { ladderIssues } from "./candidate-ladder.js";
 import { isDecide } from "./define.js";
 import type { Step } from "./define.js";
 import { PACKAGE_ROOT } from "./options.js";
 import { policyModels, readSeatPolicy, SEAT_POLICY_FILE } from "./seat-policy.js";
+import { verbArgv } from "./command-line.js";
 import type { SeatPolicyState, SeatTier } from "./seat-policy.js";
 import { writerKeysUnapproved } from "./status.js";
 import { STEPS } from "./steps/index.js";
@@ -245,12 +246,24 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
       const seat = step.id === "seats" ? context.seats[item] : undefined;
       const held = seat && seat.state === "partial" && seat.llm === "open" && seat.human !== "open" ? "human only by an earlier answer: the seat stays listed open until an llm part is added" : undefined;
       // An owner choice among candidates waits while the slot has none: its agent drafts first, so nothing is asked.
-      const drafts = step.decider === "owner" && (step.id.startsWith("pin.") || step.id === "writer.approve") && item.includes("/") && !candidatesOf(root, item).length;
+      const drafts = step.decider === "owner" && step.id.startsWith("pin.") && item.includes("/") && !candidatesOf(root, item).length;
       gaps.push({
         kind: "coverage", code: `open.${step.id}`, agent: agentOfItem(step, item), item, step: step.id,
         message: step.id === "seats" ? `seat ${item} is ${seat?.state ?? "unassigned"}` : drafts ? `${item}: no candidate yet; the ${prefixOf(item)} drafts one (${prefixOf(item)}.candidates) before the owner chooses` : `${item}: ${step.summary.replace(/\.$/, "")}`,
         decider: step.decider === "owner" && !drafts ? "owner" : "agent", ...(held ? { held } : {}),
       });
+    }
+  }
+  // Writer keys a newer candidate proposes that no owner pin holds: the owner approves them through the queue, with a
+  // pin that cites the answered queue.approve entry (`clossys pin writer/<slot> <candidate> --basis picked --by
+  // owner:queue.approve#<id>`). A slot pin.writer already lists open is asked once.
+  if (steps.some(step => step.id === "pin.writer")) {
+    const openWriter = new Set(gaps.filter(gap => gap.code === "open.pin.writer").map(gap => gap.item));
+    for (const [slot, keys] of writerKeysUnapproved(root)) {
+      const item = `writer/${slot}`;
+      if (openWriter.has(item)) continue;
+      gaps.push({ kind: "coverage", code: "open.pin.writer", agent: "writer", item, step: "pin.writer", decider: "owner",
+        message: `${item}: ${plural(keys.length, "Writer key")} no owner pin holds (${listed(keys)}); the owner approves by pinning the candidate` });
     }
   }
   if (policy.state !== "ok") gaps.push({ kind: "coverage", code: `seat-policy.${policy.state}`, agent: "producer", item: SEAT_POLICY_FILE, step: "seats", decider: "owner",
@@ -382,7 +395,7 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
     for (const [slot, row] of missing) {
       requested.add("publisher>writer");
       const keys = [...row.keys].sort(), need = [...row.need].sort();
-      gaps.push({ kind: "request", code: "request.writer-keys", agent: "writer", from: "publisher", to: "writer", item: `writer/${slot}`, step: "writer.approve", decider: "owner", need, keys,
+      gaps.push({ kind: "request", code: "request.writer-keys", agent: "writer", from: "publisher", to: "writer", item: `writer/${slot}`, step: "pin.writer", decider: "owner", need, keys,
         message: `${plural(need.length, "pinned Publisher record")} (${listed(need)}) name ${plural(keys.length, "Writer key")} writer/${slot}'s pinned copy lacks: ${listed(keys)}` });
     }
   }
@@ -523,7 +536,7 @@ function policyQuestion(policy: SeatPolicyState, given: Readonly<Partial<Record<
 }
 
 /** An argv that only prints a brief (`clossys options ...`): it records nothing, so it is never an owner answer. */
-const briefOnly = (argv: readonly string[]) => argv[0] === "clossys" && argv[1] === "options";
+const briefOnly = (command: readonly string[]) => verbArgv(command)?.[0] === "options";
 const notNeeded = (items: readonly string[]) => ({ label: `Set ${items.length > 1 ? "them" : "it"} aside: not needed, for your reason.`, calls: items.map(item => ["clossys", "pin", item, "--not-needed", "--reason", "<reason>", "--by", QUEUE_ANSWER]) });
 
 /** Owner packets of one step grouped by option shape: items whose answers differ only by item and candidate rank are one question. */
@@ -531,7 +544,7 @@ function packetQuestions(packets: readonly Packet[]): Built[] {
   const groups = new Map<string, Packet[]>();
   const shape = (packet: Packet) => {
     const names = candidateNames(packet);
-    return JSON.stringify((packet.options ?? []).map(option => option.argv?.map(word => word === packet.item ? "<item>" : names.has(word) ? `<rank:${names.get(word)}>` : word) ?? null));
+    return JSON.stringify((packet.options ?? []).map(option => option.argv?.map(word => word === packet.item ? "<item>" : word.startsWith(`${packet.item}#`) ? `<item>${word.slice(packet.item.length)}` : names.has(word) ? `<rank:${names.get(word)}>` : word) ?? null));
   };
   for (const packet of packets) {
     const key = `${packet.step}|${shape(packet)}`;
@@ -574,7 +587,7 @@ function requestQuestion(gap: Gap, root: string, agentHeld: ReadonlySet<string> 
   const downstream = { label: `The ${gap.from} re-drafts ${plural(need.length, "slot")} without it.`, calls: need.map(redraft) };
   if (gap.code === "request.writer-keys") {
     const unapproved = writerKeysUnapproved(root).get(slotOf(gap.item)) ?? [];
-    if (newest[0] && (gap.keys ?? []).some(key => unapproved.includes(key))) rows.push({ label: `Approve ${newest[0]}, which holds the keys.`, calls: [["clossys", "approve", gap.item, newest[0], "--by", QUEUE_ANSWER]] });
+    if (newest[0] && (gap.keys ?? []).some(key => unapproved.includes(key))) rows.push({ label: `Pin ${newest[0]}, which holds the keys.`, calls: [["clossys", "pin", pinTargetOf(root, gap.item, newest[0]), newest[0], "--basis", "picked", "--by", QUEUE_ANSWER]] });
     rows.push({ label: `The Writer re-drafts ${gap.item} with the ${plural(gap.keys?.length ?? 0, "missing key")}.`, calls: [redraft(gap.item)] });
     rows.push({ label: `The Publisher re-drafts ${plural(need.length, "record")} without them.`, calls: need.map(redraft) });
   } else if (gap.code === "request.input-not-needed") {
@@ -596,7 +609,7 @@ function requestQuestion(gap: Gap, root: string, agentHeld: ReadonlySet<string> 
   return {
     id: `request:${gap.item}`, agent: to, step: gap.step, header: "Request", items: [gap.item],
     question: `${gap.message}. How does the ${to} answer?`, options: optionsFrom(rows, {}),
-    freeText: { id: "other", label: FREE_LABEL, verb: gap.code === "request.writer-keys" ? "clossys approve" : "clossys pin" }, after: [], requestedBy: [gap.from!],
+    freeText: { id: "other", label: FREE_LABEL, verb: "clossys pin" }, after: [], requestedBy: [gap.from!],
   };
 }
 
@@ -666,7 +679,7 @@ const POLICY_WORDS: Readonly<Record<PolicyAgent, string>> = {
   publisher: "pages that pass wiring and assemble only pinned Designer and Writer records",
 };
 const isPolicyGap = (gap: Gap) => (POLICY_AGENTS as readonly string[]).includes(gap.agent) && gap.item.startsWith(`${gap.agent}/`)
-  && (gap.code === "agent-pick.unconfirmed" || gap.code === `open.pin.${gap.agent}` || gap.code === "open.writer.approve");
+  && (gap.code === "agent-pick.unconfirmed" || gap.code === `open.pin.${gap.agent}`);
 const CANDIDATE_WORD = /-v\d+\.(?:md|json)$/;
 
 /**
@@ -715,7 +728,7 @@ function policyQuestions(gaps: readonly Gap[], all: readonly Gap[], root: string
     questions.push({
       id: `${agent}.policy`, agent, step: `pin.${agent}`, header: "Policy", items: inferred.map(row => row.item),
       question: `${verb} the ${agent[0]!.toUpperCase()}${agent.slice(1)}'s ${plural(inferred.length, "open slot")} by policy (${sorted.map(([group, list]) => `${group} ${list.length}`).join(", ")})? Each is the agent's pick or recommended candidate.`,
-      options, freeText: { id: "other", label: FREE_LABEL, verb: agent === "writer" ? "clossys approve" : "clossys pin" }, after: [], requestedBy: [],
+      options, freeText: { id: "other", label: FREE_LABEL, verb: "clossys pin" }, after: [], requestedBy: [],
     });
   }
   return { questions, perSlot };

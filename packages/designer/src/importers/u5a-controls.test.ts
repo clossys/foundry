@@ -6,7 +6,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { rewriteShadcnAria } from "./rewrite.js";
-import { classFallback, packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
+import { classRead, packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
 import { compiledCssDeclaredSources, generateCompiledCss } from "../compiled-css/generate.js";
 import { addDeclaredFallbacks } from "../compiled-css/declared-fallbacks.js";
 import slots from "../catalog/slots/components.json" with { type: "json" };
@@ -25,6 +25,8 @@ const supported: Record<string, string[]> = {
   "toggle-button": ["size.lg", "size.md", "size.sm", "state.disabled", "state.focus-visible", "state.hover", "state.selected", "variant.ghost", "variant.outline"],
   "toggle-group": ["orientation.horizontal", "orientation.vertical", "selection.multiple", "selection.single"],
 };
+/** A spacing step as the derived rewrite writes it: the spacing member's read with its declared fallback. */
+const step = (n: number) => `calc(${classRead(packageDeclaredFallbackReader(), "--spacing")}*${n})`;
 const counts: Record<string, number> = { checkbox: 1, "radio-group": 0, switch: 6, slider: 4, "toggle-button": 11, "toggle-group": 8 };
 
 describe("six pinned control evidence surfaces", () => {
@@ -39,23 +41,24 @@ describe("six pinned control evidence surfaces", () => {
     expect(group.reads.themes).toEqual(expect.arrayContaining(inherited));
     expect(result.fills.find(doc => doc.components.calendar)!.components.calendar!.reads.themes.filter(read => /^themes\.ring\./.test(read))).toEqual(result.rewrites.calendar!.reads.themes.filter(read => /^themes\.ring\./.test(read)));
   });
-  it("binds the slider thumb's size-3 to the control mark var, leaving the track untouched, inside the slider contract", () => {
+  it("binds the slider thumb's size-3 to the control mark length as a spacing step, leaving the track untouched, inside the slider contract", () => {
     const result = importShadcnAriaComponents(input());
     const fill = result.fills.find(doc => doc.components.slider)!.components.slider!;
     expect(fill.reads.themes).toContain("themes.ring.default");
     expect(fill.reads.themes.some(read => /control-size|focus-outline/.test(read))).toBe(false);
     const source = result.rewrites.slider!.files.find(file => file.path === "components/slider/slider.tsx")!.content;
-    expect(source).toMatch(/ relative size-\(--ui-control-mark\) rounded-full /);
+    expect(source).toContain(` relative size-[${step(4)}] rounded-full `);
     expect(source).not.toMatch(/h-\(--ui-control-mark/);
     expect(slots.find(slot => slot.id === "components.slider")!.contract.allowedReads.themes).toContain("themes.ring");
   });
-  it("binds the radio item's 16px box to the control mark var and keeps its focus ring, inside the radio contract", () => {
+  it("binds the radio item's 16px box to the control mark length as a spacing step and keeps its focus ring, inside the radio contract", () => {
     const result = importShadcnAriaComponents(input());
     const fill = result.fills.find(doc => doc.components["radio-group"])!.components["radio-group"]!;
     expect(fill.reads.themes).toContain("themes.ring.default");
     expect(fill.reads.themes.some(read => /control-size|focus-outline/.test(read))).toBe(false);
     const source = result.rewrites["radio-group"]!.files.find(file => file.path === "components/radio-group/radio-group.tsx")!.content;
-    expect(source).toContain(`size-(--ui-control-mark,${classFallback(packageDeclaredFallbackReader(), "--ui-control-mark")})`);
+    expect(source).toContain(`size-[${step(4)}]`);
+    expect(source).not.toContain("--ui-control-mark");
     expect(slots.find(slot => slot.id === "components.radio-group")!.contract.allowedReads.themes).toContain("themes.ring");
   });
   it("partitions every closed contract into source-backed members and explicit gaps", () => {
@@ -111,7 +114,7 @@ describe("six pinned control evidence surfaces", () => {
         expect(html).toContain('data-slot="checkbox-indeterminate"');
         expect(html).toContain('aria-hidden="true"');
         expect(html).toContain('border-color:currentColor');
-        expect(html).toContain('w-(--spacing-sm) border-t-(length:--ui-border-hairline)');
+        expect(html).toContain(`w-[${step(2)}] border-t"`);
         expect(html).not.toContain('data-asset=');
       } else {
         expect(html).not.toContain('checkbox-indeterminate');
@@ -121,17 +124,18 @@ describe("six pinned control evidence surfaces", () => {
     expect(rewrite.reads.assets).toEqual(["assets.icon-check"]);
     expect(rewrite.reads.themes).toContain("themes.spacing.default");
     expect(rewrite.issues.some(issue => issue.code === "K7")).toBe(false);
-    const { css } = await generateCompiledCss({ stylesDir: resolve(here, "../../../../styles"), candidates: ["w-(--spacing-sm)", "border-t-(length:--ui-border-hairline)"] });
-    expect(css).toContain(declaredRead("width: var(--spacing-sm)"));
-    expect(css).toContain(declaredRead("border-top-width: var(--ui-border-hairline)"));
+    const { css } = await generateCompiledCss({ stylesDir: resolve(here, "../../../../styles"), candidates: [`w-[${step(2)}]`, "border-t"] });
+    expect(css).toContain(`width: ${step(2).replace("*", " * ")}`);
+    expect(css).toContain("border-top-width: 1px");
   });
-  it("keeps checked and selected checkbox/switch paint bound to action ink", () => {
+  it("keeps checked and selected checkbox/switch paint bound to the primary member's emitted property", () => {
     const result = importShadcnAriaComponents(input());
     for (const item of ["checkbox", "switch"]) {
       const code = result.rewrites[item]!.files.map(file => file.content).join("\n");
-      expect(code).toContain("data-checked:bg-(--color-action)");
-      expect(code).toContain("data-selected:bg-(--color-action)");
-      expect(code).not.toMatch(/(?:data-checked|data-selected):bg-\(--color-accent/);
+      expect(code).toContain("data-checked:bg-(--primary)");
+      expect(code).toContain("data-selected:bg-(--primary)");
+      expect(code).not.toMatch(/(?:data-checked|data-selected):bg-\(--(?:color-)?accent/);
+      expect(code).not.toContain("--color-action");
     }
   });
   for (const item of ["checkbox", "switch"]) it(`keeps ${item} adapter output byte-exact with its golden`, () => {

@@ -84,13 +84,14 @@ describe("selected pinned-source normalization", () => {
     }
   });
   // The former 206 K4 + 2 K7 tuples are now accounted for by rewrite.ts selectedBindings: each exact,
-  // accepted restyle is kept as a "Restyled source" receipt note rather than a blocker.
+  // accepted restyle is kept as a "Restyled source" receipt note rather than a blocker. Derived (`@5`), the keyboard's
+  // text-xs reads the stock type scale unchanged, so it is no longer a restyle (136 at `@3`).
   it("B1-N4 receipts every final file and keeps every accepted restyle as a note, not a blocker", () => {
     const result = importShadcnAriaComponents(pinnedInput());
     const blockers = result.fills.flatMap(doc => Object.values(doc.components).flatMap(fill => fill.blockers));
     expect(blockers).toHaveLength(0);
     const restyled = result.receipt.filter(row => row.status === "candidate").flatMap(row => row.notes ?? []).filter(note => note.message.startsWith("Restyled source"));
-    expect(restyled).toHaveLength(136);
+    expect(restyled).toHaveLength(135);
     for (const [item, bundle] of Object.entries(result.rewrites)) {
       expect(bundle.outputSha256, item).toEqual(bundle.files.map(file => ({ path: file.path, sha256: sha256(file.content) })).sort((a, b) => a.path.localeCompare(b.path)));
     }

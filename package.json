@@ -33,7 +33,6 @@
     "check:single-reader": "node --test scripts/check-single-reader.test.mjs && node scripts/check-single-reader.mjs",
     "check:engine-side-door": "node packages/producer/dist/cli/index.js check --side-door --root .",
     "check:review-doc": "node packages/producer/dist/cli/index.js review --check-doc --root .",
-    "review": "node packages/producer/dist/cli/index.js review",
     "check:pin-propagation": "node --test packages/producer/scripts/check-pin-propagation.test.mjs",
     "check:every-candidate-previewable": "node --test packages/producer/scripts/check-every-candidate-previewable.test.mjs",
     "//check-agents": "The agents' own strict checks (Director completion at MVS and handoff, Designer, Writer, slot readiness, strict record suites, direct --check) run by scripts/check-agents.mjs against the built producer CLI; a root `check` step after `build`. Its step list is pinned by scripts/check-agents.test.mjs, which check:gates runs.",

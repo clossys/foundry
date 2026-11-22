@@ -78,7 +78,7 @@ describe("shadcn@aria compose rules", () => {
     expect(() => validateComponentRuleTemplate(rule)).not.toThrow();
     // Mutation probe: one changed stock byte is refused by the rule receipts.
     const mutated = structuredClone(rule);
-    mutated.files = mutated.files.map(file => file.path === "components/field/stock/field.tsx" ? { ...file, content: file.content.replace(`gap-[${classRead(packageDeclaredFallbackReader(), "--spacing-xl")}]`, `gap-[${classRead(packageDeclaredFallbackReader(), "--spacing-lg")}]`) } : file);
+    mutated.files = mutated.files.map(file => file.path === "components/field/stock/field.tsx" ? { ...file, content: file.content.replace(`gap-[calc(${classRead(packageDeclaredFallbackReader(), "--spacing")}*6)]`, `gap-[calc(${classRead(packageDeclaredFallbackReader(), "--spacing")}*4)]`) } : file);
     expect(mutated.files.find(file => file.path === "components/field/stock/field.tsx")!.content).not.toBe(stockField);
     expect(() => validateComponentRuleTemplate(mutated)).toThrow();
     // A changed pinned stock item byte is refused before any rewrite.

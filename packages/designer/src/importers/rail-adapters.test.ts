@@ -15,6 +15,7 @@ import { emittedTokenProperties } from "../catalog-core/emit.js";
 import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-catalog-library.js";
 import { loadCatalog, resolve } from "../catalog-core/index.js";
 import { adaptRailClasses } from "./rail-classes.js";
+import { packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
 import { generateCompiledCss } from "../compiled-css/generate.js";
 import * as cssTree from "css-tree";
 import { JSDOM } from "jsdom";
@@ -100,12 +101,22 @@ describe("generated Aria rail adaptation contract", () => {
     expect(result.imports).toEqual(["@clossys/designer/components"]);
   });
 
-  it("binds every utility/variable registration to an actual emitted token member and property", () => {
+  it("binds a stock utility registration only to the emitted member whose property the utility reads, and names the width residual", () => {
     const catalog = loadCatalog();
     const library = completedCatalogLibrary(catalog, { id: "rail-map-fixture", kind: "consumer", author: "consumer", license: "MIT" }, "2026-10-28");
     const members = new Map(emittedTokenProperties(resolve({ catalog, library })));
-    for (const row of bindings.variables) expect(members.get(row.member)?.property, row.member).toBe(row.property);
-    for (const row of bindings.utilities) expect(members.has(row.member), row.utility).toBe(true);
+    for (const row of bindings.utilities) {
+      expect(Object.keys(row).every(key => key === "utility" || key === "member"), row.utility).toBe(true);
+      if ("member" in row) expect(members.get(row.member)?.property, row.utility).toBe(`--${row.utility}`);
+    }
+    // The stock sidebar widths are a named residual: no consumer member emits them, and each read has a declared value.
+    const emitted = new Set([...members.values()].map(token => token.property));
+    const reader = packageDeclaredFallbackReader();
+    for (const row of bindings.variables) {
+      expect(Object.keys(row).sort(), row.input).toEqual(["input", "property"]);
+      expect(emitted.has(row.input), row.input).toBe(false);
+      expect(() => reader.fallback(row.property), row.property).not.toThrow();
+    }
   });
 
   it("lowers single utilities and preserves logical centering and Sheet travel in both directions", async () => {

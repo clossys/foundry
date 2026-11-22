@@ -192,13 +192,11 @@
         "rules",
         "owner.decisions",
         "pin.director",
-        "writer.approve",
         "pin.designer",
         "pin.writer",
         "pin.publisher"
       ],
       "verbs": [
-        "approve",
         "config",
         "evidence",
         "ia",
@@ -223,12 +221,10 @@
         "packages/producer/actions/seats/skill.md",
         "packages/producer/actions/standard/skill.md",
         "packages/producer/actions/workspace.config/skill.md",
-        "packages/producer/actions/writer.approve/skill.md",
         "packages/producer/skill/SKILL.md"
       ],
       "code": [
         "packages/producer/src/cli/owner.ts",
-        "packages/producer/src/cli/owner.ts#runApproveCli",
         "packages/producer/src/cli/owner.ts#runConfigCli",
         "packages/producer/src/cli/owner.ts#runEvidenceCli",
         "packages/producer/src/cli/owner.ts#runIaCli",

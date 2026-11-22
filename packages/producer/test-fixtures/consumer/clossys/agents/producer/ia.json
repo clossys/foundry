@@ -56,7 +56,6 @@
           "slots": [
             "seat.pick.designer",
             "seat.pick.writer",
-            "seat.writer.approve",
             "seat.pin.designer",
             "seat.pin.writer"
           ]
@@ -92,6 +91,16 @@
           ]
         }
       ]
+    }
+  ],
+  "retired": [
+    {
+      "schema": "clossys.retire/1",
+      "slot": "producer/seat.writer.approve",
+      "sha256": "bcfbf3b2e75eeaeaa385fb05a6b884b0a503c6322246fca086e44bbd314ddfcc",
+      "by": "migration:ia-sync",
+      "reason": "not-needed: ia sync, the package defines no step writer.approve",
+      "at": "2026-11-17T00:00:00Z"
     }
   ]
 }

@@ -88,7 +88,7 @@ describe("release.ready mutations", () => {
     delete pins["designer/sections.hero"];
     pins["publisher/page.home"] = pins["publisher/page.home"]!.replace(/@([0-9a-f]{8})[0-9a-f]{56}$/, "@$1");
     const name = "site-v2.json";
-    const header = buildCandidateHeader({ agent: "publisher", slotId: "release.site", name, createdBy: cliActor("clossys release site --manifest"), createdAt: now().toISOString().replace(/\.\d{3}Z$/, "Z"), source: { kind: "derived", ref: ["publisher/release.site/site-v1.json"] } });
+    const header = buildCandidateHeader({ agent: "publisher", slotId: "release.site", name, createdBy: cliActor("clossys publisher release site --manifest"), createdAt: now().toISOString().replace(/\.\d{3}Z$/, "Z"), source: { kind: "derived", ref: ["publisher/release.site/site-v1.json"] } });
     writeCandidateFile(candidatePath(world.root, "publisher", "release.site", name), serializeCandidate(name, header, { ...good, pins, build: { ...good.build, id: built.id } }));
     const entry = world.signoff(now);
     const findings = readyFindings(world.root, "site", { candidate: name, decidedBy: `owner:${entry}`, basis: "picked", at: "2026-11-21T09:00:00Z" }).map(row => row.detail);

@@ -69,11 +69,11 @@
         },
         {
           "path": "components/slider/slider.tsx",
-          "sha256": "17798fd6b5611bbc726191df14528308b9bad6e165625f37ea8d2759053e9179"
+          "sha256": "65d36dfecf9eda09c5ff8c1813bb5368e8bd72d851317e4244afbaec8e81411e"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -125,7 +125,7 @@
       "root": "rac:Slider",
       "slot": "components.slider",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

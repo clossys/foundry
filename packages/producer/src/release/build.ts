@@ -1,5 +1,5 @@
 /**
- * `clossys release <pub> --build` (flows.md F8 step 2, N13): build the publication from the pins as they resolve now
+ * `clossys publisher release <pub> --build` (flows.md F8 step 2, N13): build the publication from the pins as they resolve now
  * into `clossys/.state/builds/<id first 8>/`. Producer resolves the pins and calls the build; the content packages never
  * import Producer (system.md 14.2).
  *

@@ -29,7 +29,7 @@ Four verbs; the action file is the contract and its skill is the step you run:
 `actions/publish.page/` is the read-only dry run of every pinned page against Designer
 and Writer pins; `actions/publish.install/` renders pinned pages after the owner's pins.
 Producer `actions/publisher.release/` gates a release: the publication's pinned pages
-must pass `publisher.check`, else the release is refused before `clossys release` runs.
+must pass `publisher.check`, else the release is refused before the release step runs.
 A release is ready only when the owner signs it in chat (`queue.approve`); nothing here
 takes a publication live.
 

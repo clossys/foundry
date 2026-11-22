@@ -104,8 +104,8 @@ function pinnedCandidates(file: string): string[] {
  * Writer keys awaiting a decision, per Writer slot: keys a slot's candidates propose that its pinned
  * candidate does not hold (every key of an unpinned slot's newest candidate). A pinned key is decided.
  * Pin = approval (owner Producer round 2): an owner pin (`pinApproved`: basis picked or bulk) is the
- * editorial approval (`clossys approve writer/<slot>`; no `status: approved` field exists in the Writer
- * record format); a planner or agent pin stays a confirm item until the owner pins. `records/writer-copy.ts`
+ * editorial approval (`clossys pin writer/<slot> <candidate> --basis picked --by owner:queue.approve#<id>`; no
+ * `status: approved` field exists in the Writer record format); a planner or agent pin stays a confirm item until the owner pins. `records/writer-copy.ts`
  * reads the same rule.
  */
 export function writerKeysUnapproved(root: string): ReadonlyMap<string, readonly string[]> {
@@ -142,7 +142,6 @@ export function writerKeysUnapproved(root: string): ReadonlyMap<string, readonly
 
 function openCount(counter: OpenCounter, root: string, agents: PipelineStatus["agents"], seats: Record<string, SeatReport>): number {
   if (counter.startsWith("slots-undecided:")) { const agent = counter.slice("slots-undecided:".length); return agents[agent]?.open ?? 0; }
-  if (counter === "writer-keys-unapproved") return [...writerKeysUnapproved(root).values()].reduce((sum, keys) => sum + keys.length, 0);
   if (counter === "seats-open") return Object.values(seats).filter(seat => seat.state !== "assigned").length;
   if (counter === "on-demand") return 0;
   if (counter === "slots-without-slot-json") {

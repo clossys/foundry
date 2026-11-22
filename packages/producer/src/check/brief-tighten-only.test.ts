@@ -14,7 +14,7 @@ const PROMISE = "director/advantage.proposition.promise:Promise";
 /** A Tallyhouse copy after `ia sync` (bases recorded at the installed sha). */
 async function synced() {
   const ws = tallyhouseWorld();
-  await runIaSyncCli(["sync", "--at", LATER], ws.root);
+  await runIaSyncCli(["--at", LATER], ws.root);
   const slot = ws.read("writer", HERO);
   const entry = (path: string, op: Tighten["op"], value: unknown): Tighten => ({ ...slot.tighten[0]!, path, op, value });
   return { ws, slot, entry };

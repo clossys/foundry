@@ -47,3 +47,21 @@ export function readPipelineSeats(root: string = PRODUCER_ROOT): PipelineSeats {
   for (const step of Object.keys(doc.seats)) if (!placed.has(`seat.${step}`)) throw new Error(`${PIPELINE_SEATS_FILE}: the seat default ${step} is not placed`);
   return doc as unknown as PipelineSeats;
 }
+
+/** The action registry snapshot this package ships (src/pipeline/actions.ts ACTIONS_FILE). */
+const PIPELINE_ACTIONS_FILE = "pipeline/actions.json";
+/**
+ * Every step id the package defines, decide or plumb (pipeline/actions.json, the registry snapshot). A producer seat
+ * whose step is not here seats a step the package no longer has; `clossys ia sync` retires it. A malformed file throws.
+ */
+export function packageStepIds(root: string = PRODUCER_ROOT): ReadonlySet<string> {
+  const doc = JSON.parse(readFileSync(join(root, PIPELINE_ACTIONS_FILE), "utf8")) as unknown;
+  if (!object(doc) || !Array.isArray(doc.actions)) throw new Error(`${PIPELINE_ACTIONS_FILE}: not an action registry snapshot`);
+  const ids = new Set<string>();
+  for (const action of doc.actions) {
+    const id = object(action) && object(action.contract) ? action.contract.id : undefined;
+    if (typeof id !== "string" || !id) throw new Error(`${PIPELINE_ACTIONS_FILE}: an action has no contract id`);
+    ids.add(id);
+  }
+  return ids;
+}

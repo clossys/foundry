@@ -8,7 +8,7 @@ function Kbd({ className, ...props }: React.ComponentProps<"kbd">) {
     <KbdPrimitive
       data-slot="kbd"
       className={cn(
-        "bg-(--color-surface-sunken) text-(--color-ink-muted) in-data-[slot=tooltip-content]:bg-(--color-surface-base)/20 in-data-[slot=tooltip-content]:text-(--color-surface-base) dark:in-data-[slot=tooltip-content]:bg-(--color-surface-base)/10 h-[var(--spacing-xl,24px)] w-fit min-w-[var(--spacing-xl,24px)] gap-(--spacing-xs) rounded-(--radius-control) px-(--spacing-xs) font-(family-name:--font-body) text-(length:--text-code-block) font-(weight:--font-weight-medium) [&_svg:not([class*='size-'])]:size-(--spacing-md) pointer-events-none inline-flex items-center justify-center select-none",
+        "bg-(--muted) text-(--muted-foreground) in-data-[slot=tooltip-content]:bg-(--background)/20 in-data-[slot=tooltip-content]:text-(--background) dark:in-data-[slot=tooltip-content]:bg-(--background)/10 h-[calc(var(--spacing,0.25rem)*6)] w-fit min-w-[calc(var(--spacing,0.25rem)*6)] gap-[calc(var(--spacing,0.25rem)*1)] rounded-(--radius) px-[calc(var(--spacing,0.25rem)*1)] font-(family-name:--font-sans) text-(length:--text-xs) font-medium [&_svg:not([class*='size-'])]:size-[calc(var(--spacing,0.25rem)*3)] pointer-events-none inline-flex items-center justify-center select-none",
         className
       )}
       {...props}
@@ -20,7 +20,7 @@ function KbdGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <KbdPrimitive
       data-slot="kbd-group"
-      className={cn("gap-(--spacing-xs) inline-flex items-center", className)}
+      className={cn("gap-[calc(var(--spacing,0.25rem)*1)] inline-flex items-center", className)}
       {...props}
     />
   )

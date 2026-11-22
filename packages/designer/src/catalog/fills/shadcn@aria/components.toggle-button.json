@@ -79,11 +79,11 @@
         },
         {
           "path": "components/toggle-button/toggle.tsx",
-          "sha256": "c172fb4b4c5470f027003852ef59dc96d243d1b172f2b450e78635a5c8498ebd"
+          "sha256": "b4efd757d64bef9a53a93c14202b1341f5002c2426fc87995a45a2ca878faa30"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -132,6 +132,7 @@
         "themes": [
           "themes.destructive.default",
           "themes.foreground.default",
+          "themes.input.default",
           "themes.muted.default",
           "themes.primary-foreground.default",
           "themes.primary.default",
@@ -143,7 +144,7 @@
       "root": "rac:ToggleButton",
       "slot": "components.toggle-button",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

@@ -23,6 +23,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import adapter from "../catalog/adapters/shadcn@aria.json" with { type: "json" };
+import legacyReads from "./legacy-foundry-reads.json" with { type: "json" };
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import type { ComponentSlot, FillMeta } from "../catalog-core/types.js";
 import { sha256 } from "../catalog-core/digest.js";
@@ -50,8 +51,8 @@ export interface ShadcnChartFillDoc {
 }
 export interface ShadcnChartsImport { fills: readonly ShadcnChartFillDoc[]; rewrites: Readonly<Record<string, ShadcnChartRewrite>> }
 
-/** Series colour slots: each reads only the theme token the adapter binds `--chart-N` to, with its declared value. */
-export const SHADCN_CHART_SERIES_COLORS: readonly string[] = Object.entries(adapter.bindings as Record<string, { property: string }>)
+/** Series colour slots: each reads only the theme token the legacy Foundry reads bind `--chart-N` to, with its declared value. */
+export const SHADCN_CHART_SERIES_COLORS: readonly string[] = Object.entries(legacyReads.bindings as Record<string, { property: string }>)
   .filter(([name]) => /^chart-\d+$/.test(name))
   .sort(([a], [b]) => Number(a.slice(6)) - Number(b.slice(6)))
   .map(([, binding]) => cssRead(packageDeclaredFallbackReader(), binding.property));

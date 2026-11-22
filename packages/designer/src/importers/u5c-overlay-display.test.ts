@@ -103,7 +103,10 @@ describe("overlay and display pinned source evidence", () => {
     for (const item of ["dialog", "popover", "dropdown-menu"]) {
       if (item === "dialog") expect(result.rewrites[item]!.reads.themes.some(read => read.startsWith("themes.shadow."))).toBe(false);
       else expect(result.rewrites[item]!.reads.themes).toContain("themes.shadow.md");
-      expect(result.rewrites[item]!.files.map(file => file.content).join("\n")).not.toMatch(/\bshadow-(?:sm|md|lg|xl|2xl)\b/);
+      const code = result.rewrites[item]!.files.map(file => file.content).join("\n");
+      // A stock elevation utility atom (not the emitted `--shadow-*` property a derived read names).
+      expect(code).not.toMatch(/(?<![\w-])shadow-(?:sm|md|lg|xl|2xl)\b/);
+      if (item !== "dialog") expect(code).toContain("shadow-(--shadow-md)");
     }
     expect(result.rewrites.tabs!.files.map(file => file.content).join("\n")).not.toMatch(/cn-tabs-list-variant-(?:default|line)/);
   });

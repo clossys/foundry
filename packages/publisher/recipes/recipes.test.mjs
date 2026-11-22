@@ -133,11 +133,11 @@ describe("Publisher recipes load clean and cover every standard (R15.5)", () => 
 
 describe("a plumb recipe's craft.md runs clossys verbs only, with no model stage", () => {
   it("the fault finder refuses a model stage, an unmarked stage and a non-clossys command (mutation)", () => {
-    const good = "### 1. build (deterministic)\n\n```sh\nclossys release <pub> --build\n```\n";
+    const good = "### 1. build (deterministic)\n\n```sh\nclossys publisher release <pub> --build\n```\n";
     assert.deepEqual(plumbCraftFaults(good), []);
     assert.ok(plumbCraftFaults(good.replace("build (deterministic)", "brief (model)")).some(fault => fault.startsWith("model stage")));
     assert.ok(plumbCraftFaults(good.replace(" (deterministic)", "")).some(fault => fault.startsWith("stage not deterministic")));
-    assert.ok(plumbCraftFaults(good.replace("clossys release <pub> --build", "node stage-check.mjs draft")).some(fault => fault.startsWith("not a clossys verb")));
+    assert.ok(plumbCraftFaults(good.replace("clossys publisher release <pub> --build", "node stage-check.mjs draft")).some(fault => fault.startsWith("not a clossys verb")));
   });
   for (const id of PLUMB_RECIPE_IDS) {
     it(`${id}: deterministic clossys stages only, no model node, no craft event`, () => {
@@ -152,9 +152,9 @@ describe("a plumb recipe's craft.md runs clossys verbs only, with no model stage
     const text = readFileSync(join(HERE, "release", "craft.md"), "utf8");
     const commands = [...text.matchAll(/^```[^\n]*\n([\s\S]*?)^```/gm)].flatMap(block => block[1].split("\n").map(line => line.trim()).filter(Boolean));
     assert.deepEqual(commands, [
-      "clossys release <pub> --build",
-      "clossys release <pub> --manifest",
-      "clossys release <pub> --gates",
+      "clossys publisher release <pub> --build",
+      "clossys publisher release <pub> --manifest",
+      "clossys publisher release <pub> --gates",
       "clossys check --constitution --slot publisher/release.<pub>",
     ]);
     assert.doesNotMatch(text, /--ready\b/, "the owner writes the ready-pin, never the recipe");

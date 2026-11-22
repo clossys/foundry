@@ -2,7 +2,7 @@
 
 Source: https://github.com/shadcn-ui/ui
 Commit: daaf156ee00ed91cc7e6bdd937c1b4973152d141
-Transform: shadcn-aria-rewrite@3
+Transform: shadcn-aria-rewrite@5
 Items: input, textarea (components/text-field/stock/), wired by the owned components/text-field/text-field.tsx
 
 MIT License

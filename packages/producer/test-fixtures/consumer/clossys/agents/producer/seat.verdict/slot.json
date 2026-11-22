@@ -8,7 +8,7 @@
     "l0": "seat",
     "l1": "seat/publish",
     "l2": "seat/publish/assemble",
-    "order": 22
+    "order": 21
   },
   "createdBy": {
     "actor": "code",

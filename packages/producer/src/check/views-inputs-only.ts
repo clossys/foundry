@@ -1,5 +1,5 @@
 /**
- * `views.inputs-only` (system.md 6.6, 9, 12.7, 14.9; run by the package script `check:views`): a view prompt
+ * `views.inputs-only` (system.md 6.6, 9, 12.7, 14.9; its test runs it over the shipped views): a view prompt
  * is a read-only, tool-neutral instruction for a chat agent, and it reads the workspace only through the four
  * read verbs.
  *

@@ -13,7 +13,7 @@ function InputGroup({ className, ...props }: GroupProps) {
     <Group
       data-slot="input-group"
       className={cn(
-        "group/input-group border-(--color-line-strong) dark:bg-(--color-line-strong)/30 has-[[data-slot=input-group-control]:focus-visible]:border-(--color-focus-ring) has-[[data-slot=input-group-control]:focus-visible]:outline-solid has-[[data-slot=input-group-control]:focus-visible]:outline-(length:--ui-border-focus,2px) has-[[data-slot=input-group-control]:focus-visible]:outline-offset-(--ui-focus-offset) has-[[data-slot=input-group-control]:focus-visible]:outline-(--color-focus-ring) has-[[data-slot][aria-invalid=true]]:outline-solid has-[[data-slot][aria-invalid=true]]:outline-(length:--ui-border-focus,2px) has-[[data-slot][aria-invalid=true]]:outline-offset-(--ui-focus-offset) has-[[data-slot][aria-invalid=true]]:outline-(--color-status-danger) has-[[data-slot][aria-invalid=true]]:border-(--color-status-danger) dark:has-[[data-slot][aria-invalid=true]]:ring-(--color-status-danger)/40 has-disabled:bg-(--color-line-strong)/50 dark:has-disabled:bg-(--color-line-strong)/80 h-(--ui-control-h-md,32px) rounded-(--radius-control) border-(length:--ui-border-hairline,1px) transition-colors duration-(--ui-duration-default) ease-(--default-transition-timing-function) in-data-[slot=combobox-content]:focus-within:border-inherit in-data-[slot=combobox-content]:focus-within:ring-0 has-disabled:opacity-(--ui-alpha-disabled,0.5) has-[[data-slot=input-group-control]:focus-visible]:outline-solid has-[[data-slot=input-group-control]:focus-visible]:outline-(length:--ui-border-focus,2px) has-[[data-slot=input-group-control]:focus-visible]:outline-offset-(--ui-focus-offset) has-[[data-slot=input-group-control]:focus-visible]:outline-(--color-focus-ring) has-[[data-slot][aria-invalid=true]]:outline-solid has-[[data-slot][aria-invalid=true]]:outline-(length:--ui-border-focus,2px) has-[[data-slot][aria-invalid=true]]:outline-offset-(--ui-focus-offset) has-[[data-slot][aria-invalid=true]]:outline-(--color-status-danger) has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-(--spacing-md) has-[>[data-align=block-start]]:[&>input]:pb-(--spacing-md) has-[>[data-align=inline-end]]:[&>input]:pe-(--spacing-sm) has-[>[data-align=inline-start]]:[&>input]:ps-(--spacing-sm) text-(length:--text-body) font-(family-name:--font-body) relative flex w-full min-w-0 items-center has-[>textarea]:h-auto",
+        "group/input-group border-(--input) dark:bg-(--input)/30 has-[[data-slot=input-group-control]:focus-visible]:border-(--ring) has-[[data-slot=input-group-control]:focus-visible]:outline-solid has-[[data-slot=input-group-control]:focus-visible]:outline-2 has-[[data-slot=input-group-control]:focus-visible]:outline-offset-2 has-[[data-slot=input-group-control]:focus-visible]:outline-(--ring) has-[[data-slot][aria-invalid=true]]:outline-solid has-[[data-slot][aria-invalid=true]]:outline-2 has-[[data-slot][aria-invalid=true]]:outline-offset-2 has-[[data-slot][aria-invalid=true]]:outline-(--destructive) has-[[data-slot][aria-invalid=true]]:border-(--destructive) dark:has-[[data-slot][aria-invalid=true]]:ring-(--destructive)/40 has-disabled:bg-(--input)/50 dark:has-disabled:bg-(--input)/80 h-[calc(var(--spacing,0.25rem)*8)] rounded-(--radius) border transition-colors in-data-[slot=combobox-content]:focus-within:border-inherit in-data-[slot=combobox-content]:focus-within:ring-0 has-disabled:opacity-50 has-[[data-slot=input-group-control]:focus-visible]:outline-solid has-[[data-slot=input-group-control]:focus-visible]:outline-2 has-[[data-slot=input-group-control]:focus-visible]:outline-offset-2 has-[[data-slot=input-group-control]:focus-visible]:outline-(--ring) has-[[data-slot][aria-invalid=true]]:outline-solid has-[[data-slot][aria-invalid=true]]:outline-2 has-[[data-slot][aria-invalid=true]]:outline-offset-2 has-[[data-slot][aria-invalid=true]]:outline-(--destructive) has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-[calc(var(--spacing,0.25rem)*3)] has-[>[data-align=block-start]]:[&>input]:pb-[calc(var(--spacing,0.25rem)*3)] has-[>[data-align=inline-end]]:[&>input]:pe-[calc(var(--spacing,0.25rem)*2)] has-[>[data-align=inline-start]]:[&>input]:ps-[calc(var(--spacing,0.25rem)*2)] text-(length:--text-sm) font-(family-name:--font-sans) relative flex w-full min-w-0 items-center has-[>textarea]:h-auto",
         className
       )}
       {...props}
@@ -22,16 +22,16 @@ function InputGroup({ className, ...props }: GroupProps) {
 }
 
 const inputGroupAddonVariants = cva(
-  "text-(--color-ink-muted) h-auto gap-(--spacing-sm) py-(--spacing-sm) text-(length:--text-body) font-(weight:--font-weight-medium) group-data-[disabled=true]/input-group:opacity-(--ui-alpha-disabled,0.5) [&>kbd]:rounded-(--radius-subtle) [&>svg:not([class*='size-'])]:size-(--spacing-lg,16px) flex cursor-text items-center justify-center select-none",
+  "text-(--muted-foreground) h-auto gap-[calc(var(--spacing,0.25rem)*2)] py-[calc(var(--spacing,0.25rem)*2)] text-(length:--text-sm) font-medium group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius,0.625rem)-5px)] [&>svg:not([class*='size-'])]:size-[calc(var(--spacing,0.25rem)*4)] flex cursor-text items-center justify-center select-none",
   {
     variants: {
       align: {
-        "inline-start": "ps-(--spacing-sm) has-[>button]:ms-[calc(var(--spacing-xs,4px)*-1)] has-[>kbd]:ms-[calc(var(--spacing-xs,4px)*-1)] order-first",
-        "inline-end": "pe-(--spacing-sm) has-[>button]:me-[calc(var(--spacing-xs,4px)*-1)] has-[>kbd]:me-[calc(var(--spacing-xs,4px)*-1)] order-last",
+        "inline-start": "ps-[calc(var(--spacing,0.25rem)*2)] has-[>button]:ms-[calc(calc(var(--spacing,0.25rem)*1)*-1)] has-[>kbd]:ms-[calc(calc(var(--spacing,0.25rem)*1)*-1)] order-first",
+        "inline-end": "pe-[calc(var(--spacing,0.25rem)*2)] has-[>button]:me-[calc(calc(var(--spacing,0.25rem)*1)*-1)] has-[>kbd]:me-[calc(calc(var(--spacing,0.25rem)*1)*-1)] order-last",
         "block-start":
-          "px-(--spacing-md) pt-(--spacing-sm) group-has-[>input]/input-group:pt-(--spacing-sm) [.border-b]:pb-(--spacing-sm) order-first w-full justify-start",
+          "px-[calc(var(--spacing,0.25rem)*3)] pt-[calc(var(--spacing,0.25rem)*2)] group-has-[>input]/input-group:pt-[calc(var(--spacing,0.25rem)*2)] [.border-b]:pb-[calc(var(--spacing,0.25rem)*2)] order-first w-full justify-start",
         "block-end":
-          "px-(--spacing-md) pb-(--spacing-sm) group-has-[>input]/input-group:pb-(--spacing-sm) [.border-t]:pt-(--spacing-sm) order-last w-full justify-start",
+          "px-[calc(var(--spacing,0.25rem)*3)] pb-[calc(var(--spacing,0.25rem)*2)] group-has-[>input]/input-group:pb-[calc(var(--spacing,0.25rem)*2)] [.border-t]:pt-[calc(var(--spacing,0.25rem)*2)] order-last w-full justify-start",
       },
     },
     defaultVariants: {
@@ -63,14 +63,14 @@ function InputGroupAddon({
 }
 
 const inputGroupButtonVariants = cva(
-  "gap-(--spacing-sm) text-(length:--text-body) flex items-center shadow-(--ui-elevation-none)",
+  "gap-[calc(var(--spacing,0.25rem)*2)] text-(length:--text-sm) flex items-center shadow-none",
   {
     variants: {
       size: {
-        xs: "h-(--spacing-xl) gap-(--spacing-xs) rounded-(--radius-default) px-(--spacing-sm) [&>svg:not([class*='size-'])]:size-(--ui-control-switch-thumb,14px)",
+        xs: "h-[calc(var(--spacing,0.25rem)*6)] gap-[calc(var(--spacing,0.25rem)*1)] rounded-[calc(var(--radius,0.625rem)-3px)] px-[calc(var(--spacing,0.25rem)*2)] [&>svg:not([class*='size-'])]:size-[calc(var(--spacing,0.25rem)*3.5)]",
         sm: "",
-        "icon-xs": "size-(--spacing-xl) rounded-(--radius-default) p-0 has-[>svg]:p-0",
-        "icon-sm": "size-(--spacing-2xl) p-0 has-[>svg]:p-0",
+        "icon-xs": "size-[calc(var(--spacing,0.25rem)*6)] rounded-[calc(var(--radius,0.625rem)-3px)] p-0 has-[>svg]:p-0",
+        "icon-sm": "size-[calc(var(--spacing,0.25rem)*8)] p-0 has-[>svg]:p-0",
       },
     },
     defaultVariants: {
@@ -105,7 +105,7 @@ function InputGroupText({ className, ...props }: ReactComponentProps<"span">) {
   return (
     <span
       className={cn(
-        "text-(--color-ink-muted) gap-(--spacing-sm) text-(length:--text-body) [&_svg:not([class*='size-'])]:size-(--spacing-lg,16px) flex items-center [&_svg]:pointer-events-none",
+        "text-(--muted-foreground) gap-[calc(var(--spacing,0.25rem)*2)] text-(length:--text-sm) [&_svg:not([class*='size-'])]:size-[calc(var(--spacing,0.25rem)*4)] flex items-center [&_svg]:pointer-events-none",
         className
       )}
       {...props}
@@ -120,7 +120,7 @@ function InputGroupInput({
   return (
     <Input
       data-slot="input-group-control"
-      className={cn("rounded-none border-0 bg-transparent shadow-(--ui-elevation-none) ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent flex-1", className)}
+      className={cn("rounded-none border-0 bg-transparent shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent flex-1", className)}
       {...props}
     />
   )
@@ -133,7 +133,7 @@ function InputGroupTextarea({
   return (
     <Textarea
       data-slot="input-group-control"
-      className={cn("rounded-none border-0 bg-transparent py-(--spacing-sm) shadow-(--ui-elevation-none) ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent flex-1 resize-none", className)}
+      className={cn("rounded-none border-0 bg-transparent py-[calc(var(--spacing,0.25rem)*2)] shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent flex-1 resize-none", className)}
       {...props}
     />
   )

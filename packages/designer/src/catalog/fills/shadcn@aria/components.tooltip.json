@@ -66,11 +66,11 @@
         },
         {
           "path": "components/tooltip/tooltip.tsx",
-          "sha256": "5ac282608be352c11df16e3e6fc3fd49b9463e1dd0e8aa9bc1b4f4e62e1e64f6"
+          "sha256": "8c5a578d300166bb3688eedb336740c8c7440979a95887661300d7e8c31c47dc"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -126,7 +126,7 @@
       "root": "rac:Tooltip",
       "slot": "components.tooltip",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

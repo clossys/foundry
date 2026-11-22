@@ -15,7 +15,7 @@ function Avatar({
       data-slot="avatar"
       data-size={size}
       className={cn(
-        "size-(--spacing-2xl) rounded-full after:rounded-full data-[size=lg]:size-[var(--spacing-3xl,48px)] data-[size=sm]:size-(--spacing-xl) group/avatar relative flex shrink-0 select-none after:absolute after:inset-0 after:border-(length:--ui-border-hairline,1px) after:border-(--color-line-base) after:mix-blend-darken dark:after:mix-blend-lighten",
+        "size-[calc(var(--spacing,0.25rem)*8)] rounded-full after:rounded-full data-[size=lg]:size-[calc(var(--spacing,0.25rem)*12)] data-[size=sm]:size-[calc(var(--spacing,0.25rem)*6)] group/avatar relative flex shrink-0 select-none after:absolute after:inset-0 after:border after:border-(--border) after:mix-blend-darken dark:after:mix-blend-lighten",
         className
       )}
       {...props}
@@ -50,7 +50,7 @@ function AvatarFallback({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="avatar-fallback"
       className={cn(
-        "bg-(--color-surface-sunken) text-(--color-ink-muted) rounded-full flex size-full items-center justify-center text-(length:--text-sm) group-data-[size=sm]/avatar:text-(length:--text-xs) peer-data-[state=error]:flex peer-[*]:hidden",
+        "bg-(--muted) text-(--muted-foreground) rounded-full flex size-full items-center justify-center text-(length:--text-sm) group-data-[size=sm]/avatar:text-(length:--text-xs) peer-data-[state=error]:flex peer-[*]:hidden",
         className
       )}
       {...props}
@@ -63,10 +63,10 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
     <span
       data-slot="avatar-badge"
       className={cn(
-        "bg-(--color-action) text-(--color-ink-on-action) ring-(--color-surface-base) absolute end-0 bottom-0 z-(--ui-z-sticky) inline-flex items-center justify-center rounded-full bg-blend-color ring-(length:--ui-border-rule) select-none",
-        "group-data-[size=sm]/avatar:size-(--spacing-sm) group-data-[size=sm]/avatar:[&>svg]:hidden",
-        "group-data-[size=default]/avatar:size-(--spacing-md) group-data-[size=default]/avatar:[&>svg]:size-(--spacing-sm)",
-        "group-data-[size=lg]/avatar:size-(--spacing-md) group-data-[size=lg]/avatar:[&>svg]:size-(--spacing-sm)",
+        "bg-(--primary) text-(--primary-foreground) ring-(--background) absolute end-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-blend-color ring-2 select-none",
+        "group-data-[size=sm]/avatar:size-[calc(var(--spacing,0.25rem)*2)] group-data-[size=sm]/avatar:[&>svg]:hidden",
+        "group-data-[size=default]/avatar:size-[calc(var(--spacing,0.25rem)*3)] group-data-[size=default]/avatar:[&>svg]:size-[calc(var(--spacing,0.25rem)*2)]",
+        "group-data-[size=lg]/avatar:size-[calc(var(--spacing,0.25rem)*3)] group-data-[size=lg]/avatar:[&>svg]:size-[calc(var(--spacing,0.25rem)*2)]",
         className
       )}
       {...props}
@@ -79,7 +79,7 @@ function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="avatar-group"
       className={cn(
-        "group/avatar-group flex -space-x-(--spacing-sm) *:data-[slot=avatar]:ring-(length:--ui-border-rule) *:data-[slot=avatar]:ring-(--color-surface-base)",
+        "group/avatar-group flex -space-x-[calc(var(--spacing,0.25rem)*2)] *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-(--background)",
         className
       )}
       {...props}
@@ -95,7 +95,7 @@ function AvatarGroupCount({
     <div
       data-slot="avatar-group-count"
       className={cn(
-        "bg-(--color-surface-sunken) text-(--color-ink-muted) size-(--spacing-2xl) rounded-full text-(length:--text-sm) group-has-data-[size=lg]/avatar-group:size-[var(--spacing-3xl,48px)] group-has-data-[size=sm]/avatar-group:size-(--spacing-xl) [&>svg]:size-(--spacing-lg,16px) group-has-data-[size=lg]/avatar-group:[&>svg]:size-[var(--spacing-xl,24px)] group-has-data-[size=sm]/avatar-group:[&>svg]:size-(--spacing-md) relative flex shrink-0 items-center justify-center ring-(length:--ui-border-rule) ring-(--color-surface-base)",
+        "bg-(--muted) text-(--muted-foreground) size-[calc(var(--spacing,0.25rem)*8)] rounded-full text-(length:--text-sm) group-has-data-[size=lg]/avatar-group:size-[calc(var(--spacing,0.25rem)*12)] group-has-data-[size=sm]/avatar-group:size-[calc(var(--spacing,0.25rem)*6)] [&>svg]:size-[calc(var(--spacing,0.25rem)*4)] group-has-data-[size=lg]/avatar-group:[&>svg]:size-[calc(var(--spacing,0.25rem)*6)] group-has-data-[size=sm]/avatar-group:[&>svg]:size-[calc(var(--spacing,0.25rem)*3)] relative flex shrink-0 items-center justify-center ring-2 ring-(--background)",
         "",
         className
       )}

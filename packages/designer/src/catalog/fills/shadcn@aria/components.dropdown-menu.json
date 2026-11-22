@@ -44,8 +44,7 @@
           "themes.ring.default",
           "themes.shadow.lg",
           "themes.shadow.md",
-          "themes.spacing.default",
-          "themes.tracking-tight.default"
+          "themes.spacing.default"
         ],
         "assets": [
           "assets.icon-check",
@@ -121,7 +120,7 @@
         ]
       },
       "notice": "notices/SHADCN-ARIA-RAIL.md",
-      "transform": "shadcn-aria-rewrite@4",
+      "transform": "shadcn-aria-rewrite@6",
       "item": "dropdown-menu",
       "deps": [
         {
@@ -161,11 +160,11 @@
         },
         {
           "path": "components/dropdown-menu/dropdown-menu.tsx",
-          "sha256": "b3cec5d73e72ec7db1573876e7e9fa71eb906cccfd163ca19c46b74de206216f"
+          "sha256": "a3e28b2e4f5e7bbdbcc7665a6c9ca40e2033b82d808feb5de4a127fe16ab05d6"
         },
         {
           "path": "notices/SHADCN-ARIA-RAIL.md",
-          "sha256": "ef2a475ab63e8e936989c5fafffa578773e2d97127c46ee47d032ae9c1277b3f"
+          "sha256": "a3254ebd0ca6ce0be7f1f08a73c4ac8f18ff3fbf11c10e0c80badf9ecfcddff4"
         }
       ],
       "blockers": [],

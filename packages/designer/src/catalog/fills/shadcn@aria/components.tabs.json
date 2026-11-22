@@ -72,11 +72,11 @@
         },
         {
           "path": "components/tabs/tabs.tsx",
-          "sha256": "ed3bc2710962196c4193b30df20c1ee673e9b13799cc9a23dc58f8e0324186bd"
+          "sha256": "01bcd9006e82c15506cbcca95a60b02f51941cc39d3c376fda7919f62aad9ce2"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -118,6 +118,7 @@
         "themes": [
           "themes.background.default",
           "themes.foreground.default",
+          "themes.input.default",
           "themes.muted-foreground.default",
           "themes.muted.default",
           "themes.radius.default",
@@ -143,7 +144,7 @@
       ],
       "slot": "components.tabs",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

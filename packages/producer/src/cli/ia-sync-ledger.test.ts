@@ -33,7 +33,7 @@ describe("clossys ia sync: one slot-ledger event per slot.json written (R14.1)",
     const ws = world();
     rmSync(ws.file("designer", "themes.primary"));
     const before = counts(ws);
-    const first = await runIaSyncCli(["sync", "--at", AT], ws.root);
+    const first = await runIaSyncCli(["--at", AT], ws.root);
     const changes = (first.output as { changes: { agent: string; slot: string; action: string }[] }).changes;
     expect(changes.length).toBeGreaterThan(1);
     expect(changes).toContainEqual({ agent: "designer", slot: "themes.primary", action: "added" });
@@ -46,7 +46,7 @@ describe("clossys ia sync: one slot-ledger event per slot.json written (R14.1)",
       expect(last.records).toEqual([{ file: "slot.json", sha256: sha(ws.text(change.agent as never, change.slot)) }]);
     }
 
-    const again = await runIaSyncCli(["sync", "--at", LATER], ws.root);
+    const again = await runIaSyncCli(["--at", LATER], ws.root);
     expect(again.exitCode, again.message).toBe(0);
     expect(again.message).toMatch(/^ia sync: 0 slot\(s\) written/);
     expect(counts(ws)).toEqual(after);
@@ -54,11 +54,11 @@ describe("clossys ia sync: one slot-ledger event per slot.json written (R14.1)",
 
   it("records a changed slot (a package regroup) with one more event, and no unchanged slot gains one", async () => {
     const ws = world();
-    await runIaSyncCli(["sync", "--at", AT], ws.root);
+    await runIaSyncCli(["--at", AT], ws.root);
     const slot = ws.read("writer", HERO);
     ws.writeBase({ ...packageBaseOf(slot), ia: ws.read("writer", LEXICON).ia }, "1.1.0");
     const before = counts(ws);
-    const moved = await runIaSyncCli(["sync", "--at", LATER], ws.root);
+    const moved = await runIaSyncCli(["--at", LATER], ws.root);
     expect(moved.exitCode, moved.message).toBe(0);
     expect(moved.message).toContain(`moved writer/${HERO}`);
     // The move may also re-order the target L2's other slots: each slot the sync reports gains one event, no other slot any.
@@ -71,7 +71,7 @@ describe("clossys ia sync: one slot-ledger event per slot.json written (R14.1)",
   it("--check writes no slot.json and no event", async () => {
     const ws = world();
     const before = counts(ws);
-    const check = await runIaSyncCli(["sync", "--check"], ws.root);
+    const check = await runIaSyncCli(["--check"], ws.root);
     expect(check.exitCode).toBe(1);
     expect(counts(ws)).toEqual(before);
   });

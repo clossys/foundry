@@ -24,7 +24,7 @@ export function importShadcnAriaRail(options: { reader?: DeclaredFallbackReader 
   for (const file of adaptations.files) if (byItem.get(file.item)?.sha256 !== file.inputSha256) throw new Error(`shadcn-rail: adaptation input mismatch ${file.path}`);
   for (const file of data.files) if (sha256(file.content) !== file.sha256) throw new Error(`shadcn-rail: source pin mismatch: ${file.path}`);
   const style = byItem.get("style")!, license = byItem.get("license")!;
-  const source = "shadcn@aria", transform = "shadcn-aria-rewrite@4";
+  const source = "shadcn@aria", transform = "shadcn-aria-rewrite@6";
   const leafByItem = Object.fromEntries(SHADCN_ARIA_RAIL_ITEMS.map(item => [item, leafOf(item)]));
   const allFiles = new Map<string, SourceFile>();
   const fills: ComponentCandidateDocument[] = [], sourceBundles: SourceBundle[] = [];

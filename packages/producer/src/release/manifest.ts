@@ -1,5 +1,5 @@
 /**
- * `clossys release <pub> --manifest` (publisher.md 9.4.3, flows.md F8 step 3): the release candidate
+ * `clossys publisher release <pub> --manifest` (publisher.md 9.4.3, flows.md F8 step 3): the release candidate
  * `publisher/release.<pub>/candidates/<pub>-v<n>.json`, written by code. It lists exactly what went in: the build
  * (id = the output digest), every pin the build read with its full sha256, the gate results, the ready version it
  * follows and the pin diff against it. Candidates are immutable, so a changed release is a new `-v<n>`; a manifest
@@ -123,12 +123,12 @@ export function writeManifest(root: string, publication: string, options: { now?
   const slot = readReleaseSlot(root, publication);
   if (!slot) throw new Error(`publisher/${slotId} has no readable slot.json: no release slot for ${publication}`);
   const build = latestBuild(root, publication);
-  if (!build) throw new Error(`${publication} has no build: run clossys release ${publication} --build`);
+  if (!build) throw new Error(`${publication} has no build: run clossys publisher release ${publication} --build`);
   const issue = buildIssue(root, build.id);
-  if (issue) throw new Error(`${issue}: run clossys release ${publication} --build`);
+  if (issue) throw new Error(`${issue}: run clossys publisher release ${publication} --build`);
   const pins = currentPins(root);
   const drift = pinDiff(build.pins, pins);
-  if (drift.length) throw new Error(`pins changed since build ${build.id.slice(0, 12)} (${drift.map(row => row.ref).join(", ")}): run clossys release ${publication} --build`);
+  if (drift.length) throw new Error(`pins changed since build ${build.id.slice(0, 12)} (${drift.map(row => row.ref).join(", ")}): run clossys publisher release ${publication} --build`);
   const gates = runGates(root, publication, build);
   const ready = readyVersion(root, publication);
   const content: ManifestContent = {
@@ -149,7 +149,7 @@ export function writeManifest(root: string, publication: string, options: { now?
   const name = `${publication}-v${next}.json`;
   const at = toIsoZ((options.now ?? (() => new Date()))().toISOString())!;
   const header = buildCandidateHeader({
-    agent: "publisher", slotId, name, createdBy: cliActor(`clossys release ${publication} --manifest`), createdAt: at,
+    agent: "publisher", slotId, name, createdBy: cliActor(`clossys publisher release ${publication} --manifest`), createdAt: at,
     briefSha256: sha256Hex(JSON.stringify(canonical(slot.brief ?? null))),
     source: content.previous ? { kind: "derived", ref: [rel(content.previous).replace("/candidates/", "/")] } : { kind: "original", ref: [] },
   });
@@ -159,7 +159,7 @@ export function writeManifest(root: string, publication: string, options: { now?
   // lock, so R14.1 and the pin gate find the manifest's provenance like every other candidate's. The event cites the
   // plumb action that runs the release (publisher.release), by Producer code.
   const { sha256 } = writeCandidateBytes(join(root, "clossys"), "publisher", slotId, name, serializeCandidate(name, header, content), {
-    at, fields: { reason: `clossys release ${publication} --manifest: build ${build.id.slice(0, 12)}` },
+    at, fields: { reason: `clossys publisher release ${publication} --manifest: build ${build.id.slice(0, 12)}` },
   }, { verb: "submit", by: "producer", skill: actionContractPath("producer", "publisher.release") });
   return { name, file, rel: rel(name), sha256, content, reused: false };
 }

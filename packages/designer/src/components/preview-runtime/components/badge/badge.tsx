@@ -2,16 +2,16 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "../_parts/utils/index.js"
 
 const badgeVariants = cva(
-  "h-[var(--spacing-xl,24px)] gap-(--spacing-xs) rounded-4xl border-(length:--ui-border-hairline,1px) border-transparent px-(--spacing-sm) py-[var(--spacing-xs,4px)] text-(length:--text-xs) font-(weight:--font-weight-medium) transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm) [&>svg]:size-(--spacing-md)! group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,2px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,2px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:border-(--color-status-danger) aria-invalid:ring-(--color-status-danger)/20 dark:aria-invalid:ring-(--color-status-danger)/40 [&>svg]:pointer-events-none",
+  "h-[calc(var(--spacing,0.25rem)*6)] gap-[calc(var(--spacing,0.25rem)*1)] rounded-4xl border border-transparent px-[calc(var(--spacing,0.25rem)*2)] py-[calc(var(--spacing,0.25rem)*1)] text-(length:--text-xs) font-medium transition-all has-data-[icon=inline-end]:pe-[calc(var(--spacing,0.25rem)*2)] has-data-[icon=inline-start]:ps-[calc(var(--spacing,0.25rem)*2)] [&>svg]:size-[calc(var(--spacing,0.25rem)*3)]! group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap focus-visible:border-(--ring) focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring) focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring) aria-invalid:border-(--destructive) aria-invalid:ring-(--destructive)/20 dark:aria-invalid:ring-(--destructive)/40 [&>svg]:pointer-events-none",
   {
     variants: {
       variant: {
-        default: "bg-(--color-action) text-(--color-ink-on-action) [a]:hover:bg-(--color-action)/80",
-        secondary: "bg-(--color-control-tonal) text-(--color-ink-primary) [a]:hover:bg-(--color-control-tonal)/80",
-        destructive: "bg-(--color-status-danger)/10 [a]:hover:bg-(--color-status-danger)/20 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,2px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) dark:focus-visible:outline-solid dark:focus-visible:outline-(length:--ui-border-focus,2px) dark:focus-visible:outline-offset-(--ui-focus-offset) dark:focus-visible:outline-(--color-focus-ring) text-(--color-status-danger) dark:bg-(--color-status-danger)/20",
-        outline: "border-(--color-line-base) text-(--color-ink-primary) [a]:hover:bg-(--color-surface-sunken) [a]:hover:text-(--color-ink-muted)",
-        ghost: "hover:bg-(--color-surface-sunken) hover:text-(--color-ink-muted) dark:hover:bg-(--color-surface-sunken)/50",
-        link: "text-(--color-accent-text) underline-offset-(--spacing-lg) hover:underline",
+        default: "bg-(--primary) text-(--primary-foreground) [a]:hover:bg-(--primary)/80",
+        secondary: "bg-(--secondary) text-(--foreground) [a]:hover:bg-(--secondary)/80",
+        destructive: "bg-(--destructive)/10 [a]:hover:bg-(--destructive)/20 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring) dark:focus-visible:outline-solid dark:focus-visible:outline-2 dark:focus-visible:outline-offset-2 dark:focus-visible:outline-(--ring) text-(--destructive) dark:bg-(--destructive)/20",
+        outline: "border-(--border) text-(--foreground) [a]:hover:bg-(--muted) [a]:hover:text-(--muted-foreground)",
+        ghost: "hover:bg-(--muted) hover:text-(--muted-foreground) dark:hover:bg-(--muted)/50",
+        link: "text-(--accent-foreground) underline-offset-[calc(var(--spacing,0.25rem)*4)] hover:underline",
       },
     },
     defaultVariants: {

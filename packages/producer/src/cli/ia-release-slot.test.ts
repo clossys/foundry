@@ -1,6 +1,6 @@
 /**
  * REL-SLOT (foundry-build-0048): `clossys ia publisher/release.<pub> --kind release` creates the release slot that
- * `clossys release <pub>` reads, as a valid clossys.slot/2 slot of kind release, through the ia verb's guarded write
+ * `clossys publisher release <pub>` reads, as a valid clossys.slot/2 slot of kind release, through the ia verb's guarded write
  * and its slot ledger. It is refused for any other agent, an id that is not release.<pub>, another kind on a release id,
  * a publication that does not exist, and a second create. Then the release verbs run on the slot it wrote, and the
  * release slot still refuses a publication record (records/slot-current.ts).
@@ -142,7 +142,7 @@ describe("clossys ia publisher/release.<pub> --kind release creates the release 
     expect(other.read("clossys/agents/publisher/ia.json")).toBe(iaBefore);
   });
 
-  it("is the slot clossys release reads: build, manifest, gates and the ready-pin run on it, and it still refuses a publication record", async () => {
+  it("is the slot clossys publisher release reads: build, manifest, gates and the ready-pin run on it, and it still refuses a publication record", async () => {
     const world = make();
     const now = clock();
     const before = await release(world, "--build", now);
@@ -163,7 +163,7 @@ describe("clossys ia publisher/release.<pub> --kind release creates the release 
     const skill = STEPS.find(step => step.id === "publisher.candidates")!.command.skill!;
     const submit = await runCli(["next", "publisher/release.site", "--submit", join(world.root, "drafts/site.json"), "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", skill, "--rung", "adopt", "--seed", "release.site/site-v1.json", "--root", world.root], world.root);
     expect(submit.exitCode, submit.message).not.toBe(0);
-    expect(submit.message).toContain("publisher/release.site is a release slot: it holds the manifest clossys release <pub> --manifest writes");
+    expect(submit.message).toContain("publisher/release.site is a release slot: it holds the manifest clossys publisher release <pub> --manifest writes");
     expect(readdirSync(join(world.root, SLOT, "candidates"))).toEqual(["site-v1.json"]);
     const gates = await release(world, "--gates", now);
     expect(gates.exitCode, gates.message).toBe(0);
@@ -180,7 +180,7 @@ describe("clossys ia publisher/release.<pub> --kind release creates the release 
     const now = clock();
     expect((await create(world)).exitCode).toBe(0);
     const rewrite = (value: unknown) => runCli(["ia", "publisher/release.site", "--contract", contract(world, value), "--at", AT, "--root", world.root], world.root);
-    // A contract rewrite that adds a gates entry is written (still kind release), and clossys release reads it: an
+    // A contract rewrite that adds a gates entry is written (still kind release), and clossys publisher release reads it: an
     // unknown gate fails closed.
     const unknown = { ...CONTRACT, gates: ["release.made-up"] };
     const added = await rewrite(unknown);

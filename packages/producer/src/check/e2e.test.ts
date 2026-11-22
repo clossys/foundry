@@ -47,7 +47,7 @@ describe("the shipped scenario", () => {
     expect(manifest.scripts["check:e2e"]).toBe("node dist/cli/index.js check --e2e");
     expect(scenario.steps[0]!.run).toEqual(["config", "--init"]);
     expect(crafts.map(step => step.craft.ref.split("/")[0])).toEqual(expect.arrayContaining(["writer", "designer", "publisher", "director"]));
-    expect(scenario.build.slice(0, 3)).toEqual(["release", scenario.publication, "--build"]);
+    expect(scenario.build.slice(0, 4)).toEqual(["publisher", "release", scenario.publication, "--build"]);
     expect(Object.values(scenario.render).flat().length).toBeGreaterThan(0);
   });
 
@@ -61,8 +61,8 @@ describe("the shipped scenario", () => {
 
   it("releases the built page: after the build and its repeat, the manifest is written and every release gate runs strict", () => {
     expect((scenario.after ?? []).map(step => [step.id, step.run])).toEqual([
-      ["release.manifest", ["release", scenario.publication, "--manifest"]],
-      ["release.gates", ["release", scenario.publication, "--gates"]],
+      ["release.manifest", ["publisher", "release", scenario.publication, "--manifest"]],
+      ["release.gates", ["publisher", "release", scenario.publication, "--gates"]],
     ]);
     for (const step of scenario.after ?? []) expect(step.expect ?? 0, step.id).toBe(0);
   });
@@ -121,8 +121,8 @@ describe("runScenario", () => {
     expect(ran.slice(-4)).toEqual([
       ["build", scenario.build.map(arg => arg.replaceAll("{scenario}", SHIPPED))],
       ["build.repeat", scenario.build.map(arg => arg.replaceAll("{scenario}", SHIPPED))],
-      ["release.manifest", ["release", scenario.publication, "--manifest"]],
-      ["release.gates", ["release", scenario.publication, "--gates"]],
+      ["release.manifest", ["publisher", "release", scenario.publication, "--manifest"]],
+      ["release.gates", ["publisher", "release", scenario.publication, "--gates"]],
     ]);
     for (const step of scenario.steps.filter(step => step.run)) expect(ran.map(([id]) => id)).toContain(step.id);
   });

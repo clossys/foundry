@@ -51,7 +51,7 @@ function DialogOverlay({
     <ModalOverlayPrimitive
       data-slot="dialog-overlay"
       className={cn(
-        "data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade bg-(--color-overlay-scrim) motion-safe:duration-(--ui-duration-fast) motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 supports-backdrop-filter:backdrop-blur-xs fixed inset-0 isolate z-(--ui-z-modal)",
+        "data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade bg-black/10 motion-safe:duration-100 motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 supports-backdrop-filter:backdrop-blur-xs fixed inset-0 isolate z-50",
         className
       )}
       {...props}
@@ -81,19 +81,19 @@ function Dialog({
       <ModalPrimitive
         data-slot="dialog-content"
         className={cn(
-          "bg-(--color-overlay-surface) text-(--color-ink-primary) data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom ring-(--color-ink-primary)/10 grid max-w-[calc(100%-var(--spacing-2xl,32px))] gap-(--spacing-lg) rounded-(--radius-control) p-(--spacing-lg) text-(length:--text-sm) ring-(length:--ui-border-hairline) motion-safe:duration-(--ui-duration-fast) motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 sm:max-w-(--ui-width-notice-max) fixed top-1/2 start-1/2 z-(--ui-z-modal) w-full ltr:-translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)",
+          "bg-(--popover) text-(--foreground) data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom ring-(--foreground)/10 grid max-w-[calc(100%-calc(var(--spacing,0.25rem)*8))] gap-[calc(var(--spacing,0.25rem)*4)] rounded-(--radius) p-[calc(var(--spacing,0.25rem)*4)] text-(length:--text-sm) ring-1 motion-safe:duration-100 motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 sm:max-w-sm fixed top-1/2 start-1/2 z-50 w-full ltr:-translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring)",
           className
         )}
       >
         <DialogPrimitive
           data-slot="dialog"
-          className="[display:inherit] [gap:inherit] focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)"
+          className="[display:inherit] [gap:inherit] focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring)"
         >
           {children}
           {showCloseButton && (
             <DialogClose
               variant="ghost"
-              className="absolute top-(--spacing-sm) end-(--spacing-sm)"
+              className="absolute top-[calc(var(--spacing,0.25rem)*2)] end-[calc(var(--spacing,0.25rem)*2)]"
               size="icon-sm"
             >
               <LibraryIcon asset="assets.icon-close" decorative />
@@ -110,7 +110,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("gap-(--spacing-sm) flex flex-col", className)}
+      className={cn("gap-[calc(var(--spacing,0.25rem)*2)] flex flex-col", className)}
       {...props}
     />
   )
@@ -130,7 +130,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "bg-(--color-surface-sunken)/50 -mx-(--spacing-lg) -mb-(--spacing-lg) rounded-b-(--radius-control) border-t-(length:--ui-border-hairline) p-(--spacing-lg) flex flex-col-reverse gap-(--spacing-sm) sm:flex-row sm:justify-end",
+        "bg-(--muted)/50 -mx-[calc(var(--spacing,0.25rem)*4)] -mb-[calc(var(--spacing,0.25rem)*4)] rounded-b-(--radius) border-t p-[calc(var(--spacing,0.25rem)*4)] flex flex-col-reverse gap-[calc(var(--spacing,0.25rem)*2)] sm:flex-row sm:justify-end",
         className
       )}
       {...props}
@@ -149,7 +149,7 @@ function DialogTitle({
     <Heading
       slot="title"
       data-slot="dialog-title"
-      className={cn("text-(length:--text-base) leading-(--leading-heading) font-(weight:--font-weight-medium)", className)}
+      className={cn("text-(length:--text-base) leading-none font-medium", className)}
       {...props}
     />
   )
@@ -162,7 +162,7 @@ function DialogDescription({
   return (
     <div
       data-slot="dialog-description"
-      className={cn("text-(--color-ink-muted) *:[a]:hover:text-(--color-ink-primary) text-(length:--text-sm) *:[a]:underline *:[a]:underline-offset-(--spacing-md)", className)}
+      className={cn("text-(--muted-foreground) *:[a]:hover:text-(--foreground) text-(length:--text-sm) *:[a]:underline *:[a]:underline-offset-[calc(var(--spacing,0.25rem)*3)]", className)}
       {...props}
     />
   )

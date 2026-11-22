@@ -92,7 +92,7 @@ describe("a submit reads only its own slot (U39b fix r1)", () => {
     expect(readdirSync(join(world.root, "clossys/agents/designer/sections.hero/candidates")).sort()).toEqual(["hero-v1.json", "hero-v2.json"]);
   });
 
-  it("the code writer (writeCandidateBytes, clossys release --manifest and clossys loop) lands a candidate while another slot's pin.json is a symbolic link", () => {
+  it("the code writer (writeCandidateBytes, clossys publisher release --manifest and clossys loop) lands a candidate while another slot's pin.json is a symbolic link", () => {
     const world = make();
     alias(world, "clossys/agents/designer/frames.site-shell/pin.json");
     const bytes = world.read("clossys/agents/designer/sections.hero/candidates/hero-v1.json");

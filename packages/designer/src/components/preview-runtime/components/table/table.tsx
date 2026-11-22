@@ -35,7 +35,7 @@ function TableHeader<T>({ className, ...props }: TableHeaderProps<T>) {
   return (
     <TableHeaderPrimitive
       data-slot="table-header"
-      className={cn("[&_tr]:border-b-(length:--ui-border-hairline)", className)}
+      className={cn("[&_tr]:border-b", className)}
       {...props}
     />
   )
@@ -46,7 +46,7 @@ function TableBody<T>({ className, ...props }: TableBodyProps<T>) {
     <TableBodyPrimitive
       data-slot="table-body"
       className={cn(
-        "[&_tr:last-child]:border-0 data-empty:h-(--spacing-5xl) data-empty:text-center",
+        "[&_tr:last-child]:border-0 data-empty:h-[calc(var(--spacing,0.25rem)*24)] data-empty:text-center",
         className
       )}
       {...props}
@@ -58,7 +58,7 @@ function TableFooter<T>({ className, ...props }: TableFooterProps<T>) {
   return (
     <TableFooterPrimitive
       data-slot="table-footer"
-      className={cn("bg-(--color-surface-sunken)/50 border-t-(length:--ui-border-hairline) font-(weight:--font-weight-medium) [&>tr]:last:border-b-0", className)}
+      className={cn("bg-(--muted)/50 border-t font-medium [&>tr]:last:border-b-0", className)}
       {...props}
     />
   )
@@ -69,7 +69,7 @@ function TableRow<T>({ className, ...props }: RowProps<T>) {
     <RowPrimitive
       data-slot="table-row"
       className={cn(
-        "hover:bg-(--color-surface-sunken)/50 data-[state=selected]:bg-(--color-surface-sunken) border-b-(length:--ui-border-hairline) transition-colors duration-(--ui-duration-default) ease-(--default-transition-timing-function) data-selected:bg-(--color-surface-sunken) has-aria-expanded:bg-(--color-surface-sunken)/50",
+        "hover:bg-(--muted)/50 data-[state=selected]:bg-(--muted) border-b transition-colors data-selected:bg-(--muted) has-aria-expanded:bg-(--muted)/50",
         className
       )}
       {...props}
@@ -81,7 +81,7 @@ function TableHead({ className, ...props }: ColumnProps) {
   return (
     <ColumnPrimitive
       data-slot="table-head"
-      className={cn("text-(--color-ink-primary) h-[var(--spacing-3xl,48px)] px-(--spacing-sm) text-start align-middle font-(weight:--font-weight-medium) whitespace-nowrap [&:has([role=checkbox])]:pe-0 [&:has([data-slot=checkbox])]:pe-0", className)}
+      className={cn("text-(--foreground) h-[calc(var(--spacing,0.25rem)*12)] px-[calc(var(--spacing,0.25rem)*2)] text-start align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pe-0 [&:has([data-slot=checkbox])]:pe-0", className)}
       {...props}
     />
   )
@@ -91,7 +91,7 @@ function TableCell({ className, ...props }: CellProps) {
   return (
     <CellPrimitive
       data-slot="table-cell"
-      className={cn("p-(--spacing-sm) align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0 [&:has([data-slot=checkbox])]:pe-0", className)}
+      className={cn("p-[calc(var(--spacing,0.25rem)*2)] align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0 [&:has([data-slot=checkbox])]:pe-0", className)}
       {...props}
     />
   )
@@ -104,7 +104,7 @@ function TableCaption({
   return (
     <figcaption
       data-slot="table-caption"
-      className={cn("text-(--color-ink-muted) mt-(--spacing-lg) text-(length:--text-sm) text-center", className)}
+      className={cn("text-(--muted-foreground) mt-[calc(var(--spacing,0.25rem)*4)] text-(length:--text-sm) text-center", className)}
       {...props}
     />
   )

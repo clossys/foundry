@@ -64,7 +64,7 @@
         ]
       },
       "notice": "notices/SHADCN-ARIA-RAIL.md",
-      "transform": "shadcn-aria-rewrite@4",
+      "transform": "shadcn-aria-rewrite@6",
       "item": "scroll-area",
       "deps": [
         {
@@ -104,11 +104,11 @@
         },
         {
           "path": "components/scroll-area/scroll-area.tsx",
-          "sha256": "cfc4f598262fd1669d56c240ee241b83ed669fc8455bbf53ce08e756588af35f"
+          "sha256": "a24ca8e4d09fcdc004bf04d23df5e101d16acb437ddf097278ce530a4285d262"
         },
         {
           "path": "notices/SHADCN-ARIA-RAIL.md",
-          "sha256": "ef2a475ab63e8e936989c5fafffa578773e2d97127c46ee47d032ae9c1277b3f"
+          "sha256": "a3254ebd0ca6ce0be7f1f08a73c4ac8f18ff3fbf11c10e0c80badf9ecfcddff4"
         }
       ],
       "blockers": [],

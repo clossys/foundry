@@ -64,7 +64,7 @@ export function normalizeSelectedSource(file: SourceFile): SourceFile {
   if (file.path === "components/toggle-group/toggle-group.tsx") {
     const helper = 'import { toggleVariants } from "../toggle-button/index"';
     if (file.content.includes(helper)) {
-      if (sha256(file.content) !== "491f3911fb3adb42741ddab8034804745c119699d7964bd8cdb600e2b508f7a0") refuse(file.path, "selected ToggleGroup closure receipt differs");
+      if (sha256(file.content) !== "ffb1f4f3b02daf3a1cc72bf7db51120e1eba0c434045dcd353dd0a65e4da6a87") refuse(file.path, "selected ToggleGroup closure receipt differs");
       // This is the same private CVA value, not a component secondary export.
       file = { ...file, content: file.content.replace(helper, 'import { toggleVariants } from "../toggle-button/toggle"') };
     }

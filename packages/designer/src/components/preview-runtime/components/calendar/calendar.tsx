@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from "../select/select.js"
 const cellVariants = cva(
-  "group/day relative mt-(--spacing-sm) aspect-square h-full w-full cursor-default rounded-(--cell-radius) p-0 text-center select-none [&:is(:last-child>[data-selected=true])>div]:rounded-e-(--cell-radius)",
+  "group/day relative mt-[calc(var(--spacing,0.25rem)*2)] aspect-square h-full w-full cursor-default rounded-(--cell-radius) p-0 text-center select-none [&:is(:last-child>[data-selected=true])>div]:rounded-e-(--cell-radius)",
   {
     variants: {
       showWeekNumber: {
@@ -41,22 +41,22 @@ const cellVariants = cva(
         true: "[&:is(:nth-child(2)>[data-selected=true])>div]:rounded-s-(--cell-radius)",
       },
       isToday: {
-        true: "rounded-(--cell-radius) bg-(--color-surface-sunken) text-(--color-ink-primary) data-[selected=true]:rounded-none",
+        true: "rounded-(--cell-radius) bg-(--muted) text-(--foreground) data-[selected=true]:rounded-none",
       },
       isSelectionStart: {
-        true: "relative isolate z-(--ui-z-base) rounded-s-(--cell-radius) bg-(--color-surface-sunken) after:absolute after:inset-y-0 after:end-0 after:w-(--spacing-lg) after:bg-(--color-surface-sunken)",
+        true: "relative isolate z-0 rounded-s-(--cell-radius) bg-(--muted) after:absolute after:inset-y-0 after:end-0 after:w-[calc(var(--spacing,0.25rem)*4)] after:bg-(--muted)",
       },
       isSelectionEnd: {
-        true: "relative isolate z-(--ui-z-base) rounded-e-(--cell-radius) bg-(--color-surface-sunken) after:absolute after:inset-y-0 after:start-0 after:w-(--spacing-lg) after:bg-(--color-surface-sunken)",
+        true: "relative isolate z-0 rounded-e-(--cell-radius) bg-(--muted) after:absolute after:inset-y-0 after:start-0 after:w-[calc(var(--spacing,0.25rem)*4)] after:bg-(--muted)",
       },
       isUnavailable: {
-        true: "text-(--color-ink-muted) opacity-(--ui-alpha-disabled,0.5) [&>div]:line-through",
+        true: "text-(--muted-foreground) opacity-50 [&>div]:line-through",
       },
       isDisabled: {
-        true: "text-(--color-ink-muted) opacity-(--ui-alpha-disabled,0.5)",
+        true: "text-(--muted-foreground) opacity-50",
       },
       isOutsideMonth: {
-        true: "text-(--color-ink-muted) aria-selected:text-(--color-ink-muted)",
+        true: "text-(--muted-foreground) aria-selected:text-(--muted-foreground)",
       },
     },
   }
@@ -84,7 +84,7 @@ const Calendar = ReactForwardRef(function Calendar<T extends DateValue, M extend
       data-slot="calendar"
       visibleDuration={{ months: props.numberOfMonths || 1 }}
       className={state => cn(
-        "p-(--spacing-sm) [--cell-radius:var(--radius-control,6px)] [--cell-size:var(--ui-control-h-sm,28px)] group/calendar w-fit bg-(--color-surface-base) in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
+        "p-[calc(var(--spacing,0.25rem)*2)] [--cell-radius:var(--radius,0.625rem)] [--cell-size:calc(var(--spacing,0.25rem)*7)] group/calendar w-fit bg-(--background) in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
         typeof props.className === "function" ? props.className(state) : props.className
       )}
     >
@@ -115,7 +115,7 @@ const RangeCalendar = ReactForwardRef(function RangeCalendar<T extends DateValue
       data-slot="calendar"
       visibleDuration={{ months: props.numberOfMonths || 1 }}
       className={state => cn(
-        "p-(--spacing-sm) [--cell-radius:var(--radius-control,6px)] [--cell-size:var(--ui-control-h-sm,28px)] group/calendar w-fit bg-(--color-surface-base) in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
+        "p-[calc(var(--spacing,0.25rem)*2)] [--cell-radius:var(--radius,0.625rem)] [--cell-size:calc(var(--spacing,0.25rem)*7)] group/calendar w-fit bg-(--background) in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
         typeof props.className === "function" ? props.className(state) : props.className
       )}
     >
@@ -144,26 +144,26 @@ function CalendarInner({
   isRange?: boolean
 }) {
   return (
-    <div className="relative flex flex-col gap-(--spacing-lg) md:flex-row">
-      <header className="absolute inset-x-0 top-0 flex w-full items-center justify-between gap-(--spacing-xs)">
+    <div className="relative flex flex-col gap-[calc(var(--spacing,0.25rem)*4)] md:flex-row">
+      <header className="absolute inset-x-0 top-0 flex w-full items-center justify-between gap-[calc(var(--spacing,0.25rem)*1)]">
         <Button
           variant={buttonVariant}
           slot="previous"
-          className="size-(--cell-size) p-0 select-none aria-disabled:opacity-(--ui-alpha-disabled,0.5)"
+          className="size-(--cell-size) p-0 select-none aria-disabled:opacity-50"
         >
-          <LibraryIcon asset="assets.icon-chevron-left" decorative className="size-(--spacing-lg,16px)" />
+          <LibraryIcon asset="assets.icon-chevron-left" decorative className="size-[calc(var(--spacing,0.25rem)*4)]" />
         </Button>
         <Button
           variant={buttonVariant}
           slot="next"
-          className="size-(--cell-size) p-0 select-none aria-disabled:opacity-(--ui-alpha-disabled,0.5)"
+          className="size-(--cell-size) p-0 select-none aria-disabled:opacity-50"
         >
-          <LibraryIcon asset="assets.icon-chevron-right" decorative className="size-(--spacing-lg,16px)" />
+          <LibraryIcon asset="assets.icon-chevron-right" decorative className="size-[calc(var(--spacing,0.25rem)*4)]" />
         </Button>
       </header>
       {Array.from({ length: numberOfMonths }, (_, i) => (
-        <div key={i} className="flex w-full flex-col gap-(--spacing-lg)">
-          <div className="flex h-(--cell-size) w-full items-center justify-center gap-(--spacing-xs) px-(--cell-size)">
+        <div key={i} className="flex w-full flex-col gap-[calc(var(--spacing,0.25rem)*4)]">
+          <div className="flex h-(--cell-size) w-full items-center justify-center gap-[calc(var(--spacing,0.25rem)*1)] px-(--cell-size)">
             {captionLayout === "dropdown" ? (
               <>
                 <MonthDropdown format={headerFormat} />
@@ -173,7 +173,7 @@ function CalendarInner({
               <CalendarHeading
                 offset={{ months: i }}
                 format={headerFormat}
-                className="text-(length:--text-sm) font-(weight:--font-weight-medium) select-none"
+                className="text-(length:--text-sm) font-medium select-none"
               />
             )}
           </div>
@@ -183,7 +183,7 @@ function CalendarInner({
           >
             <AriaCalendarGridHeader>
               {(day) => (
-                <CalendarHeaderCell className="rounded-(--cell-radius) text-(length:--text-caption) font-(weight:--font-weight-normal) text-(--color-ink-muted) select-none">
+                <CalendarHeaderCell className="rounded-(--cell-radius) text-[0.8rem] font-normal text-(--muted-foreground) select-none">
                   {day}
                 </CalendarHeaderCell>
               )}
@@ -208,7 +208,7 @@ function CalendarInner({
                         isRange
                       }
                       className={cn(
-                        "relative isolate z-(--ui-z-sticky) flex aspect-square h-full w-full min-w-(--cell-size) flex-col gap-(--spacing-xs) border-0 leading-(--leading-heading) font-(weight:--font-weight-normal) group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-(--ui-z-sticky) group-data-[focused=true]/day:border-(--color-focus-ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-(length:--ui-border-focus,2px) group-data-[focused=true]/day:outline-offset-(--ui-focus-offset) group-data-[focused=true]/day:outline-(--color-focus-ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-(length:--ui-border-focus,2px) group-data-[focused=true]/day:outline-offset-(--ui-focus-offset) group-data-[focused=true]/day:outline-(--color-focus-ring) data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-e-(--cell-radius) data-[range-end=true]:bg-(--color-action) data-[range-end=true]:text-(--color-ink-on-action) data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-(--color-surface-sunken) data-[range-middle=true]:text-(--color-ink-primary) data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-s-(--cell-radius) data-[range-start=true]:bg-(--color-action) data-[range-start=true]:text-(--color-ink-on-action) data-[selected-single=true]:bg-(--color-action) data-[selected-single=true]:text-(--color-ink-on-action) dark:hover:text-(--color-ink-primary) [&>span]:text-(length:--text-xs) [&>span]:opacity-(--ui-alpha-stale)"
+                        "relative isolate z-10 flex aspect-square h-full w-full min-w-(--cell-size) flex-col gap-[calc(var(--spacing,0.25rem)*1)] border-0 leading-none font-normal group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:border-(--ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-2 group-data-[focused=true]/day:outline-offset-2 group-data-[focused=true]/day:outline-(--ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-2 group-data-[focused=true]/day:outline-offset-2 group-data-[focused=true]/day:outline-(--ring) data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-e-(--cell-radius) data-[range-end=true]:bg-(--primary) data-[range-end=true]:text-(--primary-foreground) data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-(--muted) data-[range-middle=true]:text-(--foreground) data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-s-(--cell-radius) data-[range-start=true]:bg-(--primary) data-[range-start=true]:text-(--primary-foreground) data-[selected-single=true]:bg-(--primary) data-[selected-single=true]:text-(--primary-foreground) dark:hover:text-(--foreground) [&>span]:text-(length:--text-xs) [&>span]:opacity-70"
                       )}
                     >
                       {renderCell

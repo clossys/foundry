@@ -20,7 +20,7 @@ describe("clossys brief (CLI)", () => {
 
   it("reads the resolved brief and appends a stricter tighten entry; a looser one is refused", async () => {
     const ws = tallyhouseWorld();
-    await runIaSyncCli(["sync", "--at", LATER], ws.root);
+    await runIaSyncCli(["--at", LATER], ws.root);
     const shown = await runCli(["brief", `writer/${HERO}`, "--json", "--root", ws.root], ws.root);
     expect(shown.exitCode, shown.message).toBe(0);
     const before = ws.read("writer", HERO).tighten.length;

@@ -320,6 +320,7 @@
     }
   ],
   "build": [
+    "publisher",
     "release",
     "site",
     "--build",
@@ -330,6 +331,7 @@
     {
       "id": "release.manifest",
       "run": [
+        "publisher",
         "release",
         "site",
         "--manifest"
@@ -338,6 +340,7 @@
     {
       "id": "release.gates",
       "run": [
+        "publisher",
         "release",
         "site",
         "--gates"
