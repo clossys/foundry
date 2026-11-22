@@ -23,8 +23,10 @@ import { globRegex, workspaceGlob } from "./globs.js";
 import { PACKAGE_ROOT } from "./options.js";
 import { readSeats } from "./seats.js";
 import type { SeatReport } from "./seats.js";
-import { readJson, slotCounts, writerKeysUnapproved } from "./status.js";
+import { readJson, slotCounts } from "./status.js";
 import { listModelDir, modelExists } from "../records/slots.js";
+import { isAgentId, parseCandidateName } from "../records/candidate.js";
+import { isRecordSlot } from "../records/resolve.js";
 import type { PipelineStatus } from "./status.js";
 import { STEPS } from "./steps/index.js";
 import { appendRecord, buildRecord, invocationOf, readStore, STEP_ENV, storeFile } from "./trace.js";
@@ -160,7 +162,6 @@ export function openItems(step: Step, context: Context): string[] {
     return (context.agents[agent]?.bySlot ?? []).filter(row => row.candidates === 0).map(row => `${agent}/${row.slot}`);
   }
   if (counter?.startsWith("slots-undecided:")) return undecided(context, counter.slice("slots-undecided:".length));
-  if (counter === "writer-keys-unapproved") return [...writerKeysUnapproved(root).keys()].map(slot => `writer/${slot}`);
   if (counter === "seats-open") return context.steps.filter(each => isDecide(each) && context.seats[each.id]?.state !== "assigned").map(each => each.id);
   const pick = /^pick\.([a-z][a-z0-9-]*)$/.exec(step.id);
   if (pick) {
@@ -266,6 +267,18 @@ const version = (name: string) => Number(/-v(\d+)\.[a-z]+$/.exec(name)?.[1] ?? 0
  * confirm) is recorded as the owner's and cites that entry; the CLI never records an owner basis without it.
  */
 export const QUEUE_ANSWER = "<queue-answer>";
+/**
+ * The target an owner pin option names for `candidate` of `item` (`<agent>/<slot>`): a slot that pins per record (a
+ * Writer copy or prose slot, clossys.pin-map/1) takes `<agent>/<slot>#<record>`, the record the candidate's name
+ * carries (copy-v2.md -> #copy), as the retired `clossys approve` derived it; any other slot is the item itself.
+ */
+export function pinTargetOf(root: string, item: string, candidate: string): string {
+  const slash = item.indexOf("/");
+  const agent = item.slice(0, slash), slot = item.slice(slash + 1);
+  if (slash < 0 || item.includes("#") || !isAgentId(agent) || !isRecordSlot(root, agent, slot)) return item;
+  const record = parseCandidateName(candidate)?.name;
+  return record === undefined ? item : `${item}#${record}`;
+}
 /** What the answerer fills for each placeholder an owner option's argv carries (the one table; `filled` refuses any other). */
 export const PLACEHOLDER_MEANING: Readonly<Record<string, string>> = {
   // DRAFT copy (not owner-approved).
@@ -349,15 +362,9 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
   } else if (step.id === "owner.decisions") {
     add("Register the ledger comment that holds your words, so an owner-gated verb can cite it with --owner-ref.", ["clossys", "owner-decision", "add", "--ref", "<ref>", "--scope", "ia", "--quote-file", "<words.md>", "--date", new Date().toISOString().slice(0, 10)]);
     add("Start an empty registry now; register each ledger comment with clossys owner-decision add when an owner-gated verb needs it.", ["clossys", "owner-decision", "init"]);
-  } else if (step.id === "writer.approve") {
-    const names = candidatesOf(root, item).filter(name => name.endsWith(".md"));
-    const keys = writerKeysUnapproved(root).get(item.slice("writer/".length)) ?? [];
-    for (const name of names.slice(-2).reverse()) add(`Approve ${name}${name === names.at(-1) ? ` (its ${keys.length} new key${keys.length === 1 ? "" : "s"}: ${keys.slice(0, 4).join(", ")}${keys.length > 4 ? ", ..." : ""})` : ""}.`, ["clossys", "approve", item, name, "--by", QUEUE_ANSWER]);
-    // Never a lone approve: the owner can always ask the Writer for another draft first.
-    add("Ask the Writer for another draft before approving.", ["clossys", "options", item, "--more"]);
   } else if (step.id.startsWith("pin.")) {
     const names = candidatesOf(root, item);
-    for (const name of names.slice(-3).reverse()) add(`Pin ${name}.`, ["clossys", "pin", item, name, "--basis", "picked", "--by", QUEUE_ANSWER]);
+    for (const name of names.slice(-3).reverse()) add(`Pin ${name}.`, ["clossys", "pin", pinTargetOf(root, item, name), name, "--basis", "picked", "--by", QUEUE_ANSWER]);
     // A slot adopted from the package IA with no candidate yet: the first answer asks for its options.
     if (!names.length) add(`Ask the ${item.slice(0, item.indexOf("/"))} agent for candidates first (the brief for fresh options).`, ["clossys", "options", item, "--more"]);
     add("Not needed: the slot ships nothing.", ["clossys", "pin", item, "--not-needed", "--reason", "<why>", "--by", QUEUE_ANSWER]);
@@ -384,7 +391,6 @@ function questionOf(step: Step, item: string, context: Context, packageRoot: str
   if (step.id === "seats") { const target = context.steps.find(each => each.id === item); return `Who decides ${item}${target ? ` (${target.summary.replace(/\.$/, "")})` : ""}?`; }
   if (step.id === "ia" && !item.includes("/")) return `Which ${item} IA does this workspace start from?`;
   if (step.id === "ia") return `Does ${item} belong in the IA, and what is its contract?`;
-  if (step.id === "writer.approve") return `Approve the Writer copy for ${item}?`;
   if (step.id.startsWith("pin.")) return `Which candidate ships for ${item}?`;
   if (item.includes("/") && step.kind === "decide:creative") return `Draft ${item}'s candidates: ${skillLine(step, packageRoot)}`;
   if (item.includes("/")) return `Pick one of ${item}'s candidates.`;

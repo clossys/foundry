@@ -23,7 +23,7 @@ export interface ViewListing {
   readonly source: "package" | "consumer";
   /** True when a consumer file shadows a package file with the same id. */
   readonly shadowsPackage: boolean;
-  /** Set when the resolved file has no readable header (`npm run check:views` says why). */
+  /** Set when the resolved file has no readable header (checkViews in check/views-inputs-only.ts says why). */
   readonly invalid?: string;
 }
 

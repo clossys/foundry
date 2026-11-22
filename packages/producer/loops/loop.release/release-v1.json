@@ -47,7 +47,7 @@
         "decider": {
           "by": "code"
         },
-        "cli": "clossys release <pub> --build",
+        "cli": "clossys publisher release <pub> --build",
         "reads": [
           "clossys/.state/generated/"
         ],
@@ -64,7 +64,7 @@
         "decider": {
           "by": "code"
         },
-        "cli": "clossys release <pub> --manifest",
+        "cli": "clossys publisher release <pub> --manifest",
         "reads": [
           "clossys/.state/builds/<buildId>/"
         ],
@@ -81,7 +81,7 @@
         "decider": {
           "by": "code"
         },
-        "cli": "clossys release <pub> --gates",
+        "cli": "clossys publisher release <pub> --gates",
         "reads": [
           "publisher/release.<pub>/candidates/<pub>-v<n>.json"
         ],

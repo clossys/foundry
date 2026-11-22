@@ -55,7 +55,6 @@
           "slots": [
             "seat.pick.designer",
             "seat.pick.writer",
-            "seat.writer.approve",
             "seat.pin.designer",
             "seat.pin.writer"
           ]
@@ -272,18 +271,6 @@
       "human": {
         "procedure": "Pick one of a Writer slot's options as its agent seat, for the owner to confirm.",
         "command": "clossys pick"
-      }
-    },
-    "writer.approve": {
-      "by": "owner",
-      "llm": {
-        "model": "<model:mid>",
-        "tier": "mid",
-        "promptFile": "packages/producer/actions/writer.approve/skill.md"
-      },
-      "human": {
-        "procedure": "Decide whether a Writer copy key is approved to ship.",
-        "command": "clossys approve"
       }
     },
     "pin.designer": {

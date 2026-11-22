@@ -23,14 +23,17 @@
  * fixture a Writer contract determines), so a sync keeps that seed and a hand edit of it is drift; an adopted
  * slot/2 leaf also takes its option family.
  */
-import { dirname } from "node:path";
+import { createHash } from "node:crypto";
+import { dirname, join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { deriveRefs, feedsIndex } from "./derive.js";
 import { designerIa, directorIa, producerIa, slotPositions, writerIa, type FoundryIa, type FoundrySlot } from "./foundry-ia.js";
 import { iaPath, jsonBytes, slotDir, slotFile } from "./layout.js";
 import { resolveIaSource, WORKSPACE_OWNED_SOURCE } from "./ia-source.js";
-import { FOUNDRY_IA_AGENTS, SLOT_AGENTS, SLOT_SCHEMA, seatStepOf, type IaDoc, type IaLeafGroup, type IaNode, type SlotAgent, type SlotPosition } from "./types.js";
-import { isModelDir, listModelDir, modelExists, readModelText } from "../slots.js";
+import { packageStepIds } from "./pipeline-seats.js";
+import { FOUNDRY_IA_AGENTS, SEAT_AGENT, SLOT_AGENTS, SLOT_SCHEMA, seatStepOf, type IaDoc, type IaLeafGroup, type IaNode, type SlotAgent, type SlotPosition } from "./types.js";
+import { isModelDir, listModelDir, modelExists, readModelBytes, readModelText } from "../slots.js";
+import { RETIRE_SCHEMA } from "../slot-write.js";
 import { isCurrentSlot, refIds, slotFamily } from "../slot-current.js";
 import { positionIa, serializeSlot } from "../slot.js";
 import type { AgentId, Iso, Ref, Slot } from "../types.js";
@@ -326,6 +329,12 @@ export interface SyncState {
   readonly target: IaDoc;
   readonly positions: ReadonlyMap<string, SlotPosition>;
   readonly undeclared: readonly string[];
+  /**
+   * Placed producer seats whose step the package no longer defines (pipeline/actions.json): the sync retires each, as
+   * `clossys retire --slot` does (out of ia.json with a `retired` row, its folder to `_retired/<seat>`), never deleting
+   * it. A seat whose step the package still defines is never here: placed but not packaged, it stays undeclared.
+   */
+  readonly retiring: readonly string[];
   /** Every package leaf id, the ones `pkg` leaves out included. */
   readonly packageIds: ReadonlySet<string>;
   /** Placed package leaves no publication reaches (CONSISTENCY D5 option 1); empty when consumption is not judged. */
@@ -345,12 +354,16 @@ export function syncState(consumerDir: string, agent: SyncAgent, pkg?: FoundryIa
   const packaged = new Set<string>([...packageIds, ...(isLoopAgent(agent) ? AGENT_LOOPS : [])]);
   const declared = new Set(consumer?.extensions ?? []);
   const placedNow = new Set(consumer ? placedIds(consumer) : []);
-  const undeclared = consumer ? [...placedNow].filter(id => !packaged.has(id) && !declared.has(id)) : [];
+  const loose = consumer ? [...placedNow].filter(id => !packaged.has(id) && !declared.has(id)) : [];
+  const steps = agent === SEAT_AGENT && loose.length ? packageStepIds() : undefined;
+  const stepGone = (id: string) => { const step = seatStepOf(id); return steps !== undefined && step !== undefined && !steps.has(step); };
+  const retiring = loose.filter(stepGone);
+  const undeclared = loose.filter(id => !stepGone(id));
   const reach = consumed ?? (pkg === undefined && isConsumedAgent(agent) ? consumedIds(consumedLeaves(dirname(consumerDir)), agent) : undefined);
   const scoped = reach ? filterFoundryIa(full, new Set([...packageIds].filter(id => reach.has(id) || placedNow.has(id)))) : full;
   const unconsumed = reach ? [...packageIds].filter(id => placedNow.has(id) && !reach.has(id)) : [];
   const target = targetIa(agent, scoped.ia, consumer);
-  return { agent, pkg: scoped, consumer, target, positions: slotPositions(agent, target), undeclared, packageIds, unconsumed };
+  return { agent, pkg: scoped, consumer, target, positions: slotPositions(agent, target), undeclared, retiring, packageIds, unconsumed };
 }
 
 const sameJson = (a: unknown, b: unknown) => isDeepStrictEqual(JSON.parse(JSON.stringify(a ?? null)), JSON.parse(JSON.stringify(b ?? null)));
@@ -368,6 +381,7 @@ export function syncDrift(consumerDir: string, agent: SyncAgent, state: SyncStat
   if (!consumer) { add("slot-missing", `${agent} has no ia.json (${CREATED_BY_SYNC.has(agent) ? "clossys ia sync" : `clossys ia ${agent} --adopt`})`); return findings; }
   const placed = new Set(placedIds(consumer));
   for (const id of state.undeclared) add("undeclared-leaf", `${id} is placed in the consumer but is neither a package leaf nor a declared extension`, id);
+  for (const id of state.retiring) add("undeclared-leaf", `${id} seats step ${seatStepOf(id)}, which the package no longer defines: clossys ia sync retires it to agents/${agent}/${RETIRED_SEATS_DIR}/${id}`, id);
   for (const id of pkg.slots.keys()) if (!placed.has(id)) add("unadopted-leaf", `${id} is a package leaf the consumer has not adopted`, id);
   for (const id of state.unconsumed) add("unconsumed-leaf", `${id} is a package leaf no declared or seated publication reaches: ${unconsumedRemedy(agent)}`, id);
   for (const id of consumer.extensions ?? []) if (state.packageIds.has(id)) add("redefined", `${id} is declared as an extension but is a package leaf`, id);
@@ -436,13 +450,46 @@ export function driftCounts(findings: readonly SyncFinding[]): Partial<Record<Sy
  * newly adopted leaf's slot.json with its derived refs. Undeclared leaves refuse the plan: they are
  * declared as extensions or upstreamed into the package first.
  */
-export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlySet<string>, state: SyncState = syncState(consumerDir, agent), options?: CurrentSyncOptions): { writes: [string, string][]; adopted: string[] } | { error: string } {
+/** Where a retired seat's folder goes: the `clossys retire --slot` place, a non-slot (`_`) folder of the agent. */
+export const RETIRED_SEATS_DIR = "_retired";
+/** Who an ia.json `retired` row of a sync-retired seat names (clossys.retire/1 `by`: migration[:<name>]). */
+export const SYNC_RETIRE_BY = "migration:ia-sync";
+/** A seat the sync retires: its folder moves from `from` to `to` (agents/producer/_retired/<seat>), whole. */
+export interface SeatRetire { readonly id: string; readonly from: string; readonly to: string }
+
+/**
+ * The ia.json `retired` rows of the seats the sync retires (one clossys.retire/1 row each, as `clossys retire --slot`
+ * writes: the seat, its slot.json sha256 or null, who, a not-needed reason naming the step, and when), and the folder
+ * moves. A seat already on record, or whose `_retired/<seat>` place is taken, refuses the plan.
+ */
+function seatRetires(consumerDir: string, state: SyncState, at: string): { rows: Record<string, unknown>[]; moves: SeatRetire[] } | { error: string } {
+  const history = Array.isArray((state.consumer as { retired?: unknown } | undefined)?.retired) ? (state.consumer as unknown as { retired: unknown[] }).retired : [];
+  const recorded = new Set(history.flatMap(row => (row && typeof row === "object" && typeof (row as { slot?: unknown }).slot === "string" ? [(row as { slot: string }).slot] : [])));
+  const rows: Record<string, unknown>[] = [], moves: SeatRetire[] = [];
+  for (const id of state.retiring) {
+    const slot = `${state.agent}/${id}`;
+    const from = slotDir(consumerDir, state.agent, id), to = join(consumerDir, "agents", state.agent, RETIRED_SEATS_DIR, id);
+    if (recorded.has(slot)) return { error: `${slot} is placed again but ia.json already records it retired` };
+    if (modelExists(to)) return { error: `agents/${state.agent}/${RETIRED_SEATS_DIR}/${id} exists; ${slot} was retired before` };
+    const file = slotFile(from);
+    const sha256 = modelExists(file) ? createHash("sha256").update(readModelBytes(file)).digest("hex") : null;
+    rows.push({ schema: RETIRE_SCHEMA, slot, sha256, by: SYNC_RETIRE_BY, reason: `not-needed: ia sync, the package defines no step ${seatStepOf(id)}`, at });
+    if (isModelDir(from)) moves.push({ id, from, to });
+  }
+  return { rows, moves };
+}
+
+export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlySet<string>, state: SyncState = syncState(consumerDir, agent), options?: CurrentSyncOptions): { writes: [string, string][]; adopted: string[]; retired: SeatRetire[] } | { error: string } {
   if (!state.consumer && !CREATED_BY_SYNC.has(agent)) return { error: `${agent} has no ia.json: adopt the package IA first (clossys ia ${agent} --adopt)` };
   if (state.undeclared.length) return { error: `${agent} places ${state.undeclared.length} leaves that are neither package leaves nor declared extensions: ${state.undeclared.slice(0, 8).join(", ")}${state.undeclared.length > 8 ? ", ..." : ""}` };
   const writes: [string, string][] = [];
   const adopted: string[] = [];
   const iaFile = iaPath(consumerDir, agent);
-  const iaBytes = jsonBytes(state.target);
+  // A seat of a step the package no longer defines leaves ia.json with a `retired` row; its folder moves, whole.
+  const retires = state.retiring.length ? seatRetires(consumerDir, state, options?.at ?? new Date().toISOString()) : { rows: [], moves: [] };
+  if ("error" in retires) return { error: retires.error };
+  const target = retires.rows.length ? { ...state.target, retired: [...((state.target as { retired?: unknown[] }).retired ?? []), ...retires.rows] } : state.target;
+  const iaBytes = jsonBytes(target);
   if (!modelExists(iaFile) || readModelText(iaFile) !== iaBytes) writes.push([iaFile, iaBytes]);
   const feeds = feedsIndex([...(agent === "director" ? state.pkg : directorIa()).slots.values()].map(slot => [slot.id, slot.feeds] as const), known);
   const ctx: RefContext = { known, feeds };
@@ -478,7 +525,7 @@ export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlyS
     }
     writes.push([file, bytes]);
   }
-  return { writes, adopted };
+  return { writes, adopted, retired: retires.moves };
 }
 
 /** The slot ids every other placed agent IA holds (refs resolve against them). */

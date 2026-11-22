@@ -412,7 +412,7 @@ export async function runE2e(options: E2eOptions = {}): Promise<{ exitCode: 0 | 
     await runScenario(scenario, shipped, consumer, clossys, { say, findings, built: row => { build = row; } });
     const built = build as E2eReport["build"];
     const first = latest(consumer, scenario.publication);
-    if (!built || !first) stop("e2e.render", scenario.publication, `release --build wrote no ${stateRel("builds", `latest-${scenario.publication}.json`)}`);
+    if (!built || !first) stop("e2e.render", scenario.publication, `publisher release --build wrote no ${stateRel("builds", `latest-${scenario.publication}.json`)}`);
     const origin = consumer;
     const leaks = portableFindings(first!.dir, [origin, work]);
     if (leaks.length) { findings.push(...leaks); stop(leaks[0]!.cause, leaks[0]!.subject, leaks[0]!.detail); }
@@ -468,7 +468,7 @@ export async function runScenario(scenario: Scenario, shipped: string, consumer:
   const buildArgv = scenario.build.map(arg => fill(arg, shipped, scenario));
   await clossys("build", buildArgv);
   const first = latest(consumer, scenario.publication);
-  if (!first) stop("e2e.render", scenario.publication, `release --build wrote no ${stateRel("builds", `latest-${scenario.publication}.json`)}`);
+  if (!first) stop("e2e.render", scenario.publication, `publisher release --build wrote no ${stateRel("builds", `latest-${scenario.publication}.json`)}`);
   const build = { publication: scenario.publication, id: first!.id, routes: Object.keys(scenario.render) };
   io.built(build);
   const render = renderFindings(first!.dir, scenario.render);

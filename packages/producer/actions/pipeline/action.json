@@ -61,7 +61,9 @@
   "checks": [
     "pipeline",
     "step-standard",
-    "pipeline-wiring"
+    "pipeline-wiring",
+    "engine-doc",
+    "review-doc"
   ],
   "uses": []
 }

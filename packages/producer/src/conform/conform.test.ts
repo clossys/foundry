@@ -12,7 +12,7 @@ import { cellOf, conform, formatReport, readRegistry } from "./run.js";
 import { routingIssues } from "../queue/routing.js";
 import { AGENT_LOOPS, agentLoopIssues, readAgentPackageLoop } from "../loop/agent-loops.js";
 
-// U13 r4: the pin gate probe runs the guarded pin and approve verbs; at the workstation's shared load they exceed 5 s.
+// U13 r4: the pin gate probe runs the guarded pin verbs and the Writer's owner pin; at the workstation's shared load they exceed 5 s.
 vi.setConfig({ testTimeout: 60_000 });
 
 const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
@@ -557,18 +557,18 @@ describe("pin gate probe (the real pin verb on a temporary copy)", () => {
       expect(gate.accepted, gate.target).toBe(false);
       expect(gate.message, gate.target).toMatch(/no submit record/);
       const verbs = gate.verbs!;
-      // pin, pick and verdict for every agent, approve for Writer; each on the hand-placed and the submitted candidate.
+      // pin, pick and verdict for every agent, the owner pin (approval) for Writer; each on the hand-placed and the submitted candidate.
       expect(verbs.map(run => `${run.case}:${run.verb}`).sort(), agent).toEqual(
-        ["hand-placed", "submitted-uncertified"].flatMap(kind => ["pin", "pick", "verdict", ...(agent === "writer" ? ["approve"] : [])].map(verb => `${kind}:${verb}`)).sort());
+        ["hand-placed", "submitted-uncertified"].flatMap(kind => ["pin", "pick", "verdict", ...(agent === "writer" ? ["owner-pin"] : [])].map(verb => `${kind}:${verb}`)).sort());
       for (const run of verbs) {
         expect(run.exit, `${agent} ${run.case} ${run.verb}: ${run.message}`).not.toBe(0);
         expect(run.gated, `${agent} ${run.case} ${run.verb}: ${run.message}`).toBe(true);
       }
       // The submitted candidate reaches the certification: pin names its failing verdict, not a missing submit.
       expect(verbs.find(run => run.case === "submitted-uncertified" && run.verb === "pin")!.message).toMatch(/no passing verdict/);
-      // One format (U13): pick and approve pin through the gated slot/2 path, so they name the failing verdict too; a
+      // One format (U13): pick and the owner pin go through the gated slot/2 path, so they name the failing verdict too; a
       // verdict's own pick is still refused outright on a slot/2 slot.
-      for (const verb of ["pick", ...(agent === "writer" ? ["approve"] : [])]) {
+      for (const verb of ["pick", ...(agent === "writer" ? ["owner-pin"] : [])]) {
         expect(verbs.find(run => run.case === "submitted-uncertified" && run.verb === verb)!.message, `${agent} ${verb}`).toMatch(/no passing verdict/);
       }
       expect(verbs.find(run => run.case === "submitted-uncertified" && run.verb === "verdict")!.message, `${agent} verdict`).toMatch(/pinned only through the CHOOSE gate/);
@@ -582,7 +582,7 @@ describe("pin gate probe (the real pin verb on a temporary copy)", () => {
     const writer = results.writer as PinGateResult;
     const opened = (verb: string, change: Partial<VerbProbe>) => ({ ...facts, pinGate: { ...results, writer: { ...writer, verbs: writer.verbs!.map(run => run.verb === verb && run.case === "submitted-uncertified" ? { ...run, ...change } : run) } } }) as ProbeFacts;
     const c3 = (given: ProbeFacts) => ASSERTIONS.C3!(model.agents.find(agent => agent.agent === "writer")!, model, given).rows;
-    expect(c3(opened("approve", { exit: 0, gated: false }))).toContainEqual(expect.stringMatching(/^approve writer\/\S+ \S+ accepted a submitted candidate with no passing verdict \(exit 0\)$/));
+    expect(c3(opened("owner-pin", { exit: 0, gated: false }))).toContainEqual(expect.stringMatching(/^owner-pin writer\/\S+ \S+ accepted a submitted candidate with no passing verdict \(exit 0\)$/));
     expect(c3(opened("pick", { exit: 1, gated: false, message: "pick refused: R02.2" }))).toContainEqual(expect.stringMatching(/^pick writer\/\S+ \S+ \(submitted-uncertified\) was refused before the CHOOSE gate \(exit 1\): pick refused: R02\.2$/));
   });
 });

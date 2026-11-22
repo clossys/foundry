@@ -16,7 +16,7 @@ Build the publication from the current pins into `clossys/.state/builds/<id8>/` 
 of the build digest).
 
 ```sh
-clossys release <pub> --build
+clossys publisher release <pub> --build
 ```
 
 ### 2. manifest (deterministic)
@@ -25,7 +25,7 @@ Write the manifest candidate `publisher/release.<pub>/candidates/<pub>-v<n>.json
 build. If the latest manifest already lists this build, it is reused and nothing is written.
 
 ```sh
-clossys release <pub> --manifest
+clossys publisher release <pub> --manifest
 ```
 
 ### 3. gates (deterministic)
@@ -33,7 +33,7 @@ clossys release <pub> --manifest
 Run every release gate against the latest manifest. Any failure exits 1, and no flag skips a gate.
 
 ```sh
-clossys release <pub> --gates
+clossys publisher release <pub> --gates
 ```
 
 ### 4. validate (deterministic)

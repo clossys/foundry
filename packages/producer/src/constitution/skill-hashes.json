@@ -2,7 +2,8 @@
   "schema": "clossys.skill-hashes/1",
   "skills": {
     "packages/designer/actions/designer.brief/skill.md": [
-      "1171c39f1da094643cfe4f4258f2d62dbceece5d994080698de0a324ad8dba3b"
+      "1171c39f1da094643cfe4f4258f2d62dbceece5d994080698de0a324ad8dba3b",
+      "5cf1bcb789da79293901d05153af8c1008b6e2c800e8784eb65a02babfad33e0"
     ],
     "packages/designer/actions/designer.candidates/skill.md": [
       "14788d4e59896ac23787044d75ccc27cb71c71d0ff6344054039e5808f7a87eb",
@@ -14,13 +15,18 @@
     ],
     "packages/designer/actions/designer.cascade/skill.md": [
       "53862cdd3e8e87daf48279c0272a8b36f5a090cce0d78cd6c75a63535ec69394",
-      "954fa9e9021168331c9d7857904808a4ae87e39efc22b7487e0b655a75852f73"
+      "954fa9e9021168331c9d7857904808a4ae87e39efc22b7487e0b655a75852f73",
+      "cdb75ce467e090c600524afa2e9af77975cae9f17c203302cd819c31c331b3e1",
+      "fa495653bbc6d8c12d4b9512700ea0c88e223863ee70676dafc7260275eedb45"
     ],
     "packages/designer/actions/designer.scope/skill.md": [
+      "42ef4ba101e634c76eed093b5aa129f97b75cb6eb566fda03afe46e9421cb02b",
       "e7b9f75f29f1505149cf2a33b8b3855880b7dd88ee81360bdb4128b5cb607542"
     ],
     "packages/designer/actions/designer.slot/skill.md": [
+      "051fae19cda02a041058aa6e67ac666cf96c0e77728c08b736ca0a27248d4747",
       "0dfe0b00be41b83d0d9d28222ff4ecfbbce9631760bff6feef7cd79749ec5d6e",
+      "6876120639c6d57f84f3c84afcde85074578707d5b32badc41c48ebac727d7c6",
       "7d39e734fe332ce3c033071493a6b136ae9fd52e607377cebf5aa4115da3e02f",
       "be69a6e617329884473c43595b0b57fe4abcfb3f58cb0480e94ef1d4e7494257",
       "dcc9dcdfb8591da8790c70a519fa1c2cb16dcad871eb309b7a2af701054506d1"
@@ -29,7 +35,8 @@
       "04300ddb671c88f7d5571c82d406ab649b9ccbc14045bb9c83110c45b26ab5dd"
     ],
     "packages/director/actions/director.brief/skill.md": [
-      "717170f4b86ce9e0a739badc766979e9e791237e9b645fe6b118553b6ec3917d"
+      "717170f4b86ce9e0a739badc766979e9e791237e9b645fe6b118553b6ec3917d",
+      "cde22db0e8e7dc3824d17368cdca8eaa65683066e0923d8a554efe40ceded2aa"
     ],
     "packages/director/actions/director.candidates/skill.md": [
       "21682eba347b924c59afa42ca49eb3e538d0454bce842707d47f82a103a739e2",
@@ -41,14 +48,19 @@
       "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
     ],
     "packages/director/actions/director.cascade/skill.md": [
+      "2f0446356c7a998c1e8b0ce84bdfe9b0f27096711f56d99bfbc0c740e0e8ce05",
+      "3496a1889d5a13b329f5489a97355496a317370601b57150274e857684182971",
       "68f4e7e071a796445c41643bc84b1be74158c6415ff50478c56ba2d0c8b3545d",
       "7b9f49d7c38e91b074c2b1275a61add0a10d038bf71265c539eedb8050cf7084"
     ],
     "packages/director/actions/director.scope/skill.md": [
+      "22996f8eeb81f2b27d7b7783cded8681e8dc3c0a210d0e5dc82cbe44b21157d7",
       "3e0eaf03a9d3d8e371e7e85720c70eeabb7ee8eb8e0725f3fc084cc48d1e255a"
     ],
     "packages/director/actions/director.slot/skill.md": [
       "2e238753f3bee82eb54663eec250f1fa22c4392d402fb6d147495b8e9a460c45",
+      "30e4243a614c0014279147a7968ce6b89890a73b8387ba1fc21a75866a61f4e4",
+      "3794979dc91b23860cfbabbfea6da254c32d06845eb92eccae6bc2d9c49034e2",
       "52984f1771c8ca412ae9a2559e6c42a807300f155ba1b6d456a5808a949e374a",
       "63a670b051caff680d62df8aacc9c4c84d4359f95226e70694fe2b19f6ebe3b7",
       "880924dd5b1e4e6ad968f58ede7165e3ae4afd6aa384196addc33f8aaffeddbd"
@@ -115,6 +127,7 @@
       "57c7590934758886f029372c3e9262e0afabc38f3c1dd9aa562000981272ff6f"
     ],
     "packages/publisher/actions/publisher.brief/skill.md": [
+      "3058c893c235a2036ae85d52b7441f3c0fe6d8be0bb0bd831c7c2832af5f2ebd",
       "6f893ed6cdf81cf829f555d9e5c49fc180f642d559c1d555fb09cf771c16638c"
     ],
     "packages/publisher/actions/publisher.candidates/skill.md": [
@@ -128,21 +141,27 @@
     ],
     "packages/publisher/actions/publisher.cascade/skill.md": [
       "1ffa9e6bdeb021653fc06c7a4469a8193fecd52b9639d9435242fa3fa6711167",
-      "4ff808b807a045a71463815c181b72b88912517f46111aca7e5783c7fe4a9074"
+      "4ff808b807a045a71463815c181b72b88912517f46111aca7e5783c7fe4a9074",
+      "87ce5215aabc3a9e4c7a34508802dcf66b3480287d56504e0a2e18413ce91aa3",
+      "8d21a7728ca498e5e8d631a10ea6ff2133d3bd1a9ade7ebf3eabab92489287db"
     ],
     "packages/publisher/actions/publisher.scope/skill.md": [
-      "6e7cfd161331412740a3a215a9f91089494efb98534df793323ef9c8ecbc5e40"
+      "6e7cfd161331412740a3a215a9f91089494efb98534df793323ef9c8ecbc5e40",
+      "eab13f0ba4e1e754a618ad6abbb557d27946b616f0733e053cf845d5a4b5c142"
     ],
     "packages/publisher/actions/publisher.slot/skill.md": [
+      "1e2feb1a26991bedab69122005735e63470ea114bac8a36029ba772d7a413e7a",
       "3b491eb5b372a102f2886e1c8be2c2e1f2ac50f71312f890b910db01e9bf2ee2",
       "5b7fba2d691b4c337382b6b29ee55b5f4d0c5c1abcec7d3949f186329defb9a5",
       "721c26d81df43d896476532d991ad58dd77ac35c95ddfaad2945db21a0dcc07e",
-      "e88ff453b10273cd9334c8e5b501ce7ca52a2ef4b0d0da2886712a94e991b520"
+      "e88ff453b10273cd9334c8e5b501ce7ca52a2ef4b0d0da2886712a94e991b520",
+      "e9c3b31933a217c588356a5daf350c92d8468b3538cacfb1ab5a2ae425123687"
     ],
     "packages/writer/actions/pick.writer/skill.md": [
       "e97f36eaf11dae908e84898ca7ccbdd35b434450e5010b4b00cf78330a808955"
     ],
     "packages/writer/actions/writer.brief/skill.md": [
+      "3d40847cf5df3319678777f9893eb1ec23f16af685a221a5152401706e980db1",
       "a75e323f098a3f8d741b68a9d290ce5224cb5376619a369a06402d02c806b2da"
     ],
     "packages/writer/actions/writer.candidates/skill.md": [
@@ -156,15 +175,20 @@
     ],
     "packages/writer/actions/writer.cascade/skill.md": [
       "42d07afb46ed858045c838d2118cf40e44eb58ccc8621cd8522cae826907b6e5",
+      "55bebbcaad1dbd0bcda0a3628264050b150ee0774bf9c410246ce800d22b3642",
+      "69a8f249e75a5153222b0f76df8c1c4980d96feac947f84b8c2adf1508b62adf",
       "96a34eeee10cc40aa2836b9f28df9c7ab83ecb70dc68d9d57462f5c87b00cdca"
     ],
     "packages/writer/actions/writer.scope/skill.md": [
+      "041b7541815037ad9fa7c8ced81046408c7b7abcf736664ca62e7f3e75ccbb42",
       "93a93a08e111e2afeb8cd3ff79b1662f8ff01cb58e423459d5f72d7ca85f51b0"
     ],
     "packages/writer/actions/writer.slot/skill.md": [
       "1fce7d1d79d5d2cc45aca8bbd7a59faffb099b39e6d57a78f5af23b75b006ea4",
       "2f13c190eb06bfaed619f0d2abac279e2f704ba37991a3d3def0bf1a8de31c89",
+      "48daf453d2299e0f5679ceb1cd842682770f89dfdab15971cd46b926bc45e189",
       "9e677b35add50c612a16fde62bb5e74d66a5cd2a08c57b5d8de3b861bb058c9f",
+      "c196ee48f173cb9cf1cd14225977b5cf933fe68edbcc3183667396a6f9770b5d",
       "feed4a67e5526912219d890b55842d73080831269ec765dca837bc5d798f7e2c"
     ]
   },
@@ -194,6 +218,7 @@
     ],
     "packages/producer/actions/build.receipt/action.json": [
       "7b380b233cd4bf01341f107c3bbc5375322e36628ee1cacbf5d9cecb3cf642f2",
+      "b30a41cc8a5295ccca8c394abf569766fac9c22b58e7e62fefb0c70f19d6d9ad",
       "ef8490492806ec3d33b890e7ad521598dc428af1f4035e7ef3627e1210c4c4b9"
     ],
     "packages/producer/actions/capture/action.json": [
@@ -236,14 +261,17 @@
     "packages/producer/actions/pipeline/action.json": [
       "0c7e71e874f25ed97baaf9115ebc53c657b79d3439ddafe694ae366333f6161c",
       "2c04eab9a0fc5930d3d325116ebdd8236c384ade8f69ae47469a3c605817a02b",
-      "38a5b5389c5a05d60bd0caaa094e34ef152edf287fe464489f3af72021433364"
+      "38a5b5389c5a05d60bd0caaa094e34ef152edf287fe464489f3af72021433364",
+      "d8ee3042712255a883a60bc498a6d1a5c0f416da31341854693fcc52130c965c"
     ],
     "packages/producer/actions/publisher.check/action.json": [
       "37232a78ca22fd2b2aa553132f9d94978f0121d227b1e727ce20badc473c11a4",
       "fc28557e30ca5acb95f345188a818d276ecc6aa82bb47442b82a7b78a82a4080"
     ],
     "packages/producer/actions/publisher.release/action.json": [
+      "59b13ce45955f441f5ec8bb7f293ba572ed828be78b1dad69dfff7c459178475",
       "5e2dae090463375997006437e0facb568ebb52a8ae0b2a73dde36cd4baf030ea",
+      "7cb1f228a8051187d04c80739ae579b17a1aac392361f172a3e4e88b1d9c7d34",
       "f62da2f0694eb1765055b021a13a07ccc6d05a276e900b81f2c90b6cbe4ff602"
     ],
     "packages/producer/actions/render/action.json": [
@@ -252,6 +280,7 @@
     ],
     "packages/producer/actions/specimen.evidence/action.json": [
       "11fe1698cf629b45b17605700209619a1c514ea6bfebf135ae539d4f1d16b3a7",
+      "39b54fb854be527db1cb2c15572e9a9070c4994a9d2a7d0d12fd42801859cbd7",
       "655dc3c8902e28e0332cfef7548552792e48fa3f2ab48beeb278b198488bf330"
     ],
     "packages/producer/actions/specimen/action.json": [
@@ -260,15 +289,19 @@
       "6b204cded502f9ae344949c2f5077b112f0e05b838df610a1fcebd09bb03e679"
     ],
     "packages/producer/actions/studio.checks/action.json": [
-      "27ae2f7a7261b600016f39cbbeedd0ed1c5cd4c449d45e897f2b348102e0ce07"
+      "27ae2f7a7261b600016f39cbbeedd0ed1c5cd4c449d45e897f2b348102e0ce07",
+      "58db9c841eb1711e59538817f4c2ad781c986386e45af3ccf60f5f257f46d880",
+      "e9e934b867b6c1e5d3e98a35c0c8f62ad3dcfdfabbb4d2d71fc86fbfadd41793"
     ],
     "packages/producer/actions/studio.compose/action.json": [
+      "90d07658ddb4427545096fad4d5f649b9d04c164a36b121024f15336aff1eca9",
       "acdec703bc520e7b6b61ff9041391f03a0b7dd12eaba444092f51a62f26a326f",
       "b7639de9e2b90865afabf75b224b473c50e91ad1e6c9e59fe9fa8fcad925d673"
     ],
     "packages/producer/actions/studio.map/action.json": [
       "68730f60740f07735dcdd2f975ce0057fa79890c14bc231e968df8173795188f",
       "a9736e95659cbde4367748b7ef16e02b5581ef17b1a9d914c8bbac5ddaf3ed73",
+      "e3818d4c9bc15c6d1cf5bd7675a99b8211a4258e90c1e1e90df96fb16248f5bf",
       "fb385980ba406ed9a4683e0e93de74812830fff83fa39d3cae2cdaf6f6b7159b"
     ],
     "packages/producer/actions/studio.produce/action.json": [
@@ -277,6 +310,7 @@
       "e2656c45d76be1541f4862957ff8b09aeb821f15cbb483f6445e7dfb8be7491e"
     ],
     "packages/producer/actions/workspace.check/action.json": [
+      "23b8a5841a7ed68030b97afbada677185724aade6022c85b5861c79a9ebc6aa4",
       "c8b723ea249e580e15a348f3c5d32a920e394ce4b08ba544370e6cbe7e38b668",
       "dd4613f01aa1dbc03c85ca64da9d8bb2d08328eee4e40b5061e2c1a9b447cacd",
       "ed2a31e19dc6c784fea1e72039adb2d4adeddea1cf7bd7ee40cc4f8de44d5bd9"

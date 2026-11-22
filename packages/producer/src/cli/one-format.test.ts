@@ -25,7 +25,7 @@ import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/inde
 import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
 import { runCli } from "./main.js";
 import { runPickCli } from "./options.js";
-import { runApproveCli, runIaCli, runSeatCli } from "./owner.js";
+import { runIaCli, runSeatCli } from "./owner.js";
 import { runPinCli } from "./pin.js";
 import { ownerDecisionRefusal } from "../records/owner-answer.js";
 import { answerRequest, raiseWork, readRequest, requestsDir } from "../records/request.js";
@@ -77,11 +77,12 @@ function world() {
     pinUpstream: () => pinUpstream(consumer, "writer", SLOT, AT),
     /**
      * The owner's typed queue.pick answer (U13 r4, B2): a clossys.queue-entry/1 entry the owner answered, about `about`,
-     * whose answered option names this candidate (a pin or approve) or is not-needed / seat about the whole slot.
+     * whose answered option names this candidate (a pin; on queue.approve, the owner's approval of Writer copy) or is
+     * not-needed / seat about the whole slot.
      */
     queueEntry: (answer: OwnerEntryInput["answer"], about = `writer/${SLOT}`, over: Partial<OwnerEntryInput> = {}) => ownerEntry(consumer, { id: QUEUE_ID, about, answer, at: AT, ...over }),
     /** Any other bytes at the same entry path (default: an untyped `{id, kind}` object): never an owner decision. */
-    bareEntry: (bytes?: string) => bareEntry(consumer, "pick", QUEUE_ID, bytes),
+    bareEntry: (bytes?: string, queue: "pick" | "approve" = "pick") => bareEntry(consumer, queue, QUEUE_ID, bytes),
   };
 }
 
@@ -304,18 +305,29 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     expect(slot).toMatchObject({ schema: "clossys.slot/2", status: "parked", contract: { notNeeded: { reason: "not on this site", decidedBy: `owner:queue.pick#${QUEUE_ID}` } } });
   });
 
-  it("approve: the owner's approval is a gated pin-map record with basis picked naming its queue entry", async () => {
+  it("owner approval: a Writer pin citing the owner's answered queue.approve entry is a gated pin-map record with basis picked", async () => {
     const w = world();
     w.pinUpstream();
     const good = w.submit();
-    w.queueEntry({ candidate: good.name });
-    const bare = await runApproveCli([`writer/${SLOT}`, good.name, "--by", "owner", "--at", AT, "--root", w.root], w.root);
+    const approve = (by: string) => runPinCli([`writer/${SLOT}#copy`, good.name, "--basis", "picked", "--by", by, "--at", AT, "--root", w.root], w.root);
+    // No queue entry at all: the pin names no answered entry and is refused.
+    const missing = await approve(`owner:queue.approve#${QUEUE_ID}`);
+    expect(missing.exitCode).not.toBe(0);
+    expect(missing.message).toContain(`producer/queue.approve#${QUEUE_ID} is not a queue entry`);
+    // The entry is raised but the owner has not answered it: refused.
+    w.queueEntry({ candidate: good.name }, undefined, { queue: "approve", status: "open" });
+    const unanswered = await approve(`owner:queue.approve#${QUEUE_ID}`);
+    expect(unanswered.exitCode).not.toBe(0);
+    expect(unanswered.message).toMatch(/is open, not answered/);
+    expect(existsSync(join(w.dir, "pin.json"))).toBe(false);
+    w.queueEntry({ candidate: good.name }, undefined, { queue: "approve" });
+    const bare = await approve("owner");
     expect(bare.exitCode).not.toBe(0);
     expect(existsSync(join(w.dir, "pin.json"))).toBe(false);
-    const result = await runApproveCli([`writer/${SLOT}`, good.name, "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root);
+    const result = await approve(`owner:queue.approve#${QUEUE_ID}`);
     expect(result.exitCode, result.message).toBe(0);
     const pin = expectOneFormat(w.dir, "writer", SLOT);
-    expect((pin.records as Record<string, unknown>).copy).toMatchObject({ candidate: good.name, decidedBy: `owner:queue.pick#${QUEUE_ID}`, basis: "picked" });
+    expect((pin.records as Record<string, unknown>).copy).toMatchObject({ candidate: good.name, decidedBy: `owner:queue.approve#${QUEUE_ID}`, basis: "picked" });
     expect(JSON.stringify(pin.refs ?? (pin.records as Record<string, { refs?: unknown }>).copy)).toContain(QUEUE_ID);
     // An agent pick never replaces the owner's: pick refuses over it and the record is unchanged.
     const bytes = readFileSync(join(w.dir, "pin.json"), "utf8");
@@ -329,7 +341,7 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     expect(readFileSync(join(w.dir, "pin.json"), "utf8")).toBe(bytes);
   });
 
-  it("B1 (guard on): pick, planner pin and owner approve refuse while the slots the copy depends on are unpinned, writing nothing", async () => {
+  it("B1 (guard on): pick, planner pin and the owner's approval pin refuse while the slots the copy depends on are unpinned, writing nothing", async () => {
     const w = world();
     const good = w.submit();
     const GUARD = /refused by the constitution guard: .*R02\.2 dependency set not pinned upstream: advantage\.proposition\.promise unpinned.*R20\.2 copy-v1\.md: frontmatter reason cites director:advantage\.proposition\.promise, which is not a pinned Director slot/;
@@ -340,9 +352,9 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     const planner = await runPinCli([`writer/${SLOT}#copy`, good.name, "--by", "planner:U13", "--at", AT, "--root", w.root], w.root);
     expect(planner).toMatchObject({ exitCode: 1, message: expect.stringMatching(GUARD) });
     expect(tree(w.root)).toEqual(before);
-    w.queueEntry({ candidate: good.name });
+    w.queueEntry({ candidate: good.name }, undefined, { queue: "approve" });
     const entered = tree(w.root);
-    const approve = await runApproveCli([`writer/${SLOT}`, good.name, "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root);
+    const approve = await runPinCli([`writer/${SLOT}#copy`, good.name, "--basis", "picked", "--by", `owner:queue.approve#${QUEUE_ID}`, "--at", AT, "--root", w.root], w.root);
     expect(approve.exitCode).not.toBe(0);
     expect(approve.message).toMatch(GUARD);
     expect(tree(w.root)).toEqual(entered);
@@ -352,30 +364,30 @@ describe("each verb writes clossys.slot/2 and clossys.pin/2 only", { timeout: 12
     expect((await runPickCli([`writer/${SLOT}#copy`, good.name, "--by", "agent:writer", "--at", AT, "--root", w.root], w.root)).exitCode).toBe(0);
   });
 
-  it("B2 (guard on): approve, bulk and picked pin and not-needed refuse every entry but the owner's typed, bound answer, writing nothing", async () => {
+  it("B2 (guard on): the approval pin, bulk and picked pin and not-needed refuse every entry but the owner's typed, bound answer, writing nothing", async () => {
     const w = world();
     w.pinUpstream();
     const good = w.submit();
     const other = writeCandidate(w.consumer, "writer", SLOT, "copy", GOOD.replace("Ship your site this week", "Launch your site this week"), { at: AT, provenance: { by: "agent:writer", model: "claude-opus-5-5", tier: "high" } });
-    const by = `owner:queue.pick#${QUEUE_ID}`;
-    const verbs: [string, OwnerEntryInput["answer"], () => Promise<{ exitCode: number; message: string }>][] = [
-      ["approve", { candidate: good.name }, () => runApproveCli([`writer/${SLOT}`, good.name, "--by", by, "--at", AT, "--root", w.root], w.root)],
-      ["pin --basis bulk", { candidate: good.name }, () => runPinCli([`writer/${SLOT}#copy`, good.name, "--by", by, "--basis", "bulk", "--at", AT, "--root", w.root], w.root)],
-      ["pin --basis picked", { candidate: good.name }, () => runPinCli([`writer/${SLOT}#copy`, good.name, "--by", by, "--basis", "picked", "--at", AT, "--root", w.root], w.root)],
-      ["not-needed", "not-needed", () => runPinCli([`writer/${SLOT}`, "--not-needed", "--reason", "not on this site", "--by", by, "--at", AT, "--root", w.root], w.root)],
+    const by = (queue: "pick" | "approve") => `owner:queue.${queue}#${QUEUE_ID}`;
+    const verbs: [string, OwnerEntryInput["answer"], "pick" | "approve", () => Promise<{ exitCode: number; message: string }>][] = [
+      ["approval pin", { candidate: good.name }, "approve", () => runPinCli([`writer/${SLOT}#copy`, good.name, "--by", by("approve"), "--basis", "picked", "--at", AT, "--root", w.root], w.root)],
+      ["pin --basis bulk", { candidate: good.name }, "pick", () => runPinCli([`writer/${SLOT}#copy`, good.name, "--by", by("pick"), "--basis", "bulk", "--at", AT, "--root", w.root], w.root)],
+      ["pin --basis picked", { candidate: good.name }, "pick", () => runPinCli([`writer/${SLOT}#copy`, good.name, "--by", by("pick"), "--basis", "picked", "--at", AT, "--root", w.root], w.root)],
+      ["not-needed", "not-needed", "pick", () => runPinCli([`writer/${SLOT}`, "--not-needed", "--reason", "not on this site", "--by", by("pick"), "--at", AT, "--root", w.root], w.root)],
     ];
-    const entries: [string, (answer: OwnerEntryInput["answer"]) => void, RegExp][] = [
-      ["an untyped {id, kind} object", () => w.bareEntry(), /is not a typed queue entry/],
-      ["{}", () => w.bareEntry("{}"), /is not a typed queue entry/],
-      ["non-JSON", () => w.bareEntry("owner said yes\n"), /is not JSON/],
-      ["an unanswered entry", answer => w.queueEntry(answer, undefined, { status: "open" }), /is open, not answered/],
-      ["an entry an agent answered", answer => w.queueEntry(answer, undefined, { answeredBy: "agent:writer" }), /was answered by agent:writer, not the owner/],
-      ["an answer about another slot", answer => w.queueEntry(answer, "writer/sections.call-to-action.copy"), /is about writer\/sections\.call-to-action\.copy/],
-      ["an answer naming another candidate", answer => w.queueEntry(typeof answer === "string" ? { candidate: other.name } : { candidate: other.name }), new RegExp(`(about candidate|was answered) ${other.name.replace(".", "\\.")}`)],
+    const entries: [string, (answer: OwnerEntryInput["answer"], queue: "pick" | "approve") => void, RegExp][] = [
+      ["an untyped {id, kind} object", (_, queue) => w.bareEntry(undefined, queue), /is not a typed queue entry/],
+      ["{}", (_, queue) => w.bareEntry("{}", queue), /is not a typed queue entry/],
+      ["non-JSON", (_, queue) => w.bareEntry("owner said yes\n", queue), /is not JSON/],
+      ["an unanswered entry", (answer, queue) => w.queueEntry(answer, undefined, { queue, status: "open" }), /is open, not answered/],
+      ["an entry an agent answered", (answer, queue) => w.queueEntry(answer, undefined, { queue, answeredBy: "agent:writer" }), /was answered by agent:writer, not the owner/],
+      ["an answer about another slot", (answer, queue) => w.queueEntry(answer, "writer/sections.call-to-action.copy", { queue }), /is about writer\/sections\.call-to-action\.copy/],
+      ["an answer naming another candidate", (_, queue) => w.queueEntry({ candidate: other.name }, undefined, { queue }), new RegExp(`(about candidate|was answered) ${other.name.replace(".", "\\.")}`)],
     ];
-    for (const [verb, answer, run] of verbs) {
+    for (const [verb, answer, queue, run] of verbs) {
       for (const [label, write, why] of entries) {
-        write(answer);
+        write(answer, queue);
         const before = tree(w.root);
         const result = await run();
         expect(result.exitCode, `${verb} with ${label}`).not.toBe(0);
@@ -533,14 +545,14 @@ describe("each verb refuses a clossys.slot/1 slot and writes nothing", () => {
     return { root: ws.root, consumer, id, candidate, copy, copyCandidate };
   };
 
-  it("pin, pick, approve and reissue on a slot/1 store", async () => {
+  it("pin, pick, the owner's approval pin and reissue on a slot/1 store", async () => {
     const l = legacy();
     const before = tree(l.consumer);
     const pin = await runPinCli([`designer/${l.id}`, l.candidate, "--by", "planner:U13", "--root", l.root], l.root);
     expect(pin).toMatchObject({ exitCode: 1, message: expect.stringMatching(MIGRATE) });
     const pick = await runPickCli([`designer/${l.id}`, l.candidate, "--by", "agent:designer", "--root", l.root], l.root);
     expect(pick).toMatchObject({ exitCode: 1, message: expect.stringMatching(MIGRATE) });
-    const approve = await runApproveCli([`writer/${l.copy}`, l.copyCandidate, "--by", "owner:queue.pick#x", "--root", l.root], l.root);
+    const approve = await runPinCli([`writer/${l.copy}`, l.copyCandidate, "--basis", "picked", "--by", "owner:queue.pick#x", "--root", l.root], l.root);
     expect(approve.exitCode).toBe(1);
     expect(approve.message).toMatch(MIGRATE);
     const reissue = await runReissueCli([`designer/${l.id}`, l.candidate, "--by", "agent:designer", "--root", l.root], l.root);
