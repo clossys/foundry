@@ -51,4 +51,27 @@ describe("C4 coverage: retired slots need no consumer fill", () => {
     input.catalog.fills.push(fill("gone"));
     expect(coverage(input)).toEqual(["error themes.gone.fast", "error themes.resting"]);
   });
+
+  // An unfilled retired slot is exempt from the per-member and emit coverage rows too, not only the slot row: `complete`
+  // is off for it. The same slot, live, reports every member and emit row.
+  const withGone = (retired: readonly string[], members: Slot["contract"]["members"], emit?: Record<string, string>) => {
+    const input = world(retired);
+    const gone = slot("themes.gone", members);
+    if (emit && gone.contract.kind === "token") gone.contract = { ...gone.contract, emit };
+    input.catalog.slots = [input.catalog.slots[0]!, gone, input.catalog.slots[2]!];
+    return input;
+  };
+
+  it("a retired unfilled slot with closed members and emit mappings has no member or emit coverage rows", () => {
+    const closed = { mode: "closed", names: ["default", "fast"] } as const;
+    const emit = { fast: "--fixture-gone-fast" };
+    expect(coverage(withGone(["themes.gone"], closed, emit))).toEqual(["error themes.resting"]);
+    expect(coverage(withGone([], closed, emit))).toEqual(["error themes.gone", "error themes.gone.default", "error themes.gone.fast", "error themes.resting"]);
+  });
+
+  it("a retired unfilled slot with required open members has no member coverage rows", () => {
+    const open = { mode: "open", pattern: "^[a-z0-9-]+$", required: ["default", "slow"] } as const;
+    expect(coverage(withGone(["themes.gone"], open))).toEqual(["error themes.resting"]);
+    expect(coverage(withGone([], open))).toEqual(["error themes.gone", "error themes.gone.default", "error themes.gone.slow", "error themes.resting"]);
+  });
 });
