@@ -110,18 +110,23 @@
       ],
       "offers": [
         {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.field"
+          ]
+        },
+        {
           "source": "foundry",
           "leaves": [
-            "components.field",
             "components.form"
           ],
           "reason": "no external covers",
           "ladder": {
             "rung": "L3",
             "chosen": {
-              "id": "shadcn@aria/field+form"
+              "id": "shadcn@aria/form"
             },
-            "reason": "L1 decision: field already exports stock shadcn@aria field; form moves to stock form; swap pending (roster/fill relabel for field, stock form for form)",
+            "reason": "L1 decision: form moves to stock form; swap pending (field is seated on stock shadcn@aria, BR-ROSTER2)",
             "adoption": {
               "state": "pending",
               "wave": "A"
@@ -139,18 +144,23 @@
       ],
       "offers": [
         {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.text-field"
+          ]
+        },
+        {
           "source": "foundry",
           "leaves": [
-            "components.text-field",
             "components.search-field"
           ],
           "reason": "no external covers",
           "ladder": {
             "rung": "L3",
             "chosen": {
-              "id": "shadcn@aria/input+field+input-group"
+              "id": "shadcn@aria/input+input-group"
             },
-            "reason": "L1 decision: text-field already exports stock shadcn@aria text-field (relabel pending); search-field composes stock input-group+input (R2F-45 stopped on Foundry-pinned contracts)",
+            "reason": "L1 decision: search-field composes stock input-group+input (R2F-45 stopped on Foundry-pinned contracts); text-field is seated on stock shadcn@aria (BR-ROSTER2)",
             "adoption": {
               "state": "pending",
               "wave": "A"
@@ -1157,9 +1167,9 @@
           "ladder": {
             "rung": "L3",
             "chosen": {
-              "id": "open-props/props.aspects"
+              "id": "shadcn@aria/aspect-ratio"
             },
-            "reason": "image-ratio ships as the pinned Open Props aspect subset (fills/open-props/assets.image-ratio.json, open-props@1.7.23 fcb77853 src/props.aspects.css); L1 decision: image-ratio moves to stock shadcn aspect-ratio; swap pending",
+            "reason": "L1 decision: image-ratio moves to stock shadcn@aria aspect-ratio; swap pending. Until then the seat is the pinned Open Props aspect subset (fills/open-props/assets.image-ratio.json, open-props@1.7.23 fcb77853 src/props.aspects.css)",
             "adoption": {
               "state": "pending",
               "wave": "A"

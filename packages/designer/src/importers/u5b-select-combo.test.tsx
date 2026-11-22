@@ -7,7 +7,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 const { ComboBox, Label, SearchField, TextField } = createRequire(import.meta.url)("react-aria-components") as typeof import("react-aria-components");
 import slots from "../catalog/slots/components.json" with { type: "json" };
-import foundryTextField from "../catalog/fills/foundry/components.text-field.json" with { type: "json" };
+import seatedTextField from "../catalog/fills/shadcn@aria/components.text-field.json" with { type: "json" };
 import { importShadcnAriaComponents, type ShadcnComponentInput } from "./shadcn-aria-components.js";
 import { rewriteShadcnAria } from "./rewrite.js";
 import ts from "typescript";
@@ -29,11 +29,11 @@ afterEach(cleanup);
 
 describe("select and combo-box source closure", () => {
   it("keeps the selected text-field structurally complete without claiming observations", () => {
-    const fill = foundryTextField.components["text-field"];
+    const fill = seatedTextField.components["text-field"];
     const contract = slots.find(slot => slot.id === fill.slot)!.contract;
     expect(fill.members.slice().sort()).toEqual(contract.members.names!.slice().sort());
-    expect(foundryTextField.$extensions["com.clossys.fill"].evidence).toEqual([]);
-    expect(foundryTextField.$extensions["com.clossys.fill"].status).toBe("draft");
+    expect(seatedTextField.$extensions["com.clossys.fill"].evidence).toEqual([]);
+    expect(seatedTextField.$extensions["com.clossys.fill"].status).toBe("draft");
   });
   it("maps exactly every supported select and combo-box member to observed source", () => {
     const result = imported();
@@ -51,7 +51,8 @@ describe("select and combo-box source closure", () => {
     for (const item of ["select", "combobox"]) {
       const labels = labelLeaves(result.rewrites[item]!.reads.themes);
       expect(labels).toEqual(["themes.font-sans"]);
-      expect(labelLeaves(foundryTextField.components["text-field"].reads.themes)).toEqual(expect.arrayContaining(labels));
+      // BR-ROSTER2: the seated stock text-field inherits the body typeface, so it may bind no family; any family it binds is the label family.
+      expect(labels).toEqual(expect.arrayContaining(labelLeaves(seatedTextField.components["text-field"].reads.themes)));
       expect(result.rewrites[item]!.reads.themes).toContain("themes.shadow.md");
     }
     const source = result.rewrites.select!.files.find(file => file.path === "components/select/select.tsx")!.content;

@@ -319,21 +319,20 @@
       ]
     },
     {
-      "missing": [],
-      "notes": [
-        "Client Field uses RAC Label/Text/FieldError; the server entry preserves its static arbitrary-control render bridge.",
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.field",
-      "status": "candidate",
-      "supported": [
+      "missing": [
         "part.description",
         "part.error",
         "part.label",
         "state.disabled",
         "state.invalid",
         "state.required"
-      ]
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.field",
+      "status": "unavailable",
+      "supported": []
     },
     {
       "missing": [
@@ -684,20 +683,19 @@
       ]
     },
     {
-      "missing": [],
-      "notes": [
-        "The stock shadcn@aria input and textarea inside a RAC TextField over the composed field; one control size; multiline dispatches to Textarea.",
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.text-field",
-      "status": "candidate",
-      "supported": [
+      "missing": [
         "line.multiline",
         "line.single-line",
         "state.disabled",
         "state.invalid",
         "state.read-only"
-      ]
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.text-field",
+      "status": "unavailable",
+      "supported": []
     },
     {
       "missing": [],
