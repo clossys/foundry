@@ -176,7 +176,7 @@ export function darkScopedKeys(roster: SourceRoster, preset: TokenPreset): Reado
   return new Set(siblings.flatMap(entry => Object.keys(entry.theme.vars.dark)));
 }
 
-export type RosterCode = "R1"| "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9";
+export type RosterCode = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9";
 export interface RosterFinding { readonly code: RosterCode; readonly severity: "error" | "warning"; readonly subject: string; readonly message: string }
 
 /**

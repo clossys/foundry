@@ -23,8 +23,10 @@ describe("contact form catalog contract", () => {
       ["success", "submitSuccess"], ["error", "submitError"],
       ["honeypot", "honeypot"], ["turnstile", "turnstile"],
     ]) expect(form.slotMap[slot]).toBe(`./blocks#Form.${prop}`);
-    const textField = json<{ components: { "text-field": { propMap: Record<string, string> } } }>("../catalog/fills/foundry/components.text-field.json");
-    expect(textField.components["text-field"].propMap["line.multiline"]).toBe("./components#Textarea");
+    // BR-ROSTER2: text-field is seated on stock shadcn@aria; multiline maps to its Textarea secondary export.
+    const textField = json<{ components: { "text-field": { propMap: Record<string, string>; secondaryExports: { export: string }[] } } }>("../catalog/fills/shadcn@aria/components.text-field.json");
+    expect(textField.components["text-field"].propMap["line.multiline"]).toBe("Textarea");
+    expect(textField.components["text-field"].secondaryExports.map(entry => entry.export)).toContain("Textarea");
     const sections = json<{ id: string; contract: { allowedComposes: string[] } }[]>("../catalog/slots/sections.json");
     const contract = sections.find(row => row.id === "sections.form")!.contract;
     expect(contract.allowedComposes).toContain("components.text-field");

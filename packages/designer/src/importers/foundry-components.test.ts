@@ -31,13 +31,14 @@ const dynamicBlockedLeaves: string[] = [];
 const signedLeaves = new Set(signedSlots.map(slot => slot.id.slice("components.".length)));
 const AMENDMENT_ONLY = Object.keys(FOUNDRY_COMPONENT_MAP).filter(leaf => !signedLeaves.has(leaf)).sort();
 // Stock-only leaves keep a stale package mapping but their Foundry drafts were deliberately deleted (separator 922b3a337,
-// file-trigger 72374a987, breadcrumbs 75202fdb4), so the stored regeneration must not recreate them.
-const STOCK_ONLY = ["breadcrumbs", "file-trigger", "separator"];
+// file-trigger 72374a987, breadcrumbs 75202fdb4; field and text-field BR-ROSTER2: the roster seats both on stock
+// shadcn@aria), so the stored regeneration must not recreate them.
+const STOCK_ONLY = ["breadcrumbs", "field", "file-trigger", "separator", "text-field"];
 const storedMappings = Object.fromEntries(Object.entries(FOUNDRY_COMPONENT_MAP).filter(([leaf]) => !dynamicBlockedLeaves.includes(leaf) && signedLeaves.has(leaf) && !STOCK_ONLY.includes(leaf)));
 const changedMap = (leaf: string, change: Partial<FoundryComponentMapping>) => ({ ...FOUNDRY_COMPONENT_MAP, [leaf]: { ...FOUNDRY_COMPONENT_MAP[leaf]!, ...change } });
 
 describe("Foundry component package descriptors", () => {
-  it("regenerates 46 stored package descriptors and keeps no dynamic blocked candidates", () => {
+  it("regenerates 44 stored package descriptors and keeps no dynamic blocked candidates", () => {
     const files = generatedFoundryComponentFiles({ exports, mappings: storedMappings, slots: signedSlots });
     // Explicit local regeneration writes only this generator's enumerated component artifacts.
     if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(fillsDirectory, name), bytes);
@@ -57,11 +58,12 @@ describe("Foundry component package descriptors", () => {
     expect(imported().coverage).toHaveLength(78);
     expect(signedSlots).toHaveLength(57);
     // planner:C5-DREC: 55 -> 46 stored = 57 signed less the 8 unmapped signed leaves and the 3 stock-only leaves;
-    // the full import maps all 58 entries (46 stored + 3 stock-only + 9 amendment-only... checked by name below).
+    // BR-ROSTER2: 46 -> 44, field and text-field join the stock-only leaves (5 in all);
+    // the full import maps all 58 entries (44 stored + 5 stock-only + 9 amendment-only... checked by name below).
     const storedFills = importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).fills;
-    expect(storedFills).toHaveLength(46);
+    expect(storedFills).toHaveLength(44);
     expect(imported().fills.map(doc => doc.$extensions["com.clossys.fill"].slot).sort()).toEqual(Object.keys(FOUNDRY_COMPONENT_MAP).map(leaf => `components.${leaf}`).sort());
-    expect(imported().fills.filter(doc => ![...AMENDMENT_ONLY, ...STOCK_ONLY].includes(doc.$extensions["com.clossys.fill"].slot.slice("components.".length)))).toHaveLength(46);
+    expect(imported().fills.filter(doc => ![...AMENDMENT_ONLY, ...STOCK_ONLY].includes(doc.$extensions["com.clossys.fill"].slot.slice("components.".length)))).toHaveLength(44);
     const blocked = imported().fills.filter(doc => Object.values(doc.components)[0]!.blockers?.length);
     expect(blocked.map(doc => doc.$extensions["com.clossys.fill"].id)).toEqual(dynamicBlockedLeaves.map(leaf => `foundry/components.${leaf}`));
     for (const doc of blocked) {

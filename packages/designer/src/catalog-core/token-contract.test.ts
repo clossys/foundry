@@ -35,6 +35,12 @@ const codes = (patch: Partial<RosterCheckInput>) => new Set(checkSourceRoster(in
 const clone = <T,>(value: T): T => structuredClone(value) as T;
 const mutateRoster = (edit: (roster: { -readonly [K in keyof SourceRoster]: any }) => void): SourceRoster => { const roster = clone(sourceRoster) as any; edit(roster); return roster; };
 const mutateContract = (edit: (contract: any) => void): TokenContract => { const contract = clone(tokenContract) as any; edit(contract); return contract; };
+/** The declarations of one top-level `selector { ... }` block, wherever it sits in the file; a missing block throws. */
+const cssBlock = (css: string, selector: string): string => {
+  const match = new RegExp(`^${selector.replace(/[.:]/g, "\\$&")}\\s*\\{([^}]*)\\}`, "m").exec(css);
+  if (!match) throw new Error(`no ${selector} block`);
+  return match[1]!;
+};
 
 describe("token contract (shadcn@aria)", () => {
   it("passes R1–R6 and R9 on the shipped roster and contract", () => {
@@ -74,17 +80,19 @@ describe("token presets", () => {
   });
   it("neutral is exactly the vendored theme the shadcn@aria token fills came from", () => {
     const vendored = read(resolve(here, "../importers/vendor/shadcn-aria.css"));
-    const [root, dark] = vendored.split(".dark");
     const vars = (css: string) => Object.fromEntries([...css.matchAll(/^\s*(--[a-z0-9-]+):\s*([^;]+);/gm)].map(match => [match[1], match[2]!.trim()]));
-    expect(preset.theme.vars.light).toEqual(vars(root!));
-    expect(preset.theme.vars.dark).toEqual(vars(dark!));
+    expect(preset.theme.vars.light).toEqual(vars(cssBlock(vendored, ":root")));
+    expect(preset.theme.vars.dark).toEqual(vars(cssBlock(vendored, ".dark")));
   });
   it("scopes a key to dark only where the preset's pinned theme declares it in dark", () => {
     const vendored = read(resolve(here, "../importers/vendor/shadcn-aria.css"));
-    const darkBlock = vendored.split(".dark")[1]!;
+    const darkBlock = cssBlock(vendored, ".dark");
     const declared = new Set([...darkBlock.matchAll(/^\s*(--[a-z0-9-]+):/gm)].map(match => match[1]!));
     for (const entry of sourceRoster.themes.presets) expect([...darkScopedKeys(sourceRoster, entry)].sort(), entry.id).toEqual([...declared].sort());
     expect(declared.has("--radius")).toBe(false);
+    // The block parse does not depend on .dark being the file's last block.
+    expect(cssBlock(":root {\n  --a: 1;\n}\n.dark {\n  --b: 2;\n}\n@layer base {\n  --c: 3;\n}\n", ".dark")).toBe("\n  --b: 2;\n");
+    expect(() => cssBlock(":root {}", ".dark")).toThrow("no .dark block");
     expect(declared.has("--ring")).toBe(true);
     // :root-scoped --radius has one value for both modes: presetValues carries no dark value for it.
     expect(presetValues(tokenContract, preset, "themes.radius").default).toEqual({ light: "0.625rem" });
