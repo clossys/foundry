@@ -214,8 +214,9 @@ function brief(consumer, id, doc) {
   ].join("\n");
 }
 
-// Writer: every value derives from the pinned voice and the slot's other upstream pins (copy.voice-derived,
-// copy.derived-upstream); a lexicon slot holds json records, a copy slot plain values within the contract's limits.
+// Writer: every value derives from the pinned voice, which the candidate names as provenance (provenance.voice,
+// copy.voice-derived), never as an input, and from the slot's upstream pins (copy.derived-upstream); a lexicon slot holds
+// json records, a copy slot plain values within the contract's limits.
 
 const VOICE = "director:identity.verbal.voice";
 
@@ -243,13 +244,16 @@ const COPY = {
   "sections.hero.copy": { "header.heading": "Keep your site current without waiting" },
 };
 
-/** The derived source of a Writer candidate: the pinned voice first, then every other upstream pin it reads. */
+/** The derived source of a Writer candidate: every upstream pin the slot reads (its inputs, R07.1). */
 function writerSource(consumer, doc, id) {
-  const refs = [...new Set([VOICE, ...upstream(consumer, "writer", id).deps.map(dep => `${agentOf(consumer, dep)}:${dep}`)])];
+  const refs = [...new Set(upstream(consumer, "writer", id).deps.map(dep => `${agentOf(consumer, dep)}:${dep}`))];
   return { kind: "derived", ref: refs };
 }
 
-/** A Writer Markdown candidate: frontmatter (slot, locales, reason, source) and one en section of `### <key>` entries. */
+/**
+ * A Writer Markdown candidate: frontmatter (slot, locales, reason, source, provenance) and one en section of `### <key>`
+ * entries. provenance.voice names the pinned voice the copy derives from; it is provenance, not an input.
+ */
 function writerDoc(consumer, id, doc, reason, entries) {
   return [
     "---",
@@ -257,6 +261,7 @@ function writerDoc(consumer, id, doc, reason, entries) {
     `locales: ${JSON.stringify(["en"])}`,
     `reason: ${JSON.stringify(reason)}`,
     `source: ${JSON.stringify(writerSource(consumer, doc, id))}`,
+    `provenance: ${JSON.stringify({ voice: VOICE })}`,
     "---",
     "## en",
     "",
@@ -286,17 +291,6 @@ const CREATE = "fixture world: a synthetic consumer, so its copy is written from
 function lexiconContract(id, doc) {
   if (!doc.standard.startsWith("lexicon.") || doc.contract?.fixture !== undefined) return undefined;
   return { ...doc.contract, fixture: { keys: Object.keys(LEXICON[id]?.records ?? {}), locales: ["en"] } };
-}
-
-/**
- * The inputs a copy slot lacks: copy.voice-derived holds every Writer copy candidate to cite the pinned voice and R07.1
- * holds every citation to the slot's inputs, so a copy slot that does not read the voice takes it as an input
- * (`clossys ia --inputs`), as its fixture siblings do. Undefined when the slot reads it already.
- */
-function copyInputs(doc) {
-  const voice = VOICE.slice("director:".length);
-  if (doc.standard.startsWith("lexicon.") || (doc.inputs ?? []).includes(voice)) return undefined;
-  return [...(doc.inputs ?? []), voice];
 }
 
 // Designer: every candidate is a shadcn-format registry item that starts from a reference-manifest row (the
@@ -751,9 +745,8 @@ async function seedSlot(w, ref) {
   const [agent, id] = ref.split("/");
   let doc = readSlot(w.consumer, agent, id);
   const contract = agent === "writer" ? lexiconContract(id, doc) : agent === "designer" ? consumerComponentContract(id, doc) : undefined;
-  const inputs = agent === "writer" ? copyInputs(doc) : undefined;
-  if (contract || inputs) {
-    await w.run(ref, "ia", ref, "--contract", w.file(`${id}.contract.json`, contract ?? doc.contract), ...(inputs ? ["--inputs", inputs.join(",")] : []), "--at", AT);
+  if (contract) {
+    await w.run(ref, "ia", ref, "--contract", w.file(`${id}.contract.json`, contract), "--at", AT);
     doc = readSlot(w.consumer, agent, id);
   }
   const standard = readStandard(w.root, agent, doc.standard);

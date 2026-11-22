@@ -74,6 +74,25 @@ export function sourceOf(subject: Subject): { kind?: unknown; ref: string[] } | 
   return { kind: value.kind, ref: strings(value.ref) };
 }
 
+/**
+ * The candidate's frontmatter provenance as an object, or the reason it is missing or unreadable. `provenance` names
+ * what the copy derives from without reading it as an input (`provenance.voice`: the pinned Director voice), so neither
+ * the Writer inputs rule nor R07.1 counts it; `source.ref` stays the slot's cited inputs.
+ */
+export function provenanceOf(subject: Subject): Record<string, unknown> | string {
+  const raw = isRecord(subject.json) ? subject.json.provenance : undefined;
+  if (raw === undefined) return "the frontmatter has no provenance";
+  let value: unknown = raw;
+  if (typeof raw === "string") { try { value = JSON.parse(raw); } catch { return "the frontmatter provenance is not JSON"; } }
+  return isRecord(value) ? value : "the frontmatter provenance is not an object";
+}
+
+/** The slot a candidate's frontmatter names, for messages; undefined when it names none. */
+export function slotOf(subject: Subject): string | undefined {
+  const slot = isRecord(subject.json) ? subject.json.slot : undefined;
+  return typeof slot === "string" && slot ? slot : undefined;
+}
+
 /** A slot id (2-4 dotted segments). */
 export const SLOT_ID = /^[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}$/;
 /** A copy citation `<agent>:<slot>[#<key>]` or a finding. */

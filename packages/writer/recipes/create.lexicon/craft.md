@@ -5,7 +5,7 @@ Creates one lexicon slot (claims, format rules, terms, voice rules) when the slo
 - Produces: `lexicon.claim-list`, `lexicon.format-rule`, `lexicon.term-list`, `lexicon.voice-rule` (rung `create`).
 - Tier: mid. Axes: `strictness`, `coverage`, `example`.
 - Base reference: the slot contract (`recordKind`); the pinned Director voice and the other pinned upstream the slot lists (claims derive from a Director strategy).
-- Director (and Writer) derivation: all Writer copy derives from the pinned voice: the source cites `director:identity.verbal.voice` (`copy.voice-derived`) and every ref is `director:<slot>`, `writer:<slot>[#key]` or a finding (`copy.derived-upstream`). A claim cites its Director strategy as `director:<slot>` and requires a citation (`lexicon.claim-sourced`).
+- Director (and Writer) derivation: all Writer copy derives from the pinned voice: the frontmatter `provenance: {"voice": "director:identity.verbal.voice"}` names it (`copy.voice-derived`; provenance, never an input, so the slot's inputs need not list it) and every source ref is `director:<slot>`, `writer:<slot>[#key]` or a finding (`copy.derived-upstream`). A claim cites its Director strategy as `director:<slot>` and requires a citation (`lexicon.claim-sourced`).
 - Judge: the standard and its certifier, which import nothing from this folder (R16.1). This recipe
   carries no rubric; the standard's requirements and taste are the only measure (R15.5).
 
@@ -80,10 +80,10 @@ clossys next writer/<slot> --stage diverge --file directions.json --recipe creat
 
 ### 3. render (deterministic)
 
-Write each direction's draft candidate in the contract's shape: a Markdown copy file: frontmatter `slot`, `locales: ["en"]`, `source: {"kind": "derived", "ref": ["director:identity.verbal.voice", ...]}`; then `## en`, and per key `### <key>`, the meta comment `<!-- {"id": "<key>", "bindings": []} -->` and one ```json record whose `id` and `context` are the key, whose `kind` is one the standard lists, with that kind's fields.
+Write each direction's draft candidate in the contract's shape: a Markdown copy file: frontmatter `slot`, `locales: ["en"]`, `source: {"kind": "derived", "ref": [<the slot's pinned inputs>]}`, `provenance: {"voice": "director:identity.verbal.voice"}`; then `## en`, and per key `### <key>`, the meta comment `<!-- {"id": "<key>", "bindings": []} -->` and one ```json record whose `id` and `context` are the key, whose `kind` is one the standard lists, with that kind's fields.
 Nothing is generated; the checks read it mechanically.
 
-For each direction's draft candidate, check the draft first (the voice cited, a derived source of `director:`/`writer:` pins and findings, one entry per key with its meta id equal to the key, one json record per entry (id and context the key, a kind the standard lists, that kind's fields); a requirement it does not
+For each direction's draft candidate, check the draft first (the voice named in provenance, a derived source of `director:`/`writer:` pins and findings, one entry per key with its meta id equal to the key, one json record per entry (id and context the key, a kind the standard lists, that kind's fields); a requirement it does not
 check is named in its clean line as left to `clossys check --constitution --slot`), then render and preflight:
 
 ```sh

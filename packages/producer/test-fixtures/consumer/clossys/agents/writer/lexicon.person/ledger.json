@@ -289,7 +289,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "person-v1.md",
-      "sha256": "52d4db42e48e75823e85404bf70a4c7a300771a2ebdbcf505c0b567cd33b5ebf"
+      "sha256": "7ea8c63557945aba4135a76dada3af015ebbecae9d5ce233be639f7e4bfc2359"
     },
     {
       "op": "pin",
@@ -303,13 +303,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "person-v1.md",
-      "sha256": "52d4db42e48e75823e85404bf70a4c7a300771a2ebdbcf505c0b567cd33b5ebf",
+      "sha256": "7ea8c63557945aba4135a76dada3af015ebbecae9d5ce233be639f7e4bfc2359",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "4f942f55a17ea15aed13580a2ab95fc2239337840fb86df2c3f71cadc4e86dc2"
+          "sha256": "df3ac33c441f58c3053cbae78a5ab770885f8d8885c0f73eb477416b45a0a067"
         }
       ]
     }

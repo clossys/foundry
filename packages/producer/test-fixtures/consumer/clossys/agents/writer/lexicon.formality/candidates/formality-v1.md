@@ -3,6 +3,7 @@ clossys: {"schema":"clossys.candidate/1","id":"writer/lexicon.formality/formalit
 slot: "lexicon.formality"
 locales: ["en"]
 reason: "Realises director:identity.verbal.voice as a rule the copy checks can apply."
+provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ## en
 

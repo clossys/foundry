@@ -295,7 +295,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "warmth-v1.md",
-      "sha256": "7cf5a6b4fea3b362d78d22343f2e18f0b9c29efef211a07d31825cf00cacf4f6"
+      "sha256": "a4659695af5c55582e1c2df30fb30d00a87138b43cf68d79d4af413bcacb634e"
     },
     {
       "op": "pin",
@@ -309,13 +309,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "warmth-v1.md",
-      "sha256": "7cf5a6b4fea3b362d78d22343f2e18f0b9c29efef211a07d31825cf00cacf4f6",
+      "sha256": "a4659695af5c55582e1c2df30fb30d00a87138b43cf68d79d4af413bcacb634e",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "2e3a0df9b8cf1e500b5b7cb41b28f3b4c883a73240d52ecddd487e993d6dde48"
+          "sha256": "fda5f62747281c73d67440cf352a10a08b9be34da1c5d2432d2a7f2277fa5133"
         }
       ]
     }

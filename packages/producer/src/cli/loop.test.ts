@@ -918,7 +918,7 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     expect((await loop(root, "writer/loop.create")).exitCode).toBe(0);
     const slotId = "sections.hero.copy";
     const slot = `writer/${slotId}`;
-    const draft = (heading: string) => `---\nslot: "${slotId}"\nlocales: ["en"]\nreason: "realises director:advantage.proposition.promise for the hero"\nsource: {"kind":"derived","ref":["director:identity.verbal.voice","director:advantage.proposition.promise","director:identity.naming.name"]}\n---\n\n## en\n### header.heading\n<!-- {"id":"header.heading","bindings":[]} -->\n${heading}\n### actions.primary.label\n<!-- {"id":"actions.primary.label","bindings":[]} -->\nGet started\n`;
+    const draft = (heading: string) => `---\nslot: "${slotId}"\nlocales: ["en"]\nreason: "realises director:advantage.proposition.promise for the hero"\nsource: {"kind":"derived","ref":["director:identity.verbal.voice","director:advantage.proposition.promise","director:identity.naming.name"]}\nprovenance: {"voice":"director:identity.verbal.voice"}\n---\n\n## en\n### header.heading\n<!-- {"id":"header.heading","bindings":[]} -->\n${heading}\n### actions.primary.label\n<!-- {"id":"actions.primary.label","bindings":[]} -->\nGet started\n`;
     const candidates = () => { const dir = join(root, "clossys", "agents", slot, "candidates"); return existsSync(dir) ? readdirSync(dir).sort() : []; };
     // loop.create: refine-brief answers with nothing written, then the create step runs the real submit verb.
     const created = await startRun(root, { loop: "loop.create", slot }, answering("refine-brief", []), { now: minute(1) });

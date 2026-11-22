@@ -21,6 +21,17 @@ describe("slot model schema (F1)", () => {
     }
   });
 
+  it("accepts a Writer provenance.voice that cites a Director slot and refuses any other provenance shape (U-VOICE-PROV)", () => {
+    const body = '## en\n### greeting\n<!-- {"id":"greeting","bindings":[]} -->\nHello\n';
+    const fields = { slot: 'strings.common', locales: ['en'], source: { kind: 'derived', ref: ['director:advantage.proposition.promise'] } };
+    expect(validateCandidate('strings', 'strings.common', 'copy-v1.md', serializeFrontmatter({ ...fields, provenance: { voice: 'director:identity.verbal.voice' } }, body))).toEqual([]);
+    for (const provenance of [{}, 'director:identity.verbal.voice', { voice: 'identity.verbal.voice' }, { voice: 'writer:lexicon.mood' }, { voice: 7 }, { voice: 'director:identity.verbal.voice', inputs: [] }]) {
+      const issues = validateCandidate('strings', 'strings.common', 'copy-v1.md', serializeFrontmatter({ ...fields, provenance }, body));
+      expect(codes(issues), JSON.stringify(provenance)).toEqual(['candidate-invalid']);
+      expect(issues[0]!.message, JSON.stringify(provenance)).toMatch(/^provenance/);
+    }
+  });
+
   it("accepts a well-formed ia.json, slot.json and pin.json", () => {
     expect(validateIa(ia)).toEqual([]);
     expect(validateSlotDoc(slot)).toEqual([]);
