@@ -70,8 +70,9 @@ it("reads historical package descriptors without injecting fields or changing th
 
 it("carries measured reads and composes on every real generated package descriptor", () => {
   const docs = [...importFoundrySections().fills, ...importFoundryFrames().fills];
-  // BR-RETIRE3: seven retired section fills deleted, 62 -> 55.
-  expect(docs).toHaveLength(55);
+  // BR-RETIRE3: seven retired section fills deleted, 62 -> 55. BR-SEED2: the retired frames.document fill
+  // (src/catalog/retired.json:152) deleted, 55 -> 54.
+  expect(docs).toHaveLength(54);
   for (const doc of docs) {
     const fill = Object.values((doc as any).sections ?? (doc as any).frames)[0] as any;
     expect(fill.consumption?.scanStatus, fill.slot).toBe("lower-bound");
@@ -181,5 +182,6 @@ it("recalculates all current descriptor measurements and canonical importer outp
   const output = execFileSync(process.execPath, ["scripts/generate-surface-consumption.mjs", "--check"], { cwd: fileURLToPath(new URL("../../", import.meta.url)), encoding: "utf8", timeout: 60_000 });
   // 63 since sections.sectioned-document joined the surface catalog (e14e4471b, #2554). BR-RETIRE3: 56, less the seven
   // retired section fills (src/catalog/retired.json:158-196), as generate-surface-consumption.mjs --write reports.
-  expect(JSON.parse(output)).toMatchObject({ descriptors: 56, measured: 56, measurement: "source-only lower-bound", runtime: "unmeasured" });
+  // BR-SEED2: 55, less the retired frames.document fill (retired.json:152), as the same --write reports.
+  expect(JSON.parse(output)).toMatchObject({ descriptors: 55, measured: 55, measurement: "source-only lower-bound", runtime: "unmeasured" });
 }, 65_000);

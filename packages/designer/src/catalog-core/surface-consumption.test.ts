@@ -118,8 +118,9 @@ describe("committed section/frame scan evidence", () => {
     expect(actual.fills.find((fill: { slot: string }) => fill.slot === "sections.task-list").scannedComposes).toContain("components.meter");
     expect(actual.claims).toEqual({ consumerAdoption: "unmeasured", descriptorConformance: "unmeasured", reportFreshness: "Reproducibility only; not conformance clearance.", runtimeAccessibility: "unmeasured" });
     // Every measured section and frame fill under src/catalog/fills/foundry is a lower-bound scan. BR-RETIRE3 re-pin: the
-    // BR-REGEN 63 less the seven retired section fills (src/catalog/retired.json:158-196), so 56.
-    expect(actual.fills.filter((fill: { scanStatus: string }) => fill.scanStatus === "lower-bound")).toHaveLength(56);
+    // BR-REGEN 63 less the seven retired section fills (src/catalog/retired.json:158-196), so 56. BR-SEED2: less the
+    // retired frames.document fill (retired.json:152), so 55.
+    expect(actual.fills.filter((fill: { scanStatus: string }) => fill.scanStatus === "lower-bound")).toHaveLength(55);
     expect(actual.inventory.components).not.toContain("components.chip");
   });
 
