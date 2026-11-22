@@ -618,18 +618,17 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
 
 /**
  * One format (U13 r2): every slot.json this verb writes is `clossys.slot/2` (a new slot is created as slot/2), and a
- * stored `clossys.slot/1` slot is refused, never rewritten. `current` is kept for its caller (init-admin.ts) and is
- * now the only behaviour.
+ * stored `clossys.slot/1` slot is refused, never rewritten.
  */
-export async function runIaCli(argv: readonly string[], cwd: string, options: { readonly current?: boolean } = {}): Promise<CliResult> {
+export async function runIaCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   // Which package leaves a publication consumes is read from the installed Publisher package: unreadable, the verb
   // refuses by name rather than judging an empty set (CONSISTENCY fix r1).
-  try { return await runIa(argv, cwd, options); } catch (error) {
+  try { return await runIa(argv, cwd); } catch (error) {
     if (error instanceof PublisherDataError) return refuse("ia", error.message);
     throw error;
   }
 }
-async function runIa(argv: readonly string[], cwd: string, _options: { readonly current?: boolean }): Promise<CliResult> {
+async function runIa(argv: readonly string[], cwd: string): Promise<CliResult> {
   const flags = parseIa(argv);
   if (flags.help) return { exitCode: 0, message: IA_USAGE };
   if (flags.positional[0] === "sync") return runIaSync(flags, cwd);
