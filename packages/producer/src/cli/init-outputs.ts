@@ -13,13 +13,12 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { checkPublicationOutputs, PUBLICATION_FEEDS, PUBLICATION_FORM_KINDS, publicationFormDefaults, type PublicationFeed, type PublicationForm, type PublicationFormKind, type PublicationOutputs } from "@clossys/publisher/content-map";
 import { readCandidate, readSlotEntry } from "../records/slots.js";
-import type { WriteGuard } from "../records/slot-write.js";
-import { PACKAGE_ROOT } from "../pipeline/options.js";
+import { runStep } from "../pipeline/runner.js";
 import { readPinnedPublication } from "../publish/pinned-publication.js";
 import { designerShareMark, writerLocaleCopy } from "../publish/install-outputs.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
-import { runNextSubmitCli, submitValueIssue } from "./next.js";
+import { submitValueIssue } from "./submit-values.js";
 import { discoverRoot } from "./root.js";
 
 export const INIT_OUTPUTS_USAGE = "Usage: clossys init --publication <id> [--forms contact,newsletter] [--share] [--meta json-ld,llms,rss|atom]\n"
@@ -74,7 +73,7 @@ const object = (value: unknown): value is Record<string, unknown> => value !== n
  * candidate through `clossys next --submit` (the one guarded candidates verb), so it is refused, and
  * nothing is written, exactly where any other submission would be.
  */
-export async function initPublicationOutputs(root: string, options: InitOutputsOptions, submit: InitSubmit, guard: WriteGuard = true, packageRoot = PACKAGE_ROOT): Promise<InitOutputsResult> {
+export async function initPublicationOutputs(root: string, options: InitOutputsOptions, submit: InitSubmit): Promise<InitOutputsResult> {
   const consumer = join(root, "clossys");
   const slot = `publication.${options.publication}`;
   const pin = readSlotEntry(consumer, "publisher", slot)?.pin;
@@ -120,9 +119,9 @@ export async function initPublicationOutputs(root: string, options: InitOutputsO
   let result: CliResult;
   try {
     writeFileSync(file, `${JSON.stringify({ ...value, outputs }, null, 2)}\n`);
-    const argv = [`publisher/${slot}`, "--submit", file, "--model", submit.model, "--tier", submit.tier, "--basis", submit.basis, "--skill", submit.skill, "--rung", rung,
+    const argv = ["next", `publisher/${slot}`, "--submit", file, "--model", submit.model, "--tier", submit.tier, "--basis", submit.basis, "--skill", submit.skill, "--rung", rung,
       ...(seed !== undefined ? ["--seed", seed] : []), ...(submit.reason !== undefined ? ["--reason", submit.reason] : []), "--root", root];
-    try { result = await runNextSubmitCli(argv, root, undefined, packageRoot, guard); }
+    try { result = await runStep(argv, root); }
     catch (error) {
       if (error instanceof CliUsageError) throw new CliUsageError(`init --publication: ${error.message.split("\n")[0]}\n${INIT_OUTPUTS_USAGE}`);
       throw error;

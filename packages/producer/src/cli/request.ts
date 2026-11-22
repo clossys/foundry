@@ -13,6 +13,7 @@
  */
 import { join, resolve } from "node:path";
 import { readFileSync } from "node:fs";
+import { runStep } from "../pipeline/runner.js";
 import {
   answerRequest, checkRequest, closeRequest, closeWork, decideRequest, isContentAgent, listWorkEntries, outcomesFor, raiseRequest, raiseWork, readRequest, REQUEST_SEATS, RequestError, slotlessNeeds, targetOf, type SlotRequest,
 } from "../records/request.js";
@@ -188,9 +189,8 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
       if (flags.values.has("--outcome") || flags.values.has("--result")) throw new CliUsageError(`a slot entry closes by its decision; --outcome and --result are for change and fix\n${REQUEST_USAGE}`);
       if (request.decision === "create") {
         // The new leaf is placed by the one placing verb, which closes the request after its write.
-        const { runIaCli } = await import("./owner.js");
         const ownerRef = flags.values.get("--owner-ref"), approved = flags.values.get("--approved");
-        return await runIaCli([`${targetOf(request)!.agent}/${request.proposal!.slot}`, "--request", id, ...(approved ? ["--approved", approved] : []), ...(ownerRef ? ["--owner-ref", ownerRef] : []), "--at", atOf(flags), "--root", root], cwd);
+        return await runStep(["ia", `${targetOf(request)!.agent}/${request.proposal!.slot}`, "--request", id, ...(approved ? ["--approved", approved] : []), ...(ownerRef ? ["--owner-ref", ownerRef] : []), "--at", atOf(flags), "--root", root], cwd);
       }
       const approved = flags.values.get("--approved");
       const closed = closeRequest(consumer, id, { by: approved ? "owner" : by, at: atOf(flags), ...(approved ? { approved } : {}) });

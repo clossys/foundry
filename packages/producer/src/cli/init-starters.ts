@@ -22,13 +22,13 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { runStep } from "../pipeline/runner.js";
 import { appendRaise, raiseRequest, RequestError } from "../records/request.js";
 import { sameJson } from "../records/slot.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
 import { listSlots } from "../records/slots.js";
 import { readAdminSlot } from "./admin-plan.js";
 import type { CliResult } from "./main.js";
-import { runIaCli } from "./owner.js";
 import { type HeldPage, StarterPlanError, starterContract, starterPlan, starterUnder } from "./starter-plan.js";
 
 export interface StarterSeat {
@@ -70,7 +70,7 @@ export async function seatStarter(root: string, starter: string, at: string): Pr
       const file = join(dir, `${slot}.json`);
       writeFileSync(file, `${JSON.stringify(starterContract(plan, slot), null, 2)}\n`);
       const args = [`publisher/${slot}`, "--contract", file, "--standard", kind, "--under", starterUnder(plan, slot), "--kind", kind, "--inputs", refs.join(","), "--uses", refs.join(","), "--at", at, "--root", root];
-      const result = await runIaCli(args, root, { current: true });
+      const result = await runStep(["ia", ...args], root);
       if (result.exitCode !== 0) return result.message ?? `ia publisher/${slot} failed`;
       placed.push(slot);
       return undefined;
@@ -90,7 +90,7 @@ export async function seatStarter(root: string, starter: string, at: string): Pr
         contractArgs = ["--contract", file];
       }
       const args = [`publisher/${slot}`, ...contractArgs, "--standard", restore ? kind : read.doc.standard ?? kind, "--inputs", refs.join(","), "--uses", refs.join(","), "--at", at, "--root", root];
-      const result = await runIaCli(args, root, { current: true });
+      const result = await runStep(["ia", ...args], root);
       if (result.exitCode !== 0) return result.message ?? `ia publisher/${slot} failed`;
       rewired.push(slot);
       return undefined;

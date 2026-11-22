@@ -11,7 +11,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { ADMIN_SEATED, adminSeatedSummary, runAdminSeated } from "../check/admin-seated.js";
-import { registeredRules } from "../constitution/registry.js";
 import { recutCandidateBytes } from "../migrate/recut.js";
 import { PRODUCER_ROOT } from "../package-path.js";
 import { writeTargetPin } from "../records/pin-map.js";
@@ -167,19 +166,21 @@ describe("init --publication submits through the guarded candidates verb (slot/2
   }, 300_000);
 
   it("a guard finding refuses the init write and undoes it", async () => {
+    const outputs = { publication: "site", forms: ["contact"] as const, origin: "https://example.test" };
+    const submit = { model: "fixture-model", tier: "mid", basis: "agent", skill: SKILL };
+    // The real guard: R06.6 (no two slots hold identical content) finds the candidate this init writes already held by
+    // another slot. The same init on a twin store gives that content.
+    const twin = await store();
+    await initPublicationOutputs(twin.root, outputs, submit);
     const s = await store();
+    writeFileSync(s.agent("publisher", "page.home", "candidates", "page-v2.json"), readFileSync(twin.agent("publisher", "publication.site", "candidates", "site-v2.json")));
     const before = s.events().length;
-    // The real registry, its first submit-guarded check reporting the candidate init writes.
-    const fired = registeredRules().flatMap(rule => rule.run.filter(check => check.guard?.includes("submit")).map(check => check.id))[0]!;
-    const rules = registeredRules().map(rule => ({ ...rule, run: rule.run.map(check => ({ ...check, fn: () => check.id !== fired ? [] : [
-      { rule: rule.id, check: check.id, agent: "publisher", slot: "publication.site", candidate: "site-v2.json", reason: "synthetic finding", path: "clossys/agents/publisher/publication.site/candidates/site-v2.json" },
-    ] })) }));
-    const firing = { rules, history: () => ({ available: false, error: "fixture", changes: new Map(), dirty: new Set<string>() }) };
     let refusal: unknown;
-    try { await initPublicationOutputs(s.root, { publication: "site", forms: ["contact"], origin: "https://example.test" }, { model: "fixture-model", tier: "mid", basis: "agent", skill: SKILL }, firing as never); }
+    try { await initPublicationOutputs(s.root, outputs, submit); }
     catch (error) { refusal = error; }
     expect(refusal).toBeInstanceOf(InitOutputsRefusal);
-    expect((refusal as InitOutputsRefusal).result.output).toMatchObject({ schema: "clossys.next-submit-refused/1", verb: "submit", checks: [fired] });
+    expect((refusal as InitOutputsRefusal).result.output).toMatchObject({ schema: "clossys.next-submit-refused/1", verb: "submit", checks: ["R06.6"] });
+    expect((refusal as InitOutputsRefusal).result.message).toMatch(/^init --publication refused: .*R06\.6 identical content .*also held by clossys\/agents\/publisher\/page\.home\/candidates\/page-v2\.json/s);
     expect(existsSync(s.agent("publisher", "publication.site", "candidates", "site-v2.json"))).toBe(false);
     expect(s.events().length).toBe(before);
   }, 300_000);

@@ -88,13 +88,28 @@ function runRoot(argv: readonly string[], cwd: string): string | null {
  * how it exited. The pipeline page and `clossys pipeline status` derive state from these alone.
  */
 export async function runPipeline(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS): Promise<CliResult> {
+  return execute(argv, cwd, steps, false);
+}
+
+/**
+ * A step another verb runs as part of its own run (`init` seats the admin workspace through `ia` and `pin`, `loop` pins
+ * through the pin gate, `request` places a leaf through `ia`, `init --publication` submits through `next --submit`): the
+ * same lookup, dispatch and run record as runPipeline, so the CLI reaches a step entry only through this runner. An
+ * error the step throws reaches the caller after its record, as a direct call would, so the caller keeps its own
+ * messages and exit codes; runPipeline turns it into exit 2.
+ */
+export async function runStep(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS): Promise<CliResult> {
+  return execute(argv, cwd, steps, true);
+}
+
+async function execute(argv: readonly string[], cwd: string, steps: readonly Step[], rethrow: boolean): Promise<CliResult> {
   const resolved: Resolved = {};
   // The step a parent chain runs this process as; read once, and not passed to any process this one starts.
   const named = process.env[STEP_ENV];
   delete process.env[STEP_ENV];
   // A bare `clossys next --submit <file>` submits to the first open candidates slot (cli/next.ts).
   if (argv[0] === "next" && argv.includes("--submit")) argv = submitTarget(argv, cwd, steps);
-  if (!tracingEnabled()) return run(argv, cwd, steps, resolved, named);
+  if (!tracingEnabled()) return run(argv, cwd, steps, resolved, rethrow, named);
   const start = new Date();
   const watch = observe();
   let recorded = false;
@@ -115,7 +130,7 @@ export async function runPipeline(argv: readonly string[], cwd: string, steps: r
   const onExit = (code: number) => record(code);
   process.once("exit", onExit);
   try {
-    const result = await run(argv, cwd, steps, resolved, named);
+    const result = await run(argv, cwd, steps, resolved, rethrow, named);
     record(result.exitCode, result);
     return result;
   } catch (error) {
@@ -127,7 +142,7 @@ export async function runPipeline(argv: readonly string[], cwd: string, steps: r
   }
 }
 
-async function run(argv: readonly string[], cwd: string, steps: readonly Step[], resolved: Resolved, named?: string): Promise<CliResult> {
+async function run(argv: readonly string[], cwd: string, steps: readonly Step[], resolved: Resolved, rethrow: boolean, named?: string): Promise<CliResult> {
   try {
     const head = argv[0];
     // The chain orchestrators are not steps: they run (and record through) the steps they walk.
@@ -179,6 +194,7 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     let root: string | undefined;
     return await dispatch(resolved.step = step, { argv, args, cwd, root: () => root ??= discoverRoot(resolve(cwd, args.root ?? ".")) }, steps);
   } catch (error) {
+    if (rethrow) throw error;
     const message = error instanceof Error ? error.message : String(error);
     return { exitCode: 2, message: error instanceof CliUsageError ? `${message}\n${USAGE}` : message };
   }

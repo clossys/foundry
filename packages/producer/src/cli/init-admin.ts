@@ -32,6 +32,7 @@
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { runStep } from "../pipeline/runner.js";
 import { raiseRequest, RequestError } from "../records/request.js";
 import { iaPath } from "../records/slot-model/layout.js";
 import { toIsoZ } from "../records/pin.js";
@@ -41,8 +42,6 @@ import { SLOT_AGENTS } from "../records/slot-model/types.js";
 import { sameJson } from "../records/slot.js";
 import { adminContract, adminPlan, adminRefs, adminUnder, readAdminSlot } from "./admin-plan.js";
 import type { CliResult } from "./main.js";
-import { runIaCli } from "./owner.js";
-import { runPinCli } from "./pin.js";
 
 export interface AdminSeat {
   readonly started: boolean;
@@ -71,7 +70,7 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
   let plan: ReturnType<typeof adminPlan>;
   try { plan = adminPlan(root); } catch (error) { return fail(`the admin workspace plan could not be read from the installed Publisher and Designer packages (${(error as Error).message})`); }
   if (!modelExists(iaPath(consumer, "publisher"))) {
-    const start = await runIaCli(["publisher", "--start", "--root", root], root);
+    const start = await runStep(["ia", "publisher", "--start", "--root", root], root);
     if (start.exitCode !== 0) return fail(start.message ?? "ia publisher --start failed");
     started = true;
   }
@@ -89,7 +88,7 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
       const file = join(dir, `${slot}.json`);
       writeFileSync(file, `${JSON.stringify(contract, null, 2)}\n`);
       const args = [`publisher/${slot}`, "--contract", file, "--standard", kind, "--under", adminUnder(slot), "--kind", kind, "--inputs", refs.join(","), "--uses", refs.join(","), "--at", at, "--root", root];
-      const result = await runIaCli(args, root, { current: true });
+      const result = await runStep(["ia", ...args], root);
       if (result.exitCode !== 0) return result.message ?? `ia publisher/${slot} failed`;
       placed.push(slot);
       return undefined;
@@ -111,7 +110,7 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
         contractArgs = ["--contract", file];
       }
       const args = [`publisher/${slot}`, ...contractArgs, "--standard", restore ? kind : read.doc.standard ?? kind, "--inputs", refs.join(","), "--uses", refs.join(","), "--at", at, "--root", root];
-      const result = await runIaCli(args, root, { current: true });
+      const result = await runStep(["ia", ...args], root);
       if (result.exitCode !== 0) return result.message ?? `ia publisher/${slot} failed`;
       rewired.push(slot);
       return undefined;
@@ -165,7 +164,7 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
       catch (error) { return fail(`seed publisher/${slot}: ${(error as Error).message}`); }
       seeded.push(slot);
     }
-    const pin = await runPinCli([`publisher/${slot}`, ADMIN_SEED, "--by", ADMIN_SEED_BY, "--at", when, "--root", root], root);
+    const pin = await runStep(["pin", `publisher/${slot}`, ADMIN_SEED, "--by", ADMIN_SEED_BY, "--at", when, "--root", root], root);
     if (pin.exitCode === 0) pinned.push(slot);
     else waiting.push({ slot, reason: (pin.message ?? "the pin gate refused").split("\n").filter(Boolean).slice(0, 3).join(" ") });
   }
