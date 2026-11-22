@@ -30,7 +30,6 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "workspace.config": { entry: "src/cli/owner.ts#runConfigCli", parser: "src/cli/owner.ts" },
   "seats": { entry: "src/cli/owner.ts#runSeatCli", parser: "src/cli/owner.ts" },
   "rules": { entry: "src/cli/owner.ts#runRuleCli", parser: "src/cli/owner.ts" },
-  "writer.approve": { entry: "src/cli/owner.ts#runApproveCli", parser: "src/cli/owner.ts" },
   "owner.decisions": { entry: "src/cli/owner.ts#runOwnerDecisionCli", parser: "src/cli/owner.ts" },
   // clossys verbs.
   "director.check": { entry: "src/cli/direct.ts#runDirect" },

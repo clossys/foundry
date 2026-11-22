@@ -1512,88 +1512,6 @@
       }
     },
     {
-      "id": "writer.approve",
-      "kind": "decide:judgment",
-      "actor": "owner",
-      "stage": "design.pin",
-      "summary": "Owner approves a Writer slot's copy keys: the approved candidate is pinned (clossys approve).",
-      "inputs": [
-        {
-          "glob": "consumer:agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
-        }
-      ],
-      "outputs": [
-        {
-          "glob": "consumer:agents/writer/*/pin.json",
-          "schema": "pin"
-        }
-      ],
-      "command": {
-        "cli": {
-          "verb": "approve",
-          "parser": "src/cli/owner.ts",
-          "target": "writer"
-        },
-        "entry": "src/cli/owner.ts#runApproveCli",
-        "skill": "packages/producer/actions/writer.approve/skill.md"
-      },
-      "checks": [
-        "workspace"
-      ],
-      "open": "writer-keys-unapproved",
-      "agent": "owner",
-      "package": "producer",
-      "run": "clossys approve writer/<slot> <candidate-id>",
-      "pass": {
-        "command": "clossys check",
-        "exit": {
-          "pass": [
-            0
-          ],
-          "fail": [
-            1
-          ],
-          "error": [
-            2
-          ]
-        }
-      },
-      "record": "clossys.pipeline-run/1",
-      "decider": "owner",
-      "packet": {
-        "inputs": [
-          "consumer:agents/writer/*/candidates/*"
-        ],
-        "write": [
-          {
-            "glob": "consumer:agents/writer/*/pin.json",
-            "schema": "pin"
-          }
-        ],
-        "checks": [
-          "workspace"
-        ]
-      },
-      "uses": [
-        "skill/SKILL.md"
-      ],
-      "seat": "consumer:agents/producer/seat.writer.approve/pin.json",
-      "holder": {
-        "id": "you",
-        "kind": "you",
-        "source": "derived",
-        "tier": null
-      },
-      "layout": {
-        "lane": "you",
-        "stage": "design.pin",
-        "rank": 12,
-        "x": 3840,
-        "y": 172
-      }
-    },
-    {
       "id": "pin.designer",
       "kind": "decide:judgment",
       "actor": "owner",
@@ -5987,17 +5905,6 @@
     },
     {
       "from": "writer.candidates",
-      "to": "writer.approve",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/candidates/*",
-          "input": "consumer:agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
-        }
-      ]
-    },
-    {
-      "from": "writer.candidates",
       "to": "pin.writer",
       "via": [
         {
@@ -6651,237 +6558,6 @@
       "via": [
         {
           "output": "consumer:agents/writer/*/pin.json#basis",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "retire",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "publisher.candidates",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/writer/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "constitution",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "writer.compile",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/writer/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "compile",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "options",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "specimen",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/writer/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "render",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/writer/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "critique-packet",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "critic",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "verdict",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "reissue",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "derive.uses",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "studio.map",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "writer.check",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/writer/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "publish.page",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/writer/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "workspace.check",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "decisions",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "pipeline",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "build.receipt",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
-          "input": "consumer:agents/*/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "studio.produce",
-      "via": [
-        {
-          "output": "consumer:agents/writer/*/pin.json",
           "input": "consumer:agents/*/*/pin.json",
           "schema": "pin"
         }
@@ -9529,8 +9205,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 22630,
-      "after": 21009
+      "before": 19959,
+      "after": 18372
     },
     "lanes": [
       {
@@ -9873,22 +9549,6 @@
         "to": "publisher.candidates"
       },
       {
-        "from": "writer.approve",
-        "to": "derive.uses"
-      },
-      {
-        "from": "writer.approve",
-        "to": "options"
-      },
-      {
-        "from": "writer.approve",
-        "to": "publisher.candidates"
-      },
-      {
-        "from": "writer.approve",
-        "to": "reissue"
-      },
-      {
         "from": "writer.candidates",
         "to": "derive.uses"
       },
@@ -10124,21 +9784,6 @@
       },
       "issues": []
     },
-    "writer.approve": {
-      "path": "consumer:agents/producer/seat.writer.approve/pin.json",
-      "state": "assigned",
-      "by": "owner",
-      "llm": {
-        "model": "<model:mid>",
-        "tier": "mid",
-        "promptFile": "packages/producer/actions/writer.approve/skill.md"
-      },
-      "human": {
-        "procedure": "Decide whether a Writer copy key is approved to ship.",
-        "command": "clossys approve"
-      },
-      "issues": []
-    },
     "pin.designer": {
       "path": "consumer:agents/producer/seat.pin.designer/pin.json",
       "state": "assigned",
@@ -10266,7 +9911,7 @@
       "kinds": [
         "you"
       ],
-      "steps": 20,
+      "steps": 19,
       "sources": [
         "derived"
       ],
@@ -11072,52 +10717,6 @@
         },
         {
           "flag": "--root",
-          "value": null
-        }
-      ],
-      "writer.approve": [
-        {
-          "flag": "--add",
-          "value": null
-        },
-        {
-          "flag": "--adopt",
-          "value": null
-        },
-        {
-          "flag": "--assign",
-          "value": null
-        },
-        {
-          "flag": "--drop",
-          "value": null
-        },
-        {
-          "flag": "--help",
-          "value": null
-        },
-        {
-          "flag": "--init",
-          "value": null
-        },
-        {
-          "flag": "--json",
-          "value": null
-        },
-        {
-          "flag": "--layers",
-          "value": null
-        },
-        {
-          "flag": "--merge",
-          "value": null
-        },
-        {
-          "flag": "--rename",
-          "value": null
-        },
-        {
-          "flag": "--reorder",
           "value": null
         }
       ],

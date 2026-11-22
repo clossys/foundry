@@ -5,7 +5,7 @@
  * the repo either still has (red) or no longer has. The empty-L2 probe runs the real constitution over a
  * temporary copy of the consumer with one empty L2 group added per agent, and the contract probe runs the
  * real `clossys ia --contract --dry` on a temporary copy, and the pin probe runs every pin-writing verb (pin,
- * pick, verdict, approve) on a temporary copy with a hand-placed and a submitted, uncertified candidate; the rest
+ * pick, verdict, and the Writer's owner pin) on a temporary copy with a hand-placed and a submitted, uncertified candidate; the rest
  * read files.
  */
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -44,7 +44,7 @@ export interface PinGateResult { readonly target: string; readonly candidate: st
 
 /** One pin-writing verb run by the pin probe on one candidate (hand-placed, or submitted and uncertified). */
 export interface VerbProbe {
-  readonly verb: "pin" | "pick" | "verdict" | "approve";
+  readonly verb: "pin" | "pick" | "verdict" | "owner-pin";
   readonly case: "hand-placed" | "submitted-uncertified";
   readonly target: string;
   readonly candidate: string;
@@ -149,7 +149,8 @@ function uncertifiedBytes(slot: { readonly id: string; readonly kind?: string },
 /**
  * Runs every verb that writes a pin on a temporary copy of the consumer, once per agent, against its first live slot/2
  * slot (one with a candidate first): the real `clossys pin --by planner`, `clossys pick --by agent:<agent>`,
- * `clossys verdict --record` (a pick) and, for Writer, `clossys approve --by owner`. Each runs on two candidates: one
+ * `clossys verdict --record` (a pick) and, for Writer, the owner's approval:
+ * `clossys pin --basis picked --by owner:queue.approve#<id>`. Each runs on two candidates: one
  * placed by hand (a copy of the slot's newest candidate under a new name, so it has no submit record) and one submitted
  * through the candidates write that certifies against nothing (a submit record, no passing verdict). The first pin
  * result is the cell's headline; `verbs` holds every run. A run counts as gated only when it exits non-zero with the
@@ -168,7 +169,7 @@ export async function probePinGate(consumer: string, agents: readonly AgentModel
   const AT = "2026-11-17T12:00:00Z";
   try {
     cpSync(consumer, join(temp, "clossys"), { recursive: true });
-    // An owner approval names the typed queue entry the owner answered for that candidate (U13 r4, B2): approve writes
+    // An owner approval names the typed queue entry the owner answered for that candidate (U13 r4, B2): the owner pin writes
     // one answered clossys.queue-entry/1 bound to the slot and candidate before each run, so it reaches the CHOOSE gate.
     const { ownerEntry } = await import("../pipeline/owner-entry.js");
     for (const agent of agents) {
@@ -207,7 +208,8 @@ export async function probePinGate(consumer: string, agents: readonly AgentModel
             writeFileSync(file, JSON.stringify({ schema: "clossys.verdict/1", slot: pick.slot.id, pick: candidate, reason: "conform probe", criteria: [criterion ?? "conform-probe"] }));
             return runStep(["verdict", slotTarget, "--record", file, "--model", "conform-probe", "--tier", "high", "--by", `agent:${agent.agent}`, "--at", AT, "--root", temp], temp);
           }],
-          ...(agent.agent === "writer" ? [["approve", () => runStep(["approve", slotTarget, candidate, "--by", ownerEntry(join(temp, "clossys"), { id: `20261117T1200Z-${PIN_PROBE_NAME}-${kind}`, about: slotTarget, answer: { candidate }, at: AT }), "--at", AT, "--root", temp], temp)]] as [VerbProbe["verb"], () => Promise<{ exitCode: number; message?: string }>][] : []),
+          // The Writer's owner approval: a pin citing the owner's answered queue.approve entry.
+          ...(agent.agent === "writer" ? [["owner-pin", () => runStep(["pin", slotTarget, candidate, "--basis", "picked", "--by", ownerEntry(join(temp, "clossys"), { id: `20261117T1200Z-${PIN_PROBE_NAME}-${kind}`, queue: "approve", about: slotTarget, answer: { candidate }, at: AT }), "--at", AT, "--root", temp], temp)]] as [VerbProbe["verb"], () => Promise<{ exitCode: number; message?: string }>][] : []),
         ];
         for (const [verb, run] of runs) {
           let result: { exitCode: number; message?: string };

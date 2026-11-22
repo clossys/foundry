@@ -68,7 +68,7 @@ const WIRING_AT = "2026-11-18T00:00:00Z";
 /**
  * The owner's answer a decision call cites, written on the scratch copy only (U13 r4, B2): a typed clossys.queue-entry/1
  * decision entry the owner answered, about the slot the call decides, bound to that decision (the seat, not-needed, or
- * the candidate a pin or approve names), as the owner's chat answer records it. Every owner-decision verb refuses any
+ * the candidate a pin names; a Writer pin is the owner's approval, on queue.approve), as the owner's chat answer records it. Every owner-decision verb refuses any
  * other entry, so an untyped stand-in would make every live option read as dead. A confirmation's `--by` takes only the
  * owner's typed work-entry answer, which runs the step itself: a confirm call cites this entry and is refused.
  */
@@ -78,7 +78,7 @@ function scratchAnswer(scratch: string, argv: readonly string[], id: string): st
   const base: Pick<OwnerEntryInput, "id" | "at"> = { id, at: WIRING_AT };
   if (verb === "seat") return ownerEntry(consumer, { ...base, about: `${SEAT_AGENT}/${seatSlotId(item)}`, answer: "seat" });
   if (argv.includes("--not-needed")) return ownerEntry(consumer, { ...base, about: item, answer: "not-needed" });
-  return ownerEntry(consumer, { ...base, queue: verb === "approve" ? "approve" : "pick", about: item, answer: { candidate: next } });
+  return ownerEntry(consumer, { ...base, queue: verb === "pin" && item.startsWith("writer/") ? "approve" : "pick", about: item, answer: { candidate: next } });
 }
 
 /** The option's calls with each fill placeholder replaced (a `.md` placeholder becomes a file in the scratch root). */

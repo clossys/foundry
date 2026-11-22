@@ -326,7 +326,7 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     evidence: agent.live.length,
   }),
   C3: (agent, model, facts) => {
-    // The real path: every pin-writing verb (pin, pick, verdict, approve) run on a temporary consumer copy with a
+    // The real path: every pin-writing verb (pin, pick, verdict, the Writer's owner pin) run on a temporary consumer copy with a
     // hand-placed and a submitted, uncertified candidate (dogfood.ts probePinGate). Red on any accepted pin, and on any
     // refusal that is not the CHOOSE gate's: that verb never reached the pin write, so the gate is unproven for it.
     const rows = ruleRow(model, "R05.2", agent.agent);

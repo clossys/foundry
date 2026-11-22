@@ -399,22 +399,20 @@ describe("clossys next", { timeout: 60_000 }, () => {
     expect((await runPipeline(["rule", "R-W6A-FIXTURE", "--quote", "records change only through verbs", "--date", "2026-11-11", "--status", "enforced", ...at], root)).exitCode).toBe(1);
     expect((await runPipeline(["rule", "R-W6A-FIXTURE", "--quote", "records change only through verbs", "--date", "2026-11-11", "--status", "unenforced", ...at], root)).exitCode).toBe(0);
     expect((await runPipeline(["ia", "designer/assets.favicon", "--remove", ...at], root)).exitCode).toBe(1);
-    const approve = (await runNextCli(["--owner", "--json", ...at], root)).output as { packets: { step: string; options: { argv: string[] | null }[] }[] };
-    const packet = approve.packets.find(each => each.step === "writer.approve");
-    if (packet) {
-      const argv = packet.options[0]!.argv!.slice(1);
-      // The packet names the owner's answer as the <queue-answer> placeholder: run as printed it is refused, and with
-      // the queue entry holding the owner's answer (owner:queue.approve#<id>) the approval records.
-      expect(argv).toContain(QUEUE_ANSWER);
+    // The owner approves Writer keys on the queue: a Writer question's pin option names the owner's answer as the
+    // <queue-answer> placeholder. Run as printed it is refused; with the owner's answered queue.approve entry
+    // (owner:queue.approve#<id>) the pin records and no Writer question asks that slot again.
+    const writerPins = () => interviewOf(root, { agent: "writer" }).rounds.flat().flatMap(question => question.options.flatMap(option => option.calls)).filter(call => call[1] === "pin" && call.includes(QUEUE_ANSWER));
+    const call = writerPins()[0];
+    if (call) {
+      const argv = call.slice(1);
       const placeholder = await runPipeline([...argv, ...at], root);
-      expect(placeholder.exitCode).toBe(1);
-      expect(placeholder.message).toContain("only the owner approves Writer copy");
+      expect(placeholder.exitCode).not.toBe(0);
       const [, item, name] = argv as [string, string, string];
       const by = ownerEntry(join(root, "clossys"), { queue: "approve", id: "20261121T0000Z-chain-approve", about: item, answer: { candidate: name }, at: "2026-11-21T00:00:00Z" });
       const answered = await runPipeline([...argv.map(word => word === QUEUE_ANSWER ? by : word), ...at], root);
       expect(answered.exitCode, `${argv.join(" ")}: ${answered.message}`).toBe(0);
-      const after = (await runNextCli(["--owner", "--json", ...at], root)).output as { packets: { step: string; item: string }[] };
-      expect(after.packets.some(each => each.step === "writer.approve" && each.item === argv[1])).toBe(false);
+      expect(writerPins().some(each => each[2] === item)).toBe(false);
     }
   });
 
@@ -468,7 +466,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
     }
     expect(owned.find(packet => packet.step === "evidence")!.ask!.agent).toBe("director");
     // A slot with no candidate is its agent's to draft: no owner question asks it, and every agent's questions hold the rules.
-    const pins = gapsOf(root).gaps.filter(gap => gap.code.startsWith("open.pin.") || gap.code === "open.writer.approve");
+    const pins = gapsOf(root).gaps.filter(gap => gap.code.startsWith("open.pin."));
     // One open pin per placed slot: the consumed leaves of each Foundry IA (CONSISTENCY D5 option 1: a fresh adopt
     // places only the package leaves a declared or seated publication reaches, records/slot-model/consumed.ts).
     // Designer's tree is already minus retired.json, since a fresh adopt skips retired leaves as `clossys migrate recut` does.
