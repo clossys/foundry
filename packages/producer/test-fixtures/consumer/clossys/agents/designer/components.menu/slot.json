@@ -16,7 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -266,6 +266,10 @@
       "presentation.popup": "rac:Menu",
       "presentation.inline": "rac:Menu"
     },
+    "fixtureProps": [
+      "children",
+      "defaultOpen"
+    ],
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
@@ -296,10 +300,6 @@
       {
         "check": "composes.allowed"
       }
-    ],
-    "fixtureProps": [
-      "children",
-      "defaultOpen"
     ]
   },
   "tighten": [],

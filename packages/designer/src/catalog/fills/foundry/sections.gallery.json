@@ -64,7 +64,7 @@
           },
           {
             "path": "packages/designer/src/components/preview-runtime/components/dialog/dialog.tsx",
-            "sha256": "70e43728a9ff7ccded3e6029eea734bfc85f54fd9348b8518bebf6a7d95015d6"
+            "sha256": "2c65cc2b689821eaae1db7f0bb0f4a6b1963064a7fb88a10631ee2c3d4f1664c"
           }
         ],
         "unresolved": [

@@ -22,8 +22,8 @@ const app = () => structuredClone((frameSlots as unknown as FrameSlot[]).find(sl
 const descriptor = () => structuredClone(importFoundryFrames().fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "frames.app-shell")!.frames["app-shell"]!) as SurfaceDefaultDescriptor & Record<string, any>;
 /** SYNTHETIC parser input: observations come from the same scanner as real descriptors. */
 const measured = (token = false) => {
-  const file = { path: "src/Example.tsx", content: token ? 'export const View = () => <div style={{gap:"var(--spacing-md)"}}/>;' : 'import { Avatar } from "./Avatar.js"; export const View = () => <Avatar/>;' };
-  const row = buildSurfaceConsumption({ themes: [{ id: "themes.spacing", contract: { emit: { md: "--spacing-md" } } }], assets: [], components: [{ id: "components.avatar" }], sections: [], frames: [app()], fills: [{ id: "synthetic", slot: "frames.app-shell", source: "synthetic" }], sourceScans: [{ fill: "synthetic", files: [file], resolvedImports: { "src/Example.tsx:./Avatar.js#Avatar": "components.avatar" } }], themeCss: "" }).fills[0]!;
+  const file = { path: "src/Example.tsx", content: token ? 'export const View = () => <div style={{color:"var(--destructive)"}}/>;' : 'import { Avatar } from "./Avatar.js"; export const View = () => <Avatar/>;' };
+  const row = buildSurfaceConsumption({ themes: [{ id: "themes.destructive", contract: { emit: { default: "--destructive" } } }], assets: [], components: [{ id: "components.avatar" }], sections: [], frames: [app()], fills: [{ id: "synthetic", slot: "frames.app-shell", source: "synthetic" }], sourceScans: [{ fill: "synthetic", files: [file], resolvedImports: { "src/Example.tsx:./Avatar.js#Avatar": "components.avatar" } }], themeCss: "" }).fills[0]!;
   return { scanStatus: row.scanStatus as "lower-bound", sourceFiles: [{ path: file.path, sha256: sha256(file.content) }], scannedReads: row.scannedReads, scannedComposes: row.scannedComposes };
 };
 
@@ -40,12 +40,13 @@ it("refuses actual package reads outside the contract even when declared fields 
   slot.contract.allowedReads.themes = [];
   Object.assign(fill, { reads: { themes: [], assets: [] }, composes: [], consumption: measured(true) });
   // Actual use is the independent measurement of the pinned package, never the descriptor's snapshot: the stock
-  // app shell reads semantic shadcn themes (it stopped reading themes.spacing in the shadcn reset).
+  // app shell reads semantic shadcn themes. The snapshot probe reads themes.destructive, which the pinned app shell does
+  // not read (U-K4-CASCADE: the probe was themes.spacing until U-K4's calc(var(--spacing)) reads put it back in the shell).
   const read = measuredSurfaceConsumption("frames.app-shell", importFoundryFrames().fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "frames.app-shell")!.$extensions["com.clossys.fill"].pin!).reads.themes[0]!;
   expect(read).toMatch(/^themes\./);
   expect(contractFindings(slot, fill).some(row => row.startsWith("S5 unsupported themes:") && row.includes(read))).toBe(true);
   expect(contractFindings(slot, fill).some(row => row.startsWith("S5 underreported themes:") && row.includes(read))).toBe(true);
-  expect(contractFindings(slot, fill).join(" ")).not.toContain("themes.spacing");
+  expect(contractFindings(slot, fill).join(" ")).not.toContain("themes.destructive");
 });
 
 it("does not mistake an absent package consumption measurement for an empty successful scan", () => {

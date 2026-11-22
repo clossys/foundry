@@ -28,6 +28,7 @@ function stepsModule(name, body) {
   return file;
 }
 const rules = result => new Set(result.out.failures.map(failure => failure.rule));
+const undeclared = result => result.out.failures.filter(failure => failure.rule === "verb.undeclared").map(failure => failure.message);
 const foreignWriters = result => result.out.failures.filter(failure => failure.rule === "decide.foreign-writer").map(failure => failure.message);
 // A mutant reads nothing, so it sits in the first stage (a later step with no feeding edge is stage.orphan).
 const extra = fields => `STEPS.push(defineStep({ id: "mutant", kind: "plumb", actor: "code", stage: "direct.brief", summary: "mutant", inputs: [], outputs: [], checks: [], ${fields} }));`;
@@ -119,18 +120,44 @@ describe("check:pipeline", { concurrency: 3 }, () => {
     assert.ok(rules(result).has("edge.schema-mismatch"), [...rules(result)].join(","));
   });
   it("fails committed files that do not match their port schema, by step id", () => {
-    const result = run(["--steps", stepsModule("schema", extra(`command: { npm: "check:pipeline" }, outputs: [{ glob: "clossys/agents/director/*/pin.json", schema: "slot" }]`))]);
+    // The repository tracks no consumer tree, so the port names a committed package file that is not a slot record.
+    const result = run(["--steps", stepsModule("schema", extra(`command: { npm: "check:pipeline" }, outputs: [{ glob: "pkg:pipeline/actions.json", schema: "slot" }]`))]);
     assert.ok(rules(result).has("schema.invalid"), [...rules(result)].join(","));
-    assert.ok(result.out.failures.some(failure => failure.rule === "schema.invalid" && failure.message.startsWith("mutant: ")));
+    assert.ok(result.out.failures.some(failure => failure.rule === "schema.invalid" && failure.message.startsWith("mutant: packages/producer/pipeline/actions.json fails slot: ")), JSON.stringify(result.out.failures.filter(failure => failure.rule === "schema.invalid"), null, 2));
   });
   it("fails a CLI verb that no step declares", () => {
-    const result = run(["--steps", stepsModule("verb", `STEPS = STEPS.filter(step => step.id !== "workspace.check");`)]);
-    assert.ok(rules(result).has("verb.undeclared"), [...rules(result)].join(","));
+    // Every step that declares `check` goes (workspace.check and constitution both run `clossys check`); the CLI still has
+    // the verb (cli/args.ts VERBS, main.ts), so it is the one undeclared verb.
+    const result = run(["--steps", stepsModule("verb", `STEPS = STEPS.filter(step => step.command.cli?.verb !== "check");`)]);
+    assert.deepEqual(undeclared(result), ["clossys check runs, but no step declares it"], JSON.stringify(result.out.failures, null, 2));
+  });
+  it("reads an argv[0] literal in a verb's own handler as its subcommand, and one outside it as a top-level verb", () => {
+    // `clossys pipeline trace`: runPipelineCli gets the argv after `pipeline`, so its `argv[0] === "trace"` is no verb.
+    assert.deepEqual(undeclared(run([])), []);
+    // main.ts reads the full argv (`argv[0] === "migrate"`): with no migrate step, that top-level verb is undeclared.
+    const result = run(["--steps", stepsModule("toplevel", `STEPS = STEPS.filter(step => step.command.cli?.verb !== "migrate");`)]);
+    assert.deepEqual(undeclared(result), ["clossys migrate runs, but no step declares it"], JSON.stringify(result.out.failures, null, 2));
+  });
+  it("reads a verb's parser() flag lists: a listed flag is defined, an unlisted one is unknown", () => {
+    // cli/owner.ts builds its argv parsers with parser(usage, [valued], [bare]); workspace.config lists --init there.
+    const options = result => result.out.failures.filter(failure => failure.rule === "option.unknown").map(failure => failure.message);
+    assert.deepEqual(options(run([])), []);
+    const body = `STEPS = STEPS.map(step => step.id === "workspace.config" ? { ...step, command: { ...step.command, cli: { ...step.command.cli, flags: ["--init", "--from", "--bogus"] } } } : step);`;
+    const result = run(["--steps", stepsModule("parser-lists", body)]);
+    assert.deepEqual(options(result), ["workspace.config lists --bogus, which src/cli/owner.ts does not define"], JSON.stringify(result.out.failures, null, 2));
+  });
+  it("judges seat folders by the shared slot-folder rule: a `_` folder holds no seat, a misnamed folder fails", () => {
+    const consumer = join(work, "seat-consumer");
+    mkdirSync(join(consumer, "clossys", "agents", "producer", "_retired", "seat.gone"), { recursive: true });
+    const seats = () => run([], { ...process.env, CLOSSYS_ROOT: consumer }).out.failures.filter(failure => failure.rule === "seat.invalid" && failure.message.startsWith("clossys/agents/producer/")).map(failure => failure.message);
+    assert.deepEqual(seats(), []);
+    mkdirSync(join(consumer, "clossys", "agents", "producer", "seatx"));
+    assert.deepEqual(seats(), ["clossys/agents/producer/seatx/ is not a seat slot: seat folders are named seat.<step-id>"]);
   });
   it("fails code that writes a decision file inside the repository", () => {
     const result = run(["--scan", join(WRITER_FIXTURES, "repo-write")]);
     assert.equal(result.code, 1);
-    assert.ok(foreignWriters(result).some(message => message.startsWith("workspace.config (decide) owns clossys/clossys.config.ts") && message.includes("R-PIPELINE-IS-CODE/repo-write/write-workspace-config.mjs")), JSON.stringify(result.out.failures, null, 2));
+    assert.ok(foreignWriters(result).some(message => message.startsWith("workspace.config (decide) owns consumer:clossys.config.ts") && message.includes("R-PIPELINE-IS-CODE/repo-write/write-workspace-config.mjs")), JSON.stringify(result.out.failures, null, 2));
   });
   it("passes the same relative path written under os.tmpdir(): not a repository write", () => {
     const result = run(["--scan", join(WRITER_FIXTURES, "temp-write")]);

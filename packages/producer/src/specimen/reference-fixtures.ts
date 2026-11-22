@@ -36,6 +36,14 @@ export const REFERENCE_FIXTURE_RULES = {
   },
   overlays: ["components.dialog", "components.popover", "components.sheet", "components.tooltip", "components.dropdown-menu", "components.menu", "components.toast"],
   open: { prop: "defaultOpen", trigger: "react-aria-components.Button", triggerText: "Open", contentText: "Content" },
+  // A slot whose reference ships its element only inside a group of its own parts mounts that group (BR-SEED2):
+  // stock resizable renders the handle between two panels of its panel group.
+  groups: {
+    "components.resize-handle": {
+      export: "ResizablePanelGroup",
+      children: [{ $component: "ResizablePanel", children: "DRAFT panel" }, { $component: "ResizableHandle", props: { withHandle: true } }, { $component: "ResizablePanel", children: "DRAFT panel" }],
+    },
+  },
 } as const;
 
 export const GAPS_FILE = "src/catalog/contract-fixture-gaps.json";
@@ -51,6 +59,8 @@ interface Registry { readonly style?: string; readonly upstream?: string }
 interface Manifest { readonly registries: Readonly<Record<string, Registry>>; readonly items: readonly ManifestItem[] }
 interface ReferenceRow { readonly registry: string; readonly item: string; readonly version: string }
 type Row = { id: string; contract?: Record<string, unknown> } & Record<string, unknown>;
+/** A group mount: the group export and the parts it holds, each a component the same file exports. */
+interface GroupRule { readonly export: string; readonly children: readonly { readonly $component: string; readonly children?: string; readonly props?: Readonly<Record<string, unknown>> }[] }
 
 const json = (path: string): unknown => JSON.parse(readFileSync(path, "utf8"));
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
@@ -158,8 +168,12 @@ export function referenceFixture(index: ReferenceIndex, slot: string, references
     if (!main) { misses.push(`${item.registry}/${item.name} ships no ${item.name} code file`); continue; }
     const exports = (own!.get(main.path) ?? []).filter(name => /^[A-Z]/.test(name));
     const root = exports.includes(pascal(item.name)) ? pascal(item.name) : exports.length === 1 ? exports[0]! : undefined;
-    if (!root) { misses.push(`${main.path} exports no ${pascal(item.name)} and ${exports.length} other components`); continue; }
     const reference = `${item.registry}/${item.name}@${item.version}`;
+    const group = (REFERENCE_FIXTURE_RULES.groups as Readonly<Record<string, GroupRule>>)[slot];
+    if (!root && group && exports.includes(group.export) && group.children.every(child => exports.includes(child.$component))) {
+      return { reference, props: ["children"], fixture: { schema: CONTRACT_FIXTURE_SCHEMA, fixtures: { file: main.path, export: group.export, props: { children: structuredClone(group.children) as unknown[] } } } };
+    }
+    if (!root) { misses.push(`${main.path} exports no ${pascal(item.name)} and ${exports.length} other components`); continue; }
     const trigger = `${root}Trigger`;
     if ((REFERENCE_FIXTURE_RULES.overlays as readonly string[]).includes(slot) && exports.includes(trigger)) {
       const { prop, trigger: pressable, triggerText, contentText } = REFERENCE_FIXTURE_RULES.open;

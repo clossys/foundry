@@ -103,25 +103,6 @@
     {
       "op": "slot",
       "at": "2026-11-19T00:00:00Z",
-      "by": "planner",
-      "verb": "ia",
-      "skill": {
-        "path": "packages/producer/actions/ia/skill.md",
-        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
-      },
-      "model": "none",
-      "tier": "none",
-      "kind": "ia",
-      "records": [
-        {
-          "file": "slot.json",
-          "sha256": "304cee536e66f15b1541734c7c3a9ebf3cedfec83e826054e26d8dbf1a0cd5ef"
-        }
-      ]
-    },
-    {
-      "op": "slot",
-      "at": "2026-11-19T00:00:00Z",
       "by": "agent:designer",
       "verb": "retire",
       "skill": {
@@ -134,7 +115,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "e2f82c777611e807c2530d297763ff774cf108ce81a808499906e032c2aa941b"
+          "sha256": "354f13eab5901d76ea23f142cd64ecafa3677f38b4b300d44bc2a226ae88d0ec"
         }
       ]
     },
@@ -153,7 +134,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "1f5af263fcf151478b91d0f09109226a195b6d5d33829dcc7c9b72b9a19faa85"
+          "sha256": "d4704f6c06504ca4ad51562302353ec320b1854d6fe4b43b03a6ca09328f8687"
         }
       ]
     },
@@ -172,7 +153,26 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "c71398eb4b4f494b78fcf9cf76879a0800fff7708ac4781b0fa0cc30842d5128"
+          "sha256": "d4f17e458e2ffa01b5874848c81fe1f765e7972d30a1528a0cf82abefcd97485"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "8d9202b3f3e042101f2c800d36f11745a06adb55cd4d740efcd856f01f5a86de"
         }
       ]
     }

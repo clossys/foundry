@@ -11,7 +11,8 @@ import { extractStyleCandidates, scanStyleSources } from "../style-scan.js";
 import { checkTokenPurity } from "../token-gate.js";
 import { TOKENS } from "../tokens/tokens.js";
 import { contrastRatio } from "../tokens/color.js";
-import { parseRootDeclarations, parseDeclarationsForSelector } from "../tokens/internal/parse-css.js";
+import { parseDeclarationsForSelector } from "../tokens/internal/parse-css.js";
+import { defaultThemeCss } from "../builder/theme/css.js";
 
 const second = Object.freeze({ id: " host:two ", label: "Second", kind: "component", badge: "Ready", tag: "v2" });
 const first = Object.freeze({ id: "one", label: "First", kind: "component" });
@@ -234,15 +235,16 @@ describe("CatalogWorkspace", () => {
   it("uses the same token-bound surfaces in light and dark with analytical text contrast", () => {
     media(); const { container, rerender } = render(<div data-theme="light"><CatalogWorkspace {...base} selectedId={first.id} /></div>);
     const panel = screen.getByRole("region", { name: labels.preview });
-    // The preview is the stock Card, painted with the surface-raised token whose contrast is checked below.
-    expect(panel).toHaveAttribute("data-slot", "card"); expect(panel.className).toContain("bg-(--color-surface-raised)");
+    // The preview is the stock Card, painted with its derived shadcn reads (U-K4, K4 option 2): --foreground on --card,
+    // whose contrast is checked below on the package default theme.
+    expect(panel).toHaveAttribute("data-slot", "card"); expect(panel.className).toContain("bg-(--card)"); expect(panel.className).toContain("text-(--foreground)");
     const classes = panel.className;
     rerender(<div data-theme="dark"><CatalogWorkspace {...base} selectedId={first.id} /></div>);
     expect(screen.getByRole("region", { name: labels.preview }).className).toBe(classes);
     expect(container.querySelector('[data-theme="dark"]')).toContainElement(panel);
-    const css = readFileSync(resolve(import.meta.dirname, "../../styles/tokens.css"), "utf8");
-    for (const declarations of [parseRootDeclarations(css), parseDeclarationsForSelector(css, ':root[data-theme="dark"]')]) {
-      expect(contrastRatio(declarations.get("--color-ink-primary")!, declarations.get("--color-surface-raised")!)).toBeGreaterThanOrEqual(4.5);
+    const css = defaultThemeCss();
+    for (const declarations of [parseDeclarationsForSelector(css, ":root[data-brand-bound]"), parseDeclarationsForSelector(css, ':root[data-brand-bound][data-theme="dark"]')]) {
+      expect(contrastRatio(declarations.get("--foreground")!, declarations.get("--card")!)).toBeGreaterThanOrEqual(4.5);
     }
   });
   it("keeps shipped source inside the native token-purity gate without ignore markers", () => {

@@ -91,7 +91,8 @@
             "themes.primary",
             "themes.primary-foreground",
             "themes.ring",
-            "themes.sidebar"
+            "themes.sidebar",
+            "themes.spacing"
           ]
         },
         "sourceFiles": [
@@ -157,7 +158,7 @@
           },
           {
             "path": "packages/designer/src/components/preview-runtime/components/banner/alert.tsx",
-            "sha256": "6f7a06ea1ec2d22cee05f1372c99170ae18376d30fc8ba538768de4279c124d0"
+            "sha256": "8f6979fb1fe7be1355bbb61e526c2199903b2ddf470908fe78eea15e897c8619"
           },
           {
             "path": "packages/designer/src/components/surface-tones.ts",
@@ -377,7 +378,8 @@
           "themes.primary",
           "themes.primary-foreground",
           "themes.ring",
-          "themes.sidebar"
+          "themes.sidebar",
+          "themes.spacing"
         ]
       },
       "slot": "frames.app-shell",

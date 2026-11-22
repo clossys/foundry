@@ -265,11 +265,11 @@
           },
           {
             "path": "packages/designer/src/components/preview-runtime/components/avatar/avatar.tsx",
-            "sha256": "c1c8341c383ca98281b9499cd9c14a68f0c02776c8386d087bb71c3f92aaa5ac"
+            "sha256": "23c4fef65af78cd0ed3b6ccfb7bd5a61fe77605cd5f439bba6fc2f44938683a5"
           },
           {
             "path": "packages/designer/src/components/preview-runtime/components/button/button.tsx",
-            "sha256": "8b5891918ab6909ea98ebf8d1a3abc9f25e24fbbaac29515b01a066ddc3c2ce4"
+            "sha256": "278cecacd830d1ae61b0109ca472f4595eda846cae1f5105d53c863515c2a1fe"
           },
           {
             "path": "packages/designer/src/components/surface-tones.ts",
