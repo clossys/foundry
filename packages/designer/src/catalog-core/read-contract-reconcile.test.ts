@@ -2,6 +2,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import assetSlots from "../catalog/slots/assets.json" with { type: "json" };
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import themeSlots from "../catalog/slots/themes.json" with { type: "json" };
 import { checkComponentProfile } from "./check-components.js";
@@ -10,9 +11,11 @@ import type { ComponentSlot } from "./types.js";
 import { sha256 } from "./digest.js";
 import { flatten } from "./model.js";
 import { importShadcnAriaComponents, materializeShadcnComponent } from "../importers/shadcn-aria-components.js";
+import { importShadcnAriaRail } from "../importers/shadcn-aria-rail.js";
 
-// THEMES-F: contracts grant shadcn themes leaves; the U5c per-role deltas over the retired tokens layer are migration history.
-const themeLeaves = new Set((themeSlots as { id: string }[]).map(slot => slot.id));
+// Target-state invariants over the current contracts, committed fills and importer output. Nothing here records a
+// past state: every id, count and hash is computed at run time. THEMES-F: contracts grant shadcn themes leaves.
+const registered = { themes: new Set((themeSlots as { id: string }[]).map(slot => slot.id)), assets: new Set((assetSlots as { id: string }[]).map(slot => slot.id)), components: new Set((componentSlots as { id: string }[]).map(slot => slot.id)) };
 const slots = componentSlots as ComponentSlot[];
 const directory = resolve(import.meta.dirname, "../catalog/fills/shadcn@aria");
 const names = readdirSync(directory).filter(name => /^components\..*\.json$/.test(name)).sort();
@@ -25,17 +28,21 @@ const profile = (contracts = slots, fills = descriptors) => ({ slots: contracts,
 const tokenFindings = (contracts = slots, fills = descriptors) => checkComponentProfile(profile(contracts, fills)).findings.filter(f => f.code === "K3" && /(?:Token read|Read themes\.)/.test(f.message));
 const read = (name: string) => readFileSync(resolve(import.meta.dirname, "../importers/__fixtures__/shadcn-aria", name), "utf8");
 const input = () => ({ items: readdirSync(resolve(import.meta.dirname, "../importers/__fixtures__/shadcn-aria")).filter(name => name.endsWith(".json")).map(name => JSON.parse(read(name))).filter(item => item.type === "registry:ui"), styles: { path: "apps/v4/registry/styles/style-nova.css", content: read("style-nova.css") }, notice: { path: "LICENSE.md", content: read("LICENSE.md") } });
+const outputHashes = (files: readonly { path: string; content: string }[]) => files.map(file => ({ path: file.path, sha256: sha256(file.content) })).sort((a, b) => a.path.localeCompare(b.path));
 
-describe("read-contract reconciliation at the accepted U5c source", () => {
-  it("grants only registered themes leaves, once each, without changing other contract parts", () => {
+describe("read-contract reconciliation holds at the current source", () => {
+  it("grants only registered leaves of the granted layer, once each, under the current allowedReads keys", () => {
     for (const slot of slots) {
-      expect(slot.contract.allowedReads.themes.filter(leaf => !themeLeaves.has(leaf)), slot.id).toEqual([]);
-      expect(new Set(slot.contract.allowedReads.themes).size, slot.id).toBe(slot.contract.allowedReads.themes.length);
+      const reads = slot.contract.allowedReads as Record<string, readonly string[]>;
+      // THEMES-F renamed the retired tokens key to themes; no contract grants a layer outside these three.
+      expect(Object.keys(reads).filter(key => !Object.hasOwn(registered, key)), slot.id).toEqual([]);
+      expect(Array.isArray(reads.themes) && Array.isArray(reads.assets), slot.id).toBe(true);
+      for (const [layer, leaves] of Object.entries(reads)) {
+        const known = registered[layer as keyof typeof registered];
+        expect(leaves.filter(leaf => !known.has(leaf)), `${slot.id} grants unregistered ${layer}`).toEqual([]);
+        expect(leaves.filter((leaf, index) => leaves.indexOf(leaf) !== index), `${slot.id} repeats ${layer}`).toEqual([]);
+      }
     }
-    const unchanged = structuredClone(componentSlots); for (const slot of unchanged) slot.contract.allowedReads.themes = [];
-    // Accepted W2 adds DateField/DatePicker protocol surfaces; BF-B1 changes no contracts. THEMES-F changes only the
-    // allowedReads key (tokens -> themes): the pre-rename contracts with that key renamed hash to the same value.
-    expect(sha256(JSON.stringify(unchanged))).toBe("a4308fcf509dc1f7848be6d32ef3f91337db2d35dd3c3b4a5944a446c53ec9f8");
   });
   for (const descriptor of descriptors) it(`restores K3 when a granted ${descriptor.slot} read leaf is removed`, () => {
     expect(tokenFindings(slots, [descriptor])).toEqual([]);
@@ -51,37 +58,63 @@ describe("read-contract reconciliation at the accepted U5c source", () => {
   it("resolves every descriptor read against a registered themes member", () => {
     expect(tokenFindings().filter(f => f.message.startsWith("Token read "))).toEqual([]);
   });
-  it("retains exact descriptor reads, output hashes, members and unavailable runtime evidence", () => {
-    expect(descriptors.filter(fill => !["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `components.${leaf}`).includes(fill.slot))).toHaveLength(26);
-    // Canonical selected-source normalization changes only five output manifests.
-    expect(sha256(names.map(name => `${name}\n${sha256(readFileSync(resolve(directory, name), "utf8"))}\n`).join(""))).toBe("8aea581d901fd2479246b65615f46edd772280d79365fcb7165e33af46d2638e");
+  it("every committed descriptor joins one registered contract, reads members only, and claims no unmeasured runtime evidence", () => {
+    const filled = descriptors.map(fill => fill.slot);
+    expect(filled.filter((slot, index) => filled.indexOf(slot) !== index)).toEqual([]);
+    const findings = checkComponentProfile(profile()).findings;
     for (const doc of documents) {
       const fill = Object.values(doc.components)[0] as ComponentCheckFill;
-      expect(fill.reads.themes.every(read => /^themes\.[^.]+\.[^.]+$/.test(read)), fill.slot).toBe(true);
-      expect(doc.$extensions["com.clossys.fill"]).toMatchObject({ evidence: [], conforms: [], status: "draft" });
+      const meta = doc.$extensions["com.clossys.fill"];
+      const contract = slots.find(slot => slot.id === fill.slot);
+      expect(contract, fill.slot).toBeDefined();
+      expect(meta.slot, fill.slot).toBe(fill.slot);
+      expect(fill.root, fill.slot).toBe(contract!.contract.root);
+      expect(fill.reads.themes.filter(read => !/^themes\.[^.]+\.[^.]+$/.test(read)), fill.slot).toEqual([]);
+      if (contract!.contract.members.mode === "closed") expect(fill.members.filter(member => !(contract!.contract.members as { names: readonly string[] }).names.includes(member)), fill.slot).toEqual([]);
+      // No observation is supplied, so no fill is conformant or evidenced and each one is held on missing runtime evidence.
+      expect({ evidence: meta.evidence, conforms: meta.conforms, status: meta.status }, fill.slot).toEqual({ evidence: [], conforms: [], status: "draft" });
+      for (const code of ["K5", "K6", "K10"]) expect(findings.some(f => f.code === code && f.subject === fill.slot), `${fill.slot} ${code}`).toBe(true);
     }
-    for (const leaf of ["badge", "banner", "button", "progress-bar", "table"]) expect(tokenFindings(slots, [descriptors.find(fill => fill.slot === `components.${leaf}`)!]).length, leaf).toBeGreaterThan(0);
-    const toggle = descriptors.find(fill => fill.slot === "components.toggle-button")!;
-    expect(toggle.reads.themes).toContain("themes.primary.default");
-    expect(toggle.reads.themes).toContain("themes.spacing.default");
-    for (const member of ["state.pressed", "state.pending", "ground.inverse"]) expect(toggle.members).not.toContain(member);
-    const switchSlot = slots.find(slot => slot.id === "components.switch")!;
-    expect(switchSlot.contract.members.mode === "closed" && switchSlot.contract.members.names).not.toContain("state.invalid");
-    const findings = checkComponentProfile(profile()).findings;
-    for (const code of ["K1", "K4", "K5", "K6", "K7", "K10"]) expect(findings.some(f => f.code === code), code).toBe(true);
   });
-  it("keeps keyboard typography, tooltip transport and breadcrumb DEC-A blocked", () => {
+  it("every recorded output hash equals the hash of the importer's actual output", () => {
+    const result = importShadcnAriaComponents(input()), rail = importShadcnAriaRail();
+    const owned = new Set([...result.fills, ...result.composed].map(doc => doc.$extensions["com.clossys.fill"].slot));
+    for (const doc of documents) {
+      const fill = Object.values(doc.components)[0] as ComponentCheckFill & { item?: string; outputSha256: { path: string; sha256: string }[] };
+      const composed = (doc.$extensions["com.clossys.fill"].originKinds ?? []).includes("composed");
+      const leaf = fill.slot.replace(/^components\./, "");
+      const files = composed
+        ? [...JSON.parse(readFileSync(resolve(import.meta.dirname, `../catalog/rules/${fill.slot}.json`), "utf8")).files, ...result.composedFiles[leaf] ?? []]
+        : (owned.has(fill.slot) ? result.rewrites[fill.item!] : rail.rewrites[fill.item!])?.files;
+      expect(files, `${fill.slot} has no importer output`).toBeDefined();
+      expect(fill.outputSha256, `${fill.slot} recorded output hash`).toEqual(outputHashes(files!));
+    }
+  });
+  it("a DEC-A blocked rewrite stays blocked while its blocking rule holds, and a clean rewrite materializes only its hashed bytes", () => {
     const result = importShadcnAriaComponents(input());
-    const keyboard = result.rewrites.kbd!;
-    expect(slots.find(slot => slot.id === "components.keyboard")!.contract.allowedReads.themes).toContain("themes.font-mono");
-    expect(keyboard.reads.themes.every(read => /^themes\.[^.]+\.[^.]+$/.test(read))).toBe(true);
-    expect(result.rewrites.tooltip!.reads.themes.some(read => read.startsWith("themes.animate-"))).toBe(false);
-    const tooltipSource = result.rewrites.tooltip!.files.find(file => file.path === "components/tooltip/tooltip.tsx")!.content;
-    expect(tooltipSource).toMatch(/delay\s*=\s*0/);
-    expect(tooltipSource).not.toMatch(/closeDelay\s*=/);
-    expect(result.rewrites.breadcrumb!.issues.filter(issue => issue.code === "K7")).toHaveLength(2);
-    for (const item of ["kbd", "tooltip", "breadcrumb", "select", "combobox", "tabs", "calendar"]) expect(() => materializeShadcnComponent(result, item), item).toThrow(/unresolved/);
-    const changed = structuredClone(result); const rewrite = changed.rewrites.collapsible!; rewrite.files[0]!.content += " ";
-    expect(() => materializeShadcnComponent(changed, "collapsible")).toThrow(/output hash differs/);
+    for (const [item, rewrite] of Object.entries(result.rewrites)) {
+      expect(rewrite.outputSha256, item).toEqual(outputHashes(rewrite.files));
+      if (rewrite.issues.length) {
+        expect(() => materializeShadcnComponent(result, item), `${item} is blocked by ${rewrite.issues.map(issue => issue.code).join(", ")}`).toThrow(/unresolved/);
+        continue;
+      }
+      expect(materializeShadcnComponent(result, item), item).toEqual(rewrite.files);
+      const blocked = structuredClone(result); blocked.rewrites[item]!.issues.push({ code: "K7", file: rewrite.files[0]!.path, value: "glyph", message: "Unbound icon artwork remains" });
+      expect(() => materializeShadcnComponent(blocked, item), `${item} with a blocker`).toThrow(/unresolved/);
+      const changed = structuredClone(result); changed.rewrites[item]!.files[0]!.content += " ";
+      expect(() => materializeShadcnComponent(changed, item), `${item} with a changed byte`).toThrow(/output hash differs/);
+    }
+    // A filled descriptor carries exactly its rewrite's blockers.
+    for (const doc of result.fills) {
+      const fill = Object.values(doc.components)[0]!;
+      expect(fill.blockers, fill.slot).toEqual(result.rewrites[fill.item]!.issues);
+    }
+    // The committed coverage receipt keeps each item blocked exactly while the importer still finds its blockers.
+    const committed = JSON.parse(readFileSync(resolve(directory, "components.coverage.json"), "utf8")) as { receipt: { item: string; slot: string; status: string; issues: unknown[] }[] };
+    expect(committed.receipt.map(row => `${row.item} ${row.slot}`)).toEqual(result.receipt.map(row => `${row.item} ${row.slot}`));
+    for (const row of result.receipt) {
+      const recorded = committed.receipt.find(entry => entry.item === row.item && entry.slot === row.slot)!;
+      expect({ status: recorded.status, issues: recorded.issues }, `${row.item} receipt`).toEqual({ status: row.status, issues: row.issues });
+    }
   });
 });
