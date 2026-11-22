@@ -5,11 +5,15 @@ import { describe, expect, it } from "vitest";
 import ts from "typescript";
 import { importShadcnAriaComponents, SHADCN_COMPONENT_ITEMS } from "./shadcn-aria-components.js";
 import { rewriteShadcnAria } from "./rewrite.js";
+import { classRead, packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
 import { compiledCssDeclaredSources, generateCompiledCss } from "../compiled-css/generate.js";
 import { addDeclaredFallbacks } from "../compiled-css/declared-fallbacks.js";
 import type { ShadcnComponentInput } from "./shadcn-aria-components.js";
 import { dialogExecutableSource } from "./dialog-executable-profile.js";
 import { menuExecutableSource } from "./menu-executable-profile.js";
+
+/** A read inside a class, with the package reader's declared value as its fallback (D5-2b). */
+const read = (name: string) => classRead(packageDeclaredFallbackReader(), name);
 
 /** `css` as the generator writes it: every bare token read carries its declared fallback. */
 const declaredRead = (css: string) => addDeclaredFallbacks(css, compiledCssDeclaredSources(resolve(import.meta.dirname, "../../styles")));
@@ -82,7 +86,7 @@ function pinnedInput(): ShadcnComponentInput {
 }
 
 const rewrite = (content: string, styles = "") => rewriteShadcnAria({ item: "example", leaf: "button", files: [{ path: "example.tsx", content }], styles, leafByItem: { button: "button", input: "text-field" } });
-describe("shadcn-aria-rewrite@1", () => {
+describe("shadcn-aria-rewrite@3", () => {
   it.each(["button", "select", "calendar", "combobox"])("matches the pinned %s byte golden and parses rewritten TSX", item => {
     const result = importShadcnAriaComponents(pinnedInput()).rewrites[item]!;
     expect(JSON.stringify(result, null, 2) + "\n").toBe(readFileSync(resolve(import.meta.dirname, `__fixtures__/shadcn-aria/${item === "combobox" ? "combo-box" : item}.golden.json`), "utf8"));
@@ -445,12 +449,14 @@ describe("shadcn-aria-rewrite@1", () => {
 
   it("binds exact structural and geometry families without admitting unknown design values", async () => {
     const separator = rewrite('const value = "border-collapse max-w-[calc(100%-2rem)] rounded-[4px] min-w-[96px]"');
-    expect(separator.files[0]!.content).toContain("border-collapse max-w-[calc(100%-var(--spacing-2xl))] rounded-(--radius-default) min-w-(--spacing-5xl)");
+    expect(separator.files[0]!.content).toContain(`border-collapse max-w-[calc(100%-${read("--spacing-2xl")})] rounded-(--radius-default) min-w-(--spacing-5xl)`);
     expect(separator.reads.themes).toEqual(["themes.radius.default", "themes.spacing.default"]);
     expect(separator.issues).toEqual([]);
     expect(rewrite('const value = "rounded-[5px] min-w-[97px] border-unbound"').issues).toHaveLength(3);
-    const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, "../../styles"), candidates: ["border-collapse", "max-w-[calc(100%-var(--spacing-2xl))]", "rounded-(--radius-default)", "min-w-(--spacing-5xl)"] });
-    for (const declaration of ["border-collapse: collapse", "max-width: calc(100% - var(--spacing-2xl))", "border-radius: var(--radius-default)", "min-width: var(--spacing-5xl)"]) expect(css).toContain(declaredRead(declaration));
+    const { css } = await generateCompiledCss({ stylesDir: resolve(import.meta.dirname, "../../styles"), candidates: ["border-collapse", `max-w-[calc(100%-${read("--spacing-2xl")})]`, "rounded-(--radius-default)", "min-w-(--spacing-5xl)"] });
+    // The arbitrary value keeps the reader's fallback as written; the generator gives each bare read its declared one.
+    expect(css).toContain(`max-width: calc(100% - ${read("--spacing-2xl").replace(/_/g, " ")})`);
+    for (const declaration of ["border-collapse: collapse", "border-radius: var(--radius-default)", "min-width: var(--spacing-5xl)"]) expect(css).toContain(declaredRead(declaration));
   });
   it("preserves decorative ring semantics without a deleted width read", async () => {
     const avatar = rewriteShadcnAria({item:"avatar",leaf:"avatar",files:[{path:"avatar.tsx",content:'const value="ring-1 hover:ring-2 ring-3"'}],styles:"",leafByItem:{}});
@@ -468,7 +474,7 @@ describe("shadcn-aria-rewrite@1", () => {
     const styles=".cn-card { @apply gap-(--card-spacing) [--card-spacing:--spacing(4)] data-[size=sm]:[--card-spacing:--spacing(3)]; } .cn-card-content { @apply px-(--card-spacing); }";
     const run=(sheet:string)=>rewriteShadcnAria({item:"card",leaf:"card",files:[{path:"card.tsx",content:'const root="cn-card"; const child="cn-card-content"'}],styles:sheet,leafByItem:{}});
     const result=run(styles);
-    expect(result.files[0]!.content).toContain("[--card-spacing:var(--spacing-lg)] data-[size=sm]:[--card-spacing:var(--spacing-md)]");
+    expect(result.files[0]!.content).toContain(`[--card-spacing:${read("--spacing-lg")}] data-[size=sm]:[--card-spacing:${read("--spacing-md")}]`);
     expect(result.files[0]!.content).toContain("px-(--card-spacing)");
     expect(result.reads.themes).toEqual(["themes.spacing.default"]);
     expect(result.issues).toEqual([]);

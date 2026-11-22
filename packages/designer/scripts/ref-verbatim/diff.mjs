@@ -57,8 +57,23 @@ const prefixOf = (utility) => {
   return TOKEN_PREFIXES.find((p) => bare === p || bare.startsWith(`${p}-`));
 };
 
-/** H-TOKEN: one utility replaced by a same-prefix theme-variable utility. */
-export function tokenSwapAllowed(from, to, themeVars = []) {
+/**
+ * The fallback a theme-variable read may carry: exactly the value `fallback(name)` (the declared-source
+ * reader, `src/importers/declared-fallback-reader.ts`) returns, spelled as a class spells it (spaces as `_`).
+ * No `fallback`, a refused name or any other value is not a permitted swap.
+ */
+function declaredFallbackRead(name, written, fallback) {
+  if (typeof fallback !== "function") return false;
+  let value;
+  try { value = fallback(name); } catch { return false; }
+  return typeof value === "string" && value.trim() !== "" && written === value.replace(/ /g, "_");
+}
+
+/**
+ * H-TOKEN: one utility replaced by a same-prefix theme-variable utility. The read is `(--x)` / `[var(--x)]`,
+ * or `(--x,<v>)` / `[var(--x,<v>)]` where `<v>` is exactly the declared value `fallback` returns for `--x`.
+ */
+export function tokenSwapAllowed(from, to, themeVars = [], fallback) {
   const a = splitVariant(from);
   const b = splitVariant(to);
   if (a.variants !== b.variants) return false;
@@ -66,6 +81,8 @@ export function tokenSwapAllowed(from, to, themeVars = []) {
   if (!prefix || prefixOf(b.utility) !== prefix) return false;
   const value = b.utility.replace(/^!/, "").slice(prefix.length + 1).replace(/\/[0-9.]+$|\/\[[^\]]+\]$|\/\([^)]+\)$/, "");
   if (/^\(--[a-zA-Z0-9-]+\)$/.test(value) || /^\[var\(--[a-zA-Z0-9-]+\)\]$/.test(value)) return true;
+  const read = /^\((--[a-zA-Z0-9-]+),(.+)\)$/.exec(value) ?? /^\[var\((--[a-zA-Z0-9-]+),(.+)\)\]$/.exec(value);
+  if (read) return declaredFallbackRead(read[1], read[2], fallback);
   if (!value) return false;
   const vars = new Set(themeVars);
   const candidates = [`--${value}`, ...(TOKEN_VAR_FAMILIES[prefix] ?? []).map((family) => `--${family}-${value}`)];
@@ -101,7 +118,7 @@ export const CN_MODULES = Object.freeze(["cn", "@/lib/utils"]);
  * `utils` is the consumer's components.json utils alias, a further module the payload's `cn` may come from.
  * @returns {{ hunks: Array<{ rule: string, ok: boolean, ref: object|null, file: object|null, detail: string }> }}
  */
-export function diffSources(refText, refName, fileText, fileName, { themeVars = [], linkComponents = [], utils } = {}) {
+export function diffSources(refText, refName, fileText, fileName, { themeVars = [], linkComponents = [], utils, fallback } = {}) {
   const ts = loadTypeScript();
   const A = parse(ts, refText, refName);
   const B = parse(ts, fileText, fileName);
@@ -416,7 +433,7 @@ export function diffSources(refText, refName, fileText, fileName, { themeVars = 
       const swaps = [];
       for (let k = 0; k < ta.length; k++) {
         if (ta[k] === tb[k]) continue;
-        if (!tokenSwapAllowed(ta[k], tb[k], themeVars)) return hunk("REF-HUNK-CLASS", a, b, `class ${JSON.stringify(ta[k])} -> ${JSON.stringify(tb[k])} is not a same-prefix theme-token swap`);
+        if (!tokenSwapAllowed(ta[k], tb[k], themeVars, fallback)) return hunk("REF-HUNK-CLASS", a, b, `class ${JSON.stringify(ta[k])} -> ${JSON.stringify(tb[k])} is not a same-prefix theme-token swap`);
         swaps.push(`${ta[k]} -> ${tb[k]}`);
       }
       return hunk("H-TOKEN", a, b, swaps.join(", "));

@@ -75,11 +75,11 @@
         },
         {
           "path": "components/field/stock/field.tsx",
-          "sha256": "c29a3cfd05884cdb8ada1950d78c4619ee8dbb3f90c845d78f4428867391a05d"
+          "sha256": "54914e450246a620506dc7f49b6a32baaa968a4b862030c08a8cc49c3b3a90bf"
         },
         {
           "path": "components/field/stock/label.tsx",
-          "sha256": "043e20662797d607c5dce9b82b4fdb60c86a4c61b68861e9133266c50480b8d1"
+          "sha256": "a1fa252b4e0aa5b5a3aca8ca09cc5a0e6011363eef23b2aeaa8d9e399adada28"
         },
         {
           "path": "components/field/stock/utils.ts",
@@ -87,7 +87,7 @@
         },
         {
           "path": "notices/field.md",
-          "sha256": "51312ab005db37a08ff64b53764df2692410de8726e8774d9c31ab7b097860a5"
+          "sha256": "e0c1642a8897af6b8e00f54a28e0f8e8c3dc03e8158f6059dd0516eb79fc729b"
         }
       ],
       "propMap": {

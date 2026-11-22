@@ -1,17 +1,18 @@
 import { sha256 } from "../catalog-core/digest.js";
 import type { SourceFile } from "./rewrite.js";
+import { classFallback, type DeclaredFallbackReader } from "./declared-fallback-reader.js";
 
 // Exact normalized G1 entries. Raw upstream pins remain authenticated separately.
 const entries: Readonly<Record<string, string>> = {
-  "components/select/select.tsx": "2c663da6169d3ec8c13e9800ccbd29d16ab9bec9da69e1619a90ccfd5adf3fa1",
-  "components/calendar/calendar.tsx": "3be5912413b4434e4ed7581fb564fa3f25e321b8118dd4bb0af66bc293eb943d",
+  "components/select/select.tsx": "fdaf9d8b902e62f5368898abd63144286533bcad856e563821684a3754feae2d",
+  "components/calendar/calendar.tsx": "c31c0d7b5a2053c87f42c929812daeb1710eaa6e25c169dd30ec77a02fd21e73",
 };
 /**
  * Bounded caption adapter; it resolves no style finding or runtime observation.
  * All original K4 tuples remain blockers until independently measured bindings
  * or an explicitly accepted restyle can account for each exact design value.
  */
-export function selectedCaptionSource(file: SourceFile): SourceFile {
+export function selectedCaptionSource(file: SourceFile, reader: DeclaredFallbackReader): SourceFile {
   const expected = entries[file.path];
   if (!expected) return file;
   if (sha256(file.content) !== expected) throw new Error("selected-caption: normalized source receipt differs");
@@ -29,7 +30,10 @@ export function selectedCaptionSource(file: SourceFile): SourceFile {
   trigger = trigger.replace('className={cn(', 'className={composeRenderProps(className, (className) => cn(').replace('        className\n      )}', '        className\n      ))}');
   // Every inherited rule requires absence of an explicit trigger size. An
   // explicit trigger size remains an override, including under a size="lg" root.
-  trigger = trigger.replace('data-[size=default]:h-(--ui-control-h-md,calc(var(--spacing)*8))', 'h-(--ui-control-h-md,calc(var(--spacing)*8)) group-data-[size=sm]/select:not-data-[size]:h-(--ui-control-h-sm,calc(var(--spacing)*7)) group-data-[size=lg]/select:not-data-[size]:h-(--ui-control-h-lg,calc(var(--spacing)*9)) group-data-[size=sm]/select:not-data-[size]:rounded-(--radius-control) data-[size=default]:h-(--ui-control-h-md,calc(var(--spacing)*8))');
+  // Each control height reads the reader's declared value, as the rewrite's defaulted style reads do.
+  const height = (name: string): string => `h-(${name},${classFallback(reader, name)})`;
+  const md = height("--ui-control-h-md");
+  trigger = trigger.replace(`data-[size=default]:${md}`, `${md} group-data-[size=sm]/select:not-data-[size]:${height("--ui-control-h-sm")} group-data-[size=lg]/select:not-data-[size]:${height("--ui-control-h-lg")} group-data-[size=sm]/select:not-data-[size]:rounded-(--radius-control) data-[size=default]:${md}`);
   content = content.slice(0, start) + trigger + content.slice(end);
   return { ...file, content };
 }

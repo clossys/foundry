@@ -141,7 +141,7 @@
         ]
       },
       "notice": "notices/SHADCN-ARIA-RAIL.md",
-      "transform": "shadcn-aria-rewrite@2",
+      "transform": "shadcn-aria-rewrite@4",
       "item": "command",
       "deps": [
         {
@@ -185,7 +185,7 @@
       "outputSha256": [
         {
           "path": "components/_parts/rail-button/button.tsx",
-          "sha256": "599cc0e8705180e233b0816ae371a1cfebb68a21404f613ba2c676e73cac2368"
+          "sha256": "6466df81a6c34e176ddf656484d23a9b1c044e419cff3bafcc8e208c671e6451"
         },
         {
           "path": "components/_parts/rail-button/index.ts",
@@ -193,7 +193,7 @@
         },
         {
           "path": "components/_parts/rail-dialog/dialog.tsx",
-          "sha256": "b45b24d6614a08af4e27d1ffb139fb21164cb270efa3a1a2634eac0b5a0bd00a"
+          "sha256": "91b2188d543c0725d1eb27a4a457e72406a0577fb261fbd468b78ca01c75565c"
         },
         {
           "path": "components/_parts/rail-dialog/index.ts",
@@ -241,7 +241,7 @@
         },
         {
           "path": "notices/SHADCN-ARIA-RAIL.md",
-          "sha256": "0622dbb67cbca61b6c160be781485d59b3b51a49cdf5bae0132e17a0ecbfe42c"
+          "sha256": "ef2a475ab63e8e936989c5fafffa578773e2d97127c46ee47d032ae9c1277b3f"
         }
       ],
       "blockers": [],

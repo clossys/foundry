@@ -6,6 +6,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { rewriteShadcnAria } from "./rewrite.js";
+import { classFallback, packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
 import { compiledCssDeclaredSources, generateCompiledCss } from "../compiled-css/generate.js";
 import { addDeclaredFallbacks } from "../compiled-css/declared-fallbacks.js";
 import slots from "../catalog/slots/components.json" with { type: "json" };
@@ -54,7 +55,7 @@ describe("six pinned control evidence surfaces", () => {
     expect(fill.reads.themes).toContain("themes.ring.default");
     expect(fill.reads.themes.some(read => /control-size|focus-outline/.test(read))).toBe(false);
     const source = result.rewrites["radio-group"]!.files.find(file => file.path === "components/radio-group/radio-group.tsx")!.content;
-    expect(source).toContain("size-(--ui-control-mark,calc(var(--spacing)*4))");
+    expect(source).toContain(`size-(--ui-control-mark,${classFallback(packageDeclaredFallbackReader(), "--ui-control-mark")})`);
     expect(slots.find(slot => slot.id === "components.radio-group")!.contract.allowedReads.themes).toContain("themes.ring");
   });
   it("partitions every closed contract into source-backed members and explicit gaps", () => {

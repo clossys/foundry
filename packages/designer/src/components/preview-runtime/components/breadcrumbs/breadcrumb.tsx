@@ -60,7 +60,7 @@ function BreadcrumbItem({
               data-slot="breadcrumb-separator"
               role="presentation"
               aria-hidden="true"
-              className={cn("[&>svg]:size-(--ui-control-switch-thumb,calc(var(--spacing)*3.5))", separatorClassName)}
+              className={cn("[&>svg]:size-(--ui-control-switch-thumb,14px)", separatorClassName)}
             >
               <LibraryIcon asset="assets.icon-chevron-right" decorative className="" />
             </span>
@@ -105,7 +105,7 @@ function BreadcrumbEllipsis({
       role="presentation"
       aria-hidden="true"
       className={cn(
-        "size-[var(--spacing-xl)] [&>svg]:size-(--spacing-lg,calc(var(--spacing)*4)) flex items-center justify-center",
+        "size-[var(--spacing-xl,24px)] [&>svg]:size-(--spacing-lg,16px) flex items-center justify-center",
         className
       )}
       {...props}

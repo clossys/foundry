@@ -19,7 +19,7 @@ export function toggleExecutableSource(item: keyof typeof sourceHashes, file: So
     replace('  size,\n  spacing = 2,', '  size,\n  style,\n  spacing = 2,');
     replace('}: Omit<ToggleButtonGroupProps, "children"> &', '}: Omit<React.ComponentPropsWithRef<typeof ToggleGroupPrimitive>, "children"> &');
     replace('    children?: React.ReactNode', '    children?: ToggleButtonGroupProps["children"]');
-    replace('{ "--gap": `calc(var(--spacing) * ${spacing})` }', '{ ...style, "--gap": `calc(var(--spacing) * ${spacing})` }');
+    replace('{ "--gap": ', '{ ...style, "--gap": ');
     replace('      className={cn(\n        "cn-toggle-group group', '      className={composeRenderProps(className, (className) => cn(\n        "cn-toggle-group group');
     replace('        className\n      )}\n      {...props}\n    >\n      <ToggleGroupContext.Provider', '        className\n      ))}\n      {...props}\n    >\n      <ToggleGroupContext.Provider');
     replace('      <ToggleGroupContext.Provider\n', '      {composeRenderProps(children, (children) => <ToggleGroupContext.Provider\n');

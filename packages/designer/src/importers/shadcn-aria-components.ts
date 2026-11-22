@@ -13,6 +13,7 @@ import { stableStringify } from "../catalog-core/stable.js";
 import { componentRacDeclaration } from "./component-rac.js";
 import { rewriteShadcnAria, SHADCN_BUTTON_MEMBERS, type RewriteIssue, type RewriteNote, type RewriteResult, type SourceFile } from "./rewrite.js";
 import { normalizeSelectedSource } from "./normalize-selected-source.js";
+import { alignImportedReads, assertNoBareReads, packageDeclaredFallbackReader, type DeclaredFallbackReader } from "./declared-fallback-reader.js";
 import { selectedCaptionSource, selectedCaptionMembers } from "./selected-caption-profile.js";
 import { dialogExecutableSource, dialogExecutableMembers } from "./dialog-executable-profile.js";
 import { menuExecutableSource, menuExecutableMembers } from "./menu-executable-profile.js";
@@ -30,6 +31,8 @@ export interface ShadcnRegistryItem {
 export interface ShadcnComponentInput {
   items: readonly ShadcnRegistryItem[]; styles: SourceFile; notice: SourceFile;
   slots?: readonly ComponentSlot[];
+  /** Where every fallback the import writes comes from; the package's declared values when absent. */
+  reader?: DeclaredFallbackReader;
 }
 export interface ShadcnItemReceipt {
   item: string; slot: string;
@@ -40,7 +43,7 @@ export interface ShadcnItemReceipt {
 export interface ShadcnComponentFillDoc {
   $extensions: { "com.clossys.fill": FillMeta };
   components: Readonly<Record<string, ComponentCheckFill & {
-    transform: "shadcn-aria-rewrite@1"; item: string;
+    transform: "shadcn-aria-rewrite@3"; item: string;
     secondaryExports?: ComponentCandidate["secondaryExports"];
     outputSha256: RewriteResult["outputSha256"];
     blockers: readonly RewriteIssue[];
@@ -72,12 +75,12 @@ const SHADCN_COMPOSED_TEMPLATES: Readonly<Record<string, ComposedTemplate>> = {
 };
 /** Stock items a composed leaf wraps: rewritten as one leaf, relocated under `components/<leaf>/stock/`. */
 export interface ShadcnComposedStock { files: readonly SourceFile[]; themes: readonly string[]; components: readonly string[]; issues: readonly RewriteIssue[] }
-function composedStock(rule: ShadcnComposeRule, items: ReadonlyMap<string, ShadcnRegistryItem>, styles: string, notice: string): ShadcnComposedStock {
+function composedStock(rule: ShadcnComposeRule, items: ReadonlyMap<string, ShadcnRegistryItem>, styles: string, notice: string, reader: DeclaredFallbackReader): ShadcnComposedStock {
   const own = new Set(rule.items), leafByItem = Object.fromEntries(Object.entries(SHADCN_COMPONENT_ITEMS).filter(([item]) => !own.has(item)));
   const files: SourceFile[] = [], themes: string[] = [], components: string[] = [], issues: RewriteIssue[] = [];
   for (const name of rule.items!) {
     const original = items.get(name)!.files[0]!;
-    const result = rewriteShadcnAria({ item: name, leaf: rule.leaf, files: [original], styles, leafByItem, styleDefaults: true });
+    const result = rewriteShadcnAria({ item: name, leaf: rule.leaf, files: [original], styles, leafByItem, styleDefaults: true, reader });
     issues.push(...result.issues); themes.push(...result.reads.themes); components.push(...result.reads.components);
     for (const file of result.files) {
       const bound = bindSiblingLeafModules(normalizeSelectedSource(file).content, leafByItem);
@@ -88,13 +91,15 @@ function composedStock(rule: ShadcnComposeRule, items: ReadonlyMap<string, Shadc
         if (target === "utils" || own.has(target)) return `${before}./${target}${after}`;
         issues.push({ code: "K9", file: original.path, value: target, message: "Composed stock part is not a row item" }); return all;
       });
-      files.push({ path: `components/${rule.leaf}/stock/${file.path.split("/").at(-1)}`, content });
+      const stockFile = { path: `components/${rule.leaf}/stock/${file.path.split("/").at(-1)}`, content: alignImportedReads(content, reader) };
+      assertNoBareReads(stockFile);
+      files.push(stockFile);
     }
   }
   const stockComponents = sorted(components);
   for (const leaf of stockComponents) if (!rule.constituents.includes(leaf.replace(/^components\./, ""))) issues.push({ code: "K9", file: rule.leaf, value: leaf, message: "Stock item reads a leaf the compose rule does not name" });
   files.push({ path: `components/${rule.leaf}/stock/utils.ts`, content: utils });
-  files.push({ path: `notices/${rule.leaf}.md`, content: `# Third-party notice\n\nSource: ${SHADCN_ARIA_COMPONENT_PIN.url}\nCommit: ${SHADCN_ARIA_COMPONENT_PIN.commit}\nTransform: shadcn-aria-rewrite@1\nItems: ${rule.items!.join(", ")} (components/${rule.leaf}/stock/), wired by the owned components/${rule.leaf}/${rule.leaf}.tsx\n\n${notice}` });
+  files.push({ path: `notices/${rule.leaf}.md`, content: `# Third-party notice\n\nSource: ${SHADCN_ARIA_COMPONENT_PIN.url}\nCommit: ${SHADCN_ARIA_COMPONENT_PIN.commit}\nTransform: shadcn-aria-rewrite@3\nItems: ${rule.items!.join(", ")} (components/${rule.leaf}/stock/), wired by the owned components/${rule.leaf}/${rule.leaf}.tsx\n\n${notice}` });
   return { files: files.sort((a, b) => a.path.localeCompare(b.path)), themes: sorted(themes), components: stockComponents, issues };
 }
 function composedTemplate(row: ShadcnComposeReceipt, slot: ComponentSlot, stock?: ShadcnComposedStock): ShadcnComposedFillDoc | undefined {
@@ -432,6 +437,7 @@ export function bindSiblingLeafModules(content: string, leafByItem: Readonly<Rec
 export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnComponentImport {
   if (input.styles.path !== STYLE || input.notice.path !== "LICENSE.md") throw new Error("shadcn-components: missing style or licence input");
   verifyShadcnSource(input.styles); verifyShadcnSource(input.notice);
+  const reader = input.reader ?? packageDeclaredFallbackReader();
   const items = new Map<string, ShadcnRegistryItem>();
   for (const item of input.items) {
     if (!/^[a-z][a-z0-9-]*$/.test(item.name) || items.has(item.name) || item.commit !== SHADCN_ARIA_COMPONENT_PIN.commit || item.license !== "MIT") throw new Error("shadcn-components: invalid item identity, pin or licence");
@@ -480,16 +486,18 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     // pinned provenance, but its dialog/input-group imports never ship.
     if (command) verifyShadcnSource(command);
     const selected = name === "dialog" ? dialogExecutableSource(original) : name === "dropdown-menu" ? menuExecutableSource(original, command!) : name === "toggle" || name === "toggle-group" ? toggleExecutableSource(name, original) : original;
-    const aria = rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS, styleDefaults: true });
+    const aria = rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS, styleDefaults: true, reader });
     const result: RewriteResult = name === "tooltip" ? { ...aria, reads: { ...aria.reads, themes: sorted([...aria.reads.themes, ...tooltipExecutableReads]) } } : aria;
     const files: SourceFile[] = result.files.map(file => {
       const normalized = normalizeSelectedSource(name === "calendar" && file.path === "components/calendar/calendar.tsx" ? { ...file, content: calendarContextSource(file.content) } : file);
-      const received = name === "tooltip" && file.path === "components/tooltip/tooltip.tsx" ? tooltipExecutableSource(normalized) : ["select", "calendar"].includes(name) ? selectedCaptionSource(normalized) : normalized;
+      const received = name === "tooltip" && file.path === "components/tooltip/tooltip.tsx" ? tooltipExecutableSource(normalized) : ["select", "calendar"].includes(name) ? selectedCaptionSource(normalized, reader) : normalized;
       const bound = bindSiblingLeafModules(received.content, SHADCN_COMPONENT_ITEMS);
       for (const leaf of bound.ambiguous) closureIssues.push({ code: "K9", file: file.path, value: leaf, message: "Sibling leaf module is ambiguous" });
-      return { ...received, content: bound.content };
+      const aligned = { ...received, content: alignImportedReads(bound.content, reader) };
+      assertNoBareReads(aligned);
+      return aligned;
     });
-    files.push({ path: adapter.notice, content: `# Third-party notice\n\nSource: ${SHADCN_ARIA_COMPONENT_PIN.url}\nCommit: ${SHADCN_ARIA_COMPONENT_PIN.commit}\nTransform: shadcn-aria-rewrite@1\n\n${input.notice.content}` });
+    files.push({ path: adapter.notice, content: `# Third-party notice\n\nSource: ${SHADCN_ARIA_COMPONENT_PIN.url}\nCommit: ${SHADCN_ARIA_COMPONENT_PIN.commit}\nTransform: shadcn-aria-rewrite@3\n\n${input.notice.content}` });
     if (result.parts.includes("utils")) files.push({ path: "components/_parts/utils/index.ts", content: utils });
     // The consumer's emitter owns every `components/<leaf>/index.ts` entrypoint, so no leaf barrel is
     // materialized here. A private part re-exports an explicit name list; one without a list is a blocker,
@@ -520,7 +528,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     const descriptor: ShadcnComponentFillDoc["components"][string] = {
       slot: slot.id, source: SOURCE, root: slot.contract.root, members, props: name === "calendar" ? ["id", "className", "style", "children", "aria-label", "aria-labelledby", "value", "defaultValue", "onChange", "isDisabled", "isReadOnly", "isInvalid", "minValue", "maxValue", "defaultFocusedValue", "focusedValue", "onFocusChange", "isDateUnavailable", "firstDayOfWeek", "numberOfMonths", "buttonVariant", "captionLayout", "showWeekNumber", "headerFormat", "renderCell"] : name === "tooltip" ? [...tooltipExecutableProps] : [], propMap, reads, composes,
       impl,
-      license: "MIT", pin, notice: adapter.notice, transform: "shadcn-aria-rewrite@1", item: name,
+      license: "MIT", pin, notice: adapter.notice, transform: "shadcn-aria-rewrite@3", item: name,
       deps: [...npmDeps.filter(dep => dep.name === "react" || dep.name === "react-aria-components" && imports(original.content).length > 0 || dep.name === "class-variance-authority" && [...closure.values()].some(file => file.content.includes('from "class-variance-authority"')) || ["clsx", "tailwind-merge"].includes(dep.name)),
         ...sorted([...closure.values()].flatMap(file => dependencies(file.content))).filter(dep => !result.contextualInputs?.includes(dep)).map(dep => ({ name: dep, version: SHADCN_ARIA_COMPONENT_PIN.commit, license: "MIT", registryItem: dep, ...(SHADCN_COMPONENT_ITEMS[dep] ? { slot: `components.${SHADCN_COMPONENT_ITEMS[dep]}` } : {}) }))],
       parts: result.parts.map(item => ({ item })), outputSha256: rewritten.outputSha256, blockers: rewritten.issues,
@@ -542,7 +550,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
   const stock = new Map<string, ShadcnComposedStock>();
   const rules = SHADCN_COMPOSE_RULES.map(rule => {
     if (rule.blocker || !rule.items?.length || !SHADCN_COMPOSED_TEMPLATES[rule.leaf] || rule.items.some(item => !items.get(item)?.files.length)) return rule;
-    const built = composedStock(rule, items, input.styles.content, input.notice.content);
+    const built = composedStock(rule, items, input.styles.content, input.notice.content, reader);
     if (built.issues.length) return { ...rule, blocker: `K1: stock rewrite issues ${built.issues.map(issue => `${issue.code} ${issue.value}`).join(", ")}` };
     stock.set(rule.leaf, built); return rule;
   });

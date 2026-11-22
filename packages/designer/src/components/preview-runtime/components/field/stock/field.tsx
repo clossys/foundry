@@ -37,7 +37,7 @@ function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="field-group"
       className={cn(
-        "gap-[var(--spacing-xl)] data-[slot=checkbox-group]:gap-(--spacing-md) *:data-[slot=field-group]:gap-(--spacing-lg) group/field-group @container/field-group flex w-full flex-col",
+        "gap-[var(--spacing-xl,24px)] data-[slot=checkbox-group]:gap-(--spacing-md) *:data-[slot=field-group]:gap-(--spacing-lg) group/field-group @container/field-group flex w-full flex-col",
         className
       )}
       {...props}
@@ -82,7 +82,7 @@ function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="field-content"
       className={cn(
-        "gap-[var(--spacing-xs)] group/field-content flex flex-1 flex-col leading-(--leading-heading)",
+        "gap-[var(--spacing-xs,4px)] group/field-content flex flex-1 flex-col leading-(--leading-heading)",
         className
       )}
       {...props}
@@ -98,7 +98,7 @@ function FieldLabel({
     <Label
       data-slot="field-label"
       className={cn(
-        "has-data-checked:bg-(--color-action)/5 has-data-checked:border-(--color-action)/30 dark:has-data-checked:border-(--color-action)/20 dark:has-data-checked:bg-(--color-action)/10 gap-(--spacing-sm) leading-(--leading-heading) group-data-[disabled=true]/field:opacity-(--ui-alpha-disabled,50%) has-[>[data-slot=field]]:rounded-(--radius-control) has-[>[data-slot=field]]:border-(length:--ui-border-hairline,1px) has-[>[data-slot=field]]:not-has-[:disabled,[data-disabled]]:hover:bg-(--color-surface-sunken)/50 has-[>[data-slot=field]]:has-[:focus-visible]:border-(--color-focus-ring) has-[>[data-slot=field]]:has-[:focus-visible]:outline-solid has-[>[data-slot=field]]:has-[:focus-visible]:outline-(length:--ui-border-focus,3px) has-[>[data-slot=field]]:has-[:focus-visible]:outline-offset-(--ui-focus-offset) has-[>[data-slot=field]]:has-[:focus-visible]:outline-(--color-focus-ring) has-[>[data-slot=field]]:has-[:focus-visible]:outline-solid has-[>[data-slot=field]]:has-[:focus-visible]:outline-(length:--ui-border-focus,3px) has-[>[data-slot=field]]:has-[:focus-visible]:outline-offset-(--ui-focus-offset) has-[>[data-slot=field]]:has-[:focus-visible]:outline-(--color-focus-ring) *:data-[slot=field]:p-(--spacing-md) has-data-selected:bg-(--color-action)/5 has-data-selected:border-(--color-action)/30 dark:has-data-selected:border-(--color-action)/20 dark:has-data-selected:bg-(--color-action)/10 group/field-label peer/field-label flex w-fit",
+        "has-data-checked:bg-(--color-action)/5 has-data-checked:border-(--color-action)/30 dark:has-data-checked:border-(--color-action)/20 dark:has-data-checked:bg-(--color-action)/10 gap-(--spacing-sm) leading-(--leading-heading) group-data-[disabled=true]/field:opacity-(--ui-alpha-disabled,0.5) has-[>[data-slot=field]]:rounded-(--radius-control) has-[>[data-slot=field]]:border-(length:--ui-border-hairline,1px) has-[>[data-slot=field]]:not-has-[:disabled,[data-disabled]]:hover:bg-(--color-surface-sunken)/50 has-[>[data-slot=field]]:has-[:focus-visible]:border-(--color-focus-ring) has-[>[data-slot=field]]:has-[:focus-visible]:outline-solid has-[>[data-slot=field]]:has-[:focus-visible]:outline-(length:--ui-border-focus,2px) has-[>[data-slot=field]]:has-[:focus-visible]:outline-offset-(--ui-focus-offset) has-[>[data-slot=field]]:has-[:focus-visible]:outline-(--color-focus-ring) has-[>[data-slot=field]]:has-[:focus-visible]:outline-solid has-[>[data-slot=field]]:has-[:focus-visible]:outline-(length:--ui-border-focus,2px) has-[>[data-slot=field]]:has-[:focus-visible]:outline-offset-(--ui-focus-offset) has-[>[data-slot=field]]:has-[:focus-visible]:outline-(--color-focus-ring) *:data-[slot=field]:p-(--spacing-md) has-data-selected:bg-(--color-action)/5 has-data-selected:border-(--color-action)/30 dark:has-data-selected:border-(--color-action)/20 dark:has-data-selected:bg-(--color-action)/10 group/field-label peer/field-label flex w-fit",
         "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col",
         className
       )}
@@ -111,7 +111,7 @@ function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="field-label"
-      className={cn("gap-(--spacing-sm) leading-(--leading-heading) text-(length:--text-sm) font-(weight:--font-weight-medium) group-data-[disabled=true]/field:opacity-(--ui-alpha-disabled,50%) flex w-fit items-center", className)}
+      className={cn("gap-(--spacing-sm) leading-(--leading-heading) text-(length:--text-sm) font-(weight:--font-weight-medium) group-data-[disabled=true]/field:opacity-(--ui-alpha-disabled,0.5) flex w-fit items-center", className)}
       {...props}
     />
   )
@@ -143,7 +143,7 @@ function FieldSeparator({
     <div
       data-slot="field-separator"
       data-content={!!children}
-      className={cn("-my-(--spacing-sm) h-[var(--spacing-xl)] text-(length:--text-sm) group-data-[variant=outline]/field-group:-mb-(--spacing-sm) relative", className)}
+      className={cn("-my-(--spacing-sm) h-[var(--spacing-xl,24px)] text-(length:--text-sm) group-data-[variant=outline]/field-group:-mb-(--spacing-sm) relative", className)}
       {...props}
     >
       <Separator className="absolute inset-0 top-1/2" />

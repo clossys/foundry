@@ -107,8 +107,10 @@ describe("draft frame registry", () => {
     expect(original).toHaveLength(9);
     // SCROLL-1 A158/A159: exact app-shell page-module/state/progress ports and app-header actions changed; unrelated rows remain pinned.
     // foundry-build-0018 (audits 0021, 0022): site-shell consent accepts sections.consent in a named region; app-sidebar tree is components.sidebar.
+    // 8187437fd: app-sidebar composes components.navigation-tree until AppNavigation renders Sidebar; foundry-build-0032
+    // (IA audit 2026-11-16): frame copy fields; U28 9e1dbb671: frame props and contract fixtures.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("0dd31b3b64a5032211a738081310b6c8007a06c24c794a28531d4a6c143f9139");
+      .toBe("ec0d511ce84248e0db53480d1cd149fa48ae527b8b42d81d6fdaadd57073e738");
     expect(slots.find(slot => slot.id === "frames.auth-shell")).toEqual({
       id: "frames.auth-shell", layer: "frames", requires: [], status: "draft",
       contract: {
@@ -116,8 +118,10 @@ describe("draft frame registry", () => {
         landmarks: [{ slot: "main", role: "main", topLevel: true, nameRequired: false, id: "main-content", tabIndex: -1 }],
         slots: [{ id: "skip-link", required: true, accepts: "host-node" }, { id: "main", required: true, accepts: "view" }],
         members: { mode: "closed", names: [] }, statePorts: [], rendering: "server", breakpoints: [],
-        allowedReads: { themes: ["themes.spacing", "themes.background", "themes.card", "themes.popover", "themes.secondary", "themes.accent", "themes.muted", "themes.sidebar", "themes.sidebar-accent", "themes.foreground", "themes.card-foreground", "themes.popover-foreground", "themes.primary-foreground", "themes.secondary-foreground", "themes.accent-foreground", "themes.muted-foreground", "themes.sidebar-foreground", "themes.sidebar-primary-foreground", "themes.sidebar-accent-foreground", "themes.primary", "themes.radius"], assets: [] },
-        composes: [], skipTarget: "main-content",
+        allowedReads: { themes: ["themes.spacing", "themes.background", "themes.card", "themes.popover", "themes.secondary", "themes.accent", "themes.muted", "themes.sidebar", "themes.sidebar-accent", "themes.foreground", "themes.card-foreground", "themes.popover-foreground", "themes.primary-foreground", "themes.secondary-foreground", "themes.accent-foreground", "themes.muted-foreground", "themes.sidebar-foreground", "themes.sidebar-primary-foreground", "themes.sidebar-accent-foreground", "themes.primary", "themes.radius", "themes.border", "themes.ring"], assets: [] },
+        // U28 9e1dbb671: the measured composes, the children prop and the stock login-03 contract fixture.
+        composes: ["components.semantic-content", "components.link"], skipTarget: "main-content", props: ["children"],
+        fixture: { schema: "clossys.element-preview/1", fixtures: { file: "registry/aria-nova/blocks/login-03/page.tsx", export: "default", props: { children: ["DRAFT skip-link", "DRAFT main (view)"] } } },
       },
     });
     expect(placementData.nodes[0]?.children?.find(node => node.id === "frames-shells")?.leaves).toContain("frames.auth-shell");
@@ -212,7 +216,10 @@ describe("draft frame registry", () => {
   });
 
   it("keeps legacy aliases separate from the global retired registry", () => {
-    expect(globalRetired).toEqual([]);
+    // Global retirement history (catalog/retired.json) holds the owner and planner retirements of every layer; the
+    // frame legacy aliases never enter it.
+    const legacy = new Set(aliases.map(alias => alias.id));
+    expect(globalRetired.filter(entry => legacy.has(entry.id))).toEqual([]);
     expect(aliases.map(alias => [alias.id, alias.replacedBy])).toEqual([
       ["items.page-bar", "frames.app-header"], ["items.app-navigation", "frames.app-sidebar"],
       ["form.command-menu", "frames.command"], ["matrix.drawer", "frames.sheet"],

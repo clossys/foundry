@@ -12,6 +12,7 @@ import textFieldStock from "../catalog/rules/components.text-field.stock.json" w
 import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
 import { validateComponentRuleTemplate } from "../catalog-core/component-rule-validation.js";
 import { stableStringify } from "../catalog-core/stable.js";
+import { classRead, packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
 import { generatedShadcnComposedStockFiles, importShadcnAriaComponents, resolveShadcnComposeRules, SHADCN_COMPOSE_ITEMS, SHADCN_COMPOSE_MAX_DEPTH, SHADCN_COMPOSE_RULES, type ShadcnComposeRule } from "./shadcn-aria-components.js";
 
 const here = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
@@ -77,7 +78,7 @@ describe("shadcn@aria compose rules", () => {
     expect(() => validateComponentRuleTemplate(rule)).not.toThrow();
     // Mutation probe: one changed stock byte is refused by the rule receipts.
     const mutated = structuredClone(rule);
-    mutated.files = mutated.files.map(file => file.path === "components/field/stock/field.tsx" ? { ...file, content: file.content.replace("gap-[var(--spacing-xl)]", "gap-[var(--spacing-lg)]") } : file);
+    mutated.files = mutated.files.map(file => file.path === "components/field/stock/field.tsx" ? { ...file, content: file.content.replace(`gap-[${classRead(packageDeclaredFallbackReader(), "--spacing-xl")}]`, `gap-[${classRead(packageDeclaredFallbackReader(), "--spacing-lg")}]`) } : file);
     expect(mutated.files.find(file => file.path === "components/field/stock/field.tsx")!.content).not.toBe(stockField);
     expect(() => validateComponentRuleTemplate(mutated)).toThrow();
     // A changed pinned stock item byte is refused before any rewrite.

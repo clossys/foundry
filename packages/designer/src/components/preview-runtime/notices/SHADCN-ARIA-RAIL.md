@@ -2,7 +2,7 @@
 
 Source: https://github.com/shadcn-ui/ui
 Commit: 96da9cc7f1aa10580a3741664e2a77c721206c00
-Transform: shadcn-aria-rewrite@2
+Transform: shadcn-aria-rewrite@4
 
 MIT License
 

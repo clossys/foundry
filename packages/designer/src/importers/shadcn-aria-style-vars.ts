@@ -1,56 +1,53 @@
+import { classFallback, type DeclaredFallbackReader } from "./declared-fallback-reader.js";
+
 /**
  * shadcn@aria style axis (nova). Each fixed style class reads an existing
- * designer variable; the variable's fallback is the style's own value, so a
- * consumer without the designer theme renders the style unchanged and a theme
- * that sets the variable restyles every use at once.
+ * designer variable, so a theme that sets the variable restyles every use at once.
  *
- * This table is the only place these defaults are written. Rows without a
- * fallback read a variable whose own definition already carries the style's
- * value (a Tailwind theme key) or a theme colour role.
+ * No value is typed here. A row marked `defaulted` gives its read a fallback,
+ * and that fallback is the value the declared-fallback reader returns for the
+ * variable read (`declared-fallback-reader.ts`): the package's declared value
+ * for the preview graph and package output. Rows without it read a variable
+ * whose own definition already carries its value (a Tailwind theme key) or a
+ * theme colour role.
  */
 export interface ShadcnAriaStyleVar {
   /** Fixed nova class (the variant prefix is preserved by the rewrite). */
   readonly fixed: string;
   /** Existing designer variable that the rewritten class reads. */
   readonly variable: string;
-  /** The style's own value; absent when the variable already carries it. */
-  readonly fallback?: string;
+  /** The read carries the reader's declared value for its variable as fallback. */
+  readonly defaulted?: true;
 }
 
-const step = (n: string): string => `calc(var(--spacing)*${n})`;
-
 export const SHADCN_ARIA_STYLE_VARS: readonly ShadcnAriaStyleVar[] = Object.freeze([
-  { fixed: "z-50", variable: "--ui-z-modal", fallback: "50" },
-  { fixed: "duration-100", variable: "--ui-duration-fast", fallback: "100ms" },
-  { fixed: "duration-200", variable: "--ui-duration-default", fallback: "200ms" },
-  // Implicit transition timing reads Tailwind's own key, whose default is the style's.
+  { fixed: "z-50", variable: "--ui-z-modal", defaulted: true },
+  { fixed: "duration-100", variable: "--ui-duration-fast", defaulted: true },
+  { fixed: "duration-200", variable: "--ui-duration-default", defaulted: true },
+  // Implicit transition timing reads Tailwind's own key, which carries its value.
   { fixed: "transition", variable: "--default-transition-timing-function" },
-  { fixed: "opacity-50", variable: "--ui-alpha-disabled", fallback: "50%" },
-  { fixed: "ring-3", variable: "--ui-border-focus", fallback: "3px" },
+  { fixed: "opacity-50", variable: "--ui-alpha-disabled", defaulted: true },
+  { fixed: "ring-3", variable: "--ui-border-focus", defaulted: true },
   { fixed: "ring-ring/50", variable: "--color-focus-ring" },
-  { fixed: "border", variable: "--ui-border-hairline", fallback: "1px" },
-  { fixed: "h-7", variable: "--ui-control-h-sm", fallback: step("7") },
-  { fixed: "h-8", variable: "--ui-control-h-md", fallback: step("8") },
-  { fixed: "h-9", variable: "--ui-control-h-lg", fallback: step("9") },
+  { fixed: "border", variable: "--ui-border-hairline", defaulted: true },
+  { fixed: "h-7", variable: "--ui-control-h-sm", defaulted: true },
+  { fixed: "h-8", variable: "--ui-control-h-md", defaulted: true },
+  { fixed: "h-9", variable: "--ui-control-h-lg", defaulted: true },
   // Icon sizes keep their contract-readable size bindings; only the default is added.
-  { fixed: "size-3.5", variable: "--ui-control-switch-thumb", fallback: step("3.5") },
-  { fixed: "size-4", variable: "--spacing-lg", fallback: step("4") },
+  { fixed: "size-3.5", variable: "--ui-control-switch-thumb", defaulted: true },
+  { fixed: "size-4", variable: "--spacing-lg", defaulted: true },
 ]);
 
 const byFixed = new Map(SHADCN_ARIA_STYLE_VARS.map(row => [row.fixed, row]));
 
-/** The style's own value for a fixed class, if the table gives one. */
-export function shadcnAriaStyleDefault(fixed: string): string | undefined {
-  return byFixed.get(fixed)?.fallback;
-}
-
 /**
- * Tailwind v4 variable shorthand for `property`, carrying the fixed class's
- * style default: `(--x)` becomes `(--x,<default>)`; `length:` hints are kept.
+ * Tailwind v4 variable shorthand for `property`, standing in for the fixed
+ * class: `(--x)`, or `(--x,<declared value>)` when the fixed class's row is
+ * defaulted, the value read from `reader`; `length:` hints are kept.
  */
-export function shadcnAriaStyleRead(property: string, fixed: string, hint?: "length"): string {
-  const fallback = shadcnAriaStyleDefault(fixed);
-  return `(${hint ? `${hint}:` : ""}${property}${fallback === undefined ? "" : `,${fallback}`})`;
+export function shadcnAriaStyleRead(property: string, fixed: string, reader: DeclaredFallbackReader, hint?: "length"): string {
+  const fallback = byFixed.get(fixed)?.defaulted ? `,${classFallback(reader, property)}` : "";
+  return `(${hint ? `${hint}:` : ""}${property}${fallback})`;
 }
 
 /**

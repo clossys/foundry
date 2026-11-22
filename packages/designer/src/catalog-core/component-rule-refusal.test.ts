@@ -73,8 +73,10 @@ describe("component import closure refusal", () => {
   });
 });
 
-describe("component index glyph provider refusal", () => {
-  it("refuses a package fill that reads assets with no registered glyph provider", () => {
+// Owner LAD-3 (C5-DREC 8d35489c6) removed GlyphProvider: icons are lucide and a consumer icon asset reaches a leaf only
+// through the Icon adapter's glyph module, so a package fill reading an asset no longer needs a provider package.
+describe("component index without a glyph provider", () => {
+  it("emits a Fragment LibraryProvider and no GlyphProvider for a package fill that reads assets", () => {
     const input = synthetic();
     const library = applyComponentLibraryChange(input.catalog, input.library, { baseHash: componentLibraryHash(input.library), changes: [{ op: "adopt", slot: input.candidate.slot, source: input.candidate.source }] });
     const profile = resolveComponents({ catalog: input.catalog, library, values: input.check, evidence: input.check, packageExports: { "test-kit/components": ["Button"], "react-aria-components": ["Button"] } });
@@ -84,6 +86,8 @@ describe("component index glyph provider refusal", () => {
     expect(component.descriptor.pin?.package).not.toBe("@clossys/designer");
     component.reads.assets = ["assets.icon-close"];
     const glyphModule = { path: "adapters/glyphs.ts", glyphs: { "assets.icon-close": [["path", { d: "M6 6l12 12" }]] } };
-    expect(() => emitComponents(profile, ["component-index"], { glyphModule } as Parameters<typeof emitComponents>[2])).toThrow("components: registered glyph provider package is unavailable");
+    const index = emitComponents(profile, ["component-index"], { glyphModule } as Parameters<typeof emitComponents>[2]).find(file => file.path === "component-index.ts")!.content;
+    expect(index).toContain("export function LibraryProvider({ children }: { children: ReactNode }) { return createElement(Fragment, null, children); }");
+    expect(index).not.toContain("GlyphProvider");
   });
 });

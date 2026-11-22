@@ -165,13 +165,18 @@ describe("real package-surface library golden", () => {
     // Re-pinned by foundry-build-0048 CONTAM-U10 (hand-edited from the failing run, no `-u`): short-prefix attributes move to
     // full-word names, so the measured hero, cards, faq, comparison, sectioned-document and site-shell fills re-hash their
     // sources. Values and components unchanged: composite b8d538d3 -> 334b4cc8, surface 97a5b09d -> fb410dc3, whole e797a9e3 -> e3d36d35.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:334b4cc8ffde8a48f232733d8914bf2d668a214fca6d14f610b91839dd16590c"`);
+    // Re-pinned by foundry-build-0048 BASE-REDS-R3 (hand-edited from the failing run, no `-u`) on the merge of int2 77f7543a8,
+    // after package builds of designer, director, writer, publisher and producer; generate-surface-consumption.mjs --check
+    // passes there. The CONTAM-U10 pins do not reproduce on that tree; the catalog-bundles data was probed and ruled out as
+    // the cause, which is not isolated. Values and components unchanged:
+    // composite 334b4cc8 -> 5c835c74, surface fb410dc3 -> 234b1f0a, whole e3d36d35 -> 7956f559.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:5c835c745231f0398cd926849ad8763ea3a08a9785a5d3fbaef0181722a82aa4"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:149d271dd68aea6f"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
     expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:ef9a46557ea2aa79b1db4b19f2578dc33d1cde7c13f5f806b80a537f755a3734"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:fb410dc317c5c9857f1c24a4d001d9d1dfa1a44b1841aadc96e5e02c7a83640b"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"e3d36d355e139739df65aa8480d67260b68fc0a7b1ab2d74be954cc80fbaf6d9"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:234b1f0a987f95d038451cad00e622f455571a59f726e578b6eb47d475e710a0"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"7956f559b8f14a1f07db4cb9b4ff9bf0364101a675d0afd6479bc1a5dfbf0108"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

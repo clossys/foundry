@@ -164,6 +164,8 @@ export function defaults(overrides = {}) {
     linkComponents: overrides.linkComponents ?? [],
     ui: overrides.ui,
     lockfile: overrides.lockfile,
+    // The declared-source reader's value per name: the only fallback an H-TOKEN read may carry.
+    fallback: overrides.fallback,
   };
 }
 
@@ -273,7 +275,7 @@ function partParse(ts, text, file) {
   partRequire(!parsed.parseDiagnostics.length, `unparseable exact source: ${file}`);
   return parsed;
 }
-function partEditAllowed(ts, original, file, edit, config, themeVars, imports) {
+function partEditAllowed(ts, original, file, edit, config, themeVars, imports, fallback) {
   const source = partParse(ts, original, file);
   const characterOffset = byte => partDecode(Buffer.from(original).subarray(0, byte)).length;
   const a = characterOffset(edit.start), b = characterOffset(edit.endExclusive);
@@ -291,7 +293,7 @@ function partEditAllowed(ts, original, file, edit, config, themeVars, imports) {
   if (edit.kind === "token") {
     const node = nodes.find(node => ts.isStringLiteral(node) && ts.isJsxAttribute(node.parent)
       && node.parent.name.getText(source) === "className" && a > node.getStart(source) && b < node.getEnd());
-    partRequire(node && !/\s/.test(edit.from + edit.to) && tokenSwapAllowed(edit.from, edit.to, themeVars), "token edit must map one class token to a permitted semantic token");
+    partRequire(node && !/\s/.test(edit.from + edit.to) && tokenSwapAllowed(edit.from, edit.to, themeVars, fallback), "token edit must map one class token to a permitted semantic token");
     const left = original[a - 1], right = original[b];
     partRequire(/[\s"']/.test(left) && /[\s"']/.test(right), "token edit must cover a complete token");
     return;
@@ -418,7 +420,7 @@ function exactPartsCheck({ root, record, payload, codeFiles, readBytes, opts, sl
             && partNatural(edit.start) && edit.start >= offset, "unknown, empty or overlapping adaptation");
           const before = partSlice(slice, edit.start, edit.endExclusive);
           partRequire(before.equals(Buffer.from(edit.from)), "adaptation from bytes differ");
-          partEditAllowed(ts, raw, file, edit, config, record.reads?.themeVars ?? [], proof.closure.imports);
+          partEditAllowed(ts, raw, file, edit, config, record.reads?.themeVars ?? [], proof.closure.imports, opts.fallback);
           chunks.push(slice.subarray(offset, edit.start), Buffer.from(edit.to)); offset = edit.endExclusive;
         }
         chunks.push(slice.subarray(offset));
@@ -863,6 +865,7 @@ function checkVersion(root, target, options = {}, versionInput) {
         themeVars: record?.reads?.themeVars ?? [],
         linkComponents: opts.linkComponents,
         utils: config?.aliases?.utils,
+        fallback: opts.fallback,
       });
       entry.hunks = hunks;
       for (const h of hunks) {
@@ -1879,7 +1882,7 @@ const summary = (elements) => {
   return { elements: counts, files: fileCounts };
 };
 
-function main(argv) {
+function main(argv, fallback) {
   const value = (flag) => {
     const at = argv.indexOf(flag);
     return at < 0 ? undefined : argv[at + 1];
@@ -1894,6 +1897,7 @@ function main(argv) {
   const options = {
     components: value("--components") ? resolve(value("--components")) : undefined,
     baselinePath: value("--baseline") ? resolve(value("--baseline")) : undefined,
+    fallback,
   };
   let report;
   try {
@@ -1933,5 +1937,8 @@ function main(argv) {
 }
 
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  process.exitCode = main(process.argv.slice(2));
+  // The package's declared values (the built `declared-fallback-reader`); a read's fallback must be exactly one of them.
+  const { packageDeclaredFallbackReader } = await import("../dist/importers/declared-fallback-reader.js");
+  const reader = packageDeclaredFallbackReader();
+  process.exitCode = main(process.argv.slice(2), (name) => reader.fallback(name));
 }
