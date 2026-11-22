@@ -46,11 +46,11 @@ export const CHECKS = [
   defineCheck({ id: "pin-propagation", rootNpm: ["check:pin-propagation"] }),
   defineCheck({ id: "every-candidate-previewable", rootNpm: ["check:every-candidate-previewable"] }),
   defineCheck({ id: "studio", files: ["scripts/check-studio.mjs", "studio/checks/studio-origin.mjs"], npm: ["check:studio"], rootNpm: ["check"] }),
-  // A check:studio sub-check (scripts/check-studio.json) and a rules-registry rule: `clossys check --e2e`.
+  // A check:studio sub-check and a rules-registry rule: `clossys check --e2e`.
   defineCheck({ id: "e2e", npm: ["check:e2e"] }),
   // The root check's engine side-door scan, `clossys check --side-door`.
   defineCheck({ id: "engine-side-door", rootNpm: ["check:engine-side-door"] }),
-  // docs/engine.md is generated from the engine's constants; engine/doc.test.ts fails when it differs.
+  // The engine doc is generated from the engine's constants; its test fails when the doc differs.
   defineCheck({ id: "engine-doc", files: ["scripts/generate-engine-doc.mjs"], npm: ["generate:engine-doc"] }),
   // The root check's review doc freshness, `clossys review --check-doc`.
   defineCheck({ id: "review-doc", rootNpm: ["check:review-doc"] }),
