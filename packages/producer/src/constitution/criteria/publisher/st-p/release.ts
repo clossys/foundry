@@ -1,6 +1,6 @@
 /**
  * The Publisher release criterion (ST-P): a release candidate `publisher/<release slot>/candidates/<pub>-v<n>.json` is a
- * manifest Producer code computes (`clossys release <pub> --manifest`, release/manifest.ts), never a crafted record.
+ * manifest Producer code computes (`clossys publisher release <pub> --manifest`, release/manifest.ts), never a crafted record.
  * Like every kind rule it judges the candidate's view (records/slot-current.ts candidateView): the manifest content with
  * the header's source as `meta.source`. This is the part of the release certifier's criteria (release/ready.ts
  * `releaseCandidateIssues`) a pure function can decide from the view. What needs the workspace or the header (the build

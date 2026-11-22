@@ -172,7 +172,7 @@ describe("a target-format candidate is judged by the target rules", () => {
     return candidateIssues(read, agent as SlotAgent, slotId, name, bytes).map(issue => `${issue.code}: ${issue.message}`);
   }
 
-  it("clossys check gains no finding from clossys release --manifest, and the pinned release slot clears as an input", async () => {
+  it("clossys check gains no finding from clossys publisher release --manifest, and the pinned release slot clears as an input", async () => {
     const world = make();
     const now = clock();
     const consumer = join(world.root, "clossys");
@@ -247,7 +247,7 @@ describe("a target-format candidate is judged by the target rules", () => {
     const int2 = { schema: "clossys.publication/1", meta: { slot: "release.site" } };
     // A release slot holds the manifest, so a publication record there is refused as such (U39b fix r1) ...
     expect(judge(world, "publisher/release.site", "site-v1.json", int2))
-      .toEqual(["candidate-invalid: publisher/release.site is a release slot: it holds the manifest clossys release <pub> --manifest writes, not a page or publication record"]);
+      .toEqual(["candidate-invalid: publisher/release.site is a release slot: it holds the manifest clossys publisher release <pub> --manifest writes, not a page or publication record"]);
     // ... and on a publication slot the same document is still judged by every rule of the publication kind.
     const name = "site-v1.json";
     const header = buildCandidateHeader({ agent: "publisher", slotId: "publication.site", name, createdBy: cliActor("test"), createdAt: AT as never, source: { kind: "original", ref: [] } as never });

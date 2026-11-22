@@ -1,5 +1,5 @@
 /**
- * `clossys release <pub> --build|--manifest|--gates|--ready` and the ready-pin (flows.md F8), on a tmp consumer
+ * `clossys publisher release <pub> --build|--manifest|--gates|--ready` and the ready-pin (flows.md F8), on a tmp consumer
  * (release/__fixtures__/world.ts) with a stub builder. Nothing is deployed or published; the ready-pin is written only
  * in the tmp consumer.
  */
@@ -52,7 +52,7 @@ async function ready(world: ReleaseWorld, now = clock()): Promise<{ manifest: st
   return { manifest: name, entry };
 }
 
-describe("clossys release --build", () => {
+describe("clossys publisher release --build", () => {
   it("builds into clossys/.state/builds/<id8>/ and names the build by the digest of its bytes", async () => {
     const world = make();
     const result = await release(world, "--build");
@@ -81,7 +81,7 @@ describe("clossys release --build", () => {
   });
 });
 
-describe("clossys release --manifest", () => {
+describe("clossys publisher release --manifest", () => {
   it("writes publisher/release.site/candidates/site-v1.json with every pin at its full sha256 and the gate results", async () => {
     const world = make();
     await release(world, "--build");
@@ -90,7 +90,7 @@ describe("clossys release --manifest", () => {
     expect(out(result).wrote).toEqual(["publisher/release.site/candidates/site-v1.json"]);
     const manifest = latestManifest(world.root, "site")!;
     expect(manifest.issues).toEqual([]);
-    expect(manifest.header).toMatchObject({ createdBy: { actor: "code", cli: "clossys release site --manifest" }, source: { kind: "original" } });
+    expect(manifest.header).toMatchObject({ createdBy: { actor: "code", cli: "clossys publisher release site --manifest" }, source: { kind: "original" } });
     const content = manifest.content!;
     expect(content.build.id).toBe(latestBuild(world.root, "site")!.id);
     expect(Object.keys(content.pins)).toEqual(["designer/frames.site-shell", "designer/sections.hero", "director/focus.reach.geography", "director/identity.verbal.voice", "publisher/page.home", "writer/sections.hero.copy#home.hero"]);
@@ -124,7 +124,7 @@ describe("clossys release --manifest", () => {
   });
 });
 
-describe("clossys release --gates", () => {
+describe("clossys publisher release --gates", () => {
   it("passes a green release and writes the check result for the manifest", async () => {
     const world = make();
     await release(world, "--build");
@@ -293,13 +293,23 @@ describe("the ready-pin", () => {
   });
 });
 
-describe("loop.release through clossys release", () => {
+/**
+ * The loop's release steps run `clossys publisher release <pub> --<step>`; here its release step runs over the stub
+ * builder. The world's page record predates page bindings, so its publisher.check gate (actions/publisher.test.ts) is
+ * not what these tests judge: they judge that the loop calls the publisher release verb and keeps the step's output.
+ */
+const viaPublisherRelease = (argv: readonly string[], cwd: string, now: () => Date) => {
+  expect(argv.slice(0, 2)).toEqual(["publisher", "release"]);
+  return runReleaseCli(argv.slice(2), cwd, { builder: stubBuilder, now });
+};
+
+describe("loop.release through clossys publisher release", () => {
   it("runs compile, build, manifest, gates, the owner sign-off and the ready-pin, and ends on release.ready", async () => {
     const world = make();
     const now = clock();
     const run = (argv: readonly string[], cwd: string) => argv[0] === "compile"
       ? Promise.resolve({ exitCode: 0 as const, message: "compiled (stub)" })
-      : argv[0] === "release" ? runReleaseCli(argv.slice(1), cwd, { builder: stubBuilder, now }) : runCli(argv, cwd);
+      : argv[0] === "publisher" && argv[1] === "release" ? viaPublisherRelease(argv, cwd, now) : runCli(argv, cwd);
     const hooks = cliHooks(world.root, undefined, run);
     const started = await startRun(world.root, { loop: "loop.release", publication: "site" }, hooks, { now });
     expect(started.entry, started.message).toMatch(/^queue\.approve#/);
@@ -321,7 +331,7 @@ describe("loop.release through clossys release", () => {
     const now = clock();
     const run = (argv: readonly string[], cwd: string) => argv[0] === "compile"
       ? Promise.resolve({ exitCode: 0 as const, message: "compiled (stub)" })
-      : argv[0] === "release" ? runReleaseCli(argv.slice(1), cwd, { builder: stubBuilder, now }) : runCli(argv, cwd);
+      : argv[0] === "publisher" && argv[1] === "release" ? viaPublisherRelease(argv, cwd, now) : runCli(argv, cwd);
     const result = await startRun(world.root, { loop: "loop.release", publication: "site" }, cliHooks(world.root, undefined, run), { now });
     expect(result.exitCode).toBe(1);
     expect(result.state!.raised.some(name => name.startsWith("queue.fix#"))).toBe(true);
@@ -330,11 +340,17 @@ describe("loop.release through clossys release", () => {
   });
 });
 
-describe("clossys release dispatch", () => {
-  it("reaches the release CLI from runCli", async () => {
-    const result = await runCli(["release", "--help"]);
-    expect(result.exitCode).toBe(0);
-    expect(result.message).toContain("clossys release <publication>");
+describe("the release verb is clossys publisher release", () => {
+  it("retires the top-level clossys release: runCli runs no release step for it, and publisher release names the flags", async () => {
+    const world = make();
+    const retired = await runCli(["release", "site", "--gates", "--root", world.root], world.root);
+    expect(retired.exitCode, retired.message).toBe(2);
+    expect(retired.message).toMatch(/^Unknown argument: release\n/);
+    expect(retired.message).not.toContain("clossys publisher release <publication>");
+    expect(existsSync(join(world.root, "clossys/.state/checks/publisher/release.site"))).toBe(false);
+    const help = await runCli(["publisher", "release", "--help"]);
+    expect(help.exitCode).toBe(0);
+    expect(help.message).toContain("clossys publisher release <publication> [--build|--manifest|--gates|--ready]... [--selection <module>[#export]]");
   });
 });
 
@@ -454,7 +470,7 @@ describe("a release slot holds the manifest, never a publication record (U39b fi
     meta: { source: { kind: "derived", ref: ["publisher:ia.json"] }, tree: { id: "site", name: "site.publication", children: [{ id: "site.pages", name: "site.pages", cells: ["page.home"] }] } },
   };
   const SKILL = STEPS.find(step => step.id === "publisher.candidates")!.command.skill!;
-  const REFUSAL = "publisher/release.site is a release slot: it holds the manifest clossys release <pub> --manifest writes, not a page or publication record";
+  const REFUSAL = "publisher/release.site is a release slot: it holds the manifest clossys publisher release <pub> --manifest writes, not a page or publication record";
   const candidates = (world: ReleaseWorld) => readdirSync(join(world.root, "clossys/agents/publisher/release.site/candidates")).sort();
 
   it("refuses a publication/1 record at next --submit, names it in clossys check and refuses it at clossys pin", async () => {
@@ -469,7 +485,7 @@ describe("a release slot holds the manifest, never a publication record (U39b fi
     expect(submit.message).toContain(REFUSAL);
     expect(candidates(world)).toEqual(["site-v1.json"]);
     // The code writer takes bytes as given (it judges no kind): the headered record lands as site-v2.json with its submit event.
-    const header = buildCandidateHeader({ agent: "publisher" as never, slotId: "release.site" as never, name: "site-v2.json" as never, createdBy: cliActor("clossys release site --manifest"), createdAt: AT_SUBMIT as never, source: { kind: "derived", ref: ["publisher:ia.json"] } });
+    const header = buildCandidateHeader({ agent: "publisher" as never, slotId: "release.site" as never, name: "site-v2.json" as never, createdBy: cliActor("clossys publisher release site --manifest"), createdAt: AT_SUBMIT as never, source: { kind: "derived", ref: ["publisher:ia.json"] } });
     const { meta: _meta, ...content } = RECORD;
     writeCandidateBytes(join(world.root, "clossys"), "publisher", "release.site", "site-v2.json", serializeCandidate("site-v2.json" as never, header, { ...content, meta: { tree: RECORD.meta.tree } }), { at: AT_SUBMIT }, { by: "code", skill: "packages/producer/actions/publisher.release/action.json", model: "none", tier: "none" });
     expect(candidates(world)).toEqual(["site-v1.json", "site-v2.json"]);

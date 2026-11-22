@@ -4249,7 +4249,7 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "publish.publish",
-      "summary": "Release gate: a publication's pinned pages must pass publisher.check, else the release is refused; a clean check runs clossys release.",
+      "summary": "Release gate: a publication's pinned pages must pass publisher.check, else the release is refused; a clean check runs the release step (build, manifest, gates or ready) and reports what it wrote and found.",
       "inputs": [
         {
           "glob": "consumer:agents/publisher/*/pin.json",
@@ -11624,6 +11624,10 @@
         {
           "flag": "--root",
           "value": null
+        },
+        {
+          "flag": "--selection",
+          "value": null
         }
       ],
       "publish.install": [
@@ -11753,6 +11757,10 @@
         },
         {
           "flag": "--root",
+          "value": null
+        },
+        {
+          "flag": "--selection",
           "value": null
         }
       ]

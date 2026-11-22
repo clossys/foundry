@@ -5,15 +5,17 @@
  * package defaults in Publisher's own tests. These actions run them over a consumer's page records in the agent chain:
  *
  *   clossys publisher check [--root <dir>] [--json]
- *   clossys publisher release <publication> [--build|--manifest|--gates|--ready]... [--root <dir>] [--json]
+ *   clossys publisher release <publication> [--build|--manifest|--gates|--ready]... [--selection <module>[#export]] [--root <dir>] [--json]
  *
- * The consumer root is discovered exactly as `clossys release` discovers it (cli/root.ts discoverRoot: the nearest
+ * `publisher release` is the one release verb (the release loop's build, manifest and gates steps run it; the top-level
+ * `clossys release` is retired, BR-PIPELINE2 b1). The consumer root is discovered exactly as the release steps discover it (cli/root.ts discoverRoot: the nearest
  * ancestor holding clossys/clossys.config.ts), so the check judges the same records the release ships.
  *
  * `check` reads every page candidate under `clossys/agents/publisher/page.<id>/candidates/` and judges it against the
  * installed Publisher's page and layout contracts and the live Designer catalog. `release` runs the same checks over
  * the publication's pinned pages and refuses (exit 1, no release step runs) on any finding; only a clean check hands on to
- * `clossys release` (default `--gates`). Exit 0 pass, 1 findings or refusal, 2 the check could not run.
+ * the release step (cli/release.ts runReleaseCli, default `--gates`), whose `wrote` and findings it passes through so the
+ * release loop keeps them. Exit 0 pass, 1 findings or refusal, 2 the check could not run.
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -74,7 +76,7 @@ export async function loadPublisherCheckApi(root: string | undefined = installed
   return api as PublisherCheckApi;
 }
 
-/** The consumer root around `start`, as `clossys release` finds it; a folder outside any consumer is an error. */
+/** The consumer root around `start`, as the release steps find it; a folder outside any consumer is an error. */
 function consumerRoot(start: string): { root: string } | { error: string } {
   try { return { root: discoverRoot(start) }; } catch (error) { return { error: error instanceof Error ? error.message : String(error) }; }
 }
@@ -168,11 +170,26 @@ export async function checkPublisherPages(start: string, options: PublisherActio
   return { exit, root, checked, findings, message: [head, ...findings.map(finding => `  ${finding.check}  ${finding.subject}: ${finding.detail}`)].join("\n") };
 }
 
-export interface PublisherReleaseResult extends PublisherCheckResult { readonly released: boolean; readonly release?: { exitCode: Exit; message: string } }
+/** What the release step reports: the files it wrote and its gate findings (cli/release.ts ReleaseOutput). */
+export interface PublisherReleaseStep { readonly exitCode: Exit; readonly message: string; readonly wrote: readonly string[]; readonly findings: readonly PublisherFinding[]; readonly output?: unknown }
+
+export interface PublisherReleaseResult extends PublisherCheckResult { readonly released: boolean; readonly release?: PublisherReleaseStep }
+
+/** The release step's `wrote` and findings, from its output (none when it reports none). */
+function releaseStep(result: Awaited<ReturnType<ReleaseRunner>>): PublisherReleaseStep {
+  const output = isRecord(result.output) ? result.output : {};
+  const wrote = Array.isArray(output.wrote) ? output.wrote.filter((file): file is string => typeof file === "string") : [];
+  const findings = Array.isArray(output.findings)
+    ? output.findings.filter(isRecord).filter(row => typeof row.subject === "string" && typeof row.detail === "string")
+      .map(row => ({ check: typeof row.check === "string" ? row.check : "release.ready", subject: row.subject as string, detail: row.detail as string }))
+    : [];
+  return { exitCode: result.exitCode, message: result.message, wrote, findings, ...(result.output !== undefined ? { output: result.output } : {}) };
+}
 
 /**
  * `publisher.release`: the pinned pages must pass `publisher.check` first; any finding (or a check that cannot run)
- * refuses the release and no release step runs. A clean check hands `<publication> <flags>` to `clossys release`.
+ * refuses the release and no release step runs. A clean check hands `<publication> <flags>` to the release step, and the
+ * result carries that step's `wrote` and findings.
  */
 export async function releasePublisher(
   start: string,
@@ -188,13 +205,14 @@ export async function releasePublisher(
   const root = check.root;
   const release = options.release ?? defaultRelease;
   const result = await release([publication, ...(flags.length ? flags : ["--gates"]), "--root", root], root);
-  return { ...check, exit: result.exitCode, released: result.exitCode === 0, release: { exitCode: result.exitCode, message: result.message }, message: `${check.message}\n${result.message}` };
+  const step = releaseStep(result);
+  return { ...check, exit: result.exitCode, released: result.exitCode === 0, release: step, findings: [...check.findings, ...step.findings], message: `${check.message}\n${result.message}` };
 }
 
 const defaultRelease: ReleaseRunner = async (argv, cwd) => (await import("../cli/release.js")).runReleaseCli(argv, cwd);
 
 const USAGE = "Usage: clossys publisher check [--root <dir>] [--json]\n"
-  + "       clossys publisher release <publication> [--build|--manifest|--gates|--ready]... [--root <dir>] [--json]";
+  + "       clossys publisher release <publication> [--build|--manifest|--gates|--ready]... [--selection <module>[#export]] [--root <dir>] [--json]";
 
 /** The verb's run: parse argv, run the action, return its exit, printed text and --json output. */
 export async function runPublisherAction(argv: readonly string[], cwd: string, options: PublisherActionOptions & { release?: ReleaseRunner } = {}): Promise<{ exit: Exit; text: string; output?: unknown }> {
@@ -211,6 +229,11 @@ export async function runPublisherAction(argv: readonly string[], cwd: string, o
     if (arg === "--root") {
       rootFlag = rest[++index];
       if (rootFlag === undefined || rootFlag.startsWith("--")) return { exit: 2, text: `--root requires a value\n${USAGE}` };
+    } else if (mode === "release" && arg === "--selection") {
+      const selection = rest[++index];
+      if (selection === undefined || selection.startsWith("--")) return { exit: 2, text: `--selection requires <module>[#export]\n${USAGE}` };
+      // The release step runs on the discovered root, so a relative module (./, ../) is resolved here, from the caller's folder.
+      flags.push(arg, selection.startsWith(".") ? resolve(cwd, selection) : selection);
     } else if (mode === "release" && (arg === "--build" || arg === "--manifest" || arg === "--gates" || arg === "--ready")) flags.push(arg);
     else if (mode === "release" && !arg.startsWith("--") && publication === undefined) publication = arg;
     else return { exit: 2, text: `Unknown argument: ${arg}\n${USAGE}` };
@@ -222,7 +245,8 @@ export async function runPublisherAction(argv: readonly string[], cwd: string, o
   }
   if (!publication) return { exit: 2, text: `release requires <publication>\n${USAGE}` };
   const result = await releasePublisher(start, publication, flags, options);
-  return { exit: result.exit, text: result.message, output: { exitCode: result.exit, message: result.message, root: result.root, released: result.released, checked: result.checked, findings: result.findings } };
+  // The release step's wrote and findings ride on the output, so the release loop's step keeps both (loop/cli.ts runCode).
+  return { exit: result.exit, text: result.message, output: { exitCode: result.exit, message: result.message, root: result.root, released: result.released, checked: result.checked, wrote: result.release?.wrote ?? [], findings: result.findings, ...(result.release?.output !== undefined ? { release: result.release.output } : {}) } };
 }
 
 /** `clossys publisher check|release ...`: the handler entry the publisher.check and publisher.release actions bind. */

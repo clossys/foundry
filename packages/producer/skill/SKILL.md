@@ -28,7 +28,7 @@ that is the first gap to report.
 - Publisher's page records are judged by two Producer actions: `publisher.check` (`clossys publisher check`) runs the Publisher
   page checks (catalog, instance key, inline copy) over every page candidate and exits 1 on any
   finding; `publisher.release` (`clossys publisher release <publication>`) refuses the release while the publication's pinned
-  pages fail that check, and only then runs `clossys release` (default `--gates`).
+  pages fail that check, and only then runs the release step (default `--gates`).
 
 ## Run a loop
 

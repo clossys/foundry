@@ -1,5 +1,5 @@
 /**
- * `clossys release <pub> --build|--manifest|--gates|--ready` (flows.md F8, publisher.md 9.4.3). Local only: it builds
+ * `clossys publisher release <pub> --build|--manifest|--gates|--ready` (flows.md F8, publisher.md 9.4.3). Local only: it builds
  * into `clossys/.state/builds/`, writes the release candidate and the gate results, and checks the ready-pin. It never
  * deploys, publishes, pushes or bumps a version, and no flag skips a gate. The ready-pin itself is written by
  * `clossys pin publisher/release.<pub> <manifest> --by owner:queue.approve#<id>`, which refuses it unless
@@ -22,7 +22,7 @@ import { PUBLICATION_ID, releaseSlotId } from "../release/paths.js";
 import { currentPins, pinDiff } from "../release/pins.js";
 import { checkReleaseReady, RELEASE_READY } from "../release/ready.js";
 
-export const RELEASE_USAGE = "Usage: clossys release <publication> --build|--manifest|--gates|--ready [--selection <module>[#export]] [--root <dir>] [--json]\n"
+export const RELEASE_USAGE = "Usage: clossys publisher release <publication> --build|--manifest|--gates|--ready [--selection <module>[#export]] [--root <dir>] [--json]\n"
   + "  --build     build the publication from the pins as they resolve now into clossys/.state/builds/<id>/\n"
   + "  --selection (with --build) the consumer's component selection module every route mounts inside, as publish --install takes it\n"
   + "  --manifest  write the release candidate publisher/release.<pub>/candidates/<pub>-v<n>.json for the latest build\n"
@@ -128,7 +128,7 @@ async function releaseCli(argv: readonly string[], cwd: string, options: Release
     const build = latestBuild(root, publication);
     const gates = runGates(root, publication, build);
     const findings: Finding[] = [...gates.findings];
-    if (!manifest) findings.push({ check: "release.manifest", subject: slotRef, detail: `${publication} has no manifest: run clossys release ${publication} --manifest` });
+    if (!manifest) findings.push({ check: "release.manifest", subject: slotRef, detail: `${publication} has no manifest: run clossys publisher release ${publication} --manifest` });
     else {
       for (const issue of manifest.issues) findings.push({ check: "release.manifest", subject: `${slotRef}/${manifest.name}`, detail: issue });
       const content = manifest.content;
@@ -150,7 +150,7 @@ async function releaseCli(argv: readonly string[], cwd: string, options: Release
         briefSha256: sha256Hex(JSON.stringify(canonical(slot?.brief ?? null))),
         standard: typeof (slot as { standard?: unknown } | undefined)?.standard === "string" ? (slot as { standard: string }).standard : "release",
         ranAt: toIsoZ(now().toISOString())!,
-        by: cliActor(`clossys release ${publication} --gates`),
+        by: cliActor(`clossys publisher release ${publication} --gates`),
         status: findings.length ? "fail" : "pass",
         results: [
           ...Object.entries(gates.checks).map(([check, status]) => ({ check, status })),

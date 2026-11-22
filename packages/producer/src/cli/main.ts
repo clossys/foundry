@@ -67,7 +67,5 @@ export function legacyStateRefusal(argv: readonly string[], cwd: string): CliRes
 export async function runCli(argv: readonly string[], cwd = process.cwd()): Promise<CliResult> {
   const legacy = legacyStateRefusal(argv, cwd);
   if (legacy) return legacy;
-  // `clossys release` (flows.md F8) is the release loop's code steps, not a pipeline step.
-  if (argv[0] === "release") return (await import("./release.js")).runReleaseCli(argv.slice(1), cwd);
   return runPipeline(argv, cwd);
 }

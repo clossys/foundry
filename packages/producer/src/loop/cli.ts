@@ -149,7 +149,7 @@ export function cliHooks(root: string, answer?: StepAnswer, run: (argv: readonly
     async code(call: CodeCall): Promise<CodeOutcome> {
       const before = agentsSnapshot(root);
       const outcome = await runCode(call);
-      // B4: a step's wrote is what the verb reports (clossys release names its build and manifest), plus every other
+      // B4: a step's wrote is what the verb reports (clossys publisher release names its build and manifest), plus every other
       // file the step changed under clossys/agents/, so each code step hands back the files it wrote.
       const changed = wroteBetween(before, agentsSnapshot(root));
       const wrote = [...(outcome.wrote ?? []), ...changed.filter(file => !outcome.wrote?.includes(file))];
@@ -172,7 +172,7 @@ export function cliHooks(root: string, answer?: StepAnswer, run: (argv: readonly
         const findings = checkVerbFindings(result);
         return { exit: result.exitCode, detail: result.message, ...(findings.length ? { findings } : {}) };
       }
-      // A verb that reports what it wrote and found (clossys release) hands both on: the manifest step names the
+      // A verb that reports what it wrote and found (clossys publisher release) hands both on: the manifest step names the
       // manifest, a failing gate routes its findings (flows.md F8).
       const output = (typeof result.output === "object" && result.output !== null ? result.output : {}) as { wrote?: unknown; findings?: unknown };
       const wrote = Array.isArray(output.wrote) ? output.wrote.filter((file): file is string => typeof file === "string") : undefined;

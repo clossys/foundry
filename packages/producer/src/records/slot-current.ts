@@ -42,7 +42,7 @@ export const slotFamily = (kind: unknown): unknown => typeof kind === "string" ?
 const RELEASE_SLOT_ID = /^release\.[a-z0-9][a-z0-9-]*$/;
 /**
  * True for a release slot: a Publisher clossys.slot/2 slot of target kind `release`, or one named `release.<pub>` whatever
- * kind it declares. A release slot holds the manifests `clossys release <pub> --manifest` writes, so the publication
+ * kind it declares. A release slot holds the manifests `clossys publisher release <pub> --manifest` writes, so the publication
  * family's record rules never make a page/1 or publication/1 record fit there.
  */
 export const isReleaseSlot = (agent: string, id: string, kind: unknown): boolean => agent === "publisher" && (kind === "release" || RELEASE_SLOT_ID.test(id));
@@ -423,7 +423,7 @@ function targetIssues(kind: Exclude<SlotKind, "seat">, name: string, bytes: stri
 export function candidateIssues(read: SlotRead, agent: ModelAgent, id: string, name: string, bytes: string, path = name): SlotModelIssue[] {
   // A release slot holds the release manifest, never a Publisher page or publication record, headered or bare.
   if (read.current && isReleaseSlot(agent, id, read.current.kind) && publisherRecord(name, bytes)) {
-    return [{ code: "candidate-invalid", path, message: `${agent}/${id} is a release slot: it holds the manifest clossys release <pub> --manifest writes, not a page or publication record` }];
+    return [{ code: "candidate-invalid", path, message: `${agent}/${id} is a release slot: it holds the manifest clossys publisher release <pub> --manifest writes, not a page or publication record` }];
   }
   if (!read.current || pageRecord(agent, name, bytes)) return validateCandidate(read.doc.kind, id, name, bytes, path);
   if (!parseCandidateName(name)) return [{ code: "candidate-name", path, message: "candidate file name must be <name>-v<n>.<ext>" }];

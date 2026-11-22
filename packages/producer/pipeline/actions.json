@@ -3340,7 +3340,7 @@
         "agent": "producer",
         "kind": "plumb",
         "stage": "publish.publish",
-        "summary": "Release gate: a publication's pinned pages must pass publisher.check, else the release is refused; a clean check runs clossys release.",
+        "summary": "Release gate: a publication's pinned pages must pass publisher.check, else the release is refused; a clean check runs the release step (build, manifest, gates or ready) and reports what it wrote and found.",
         "run": "clossys publisher release <publication> --gates",
         "chain": {
           "skip": "publisher.release runs one caller-named publication; loop.release and the owner name it"
