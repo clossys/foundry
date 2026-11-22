@@ -10,7 +10,9 @@
  * It reads the producer's built modules (packages/producer/dist): build the producer first.
  */
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { cpSync, mkdtempSync, readdirSync, readFileSync, realpathSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -21,14 +23,31 @@ import { pinOf, slotWorld, tasteWindow } from "./stage-core.mjs";
 const AGENT = "producer";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..", "..", "..");
-const CONSUMER_ROOT = process.env.CLOSSYS_ROOT ? resolve(process.env.CLOSSYS_ROOT) : join(ROOT, "packages/producer/test-fixtures/consumer");
-const CONSUMER = join(CONSUMER_ROOT, "clossys");
 const dist = path => import(pathToFileURL(join(ROOT, "packages", "producer", "dist", path)).href);
+/**
+ * The seat world: $CLOSSYS_ROOT as it is, or a temp copy of the fixture consumer (which pins no seat) where the
+ * verbs seat the Writer candidates step: `clossys seat --policy` maps the one tier the fixture's candidates name
+ * for that step (mid, fixture-model), then `clossys seat writer.candidates` writes the seat's clossys.candidate/1
+ * envelope and its pin. No tier the fixture does not name is mapped (no high model is invented).
+ */
+function seatWorld() {
+  if (process.env.CLOSSYS_ROOT) return resolve(process.env.CLOSSYS_ROOT);
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "producer-recipes-seat-")));
+  cpSync(join(ROOT, "packages/producer/test-fixtures/consumer"), root, { recursive: true });
+  const clossys = args => execFileSync(process.execPath, [join(ROOT, "packages", "producer", "dist", "cli", "index.js"), ...args, "--root", root], { encoding: "utf8" });
+  clossys(["seat", "--policy", "--model", "mid=fixture-model"]);
+  clossys(["seat", "writer.candidates", "--by", "agent:writer", "--model", "fixture-model", "--tier", "mid", "--prompt-file", "packages/writer/actions/writer.candidates/skill.md",
+    "--procedure", "The owner writes each copy candidate by hand from the pinned voice.", "--command", "clossys next writer/<slot> --submit <file>", "--decided-by", "planner:fixture-world"]);
+  return root;
+}
+const CONSUMER_ROOT = seatWorld();
+const CONSUMER = join(CONSUMER_ROOT, "clossys");
 const { loadRecipes, produceIssues, recipesFor } = await dist("records/recipes.js");
 const { loadStandards } = await dist("records/standards.js");
 const { craftIssues } = await dist("constitution/rules/r15.js");
 const { importSpecifiers, importsRecipe, judgeFiles } = await dist("constitution/rules/r16.js");
 const { requirementsVerdict } = await dist("constitution/criteria/core/verdict.js");
+const { candidateView } = await dist("records/slot-current.js");
 
 const recipes = loadRecipes(ROOT).filter(recipe => recipe.agent === AGENT);
 const standards = loadStandards(ROOT).filter(standard => standard.agent === AGENT);
@@ -44,11 +63,18 @@ function pinned(slot) {
   return { name: pin.candidate, text: readFileSync(join(CONSUMER, "agents", AGENT, slot, "candidates", pin.candidate), "utf8") };
 }
 const asDraft = ({ name, text }) => { let json; if (name.endsWith(".json")) { try { json = JSON.parse(text); } catch { json = undefined; } } return { name, text, json }; };
-const withJson = (candidate, change) => { const json = JSON.parse(candidate.text); change(json); return { name: candidate.name, text: JSON.stringify(json, null, 2) }; };
+/** Changes the seat inside the clossys.candidate/1 envelope (`content`); `whole` changes the envelope itself. */
+const withJson = (candidate, change, whole = false) => {
+  const json = JSON.parse(candidate.text);
+  assert.ok(json.clossys && json.content, `${candidate.name} is a clossys.candidate/1 envelope`);
+  change(whole ? json : json.content);
+  return { name: candidate.name, text: JSON.stringify(json, null, 2) };
+};
 async function judge(slot, candidate) {
   const slotDoc = readJson(join(CONSUMER, "agents", AGENT, slot, "slot.json"));
   const standard = readJson(join(ROOT, "packages", AGENT, "standards", slotDoc.standard, "requirements.json"));
-  const verdict = await requirementsVerdict({ candidate: { name: candidate.name, bytes: candidate.text }, kind: slotDoc.kind, standard: { id: standard.id, sha256: "0".repeat(64), requirements: standard.requirements.map(item => ({ check: item.check, params: item.params ?? {} })) }, contract: slotDoc.contract, pinSet: "0".repeat(64) });
+  // The judge reads a clossys.candidate/1 file through its view (the envelope's content), as certify does.
+  const verdict = await requirementsVerdict({ candidate: { name: candidate.name, bytes: candidateView(candidate.name, candidate.text) }, kind: slotDoc.kind, standard: { id: standard.id, sha256: "0".repeat(64), requirements: standard.requirements.map(item => ({ check: item.check, params: item.params ?? {} })) }, contract: slotDoc.contract, pinSet: "0".repeat(64) });
   return Object.fromEntries(verdict.results.map(result => [result.check, result.pass]));
 }
 async function failsBoth(slot, candidate, check) {
@@ -194,6 +220,20 @@ describe("stage-check draft: the maker's preflight agrees with the judge", () =>
   it("a model the seat policy does not map, or a skill file that does not exist, fails the maker (stricter than the judge)", async () => {
     await makerOnly(slot, withJson(seat, json => { json.llm.model = "other-model"; }), "R20", /other-model/);
     await makerOnly(slot, withJson(seat, json => { json.llm.promptFile = "packages/writer/actions/writer.no-such-step/skill.md"; }), "R07", /writer\.no-such-step/);
+  });
+
+  it("reads the {clossys, content} envelope clossys seat writes: no content or a header that is not candidate/1 fails both (mutation)", async () => {
+    assert.ok(JSON.parse(seat.text).clossys.schema === "clossys.candidate/1", "the pinned seat is the envelope the verb wrote");
+    const noContent = withJson(seat, json => { delete json.content; }, true);
+    await failsBoth(slot, noContent, "seat.assigned");
+    assert.ok(checkDraft(CONSUMER_ROOT, slot, asDraft(noContent)).issues.some(item => /envelope has no content object/.test(item.what) && item.fix));
+    const beside = withJson(seat, json => { Object.assign(json, json.content); delete json.content; }, true);
+    assert.ok(checkDraft(CONSUMER_ROOT, slot, asDraft(beside)).issues.some(item => item.check === "seat.assigned" && /no content object/.test(item.what)), "seat keys beside the header are not read");
+    const header = withJson(seat, json => { json.clossys.schema = "clossys.candidate/0"; }, true);
+    await failsBoth(slot, header, "seat.assigned");
+    assert.ok(checkDraft(CONSUMER_ROOT, slot, asDraft(header)).issues.some(item => /not a clossys\.candidate\/1 envelope/.test(item.what)));
+    const flat = { name: seat.name, text: JSON.stringify(JSON.parse(seat.text).content) };
+    assert.deepEqual(checkDraft(CONSUMER_ROOT, slot, asDraft(flat)).issues, [], "a maker's draft before clossys seat writes it is the bare seat");
   });
 });
 

@@ -12,10 +12,10 @@
  * pinned voice, so the brief lists identity.verbal.voice at its pin and every direction cites it;
  * every input is a Director or Writer slot or a recorded finding.
  * draft: the copy candidate meets the mechanical requirements its standard names (the 3S-ND
- * worklist classes): the source cites director:identity.verbal.voice and derives from pinned
- * director:/writer: slots and findings only, one entry per key whose meta id is the key, plain values
- * (no Markdown or HTML, no placeholder, no doubled spaces, valid ICU), within the contract's limits,
- * sentence case for headlines, and each lexicon, claim, narrative and pattern shape.
+ * worklist classes): the source (the clossys.candidate/1 envelope's, as the judge reads it) cites
+ * director:identity.verbal.voice and derives from pinned director:/writer: slots and findings only, one
+ * entry per key whose meta id is the key, plain values (no Markdown or HTML, no placeholder, no doubled
+ * spaces, valid ICU), within the contract's limits (copy.fields[].maxLength), sentence case for headlines, and each lexicon, claim, narrative and pattern shape.
  *
  * Mechanical only: it reads files, never the clock, the network or randomness, and runs no model.
  * Exit 0 clean, 1 with one line per issue (rule id, the issue, the fix), 2 on a usage error.
@@ -89,11 +89,41 @@ export function parseCopy(text) {
 
 const body = draft => frontmatter(draft.text).body;
 const copyEntries = draft => parseCopy(body(draft)).entries;
+/** The schema of the candidate envelope the verbs write (`clossys next --submit`, `migrate recut`, `reissue`). */
+export const CANDIDATE_SCHEMA = "clossys.candidate/1";
+/**
+ * The draft's clossys.candidate/1 envelope (its `clossys:` frontmatter line), undefined when it carries none,
+ * or the reason it cannot be read. A `clossys:` key that is not that envelope is refused, never skipped.
+ */
+export function candidateHeader(draft) {
+  const fields = frontmatter(draft.text).fields;
+  if (!fields || !Object.hasOwn(fields, "clossys")) return undefined;
+  const read = jsonField(fields, "clossys");
+  if (read.error) return "the frontmatter clossys header is not JSON";
+  if (!isRecord(read.value) || read.value.schema !== CANDIDATE_SCHEMA) return `the frontmatter clossys header is not a ${CANDIDATE_SCHEMA} envelope`;
+  return read.value;
+}
+/**
+ * The candidate's source, as the judge reads it (records/slot-current.ts candidateView): a clossys.candidate/1
+ * file's source is its envelope's `source` and only that (a frontmatter `source:` beside the envelope is not read);
+ * a draft with no envelope (the int2 file `clossys next --submit` headers) carries it as its frontmatter `source:`.
+ * An envelope with no source object is refused; nothing falls back.
+ */
 function sourceOf(draft) {
-  const read = jsonField(frontmatter(draft.text).fields, "source");
-  if (read.error) return read.error;
-  if (!isRecord(read.value)) return "the frontmatter source is not an object";
-  return { kind: read.value.kind, ref: strings(read.value.ref) };
+  const header = candidateHeader(draft);
+  if (typeof header === "string") return header;
+  let value;
+  if (header) {
+    if (!Object.hasOwn(header, "source")) return `the ${CANDIDATE_SCHEMA} header has no source`;
+    value = header.source;
+    if (!isRecord(value)) return `the ${CANDIDATE_SCHEMA} header source is not an object`;
+  } else {
+    const read = jsonField(frontmatter(draft.text).fields, "source");
+    if (read.error) return read.error;
+    value = read.value;
+    if (!isRecord(value)) return "the frontmatter source is not an object";
+  }
+  return { kind: value.kind, ref: strings(value.ref) };
 }
 function localesOf(draft) {
   const raw = frontmatter(draft.text).fields?.locales;
@@ -148,14 +178,24 @@ function icuIssues(message) {
 
 const endsWithKey = (key, suffix) => key === suffix || key.endsWith(`.${suffix}`);
 const numberOf = value => typeof value === "number" ? value : undefined;
-/** The limits a slot contract states: passage fields by last key segment, pattern parts, a string's own. */
+/** The copy contract the verbs derive for a unit's copy (`contract.candidate`): its limits sit in `copy.fields[].maxLength`. */
+export const COPY_CANDIDATE = "clossys.copy-candidate/1";
+/**
+ * The limits a slot contract states, as the judge reads them: a passage's or a copy contract's
+ * (`candidate: clossys.copy-candidate/1`) per-field English maxLength by its last key segment (the tightest
+ * when two fields share one), pattern parts, a string's own. A copy field that states no English maxLength
+ * is listed in `unlimited`: the maker refuses it rather than let its values fall to no limit.
+ */
 function contractLimits(contract) {
-  if (!isRecord(contract)) return { limits: [], fallback: {} };
+  if (!isRecord(contract)) return { limits: [], fallback: {}, unlimited: [] };
   const limits = new Map();
-  if (contract.kind === "passage" && isRecord(contract.copy) && Array.isArray(contract.copy.fields)) {
+  const unlimited = [];
+  const fielded = contract.kind === "passage" || contract.candidate === COPY_CANDIDATE;
+  if (fielded && isRecord(contract.copy) && Array.isArray(contract.copy.fields)) {
     for (const field of contract.copy.fields.filter(isRecord)) {
       const max = isRecord(field.maxLength) ? numberOf(field.maxLength.en) : undefined;
-      if (max === undefined || typeof field.key !== "string") continue;
+      if (typeof field.key !== "string") continue;
+      if (max === undefined) { unlimited.push(field.key); continue; }
       const suffix = field.key.split("[].").at(-1);
       const was = limits.get(suffix)?.maxChars;
       limits.set(suffix, { suffix, maxChars: was === undefined ? max : Math.min(was, max) });
@@ -169,7 +209,7 @@ function contractLimits(contract) {
     }
   }
   const maxChars = contract.kind === "string" ? numberOf(contract.maxChars) : undefined, maxWords = contract.kind === "string" ? numberOf(contract.maxWords) : undefined;
-  return { limits: [...limits.values()], fallback: { ...(maxChars !== undefined ? { maxChars } : {}), ...(maxWords !== undefined ? { maxWords } : {}) } };
+  return { limits: [...limits.values()], fallback: { ...(maxChars !== undefined ? { maxChars } : {}), ...(maxWords !== undefined ? { maxWords } : {}) }, unlimited };
 }
 const limitRows = params => Array.isArray(params.limits) ? params.limits.filter(isRecord).map(item => ({ ...(typeof item.suffix === "string" ? { suffix: item.suffix } : {}), ...(typeof item.maxChars === "number" ? { maxChars: item.maxChars } : {}), ...(typeof item.maxWords === "number" ? { maxWords: item.maxWords } : {}) })) : [];
 
@@ -279,8 +319,9 @@ export const DRAFT_CHECKS = Object.freeze({
     const stated = contractLimits(params.contract);
     const limits = limitRows(params).length ? limitRows(params) : stated.limits;
     const fallback = { ...(typeof params.maxChars === "number" ? { maxChars: params.maxChars } : {}), ...(typeof params.maxWords === "number" ? { maxWords: params.maxWords } : {}), ...stated.fallback };
-    if (!limits.length && fallback.maxChars === undefined && fallback.maxWords === undefined) return [{ what: "neither the standard nor the contract states a limit", fix: "fix the slot contract before crafting" }];
+    if (!limits.length && fallback.maxChars === undefined && fallback.maxWords === undefined && !stated.unlimited.length) return [{ what: "neither the standard nor the contract states a limit", fix: "fix the slot contract before crafting" }];
     const out = [];
+    if (!limitRows(params).length) for (const key of stated.unlimited) out.push({ what: `contract copy field ${key} states no maxLength.en`, fix: "fix the slot contract before crafting: every copy field states its maxLength" });
     for (const entry of copyEntries(draft)) {
       if (entry.fenced) continue;
       const row = limits.filter(item => item.suffix && endsWithKey(entry.key, item.suffix)).sort((a, b) => b.suffix.length - a.suffix.length)[0] ?? fallback;

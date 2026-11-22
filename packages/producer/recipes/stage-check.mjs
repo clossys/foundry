@@ -12,7 +12,7 @@
  * and every direction is a feasible seat (a holder of owner, planner or agent:<agent>; a hand of llm,
  * human or llm+human; an owner holds a human hand; an llm hand runs at a tier the seat policy maps,
  * a human-only hand at tier none).
- * draft: the seat meets seat.assigned and seat.prompt-owner (the 3S-ND worklist classes: an invalid
+ * draft: the seat (the content of the clossys.candidate/1 envelope clossys seat writes) meets seat.assigned and seat.prompt-owner (the 3S-ND worklist classes: an invalid
  * holder, a prompt of another agent), and, maker-only, its skill file exists, its model is the one
  * the seat policy maps to its tier, and a human-only policy leaves the llm unset.
  *
@@ -67,10 +67,28 @@ export const checkDiverge = (root, slot, file) => checkDivergeWith(root, AGENT, 
 
 // ---- draft --------------------------------------------------------------------------------------
 
+/** The schema of the candidate envelope `clossys seat` writes: `{"clossys": <header>, "content": <seat>}`. */
+export const CANDIDATE_SCHEMA = "clossys.candidate/1";
+/**
+ * The seat a draft holds, as the judge reads it (records/slot-current.ts candidateView): the `content` of a
+ * clossys.candidate/1 envelope, or a draft's own object while it carries no envelope (the maker's draft before
+ * `clossys seat` writes it). A `clossys` key that is not that envelope, or an envelope with no `content`
+ * object, is refused: nothing falls back to the keys beside it. Returns the seat or the reason it cannot be read.
+ */
+export function seatOf(draft) {
+  const json = draft.json;
+  if (!isRecord(json)) return { error: "the seat is not a JSON object" };
+  if (!Object.hasOwn(json, "clossys")) return { seat: json };
+  if (!isRecord(json.clossys) || json.clossys.schema !== CANDIDATE_SCHEMA) return { error: `the clossys header is not a ${CANDIDATE_SCHEMA} envelope` };
+  if (!isRecord(json.content)) return { error: `the ${CANDIDATE_SCHEMA} envelope has no content object` };
+  return { seat: json.content };
+}
+const SEAT_FIX = 'write {"by", "llm", "human"}, or the {"clossys", "content": {"by", "llm", "human"}} envelope clossys seat writes';
+
 export const DRAFT_CHECKS = Object.freeze({
   "seat.assigned": draft => {
-    const seat = draft.json;
-    if (!isRecord(seat)) return [{ what: "the seat is not a JSON object", fix: 'write {"by", "llm", "human"}' }];
+    const { seat, error } = seatOf(draft);
+    if (error) return [{ what: error, fix: SEAT_FIX }];
     const out = [];
     if (typeof seat.by !== "string" || !BY.test(seat.by)) out.push({ what: `by ${JSON.stringify(seat.by)} is not owner, planner or agent:<agent>`, fix: "set by to owner, planner or agent:<director|designer|writer|publisher|producer>" });
     const { llm, human } = seat;
@@ -94,8 +112,8 @@ export const DRAFT_CHECKS = Object.freeze({
     return out;
   },
   "seat.prompt-owner": draft => {
-    const seat = draft.json;
-    if (!isRecord(seat)) return [{ what: "the seat is not a JSON object", fix: 'write {"by", "llm", "human"}' }];
+    const { seat, error } = seatOf(draft);
+    if (error) return [{ what: error, fix: SEAT_FIX }];
     if (!isRecord(seat.llm)) return [];
     const match = typeof seat.llm.promptFile === "string" ? PROMPT.exec(seat.llm.promptFile) : null;
     if (!match) return [{ what: `llm promptFile ${JSON.stringify(seat.llm.promptFile)} is not packages/<agent>/actions/<step>/skill.md`, fix: "point promptFile at the holder's skill file" }];
@@ -106,8 +124,8 @@ export const DRAFT_CHECKS = Object.freeze({
 
 /** Maker-only: the skill file exists, the model is the policy's for the tier, a human-only policy has no llm. */
 function draftExtra(root, world, draft) {
-  const seat = draft.json;
-  if (!isRecord(seat)) return [];
+  const { seat } = seatOf(draft);
+  if (!seat) return [];
   const out = [];
   const policy = seatPolicy(root);
   if (isRecord(seat.llm)) {
