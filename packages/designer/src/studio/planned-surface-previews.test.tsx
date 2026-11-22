@@ -13,8 +13,8 @@ import { hostedRender, hostedMarkup } from "../frames/__fixtures__/shell-copy.js
 const render = hostedRender(renderBare);
 const renderToStaticMarkup = hostedMarkup(renderToStaticMarkupBare);
 
-// The one planned leaf whose runtime declines a Studio preview by design (preview.tsx); every other planned fill previews.
-const DOCUMENT_FRAME_GAP = { slot: "frames.document", reason: "frames.document preview requires an isolated document renderer" };
+// Every planned fill previews. The retired frames.document (src/catalog/retired.json), the one leaf that declined a
+// Studio preview, left the runtime registries with its fill (foundry-build-0048 BR-SEED3), so it is not planned.
 const HOST_POINTER = "@clossys/publisher/web#SiteFrame";
 const NOT_DESIGNER = `${HOST_POINTER} is not a designer export; the designer does not render it`;
 const filledSlots = (fills: readonly SurfaceDefaultCandidateDocument[], layer: string) => fills.map(doc => doc.$extensions["com.clossys.fill"].slot).filter(slot => slot.startsWith(`${layer}.`)).sort();
@@ -49,12 +49,13 @@ describe("planSurfacePreviews", () => {
     const result = planSurfacePreviews({ plan, fills });
     const previewed = Object.keys(result.previews), gaps = result.unrenderable.map(gap => gap.slot);
     expect([...previewed, ...gaps].sort()).toEqual(planned.map(row => row.slot).sort());
-    // Every planned designer export has sample content; only the document frame waits for its isolated renderer.
+    // Every planned designer export has sample content, and no planned leaf is unrenderable.
     expect(previewed.filter(slot => slot.startsWith("sections.")).sort()).toEqual(filledSlots(fills, "sections"));
     for (const slot of ["sections.activity-feed", "sections.audit-log", "sections.timeline", "sections.usage"]) expect(previewed, slot).toContain(slot);
     for (const leaf of ["consent", "error-state", "stats", "data-grid", "call-to-action", "notices", "gallery", "data-table"]) expect(previewed, leaf).toContain(`sections.${leaf}`);
-    expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(filledSlots(fills, "frames").filter(slot => slot !== DOCUMENT_FRAME_GAP.slot));
-    expect(result.unrenderable).toEqual([DOCUMENT_FRAME_GAP]);
+    expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(filledSlots(fills, "frames"));
+    expect(filledSlots(fills, "frames")).not.toContain("frames.document");
+    expect(result.unrenderable).toEqual([]);
   });
 
   it("renders a non-designer export only from the host's own sample for that exact pointer", () => {

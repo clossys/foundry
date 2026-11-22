@@ -174,14 +174,13 @@ function unfed(value: unknown, path: string, index = datasetIndex()): string[] {
 
 /**
  * Sections and Frames leaves another host previews, derived from their importers rather than listed: the Studio's
- * intrinsic specimen sections (specimen-registry.test.tsx renders them), Publisher-package section exports (the
- * Publisher hosts them) and frames.document, which waits for an isolated document renderer (runtime/preview.tsx).
- * Every other leaf on every layer fills here.
+ * intrinsic specimen sections (specimen-registry.test.tsx renders them) and Publisher-package section exports (the
+ * Publisher hosts them). The retired frames.document (src/catalog/retired.json) has no fill and no build slot, so it is
+ * not a leaf here (foundry-build-0048 BR-SEED3). Every other leaf on every layer fills here.
  */
 const ELSEWHERE_OWNED: ReadonlySet<string> = new Set([
   ...SPECIMEN_SECTION_EXPORTS.map(row => row.id),
   ...Object.keys(generatedPublisherSectionFiles()).map(file => file.replace(/\.json$/, "")),
-  "frames.document",
 ]);
 
 function realPlan() {

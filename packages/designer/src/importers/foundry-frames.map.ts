@@ -23,6 +23,6 @@ export const FOUNDRY_FRAME_MAP: Readonly<Record<string, FoundryFrameMapping>> = 
   command: designer("CommandMenu", {}, { search: "searchLabel", groups: "groups", empty: "emptyMessage" }, { open: "isOpen/onOpenChange", query: "query/onQueryChange" }, ["CommandMenu has no shortcut configuration. useCommandMenuShortcut is separately exported but requires host composition; no shortcut member is mapped. Search is a built-in SearchField the host adapts through searchLabel and the query state port; it is not replaceable by a host node. No RAC conformance is claimed."]),
 };
 export const FOUNDRY_FRAME_GAPS: Readonly<Record<string, string>> = {
+  document: "Retired 2026-11-15 (src/catalog/retired.json, planner:foundry-build-0018): render plumbing, not a slot. Publisher renders DocumentFrame from @clossys/designer/frames directly; no slot fill is measured (foundry-build-0048 BR-SEED3).",
   deck: "Publisher renders frames.deck in its static slides build from the package canvas default; no Designer package export exists yet (foundry-build-0032, audit P3).",
-  document: "Retired 2026-11-15 (src/catalog/retired.json, planner:foundry-build-0018): render plumbing, not a slot. Publisher renders DocumentFrame from @clossys/designer/frames directly; no slot fill is measured (foundry-build-0048 BR-SEED2).",
 };

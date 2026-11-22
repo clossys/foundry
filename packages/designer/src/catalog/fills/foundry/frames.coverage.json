@@ -108,20 +108,27 @@
       "supported": []
     },
     {
-      "missing": [],
-      "missingRequiredSlots": [],
-      "missingSlots": [],
+      "missing": [
+        "variant.page",
+        "variant.status"
+      ],
+      "missingRequiredSlots": [
+        "body",
+        "head"
+      ],
+      "missingSlots": [
+        "body",
+        "critical-css",
+        "head"
+      ],
       "missingStatePorts": [],
       "notes": [
-        "Document root. The host supplies Writer-resolved language and direction and a formatted title. Status documents retain noindex and inline critical CSS.",
+        "Retired 2026-11-15 (src/catalog/retired.json, planner:foundry-build-0018): render plumbing, not a slot. Publisher renders DocumentFrame from @clossys/designer/frames directly; no slot fill is measured (foundry-build-0048 BR-SEED3).",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.document",
-      "status": "candidate",
-      "supported": [
-        "variant.page",
-        "variant.status"
-      ]
+      "status": "unavailable",
+      "supported": []
     },
     {
       "missing": [],

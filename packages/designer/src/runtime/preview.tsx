@@ -45,8 +45,6 @@ export function surfaceRuntimePreview(entry: SurfacePreviewEntry, options: Surfa
   const leaf = typeof entry.slot === "string" ? entry.slot : "";
   const runtime = Object.hasOwn(surfaceRuntimeRenderers, leaf) ? surfaceRuntimeRenderers[leaf] : undefined;
   if (!runtime) return { reason: `no package runtime renderer for ${leaf || "this fill"}` };
-  // An html/head/body renderer needs an isolated document, not invalid nested document roots in a board cell.
-  if (leaf === "frames.document") return { reason: "frames.document preview requires an isolated document renderer" };
   const kind = leaf.startsWith("frames.") ? "frame" : "section";
   const slots = keys(entry.slotMap ?? entry.slots).sort(), members = keys(entry.members ?? entry.propMap).sort();
   const sample = runtime.sample(specimenDataset), kinds = sectionKinds.get(leaf);
