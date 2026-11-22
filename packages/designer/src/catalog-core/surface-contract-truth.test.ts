@@ -179,6 +179,7 @@ it("refuses missing or mismatched package measurement identities", () => {
 
 it("recalculates all current descriptor measurements and canonical importer output from actual source", () => {
   const output = execFileSync(process.execPath, ["scripts/generate-surface-consumption.mjs", "--check"], { cwd: fileURLToPath(new URL("../../", import.meta.url)), encoding: "utf8", timeout: 60_000 });
-  // 63 since sections.sectioned-document joined the surface catalog (e14e4471b, #2554).
-  expect(JSON.parse(output)).toMatchObject({ descriptors: 63, measured: 63, measurement: "source-only lower-bound", runtime: "unmeasured" });
+  // 63 since sections.sectioned-document joined the surface catalog (e14e4471b, #2554). BR-RETIRE3: 56, less the seven
+  // retired section fills (src/catalog/retired.json:158-196), as generate-surface-consumption.mjs --write reports.
+  expect(JSON.parse(output)).toMatchObject({ descriptors: 56, measured: 56, measurement: "source-only lower-bound", runtime: "unmeasured" });
 }, 65_000);

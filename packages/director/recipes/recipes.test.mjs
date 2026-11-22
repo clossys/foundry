@@ -150,7 +150,7 @@ describe("stage-check brief and diverge: each stage checks its own output", () =
     assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, stale)).includes("R12"));
     const path = clone(brief); path.inputs.push({ slot: "clossys/agents/director/focus.segment.core/pin.json", candidate: "x", sha256: "0".repeat(64) });
     assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, path)).includes("R06.7"));
-    const writer = clone(brief); const pin = pinOf(CONSUMER_ROOT, "strings.actions"); writer.inputs.push({ slot: "strings.actions", candidate: pin.candidate, sha256: pin.sha256 });
+    const writer = clone(brief); const pin = pinOf(CONSUMER_ROOT, "lexicon.capitalization"); writer.inputs.push({ slot: "lexicon.capitalization", candidate: pin.candidate, sha256: pin.sha256 });
     assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, writer)).includes("R20"), "a Writer slot is no Director input");
     const wrongRecipe = clone(brief); wrongRecipe.recipe = "create.structured";
     assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, wrongRecipe)).includes("R15.5"));
@@ -163,7 +163,7 @@ describe("stage-check brief and diverge: each stage checks its own output", () =
     assert.ok(checkDiverge(CONSUMER_ROOT, slot, cosmetic).some(item => item.rule === "R15.7" && /axis stance/.test(item.what)));
     const noTrait = clone(directions); noTrait.directions[1].traits = [];
     assert.ok(rules(checkDiverge(CONSUMER_ROOT, slot, noTrait)).includes("R20"));
-    const writer = clone(directions); writer.directions[0].traits.push("strings.actions");
+    const writer = clone(directions); writer.directions[0].traits.push("lexicon.capitalization");
     assert.ok(rules(checkDiverge(CONSUMER_ROOT, slot, writer)).includes("R20"));
     const finding = clone(directions); finding.directions[2].traits = ["finding:no-such-finding"];
     assert.ok(rules(checkDiverge(CONSUMER_ROOT, slot, finding)).includes("R06.7"));
@@ -206,7 +206,7 @@ describe("stage-check draft: the maker's preflight agrees with the judge", () =>
 
   it("a source that cites a URL or a non-Director slot fails (worklist)", async () => {
     await failsBoth("advantage.proposition.promise", edit(promise, '"ref": ["context.customer.need"', '"ref": ["https://example.com/notes", "context.customer.need"'), "brief.derived-upstream");
-    const writer = checkDraft(CONSUMER_ROOT, "advantage.proposition.promise", asDraft(edit(promise, '"ref": ["context.customer.need"', '"ref": ["strings.actions", "context.customer.need"'))).issues;
+    const writer = checkDraft(CONSUMER_ROOT, "advantage.proposition.promise", asDraft(edit(promise, '"ref": ["context.customer.need"', '"ref": ["lexicon.capitalization", "context.customer.need"'))).issues;
     assert.ok(writer.some(item => item.check === "brief.derived-upstream" && /writer slot/.test(item.what)), "the maker refuses a Writer slot as a brief source");
   });
 

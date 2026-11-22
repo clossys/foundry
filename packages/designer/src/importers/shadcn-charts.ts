@@ -7,9 +7,10 @@
  * shadcn installer itself performs (`"cn"` to the local utils part). Each
  * leaf adds one composition that wires Recharts marks to that container.
  *
- * Colours: every series reads the shadcn `--chart-N` slot first and falls
- * back to the theme token the shadcn@aria adapter binds it to; chart chrome
- * reads the existing chart token family. No colour literal is emitted.
+ * Colours: every series reads only the theme token the shadcn@aria adapter
+ * binds its `--chart-N` slot to, carrying the package's declared value (no
+ * `var(--chart-N, …)` chain, D5-2D); chart chrome reads the existing chart
+ * token family. No colour literal is emitted.
  *
  * Rendering is client-only, as upstream: the file is marked "use client" and
  * Recharts 3 sizes the chart in an effect, so a server render draws no SVG.
@@ -49,11 +50,11 @@ export interface ShadcnChartFillDoc {
 }
 export interface ShadcnChartsImport { fills: readonly ShadcnChartFillDoc[]; rewrites: Readonly<Record<string, ShadcnChartRewrite>> }
 
-/** Series colour slots: the shadcn var first, then the adapter-bound theme token. */
+/** Series colour slots: each reads only the theme token the adapter binds `--chart-N` to, with its declared value. */
 export const SHADCN_CHART_SERIES_COLORS: readonly string[] = Object.entries(adapter.bindings as Record<string, { property: string }>)
   .filter(([name]) => /^chart-\d+$/.test(name))
   .sort(([a], [b]) => Number(a.slice(6)) - Number(b.slice(6)))
-  .map(([name, binding]) => `var(--${name}, var(${binding.property}))`);
+  .map(([, binding]) => cssRead(packageDeclaredFallbackReader(), binding.property));
 
 /** Chart chrome reads the existing chart token family, each read carrying the package's declared value. */
 export const SHADCN_CHART_CHROME = Object.freeze({

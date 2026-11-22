@@ -535,10 +535,14 @@ function declare(root, slot, files) {
   return names.map(name => `${name}@${lockedVersion(name)}`);
 }
 
-/** The consumer's clossys/components.json, from the Designer flavor's one writer (check-generated-derived). */
+/**
+ * The consumer's clossys/components.json, from the Designer flavor's one writer (check-generated-derived). The
+ * run stages in a temporary root, but its output is the fixture: the stylesheet path is relative to the fixture's
+ * clossys/ folder, so every pass writes the same bytes wherever it stages.
+ */
 async function setup(root) {
   const { writeFlavor } = await import("./check-generated-derived.mjs");
-  writeFlavor(join(root, "clossys"));
+  writeFlavor(join(root, "clossys"), join(FIXTURE, "clossys"));
 }
 
 /**
@@ -840,7 +844,7 @@ export async function seed({ from, out, only, keep = false, resume } = {}) {
       writeFileSync(join(root, MARK), MARK_TEXT);
     }
     if (!existsSync(join(root, ".git"))) { execFileSync("git", ["init", "-q"], { cwd: root }); ownGit = true; }
-    if (!existsSync(join(root, "clossys", "components.json"))) await setup(root);
+    await setup(root);
     const w = world(root, scratch);
     await storeFormat(w);
     await migrate(w);

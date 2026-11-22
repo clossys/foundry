@@ -15,11 +15,19 @@
  * The writer (records/slot-write.ts writeCandidate) accepts `--by code:adopt` only when codeAdoptRefusal finds
  * nothing: the slot rule, then the item is the stock item exactly (registry lineage, rung L1 with its seed, every
  * file byte-exact to the normalized reference). R03.2 flags any submit by code:adopt that fails the same rule.
+ *
+ * Token fallbacks (D5-2D, remainder 2 option b): a consumer adoption writes every bare token read with the value the
+ * consumer's pinned `themes.*` slots declare (read/theme-pins.ts pinnedThemeReader), never a package value; a name the
+ * pins do not declare refuses the adoption (UndeclaredTokenFallbackError). The reference is normalized through the
+ * same reader, so the comparison stays byte-exact, and the item records the reader's source and each written file's
+ * sha256 (meta.refVerbatim.reader, outputSha256).
  */
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { byteExactAdoption, normalizedSeedFile } from "@clossys/designer/ref-verbatim";
+import { byteExactAdoption, normalizedSeedFile, type DeclaredFallbackReader } from "@clossys/designer/ref-verbatim";
 import { packagePath } from "../package-path.js";
+import { pinnedThemeReader } from "../read/theme-pins.js";
 import { readSlot } from "./slots.js";
 import { readStandard } from "./standards.js";
 
@@ -47,6 +55,7 @@ export interface StockItem {
 }
 
 const refIdOf = (row: ManifestRow): string => `${row.registry}/${row.name}@${row.version}`;
+const sha256 = (text: string): string => createHash("sha256").update(text, "utf8").digest("hex");
 const readJson = (file: string): unknown => JSON.parse(readFileSync(file, "utf8")) as unknown;
 const manifestOf = (root: string): { items: ManifestRow[] } => readJson(packagePath(root, REFERENCE_MANIFEST)) as { items: ManifestRow[] };
 const referencesDirOf = (root: string): string => dirname(packagePath(root, REFERENCE_MANIFEST));
@@ -118,8 +127,10 @@ export function stockItemOf(root: string, slotId: string): { readonly stock: Sto
   if (!row) return { none: `no ${STOCK_REGISTRIES.join(" or ")} stock item ships ${at}'s contract fixture ${file}` };
   const ref = refIdOf(row);
   const consumer = join(root, "clossys");
+  // Every fallback the written file carries is the consumer's pinned value; an undeclared name throws (refused).
+  const reader = pinnedThemeReader(consumer);
   const files = row.files.filter(each => each.path.endsWith(".tsx")).map(each => ({
-    path: each.path, type: row.type, content: normalizedSeedFile(consumer, ref, each.path, { manifest, referencesDir: referencesDirOf(root) }),
+    path: each.path, type: row.type, content: normalizedSeedFile(consumer, ref, each.path, { manifest, referencesDir: referencesDirOf(root), reader }),
   }));
   const lockFile = join(root, "package-lock.json");
   const locked = existsSync(lockFile) ? ((readJson(lockFile) as { packages?: Record<string, { version?: string }> }).packages ?? {}) : {};
@@ -134,7 +145,11 @@ export function stockItemOf(root: string, slotId: string): { readonly stock: Sto
     meta: {
       slot: slotId,
       source: { kind: "registry", ref: [ref], hash: row.hash, license: row.license },
-      refVerbatim: { files: Object.fromEntries(files.map(each => [each.path, each.path])) },
+      refVerbatim: {
+        files: Object.fromEntries(files.map(each => [each.path, each.path])),
+        reader: reader.source,
+        outputSha256: Object.fromEntries(files.map(each => [each.path, sha256(each.content)])),
+      },
       element: { slot: slotId, reason: reasonOf(root, doc, `stock ${ref}, adopted unmodified by code`) },
     },
   };
@@ -166,16 +181,52 @@ export function codeAdoptRefusal(root: string, agent: string, slotId: string, co
   const submit = codeAdoptSubmitRefusal(root, agent, slotId, fields);
   if (typeof submit === "string") return submit;
   const { stock } = submit;
-  const item = content as { meta?: { source?: { kind?: unknown; ref?: unknown }; refVerbatim?: { files?: Record<string, unknown> } }; files?: { path?: unknown; content?: unknown }[] } | undefined;
+  const item = content as { meta?: { source?: { kind?: unknown; ref?: unknown }; refVerbatim?: { files?: Record<string, unknown>; reader?: unknown; outputSha256?: Record<string, unknown> } }; files?: { path?: unknown; content?: unknown }[] } | undefined;
   const source = item?.meta?.source;
   if (source?.kind !== "registry" || JSON.stringify(source.ref) !== JSON.stringify([stock.ref])) return `a code adopt carries registry lineage citing ${stock.ref} only`;
   const given = item?.files ?? [];
   const mapped = item?.meta?.refVerbatim?.files ?? {};
+  const expectedMeta = stock.item.meta.refVerbatim as { reader: string; outputSha256: Record<string, string> };
+  if (item?.meta?.refVerbatim?.reader !== expectedMeta.reader) return `a code adopt names its fallback reader "${expectedMeta.reader}", not ${JSON.stringify(item?.meta?.refVerbatim?.reader)}`;
+  const recorded = item?.meta?.refVerbatim?.outputSha256 ?? {};
   if (given.length !== stock.item.files.length) return `a code adopt ships the stock item's ${stock.item.files.length} file(s), not ${given.length}`;
   for (const expected of stock.item.files) {
     const file = given.find(each => each.path === expected.path);
     if (!file || mapped[expected.path] !== expected.path) return `a code adopt ships and maps ${expected.path} from ${stock.ref}`;
-    if (file.content !== expected.content) return `a code adopt's ${expected.path} is not byte-exact to ${stock.ref}'s normalized reference`;
+    if (file.content !== expected.content) return `a code adopt's ${expected.path} is not byte-exact to ${stock.ref}'s reference normalized through ${expectedMeta.reader}`;
+    if (recorded[expected.path] !== expectedMeta.outputSha256[expected.path]) return `a code adopt records ${expected.path}'s output sha256 ${expectedMeta.outputSha256[expected.path]}, not ${String(recorded[expected.path])}`;
   }
   return undefined;
+}
+
+/**
+ * The declared-fallback reader a candidate's adoption record names (meta.refVerbatim.reader), for the checks that
+ * normalize its reference through the same reader: the consumer's pinned themes reader when it names that source,
+ * else undefined (a package or legacy adoption, compared with the plain normalized reference). A reader the consumer
+ * cannot supply is the check's refusal, never a substitute.
+ */
+export function adoptionReaderOf(consumer: string, item: unknown): DeclaredFallbackReader | undefined {
+  const named = (item as { meta?: { refVerbatim?: { reader?: unknown } } } | undefined)?.meta?.refVerbatim?.reader;
+  if (named === undefined) return undefined;
+  const reader = pinnedThemeReader(consumer);
+  if (named !== reader.source) throw new Error(`the adoption names the fallback reader ${JSON.stringify(named)}; this consumer supplies only "${reader.source}"`);
+  return reader;
+}
+
+/** The fix a stale consumer adoption names (N1): its bytes are the adoption's own, so the pins moved after it. */
+export const READOPT_HINT = "re-adopt it (code:adopt the stock item again) to take the consumer's current pinned theme values";
+
+/**
+ * Whether a consumer adoption's files are still the bytes it wrote (every `meta.refVerbatim.outputSha256` entry
+ * matches its file): then a byte-exact failure against the reference normalized through the current pins means a
+ * pinned `themes.*` value changed after the adoption, and the fix is re-adoption ({@link READOPT_HINT}), not an edit.
+ */
+export function adoptionUnchangedSinceWrite(item: unknown): boolean {
+  const doc = item as { meta?: { refVerbatim?: { reader?: unknown; outputSha256?: Record<string, unknown> } }; files?: { path?: unknown; content?: unknown }[] } | undefined;
+  const recorded = doc?.meta?.refVerbatim?.outputSha256;
+  if (doc?.meta?.refVerbatim?.reader === undefined || !recorded || !Object.keys(recorded).length) return false;
+  return Object.entries(recorded).every(([path, sha]) => {
+    const file = doc.files?.find(each => each.path === path);
+    return typeof file?.content === "string" && sha256(file.content) === sha;
+  });
 }

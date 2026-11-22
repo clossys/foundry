@@ -8,7 +8,7 @@ import { studioTheme } from "../server/theme.js";
 import { PINNED_CANDIDATES, pinnedConsumer, unpinnedConsumer } from "./__fixtures__/theme-pins/pinned-consumer.js";
 import { validateAgainst, type JsonSchema } from "../records/schema.js";
 import { readCandidate } from "../records/slots.js";
-import { consumerThemeProjection, packageDefaultTheme, pinnedThemeCss, readConsumerTheme, resolveThemePins } from "./theme-pins.js";
+import { consumerThemeProjection, packageDefaultTheme, PINNED_THEME_READER, pinnedThemeCss, pinnedThemeReader, pinnedThemeValues, readConsumerTheme, resolveThemePins } from "./theme-pins.js";
 
 /** Goldens: the Studio server's `studioTheme` CSS on the int2 fixture, captured before the move. */
 const golden = (name: string) => readFileSync(fileURLToPath(new URL(`./__fixtures__/theme-pins/${name}`, import.meta.url)), "utf8");
@@ -86,5 +86,20 @@ describe("theme pins (designer.md 9.8, system.md 14.2)", () => {
     expect(theme.source).toBe("error");
     expect(theme.message).toBe("Consumer theme could not be compiled: themes.primary does not match its pin");
     expect(theme.css).toBe(defaultThemeCss());
+  });
+
+  it("gives a consumer adoption's fallback reader exactly the pinned :root values, refusing any other name (D5-2D)", () => {
+    const library = join(pinned(), "clossys");
+    const values = pinnedThemeValues(library);
+    expect(values).toEqual(consumerThemeProjection(library).vars.light);
+    expect(values).toMatchObject({ "--primary": "oklch(0.45 0.09 160)", "--radius": "0.5rem", "--font-sans": "\"Inter\", sans-serif" });
+    const reader = pinnedThemeReader(library);
+    expect(reader.source).toBe(PINNED_THEME_READER);
+    expect(reader.fallback("--primary")).toBe("oklch(0.45 0.09 160)");
+    // A name no pin declares is refused: no package default and no dark value stands in.
+    expect(() => reader.fallback("--spacing")).toThrow(expect.objectContaining({ name: "UndeclaredTokenFallbackError", message: expect.stringContaining("--spacing") }));
+    const bare = pinnedThemeReader(join(unpinned(), "clossys"));
+    expect(pinnedThemeValues(join(unpinned(), "clossys"))).toEqual({});
+    expect(() => bare.fallback("--primary")).toThrow(expect.objectContaining({ name: "UndeclaredTokenFallbackError" }));
   });
 });

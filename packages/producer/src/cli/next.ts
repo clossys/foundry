@@ -48,6 +48,7 @@ import { workspacePath } from "../pipeline/trace.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
+import { SUBMIT_TIERS, submitValueIssue } from "./submit-values.js";
 import { errorMessage } from "../errors.js";
 
 /** The step a Producer seat slot crafts under: the seats action (`clossys seat` writes the seat). */
@@ -71,19 +72,6 @@ export const NEXT_USAGE = "Usage: clossys next [--json] [--root <dir>]\n"
   + "  then at most 2 refine rounds; diverge takes --file with 3 to 4 {id, idea, axes} directions (cap 4). Refused under a\n"
   + "  plumb recipe (R15.7: its plumb action computes the candidate, so no craft stage is recorded). A Producer seat\n"
   + "  slot (producer/seat.<step>) crafts under the seats action's skill; clossys seat writes the seat.";
-
-const TIERS = ["low", "mid", "high"] as const;
-const BASES = ["agent", "owner", "planner"] as const;
-
-/**
- * The submit's `--tier` and `--basis` value rule, shared with every caller that submits through this verb (`init
- * --publication` checks it before it writes anything), so the two cannot drift: the usage problem, or undefined.
- */
-export function submitValueIssue(flags: { readonly tier?: string; readonly basis?: string }): string | undefined {
-  if (!(TIERS as readonly string[]).includes(flags.tier!)) return `--tier must be ${TIERS.join(", ")}, got ${flags.tier}`;
-  if (!(BASES as readonly string[]).includes(flags.basis!)) return `--basis must be ${BASES.join(", ")}, got ${flags.basis}`;
-  return undefined;
-}
 
 interface Flags {
   positional: string[]; json: boolean; owner: boolean; help: boolean; root?: string; agent?: string;
@@ -391,7 +379,7 @@ export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly
   const seat = agent === SEAT_AGENT && seatStepOf(slot) !== undefined;
   if (slash < 1 || !slot || !(seat || (SLOT_AGENTS as readonly string[]).includes(agent))) throw new CliUsageError(`next --stage target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")}, or producer/seat.<step>, got ${target}\n${NEXT_USAGE}`);
   for (const [flag, given] of [["--model", flags.model], ["--tier", flags.tier], ["--skill", flags.skill]] as const) if (!given) throw new CliUsageError(`next --stage requires ${flag}\n${NEXT_USAGE}`);
-  if (!(TIERS as readonly string[]).includes(flags.tier!)) throw new CliUsageError(`--tier must be ${TIERS.join(", ")}, got ${flags.tier}\n${NEXT_USAGE}`);
+  if (!(SUBMIT_TIERS as readonly string[]).includes(flags.tier!)) throw new CliUsageError(`--tier must be ${SUBMIT_TIERS.join(", ")}, got ${flags.tier}\n${NEXT_USAGE}`);
   const owning = steps.find(each => each.id === (seat ? SEAT_STEP : `${agent}.candidates`));
   if (!owning) return refuse(`${target} is not a candidates slot of a defined step`);
   const contractSkill = owning.command.skill;

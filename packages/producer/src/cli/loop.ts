@@ -21,7 +21,7 @@ import { toIsoZ } from "../records/pin.js";
 import { SeatRefusal } from "../records/seat-owner.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
-import { runPinCli } from "./pin.js";
+import { runStep } from "../pipeline/runner.js";
 import { discoverRoot } from "./root.js";
 
 export const LOOP_USAGE = "Usage: clossys loop <agent>/loop.<scope|slot|create|choose|cascade> [--check] [--by planner[:<ref>]|owner:<ref>] [--at <iso>] [--root <dir>] [--json]\n"
@@ -146,7 +146,7 @@ async function pinOwn(root: string, agent: LoopAgent, loop: AgentLoopName, by: s
   if (current?.ok) return "held";
   // A pin that is there but does not resolve is the consumer's (maybe the owner's): reported, never replaced.
   if (existsSync(join(root, "clossys", "agents", agent, loop, "pin.json"))) return `${agent}/${loop} holds a pin that does not resolve (${current?.ok === false ? current.reason : "unreadable"}); fix or repin it with clossys pin`;
-  const result = await runPinCli([`${agent}/${loop}`, adoptedLoopCandidate(loop), "--by", by, ...(by.startsWith("owner") ? ["--basis", "picked"] : []), "--at", at, "--root", root], cwd);
+  const result = await runStep(["pin", `${agent}/${loop}`, adoptedLoopCandidate(loop), "--by", by, ...(by.startsWith("owner") ? ["--basis", "picked"] : []), "--at", at, "--root", root], cwd);
   return result.exitCode === 0 ? "pinned" : result.message;
 }
 

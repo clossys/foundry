@@ -2,13 +2,13 @@
   "counts": {
     "assetEdges": 4,
     "assets": 49,
-    "members": 673,
+    "members": 110,
     "orphanEdges": 0,
-    "resolvedMembers": 672,
-    "tokenEdges": 27,
-    "themes": 56,
+    "resolvedMembers": 107,
+    "themeEdges": 15,
+    "themes": 42,
     "unusedAssets": 47,
-    "unusedTokens": 44
+    "unusedThemes": 36
   },
   "leaves": [
     {
@@ -19,16 +19,8 @@
       "id": "assets.app-icon",
       "resolved": 2,
       "themes": [
-        "themes.foreground",
-        "themes.card-foreground",
-        "themes.popover-foreground",
-        "themes.primary-foreground",
-        "themes.secondary-foreground",
-        "themes.accent-foreground",
-        "themes.muted-foreground",
-        "themes.sidebar-foreground",
-        "themes.sidebar-primary-foreground",
-        "themes.sidebar-accent-foreground"
+        "themes.background",
+        "themes.foreground"
       ],
       "total": 2
     },
@@ -40,16 +32,8 @@
       "id": "assets.favicon",
       "resolved": 1,
       "themes": [
-        "themes.foreground",
-        "themes.card-foreground",
-        "themes.popover-foreground",
-        "themes.primary-foreground",
-        "themes.secondary-foreground",
-        "themes.accent-foreground",
-        "themes.muted-foreground",
-        "themes.sidebar-foreground",
-        "themes.sidebar-primary-foreground",
-        "themes.sidebar-accent-foreground"
+        "themes.background",
+        "themes.foreground"
       ],
       "total": 2
     },
@@ -251,7 +235,7 @@
       "id": "assets.icon-organization",
       "resolved": 1,
       "themes": [],
-      "total": 1
+      "total": 3
     },
     {
       "assets": [],
@@ -407,16 +391,11 @@
       "id": "assets.lockup",
       "resolved": 2,
       "themes": [
+        "themes.background",
+        "themes.font-heading",
         "themes.foreground",
-        "themes.card-foreground",
-        "themes.popover-foreground",
-        "themes.primary-foreground",
-        "themes.secondary-foreground",
-        "themes.accent-foreground",
-        "themes.muted-foreground",
-        "themes.sidebar-foreground",
-        "themes.sidebar-primary-foreground",
-        "themes.sidebar-accent-foreground"
+        "themes.primary",
+        "themes.primary-foreground"
       ],
       "total": 2
     },
@@ -432,16 +411,11 @@
       "id": "assets.mark",
       "resolved": 3,
       "themes": [
+        "themes.background",
+        "themes.font-heading",
         "themes.foreground",
-        "themes.card-foreground",
-        "themes.popover-foreground",
-        "themes.primary-foreground",
-        "themes.secondary-foreground",
-        "themes.accent-foreground",
-        "themes.muted-foreground",
-        "themes.sidebar-foreground",
-        "themes.sidebar-primary-foreground",
-        "themes.sidebar-accent-foreground"
+        "themes.primary",
+        "themes.primary-foreground"
       ],
       "total": 3
     },
@@ -463,80 +437,246 @@
     },
     {
       "assets": [],
-      "consumedBy": [
-        "themes.ring",
-        "themes.sidebar-ring"
-      ],
-      "id": "themes.primary",
-      "resolved": 5,
+      "consumedBy": [],
+      "id": "themes.accent",
+      "resolved": 1,
       "themes": [],
-      "total": 5
+      "total": 1
     },
     {
       "assets": [],
       "consumedBy": [],
-      "id": "themes.primary",
-      "resolved": 5,
+      "id": "themes.accent-foreground",
+      "resolved": 1,
       "themes": [],
-      "total": 5
+      "total": 1
     },
     {
       "assets": [],
       "consumedBy": [],
       "id": "themes.animate-marquee",
-      "resolved": 10,
+      "resolved": 2,
       "themes": [],
-      "total": 10
+      "total": 2
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.animate-marquee-vertical",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.animate-shiny-text",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
     },
     {
       "assets": [],
       "consumedBy": [
-        "themes.border",
-        "themes.input",
-        "themes.sidebar-border",
-        "themes.shadow"
+        "assets.app-icon",
+        "assets.favicon",
+        "assets.lockup",
+        "assets.mark"
       ],
+      "id": "themes.background",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
       "id": "themes.border",
-      "resolved": 6,
-      "themes": [
-        "themes.border",
-        "themes.input",
-        "themes.sidebar-border"
-      ],
-      "total": 6
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.card",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.card-foreground",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
     },
     {
       "assets": [],
       "consumedBy": [],
       "id": "themes.chart-1",
-      "resolved": 8,
+      "resolved": 1,
       "themes": [],
-      "total": 8
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.chart-2",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.chart-3",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.chart-4",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.chart-5",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.destructive",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "assets.lockup",
+        "assets.mark"
+      ],
+      "id": "themes.font-heading",
+      "resolved": 1,
+      "themes": [
+        "themes.font-sans"
+      ],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.font-mono",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "themes.font-heading"
+      ],
+      "id": "themes.font-sans",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.font-serif",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "assets.app-icon",
+        "assets.favicon",
+        "assets.lockup",
+        "assets.mark"
+      ],
+      "id": "themes.foreground",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
     },
     {
       "assets": [],
       "consumedBy": [],
       "id": "themes.input",
-      "resolved": 5,
-      "themes": [
-        "themes.foreground",
-        "themes.card-foreground",
-        "themes.popover-foreground",
-        "themes.primary-foreground",
-        "themes.secondary-foreground",
-        "themes.accent-foreground",
-        "themes.muted-foreground",
-        "themes.sidebar-foreground",
-        "themes.sidebar-primary-foreground",
-        "themes.sidebar-accent-foreground"
-      ],
-      "total": 5
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.muted",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.muted-foreground",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.popover",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.popover-foreground",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
     },
     {
       "assets": [],
       "consumedBy": [
-        "themes.radius"
+        "assets.lockup",
+        "assets.mark"
       ],
+      "id": "themes.primary",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "assets.lockup",
+        "assets.mark"
+      ],
+      "id": "themes.primary-foreground",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
       "id": "themes.radius",
       "resolved": 1,
       "themes": [],
@@ -545,176 +685,114 @@
     {
       "assets": [],
       "consumedBy": [],
-      "id": "themes.font-heading",
-      "resolved": 5,
-      "themes": [],
-      "total": 5
-    },
-    {
-      "assets": [],
-      "consumedBy": [
-        "themes.shadow"
-      ],
-      "id": "themes.shadow",
-      "resolved": 4,
-      "themes": [
-        "themes.border",
-        "themes.input",
-        "themes.sidebar-border",
-        "themes.shadow"
-      ],
-      "total": 4
-    },
-    {
-      "assets": [],
-      "consumedBy": [],
       "id": "themes.ring",
-      "resolved": 2,
-      "themes": [
-        "themes.primary",
-        "themes.foreground",
-        "themes.card-foreground",
-        "themes.popover-foreground",
-        "themes.primary-foreground",
-        "themes.secondary-foreground",
-        "themes.accent-foreground",
-        "themes.muted-foreground",
-        "themes.sidebar-foreground",
-        "themes.sidebar-primary-foreground",
-        "themes.sidebar-accent-foreground"
-      ],
-      "total": 2
+      "resolved": 1,
+      "themes": [],
+      "total": 1
     },
     {
       "assets": [],
       "consumedBy": [],
-      "id": "themes.tracking-tight",
-      "resolved": 9,
+      "id": "themes.secondary",
+      "resolved": 1,
       "themes": [],
-      "total": 9
+      "total": 1
     },
     {
       "assets": [],
       "consumedBy": [],
-      "id": "themes.radius",
-      "resolved": 12,
+      "id": "themes.secondary-foreground",
+      "resolved": 1,
       "themes": [],
-      "total": 12
+      "total": 1
     },
     {
       "assets": [],
       "consumedBy": [],
       "id": "themes.shadow",
-      "resolved": 9,
+      "resolved": 7,
       "themes": [],
-      "total": 9
+      "total": 7
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.sidebar",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.sidebar-accent",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.sidebar-accent-foreground",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.sidebar-border",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.sidebar-foreground",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.sidebar-primary",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.sidebar-primary-foreground",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.sidebar-ring",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
     },
     {
       "assets": [],
       "consumedBy": [],
       "id": "themes.spacing",
-      "resolved": 10,
+      "resolved": 1,
       "themes": [],
-      "total": 10
+      "total": 1
     },
     {
       "assets": [],
       "consumedBy": [],
-      "id": "themes.destructive",
-      "resolved": 12,
+      "id": "themes.tracking-tight",
+      "resolved": 1,
       "themes": [],
-      "total": 12
-    },
-    {
-      "assets": [],
-      "consumedBy": [
-        "themes.background",
-        "themes.card",
-        "themes.popover",
-        "themes.secondary",
-        "themes.accent",
-        "themes.muted",
-        "themes.sidebar",
-        "themes.sidebar-accent"
-      ],
-      "id": "themes.background",
-      "resolved": 11,
-      "themes": [
-        "themes.background",
-        "themes.card",
-        "themes.popover",
-        "themes.secondary",
-        "themes.accent",
-        "themes.muted",
-        "themes.sidebar",
-        "themes.sidebar-accent"
-      ],
-      "total": 11
-    },
-    {
-      "assets": [],
-      "consumedBy": [
-        "themes.radius"
-      ],
-      "id": "themes.radius",
-      "resolved": 3,
-      "themes": [
-        "themes.radius"
-      ],
-      "total": 3
-    },
-    {
-      "assets": [],
-      "consumedBy": [
-        "assets.app-icon",
-        "assets.favicon",
-        "assets.lockup",
-        "assets.mark",
-        "themes.input",
-        "themes.ring",
-        "themes.sidebar-ring",
-        "themes.foreground",
-        "themes.card-foreground",
-        "themes.popover-foreground",
-        "themes.primary-foreground",
-        "themes.secondary-foreground",
-        "themes.accent-foreground",
-        "themes.muted-foreground",
-        "themes.sidebar-foreground",
-        "themes.sidebar-primary-foreground",
-        "themes.sidebar-accent-foreground"
-      ],
-      "id": "themes.foreground",
-      "resolved": 8,
-      "themes": [
-        "themes.foreground",
-        "themes.card-foreground",
-        "themes.popover-foreground",
-        "themes.primary-foreground",
-        "themes.secondary-foreground",
-        "themes.accent-foreground",
-        "themes.muted-foreground",
-        "themes.sidebar-foreground",
-        "themes.sidebar-primary-foreground",
-        "themes.sidebar-accent-foreground"
-      ],
-      "total": 8
-    },
-    {
-      "assets": [],
-      "consumedBy": [
-        "themes.font-sans",
-        "themes.font-heading",
-        "themes.font-mono"
-      ],
-      "id": "themes.font-sans",
-      "resolved": 3,
-      "themes": [
-        "themes.font-sans",
-        "themes.font-heading",
-        "themes.font-mono"
-      ],
-      "total": 3
+      "total": 1
     }
   ],
   "orphans": []

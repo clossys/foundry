@@ -7,6 +7,8 @@
  * contract fixture ships as shadcn-aria/checkbox; components.chart-area has no stock fixture; components.button already
  * holds a candidate; sections.hero is a crafted (not byte-exact) slot.
  */
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -16,12 +18,16 @@ import { buildContext } from "../constitution/index.js";
 import { R14 } from "../constitution/checks/R14-provenance.js";
 import { r03_2, r03_4 } from "../constitution/rules/r03.js";
 import { CODE_ADOPT, CODE_ADOPT_RUNG, codeAdoptRefusal, codeAdoptSlotRefusal, stockItemOf } from "../records/code-adopt.js";
+import { PINNED_THEME_READER } from "../read/theme-pins.js";
 import { writeCandidate } from "../records/slot-write.js";
 import { readLedger } from "../records/slots.js";
 import { startRun, type AgentPacket, type CodeCall, type RunHooks } from "./runner.js";
 
+const REF_VERBATIM_CLI = fileURLToPath(new URL("../../../designer/scripts/check-ref-verbatim.mjs", import.meta.url));
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
 const CHECKBOX = "components.checkbox";
+/** shadcn-aria/sonner reads --border, --popover, --popover-foreground and --radius bare: every one a fixture theme pin. */
+const TOAST = "components.toast";
 const roots: string[] = [];
 afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
 
@@ -151,5 +157,104 @@ describe("loop.create's adopt step (clossys settle adopt): code installs the sto
       expect(h.agentSteps).toContain("create");
       expect(candidatesOf(consumer, slotId)).toEqual(held);
     }
+  }, 60_000);
+});
+
+const sha256 = (text: string) => createHash("sha256").update(text, "utf8").digest("hex");
+/** Re-pin `themes.<name>` after `edit` changes its candidate item: the candidate's bytes and the pin's sha256 move together. */
+function repinTheme(consumer: string, name: string, edit: (item: { cssVars: Record<string, Record<string, string>> }) => void): void {
+  const dir = join(consumer, "agents", "designer", `themes.${name}`);
+  const pinFile = join(dir, "pin.json");
+  const pin = JSON.parse(readFileSync(pinFile, "utf8"));
+  const file = join(dir, "candidates", pin.candidate);
+  const doc = JSON.parse(readFileSync(file, "utf8"));
+  edit(doc.content ?? doc);
+  const bytes = `${JSON.stringify(doc, null, 2)}\n`;
+  writeFileSync(file, bytes);
+  writeFileSync(pinFile, `${JSON.stringify({ ...pin, sha256: sha256(bytes) }, null, 2)}\n`);
+}
+const toastStock = (root: string) => {
+  const found = stockItemOf(root, TOAST);
+  if (!("stock" in found)) throw new Error(found.none);
+  return found.stock;
+};
+const adoptFields = (seed: string) => ({ basis: "code", rung: CODE_ADOPT_RUNG, seed, ladder: { rung: CODE_ADOPT_RUNG, seed } });
+
+describe("a consumer adoption writes the consumer's pinned theme values as its token fallbacks (D5-2D)", () => {
+  it("every bare read of the stock item carries the consumer's pinned value, and the record names the reader and output sha", () => {
+    const { root } = world();
+    expect(codeAdoptSlotRefusal(root, "designer", TOAST)).toBeUndefined();
+    const stock = toastStock(root);
+    expect(stock.ref).toMatch(/^shadcn-aria\/sonner@/);
+    const [file] = stock.item.files;
+    for (const [name, value] of [["--border", "oklch(0.922 0 0)"], ["--popover", "oklch(1 0 0)"], ["--popover-foreground", "oklch(0.145 0 0)"], ["--radius", "0.625rem"]]) {
+      expect(file!.content).toContain(`var(${name}, ${value})`);
+    }
+    expect(file!.content).not.toMatch(/var\(--[a-zA-Z0-9_-]+\)/);
+    expect(stock.item.meta.refVerbatim).toEqual({ files: { [file!.path]: file!.path }, reader: PINNED_THEME_READER, outputSha256: { [file!.path]: sha256(file!.content) } });
+    expect(codeAdoptRefusal(root, "designer", TOAST, stock.item, adoptFields(stock.seed))).toBeUndefined();
+  });
+
+  it("follows a changed pin byte-exact, and refuses a hand-edited fallback (mutation 1)", () => {
+    const { root, consumer } = world();
+    repinTheme(consumer, "radius", item => { item.cssVars.light!.radius = "0.375rem"; });
+    const stock = toastStock(root);
+    const [file] = stock.item.files;
+    expect(file!.content).toContain("var(--radius, 0.375rem)");
+    expect(file!.content).not.toContain("0.625rem");
+    const fields = adoptFields(stock.seed);
+    expect(codeAdoptRefusal(root, "designer", TOAST, stock.item, fields)).toBeUndefined();
+    // The written file's fallback hand-changed: the proof against the reference normalized through the same reader fails.
+    const edited = { ...stock.item, files: [{ ...file!, content: file!.content.replace("var(--radius, 0.375rem)", "var(--radius, 0.625rem)") }] };
+    expect(codeAdoptRefusal(root, "designer", TOAST, edited, fields)).toMatch(/is not byte-exact to shadcn-aria\/sonner@[^ ]+'s reference normalized through consumer pinned themes/);
+    // The recorded reader or output sha must be the adoption's own.
+    expect(codeAdoptRefusal(root, "designer", TOAST, { ...stock.item, meta: { ...stock.item.meta, refVerbatim: { ...stock.item.meta.refVerbatim as object, reader: "package declared fallbacks" } } }, fields)).toMatch(/names its fallback reader "consumer pinned themes"/);
+    expect(codeAdoptRefusal(root, "designer", TOAST, { ...stock.item, meta: { ...stock.item.meta, refVerbatim: { ...stock.item.meta.refVerbatim as object, outputSha256: { [file!.path]: "0".repeat(64) } } } }, fields)).toMatch(/records .* output sha256/);
+  });
+
+  it("refuses the adoption when the pins do not declare a name the stock item reads (mutation 2): no default, no package value", () => {
+    const { root, consumer } = world();
+    repinTheme(consumer, "radius", item => { delete item.cssVars.light!.radius; });
+    expect(() => stockItemOf(root, TOAST)).toThrow(expect.objectContaining({ name: "UndeclaredTokenFallbackError", message: expect.stringContaining("--radius") }));
+    expect(codeAdoptRefusal(root, "designer", TOAST, {}, adoptFields("shadcn-aria/sonner"))).toMatch(/stock item cannot be read: .*--radius/);
+  });
+
+  it("the submit guard and R03.4 prove a written consumer adoption byte-exact through the same reader", () => {
+    const { root, consumer } = world();
+    repinTheme(consumer, "popover", item => { item.cssVars.light!.popover = "oklch(0.99 0.01 250)"; });
+    const stock = toastStock(root);
+    expect(stock.item.files[0]!.content).toContain("var(--popover, oklch(0.99 0.01 250))");
+    const written = writeCandidate(consumer, "designer", TOAST, stock.item.name, stock.item, {
+      at: "2026-11-21T12:00:00Z", provenance: { verb: "submit", by: CODE_ADOPT }, fields: adoptFields(stock.seed), guard: true,
+    });
+    const rowsOf = () => r03_4(buildContext(root, consumer)).filter(row => row.slot === TOAST && row.candidate === written.name);
+    expect(rowsOf()).toEqual([]);
+    // The written file's fallback hand-changed on disk: R03.4's proof through the same reader fails.
+    const file = join(consumer, "agents", "designer", TOAST, "candidates", written.name);
+    const bytes = readFileSync(file, "utf8");
+    expect(bytes).toContain("var(--popover, oklch(0.99 0.01 250))");
+    writeFileSync(file, bytes.replace("var(--popover, oklch(0.99 0.01 250))", "var(--popover, oklch(1 0 0))"));
+    expect(rowsOf().map(row => row.reason).join("\n")).toMatch(/is adopt-first: .* is not byte-exact to the normalized reference shadcn-aria\/sonner@/);
+  }, 60_000);
+
+  it("the designer check:ref-verbatim CLI proves a written consumer adoption through the same reader, and names re-adopt for a pin moved after it", () => {
+    const { root, consumer } = world();
+    const stock = toastStock(root);
+    const written = writeCandidate(consumer, "designer", TOAST, stock.item.name, stock.item, {
+      at: "2026-11-21T12:00:00Z", provenance: { verb: "submit", by: CODE_ADOPT }, fields: adoptFields(stock.seed), guard: true,
+    });
+    // The strict one-candidate mode (the pin gate): this adoption alone, not the fixture's unrelated lockfile rows.
+    const [, element, version] = /^(.+)-v(\d+)\.json$/.exec(written.name)!;
+    const cli = () => spawnSync(process.execPath, [REF_VERBATIM_CLI, "--root", consumer, "--element", `${TOAST}/${element}/v${version}`, "--report", join(root, "ref-verbatim.json")], { encoding: "utf8" });
+    const adopted = cli();
+    expect(adopted.status, adopted.stderr).toBe(0);
+    expect(adopted.stdout).toMatch(/^pass +components\.toast\//m);
+    // N1: the pin moves after the adoption; the unchanged adoption fails byte-exact and the finding names re-adoption.
+    repinTheme(consumer, "radius", item => { item.cssVars.light!.radius = "0.375rem"; });
+    const moved = cli();
+    expect(moved.status).toBe(1);
+    expect(moved.stderr).toMatch(/components\.toast\/.*unchanged since adoption, so a pinned theme value changed after it: re-adopt it \(code:adopt the stock item again\)/);
+    const rows = r03_4(buildContext(root, consumer)).filter(row => row.slot === TOAST).map(row => row.reason).join("\n");
+    expect(rows).toMatch(/is not byte-exact .*; its files are unchanged since adoption, so a pinned theme value changed after it: re-adopt it/);
   }, 60_000);
 });
