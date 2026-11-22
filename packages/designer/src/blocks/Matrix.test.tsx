@@ -19,7 +19,7 @@ describe("Matrix", () => {
       const plate = side.firstElementChild as HTMLElement;
       // The stock Card is the plate (E4, P0 shadcn reset); its look is on the owner CREATIVE list.
       expect(plate).toHaveAttribute("data-slot", "card");
-      expect(plate).toHaveClass("bg-(--color-surface-raised)", "rounded-(--radius-control)");
+      expect(plate).toHaveClass("bg-(--card)", "rounded-(--radius)");
       expect(within(side as HTMLElement).getAllByRole("listitem")[0]).toHaveClass("text-ink-primary");
     }
     expect(screen.getByRole("heading", { name: "A shared record" }).tagName).toBe("H3");
@@ -155,9 +155,9 @@ describe("Matrix", () => {
       // An inverse band reaches the stock card as token classes its merge puts in place of its own surface and ink.
       if (ground === "inverse") {
         expect(plate).toHaveClass("bg-surface-inverse-raised", "text-ink-on-inverse");
-        expect(plate).not.toHaveClass("bg-(--color-surface-raised)");
-      } else expect(plate).toHaveClass("bg-(--color-surface-raised)");
-      expect((plate as HTMLElement).style.getPropertyValue("--color-surface-raised")).toBe("");
+        expect(plate).not.toHaveClass("bg-(--card)");
+      } else expect(plate).toHaveClass("bg-(--card)");
+      expect((plate as HTMLElement).style.getPropertyValue("--card")).toBe("");
     }
     expect(container.querySelector('[data-featured="true"]')).toHaveClass(ground === "inverse" ? "border-t-accent-on-inverse" : "border-t-primary");
     expect(screen.getByRole("heading", { name: "A shared record" }).tagName).toBe("H4");

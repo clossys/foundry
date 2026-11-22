@@ -89,7 +89,7 @@ describe("SectionIntro", () => {
 describe("buttonVariants on a link", () => {
   it("gives an anchor the Button look with a focus-visible outline, without outline suppression", () => {
     const look = buttonVariants({ variant: "default", size: "lg" }).split(" ");
-    expect(look).toEqual(expect.arrayContaining(["bg-(--color-action)", "text-(--color-ink-on-action)", "focus-visible:outline-solid", "focus-visible:outline-(--color-focus-ring)", "focus-visible:outline-offset-(--ui-focus-offset)"]));
+    expect(look).toEqual(expect.arrayContaining(["bg-(--primary)", "text-(--primary-foreground)", "focus-visible:outline-solid", "focus-visible:outline-(--ring)", "focus-visible:outline-offset-2"]));
     expect(look).not.toContain("outline-none");
   });
 
@@ -98,7 +98,7 @@ describe("buttonVariants on a link", () => {
     const primary = buttonVariants({ variant: "default", size: "lg" }).split(" ");
     const outline = buttonVariants({ variant: "outline", size: "lg" }).split(" ");
     expect(sizeOf(outline)).toEqual(sizeOf(primary));
-    expect(outline).toEqual(expect.arrayContaining(["focus-visible:outline-solid", "focus-visible:outline-(--color-focus-ring)"]));
+    expect(outline).toEqual(expect.arrayContaining(["focus-visible:outline-solid", "focus-visible:outline-(--ring)"]));
     expect(outline).not.toContain("outline-none");
   });
 

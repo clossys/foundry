@@ -120,7 +120,10 @@ describe("component default fills", () => {
     for (const leaf of ["button", "table", "card", "menu"]) {
       expect(plan.rows.find(row => row.slot === `components.${leaf}`), leaf).toMatchObject({ status: "default", source: "shadcn@aria", fill: `shadcn@aria/components.${leaf}`, reasons: [] });
     }
-    for (const [leaf, member] of [["card", "themes.card.default"], ["menu", "themes.tracking-tight.default"]]) {
+    // U-K4 (K4 option 2): the menu shortcut takes the stock `tracking-widest` utility in place of the Foundry
+    // tracking-(--tracking-label) read, so the menu no longer reads themes.tracking-tight; its registered surface read is
+    // the derived stock --popover, which bg-(--popover) paints in place of bg-(--color-overlay-surface).
+    for (const [leaf, member] of [["card", "themes.card.default"], ["menu", "themes.popover.default"]]) {
       const fill = componentOf(input.catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].id === `shadcn@aria/components.${leaf}`)!);
       expect(fill.reads.themes).toContain(member);
       expect(input.tokens[member]).toBeDefined();

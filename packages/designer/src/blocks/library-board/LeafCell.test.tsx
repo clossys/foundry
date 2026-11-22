@@ -85,7 +85,9 @@ describe('board capture hooks (vf35)', () => {
     const cell = container.querySelector<HTMLElement>('[data-candidate-cell]')!;
     expect(cell).toHaveAttribute('data-slot', 'card');
     expect(cell).toHaveAttribute('data-ground', 'raised');
-    expect(cell).toHaveClass(`bg-(--color-surface-${cell.dataset.ground})`);
+    // U-K4 (K4 option 2): the stock Card paints the raised ground through its derived shadcn read, --card.
+    const stockFill: Record<string, string> = { raised: '--card' };
+    expect(cell).toHaveClass(`bg-(${stockFill[cell.dataset.ground!]})`);
   });
 
   it('marks an unchosen library board leaf as not chosen', () => {
