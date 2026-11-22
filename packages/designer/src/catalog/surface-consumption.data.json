@@ -55,7 +55,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/icons/Check.ts",
@@ -225,7 +225,7 @@
         },
         {
           "path": "packages/designer/src/components/preview-runtime/components/banner/alert.tsx",
-          "sha256": "4132ac138b9cf9c90a842f15aca6ea66fb8c3a65ff329013af7eec2295c50258"
+          "sha256": "6f7a06ea1ec2d22cee05f1372c99170ae18376d30fc8ba538768de4279c124d0"
         },
         {
           "path": "packages/designer/src/components/surface-tones.ts",
@@ -1157,7 +1157,7 @@
         },
         {
           "path": "packages/designer/src/components/button-classes.ts",
-          "sha256": "cb78cb551dbe87b71eaaa8e8766026f13580da668fd4cc87b597fea2e951d887"
+          "sha256": "9cd0c5c09d1db7bdbcc84fc88a4a24d21840aac2f7e8be2f57a562936ec49514"
         },
         {
           "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
@@ -2188,7 +2188,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/icons/Check.ts",
@@ -2374,7 +2374,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.client.tsx",
@@ -3247,9 +3247,7 @@
           "components.link",
           "components.semantic-content"
         ],
-        "themes": [
-          "themes.primary"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -3270,7 +3268,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.client.tsx",
@@ -3342,7 +3340,7 @@
         },
         {
           "path": "packages/designer/src/components/preview-runtime/components/dialog/dialog.tsx",
-          "sha256": "81b5ea741eb3c03f6af7c1056ec893fe67f5b6d56fb5ef602de466880547c893"
+          "sha256": "70e43728a9ff7ccded3e6029eea734bfc85f54fd9348b8518bebf6a7d95015d6"
         }
       ],
       "unresolved": [
@@ -3670,7 +3668,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/components/surface-tones.ts",
@@ -3760,7 +3758,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.client.tsx",
@@ -4044,7 +4042,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/icons/XCircle.ts",
@@ -4130,7 +4128,7 @@
         },
         {
           "path": "packages/designer/src/components/preview-runtime/components/banner/alert.tsx",
-          "sha256": "4132ac138b9cf9c90a842f15aca6ea66fb8c3a65ff329013af7eec2295c50258"
+          "sha256": "6f7a06ea1ec2d22cee05f1372c99170ae18376d30fc8ba538768de4279c124d0"
         },
         {
           "path": "packages/designer/src/components/surface-tones.ts",
@@ -4357,7 +4355,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/icons/ChevronRight.ts",
@@ -4599,7 +4597,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/components/surface-tones.ts",
@@ -4925,7 +4923,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/components/Meter.server.tsx",
@@ -4937,11 +4935,11 @@
         },
         {
           "path": "packages/designer/src/components/preview-runtime/components/avatar/avatar.tsx",
-          "sha256": "b689552fb97ab80ed221ca6ef1495f38ecf5e5f99b60ddd819938b2456b00b51"
+          "sha256": "c1c8341c383ca98281b9499cd9c14a68f0c02776c8386d087bb71c3f92aaa5ac"
         },
         {
           "path": "packages/designer/src/components/preview-runtime/components/button/button.tsx",
-          "sha256": "2584e267277f5a1c1282bffc539cfcdc524311d580eb5a2e10963aa3807db4ad"
+          "sha256": "8a023ebd980fc814e92524a65d09feb29f7ffd4eadf4c08d970516f554cd8637"
         },
         {
           "path": "packages/designer/src/components/surface-tones.ts",
@@ -5154,6 +5152,12 @@
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/components/internal/cx.ts",
           "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/ui-vars.ts",
+          "line": 14
         },
         {
           "code": "DF2",
@@ -5372,9 +5376,7 @@
           "components.link",
           "components.semantic-content"
         ],
-        "themes": [
-          "themes.primary"
-        ]
+        "themes": []
       },
       "sourceFiles": [
         {
@@ -5395,7 +5397,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.client.tsx",
@@ -5703,7 +5705,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/internal/brandmark.ts",
@@ -5792,7 +5794,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
         },
         {
           "path": "packages/designer/src/icons/ChevronRight.ts",

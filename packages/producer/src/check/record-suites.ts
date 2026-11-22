@@ -185,7 +185,9 @@ export async function slotContractSuite(): Promise<SuiteReport> {
  */
 export async function refVerbatimSuite(root: string): Promise<SuiteReport> {
   const { refVerbatimReport } = await import("@clossys/designer/ref-verbatim");
-  const result = refVerbatimReport(join(root, "clossys"));
+  const { pinnedThemeReader } = await import("../read/theme-pins.js");
+  // A consumer adoption's reference is normalized through the consumer's pinned themes reader it names.
+  const result = refVerbatimReport(join(root, "clossys"), { reader: pinnedThemeReader(join(root, "clossys")) });
   const findings: SuiteFinding[] = result.findings.map(finding => ({
     severity: "error", code: finding.code, message: finding.detail,
     where: `${finding.element}${finding.file ? ` ${finding.file}` : ""}${finding.range ? `:${finding.range.start.line}` : ""}`,

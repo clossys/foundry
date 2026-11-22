@@ -6,6 +6,7 @@
  */
 import { join } from "node:path";
 import { defaultThemeCss, isEmptyProjection, projectTheme, themeHash, toCss, type ResolvedThemePins, type ThemeProjection as DesignerThemeProjection } from "@clossys/designer/build/theme";
+import { pinnedThemeFallbackReader, type DeclaredFallbackReader } from "@clossys/designer/ref-verbatim";
 import type { ThemeProjection } from "../records/types.js";
 import { hasAgentModel, hasPinFile, listSlots, readCandidate, withSlotReadScope } from "../records/slots.js";
 
@@ -63,6 +64,26 @@ export function resolveThemePins(library: string): ResolvedThemePins {
     if (slot.startsWith("themes.")) pins[slot] = { slot, candidate: pin.candidate, sha256: pin.sha256, sample: false, content: pin.item };
   }
   return pins;
+}
+
+/** Where a consumer adoption's token fallbacks come from: the adoption record names this source. */
+export const PINNED_THEME_READER = "consumer pinned themes";
+
+/**
+ * The values the consumer's pinned `themes.*` slots declare at `:root` (the light mode, in scope wherever no mode
+ * class applies), by custom-property name: the projection `pinnedThemeCss` writes, never a second parser.
+ */
+export function pinnedThemeValues(library: string): Record<string, string> {
+  return { ...projectTheme(resolveThemePins(library)).vars.light } as Record<string, string>;
+}
+
+/**
+ * The declared-fallback reader a consumer adoption writes its token fallbacks through: the consumer's pinned
+ * `themes.*` values only. A name the pins do not declare is refused (`UndeclaredTokenFallbackError`); there is no
+ * default and no package value.
+ */
+export function pinnedThemeReader(library: string): DeclaredFallbackReader {
+  return pinnedThemeFallbackReader(pinnedThemeValues(library), PINNED_THEME_READER);
 }
 
 /** The pinned `themes.*` slots as CSS, or undefined when they declare no variable. */

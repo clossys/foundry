@@ -26,7 +26,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
 import { normalizedSeedFile } from "@clossys/designer/ref-verbatim";
-import { CODE_ADOPT, codeAdoptSubmitRefusal } from "../../records/code-adopt.js";
+import { CODE_ADOPT, READOPT_HINT, adoptionReaderOf, adoptionUnchangedSinceWrite, codeAdoptSubmitRefusal } from "../../records/code-adopt.js";
 import { packagePath } from "../../package-path.js";
 import { ladderIssues, rungKind, type GenericRung } from "../../pipeline/candidate-ladder.js";
 import { ledgerEvents, standardFor, type Standard } from "../../records/standards.js";
@@ -217,8 +217,14 @@ export const r03_4: Check = ctx => {
       if (provenance.error) { rows.push(row("R03", "R03.4", slot, provenance.error, candidate.path, candidate.name)); continue; }
       const manifest = provenance.manifest!;
       const referencesDir = dirname(packagePath(ctx.root, REFERENCE_MANIFEST_PATH));
-      const normalized = (ref: string, path: string) => normalizedSeedFile(ctx.consumer, ref, path, { manifest, referencesDir });
-      for (const finding of verbatimFindings(`${slot.id}/${candidate.name}`, candidate.json, manifest, normalized)) rows.push(row("R03", "R03.4", slot, `${standard.id} is adopt-first: ${finding}`, candidate.path, candidate.name));
+      // A consumer adoption (meta.refVerbatim.reader) is compared with its reference normalized through the same reader.
+      let reader: ReturnType<typeof adoptionReaderOf>;
+      try { reader = adoptionReaderOf(ctx.consumer, candidate.json); }
+      catch (error) { rows.push(row("R03", "R03.4", slot, `${standard.id} is adopt-first: ${error instanceof Error ? error.message : String(error)}`, candidate.path, candidate.name)); continue; }
+      const normalized = (ref: string, path: string) => normalizedSeedFile(ctx.consumer, ref, path, { manifest, referencesDir, ...(reader ? { reader } : {}) });
+      // A consumer adoption still holding the bytes it wrote failed because a pin moved after it: name re-adoption.
+      const stale = reader && adoptionUnchangedSinceWrite(candidate.json) ? `; its files are unchanged since adoption, so a pinned theme value changed after it: ${READOPT_HINT}` : "";
+      for (const finding of verbatimFindings(`${slot.id}/${candidate.name}`, candidate.json, manifest, normalized)) rows.push(row("R03", "R03.4", slot, `${standard.id} is adopt-first: ${finding}${stale}`, candidate.path, candidate.name));
     }
   }
   return rows;

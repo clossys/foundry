@@ -88,7 +88,21 @@ export type RefVerbatimOptions = {
   readonly slotDoc?: { readonly uses?: readonly string[] };
   /** Canonical element dependencies (`<slot>/<element>/v<N>`) whose strict proof is already in progress; a repeat is a cycle. */
   readonly exactAncestors?: readonly string[];
+  /** The declared value an H-TOKEN read's fallback must equal, per custom-property name. */
+  readonly fallback?: (name: string) => string;
+  /**
+   * A consumer adoption's declared-fallback reader. A candidate whose `meta.refVerbatim.reader` names this reader's
+   * source is compared with its reference normalized through it; one naming a reader not given here fails.
+   */
+  readonly reader?: DeclaredFallbackReader;
 };
+
+/** A declared-source fallback reader (`src/importers/declared-fallback-reader.ts`): `fallback` refuses an undeclared name. */
+export type DeclaredFallbackReader = { readonly source: string; fallback(name: string): string };
+/** A consumer's pinned `themes.*` values (by custom-property name) as a declared-fallback reader. */
+export declare function pinnedThemeFallbackReader(values: Readonly<Record<string, string>>, source?: string): DeclaredFallbackReader;
+/** Whether `error` is the reader's refusal of a name with no declared value (`UndeclaredTokenFallbackError`). */
+export declare function isUndeclaredTokenFallback(error: unknown): boolean;
 
 /** One ds-only scan event of a source file, in source order. */
 export type DsOnlyEvent =
@@ -134,7 +148,11 @@ export declare function refVerbatimReport(
   readonly stale: readonly string[];
 };
 
-/** The vendored seed file `path` of manifest item `ref` normalized for the consumer at `root` (the reference this gate compares with). Throws when it cannot be read. */
+/**
+ * The vendored seed file `path` of manifest item `ref` normalized for the consumer at `root` (the reference this gate
+ * compares with); with `options.reader`, its bare reads carry that reader's values. Throws when it cannot be read, or
+ * when the reader does not declare a name the file reads.
+ */
 export declare function normalizedSeedFile(root: string, ref: string, path: string, options?: RefVerbatimOptions): string;
 
 export type AdaptationKind = "import-paths" | "token-mapping" | "data-binding" | "data-fit" | "slot-bound-copy" | "slot-bound-identity";

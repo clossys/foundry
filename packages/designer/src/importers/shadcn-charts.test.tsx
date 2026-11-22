@@ -11,6 +11,7 @@ import {
   generatedShadcnChartFiles, importShadcnCharts, materializeShadcnChart, pinnedShadcnChartsInput, resolveChartAlias,
   SHADCN_CHART_FILLS_DIR, SHADCN_CHARTS_PIN, verifyShadcnChartSource, type ChartSourceFile,
 } from "./shadcn-charts.js";
+import { cssRead, packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
 
 const requireFromHere = createRequire(import.meta.url);
 const HEX = /#[0-9a-fA-F]{3,8}\b/;
@@ -96,17 +97,23 @@ describe("shadcn charts source (charts-core on Recharts)", () => {
     }
   });
 
-  it("emits no hex literal: series read --chart-N, chrome reads chart tokens", () => {
+  it("emits no hex literal: series read their bound chart token, chrome reads chart tokens", () => {
     const result = importShadcnCharts(pinnedShadcnChartsInput());
     const importer = readFileSync(resolve(import.meta.dirname, "shadcn-charts.ts"), "utf8");
     expect(importer).not.toMatch(HEX);
     for (const leaf of ["chart-bar", "chart-line", "chart-area"]) {
       const code = materializeShadcnChart(result, leaf).find(file => file.path === `components/${leaf}/${leaf}.tsx`)!.content;
-      expect(code, leaf).not.toMatch(HEX);
-      for (const n of [1, 2, 3, 4, 5]) expect(code).toContain(`var(--chart-${n}, var(--color-chart-categorical-${n}))`);
+      // A series read carries its bound token's declared value (styles/tokens.css declares the categorical ramp in
+      // hex): that read, exactly, is the only place a colour value appears; the code with every series read removed
+      // holds no colour literal.
+      const series = [1, 2, 3, 4, 5].map(n => JSON.stringify(cssRead(packageDeclaredFallbackReader(), `--color-chart-categorical-${n}`)));
+      for (const read of series) expect(code).toContain(read);
+      expect(series.reduce((text, read) => text.split(read).join("\"\""), code), leaf).not.toMatch(HEX);
+      // Each series reads its bound token only: no `var(--chart-N, …)` chain (D5-2D).
+      expect(code, leaf).not.toMatch(/var\(--chart-\d+/);
       const vars = [...code.matchAll(/var\((--[a-z0-9-]+)/g)].map(match => match[1]!);
       for (const name of vars) {
-        if (/^--chart-\d+$/.test(name) || name === "--color-") continue;
+        if (name === "--color-") continue;
         expect(TOKENS[name], `${leaf} reads ${name}`).toBeDefined();
       }
       for (const chrome of ["--color-chart-grid", "--color-chart-axis", "--color-chart-axis-label"]) expect(vars).toContain(chrome);
@@ -133,7 +140,7 @@ describe("shadcn charts source (charts-core on Recharts)", () => {
     expect(svg, leaf).not.toBeNull();
     const marks = { "chart-bar": ".recharts-bar-rectangle", "chart-line": ".recharts-line-curve", "chart-area": ".recharts-area-area" }[leaf]!;
     expect(svg!.querySelectorAll(marks).length, leaf).toBeGreaterThanOrEqual(2);
-    expect(host.querySelector("[data-slot=chart] style")?.textContent).toContain("--color-desktop: var(--chart-1, var(--color-chart-categorical-1));");
+    expect(host.querySelector("[data-slot=chart] style")?.textContent).toContain(`--color-desktop: ${cssRead(packageDeclaredFallbackReader(), "--color-chart-categorical-1")};`);
     await React.act(async () => root.unmount());
     host.remove();
     expect(dirname(SHADCN_CHART_FILLS_DIR)).toMatch(/catalog\/fills$/);

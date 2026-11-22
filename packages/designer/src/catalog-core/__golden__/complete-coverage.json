@@ -1,6 +1,6 @@
 {
   "assetLeaves": 49,
-  "boundProperties": 230,
+  "boundProperties": 49,
   "complete": true,
   "consumer": "example-complete-catalog",
   "kind": "materialized-consumer-coverage",
@@ -555,68 +555,34 @@
       ]
     },
     {
-      "members": 5,
+      "members": 1,
       "originKinds": [
         "adopted"
       ],
       "rules": [],
-      "slot": "themes.primary",
+      "slot": "themes.accent",
       "sources": [
-        "foundry"
+        "shadcn@aria"
       ]
     },
     {
-      "members": 5,
+      "members": 1,
       "originKinds": [
         "adopted"
       ],
       "rules": [],
-      "slot": "themes.primary",
+      "slot": "themes.accent-foreground",
       "sources": [
-        "foundry"
+        "shadcn@aria"
       ]
     },
     {
-      "members": 10,
+      "members": 2,
       "originKinds": [
         "adopted"
       ],
       "rules": [],
       "slot": "themes.animate-marquee",
-      "sources": [
-        "foundry",
-        "tailwind-default"
-      ]
-    },
-    {
-      "members": 6,
-      "originKinds": [
-        "adopted"
-      ],
-      "rules": [],
-      "slot": "themes.border",
-      "sources": [
-        "foundry"
-      ]
-    },
-    {
-      "members": 8,
-      "originKinds": [
-        "adopted"
-      ],
-      "rules": [],
-      "slot": "themes.chart-1",
-      "sources": [
-        "carbon-colors"
-      ]
-    },
-    {
-      "members": 5,
-      "originKinds": [
-        "adopted"
-      ],
-      "rules": [],
-      "slot": "themes.input",
       "sources": [
         "foundry"
       ]
@@ -627,69 +593,310 @@
         "adopted"
       ],
       "rules": [],
-      "slot": "themes.radius",
+      "slot": "themes.animate-marquee-vertical",
       "sources": [
         "foundry"
       ]
     },
     {
-      "members": 5,
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.animate-shiny-text",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.background",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.border",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.card",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.card-foreground",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.chart-1",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.chart-2",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.chart-3",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.chart-4",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.chart-5",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.destructive",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
       "originKinds": [
         "adopted"
       ],
       "rules": [],
       "slot": "themes.font-heading",
       "sources": [
-        "foundry"
-      ]
-    },
-    {
-      "members": 4,
-      "originKinds": [
-        "adopted"
-      ],
-      "rules": [],
-      "slot": "themes.shadow",
-      "sources": [
-        "foundry"
-      ]
-    },
-    {
-      "members": 2,
-      "originKinds": [
-        "adopted"
-      ],
-      "rules": [],
-      "slot": "themes.ring",
-      "sources": [
-        "foundry"
-      ]
-    },
-    {
-      "members": 9,
-      "originKinds": [
-        "adopted"
-      ],
-      "rules": [],
-      "slot": "themes.tracking-tight",
-      "sources": [
-        "foundry",
         "tailwind-default"
       ]
     },
     {
-      "members": 12,
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.font-mono",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.font-sans",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.font-serif",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.foreground",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.input",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.muted",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.muted-foreground",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.popover",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.popover-foreground",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.primary",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.primary-foreground",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
       "originKinds": [
         "adopted"
       ],
       "rules": [],
       "slot": "themes.radius",
       "sources": [
-        "tailwind-default"
+        "shadcn@aria"
       ]
     },
     {
-      "members": 9,
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.ring",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.secondary",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.secondary-foreground",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 7,
       "originKinds": [
         "adopted"
       ],
@@ -700,7 +907,95 @@
       ]
     },
     {
-      "members": 10,
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.sidebar",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.sidebar-accent",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.sidebar-accent-foreground",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.sidebar-border",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.sidebar-foreground",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.sidebar-primary",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.sidebar-primary-foreground",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "themes.sidebar-ring",
+      "sources": [
+        "shadcn@aria"
+      ]
+    },
+    {
+      "members": 1,
       "originKinds": [
         "adopted"
       ],
@@ -711,62 +1006,18 @@
       ]
     },
     {
-      "members": 12,
+      "members": 1,
       "originKinds": [
         "adopted"
       ],
       "rules": [],
-      "slot": "themes.destructive",
-      "sources": [
-        "radix-colors"
-      ]
-    },
-    {
-      "members": 11,
-      "originKinds": [
-        "adopted"
-      ],
-      "rules": [],
-      "slot": "themes.background",
-      "sources": [
-        "foundry"
-      ]
-    },
-    {
-      "members": 3,
-      "originKinds": [
-        "adopted"
-      ],
-      "rules": [],
-      "slot": "themes.radius",
-      "sources": [
-        "foundry"
-      ]
-    },
-    {
-      "members": 8,
-      "originKinds": [
-        "adopted"
-      ],
-      "rules": [],
-      "slot": "themes.foreground",
-      "sources": [
-        "foundry"
-      ]
-    },
-    {
-      "members": 3,
-      "originKinds": [
-        "adopted"
-      ],
-      "rules": [],
-      "slot": "themes.font-sans",
+      "slot": "themes.tracking-tight",
       "sources": [
         "tailwind-default"
       ]
     }
   ],
-  "served": 105,
-  "slots": 105,
-  "tokenLeaves": 56
+  "served": 91,
+  "slots": 91,
+  "tokenLeaves": 42
 }
