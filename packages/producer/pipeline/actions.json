@@ -310,6 +310,10 @@
           {
             "glob": "consumer:clossys.config.ts",
             "schema": "workspace-config"
+          },
+          {
+            "glob": "consumer:components.json",
+            "schema": "components-config"
           }
         ],
         "pass": {
@@ -340,6 +344,10 @@
             {
               "glob": "consumer:clossys.config.ts",
               "schema": "workspace-config"
+            },
+            {
+              "glob": "consumer:components.json",
+              "schema": "components-config"
             }
           ],
           "checks": [
@@ -2333,7 +2341,7 @@
         "agent": "producer",
         "kind": "plumb",
         "stage": "publish.assemble",
-        "summary": "Derive each slot's uses list from pinned candidates, and the consumer's shadcn flavor from the Designer config.",
+        "summary": "Derive each slot's uses list from pinned candidates.",
         "run": "clossys pipeline trace derive.uses -- node scripts/check-generated-derived.mjs --write",
         "inputs": [
           {
@@ -2361,10 +2369,6 @@
           {
             "glob": "consumer:agents/*/*/slot.json#uses",
             "schema": "slot"
-          },
-          {
-            "glob": "consumer:components.json",
-            "schema": "components-config"
           }
         ],
         "pass": {

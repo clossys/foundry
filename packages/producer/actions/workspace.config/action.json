@@ -11,6 +11,10 @@
     {
       "glob": "consumer:clossys.config.ts",
       "schema": "workspace-config"
+    },
+    {
+      "glob": "consumer:components.json",
+      "schema": "components-config"
     }
   ],
   "pass": {
@@ -41,6 +45,10 @@
       {
         "glob": "consumer:clossys.config.ts",
         "schema": "workspace-config"
+      },
+      {
+        "glob": "consumer:components.json",
+        "schema": "components-config"
       }
     ],
     "checks": [

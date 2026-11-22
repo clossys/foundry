@@ -22,7 +22,8 @@
  * `clossys settle adopt` code step installs the slot's stock item unmodified (`--by code:adopt`, rung L1,
  * records/code-adopt.ts) and whose certify step judges it, then pins it. The scenario ships the item it expects code to
  * install; a candidate code adopted that is not that item byte for byte, or a run that leaves the create to the agent,
- * stops the step.
+ * stops the step. Code adopt normalizes the item to the consumer's shadcn flavor, `clossys/components.json`, which the
+ * scenario's first verb (`clossys config --init`) writes, as it does for any consumer.
  *
  * There are two stand-ins. Agent judgement is scripted: the shipped candidate files, the fixed verdicts and the three
  * fixed design directions, critique scores hard-coded to 4 under the model `e2e-fixture-critic`, and a critique render
