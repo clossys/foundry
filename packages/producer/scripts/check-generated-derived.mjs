@@ -28,10 +28,14 @@
  * brand path in consumer brand resolution.
  *
  *   node scripts/check-generated-derived.mjs            check; exit 1 with findings
- *   node scripts/check-generated-derived.mjs --write    write slot.json `uses` and clossys/components.json (the build step)
+ *   node scripts/check-generated-derived.mjs --write    write slot.json `uses`, clossys/components.json and the pin-derived
+ *                                                       studio/generated icons and brand (the build step)
  *   node scripts/check-generated-derived.mjs --root <checkout>   check another tree (a fixture)
  *
- * Node builtins only: the generator imports these derivations, and the check runs on any tree.
+ * Icons and brand read their pins and candidates through the Producer's one slot reader
+ * (dist/records/slots.js) and icon drawings through its one markup tag reader, so they read the
+ * current candidate format; the generator imports these derivations, and the check runs on any tree
+ * with the Producer built.
  */
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -40,6 +44,8 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 // The Designer's flavor generator: one writer for every components.json (Node builtins only).
 import { shadcnComponentsJsonText } from '@clossys/designer/shadcn-flavor';
+import { tags } from '../dist/constitution/criteria/core/lib.js';
+import { readCandidate, readPin } from '../dist/records/slots.js';
 import { consumerPath, consumerUnder } from './consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -75,30 +81,39 @@ export function pinned(clossysRoot, agent, slot) {
   return { slot, agent, candidate: pin.candidate, sha256: pin.sha256, text, item };
 }
 
+/**
+ * The pinned candidate of a slot as the Producer's one slot reader views it, or undefined: `item` is the
+ * view of the current candidate format (a `clossys.candidate/1` envelope's content, with its header source
+ * as `meta.source`). A candidate whose bytes differ from its pin is not the pinned one.
+ */
+export function pinnedView(clossysRoot, agent, slot) {
+  let pin, read;
+  try { pin = readPin(clossysRoot, agent, slot); } catch { return undefined; }
+  if (!object(pin) || typeof pin.candidate !== 'string') return undefined;
+  try { read = readCandidate(clossysRoot, agent, slot, pin.candidate); } catch { return undefined; }
+  if (read.sha256 !== pin.sha256) return undefined;
+  let item;
+  if (pin.candidate.endsWith('.json')) try { item = JSON.parse(read.bytes); } catch { return undefined; }
+  return { slot, agent, candidate: pin.candidate, sha256: pin.sha256, text: read.raw, item };
+}
+
 // ---------------------------------------------------------------------------------------------
 // 1. Icons (R-ICONS-FROM-PINS)
 
-/** The lucide glyph a pinned icon candidate carries: its `clossys/assets.<slot>.json` glyph token. */
+/** The lucide glyph a pinned icon candidate carries: the child elements of its `assets/<icon>.svg` drawing. */
 function iconGlyph(entry) {
-  const name = entry.slot.slice('assets.'.length);
-  for (const file of entry.item?.files ?? []) {
-    if (!object(file) || typeof file.content !== 'string' || !String(file.path).endsWith('.json')) continue;
-    let tokens; try { tokens = JSON.parse(file.content); } catch { continue; }
-    const group = object(tokens) && object(tokens.assets) ? tokens.assets[name] : undefined;
-    if (!object(group)) continue;
-    for (const variant of ['default', ...Object.keys(group)]) {
-      const token = group[variant];
-      if (object(token) && token.$type === 'glyph' && Array.isArray(token.$value)) return token.$value;
-    }
-  }
-  return undefined;
+  const path = `assets/${entry.slot.slice('assets.'.length)}.svg`;
+  const drawing = (entry.item?.files ?? []).find(file => object(file) && file.path === path && typeof file.content === 'string');
+  if (!drawing) return undefined;
+  const nodes = tags(drawing.content).filter(tag => tag.name !== 'svg').map(tag => [tag.name, Object.fromEntries(tag.attrs)]);
+  return nodes.length ? nodes : undefined;
 }
 
 /** Each pinned assets.icon-* slot: its lucide name (from the pinned ref) and glyph. */
 export function deriveIcons(clossysRoot) {
   const rows = [], findings = [];
   for (const slot of slotIds(clossysRoot, 'designer').filter(id => id.startsWith('assets.icon-'))) {
-    const entry = pinned(clossysRoot, 'designer', slot);
+    const entry = pinnedView(clossysRoot, 'designer', slot);
     if (!entry) continue;
     const ref = (entry.item?.meta?.source?.ref ?? []).find(value => typeof value === 'string' && value.startsWith('lucide/'));
     const lucide = ref ? /^lucide\/([a-z0-9-]+)@/.exec(ref)?.[1] : undefined;
@@ -338,9 +353,9 @@ const safeSvg = value => {
   return svg.startsWith('<svg') && svg.endsWith('</svg>') && !/<script|\son[a-z]+=|javascript:|<foreignObject/i.test(svg) ? svg : undefined;
 };
 
-/** The pinned design tokens of `assets.<name>`, or undefined. */
+/** The pinned design tokens of `assets.<name>` (its `clossys/assets.<name>.json` token file), or undefined. */
 function assetTokens(clossysRoot, name) {
-  const entry = pinned(clossysRoot, 'designer', `assets.${name}`);
+  const entry = pinnedView(clossysRoot, 'designer', `assets.${name}`);
   for (const file of entry?.item?.files ?? []) {
     if (!object(file) || typeof file.content !== 'string' || !String(file.path).endsWith('.json')) continue;
     let tokens; try { tokens = JSON.parse(file.content); } catch { continue; }
@@ -350,15 +365,11 @@ function assetTokens(clossysRoot, name) {
   return undefined;
 }
 
-/** One asset variant's SVG, following `{{assets.<name>.<variant>}}` aliases inside the consumer's own pins. */
-function variantSvg(clossysRoot, name, variant, seen = new Set()) {
-  const key = `${name}.${variant}`;
-  if (seen.has(key)) return undefined;
-  seen.add(key);
-  const token = assetTokens(clossysRoot, name)?.group[variant];
-  const value = object(token) ? token.$value : undefined;
-  const alias = typeof value === 'string' ? /^\{\{assets\.([a-z0-9-]+)\.([a-z0-9-]+)\}\}$/.exec(value.trim()) : undefined;
-  return alias ? variantSvg(clossysRoot, alias[1], alias[2], seen) : safeSvg(value);
+/** One asset variant's SVG: the `assets/<name>-<variant>.svg` drawing the pinned `assets.<name>` candidate carries. */
+function variantSvg(clossysRoot, name, variant) {
+  const entry = pinnedView(clossysRoot, 'designer', `assets.${name}`);
+  const drawing = (entry?.item?.files ?? []).find(file => object(file) && file.path === `assets/${name}-${variant}.svg` && typeof file.content === 'string');
+  return safeSvg(drawing?.content);
 }
 
 /** The image rule's SVG (an SVG data URI). */
@@ -384,7 +395,7 @@ export function deriveBrand(clossysRoot) {
   const name = /\baria-label="([^"<>]{1,80})"/.exec(markLight ?? lockupLight ?? '')?.[1];
   const sources = {};
   for (const asset of ['mark', 'favicon', 'app-icon', 'lockup', 'image']) {
-    const entry = pinned(clossysRoot, 'designer', `assets.${asset}`);
+    const entry = pinnedView(clossysRoot, 'designer', `assets.${asset}`);
     if (entry) sources[`assets.${asset}`] = { candidate: entry.candidate, hash: `sha256:${entry.sha256}` };
   }
   return { name, sources, resolved };
@@ -468,13 +479,15 @@ export function flowThemeCss(clossysRoot) {
 export const CONSUMER_STYLESHEET = '../packages/producer/studio/styles/studio.css';
 
 /**
- * The stylesheet a consumer's clossys/components.json names. A Foundry checkout keeps the Studio's
- * (CONSUMER_STYLESHEET). An installed Producer ships no Studio, so a packed consumer names the
- * installed Designer theme (`@clossys/designer/theme.css`), relative to its clossys/ folder: never a
- * path that exists only in the Foundry repository.
+ * The stylesheet a consumer's shadcn flavor file names, relative to the consumer's folder. A
+ * Foundry checkout keeps the Studio's, read where it is (CONSUMER_STYLESHEET for a clossys/ at the
+ * repository root, the same file from the fixture consumer's folder). An installed Producer ships no
+ * Studio, so a packed consumer names the installed Designer theme (`@clossys/designer/theme.css`):
+ * never a path that exists only in the Foundry repository.
  */
 export function consumerStylesheet(clossysRoot) {
-  if (existsSync(join(producer, 'studio', 'styles', 'studio.css'))) return CONSUMER_STYLESHEET;
+  const studio = join(producer, 'studio', 'styles', 'studio.css');
+  if (existsSync(studio)) return posix(relative(resolve(clossysRoot), studio));
   return posix(relative(clossysRoot, fileURLToPath(import.meta.resolve('@clossys/designer/theme.css'))));
 }
 
@@ -486,12 +499,30 @@ export function flavorJson(css = CONSUMER_STYLESHEET) {
   return shadcnComponentsJsonText({ css });
 }
 
-/** Write clossys/components.json; returns whether it changed. */
-export function writeFlavor(clossysRoot) {
-  const path = join(clossysRoot, 'components.json'), content = flavorJson(consumerStylesheet(clossysRoot));
+/**
+ * Write the consumer's shadcn flavor file; returns whether it changed. `at` is the consumer folder the file will be read
+ * from (the stylesheet path is relative to it): the folder itself, unless a seeder writes it in a staging root.
+ */
+export function writeFlavor(clossysRoot, at = clossysRoot) {
+  const path = join(clossysRoot, 'components.json'), content = flavorJson(consumerStylesheet(at));
   if (existsSync(path) && readFileSync(path, 'utf8') === content) return false;
   writeFileSync(path, content);
   return true;
+}
+
+/**
+ * Write the Studio products derived from the consumer's pins alone (the generated icon module and brand
+ * record), the same derivations the check regenerates; returns the file names that changed.
+ */
+export function writeStudioDerived(clossysRoot, root = repo) {
+  const generated = join(root, 'packages', 'producer', 'studio', 'generated'), changed = [];
+  for (const [name, content] of [['studio-icons.ts', iconsModule(clossysRoot)], ['studio-brand.json', brandJson(clossysRoot)]]) {
+    const path = join(generated, name);
+    if (existsSync(path) && readFileSync(path, 'utf8') === content) continue;
+    writeFileSync(path, content);
+    changed.push(name);
+  }
+  return changed;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -590,7 +621,7 @@ export function checkGeneratedDerived({ root = repo, clossysRoot = consumerUnder
     const stored = committed.get(key) ?? [];
     if (JSON.stringify(stored) !== JSON.stringify(list)) findings.push({ rule: 'R-USES-COMPUTED', file: `clossys/agents/${key}/slot.json`, detail: `uses ${JSON.stringify(stored)} != computed ${JSON.stringify(list)}` });
   }
-  const flavor = flavorJson(), flavorPath = join(clossysRoot, 'components.json');
+  const flavor = flavorJson(consumerStylesheet(clossysRoot)), flavorPath = join(clossysRoot, 'components.json');
   writeFileSync(join(temp, 'components.json'), flavor);
   const storedFlavor = existsSync(flavorPath) ? readFileSync(flavorPath, 'utf8') : undefined;
   if (storedFlavor === undefined) findings.push({ rule: 'R-SHADCN-FLAVOR', file: posix(relative(root, flavorPath)), detail: 'generated file is missing' });
@@ -615,7 +646,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     else {
       const changed = writeUses(consumerPath());
       const flavor = writeFlavor(consumerPath());
-      console.log(`check-generated-derived: wrote computed uses into ${changed} slot.json file(s); clossys/components.json ${flavor ? 'written' : 'unchanged'}`);
+      const studio = writeStudioDerived(consumerPath());
+      console.log(`check-generated-derived: wrote computed uses into ${changed} slot.json file(s); clossys/components.json ${flavor ? 'written' : 'unchanged'}; studio/generated ${studio.length ? studio.join(', ') : 'unchanged'}`);
     }
   } else {
     // --root <checkout> checks another tree's clossys/ and generated Studio data (a fixture).
