@@ -44,6 +44,32 @@ export { DESIGNER_SHADCN_FLAVOR, shadcnComponentsJson, shadcnComponentsJsonText 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const json = (path) => JSON.parse(readFileSync(path, "utf8"));
 
+/**
+ * The package's one declared-source fallback reader module (`src/importers/declared-fallback-reader.ts`, built to
+ * `dist/`), loaded on first use: only a check that aligns reads through a reader, or the CLI's package reader, needs it.
+ */
+let fallbackReaderModule;
+const fallbackReaders = () => (fallbackReaderModule ??= createRequire(import.meta.url)("../dist/importers/declared-fallback-reader.js"));
+
+/** A consumer's pinned `themes.*` values as a declared-fallback reader (`pinnedThemeFallbackReader`); a name they do not declare is refused. */
+export function pinnedThemeFallbackReader(values, source) {
+  return fallbackReaders().pinnedThemeFallbackReader(values, source);
+}
+
+/** Whether `error` is the reader's refusal of a name with no declared value (`UndeclaredTokenFallbackError`). */
+export function isUndeclaredTokenFallback(error) {
+  return error instanceof fallbackReaders().UndeclaredTokenFallbackError;
+}
+
+/**
+ * `text` (a normalized reference file) with every bare read given `reader`'s value, through the importers' own
+ * `alignImportedReads`: the reference a consumer adoption made through that reader must equal byte for byte.
+ */
+function alignedThrough(text, path, reader) {
+  if (!/\.(?:ts|tsx)$/.test(path)) return text;
+  return fallbackReaders().alignImportedReads(text, reader);
+}
+
 export const CODES = [
   "REF-NO-SOURCE",
   "REF-NOT-VENDORED",
@@ -166,6 +192,9 @@ export function defaults(overrides = {}) {
     lockfile: overrides.lockfile,
     // The declared-source reader's value per name: the only fallback an H-TOKEN read may carry.
     fallback: overrides.fallback,
+    // The consumer adoption reader (`meta.refVerbatim.reader` names its source): the reference a candidate adopted
+    // through it is normalized through the same reader before the byte-exact comparison.
+    reader: overrides.reader,
   };
 }
 
@@ -227,6 +256,7 @@ function candidateInput(candidate, manifest, { byteExact } = {}) {
     ...(item ? { source: { registry: item.registry, item: item.name, version: item.version, hash: item.hash, files: mapping.files } } : {}),
     adaptations: mapping.adaptations ?? [],
     ...(byteExact ? { byteExact } : {}),
+    ...(Object.hasOwn(mapping, "reader") ? { reader: mapping.reader } : {}),
     ...(mapping.parts ? { parts: mapping.parts } : {}),
     ...(Object.hasOwn(mapping, "exactParts") ? { exactParts: mapping.exactParts } : {}),
   } };
@@ -854,6 +884,13 @@ function checkVersion(root, target, options = {}, versionInput) {
     try {
       const rawSource = readFileSync(join(target.itemDir, target.path), "utf8");
       let normalized = normalizeReference(rawSource, target.path, config);
+      // A consumer adoption names the reader its fallbacks came from: its reference is normalized through the
+      // same reader, so the comparison stays byte-exact. A recorded reader this check was not given is refused.
+      if (Object.hasOwn(record.lineage ?? {}, "reader")) {
+        const named = record.lineage.reader;
+        if (typeof named !== "string" || !opts.reader || opts.reader.source !== named) throw new Error(`${file} was adopted through the reader "${String(named)}", which this check was not given${opts.reader ? ` (it has "${opts.reader.source}")` : ""}`);
+        normalized = alignedThrough(normalized, target.path, opts.reader);
+      }
       const candidate = readPayload(file);
       const recorded = Array.isArray(adaptations) ? adaptations : [];
       for (const adaptation of recorded.filter(a => a?.file === file && a.kind === "data-fit")) {
@@ -979,7 +1016,9 @@ export function byteExactAdoption(slot, candidate) {
  * The seed file `path` of the vendored manifest item `ref` (`<registry>/<name>@<version>`) as the
  * consumer at `root` installs it: the vendored bytes (which must hold their manifest sha256) normalized
  * for the consumer's components.json, the reference this gate compares with. Producer R03.4 compares an
- * adopt's mapped files with it. Throws when the item, the file or components.json is missing.
+ * adopt's mapped files with it. With `options.reader` (a consumer adoption's declared-fallback reader), every bare
+ * read is then given that reader's value, and a name it does not declare is refused (`UndeclaredTokenFallbackError`).
+ * Throws when the item, the file or components.json is missing.
  */
 export function normalizedSeedFile(root, ref, path, options = {}) {
   const opts = defaults(options);
@@ -992,7 +1031,8 @@ export function normalizedSeedFile(root, ref, path, options = {}) {
   if (sha256(raw) !== listed.sha256) throw new Error(`${ref}: ${path} does not hold its manifest sha256`);
   const components = loadComponents(root, opts.components);
   if (!components) throw new Error("no components.json for this consumer (style, iconLibrary and aliases are required)");
-  return normalizeReference(raw.toString("utf8"), path, configFromComponents(components.value));
+  const normalized = normalizeReference(raw.toString("utf8"), path, configFromComponents(components.value));
+  return opts.reader ? alignedThrough(normalized, path, opts.reader) : normalized;
 }
 
 function checkLineageItem(root, slot, candidate, options = {}) {
@@ -1938,7 +1978,6 @@ function main(argv, fallback) {
 
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   // The package's declared values (the built `declared-fallback-reader`); a read's fallback must be exactly one of them.
-  const { packageDeclaredFallbackReader } = await import("../dist/importers/declared-fallback-reader.js");
-  const reader = packageDeclaredFallbackReader();
+  const reader = fallbackReaders().packageDeclaredFallbackReader();
   process.exitCode = main(process.argv.slice(2), (name) => reader.fallback(name));
 }

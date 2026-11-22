@@ -69,7 +69,7 @@
         },
         {
           "path": "components/chart-area/chart-area.tsx",
-          "sha256": "95ff1fae05c54fa9402959e7eca53bd98d7a021f58a3f86d1a285f13a278e34a"
+          "sha256": "50b108e950786fd404d3129debee21364a30a31fd11545db5c6e8d1a7c5dc636"
         },
         {
           "path": "components/chart/chart.tsx",
