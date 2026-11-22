@@ -85,7 +85,7 @@ describe("Timeline selected component composition", () => {
     expect(within(rows[0]!).getByText(timelineSample.events[0]!.dateText)).toBeVisible();
     expect(screen.getAllByRole("heading", { level: 3 }).map(heading => heading.textContent)).toEqual(timelineSample.events.map(event => event.heading));
     for (const slot of ["card", "card-header", "card-title", "card-content"]) expect(container.querySelectorAll(`[data-slot=${slot}]`)).toHaveLength(timelineSample.events.length);
-    expect(container.querySelector("[data-slot=card]")).toHaveClass("bg-(--color-surface-raised)");
+    expect(container.querySelector("[data-slot=card]")).toHaveClass("bg-(--card)");
   });
   it.each([2, 4] as const)("honours heading level %s and caller order without sorting dates", async headingLevel => {
     const events = [...timelineSample.events].reverse();

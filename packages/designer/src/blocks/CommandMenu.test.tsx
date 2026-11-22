@@ -378,7 +378,7 @@ describe("CommandMenu visual pass (VF-1 shell-12/13, stock command anatomy)", ()
     expect(active).toHaveLength(1);
     expect(active[0]!.id).toBe(input.getAttribute("aria-activedescendant"));
     for (const option of items) {
-      expect(option.getAttribute("class")).toContain("data-focused:bg-(--color-surface-sunken)");
+      expect(option.getAttribute("class")).toContain("data-focused:bg-(--muted)");
       expect(option).not.toHaveClass("underline");
     }
   });
@@ -390,8 +390,8 @@ describe("CommandMenu visual pass (VF-1 shell-12/13, stock command anatomy)", ()
     expect(input.style.outline).toBe("");
     expect(input.style.boxShadow).toBe("");
     const classes = input.getAttribute("class") ?? "";
-    expect(classes).toContain("focus-visible:outline-(--color-focus-ring)");
-    expect(classes).toContain("focus-visible:outline-offset-(--ui-focus-offset)");
+    expect(classes).toContain("focus-visible:outline-(--ring)");
+    expect(classes).toContain("focus-visible:outline-offset-2");
     expect(classes).not.toMatch(/(?:^|\s)outline-(?!none)[^\s]*/);
   });
 });

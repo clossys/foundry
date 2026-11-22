@@ -74,7 +74,7 @@ export function renderTableOfContentsList(items: readonly TableOfContentsItem[],
                 item.level === 4 ? "ps-2xl" : item.level === 3 ? "ps-xl" : "ps-md",
                 isCurrent
                   ? "border-primary font-medium text-ink-primary forced-colors:border-current"
-                  : "border-transparent text-ink-secondary hover:text-ink-primary",
+                  : "border-transparent font-normal text-ink-secondary hover:text-ink-primary",
                 FOCUS_CLASSES,
               )}
             >

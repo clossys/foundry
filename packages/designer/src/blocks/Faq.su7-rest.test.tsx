@@ -46,7 +46,7 @@ describe("selected FAQ disclosure section", () => {
     const second = screen.getByRole("button", { name: "Second question" });
     expect(container.querySelector('[data-slot="accordion"]')).not.toBeNull();
     expect(first).toHaveAttribute("data-slot", "accordion-trigger");
-    expect(first.className).toContain("rounded-(--radius-control)");
+    expect(first.className).toContain("rounded-(--radius)");
     first.focus(); await user.keyboard("{Enter}");
     expect(first).toHaveAttribute("aria-expanded", "true");
     expect(first).toHaveFocus();

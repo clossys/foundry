@@ -16,7 +16,7 @@
  * and explicit dark values a consumer binding the default brand receives.
  */
 import themeSlots from "../catalog/slots/themes.json" with { type: "json" };
-import { AA_LARGE, type ContrastPair } from "../tokens/contrast-pairs.js";
+import { AA, AA_LARGE, type ContrastPair } from "../tokens/contrast-pairs.js";
 import { THEME_OUTPUT_BY_PROPERTY } from "./emit.js";
 import { applyLibraryChange, emit, libraryHash, loadCatalog, resolve, type LibraryData } from "./index.js";
 
@@ -48,6 +48,10 @@ export const STOCK_COLOR_KEYS: ReadonlyMap<string, StockColorKey> = new Map((the
 /** Themes variable (`--primary`) to its stock key entry. */
 export const STOCK_COLOR_BY_PROPERTY: ReadonlyMap<string, StockColorKey> = new Map([...STOCK_COLOR_KEYS.values()].map(entry => [entry.property, entry]));
 
+function stockText(id: string, foreground: string, background: string, minimumRatio: typeof AA | typeof AA_LARGE, description: string): ContrastPair {
+  return { id, foreground, background, level: minimumRatio === AA ? "AA" : "AA-large", minimumRatio, description };
+}
+
 /**
  * Contrast pairs whose foreground or background is a themes variable. They are
  * checked against the shipped themes values (see `shippedThemeCss`), not
@@ -61,7 +65,20 @@ export const THEME_CONTRAST_PAIRS: readonly ContrastPair[] = [{
   level: "AA-large",
   minimumRatio: AA_LARGE,
   description: "Stock focus outline (`outline-primary`, themes.primary) against the raised plate it surrounds (non-text 3:1).",
-}];
+},
+/*
+ * Stock text pairs (U-K4-CASCADE, planner ruling R1). The stock parts read the themes
+ * variables directly (--foreground on --card or --popover); each pair
+ * keeps the threshold of the Foundry pair it stands in for: body ink at AA, muted ink on a
+ * raised plate at AA-large (ink-muted/surface-raised).
+ */
+stockText("foreground/background", "--foreground", "--background", AA, "Stock body text (themes --foreground) on the page ground (--background); stands in for ink-primary/surface-base."),
+stockText("foreground/card", "--foreground", "--card", AA, "Stock body text (themes --foreground) on the stock Card and Alert surface (--card); stands in for ink-primary on the raised plate."),
+stockText("foreground/popover", "--foreground", "--popover", AA, "Stock body text (themes --foreground) on the stock menu, dialog and select surface (--popover); stands in for ink-primary/surface-raised."),
+stockText("muted-foreground/card", "--muted-foreground", "--card", AA_LARGE, "Stock muted text (themes --muted-foreground) on the stock Card and Alert surface (--card); stands in for ink-muted/surface-raised."),
+stockText("muted-foreground/popover", "--muted-foreground", "--popover", AA_LARGE, "Stock muted text (themes --muted-foreground) on the stock menu and dialog surface (--popover); stands in for ink-muted/surface-raised."),
+stockText("muted-foreground/surface-raised", "--muted-foreground", "--color-surface-raised", AA_LARGE, "Stock field description and placeholder text (themes --muted-foreground) on a Block's own raised plate (--color-surface-raised); stands in for ink-muted/surface-raised."),
+];
 
 const SCALE_SELECTORS = { light: ":root", mediaDark: '@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])', dark: ':root[data-theme="dark"]' };
 

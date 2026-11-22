@@ -61,7 +61,7 @@
           },
           {
             "path": "packages/designer/src/blocks/TableOfContents.server.tsx",
-            "sha256": "588b44afa1f9833eb531185d18b3711c31a6dae033d023c0939e4b80fc05d74f"
+            "sha256": "1878c89a35ae9a06b7b61ae26319857f934ae555149a18eaefc69fa2b5099246"
           },
           {
             "path": "packages/designer/src/blocks/TableOfContents.tsx",
