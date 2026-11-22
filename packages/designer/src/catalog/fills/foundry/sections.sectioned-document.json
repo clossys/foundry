@@ -249,7 +249,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+            "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
           },
           {
             "path": "packages/designer/src/components/Meter.server.tsx",
@@ -261,11 +261,11 @@
           },
           {
             "path": "packages/designer/src/components/preview-runtime/components/avatar/avatar.tsx",
-            "sha256": "b689552fb97ab80ed221ca6ef1495f38ecf5e5f99b60ddd819938b2456b00b51"
+            "sha256": "c1c8341c383ca98281b9499cd9c14a68f0c02776c8386d087bb71c3f92aaa5ac"
           },
           {
             "path": "packages/designer/src/components/preview-runtime/components/button/button.tsx",
-            "sha256": "2584e267277f5a1c1282bffc539cfcdc524311d580eb5a2e10963aa3807db4ad"
+            "sha256": "8a023ebd980fc814e92524a65d09feb29f7ffd4eadf4c08d970516f554cd8637"
           },
           {
             "path": "packages/designer/src/components/surface-tones.ts",
@@ -478,6 +478,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/ui-vars.ts",
+            "line": 14
           },
           {
             "code": "DF2",

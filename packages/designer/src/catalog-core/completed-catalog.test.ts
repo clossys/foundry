@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
 import { completedCatalogLibrary } from "./__fixtures__/completed-catalog-library.js";
+import { completedCatalogGoldens } from "./__fixtures__/completed-catalog-goldens.js";
 import { completedTokenLibrary } from "../importers/__fixtures__/completed-token-library.js";
 import { applyLibraryChange, assetCoverageReport, check, consumptionReport, deriveIdentity, emit, emitGlyphModule, libraryHash, loadCatalog, resolve, stableStringify, type Source } from "./index.js";
 import { emitWebIcons } from "./server.js";
-import { compare } from "./model.js";
 import themeSlots from "../catalog/slots/themes.json" with { type: "json" };
 import assetSlots from "../catalog/slots/assets.json" with { type: "json" };
 import assetRules from "../catalog-assets/rules.json" with { type: "json" };
@@ -38,15 +38,13 @@ describe("complete consumer token and asset library", () => {
   });
 
   it("records generated reverse edges, orphan counts and per-leaf consumer origins", async () => {
-    const profile = resolve({ catalog, library }); const consumption = consumptionReport({ catalog, library });
+    const consumption = consumptionReport({ catalog, library });
     expect(consumption.counts.orphanEdges).toBe(0); expect(consumption.leaves).toHaveLength(LEAVES);
-    const leaves = catalog.slots.map(slot => {
-      const members = Object.entries(profile.members).filter(([, member]) => member.slot === slot.id);
-      return { slot: slot.id, members: members.length, sources: [...new Set(members.map(([, member]) => member.origin?.kind === "adopted" ? member.origin.source : source.id))].sort(compare), originKinds: [...new Set(members.map(([, member]) => member.origin?.kind))].sort(), rules: [...new Set(members.flatMap(([, member]) => member.origin?.kind === "derived" ? [member.origin.rule] : []))].sort(compare) };
-    }).sort((a, b) => compare(a.slot, b.slot));
-    const coverage = { kind: "materialized-consumer-coverage", consumer: source.id, complete: library.complete, slots: leaves.length, served: leaves.filter(leaf => leaf.members > 0).length, tokenLeaves: leaves.filter(leaf => leaf.slot.startsWith("themes.")).length, assetLeaves: leaves.filter(leaf => leaf.slot.startsWith("assets.")).length, boundProperties: Object.values(profile.members).filter(member => member.emit).length, leaves };
-    await expect(stableStringify(consumption)).toMatchFileSnapshot("__golden__/complete-consumption.json");
-    await expect(stableStringify(coverage)).toMatchFileSnapshot("__golden__/complete-coverage.json");
+    // The goldens are generator output (scripts/generate-completed-catalog-goldens.mjs) from this one builder.
+    const goldens = completedCatalogGoldens(catalog, source);
+    expect(goldens["complete-consumption.json"]).toBe(stableStringify(consumption));
+    await expect(goldens["complete-consumption.json"]).toMatchFileSnapshot("__golden__/complete-consumption.json");
+    await expect(goldens["complete-coverage.json"]).toMatchFileSnapshot("__golden__/complete-coverage.json");
   });
 
   it("retains materialized output offline and explicitly refreshes assets after a token change", async () => {

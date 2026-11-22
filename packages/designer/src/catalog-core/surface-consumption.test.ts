@@ -97,7 +97,8 @@ describe("committed section/frame scan evidence", () => {
   });
 
   it.each([
-    ["sections.data-table", "data-table/ViewOptions.tsx", "components.dialog", "Dialog"],
+    // Re-pinned by BR-REGEN (D1, source wins): ViewOptions.tsx:131 opens the dialog through its componentLeaf facade.
+    ["sections.data-table", "data-table/ViewOptions.tsx", "components.dialog", "DialogTrigger"],
     ["sections.data-table", "data-table/FlatGrid.tsx", "sections.section-header", "SectionHeader"],
     ["sections.data-table", "data-table/PivotGrid.tsx", "sections.section-header", "SectionHeader"],
     ["sections.task-list", "TaskList.tsx", "sections.section-header", "SectionHeader"],
@@ -106,13 +107,18 @@ describe("committed section/frame scan evidence", () => {
     expect(row.observedComposes.some((edge: { file: string; slotId: string; tag: string }) => edge.file.endsWith(`/blocks/${file}`) && edge.slotId === target && edge.tag === tag)).toBe(true);
   });
 
-  it("S2-6 retains unresolved Chip and server Meter ownership and unmeasured claims", () => {
+  it("S2-6 resolves the former Chip and server Meter owners and keeps unmeasured claims", () => {
     const actual = report();
+    // Re-pinned by BR-REGEN (D1, source wins): the chips are TagGroup items (data-table/ViewOptions.tsx:216-218) and the
+    // meter is the registered components.meter leaf (TaskList.tsx:11), so neither is an unresolved DF5 any longer.
     for (const [fill, tag] of [["foundry/sections.data-table", "Chip"], ["foundry/sections.task-list", "Meter"], ["foundry/sections.task-list", "MeterBar"]]) {
-      expect(actual.findings.some((finding: { fill: string; code: string; evidence: string }) => finding.fill === fill && finding.code === "DF5" && finding.evidence.includes(`<${tag}>`))).toBe(true);
+      expect(actual.findings.some((finding: { fill: string; code: string; evidence: string }) => finding.fill === fill && finding.code === "DF5" && finding.evidence.includes(`<${tag}>`))).toBe(false);
     }
+    expect(actual.fills.find((fill: { slot: string }) => fill.slot === "sections.data-table").scannedComposes).toContain("components.tag-group");
+    expect(actual.fills.find((fill: { slot: string }) => fill.slot === "sections.task-list").scannedComposes).toContain("components.meter");
     expect(actual.claims).toEqual({ consumerAdoption: "unmeasured", descriptorConformance: "unmeasured", reportFreshness: "Reproducibility only; not conformance clearance.", runtimeAccessibility: "unmeasured" });
-    expect(actual.fills.filter((fill: { scanStatus: string }) => fill.scanStatus === "lower-bound")).toHaveLength(38);
+    // Every section and frame fill under src/catalog/fills/foundry (63) is a lower-bound scan.
+    expect(actual.fills.filter((fill: { scanStatus: string }) => fill.scanStatus === "lower-bound")).toHaveLength(63);
     expect(actual.inventory.components).not.toContain("components.chip");
   });
 
@@ -121,16 +127,20 @@ describe("committed section/frame scan evidence", () => {
     const chat = report.fills.find((row: { slot: string }) => row.slot === "sections.chat");
     expect(chat.scannedComposes).toContain("components.button");
     expect(chat.sourceFiles.some((file: string) => /components\/Button\.tsx$/.test(file))).toBe(false);
-    expect(report.findings.some((row: { code: string; evidence: string }) => row.code === "DF4" && row.evidence.includes("themes."))).toBe(true);
-    expect(report.inventory.sections).toHaveLength(45);
-    expect(report.inventory.frames).toHaveLength(9);
+    // Re-pinned by BR-REGEN (D1, source wins): the under-declared utility reads are unknown --color-* keys that bind no
+    // theme leaf (styles/theme-keys.css:102 --color-surface-glass reads only itself), and the inventory is
+    // src/catalog/slots/sections.json (71) and frames.json (12).
+    expect(report.findings.some((row: { code: string; evidence: string }) => row.code === "DF4" && row.evidence.includes("--color-surface-glass"))).toBe(true);
+    expect(report.findings.some((row: { code: string; evidence: string }) => row.code === "DF4" && row.evidence.includes("themes."))).toBe(false);
+    expect(report.inventory.sections).toHaveLength(71);
+    expect(report.inventory.frames).toHaveLength(12);
     expect(report.claims.consumerAdoption).toBe("unmeasured");
   });
 });
 
 it.each([
   ["sections.faq", "Faq.tsx"], ["sections.empty-state", "EmptyState.tsx"],
-  ["sections.features", "items/compat-features.tsx"], ["sections.pricing", "PricingTable.tsx"],
+  ["sections.features", "items/compat-features.tsx"],
   ["sections.steps", "OrderedStepSequence.tsx"], ["sections.status-list", "StatusList.tsx"],
   ["sections.record-detail", "DetailView.tsx"],
 ])("S4-7 observes a real direct Header call in %s", (slot, file) => {
@@ -139,9 +149,23 @@ it.each([
   expect(row.observedComposes.some((edge: { file: string; slotId: string; tag: string }) => edge.file.endsWith(`/blocks/${file}`) && edge.slotId === "sections.section-header" && edge.tag === "SectionHeader")).toBe(true);
 });
 
+// Re-pinned by BR-REGEN (D1, source wins): PricingTable heads its cards and table through the registered card and table
+// leaves (PricingTable.tsx:11, :15), not SectionHeader; PageHeader renders <SectionHeader level={1}> (PageHeader.tsx:51)
+// and the comparison Matrix's LeafCell renders <SectionHeader> (library-board/LeafCell.tsx:58). Those are real calls.
+it("S4-7 records pricing's card/table heads and the real SectionHeader calls in page-header and comparison", () => {
+  const actual = JSON.parse(readFileSync(new URL("../catalog/reports/sections-frames-consumption.json", import.meta.url), "utf8"));
+  const row = (slot: string) => actual.fills.find((fill: { slot: string }) => fill.slot === slot);
+  expect(row("sections.pricing").scannedComposes).not.toContain("sections.section-header");
+  expect(row("sections.pricing").scannedComposes).toEqual(expect.arrayContaining(["components.card", "components.table"]));
+  for (const [slot, file] of [["sections.page-header", "PageHeader.tsx"], ["sections.comparison", "library-board/LeafCell.tsx"]]) {
+    expect(row(slot).observedComposes.some((edge: { file: string; slotId: string; tag: string }) => edge.file.endsWith(`/blocks/${file}`) && edge.slotId === "sections.section-header" && edge.tag === "SectionHeader")).toBe(true);
+    expect(row(slot).scannedComposes).not.toContain("sections.band");
+  }
+});
+
 it("S4-7 keeps h1 owners and externally framed bare modules free of synthetic Header/band edges", () => {
   const actual = JSON.parse(readFileSync(new URL("../catalog/reports/sections-frames-consumption.json", import.meta.url), "utf8"));
-  for (const slot of ["sections.hero", "sections.content", "sections.page-header", "sections.article", "sections.people", "sections.testimonials", "sections.logo-cloud", "sections.comparison"]) {
+  for (const slot of ["sections.hero", "sections.content", "sections.article", "sections.people", "sections.testimonials", "sections.logo-cloud"]) {
     const row = actual.fills.find((fill: { slot: string }) => fill.slot === slot);
     expect(row).toBeDefined();
     expect(row.scannedComposes).not.toContain("sections.section-header");
@@ -151,12 +175,18 @@ it("S4-7 keeps h1 owners and externally framed bare modules free of synthetic He
   expect(actual.claims.consumerAdoption).toBe("unmeasured");
 });
 
-it.each(["frames.site-header", "frames.app-header"])("S7 records the real header option helper and lower-bound layer scan for %s", slot => {
+// Re-pinned by BR-REGEN (D1, source wins): the app header's only theme-leaf reads are border-primary / outline-primary
+// (PageBar.tsx:316, page-bar-layout.ts:17); its other utilities read --color-* keys that bind no theme leaf
+// (styles/theme-keys.css:102). The site header still reads background, foreground and border.
+it.each([
+  ["frames.site-header", ["themes.background", "themes.foreground", "themes.border"]],
+  ["frames.app-header", ["themes.primary"]],
+])("S7 records the real header option helper and lower-bound layer scan for %s", (slot, themes) => {
   const actual = JSON.parse(readFileSync(new URL("../catalog/reports/sections-frames-consumption.json", import.meta.url), "utf8"));
   const row = actual.fills.find((fill: { slot: string }) => fill.slot === slot);
   expect(row.sourceFiles).toContain("packages/designer/src/catalog-core/frame-header-options.ts");
   expect(row.scanStatus).toBe("lower-bound");
-  expect(row.scannedReads.themes).toEqual(expect.arrayContaining(["themes.background", "themes.foreground", "themes.border"]));
+  expect(row.scannedReads.themes).toEqual(expect.arrayContaining(themes));
   expect(row.scannedReads.themes.every((id: string) => id.startsWith("themes."))).toBe(true);
   // A source scan sees all branches; runtime tests separately prove lazy reads for static instances.
   expect(actual.claims.runtimeAccessibility).toBe("unmeasured");

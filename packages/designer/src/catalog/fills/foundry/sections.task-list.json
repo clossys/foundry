@@ -81,7 +81,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+            "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
           },
           {
             "path": "packages/designer/src/icons/ChevronRight.ts",
