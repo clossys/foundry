@@ -32,7 +32,8 @@ const MEASURED_MARKETING_DECLARATIONS = [
   {
     slot: "sections.content",
     // components.card: the authored summary aside (943cabcbd), composed through componentLeaf("components.card") in ContentSection.
-    composes: ["components.link", "components.semantic-content", "components.card"],
+    // BR-RETIRE3 (owner 2026-11-20): components.link is retired; the content links render components.button's LinkButton.
+    composes: ["components.button", "components.semantic-content", "components.card"],
   },
   {
     slot: "sections.logo-cloud",
@@ -45,7 +46,8 @@ const MEASURED_MARKETING_DECLARATIONS = [
   {
     slot: "frames.site-footer",
     themes: ["themes.background", "themes.card", "themes.popover", "themes.secondary", "themes.accent", "themes.muted", "themes.sidebar", "themes.sidebar-accent", "themes.foreground", "themes.card-foreground", "themes.popover-foreground", "themes.primary-foreground", "themes.secondary-foreground", "themes.accent-foreground", "themes.muted-foreground", "themes.sidebar-foreground", "themes.sidebar-primary-foreground", "themes.sidebar-accent-foreground", "themes.border", "themes.input", "themes.sidebar-border", "themes.spacing", "themes.font-sans", "themes.font-heading", "themes.font-mono", "themes.primary", "themes.sidebar-primary", "themes.radius", "themes.ring", "themes.sidebar-ring", "themes.destructive"],
-    composes: ["components.link", "components.icon", "components.logo", "components.separator", "components.semantic-content", "components.button"],
+    // BR-RETIRE3 (owner 2026-11-20): components.link becomes components.button, the first occurrence kept.
+    composes: ["components.button", "components.icon", "components.logo", "components.separator", "components.semantic-content"],
   },
 ] as const;
 

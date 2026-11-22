@@ -2,7 +2,6 @@ import { useState, type ReactNode } from "react";
 import { SectionHeader, type SectionHeaderLevel } from "../../blocks/SectionHeader.js";
 import { Pagination } from "../../blocks/Pagination.js";
 
-import type { StatusMarkTone } from "../../components/StatusMark.js";
 
 import { FieldRegion, PaginationRegion, type FieldRegionContent, type PaginationRegionContent } from "./group-b-parts.js";
 import { entryOf, recordsOf, stateOf, type GroupBSection, type SectionRenderInput, type SelectionRecord } from "./group-b-support.js";
@@ -14,8 +13,7 @@ import { componentLeaf } from "../component-leaf.js";
 
 const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
-const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
-const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const RECORDS_PER_PAGE = 100;
@@ -61,7 +59,7 @@ function ScrollDataTable({ input }: { input: SectionRenderInput }) {
         const status = isObject(value) ? value : undefined;
         const tone = status?.tone ?? "neutral", label = status?.label ?? text;
         if (!["neutral", "info", "success", "warning", "danger"].includes(String(tone))) throw new TypeError("sections.data-table: invalid status tone");
-        return <StatusMark tone={tone as StatusMarkTone}><Badge>{String(label)}</Badge></StatusMark>;
+        return <Badge data-tone={tone}>{String(label)}</Badge>;
       }
       case "list": return Array.isArray(value) ? value.map(String).join(", ") : text;
       case "date": {

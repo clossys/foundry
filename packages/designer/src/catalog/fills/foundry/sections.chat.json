@@ -35,7 +35,6 @@
         "components.avatar",
         "components.button",
         "components.icon",
-        "components.link",
         "components.semantic-content",
         "components.text-field"
       ],
@@ -46,7 +45,6 @@
           "components.avatar",
           "components.button",
           "components.icon",
-          "components.link",
           "components.semantic-content",
           "components.text-field"
         ],
@@ -56,7 +54,6 @@
             "components.avatar",
             "components.button",
             "components.icon",
-            "components.link",
             "components.semantic-content",
             "components.text-field"
           ],
@@ -71,7 +68,7 @@
           },
           {
             "path": "packages/designer/src/blocks/chat/content.tsx",
-            "sha256": "55de28399d4c51c5be481f09f5f84437aa0f72edc8b18ad83859ffe154c81b88"
+            "sha256": "2bd96e5b1f11f260cfb1494e941582c20d8cea7ae91e7c2b58e23859ea314d35"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

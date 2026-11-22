@@ -26,7 +26,7 @@ const Popover = componentLeaf<StockPopover["Popover"]>("components.popover");
 const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const ToggleButton = componentLeaf<StockToggle["Toggle"]>("components.toggle-button");
 const Icon = componentLeaf<typeof import("../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
-const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 
 const EMBEDDED_HEADER = "frame-header-row";
 const GLASS_SURFACE = "bg-surface-glass";

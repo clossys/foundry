@@ -27,32 +27,29 @@
   "sections": {
     "task-list": {
       "composes": [
+        "components.button",
         "components.icon",
-        "components.link",
         "components.meter",
         "components.semantic-content",
-        "components.status-mark",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.button",
           "components.icon",
-          "components.link",
           "components.meter",
           "components.semantic-content",
-          "components.status-mark",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.button",
             "components.icon",
-            "components.link",
             "components.meter",
-            "components.semantic-content",
-            "components.status-mark"
+            "components.semantic-content"
           ],
           "themes": [
             "themes.primary"
@@ -65,11 +62,11 @@
           },
           {
             "path": "packages/designer/src/blocks/stretched-link.tsx",
-            "sha256": "20c899ae1a637fe6ece7a4a7bca2f94065462d7fcb3a0d09a24fea28c275fd8f"
+            "sha256": "b446684e391b8b03a30f4098f0122f112d9c9dc15c15adf703869dbda45398df"
           },
           {
             "path": "packages/designer/src/blocks/TaskList.tsx",
-            "sha256": "fa3977a43d5e5b9d5883924d555e1384f3568a02d7d8e9b664c381887dbd7d9e"
+            "sha256": "8ff8eb3c7679b2c236798d03bc079e3cb01fb8c17e87eb09d8bbe1ab3d215c9f"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -81,7 +78,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+            "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
           },
           {
             "path": "packages/designer/src/icons/ChevronRight.ts",

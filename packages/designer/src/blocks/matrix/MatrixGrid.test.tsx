@@ -125,7 +125,8 @@ describe("Matrix grid", () => {
     expect(() => html({ ...withCell(grid(), 1, "column-1", { type: "empty" }), emptyLabel: "No value" })).not.toThrow();
   });
 
-  it("renders text, end-aligned tabular figures and visibly labelled StatusMarks", () => {
+  // components.status-mark is retired (owner 2026-11-20): a status cell is its visible label with the tone as data.
+  it("renders text, end-aligned tabular figures and visibly labelled statuses", () => {
     render(<Matrix {...grid()} />);
     expect(screen.getByText("Copy 1-1")).toHaveClass("text-body-s");
     expect(screen.getByText("2,481")).toHaveClass("tabular-nums");
@@ -133,7 +134,7 @@ describe("Matrix grid", () => {
     expect(screen.getByText("+12%")).toHaveClass("text-status-success-text");
     expect(screen.getByText("-3%")).toHaveClass("text-status-danger-text");
     expect(screen.getByText("Reviewed").closest("[data-tone]")).toHaveAttribute("data-tone", "success");
-    expect(screen.getByText("Needs review").closest("[data-tone]")?.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByText("Needs review").closest("[data-tone]")).toBeVisible();
     expect(screen.getByText("0", { exact: true })).toBeInTheDocument();
   });
 

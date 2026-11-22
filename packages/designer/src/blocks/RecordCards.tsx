@@ -14,7 +14,7 @@ const CardHeader = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>(
 const CardTitle = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card", "CardTitle");
 const CardContent = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card", "CardContent");
 const Badge = componentLeaf<ComponentType<{ children?: ReactNode; tone?: "neutral" | "danger"; variant?: "outline"; className?: string }>>("components.badge");
-const Link = componentLeaf<typeof LinkType>("components.link");
+const Link = componentLeaf<typeof LinkType>("components.button", "LinkButton");
 const SECTION_STAMP = dsAttrs("sections", "sections.cards", "foundry/sections.cards");
 
 export type RecordCardsLayout = "grid" | "list";

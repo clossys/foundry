@@ -111,7 +111,7 @@ export const sectionDatasetC: Readonly<Record<GroupCLeaf, (dataset: SpecimenData
   }),
   notices: ({ sections: S }) => ({
     [ANATOMY_CONTENT_KEY]: { heading: S.noticeList.label },
-    // The notice record's link action has no contract component (NEED: components.link), so it is left out.
+    // The notice record's link action has no contract component (NEED: components.button LinkButton), so it is left out.
     notices: S.noticeList.notices.map(({ action: _action, ...notice }) => plainJson(notice)),
   }),
   "page-header": d => ({

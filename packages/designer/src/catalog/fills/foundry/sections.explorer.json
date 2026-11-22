@@ -29,7 +29,6 @@
       "composes": [
         "components.button",
         "components.icon",
-        "components.link",
         "components.semantic-content"
       ],
       "configs": {},
@@ -38,7 +37,6 @@
         "scannedComposes": [
           "components.button",
           "components.icon",
-          "components.link",
           "components.semantic-content"
         ],
         "scannedReads": {
@@ -46,7 +44,6 @@
           "components": [
             "components.button",
             "components.icon",
-            "components.link",
             "components.semantic-content"
           ],
           "themes": []
@@ -54,7 +51,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Explorer.tsx",
-            "sha256": "7e9e4f2df4a301ec617dd9c6f619ea492c04907e57663dfa8cab8821d5a59b3d"
+            "sha256": "fbf58978ece125c12a9458d75aeac1ab8d71b347fd9525a8178afeda78629e91"
           },
           {
             "path": "packages/designer/src/blocks/tree-model.ts",

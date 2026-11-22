@@ -17,7 +17,7 @@ import { selectChromium } from "../__fixtures__/chromium-discovery.js";
 // awaiting it here waits on itself and the file never loads.
 vi.mock("../runtime/component-leaf.js", async () => {
   const [link, content, item] = await Promise.all([import("../components/preview-runtime/components/button/button.js"), import("../components/SemanticContent.js"), import("../components/item/item.js")]);
-  return { componentLeaf: (leaf: string, part?: string) => part ? item[part as keyof typeof item] : leaf === "components.link" ? link.LinkButton : content.SemanticContent };
+  return { componentLeaf: (leaf: string, part?: string) => leaf === "components.button" && part === "LinkButton" ? link.LinkButton : part ? item[part as keyof typeof item] : content.SemanticContent };
 });
 
 type BrowserStep =

@@ -9,7 +9,7 @@ const isGroup = (record: StatusListItem | StatusListGroup): record is StatusList
 
 /**
  * sections.status-list: each item carries a readiness `state` (available, partial, planned) or the
- * separate `not-offered` disposition, rendered with StatusMark; `legend` is the legend's copy. Items records
+ * separate `not-offered` disposition, rendered by StatusList; `legend` is the legend's copy. Items records
  * that are groups (a heading over their own items) render as StatusList groups, so no group heading is dropped.
  */
 export function renderStatusList(input: SectionRenderInput) {

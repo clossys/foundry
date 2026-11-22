@@ -1,5 +1,5 @@
 // Generated from sections.link-index by src/generated/props/generate.ts; do not edit.
-export const linkIndexContractSha256 = "a221005ca28adf58056a4c2b53827015e552424101dda61c64ef5020c05aaac0";
+export const linkIndexContractSha256 = "8afebed40af38f10aba282f2ffddad29ff38cca46be077efec0384b6151b93c6";
 
 export type LinkIndexCopy = {
   header?: {

@@ -40,7 +40,7 @@ function sourceModule(files: readonly { path: string; content: string }[], entry
 }
 
 beforeAll(() => {
-  const bundles = loadCatalogBundles(), preferred = new Set(["components.card", "components.badge"]);
+  const bundles = loadCatalogBundles(), preferred = new Set(["components.card", "components.badge", "components.button"]);
   const catalog = { slots: loadComponentRegistry().slots, fills: bundles.componentFills };
   let library: ComponentLibrary = { source, adoptedAt: "2026-10-30", fills: [], files: [] };
   const adopted = new Set<string>();
@@ -54,7 +54,8 @@ beforeAll(() => {
     library = applyComponentLibraryChange(catalog, library, { baseHash: componentLibraryHash(library), changes: [{ op: "adopt", slot, source: origin }] }, bundles.sourceBundles);
     adopted.add(slot);
   };
-  for (const slot of [...preferred, "components.link", "components.semantic-content"]) adopt(slot);
+  // components.link is retired (owner 2026-11-20): the stock Button source carries the LinkButton part.
+  for (const slot of [...preferred, "components.semantic-content"]) adopt(slot);
   const values = loadCatalog(), complete = completedCatalogLibrary(values, source, "2026-10-30"), { source: _source, adoptedAt: _date, ...owned } = complete;
   profile = resolve({ catalog: { values, components: catalog }, library: { source, adoptedAt: "2026-10-30", values: owned, components: library } });
   const modules: Record<string, Record<string, unknown>> = { "@clossys/designer/components": components };

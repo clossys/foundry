@@ -4,7 +4,6 @@ import { cx } from "../components/internal/cx.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Meter = componentLeaf<typeof import("../components/Meter.js").Meter>("components.meter");
-const StatusMark = componentLeaf<typeof import("../components/StatusMark.js").StatusMark>("components.status-mark");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 export interface UsageMeterThreshold {
@@ -32,8 +31,8 @@ export interface UsageMeterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
 
 /**
  * Draft usage against a limit for a period. The host supplies every visible
- * fact and state message; Meter draws the quantity and StatusMark repeats the
- * highest threshold in shape and text. The client variant uses the
+ * fact and state message; Meter draws the quantity and the state message names the
+ * highest threshold in text. The client variant uses the
  * react-aria-components Meter, named by `label` when that is a string (a
  * non-string `label` leaves the meter named by `usedText`);
  * `UsageMeter.server.tsx` is the server-safe twin.
@@ -84,7 +83,7 @@ export function UsageMeter({
         limitText={limitText}
         tone={matched ? matched.tone : "accent"}
       />
-      {matched ? <StatusMark className="min-w-0" tone={matched.tone}>{matched.message}</StatusMark> : null}
+      {matched ? <SemanticContent as="span" className="min-w-0" data-tone={matched.tone}>{matched.message}</SemanticContent> : null}
       {size !== "compact" && projectedText !== undefined ? <SemanticContent as="p" className="m-0 min-w-0 text-body-s text-ink-secondary">{projectedText}</SemanticContent> : null}
       {action != null ? <SemanticContent as="div" className="min-w-0">{action}</SemanticContent> : null}
     </SemanticContent>

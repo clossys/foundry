@@ -21,8 +21,9 @@ describe("vitest harness: explicit selection across module instances", () => {
   it("still refuses a leaf the explicit selection does not hold", () => {
     const selection = fixtureConsumerComponents();
     const components = { ...selection.profile.components.components };
-    delete components["components.link"];
+    // BR-RETIRE3 (owner 2026-11-20): the skip link renders components.button's LinkButton; components.link is retired.
+    delete components["components.button"];
     const missing = { ...selection, profile: { components: { ...selection.profile.components, components } } };
-    expect(() => render(<ConsumerComponentProvider value={missing}><SiteSkipLink targetId="main" label="Skip to content" /></ConsumerComponentProvider>)).toThrow("NEED component selection: components.link");
+    expect(() => render(<ConsumerComponentProvider value={missing}><SiteSkipLink targetId="main" label="Skip to content" /></ConsumerComponentProvider>)).toThrow("NEED component selection: components.button");
   });
 });

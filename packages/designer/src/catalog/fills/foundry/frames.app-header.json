@@ -27,7 +27,6 @@
         "components.button",
         "components.dialog",
         "components.icon",
-        "components.link",
         "components.menu",
         "components.popover",
         "components.semantic-content",
@@ -39,7 +38,6 @@
           "components.button",
           "components.dialog",
           "components.icon",
-          "components.link",
           "components.menu",
           "components.popover",
           "components.semantic-content",
@@ -51,7 +49,6 @@
             "components.button",
             "components.dialog",
             "components.icon",
-            "components.link",
             "components.menu",
             "components.popover",
             "components.semantic-content",
@@ -76,7 +73,7 @@
           },
           {
             "path": "packages/designer/src/blocks/PageBar.tsx",
-            "sha256": "2bce2bd8cc168716665febaa396c6b3eb6b920be4f006c896b77322842282744"
+            "sha256": "aab1aa12153aab729c402423877826b4fe25724b086e1b8752ab3502a6686b7c"
           },
           {
             "path": "packages/designer/src/blocks/shell-menu.tsx",
@@ -88,7 +85,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+            "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
           },
           {
             "path": "packages/designer/src/icons/Check.ts",

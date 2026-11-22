@@ -4,7 +4,7 @@ import { componentLeaf } from "../component-leaf.js";
 import { CallToAction } from "../../blocks/CallToAction.js";
 import { object, optionalText, readSectionContent, required, SectionContentError, STOCK_LINK_VARIANT, text, type SectionContent, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
 
-const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 const variants = ["primary", "secondary", "outline", "ghost", "tonal", "quiet"] as const;
 type ActionVariant = typeof variants[number];
 function isVariant(value: string): value is ActionVariant { return variants.some(variant => variant === value); }

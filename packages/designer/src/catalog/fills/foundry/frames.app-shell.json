@@ -30,7 +30,6 @@
         "components.card",
         "components.dialog",
         "components.icon",
-        "components.link",
         "components.logo",
         "components.menu",
         "components.popover",
@@ -52,7 +51,6 @@
           "components.card",
           "components.dialog",
           "components.icon",
-          "components.link",
           "components.logo",
           "components.menu",
           "components.popover",
@@ -76,7 +74,6 @@
             "components.card",
             "components.dialog",
             "components.icon",
-            "components.link",
             "components.logo",
             "components.menu",
             "components.popover",
@@ -160,7 +157,7 @@
           },
           {
             "path": "packages/designer/src/components/preview-runtime/components/banner/alert.tsx",
-            "sha256": "4132ac138b9cf9c90a842f15aca6ea66fb8c3a65ff329013af7eec2295c50258"
+            "sha256": "6f7a06ea1ec2d22cee05f1372c99170ae18376d30fc8ba538768de4279c124d0"
           },
           {
             "path": "packages/designer/src/components/surface-tones.ts",
@@ -244,7 +241,7 @@
           },
           {
             "path": "packages/designer/src/shell/SkipLink.tsx",
-            "sha256": "5a179f1c44b24be92d3de21e71de9294cf7fb01434de25b7d61532e04244f86a"
+            "sha256": "db86166fc3d61f01a2fa2922c9e9d4233d374a7050365556845ee402aa3983cc"
           },
           {
             "path": "packages/designer/src/shell/Toaster.tsx",

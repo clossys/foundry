@@ -28,8 +28,8 @@
     "cards": {
       "composes": [
         "components.badge",
+        "components.button",
         "components.card",
-        "components.link",
         "components.semantic-content"
       ],
       "configs": {
@@ -41,8 +41,8 @@
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.badge",
+          "components.button",
           "components.card",
-          "components.link",
           "components.semantic-content"
         ],
         "scannedReads": {
@@ -51,8 +51,8 @@
           ],
           "components": [
             "components.badge",
+            "components.button",
             "components.card",
-            "components.link",
             "components.semantic-content"
           ],
           "themes": []
@@ -60,11 +60,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
-            "sha256": "f8319a480009478413ee4531b8ef51ed3b9d1d8194e9b121dfcae26d62d8a326"
+            "sha256": "28bb83d0fa255fc0283effbfe215958cec91d3f467042068b58eaac24efab09a"
           },
           {
             "path": "packages/designer/src/blocks/RecordCards.tsx",
-            "sha256": "1de8bfeaf2f27d5ff96fe9d2ef7650147a23b46140909e57f8809d92bde1ae28"
+            "sha256": "06275bb1aa3079da9f2542f5900eae786767d5ec418e3386987be2c97bb98883"
           },
           {
             "path": "packages/designer/src/catalog-assets/media.ts",

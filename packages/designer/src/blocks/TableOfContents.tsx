@@ -1,6 +1,6 @@
 import { componentLeaf } from "../runtime/component-leaf.js";
 import { TableOfContentsDisclosure } from "./TableOfContentsDisclosure.js";
-const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 import { articleTocCss, readingTarget } from "./ArticleReading.js";
 import { useHeadingScrollSpy } from "./TableOfContents.scroll-spy.js";

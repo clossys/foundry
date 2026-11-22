@@ -5,7 +5,7 @@ import { actionsOf, anatomyOf, memberOf, noop, refuseUnmapped, requiredAnatomy, 
 import { componentLeaf } from "../component-leaf.js";
 
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
-const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 
 const LEAF = "sections.error-state";
 const KINDS: readonly ErrorStateKind[] = ["not-found", "failure", "forbidden", "offline"];

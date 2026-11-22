@@ -1,5 +1,5 @@
 // Generated from sections.section-header by src/generated/props/generate.ts; do not edit.
-export const sectionHeaderContractSha256 = "24153d9472e7c5d4c7924eb221fae3adc9a8c5e24515f9fc99b75e2908a42ea7";
+export const sectionHeaderContractSha256 = "16c55c40f7619491e61681f615b6621bab3126869f1719240a4445503dfddfb9";
 
 export type SectionHeaderCopy = {
   eyebrow?: string; // eyebrow

@@ -1,5 +1,5 @@
 // Generated from sections.consent by src/generated/props/generate.ts; do not edit.
-export const consentContractSha256 = "a160dae6246d8264797f530055fda092212081d356fa7a4a861d10f66a208573";
+export const consentContractSha256 = "44e4d1b428e49f13b36a456d23e51e060b296f3dba65dff6b022c89461288dcc";
 
 export type ConsentCopy = {
   header?: {

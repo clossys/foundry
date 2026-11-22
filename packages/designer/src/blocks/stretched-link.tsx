@@ -5,7 +5,7 @@ import { ChevronRight } from "../icons/ChevronRight.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
-const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 const Icon = componentLeaf<typeof import("../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 

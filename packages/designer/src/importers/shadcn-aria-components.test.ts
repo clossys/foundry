@@ -97,7 +97,8 @@ describe("pinned shadcn aria component import", () => {
       id: "foundry/components.rich-text", sourceAddress: "./components#RichText" });
     expect(richText.$extensions["com.clossys.engine-exception"]).toMatchObject({ component: "components.rich-text", engine: "Tiptap 3 / ProseMirror" });
     expect(richText.components["rich-text"].impl).toEqual({ kind: "package", module: "@clossys/designer/components", export: "RichText" });
-    expect(richText.components["rich-text"].composes).toEqual(["components.badge", "components.link", "components.semantic-content", "components.table"]);
+    // Retargeted (BR-RETIRE3): components.link is retired (owner 2026-11-20); RichText's links render components.button's LinkButton.
+    expect(richText.components["rich-text"].composes).toEqual(["components.badge", "components.button", "components.semantic-content", "components.table"]);
   });
   it("classifies every inspected item at the immutable commit with no unknown runtime result", () => {
     const result = importShadcnAriaComponents(pinnedInput());

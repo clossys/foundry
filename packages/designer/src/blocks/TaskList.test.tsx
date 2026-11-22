@@ -89,12 +89,13 @@ describe("TaskList", () => {
     expect(rows[0]).not.toHaveAttribute("tabindex");
   });
 
-  it("T5: maps each status to its semantic StatusMark tone and shape", () => {
+  // components.status-mark is retired (owner 2026-11-20): each status is its visible label with the semantic tone as data.
+  it("T5: maps each status to its semantic tone and visible label", () => {
     const { container } = render(<TaskList {...props} />);
     const tones = ["success", "info", "danger", "neutral"];
     [...container.querySelectorAll("li")].forEach((row, index) => {
       expect(row.querySelector("[data-tone]")).toHaveAttribute("data-tone", tones[index]);
-      expect(row.querySelector('[data-part="mark"]')).toHaveAttribute("aria-hidden", "true");
+      expect(row.querySelector("[data-tone]")!.textContent!.trim()).not.toBe("");
     });
   });
 

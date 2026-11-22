@@ -109,8 +109,10 @@ describe("draft frame registry", () => {
     // foundry-build-0018 (audits 0021, 0022): site-shell consent accepts sections.consent in a named region; app-sidebar tree is components.sidebar.
     // 8187437fd: app-sidebar composes components.navigation-tree until AppNavigation renders Sidebar; foundry-build-0032
     // (IA audit 2026-11-16): frame copy fields; U28 9e1dbb671: frame props and contract fixtures.
+    // BR-RETIRE3 (owner 2026-11-20): components.link becomes components.button (compose lists, accepts and draft notes) and
+    // components.status-mark leaves every compose list; re-pinned from the data (the contract diff is exactly that rewrite).
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("ec0d511ce84248e0db53480d1cd149fa48ae527b8b42d81d6fdaadd57073e738");
+      .toBe("9a920e94a2a687afc324b35ee580377dc6f4c3745f699e256183ea69b6596b7c");
     expect(slots.find(slot => slot.id === "frames.auth-shell")).toEqual({
       id: "frames.auth-shell", layer: "frames", requires: [], status: "draft",
       contract: {
@@ -120,7 +122,7 @@ describe("draft frame registry", () => {
         members: { mode: "closed", names: [] }, statePorts: [], rendering: "server", breakpoints: [],
         allowedReads: { themes: ["themes.spacing", "themes.background", "themes.card", "themes.popover", "themes.secondary", "themes.accent", "themes.muted", "themes.sidebar", "themes.sidebar-accent", "themes.foreground", "themes.card-foreground", "themes.popover-foreground", "themes.primary-foreground", "themes.secondary-foreground", "themes.accent-foreground", "themes.muted-foreground", "themes.sidebar-foreground", "themes.sidebar-primary-foreground", "themes.sidebar-accent-foreground", "themes.primary", "themes.radius", "themes.border", "themes.ring"], assets: [] },
         // U28 9e1dbb671: the measured composes, the children prop and the stock login-03 contract fixture.
-        composes: ["components.semantic-content", "components.link"], skipTarget: "main-content", props: ["children"],
+        composes: ["components.semantic-content", "components.button"], skipTarget: "main-content", props: ["children"],
         fixture: { schema: "clossys.element-preview/1", fixtures: { file: "registry/aria-nova/blocks/login-03/page.tsx", export: "default", props: { children: ["DRAFT skip-link", "DRAFT main (view)"] } } },
       },
     });

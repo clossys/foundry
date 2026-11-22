@@ -1,5 +1,5 @@
 // Generated from sections.comparison by src/generated/props/generate.ts; do not edit.
-export const comparisonContractSha256 = "148519ebac08404cfb4ef6cb291003f8eca355b963553357c6d64a71b3c4a7fe";
+export const comparisonContractSha256 = "04569a3d501d7e91cf198b6a84f57e3e6016f87c3bb34063253b11250dde555c";
 
 export type ComparisonCopy = {
   header?: {

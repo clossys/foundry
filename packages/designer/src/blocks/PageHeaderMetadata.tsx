@@ -5,7 +5,7 @@ import type { LinkButton as LinkType } from "../components/preview-runtime/compo
 import { componentLeaf } from "../runtime/component-leaf.js";
 const SemanticContent = componentLeaf<typeof SemanticContentType>("components.semantic-content");
 const Badge = componentLeaf<typeof BadgeType>("components.badge");
-const Link = componentLeaf<typeof LinkType>("components.link");
+const Link = componentLeaf<typeof LinkType>("components.button", "LinkButton");
 
 /** Display copy is supplied by Writer; date values are ISO calendar dates. */
 export interface EditorialMetadata {

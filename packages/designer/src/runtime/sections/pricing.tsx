@@ -7,7 +7,7 @@ import { PricingTable, type PricingTier } from "../../blocks/PricingTable.js";
 import { list, object, optionalText, readSectionContent, required, SectionContentError, STOCK_LINK_VARIANT, text, texts, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
 
 import { componentLeaf } from "../component-leaf.js";
-const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 
 export const pricingInputs: SectionRendererInputs = { slots: ["highlight", "interval", "plans"], members: [] };
 

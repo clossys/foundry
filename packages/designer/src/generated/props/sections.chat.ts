@@ -1,5 +1,5 @@
 // Generated from sections.chat by src/generated/props/generate.ts; do not edit.
-export const chatContractSha256 = "d2ec4d03a604723f32394d560c8b8fdf3d221997e0609fd4234678732c850889";
+export const chatContractSha256 = "6ee38951e47973f2ea5f8ea28d394def65f4db8d2e4b54d40b0a7f302d105df7";
 
 export type ChatCopy = {
   header?: {

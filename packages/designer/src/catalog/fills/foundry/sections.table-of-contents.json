@@ -27,23 +27,23 @@
   "sections": {
     "table-of-contents": {
       "composes": [
+        "components.button",
         "components.disclosure",
-        "components.link",
         "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.button",
           "components.disclosure",
-          "components.link",
           "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.button",
             "components.disclosure",
-            "components.link",
             "components.semantic-content"
           ],
           "themes": [
@@ -61,11 +61,11 @@
           },
           {
             "path": "packages/designer/src/blocks/TableOfContents.server.tsx",
-            "sha256": "39a14a5a0d9fa34d994bb1e20cc71f03fbf90a7a6cd09347229a29b627b672c6"
+            "sha256": "588b44afa1f9833eb531185d18b3711c31a6dae033d023c0939e4b80fc05d74f"
           },
           {
             "path": "packages/designer/src/blocks/TableOfContents.tsx",
-            "sha256": "3e10079c7fcaf327dcf096c228a0cbf927e73892a613ce89a0b1f8fe62e1a8e5"
+            "sha256": "69b90e84098f5db90f74de1b3cd0575717cbcbaa1efec04e6b1106fb854721ae"
           },
           {
             "path": "packages/designer/src/blocks/TableOfContentsDisclosure.tsx",
@@ -81,7 +81,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+            "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
           },
           {
             "path": "packages/designer/src/internal/brandmark.ts",
