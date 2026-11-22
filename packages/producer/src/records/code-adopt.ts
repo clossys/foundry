@@ -212,3 +212,21 @@ export function adoptionReaderOf(consumer: string, item: unknown): DeclaredFallb
   if (named !== reader.source) throw new Error(`the adoption names the fallback reader ${JSON.stringify(named)}; this consumer supplies only "${reader.source}"`);
   return reader;
 }
+
+/** The fix a stale consumer adoption names (N1): its bytes are the adoption's own, so the pins moved after it. */
+export const READOPT_HINT = "re-adopt it (code:adopt the stock item again) to take the consumer's current pinned theme values";
+
+/**
+ * Whether a consumer adoption's files are still the bytes it wrote (every `meta.refVerbatim.outputSha256` entry
+ * matches its file): then a byte-exact failure against the reference normalized through the current pins means a
+ * pinned `themes.*` value changed after the adoption, and the fix is re-adoption ({@link READOPT_HINT}), not an edit.
+ */
+export function adoptionUnchangedSinceWrite(item: unknown): boolean {
+  const doc = item as { meta?: { refVerbatim?: { reader?: unknown; outputSha256?: Record<string, unknown> } }; files?: { path?: unknown; content?: unknown }[] } | undefined;
+  const recorded = doc?.meta?.refVerbatim?.outputSha256;
+  if (doc?.meta?.refVerbatim?.reader === undefined || !recorded || !Object.keys(recorded).length) return false;
+  return Object.entries(recorded).every(([path, sha]) => {
+    const file = doc.files?.find(each => each.path === path);
+    return typeof file?.content === "string" && sha256(file.content) === sha;
+  });
+}

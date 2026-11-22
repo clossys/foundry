@@ -7,6 +7,7 @@
  * contract fixture ships as shadcn-aria/checkbox; components.chart-area has no stock fixture; components.button already
  * holds a candidate; sections.hero is a crafted (not byte-exact) slot.
  */
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -22,6 +23,7 @@ import { writeCandidate } from "../records/slot-write.js";
 import { readLedger } from "../records/slots.js";
 import { startRun, type AgentPacket, type CodeCall, type RunHooks } from "./runner.js";
 
+const REF_VERBATIM_CLI = fileURLToPath(new URL("../../../designer/scripts/check-ref-verbatim.mjs", import.meta.url));
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
 const CHECKBOX = "components.checkbox";
 /** shadcn-aria/sonner reads --border, --popover, --popover-foreground and --radius bare: every one a fixture theme pin. */
@@ -233,5 +235,26 @@ describe("a consumer adoption writes the consumer's pinned theme values as its t
     expect(bytes).toContain("var(--popover, oklch(0.99 0.01 250))");
     writeFileSync(file, bytes.replace("var(--popover, oklch(0.99 0.01 250))", "var(--popover, oklch(1 0 0))"));
     expect(rowsOf().map(row => row.reason).join("\n")).toMatch(/is adopt-first: .* is not byte-exact to the normalized reference shadcn-aria\/sonner@/);
+  }, 60_000);
+
+  it("the designer check:ref-verbatim CLI proves a written consumer adoption through the same reader, and names re-adopt for a pin moved after it", () => {
+    const { root, consumer } = world();
+    const stock = toastStock(root);
+    const written = writeCandidate(consumer, "designer", TOAST, stock.item.name, stock.item, {
+      at: "2026-11-21T12:00:00Z", provenance: { verb: "submit", by: CODE_ADOPT }, fields: adoptFields(stock.seed), guard: true,
+    });
+    // The strict one-candidate mode (the pin gate): this adoption alone, not the fixture's unrelated lockfile rows.
+    const [, element, version] = /^(.+)-v(\d+)\.json$/.exec(written.name)!;
+    const cli = () => spawnSync(process.execPath, [REF_VERBATIM_CLI, "--root", consumer, "--element", `${TOAST}/${element}/v${version}`, "--report", join(root, "ref-verbatim.json")], { encoding: "utf8" });
+    const adopted = cli();
+    expect(adopted.status, adopted.stderr).toBe(0);
+    expect(adopted.stdout).toMatch(/^pass +components\.toast\//m);
+    // N1: the pin moves after the adoption; the unchanged adoption fails byte-exact and the finding names re-adoption.
+    repinTheme(consumer, "radius", item => { item.cssVars.light!.radius = "0.375rem"; });
+    const moved = cli();
+    expect(moved.status).toBe(1);
+    expect(moved.stderr).toMatch(/components\.toast\/.*unchanged since adoption, so a pinned theme value changed after it: re-adopt it \(code:adopt the stock item again\)/);
+    const rows = r03_4(buildContext(root, consumer)).filter(row => row.slot === TOAST).map(row => row.reason).join("\n");
+    expect(rows).toMatch(/is not byte-exact .*; its files are unchanged since adoption, so a pinned theme value changed after it: re-adopt it/);
   }, 60_000);
 });

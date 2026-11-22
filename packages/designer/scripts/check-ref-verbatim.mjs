@@ -155,6 +155,8 @@ const treeHash = (files) =>
  * sha256 and treeHash stay local and certify/source.test.ts (not shipped) pins them equal to source.ts's.
  */
 const SOURCE_ANCHOR = "@clossys/producer/records/slots";
+/** The fix a stale consumer adoption names; the same words as Producer's records/code-adopt.ts READOPT_HINT. */
+const READOPT_HINT = "re-adopt it (code:adopt the stock item again) to take the consumer's current pinned theme values";
 let producerSourceDir; let producerSourceMissing;
 try { producerSourceDir = new URL("../constitution/certify/", import.meta.resolve(SOURCE_ANCHOR)).href; }
 catch (error) {
@@ -257,6 +259,7 @@ function candidateInput(candidate, manifest, { byteExact } = {}) {
     adaptations: mapping.adaptations ?? [],
     ...(byteExact ? { byteExact } : {}),
     ...(Object.hasOwn(mapping, "reader") ? { reader: mapping.reader } : {}),
+    ...(Object.hasOwn(mapping, "outputSha256") ? { outputSha256: mapping.outputSha256 } : {}),
     ...(mapping.parts ? { parts: mapping.parts } : {}),
     ...(Object.hasOwn(mapping, "exactParts") ? { exactParts: mapping.exactParts } : {}),
   } };
@@ -911,6 +914,12 @@ function checkVersion(root, target, options = {}, versionInput) {
       }
     } catch (error) {
       fail("REF-NORMALIZE", error.message, { file, reference: target.path });
+    }
+    // A consumer adoption whose file is still the bytes it wrote (its recorded output sha256) failed because a pinned
+    // theme value moved after it: the finding names re-adoption as the fix, never an edit.
+    const outputSha = record.lineage?.outputSha256?.[file];
+    if (typeof record.lineage?.reader === "string" && opts.reader?.source === record.lineage.reader && typeof outputSha === "string" && config && (() => { try { return sha256(readPayload(file)); } catch { return undefined; } })() === outputSha) {
+      for (const f of findings.filter((each) => each.file === file)) f.detail = `${f.detail}; ${file} is unchanged since adoption, so a pinned theme value changed after it: ${READOPT_HINT}`;
     }
     entry.codes = [...new Set(findings.filter((f) => f.file === file).map((f) => f.code))];
     entry.status = entry.codes.length ? "fail" : "pass";
@@ -1922,7 +1931,7 @@ const summary = (elements) => {
   return { elements: counts, files: fileCounts };
 };
 
-function main(argv, fallback) {
+function main(argv, fallback, consumerReader) {
   const value = (flag) => {
     const at = argv.indexOf(flag);
     return at < 0 ? undefined : argv[at + 1];
@@ -1941,6 +1950,9 @@ function main(argv, fallback) {
   };
   let report;
   try {
+    // A consumer adoption names the consumer's pinned-themes reader: the CLI builds it for --root through Producer's
+    // read/theme-pins (the one pinned-theme parser), so its reference is normalized through the same reader.
+    options.reader = consumerReader(resolve(root));
     if (element) {
       const checked = checkElement(resolve(root), element, { ...options, strict: true });
       report = { mode: "element", root: resolve(root), elements: [checked], findings: checked.findings, baselined: [], stale: [] };
@@ -1979,5 +1991,15 @@ function main(argv, fallback) {
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   // The package's declared values (the built `declared-fallback-reader`); a read's fallback must be exactly one of them.
   const reader = fallbackReaders().packageDeclaredFallbackReader();
-  process.exitCode = main(process.argv.slice(2), (name) => reader.fallback(name));
+  // Producer's read/theme-pins imports this module, so it loads only after this module has evaluated (not awaited here).
+  const themePins = () => {
+    if (!producerSourceDir) return producerSource();
+    return import(/* @vite-ignore */ new URL("../../read/theme-pins.js", producerSourceDir).href);
+  };
+  new Promise((done) => done(themePins())).then(({ pinnedThemeReader }) => {
+    process.exitCode = main(process.argv.slice(2), (name) => reader.fallback(name), pinnedThemeReader);
+  }, (error) => {
+    console.error(`check-ref-verbatim: ${error.message}`);
+    process.exitCode = 2;
+  });
 }
