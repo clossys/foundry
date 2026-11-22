@@ -81,13 +81,6 @@
         "shape": "voice.formality",
         "value": "register enum per locale + address form",
         "check": "address deterministic; register owner rubric",
-        "fixture": {
-          "keys": [],
-          "locales": [
-            "en"
-          ]
-        },
-        "open": true,
         "defaults": "defaults/lexicon.formality/"
       }
     },
@@ -109,13 +102,6 @@
         "shape": "voice.warmth",
         "value": "1-5 anchored scale",
         "check": "owner rubric",
-        "fixture": {
-          "keys": [],
-          "locales": [
-            "en"
-          ]
-        },
-        "open": true,
         "defaults": "defaults/lexicon.warmth/"
       }
     },
@@ -137,13 +123,6 @@
         "shape": "voice.energy",
         "value": "1-5 scale + max ! per 1k words",
         "check": "proxy deterministic",
-        "fixture": {
-          "keys": [],
-          "locales": [
-            "en"
-          ]
-        },
-        "open": true,
         "defaults": "defaults/lexicon.energy/"
       }
     },
@@ -161,13 +140,6 @@
         "shape": "voice.person",
         "value": "we-you, you-only or third",
         "check": "pronoun scan",
-        "fixture": {
-          "keys": [],
-          "locales": [
-            "en"
-          ]
-        },
-        "open": true,
         "defaults": "defaults/lexicon.person/"
       }
     },
@@ -185,13 +157,6 @@
         "shape": "voice.mood",
         "value": "per field role: imperative, declarative or question",
         "check": "deterministic",
-        "fixture": {
-          "keys": [],
-          "locales": [
-            "en"
-          ]
-        },
-        "open": true,
         "defaults": "defaults/lexicon.mood/"
       }
     },
@@ -213,13 +178,6 @@
         "shape": "voice.sentence-length",
         "value": "max and mean words per sentence, per locale and role",
         "check": "deterministic",
-        "fixture": {
-          "keys": [],
-          "locales": [
-            "en"
-          ]
-        },
-        "open": true,
         "defaults": "defaults/lexicon.sentence-length/"
       }
     },
@@ -241,13 +199,6 @@
         "shape": "voice.reading-level",
         "value": "max grade per locale",
         "check": "deterministic where a formula exists",
-        "fixture": {
-          "keys": [],
-          "locales": [
-            "en"
-          ]
-        },
-        "open": true,
         "defaults": "defaults/lexicon.reading-level/"
       }
     },
@@ -269,13 +220,6 @@
         "shape": "voice.capitalization",
         "value": "case per role; exceptions from Director naming.name:Casing",
         "check": "deterministic",
-        "fixture": {
-          "keys": [],
-          "locales": [
-            "en"
-          ]
-        },
-        "open": true,
         "defaults": "defaults/lexicon.capitalization/"
       }
     },
@@ -297,13 +241,6 @@
         "shape": "voice.punctuation",
         "value": "rule set per locale",
         "check": "deterministic",
-        "fixture": {
-          "keys": [],
-          "locales": [
-            "en"
-          ]
-        },
-        "open": true,
         "defaults": "defaults/lexicon.punctuation/"
       }
     },
@@ -329,13 +266,6 @@
         "shape": "voice.preferred-terms",
         "value": "map avoid to use",
         "check": "deterministic",
-        "fixture": {
-          "keys": [],
-          "locales": [
-            "en"
-          ]
-        },
-        "open": true,
         "defaults": "defaults/lexicon.preferred-terms/"
       }
     },
@@ -357,13 +287,6 @@
         "shape": "voice.avoid-terms",
         "value": "term list (absorbs the quoted words from Director voice Never)",
         "check": "deterministic",
-        "fixture": {
-          "keys": [],
-          "locales": [
-            "en"
-          ]
-        },
-        "open": true,
         "defaults": "defaults/lexicon.avoid-terms/"
       }
     },
@@ -381,13 +304,6 @@
         "shape": "voice.avoid-patterns",
         "value": "regex list",
         "check": "deterministic",
-        "fixture": {
-          "keys": [],
-          "locales": [
-            "en"
-          ]
-        },
-        "open": true,
         "defaults": "defaults/lexicon.avoid-patterns/"
       }
     }

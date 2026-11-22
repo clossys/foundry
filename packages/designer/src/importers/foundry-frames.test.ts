@@ -35,7 +35,7 @@ describe("Foundry frame descriptors", () => {
 
   // foundry-build-0032 (audit P3): frames.deck is the twelfth leaf; it has coverage (status unavailable, the named gap) but
   // no fill, since no Designer package export exists for it yet.
-  // BR-SEED2: the retired frames.document (src/catalog/retired.json:152) left FOUNDRY_FRAME_MAP with its fill, so its
+  // BR-SEED3: the retired frames.document (src/catalog/retired.json:152) left FOUNDRY_FRAME_MAP with its fill, so its
   // slot row joins deck as unavailable and the fills go 11 -> 10, as the importer regenerates them.
   it("accounts for exactly twelve leaves, ten fills, the deck gap and the retired document, and regenerates committed bytes", () => {
     const files = generatedFoundryFrameFiles({ exports });
