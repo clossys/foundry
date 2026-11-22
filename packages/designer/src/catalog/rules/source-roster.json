@@ -760,22 +760,7 @@
         "components.canvas-zoom",
         "components.canvas-map"
       ],
-      "offers": [
-        {
-          "source": "foundry",
-          "leaves": [
-            "components.canvas-zoom",
-            "components.canvas-map"
-          ],
-          "reason": "no external covers",
-          "ladder": {
-            "rung": "L4",
-            "slotNeeded": "Studio's canvas camera: zoom controls and a board overview minimap over the Foundry CanvasSurface projection; both are visible in Studio, so they are registered (owner LAD-3, 2026-11-11)",
-            "reason": "canvas-zoom composes stock toolbar+button+icon; canvas-map composes stock button over SVG board rects; no stock shadcn@aria canvas camera part, and partner canvases (React Flow controls/minimap) own their own surface, so they cannot drive CanvasSurface",
-            "checkedAt": "2026-11-11"
-          }
-        }
-      ]
+      "offers": []
     },
     {
       "l2": "containment-structure",
@@ -1165,17 +1150,16 @@
       ],
       "offers": [
         {
-          "source": "foundry",
+          "source": "open-props",
           "leaves": [
             "assets.image-ratio"
           ],
-          "reason": "no external covers",
           "ladder": {
             "rung": "L3",
             "chosen": {
-              "id": "shadcn@aria/aspect-ratio"
+              "id": "open-props/props.aspects"
             },
-            "reason": "L1 decision: image-ratio moves to stock shadcn aspect-ratio; swap pending",
+            "reason": "image-ratio ships as the pinned Open Props aspect subset (fills/open-props/assets.image-ratio.json, open-props@1.7.23 fcb77853 src/props.aspects.css); L1 decision: image-ratio moves to stock shadcn aspect-ratio; swap pending",
             "adoption": {
               "state": "pending",
               "wave": "A"
@@ -1978,6 +1962,17 @@
           }
         }
       ]
+    },
+    {
+      "l2": "studio-records",
+      "leaves": [
+        "sections.slot-gallery",
+        "sections.slot-detail",
+        "sections.candidate-preview",
+        "sections.question-packet",
+        "sections.queue-list"
+      ],
+      "offers": []
     }
   ],
   "frames": [
@@ -2235,6 +2230,13 @@
           }
         }
       ]
+    },
+    {
+      "l2": "page-shells-presentations",
+      "leaves": [
+        "frames.deck"
+      ],
+      "offers": []
     }
   ],
   "themes": {

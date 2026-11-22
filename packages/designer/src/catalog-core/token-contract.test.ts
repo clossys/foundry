@@ -5,7 +5,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
-  assertCustomDistinct, checkBoardColumns, checkSourceRoster, defaultPreset, presetValues, rosterOffers, rosterStarter, sourceRoster, tokenContract,
+  assertCustomDistinct, checkBoardColumns, checkSourceRoster, darkScopedKeys, defaultPreset, presetValues, rosterOffers, rosterStarter, sourceRoster, tokenContract,
   type RosterCheckInput, type RosterCode, type SourceRoster, type TokenContract,
 } from "./token-contract.js";
 import { scanContractVars } from "./token-contract-scan.js";
@@ -79,6 +79,16 @@ describe("token presets", () => {
     expect(preset.theme.vars.light).toEqual(vars(root!));
     expect(preset.theme.vars.dark).toEqual(vars(dark!));
   });
+  it("scopes a key to dark only where the preset's pinned theme declares it in dark", () => {
+    const vendored = read(resolve(here, "../importers/vendor/shadcn-aria.css"));
+    const darkBlock = vendored.split(".dark")[1]!;
+    const declared = new Set([...darkBlock.matchAll(/^\s*(--[a-z0-9-]+):/gm)].map(match => match[1]!));
+    for (const entry of sourceRoster.themes.presets) expect([...darkScopedKeys(sourceRoster, entry)].sort(), entry.id).toEqual([...declared].sort());
+    expect(declared.has("--radius")).toBe(false);
+    expect(declared.has("--ring")).toBe(true);
+    // :root-scoped --radius has one value for both modes: presetValues carries no dark value for it.
+    expect(presetValues(tokenContract, preset, "themes.radius").default).toEqual({ light: "0.625rem" });
+  });
   it("presetValues reads theme members from the preset and the rest from the contract default", () => {
     const zinc = sourceRoster.themes.presets[1]!;
     expect(presetValues(tokenContract, zinc, "themes.background").default).toEqual({ light: "oklch(1 0 0)", dark: "oklch(0.141 0.005 285.823)" });
@@ -130,6 +140,8 @@ describe("mutation proofs", () => {
     ["a dead member without a decision", "R9", () => ({ contract: mutateContract(contract => { contract.leaves["themes.background"].members.default.status = "dead"; delete contract.leaves["themes.background"].members.default.decision; }) })],
     ["shadcn@aria offered where it ships no fill", "R3", () => ({ roster: mutateRoster(roster => { roster.components.find((row: any) => row.l2 === "actions-toolbars").offers.unshift({ source: "shadcn@aria", leaves: ["components.toolbar"] }); }) })],
     ["a preset that leaves a live key empty", "R3", () => ({ roster: mutateRoster(roster => { delete roster.themes.presets[1].theme.vars.dark["--ring"]; }) })],
+    ["a preset that leaves a :root-scoped key empty in light", "R3", () => ({ roster: mutateRoster(roster => { delete roster.themes.presets[1].theme.vars.light["--radius"]; }) })],
+    ["Foundry offered on the canvas leaves, which ship no fill", "R3", () => ({ roster: mutateRoster(roster => { roster.components.find((row: any) => row.l2 === "navigation-canvas").offers.push({ source: "foundry", leaves: ["components.canvas-zoom"], reason: "no external covers" }); }) })],
     ["Custom not last", "R4", () => ({ roster: mutateRoster(roster => { roster.custom.position = "first"; }) })],
     ["a brand row offering Foundry", "R5", () => ({ roster: mutateRoster(roster => { roster.assets.find((row: any) => row.l2 === "logo-artwork").offers.push({ source: "foundry", leaves: ["assets.mark"], reason: "no external covers" }); }) })],
     ["a brand row without its Generate starter", "R5", () => ({ roster: mutateRoster(roster => { delete roster.assets.find((row: any) => row.l2 === "app-identity-browser").starter; }) })],

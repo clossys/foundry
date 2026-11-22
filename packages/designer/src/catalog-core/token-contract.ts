@@ -164,7 +164,19 @@ export function presetValues(contract: TokenContract, preset: TokenPreset, slot:
   return values;
 }
 
-export type RosterCode = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9";
+/**
+ * The keys a preset's own pinned theme scopes to dark mode. shadcn writes `cssVars.light` to `:root` and
+ * `cssVars.dark` to `.dark`, so a key the pinned file declares for no theme in dark (today `--radius`) is
+ * `:root`-scoped: one value for both modes, which `.dark` inherits. Read from the presets sharing this
+ * preset's pinned file (verified byte-exact by `import-shadcn-presets.mjs --check`), never typed here.
+ */
+export function darkScopedKeys(roster: SourceRoster, preset: TokenPreset): ReadonlySet<string> {
+  const pin = preset.theme.pin;
+  const siblings = roster.themes.presets.filter(entry => entry.theme.pin.url === pin.url && entry.theme.pin.sha256 === pin.sha256);
+  return new Set(siblings.flatMap(entry => Object.keys(entry.theme.vars.dark)));
+}
+
+export type RosterCode = "R1"| "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9";
 export interface RosterFinding { readonly code: RosterCode; readonly severity: "error" | "warning"; readonly subject: string; readonly message: string }
 
 /**
@@ -253,7 +265,9 @@ export function checkSourceRoster(input: RosterCheckInput): readonly RosterFindi
   }
   const themeKeys = Object.values(contract.leaves).flatMap(leaf => Object.values(leaf.members ?? {})).filter(member => member.kind === "theme" && member.status === "live").map(member => member.target);
   for (const preset of roster.themes.presets) {
+    const dark = darkScopedKeys(roster, preset);
     for (const key of new Set(themeKeys)) for (const mode of ["light", "dark"] as const) {
+      if (mode === "dark" && !dark.has(key)) continue;
       if (preset.theme.vars[mode][key] === undefined) error("R3", preset.id, `${preset.id} leaves live key ${key} empty in ${mode}`);
     }
     for (const key of Object.keys(contract.aliases)) {
