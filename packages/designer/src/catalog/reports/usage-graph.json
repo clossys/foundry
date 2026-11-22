@@ -21473,7 +21473,7 @@
           },
           {
             "path": "packages/designer/src/components/preview-runtime/components/button/button.tsx",
-            "sha256": "8a023ebd980fc814e92524a65d09feb29f7ffd4eadf4c08d970516f554cd8637"
+            "sha256": "8b5891918ab6909ea98ebf8d1a3abc9f25e24fbbaac29515b01a066ddc3c2ce4"
           },
           {
             "path": "packages/designer/src/components/surface-tones.ts",

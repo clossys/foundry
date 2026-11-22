@@ -59,3 +59,24 @@ test("G12: npm lookups stop at the repository, and LICENCE.md must be the packag
   mkdirSync(join(bare, "clossys"));
   assert.deepEqual(codes(join(bare, "clossys"), item(undefined)), ["REF-NPM-VERSION"]);
 });
+
+// BR-RETIRE3 (planner 2026-11-21): the one approved preview props adaptation. LinkButton declares the
+// aria-current that its RAC Link already renders, content-bound on the stock anchor, and nowhere else.
+test("preview adaptation: the stock LinkButton declares aria-current, and a changed anchor throws", async () => {
+  const { linkButtonAriaCurrent, previewSource } = await import("../lib/preview-source.mjs");
+  const props = '}: Omit<LinkPrimitiveProps, "className"> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n  }) {';
+  const stock = `function LinkButton({\n  className,\n  ...props\n${props}\n  return <LinkPrimitive {...props} />\n}\n`;
+  const adapted = previewSource(stock, "components/button/button.tsx");
+  assert.equal(adapted, stock.replace("    className?: string\n", '    className?: string\n    "aria-current"?: React.AriaAttributes["aria-current"]\n'));
+  assert.equal(linkButtonAriaCurrent(stock, "/repo/src/components/preview-runtime/components/button/button.tsx"), adapted);
+  assert.throws(() => previewSource(stock.replace("className?: string", "className?: string | undefined"), "components/button/button.tsx"), /anchor changed/);
+  assert.throws(() => previewSource(stock + stock, "components/button/button.tsx"), /anchor changed/);
+});
+test("preview adaptation: aria-current is never added outside the stock button module", async () => {
+  const { previewSource } = await import("../lib/preview-source.mjs");
+  const props = '}: Omit<LinkPrimitiveProps, "className"> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n  }) {';
+  const stock = `function LinkButton({\n  ...props\n${props}\n  return null\n}\n`;
+  for (const path of ["components/_parts/rail-button/button.tsx", "components/toggle-button/button.tsx", "components/button/index.ts", "components/link/button.tsx"]) {
+    assert.equal(previewSource(stock, path), stock, path);
+  }
+});

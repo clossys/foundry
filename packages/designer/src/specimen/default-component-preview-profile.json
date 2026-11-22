@@ -1,6 +1,6 @@
 {
   "consumer": "defaults-consumer",
-  "selectionHash": "sha256:a856bceefd1e30532aede7de501e2d10bc804116c7741dbff45879636c283bda",
+  "selectionHash": "sha256:768fc88fdc3c51b1abd7cd073fc380e0a48594f8f8b96c1bf487dfc0c5145f02",
   "components": {
     "components.avatar": {
       "slot": "components.avatar",
@@ -7872,7 +7872,7 @@
           "export": "./components#RichText"
         },
         "license": "MIT",
-        "sha256": "39e634a365d19ad26d65aae9d3e005d047b4b1ebbfa743e3e5e777d6fc29d3db",
+        "sha256": "dbf409d82bbb1388d5294dcfd2655cc6052d9086d4020e9e7011fc0b22fe3ff5",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
@@ -7918,7 +7918,7 @@
         "assets": [],
         "components": [
           "components.badge",
-          "components.link",
+          "components.button",
           "components.semantic-content",
           "components.table"
         ]
@@ -7981,14 +7981,14 @@
           "assets": [],
           "components": [
             "components.badge",
-            "components.link",
+            "components.button",
             "components.semantic-content",
             "components.table"
           ]
         },
         "composes": [
           "components.badge",
-          "components.link",
+          "components.button",
           "components.semantic-content",
           "components.table"
         ],
@@ -8050,7 +8050,7 @@
             "export": "./components#RichText"
           },
           "license": "MIT",
-          "sha256": "39e634a365d19ad26d65aae9d3e005d047b4b1ebbfa743e3e5e777d6fc29d3db",
+          "sha256": "dbf409d82bbb1388d5294dcfd2655cc6052d9086d4020e9e7011fc0b22fe3ff5",
           "adoptedAt": "2026-10-26"
         }
       }

@@ -2,10 +2,26 @@
 import { posix } from "node:path";
 
 const logical = { "left-": "start-", "right-": "end-", "ml-": "ms-", "mr-": "me-", "pl-": "ps-", "pr-": "pe-", "border-l-": "border-s-", "border-r-": "border-e-", "rounded-l-": "rounded-s-", "rounded-r-": "rounded-e-", "text-left": "text-start", "text-right": "text-end" };
-function previewSource(content, path) {
+
+/**
+ * Approved parity adaptation (BR-RETIRE3, planner 2026-11-21): the stock LinkButton props type omits
+ * `aria-current`, which the RAC Link it wraps already renders. It is declared on the stock button
+ * module only, so compositions that mark the current page stay on the stock prop surface. The anchor
+ * is content-bound: a changed stock source throws instead of passing through unadapted.
+ */
+const LINK_BUTTON_MODULE = /(?:^|\/)components\/button\/button\.tsx$/;
+const LINK_BUTTON_PROPS = '}: Omit<LinkPrimitiveProps, "className"> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n  }) {';
+const LINK_BUTTON_ARIA_CURRENT = '}: Omit<LinkPrimitiveProps, "className"> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n    "aria-current"?: React.AriaAttributes["aria-current"]\n  }) {';
+export function linkButtonAriaCurrent(code, path) {
+  if (!LINK_BUTTON_MODULE.test(path)) return code;
+  if (code.split(LINK_BUTTON_PROPS).length !== 2) throw new Error(`${path}: the stock LinkButton props anchor changed; the aria-current adaptation cannot apply`);
+  return code.replace(LINK_BUTTON_PROPS, LINK_BUTTON_ARIA_CURRENT);
+}
+
+export function previewSource(content, path) {
   let code = content.replace(/(?<![\w-])(?:-?(?:left|right)-|[mp][lr]-|border-[lr]-|rounded-[lr]-|text-(?:left|right)(?![\w-]))/g, token => (token.startsWith("-") ? "-" : "") + logical[token.startsWith("-") ? token.slice(1) : token]).replaceAll("max-w-xs", "max-w-[20rem]").replaceAll("max-w-sm", "max-w-[24rem]");
   if (path.endsWith("/dialog.tsx") || path.endsWith("/radio-group.tsx")) code = code.replaceAll("-translate-x-1/2 ", "-translate-x-1/2 rtl:translate-x-1/2 ");
-  return code;
+  return linkButtonAriaCurrent(code, path);
 }
 
 /**
