@@ -57,6 +57,9 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
   const findings: Finding[] = [...fresh.notices];
   const add = (code: CheckCode, rule: string, subject: string, diagnostic: { message: string; copy: NonNullable<Finding["copy"]> }, severity: Finding["severity"] = "error"): void => { findings.push({ code, rule, subject, severity, ...diagnostic }); };
   const slots = new Map(input.catalog.slots.map(slot => [slot.id, slot]));
+  // A retired slot stays registered (retired-leaves.ts) but is no longer offered, so C4 coverage does not require a
+  // consumer fill for it (owner 2026-11-22, Q1); a fill it still ships is judged as any other. Parked slots stay required.
+  const retiredSlots = new Set((input.catalog.retired ?? []).map(entry => entry.id));
   const sources = new Map([input.library.source].map(source => [source.id, source]));
   const clauses = new Set(input.catalog.standards.flatMap(standard => standard.clauses.map(clause => `${standard.id}#${clause.id}`)));
   const bound = new Map<string, string[]>(); const shipped = THEME_OUTPUT_BY_PROPERTY;
@@ -70,13 +73,14 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
     if (slot.contract.kind === "asset" && slot.contract.optional?.some(name => slot.contract.members.mode !== "closed" || !slot.contract.members.names.includes(name))) add("C1", "contract", slot.id, { message: `contract: ${slot.id} optional members must be declared closed members`, copy: { id: "st.9z67w1pg64", values: { item: (slot.id ?? "") } } });
     for (const clause of slot.requires) if (!clauses.has(clause)) add("C3", "standards", slot.id, { message: `standards: unknown clause ${clause} in ${slot.id}`, copy: { id: "st.3chprq1k2v", values: { item: (slot.id ?? ""), clause: (clause ?? "") } } });
     const hasFill = filledSlots.has(slot.id);
-    const complete = input.library.complete && !(slot.contract.kind === "asset" && input.valueOptions?.assetScope === "adopted");
+    const retiredUnfilled = retiredSlots.has(slot.id) && !hasFill;
+    const complete = input.library.complete && !retiredUnfilled && !(slot.contract.kind === "asset" && input.valueOptions?.assetScope === "adopted");
     if (slot.contract.kind === "token") for (const [relative, css] of Object.entries(slot.contract.emit ?? {})) {
       const id = `${slot.id}.${relative}`; bound.set(css, [...(bound.get(css) ?? []), id]);
       if (!shipped.has(css)) add("C4", "binding", css, { message: `binding: ${css} is not a shipped token`, copy: { id: "st.y89003hb02", values: { property: (css ?? "") } } });
       if (!fresh.members[id] && (complete || hasFill)) add("C4", "coverage", id, { message: `coverage: ${id} (emits ${css}) has no value in profile ${input.library.source.id}`, copy: { id: "st.rhhgjm5eg2", values: { item: (id ?? ""), source: (input.library.source.id ?? "") } } });
     }
-    if (!hasFill) add("C4", "coverage", slot.id, { message: `coverage: slot ${slot.id} has no consumer fill`, copy: { id: "st.q4xjgfd4fz", values: { item: (slot.id ?? "") } } }, complete ? "error" : "notice");
+    if (!hasFill && !retiredUnfilled) add("C4", "coverage", slot.id, { message: `coverage: slot ${slot.id} has no consumer fill`, copy: { id: "st.q4xjgfd4fz", values: { item: (slot.id ?? "") } } }, complete ? "error" : "notice");
     const requiredMembers = slot.contract.members.mode === "closed" ? slot.contract.members.names : slot.contract.members.required ?? [];
     for (const relative of requiredMembers) {
       if (slot.contract.kind === "asset" && slot.contract.optional?.includes(relative)) continue;

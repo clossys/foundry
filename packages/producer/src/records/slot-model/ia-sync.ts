@@ -15,13 +15,14 @@
  *
  * A `clossys.slot/2` slot.json (a recut store, foundry-build-0048 U2) is compared and written in its own terms:
  * its kind family (Writer `copy` is the `strings` family), its contract without the consumer's
- * `contract.notNeeded`, the slot ids of its `input` refs (as a set: refs keep their keys and order), and the
+ * `contract.notNeeded` (and without a Writer `contract.fixture` the package neither declares nor derives, which is
+ * the consumer's to state: migrate/contracts.ts consumerStatesFixture), the slot ids of its `input` refs (as a set: refs keep their keys and order), and the
  * slash-path `ia` the package position gives (positionIa: `themes/colors`, the position `themes.colors`). A
  * sync writes a slot/2 file as slot/2 (and adopts a missing leaf of a slot/2 store as slot/2), never as slot/1.
  * The package contract of a Director, Designer or Writer slot/2 file is the CREATE and CHOOSE seed of the
  * package's own contract (migrate/contracts.ts seededContract: its standard's requirement checks, and the copy
- * fixture a Writer contract determines), so a sync keeps that seed and a hand edit of it is drift; an adopted
- * slot/2 leaf also takes its option family.
+ * fixture a Writer contract determines), so a sync keeps that seed and a hand edit of it is drift; a sync keeps
+ * the consumer's `notNeeded` and a consumer-stated Writer fixture; an adopted slot/2 leaf also takes its option family.
  */
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
@@ -40,7 +41,7 @@ import type { AgentId, Iso, Ref, Slot } from "../types.js";
 import { slotFromV1, targetKind as v1TargetKind, type SlotV1 } from "../../migrate/slot-1-to-2.js";
 import { classify } from "../slot-options.js";
 import { OPTION_TABLE } from "./option-classes.js";
-import { CONTRACT_AGENTS, familyFor, seededContract } from "../../migrate/contracts.js";
+import { CONTRACT_AGENTS, consumerStatesFixture, familyFor, seededContract } from "../../migrate/contracts.js";
 import { readStandard } from "../standards.js";
 import { AGENT_LOOPS, holdsAgentLoops, isLoopAgent, withAgentLoopsIa } from "../../loop/agent-loops-ia.js";
 import { consumedIds, consumedLeaves, filterFoundryIa, isConsumedAgent } from "./consumed.js";
@@ -205,10 +206,17 @@ function seededPackageContract(consumerDir: string, agent: SyncAgent, contract: 
   const doc = typeof standard === "string" ? readStandard(dirname(consumerDir), agent as (typeof CONTRACT_AGENTS)[number], standard).doc : undefined;
   return seededContract(agent, contract as Record<string, unknown>, doc);
 }
-/** A slot/2 contract as the package sees it: without the consumer's `notNeeded` marker. */
-const packageContract = (contract: unknown): unknown => {
+/** Whether a package slot leaves its Writer `contract.fixture` to the consumer (migrate/contracts.ts consumerStatesFixture). */
+const consumerFixture = (agent: SyncAgent, contract: unknown): boolean =>
+  !!contract && typeof contract === "object" && !Array.isArray(contract) && consumerStatesFixture(agent, contract as Readonly<Record<string, unknown>>);
+/**
+ * A slot/2 contract as the package sees it: without the consumer's `notNeeded` marker, and without `fixture` when
+ * the consumer states it (`ownFixture`: the package contract neither declares nor derives one).
+ */
+const packageContract = (contract: unknown, ownFixture: boolean): unknown => {
   if (!contract || typeof contract !== "object" || Array.isArray(contract)) return contract;
   const { notNeeded: _marker, ...rest } = contract as Doc;
+  if (ownFixture) delete rest.fixture;
   return rest;
 };
 /** A clossys.slot/2 file (a recut store), as a plain test: the doc keeps its Doc type. */
@@ -257,11 +265,15 @@ function inputRefs(id: string, slot: FoundrySlot, behaviour: SlotBehaviour, exis
     return holder && input !== id ? [{ to: `${holder}/${input}` as Ref["to"], rel: "input" as const }] : [];
   });
 }
-/** An existing slot/2 file with the package's structure and behaviour: kind, contract (notNeeded kept), refs, ia, standard, options. */
+/**
+ * An existing slot/2 file with the package's structure and behaviour: kind, contract (notNeeded kept, and a
+ * consumer-stated Writer fixture kept), refs, ia, standard, options.
+ */
 function syncedCurrent(consumerDir: string, current: Slot, id: string, slot: FoundrySlot, position: SlotPosition, behaviour: SlotBehaviour, held: ReadonlyMap<string, readonly AgentId[]>, agent: SyncAgent): Slot {
   const marker = (current.contract as Doc | undefined)?.notNeeded;
+  const stated = consumerFixture(agent, slot.contract) ? (current.contract as Doc | undefined)?.fixture : undefined;
   const seeded = seededPackageContract(consumerDir, agent, structuredClone(slot.contract), behaviour.standard ?? current.standard) as Record<string, unknown>;
-  const contract: Record<string, unknown> = { ...seeded, ...(marker !== undefined ? { notNeeded: marker } : {}) };
+  const contract: Record<string, unknown> = { ...seeded, ...(stated !== undefined ? { fixture: structuredClone(stated) } : {}), ...(marker !== undefined ? { notNeeded: marker } : {}) };
   const inputs = inputRefs(id, slot, behaviour, current.refs, held, agent);
   const next: Slot = {
     ...current,
@@ -425,7 +437,7 @@ export function syncDrift(consumerDir: string, agent: SyncAgent, state: SyncStat
       if (family !== slot.kind || (current && slot.targetKind !== undefined && doc.kind !== slot.targetKind)) add("kind", `${id} is kind ${String(doc.kind)}, the package says ${slot.targetKind && current ? slot.targetKind : slot.kind}`, id);
       const behaviour = packageBehaviour(agent, id, slot, position, ctx!);
       const want = current ? seededPackageContract(consumerDir, agent, slot.contract, behaviour.standard ?? doc.standard) : slot.contract;
-      if (!sameJson(current ? packageContract(doc.contract) : doc.contract, want)) add("contract", `${id} contract differs from the package`, id);
+      if (!sameJson(current ? packageContract(doc.contract, consumerFixture(agent, slot.contract)) : doc.contract, want)) add("contract", `${id} contract differs from the package`, id);
       const off = behaviourOff(doc, behaviour);
       if (off.length) add("behaviour", `${id} ${off.map(item => item.key).join(", ")} differ from the package (${off.map(item => `${item.key} ${JSON.stringify(item.have ?? null)} vs ${JSON.stringify(item.want ?? null)}`).join("; ")})`, id);
     }

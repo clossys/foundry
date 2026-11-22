@@ -7,7 +7,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { FIXTURE_CONSUMER_ROOT } from "./fixture-consumer.test.js";
-import { driftCounts, SYNC_AGENTS, syncDrift } from "./ia-sync.js";
+import { certifyStrings } from "../../constitution/certify/strings.js";
+import type { CandidateRecord, SlotRecord } from "../../constitution/types.js";
+import { consumerStatesFixture } from "../../migrate/contracts.js";
+import { designerIa, writerIa } from "./foundry-ia.js";
+import { driftCounts, knownSlots, SYNC_AGENTS, syncDrift, syncPlan, syncState, type SyncAgent } from "./ia-sync.js";
 import type { IaDoc } from "./types.js";
 
 const fixture = join(FIXTURE_CONSUMER_ROOT, "clossys");
@@ -86,5 +90,97 @@ describe("ia sync --check", () => {
     expect(behaviour("writer")).toEqual(["sections.hero.copy"]);
     expect(behaviour("director")).toEqual(["identity.naming.name"]);
     expect(behaviour("designer").filter(slot => !before.designer.includes(slot))).toEqual(["sections.hero"]);
+  });
+});
+
+/**
+ * U-CHECKALIGN (owner Q8, 2026-11-22): a Writer slot whose package contract neither declares nor derives a fixture
+ * (a Voice or Prose rule: no copy fields) leaves `contract.fixture` to the consumer. ia-sync does not compare that
+ * field and a sync writes it back; every other contract field, every package-declared or copy-derived fixture and
+ * every Designer fixture stays package data; certify still judges the consumer's fixture in full.
+ */
+describe("ia sync: a Writer fixture the package does not determine is the consumer's", () => {
+  const slotPath = (consumer: string, agent: string, id: string) => join(consumer, "agents", agent, id, "slot.json");
+  const readSlot = (consumer: string, agent: string, id: string) => JSON.parse(readFileSync(slotPath(consumer, agent, id), "utf8"));
+  const editSlot = (consumer: string, agent: string, id: string, change: (doc: any) => void) => {
+    const doc = readSlot(consumer, agent, id);
+    change(doc);
+    writeFileSync(slotPath(consumer, agent, id), `${JSON.stringify(doc, null, 2)}\n`);
+  };
+  const contractRows = (consumer: string, agent: SyncAgent) => syncDrift(consumer, agent).filter(finding => finding.kind === "contract").map(finding => finding.slot);
+  const planOf = (consumer: string, agent: SyncAgent) => {
+    const state = syncState(consumer, agent);
+    const plan = syncPlan(consumer, agent, knownSlots(consumer, agent, state), state);
+    if ("error" in plan) throw new Error(plan.error);
+    return plan;
+  };
+  /** The contract a sync leaves in a slot.json: the planned write's, else the file's own. */
+  const syncedContract = (consumer: string, agent: SyncAgent, id: string, plan = planOf(consumer, agent)) => {
+    const write = plan.writes.find(([file]) => file === slotPath(consumer, agent, id));
+    return (write ? JSON.parse(write[1]) : readSlot(consumer, agent, id)).contract;
+  };
+  const lexicon = [...writerIa().slots.values()].filter(slot => slot.id.startsWith("lexicon.")).map(slot => slot.id).sort();
+
+  it("the package states no fixture for the 12 lexicon slots, and does for a copy slot", () => {
+    expect(lexicon).toHaveLength(12);
+    for (const id of lexicon) expect(consumerStatesFixture("writer", writerIa().slots.get(id)!.contract), id).toBe(true);
+    expect(consumerStatesFixture("writer", writerIa().slots.get("sections.hero.copy")!.contract)).toBe(false);
+  });
+
+  it("keeps a consumer-stated fixture: no contract drift, and a sync writes it back unchanged", () => {
+    expect(contractRows(fixture, "writer")).toEqual([]);
+    const consumer = copy();
+    const plan = planOf(consumer, "writer");
+    for (const id of lexicon) {
+      const stated = readSlot(consumer, "writer", id).contract.fixture;
+      expect(stated, id).toBeDefined();
+      expect(syncedContract(consumer, "writer", id, plan).fixture, id).toEqual(stated);
+    }
+  });
+
+  it("a consumer edit of its own stated fixture is not drift and survives a sync", () => {
+    const consumer = copy();
+    const edited = { keys: ["register", "address", "tone"], locales: ["en", "fr"] };
+    editSlot(consumer, "writer", "lexicon.formality", doc => { doc.contract.fixture = edited; });
+    expect(contractRows(consumer, "writer")).toEqual([]);
+    expect(syncedContract(consumer, "writer", "lexicon.formality").fixture).toEqual(edited);
+  });
+
+  it("still reports a fixture edit where the package derives one", () => {
+    const consumer = copy();
+    editSlot(consumer, "writer", "sections.hero.copy", doc => { doc.contract.fixture.keys = [...doc.contract.fixture.keys, "header.not-a-field"]; });
+    expect(contractRows(consumer, "writer")).toEqual(["sections.hero.copy"]);
+    expect(syncedContract(consumer, "writer", "sections.hero.copy").fixture.keys).not.toContain("header.not-a-field");
+  });
+
+  it("still reports any other contract edit on a slot whose fixture the consumer states", () => {
+    const consumer = copy();
+    editSlot(consumer, "writer", "lexicon.formality", doc => { doc.contract.shape = "voice.edited-in-the-consumer"; });
+    expect(contractRows(consumer, "writer")).toEqual(["lexicon.formality"]);
+  });
+
+  it("a Designer fixture stays package-compared", () => {
+    const consumer = copy();
+    const before = contractRows(consumer, "designer");
+    const id = [...designerIa().slots.values()].map(slot => slot.id).sort().find(slot => designerIa().slots.get(slot)!.contract.fixture === undefined
+      && !before.includes(slot) && (() => { try { const doc = readSlot(consumer, "designer", slot); return doc.schema === "clossys.slot/2" && doc.contract?.fixture === undefined; } catch { return false; } })());
+    expect(id).toBeDefined();
+    editSlot(consumer, "designer", id!, doc => { doc.contract.fixture = { file: "hand.tsx", export: "Hand" }; });
+    expect(contractRows(consumer, "designer").filter(slot => !before.includes(slot))).toEqual([id]);
+  });
+
+  it("certify still judges the consumer-stated fixture in full (R05.1)", () => {
+    const consumer = copy();
+    const contract = syncedContract(consumer, "writer", "lexicon.formality") as Record<string, unknown>;
+    const slot = { id: "lexicon.formality" } as unknown as SlotRecord;
+    const candidate = (ids: string[]) => ({ text: [
+      "---", 'slot: "lexicon.formality"', 'locales: ["en"]', "---", "## en", "",
+      ...ids.flatMap(id => [`### ${id}`, `<!-- {"id":"${id}","bindings":[]} -->`, "```json", JSON.stringify({ id, context: id, kind: "voice-rule", rule: "A rule", value: "v" }), "```", ""]),
+    ].join("\n") }) as unknown as CandidateRecord;
+    expect(certifyStrings(slot, candidate(["register", "address"]), contract)).toEqual([]);
+    expect(certifyStrings(slot, candidate(["register"]), contract)).toEqual([expect.objectContaining({ code: "fixture", message: expect.stringMatching(/address/) })]);
+    expect(certifyStrings(slot, candidate(["register", "address", "extra"]), contract)).toEqual([expect.objectContaining({ code: "fixture", message: expect.stringMatching(/extra/) })]);
+    const { fixture: _fixture, ...bare } = contract;
+    expect(certifyStrings(slot, candidate(["register", "address"]), bare).map(reason => reason.code)).toEqual(["no-fixture"]);
   });
 });

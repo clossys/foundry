@@ -10,7 +10,8 @@
  *   the standard; certify merges them by check id, records/standards resolveRequirements).
  * - `contract.fixture`, only when the contract's own data determines it: a Writer copy contract's
  *   `{keys: <required copy field keys>, locales: [<sourceLocale>]}`. A fixture the contract does not
- *   determine (a mounted Designer element, a Voice or Prose rule) is named, never invented.
+ *   determine (a mounted Designer element, a Voice or Prose rule) is named, never invented. On a Writer
+ *   slot it is the consumer's to state (consumerStatesFixture): `clossys ia sync` neither compares nor drops it.
  * Each rewrite is one ledgered `slot` event (verb migrate); a second run changes nothing.
  */
 import type { Slot, SlotFamily } from "../records/types.js";
@@ -59,6 +60,17 @@ export function copyFixture(contract: Readonly<Record<string, unknown>>): { keys
   const required = fields.filter(field => field.required === true);
   const keys = (required.length ? required : fields).map(field => field.key as string);
   return keys.length ? { keys, locales: [copy.sourceLocale] } : undefined;
+}
+
+/**
+ * Whether a Writer slot's `contract.fixture` is the consumer's to state: the package contract neither declares
+ * one nor determines one (no copy fields to derive it from, a Voice or Prose rule). Its record keys are consumer
+ * content, so `clossys ia sync` does not compare that field and keeps it on write; certify still judges it in
+ * full (R01.3, R05.1). Every other contract field, and every fixture the package declares or derives, stays
+ * package data. Designer and Director fixtures are not covered.
+ */
+export function consumerStatesFixture(agent: string, contract: Readonly<Record<string, unknown>>): boolean {
+  return agent === "writer" && contract.fixture === undefined && copyFixture(contract) === undefined;
 }
 
 /**
