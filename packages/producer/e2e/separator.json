@@ -1,0 +1,67 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "separator",
+  "type": "registry:ui",
+  "dependencies": [
+    "cn@0.5.1",
+    "react-aria-components@1.21.1"
+  ],
+  "files": [
+    {
+      "path": "registry/aria-nova/ui/separator.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport { cn } from \"cn\"\nimport { Separator as SeparatorPrimitive } from \"react-aria-components\"\n\nfunction Separator({\n  className,\n  orientation = \"horizontal\",\n  ...props\n}: React.ComponentProps<typeof SeparatorPrimitive>) {\n  return (\n    <SeparatorPrimitive\n      data-slot=\"separator\"\n      orientation={orientation}\n      className={cn(\n        \"block shrink-0 border-0 bg-border aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=vertical]:w-px aria-[orientation=vertical]:self-stretch [:is(hr)]:h-px [:is(hr)]:w-full\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport { Separator }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.separator",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/separator@4.23.0"
+      ],
+      "hash": "sha256:a82bd03221fea5a3e19ed40da6c50c910adcd30768ff1a047b392a702b758c22",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "registry/aria-nova/ui/separator.tsx": "registry/aria-nova/ui/separator.tsx"
+      }
+    },
+    "element": {
+      "id": "separator",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.separator",
+      "kind": "registry:ui",
+      "license": {
+        "spdx": "MIT"
+      },
+      "creator": {
+        "agent": "designer",
+        "model": "fixture"
+      },
+      "reason": "e2e scenario: stock shadcn-aria/separator@4.23.0, adopted unmodified, for the frame to compose",
+      "createdAt": "2026-11-22T00:00:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    },
+    "preview": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {},
+      "inputs": {
+        "copy": []
+      },
+      "container": "page",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}
