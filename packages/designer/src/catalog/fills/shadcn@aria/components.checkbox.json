@@ -73,11 +73,11 @@
         },
         {
           "path": "components/checkbox/checkbox.tsx",
-          "sha256": "1501baedb0099ba72c65713b21c4278f221cc96d017cadcd346026d3f72ac476"
+          "sha256": "64a1a875993337a7813b378a972459d8083904478c6870053a4594fd40f99c15"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -124,9 +124,9 @@
         ],
         "themes": [
           "themes.destructive.default",
+          "themes.input.default",
           "themes.primary-foreground.default",
           "themes.primary.default",
-          "themes.radius.default",
           "themes.ring.default",
           "themes.spacing.default"
         ]
@@ -134,7 +134,7 @@
       "root": "rac:Checkbox",
       "slot": "components.checkbox",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

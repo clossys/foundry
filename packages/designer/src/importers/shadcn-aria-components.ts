@@ -43,7 +43,7 @@ export interface ShadcnItemReceipt {
 export interface ShadcnComponentFillDoc {
   $extensions: { "com.clossys.fill": FillMeta };
   components: Readonly<Record<string, ComponentCheckFill & {
-    transform: "shadcn-aria-rewrite@3"; item: string;
+    transform: "shadcn-aria-rewrite@5"; item: string;
     secondaryExports?: ComponentCandidate["secondaryExports"];
     outputSha256: RewriteResult["outputSha256"];
     blockers: readonly RewriteIssue[];
@@ -99,7 +99,7 @@ function composedStock(rule: ShadcnComposeRule, items: ReadonlyMap<string, Shadc
   const stockComponents = sorted(components);
   for (const leaf of stockComponents) if (!rule.constituents.includes(leaf.replace(/^components\./, ""))) issues.push({ code: "K9", file: rule.leaf, value: leaf, message: "Stock item reads a leaf the compose rule does not name" });
   files.push({ path: `components/${rule.leaf}/stock/utils.ts`, content: utils });
-  files.push({ path: `notices/${rule.leaf}.md`, content: `# Third-party notice\n\nSource: ${SHADCN_ARIA_COMPONENT_PIN.url}\nCommit: ${SHADCN_ARIA_COMPONENT_PIN.commit}\nTransform: shadcn-aria-rewrite@3\nItems: ${rule.items!.join(", ")} (components/${rule.leaf}/stock/), wired by the owned components/${rule.leaf}/${rule.leaf}.tsx\n\n${notice}` });
+  files.push({ path: `notices/${rule.leaf}.md`, content: `# Third-party notice\n\nSource: ${SHADCN_ARIA_COMPONENT_PIN.url}\nCommit: ${SHADCN_ARIA_COMPONENT_PIN.commit}\nTransform: shadcn-aria-rewrite@5\nItems: ${rule.items!.join(", ")} (components/${rule.leaf}/stock/), wired by the owned components/${rule.leaf}/${rule.leaf}.tsx\n\n${notice}` });
   return { files: files.sort((a, b) => a.path.localeCompare(b.path)), themes: sorted(themes), components: stockComponents, issues };
 }
 function composedTemplate(row: ShadcnComposeReceipt, slot: ComponentSlot, stock?: ShadcnComposedStock): ShadcnComposedFillDoc | undefined {
@@ -497,7 +497,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
       assertNoBareReads(aligned);
       return aligned;
     });
-    files.push({ path: adapter.notice, content: `# Third-party notice\n\nSource: ${SHADCN_ARIA_COMPONENT_PIN.url}\nCommit: ${SHADCN_ARIA_COMPONENT_PIN.commit}\nTransform: shadcn-aria-rewrite@3\n\n${input.notice.content}` });
+    files.push({ path: adapter.notice, content: `# Third-party notice\n\nSource: ${SHADCN_ARIA_COMPONENT_PIN.url}\nCommit: ${SHADCN_ARIA_COMPONENT_PIN.commit}\nTransform: shadcn-aria-rewrite@5\n\n${input.notice.content}` });
     if (result.parts.includes("utils")) files.push({ path: "components/_parts/utils/index.ts", content: utils });
     // The consumer's emitter owns every `components/<leaf>/index.ts` entrypoint, so no leaf barrel is
     // materialized here. A private part re-exports an explicit name list; one without a list is a blocker,
@@ -528,7 +528,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     const descriptor: ShadcnComponentFillDoc["components"][string] = {
       slot: slot.id, source: SOURCE, root: slot.contract.root, members, props: name === "calendar" ? ["id", "className", "style", "children", "aria-label", "aria-labelledby", "value", "defaultValue", "onChange", "isDisabled", "isReadOnly", "isInvalid", "minValue", "maxValue", "defaultFocusedValue", "focusedValue", "onFocusChange", "isDateUnavailable", "firstDayOfWeek", "numberOfMonths", "buttonVariant", "captionLayout", "showWeekNumber", "headerFormat", "renderCell"] : name === "tooltip" ? [...tooltipExecutableProps] : [], propMap, reads, composes,
       impl,
-      license: "MIT", pin, notice: adapter.notice, transform: "shadcn-aria-rewrite@3", item: name,
+      license: "MIT", pin, notice: adapter.notice, transform: "shadcn-aria-rewrite@5", item: name,
       deps: [...npmDeps.filter(dep => dep.name === "react" || dep.name === "react-aria-components" && imports(original.content).length > 0 || dep.name === "class-variance-authority" && [...closure.values()].some(file => file.content.includes('from "class-variance-authority"')) || ["clsx", "tailwind-merge"].includes(dep.name)),
         ...sorted([...closure.values()].flatMap(file => dependencies(file.content))).filter(dep => !result.contextualInputs?.includes(dep)).map(dep => ({ name: dep, version: SHADCN_ARIA_COMPONENT_PIN.commit, license: "MIT", registryItem: dep, ...(SHADCN_COMPONENT_ITEMS[dep] ? { slot: `components.${SHADCN_COMPONENT_ITEMS[dep]}` } : {}) }))],
       parts: result.parts.map(item => ({ item })), outputSha256: rewritten.outputSha256, blockers: rewritten.issues,

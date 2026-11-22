@@ -79,11 +79,11 @@
         },
         {
           "path": "components/menu/dropdown-menu.tsx",
-          "sha256": "6cd7215ce85618c101020373d95ac42da8650d13930b2398d52921a5f4dafece"
+          "sha256": "1dc31a06e69bfb27c9a5c7ee0e524cc8cd06ba1b804ade2d711da577238a4244"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -145,8 +145,7 @@
           "themes.ring.default",
           "themes.shadow.lg",
           "themes.shadow.md",
-          "themes.spacing.default",
-          "themes.tracking-tight.default"
+          "themes.spacing.default"
         ]
       },
       "root": "rac:Menu",
@@ -174,7 +173,7 @@
       ],
       "slot": "components.menu",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

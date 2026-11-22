@@ -1,43 +1,84 @@
 {
-  "avatar": [],
-  "badge": [],
-  "banner": [],
-  "breadcrumbs": [],
-  "button": [],
-  "calendar": [],
-  "card": [],
+  "avatar": [
+    "themes.spacing"
+  ],
+  "badge": [
+    "themes.spacing"
+  ],
+  "banner": [
+    "themes.spacing"
+  ],
+  "breadcrumbs": [
+    "themes.spacing"
+  ],
+  "button": [
+    "themes.foreground",
+    "themes.secondary",
+    "themes.spacing"
+  ],
+  "calendar": [
+    "themes.radius",
+    "themes.spacing"
+  ],
+  "card": [
+    "themes.spacing"
+  ],
   "chart-area": [],
   "chart-bar": [],
   "chart-line": [],
-  "checkbox": [],
+  "checkbox": [
+    "themes.spacing"
+  ],
   "color-picker": [],
-  "combo-box": [],
+  "combo-box": [
+    "themes.spacing"
+  ],
   "date-field": [],
-  "dialog": [],
-  "disclosure": [],
+  "dialog": [
+    "themes.spacing"
+  ],
+  "disclosure": [
+    "themes.spacing"
+  ],
   "field": [],
   "file-trigger": [],
   "form": [],
   "grid-list": [],
   "icon": [],
-  "link": [],
+  "link": [
+    "themes.foreground",
+    "themes.secondary",
+    "themes.spacing"
+  ],
   "logo": [],
   "media-player": [],
-  "menu": [],
+  "menu": [
+    "themes.spacing"
+  ],
   "meter": [],
   "native-action": [],
   "navigation-tree": [],
   "number-field": [],
-  "popover": [],
-  "progress-bar": [],
-  "radio-group": [],
+  "popover": [
+    "themes.spacing"
+  ],
+  "progress-bar": [
+    "themes.spacing"
+  ],
+  "radio-group": [
+    "themes.spacing"
+  ],
   "resize-handle": [],
   "search-field": [],
-  "select": [],
+  "select": [
+    "themes.spacing"
+  ],
   "semantic-content": [],
   "separator": [],
   "skeleton": [],
-  "slider": [],
+  "slider": [
+    "themes.spacing"
+  ],
   "specimen-copy-in-context": [],
   "specimen-grid": [],
   "specimen-ladder": [],
@@ -48,15 +89,25 @@
   "specimen-viewport": [],
   "spinner": [],
   "status-mark": [],
-  "switch": [],
-  "table": [],
-  "tabs": [],
+  "switch": [
+    "themes.spacing"
+  ],
+  "table": [
+    "themes.spacing"
+  ],
+  "tabs": [
+    "themes.spacing"
+  ],
   "tag-group": [],
   "text-field": [],
   "toast": [],
-  "toggle-button": [],
+  "toggle-button": [
+    "themes.spacing"
+  ],
   "toggle-group": [],
   "toolbar": [],
-  "tooltip": [],
+  "tooltip": [
+    "themes.spacing"
+  ],
   "tree": []
 }

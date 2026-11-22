@@ -24,7 +24,7 @@ function Slider<T extends SliderValue = SliderValue>({
   return (
     <SliderPrimitive
       className={cn(
-        "data-vertical:min-h-[var(--spacing-6xl,128px)] group relative flex w-full touch-none items-center select-none data-disabled:opacity-(--ui-alpha-disabled,0.5) data-vertical:h-full data-vertical:w-auto data-vertical:flex-col",
+        "data-vertical:min-h-[calc(var(--spacing,0.25rem)*32)] group relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:w-auto data-vertical:flex-col",
         className
       )}
       data-slot="slider"
@@ -35,11 +35,11 @@ function Slider<T extends SliderValue = SliderValue>({
           <>
             <SliderTrack
               data-slot="slider-track"
-              className="bg-(--color-surface-sunken) rounded-full data-horizontal:h-(--spacing-xs) data-horizontal:w-full data-vertical:h-full data-vertical:w-(--spacing-xs) relative grow overflow-hidden select-none"
+              className="bg-(--muted) rounded-full data-horizontal:h-[calc(var(--spacing,0.25rem)*1)] data-horizontal:w-full data-vertical:h-full data-vertical:w-[calc(var(--spacing,0.25rem)*1)] relative grow overflow-hidden select-none"
             >
               <SliderFill
                 data-slot="slider-range"
-                className="bg-(--color-action) absolute select-none data-horizontal:h-full data-vertical:w-full"
+                className="bg-(--primary) absolute select-none data-horizontal:h-full data-vertical:w-full"
               />
             </SliderTrack>
             {state.values.map((_, index) => (
@@ -47,7 +47,7 @@ function Slider<T extends SliderValue = SliderValue>({
                 data-slot="slider-thumb"
                 key={index}
                 index={index}
-                className="border-(--color-focus-ring) outline-solid outline-(length:--ui-border-focus,2px) outline-offset-(--ui-focus-offset) outline-(--color-focus-ring) relative size-(--ui-control-mark) rounded-full border-(length:--ui-border-hairline,1px) bg-(--color-surface-raised) transition-[color,box-shadow] duration-(--ui-duration-default) ease-(--default-transition-timing-function) after:absolute after:-inset-(--spacing-sm) hover:ring-(length:--ui-border-rule,2px) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,2px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)  active:ring-(length:--ui-border-rule,2px) block shrink-0 select-none group-data-horizontal:top-[50%] group-data-vertical:start-[50%] disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,0.5)"
+                className="border-(--ring) outline-solid outline-2 outline-offset-2 outline-(--ring) relative size-[calc(var(--spacing,0.25rem)*4)] rounded-full border bg-(--card) transition-[color,box-shadow] after:absolute after:-inset-[calc(var(--spacing,0.25rem)*2)] hover:ring-3 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring)  active:ring-3 block shrink-0 select-none group-data-horizontal:top-[50%] group-data-vertical:start-[50%] disabled:pointer-events-none disabled:opacity-50"
               />
             ))}
           </>

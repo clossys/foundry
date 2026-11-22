@@ -6,7 +6,7 @@ function Empty({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="empty"
       className={cn(
-        "gap-(--spacing-lg) rounded-(--radius-control) border-dashed p-(--spacing-xl) flex w-full min-w-0 flex-1 flex-col items-center justify-center text-center text-balance",
+        "gap-[calc(var(--spacing,0.25rem)*4)] rounded-(--radius) border-dashed p-[calc(var(--spacing,0.25rem)*6)] flex w-full min-w-0 flex-1 flex-col items-center justify-center text-center text-balance",
         className
       )}
       {...props}
@@ -19,7 +19,7 @@ function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="empty-header"
       className={cn(
-        "gap-(--spacing-sm) flex max-w-(--ui-width-notice-max) flex-col items-center",
+        "gap-[calc(var(--spacing,0.25rem)*2)] flex max-w-[24rem] flex-col items-center",
         className
       )}
       {...props}
@@ -27,7 +27,7 @@ function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-const emptyMediaVariants_DEFINITION = {"base":"mb-(--spacing-sm) flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0","variants":{"variant":{"default":"bg-transparent","icon":"bg-(--color-surface-sunken) text-(--color-ink-primary) flex size-(--spacing-2xl) shrink-0 items-center justify-center rounded-(--radius-control) [&_svg:not([class*='size-'])]:size-(--spacing-lg)"}},"defaultVariants":{"variant":"default"}}
+const emptyMediaVariants_DEFINITION = {"base":"mb-[calc(var(--spacing,0.25rem)*2)] flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0","variants":{"variant":{"default":"bg-transparent","icon":"bg-(--muted) text-(--foreground) flex size-[calc(var(--spacing,0.25rem)*8)] shrink-0 items-center justify-center rounded-(--radius) [&_svg:not([class*='size-'])]:size-[calc(var(--spacing,0.25rem)*4)]"}},"defaultVariants":{"variant":"default"}}
 function emptyMediaVariants(props: { "variant"?: "default" | "icon" | null; class?: ClassValue; className?: ClassValue } = {}) {
   props ??= {}
   const definition = emptyMediaVariants_DEFINITION
@@ -65,7 +65,7 @@ function EmptyTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="empty-title"
-      className={cn("text-(length:--text-sm) font-(weight:--font-weight-medium) tracking-(--tracking-meta)", className)}
+      className={cn("text-(length:--text-sm) font-medium tracking-tight", className)}
       {...props}
     />
   )
@@ -76,7 +76,7 @@ function EmptyDescription({ className, ...props }: React.ComponentProps<"p">) {
     <div
       data-slot="empty-description"
       className={cn(
-        "text-(length:--text-sm) leading-(--leading-heading) text-(--color-ink-muted) [&>a]:underline [&>a]:underline-offset-(--spacing-lg) [&>a:hover]:text-(--color-action)",
+        "text-(length:--text-sm) leading-relaxed text-(--muted-foreground) [&>a]:underline [&>a]:underline-offset-[calc(var(--spacing,0.25rem)*4)] [&>a:hover]:text-(--primary)",
         className
       )}
       {...props}
@@ -89,7 +89,7 @@ function EmptyContent({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="empty-content"
       className={cn(
-        "gap-(--spacing-md) text-(length:--text-sm) flex w-full max-w-(--ui-width-notice-max) min-w-0 flex-col items-center text-balance",
+        "gap-[calc(var(--spacing,0.25rem)*3)] text-(length:--text-sm) flex w-full max-w-[24rem] min-w-0 flex-col items-center text-balance",
         className
       )}
       {...props}

@@ -131,22 +131,22 @@
       "notes": [
         {
           "file": "apps/v4/registry/bases/aria/ui/button.tsx",
-          "message": "Restyled source: Preserve one-hairline press displacement; use existing exact 1px member with explicit geometric read.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "active:not-aria-[haspopup]:translate-y-px"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/button.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "gap-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/button.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "has-data-[icon=inline-end]:pr-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/button.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "has-data-[icon=inline-start]:pl-1.5"
         },
         {
@@ -156,7 +156,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/button.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "px-2.5"
         },
         {
@@ -171,7 +171,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/button.tsx",
-          "message": "Restyled source: Restyle 12.8px small control/calendar typography to existing caption 12px; no token value change.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "text-[0.8rem]"
         }
       ],
@@ -186,12 +186,12 @@
       "notes": [
         {
           "file": "apps/v4/registry/bases/aria/ui/toggle.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "has-data-[icon=inline-end]:pr-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/toggle.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "has-data-[icon=inline-start]:pl-1.5"
         },
         {
@@ -211,7 +211,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/toggle.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "px-2.5"
         },
         {
@@ -221,7 +221,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/toggle.tsx",
-          "message": "Restyled source: Restyle 12.8px small control/calendar typography to existing caption 12px; no token value change.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "text-[0.8rem]"
         }
       ],
@@ -256,12 +256,12 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "gap-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
-          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "h-px"
         },
         {
@@ -281,22 +281,22 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "pl-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "px-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
-          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "ring-1"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
-          "message": "Restyled source: Bind menu shortcut label tracking to the existing consumer label letter-spacing token.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "tracking-widest"
         }
       ],
@@ -310,7 +310,7 @@
         {
           "code": "K4",
           "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
-          "message": "No spacing member has the exact source length",
+          "message": "No spacing step has the exact source length",
           "value": "min-w-36"
         },
         {
@@ -350,32 +350,32 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "gap-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
-          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "h-px"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "pl-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "px-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
-          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "ring-1"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
-          "message": "Restyled source: Bind menu shortcut label tracking to the existing consumer label letter-spacing token.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "tracking-widest"
         }
       ],
@@ -459,22 +459,22 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)]"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-2px)]"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)]"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-2px)]"
         },
         {
@@ -509,7 +509,7 @@
       "notes": [
         {
           "file": "apps/v4/registry/bases/aria/ui/select.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "*:data-[slot=select-value]:gap-1.5"
         },
         {
@@ -534,12 +534,12 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/select.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "gap-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/select.tsx",
-          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "h-px"
         },
         {
@@ -564,27 +564,27 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/select.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "pl-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/select.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "pl-2.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/select.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "px-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/select.tsx",
-          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "ring-1"
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: Use actual subtle 2px radius for nested keyboard corners, replacing private-radius-minus-5 geometry.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "[&>kbd]:rounded-[calc(var(--radius)-5px)]"
         },
         {
@@ -609,12 +609,12 @@
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "has-[>[data-align=inline-end]]:[&>input]:pr-1.5"
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "has-[>[data-align=inline-start]]:[&>input]:pl-1.5"
         },
         {
@@ -659,17 +659,17 @@
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "px-1.5"
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "px-2.5"
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "py-1.5"
         },
         {
@@ -679,7 +679,7 @@
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: Use actual adopted default 4px radius for inset control rather than an offset from control radius.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "rounded-[calc(var(--radius)-3px)]"
         },
         {
@@ -754,7 +754,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
-          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "h-px"
         },
         {
@@ -789,32 +789,32 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "pl-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "px-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "px-2.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "py-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
-          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "ring-1"
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: Use actual subtle 2px radius for nested keyboard corners, replacing private-radius-minus-5 geometry.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "[&>kbd]:rounded-[calc(var(--radius)-5px)]"
         },
         {
@@ -839,12 +839,12 @@
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "has-[>[data-align=inline-end]]:[&>input]:pr-1.5"
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "has-[>[data-align=inline-start]]:[&>input]:pl-1.5"
         },
         {
@@ -889,17 +889,17 @@
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "px-1.5"
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "px-2.5"
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "py-1.5"
         },
         {
@@ -909,7 +909,7 @@
         },
         {
           "file": "components/_parts/input-group/input-group.tsx",
-          "message": "Restyled source: Use actual adopted default 4px radius for inset control rather than an offset from control radius.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "rounded-[calc(var(--radius)-3px)]"
         },
         {
@@ -934,22 +934,22 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
-          "message": "Restyled source: Exact existing layer value; new component read only where absent.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "focus-visible:z-10"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
-          "message": "Restyled source: Exact existing layer value; new component read only where absent.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "focus:z-10"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:pr-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:pl-1.5"
         },
         {
@@ -979,7 +979,7 @@
       "notes": [
         {
           "file": "apps/v4/registry/bases/aria/ui/slider.tsx",
-          "message": "Restyled selected decorative thumb ring from 3px to existing 2px rule width; independent keyboard focus remains token bound",
+          "message": "Kept the stock decorative thumb ring; independent keyboard focus remains token bound",
           "value": "active:ring-3"
         },
         {
@@ -999,7 +999,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/slider.tsx",
-          "message": "Restyled selected decorative thumb ring from 3px to existing 2px rule width; independent keyboard focus remains token bound",
+          "message": "Kept the stock decorative thumb ring; independent keyboard focus remains token bound",
           "value": "hover:ring-3"
         }
       ],
@@ -1039,27 +1039,27 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
-          "message": "Restyled source: Exact existing layer value; new component read only where absent.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "group-data-[focused=true]/day:z-10"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
-          "message": "Restyled source: Restyle unit line height to existing compact heading line height 1.15; do not alias a font-size-specific 5xl line-height member.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "leading-none"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
-          "message": "Restyled source: Restyle 12.8px small control/calendar typography to existing caption 12px; no token value change.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "text-[0.8rem]"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
-          "message": "Restyled source: Exact existing layer value; new component read only where absent.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "z-0"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
-          "message": "Restyled source: Exact existing layer value; new component read only where absent.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "z-10"
         }
       ],
@@ -1104,12 +1104,12 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "has-data-[icon=inline-end]:pr-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "has-data-[icon=inline-start]:pl-1.5"
         },
         {
@@ -1136,11 +1136,6 @@
           "file": "apps/v4/registry/bases/aria/ui/kbd.tsx",
           "message": "Restyled source: Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact.",
           "value": "min-w-5"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/kbd.tsx",
-          "message": "Restyled source: keyboard 12px to existing code-size.block 13px",
-          "value": "text-xs"
         }
       ],
       "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
@@ -1169,7 +1164,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/alert.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "px-2.5"
         }
       ],
@@ -1232,7 +1227,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/breadcrumb.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "gap-1.5"
         },
         {
@@ -1257,17 +1252,17 @@
       "notes": [
         {
           "file": "apps/v4/registry/bases/aria/ui/separator.tsx",
-          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "[:is(hr)]:h-px"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/separator.tsx",
-          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "aria-[orientation=horizontal]:h-px"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/separator.tsx",
-          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "aria-[orientation=vertical]:w-px"
         },
         {
@@ -1312,7 +1307,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "gap-1.5"
         },
         {
@@ -1337,7 +1332,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
-          "message": "Restyled source: Preserve relative height minus exact hairline.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "h-[calc(100%-1px)]"
         },
         {
@@ -1352,7 +1347,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "px-1.5"
         },
         {
@@ -1372,7 +1367,7 @@
       "notes": [
         {
           "file": "apps/v4/registry/bases/aria/ui/avatar.tsx",
-          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "*:data-[slot=avatar]:ring-2"
         },
         {
@@ -1387,7 +1382,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/avatar.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "group-data-[size=default]/avatar:size-2.5"
         },
         {
@@ -1402,12 +1397,12 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/avatar.tsx",
-          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "ring-2"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/avatar.tsx",
-          "message": "Restyled source: Exact existing layer value; new component read only where absent.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "z-10"
         }
       ],
@@ -1432,12 +1427,12 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/card.tsx",
-          "message": "Restyled source: Bind compact card heading typography to the existing consumer heading line-height token.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "leading-snug"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/card.tsx",
-          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "ring-1"
         }
       ],
@@ -1477,12 +1472,12 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "pb-2.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "py-2.5"
         }
       ],
@@ -1510,7 +1505,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
-          "message": "Restyled source: Use the consumer modal scrim role (existing default40% and mode binding), replacing literal black10%; contrast thresholds stay unchanged.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "bg-black/10"
         },
         {
@@ -1525,7 +1520,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
-          "message": "Restyled source: Restyle unit line height to existing compact heading line height 1.15; do not alias a font-size-specific 5xl line-height member.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "leading-none"
         },
         {
@@ -1535,7 +1530,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
-          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "ring-1"
         }
       ],
@@ -1555,7 +1550,7 @@
         {
           "code": "K4",
           "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
-          "message": "No spacing member has the exact source length",
+          "message": "No spacing step has the exact source length",
           "value": "size-10"
         }
       ],
@@ -1568,7 +1563,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
-          "message": "Restyled source: Use the consumer modal scrim role (existing default40% and mode binding), replacing literal black10%; contrast thresholds stay unchanged.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "bg-black/10"
         },
         {
@@ -1588,12 +1583,12 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "gap-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
-          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "ring-1"
         }
       ],
@@ -1613,7 +1608,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/popover.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "gap-2.5"
         },
         {
@@ -1623,12 +1618,12 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/popover.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "p-2.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/popover.tsx",
-          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "ring-1"
         },
         {
@@ -1653,7 +1648,7 @@
         {
           "code": "K4",
           "file": "apps/v4/registry/bases/aria/ui/hover-card.tsx",
-          "message": "No spacing member has the exact source length",
+          "message": "No spacing step has the exact source length",
           "value": "w-64"
         }
       ],
@@ -1661,12 +1656,12 @@
       "notes": [
         {
           "file": "apps/v4/registry/bases/aria/ui/hover-card.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "p-2.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/hover-card.tsx",
-          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "ring-1"
         }
       ],
@@ -1681,32 +1676,32 @@
       "notes": [
         {
           "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "gap-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "has-data-[slot=kbd]:pr-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
+          "message": "Restyled source: 6px to spacing step 2, 8px",
           "value": "py-1.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
-          "message": "Restyled source: Exact existing subtle radius 2px.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "rounded-[2px]"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
-          "message": "Restyled source: 10px to spacing.md 12px",
+          "message": "Restyled source: 10px to spacing step 3, 12px",
           "value": "size-2.5"
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
-          "message": "Restyled source: Preserve tooltip arrow centering and exact2px edge offset using existing rule width; explicit edge-geometry read.",
+          "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits.",
           "value": "translate-y-[calc(-50%-2px)]"
         }
       ],

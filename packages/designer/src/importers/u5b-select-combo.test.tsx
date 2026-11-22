@@ -10,6 +10,7 @@ import slots from "../catalog/slots/components.json" with { type: "json" };
 import seatedTextField from "../catalog/fills/shadcn@aria/components.text-field.json" with { type: "json" };
 import { importShadcnAriaComponents, type ShadcnComponentInput } from "./shadcn-aria-components.js";
 import { rewriteShadcnAria } from "./rewrite.js";
+import { classRead, packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
 import ts from "typescript";
 
 const fixture = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
@@ -45,7 +46,7 @@ describe("select and combo-box source closure", () => {
     }
     expect(result.rewrites.select!.files.find(file => file.path === "components/select/select.tsx")!.content).toContain('size?: "sm" | "default" | "lg"');
   });
-  it("binds labels to the selected field typeface and select heights to the control-height vars", () => {
+  it("binds labels to the selected field typeface and select heights to spacing steps of the control heights", () => {
     const result = imported();
     const labelLeaves = (reads: readonly string[]) => [...new Set(reads.filter(read => /^themes\.font-(?:sans|heading|mono)(?:\.|$)/.test(read)).map(read => read.split(".").slice(0, 2).join(".")))].sort();
     for (const item of ["select", "combobox"]) {
@@ -57,9 +58,9 @@ describe("select and combo-box source closure", () => {
     }
     const source = result.rewrites.select!.files.find(file => file.path === "components/select/select.tsx")!.content;
     expect(result.rewrites.select!.reads.themes.some(read => /control-size/.test(read))).toBe(false);
-    for (const size of ["sm", "md", "lg"]) {
-      expect(source).toContain(`--ui-control-h-${size}`);
-    }
+    // Control heights 28/32/36px are spacing steps 7/8/9 of the spacing member's emitted unit.
+    for (const step of [7, 8, 9]) expect(source).toContain(`h-[calc(${classRead(packageDeclaredFallbackReader(), "--spacing")}*${step})]`);
+    expect(source).not.toContain("--ui-control-h-");
   });
   it("uses RAC Input and TextArea for InputGroup without introducing a TextField root", () => {
     const result = partRewrite();

@@ -80,11 +80,11 @@
         },
         {
           "path": "components/dialog/dialog.tsx",
-          "sha256": "ec82d3e8dc22114b397450513e77a7eedc92bd094088ea4bea2fd73701c4928b"
+          "sha256": "159473a107e62bca86c18af8a14e626c8cc2839c2bafd763df07500c9591109d"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -159,7 +159,7 @@
       ],
       "slot": "components.dialog",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

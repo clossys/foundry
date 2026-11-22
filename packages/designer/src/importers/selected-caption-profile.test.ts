@@ -7,7 +7,7 @@ import { componentSecondaryExports } from "../catalog-core/component-secondary-e
 import { sha256 } from "../catalog-core/digest.js";
 import { rewriteShadcnAria } from "./rewrite.js";
 import { selectedCaptionSource } from "./selected-caption-profile.js";
-import { classFallback, packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
+import { classRead, packageDeclaredFallbackReader } from "./declared-fallback-reader.js";
 import { importShadcnAriaComponents, SHADCN_COMPONENT_ITEMS, materializeShadcnComponent, type ShadcnComponentInput } from "./shadcn-aria-components.js";
 const fixture = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
 const read = (name: string) => readFileSync(resolve(fixture, name), "utf8");
@@ -15,8 +15,8 @@ function input(): ShadcnComponentInput {
   return { items: readdirSync(fixture).filter(name => name.endsWith(".json")).map(name => JSON.parse(read(name))).filter(item => item.type === "registry:ui"), styles: { path: "apps/v4/registry/styles/style-nova.css", content: read("style-nova.css") }, notice: { path: "LICENSE.md", content: read("LICENSE.md") } };
 }
 const result = () => importShadcnAriaComponents(input());
-/** A height read with the package reader's declared value as its fallback (D5-2b). */
-const height = (name: string) => `h-(${name},${classFallback(packageDeclaredFallbackReader(), name)})`;
+/** A control height as a spacing step: the spacing member's read, with the reader's declared value as its fallback (D5-2b). */
+const height = (step: number) => `h-[calc(${classRead(packageDeclaredFallbackReader(), "--spacing")}*${step})]`;
 const entry = (item: "select" | "calendar") => result().rewrites[item]!.files.find(file => file.path === `components/${item}/${item}.tsx`)!.content;
 describe("selected caption source prerequisite; runtime profile remains unavailable", () => {
   it("maps each Select member to the real root and preserves both Calendar roots", () => {
@@ -40,11 +40,11 @@ describe("selected caption source prerequisite; runtime profile remains unavaila
   it("inherits root geometry only without an explicit Calendar trigger size", () => {
     const code = entry("select"), trigger = code.slice(code.indexOf("function SelectTrigger("), code.indexOf("function SelectContent("));
     expect(trigger).not.toContain('size = "default"');
-    expect(trigger).toContain(`group-data-[size=sm]/select:not-data-[size]:${height("--ui-control-h-sm")}`);
-    expect(trigger).toContain(`group-data-[size=lg]/select:not-data-[size]:${height("--ui-control-h-lg")}`);
-    expect(trigger).toContain(`data-[size=sm]:${height("--ui-control-h-sm")}`);
-    expect(trigger).toContain('data-[size=lg]:h-(--ui-control-h-lg)');
-    expect(trigger).toContain(`data-[size=default]:${height("--ui-control-h-md")}`);
+    expect(trigger).toContain(`group-data-[size=sm]/select:not-data-[size]:${height(7)}`);
+    expect(trigger).toContain(`group-data-[size=lg]/select:not-data-[size]:${height(9)}`);
+    expect(trigger).toContain(`data-[size=sm]:${height(7)}`);
+    expect(trigger).toContain(`data-[size=lg]:${height(9)}`);
+    expect(trigger).toContain(`data-[size=default]:${height(8)}`);
     expect(trigger).toContain('className={composeRenderProps(className, (className) => cn(');
     expect(entry("calendar")).toContain("<SelectTrigger>");
   });

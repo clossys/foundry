@@ -94,7 +94,7 @@
         },
         {
           "path": "components/_parts/input-group/input-group.tsx",
-          "sha256": "4656ef23fb65128fd7073ef1efbe02daaf12b873ea995b5769807caf70b579c8"
+          "sha256": "519702fa9c4fafe882923ba841283969894837392cee993c34f2529fc5386f5c"
         },
         {
           "path": "components/_parts/utils/index.ts",
@@ -102,11 +102,11 @@
         },
         {
           "path": "components/select/select.tsx",
-          "sha256": "bed346fe41e096101b7398e1a552eccec53cfed9b647aeaae8005b9f3ee897aa"
+          "sha256": "b418e125df51ff5048b2e6c2fd690e5df1675b79f0ca2cd98914d7a5ffd20534"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -168,6 +168,7 @@
           "themes.destructive.default",
           "themes.font-sans.default",
           "themes.foreground.default",
+          "themes.input.default",
           "themes.muted-foreground.default",
           "themes.popover.default",
           "themes.radius.default",
@@ -201,7 +202,7 @@
       ],
       "slot": "components.select",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

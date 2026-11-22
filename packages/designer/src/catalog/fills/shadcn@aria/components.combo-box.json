@@ -91,7 +91,7 @@
         },
         {
           "path": "components/_parts/input-group/input-group.tsx",
-          "sha256": "4656ef23fb65128fd7073ef1efbe02daaf12b873ea995b5769807caf70b579c8"
+          "sha256": "519702fa9c4fafe882923ba841283969894837392cee993c34f2529fc5386f5c"
         },
         {
           "path": "components/_parts/utils/index.ts",
@@ -99,11 +99,11 @@
         },
         {
           "path": "components/combo-box/combobox.tsx",
-          "sha256": "20d1558e54da8fe42e87d6a7657704a9dc2e8bb959537806bbf9d5505b449303"
+          "sha256": "049cf0505d97007cf1bacb230d0923e5bd88690aa5ca1be60f9db7c0db0917ac"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -162,6 +162,7 @@
           "themes.destructive.default",
           "themes.font-sans.default",
           "themes.foreground.default",
+          "themes.input.default",
           "themes.muted-foreground.default",
           "themes.muted.default",
           "themes.popover.default",
@@ -192,7 +193,7 @@
       ],
       "slot": "components.combo-box",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

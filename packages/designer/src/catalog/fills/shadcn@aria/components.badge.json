@@ -67,11 +67,11 @@
         },
         {
           "path": "components/badge/badge.tsx",
-          "sha256": "416bb8a8a14634a95365ac1c37631949d8ab7a128a484c7151e275c03c4bd776"
+          "sha256": "b34916957f1f3ec92a07a8ddc31a5966079c71e97ddc983bf141464737b358cb"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -127,7 +127,7 @@
       "root": "presentational",
       "slot": "components.badge",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

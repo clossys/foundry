@@ -1,16 +1,21 @@
 import { adaptRailClasses } from "./rail-classes.js";
 import railTokenBindings from "./rail-token-bindings.json" with { type: "json" };
 import adapterData from "../catalog/adapters/shadcn@aria.json" with { type: "json" };
+import legacyReads from "./legacy-foundry-reads.json" with { type: "json" };
+import themeSlots from "../catalog/slots/themes.json" with { type: "json" };
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import { sha256 } from "../catalog-core/digest.js";
-import { shadcnAriaStyleRead } from "./shadcn-aria-style-vars.js";
+import { isShadcnAriaStockUtility } from "./shadcn-aria-style-vars.js";
 import { alignImportedReads, assertNoBareReads, classRead, cssRead, packageDeclaredFallbackReader, type DeclaredFallbackReader } from "./declared-fallback-reader.js";
 
 /** Set for the duration of one synchronous rewrite from its input. */
 let styleDefaults = false;
 let activeReader: DeclaredFallbackReader = Object.freeze({ source: "none", fallback(name: string): string { throw new Error(`rewrite: ${name} read outside a rewrite`); } });
-const styleRead = (property: string, fixed: string, hint?: "length"): string =>
-  styleDefaults ? shadcnAriaStyleRead(property, fixed, activeReader, hint) : `(${hint ? `${hint}:` : ""}${property})`;
+/** A legacy (reader-less) read of a recorded Foundry property; a derived rewrite never writes one. */
+const styleRead = (property: string, _fixed: string, hint?: "length"): string => {
+  if (derived) throw new Error(`rewrite: derived rewrite cannot read Foundry property ${property}`);
+  return `(${hint ? `${hint}:` : ""}${property})`;
+};
 /** The pinned toggle-group's public spacing multiplier, as upstream spells it (an input matcher, not an emitted read). */
 const UPSTREAM_TOGGLE_GAP = /"--gap": `calc\(var\(--spacing\) \* \$\{spacing\}\)`/;
 /** A read inside a class string, with the active reader's declared value as its fallback. */
@@ -19,6 +24,40 @@ const tv = (name: string): string => classRead(activeReader, name);
 let aligning = false;
 /** A read in an inline style value, with the active reader's declared value as its fallback. */
 const cv = (name: string): string => cssRead(activeReader, name);
+/**
+ * Whether this rewrite derives every token read from the bound member's emitted shadcn name (`@5`, rail `@6`):
+ * set when a reader is given or style defaults are asked for. Otherwise the importer is one not yet re-adopted
+ * (rac-starter) and keeps the Foundry reads its receipts record (`legacy-foundry-reads.json`).
+ */
+let derived = false;
+/** Every consumer property a themes member emits, by member id (`themes.<slot>.<emit key>`). */
+const EMITS: ReadonlyMap<string, string> = new Map((themeSlots as unknown as readonly { id: string; contract: { emit?: Readonly<Record<string, string>> } }[])
+  .flatMap(slot => Object.entries(slot.contract.emit ?? {}).map(([key, property]) => [`${slot.id}.${key}`, property] as const)));
+/** The emitted consumer properties; a derived rewrite writes no other token read. */
+export const EMITTED_PROPERTIES: ReadonlySet<string> = new Set(EMITS.values());
+const MEMBER_BY_PROPERTY: ReadonlyMap<string, string> = new Map([...EMITS].map(([member, property]) => [property, member]));
+/** The shadcn property `member` emits (`themes.json` `contract.emit`); a member that emits none is refused (D3). */
+export function memberEmit(member: string): string {
+  const property = EMITS.get(member);
+  if (!property) throw new Error(`rewrite: ${member} emits no consumer property`);
+  return property;
+}
+const lengthPx = (value: string): number | undefined => {
+  const match = /^(\d*\.?\d+)(px|rem)$/.exec(value.trim());
+  return match ? Number(match[1]) * (match[2] === "rem" ? 16 : 1) : undefined;
+};
+/** `calc(var(--spacing,<declared>)*N)`: the spacing member's emitted unit times a step, as stock `h-N` compiles. */
+const spacingRead = (step: string): string => `calc(${tv(memberEmit(adapter.spacing.member))}*${step})`;
+/**
+ * The spacing step a Foundry length read stands for: its declared value over the declared spacing unit
+ * (`--spacing-xl` 24px over 0.25rem is 6). Only the legacy spacing and control lengths are converted.
+ */
+function spacingStep(name: string): string | undefined {
+  if (!FOUNDRY_LENGTHS.has(name)) return undefined;
+  const length = lengthPx(activeReader.fallback(name)), unit = lengthPx(activeReader.fallback(memberEmit(adapter.spacing.member)));
+  if (length === undefined || !unit) throw new Error(`rewrite: ${name} has no length the spacing unit divides`);
+  return String(length / unit);
+}
 
 export interface SourceFile { path: string; content: string }
 export interface RewriteIssue { code: "K2" | "K4" | "K7" | "K9"; file: string; value: string; message: string }
@@ -27,7 +66,7 @@ export interface RewriteResult {
   notes?: readonly RewriteNote[];
   /** Registry input surfaces replaced by their contextual RAC primitive, not a nested field. */
   contextualInputs?: readonly string[];
-  transform: "shadcn-aria-rewrite@3" | "shadcn-aria-rewrite@4";
+  transform: "shadcn-aria-rewrite@3" | "shadcn-aria-rewrite@5" | "shadcn-aria-rewrite@6";
   files: readonly SourceFile[];
   outputSha256: readonly { path: string; sha256: string }[];
   reads: { themes: readonly string[]; assets: readonly string[]; components: readonly string[] };
@@ -47,21 +86,32 @@ export interface RewriteInput {
    * keeps the exact bytes its receipts record.
    */
   reader?: DeclaredFallbackReader;
-  /** Component-only v2 rules (`@4`); existing `@1`/`@2` receipts retain their exact bytes. */
+  /** Component-only v2 rules (the rail, `@6`, always derived: a reader is required). */
   transformVersion?: 2;
   /** Private registry dependencies retain their own Button API. */
   retainRegistryButtonProps?: boolean;
 }
 const FOREIGN_ICON_MODULES = ["lucide-react", "@phosphor-icons/react", "react-icons"];
 const FOREIGN_ICONS = new RegExp("^(?:" + FOREIGN_ICON_MODULES.join("|") + ")(?:/|$)");
+/** shadcn@aria binds each upstream theme name to a member only; the property it reads is that member's emit. */
 const adapter = adapterData as {
+  bindings: Record<string, { member: string }>;
+  glyphs: Record<string, string>; fontSizes: Record<string, string>;
+  fontFamily: { member: string };
+  /** Stock spacing steps the importer accepts; each reads the spacing member's unit. */
+  spacing: { member: string; steps: readonly string[] };
+  /** Exact source lengths and steps a size utility may carry; each becomes spacing steps. */
+  sizes: { lengths: readonly string[]; steps: readonly string[] };
+};
+/** The Foundry reads an importer not yet re-adopted keeps byte for byte (rac-starter); never a shadcn@aria read. */
+const legacy = legacyReads as {
   bindings: Record<string, { member?: string; property: string }>;
-  glyphs: Record<string, string>; spacing: Record<string, string>;
-  controlSizes: Record<string, string>; controlProperties: Record<string, string>;
-  spacingProperties: Record<string, string>; fontSizes: Record<string, string>;
+  spacing: Record<string, string>; controlSizes: Record<string, string>; controlProperties: Record<string, string>;
+  spacingProperties: Record<string, string>;
   fieldTypography: Record<string, { member?: string; property: string }>;
   sizeLengths: Record<string, { member?: string; property: string }>; sizeSteps: Record<string, string>;
 };
+const FOUNDRY_LENGTHS: ReadonlySet<string> = new Set([...Object.values(legacy.spacingProperties), ...Object.values(legacy.controlProperties)]);
 const sorted = (values: Iterable<string>): string[] => [...new Set(values)].sort();
 /**
  * The pinned shadcn Button's prop values, as the Foundry Button members they evidence. A source that
@@ -130,19 +180,47 @@ const iconCall = (asset: string, attributes: string): string => {
   const named = /(?:^|\s)(?:decorative|label|aria-label)(?=[\s=]|$)/.test(kept);
   return `<LibraryIcon asset="${asset}"${named ? "" : " decorative"}${kept ? " " + kept : ""} />`;
 };
-/** One solid focus outline; its width reads the focus variable with the style's ring-3 default. */
-const focusOutline = (prefix: string, paint: string): string =>
-  ["outline-solid", `outline-${styleRead("--ui-border-focus", "ring-3", "length")}`, "outline-offset-(--ui-focus-offset)", `outline-(${paint})`].map(atom => prefix + atom).join(" ");
+/**
+ * One solid focus outline painted by `member`. Derived, it is the stock outline utilities at the width and
+ * offset the Foundry outline rendered (2px, 2px) over the member's emitted paint; legacy reads the focus variables.
+ */
+const focusOutline = (prefix: string, member: "themes.ring.default" | "themes.destructive.default"): string =>
+  (derived ? ["outline-solid", "outline-2", "outline-offset-2", `outline-(${memberEmit(member)})`]
+    : ["outline-solid", `outline-${styleRead("--ui-border-focus", "ring-3", "length")}`, "outline-offset-(--ui-focus-offset)", `outline-(${legacy.bindings[member === "themes.ring.default" ? "ring" : "destructive"]!.property})`])
+    .map(atom => prefix + atom).join(" ");
 
 type SelectedBindings = Readonly<Record<string, Readonly<Record<string, { output: string; themes: readonly string[]; note: string }>>>>;
 const selectedBindingsByReader = new WeakMap<DeclaredFallbackReader, SelectedBindings>();
+const derivedBindingsByReader = new WeakMap<DeclaredFallbackReader, SelectedBindings>();
+/**
+ * One selected restyle, derived: each Foundry spacing or control length becomes spacing steps and each legacy
+ * theme read its member's emit. A restyle that still reads a property no member emits keeps the stock utility.
+ * Its reads are the members whose emits the output reads.
+ */
+function derivedSelected(key: string, row: { output: string; themes: readonly string[]; note: string }): { output: string; themes: readonly string[]; note: string } {
+  const legacyEmit = new Map(Object.values(legacy.bindings).flatMap(binding => binding.member ? [[binding.property, memberEmit(binding.member)] as const] : []));
+  const output = row.output
+    .replace(/var\((--[a-z][a-z0-9-]*),[^()]*\)/g, (all, name: string) => { const step = spacingStep(name); return step ? spacingRead(step) : all; })
+    .replace(/-\((--[a-z][a-z0-9-]*)\)/g, (all, name: string) => { const step = spacingStep(name); return step ? `-[${spacingRead(step)}]` : all; })
+    .replace(/\((--[a-z][a-z0-9-]*)\)/g, (all, name: string) => legacyEmit.has(name) ? `(${legacyEmit.get(name)})` : all);
+  const own = new Set(key.match(/--[a-z][a-z0-9-]*/g) ?? []);
+  const reads = (value: string): string[] => sorted((value.match(/--[a-z][a-z0-9-]*/g) ?? []).flatMap(name => MEMBER_BY_PROPERTY.has(name) ? [MEMBER_BY_PROPERTY.get(name)!] : []));
+  if ((output.match(/--[a-z][a-z0-9-]*/g) ?? []).some(name => !own.has(name) && !EMITTED_PROPERTIES.has(name))) {
+    return { output: key, themes: reads(key), note: "none; the stock utility is kept because its restyle read a property no consumer member emits." };
+  }
+  return { output, themes: reads(output), note: row.note };
+}
 /**
  * Exact selected source bindings for the active reader; unmatched spellings remain findings.
  * Keys are the pinned spellings with each read aligned to its declared value, as `utility` looks them up.
  */
 function selectedBindings(): SelectedBindings {
-  const cached = selectedBindingsByReader.get(activeReader);
+  const cached = (derived ? derivedBindingsByReader : selectedBindingsByReader).get(activeReader);
   if (cached) return cached;
+  const built = selectedBindingsByReader.get(activeReader);
+  if (built) { const derivedTable: SelectedBindings = Object.fromEntries(Object.entries(built).map(([leaf, rows]) =>
+    [leaf, Object.fromEntries(Object.entries(rows).map(([key, row]) => [key, derivedSelected(key, row)]))]));
+    derivedBindingsByReader.set(activeReader, derivedTable); return derivedTable; }
   const table: SelectedBindings = {
   "avatar": {
     "*:data-[slot=avatar]:ring-2": {
@@ -809,7 +887,11 @@ function selectedBindings(): SelectedBindings {
   }
   };
   selectedBindingsByReader.set(activeReader, table);
-  return table;
+  if (!derived) return table;
+  const derivedTable: SelectedBindings = Object.fromEntries(Object.entries(table).map(([leaf, rows]) =>
+    [leaf, Object.fromEntries(Object.entries(rows).map(([key, row]) => [key, derivedSelected(key, row)]))]));
+  derivedBindingsByReader.set(activeReader, derivedTable);
+  return derivedTable;
 }
 
 
@@ -837,16 +919,20 @@ function styleRules(css: string): Map<string, string> {
 
 /** Deterministic source transform. Issues are blockers, never a conformance pass. */
 export function rewriteShadcnAria(input: RewriteInput): RewriteResult {
-  const previous = styleDefaults, previousReader = activeReader, previousAligning = aligning;
+  // The rail rules (`@6`) exist only derived; a rail rewrite without a reader is refused, never given legacy reads.
+  if (input.transformVersion === 2 && input.reader === undefined) throw new Error("rewrite: the rail transform derives every read and needs a reader");
+  const previous = styleDefaults, previousReader = activeReader, previousAligning = aligning, previousDerived = derived;
   styleDefaults = input.styleDefaults === true;
   activeReader = input.reader ?? packageDeclaredFallbackReader();
   aligning = input.reader !== undefined;
+  derived = input.reader !== undefined || input.styleDefaults === true;
   try {
     return rewriteSource(input);
   } finally {
     styleDefaults = previous;
     activeReader = previousReader;
     aligning = previousAligning;
+    derived = previousDerived;
   }
 }
 
@@ -875,9 +961,11 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     ])];
   }));
   const add = (code: RewriteIssue["code"], file: string, value: string, message: string): void => { issues.push({ code, file, value, message }); };
+  // Derived, a bound upstream name reads its member's emitted property; legacy keeps its recorded Foundry read.
   const bind = (name: string): string | undefined => {
+    if (!derived) { const binding = legacy.bindings[name]; if (!binding) return; if (binding.member) tokens.add(binding.member); return binding.property; }
     const binding = adapter.bindings[name]; if (!binding) return;
-    { if (binding.member) tokens.add(binding.member); }; return binding.property;
+    tokens.add(binding.member); return memberEmit(binding.member);
   };
   // Card children inherit both the base and small-size consumer bindings.
   // A missing definition must leave every private alias unresolved.
@@ -963,7 +1051,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
         || input.item === "tabs" && expressionSourceTerms.join(" ") === "cn-tabs-content flex-1 outline-none");
       if (ownFocus) { tokens.add("themes.ring.default");
         notes.push({ file, value, message: "Restyled selected focusable surface: replace outline suppression with its own existing token-bound keyboard outline" });
-        return focusOutline("focus-visible:", "--color-focus-ring");
+        return focusOutline("focus-visible:", "themes.ring.default");
       }
       if (input.item === "accordion" && stack.includes("cn-accordion-content")
         && ["data-open:animate-accordion-down", "data-closed:animate-accordion-up"].includes(value)) {
@@ -976,6 +1064,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
         return "";
       }
       if (input.item === "slider" && stack.includes("cn-slider-thumb") && ["hover:ring-3", "active:ring-3"].includes(value)) {
+        if (derived) { notes.push({ file, value, message: "Kept the stock decorative thumb ring; independent keyboard focus remains token bound" }); return value; }
         notes.push({ file, value, message: "Restyled selected decorative thumb ring from 3px to existing 2px rule width; independent keyboard focus remains token bound" });
         return `${prefix}ring-${styleRead("--ui-border-rule", "ring-3", "length")}`;
       }
@@ -984,31 +1073,30 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       const bindV2 = (member: string | undefined, output: string): string => { if (member) tokens.add(member); return prefix + output; };
       if (["border-dashed", "border-transparent", "border-inherit", "border-0", "ring-0", "opacity-0", "opacity-100"].includes(base)) return value;
       if (["outline-none", "outline-hidden"].includes(base)) { tokens.add("themes.ring.default");
-        return focusOutline("focus-visible:", "--color-focus-ring");
+        return focusOutline("focus-visible:", "themes.ring.default");
       }
 
       if (base === "animate-pulse") { notes.push({ file, value, message: "Restyled loading indicator to its static token-bound shape" }); return ""; }
-      if (/^rounded-\[calc\(var\(--radius\)-[35]px\)\]$/.test(base)) return bindV2("themes.radius.default", "rounded-(--radius-default)");
+      // The rail is derived only: a Foundry spacing length becomes the spacing steps it renders.
+      const steps = (member: string): string => `[${spacingRead(spacingStep(legacy.spacingProperties[member]!)!)}]`;
+      if (/^rounded-\[calc\(var\(--radius\)-[35]px\)\]$/.test(base)) return bindV2("themes.radius.default", base);
       const inset = /^(m[lr])-\[-0\.(?:3|15)rem\]$/.exec(base);
-      if (inset) return bindV2("themes.spacing.default", `-${inset[1]}-(--spacing-xs)`);
-      if (base === "pl-7") return bindV2("themes.spacing.default", "pl-(--spacing-xl)");
-      if (base === "min-w-[96px]") return bindV2("themes.spacing.default", "min-w-(--spacing-6xl)");
+      if (inset) return bindV2("themes.spacing.default", `-${inset[1]}-${steps("xs")}`);
+      if (base === "pl-7") return bindV2("themes.spacing.default", `pl-${steps("xl")}`);
+      if (base === "min-w-[96px]") return bindV2("themes.spacing.default", `min-w-${steps("6xl")}`);
+      // Registered stock design utilities stay stock; a row's member is the property its compiled class reads.
       const fixed = railTokenBindings.utilities.find(row => row.utility === base);
-      if (fixed) return bindV2(fixed.member, fixed.output);
-      if (base === "text-sm/relaxed") return prefix + "text-(length:--text-sm) leading-(--leading-heading)";
+      if (fixed) return bindV2(fixed.member, base);
+      if (base === "text-sm/relaxed") return prefix + `text-(length:${adapter.fontSizes.sm}) leading-relaxed`;
       const near = /^((?:h|w|min-w|size|mx|top|py|gap|translate-y))-([057]|3\.5|10|0\.5)$/.exec(base);
-      if (near) { const member = ({ "0.5": "xs", "3.5": "lg", "5": "xl", "7": "xl", "10": "2xl" } as Record<string,string>)[near[2]!]; if (member) return bindV2("themes.spacing.default", `${near[1]}-(${adapter.spacingProperties[member]})`); }
+      if (near) { const member = ({ "0.5": "xs", "3.5": "lg", "5": "xl", "7": "xl", "10": "2xl" } as Record<string,string>)[near[2]!]; if (member) return bindV2("themes.spacing.default", `${near[1]}-${steps(member)}`); }
       const slide = /^translate-([xy])-\[(-?)2\.5rem\]$/.exec(base);
-      if (slide) return bindV2("themes.spacing.default", `${slide[2] ? "-" : ""}translate-${slide[1]}-(--spacing-2xl)`);
+      if (slide) return bindV2("themes.spacing.default", `${slide[2] ? "-" : ""}translate-${slide[1]}-${steps("2xl")}`);
       if (base.includes("--spacing(4)")) {
         tokens.add("themes.spacing.default");
-        let output = base.replaceAll("--spacing(4)", tv("--spacing-lg"));
-        if (output.includes("+2px")) { output = output.replaceAll("+2px", `+${tv("--ui-border-rule")}`); }
-        return prefix + output;
+        return prefix + base.replaceAll("--spacing(4)", spacingRead("4"));
       }
-      if (/^transition(?:-(?:all|colors|opacity|shadow|transform|\[[a-z-]+(?:,[a-z-]+)*\]))?$/.test(base)) {
-        return `${value} ${prefix}duration-(--ui-duration-default) ${prefix}ease-(--ease-default)`;
-      }
+      if (/^transition(?:-(?:all|colors|opacity|shadow|transform|\[[a-z-]+(?:,[a-z-]+)*\]))?$/.test(base)) return value;
     }
     const selected = selectedBindings()[input.leaf]?.[alignImportedReads(value, activeReader)];
     if (selected) {
@@ -1049,19 +1137,25 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       const expanded = rule.split(/\s+/).map(term => {
         const [variants, atom] = variantParts(term);
         if (mark && atom === mark) {
-          return `${prefix}${variants}size-${styleRead(adapter.controlProperties.mark!, mark)}`;
+          if (derived) { tokens.add(adapter.spacing.member); return `${prefix}${variants}size-[${spacingRead(spacingStep(legacy.controlProperties.mark!)!)}]`; }
+          return `${prefix}${variants}size-${styleRead(legacy.controlProperties.mark!, mark)}`;
         }
         const size = /^(h|size)-(7|8|9)$/.exec(atom);
         if (control && size) {
-          const member = adapter.controlSizes[size[2]!]!;
-          return `${prefix}${variants}${size[1]}-${styleRead(adapter.controlProperties[member]!, `h-${size[2]}`)}`;
+          const member = legacy.controlSizes[size[2]!]!;
+          if (derived) { tokens.add(adapter.spacing.member); return `${prefix}${variants}${size[1]}-[${spacingRead(spacingStep(legacy.controlProperties[member]!)!)}]`; }
+          return `${prefix}${variants}${size[1]}-${styleRead(legacy.controlProperties[member]!, `h-${size[2]}`)}`;
         }
         return utility(prefix + term, file, [...stack, base]);
       }).join(" ");
+      if (fieldControl && ["cn-select-label", "cn-combobox-label", "cn-select-trigger", "cn-input-group"].includes(base) && derived) {
+        tokens.add(adapter.fontFamily.member);
+        return `${expanded}${base === "cn-input-group" ? ` text-(length:${adapter.fontSizes.sm})` : ""} font-(family-name:${memberEmit(adapter.fontFamily.member)})`;
+      }
       if (fieldControl && ["cn-select-label", "cn-combobox-label", "cn-select-trigger", "cn-input-group"].includes(base)) {
-        const family = adapter.fieldTypography.family!;
+        const family = legacy.fieldTypography.family!;
         { if (family.member) tokens.add(family.member); };
-        const body = base === "cn-input-group" ? adapter.fieldTypography.sm : undefined;
+        const body = base === "cn-input-group" ? legacy.fieldTypography.sm : undefined;
         if (body) { if (body.member) tokens.add(body.member); };
         return `${expanded}${body ? ` text-(length:${body.property})` : ""} font-(family-name:${family.property})`;
       }
@@ -1074,7 +1168,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     }
     // The two link variants use upstream primary as link ink, rather than action fill.
     if (base === "text-primary" && stack.some(rule => rule === "cn-button-variant-link" || rule === "cn-badge-variant-link")) {
-      tokens.add("themes.accent-foreground.default"); return `${prefix}text-(--color-accent-text)`;
+      tokens.add("themes.accent-foreground.default"); return `${prefix}text-(${derived ? memberEmit("themes.accent-foreground.default") : "--color-accent-text"})`;
     }
     // Explicit zero-width adjacency and on/off visibility do not introduce a
     // positive design value. Keep the selector and require its structural peer.
@@ -1143,7 +1237,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       return (paintPrefix === prefix || !paintPrefix) && /^ring-destructive(?:\/(?:20|40))?$/.test(paint);
     });
     if ((invalidRing || interactiveDangerRing) && expressionTerms.includes(prefix + "ring-3") && /^(?:ring-3|ring-destructive(?:\/(?:20|40))?)$/.test(base)) { tokens.add("themes.destructive.default");
-      return focusOutline(prefix, "--color-status-danger");
+      return focusOutline(prefix, "themes.destructive.default");
     }
     if (base === "border-collapse") return value;
     if (cardSpacing && cardFiles.has(file)) {
@@ -1151,20 +1245,27 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       if (assignment) {
         const member = assignment[1] === "4" ? "lg" : "md";
         tokens.add("themes.spacing.default");
-        return `${prefix}[--card-spacing:${tv(`--spacing-${member}`)}]`;
+        return `${prefix}[--card-spacing:${derived ? spacingRead(assignment[1]!) : tv(`--spacing-${member}`)}]`;
       }
       if (/^(?:gap(?:-[xy])?|p[trblxy]?)-\(--card-spacing\)$/.test(base)) return value;
     }
+    // Derived, a radius no member emits keeps its stock spelling; spacing lengths become spacing steps.
     if (base === "rounded-[4px]" && allowedTokens.includes("themes.radius")) {
+      if (derived) return value;
       tokens.add("themes.radius.default"); return `${prefix}rounded-(--radius-default)`;
     }
     if (base === "min-w-[96px]" && allowedTokens.includes("themes.spacing")) {
-      tokens.add("themes.spacing.default"); return `${prefix}min-w-(--spacing-5xl)`;
+      tokens.add("themes.spacing.default"); return derived ? `${prefix}min-w-[${spacingRead(spacingStep(legacy.spacingProperties["5xl"]!)!)}]` : `${prefix}min-w-(--spacing-5xl)`;
     }
     if (base === "max-w-[calc(100%-2rem)]" && allowedTokens.includes("themes.spacing")) {
-      tokens.add("themes.spacing.default"); return `${prefix}max-w-[calc(100%-${tv("--spacing-2xl")})]`;
+      tokens.add("themes.spacing.default"); return `${prefix}max-w-[calc(100%-${derived ? spacingRead(spacingStep(legacy.spacingProperties["2xl"]!)!) : tv("--spacing-2xl")})]`;
     }
+    // A derived spacing read is already final; the select size row inserts one before this walk.
+    const spacingPrefix = `[calc(${tv(memberEmit(adapter.spacing.member))}*`;
+    const spacingArgument = /^-?(?:min-|max-)?(?:h|w|size|p[trblxy]?|m[trblxy]?|gap(?:-[xy])?)-(\[.*)$/.exec(base)?.[1];
+    if (derived && spacingArgument?.startsWith(spacingPrefix) && /^\d+(?:\.\d+)?\)\]$/.test(spacingArgument.slice(spacingPrefix.length))) { tokens.add(adapter.spacing.member); return value; }
     const decorativeRing = /^ring-([12])$/.exec(base);
+    if (decorativeRing && derived) return value;
     if (decorativeRing) {
       const member = decorativeRing[1] === "1" ? "hairline" : "rule";
       return `${prefix}ring-(length:--ui-border-${member})`;
@@ -1172,19 +1273,28 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     // A size role may bind only size utilities, never padding or spacing.
     const exactSize = /^(h|w|size|min-h|min-w|max-h|max-w)-(?:\[([0-9.]+px)\]|([0-9.]+))$/.exec(base);
     if (exactSize) {
-      const binding = adapter.sizeLengths[exactSize[2] ?? adapter.sizeSteps[exactSize[3]!]!];
+      if (derived) {
+        const length = exactSize[2] ? (adapter.sizes.lengths.includes(exactSize[2]) ? lengthPx(exactSize[2]) : undefined)
+          : adapter.sizes.steps.includes(exactSize[3]!) ? Number(exactSize[3]) * lengthPx(activeReader.fallback(memberEmit(adapter.spacing.member)))! : undefined;
+        if (length !== undefined) {
+          tokens.add(adapter.spacing.member);
+          return `${prefix}${exactSize[1]}-[${spacingRead(String(length / lengthPx(activeReader.fallback(memberEmit(adapter.spacing.member)))!))}]`;
+        }
+      }
+      const binding = derived ? undefined : legacy.sizeLengths[exactSize[2] ?? legacy.sizeSteps[exactSize[3]!]!];
       if (binding) { { if (binding.member) tokens.add(binding.member); }; return `${prefix}${exactSize[1]}-${styleRead(binding.property, base)}`; }
     }
     // Focus width and paint form one solid outline. Invalid-state rings and decorative
     // borders remain separate; they must not accidentally count as focus clearance.
     const focus = /(?:focus-visible|focus-within|has-focus)/.test(prefix) || prefix === "group-data-[focused=true]/day:";
     if ((focus && /^ring-(?:3|ring(?:\/50)?|destructive\/(?:20|40))$/.test(base)) || (!prefix && /^(?:ring-3|ring-ring\/50)$/.test(base))) { tokens.add("themes.ring.default");
-      return focusOutline(prefix, "--color-focus-ring");
+      return focusOutline(prefix, "themes.ring.default");
     }
     const elevation = /^shadow-(none|xs|sm|md|lg|xl|2xl)(!)?$/.exec(base);
     if (elevation) {
       const member = elevation[1] === "none" ? "none" : ["xs", "sm"].includes(elevation[1]!) ? "raised" : "floating";
       if (member !== "none") tokens.add(`themes.shadow.${elevation[1]}`);
+      if (derived) return member === "none" ? value : `${prefix}shadow-(${memberEmit(`themes.shadow.${elevation[1]}`)})${elevation[2] ?? ""}`;
       return `${prefix}shadow-(--ui-elevation-${member})${elevation[2] ?? ""}`;
     }
     const motion = /^(animate-(in|out)|fade-(in|out)-0|zoom-(in|out)-95|slide-in-from-(top|bottom|left|right)-2)$/.exec(base);
@@ -1197,6 +1307,8 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       if (base.startsWith("zoom-")) return `${prefix}library-zoom`;
       return `${prefix}library-slide-${motion[5]}`;
     }
+    // Derived, timing, opacity, stacking, weight and border width keep their stock utilities: no consumer member emits them.
+    if (derived && isShadcnAriaStockUtility(base)) return value;
     if (base === "duration-100") { return `${prefix}duration-${styleRead("--ui-duration-fast", base)}`;
     }
     if (styleDefaults && base === "duration-200") { return `${prefix}duration-${styleRead("--ui-duration-default", base)}`;
@@ -1210,8 +1322,9 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     if (z) {
       const member = ({ "0": "base", "10": "sticky", "20": "shell", "30": "aside", "40": "notice", "50": "modal", "60": "toast", "70": "palette", "80": "tooltip", "90": "progress", "100": "skip-link" } as Record<string, string>)[z[1]!]!; return `${prefix}z-${styleRead(`--ui-z-${member}`, base)}`;
     }
+    if (base === "font-sans" && derived) { tokens.add(adapter.fontFamily.member); return `${prefix}font-(family-name:${memberEmit(adapter.fontFamily.member)})`; }
     if (base === "font-sans") {
-      const family = adapter.fieldTypography.family!;
+      const family = legacy.fieldTypography.family!;
       { if (family.member) tokens.add(family.member); }; return `${prefix}font-(family-name:${family.property})`;
     }
     const weight = /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/.exec(base);
@@ -1243,6 +1356,11 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     }
     // Rewrite every upstream theme reference, including references in color-mix().
     let next = base.replace(/--([a-z][a-z0-9-]*)/g, (all, name: string) => {
+      if (input.transformVersion === 2 && derived) {
+        if (["sidebar-width", "sidebar-width-icon", "skeleton-width"].includes(name)) return all;
+        if (name === "spacing") { tokens.add(adapter.spacing.member); return memberEmit(adapter.spacing.member); }
+        if (name === "color-border") return bind("border") ?? all;
+      }
       if (input.transformVersion === 2) {
         const role = ({ "sidebar-width": ["", "--sidebar-width"], "sidebar-width-icon": ["", "--sidebar-width-icon"], "skeleton-width": ["", "--ui-width-notice-max"], "spacing": ["themes.spacing.default", "--spacing-xs"], "color-border": ["themes.border.default", "--color-line-base"] } as Record<string, [string, string]>)[name];
         if (role) { if (role[0]) tokens.add(role[0]); return role[1]; }
@@ -1256,12 +1374,12 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       if (property) return `${prefix}${themed[1]}-(${property})${themed[3] ?? ""}`;
     }
     const font = /^text-(xs|sm|base|lg|xl|[2-9]xl)$/.exec(next);
-    if (font && input.leaf === "keyboard" && font[1] === "xs") {
+    if (font && input.leaf === "keyboard" && font[1] === "xs" && !derived) {
       notes.push({ file, value, message: "Restyled source: keyboard 12px to existing code-size.block 13px" });
       return `${prefix}text-(length:--text-code-block)`;
     }
-    if (font && fieldControl && ["xs", "sm"].includes(font[1]!)) {
-      const binding = adapter.fieldTypography[font[1]!]!;
+    if (font && fieldControl && ["xs", "sm"].includes(font[1]!) && !derived) {
+      const binding = legacy.fieldTypography[font[1]!]!;
       { if (binding.member) tokens.add(binding.member); }; return `${prefix}text-(length:${binding.property})`;
     }
     if (font) { return `${prefix}text-(length:${adapter.fontSizes[font[1]!]})`; }
@@ -1270,17 +1388,26 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     const space = /^(-?(?:h|w|size|min-h|min-w|max-h|max-w|p[trblxy]?|m[trblxy]?|gap(?:-[xy])?|space-[xy]|top|bottom|left|right|inset|translate-[xy]|underline-offset))-(\d+(?:\.\d+)?|px)$/.exec(next);
     if (space && space[2] !== "0") {
       const restyle = ({ "1.5": "sm", "2.5": "md" } as Record<string,string>)[space[2]!];
-      if (restyle) {
+      if (derived) {
+        const step = restyle ? String(Math.round(Number(space[2]))) : adapter.spacing.steps.includes(space[2]!) ? space[2]! : undefined;
+        if (step) {
+          tokens.add(adapter.spacing.member);
+          if (restyle) notes.push({ file, value, message: `Restyled source: ${space[2] === "1.5" ? "6px to spacing step 2, 8px" : "10px to spacing step 3, 12px"}` });
+          return `${prefix}${space[1]}-[${spacingRead(step)}]`;
+        }
+        add("K4", file, value, "No spacing step has the exact source length");
+      }
+      else if (restyle) {
         tokens.add("themes.spacing.default");
         notes.push({ file, value, message: `Restyled source: ${space[2] === "1.5" ? "6px to spacing.sm 8px" : "10px to spacing.md 12px"}` });
-        return `${prefix}${space[1]}-(${adapter.spacingProperties[restyle]})`;
+        return `${prefix}${space[1]}-(${legacy.spacingProperties[restyle]})`;
       }
-      const member = adapter.spacing[space[2]!];
-      if (member) { tokens.add("themes.spacing.default"); return `${prefix}${space[1]}-${/^(?:h|size)$/.test(space[1]!) ? styleRead(adapter.spacingProperties[member]!, `${space[1]}-${space[2]}`) : `(${adapter.spacingProperties[member]})`}`; }
-      add("K4", file, value, "No spacing member has the exact source length");
+      const member = derived ? undefined : legacy.spacing[space[2]!];
+      if (member) { tokens.add("themes.spacing.default"); return `${prefix}${space[1]}-${/^(?:h|size)$/.test(space[1]!) ? styleRead(legacy.spacingProperties[member]!, `${space[1]}-${space[2]}`) : `(${legacy.spacingProperties[member]})`}`; }
+      if (!derived) add("K4", file, value, "No spacing member has the exact source length");
     }
     if (/(?:#[\da-f]{3,8}\b|\d*\.?\d+(?:px|rem|em)\b|--spacing\()/i.test(next)) add("K4", file, value, "Literal colour or length remains after rewriting");
-    for (const property of next.match(/--[a-z][a-z0-9-]*/g) ?? []) if (!engineVariables.get(file)?.has(property) && !(input.transformVersion === 2 && ["--sidebar-width", "--sidebar-width-icon", "--ui-width-notice-max", "--spacing-xs", "--color-line"].includes(property)) && !consumerVariables.get(file)?.has(property) && ![...Object.values(adapter.bindings).map(binding => binding.property), ...Object.values(adapter.controlProperties), ...Object.values(adapter.spacingProperties), ...Object.values(adapter.fontSizes)].includes(property)) add("K4", file, property, "Private CSS variable needs an independently bound consumer token");
+    for (const property of next.match(/--[a-z][a-z0-9-]*/g) ?? []) if (!engineVariables.get(file)?.has(property) && !(input.transformVersion === 2 && (derived ? ["--sidebar-width", "--sidebar-width-icon", "--skeleton-width"] : ["--sidebar-width", "--sidebar-width-icon", "--ui-width-notice-max", "--spacing-xs", "--color-line"]).includes(property)) && !consumerVariables.get(file)?.has(property) && !(derived ? [...EMITTED_PROPERTIES, ...Object.values(adapter.fontSizes)] : [...Object.values(legacy.bindings).map(binding => binding.property), ...Object.values(legacy.controlProperties), ...Object.values(legacy.spacingProperties), ...Object.values(adapter.fontSizes)]).includes(property)) add("K4", file, property, "Private CSS variable needs an independently bound consumer token");
     if (/^(?:bg|text|border|outline|ring|fill|stroke|divide|decoration)-(?:[a-z]+-\d{2,3}|black|white)(?:\/|$)/.test(next) || /^(?:bg|text|border|outline|ring|fill|stroke|divide|decoration)-\[/.test(next) && !next.includes("var(--")) add("K4", file, value, "Raw paint or arbitrary design value needs a consumer binding");
     if (/^(?:ring|border|outline|shadow|leading|tracking|font|duration|delay|ease|animate|fade|zoom|slide|opacity|z|transition)-/.test(next) && next === base) add("K4", file, value, "Design utility needs a consumer binding");
     return prefix + next;
@@ -1344,21 +1471,29 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     const relative = inPart ? "../../" : "../";
     let needsIcon = false;
     let content = reboundButton && !input.retainRegistryButtonProps ? translateButtonProps(file.content, file.path) : file.content;
-    if (input.transformVersion === 2 && input.item === "sidebar") {
+    // The stock sidebar widths have no consumer member and no declared value for their bare calc() reads, so
+    // they keep the recorded layout reads (residual R-W); the skeleton keeps one deterministic spacing width.
+    if (input.transformVersion === 2 && input.item === "sidebar" && derived) {
+      content = content.replace(/^const SIDEBAR_WIDTH(?:_MOBILE|_ICON)? = .*\n/gm, "")
+        .replace(/^\s*"--sidebar-width(?:-icon)?": SIDEBAR_WIDTH(?:_MOBILE|_ICON)?,\n/gm, "")
+        .replace(/  \/\/ Random width between 50 to 90%\.\n  const \[width\] = React\.useState\(\(\) => \{[\s\S]*?\n  \}\)\n/, "")
+        .replace('"--skeleton-width": width,', '"--skeleton-width": "calc(' + cv(memberEmit(adapter.spacing.member)) + ' * 96)",');
+    }
+    else if (input.transformVersion === 2 && input.item === "sidebar") {
       content = content.replace(/^const SIDEBAR_WIDTH(?:_MOBILE|_ICON)? = .*\n/gm, "")
         .replace(/^\s*"--sidebar-width(?:-icon)?": SIDEBAR_WIDTH(?:_MOBILE|_ICON)?,\n/gm, "")
         .replace(/  \/\/ Random width between 50 to 90%\.\n  const \[width\] = React\.useState\(\(\) => \{[\s\S]*?\n  \}\)\n/, "")
         .replace('"--skeleton-width": width,', 'maxWidth: "' + cv("--ui-width-notice-max") + '",');
     }
     if (consumerVariables.get(file.path)?.has("--gap")) {
-      content = content.replace(UPSTREAM_TOGGLE_GAP, '"--gap": `calc(' + cv("--spacing-xs") + ' * ${spacing})`');
+      content = content.replace(UPSTREAM_TOGGLE_GAP, '"--gap": `calc(' + cv(derived ? memberEmit(adapter.spacing.member) : "--spacing-xs") + ' * ${spacing})`');
       tokens.add("themes.spacing.default");
       notes.push({ file: file.path, value: "style --gap = --spacing unit * spacing", message: "Restyled source: bind the public spacing multiplier to the existing spacing.xs unit; preserve caller value and default" });
     }
     if (input.item === "select" && input.leaf === "select" && !inPart) {
       content = content.replace('size?: "sm" | "default"', 'size?: "sm" | "default" | "lg"');
       if (content.includes("cn-select-trigger flex")) {
-        content = content.replace("cn-select-trigger flex", "cn-select-trigger data-[size=lg]:h-(--ui-control-h-lg) flex");
+        content = content.replace("cn-select-trigger flex", `cn-select-trigger data-[size=lg]:h-${derived ? `[${spacingRead(spacingStep(legacy.controlProperties["h-lg"]!)!)}]` : "(--ui-control-h-lg)"} flex`);
       }
     }
     // InputGroup is already inside SearchField/ComboBox. A full TextField would
@@ -1465,5 +1600,5 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     return { path, content };
   }).sort((a, b) => a.path.localeCompare(b.path));
   const unique = [...new Map(issues.map(issue => [JSON.stringify(issue), issue])).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
-  return { transform: input.transformVersion === 2 ? "shadcn-aria-rewrite@4" : "shadcn-aria-rewrite@3", ...(contextualInputs.size ? { contextualInputs: sorted(contextualInputs) } : {}), ...(notes.length ? { notes: [...new Map(notes.map(note => [JSON.stringify(note), note])).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) } : {}), files, outputSha256: files.map(file => ({ path: file.path, sha256: sha256(file.content) })), reads: { themes: sorted(tokens), assets: sorted(assets), components: sorted(components) }, parts: sorted(parts), issues: unique };
+  return { transform: input.transformVersion === 2 ? "shadcn-aria-rewrite@6" : derived ? "shadcn-aria-rewrite@5" : "shadcn-aria-rewrite@3", ...(contextualInputs.size ? { contextualInputs: sorted(contextualInputs) } : {}), ...(notes.length ? { notes: [...new Map(notes.map(note => [JSON.stringify(note), note])).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) } : {}), files, outputSha256: files.map(file => ({ path: file.path, sha256: sha256(file.content) })), reads: { themes: sorted(tokens), assets: sorted(assets), components: sorted(components) }, parts: sorted(parts), issues: unique };
 }

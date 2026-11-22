@@ -68,11 +68,11 @@
         },
         {
           "path": "components/radio-group/radio-group.tsx",
-          "sha256": "367f78cac71a3f0d0008df3f7fa4f8b0d93fbf6149db526cc59f8a2af01e330a"
+          "sha256": "4b118310d85a5a1f4a6d0ec41a93f680892b3e8101ee73a5aa61095e7017ee81"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -114,6 +114,7 @@
         "components": [],
         "themes": [
           "themes.destructive.default",
+          "themes.input.default",
           "themes.primary-foreground.default",
           "themes.primary.default",
           "themes.ring.default",
@@ -123,7 +124,7 @@
       "root": "rac:RadioGroup",
       "slot": "components.radio-group",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

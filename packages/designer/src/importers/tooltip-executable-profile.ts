@@ -3,7 +3,7 @@ import type { SourceFile } from "./rewrite.js";
 
 // Exact rewritten entry before this selected adaptation. Upstream bytes have
 // already been authenticated independently by importShadcnAriaComponents.
-const sourceHash = "9fa112ee37fafd75df23b1dca745fa7f2da107755d241b898d977c6344e99aae";
+const sourceHash = "f993ba88554a989d04cee6aa2665a9c6e4d04140517fb455885c87ca44bdf193";
 /** Tooltip timing is a caller binding, not a themes leaf, so the adaptation adds no theme reads. */
 export const tooltipExecutableReads: readonly string[] = Object.freeze([]);
 export const tooltipExecutableProps = Object.freeze(["children", "className", "crossOffset", "offset", "placement", "ref", "style"]);

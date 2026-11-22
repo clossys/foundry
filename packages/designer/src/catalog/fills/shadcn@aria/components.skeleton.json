@@ -61,11 +61,11 @@
         },
         {
           "path": "components/skeleton/skeleton.tsx",
-          "sha256": "0e19019b20a372ed9cf4e5de28a5f5eb766bf923d58e571cbbdac4d3a48f8b1a"
+          "sha256": "dda2f75e24a2a14a87fdc28e5455a2aad0e11fce78969806c521ff0b65b8cac9"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -111,7 +111,7 @@
       "root": "presentational",
       "slot": "components.skeleton",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

@@ -111,7 +111,7 @@
         ]
       },
       "notice": "notices/SHADCN-ARIA-RAIL.md",
-      "transform": "shadcn-aria-rewrite@4",
+      "transform": "shadcn-aria-rewrite@6",
       "item": "item",
       "deps": [
         {
@@ -147,7 +147,7 @@
         },
         {
           "path": "components/_parts/rail-separator/separator.tsx",
-          "sha256": "e5e91311a531c490e0f3eb2d9f624d0e110aa8f70480fe0e8a8edcb3a8f14121"
+          "sha256": "ceba9d4dd33940e72e3d4c597af66c6e01420532ef0c226d13383c10fbcdd6fc"
         },
         {
           "path": "components/_parts/rail-utils/copy.ts",
@@ -163,11 +163,11 @@
         },
         {
           "path": "components/item/item.tsx",
-          "sha256": "8e680d7cda2ca581321160a3ebb237274aa7096a60519ce816fc361b0e99a527"
+          "sha256": "53c2442a5bc130acebc698f2d0daf86de6e8829c827326c6cc8225d55a7f3f38"
         },
         {
           "path": "notices/SHADCN-ARIA-RAIL.md",
-          "sha256": "ef2a475ab63e8e936989c5fafffa578773e2d97127c46ee47d032ae9c1277b3f"
+          "sha256": "a3254ebd0ca6ce0be7f1f08a73c4ac8f18ff3fbf11c10e0c80badf9ecfcddff4"
         }
       ],
       "blockers": [],

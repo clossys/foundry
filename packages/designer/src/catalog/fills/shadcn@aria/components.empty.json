@@ -91,7 +91,7 @@
         ]
       },
       "notice": "notices/SHADCN-ARIA-RAIL.md",
-      "transform": "shadcn-aria-rewrite@4",
+      "transform": "shadcn-aria-rewrite@6",
       "item": "empty",
       "deps": [
         {
@@ -131,11 +131,11 @@
         },
         {
           "path": "components/empty/empty.tsx",
-          "sha256": "66d76b36441351629fa0f1d9d5729adffccbca1f2067fac8009b8f3b4f95c0b5"
+          "sha256": "b05c18b264a4262b6c148df408494426d20f752489c0e496bfdf90fd37a022cd"
         },
         {
           "path": "notices/SHADCN-ARIA-RAIL.md",
-          "sha256": "ef2a475ab63e8e936989c5fafffa578773e2d97127c46ee47d032ae9c1277b3f"
+          "sha256": "a3254ebd0ca6ce0be7f1f08a73c4ac8f18ff3fbf11c10e0c80badf9ecfcddff4"
         }
       ],
       "blockers": [],

@@ -52,7 +52,7 @@ function SheetOverlay({
       data-slot="sheet-overlay"
       isDismissable
       className={cn(
-        "bg-(--color-overlay-scrim) supports-backdrop-filter:backdrop-blur-xs fixed inset-0 z-(--ui-z-modal) motion-safe:transition-opacity motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:duration-(--ui-duration-default) ease-(--ease-default) motion-safe:duration-(--ui-duration-fast) data-entering:opacity-0 data-exiting:opacity-0",
+        "bg-black/10 supports-backdrop-filter:backdrop-blur-xs fixed inset-0 z-50 motion-safe:transition-opacity motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:duration-150 data-entering:opacity-0 data-exiting:opacity-0",
         className
       )}
       {...props}
@@ -84,19 +84,19 @@ function Sheet({
         data-slot="sheet-content"
         data-side={side}
         className={cn(
-          "bg-(--color-overlay-surface) text-(--color-ink-primary) fixed z-(--ui-z-modal) flex flex-col gap-(--spacing-lg) bg-clip-padding text-(length:--text-sm) shadow-(--ui-elevation-floating) motion-safe:transition motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:duration-(--ui-duration-default) ease-(--ease-default) data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t-(length:--ui-border-hairline) data-[side=left]:inset-y-0 data-[side=left]:start-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-e-(length:--ui-border-hairline) data-[side=right]:inset-y-0 data-[side=right]:end-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-s-(length:--ui-border-hairline) data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b-(length:--ui-border-hairline) data-[side=left]:sm:max-w-(--ui-width-notice-max) data-[side=right]:sm:max-w-(--ui-width-notice-max) data-entering:opacity-0 data-exiting:opacity-0 data-[side=bottom]:data-entering:translate-y-(--spacing-2xl) data-[side=bottom]:data-exiting:translate-y-(--spacing-2xl) data-[side=left]:data-entering:ltr:-translate-x-(--spacing-2xl) data-[side=left]:data-entering:rtl:translate-x-(--spacing-2xl) data-[side=left]:data-exiting:ltr:-translate-x-(--spacing-2xl) data-[side=left]:data-exiting:rtl:translate-x-(--spacing-2xl) data-[side=right]:data-entering:ltr:translate-x-(--spacing-2xl) data-[side=right]:data-entering:rtl:-translate-x-(--spacing-2xl) data-[side=right]:data-exiting:ltr:translate-x-(--spacing-2xl) data-[side=right]:data-exiting:rtl:-translate-x-(--spacing-2xl) data-[side=top]:data-entering:-translate-y-(--spacing-2xl) data-[side=top]:data-exiting:-translate-y-(--spacing-2xl)",
+          "bg-(--popover) text-(--foreground) fixed z-50 flex flex-col gap-[calc(var(--spacing,0.25rem)*4)] bg-clip-padding text-(length:--text-sm) shadow-(--shadow-lg) motion-safe:transition motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:duration-200 ease-in-out data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t data-[side=left]:inset-y-0 data-[side=left]:start-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-e data-[side=right]:inset-y-0 data-[side=right]:end-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-s data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm data-entering:opacity-0 data-exiting:opacity-0 data-[side=bottom]:data-entering:translate-y-[calc(var(--spacing,0.25rem)*8)] data-[side=bottom]:data-exiting:translate-y-[calc(var(--spacing,0.25rem)*8)] data-[side=left]:data-entering:ltr:-translate-x-[calc(var(--spacing,0.25rem)*8)] data-[side=left]:data-entering:rtl:translate-x-[calc(var(--spacing,0.25rem)*8)] data-[side=left]:data-exiting:ltr:-translate-x-[calc(var(--spacing,0.25rem)*8)] data-[side=left]:data-exiting:rtl:translate-x-[calc(var(--spacing,0.25rem)*8)] data-[side=right]:data-entering:ltr:translate-x-[calc(var(--spacing,0.25rem)*8)] data-[side=right]:data-entering:rtl:-translate-x-[calc(var(--spacing,0.25rem)*8)] data-[side=right]:data-exiting:ltr:translate-x-[calc(var(--spacing,0.25rem)*8)] data-[side=right]:data-exiting:rtl:-translate-x-[calc(var(--spacing,0.25rem)*8)] data-[side=top]:data-entering:-translate-y-[calc(var(--spacing,0.25rem)*8)] data-[side=top]:data-exiting:-translate-y-[calc(var(--spacing,0.25rem)*8)]",
           className
         )}
       >
         <SheetPrimitive
           data-slot="sheet"
-          className="[display:inherit] h-full max-h-[inherit] [flex-direction:inherit] [gap:inherit] focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)"
+          className="[display:inherit] h-full max-h-[inherit] [flex-direction:inherit] [gap:inherit] focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring)"
         >
           {children}
           {showCloseButton && (
             <SheetClose
               variant="ghost"
-              className="absolute top-(--spacing-md) end-(--spacing-md)"
+              className="absolute top-[calc(var(--spacing,0.25rem)*3)] end-[calc(var(--spacing,0.25rem)*3)]"
               size="icon-sm"
             >
               <LibraryIcon asset="assets.icon-close" decorative />
@@ -137,7 +137,7 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sheet-header"
-      className={cn("gap-(--spacing-xs) p-(--spacing-lg) flex flex-col", className)}
+      className={cn("gap-[calc(var(--spacing,0.25rem)*1)] p-[calc(var(--spacing,0.25rem)*4)] flex flex-col", className)}
       {...props}
     />
   )
@@ -147,7 +147,7 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sheet-footer"
-      className={cn("gap-(--spacing-sm) p-(--spacing-lg) mt-auto flex flex-col", className)}
+      className={cn("gap-[calc(var(--spacing,0.25rem)*2)] p-[calc(var(--spacing,0.25rem)*4)] mt-auto flex flex-col", className)}
       {...props}
     />
   )
@@ -161,7 +161,7 @@ function SheetTitle({
     <Heading
       slot="title"
       data-slot="sheet-title"
-      className={cn("text-(--color-ink-primary) text-(length:--text-base) font-(weight:--font-weight-medium)", className)}
+      className={cn("text-(--foreground) text-(length:--text-base) font-medium", className)}
       {...props}
     />
   )
@@ -174,7 +174,7 @@ function SheetDescription({
   return (
     <div
       data-slot="sheet-description"
-      className={cn("text-(--color-ink-muted) text-(length:--text-sm)", className)}
+      className={cn("text-(--muted-foreground) text-(length:--text-sm)", className)}
       {...props}
     />
   )

@@ -55,14 +55,14 @@ function Tooltip({
       offset={offset}
       crossOffset={crossOffset}
       className={cn(
-        "data-entering:library-enter data-entering:library-fade data-entering:library-zoom data-exiting:library-exit data-exiting:library-fade data-exiting:library-zoom data-[placement=bottom]:library-slide-top data-[placement=left]:library-slide-right data-[placement=right]:library-slide-left data-[placement=top]:library-slide-bottom inline-flex items-center gap-(--spacing-sm) rounded-(--radius-control) px-(--spacing-md) py-(--spacing-sm) text-(length:--text-xs) has-data-[slot=kbd]:pe-(--spacing-sm) **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-(--ui-z-modal) **:data-[slot=kbd]:rounded-(--radius-control) z-(--ui-z-modal) w-fit max-w-(--ui-width-notice-max) origin-(--trigger-anchor-point) bg-(--color-ink-primary) text-(--color-surface-base)",
+        "data-entering:library-enter data-entering:library-fade data-entering:library-zoom data-exiting:library-exit data-exiting:library-fade data-exiting:library-zoom data-[placement=bottom]:library-slide-top data-[placement=left]:library-slide-right data-[placement=right]:library-slide-left data-[placement=top]:library-slide-bottom inline-flex items-center gap-[calc(var(--spacing,0.25rem)*2)] rounded-(--radius) px-[calc(var(--spacing,0.25rem)*3)] py-[calc(var(--spacing,0.25rem)*2)] text-(length:--text-xs) has-data-[slot=kbd]:pe-[calc(var(--spacing,0.25rem)*2)] **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-(--radius) z-50 w-fit max-w-xs origin-(--trigger-anchor-point) bg-(--foreground) text-(--background)",
         className
       )}
       {...props}
     >
       {children}
       <OverlayArrow
-        className="size-(--spacing-md) translate-y-[calc(-50%-var(--ui-border-rule,2px))] rotate-45 rounded-(--radius-subtle) z-(--ui-z-modal) bg-(--color-ink-primary) fill-(--color-ink-primary)"
+        className="size-[calc(var(--spacing,0.25rem)*3)] translate-y-[calc(-50%-2px)] rotate-45 rounded-[2px] z-50 bg-(--foreground) fill-(--foreground)"
         style={({ placement, defaultStyle }) => ({
           ...defaultStyle,
           rotate: "0deg",

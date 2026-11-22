@@ -32,7 +32,7 @@ function BreadcrumbList<T extends object>({
     <BreadcrumbsPrimitive
       data-slot="breadcrumb-list"
       className={cn(
-        "text-(--color-ink-muted) gap-(--spacing-sm) text-(length:--text-sm) flex flex-wrap items-center wrap-break-word",
+        "text-(--muted-foreground) gap-[calc(var(--spacing,0.25rem)*2)] text-(length:--text-sm) flex flex-wrap items-center wrap-break-word",
         className
       )}
       {...props}
@@ -49,7 +49,7 @@ function BreadcrumbItem({
   return (
     <BreadcrumbPrimitive
       data-slot="breadcrumb-item"
-      className={cn("gap-(--spacing-xs) inline-flex items-center", className)}
+      className={cn("gap-[calc(var(--spacing,0.25rem)*1)] inline-flex items-center", className)}
       {...props}
     >
       {composeRenderProps(children, (children, { isCurrent }) => (
@@ -60,7 +60,7 @@ function BreadcrumbItem({
               data-slot="breadcrumb-separator"
               role="presentation"
               aria-hidden="true"
-              className={cn("[&>svg]:size-(--ui-control-switch-thumb,14px)", separatorClassName)}
+              className={cn("[&>svg]:size-[calc(var(--spacing,0.25rem)*3.5)]", separatorClassName)}
             >
               <LibraryIcon asset="assets.icon-chevron-right" decorative className="" />
             </span>
@@ -75,7 +75,7 @@ function BreadcrumbLink({ className, render, ...props }: LinkProps) {
   return (
     <LinkPrimitive
       data-slot="breadcrumb-link"
-      className={cn("hover:text-(--color-ink-primary) transition-colors duration-(--ui-duration-default) ease-(--default-transition-timing-function)", className)}
+      className={cn("hover:text-(--foreground) transition-colors", className)}
       render={render}
       {...props}
     />
@@ -89,7 +89,7 @@ function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
       role="link"
       aria-disabled="true"
       aria-current="page"
-      className={cn("text-(--color-ink-primary) font-(weight:--font-weight-normal)", className)}
+      className={cn("text-(--foreground) font-normal", className)}
       {...props}
     />
   )
@@ -105,7 +105,7 @@ function BreadcrumbEllipsis({
       role="presentation"
       aria-hidden="true"
       className={cn(
-        "size-[var(--spacing-xl,24px)] [&>svg]:size-(--spacing-lg,16px) flex items-center justify-center",
+        "size-[calc(var(--spacing,0.25rem)*6)] [&>svg]:size-[calc(var(--spacing,0.25rem)*4)] flex items-center justify-center",
         className
       )}
       {...props}

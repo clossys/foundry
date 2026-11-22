@@ -59,11 +59,11 @@
         },
         {
           "path": "components/card/card.tsx",
-          "sha256": "6469fc4a257677c9ed5ea956f6504d4bec7938b9b3db1323676a835d8724a590"
+          "sha256": "7964a3108fded0c48a8e9268fcb770d8c129ce53e52a805e7fba3c523a6d2fc0"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -133,7 +133,7 @@
       ],
       "slot": "components.card",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

@@ -84,11 +84,11 @@
         },
         {
           "path": "components/button/button.tsx",
-          "sha256": "77e0d1e4e96869184cbda427e44d0174db7d91eddbcc57abae9486f62cf71983"
+          "sha256": "d7c72d1f7be890f5ac7a2d3ebc32ffef4ecf03bc9539287256fd51ee67b6d7e2"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -145,6 +145,7 @@
           "themes.border.default",
           "themes.destructive.default",
           "themes.foreground.default",
+          "themes.input.default",
           "themes.muted.default",
           "themes.primary-foreground.default",
           "themes.primary.default",
@@ -163,7 +164,7 @@
       ],
       "slot": "components.button",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

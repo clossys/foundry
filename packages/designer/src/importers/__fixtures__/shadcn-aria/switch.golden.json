@@ -1,5 +1,5 @@
 {
-  "transform": "shadcn-aria-rewrite@3",
+  "transform": "shadcn-aria-rewrite@5",
   "notes": [
     {
       "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
@@ -9,22 +9,22 @@
     {
       "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
       "value": "group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)]",
-      "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
+      "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits."
     },
     {
       "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
       "value": "group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-2px)]",
-      "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
+      "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits."
     },
     {
       "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
       "value": "group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)]",
-      "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
+      "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits."
     },
     {
       "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
       "value": "group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-2px)]",
-      "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read."
+      "message": "Restyled source: none; the stock utility is kept because its restyle read a property no consumer member emits."
     },
     {
       "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
@@ -54,11 +54,11 @@
     },
     {
       "path": "components/switch/switch.tsx",
-      "content": "\"use client\"\n\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  composeRenderProps,\n  Switch as SwitchPrimitive,\n  type SwitchProps as SwitchPrimitiveProps,\n} from \"react-aria-components\"\n\nfunction Switch({\n  className,\n  size = \"default\",\n  children,\n  ...props\n}: SwitchPrimitiveProps & {\n  size?: \"sm\" | \"default\"\n}) {\n  return (\n    <SwitchPrimitive\n      data-slot=\"switch\"\n      data-size={size}\n      className={cn(\n        \"data-checked:bg-(--color-action) data-unchecked:bg-(--color-line-strong) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,2px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,2px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) dark:aria-invalid:ring-(--color-status-danger)/40 aria-invalid:border-(--color-status-danger) dark:aria-invalid:border-(--color-status-danger)/50 dark:data-unchecked:bg-(--color-line-strong)/80 shrink-0 rounded-full border-(length:--ui-border-hairline,1px) border-transparent focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,2px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,2px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger)   data-[size=default]:h-(--ui-control-switch-thumb) data-[size=default]:w-(--spacing-2xl) data-[size=sm]:h-(--ui-control-switch-thumb) data-[size=sm]:w-(--spacing-xl) data-selected:bg-(--color-action) not-data-selected:bg-(--color-line-strong) data-focus-visible:border-(--color-focus-ring) data-focus-visible:outline-solid data-focus-visible:outline-(length:--ui-border-focus,2px) data-focus-visible:outline-offset-(--ui-focus-offset) data-focus-visible:outline-(--color-focus-ring) dark:not-data-selected:bg-(--color-line-strong)/80 data-focus-visible:outline-solid data-focus-visible:outline-(length:--ui-border-focus,2px) data-focus-visible:outline-offset-(--ui-focus-offset) data-focus-visible:outline-(--color-focus-ring) data-invalid:outline-solid data-invalid:outline-(length:--ui-border-focus,2px) data-invalid:outline-offset-(--ui-focus-offset) data-invalid:outline-(--color-status-danger) dark:data-invalid:ring-(--color-status-danger)/40 data-invalid:border-(--color-status-danger) dark:data-invalid:border-(--color-status-danger)/50 data-invalid:outline-solid data-invalid:outline-(length:--ui-border-focus,2px) data-invalid:outline-offset-(--ui-focus-offset) data-invalid:outline-(--color-status-danger) peer group/switch relative inline-flex items-center transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) after:absolute after:-inset-x-3 after:-inset-y-2 data-disabled:cursor-not-allowed data-disabled:opacity-(--ui-alpha-disabled,0.5)\",\n        className\n      )}\n      {...props}\n    >\n      {composeRenderProps(children, (children, { isSelected }) => (\n        <>\n          <span\n            data-slot=\"switch-thumb\"\n            data-selected={isSelected || undefined}\n            className=\"bg-(--color-surface-base) dark:data-unchecked:bg-(--color-ink-primary) dark:data-checked:bg-(--color-ink-on-action) rounded-full group-data-[size=default]/switch:size-(--spacing-lg,16px) group-data-[size=sm]/switch:size-(--spacing-md) group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule,2px))] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule,2px))] group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 dark:not-data-selected:bg-(--color-ink-primary) dark:data-selected:bg-(--color-ink-on-action) group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule,2px))] group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule,2px))] group-data-[size=default]/switch:not-data-selected:translate-x-0 group-data-[size=sm]/switch:not-data-selected:translate-x-0 pointer-events-none block ring-0 transition-transform duration-(--ui-duration-default) ease-(--default-transition-timing-function)\"\n          />\n          {children}\n        </>\n      ))}\n    </SwitchPrimitive>\n  )\n}\n\nexport { Switch }\n"
+      "content": "\"use client\"\n\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  composeRenderProps,\n  Switch as SwitchPrimitive,\n  type SwitchProps as SwitchPrimitiveProps,\n} from \"react-aria-components\"\n\nfunction Switch({\n  className,\n  size = \"default\",\n  children,\n  ...props\n}: SwitchPrimitiveProps & {\n  size?: \"sm\" | \"default\"\n}) {\n  return (\n    <SwitchPrimitive\n      data-slot=\"switch\"\n      data-size={size}\n      className={cn(\n        \"data-checked:bg-(--primary) data-unchecked:bg-(--input) focus-visible:border-(--ring) focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring) aria-invalid:outline-solid aria-invalid:outline-2 aria-invalid:outline-offset-2 aria-invalid:outline-(--destructive) dark:aria-invalid:ring-(--destructive)/40 aria-invalid:border-(--destructive) dark:aria-invalid:border-(--destructive)/50 dark:data-unchecked:bg-(--input)/80 shrink-0 rounded-full border border-transparent focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring) aria-invalid:outline-solid aria-invalid:outline-2 aria-invalid:outline-offset-2 aria-invalid:outline-(--destructive)   data-[size=default]:h-[calc(var(--spacing,0.25rem)*3.5)] data-[size=default]:w-[calc(var(--spacing,0.25rem)*8)] data-[size=sm]:h-[calc(var(--spacing,0.25rem)*3.5)] data-[size=sm]:w-[calc(var(--spacing,0.25rem)*6)] data-selected:bg-(--primary) not-data-selected:bg-(--input) data-focus-visible:border-(--ring) data-focus-visible:outline-solid data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-(--ring) dark:not-data-selected:bg-(--input)/80 data-focus-visible:outline-solid data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-(--ring) data-invalid:outline-solid data-invalid:outline-2 data-invalid:outline-offset-2 data-invalid:outline-(--destructive) dark:data-invalid:ring-(--destructive)/40 data-invalid:border-(--destructive) dark:data-invalid:border-(--destructive)/50 data-invalid:outline-solid data-invalid:outline-2 data-invalid:outline-offset-2 data-invalid:outline-(--destructive) peer group/switch relative inline-flex items-center transition-all after:absolute after:-inset-x-3 after:-inset-y-2 data-disabled:cursor-not-allowed data-disabled:opacity-50\",\n        className\n      )}\n      {...props}\n    >\n      {composeRenderProps(children, (children, { isSelected }) => (\n        <>\n          <span\n            data-slot=\"switch-thumb\"\n            data-selected={isSelected || undefined}\n            className=\"bg-(--background) dark:data-unchecked:bg-(--foreground) dark:data-checked:bg-(--primary-foreground) rounded-full group-data-[size=default]/switch:size-[calc(var(--spacing,0.25rem)*4)] group-data-[size=sm]/switch:size-[calc(var(--spacing,0.25rem)*3)] group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)] group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 dark:not-data-selected:bg-(--foreground) dark:data-selected:bg-(--primary-foreground) group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-2px)] group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-2px)] group-data-[size=default]/switch:not-data-selected:translate-x-0 group-data-[size=sm]/switch:not-data-selected:translate-x-0 pointer-events-none block ring-0 transition-transform\"\n          />\n          {children}\n        </>\n      ))}\n    </SwitchPrimitive>\n  )\n}\n\nexport { Switch }\n"
     },
     {
       "path": "notices/THIRD-PARTY.md",
-      "content": "# Third-party notice\n\nSource: https://github.com/shadcn-ui/ui\nCommit: daaf156ee00ed91cc7e6bdd937c1b4973152d141\nTransform: shadcn-aria-rewrite@3\n\nMIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+      "content": "# Third-party notice\n\nSource: https://github.com/shadcn-ui/ui\nCommit: daaf156ee00ed91cc7e6bdd937c1b4973152d141\nTransform: shadcn-aria-rewrite@5\n\nMIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
     }
   ],
   "outputSha256": [
@@ -68,11 +68,11 @@
     },
     {
       "path": "components/switch/switch.tsx",
-      "sha256": "661e6d41cc4aa193493bd273f1cadd9e7d84332ca3f085c8e8f53a27dc970ca0"
+      "sha256": "34edb5e00c6435f94caecdb40796ffba74bf590ada546285ac44ee72457ab45e"
     },
     {
       "path": "notices/THIRD-PARTY.md",
-      "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+      "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
     }
   ],
   "reads": {
@@ -80,6 +80,7 @@
       "themes.background.default",
       "themes.destructive.default",
       "themes.foreground.default",
+      "themes.input.default",
       "themes.primary-foreground.default",
       "themes.primary.default",
       "themes.ring.default",

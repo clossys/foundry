@@ -68,11 +68,11 @@
         },
         {
           "path": "components/switch/switch.tsx",
-          "sha256": "661e6d41cc4aa193493bd273f1cadd9e7d84332ca3f085c8e8f53a27dc970ca0"
+          "sha256": "34edb5e00c6435f94caecdb40796ffba74bf590ada546285ac44ee72457ab45e"
         },
         {
           "path": "notices/THIRD-PARTY.md",
-          "sha256": "b2f39b21882517dfe1b048d01cd16f1beaa5abc3f06597a7a96bdfa0514c7838"
+          "sha256": "cb935cafe18b4e65848117914bfd5fa0c811613a0b3f34366b589ccf36d1a58a"
         }
       ],
       "parts": [
@@ -116,6 +116,7 @@
           "themes.background.default",
           "themes.destructive.default",
           "themes.foreground.default",
+          "themes.input.default",
           "themes.primary-foreground.default",
           "themes.primary.default",
           "themes.ring.default",
@@ -125,7 +126,7 @@
       "root": "rac:Switch",
       "slot": "components.switch",
       "source": "shadcn@aria",
-      "transform": "shadcn-aria-rewrite@3"
+      "transform": "shadcn-aria-rewrite@5"
     }
   }
 }

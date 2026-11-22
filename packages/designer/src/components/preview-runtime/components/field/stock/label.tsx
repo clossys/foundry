@@ -13,7 +13,7 @@ function Label({ className, htmlFor, slot, ...props }: LabelProps) {
     <LabelPrimitive
       data-slot="label"
       className={cn(
-        "gap-(--spacing-sm) text-(length:--text-sm) leading-(--leading-heading) font-(weight:--font-weight-medium) group-data-[disabled=true]:opacity-(--ui-alpha-disabled,0.5) peer-disabled:opacity-(--ui-alpha-disabled,0.5) peer-data-disabled:opacity-(--ui-alpha-disabled,0.5) flex items-center select-none group-data-[disabled=true]:pointer-events-none peer-disabled:cursor-not-allowed",
+        "gap-[calc(var(--spacing,0.25rem)*2)] text-(length:--text-sm) leading-none font-medium group-data-[disabled=true]:opacity-50 peer-disabled:opacity-50 peer-data-disabled:opacity-50 flex items-center select-none group-data-[disabled=true]:pointer-events-none peer-disabled:cursor-not-allowed",
         className
       )}
       {...props}

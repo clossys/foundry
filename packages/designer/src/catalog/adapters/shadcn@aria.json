@@ -1,159 +1,104 @@
 {
   "bindings": {
     "accent": {
-      "member": "themes.accent.default",
-      "property": "--color-surface-selected"
+      "member": "themes.accent.default"
     },
     "accent-foreground": {
-      "member": "themes.foreground.default",
-      "property": "--color-ink-primary"
+      "member": "themes.foreground.default"
     },
     "background": {
-      "member": "themes.background.default",
-      "property": "--color-surface-base"
+      "member": "themes.background.default"
     },
     "border": {
-      "member": "themes.border.default",
-      "property": "--color-line-base"
+      "member": "themes.border.default"
     },
     "card": {
-      "member": "themes.card.default",
-      "property": "--color-surface-raised"
+      "member": "themes.card.default"
     },
     "card-foreground": {
-      "member": "themes.foreground.default",
-      "property": "--color-ink-primary"
+      "member": "themes.foreground.default"
     },
     "chart-1": {
-      "member": "themes.chart-1.default",
-      "property": "--color-chart-categorical-1"
+      "member": "themes.chart-1.default"
     },
     "chart-2": {
-      "member": "themes.chart-2.default",
-      "property": "--color-chart-categorical-2"
+      "member": "themes.chart-2.default"
     },
     "chart-3": {
-      "member": "themes.chart-3.default",
-      "property": "--color-chart-categorical-3"
+      "member": "themes.chart-3.default"
     },
     "chart-4": {
-      "member": "themes.chart-4.default",
-      "property": "--color-chart-categorical-4"
+      "member": "themes.chart-4.default"
     },
     "chart-5": {
-      "member": "themes.chart-5.default",
-      "property": "--color-chart-categorical-5"
+      "member": "themes.chart-5.default"
     },
     "destructive": {
-      "member": "themes.destructive.default",
-      "property": "--color-status-danger"
+      "member": "themes.destructive.default"
     },
     "foreground": {
-      "member": "themes.foreground.default",
-      "property": "--color-ink-primary"
+      "member": "themes.foreground.default"
     },
     "input": {
-      "property": "--color-line-strong"
+      "member": "themes.input.default"
     },
     "muted": {
-      "member": "themes.muted.default",
-      "property": "--color-surface-sunken"
+      "member": "themes.muted.default"
     },
     "muted-foreground": {
-      "member": "themes.muted-foreground.default",
-      "property": "--color-ink-muted"
+      "member": "themes.muted-foreground.default"
     },
     "popover": {
-      "member": "themes.popover.default",
-      "property": "--color-overlay-surface"
+      "member": "themes.popover.default"
     },
     "popover-foreground": {
-      "member": "themes.foreground.default",
-      "property": "--color-ink-primary"
+      "member": "themes.foreground.default"
     },
     "primary": {
-      "member": "themes.primary.default",
-      "property": "--color-action"
+      "member": "themes.primary.default"
     },
     "primary-foreground": {
-      "member": "themes.primary-foreground.default",
-      "property": "--color-ink-on-action"
+      "member": "themes.primary-foreground.default"
     },
     "radius": {
-      "member": "themes.radius.default",
-      "property": "--radius-control"
+      "member": "themes.radius.default"
     },
     "ring": {
-      "member": "themes.ring.default",
-      "property": "--color-focus-ring"
+      "member": "themes.ring.default"
     },
     "secondary": {
-      "member": "themes.secondary.default",
-      "property": "--color-control-tonal"
+      "member": "themes.secondary.default"
     },
     "secondary-foreground": {
-      "member": "themes.foreground.default",
-      "property": "--color-ink-primary"
+      "member": "themes.foreground.default"
     },
     "sidebar": {
-      "member": "themes.background.default",
-      "property": "--color-surface-base"
+      "member": "themes.background.default"
     },
     "sidebar-accent": {
-      "member": "themes.accent.default",
-      "property": "--color-surface-selected"
+      "member": "themes.accent.default"
     },
     "sidebar-accent-foreground": {
-      "member": "themes.foreground.default",
-      "property": "--color-ink-primary"
+      "member": "themes.foreground.default"
     },
     "sidebar-border": {
-      "member": "themes.border.default",
-      "property": "--color-line-base"
+      "member": "themes.border.default"
     },
     "sidebar-foreground": {
-      "member": "themes.foreground.default",
-      "property": "--color-ink-primary"
+      "member": "themes.foreground.default"
     },
     "sidebar-primary": {
-      "member": "themes.primary.default",
-      "property": "--color-action"
+      "member": "themes.primary.default"
     },
     "sidebar-primary-foreground": {
-      "member": "themes.primary-foreground.default",
-      "property": "--color-ink-on-action"
+      "member": "themes.primary-foreground.default"
     },
     "sidebar-ring": {
-      "member": "themes.ring.default",
-      "property": "--color-focus-ring"
+      "member": "themes.ring.default"
     }
   },
-  "controlProperties": {
-    "h-lg": "--ui-control-h-lg",
-    "h-md": "--ui-control-h-md",
-    "h-sm": "--ui-control-h-sm",
-    "mark": "--ui-control-mark",
-    "row-h": "--ui-control-row-h",
-    "switch-h": "--ui-control-switch-h",
-    "switch-thumb": "--ui-control-switch-thumb",
-    "switch-w": "--ui-control-switch-w"
-  },
-  "controlSizes": {
-    "7": "h-sm",
-    "8": "h-md",
-    "9": "h-lg"
-  },
-  "fieldTypography": {
-    "family": {
-      "member": "themes.font-sans.default",
-      "property": "--font-body"
-    },
-    "sm": {
-      "property": "--text-body"
-    },
-    "xs": {
-      "property": "--text-caption"
-    }
+  "fontFamily": {
+    "member": "themes.font-sans.default"
   },
   "fontSizes": {
     "2xl": "--text-2xl",
@@ -385,46 +330,31 @@
     "style": "nova",
     "url": "https://github.com/shadcn-ui/ui"
   },
-  "sizeLengths": {
-    "14px": {
-      "property": "--ui-control-switch-thumb"
-    },
-    "24px": {
-      "member": "themes.spacing.default",
-      "property": "--spacing-xl"
-    },
-    "32px": {
-      "member": "themes.spacing.default",
-      "property": "--spacing-2xl"
-    }
-  },
-  "sizeSteps": {
-    "3.5": "14px"
+  "sizes": {
+    "lengths": [
+      "14px",
+      "24px",
+      "32px"
+    ],
+    "steps": [
+      "3.5"
+    ]
   },
   "source": "shadcn@aria",
   "spacing": {
-    "1": "xs",
-    "12": "3xl",
-    "16": "4xl",
-    "2": "sm",
-    "24": "5xl",
-    "3": "md",
-    "32": "6xl",
-    "4": "lg",
-    "6": "xl",
-    "8": "2xl"
+    "member": "themes.spacing.default",
+    "steps": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "6",
+      "8",
+      "12",
+      "16",
+      "24",
+      "32"
+    ]
   },
-  "spacingProperties": {
-    "2xl": "--spacing-2xl",
-    "3xl": "--spacing-3xl",
-    "4xl": "--spacing-4xl",
-    "5xl": "--spacing-5xl",
-    "6xl": "--spacing-6xl",
-    "lg": "--spacing-lg",
-    "md": "--spacing-md",
-    "sm": "--spacing-sm",
-    "xl": "--spacing-xl",
-    "xs": "--spacing-xs"
-  },
-  "transform": "shadcn-aria-rewrite@3"
+  "transform": "shadcn-aria-rewrite@5"
 }

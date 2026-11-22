@@ -56,11 +56,11 @@ function ComboboxTrigger({
   return (
     <ButtonPrimitive
       data-slot="combobox-trigger"
-      className={cn("[&_svg:not([class*='size-'])]:size-(--spacing-lg,16px)", className)}
+      className={cn("[&_svg:not([class*='size-'])]:size-[calc(var(--spacing,0.25rem)*4)]", className)}
       {...props}
     >
       {children}
-      <LibraryIcon asset="assets.icon-chevron-down" decorative className="text-(--color-ink-muted) size-(--spacing-lg,16px) pointer-events-none" />
+      <LibraryIcon asset="assets.icon-chevron-down" decorative className="text-(--muted-foreground) size-[calc(var(--spacing,0.25rem)*4)] pointer-events-none" />
     </ButtonPrimitive>
   )
 }
@@ -112,10 +112,10 @@ function ComboboxInput({
             size="icon-xs"
             variant="ghost"
             data-slot="combobox-trigger"
-            className="[&_svg:not([class*='size-'])]:size-(--spacing-lg,16px) group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
+            className="[&_svg:not([class*='size-'])]:size-[calc(var(--spacing,0.25rem)*4)] group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
             isDisabled={disabled}
           >
-            <LibraryIcon asset="assets.icon-chevron-down" decorative className="text-(--color-ink-muted) size-(--spacing-lg,16px) pointer-events-none" />
+            <LibraryIcon asset="assets.icon-chevron-down" decorative className="text-(--muted-foreground) size-[calc(var(--spacing,0.25rem)*4)] pointer-events-none" />
           </InputGroupButton>
         )}
         {showClear && <ComboboxClear isDisabled={disabled} />}
@@ -148,7 +148,7 @@ function ComboboxContent({
       crossOffset={crossOffset}
       triggerRef={anchor}
       className={cn(
-        "bg-(--color-overlay-surface) text-(--color-ink-primary) data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom data-[placement=bottom]:library-slide-top data-[placement=left]:library-slide-right data-[placement=right]:library-slide-left data-[placement=top]:library-slide-bottom ring-(--color-ink-primary)/10 *:data-[slot=input-group]:bg-(--color-line-strong)/30 *:data-[slot=input-group]:border-(--color-line-strong)/30 max-h-[calc(var(--spacing-6xl,128px)*2)] min-w-[var(--spacing-6xl,128px)] overflow-hidden rounded-(--radius-control) shadow-(--ui-elevation-floating) ring-(length:--ui-border-hairline) duration-(--ui-duration-fast,120ms) *:data-[slot=input-group]:m-(--spacing-xs) *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-(--spacing-2xl,32px) *:data-[slot=input-group]:shadow-(--ui-elevation-none) animate-none! relative bg-(--color-overlay-surface)/70 before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:backdrop-blur-2xl before:backdrop-saturate-150 **:data-[slot$=-item]:focus:bg-(--color-ink-primary)/10 **:data-[slot$=-item]:data-highlighted:bg-(--color-ink-primary)/10 **:data-[slot$=-separator]:bg-(--color-ink-primary)/5 **:data-[slot$=-trigger]:focus:bg-(--color-ink-primary)/10 **:data-[slot$=-trigger]:aria-expanded:bg-(--color-ink-primary)/10! **:data-[variant=destructive]:focus:bg-(--color-ink-primary)/10! **:data-[variant=destructive]:text-(--color-ink-primary)! **:data-[variant=destructive]:**:text-(--color-ink-primary)! **:data-[slot$=-item]:data-focused:bg-(--color-ink-primary)/10 relative isolate z-(--ui-z-modal,50) w-(--trigger-width) origin-(--trigger-anchor-point)",
+        "bg-(--popover) text-(--foreground) data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom data-[placement=bottom]:library-slide-top data-[placement=left]:library-slide-right data-[placement=right]:library-slide-left data-[placement=top]:library-slide-bottom ring-(--foreground)/10 *:data-[slot=input-group]:bg-(--input)/30 *:data-[slot=input-group]:border-(--input)/30 max-h-[calc(calc(var(--spacing,0.25rem)*32)*2)] min-w-[calc(var(--spacing,0.25rem)*32)] overflow-hidden rounded-(--radius) shadow-(--shadow-md) ring-1 duration-100 *:data-[slot=input-group]:m-[calc(var(--spacing,0.25rem)*1)] *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-[calc(var(--spacing,0.25rem)*8)] *:data-[slot=input-group]:shadow-none animate-none! relative bg-(--popover)/70 before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:backdrop-blur-2xl before:backdrop-saturate-150 **:data-[slot$=-item]:focus:bg-(--foreground)/10 **:data-[slot$=-item]:data-highlighted:bg-(--foreground)/10 **:data-[slot$=-separator]:bg-(--foreground)/5 **:data-[slot$=-trigger]:focus:bg-(--foreground)/10 **:data-[slot$=-trigger]:aria-expanded:bg-(--foreground)/10! **:data-[variant=destructive]:focus:bg-(--foreground)/10! **:data-[variant=destructive]:text-(--foreground)! **:data-[variant=destructive]:**:text-(--foreground)! **:data-[slot$=-item]:data-focused:bg-(--foreground)/10 relative isolate z-50 w-(--trigger-width) origin-(--trigger-anchor-point)",
         className
       )}
       {...props}
@@ -164,7 +164,7 @@ function ComboboxList<T extends object>({
     <ListBoxPrimitive
       data-slot="combobox-list"
       className={cn(
-        "no-scrollbar max-h-[min(calc(var(--spacing-6xl,128px)*2-var(--spacing-2xl,32px)),calc(var(--available-height,100dvh)-var(--spacing-2xl,32px)))] scroll-py-1 overflow-y-auto p-(--spacing-xs) data-empty:p-0 group/combobox-content max-h-[inherit] overflow-y-auto overscroll-contain",
+        "no-scrollbar max-h-[min(calc(calc(var(--spacing,0.25rem)*32)*2-calc(var(--spacing,0.25rem)*8)),calc(var(--available-height,100dvh)-calc(var(--spacing,0.25rem)*8)))] scroll-py-1 overflow-y-auto p-[calc(var(--spacing,0.25rem)*1)] data-empty:p-0 group/combobox-content max-h-[inherit] overflow-y-auto overscroll-contain",
         className
       )}
       {...props}
@@ -182,7 +182,7 @@ function ComboboxItem<T extends object>({
       data-slot="combobox-item"
       textValue={typeof children === "string" ? children : undefined}
       className={cn(
-        "data-highlighted:bg-(--color-surface-selected) data-highlighted:text-(--color-ink-primary) not-data-[variant=destructive]:data-highlighted:**:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) py-(--spacing-xs) pe-(--spacing-2xl) ps-(--spacing-sm) text-(length:--text-body) [&_svg:not([class*='size-'])]:size-(--spacing-lg,16px) data-focused:bg-(--color-surface-selected) data-focused:text-(--color-ink-primary) not-data-[variant=destructive]:data-focused:**:text-(--color-ink-primary) relative flex w-full cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-(--ui-alpha-disabled,0.5) [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "data-highlighted:bg-(--accent) data-highlighted:text-(--foreground) not-data-[variant=destructive]:data-highlighted:**:text-(--foreground) gap-[calc(var(--spacing,0.25rem)*2)] rounded-(--radius) py-[calc(var(--spacing,0.25rem)*1)] pe-[calc(var(--spacing,0.25rem)*8)] ps-[calc(var(--spacing,0.25rem)*2)] text-(length:--text-sm) [&_svg:not([class*='size-'])]:size-[calc(var(--spacing,0.25rem)*4)] data-focused:bg-(--accent) data-focused:text-(--foreground) not-data-[variant=destructive]:data-focused:**:text-(--foreground) relative flex w-full cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       {...props}
@@ -190,7 +190,7 @@ function ComboboxItem<T extends object>({
       {composeRenderProps(children, (children, { isSelected }) => (
         <>
           {children}
-          <span className="pointer-events-none absolute end-(--spacing-sm) flex size-(--spacing-lg,16px) items-center justify-center">
+          <span className="pointer-events-none absolute end-[calc(var(--spacing,0.25rem)*2)] flex size-[calc(var(--spacing,0.25rem)*4)] items-center justify-center">
             {isSelected ? (
               <LibraryIcon asset="assets.icon-check" decorative className="pointer-events-none" />
             ) : null}
@@ -218,7 +218,7 @@ function ComboboxLabel({ className, ...props }: HeaderProps) {
   return (
     <HeaderPrimitive
       data-slot="combobox-label"
-      className={cn("text-(--color-ink-muted) px-(--spacing-sm) py-(--spacing-sm) text-(length:--text-caption) font-(family-name:--font-body)", className)}
+      className={cn("text-(--muted-foreground) px-[calc(var(--spacing,0.25rem)*2)] py-[calc(var(--spacing,0.25rem)*2)] text-(length:--text-xs) font-(family-name:--font-sans)", className)}
       {...props}
     />
   )
@@ -228,7 +228,7 @@ function ComboboxEmpty({ className, ...props }: ReactComponentProps<"div">) {
   return (
     <div
       data-slot="combobox-empty"
-      className={cn("text-(--color-ink-muted) hidden w-full justify-center py-(--spacing-sm) text-center text-(length:--text-body) group-data-empty/combobox-content:flex", className)}
+      className={cn("text-(--muted-foreground) hidden w-full justify-center py-[calc(var(--spacing,0.25rem)*2)] text-center text-(length:--text-sm) group-data-empty/combobox-content:flex", className)}
       {...props}
     />
   )
@@ -238,7 +238,7 @@ function ComboboxSeparator({ className, ...props }: SeparatorProps) {
   return (
     <SeparatorPrimitive
       data-slot="combobox-separator"
-      className={cn("bg-(--color-line-base) -mx-(--spacing-xs) my-(--spacing-xs) h-(--ui-border-hairline)", className)}
+      className={cn("bg-(--border) -mx-[calc(var(--spacing,0.25rem)*1)] my-[calc(var(--spacing,0.25rem)*1)] h-px", className)}
       {...props}
     />
   )
@@ -248,7 +248,7 @@ function ComboboxChips({ children, className, ...props }: GroupProps) {
   return (
     <Group
       data-slot="combobox-chips"
-      className={cn("dark:bg-(--color-line-strong)/30 border-(--color-line-strong) focus-within:border-(--color-focus-ring) focus-within:outline-solid focus-within:outline-(length:--ui-border-focus,2px) focus-within:outline-offset-(--ui-focus-offset) focus-within:outline-(--color-focus-ring) has-aria-invalid:outline-solid has-aria-invalid:outline-(length:--ui-border-focus,2px) has-aria-invalid:outline-offset-(--ui-focus-offset) has-aria-invalid:outline-(--color-status-danger) dark:has-aria-invalid:ring-(--color-status-danger)/40 has-aria-invalid:border-(--color-status-danger) dark:has-aria-invalid:border-(--color-status-danger)/50 flex min-h-(--spacing-2xl) flex-wrap items-center gap-(--spacing-xs) rounded-(--radius-control) border-(length:--ui-border-hairline,1px) bg-transparent bg-clip-padding px-(--spacing-md) py-(--spacing-xs) text-(length:--text-body) transition-colors duration-(--ui-duration-default) ease-(--default-transition-timing-function) focus-within:outline-solid focus-within:outline-(length:--ui-border-focus,2px) focus-within:outline-offset-(--ui-focus-offset) focus-within:outline-(--color-focus-ring) has-aria-invalid:outline-solid has-aria-invalid:outline-(length:--ui-border-focus,2px) has-aria-invalid:outline-offset-(--ui-focus-offset) has-aria-invalid:outline-(--color-status-danger) has-data-[slot=combobox-chip]:px-(--spacing-xs)", className)}
+      className={cn("dark:bg-(--input)/30 border-(--input) focus-within:border-(--ring) focus-within:outline-solid focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-(--ring) has-aria-invalid:outline-solid has-aria-invalid:outline-2 has-aria-invalid:outline-offset-2 has-aria-invalid:outline-(--destructive) dark:has-aria-invalid:ring-(--destructive)/40 has-aria-invalid:border-(--destructive) dark:has-aria-invalid:border-(--destructive)/50 flex min-h-[calc(var(--spacing,0.25rem)*8)] flex-wrap items-center gap-[calc(var(--spacing,0.25rem)*1)] rounded-(--radius) border bg-transparent bg-clip-padding px-[calc(var(--spacing,0.25rem)*3)] py-[calc(var(--spacing,0.25rem)*1)] text-(length:--text-sm) transition-colors focus-within:outline-solid focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-(--ring) has-aria-invalid:outline-solid has-aria-invalid:outline-2 has-aria-invalid:outline-offset-2 has-aria-invalid:outline-(--destructive) has-data-[slot=combobox-chip]:px-[calc(var(--spacing,0.25rem)*1)]", className)}
       {...props}
     >
       {children}
@@ -298,7 +298,7 @@ function ComboboxChip({
     <TagPrimitive
       data-slot="combobox-chip"
       className={cn(
-        "bg-(--color-surface-sunken) text-(--color-ink-primary) flex h-(--spacing-xl) w-fit items-center justify-center gap-(--spacing-xs) rounded-(--radius-control) px-(--spacing-sm) text-(length:--text-caption) font-(weight:--font-weight-medium) whitespace-nowrap has-data-[slot=combobox-chip-remove]:pe-0 has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-(--ui-alpha-disabled,0.5)",
+        "bg-(--muted) text-(--foreground) flex h-[calc(var(--spacing,0.25rem)*6)] w-fit items-center justify-center gap-[calc(var(--spacing,0.25rem)*1)] rounded-(--radius) px-[calc(var(--spacing,0.25rem)*2)] text-(length:--text-xs) font-medium whitespace-nowrap has-data-[slot=combobox-chip-remove]:pe-0 has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50",
         className
       )}
       {...props}
@@ -309,7 +309,7 @@ function ComboboxChip({
           slot="remove"
           variant="ghost"
           shape="icon-only"
-          className="-ml-(--spacing-xs) opacity-(--ui-alpha-disabled,0.5) hover:opacity-100"
+          className="-ml-[calc(var(--spacing,0.25rem)*1)] opacity-50 hover:opacity-100"
           data-slot="combobox-chip-remove"
         >
           <LibraryIcon asset="assets.icon-close" decorative className="pointer-events-none" />
@@ -325,7 +325,7 @@ function ComboboxChipsInput({ className, ...props }: InputProps) {
     <InputPrimitive
       data-slot="combobox-chip-input"
       className={cn(
-        "min-w-(--spacing-4xl) flex-1 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,2px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)",
+        "min-w-[calc(var(--spacing,0.25rem)*16)] flex-1 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ring)",
         className
       )}
       onKeyDown={(e) => {
