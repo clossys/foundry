@@ -1665,7 +1665,7 @@
 @source inline("src/blocks/library-board/LibraryBoardSection.tsx src/blocks/scene/Scene.tsx");
 @source inline("src/blocks/specimen/Specimen.tsx src/blocks/specimen/SpecimenPanel.tsx src/blocks/stock-combobox.tsx");
 @source inline("src/blocks/stock-select.tsx src/blocks/tree/Tree.tsx src/components/Icon.tsx");
-@source inline("src/components/ResizeHandle.tsx src/components/SearchField.tsx src/components/StatusMark.tsx");
+@source inline("src/components/ResizeHandle.tsx src/components/SearchField.tsx");
 @source inline("src/components/preview-runtime/components/avatar/avatar.tsx");
 @source inline("src/components/preview-runtime/components/button/button.tsx");
 @source inline("src/components/preview-runtime/components/card/card.tsx");
