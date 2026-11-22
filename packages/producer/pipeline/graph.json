@@ -9998,10 +9998,6 @@
           "value": null
         },
         {
-          "flag": "--init",
-          "value": null
-        },
-        {
           "flag": "--json",
           "value": null
         },
@@ -10058,10 +10054,6 @@
           "value": null
         },
         {
-          "flag": "--init",
-          "value": null
-        },
-        {
           "flag": "--json",
           "value": null
         },
@@ -10101,10 +10093,6 @@
         },
         {
           "flag": "--help",
-          "value": null
-        },
-        {
-          "flag": "--init",
           "value": null
         },
         {
@@ -10150,10 +10138,6 @@
           "value": null
         },
         {
-          "flag": "--init",
-          "value": null
-        },
-        {
           "flag": "--json",
           "value": null
         },
@@ -10193,10 +10177,6 @@
         },
         {
           "flag": "--help",
-          "value": null
-        },
-        {
-          "flag": "--init",
           "value": null
         },
         {
@@ -10242,10 +10222,6 @@
           "value": null
         },
         {
-          "flag": "--init",
-          "value": null
-        },
-        {
           "flag": "--json",
           "value": null
         },
@@ -10285,10 +10261,6 @@
         },
         {
           "flag": "--help",
-          "value": null
-        },
-        {
-          "flag": "--init",
           "value": null
         },
         {

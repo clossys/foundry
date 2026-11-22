@@ -54,7 +54,7 @@ import { writerCopyPins } from "../records/writer-copy-slots.js";
 import { writerWording, type WordingRow } from "../records/writer-wording.js";
 import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
 import type { DirectorContent } from "./director-interview.js";
-import { agentOfItem, candidatesOf, chainCommand, contextOf, explainChain, INTERVIEW_AGENTS, openItems, packetOf, PLACEHOLDER_MEANING, QUEUE_ANSWER, skillLine, skillOf, verbOf } from "./chain.js";
+import { agentOfItem, candidatesOf, chainCommand, contextOf, explainChain, INTERVIEW_AGENTS, openItems, packetOf, pinTargetOf, PLACEHOLDER_MEANING, QUEUE_ANSWER, skillLine, skillOf, verbOf } from "./chain.js";
 import type { Context, InterviewAgent, Packet } from "./chain.js";
 import { ladderIssues } from "./candidate-ladder.js";
 import { isDecide } from "./define.js";
@@ -544,7 +544,7 @@ function packetQuestions(packets: readonly Packet[]): Built[] {
   const groups = new Map<string, Packet[]>();
   const shape = (packet: Packet) => {
     const names = candidateNames(packet);
-    return JSON.stringify((packet.options ?? []).map(option => option.argv?.map(word => word === packet.item ? "<item>" : names.has(word) ? `<rank:${names.get(word)}>` : word) ?? null));
+    return JSON.stringify((packet.options ?? []).map(option => option.argv?.map(word => word === packet.item ? "<item>" : word.startsWith(`${packet.item}#`) ? `<item>${word.slice(packet.item.length)}` : names.has(word) ? `<rank:${names.get(word)}>` : word) ?? null));
   };
   for (const packet of packets) {
     const key = `${packet.step}|${shape(packet)}`;
@@ -587,7 +587,7 @@ function requestQuestion(gap: Gap, root: string, agentHeld: ReadonlySet<string> 
   const downstream = { label: `The ${gap.from} re-drafts ${plural(need.length, "slot")} without it.`, calls: need.map(redraft) };
   if (gap.code === "request.writer-keys") {
     const unapproved = writerKeysUnapproved(root).get(slotOf(gap.item)) ?? [];
-    if (newest[0] && (gap.keys ?? []).some(key => unapproved.includes(key))) rows.push({ label: `Pin ${newest[0]}, which holds the keys.`, calls: [["clossys", "pin", gap.item, newest[0], "--basis", "picked", "--by", QUEUE_ANSWER]] });
+    if (newest[0] && (gap.keys ?? []).some(key => unapproved.includes(key))) rows.push({ label: `Pin ${newest[0]}, which holds the keys.`, calls: [["clossys", "pin", pinTargetOf(root, gap.item, newest[0]), newest[0], "--basis", "picked", "--by", QUEUE_ANSWER]] });
     rows.push({ label: `The Writer re-drafts ${gap.item} with the ${plural(gap.keys?.length ?? 0, "missing key")}.`, calls: [redraft(gap.item)] });
     rows.push({ label: `The Publisher re-drafts ${plural(need.length, "record")} without them.`, calls: need.map(redraft) });
   } else if (gap.code === "request.input-not-needed") {

@@ -162,10 +162,7 @@ function runTrace(argv: readonly string[], cwd: string): CliResult {
 }
 
 export async function runPipelineCli(argv: readonly string[], cwd: string): Promise<CliResult> {
-  // `clossys pipeline trace <step> -- <command>`: a pipeline subcommand whose argv after the step id is the traced
-  // command, so it is read before parsePipelineArgs (which would refuse that command's words).
-  const [subcommand, ...traced] = argv;
-  if (subcommand === "trace") return runTrace(traced, cwd);
+  if (argv[0] === "trace") return runTrace(argv.slice(1), cwd);
   let args: PipelineArgs;
   try { args = parsePipelineArgs(argv); }
   catch (error) { return { exitCode: 2, message: `${error instanceof Error ? error.message : String(error)}\n${PIPELINE_USAGE}` }; }

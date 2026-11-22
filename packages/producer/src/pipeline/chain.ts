@@ -25,6 +25,8 @@ import { readSeats } from "./seats.js";
 import type { SeatReport } from "./seats.js";
 import { readJson, slotCounts } from "./status.js";
 import { listModelDir, modelExists } from "../records/slots.js";
+import { isAgentId, parseCandidateName } from "../records/candidate.js";
+import { isRecordSlot } from "../records/resolve.js";
 import type { PipelineStatus } from "./status.js";
 import { STEPS } from "./steps/index.js";
 import { appendRecord, buildRecord, invocationOf, readStore, STEP_ENV, storeFile } from "./trace.js";
@@ -265,6 +267,18 @@ const version = (name: string) => Number(/-v(\d+)\.[a-z]+$/.exec(name)?.[1] ?? 0
  * confirm) is recorded as the owner's and cites that entry; the CLI never records an owner basis without it.
  */
 export const QUEUE_ANSWER = "<queue-answer>";
+/**
+ * The target an owner pin option names for `candidate` of `item` (`<agent>/<slot>`): a slot that pins per record (a
+ * Writer copy or prose slot, clossys.pin-map/1) takes `<agent>/<slot>#<record>`, the record the candidate's name
+ * carries (copy-v2.md -> #copy), as the retired `clossys approve` derived it; any other slot is the item itself.
+ */
+export function pinTargetOf(root: string, item: string, candidate: string): string {
+  const slash = item.indexOf("/");
+  const agent = item.slice(0, slash), slot = item.slice(slash + 1);
+  if (slash < 0 || item.includes("#") || !isAgentId(agent) || !isRecordSlot(root, agent, slot)) return item;
+  const record = parseCandidateName(candidate)?.name;
+  return record === undefined ? item : `${item}#${record}`;
+}
 /** What the answerer fills for each placeholder an owner option's argv carries (the one table; `filled` refuses any other). */
 export const PLACEHOLDER_MEANING: Readonly<Record<string, string>> = {
   // DRAFT copy (not owner-approved).
@@ -350,7 +364,7 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
     add("Start an empty registry now; register each ledger comment with clossys owner-decision add when an owner-gated verb needs it.", ["clossys", "owner-decision", "init"]);
   } else if (step.id.startsWith("pin.")) {
     const names = candidatesOf(root, item);
-    for (const name of names.slice(-3).reverse()) add(`Pin ${name}.`, ["clossys", "pin", item, name, "--basis", "picked", "--by", QUEUE_ANSWER]);
+    for (const name of names.slice(-3).reverse()) add(`Pin ${name}.`, ["clossys", "pin", pinTargetOf(root, item, name), name, "--basis", "picked", "--by", QUEUE_ANSWER]);
     // A slot adopted from the package IA with no candidate yet: the first answer asks for its options.
     if (!names.length) add(`Ask the ${item.slice(0, item.indexOf("/"))} agent for candidates first (the brief for fresh options).`, ["clossys", "options", item, "--more"]);
     add("Not needed: the slot ships nothing.", ["clossys", "pin", item, "--not-needed", "--reason", "<why>", "--by", QUEUE_ANSWER]);
