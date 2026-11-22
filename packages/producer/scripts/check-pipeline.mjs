@@ -65,6 +65,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from "n
 import { tmpdir } from "node:os";
 import { basename, dirname, join, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import ts from "typescript";
 import { consumerPath } from "./consumer-root.mjs";
 
 const PKG = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -126,7 +127,7 @@ const newest = (dir, ext) => {
  * Sources of the dist modules this check loads (transitively) that are newer than their build output.
  * The pipeline imports ../records, ../cli and more; a stale import is as stale as a stale step.
  */
-const LOADED = ["steps/index.js", "define.js", "graph.js", "globs.js", "schema.js", "seats.js", "roster.js"].map(file => join(DIST, file));
+const LOADED = [...["steps/index.js", "define.js", "graph.js", "globs.js", "schema.js", "seats.js", "roster.js"].map(file => join(DIST, file)), join(PKG, "dist", "records", "slots.js")];
 function staleImports(entries) {
   const DIST_ROOT = join(PKG, "dist");
   const seen = new Set();
@@ -161,6 +162,7 @@ else try {
     schema: await import(pathToFileURL(join(DIST, "schema.js")).href),
     seats: await import(pathToFileURL(join(DIST, "seats.js")).href),
     roster: await import(pathToFileURL(join(DIST, "roster.js")).href),
+    slots: await import(pathToFileURL(join(PKG, "dist", "records", "slots.js")).href),
   };
 } catch (error) {
   const rule = /listed by hand/.test(error?.message ?? "") ? "edge.declared" : "step.invalid";
@@ -400,14 +402,47 @@ function buildStages(name, seen = new Set()) {
 }
 
 // ---------------------------------------------------------------- CLI verbs
+// A declaration, not a const: the entry rules read the CLI verbs (cliVerbsLater) before this section runs.
+function escapeRegex(value) { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+/**
+ * Where an `argv[0]` literal reads a verb's own argv, by file: the body of each entry function that the runner
+ * hands the argv after the verb. A step with its own parser runs with `argv.slice(1)` (runner.ts), and its handler
+ * (handlers.ts) passes `context.argv` on as the entry function's first parameter `argv`; an `argv[0]` literal in
+ * that body names a subcommand of the verb (`clossys pipeline trace`), never a top-level verb. Anything this cannot
+ * read exactly (no such handler, another parameter name, an entry that is not a function declaration) marks no
+ * span, so its literals still count as top-level verbs.
+ */
+function verbArgvSpans(handlers) {
+  const spans = new Map();
+  for (const step of steps) {
+    const cli = step.run?.cli, entry = step.run?.entry;
+    if (!cli?.parser || typeof entry !== "string") continue;
+    const [rel, name] = entry.split("#");
+    if (!name || !new RegExp(`["']${escapeRegex(entry)}["']\\s*:\\s*async\\s+context\\s*=>\\s*${escapeRegex(name)}\\(\\s*context\\.argv\\s*[,)]`).test(handlers)) continue;
+    const file = join(PKG, rel);
+    if (!existsSync(file)) continue;
+    const source = ts.createSourceFile(file, text(file), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    for (const node of source.statements) {
+      if (!ts.isFunctionDeclaration(node) || node.name?.text !== name || !node.body) continue;
+      const first = node.parameters[0];
+      if (!first || !ts.isIdentifier(first.name) || first.name.text !== "argv") continue;
+      spans.set(file, [...(spans.get(file) ?? []), [node.body.getStart(source), node.body.getEnd()]]);
+    }
+  }
+  return spans;
+}
 function cliVerbs() {
   const verbs = new Set();
   const cliDir = join(PKG, "src", "cli");
   const args = existsSync(join(cliDir, "args.ts")) ? text(join(cliDir, "args.ts")) : "";
   for (const match of args.matchAll(/export const (?:VERBS|COMMANDS)\s*=\s*\[([^\]]*)\]/g)) for (const verb of match[1].matchAll(/["']([a-z][a-z-]*)["']/g)) verbs.add(verb[1]);
-  for (const file of [...walk(cliDir), ...walk(join(PKG, "src", "pipeline"))]) for (const match of text(file).matchAll(/argv\[0\]\s*===\s*["']([a-z][a-z-]*)["']/g)) verbs.add(match[1]);
-  // The runner hands a verb with its own parser to that step's handler: it is a verb when the parser exists and a handler is registered.
   const handlers = existsSync(join(PKG, "src", "pipeline", "handlers.ts")) ? text(join(PKG, "src", "pipeline", "handlers.ts")) : "";
+  const own = verbArgvSpans(handlers);
+  for (const file of [...walk(cliDir), ...walk(join(PKG, "src", "pipeline"))]) for (const match of text(file).matchAll(/argv\[0\]\s*===\s*["']([a-z][a-z-]*)["']/g)) {
+    if ((own.get(file) ?? []).some(([start, end]) => match.index >= start && match.index < end)) continue;
+    verbs.add(match[1]);
+  }
+  // The runner hands a verb with its own parser to that step's handler: it is a verb when the parser exists and a handler is registered.
   for (const step of steps) {
     const cli = step.run?.cli;
     if (cli?.parser && step.run.entry && existsSync(join(PKG, cli.parser)) && new RegExp(`["']${step.run.entry.replace(/[.$]/g, "\\$&")}["']\\s*:`).test(handlers)) verbs.add(cli.verb);
@@ -435,10 +470,23 @@ for (const verb of verbs) {
 }
 
 // ---------------------------------------------------------------- options
-/** Flags each parser defines, read from the parser source; `own` verbs parse their own argv. */
+/**
+ * Flags each parser defines, read from the parser source; `own` verbs parse their own argv. A parser defines a flag
+ * by its own `case "--x"` / `=== "--x"` branch, or by listing it in a `parser(usage, [valued], [bare])` call: the
+ * flag lists of the shared flag parser a verb module builds its argv parser with (cli/owner.ts `parser`).
+ */
 function parserFlags(file) {
   if (!existsSync(file)) return new Set();
-  return new Set([...text(file).matchAll(/(?:case\s+|===\s*)["'](--[a-z][a-z0-9-]*)["']/g)].map(match => match[1]));
+  const source = text(file);
+  const flags = new Set([...source.matchAll(/(?:case\s+|===\s*)["'](--[a-z][a-z0-9-]*)["']/g)].map(match => match[1]));
+  for (const call of source.matchAll(/\bparser\s*\(/g)) {
+    const [, ...lists] = callArgs(source, call.index + call[0].length);
+    for (const list of lists) {
+      if (!list.trim().startsWith("[")) continue;
+      for (const flag of list.matchAll(/["'](--[a-z][a-z0-9-]*)["']/g)) flags.add(flag[1]);
+    }
+  }
+  return flags;
 }
 const SHARED_PARSER = join(PKG, "src", "cli", "args.ts");
 function flagsFor(step) {
@@ -488,6 +536,10 @@ const seatDir = consumerPath("agents", "producer");
 const seatStep = id => (typeof id === "string" && id.startsWith("seat.") ? id.slice("seat.".length) : undefined);
 if (existsSync(seatDir)) for (const name of readdirSync(seatDir)) {
   if (!statSync(join(seatDir, name)).isDirectory()) continue;
+  // Folders that cannot be slot folders (records/slots.ts isSlotFolderName, the rule every agent's slot loaders use:
+  // the `_` non-slot folders such as `_retired/`, and `retired/`) hold no seat; every other folder must be a seat slot.
+  // Without the built rule (dist.missing above) no folder is skipped.
+  if (lib && !lib.slots.isSlotFolderName(name)) continue;
   const id = seatStep(name);
   if (id === undefined) { fail("seat.invalid", `clossys/agents/producer/${name}/ is not a seat slot: seat folders are named seat.<step-id>`); continue; }
   const step = byId.get(id);
@@ -501,7 +553,9 @@ if (existsSync(seatIa)) {
   for (const node of Array.isArray(ia?.nodes) ? ia.nodes : []) for (const child of Array.isArray(node?.children) ? node.children : []) for (const id of Array.isArray(child?.slots) ? child.slots : []) {
     const step = byId.get(seatStep(id));
     if (!step || !isDecide(step)) { fail("seat.invalid", `clossys/agents/producer/ia.json places ${id}, which is not seat.<decide step id>`); continue; }
-    if (node.id !== step.stage.split(".")[0] || child.id !== step.stage) fail("seat.invalid", `clossys/agents/producer/ia.json places ${id} under ${node.id}/${child.id}; its step's stage is ${step.stage}`);
+    // A step with no stage (stage.missing above) has no place to match: its placement fails too, and the check reads on.
+    const stage = typeof step.stage === "string" ? step.stage : undefined;
+    if (stage === undefined || node.id !== stage.split(".")[0] || child.id !== stage) fail("seat.invalid", `clossys/agents/producer/ia.json places ${id} under ${node.id}/${child.id}; ${stage === undefined ? "its step names no stage" : `its step's stage is ${stage}`}`);
   }
 }
 
