@@ -12,7 +12,6 @@ import { componentLeaf } from "../../runtime/component-leaf.js";
 import { BADGE_TONE } from "../../components/surface-tones.js";
 
 const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
-const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const RULE_CLASSES: Record<SectionGround, string> = {
@@ -33,7 +32,7 @@ const FIGURE_VALUE_CLASSES: Record<ItemSize, string> = { standard: "text-h2", di
 const STATUS_BACKING_CLASSES: Record<SectionGround, string> = { base: "", sunken: "", inverse: "bg-surface-raised" };
 /** The same shaped, visibly labelled state in static and disclosure meta rows. */
 export function renderItemStatus(item: ItemData, row = false, ground: SectionGround = "base") {
-  return item.status === undefined ? null : <StatusMark data-item-status="" tone={item.status.tone} className={cx(row ? "tablet:ms-auto" : undefined, STATUS_BACKING_CLASSES[ground])}>{item.status.label}</StatusMark>;
+  return item.status === undefined ? null : <SemanticContent as="span" data-item-status="" data-tone={item.status.tone} className={cx(row ? "tablet:ms-auto" : undefined, STATUS_BACKING_CLASSES[ground])}>{item.status.label}</SemanticContent>;
 }
 /** One canonical item renderer, used by standalone Item and every Items arrangement. */
 export function ItemRenderer({ item, treatment, size, ground, headingLevel, statement = false, className: spanClassName, span, sharedVisualRow = false, orderClassName, navigation, profile, row = false }: {

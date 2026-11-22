@@ -27,23 +27,23 @@
   "sections": {
     "people": {
       "composes": [
+        "components.button",
         "components.icon",
-        "components.link",
         "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.button",
           "components.icon",
-          "components.link",
           "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.button",
             "components.icon",
-            "components.link",
             "components.semantic-content"
           ],
           "themes": [
@@ -61,7 +61,7 @@
           },
           {
             "path": "packages/designer/src/blocks/stretched-link.tsx",
-            "sha256": "20c899ae1a637fe6ece7a4a7bca2f94065462d7fcb3a0d09a24fea28c275fd8f"
+            "sha256": "b446684e391b8b03a30f4098f0122f112d9c9dc15c15adf703869dbda45398df"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

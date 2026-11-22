@@ -10,7 +10,7 @@ type StockAvatar = typeof import("../../components/preview-runtime/components/av
 const Avatar = componentLeaf<StockAvatar["Avatar"]>("components.avatar");
 const AvatarImage = componentLeaf<StockAvatar["AvatarImage"]>("components.avatar", "AvatarImage");
 const AvatarFallback = componentLeaf<StockAvatar["AvatarFallback"]>("components.avatar", "AvatarFallback");
-const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const LEAF = "sections.account-summary";

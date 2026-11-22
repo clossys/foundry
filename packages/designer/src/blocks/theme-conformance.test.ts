@@ -478,33 +478,21 @@ describe("Block theme conformance", () => {
     expect(conformanceFindings(input)).toEqual([]);
   });
 
-  it("registers canonical LegalProse once with its owned and delegated reading pairs", () => {
+  // BR-RETIRE3: LegalProse (sections.legal-prose, retired 2026-11-11) was deleted; the canonical-registration and
+  // unregistered-export proof moves to the comparison section's LibraryBoardSection registration.
+  it("registers a canonical section export once and reports it as unregistered when its registration is dropped", () => {
     const input = realInputs();
-    const entries = input.registrations.filter(entry => entry.exportName === "LegalProse");
+    const entries = input.registrations.filter(entry => entry.exportName === "LibraryBoardSection");
     expect(entries).toHaveLength(1);
     const entry = entries[0]!;
     expect(CANONICAL_SECTION_BLOCK_REGISTRATIONS.filter(item => item.export === entry.exportName)).toEqual([
-      { id: "sections.legal-prose", export: "LegalProse", source: entry.source },
+      { id: "sections.comparison", export: "LibraryBoardSection", source: entry.source },
     ]);
-    expect(entry.source).toBe("src/blocks/LegalProse.tsx");
-    expect(entry).not.toHaveProperty("exemptionReason");
-    expect(NON_BLOCK_THEME_EXPORTS).not.toHaveProperty("LegalProse");
-    expect(entry.contrastPairs).toEqual([
-      "ink-primary/surface-base", "ink-secondary/surface-base",
-      "ink-primary/surface-sunken", "ink-link/surface-base",
-    ]);
-    const graph = sourceGraph(entry.source, input.sources);
-    expect(graph).toContain("src/components/SemanticContent.tsx");
-    expect(graph).toContain("src/blocks/SectionHeader.tsx");
-    expect(graph).toContain("src/blocks/ArticleBody.tsx");
-    const source = input.sources.get(entry.source)!;
-    expect(source).toContain('dsAttrs("sections", "sections.legal-prose", "foundry/sections.legal-prose")');
-    expect(source).toContain('className="text-body-s text-ink-secondary"');
-    expect(sourceEvidence(entry.source, source).paintTokens).toContain("--color-ink-secondary");
+    expect(NON_BLOCK_THEME_EXPORTS).not.toHaveProperty("LibraryBoardSection");
     const baseline = conformanceFindings(input);
     expect(baseline.filter(finding => finding.includes(entry.exportName) || finding.includes(entry.source))).toEqual([]);
     input.registrations = input.registrations.filter(item => item.exportName !== entry.exportName);
-    expect(conformanceFindings(input).sort()).toEqual([...baseline, "unregistered barrel export LegalProse"].sort());
+    expect(conformanceFindings(input).sort()).toEqual([...baseline, "unregistered barrel export LibraryBoardSection"].sort());
   });
 
   it("follows real re-exports and nested runtime render helpers", () => {

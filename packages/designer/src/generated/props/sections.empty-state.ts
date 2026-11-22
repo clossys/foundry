@@ -1,5 +1,5 @@
 // Generated from sections.empty-state by src/generated/props/generate.ts; do not edit.
-export const emptyStateContractSha256 = "0b7406381f1b83472830d29cd0cf3ed9a6d57c79819c48a38d948ffa8f4b6e3e";
+export const emptyStateContractSha256 = "8cfbb94c679058e202fb498efbc88a59ba293e91aba0a95abb017233f621a843";
 
 export type EmptyStateCopy = {
   header?: {

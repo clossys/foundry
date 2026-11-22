@@ -5,7 +5,7 @@ import { object, SectionContentError, text, type SectionContent } from "./group-
 import { componentLeaf } from "../component-leaf.js";
 
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
-const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 
 /** Live commands are consumer-owned and never enter the JSON content snapshot. */
 export interface MessageSectionHost {

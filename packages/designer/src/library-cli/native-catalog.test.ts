@@ -106,7 +106,8 @@ it("adopts and reselects the existing RichText package candidate with its source
   const adopt = (library: CompositeLibraryData) => applyLibraryChange(catalog, library, {
     baseHash: libraryHash(library),
     changes: [
-      ...["components.badge", "components.link", "components.semantic-content", "components.checkbox", "components.table"].map(dependency => ({ portion: "components" as const, change: { op: "adopt" as const, slot: dependency, source: "foundry" } })),
+      // Retargeted (BR-RETIRE3): components.link is retired (owner 2026-11-20); RichText's links render components.button's LinkButton.
+      ...["components.badge", "components.button", "components.semantic-content", "components.checkbox", "components.table"].map(dependency => ({ portion: "components" as const, change: { op: "adopt" as const, slot: dependency, source: "foundry" } })),
       // Retargeted (planner:C5-DREC, owner D6 2026-11-11): before shadcn@aria; after its real source, foundry.
       { portion: "components", change: { op: "adopt", slot, source: "foundry" } },
     ],

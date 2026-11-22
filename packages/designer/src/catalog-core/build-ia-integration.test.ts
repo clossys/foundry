@@ -45,8 +45,9 @@ describe("combined five-layer build IA", () => {
     const build = loadBuildCatalog();
     // planner:C5-DREC: 13 owner retirements (D2/LAD-1/LAD-2); foundry-build-0018 adds 22 studio-killed and 6 recut ids (frames.sheet and frames.command stay live, review r1 P1);
     // foundry-build-0032 (audit P12) adds assets.icon-business and assets.icon-institution (into assets.icon-organization).
+    // BR-RETIRE3: the owner's 2026-11-20 three (components.link, components.media-player, components.status-mark) make 46.
     // Frames and sections migration aliases stay separate from this global registry.
-    expect(build.retired).toHaveLength(43);
+    expect(build.retired).toHaveLength(46);
     expect(build.retired.filter(entry => entry.id.startsWith("frames.")).map(entry => entry.id)).toEqual(["frames.document"]);
     expect(build.retiredByLayer.frames).toEqual(frameRetired);
     expect(build.retiredByLayer.frames).toHaveLength(4);

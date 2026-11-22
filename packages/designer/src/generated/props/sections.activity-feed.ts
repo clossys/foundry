@@ -1,5 +1,5 @@
 // Generated from sections.activity-feed by src/generated/props/generate.ts; do not edit.
-export const activityFeedContractSha256 = "cbd818b264f95d1086692b84b7d023cb86e47b845d91c086ac39e309041a9f59";
+export const activityFeedContractSha256 = "735d790243cd3e16751030e2bf0012d35b9eb40e6cb887ee0bd91a4b7a539e91";
 
 export type ActivityFeedCopy = {
   header?: {

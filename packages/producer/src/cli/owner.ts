@@ -13,7 +13,6 @@
  *   clossys seat <step> --by <who> ((--model <id> --tier low|mid|high | --llm-from <step>) --prompt-file <path> | --no-llm) [--procedure <text> --command <verb>] --decided-by owner:queue.<kind>#<id>|planner[:<ref>] [--root <dir>]
  *   clossys rule --init [--root <dir>]
  *   clossys rule <R-ID> --quote <text> --date <YYYY-MM-DD> --status enforced|unenforced|pending-wire [--check <id>]... [--fixture <path>] [--fixture-run <cmd>]... [--note <text>] [--replace] [--root <dir>]
- *   clossys approve writer/<slot> <candidate-id> [--by owner[:<ref>]] [--at <iso>] [--root <dir>]
  *   clossys owner-decision add --ref <ledger ref> --scope <op,...> --quote-file <file> [--date <YYYY-MM-DD>] [--root <dir>]
  *   clossys owner-decision init [--root <dir>]
  *   clossys retire <agent>/<slot> <candidate> --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]
@@ -24,7 +23,7 @@
  * Slot-model reads go through the one reader (records/slots.ts); see check:single-reader.
  */
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { packagePath } from "../package-path.js";
 import { checkSlotModel, RETIRED_DIR } from "../records/slot-check.js";
@@ -36,13 +35,13 @@ import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, 
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { feedsIndex } from "../records/slot-model/derive.js";
 import { PRODUCER_IA_SOURCE } from "../records/slot-model/pipeline-seats.js";
-import { adoptedCurrentSlots, driftCounts, holdsRecord, knownSlots, SYNC_AGENTS, syncPlan, syncState, syncVerdict, type SyncAgent, type SyncVerdict } from "../records/slot-model/ia-sync.js";
+import { adoptedCurrentSlots, driftCounts, holdsRecord, knownSlots, RETIRED_SEATS_DIR, SYNC_AGENTS, syncPlan, syncState, syncVerdict, type SeatRetire, type SyncAgent, type SyncVerdict } from "../records/slot-model/ia-sync.js";
 import { consumedIds, consumedLeaves, filterFoundryIa, filterIa } from "../records/slot-model/consumed.js";
 import { consumerGraph, PublisherDataError } from "../check/ia-orphans.js";
 import { pinRecords, validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
 import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, retireAnswerUses, retireBinding, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writeSeatDecision } from "../records/slot-write.js";
-import "../constitution/guard.js"; // registers the write guard's runner (seat, approve)
+import "../constitution/guard.js"; // registers the write guard's runner (seat)
 import { LEDGER_FILE, skillPath } from "../records/ledger.js";
 import { readStandard, slotKinds, standardFits } from "../records/standards.js";
 import type { ModelAgent } from "../records/slot-model/index.js";
@@ -51,15 +50,13 @@ import type { Step } from "../pipeline/define.js";
 import { loadSchema, validateFile, validateValue } from "../pipeline/schema.js";
 import { readSeat } from "../pipeline/seats.js";
 import { SEAT_POLICY_FILE, SEAT_POLICY_SCHEMA, validateSeatPolicy } from "../pipeline/seat-policy.js";
-import { writerKeysUnapproved } from "../pipeline/status.js";
 import { STEPS } from "../pipeline/steps/index.js";
 import { RETIRE_CODES, RETIRE_REASON } from "../constitution/checks/R10-retire.js";
 import { validateAgainst } from "../constitution/schema.js";
 import { IA_KIND, slotWriteKind } from "../constitution/green.js";
-import { isTargetSlot, oldSlotRefusal, pinTargetSlot, resolveCandidate } from "./pin.js";
-import { parseCandidateName } from "../records/candidate.js";
-import { readPinFile, usesPinMap } from "../records/pin-map.js";
-import { errorMessage, isAbsent } from "../errors.js";
+import { oldSlotRefusal, resolveCandidate } from "./pin.js";
+import { readPinFile } from "../records/pin-map.js";
+import { errorMessage } from "../errors.js";
 import { consumerSlotFolders, positionIa, serializeSlot, SLOT_SCHEMA as SLOT_V2_SCHEMA, validateSlot } from "../records/slot.js";
 import { currentView, slotReadIssues } from "../records/slot-current.js";
 import { buildPin, cliActor, ownerAnswerRef, pinIssues, toIsoZ } from "../records/pin.js";
@@ -94,7 +91,7 @@ export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--s
   + "  --standard names the standard the slot is judged by (packages/<agent>/standards/<id>/, R15.1): it must exist, be valid and serve the slot's kind; alone it keeps the written contract.\n"
   + "  producer/<seat>: names the standard of a seat slot clossys seat wrote (kind seat); --contract may add requirements but keeps the seat's step. Nothing else of a seat is written here.\n"
   + "  publisher/release.<pub>: creates the release slot (clossys.slot/2 kind release) of an existing publication <pub> (a placed\n"
-  + "  publisher/publication.<pub> slot or a publisher ia.json publication), once; its candidates are the manifests clossys release <pub> --manifest writes.\n"
+  + "  publisher/publication.<pub> slot or a publisher ia.json publication), once; its candidates are the manifests clossys publisher release <pub> --manifest writes.\n"
   + "  --adopt writes the agent's Foundry IA (ia.json and every slot.json, inputs and uses derived) where it has no ia.json (Director, Designer, Writer; the Director's first).\n"
   + "  --start writes an empty workspace IA instead; --under then adds its L1/L2 groups as it places each slot.\n"
   + "  sync refreshes ia.json and every slot.json structure field from the package IA the consumer resolves (declared extensions kept; candidates, pins and ledgers untouched); --check lists the drift and exits 1 on any.\n"
@@ -139,8 +136,6 @@ export const OWNER_DECISION_USAGE = "Usage: clossys owner-decision add --ref <le
   + `  --scope: what the decision authorizes, one or more of ${OWNER_DECISION_SCOPES.join(", ")};\n`
   + "  --quote-file: a file holding the owner's words (or their summary) on one line, the decision's summary;\n"
   + "  --date: the date of the owner's words (default today, UTC). A registered id is never rewritten.";
-export const APPROVE_USAGE = "Usage: clossys approve writer/<slot>[#<record>] <candidate-id> --by owner:queue.<kind>#<id> [--at <iso>] [--root <dir>]\n"
-  + "  the owner approves a Writer candidate's copy: it is pinned (basis picked) and its keys are approved.";
 
 // ---------------------------------------------------------------- shared
 interface Flags { positional: string[]; values: Map<string, string[]>; bare: Set<string>; help: boolean }
@@ -228,10 +223,10 @@ const GATE_FLAGS = ["--owner-ref", "--at", "--root"];
  * A dry run validates what a write validates and runs the same slot model check on the planned files in
  * memory: it refuses (exit 1) exactly where the write would be refused, and lists the files either way.
  */
-function commitIa(consumer: string, root: string, writes: readonly (readonly [string, string])[], dry: boolean, summary: string, lines: readonly string[] = [], message = `ia: ${summary}`, who: IaWho = {}, extra: ReadonlyMap<string, Readonly<Record<string, unknown>>> = new Map()): CliResult {
+function commitIa(consumer: string, root: string, writes: readonly (readonly [string, string])[], dry: boolean, summary: string, lines: readonly string[] = [], message = `ia: ${summary}`, who: IaWho = {}, extra: ReadonlyMap<string, Readonly<Record<string, unknown>>> = new Map(), moves: readonly SeatRetire[] = []): CliResult {
   const rel = (path: string) => relative(root, path).split(sep).join("/");
   if (dry) {
-    const files = writes.map(([path]) => rel(path));
+    const files = [...writes.map(([path]) => rel(path)), ...moves.map(move => `${rel(move.from)}/ -> ${rel(move.to)}/`)];
     const shown = files.length > 25 ? [...files.slice(0, 25), `... and ${files.length - 25} more`] : files;
     const listed = [...lines.map(line => `  ${line}`), ...shown.map(file => `  write ${file}`)];
     const added = plannedIssues(consumer, writes);
@@ -248,13 +243,16 @@ function commitIa(consumer: string, root: string, writes: readonly (readonly [st
   const targets = writes.map(([path, bytes]) => iaWriteTarget(consumer, path, bytes));
   const ledgers = [...new Set(writes.map(([path]) => join(dirname(path), LEDGER_FILE)))];
   const by = who.by ?? "planner", at = who.at || new Date().toISOString();
+  // A retired seat's folder moves whole after the files (the `clossys retire --slot` place); an undo moves it back.
+  const moveBack = () => { for (const move of [...moves].reverse()) { if (modelExists(move.to) && !modelExists(move.from)) moveModelEntry(move.to, move.from); dropEmptyDir(dirname(move.to)); } };
   const added = guarded(consumer, [...writes.map(([path]) => path), ...ledgers], () => {
     for (const [path, bytes] of writes) replaceFile(path, bytes);
     for (const target of targets) {
       if (target.slot === undefined) appendIaEvent(consumer, target.agent, { by, at, fields: { kind: target.kind } });
       else appendSlotDocEvent(consumer, target.agent, target.slot, { by, at, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: target.kind, ...(extra.get(`${target.agent}/${target.slot}`) ?? {}) } });
     }
-  });
+    for (const move of moves) moveModelEntry(move.from, move.to);
+  }, { undo: moveBack });
   if (added.length) return refuse("ia", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);
   return { exitCode: 0, root, message: [message, ...lines.map(line => `  ${line}`)].join("\n") };
 }
@@ -572,6 +570,7 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
   }
   // The write: per agent, the sync plan (ia.json and the changed slot.json files); an undeclared leaf refuses the whole sync.
   const writes: [string, string][] = [];
+  const moves: SeatRetire[] = [];
   const lines: string[] = [];
   for (const agent of agents) {
     const state = syncState(consumer, agent);
@@ -591,7 +590,9 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
       }
     }
     writes.push(...plan.writes);
-    lines.push(`${agent}: ${plan.writes.length} file${plan.writes.length === 1 ? "" : "s"}${plan.adopted.length ? `, adopted ${plan.adopted.join(", ")}` : ""}`);
+    moves.push(...plan.retired);
+    const retiredIds = state.retiring;
+    lines.push(`${agent}: ${plan.writes.length} file${plan.writes.length === 1 ? "" : "s"}${plan.adopted.length ? `, adopted ${plan.adopted.join(", ")}` : ""}${retiredIds.length ? `, retired ${retiredIds.join(", ")} (the package defines no such step; agents/${agent}/${RETIRED_SEATS_DIR}/)` : ""}`);
   }
   for (const repair of repairs) {
     writes.push([repair.path, repair.bytes]);
@@ -602,11 +603,11 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
     const shown = report(before);
     return { exitCode: before.exitCode, root, message: [`ia sync: nothing written; ${shown.head}`, ...shown.lines].join("\n") };
   }
-  const result = commitIa(consumer, root, writes, dry, `sync ${agents.join(", ")} from the package IA (${before.failing.length + repairs.length} drift finding${before.failing.length + repairs.length === 1 ? "" : "s"})`, lines, undefined, { at });
+  const result = commitIa(consumer, root, writes, dry, `sync ${agents.join(", ")} from the package IA (${before.failing.length + repairs.length} drift finding${before.failing.length + repairs.length === 1 ? "" : "s"})`, lines, undefined, { at }, undefined, moves);
   if (result.exitCode !== 0) return result;
   if (dry) {
     // Nothing is written: the findings no planned file repairs are the ones the write would leave.
-    const planned = new Set(writes.map(([path]) => path));
+    const planned = new Set([...writes.map(([path]) => path), ...moves.map(move => slotFile(move.from))]);
     const left = before.failing.filter(finding => !planned.has(finding.slot === undefined ? iaPath(consumer, finding.agent) : slotFile(slotDir(consumer, finding.agent, finding.slot))));
     if (!left.length) return result;
     return { ...result, exitCode: 1, message: [result.message, `  ${left.length} drift finding${left.length === 1 ? "" : "s"} the write would not repair:`, ...left.slice(0, 60).map(finding => `  ${finding.agent} ${finding.kind}: ${finding.detail}`)].join("\n") };
@@ -841,7 +842,7 @@ const RELEASE_FAMILY: SlotKind = "publication";
 const RELEASE_STANDARD = "release";
 
 /**
- * REL-SLOT: the release slot `publisher/release.<pub>` that `clossys release <pub>` reads (release/paths.ts). It applies
+ * REL-SLOT: the release slot `publisher/release.<pub>` that `clossys publisher release <pub>` reads (release/paths.ts). It applies
  * to `--kind release` on any target and to any Publisher `release.<pub>` id (which the slot/2 reader takes as a release
  * slot whatever kind it declares): undefined for every other slot. The slot is created once, by the Publisher, for a
  * publication that exists (a placed `publisher/publication.<pub>` slot that is not retired, or a publisher ia.json
@@ -860,7 +861,7 @@ function releasePlacement(consumer: string, root: string, ia: AgentIaFile, agent
   if (givenKind !== undefined && givenKind !== "release") return { error: `${target} is a release slot id: it takes --kind release, not ${givenKind}` };
   if (given.standard !== undefined && given.standard !== RELEASE_STANDARD) return { error: `${target} is a release slot: it is judged by --standard ${RELEASE_STANDARD}, not ${given.standard}` };
   if (exists) {
-    if (givenKind !== undefined || given.under) return { error: `${target} already exists: a release slot is created once (its manifests are written by clossys release ${publicationOf(root, slot)} --manifest; --contract or --standard alone rewrites it)` };
+    if (givenKind !== undefined || given.under) return { error: `${target} already exists: a release slot is created once (its manifests are written by clossys publisher release ${publicationOf(root, slot)} --manifest; --contract or --standard alone rewrites it)` };
     return undefined;
   }
   const publication = publicationOf(root, slot);
@@ -1252,53 +1253,6 @@ export async function runRuleCli(argv: readonly string[], cwd: string): Promise<
   if (issues.length) return refuse("rule", issues.map(issue => `${issue.path} ${issue.message}`).join("; "));
   replaceFile(file, `${JSON.stringify(next, null, 2)}\n`);
   return { exitCode: 0, root, message: `rule: ${at >= 0 ? "replaced" : "added"} ${id} (${status}) in ${RULES_FILE}` };
-}
-
-// ---------------------------------------------------------------- clossys approve
-const parseApprove = parser(APPROVE_USAGE, ["--by", "--at", "--root"], []);
-
-export async function runApproveCli(argv: readonly string[], cwd: string): Promise<CliResult> {
-  const flags = parseApprove(argv);
-  if (flags.help) return { exitCode: 0, message: APPROVE_USAGE };
-  const [target, candidateId, ...extra] = flags.positional;
-  if (!target || !candidateId || extra.length) throw new CliUsageError(`approve takes writer/<slot> and a candidate id\n${APPROVE_USAGE}`);
-  if (!target.startsWith("writer/")) return refuse("approve", `approve is the owner's Writer copy approval; ${target} is not a Writer slot`);
-  const slot = target.slice("writer/".length);
-  const by = one(flags, "--by") ?? "owner";
-  // Approval is the owner's: an agent pick (clossys pick) or a planner pin is not editorial approval.
-  if (!/^owner(:\S.*)?$/.test(by)) return refuse("approve", `--by ${by}: only the owner approves Writer copy`);
-  const at = one(flags, "--at") ?? new Date().toISOString();
-  if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${APPROVE_USAGE}`);
-  const root = rootOf(cwd, flags), consumer = join(root, "clossys");
-  // One format (foundry-build-0048 U13): approve writes clossys.pin/2 (a Writer pin-map record) through the gated pin
-  // path on a clossys.slot/2 slot only; the owner's approval names the queue entry it answers.
-  const hash = slot.indexOf("#");
-  const slotId = hash < 0 ? slot : slot.slice(0, hash);
-  if (!isTargetSlot(root, "writer", slotId)) return refuse("approve", oldSlotRefusal("approve", `writer/${slotId}`).replace(/^approve refused: /, ""));
-  if (!ownerAnswerRef(by)) return refuse("approve", `--by ${by} names no queue answer; the owner approves with --by owner:queue.<kind>#<id>`);
-  const dir = slotDir(consumer, "writer", slotId);
-  // No candidates folder is no candidate; any other failure to list it is a broken record, refused with its cause.
-  let names: string[];
-  try { names = readdirSync(join(dir, "candidates")).filter(name => !name.startsWith(".")); }
-  catch (error) {
-    if (!isAbsent(error)) return refuse("approve", `cannot list ${target} candidates: ${errorMessage(error)}`);
-    names = [];
-  }
-  const candidate = resolveCandidate(names, candidateId);
-  if (!candidate) return refuse("approve", `${target} has no candidate ${candidateId}`);
-  let kind: unknown;
-  try { kind = (JSON.parse(readFileSync(slotFile(dir), "utf8")) as { kind?: unknown }).kind; }
-  catch (error) { return refuse("approve", `writer/${slotId} slot.json cannot be read: ${errorMessage(error)}`); }
-  const record = hash >= 0 ? slot.slice(hash + 1) : usesPinMap("writer", typeof kind === "string" ? kind : undefined) ? parseCandidateName(candidate)?.name : undefined;
-  const pinTarget = record !== undefined ? `${slotId}#${record}` : slotId;
-  const before = writerKeysUnapproved(root).get(slotId) ?? [];
-  const result = pinTargetSlot(root, "writer", pinTarget, candidate, { by, basis: "picked", at });
-  if (result.exitCode !== 0) return refuse("approve", result.message.replace(/^pin refused: /, ""));
-  const after = new Set(writerKeysUnapproved(root).get(slotId) ?? []);
-  const approved = before.filter(key => !after.has(key));
-  const doc = result.output as { kind?: string; records?: Record<string, { sha256: string }>; sha256?: string } | undefined;
-  const sha256 = doc?.kind === "pin-map" ? doc.records?.[record!]?.sha256 : doc?.sha256;
-  return { exitCode: 0, root, output: result.output, decision: { slot: `writer/${pinTarget}`, state: "pinned", candidate, sha256, decidedBy: by, basis: "picked", at, approved }, message: `approve: writer/${pinTarget} ${candidate} pinned by ${by} (picked); ${approved.length} key${approved.length === 1 ? "" : "s"} approved${after.size ? `, ${after.size} still open` : ""}` };
 }
 
 // ---------------------------------------------------------------- clossys owner-decision

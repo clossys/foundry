@@ -1174,69 +1174,6 @@
     },
     {
       "package": "producer",
-      "path": "packages/producer/actions/writer.approve/action.json",
-      "contract": {
-        "schema": "clossys.action/1",
-        "id": "writer.approve",
-        "agent": "owner",
-        "kind": "decide:judgment",
-        "stage": "design.pin",
-        "summary": "Owner approves a Writer slot's copy keys: the approved candidate is pinned (clossys approve).",
-        "run": "clossys approve writer/<slot> <candidate-id>",
-        "inputs": [
-          {
-            "glob": "consumer:agents/writer/*/candidates/*",
-            "schema": "candidate-strings"
-          }
-        ],
-        "outputs": [
-          {
-            "glob": "consumer:agents/writer/*/pin.json",
-            "schema": "pin"
-          }
-        ],
-        "pass": {
-          "command": "clossys check",
-          "exit": {
-            "pass": [
-              0
-            ],
-            "fail": [
-              1
-            ],
-            "error": [
-              2
-            ]
-          }
-        },
-        "record": "clossys.pipeline-run/1",
-        "checks": [
-          "workspace"
-        ],
-        "uses": [
-          "skill/SKILL.md"
-        ],
-        "decider": "owner",
-        "packet": {
-          "inputs": [
-            "consumer:agents/writer/*/candidates/*"
-          ],
-          "write": [
-            {
-              "glob": "consumer:agents/writer/*/pin.json",
-              "schema": "pin"
-            }
-          ],
-          "checks": [
-            "workspace"
-          ]
-        },
-        "skill": "skill.md",
-        "open": "writer-keys-unapproved"
-      }
-    },
-    {
-      "package": "producer",
       "path": "packages/producer/actions/pin.designer/action.json",
       "contract": {
         "schema": "clossys.action/1",
@@ -2909,7 +2846,8 @@
           "workspace",
           "slot-pins",
           "cli-verbs",
-          "no-consumer-content"
+          "no-consumer-content",
+          "engine-side-door"
         ],
         "uses": []
       }
@@ -3023,7 +2961,9 @@
         "checks": [
           "pipeline",
           "step-standard",
-          "pipeline-wiring"
+          "pipeline-wiring",
+          "engine-doc",
+          "review-doc"
         ],
         "uses": []
       }
@@ -3168,7 +3108,8 @@
           "copy-rendered",
           "rendered-provenance",
           "no-hidden-fallbacks",
-          "studio"
+          "studio",
+          "e2e"
         ],
         "uses": []
       }
@@ -3399,7 +3340,7 @@
         "agent": "producer",
         "kind": "plumb",
         "stage": "publish.publish",
-        "summary": "Release gate: a publication's pinned pages must pass publisher.check, else the release is refused; a clean check runs clossys release.",
+        "summary": "Release gate: a publication's pinned pages must pass publisher.check, else the release is refused; a clean check runs the release step (build, manifest, gates or ready) and reports what it wrote and found.",
         "run": "clossys publisher release <publication> --gates",
         "chain": {
           "skip": "publisher.release runs one caller-named publication; loop.release and the owner name it"

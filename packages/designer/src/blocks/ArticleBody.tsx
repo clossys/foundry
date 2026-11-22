@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { ArticleReadingProgress } from "./ArticleReading.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
-const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const Card = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").Card>("components.card");
 import { cx } from "../components/internal/cx.js";

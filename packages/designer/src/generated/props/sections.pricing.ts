@@ -1,5 +1,5 @@
 // Generated from sections.pricing by src/generated/props/generate.ts; do not edit.
-export const pricingContractSha256 = "897e10d30d2d8ac5d12cc73fbdfb9227ee272039b58e62d2dd745c7c45abc1a8";
+export const pricingContractSha256 = "c6f3ac703da2841e645b16ba21ecf3995af2952279a65896d0acd7a196b3ff63";
 
 export type PricingCopy = {
   header?: {

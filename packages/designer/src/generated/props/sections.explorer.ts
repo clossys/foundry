@@ -1,5 +1,5 @@
 // Generated from sections.explorer by src/generated/props/generate.ts; do not edit.
-export const explorerContractSha256 = "3c0376f10981d9187dc70e6710456ebe1785df1507adf25de83a68d86a3723dc";
+export const explorerContractSha256 = "832293ea856f23ea980296d7a4997e4da882999ab2a38c8cb0c25e8ec686adf1";
 
 export type ExplorerCopy = {
   header?: {

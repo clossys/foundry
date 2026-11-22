@@ -38,8 +38,12 @@ const errors = (findings: readonly WiringFinding[], code: string) => findings.fi
 describe("frames from components (WIRE-4)", () => {
   it("scans the frame layer and leaves only registered component fills to the component layer", () => {
     expect(sources.length).toBeGreaterThan(20);
-    expect(sources.map(source => source.path)).toEqual(expect.arrayContaining(["src/frames/AppFrame.tsx", "src/frames/right-panel-config.ts", "src/shell/SiteHeader.tsx", "src/shell/internal/shell-vars.ts"]));
-    expect([...componentFiles].sort()).toEqual(["src/shell/Brandmark.tsx", "src/shell/Toaster.tsx", "src/shell/internal/toast-queue.ts"]);
+    expect(sources.map(source => source.path)).toEqual(expect.arrayContaining(["src/frames/AppFrame.tsx", "src/frames/right-panel-config.ts", "src/shell/SiteHeader.tsx", "src/shell/internal/shell-ground.ts"]));
+    // BR-RETIRE3 (D5-5): the regenerated sections-frames report no longer credits the
+    // unimported re-export module shell-vars.ts to frames.site-header/footer (its only
+    // owner is components.toast, so it moves to the component layer) and credits
+    // Toaster.tsx to frames.app-shell, which AppFrame imports, so it is scanned here.
+    expect([...componentFiles].sort()).toEqual(["src/shell/Brandmark.tsx", "src/shell/internal/shell-vars.ts", "src/shell/internal/toast-queue.ts"]);
   });
 
   it("reports no WL2/WL3/WL4 finding anywhere in the frame layer", () => {

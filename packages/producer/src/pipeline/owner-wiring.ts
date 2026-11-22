@@ -21,6 +21,7 @@ import { RULES_FILE } from "../cli/rules-file.js";
 import { seatSlotId, SEAT_AGENT } from "../records/slot-model/types.js";
 import { writerCopyDuplicates } from "../records/writer-copy.js";
 import { QUEUE_ANSWER } from "./chain.js";
+import { verbArgv } from "./command-line.js";
 import { gapsOf, interviewOf, INTERVIEW_AGENTS, type Gaps, type Interview, type InterviewAgent, type QuestionOption } from "./interview.js";
 
 export type RunCall = (argv: readonly string[], cwd: string) => Promise<{ exitCode: number; message?: string }>;
@@ -67,7 +68,7 @@ const WIRING_AT = "2026-11-18T00:00:00Z";
 /**
  * The owner's answer a decision call cites, written on the scratch copy only (U13 r4, B2): a typed clossys.queue-entry/1
  * decision entry the owner answered, about the slot the call decides, bound to that decision (the seat, not-needed, or
- * the candidate a pin or approve names), as the owner's chat answer records it. Every owner-decision verb refuses any
+ * the candidate a pin names; a Writer pin is the owner's approval, on queue.approve), as the owner's chat answer records it. Every owner-decision verb refuses any
  * other entry, so an untyped stand-in would make every live option read as dead. A confirmation's `--by` takes only the
  * owner's typed work-entry answer, which runs the step itself: a confirm call cites this entry and is refused.
  */
@@ -77,7 +78,7 @@ function scratchAnswer(scratch: string, argv: readonly string[], id: string): st
   const base: Pick<OwnerEntryInput, "id" | "at"> = { id, at: WIRING_AT };
   if (verb === "seat") return ownerEntry(consumer, { ...base, about: `${SEAT_AGENT}/${seatSlotId(item)}`, answer: "seat" });
   if (argv.includes("--not-needed")) return ownerEntry(consumer, { ...base, about: item, answer: "not-needed" });
-  return ownerEntry(consumer, { ...base, queue: verb === "approve" ? "approve" : "pick", about: item, answer: { candidate: next } });
+  return ownerEntry(consumer, { ...base, queue: verb === "pin" && item.startsWith("writer/") ? "approve" : "pick", about: item, answer: { candidate: next } });
 }
 
 /** The option's calls with each fill placeholder replaced (a `.md` placeholder becomes a file in the scratch root). */
@@ -135,22 +136,24 @@ export async function ownerWiringIssues(root: string, options: OwnerWiringOption
           try {
             for (const name of COPIED) if (existsSync(join(root, name))) cpSync(join(root, name), join(scratch, name), { recursive: true });
             let failed = false;
-            for (const prior of prerequisites(question)) for (const argv of filled(prior, scratch, nextEntry)) {
+            for (const prior of prerequisites(question)) for (const command of filled(prior, scratch, nextEntry)) {
               if (failed) break;
-              const result = argv[0] === "clossys" ? await options.run(argv.slice(1), scratch) : { exitCode: 127, message: "not a clossys argv" };
-              if (result.exitCode !== 0) { issues.push({ rule: "owner.wiring", message: `${label}: the answer it waits on (${question.after.join(", ")}) ran ${argv.join(" ")}, which exited ${result.exitCode}${result.message ? ` (${result.message.split("\n")[0]})` : ""}` }); failed = true; }
+              const argv = verbArgv(command);
+              const result = argv ? await options.run(argv, scratch) : { exitCode: 127, message: "not a clossys argv" };
+              if (result.exitCode !== 0) { issues.push({ rule: "owner.wiring", message: `${label}: the answer it waits on (${question.after.join(", ")}) ran ${command.join(" ")}, which exited ${result.exitCode}${result.message ? ` (${result.message.split("\n")[0]})` : ""}` }); failed = true; }
             }
             if (failed) continue;
             const before = gapsKey(gaps(scratch, { agent }));
             const held = new Set(writerCopyDuplicates(join(scratch, "clossys")).map(row => row.id));
-            for (const argv of filled(option, scratch, nextEntry)) {
+            for (const command of filled(option, scratch, nextEntry)) {
               calls++;
-              const target = SLOT_TARGET.exec(argv[2] ?? "");
+              const target = SLOT_TARGET.exec(command[2] ?? "");
               const where = target ? [join(scratch, "clossys", "agents", target[1]!, target[2]!)] : [join(scratch, "clossys"), join(scratch, RULES_DIR)];
               const was = where.map(digest).join();
-              const result = argv[0] === "clossys" ? await options.run(argv.slice(1), scratch) : { exitCode: 127, message: "not a clossys argv" };
-              if (result.exitCode !== 0) { issues.push({ rule: "owner.wiring", message: `${label}: ${argv.join(" ")} exited ${result.exitCode}${result.message ? ` (${result.message.split("\n")[0]})` : ""}` }); failed = true; break; }
-              if (where.map(digest).join() === was) { issues.push({ rule: "owner.wiring", message: `${label}: ${argv.join(" ")} exited 0 but changed no record${target ? ` in ${target[0]}` : " under clossys/"}` }); failed = true; break; }
+              const argv = verbArgv(command);
+              const result = argv ? await options.run(argv, scratch) : { exitCode: 127, message: "not a clossys argv" };
+              if (result.exitCode !== 0) { issues.push({ rule: "owner.wiring", message: `${label}: ${command.join(" ")} exited ${result.exitCode}${result.message ? ` (${result.message.split("\n")[0]})` : ""}` }); failed = true; break; }
+              if (where.map(digest).join() === was) { issues.push({ rule: "owner.wiring", message: `${label}: ${command.join(" ")} exited 0 but changed no record${target ? ` in ${target[0]}` : " under clossys/"}` }); failed = true; break; }
             }
             if (!failed) for (const row of writerCopyDuplicates(join(scratch, "clossys"))) if (!held.has(row.id)) {
               issues.push({ rule: "owner.wiring", message: `${label}: the answer records Writer key ${row.id} in ${row.slots.join(" and ")}; one Writer slot owns a key` }); failed = true;

@@ -195,8 +195,7 @@
         "components.disclosure",
         "components.icon",
         "components.logo",
-        "components.semantic-content",
-        "components.status-mark"
+        "components.semantic-content"
       ],
       "skipTarget": "main-content",
       "props": [
@@ -431,7 +430,6 @@
         "components.tabs",
         "components.tooltip",
         "components.dialog",
-        "components.link",
         "components.popover",
         "components.semantic-content"
       ],
@@ -542,7 +540,7 @@
       },
       "composes": [
         "components.semantic-content",
-        "components.link"
+        "components.button"
       ],
       "skipTarget": "main-content",
       "props": [
@@ -594,7 +592,7 @@
         {
           "id": "nav",
           "required": false,
-          "accepts": "components.link"
+          "accepts": "components.button"
         },
         {
           "id": "actions",
@@ -667,7 +665,6 @@
       },
       "composes": [
         "components.logo",
-        "components.link",
         "components.button",
         "components.icon",
         "components.badge",
@@ -730,7 +727,7 @@
           "props": {
             "children": [
               "DRAFT brand (components.logo)",
-              "DRAFT nav (components.link)",
+              "DRAFT nav (components.button)",
               "DRAFT actions (components.button)"
             ]
           }
@@ -818,9 +815,7 @@
         "components.menu",
         "components.popover",
         "components.button",
-        "components.link",
         "components.toggle-button",
-        "components.status-mark",
         "components.icon",
         "components.tooltip",
         "components.semantic-content",
@@ -1043,7 +1038,6 @@
       "composes": [
         "components.navigation-tree",
         "components.sidebar",
-        "components.link",
         "components.button",
         "components.tooltip",
         "components.menu",
@@ -1251,7 +1245,7 @@
         {
           "id": "links",
           "required": false,
-          "accepts": "components.link"
+          "accepts": "components.button"
         },
         {
           "id": "legal",
@@ -1324,12 +1318,11 @@
         ]
       },
       "composes": [
-        "components.link",
+        "components.button",
         "components.icon",
         "components.logo",
         "components.separator",
-        "components.semantic-content",
-        "components.button"
+        "components.semantic-content"
       ],
       "copy": {
         "sourceLocale": "en",
@@ -1367,7 +1360,7 @@
           "props": {
             "children": [
               "DRAFT columns",
-              "DRAFT links (components.link)",
+              "DRAFT links (components.button)",
               "DRAFT legal",
               "DRAFT social (components.icon)"
             ]

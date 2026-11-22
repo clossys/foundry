@@ -9,7 +9,7 @@
       "relation": "same-contract",
       "builtOn": [
         "components.badge",
-        "components.link",
+        "components.button",
         "components.semantic-content",
         "components.table"
       ],
@@ -94,14 +94,14 @@
         "assets": [],
         "components": [
           "components.badge",
-          "components.link",
+          "components.button",
           "components.semantic-content",
           "components.table"
         ]
       },
       "composes": [
         "components.badge",
-        "components.link",
+        "components.button",
         "components.semantic-content",
         "components.table"
       ],

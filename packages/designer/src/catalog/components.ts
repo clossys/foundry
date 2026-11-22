@@ -198,7 +198,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Interaction / Navigation
-  onMain("LinkButton", ["src/components/preview-runtime/components/button/button.tsx"], {
+  retired("LinkButton", ["src/components/preview-runtime/components/button/button.tsx"], {
     id: "act.link",
     label: "Link",
     racBase: rac("Link"),
@@ -516,7 +516,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     id: "components.rich-text", label: "Rich text", racBase: none("hand-built"), disposition: "keep",
     notes: ["Renders a stored rich-text document through Tiptap (MIT)."],
   }),
-  onMain("MediaPlayer", ["src/components/media-player/media-player.tsx"], {
+  retired("MediaPlayer", ["src/components/media-player/media-player.tsx"], {
     id: "components.media-player", label: "Media player", racBase: none("hand-built", ["Button"]), disposition: "keep",
   }),
   gap({
@@ -624,7 +624,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     anatomy: ["AlertTitle", "AlertDescription", "AlertAction"],
     notes: ["The stock shadcn@aria Alert; a dismiss control is an AlertAction holding a react-aria-components Button."],
   }),
-  onMain("StatusMark", ["src/components/StatusMark.tsx"], {
+  retired("StatusMark", ["src/components/StatusMark.tsx"], {
     id: "inform.status-mark",
     label: "Status mark",
     racBase: none("presentational"),

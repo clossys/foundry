@@ -1,19 +1,17 @@
 import { SectionHeader } from "../../blocks/SectionHeader.js";
 
-import type { StatusMarkTone } from "../../components/StatusMark.js";
 
 import { actionsOf, memberOf, noop, refuseUnmapped, requiredText, recordsOf, stringField, isObject, slotValue, textOf, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
 
 const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
-const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
 // GATES-RED G5: the selected stock menu/popover take no trigger prop; compose their declared trigger parts.
 type StockMenu = typeof import("../../components/preview-runtime/components/menu/dropdown-menu.js");
 const MenuTrigger = componentLeaf<StockMenu["DropdownMenuTrigger"]>("components.menu", "DropdownMenuTrigger");
 const PopupMenu = componentLeaf<StockMenu["DropdownMenu"]>("components.menu");
 const MenuItem = componentLeaf<StockMenu["DropdownMenuItem"]>("components.menu", "MenuItem");
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
-const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 
 const LEAF = "sections.section-header";
 const ALIGNS = ["start", "center"] as const;
@@ -41,7 +39,7 @@ export const renderSectionHeader: SectionRenderer = input => {
     if (!label) throw new TypeError(`${LEAF}: stat ${index} needs a resolved label`);
     const tone = stringField(row, "tone");
     if (tone && !["neutral", "info", "success", "warning", "danger"].includes(tone)) throw new TypeError(`${LEAF}: invalid stat tone`);
-    return <Badge key={stringField(row, "id") ?? index}>{tone ? <StatusMark tone={tone as StatusMarkTone}>{label}</StatusMark> : label}</Badge>;
+    return <Badge key={stringField(row, "id") ?? index} data-tone={tone}>{label}</Badge>;
   });
   const actionValue = slotValue(input, "actions");
   const rawActions = Array.isArray(actionValue) ? actionValue : actionValue === undefined ? [] : [actionValue];

@@ -51,18 +51,20 @@ const changedPlacement = (mutate: (leaves: string[]) => string[]): SectionRegist
 };
 
 // GATES-RED G3: each list is the S2-1 reconciliation plus the composes the slot records declare from their measured source.
+// BR-RETIRE3 (owner 2026-11-20): components.link becomes components.button (first occurrence kept); components.status-mark
+// and components.media-player leave every list.
 const reconciledComposes: Record<string, readonly string[]> = {
   "access-matrix": ["table", "checkbox", "tooltip", "button", "icon", "semantic-content"],
-  chat: ["text-field", "button", "file-trigger", "avatar", "spinner", "link", "tooltip", "semantic-content", "icon"],
-  comparison: ["table", "status-mark", "badge", "card", "icon", "radio-group", "tooltip", "button", "dialog", "menu", "link", "semantic-content"],
-  form: ["form", "field", "text-field", "button", "banner", "checkbox", "combo-box", "select", "link", "semantic-content"],
-  "record-detail": ["card", "tabs", "badge", "skeleton", "button", "link", "disclosure", "semantic-content"],
-  "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field", "badge", "status-mark", "tooltip", "link", "skeleton", "semantic-content", "tag-group", "sheet", "field"],
-  "link-index": ["link", "card", "icon", "badge", "button", "status-mark", "semantic-content"],
+  chat: ["text-field", "button", "file-trigger", "avatar", "spinner", "tooltip", "semantic-content", "icon"],
+  comparison: ["table", "badge", "card", "icon", "radio-group", "tooltip", "button", "dialog", "menu", "semantic-content"],
+  form: ["form", "field", "text-field", "button", "banner", "checkbox", "combo-box", "select", "semantic-content"],
+  "record-detail": ["card", "tabs", "badge", "skeleton", "button", "disclosure", "semantic-content"],
+  "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field", "badge", "tooltip", "skeleton", "semantic-content", "tag-group", "sheet", "field"],
+  "link-index": ["button", "card", "icon", "badge", "semantic-content"],
   notices: ["banner", "button", "icon", "semantic-content"],
   newsletter: ["text-field", "button", "icon"],
-  "table-of-contents": ["link", "disclosure", "semantic-content"],
-  "task-list": ["checkbox", "avatar", "badge", "icon", "status-mark", "link", "meter", "semantic-content"],
+  "table-of-contents": ["button", "disclosure", "semantic-content"],
+  "task-list": ["checkbox", "avatar", "badge", "icon", "button", "meter", "semantic-content"],
 };
 
 // R2F-11 re-pin (planner:R2C-designer): the three hashes below were last pinned at d523717cf (2026-10-29). Committed
@@ -103,6 +105,58 @@ function undoContractFixtures<T extends { id: string; contract: object }>(slot: 
   return { ...slot, contract } as T;
 }
 
+/**
+ * BR-RETIRE3 (owner 2026-11-20): components.link becomes components.button (first occurrence kept) and components.status-mark
+ * and components.media-player leave every compose list. Undo exactly that edit: each prior list below must rewrite to the
+ * committed list (checked here, not assumed), and the prior list is restored in place.
+ */
+const RETIRE3_PRIOR: Record<string, readonly string[]> = {
+  "account-summary": ["avatar", "link", "semantic-content"],
+  "activity-feed": ["avatar", "badge", "link", "icon", "semantic-content"],
+  "article": ["link", "separator", "semantic-content", "card"],
+  "boundary-message": ["button", "link", "semantic-content"],
+  "call-to-action": ["button", "link", "semantic-content", "card"],
+  "candidate-preview": ["link", "badge", "semantic-content"],
+  "cards": ["card", "link", "badge", "semantic-content"],
+  "chat": ["text-field", "button", "file-trigger", "avatar", "spinner", "link", "tooltip", "semantic-content", "icon"],
+  "comparison": ["table", "status-mark", "badge", "card", "icon", "radio-group", "tooltip", "button", "dialog", "menu", "link", "semantic-content"],
+  "consent": ["button", "link", "card", "icon", "semantic-content"],
+  "content": ["link", "semantic-content", "card"],
+  "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field", "badge", "status-mark", "tooltip", "link", "skeleton", "semantic-content", "tag-group", "sheet", "field"],
+  "empty-state": ["button", "link", "icon", "semantic-content"],
+  "error-state": ["button", "link", "semantic-content"],
+  "explorer": ["tree", "grid-list", "breadcrumbs", "resize-handle", "button", "icon", "link", "semantic-content"],
+  "features": ["badge", "card", "icon", "link", "item", "tabs", "semantic-content"],
+  "form": ["form", "field", "text-field", "button", "banner", "checkbox", "combo-box", "select", "link", "semantic-content"],
+  "hero": ["button", "link", "semantic-content", "media-player"],
+  "link-index": ["link", "card", "icon", "badge", "button", "status-mark", "semantic-content"],
+  "logo-cloud": ["item", "link", "logo", "semantic-content"],
+  "pagination": ["button", "link", "select", "icon", "semantic-content", "field"],
+  "people": ["avatar", "card", "link", "icon", "semantic-content"],
+  "pricing": ["toggle-group", "button", "card", "badge", "icon", "status-mark", "semantic-content", "table", "link"],
+  "question-packet": ["link", "badge", "semantic-content"],
+  "queue-list": ["link", "badge", "semantic-content"],
+  "record-detail": ["card", "tabs", "badge", "skeleton", "button", "link", "disclosure", "semantic-content"],
+  "section-header": ["button", "link", "badge", "status-mark", "menu", "semantic-content"],
+  "sectioned-document": ["avatar", "badge", "card", "disclosure", "icon", "item", "link", "semantic-content", "status-mark"],
+  "sign-in-form": ["text-field", "button", "form", "link", "semantic-content", "banner", "field"],
+  "slot-detail": ["link", "badge", "semantic-content"],
+  "slot-gallery": ["link", "badge", "semantic-content"],
+  "status-list": ["status-mark", "semantic-content"],
+  "steps": ["status-mark", "semantic-content"],
+  "table-of-contents": ["link", "disclosure", "semantic-content"],
+  "task-list": ["checkbox", "avatar", "badge", "icon", "status-mark", "link", "meter", "semantic-content"],
+  "usage": ["meter", "progress-bar", "status-mark", "semantic-content"],
+};
+const retire3 = (list: readonly string[]): string[] => [...new Set(list.filter(leaf => leaf !== "components.status-mark" && leaf !== "components.media-player").map(leaf => leaf === "components.link" ? "components.button" : leaf))];
+function undoRetire3<T extends { id: string; contract: object }>(slot: T): T {
+  const prior = RETIRE3_PRIOR[slot.id.slice("sections.".length)]?.map(component => `components.${component}`);
+  if (!prior) return slot;
+  const contract = slot.contract as { allowedComposes: readonly string[] };
+  expect(contract.allowedComposes, slot.id).toEqual(retire3(prior));
+  return { ...slot, contract: { ...contract, allowedComposes: prior } } as T;
+}
+
 describe("S2-1 bounded section composition reconciliation", () => {
   it.each(Object.entries(reconciledComposes))("pins the exact component permissions for %s", (leaf, components) => {
     expect(loadSectionRegistry().slots.find(slot => slot.id === id(leaf))!.contract.allowedComposes)
@@ -116,7 +170,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
       for (const component of slot.contract.allowedComposes) expect(component).toMatch(/^components\./);
     }
     // SCROLL-1 A158/A159/A161: stats, TOC label, typed table cells and native band header are the exact new contract delta; keep existing normalization and unrelated pins unchanged.
-    const invariant = slots.filter(slot => !isWaveOne(slot) && !isLater(slot) && !isAdminRecord(slot) && slot.id !== "sections.logo-hero").map(undoContractFixtures).map(undoMediaPlacement).map(undoInteractiveBackdrop).map(slot => {
+    const invariant = slots.filter(slot => !isWaveOne(slot) && !isLater(slot) && !isAdminRecord(slot) && slot.id !== "sections.logo-hero").map(undoRetire3).map(undoContractFixtures).map(undoMediaPlacement).map(undoInteractiveBackdrop).map(slot => {
       // foundry-build-0032 (audit P3/P7): undo exactly its two edits (twin media, stats sparkline) so this pin stays the prior digest.
       const { substrates: _substrates, substrateTests: _tests, copy: _copy, passageSchema: _passage, media: _media, ...unmedia } = slot.contract as typeof slot.contract & { media?: readonly string[] };
       const rest = slot.id === "sections.stats" ? { ...unmedia, allowedComposes: ["components.chart-sparkline", ...unmedia.allowedComposes] } : unmedia;
@@ -126,6 +180,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
       const { allowedComposes: _permissions, ...contract } = original;
       return { ...slot, contract };
     });
+    // BR-RETIRE3: undoRetire3 restores the prior compose lists, so this digest is unchanged.
     expect(createHash("sha256").update(JSON.stringify(invariant)).digest("hex"))
       .toBe("29cc38ada0e56d696f69e3ad210d90f25adabd2998553e35d7b2d3f84fe8a348");
   });
@@ -145,9 +200,14 @@ describe("S2-1 bounded section composition reconciliation", () => {
     // backdrop-placed slot instead of contract.interactive; re-pinned from the data. undoMediaPlacement restores the A4 digest.
     // foundry-build-0048 U28: live sections gain contract.props and contract.fixture; re-pinned from the data.
     // undoContractFixtures restores the U23 digest, so no other base field moved.
+    // BR-RETIRE3 (owner 2026-11-20): components.link becomes components.button and components.status-mark and
+    // components.media-player leave every compose list; re-pinned from the data. undoRetire3 restores the U28 digest.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
+      .toBe("8041830c5ce47f506dc3ab5f1f62ebc86f41cda829eb52b019f4df6a1582471f");
+    const unretired = original.map(undoRetire3);
+    expect(createHash("sha256").update(JSON.stringify(unretired)).digest("hex"))
       .toBe("d3b3e73d31669ff37ce4143a8cb0c7727223ae6bcfafcf1ce133733def536cc4");
-    const unfixtured = original.map(undoContractFixtures);
+    const unfixtured = unretired.map(undoContractFixtures);
     expect(createHash("sha256").update(JSON.stringify(unfixtured)).digest("hex"))
       .toBe("fdf86d560a377b2be9cc37f95b76a8dace74c0960f4ef8f2a1ffa396b600e2db");
     const placed = unfixtured.map(undoMediaPlacement);
@@ -178,11 +238,14 @@ describe("S2-1 bounded section composition reconciliation", () => {
     // that edit restores the prior digest.
     // foundry-build-0048 U28: the wave-one sections gain contract.props and contract.fixture; re-pinned from the data, and
     // undoing exactly that edit restores the U23 digest.
+    // BR-RETIRE3 (owner 2026-11-20): the retired compose rewrite; re-pinned from the data, and undoRetire3 restores the U28 digest.
     expect(createHash("sha256").update(JSON.stringify(additions)).digest("hex"))
+      .toBe("adcba41ae97066d02fea2131bb04c7f94cfb3ad305a392c428be9f59769da974");
+    expect(createHash("sha256").update(JSON.stringify(additions.map(undoRetire3))).digest("hex"))
       .toBe("b1ce8c1dca5597985c87cb6f7cbb223719859c6b2de7397d2c31ace115be5df9");
-    expect(createHash("sha256").update(JSON.stringify(additions.map(undoContractFixtures))).digest("hex"))
+    expect(createHash("sha256").update(JSON.stringify(additions.map(undoRetire3).map(undoContractFixtures))).digest("hex"))
       .toBe("1d391dad9cf1c5de452f17a460527eece42ae53ccadbce20ae6af1c15f3b8cf4");
-    expect(createHash("sha256").update(JSON.stringify(additions.map(undoContractFixtures).map(undoMediaPlacement))).digest("hex"))
+    expect(createHash("sha256").update(JSON.stringify(additions.map(undoRetire3).map(undoContractFixtures).map(undoMediaPlacement))).digest("hex"))
       .toBe("e431609cdec2064100fbdd38a08b2f67cefd6f0076aa0874e23415bfc750a6a9");
   });
 });
@@ -239,7 +302,7 @@ describe("section build IA registry", () => {
     expect(consent).toMatchObject({ layer: "sections", status: "draft", requires: [], contract: {
       kind: "section", data: "host-injected", surface: "site",
       // GATES-RED G3 (25ec7c105): icon and semantic-content are the measured composes of the consent implementation.
-      allowedComposes: ["components.button", "components.link", "components.card", "components.icon", "components.semantic-content"],
+      allowedComposes: ["components.button", "components.card", "components.icon", "components.semantic-content"],
       slots: [
         { name: "copy", type: "copy", required: true },
         { name: "actions", type: "action", required: true, max: 2 },

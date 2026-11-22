@@ -28,9 +28,9 @@
     "form": {
       "composes": [
         "components.banner",
+        "components.button",
         "components.field",
         "components.form",
-        "components.link",
         "components.semantic-content"
       ],
       "configs": {
@@ -40,18 +40,18 @@
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.banner",
+          "components.button",
           "components.field",
           "components.form",
-          "components.link",
           "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
             "components.banner",
+            "components.button",
             "components.field",
             "components.form",
-            "components.link",
             "components.semantic-content"
           ],
           "themes": []
@@ -59,7 +59,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Form.tsx",
-            "sha256": "af4156aa3094cae665cc055dc0de8e4e2efec1d68aa08a79e224498f1d54e76c"
+            "sha256": "c9c112f2ebeb174fb61611e38def459459511139a2b7b11ae4d2f3cf942c91ea"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

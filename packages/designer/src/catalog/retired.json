@@ -69,6 +69,19 @@
     "reason": "withdrawn: merged into components.menu (ia-target designer.md section 7)"
   },
   {
+    "id": "components.link",
+    "retiredAt": "2026-11-20",
+    "replacedBy": "components.button",
+    "decidedBy": "owner 2026-11-20 (retire link, media-player and status-mark); foundry-build-0048 BR-RETIRE3",
+    "reason": "duplicate: shadcn stock ships no Link component; the Button link variant (LinkButton) covers it"
+  },
+  {
+    "id": "components.media-player",
+    "retiredAt": "2026-11-20",
+    "decidedBy": "owner 2026-11-20 (retire link, media-player and status-mark); foundry-build-0048 BR-RETIRE3",
+    "reason": "not-needed: no stock media player ships in the consumer's engine"
+  },
+  {
     "id": "components.native-action",
     "retiredAt": "2026-11-11",
     "replacedBy": "components.button",
@@ -128,6 +141,12 @@
     "retiredAt": "2026-11-15",
     "decidedBy": "planner:foundry-build-0018",
     "reason": "studio-killed"
+  },
+  {
+    "id": "components.status-mark",
+    "retiredAt": "2026-11-20",
+    "decidedBy": "owner 2026-11-20 (retire link, media-player and status-mark); foundry-build-0048 BR-RETIRE3",
+    "reason": "not-needed: no stock status mark ships in the consumer's engine"
   },
   {
     "id": "frames.document",

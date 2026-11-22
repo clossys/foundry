@@ -16,10 +16,16 @@ function previewSource(content: string, path: string): string {
     return (negative ? "-" : "") + logical[negative ? token.slice(1) : token];
   }).replaceAll("max-w-xs","max-w-[20rem]").replaceAll("max-w-sm","max-w-[24rem]");
   if (path.endsWith("/dialog.tsx") || path.endsWith("/radio-group.tsx")) source = source.replaceAll("-translate-x-1/2 ","-translate-x-1/2 rtl:translate-x-1/2 ");
+  // BR-RETIRE3 (planner 2026-11-21): the one approved props adaptation, LinkButton's aria-current.
+  if (path === "components/button/button.tsx") {
+    const anchor = '}: Omit<LinkPrimitiveProps, "className"> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n  }) {';
+    expect(source.split(anchor).length, path).toBe(2);
+    source = source.replace(anchor, anchor.replace("    className?: string\n", '    className?: string\n    "aria-current"?: React.AriaAttributes["aria-current"]\n'));
+  }
   return source;
 }
 
-it("ships the canonical graph with only approved ESM, logical-class and width adaptations", () => {
+it("ships the canonical graph with only approved ESM, logical-class, width and LinkButton aria-current adaptations", () => {
   const root = resolve(import.meta.dirname, "..");
   const target = resolve(root, "components/preview-runtime");
   const emitted = emitComponents(profile as ResolvedComponents, ["component-index"], { glyphModule: { path: "adapters/glyphs.ts", glyphs } });

@@ -1,16 +1,18 @@
 import type { Mode, Resolved } from "../../catalog-core/types.js";
 import { patternBackdropFromResolved, type BackdropGraphicArtifact } from "../../catalog-assets/pattern-backdrop.js";
 import { checkConsumerArtContract, type StillBackdropArt } from "../../backdrop/consumer-art.js";
-import { isVideoResource, type VideoResource } from "../../catalog-assets/media.js";
 import { interactiveBackdropDescriptorIssues, type InteractiveBackdropDescriptor } from "../../tokens/interactive-backdrops.js";
 
 export type HeroBackdropKind = "none" | "image" | "video" | "graphic" | "interactive";
 export interface HeroImageBackdrop { readonly kind: "image"; readonly image: StillBackdropArt }
+/**
+ * The owner retired components.media-player on 2026-11-20 (foundry-build-0048 BR-RETIRE3), so a hero
+ * never plays video: the video kind is the poster with resolved host copy, and video bytes are refused.
+ */
 export interface HeroVideoBackdrop {
   readonly kind: "video";
-  readonly video?: VideoResource;
-  /** Resolved host copy when the owner has not supplied video bytes. */
-  readonly missingVideoMessage?: string;
+  /** Resolved host copy shown with the poster; video playback is not offered. */
+  readonly missingVideoMessage: string;
   readonly poster: StillBackdropArt;
   readonly muted: true;
   readonly autoplay: true;
@@ -23,7 +25,7 @@ export interface HeroGraphicBackdrop { readonly kind: "graphic"; readonly asset:
 export interface HeroInteractiveBackdrop { readonly kind: "interactive"; readonly backdrop: InteractiveBackdropDescriptor }
 /** Existing checked still declarations remain valid callers. */
 export type HeroBackdrop = StillBackdropArt | { readonly kind: "none" } | HeroImageBackdrop | HeroVideoBackdrop | HeroGraphicBackdrop | HeroInteractiveBackdrop;
-export interface ResolvedHeroBackdrop { readonly kind: HeroBackdropKind; readonly art?: StillBackdropArt; readonly need?: string; readonly video?: HeroVideoBackdrop & { readonly video: VideoResource }; readonly graphic?: BackdropGraphicArtifact; readonly interactive?: InteractiveBackdropDescriptor }
+export interface ResolvedHeroBackdrop { readonly kind: HeroBackdropKind; readonly art?: StillBackdropArt; readonly need?: string; readonly graphic?: BackdropGraphicArtifact; readonly interactive?: InteractiveBackdropDescriptor }
 function still(value: unknown): value is StillBackdropArt {
   return checkConsumerArtContract(value).ok && (value as StillBackdropArt).slot === "backdrop" && (value as StillBackdropArt).loading === "lazy";
 }
@@ -41,12 +43,11 @@ export function resolveHeroBackdrop(value: unknown, resolved?: Resolved, mode: M
     return { kind: "image", art: row.image };
   }
   if (row.kind === "video") {
-    if (row.video === undefined && still(row.poster) && row.muted === true && row.autoplay === true && row.loop === true && row.playsInline === true) {
-      if (typeof row.missingVideoMessage !== "string" || !row.missingVideoMessage.trim()) throw new TypeError("Hero missing-video state requires resolved host copy");
-      return { kind: "video", art: row.poster, need: row.missingVideoMessage };
-    }
-    if (!isVideoResource(row.video) || row.video.reducedMotion !== "poster" || !row.video.poster || !still(row.poster) || row.muted !== true || row.autoplay !== true || row.loop !== true || row.playsInline !== true) throw new TypeError("Hero video requires src, poster, muted autoplay loop playsInline and reduced-motion poster policy");
-    return { kind: "video", art: row.poster, video: value as HeroVideoBackdrop & { readonly video: VideoResource } };
+    // D3: no player leaf is offered (components.media-player retired), so supplied video bytes are refused, never dropped silently.
+    if (row.video !== undefined) throw new TypeError("Hero video playback is retired (components.media-player); declare the poster with resolved host copy, or an image backdrop");
+    if (!still(row.poster) || row.muted !== true || row.autoplay !== true || row.loop !== true || row.playsInline !== true) throw new TypeError("Hero video requires a checked poster and the muted autoplay loop playsInline declaration");
+    if (typeof row.missingVideoMessage !== "string" || !row.missingVideoMessage.trim()) throw new TypeError("Hero missing-video state requires resolved host copy");
+    return { kind: "video", art: row.poster, need: row.missingVideoMessage };
   }
   if (row.kind === "graphic") {
     if (typeof row.asset !== "string" || !row.asset.trim()) throw new TypeError("Hero graphic requires an Assets leaf reference");

@@ -54,14 +54,14 @@ const CONTENT: Readonly<Record<string, Readonly<Record<string, RuntimeJson>>>> =
 const RECORD: Readonly<Record<string, unknown>> = {
   "sections.article": S.articleBody, "sections.call-to-action": S.callToAction, "sections.comparison": S.comparison,
   "sections.content": S.content, "sections.faq": S.faq, "sections.features": S.featureGrid, "sections.gallery": S.gallery,
-  "sections.hero": S.hero, "sections.logo-cloud": S.logoCloud, "sections.media": S.mediaFigure, "sections.newsletter": S.newsletter,
+  "sections.hero": S.hero, "sections.logo-cloud": S.logoCloud, "sections.media": S.mediaFigure,
   "sections.people": S.peopleGrid, "sections.pricing": S.pricing, "sections.testimonials": S.testimonials,
   "sections.access-matrix": S.accessMatrix, "sections.activity-feed": S.activityFeed, "sections.audit-log": S.auditLog,
   "sections.column-mapper": S.columnMapper, "sections.data-grid": S.dataTable, "sections.data-table": S.dataTable,
   "sections.explorer": S.explorer, "sections.filter-builder": S.filterBuilder,
   "sections.resource-list": S.resourceList, "sections.stats": S.statGroup, "sections.status-list": S.statusList,
   "sections.task-list": S.taskList, "sections.timeline": S.timeline, "sections.usage": S.usageSummary,
-  "sections.cards": S.recordCards, "sections.chat": S.chat, "sections.consent": S.consentBanner, "sections.empty-state": S.emptyState,
+  "sections.chat": S.chat, "sections.consent": S.consentBanner, "sections.empty-state": S.emptyState,
   "sections.error-state": S.errorState, "sections.form": S.form, "sections.link-index": S.navGrid, "sections.notices": S.noticeList,
   "sections.page-header": S.pageHeader, "sections.pagination": S.pagination, "sections.section-header": S.sectionHeader,
   "sections.settings": S.settingsSection, "sections.steps": S.orderedSteps, "sections.table-of-contents": S.tableOfContents,
@@ -89,9 +89,10 @@ function shared(record: unknown, content: RuntimeJson): number {
 
 describe("Section sample content binds to the shared dataset", () => {
   // Re-pinned 45/44 -> 44/43: sections.record-detail was dropped with no successor (foundry-build-0042).
-  it("covers all 44 Sections, 43 with a sections record (band holds only nested Sections)", () => {
-    expect(Object.keys(CONTENT)).toHaveLength(44);
-    expect(Object.keys(RECORD)).toHaveLength(43);
+  // Re-pinned 44/43 -> 42/41 (BR-RETIRE3): retired sections.cards and sections.newsletter lost their fills and renderers.
+  it("covers all 42 Sections, 41 with a sections record (band holds only nested Sections)", () => {
+    expect(Object.keys(CONTENT)).toHaveLength(42);
+    expect(Object.keys(RECORD)).toHaveLength(41);
     expect(CONTENT["sections.band"]).toEqual({});
   });
 
@@ -105,10 +106,4 @@ describe("Section sample content binds to the shared dataset", () => {
     expect(shared(RECORD[leaf], CONTENT[leaf]! as RuntimeJson)).toBeGreaterThanOrEqual(leaf === "sections.media" ? 1 : 2);
   });
 
-  it("newsletter reads its email label and form destination from the dataset", () => {
-    const newsletter = GROUP_A_CONTENT.newsletter as { email: { label: string }; submit: { action: string; label: string } };
-    expect(newsletter.email.label).toBe(S.newsletter.emailLabel);
-    expect(newsletter.submit.action).toBe(S.newsletter.action);
-    expect(newsletter.submit.label).toBe(S.newsletter.submitLabel);
-  });
 });

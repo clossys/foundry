@@ -117,8 +117,9 @@ describe("committed section/frame scan evidence", () => {
     expect(actual.fills.find((fill: { slot: string }) => fill.slot === "sections.data-table").scannedComposes).toContain("components.tag-group");
     expect(actual.fills.find((fill: { slot: string }) => fill.slot === "sections.task-list").scannedComposes).toContain("components.meter");
     expect(actual.claims).toEqual({ consumerAdoption: "unmeasured", descriptorConformance: "unmeasured", reportFreshness: "Reproducibility only; not conformance clearance.", runtimeAccessibility: "unmeasured" });
-    // Every section and frame fill under src/catalog/fills/foundry (63) is a lower-bound scan.
-    expect(actual.fills.filter((fill: { scanStatus: string }) => fill.scanStatus === "lower-bound")).toHaveLength(63);
+    // Every measured section and frame fill under src/catalog/fills/foundry is a lower-bound scan. BR-RETIRE3 re-pin: the
+    // BR-REGEN 63 less the seven retired section fills (src/catalog/retired.json:158-196), so 56.
+    expect(actual.fills.filter((fill: { scanStatus: string }) => fill.scanStatus === "lower-bound")).toHaveLength(56);
     expect(actual.inventory.components).not.toContain("components.chip");
   });
 
@@ -142,7 +143,7 @@ it.each([
   ["sections.faq", "Faq.tsx"], ["sections.empty-state", "EmptyState.tsx"],
   ["sections.features", "items/compat-features.tsx"],
   ["sections.steps", "OrderedStepSequence.tsx"], ["sections.status-list", "StatusList.tsx"],
-  ["sections.record-detail", "DetailView.tsx"],
+  // BR-RETIRE3: sections.record-detail is retired (src/catalog/retired.json:196) and its fill is deleted, so it has no row.
 ])("S4-7 observes a real direct Header call in %s", (slot, file) => {
   const actual = JSON.parse(readFileSync(new URL("../catalog/reports/sections-frames-consumption.json", import.meta.url), "utf8"));
   const row = actual.fills.find((fill: { slot: string }) => fill.slot === slot);

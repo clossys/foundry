@@ -34,20 +34,20 @@ describe("UsageMeter", () => {
   it.each([[79, "accent", null], [80, "warning", thresholds[0]!.message], [100, "danger", thresholds[1]!.message]] as const)("U2 uses inclusive highest thresholds at %s percent", (used, tone, message) => {
     const { container } = render(<UsageMeter {...sample} used={used} limit={100} />);
     expect(container.querySelector("[data-emphasis]")).toHaveAttribute("data-tone", tone);
-    expect(container.querySelectorAll("[data-part='mark']")).toHaveLength(message ? 1 : 0);
+    // components.status-mark is retired (owner 2026-11-20): the matched message carries the threshold tone as data.
+    if (message) expect(screen.getByText(message)).toHaveAttribute("data-tone", tone);
     for (const threshold of thresholds) {
       if (threshold.message === message) expect(screen.getByText(threshold.message)).toBeVisible();
       else expect(screen.queryByText(threshold.message)).toBeNull();
     }
   });
 
-  it("U3 shows only the highest message with its StatusMark shape and text", () => {
-    const { container } = render(<UsageMeter {...sample} used={12000} />);
+  it("U3 shows only the highest message, as visible text with its tone", () => {
+    render(<UsageMeter {...sample} used={12000} />);
     expect(screen.queryByText(thresholds[0]!.message)).toBeNull();
     const message = screen.getByText(thresholds[1]!.message);
     expect(message).toBeVisible();
-    expect(message.closest("[data-tone]")?.querySelector("[data-part='mark']")).toHaveAttribute("data-shape", "circle-x");
-    expect(container.querySelectorAll("[data-part='mark']")).toHaveLength(1);
+    expect(message).toHaveAttribute("data-tone", "danger");
   });
 
   it("U4 preserves over-limit fill, an interior tick and a shaded over-limit zone", () => {

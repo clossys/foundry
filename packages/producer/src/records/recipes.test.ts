@@ -77,7 +77,7 @@ describe("records/recipes", () => {
   });
 
   it("plumbCraftIssues: CLI verbs only, every stage deterministic, no model stage", () => {
-    expect(plumbCraftIssues("### 1. build (deterministic)\n\n```sh\nclossys release <pub> --build\n```\n")).toEqual([]);
+    expect(plumbCraftIssues("### 1. build (deterministic)\n\n```sh\nclossys publisher release <pub> --build\n```\n")).toEqual([]);
     expect(plumbCraftIssues("### 1. brief (model)\n\n```sh\nclossys next x --stage brief\n```\n")).toEqual([
       'craft.md has a model stage "### 1. brief (model)": a plumb recipe runs no model',
       'craft.md stage "### 1. brief (model)" is not marked (deterministic)',

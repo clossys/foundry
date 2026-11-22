@@ -14,7 +14,8 @@ it("registers the whole resolved document once in the existing reading placement
     slots: [{ name: "document", type: "records", required: true }],
     members: { mode: "closed", names: ["landmark.none"] },
     // GATES-RED G3: the composes and reads measured from the real import graph are declared.
-    allowedComposes: ["components.avatar", "components.badge", "components.card", "components.disclosure", "components.icon", "components.item", "components.link", "components.semantic-content", "components.status-mark"],
+    // BR-RETIRE3 (owner 2026-11-20): components.link becomes components.button; components.status-mark leaves.
+    allowedComposes: ["components.avatar", "components.badge", "components.card", "components.disclosure", "components.icon", "components.item", "components.button", "components.semantic-content"],
     parts: [],
     allowedReads: { themes: ["themes.accent", "themes.background", "themes.font-mono", "themes.primary", "themes.primary-foreground"], assets: [] },
     composes: ["sections.content", "sections.media", "sections.pricing", "sections.section-header"],

@@ -1,7 +1,5 @@
 import type { RuntimeJson } from "../../catalog-core/runtime-ports.js";
-import { blogSpecimenRecords } from "../../specimen/blog-specimen-data.js";
 import type { SpecimenDataset } from "../../specimen/specimen-dataset.js";
-import { cardsInputs, renderCards } from "./cards.js";
 import { chatInputs, renderChat } from "./chat.js";
 import { consentInputs, renderConsent } from "./consent.js";
 import { emptyStateInputs, renderEmptyState } from "./empty-state.js";
@@ -19,16 +17,15 @@ import { renderSteps, stepsInputs } from "./steps.js";
 import { renderTableOfContents, tableOfContentsInputs } from "./table-of-contents.js";
 import { renderWizard, wizardInputs } from "./wizard.js";
 
-/** The fifteen group-c Section leaves, by their name under `sections.`. */
+/** The fourteen group-c Section leaves, by their name under `sections.`. */
 export const GROUP_C_LEAVES = [
-  "cards", "chat", "consent", "empty-state", "error-state", "form", "link-index", "notices",
+  "chat", "consent", "empty-state", "error-state", "form", "link-index", "notices",
   "page-header", "pagination", "section-header", "settings", "steps", "table-of-contents", "wizard",
 ] as const;
 export type GroupCLeaf = (typeof GROUP_C_LEAVES)[number];
 
 /** Leaf -> package-owned runtime renderer. Each renders its registered Foundry block from `RuntimeRenderInput`. */
 export const sectionRenderersC: Readonly<Record<`sections.${GroupCLeaf}`, SectionRenderer>> = {
-  "sections.cards": renderCards,
   "sections.chat": renderChat,
   "sections.consent": renderConsent,
   "sections.empty-state": renderEmptyState,
@@ -47,7 +44,6 @@ export const sectionRenderersC: Readonly<Record<`sections.${GroupCLeaf}`, Sectio
 
 /** Leaf -> the contract slots and members its renderer maps, and those it refuses for want of an API. */
 export const sectionInputsC: Readonly<Record<GroupCLeaf, SectionInputs>> = {
-  cards: cardsInputs,
   chat: chatInputs,
   consent: consentInputs,
   "empty-state": emptyStateInputs,
@@ -77,9 +73,6 @@ const rows = (list: readonly RuntimeObject[]): readonly RuntimeObject[] => list;
  * names `anatomy.header`.
  */
 export const sectionDatasetC: Readonly<Record<GroupCLeaf, (dataset: SpecimenDataset) => Content>> = {
-  cards: ({ sections: S }) => ({
-    records: plainJson(blogSpecimenRecords(S.recordCards.records, S.recordEditorial)),
-  }),
   chat: ({ sections: S }) => ({
     parts: plainJson(S.chat.messages),
     composer: { placeholder: S.chat.placeholder },
@@ -111,7 +104,7 @@ export const sectionDatasetC: Readonly<Record<GroupCLeaf, (dataset: SpecimenData
   }),
   notices: ({ sections: S }) => ({
     [ANATOMY_CONTENT_KEY]: { heading: S.noticeList.label },
-    // The notice record's link action has no contract component (NEED: components.link), so it is left out.
+    // The notice record's link action has no contract component (NEED: components.button LinkButton), so it is left out.
     notices: S.noticeList.notices.map(({ action: _action, ...notice }) => plainJson(notice)),
   }),
   "page-header": d => ({

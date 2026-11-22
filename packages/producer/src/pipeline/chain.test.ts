@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { runNextCli, runNextSubmitCli } from "../cli/next.js";
 import { runRunCli } from "../cli/run.js";
@@ -41,6 +42,8 @@ function workspace(): string {
   return root;
 }
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
+/** The shared fixture consumer (test-fixtures/consumer): its Writer slots hold submitted, passing candidates. */
+const FIXTURE_CONSUMER = fileURLToPath(new URL("../../test-fixtures/consumer", import.meta.url));
 /** The copy converted to clossys.slot/2 and pin/2 (clossys migrate slots --apply); its plan must have no finding. */
 function converted(root: string): string {
   const plan = planSlotsMigration(root, { at: "2026-11-17T12:00:00.000Z", version: "0.0.0-test" });
@@ -399,23 +402,31 @@ describe("clossys next", { timeout: 60_000 }, () => {
     expect((await runPipeline(["rule", "R-W6A-FIXTURE", "--quote", "records change only through verbs", "--date", "2026-11-11", "--status", "enforced", ...at], root)).exitCode).toBe(1);
     expect((await runPipeline(["rule", "R-W6A-FIXTURE", "--quote", "records change only through verbs", "--date", "2026-11-11", "--status", "unenforced", ...at], root)).exitCode).toBe(0);
     expect((await runPipeline(["ia", "designer/assets.favicon", "--remove", ...at], root)).exitCode).toBe(1);
-    const approve = (await runNextCli(["--owner", "--json", ...at], root)).output as { packets: { step: string; options: { argv: string[] | null }[] }[] };
-    const packet = approve.packets.find(each => each.step === "writer.approve");
-    if (packet) {
-      const argv = packet.options[0]!.argv!.slice(1);
-      // The packet names the owner's answer as the <queue-answer> placeholder: run as printed it is refused, and with
-      // the queue entry holding the owner's answer (owner:queue.approve#<id>) the approval records.
-      expect(argv).toContain(QUEUE_ANSWER);
-      const placeholder = await runPipeline([...argv, ...at], root);
-      expect(placeholder.exitCode).toBe(1);
-      expect(placeholder.message).toContain("only the owner approves Writer copy");
-      const [, item, name] = argv as [string, string, string];
-      const by = ownerEntry(join(root, "clossys"), { queue: "approve", id: "20261121T0000Z-chain-approve", about: item, answer: { candidate: name }, at: "2026-11-21T00:00:00Z" });
-      const answered = await runPipeline([...argv.map(word => word === QUEUE_ANSWER ? by : word), ...at], root);
-      expect(answered.exitCode, `${argv.join(" ")}: ${answered.message}`).toBe(0);
-      const after = (await runNextCli(["--owner", "--json", ...at], root)).output as { packets: { step: string; item: string }[] };
-      expect(after.packets.some(each => each.step === "writer.approve" && each.item === argv[1])).toBe(false);
-    }
+  });
+
+  it("records the owner's Writer approval through the pin.writer packet: refused as printed, recorded with the answered queue entry", async () => {
+    // The fixture consumer with one Writer copy slot's pin left out: its submitted, passing candidate's keys wait for
+    // the owner. The packet's first option pins the candidate's record (writer/<slot>#copy), as the retired approve
+    // derived it, and names the owner's answer as the <queue-answer> placeholder.
+    const slot = "writer/frames.site-header.copy";
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "chain-")));
+    dirs.push(root);
+    const unpinned = join(FIXTURE_CONSUMER, "clossys", "agents", "writer", "frames.site-header.copy", "pin.json");
+    cpSync(FIXTURE_CONSUMER, root, { recursive: true, filter: src => src !== unpinned });
+    const at = ["--root", root];
+    const packets = async () => ((await runNextCli(["--owner", "--json", ...at], root)).output as { packets: { step: string; item: string; options: { argv: string[] | null }[] }[] }).packets;
+    const packet = (await packets()).find(each => each.step === "pin.writer" && each.item === slot);
+    expect(packet, `no pin.writer packet for ${slot}`).toBeDefined();
+    const argv = packet!.options[0]!.argv!.slice(1);
+    expect(argv).toEqual(["pin", `${slot}#copy`, "copy-v1.md", "--basis", "picked", "--by", QUEUE_ANSWER]);
+    const placeholder = await runPipeline([...argv, ...at], root);
+    expect(placeholder.exitCode).toBe(1);
+    expect(placeholder.message).toBe(`pin refused: --by ${QUEUE_ANSWER} names no queue answer; an owner pin is --by owner:queue.<kind>#<id>, else planner[:<ref>] or agent:<agent>`);
+    const by = ownerEntry(join(root, "clossys"), { queue: "approve", id: "20261121T0000Z-chain-approve", about: slot, answer: { candidate: "copy-v1.md" }, at: "2026-11-21T00:00:00Z" });
+    const answered = await runPipeline([...argv.map(word => word === QUEUE_ANSWER ? by : word), ...at], root);
+    expect(answered.exitCode, `${argv.join(" ")}: ${answered.message}`).toBe(0);
+    expect(answered.message).toMatch(new RegExp(`^${slot.replace(/[.#]/g, "\\$&")}#copy: pinned copy-v1\\.md \\([0-9a-f]{12}\\), decided by ${by.replace(/[.#]/g, "\\$&")} \\(picked\\)$`));
+    expect((await packets()).some(each => each.step === "pin.writer" && each.item === slot)).toBe(false);
   });
 
   it("opens the ia step on a fresh workspace and places a Foundry IA through clossys ia --adopt, the Director first", async () => {
@@ -468,7 +479,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
     }
     expect(owned.find(packet => packet.step === "evidence")!.ask!.agent).toBe("director");
     // A slot with no candidate is its agent's to draft: no owner question asks it, and every agent's questions hold the rules.
-    const pins = gapsOf(root).gaps.filter(gap => gap.code.startsWith("open.pin.") || gap.code === "open.writer.approve");
+    const pins = gapsOf(root).gaps.filter(gap => gap.code.startsWith("open.pin."));
     // One open pin per placed slot: the consumed leaves of each Foundry IA (CONSISTENCY D5 option 1: a fresh adopt
     // places only the package leaves a declared or seated publication reaches, records/slot-model/consumed.ts).
     // Designer's tree is already minus retired.json, since a fresh adopt skips retired leaves as `clossys migrate recut` does.

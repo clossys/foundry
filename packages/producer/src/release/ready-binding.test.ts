@@ -75,7 +75,7 @@ describe("R1: the owner's ready answer is bound to one manifest", () => {
     await release(world, "--build", now, noisy);
     expect((await release(world, "--manifest", now)).exitCode).toBe(0);
     const run = (argv: readonly string[], cwd: string) => argv[0] === "compile" ? Promise.resolve({ exitCode: 0 as const, message: "compiled (stub)" })
-      : argv[0] === "release" ? runReleaseCli(argv.slice(1), cwd, { builder: noisy, now }) : runCli(argv, cwd);
+      : argv[0] === "publisher" && argv[1] === "release" ? runReleaseCli(argv.slice(2), cwd, { builder: noisy, now }) : runCli(argv, cwd);
     const hooks = cliHooks(world.root, undefined, run);
     const started = await startRun(world.root, { loop: "loop.release", publication: "site" }, hooks, { now });
     const v = started.state!.vars.manifest!;
@@ -193,14 +193,14 @@ describe("R2: release.ready re-derives what the manifest says", () => {
   });
 });
 
-describe("R3: clossys release exits 2 on an environment error", () => {
+describe("R3: clossys publisher release exits 2 on an environment error", () => {
   it("outside a workspace (--root with no clossys/) is exit 2, through runReleaseCli and runCli", async () => {
     const dir = realpathSync(mkdtempSync(join(tmpdir(), "release-no-workspace-")));
     dirs.push(dir);
     for (const flag of ["--build", "--manifest", "--gates", "--ready"]) {
       const direct = await runReleaseCli(["site", flag, "--root", dir], dir);
       expect(direct.exitCode, direct.message).toBe(2);
-      const viaMain = await runCli(["release", "site", flag, "--root", dir], dir);
+      const viaMain = await runCli(["publisher", "release", "site", flag, "--root", dir], dir);
       expect(viaMain.exitCode, viaMain.message).toBe(2);
     }
     expect((await runReleaseCli(["site", "--gates", "--root", join(dir, "nonexistent")], dir)).exitCode).toBe(2);
@@ -302,7 +302,7 @@ describe("R6: loop.release records release.ready from the check, not the pin ste
     const now = clock();
     const run = (argv: readonly string[], cwd: string) => argv[0] === "compile" ? Promise.resolve({ exitCode: 0 as const, message: "compiled (stub)" })
       : argv[0] === "pin" ? Promise.resolve({ exitCode: 0 as const, message: "pinned (stub, wrote nothing)" })
-        : argv[0] === "release" ? runReleaseCli(argv.slice(1), cwd, { builder: stubBuilder, now }) : runCli(argv, cwd);
+        : argv[0] === "publisher" && argv[1] === "release" ? runReleaseCli(argv.slice(2), cwd, { builder: stubBuilder, now }) : runCli(argv, cwd);
     const hooks = cliHooks(world.root, undefined, run);
     const started = await startRun(world.root, { loop: "loop.release", publication: "site" }, hooks, { now });
     answerQueueEntry(world.root, { entry: started.entry!, answer: "ready", by: "owner", via: "chat", quote: "ready" }, now());

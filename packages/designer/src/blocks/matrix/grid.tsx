@@ -8,7 +8,6 @@ import { HarveyMark } from "./harvey-mark.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
-const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 type GridProps = Extract<MatrixProps, { arrangement: "grid" }>;
@@ -113,7 +112,7 @@ function CellValue({ cell, ground, emptyLabel, markLabels }: { cell: Cell; groun
       {cell.delta !== undefined ? <SemanticContent as="span" className={cx("text-body-s font-body tabular-nums", TREND_TEXT_CLASSES[trend], BACKING_CLASSES[ground])}>{cell.delta}</SemanticContent> : null}
     </SemanticContent>;
     }
-    case "status": return <StatusMark tone={cell.tone} className={BACKING_CLASSES[ground]}>{cell.label}</StatusMark>;
+    case "status": return <SemanticContent as="span" data-tone={cell.tone} className={BACKING_CLASSES[ground]}>{cell.label}</SemanticContent>;
     case "mark": return <SemanticContent as="span" className="inline-flex min-w-0 items-center"><HarveyMark value={cell.value} ground={ground} /><SemanticContent as="span" className="sr-only">{markLabels![cell.value]}</SemanticContent></SemanticContent>;
     case "empty": return <SemanticContent as="span" className="sr-only">{emptyLabel}</SemanticContent>;
   }

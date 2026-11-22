@@ -1,5 +1,5 @@
 // Generated from sections.article by src/generated/props/generate.ts; do not edit.
-export const articleContractSha256 = "447d6c61408ea4e4efdc1ccf69ffcf311363dbf03f8162855004253626c8b870";
+export const articleContractSha256 = "636419d9dbbe1dc8c4df45845d01dd9736ae3d1f7663c84f0c3f27b3cca93809";
 
 export type ArticleCopy = {
   header?: {

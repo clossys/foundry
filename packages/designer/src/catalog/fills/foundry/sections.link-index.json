@@ -35,9 +35,7 @@
         "components.button",
         "components.card",
         "components.icon",
-        "components.link",
-        "components.semantic-content",
-        "components.status-mark"
+        "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
@@ -47,9 +45,7 @@
           "components.button",
           "components.card",
           "components.icon",
-          "components.link",
-          "components.semantic-content",
-          "components.status-mark"
+          "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
@@ -58,9 +54,7 @@
             "components.button",
             "components.card",
             "components.icon",
-            "components.link",
-            "components.semantic-content",
-            "components.status-mark"
+            "components.semantic-content"
           ],
           "themes": [
             "themes.primary"
@@ -85,11 +79,11 @@
           },
           {
             "path": "packages/designer/src/blocks/items/render.tsx",
-            "sha256": "17b25a4de0142df0be62b7bebdd7f2405f97f9f59fb1b7ed14fd849f36d44b63"
+            "sha256": "4dd5e63b80d66e5f5b458ddafeda979cdbacb04d50b76b0b7675ab63ef78b502"
           },
           {
             "path": "packages/designer/src/blocks/NavGrid.tsx",
-            "sha256": "59a10a390ca9a4a875718ba153698364bb33d11ec256a7b0a5381442a994e2f2"
+            "sha256": "17a996a1a94f6d21377e5dae85405939d8bcfc556c18671fbad850507e17645d"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -97,7 +91,7 @@
           },
           {
             "path": "packages/designer/src/blocks/stretched-link.tsx",
-            "sha256": "20c899ae1a637fe6ece7a4a7bca2f94065462d7fcb3a0d09a24fea28c275fd8f"
+            "sha256": "b446684e391b8b03a30f4098f0122f112d9c9dc15c15adf703869dbda45398df"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

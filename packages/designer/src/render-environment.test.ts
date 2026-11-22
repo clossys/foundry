@@ -150,7 +150,6 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "StockItem",
         "assertItemLink",
         "Items",
-        "LegalProse",
         "RecordLedger",
         "Scene",
         "layoutScene",
@@ -235,7 +234,7 @@ it("imports and calls the compiled TableOfContents server graph under react-serv
   const props = { label: "On this page", items: [{ id: "a", label: "One" }, { id: "b", label: "Two" }, { id: "c", label: "Three" }], currentId: "b" };
   // planner:c5-drt (D3): react-server emits selected leaves (semantic-content nav, link anchors), never a default implementation.
   const server = `import {TableOfContents} from ${JSON.stringify(absolute)}; ${SERVER_WALK} const out = walk(TableOfContents(${JSON.stringify(props)})); process.stdout.write(JSON.stringify(out.leaves));`;
-  expectPinnedLeaves(JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", server], { encoding: "utf8", timeout: 10_000 })), ["components.link", "components.semantic-content"]);
+  expectPinnedLeaves(JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", server], { encoding: "utf8", timeout: 10_000 })), ["components.button", "components.semantic-content"]); // BR-RETIRE3: link anchors are components.button's LinkButton
   const rendered = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {TableOfContents} from ${JSON.stringify(absolute)}; ${PINNED_PROVIDER} process.stdout.write(renderToStaticMarkup(h(Pinned, null, h(TableOfContents, ${JSON.stringify(props)}))));`;
   const host = document.createElement("div");
   host.innerHTML = execFileSync(process.execPath, ["--input-type=module", "-e", rendered], { encoding: "utf8", timeout: 10_000, cwd: packageRoot });

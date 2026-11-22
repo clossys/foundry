@@ -1374,7 +1374,7 @@
       },
       "allowedComposes": [
         "components.avatar",
-        "components.link",
+        "components.button",
         "components.semantic-content"
       ],
       "parts": [
@@ -1534,7 +1534,7 @@
       "allowedComposes": [
         "components.avatar",
         "components.badge",
-        "components.link",
+        "components.button",
         "components.icon",
         "components.semantic-content"
       ],
@@ -1926,7 +1926,7 @@
         ]
       },
       "allowedComposes": [
-        "components.link",
+        "components.button",
         "components.separator",
         "components.semantic-content",
         "components.card"
@@ -2532,7 +2532,6 @@
       },
       "allowedComposes": [
         "components.button",
-        "components.link",
         "components.semantic-content"
       ],
       "parts": [
@@ -2660,7 +2659,6 @@
       },
       "allowedComposes": [
         "components.button",
-        "components.link",
         "components.semantic-content",
         "components.card"
       ],
@@ -2816,7 +2814,7 @@
         "names": []
       },
       "allowedComposes": [
-        "components.link",
+        "components.button",
         "components.badge",
         "components.semantic-content"
       ],
@@ -2874,7 +2872,7 @@
       },
       "allowedComposes": [
         "components.card",
-        "components.link",
+        "components.button",
         "components.badge",
         "components.semantic-content"
       ],
@@ -3199,7 +3197,6 @@
         "components.file-trigger",
         "components.avatar",
         "components.spinner",
-        "components.link",
         "components.tooltip",
         "components.semantic-content",
         "components.icon"
@@ -3579,7 +3576,6 @@
       },
       "allowedComposes": [
         "components.table",
-        "components.status-mark",
         "components.badge",
         "components.card",
         "components.icon",
@@ -3588,7 +3584,6 @@
         "components.button",
         "components.dialog",
         "components.menu",
-        "components.link",
         "components.semantic-content"
       ],
       "parts": [
@@ -3886,7 +3881,6 @@
       },
       "allowedComposes": [
         "components.button",
-        "components.link",
         "components.card",
         "components.icon",
         "components.semantic-content"
@@ -4066,7 +4060,7 @@
         ]
       },
       "allowedComposes": [
-        "components.link",
+        "components.button",
         "components.semantic-content",
         "components.card"
       ],
@@ -4642,9 +4636,7 @@
         "components.select",
         "components.text-field",
         "components.badge",
-        "components.status-mark",
         "components.tooltip",
-        "components.link",
         "components.skeleton",
         "components.semantic-content",
         "components.tag-group",
@@ -5031,7 +5023,6 @@
       },
       "allowedComposes": [
         "components.button",
-        "components.link",
         "components.icon",
         "components.semantic-content"
       ],
@@ -5204,7 +5195,6 @@
       },
       "allowedComposes": [
         "components.button",
-        "components.link",
         "components.semantic-content"
       ],
       "parts": [
@@ -5375,7 +5365,6 @@
         "components.resize-handle",
         "components.button",
         "components.icon",
-        "components.link",
         "components.semantic-content"
       ],
       "parts": [
@@ -5707,7 +5696,7 @@
         "components.badge",
         "components.card",
         "components.icon",
-        "components.link",
+        "components.button",
         "components.item",
         "components.tabs",
         "components.semantic-content"
@@ -6176,7 +6165,6 @@
         "components.checkbox",
         "components.combo-box",
         "components.select",
-        "components.link",
         "components.semantic-content"
       ],
       "parts": [
@@ -6668,9 +6656,7 @@
       },
       "allowedComposes": [
         "components.button",
-        "components.link",
-        "components.semantic-content",
-        "components.media-player"
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -7000,12 +6986,10 @@
         ]
       },
       "allowedComposes": [
-        "components.link",
+        "components.button",
         "components.card",
         "components.icon",
         "components.badge",
-        "components.button",
-        "components.status-mark",
         "components.semantic-content"
       ],
       "parts": [
@@ -7194,7 +7178,7 @@
       },
       "allowedComposes": [
         "components.item",
-        "components.link",
+        "components.button",
         "components.logo",
         "components.semantic-content"
       ],
@@ -8325,7 +8309,6 @@
       },
       "allowedComposes": [
         "components.button",
-        "components.link",
         "components.select",
         "components.icon",
         "components.semantic-content",
@@ -8506,7 +8489,7 @@
       "allowedComposes": [
         "components.avatar",
         "components.card",
-        "components.link",
+        "components.button",
         "components.icon",
         "components.semantic-content"
       ],
@@ -8685,10 +8668,8 @@
         "components.card",
         "components.badge",
         "components.icon",
-        "components.status-mark",
         "components.semantic-content",
-        "components.table",
-        "components.link"
+        "components.table"
       ],
       "parts": [
         "sections.band",
@@ -8926,7 +8907,7 @@
         "names": []
       },
       "allowedComposes": [
-        "components.link",
+        "components.button",
         "components.badge",
         "components.semantic-content"
       ],
@@ -8980,7 +8961,7 @@
         "names": []
       },
       "allowedComposes": [
-        "components.link",
+        "components.button",
         "components.badge",
         "components.semantic-content"
       ],
@@ -9055,7 +9036,6 @@
         "components.badge",
         "components.skeleton",
         "components.button",
-        "components.link",
         "components.disclosure",
         "components.semantic-content"
       ],
@@ -9652,9 +9632,7 @@
       },
       "allowedComposes": [
         "components.button",
-        "components.link",
         "components.badge",
-        "components.status-mark",
         "components.menu",
         "components.semantic-content"
       ],
@@ -9802,9 +9780,8 @@
         "components.disclosure",
         "components.icon",
         "components.item",
-        "components.link",
-        "components.semantic-content",
-        "components.status-mark"
+        "components.button",
+        "components.semantic-content"
       ],
       "parts": [],
       "allowedReads": {
@@ -10359,7 +10336,6 @@
         "components.text-field",
         "components.button",
         "components.form",
-        "components.link",
         "components.semantic-content",
         "components.banner",
         "components.field"
@@ -10475,7 +10451,7 @@
         "names": []
       },
       "allowedComposes": [
-        "components.link",
+        "components.button",
         "components.badge",
         "components.semantic-content"
       ],
@@ -10529,7 +10505,7 @@
         "names": []
       },
       "allowedComposes": [
-        "components.link",
+        "components.button",
         "components.badge",
         "components.semantic-content"
       ],
@@ -10849,7 +10825,6 @@
         ]
       },
       "allowedComposes": [
-        "components.status-mark",
         "components.semantic-content"
       ],
       "parts": [
@@ -11176,7 +11151,6 @@
         "names": []
       },
       "allowedComposes": [
-        "components.status-mark",
         "components.semantic-content"
       ],
       "parts": [
@@ -11357,7 +11331,7 @@
         ]
       },
       "allowedComposes": [
-        "components.link",
+        "components.button",
         "components.disclosure",
         "components.semantic-content"
       ],
@@ -11488,8 +11462,7 @@
         "components.avatar",
         "components.badge",
         "components.icon",
-        "components.status-mark",
-        "components.link",
+        "components.button",
         "components.meter",
         "components.semantic-content"
       ],
@@ -12140,7 +12113,6 @@
       "allowedComposes": [
         "components.meter",
         "components.progress-bar",
-        "components.status-mark",
         "components.semantic-content"
       ],
       "composes": [

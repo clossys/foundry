@@ -156,6 +156,8 @@
     "components.chart-status-strip",
     "components.chart-waterfall",
     "components.dropdown-menu",
+    "components.link",
+    "components.media-player",
     "components.native-action",
     "components.number-field",
     "components.specimen-copy-in-context",
@@ -165,7 +167,8 @@
     "components.specimen-passage",
     "components.specimen-player",
     "components.specimen-swatch",
-    "components.specimen-viewport"
+    "components.specimen-viewport",
+    "components.status-mark"
   ],
   "starter": [
     "components.button",
@@ -182,7 +185,6 @@
     "components.combo-box",
     "components.table",
     "components.item",
-    "components.link",
     "components.breadcrumbs",
     "components.tabs",
     "components.sidebar",

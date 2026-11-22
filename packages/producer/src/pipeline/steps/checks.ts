@@ -21,7 +21,7 @@ export const CHECKS = [
   defineCheck({ id: "no-handrolling", files: ["studio/checks/check-no-handrolling.cjs"] }),
   defineCheck({ id: "no-page-jsx", files: ["studio/checks/check-no-page-jsx.cjs"] }),
   defineCheck({ id: "theme-parity", files: ["studio/checks/check-theme-parity.cjs"] }),
-  defineCheck({ id: "studio-p0", files: ["studio/checks/p0-studio-check.cjs", "studio/checks/chrome-launch.cjs"], npm: ["studio:check"], rootNpm: ["studio:check"] }),
+  defineCheck({ id: "studio-p0", files: ["studio/checks/p0-studio-check.cjs", "studio/checks/chrome-launch.cjs", "studio/checks/route-scope.cjs"], npm: ["studio:check"], rootNpm: ["studio:check"] }),
   defineCheck({ id: "studio-propagate", files: ["studio/checks/p0-propagate.mjs"], npm: ["studio:propagate"], rootNpm: ["studio:propagate"] }),
   defineCheck({ id: "studio-mutations", files: ["studio/checks/p0-studio-mutations.cjs"], npm: ["studio:mutation-proof"], rootNpm: ["studio:mutation-proof"] }),
   defineCheck({ id: "publisher-preview", files: ["studio/checks/publisher-preview.cjs"] }),
@@ -34,7 +34,7 @@ export const CHECKS = [
   defineCheck({ id: "rules", rootNpm: ["check:rules"] }),
   defineCheck({ id: "slot-options", files: ["scripts/check-slot-options.mjs"], npm: ["check:slot-options"], rootNpm: ["check:slot-options"] }),
   defineCheck({ id: "ia-source", files: ["scripts/check-ia-source.mjs"], npm: ["check:ia-source"] }),
-  defineCheck({ id: "no-consumer-content", files: ["scripts/check-no-consumer-content.mjs"], npm: ["check:no-consumer-content"] }),
+  defineCheck({ id: "no-consumer-content", files: ["scripts/check-no-consumer-content.mjs"], npm: ["check:no-consumer-content", "test:no-consumer-content"] }),
   defineCheck({ id: "slot-defaults", files: ["scripts/check-slot-defaults.mjs"], npm: ["check:slot-defaults"] }),
   defineCheck({ id: "pipeline-seats", files: ["scripts/generate-pipeline-seats.mjs"], npm: ["check:pipeline-seats", "generate:pipeline-seats"] }),
   defineCheck({ id: "slot-state", files: ["scripts/check-slot-state.mjs"], npm: ["check:slot-state"] }),
@@ -45,5 +45,13 @@ export const CHECKS = [
   defineCheck({ id: "no-hidden-fallbacks", files: ["scripts/check-no-hidden-fallbacks.mjs"], npm: ["check:no-hidden-fallbacks"] }),
   defineCheck({ id: "pin-propagation", rootNpm: ["check:pin-propagation"] }),
   defineCheck({ id: "every-candidate-previewable", rootNpm: ["check:every-candidate-previewable"] }),
-  defineCheck({ id: "studio", files: ["scripts/check-studio.mjs"], npm: ["check:studio"], rootNpm: ["check"] }),
+  defineCheck({ id: "studio", files: ["scripts/check-studio.mjs", "studio/checks/studio-origin.mjs"], npm: ["check:studio"], rootNpm: ["check"] }),
+  // A check:studio sub-check and a rules-registry rule: `clossys check --e2e`.
+  defineCheck({ id: "e2e", npm: ["check:e2e"] }),
+  // The root check's engine side-door scan, `clossys check --side-door`.
+  defineCheck({ id: "engine-side-door", rootNpm: ["check:engine-side-door"] }),
+  // The engine doc is generated from the engine's constants; its test fails when the doc differs.
+  defineCheck({ id: "engine-doc", files: ["scripts/generate-engine-doc.mjs"], npm: ["generate:engine-doc"] }),
+  // The root check's review doc freshness, `clossys review --check-doc`.
+  defineCheck({ id: "review-doc", rootNpm: ["check:review-doc"] }),
 ];

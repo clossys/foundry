@@ -1,5 +1,4 @@
 import { Meter } from "../components/Meter.server.js";
-import { StatusMark } from "../components/StatusMark.js";
 import { cx } from "../components/internal/cx.js";
 import type { UsageMeterProps, UsageMeterThreshold } from "./UsageMeter.js";
 
@@ -56,7 +55,7 @@ export function UsageMeter({
         limitText={limitText}
         tone={matched ? matched.tone : "accent"}
       />
-      {matched ? <StatusMark className="min-w-0" tone={matched.tone}>{matched.message}</StatusMark> : null}
+      {matched ? <span className="min-w-0" data-tone={matched.tone}>{matched.message}</span> : null}
       {size !== "compact" && projectedText !== undefined ? <p className="m-0 min-w-0 text-body-s text-ink-secondary">{projectedText}</p> : null}
       {action != null ? <div className="min-w-0">{action}</div> : null}
     </section>

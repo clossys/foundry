@@ -1,4 +1,3 @@
-import type { MediaPlayer as MediaPlayerComponent } from "../components/media-player/media-player.js";
 import type { Mode, Resolved } from "../catalog-core/types.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import type { SemanticContent as SemanticContentComponent } from "../components/SemanticContent.js";
@@ -14,7 +13,6 @@ export type { HeroBackdrop, HeroBackdropKind, HeroImageBackdrop, HeroVideoBackdr
 export type { HeroBackdropScrim } from "./hero/StillBackdrop.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
-const MediaPlayer = componentLeaf<typeof MediaPlayerComponent>("components.media-player");
 const SemanticContent = componentLeaf<typeof SemanticContentComponent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -165,8 +163,7 @@ export function Hero({
       data-backdrop-kind={resolvedBackdrop.kind}
     >
       {resolvedBackdrop.art ? <StillBackdrop art={resolvedBackdrop.art} scrim={backdropScrim} /> : null}
-      {resolvedBackdrop.video || resolvedBackdrop.graphic || resolvedBackdrop.interactive ? <SemanticContent as="div" data-backdrop-live="" aria-hidden="true" className="absolute inset-0" style={{ pointerEvents: "none", ...resolvedBackdrop.graphic?.style }}>
-        {resolvedBackdrop.video ? <MediaPlayer decorative video={resolvedBackdrop.video.video} poster={{ kind: "photo", src: resolvedBackdrop.video.video.poster!, width: resolvedBackdrop.video.poster.width, height: resolvedBackdrop.video.poster.height, decorative: true }} muted autoplay loop /> : null}
+      {resolvedBackdrop.graphic || resolvedBackdrop.interactive ? <SemanticContent as="div" data-backdrop-live="" aria-hidden="true" className="absolute inset-0" style={{ pointerEvents: "none", ...resolvedBackdrop.graphic?.style }}>
         {resolvedBackdrop.interactive ? <InteractiveBackdrop descriptor={resolvedBackdrop.interactive} /> : null}
         <SemanticContent as="div" className="absolute inset-0" style={{ pointerEvents: "none", backgroundImage: `linear-gradient(transparent, var(--color-overlay-scrim, ${TOKENS["--color-overlay-scrim"]!.value}))` }} />
         {Array.from({ length: HERO_SCRIM_PASSES[backdropScrim] }, (_, index) => <SemanticContent as="div" key={index} data-backdrop-live-scrim={backdropScrim} className="absolute inset-0 bg-overlay-scrim" style={{ pointerEvents: "none" }} />)}

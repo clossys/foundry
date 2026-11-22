@@ -3,7 +3,6 @@ import { Badge } from "../../components/preview-runtime/components/badge/badge.j
 import { BADGE_TONE, CARD_SURFACE, type BadgeTone } from "../../components/surface-tones.js";
 import { hasContent } from "../items/policies.js";
 import { Card } from "../../components/preview-runtime/components/card/card.js";
-import { StatusMark } from "../../components/StatusMark.js";
 import { cx } from "../../components/internal/cx.js";
 import { UI_BORDER_HAIRLINE, UI_ELEVATION_PANEL } from "../../components/internal/ui-vars.js";
 import { AnatomyMarker, SpecimenPartView, type SpecimenPart, type SpecimenStatus } from "./parts.js";
@@ -146,7 +145,7 @@ export function SpecimenPanel({ title, meta, status, badge, parts, footer, marke
             </div>
             {badge !== undefined || status !== undefined ? <div className="flex flex-wrap items-center gap-sm">
               {statusBadge ? <span className="inline-flex rounded-pill bg-surface-base">{badgeElement}</span> : badgeElement}
-              {status ? <StatusMark tone={status.tone}>{status.label}</StatusMark> : null}
+              {status ? <span data-tone={status.tone}>{status.label}</span> : null}
             </div> : null}
           </div>
         ) : null}

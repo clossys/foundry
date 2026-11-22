@@ -29,13 +29,12 @@
       "composes": [
         "components.avatar",
         "components.badge",
+        "components.button",
         "components.card",
         "components.disclosure",
         "components.icon",
         "components.item",
-        "components.link",
         "components.semantic-content",
-        "components.status-mark",
         "sections.content",
         "sections.media",
         "sections.pricing",
@@ -47,13 +46,12 @@
         "scannedComposes": [
           "components.avatar",
           "components.badge",
+          "components.button",
           "components.card",
           "components.disclosure",
           "components.icon",
           "components.item",
-          "components.link",
           "components.semantic-content",
-          "components.status-mark",
           "sections.content",
           "sections.media",
           "sections.pricing",
@@ -64,13 +62,12 @@
           "components": [
             "components.avatar",
             "components.badge",
+            "components.button",
             "components.card",
             "components.disclosure",
             "components.icon",
             "components.item",
-            "components.link",
-            "components.semantic-content",
-            "components.status-mark"
+            "components.semantic-content"
           ],
           "themes": [
             "themes.accent",
@@ -153,7 +150,7 @@
           },
           {
             "path": "packages/designer/src/blocks/items/render.tsx",
-            "sha256": "17b25a4de0142df0be62b7bebdd7f2405f97f9f59fb1b7ed14fd849f36d44b63"
+            "sha256": "4dd5e63b80d66e5f5b458ddafeda979cdbacb04d50b76b0b7675ab63ef78b502"
           },
           {
             "path": "packages/designer/src/blocks/items/reveal-policy.tsx",
@@ -173,7 +170,7 @@
           },
           {
             "path": "packages/designer/src/blocks/ledger-rows.tsx",
-            "sha256": "92c54874012bc8fd01eab44e054edb6fd8e0493f8471dabba1ec31660899568e"
+            "sha256": "2fc2bd94dec55a2248f3d0c37b02db3a528bd6fb0c9ee3b1564a5be617a7765c"
           },
           {
             "path": "packages/designer/src/blocks/Matrix.server.tsx",
@@ -181,7 +178,7 @@
           },
           {
             "path": "packages/designer/src/blocks/matrix/grid.tsx",
-            "sha256": "bf0a1ea6bac2c18ce864a684a3413cf49980ad56bb0ef945b15c0879fd7b3faa"
+            "sha256": "19e3c1f730c4557856309785d98977b4b0d7bb68edd9396608238702e0a6418f"
           },
           {
             "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",
@@ -201,7 +198,7 @@
           },
           {
             "path": "packages/designer/src/blocks/scene/Scene.tsx",
-            "sha256": "22d1272815f1071959c0b8e380aa4544bbd5901f09a540197f73fc7b6522c007"
+            "sha256": "ba4ae29eb378fe7a8cb2ed3a4140307378d53b47c3444a6f798de4fa7ee8268f"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -209,7 +206,7 @@
           },
           {
             "path": "packages/designer/src/blocks/specimen/parts.tsx",
-            "sha256": "899b12a57c040ab0c723c8ad6f71ac8b2c613b79424daa319bfc3e193e192f47"
+            "sha256": "8a1b13fcde4eccf012b068da22b35fb4df83f0526e79f0c9583de69c25b7ba46"
           },
           {
             "path": "packages/designer/src/blocks/specimen/Specimen.tsx",
@@ -217,7 +214,7 @@
           },
           {
             "path": "packages/designer/src/blocks/specimen/SpecimenPanel.tsx",
-            "sha256": "1d9bffc48aba55c2958d21235056bc477561c56fc31e85b6953a9177d027546b"
+            "sha256": "00351a3b8b042977fcdb6ebc02bbe20f4f7f36229ab1d66e340650149072feba"
           },
           {
             "path": "packages/designer/src/blocks/Stat.tsx",
@@ -225,7 +222,7 @@
           },
           {
             "path": "packages/designer/src/blocks/stretched-link.tsx",
-            "sha256": "20c899ae1a637fe6ece7a4a7bca2f94065462d7fcb3a0d09a24fea28c275fd8f"
+            "sha256": "b446684e391b8b03a30f4098f0122f112d9c9dc15c15adf703869dbda45398df"
           },
           {
             "path": "packages/designer/src/blocks/Testimonial.server.tsx",
@@ -265,7 +262,7 @@
           },
           {
             "path": "packages/designer/src/components/preview-runtime/components/button/button.tsx",
-            "sha256": "8a023ebd980fc814e92524a65d09feb29f7ffd4eadf4c08d970516f554cd8637"
+            "sha256": "8b5891918ab6909ea98ebf8d1a3abc9f25e24fbbaac29515b01a066ddc3c2ce4"
           },
           {
             "path": "packages/designer/src/components/surface-tones.ts",

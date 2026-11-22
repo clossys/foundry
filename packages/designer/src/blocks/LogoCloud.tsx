@@ -6,7 +6,7 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js"
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.logo-cloud", "foundry/sections.logo-cloud");
-const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const ItemMedia = componentLeaf<typeof import("../components/item/item.js").ItemMedia>("components.item", "ItemMedia");
 const ItemTitle = componentLeaf<typeof import("../components/item/item.js").ItemTitle>("components.item", "ItemTitle");

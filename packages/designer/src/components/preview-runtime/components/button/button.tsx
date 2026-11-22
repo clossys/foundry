@@ -69,6 +69,7 @@ function LinkButton({
 }: Omit<LinkPrimitiveProps, "className"> &
   VariantProps<typeof buttonVariants> & {
     className?: string
+    "aria-current"?: React.AriaAttributes["aria-current"]
   }) {
   return (
     <LinkPrimitive

@@ -112,7 +112,7 @@ describe("publisher.release refuses when publisher.check fails", () => {
     });
   }
 
-  it("hands a clean publication on to clossys release (default --gates) and reports its exit", async () => {
+  it("hands a clean publication on to the release step (default --gates) and reports its exit", async () => {
     const root = consumer();
     const { calls, release } = spy();
     const result = await releasePublisher(root, "site", [], { release });
@@ -123,6 +123,32 @@ describe("publisher.release refuses when publisher.check fails", () => {
     expect(result.checked).toHaveLength(9);
     const failing: ReleaseRunner = async () => ({ exitCode: 1, message: "release: gate failed" });
     expect((await releasePublisher(root, "site", ["--build", "--manifest"], { release: failing })).exit).toBe(1);
+  });
+
+  it("passes the release step's wrote and gate findings through, so the release loop keeps both (BR-PIPELINE2 b1)", async () => {
+    const root = consumer();
+    const finding = { check: "copy.locales", subject: "writer/sections.hero.copy#home.hero", detail: "de missing" };
+    const gates: ReleaseRunner = async () => ({ exitCode: 1, message: "release site: gates fail (copy.locales)", output: { publication: "site", action: "gates", wrote: ["clossys/.state/checks/publisher/release.site/site-v1.json.json"], findings: [finding] } });
+    const result = await releasePublisher(root, "site", ["--gates"], { release: gates });
+    expect(result.exit).toBe(1);
+    expect(result.release).toMatchObject({ exitCode: 1, wrote: ["clossys/.state/checks/publisher/release.site/site-v1.json.json"], findings: [finding] });
+    expect(result.findings).toEqual([finding]);
+    const verb = await runPublisherAction(["release", "site", "--gates", "--root", root], "/", { release: gates });
+    expect(verb.output).toMatchObject({ released: false, wrote: ["clossys/.state/checks/publisher/release.site/site-v1.json.json"], findings: [finding] });
+    // A release step that reports nothing hands on nothing: no wrote, no findings (never a guessed file).
+    const bare = await runPublisherAction(["release", "site", "--build", "--root", root], "/", { release: async () => ({ exitCode: 0, message: "built" }) });
+    expect(bare.output).toMatchObject({ released: true, wrote: [], findings: [] });
+  });
+
+  it("takes --selection for the build step, a relative module resolved from the caller's folder", async () => {
+    const root = consumer();
+    const { calls, release } = spy();
+    const verb = await runPublisherAction(["release", "site", "--build", "--selection", "./selection.js#Selection", "--root", root], "/work", { release });
+    expect(verb.exit, verb.text).toBe(0);
+    expect(calls).toEqual([["site", "--build", "--selection", "/work/selection.js#Selection", "--root", root]]);
+    await runPublisherAction(["release", "site", "--build", "--selection", "@acme/selection", "--root", root], "/work", { release });
+    expect(calls[1]).toEqual(["site", "--build", "--selection", "@acme/selection", "--root", root]);
+    expect((await runPublisherAction(["release", "site", "--build", "--selection"], "/work", { release })).exit).toBe(2);
   });
 });
 
@@ -190,7 +216,7 @@ describe("registered actions", () => {
   });
 });
 
-describe("the consumer root is discovered the way clossys release discovers it (review r1 P1-1)", () => {
+describe("the consumer root is discovered the way the release step discovers it (review r1 P1-1)", () => {
   const spy = () => {
     const calls: (readonly string[])[] = [];
     const release: ReleaseRunner = async argv => { calls.push(argv); return { exitCode: 0, message: "spy release ran" }; };

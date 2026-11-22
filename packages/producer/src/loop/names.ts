@@ -132,8 +132,8 @@ export const VERIFIED_CHECKS: readonly string[] = ["pins.resolve", RELEASE_READY
 /** The release steps that must run, for every publication, before the owner's sign-off (cli prefix match). */
 export const RELEASE_BEFORE_SIGNOFF: readonly { readonly id: string; readonly cli: RegExp }[] = [
   { id: "compile", cli: /^clossys compile(\s|$)/ },
-  { id: "build", cli: /^clossys release <pub> --build(\s|$)/ },
-  { id: "gates", cli: /^clossys release <pub> --gates(\s|$)/ },
+  { id: "build", cli: /^clossys publisher release <pub> --build(\s|$)/ },
+  { id: "gates", cli: /^clossys publisher release <pub> --gates(\s|$)/ },
 ];
 
 /** Ids a run takes from its caller, checked before any is used in a path or an argv (B8). */

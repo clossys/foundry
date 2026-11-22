@@ -49,12 +49,14 @@ describe("Hero backdrop kind specimen", () => {
       expect(JSON.stringify(HERO_BACKDROP_SPECIMENS[2].backdrop)).not.toContain("/specimens/");
     } finally { play.mockRestore(); }
   });
-  it("requires a real poster policy and muted inline autoplay loop declaration for video", () => {
-    const video = { ...HERO_BACKDROP_SPECIMENS[2].backdrop, video: { src: "/owner-supplied.webm", poster: "/owner-supplied-poster.webp", mediaType: "video/webm", width: 1600, height: 900, reducedMotion: "poster" } } as const;
-    expect(resolveHeroBackdrop(video)).toMatchObject({ kind: "video", art: HERO_SPECIMEN_BACKDROP });
-    expect(() => resolveHeroBackdrop({ ...video, muted: false })).toThrow(/muted autoplay loop playsInline/);
-    expect(() => resolveHeroBackdrop({ ...video, video: { ...video.video, reducedMotion: "paused" } })).toThrow(/poster policy/);
-    expect(() => resolveHeroBackdrop({ ...video, poster: undefined })).toThrow(/poster policy/);
+  it("refuses video bytes now that the media player is retired, and requires the poster declaration", () => {
+    const declared = HERO_BACKDROP_SPECIMENS[2].backdrop;
+    expect(resolveHeroBackdrop(declared)).toMatchObject({ kind: "video", art: HERO_SPECIMEN_BACKDROP, need: declared.missingVideoMessage });
+    const withBytes = { ...declared, video: { src: "/owner-supplied.webm", poster: "/owner-supplied-poster.webp", mediaType: "video/webm", width: 1600, height: 900, reducedMotion: "poster" } };
+    expect(() => resolveHeroBackdrop(withBytes)).toThrow(/components\.media-player/);
+    expect(() => resolveHeroBackdrop({ ...declared, muted: false })).toThrow(/muted autoplay loop playsInline/);
+    expect(() => resolveHeroBackdrop({ ...declared, poster: undefined })).toThrow(/checked poster/);
+    expect(() => resolveHeroBackdrop({ ...declared, missingVideoMessage: " " })).toThrow(/resolved host copy/);
   });
   it.each(["light", "strong"] as const)("bounds the actual %s scalar token scrim against the worst white backdrop in both themes", scrim => {
     const css = readFileSync(resolve(import.meta.dirname, "../../styles/tokens.css"), "utf8");

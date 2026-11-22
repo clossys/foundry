@@ -318,7 +318,7 @@
     ],
     "limits": {
       "apg": "breadcrumb",
-      "compose.components": "components.link",
+      "compose.components": "components.button",
       "members": "current,collapsed",
       "members.mode": "closed",
       "more.label.maxLength.en": 40,
@@ -5911,7 +5911,7 @@
       }
     ],
     "limits": {
-      "compose.components": "components.badge,components.link,components.semantic-content,components.table",
+      "compose.components": "components.badge,components.button,components.semantic-content,components.table",
       "members": "value.markdown,value.json,state.read-only,state.editable",
       "members.mode": "closed",
       "root": "presentational"

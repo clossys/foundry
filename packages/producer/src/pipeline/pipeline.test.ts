@@ -281,6 +281,18 @@ describe("status", () => {
     expect((await runPipeline(["pipeline", "status", "--root", root], root)).exitCode).toBe(0);
     expect((await runPipelineCli(["status"], tmpdir())).exitCode).toBe(2);
   });
+  it("graph --out writes the package definition with no consumer root, byte-equal to the graph the definitions build", async () => {
+    const bare = realpathSync(mkdtempSync(join(tmpdir(), "graph-out-")));
+    try {
+      const file = join(bare, "out", "graph.json");
+      const result = await runPipelineCli(["graph", "--root", bare, "--out", file], bare);
+      expect(result.exitCode).toBe(0);
+      expect(readFileSync(file, "utf8")).toBe(graphJson(buildGraph(bare)));
+      expect(Object.keys(result.output as object)).not.toContain("status");
+      // Without --out the printed graph reads the consumer's seats and status, so a missing consumer is still exit 2.
+      expect((await runPipelineCli(["graph", "--root", bare], bare)).exitCode).toBe(2);
+    } finally { rmSync(bare, { recursive: true, force: true }); }
+  });
 });
 
 describe("port schemas", () => {

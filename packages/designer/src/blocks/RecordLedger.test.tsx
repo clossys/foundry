@@ -17,7 +17,8 @@ describe("RecordLedger", () => {
     expect(screen.getByRole("region", { name: "Checks" })).toHaveAttribute("aria-labelledby", "6:record:group:6:checks");
     expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(2);
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
-    expect(container.querySelectorAll('[data-part="mark"][aria-hidden="true"]')).toHaveLength(2);
+    // Retargeted (BR-RETIRE3): components.status-mark is retired (owner 2026-11-20); each status is its visible words with its tone.
+    expect([...container.querySelectorAll("[data-tone]")].map(node => node.textContent)).toEqual(["Open", "Open"]);
     expect(container.querySelector("figure")).toHaveClass("m-0");
     expect(container.querySelector("ul")).toHaveClass("m-0", "p-0", "list-none");
     for (const node of container.querySelectorAll("p,h3")) expect(node).toHaveClass("m-0");
@@ -95,15 +96,13 @@ it("keeps a middle flag on the logical start edge and retains the row hairline c
 });
 
 
-it("uses ledger-only inverse label ink while preserving the status glyph's tone and shape", () => {
+it("uses ledger-only inverse label ink while preserving the status tone", () => {
   const { container } = render(<RecordLedger id="inverse" form="record" ground="inverse" head={{ title: "Record", status: { tone: "danger", label: "Overdue" } }} groups={[{ id: "rows", label: "Rows", rows: [{ id: "danger", label: "Check", status: { tone: "danger", label: "Needs review" } }] }]} caption="Sample data." />);
   for (const status of container.querySelectorAll('[data-tone="danger"]')) {
     expect(status).not.toHaveAttribute("style");
-    // Retargeted (R2F-53): the tone text colour sits on Kibo's StatusLabel; the ledger's inverse ink wraps the label text inside it.
-    expect(status.querySelector('[data-part="label"]')).toHaveClass("text-status-danger-text");
-    expect(status.querySelector('[data-part="label"] > span')).toHaveClass("text-ink-on-inverse");
-    expect(status.querySelector('[data-part="mark"]')).toHaveClass("text-status-danger");
-    expect(status.querySelector('[data-part="mark"]')).toHaveAttribute("data-shape", "circle-x");
+    // Retargeted (BR-RETIRE3): components.status-mark is retired (owner 2026-11-20); the inverse ink sits on the status words themselves.
+    expect(status).toHaveClass("text-ink-on-inverse");
+    expect(status.textContent).not.toBe("");
   }
   const ordinary = render(<RecordLedger id="ordinary" form="record" head={{ title: "Record", status: { tone: "danger", label: "Overdue" } }} groups={groups} caption="Sample data." />);
   expect(ordinary.container.querySelector('[data-tone="danger"]')).not.toHaveAttribute("style");

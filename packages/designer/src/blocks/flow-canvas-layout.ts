@@ -20,7 +20,7 @@ export interface FlowCanvasNode {
   label: string;
   /** Optional short category shown above the label and read as part of the description ("Step", "Gate"). */
   kind?: string;
-  /** Optional state shown with a `StatusMark`. The label carries the meaning; the tone only repeats it. */
+  /** Optional state, shown as its label (tone kept as `data-tone`). The label carries the meaning; the tone only repeats it. */
   status?: { tone: StatusMarkTone; label: string };
 }
 

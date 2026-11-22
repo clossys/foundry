@@ -1,5 +1,5 @@
 // Generated from sections.account-summary by src/generated/props/generate.ts; do not edit.
-export const accountSummaryContractSha256 = "e4f63dd680d7be1d8a70f9df3d78d10b13641ffbf7c9baa339cee27a8a429c1f";
+export const accountSummaryContractSha256 = "529a42a2c0ad2b1f86ebe6713db51a7e54f16114a776f995170544b3bf2bffe6";
 
 export type AccountSummaryCopy = {
   heading: string; // heading

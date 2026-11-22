@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { StatusMark } from "../components/StatusMark.js";
 import { cx } from "../components/internal/cx.js";
 import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../components/internal/ui-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
@@ -9,9 +8,9 @@ const FLAG_CLASSES: Record<SectionGround, string> = { base: "border-s-primary", 
 const LIST_CLASSES = "m-0 list-none p-0 flex flex-col";
 const ROW_CLASSES = "grid min-w-0 ledger-row-grid items-start gap-x-lg text-body-s";
 
-/** Ledger-only inverse label ink. StatusMark's glyph and global defaults stay intact. */
+/** Ledger-only inverse label ink. The state is its words; components.status-mark is retired (owner 2026-11-20). */
 export function LedgerStatus({ status, ground, className }: { status: LedgerRowData["status"]; ground: SectionGround; className?: string }) {
-  return status ? <StatusMark tone={status.tone} className={className}><span className={ground === "inverse" ? "text-ink-on-inverse" : undefined}>{status.label}</span></StatusMark> : null;
+  return status ? <span data-tone={status.tone} className={cx(className, ground === "inverse" ? "text-ink-on-inverse" : undefined)}>{status.label}</span> : null;
 }
 
 /** Shared static rows for the record and tile. The mobile cap only applies below tablet. */

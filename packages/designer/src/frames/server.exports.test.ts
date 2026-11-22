@@ -130,7 +130,8 @@ it.each(["default", "react-server"])("resolves the %s skip island binding and pr
   ], { cwd: packageRoot, encoding: "utf8", timeout: 10_000 }));
   expect(observed.target).toMatch(condition === "react-server" ? /SkipLink\.server\.js$/ : /SkipLink\.client\.js$/);
   if (condition === "react-server") {
-    expect(observed.anchor).toMatchObject({ componentLeaf: "components.link", href: "#example-main", label: "Jump to content" });
+    // Retargeted (BR-RETIRE3): components.link is retired (owner 2026-11-20); the skip anchor is components.button's LinkButton part.
+    expect(observed.anchor).toMatchObject({ componentLeaf: "components.button.LinkButton", href: "#example-main", label: "Jump to content" });
     expect(observed.anchor.className).toContain("focus:not-sr-only");
   }
 });

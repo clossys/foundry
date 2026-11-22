@@ -35,7 +35,6 @@
         "components.menu",
         "components.radio-group",
         "components.semantic-content",
-        "components.status-mark",
         "components.table",
         "sections.section-header"
       ],
@@ -53,7 +52,6 @@
           "components.menu",
           "components.radio-group",
           "components.semantic-content",
-          "components.status-mark",
           "components.table",
           "sections.section-header"
         ],
@@ -68,7 +66,6 @@
             "components.menu",
             "components.radio-group",
             "components.semantic-content",
-            "components.status-mark",
             "components.table"
           ],
           "themes": [
@@ -123,7 +120,7 @@
           },
           {
             "path": "packages/designer/src/blocks/matrix/grid.tsx",
-            "sha256": "bf0a1ea6bac2c18ce864a684a3413cf49980ad56bb0ef945b15c0879fd7b3faa"
+            "sha256": "19e3c1f730c4557856309785d98977b4b0d7bb68edd9396608238702e0a6418f"
           },
           {
             "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",

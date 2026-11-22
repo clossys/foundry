@@ -53,9 +53,6 @@ it("declares exactly the three real EmptyState callers as composition while keep
     expect(descriptor(leaf).composes).toContain("sections.empty-state");
     expect(contractFindings(section(leaf), descriptor(leaf))).toEqual([]);
   }
-  // The private boundary adapter keeps its public adaptation anchor, not native ownership.
-  expect(descriptor("boundary-message").pin.export).toBe("./blocks#EmptyState");
-  expect(descriptor("boundary-message").notes.join(" ")).toContain("private runtime boundary-message");
 });
 
 it("uses the same strict actual-use rules for source and package consumers of nested sections", () => {

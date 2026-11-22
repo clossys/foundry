@@ -28,7 +28,7 @@ describe("retired leaves (owner D2 / LAD-1 / LAD-2 2026-11-11)", () => {
       .toEqual([expect.stringContaining("is itself retired")]);
   });
 
-  it("the committed registry is valid against the build IA and records the owner's 13 retirements, then foundry-build-0018's 28 and foundry-build-0032's 2", () => {
+  it("the committed registry is valid against the build IA and records the owner's 13 retirements, then foundry-build-0018's 28, foundry-build-0032's 2 and the owner's 2026-11-20 3", () => {
     const build = loadBuildCatalog();
     expect(checkRetiredLeaves(build.retired, build.placements)).toEqual([]);
     expect(build.retired).toEqual(retired);
@@ -48,6 +48,8 @@ describe("retired leaves (owner D2 / LAD-1 / LAD-2 2026-11-11)", () => {
       // The 22 Studio specimen leaves, retired in place.
       ...Object.fromEntries(["swatch", "ladder", "player", "grid", "matrix", "viewport", "passage", "copy-in-context"].map(leaf => [`components.specimen-${leaf}`, null])),
       ...Object.fromEntries(["swatch", "color-ramp", "type-ladder", "spacing-ladder", "radius-ladder", "motion-player", "asset-grid", "icon-grid", "variant-matrix", "section-viewports", "frame-viewports", "rich-passage", "copy-in-context", "page-viewports"].map(leaf => [`sections.specimen-${leaf}`, null])),
+      // Owner 2026-11-20 (foundry-build-0048 BR-RETIRE3): link merges into the Button link variant; media-player and status-mark withdraw.
+      "components.link": "components.button", "components.media-player": null, "components.status-mark": null,
     });
     expect((retired as Array<Retired & { reason?: string }>).filter(entry => /\.specimen-/.test(entry.id)).every(entry => entry.reason === "studio-killed")).toBe(true);
     expect((retired as Retired[]).filter(entry => /\.specimen-/.test(entry.id))).toHaveLength(22);

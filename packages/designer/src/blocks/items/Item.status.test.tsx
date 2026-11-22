@@ -76,23 +76,16 @@ describe("Item status", () => {
     await expect(stableStringify({ $capture: "stock Card plate and selected stock accordion (E4, ebd6753ac); inverse ground as token classes, no inline re-point (E4); planner:R2F-05; single item on the stock Item anatomy, plain/plate treatments retired (R2F-26b); stock Badge with caller tone data (R2F-29)", hashes }) + "\n").toMatchFileSnapshot("__golden__/item-status-stock.sha256.json");
   }, 60_000);
 
-  it("renders StatusMark with a visible label in the meta row", () => {
+  // components.status-mark is retired (owner 2026-11-20): the state is its visible words, with the tone kept as data.
+  it("renders the status as its visible label in the meta row", () => {
     const { container } = render(<Item {...single} eyebrow="Product" meta="Updated" status={{ tone: "success", label: "Available" }} />);
     const row = container.querySelector("[data-item-meta]")!;
     const status = row.querySelector("[data-item-status]")!;
     expect(row).toHaveTextContent("ProductUpdatedAvailable");
     expect(status).toHaveAttribute("data-tone", "success");
-    expect(status.querySelector("[data-part=mark]")).toHaveAttribute("data-shape", "circle-check");
-    expect(status.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     expect(status).toContainElement(screen.getByText("Available"));
     expect(screen.getByText("Available")).toBeVisible();
     expect(status.querySelector(".sr-only")).toBeNull();
-  });
-
-  it.each([["success", "circle-check"], ["warning", "triangle-alert"], ["danger", "circle-x"], ["info", "info"], ["neutral", "minus"]] as const)("keeps the %s mark's non-colour shape", (tone, shape) => {
-    const { container } = render(<Item {...single} status={{ tone, label: "State" }} />);
-    expect(container.querySelector("[data-shape]")).toHaveAttribute("data-shape", shape);
-    expect(screen.getByText("State")).toBeVisible();
   });
 
   it.each(["plain", "rule", "plate"] as const)("accepts status in %s treatment", treatment => {
@@ -129,7 +122,7 @@ describe("Item status", () => {
     expect(rows).toHaveLength(4);
     rows.forEach((row, index) => {
       expect(row.querySelector("[data-item-status]")).toHaveTextContent(`Available ${index}`);
-      expect(row.querySelector("[data-shape]")).toHaveAttribute("data-shape", "circle-check");
+      expect(row.querySelector("[data-item-status]")).toHaveAttribute("data-tone", "success");
     });
   });
 

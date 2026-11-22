@@ -9,7 +9,7 @@
  * - `clossys retire <candidate>`: a pin.json that does not parse may pin the candidate; refused, never read as no pin.
  * - `clossys ia sync` and `clossys ia <slot>`: an unreadable slot.json is named, never read as "store not recut" or as
  *   a sibling of no kind.
- * - `clossys approve`: a candidates folder that cannot be listed is not "no candidate".
+ * - `clossys pin` (the owner's approval of Writer copy): a candidates folder that cannot be listed is not "no candidate".
  * - `clossys next --submit`: a held candidate that cannot be read refuses the submission; a root that cannot be
  *   resolved fails with the root error, never as the argv unchanged; an unreadable --submit file or contract skill
  *   refuses with its read error.
@@ -25,7 +25,9 @@ import { runCli } from "./main.js";
 import { STEPS } from "../pipeline/steps/index.js";
 import { legacyTreeConsumer } from "./__fixtures__/flat-consumer.js";
 import { runNextSubmitCli } from "./next.js";
-import { runApproveCli, runEvidenceCli, runIaCli, runOwnerDecisionCli, runRetireCli } from "./owner.js";
+import { runEvidenceCli, runIaCli, runOwnerDecisionCli, runRetireCli } from "./owner.js";
+import { runPinCli } from "./pin.js";
+import { ownerEntry } from "../pipeline/owner-entry.js";
 import { RootDiscoveryError } from "./root.js";
 
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
@@ -239,7 +241,7 @@ describe("clossys ia: an unreadable slot.json in a store-wide scan", { timeout: 
   }
 });
 
-describe("clossys approve: a candidates folder that cannot be listed", { timeout: 300_000 }, () => {
+describe("clossys pin (owner approval): a candidates folder that cannot be listed", { timeout: 300_000 }, () => {
   // A mode-000 folder is readable by root: the case holds only for an unprivileged run.
   it.skipIf(process.getuid?.() === 0)("refuses with the listing error, not as a slot holding no candidate", async () => {
     const { root, consumer } = copyOf(FIXTURE, "approve");
@@ -247,12 +249,14 @@ describe("clossys approve: a candidates folder that cannot be listed", { timeout
     const slot = writer.nodes[0]!.children[0]!.slots[0]!;
     const candidates = join(consumer, "agents", "writer", slot, "candidates");
     mkdirSync(candidates, { recursive: true });
+    // The owner answered the queue.approve entry naming the candidate: only the listing can refuse the pin.
+    const by = ownerEntry(consumer, { queue: "approve", id: "20261120T1200Z-approve", about: `writer/${slot}`, answer: { candidate: "copy-v1.md" }, at: AT });
     const before = snapshot(consumer);
     chmodSync(candidates, 0o000);
     try {
-      const result = await runApproveCli([`writer/${slot}`, "copy-v1", "--by", "owner:queue.approve#20261120T1200Z-approve", "--at", AT, "--root", root], root);
+      const result = await runPinCli([`writer/${slot}`, "copy-v1.md", "--basis", "picked", "--by", by, "--at", AT, "--root", root], root);
       expect(result.exitCode).toBe(1);
-      expect(result.message).toMatch(new RegExp(`^approve refused: cannot list writer/${slot.replace(/\./g, "\\.")} candidates: .*EACCES`));
+      expect(result.message).toMatch(new RegExp(`^pin refused: EACCES: .*writer/${slot.replace(/\./g, "\\.")}/candidates'$`));
     } finally { chmodSync(candidates, 0o755); }
     expect(snapshot(consumer)).toEqual(before);
   });
