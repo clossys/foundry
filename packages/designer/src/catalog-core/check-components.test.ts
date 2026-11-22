@@ -594,3 +594,87 @@ describe("new Aria root protocols", () => {
     expect(k5(unknown).some(row => row.message.startsWith("Roles, keyboard or axe evidence fails"))).toBe(true);
   });
 });
+
+describe("U-KCHECK: K2 forwarding by consumer need, D-A(a) declared fallbacks, R-L verbatim upstream literals", () => {
+  const k2 = (profile: ComponentCheckInput) => checkComponentProfile(profile).findings.filter(f => f.code === "K2").map(f => f.message);
+  const k4 = (profile: ComponentCheckInput) => checkComponentProfile(profile).findings.filter(f => f.code === "K4").map(f => f.message);
+  const base = () => componentProfile().observations["components.button"]!.files[0]!.content;
+  const stock = 'import {Button} from "react-aria-components"; export const Example = ({ className }: { className?: string }) => <Button className={cn("inline-flex", className)} style={{color:"var(--text)",background:"var(--surface)"}}>Continue</Button>;';
+  it("K2: a stock fill with a string className and no consumer of render props passes", () => {
+    const profile = fixture(); source(profile, stock); profile.observations["components.button"]!.forwardsRenderProps = false;
+    expect(profile.slots[0]!.contract.props).not.toContain("className");
+    expect(k2(profile)).toEqual([]);
+    expect(checkComponentProfile(profile).ok).toBe(true);
+  });
+  it("K2: a slot whose contract offers className or style fails without render-prop forwarding", () => {
+    for (const prop of ["className", "style"]) {
+      const profile = fixture(); source(profile, stock); profile.observations["components.button"]!.forwardsRenderProps = false;
+      profile.slots[0]!.contract.props.push(prop); profile.fills[0]!.props.push(prop);
+      expect(k2(profile), prop).toEqual(["RAC implementations must forward render props where the contract offers className or style"]);
+      profile.observations["components.button"]!.forwardsRenderProps = true;
+      expect(k2(profile), prop).toEqual([]);
+    }
+  });
+  it("K2: refs stay required everywhere, consumed or not", () => {
+    const profile = fixture(); profile.observations["components.button"]!.forwardsRef = false;
+    expect(k2(profile)).toEqual(["RAC implementations must forward refs"]);
+  });
+  it("K12 CC2: a RAC-context dependency without render-prop forwarding still fails, though K2 does not", () => {
+    const profile = fixture(true); profile.observations["components.button"]!.forwardsRenderProps = false;
+    expect(k2(profile)).toEqual([]);
+    expect(checkComponentProfile(profile).findings).toContainEqual(expect.objectContaining({ code: "K12", compatibility: "CC2", subject: "components.select" }));
+  });
+  it("D-A(a): a fallback equal to the bound member's declared value is not a literal", () => {
+    const profile = fixture(); source(profile, base() + ' const cls = "bg-[var(--text,#000000)] border-[var(--surface,#ffffff)]"; const style = { color: "var(--text, #000000)" };');
+    expect(k4(profile)).toEqual([]);
+    // A declared value with spaces is spelled with `_` inside a class and with spaces in CSS text.
+    const spaced = fixture(); spaced.tokens["themes.foreground.default"]!.light = "oklch(0.145 0 0)"; refreshTokens(spaced);
+    source(spaced, base() + ' const cls = "text-[var(--text,oklch(0.145_0_0))]"; const css = "color: var(--text, oklch(0.145 0 0));";');
+    expect(k4(spaced)).toEqual([]);
+    const spacing = fixture(); spacing.tokens["themes.spacing.default"]!.light = "0.25rem"; refreshTokens(spacing);
+    source(spacing, base() + ' const cls = "h-[calc(var(--control,0.25rem)*9)]";');
+    expect(k4(spacing)).toEqual([]);
+  });
+  it("D-A(a): a differing, dark-only, unbound or unread fallback is still a literal", () => {
+    for (const [usage, extra] of [
+      [' const cls = "bg-[var(--text,#000001)]";', []],
+      [' const cls = "bg-[var(--text,#ffffff)]";', []],
+      [' const cls = "bg-[var(--surface,#000000)]";', []],
+      [' const style = { color: "var(--text, #000000) #111111" };', []],
+      [' const cls = "bg-[var(--foreign,#000000)]";', ["Unbound CSS property --foreign in button.tsx"]],
+    ] as const) {
+      const profile = fixture(); source(profile, base() + usage);
+      expect(k4(profile).sort(), usage).toEqual(["Literal colour or length in button.tsx", ...extra].sort());
+    }
+    const unread = fixture(); unread.fills[0]!.reads.themes = unread.fills[0]!.reads.themes.filter(read => read !== "themes.foreground");
+    source(unread, 'import {Button} from "react-aria-components"; export const Example = () => <Button className="bg-[var(--text,#000000)]">Continue</Button>;');
+    expect(k4(unread)).toContain("Literal colour or length in button.tsx");
+  });
+  function upstream(output: string, upstreamText: string): Mutable<ComponentCheckInput> {
+    const profile = fixture(); const fill = profile.fills[0]!; const observed = profile.observations[fill.slot]!;
+    const original = { path: "registry/style-nova.css", content: upstreamText };
+    fill.impl = { kind: "source", entry: "button.tsx", export: "Example" };
+    fill.pin = { url: "https://example.org/registry", commit: "a".repeat(40), files: [{ path: original.path, sha256: sha256(original.content) }] }; fill.notice = "MIT notice";
+    observed.rac.dependency = "source"; observed.upstreamFiles = [original];
+    source(profile, output); observed.outputSha256 = observed.files.map(file => ({ path: file.path, sha256: sha256(file.content) }));
+    return profile;
+  }
+  const nova = ".cn-checkbox { @apply rounded-[4px] text-[0.8rem] data-checked:translate-x-[calc(100%-2px)] max-w-[24rem] text-[0.8em]; }\n.cn-tooltip { transform: translate(calc(50% + 2px)); }";
+  it("R-L: a px or rem arbitrary literal verbatim in the pinned upstream bytes passes", () => {
+    const profile = upstream(base() + ' const cls = "rounded-[4px] data-[size=sm]:text-[0.8rem] group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-2px)] sm:max-w-[24rem]";', nova);
+    expect(k4(profile)).toEqual([]);
+    expect(checkComponentProfile(profile).ok).toBe(true);
+  });
+  it("R-L: a typed or new literal, another unit, a non-arbitrary literal or unpinned bytes still fail", () => {
+    for (const usage of [' const cls = "rounded-[5px]";', ' const cls = "w-[24rem]";', ' const cls = "text-[0.8em]";', ' const cls = "rounded-[4px] p-[3px]";',
+      ' const style = { transform: "translate(calc(50% + 2px))" };', ' const cls = "bg-[#fff]";']) {
+      expect(k4(upstream(base() + usage, nova)), usage).toEqual(["Literal colour or length in button.tsx"]);
+    }
+    // Upstream bytes that do not hash to the pin excuse nothing.
+    const forged = upstream(base() + ' const cls = "rounded-[4px]";', nova); forged.fills[0]!.pin!.files![0]!.sha256 = "b".repeat(64);
+    expect(k4(forged)).toEqual(["Literal colour or length in button.tsx"]);
+    // A package fill has no pinned upstream bytes.
+    const packaged = fixture(); source(packaged, base() + ' const cls = "rounded-[4px]";');
+    expect(k4(packaged)).toEqual(["Literal colour or length in button.tsx"]);
+  });
+});

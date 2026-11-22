@@ -352,6 +352,41 @@ function definedProperties(code: string): Set<string> {
   }
   return exempt;
 }
+/** K4 literal colour or length; every match fails unless D-A(a) stripped it or R-L excuses it. */
+const LITERAL = /#[\da-f]{3,8}\b|\b(?:rgb|hsl|oklch|oklab|lab|lch)a?\s*\(|\b\d*\.?\d+(?:px|rem|em|vh|vw|ch)\b/gi;
+/**
+ * D-A(a): a `var(--x, <v>)` read keeps its fallback out of the K4 literal scan only when `<v>` is exactly the declared
+ * value of a token member the fill reads with property `--x` (spelled as a class spells it, spaces as `_`). Any other
+ * fallback, or a fallback on an unbound property, stays in the text and is judged as a literal.
+ */
+function stripDeclaredFallbacks(code: string, declared: (property: string, value: string) => boolean): string {
+  let result = ""; let from = 0;
+  for (const match of code.matchAll(/var\(\s*(--[a-zA-Z][\w-]*)\s*,/g)) {
+    if (match.index < from) continue;
+    const open = match.index + match[0].length;
+    let close = -1;
+    for (let i = open, depth = 0; i < code.length; i++) { if (code[i] === "(") depth++; else if (code[i] === ")") { if (depth === 0) { close = i; break; } depth--; } }
+    if (close < 0 || !declared(match[1]!, code.slice(open, close))) continue;
+    result += `${code.slice(from, match.index)}var(${match[1]})`; from = close + 1;
+  }
+  return result + code.slice(from);
+}
+/**
+ * R-L: the Tailwind arbitrary-value utility (variants stripped at the last top-level `:`) that holds a px or rem literal
+ * at `index`, or undefined when the literal is another unit, a colour, or not inside a `utility-[…]` value.
+ */
+function arbitraryLengthUtility(code: string, index: number, literal: string): string | undefined {
+  if (!/^\d*\.?\d+(?:px|rem)$/i.test(literal)) return undefined;
+  let start = index; while (start > 0 && !/[\s"'`]/.test(code[start - 1]!)) start--;
+  let end = index; while (end < code.length && !/[\s"'`]/.test(code[end]!)) end++;
+  const token = code.slice(start, end);
+  let base = 0;
+  for (let i = 0, depth = 0; i < token.length; i++) { const char = token[i]!; if (char === "[" || char === "(") depth++; else if (char === "]" || char === ")") depth = Math.max(0, depth - 1); else if (char === ":" && depth === 0) base = i + 1; }
+  const utility = token.slice(base).replace(/^!/, "").replace(/!$/, "");
+  const offset = index - start - base - (token.slice(base).startsWith("!") ? 1 : 0);
+  const value = /^-?[a-z][a-z0-9-]*-\[/.exec(utility);
+  return value && utility.endsWith("]") && offset >= value[0].length && offset + literal.length < utility.length ? utility : undefined;
+}
 function rootNames(root: string): string[] { return root.startsWith("rac:") ? root.slice(4).split("+") : []; }
 /** Contracts grant leaves; declarations may name a leaf or one exact member. */
 function tokenLeaf(read: string): string | undefined {
@@ -450,15 +485,31 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
     }
     if (modules.some(module => FORBIDDEN.test(module))) add("K2", fill.slot, "A foreign headless or engine import is forbidden");
     if (observation.root !== contract.root) add("K2", fill.slot, `Observed root differs from ${contract.root}`);
-    if (contract.root.startsWith("rac:") && (!observation.forwardsRef || !observation.forwardsRenderProps)) add("K2", fill.slot, "RAC implementations must forward refs and render props");
+    // Refs are always forwarded. Render props are required where something consumes them: a contract that offers
+    // `className` or `style`; a RAC-context dependency is held to forwarding by K12 CC2.
+    const renderPropsConsumed = contract.props.some(prop => prop === "className" || prop === "style");
+    if (contract.root.startsWith("rac:") && !observation.forwardsRef) add("K2", fill.slot, "RAC implementations must forward refs");
+    if (contract.root.startsWith("rac:") && renderPropsConsumed && !observation.forwardsRenderProps) add("K2", fill.slot, "RAC implementations must forward render props where the contract offers className or style");
     for (const root of rootNames(contract.root)) if (!files.some(file => [...file.code.matchAll(/import\s*\{([^}]+)\}\s*from\s*["']react-aria-components["']/g)].some(match => match[1]!.split(",").some(binding => binding.trim().split(/\s+as\s+/)[0] === root)))) add("K2", fill.slot, `Missing RAC root import ${root}`);
     if (files.some(file => /\b(?:import|require)\s*\(\s*[^"'\s]/.test(file.code))) add("K2", fill.slot, "Dynamic module resolution is unverified");
     const racImported = modules.includes(RAC_PACKAGE);
+    const declaredFallback = (property: string, value: string): boolean => {
+      const spelled = value.replace(/_/g, " ").trim();
+      return Object.entries(input.tokens).some(([member, token]) => token.property === property && isRead(fill, member) && token.light.trim() !== "" && (value.trim() === token.light.trim() || spelled === token.light.trim()));
+    };
+    // R-L: only upstream bytes that hash to the fill's pin at its pinned commit can excuse a stock literal.
+    const pinnedUpstream = fill.impl.kind === "source" && /^[a-f0-9]{40}$/.test(fill.pin?.commit ?? "")
+      ? (observation.upstreamFiles ?? []).filter(file => fill.pin?.files?.some(pin => pin.path === file.path && pin.sha256 === sha256(file.content))) : [];
+    const verbatimUpstream = (utility: string): boolean => {
+      const pattern = new RegExp(`(?<![\\w.\\-\\[])${utility.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\w.\\-\\[(])`);
+      return pinnedUpstream.some(file => pattern.test(file.content));
+    };
     for (const file of files) {
       const local = definedProperties(file.code);
       const properties = [...file.code.matchAll(/--[a-zA-Z][\w-]*/g)].map(match => match[0]).filter(property => !local.has(property) && !(racImported && Object.hasOwn(RAC_RUNTIME_PROPERTIES, property)));
       for (const property of properties) if (!Object.entries(input.tokens).some(([member, token]) => token.property === property && isRead(fill, member))) add("K4", fill.slot, `Unbound CSS property ${property} in ${file.path}`);
-      if (/(?:#[\da-f]{3,8}\b|\b(?:rgb|hsl|oklch|oklab|lab|lch)a?\s*\(|\b\d*\.?\d+(?:px|rem|em|vh|vw|ch)\b)/i.test(file.code)) add("K4", fill.slot, `Literal colour or length in ${file.path}`);
+      const literalCode = stripDeclaredFallbacks(file.code, declaredFallback);
+      if ([...literalCode.matchAll(LITERAL)].some(match => { const utility = arbitraryLengthUtility(literalCode, match.index, match[0]); return !utility || !verbatimUpstream(utility); })) add("K4", fill.slot, `Literal colour or length in ${file.path}`);
       for (const utility of classUtilities(file.code)) {
         const binding = input.classBindings?.[utility];
         // A value-free utility is exempt only while the compiled CSS bound it to no token; a bound class is judged by its binding.
