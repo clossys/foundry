@@ -2325,7 +2325,35 @@
         ],
         "assets": []
       },
-      "apg": "windowsplitter"
+      "apg": "windowsplitter",
+      "fixtureProps": [
+        "children"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/resizable.tsx",
+          "export": "ResizablePanelGroup",
+          "props": {
+            "children": [
+              {
+                "$component": "ResizablePanel",
+                "children": "DRAFT panel"
+              },
+              {
+                "$component": "ResizableHandle",
+                "props": {
+                  "withHandle": true
+                }
+              },
+              {
+                "$component": "ResizablePanel",
+                "children": "DRAFT panel"
+              }
+            ]
+          }
+        }
+      }
     },
     "requires": [],
     "status": "draft"

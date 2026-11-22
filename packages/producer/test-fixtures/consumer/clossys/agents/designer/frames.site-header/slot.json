@@ -288,7 +288,6 @@
     "composes": [
       "components.logo",
       "components.button",
-      "components.button",
       "components.icon",
       "components.badge",
       "components.disclosure",

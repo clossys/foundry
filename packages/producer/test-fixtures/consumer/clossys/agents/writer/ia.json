@@ -118,11 +118,6 @@
           ]
         },
         {
-          "id": "text-and-media",
-          "label": "Text and media",
-          "slots": []
-        },
-        {
           "id": "overlays",
           "label": "Overlays",
           "slots": [

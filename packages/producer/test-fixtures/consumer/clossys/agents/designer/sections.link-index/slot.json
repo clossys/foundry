@@ -147,7 +147,6 @@
       "components.card",
       "components.icon",
       "components.badge",
-      "components.button",
       "components.semantic-content"
     ],
     "parts": [

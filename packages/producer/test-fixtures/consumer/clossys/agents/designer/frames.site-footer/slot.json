@@ -257,8 +257,7 @@
       "components.icon",
       "components.logo",
       "components.separator",
-      "components.semantic-content",
-      "components.button"
+      "components.semantic-content"
     ],
     "copy": {
       "sourceLocale": "en",
