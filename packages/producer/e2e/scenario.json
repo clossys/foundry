@@ -172,14 +172,10 @@
     },
     {
       "id": "craft.separator",
-      "craft": {
+      "adopt": {
         "ref": "designer/components.separator",
-        "standard": "component",
         "file": "separator.json",
-        "candidate": "separator-v1.json",
-        "gap": "source.ref",
-        "rung": "L4",
-        "skill": "packages/designer/actions/designer.candidates/skill.md"
+        "candidate": "separator-v1.json"
       }
     },
     {
