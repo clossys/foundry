@@ -26,16 +26,16 @@ const ROOT = resolve(HERE, "..", "..", "..");
 const dist = path => import(pathToFileURL(join(ROOT, "packages", "producer", "dist", path)).href);
 /**
  * The seat world: $CLOSSYS_ROOT as it is, or a temp copy of the fixture consumer (which pins no seat) where the
- * verbs seat the Writer candidates step: `clossys seat --policy` maps the one tier the fixture's candidates name
- * for that step (mid, fixture-model), then `clossys seat writer.candidates` writes the seat's clossys.candidate/1
- * envelope and its pin. No tier the fixture does not name is mapped (no high model is invented).
+ * verbs seat the Writer candidates step: `clossys seat --policy` maps the two tiers the fixture's candidates name
+ * (mid and high, both fixture-model; planner decision "BR-STAGECHECK high tier"), then `clossys seat
+ * writer.candidates` writes the seat's clossys.candidate/1 envelope and its pin. Test fixture only.
  */
 function seatWorld() {
   if (process.env.CLOSSYS_ROOT) return resolve(process.env.CLOSSYS_ROOT);
   const root = realpathSync(mkdtempSync(join(tmpdir(), "producer-recipes-seat-")));
   cpSync(join(ROOT, "packages/producer/test-fixtures/consumer"), root, { recursive: true });
   const clossys = args => execFileSync(process.execPath, [join(ROOT, "packages", "producer", "dist", "cli", "index.js"), ...args, "--root", root], { encoding: "utf8" });
-  clossys(["seat", "--policy", "--model", "mid=fixture-model"]);
+  clossys(["seat", "--policy", "--model", "mid=fixture-model", "--model", "high=fixture-model"]);
   clossys(["seat", "writer.candidates", "--by", "agent:writer", "--model", "fixture-model", "--tier", "mid", "--prompt-file", "packages/writer/actions/writer.candidates/skill.md",
     "--procedure", "The owner writes each copy candidate by hand from the pinned voice.", "--command", "clossys next writer/<slot> --submit <file>", "--decided-by", "planner:fixture-world"]);
   return root;
