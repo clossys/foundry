@@ -56,7 +56,7 @@ import { STEPS } from "../pipeline/steps/index.js";
 import { RETIRE_CODES, RETIRE_REASON } from "../constitution/checks/R10-retire.js";
 import { validateAgainst } from "../constitution/schema.js";
 import { IA_KIND, slotWriteKind } from "../constitution/green.js";
-import { isTargetSlot, oldSlotRefusal, pinTargetSlot, resolveCandidate } from "./pin.js";
+import { isTargetSlot, oldSlotRefusal, resolveCandidate } from "./pin.js";
 import { parseCandidateName } from "../records/candidate.js";
 import { readPinFile, usesPinMap } from "../records/pin-map.js";
 import { errorMessage, isAbsent } from "../errors.js";
@@ -1294,7 +1294,10 @@ export async function runApproveCli(argv: readonly string[], cwd: string): Promi
   const record = hash >= 0 ? slot.slice(hash + 1) : usesPinMap("writer", typeof kind === "string" ? kind : undefined) ? parseCandidateName(candidate)?.name : undefined;
   const pinTarget = record !== undefined ? `${slotId}#${record}` : slotId;
   const before = writerKeysUnapproved(root).get(slotId) ?? [];
-  const result = pinTargetSlot(root, "writer", pinTarget, candidate, { by, basis: "picked", at });
+  // One writer per output (BR-PIPELINE2): the pin.writer step is the only step that writes a Writer pin.json, so the
+  // approval reaches it through the runner, with the same gated pin path (deciders, queue answer, CHOOSE gate, lock).
+  const { runStep } = await import("../pipeline/runner.js");
+  const result = await runStep(["pin", `writer/${pinTarget}`, candidate, "--by", by, "--basis", "picked", "--at", at, "--root", root], cwd);
   if (result.exitCode !== 0) return refuse("approve", result.message.replace(/^pin refused: /, ""));
   const after = new Set(writerKeysUnapproved(root).get(slotId) ?? []);
   const approved = before.filter(key => !after.has(key));

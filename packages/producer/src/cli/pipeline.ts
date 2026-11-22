@@ -170,6 +170,15 @@ export async function runPipelineCli(argv: readonly string[], cwd: string): Prom
   try { args = parsePipelineArgs(argv); }
   catch (error) { return { exitCode: 2, message: `${error instanceof Error ? error.message : String(error)}\n${PIPELINE_USAGE}` }; }
   if (args.help) return { exitCode: 0, message: PIPELINE_USAGE };
+  if (args.command === "graph" && args.out !== undefined) {
+    // --out writes the package definition (the step definitions with the package seat defaults, no live status): it
+    // reads no consumer, so it needs no consumer root, and the package's own generate:pipeline-graph runs in this repo.
+    const definition = buildGraph(resolve(cwd, args.root ?? "."));
+    const file = resolve(cwd, args.out);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, graphJson(definition));
+    return { exitCode: 0, message: `pipeline graph: ${definition.nodes.length} steps, ${definition.edges.length} edges, ${definition.untyped.length} untyped ports, ${definition.layout.cycleBreaks.length} cycle breaks; wrote ${args.out}`, output: definition };
+  }
   let root: string;
   try { root = discoverRoot(resolve(cwd, args.root ?? ".")); }
   catch (error) { return { exitCode: 2, message: error instanceof Error ? error.message : String(error) }; }
@@ -209,15 +218,10 @@ export async function runPipelineCli(argv: readonly string[], cwd: string): Prom
     const counts = `runs: ${status.counts.runs} records; ${status.counts.passed} passed, ${status.counts.failed} failed, ${status.counts.stale} stale, ${status.counts["never-run"]} never run`;
     return { exitCode: 0, root, message: [...lines, ...undrawn, counts, ...decisions, ...agents, `open decisions: ${status.open} (${status.openParts.slots} undecided slots + ${status.openParts.seats} open seats)`].join("\n"), output: status };
   }
-  // --out writes the package definition (package seat defaults); the printed graph reads the consumer's seats.
+  // The printed graph reads the consumer's seats; --out (above) writes the package definition.
   const graph = buildGraph(root, undefined, undefined, { seats: "workspace" });
-  if (args.out) {
-    const file = resolve(cwd, args.out);
-    mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, graphJson(buildGraph(root)));
-  }
   const output = { ...graph, status };
-  return { exitCode: 0, root, message: `pipeline graph: ${graph.nodes.length} steps, ${graph.edges.length} edges, ${graph.untyped.length} untyped ports, ${graph.layout.cycleBreaks.length} cycle breaks${args.out ? `; wrote ${args.out}` : ""}`, output };
+  return { exitCode: 0, root, message: `pipeline graph: ${graph.nodes.length} steps, ${graph.edges.length} edges, ${graph.untyped.length} untyped ports, ${graph.layout.cycleBreaks.length} cycle breaks`, output };
 }
 
 /**
