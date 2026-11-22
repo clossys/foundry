@@ -481,9 +481,34 @@ export async function runScenario(scenario: Scenario, shipped: string, consumer:
   for (const step of scenario.after ?? []) await clossys(step.id, step.run!.map(arg => fill(arg, shipped, scenario)), step.expect ?? 0);
 }
 
+/** The three fixed design directions the scripted diverge stage hands the verb (agent judgement is a stand-in). */
+export const E2E_DIRECTIONS = ["plain", "warm", "crisp"] as const;
+
 /**
- * The P2 create sequence of one slot, every write a public verb: options, a create verdict naming the gap, the brief,
- * three directions that differ on one axis, the render stage, a critique packet whose render is a copy of the candidate's bytes,
+ * The recipe axes the brief stage recorded, read from `clossys next --stage brief --json` (its printed
+ * `event.assembled.recipe.axes`, the axes of the recipe code chose for the slot's standard), or undefined when the
+ * output names none. Never a fallback list: no axes read is no diverge written.
+ */
+export function briefAxes(stdout: string): string[] | undefined {
+  let printed: unknown;
+  try { printed = JSON.parse(stdout); } catch { return undefined; }
+  const at = (value: unknown, key: string): unknown => (value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>)[key] : undefined);
+  const axes = at(at(at(at(printed, "event"), "assembled"), "recipe"), "axes");
+  if (!Array.isArray(axes) || !axes.length || !axes.every((axis): axis is string => typeof axis === "string" && axis !== "")) return undefined;
+  return [...axes];
+}
+
+/**
+ * The scripted diverge payload: one direction per E2E_DIRECTIONS idea, each with a value on every recipe axis
+ * (`<idea> <axis>`), so every direction names every axis and no two share a value on any (R15.7).
+ */
+export function divergeDirections(axes: readonly string[]): { id: string; idea: string; axes: Record<string, string> }[] {
+  return E2E_DIRECTIONS.map((idea, at) => ({ id: `d${at + 1}`, idea, axes: Object.fromEntries(axes.map(axis => [axis, `${idea} ${axis}`])) }));
+}
+
+/**
+ * The P2 create sequence of one slot, every write a public verb: options, a create verdict naming the gap, the brief
+ * (its `--json` output names the recipe's axes), three directions that differ on every one of those axes, the render stage, a critique packet whose render is a copy of the candidate's bytes,
  * the critique record carrying that packet's manifest, the submit at the contract's rung, and the CHOOSE pin (`pin`, when
  * the slot pins per record, names the `<ref>#<record>` the pin verb takes; `unpinned` skips it).
  * The files it hands the verbs (verdict, diverge, critique) are inputs under the consumer's `e2e/` folder, never records.
@@ -500,10 +525,10 @@ async function craft(step: ScenarioStep, scenario: Scenario, shipped: string, co
   await clossys(`${step.id}.options`, ["options", c.ref]);
   writeFileSync(join(inputs, "verdict.json"), JSON.stringify({ schema: "clossys.verdict/1", slot, create: true, reason: "a fresh consumer holds no candidate", gaps: [{ id: c.gap }] }));
   await clossys(`${step.id}.verdict`, ["verdict", c.ref, "--record", join(inputs, "verdict.json"), ...llm, "--by", `agent:${agent}.verdict`]);
-  await clossys(`${step.id}.brief`, ["next", c.ref, "--stage", "brief", ...llm, ...skill]);
-  writeFileSync(join(inputs, "diverge.json"), JSON.stringify([
-    { id: "d1", idea: "plain", axes: { tone: "plain" } }, { id: "d2", idea: "warm", axes: { tone: "warm" } }, { id: "d3", idea: "crisp", axes: { tone: "crisp" } },
-  ]));
+  const brief = await clossys(`${step.id}.brief`, ["next", c.ref, "--stage", "brief", ...llm, ...skill, "--json"]);
+  const axes = briefAxes(brief.stdout);
+  if (!axes) stop("e2e.step", `${step.id}.brief`, "next --stage brief --json printed no recipe axes (event.assembled.recipe.axes), so the diverge directions have no axes to differ on");
+  writeFileSync(join(inputs, "diverge.json"), JSON.stringify(divergeDirections(axes!)));
   await clossys(`${step.id}.diverge`, ["next", c.ref, "--stage", "diverge", "--file", join(inputs, "diverge.json"), ...llm, ...skill]);
   await clossys(`${step.id}.render`, ["next", c.ref, "--stage", "render", ...llm, ...skill]);
   const render = join("renders", `${slot}${c.file.slice(c.file.lastIndexOf("."))}`);

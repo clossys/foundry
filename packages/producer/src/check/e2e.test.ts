@@ -12,7 +12,8 @@ import { parseArgs } from "../cli/args.js";
 import { runReleaseCli } from "../cli/release.js";
 import type { BuildRequest, ReleaseBuilder } from "../release/build.js";
 import { releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
-import { E2E_CAUSES, E2E_CHECK, E2E_COHORT, childEnv, e2eDoc, installFindings, machineRoots, movedFinding, portableFindings, producerPackageRoot, readScenario, renderFindings, runScenario, type Clossys, type ScenarioStep } from "./e2e.js";
+import { loadRecipes, standardRecipe } from "../records/recipes.js";
+import { E2E_CAUSES, E2E_CHECK, E2E_COHORT, E2E_DIRECTIONS, briefAxes, childEnv, divergeDirections, e2eDoc, installFindings, machineRoots, movedFinding, portableFindings, producerPackageRoot, readScenario, renderFindings, runScenario, type Clossys, type ScenarioStep } from "./e2e.js";
 
 const PACKAGE = producerPackageRoot();
 const SHIPPED = join(PACKAGE, "e2e");
@@ -26,6 +27,18 @@ afterEach(() => {
   for (const world of worlds.splice(0)) world.dispose();
 });
 const temp = (): string => { const dir = realpathSync(mkdtempSync(join(realpathSync(tmpdir()), "e2e-test-"))); temps.push(dir); return dir; };
+/** The axes of the recipe code chooses for `<agent>`'s `standard` (the one the brief stage assembles), from the repo's recipes. */
+const recipeAxes = (agent: string, standard: string): readonly string[] => {
+  const chosen = standardRecipe(loadRecipes(REPO), agent, standard);
+  if (!("recipe" in chosen)) throw new Error(chosen.issue);
+  return chosen.recipe.doc!.axes;
+};
+/** A stand-in brief stage's `--json` output: the event's assembled recipe, as `clossys next --stage brief --json` prints it. */
+const briefOutput = (argv: readonly string[]): string => {
+  const [agent] = argv[1]!.split("/") as [string];
+  const standard = readScenario(SHIPPED).steps.find(step => step.craft?.ref === argv[1])!.craft!.standard;
+  return JSON.stringify({ schema: "clossys.next-stage/1", slot: argv[1], event: { op: "craft:brief", assembled: { recipe: { axes: recipeAxes(agent, standard) } } } });
+};
 
 describe("check --e2e arguments", () => {
   it("takes --e2e with --from, --scenario and --keep on check only, and alone", () => {
@@ -113,11 +126,23 @@ describe("runScenario", () => {
           writeFileSync(join(builds, "01234567", "site", route, "index.html"), strings.join("\n"));
         }
       }
-      return { code: 0, stdout: id.endsWith(".packet") ? JSON.stringify({ manifest: [] }) : "", stderr: "" };
+      return { code: 0, stdout: id.endsWith(".packet") ? JSON.stringify({ manifest: [] }) : id.endsWith(".brief") ? briefOutput(argv) : "", stderr: "" };
     };
     let built: unknown;
     await runScenario(scenario, SHIPPED, consumer, clossys, { say: () => undefined, findings: [], built: row => { built = row; } });
     expect(built).toMatchObject({ publication: scenario.publication, id: "0123456789abcdef" });
+    // Every craft's diverge file carries a value on every axis of the recipe code chooses for its standard, each distinct.
+    const crafts = scenario.steps.filter(step => step.craft);
+    expect(crafts.length).toBeGreaterThan(0);
+    for (const step of crafts) {
+      const [agent, slot] = step.craft!.ref.split("/") as [string, string];
+      expect(ran.find(([id]) => id === `${step.id}.brief`)![1]).toContain("--json");
+      const axes = recipeAxes(agent, step.craft!.standard);
+      const directions = JSON.parse(readFileSync(join(consumer, "e2e", slot, "diverge.json"), "utf8")) as { idea: string; axes: Record<string, unknown> }[];
+      expect(directions.map(direction => direction.idea)).toEqual([...E2E_DIRECTIONS]);
+      for (const direction of directions) expect(Object.keys(direction.axes).sort(), `${step.id} ${direction.idea}`).toEqual([...axes].sort());
+      for (const axis of axes) expect(new Set(directions.map(direction => direction.axes[axis])).size, `${step.id} ${axis}`).toBe(directions.length);
+    }
     expect(ran.slice(-4)).toEqual([
       ["build", scenario.build.map(arg => arg.replaceAll("{scenario}", SHIPPED))],
       ["build.repeat", scenario.build.map(arg => arg.replaceAll("{scenario}", SHIPPED))],
@@ -125,6 +150,31 @@ describe("runScenario", () => {
       ["release.gates", ["publisher", "release", scenario.publication, "--gates"]],
     ]);
     for (const step of scenario.steps.filter(step => step.run)) expect(ran.map(([id]) => id)).toContain(step.id);
+  });
+});
+
+describe("the scripted diverge payload", () => {
+  it("reads the recipe axes from the brief's --json output, and none from output that names none", () => {
+    expect(briefAxes(JSON.stringify({ schema: "clossys.next-stage/1", event: { assembled: { recipe: { id: "create.structured", axes: ["selection", "cut", "evidence"] } } } }))).toEqual(["selection", "cut", "evidence"]);
+    for (const stdout of ["", "next --stage: director/x craft:brief", JSON.stringify({ event: {} }), JSON.stringify({ event: { assembled: { recipe: { axes: [] } } } }), JSON.stringify({ event: { assembled: { recipe: { axes: ["cut", ""] } } } })]) expect(briefAxes(stdout), stdout).toBeUndefined();
+  });
+
+  it("gives every direction a distinct value on every axis it is handed", () => {
+    const directions = divergeDirections(["selection", "cut", "evidence"]);
+    expect(directions).toHaveLength(E2E_DIRECTIONS.length);
+    for (const direction of directions) expect(Object.keys(direction.axes)).toEqual(["selection", "cut", "evidence"]);
+    for (const axis of ["selection", "cut", "evidence"]) expect(new Set(directions.map(direction => direction.axes[axis])).size).toBe(directions.length);
+  });
+
+  it("stops at the brief, writing no diverge, when the brief prints no recipe axes", async () => {
+    const scenario = readScenario(SHIPPED);
+    const consumer = temp();
+    const ran: string[] = [];
+    const clossys: Clossys = async id => { ran.push(id); return { code: 0, stdout: "", stderr: "" }; };
+    const first = scenario.steps.find(step => step.craft)!;
+    await expect(runScenario(scenario, SHIPPED, consumer, clossys, { say: () => undefined, findings: [], built: () => undefined })).rejects.toMatchObject({ finding: { cause: "e2e.step", subject: `${first.id}.brief` } });
+    expect(ran).not.toContain(`${first.id}.diverge`);
+    expect(existsSync(join(consumer, "e2e", first.craft!.ref.split("/")[1]!, "diverge.json"))).toBe(false);
   });
 });
 
